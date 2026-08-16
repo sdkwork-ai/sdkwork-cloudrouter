@@ -1318,7 +1318,10 @@ fn group_model_blacklist_forbids_the_model_for_the_whole_group() {
     let error = UpstreamRouteSelector::new(&catalog)
         .select_model_route(model_query(group_id))
         .expect_err("blacklisted model must be rejected");
-    assert_eq!(UpstreamRouteSelectionErrorKind::ModelForbidden, error.kind());
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::ModelForbidden,
+        error.kind()
+    );
     assert!(error.to_string().contains("model blacklist"));
 }
 
@@ -1346,7 +1349,10 @@ fn group_model_blacklist_vendor_wide_entry_blocks_every_model_of_the_vendor() {
     let error = UpstreamRouteSelector::new(&catalog)
         .select_model_route(model_query(group_id))
         .expect_err("vendor-wide blacklist entry must reject the model");
-    assert_eq!(UpstreamRouteSelectionErrorKind::ModelForbidden, error.kind());
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::ModelForbidden,
+        error.kind()
+    );
 }
 
 #[test]
@@ -1373,7 +1379,10 @@ fn group_model_blacklist_matching_is_case_insensitive() {
     let error = UpstreamRouteSelector::new(&catalog)
         .select_model_route(model_query(group_id))
         .expect_err("blacklist model matching must be case-insensitive");
-    assert_eq!(UpstreamRouteSelectionErrorKind::ModelForbidden, error.kind());
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::ModelForbidden,
+        error.kind()
+    );
 }
 
 #[test]
@@ -1433,7 +1442,10 @@ fn group_model_whitelist_is_fail_closed() {
     let error = UpstreamRouteSelector::new(&catalog)
         .select_model_route(model_query(group_id))
         .expect_err("model outside the whitelist must be rejected");
-    assert_eq!(UpstreamRouteSelectionErrorKind::ModelForbidden, error.kind());
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::ModelForbidden,
+        error.kind()
+    );
     assert!(error.to_string().contains("model whitelist"));
 }
 
@@ -1489,7 +1501,10 @@ fn group_model_blacklist_wins_over_whitelist() {
     let error = UpstreamRouteSelector::new(&catalog)
         .select_model_route(model_query(group_id))
         .expect_err("blacklist must win over whitelist");
-    assert_eq!(UpstreamRouteSelectionErrorKind::ModelForbidden, error.kind());
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::ModelForbidden,
+        error.kind()
+    );
     assert!(error.to_string().contains("model blacklist"));
 }
 
@@ -1501,9 +1516,18 @@ fn account_route_path_returns_failover_chain_for_dispatch() {
         UpstreamAccountRoutingStrategy::Weighted,
         UpstreamAccountFallbackMode::CrossSupplier,
     ));
-    add_route_and_price(&mut catalog, account_route(group_id, 1001, "openai", 100, 100));
-    add_route_and_price(&mut catalog, account_route(group_id, 1002, "openai", 200, 100));
-    add_route_and_price(&mut catalog, account_route(group_id, 1003, "anthropic", 300, 100));
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 1001, "openai", 100, 100),
+    );
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 1002, "openai", 200, 100),
+    );
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 1003, "anthropic", 300, 100),
+    );
 
     let selection = UpstreamRouteSelector::new(&catalog)
         .select_account_route(account_route_query(group_id))
@@ -1530,8 +1554,14 @@ fn account_route_path_without_fallback_keeps_single_candidate() {
         UpstreamAccountRoutingStrategy::Weighted,
         UpstreamAccountFallbackMode::None,
     ));
-    add_route_and_price(&mut catalog, account_route(group_id, 1001, "openai", 100, 100));
-    add_route_and_price(&mut catalog, account_route(group_id, 1002, "openai", 200, 100));
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 1001, "openai", 100, 100),
+    );
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 1002, "openai", 200, 100),
+    );
 
     let selection = UpstreamRouteSelector::new(&catalog)
         .select_account_route(account_route_query(group_id))
@@ -1555,15 +1585,22 @@ fn binding_price_first_overrides_group_default_strategy() {
     catalog.add_api_key(
         GatewayApiKey::new(API_KEY_ID, group_id, "sk-test", "hash:sk-test")
             .with_owner(TENANT_ID, ORGANIZATION_ID, USER_ID)
-            .with_account_group_bindings(vec![
-                GatewayApiKeyAccountGroupBinding::new(group_id, &format!("group-{group_id}"), "standard", 100, 100)
-                    .with_routing_strategy("price_first"),
-            ]),
+            .with_account_group_bindings(vec![GatewayApiKeyAccountGroupBinding::new(
+                group_id,
+                &format!("group-{group_id}"),
+                "standard",
+                100,
+                100,
+            )
+            .with_routing_strategy("price_first")]),
     );
     let mut expensive = account_route(group_id, 3001, "openai-a", 100, 100);
     expensive.contract_cost_multiplier = decimal("2.000000");
     add_route_and_price(&mut catalog, expensive);
-    add_route_and_price(&mut catalog, account_route(group_id, 3002, "openai-b", 100, 100));
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 3002, "openai-b", 100, 100),
+    );
 
     assert_eq!(3002, select_account(&catalog, group_id));
 }
@@ -1581,15 +1618,22 @@ fn binding_quality_first_prefers_healthy_account() {
     catalog.add_api_key(
         GatewayApiKey::new(API_KEY_ID, group_id, "sk-test", "hash:sk-test")
             .with_owner(TENANT_ID, ORGANIZATION_ID, USER_ID)
-            .with_account_group_bindings(vec![
-                GatewayApiKeyAccountGroupBinding::new(group_id, &format!("group-{group_id}"), "standard", 100, 100)
-                    .with_routing_strategy("quality_first"),
-            ]),
+            .with_account_group_bindings(vec![GatewayApiKeyAccountGroupBinding::new(
+                group_id,
+                &format!("group-{group_id}"),
+                "standard",
+                100,
+                100,
+            )
+            .with_routing_strategy("quality_first")]),
     );
     let mut unhealthy = account_route(group_id, 3001, "openai-a", 100, 100);
     unhealthy.account_health_status = 2;
     add_route_and_price(&mut catalog, unhealthy);
-    add_route_and_price(&mut catalog, account_route(group_id, 3002, "openai-b", 100, 100));
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 3002, "openai-b", 100, 100),
+    );
 
     assert_eq!(3002, select_account(&catalog, group_id));
 }
@@ -1607,15 +1651,22 @@ fn legacy_auto_binding_falls_back_to_group_default_strategy() {
     catalog.add_api_key(
         GatewayApiKey::new(API_KEY_ID, group_id, "sk-test", "hash:sk-test")
             .with_owner(TENANT_ID, ORGANIZATION_ID, USER_ID)
-            .with_account_group_bindings(vec![
-                GatewayApiKeyAccountGroupBinding::new(group_id, &format!("group-{group_id}"), "standard", 100, 100)
-                    .with_routing_strategy("auto"),
-            ]),
+            .with_account_group_bindings(vec![GatewayApiKeyAccountGroupBinding::new(
+                group_id,
+                &format!("group-{group_id}"),
+                "standard",
+                100,
+                100,
+            )
+            .with_routing_strategy("auto")]),
     );
     let mut expensive = account_route(group_id, 3001, "openai-a", 100, 100);
     expensive.contract_cost_multiplier = decimal("2.000000");
     add_route_and_price(&mut catalog, expensive);
-    add_route_and_price(&mut catalog, account_route(group_id, 3002, "openai-b", 100, 100));
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 3002, "openai-b", 100, 100),
+    );
 
     // Failover 默认：不重排，首个成员 3001 胜出（auto 未注入 price_first）
     assert_eq!(3001, select_account(&catalog, group_id));

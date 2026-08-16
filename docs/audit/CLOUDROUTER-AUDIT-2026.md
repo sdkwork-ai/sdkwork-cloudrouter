@@ -208,7 +208,7 @@
 - **HIGH-SSRF**：`edge_server.rs:1248-1255,1441-1467` tool-api（SDK 生成器）未配置 base URL 时由请求 `Host` 头派生目标，`is_safe_http_host` 放行私网/环回/169.254 → 客户端可让边缘带生成器密钥向任意主机 POST（条件开启）。
 - **HIGH-路径穿越**：`provider_passthrough_transport.rs:89-94,251-258` 不拒 `..` 段 → `/provider/tencent-cloud/../../<任意路径>` 带共享凭据转发（relay 路径缺口）。
 - **HIGH-IP 安全控制失效**：`invocation_http.rs:153,387,588-589` `extract_client_ip` 硬编码 `trust_forwarded_headers=false` 且 `axum::serve` 未注入 `ConnectInfo` → `client_ip` 恒 None → IP 白名单拒绝所有流量、IP DENY/按 IP 限流永不命中（**两项安全控制静默失效**）。
-- **HIGH-租户隔离**：`auth.rs:300-326` 无边界模式回退 `from_headers` 直接解析客户端 `x-sdkwork-tenant-id` 等且**不校验 HMAC**。
+- ~~**HIGH-租户隔离**：`auth.rs:300-326` 无边界模式回退 `from_headers` 直接解析客户端 `x-sdkwork-tenant-id` 等且**不校验 HMAC**~~ → **已修复（2026-08-16）**：`TrustedRequestSubject::resolve_optional` 删除客户端投影头回退（fail-closed），无边界模式下 subject 只能来自已验签的 app-session 边界或扩展上下文；`from_headers` 仅保留为边界验签后的服务端内部握手；新增回归测试 `trusted_request_subject_never_resolves_from_client_supplied_headers`（29 集成 + 45 lib 测试通过）。
 - **HIGH-降级**：`RedisConfig::from_env_or_runtime_toml(...).ok().flatten()` 吞 Err + Redis 失败静默回退本地计数/内存流总线 → 多副本下配额按节点放大、去重失效、事件丢失。
 - **HIGH-重试**：legacy relay `openai_compatible_relay.rs:1444-1517` 对 POST 429/5xx 无幂等键重试（双重计费风险）；全量管道路径正确（仅 GET/HEAD/OPTIONS 重试）。
 - **HIGH-溢出**：`admin_ip_rate_limit.rs:270-285` `amount * 86_400` 无 checked_mul（debug panic/release 回绕绕过封顶）。

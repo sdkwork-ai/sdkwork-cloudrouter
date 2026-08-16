@@ -1,0 +1,32 @@
+{
+  "name": "@sdkwork/cloudrouter-pc-admin-pricing",
+  "version": "1.0.0",
+  "license": "SEE LICENSE IN ../../../../LICENSE",
+  "type": "module",
+  "main": "./src/index.tsx",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sdkwork/appbase-pc-react": "workspace:*",
+    "@sdkwork/cloudrouter-pc-admin-core": "workspace:*",
+    "@sdkwork/cloudroutes-pc-commons": "workspace:*",
+    "react-i18next": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  },
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./src/index.tsx",
+      "import": "./src/index.tsx",
+      "default": "./src/index.tsx"
+    },
+    "./i18n": {
+      "types": "./src/i18n/index.ts",
+      "import": "./src/i18n/index.ts",
+      "default": "./src/i18n/index.ts"
+    }
+  }
+}

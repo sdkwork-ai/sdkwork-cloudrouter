@@ -16,6 +16,7 @@ sdkwork-web-core.workspace = true
 anyhow.workspace = true
 sdkwork-cloudrouter-http.workspace = true
 sdkwork-cloudrouter-edge-runtime.workspace = true
+sdkwork_api_models_assembly.workspace = true
 sdkwork-web-contract.workspace = true
 sdkwork-iam-database-host.workspace = true
 sdkwork-iam-embedded-application-bootstrap.workspace = true

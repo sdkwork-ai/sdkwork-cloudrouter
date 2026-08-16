@@ -1,5 +1,4 @@
 pub mod common;
-use common::InternalTrustedSubjectHeaders;
 use std::sync::{Arc, Mutex};
 
 use axum::body::Body;
@@ -19,11 +18,14 @@ async fn app_dashboard_overview_normalizes_valid_utc_timestamps_before_read_stor
 
     let response = router
         .oneshot(
-            Request::builder()
-                .uri("/app/v3/api/ai/dashboard/overview?time_range=DAILY&start_time=2026-04-29T01:02:03.987Z&end_time=2026-04-29T02:03:04.000Z")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::empty())
-                .unwrap(),
+            common::web_framework_backend_request(
+            "GET",
+            "/app/v3/api/ai/dashboard/overview?time_range=DAILY&start_time=2026-04-29T01:02:03.987Z&end_time=2026-04-29T02:03:04.000Z",
+            Body::empty(),
+            "100001",
+            Some("0"),
+            "30",
+        )
         )
         .await
         .unwrap();

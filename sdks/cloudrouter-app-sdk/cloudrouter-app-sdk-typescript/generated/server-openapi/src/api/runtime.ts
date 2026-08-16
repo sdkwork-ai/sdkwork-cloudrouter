@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 import type { CompleteRuntimeInvocationRequest, CreateRuntimeArtifactRequest, CreateRuntimeEventRequest, CreateRuntimeInvocationRequest, RuntimeArtifactItem, RuntimeArtifactListResponse, RuntimeEventItem, RuntimeEventListResponse, RuntimeInvocationItem, RuntimeInvocationListResponse } from '../types';
-export interface RuntimeInvocationsEventsStreamListParams {
+export interface RuntimeInvocationsEventsStreamRetrieveParams {
   afterEventNo?: string;
 }
 
@@ -14,7 +14,7 @@ export class RuntimeInvocationsEventsStreamApi {
 
 
 /** Stream runtime events */
-  async list(invocationId: string, params?: RuntimeInvocationsEventsStreamListParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
+  async retrieve(invocationId: string, params?: RuntimeInvocationsEventsStreamRetrieveParams, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
     const query = buildQueryString([
       { name: 'after_event_no', value: params?.afterEventNo, style: 'form', explode: true, allowReserved: false },
     ]);

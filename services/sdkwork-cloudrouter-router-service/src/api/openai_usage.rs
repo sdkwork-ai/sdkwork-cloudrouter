@@ -10,10 +10,11 @@ use crate::api::openai_invocation::{
 };
 use crate::api::openai_runtime::ResolvedOpenAiUpstreamRoute;
 use crate::application::{
-    AuthenticatedApiKeyContext, PricingResolver, ResolveModelPriceQuery, ResolvedModelPrice,
+    AuthenticatedApiKeyContext, GatewayPricingDecision, PriceResolution, PriceService,
 };
 use crate::domain::{
     provider_native_model_id, BillingMeter, DecimalValue, DomainError, DomainResult,
+    ResourceDefinition,
 };
 use crate::ports::{
     GatewayRequestTraceCommand, GatewayUsageQuantity, GatewayUsageRecordCommand,
@@ -23,8 +24,8 @@ use crate::ports::{
 const MODALITY_TEXT: i64 = 1;
 const MODALITY_EMBEDDING: i64 = 6;
 const USAGE_TYPE_INPUT: i64 = 1;
-const TOKEN_BILLING_UNIT_SIZE: i64 = 1_000_000;
-const USAGE_AMOUNT_DECIMAL_DIGITS: u32 = 12;
+const USAGE_TYPE_OUTPUT: i64 = 2;
+const USAGE_TYPE_CACHE_READ: i64 = 3;
 const MAX_TRACE_ERROR_MESSAGE_LEN: usize = 1024;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -33,7 +34,6 @@ pub(crate) struct OpenAiUsageBillingProfile {
     output_meter: Option<BillingMeter>,
     cache_read_meter: Option<BillingMeter>,
     modality: i64,
-    usage_type: i64,
 }
 
 impl OpenAiUsageBillingProfile {
@@ -43,7 +43,6 @@ impl OpenAiUsageBillingProfile {
             output_meter: Some(BillingMeter::LlmOutputToken),
             cache_read_meter: Some(BillingMeter::LlmCacheReadToken),
             modality: MODALITY_TEXT,
-            usage_type: USAGE_TYPE_INPUT,
         }
     }
 
@@ -57,7 +56,6 @@ impl OpenAiUsageBillingProfile {
             output_meter: None,
             cache_read_meter: None,
             modality: MODALITY_EMBEDDING,
-            usage_type: USAGE_TYPE_INPUT,
         }
     }
 
@@ -120,7 +118,7 @@ where
         }
         let usage =
             usage_from_response(context.endpoint, body).map_err(provider_usage_record_error)?;
-        let mut command = build_usage_record_command(
+        let mut commands = build_usage_record_commands(
             self.catalog.as_ref(),
             context,
             route,
@@ -130,9 +128,11 @@ where
             OpenAiUsageBillingProfile::for_endpoint(context.endpoint),
         )
         .map_err(provider_usage_record_error)?;
-        command.latency_ms = outcome.latency_ms;
+        for command in &mut commands {
+            command.latency_ms = outcome.latency_ms;
+        }
         self.usage_recorder
-            .record_gateway_usage(command)
+            .record_gateway_usage_batch(commands)
             .await
             .map_err(provider_usage_record_error)?;
         Ok(())
@@ -186,64 +186,75 @@ pub(crate) struct GatewayUsageRecordCommandBuilder {
     error_type: Option<String>,
     error_message_masked: Option<String>,
     modality: i64,
-    usage_type: i64,
-    billing_meter_code: String,
-    base_input_unit_price: String,
-    base_output_unit_price: String,
-    cache_read_unit_price: String,
-    sale_multiplier: DecimalValue,
-    reference_multiplier: DecimalValue,
-    official_input_unit_price: DecimalValue,
-    official_output_unit_price: DecimalValue,
-    official_cache_read_unit_price: DecimalValue,
-    input_unit_price: DecimalValue,
-    output_unit_price: DecimalValue,
-    customer_cache_read_unit_price: DecimalValue,
-    upstream_input_unit_price: DecimalValue,
-    upstream_output_unit_price: DecimalValue,
-    upstream_cache_read_unit_price: DecimalValue,
-    currency: String,
-    pricing_plan_code: String,
-    pricing_snapshot: String,
+    input_quote: PriceResolution,
+    output_quote: Option<PriceResolution>,
+    cache_read_quote: Option<PriceResolution>,
 }
 
 impl GatewayUsageRecordCommandBuilder {
-    pub(crate) fn build(&self, usage: OpenAiTokenUsage) -> DomainResult<GatewayUsageRecordCommand> {
+    pub(crate) fn build(
+        &self,
+        usage: OpenAiTokenUsage,
+    ) -> DomainResult<Vec<GatewayUsageRecordCommand>> {
         let input_tokens = billable_input_tokens(usage.prompt_tokens, usage.cached_tokens)?;
-        let input_amount = token_amount(self.input_unit_price, input_tokens)?;
-        let cache_read_amount =
-            token_amount(self.customer_cache_read_unit_price, usage.cached_tokens)?;
-        let output_amount = token_amount(self.output_unit_price, usage.completion_tokens)?;
-        let official_input_amount = token_amount(self.official_input_unit_price, input_tokens)?;
-        let official_cache_read_amount =
-            token_amount(self.official_cache_read_unit_price, usage.cached_tokens)?;
-        let official_output_amount =
-            token_amount(self.official_output_unit_price, usage.completion_tokens)?;
-        let upstream_input_amount = self
-            .upstream_input_unit_price
-            .multiply_i64(input_tokens)?
-            .divide_i64(TOKEN_BILLING_UNIT_SIZE)?;
-        let upstream_cache_read_amount = self
-            .upstream_cache_read_unit_price
-            .multiply_i64(usage.cached_tokens)?
-            .divide_i64(TOKEN_BILLING_UNIT_SIZE)?;
-        let upstream_output_amount = self
-            .upstream_output_unit_price
-            .multiply_i64(usage.completion_tokens)?
-            .divide_i64(TOKEN_BILLING_UNIT_SIZE)?;
-        let official_reference_amount = sum_decimal_values(&[
-            official_input_amount,
-            official_cache_read_amount,
-            official_output_amount,
-        ])?;
-        let customer_charge_amount =
-            sum_decimal_values(&[input_amount, cache_read_amount, output_amount])?;
-        let upstream_cost_amount = sum_decimal_values(&[
-            upstream_input_amount,
-            upstream_cache_read_amount,
-            upstream_output_amount,
-        ])?;
-        let quantity = GatewayUsageQuantity::tokens(usage.total_tokens)?;
+        let mut commands = Vec::with_capacity(3);
+        commands.push(self.build_line(
+            &self.input_quote,
+            input_tokens,
+            USAGE_TYPE_INPUT,
+            input_tokens,
+            0,
+            0,
+            true,
+        )?);
+        if let Some(output_quote) = self.output_quote.as_ref() {
+            commands.push(self.build_line(
+                output_quote,
+                usage.completion_tokens,
+                USAGE_TYPE_OUTPUT,
+                0,
+                usage.completion_tokens,
+                0,
+                false,
+            )?);
+        }
+        if let Some(cache_read_quote) = self.cache_read_quote.as_ref() {
+            commands.push(self.build_line(
+                cache_read_quote,
+                usage.cached_tokens,
+                USAGE_TYPE_CACHE_READ,
+                0,
+                0,
+                usage.cached_tokens,
+                false,
+            )?);
+        }
+        Ok(commands)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn build_line(
+        &self,
+        quoted_resolution: &PriceResolution,
+        measured_quantity: i64,
+        usage_type: i64,
+        prompt_tokens: i64,
+        completion_tokens: i64,
+        cached_tokens: i64,
+        owns_request_count: bool,
+    ) -> DomainResult<GatewayUsageRecordCommand> {
+        let resolution = rate_price_resolution(quoted_resolution, measured_quantity)?;
+        let pricing = GatewayPricingDecision::from_resolution(&resolution)?;
+        let quantity = GatewayUsageQuantity::tokens(measured_quantity)?;
+        let zero = "0.000000000000".to_owned();
+        let (base_input_unit_price, base_output_unit_price, cache_read_unit_price) =
+            match usage_type {
+                USAGE_TYPE_OUTPUT => (zero.clone(), pricing.base_unit_price.clone(), zero.clone()),
+                USAGE_TYPE_CACHE_READ => {
+                    (zero.clone(), zero.clone(), pricing.base_unit_price.clone())
+                }
+                _ => (pricing.base_unit_price.clone(), zero.clone(), zero),
+            };
         Ok(GatewayUsageRecordCommand {
             request_id: self.request_id.clone(),
             trace_id: self.trace_id.clone(),
@@ -268,14 +279,16 @@ impl GatewayUsageRecordCommandBuilder {
             http_status: self.http_status,
             streaming: self.streaming,
             modality: self.modality,
-            usage_type: self.usage_type,
-            billing_meter_code: self.billing_meter_code.clone(),
-            billable_quantity: quantity.billable_quantity,
-            prompt_tokens: usage.prompt_tokens,
-            completion_tokens: usage.completion_tokens,
-            cached_tokens: usage.cached_tokens,
-            total_tokens: usage.total_tokens,
-            request_count: quantity.request_count,
+            usage_type,
+            billing_meter_code: resolution.audit_snapshot.resource.meter.code().to_owned(),
+            unit_size: pricing.unit_size,
+            billable_quantity: quantity.billable_quantity.clone(),
+            rated_quantity: pricing.rated_quantity,
+            prompt_tokens,
+            completion_tokens,
+            cached_tokens,
+            total_tokens: measured_quantity,
+            request_count: if owns_request_count { 1 } else { 0 },
             result_count: quantity.result_count,
             item_count: quantity.item_count,
             character_count: quantity.character_count,
@@ -287,19 +300,23 @@ impl GatewayUsageRecordCommandBuilder {
             provider_error_code: self.provider_error_code.clone(),
             error_type: self.error_type.clone(),
             error_message_masked: self.error_message_masked.clone(),
-            base_input_unit_price: self.base_input_unit_price.clone(),
-            base_output_unit_price: self.base_output_unit_price.clone(),
-            cache_read_unit_price: self.cache_read_unit_price.clone(),
-            rate_multiplier: self.sale_multiplier.to_fixed_string(6),
-            reference_multiplier: self.reference_multiplier.to_fixed_string(6),
-            official_reference_amount: official_reference_amount
-                .to_fixed_string(USAGE_AMOUNT_DECIMAL_DIGITS),
-            customer_charge_amount: customer_charge_amount
-                .to_fixed_string(USAGE_AMOUNT_DECIMAL_DIGITS),
-            upstream_cost_amount: upstream_cost_amount.to_fixed_string(USAGE_AMOUNT_DECIMAL_DIGITS),
-            currency: self.currency.clone(),
-            pricing_plan_code: self.pricing_plan_code.clone(),
-            pricing_snapshot: self.pricing_snapshot.clone(),
+            decision_status: pricing.decision_status,
+            billability: pricing.billability,
+            reason_code: pricing.reason_code,
+            strategy_code: pricing.strategy_code,
+            base_input_unit_price,
+            base_output_unit_price,
+            cache_read_unit_price,
+            rate_multiplier: pricing.rate_multiplier,
+            reference_multiplier: pricing.reference_multiplier,
+            official_reference_amount: pricing.official_reference_amount,
+            customer_charge_amount: pricing.customer_charge_amount,
+            upstream_cost_amount: pricing.upstream_cost_amount,
+            currency: pricing.currency,
+            pricing_plan_code: pricing.pricing_plan_code,
+            billing_components: pricing.billing_components,
+            pricing_snapshot: openai_pricing_snapshot(self, &resolution),
+            official_rate: pricing.official_rate,
         })
     }
 
@@ -476,7 +493,7 @@ fn non_negative_integer(field: &str, integer: i64) -> DomainResult<i64> {
     Ok(integer)
 }
 
-pub(crate) fn build_usage_record_command<C>(
+pub(crate) fn build_usage_record_commands<C>(
     catalog: &C,
     invocation_context: &OpenAiInvocationContext,
     route: &ResolvedOpenAiUpstreamRoute,
@@ -484,7 +501,7 @@ pub(crate) fn build_usage_record_command<C>(
     streaming: bool,
     usage: OpenAiTokenUsage,
     billing_profile: OpenAiUsageBillingProfile,
-) -> DomainResult<GatewayUsageRecordCommand>
+) -> DomainResult<Vec<GatewayUsageRecordCommand>>
 where
     C: PricingCatalog + Send + Sync,
 {
@@ -621,61 +638,44 @@ pub(crate) fn build_usage_record_command_builder<C>(
 where
     C: PricingCatalog + Send + Sync,
 {
-    let input_price = PricingResolver::new(catalog).resolve(ResolveModelPriceQuery {
-        api_key_id: context.api_key_id,
-        account_group_id: Some(route.group_id),
-        model: route.catalog_key.clone(),
-        billing_meter: billing_profile.input_meter.clone(),
-        supplier_code: Some(route.supplier_code.clone()),
-        account_id: Some(route.account_id),
-        region_code: Some(route.region_code.clone()),
-    })?;
+    let price_service = PriceService::new();
+    let occurred_at = chrono::Utc::now();
+    let input_quote = resolve_openai_price(
+        &price_service,
+        catalog,
+        invocation_context,
+        context,
+        route,
+        billing_profile.input_meter.clone(),
+        occurred_at,
+    )?;
     let output_price = match billing_profile.output_meter.clone() {
-        Some(output_meter) => Some(PricingResolver::new(catalog).resolve(
-            ResolveModelPriceQuery {
-                api_key_id: context.api_key_id,
-                account_group_id: Some(route.group_id),
-                model: route.catalog_key.clone(),
-                billing_meter: output_meter,
-                supplier_code: Some(route.supplier_code.clone()),
-                account_id: Some(route.account_id),
-                region_code: Some(route.region_code.clone()),
-            },
+        Some(output_meter) => Some(resolve_openai_price(
+            &price_service,
+            catalog,
+            invocation_context,
+            context,
+            route,
+            output_meter,
+            occurred_at,
         )?),
         None => None,
     };
-    let upstream_input_unit_price = upstream_unit_price(&input_price);
-    let upstream_output_unit_price = output_price
-        .as_ref()
-        .map(upstream_unit_price)
-        .unwrap_or(DecimalValue::ZERO);
-    let output_customer_charge = output_price
-        .as_ref()
-        .map(|price| price.customer_charge.clone())
-        .unwrap_or_else(|| zero_money_like(&input_price));
     let cache_read_price = match billing_profile.cache_read_meter.clone() {
-        Some(cache_read_meter) => resolve_optional_cache_read_price(
+        Some(cache_read_meter) => Some(resolve_openai_price(
+            &price_service,
             catalog,
+            invocation_context,
             context,
             route,
             cache_read_meter,
-            &input_price,
-        )?,
+            occurred_at,
+        )?),
         None => None,
     };
-    let cache_read_customer_charge = cache_read_price
-        .as_ref()
-        .map(|price| price.customer_charge.clone())
-        .unwrap_or_else(|| zero_money_like(&input_price));
 
     let requested_model_catalog_key = route.catalog_key.clone();
     let provider_native_model = provider_native_model_id(&route.provider_model);
-    let pricing_snapshot = build_pricing_snapshot(
-        route,
-        &input_price,
-        output_price.as_ref(),
-        cache_read_price.as_ref(),
-    );
     Ok(GatewayUsageRecordCommandBuilder {
         request_id: invocation_context.request_id.clone(),
         trace_id: invocation_context.trace_id.clone(),
@@ -705,169 +705,109 @@ where
         error_type: None,
         error_message_masked: None,
         modality: billing_profile.modality,
-        usage_type: billing_profile.usage_type,
-        billing_meter_code: billing_profile.input_meter.code().to_owned(),
-        base_input_unit_price: input_price
-            .customer_charge_before_sale_multiplier
-            .to_fixed_string(6),
-        base_output_unit_price: output_price
-            .as_ref()
-            .map(|price| {
-                price
-                    .customer_charge_before_sale_multiplier
-                    .to_fixed_string(6)
-            })
-            .unwrap_or_else(|| output_customer_charge.to_fixed_string(6)),
-        cache_read_unit_price: cache_read_price
-            .as_ref()
-            .map(|price| {
-                price
-                    .customer_charge_before_sale_multiplier
-                    .to_fixed_string(6)
-            })
-            .unwrap_or_else(|| cache_read_customer_charge.to_fixed_string(6)),
-        sale_multiplier: input_price.sale_multiplier,
-        reference_multiplier: input_price.reference_multiplier,
-        official_input_unit_price: input_price.official_reference.unit_price.unit_price,
-        official_output_unit_price: output_price
-            .as_ref()
-            .map(|price| price.official_reference.unit_price.unit_price)
-            .unwrap_or(DecimalValue::ZERO),
-        official_cache_read_unit_price: cache_read_price
-            .as_ref()
-            .map(|price| price.official_reference.unit_price.unit_price)
-            .unwrap_or(DecimalValue::ZERO),
-        input_unit_price: input_price.customer_charge.unit_price,
-        output_unit_price: output_customer_charge.unit_price,
-        customer_cache_read_unit_price: cache_read_customer_charge.unit_price,
-        upstream_input_unit_price,
-        upstream_output_unit_price,
-        upstream_cache_read_unit_price: cache_read_price
-            .as_ref()
-            .map(upstream_unit_price)
-            .unwrap_or(DecimalValue::ZERO),
-        currency: input_price.customer_charge.currency,
-        pricing_plan_code: route.pricing_plan_code.clone(),
-        pricing_snapshot,
+        input_quote,
+        output_quote: output_price,
+        cache_read_quote: cache_read_price,
     })
 }
 
-fn resolve_optional_cache_read_price<C>(
+fn resolve_openai_price<C>(
+    price_service: &PriceService,
     catalog: &C,
+    invocation_context: &OpenAiInvocationContext,
     context: &AuthenticatedApiKeyContext,
     route: &ResolvedOpenAiUpstreamRoute,
     meter: BillingMeter,
-    fallback: &ResolvedModelPrice,
-) -> DomainResult<Option<ResolvedModelPrice>>
+    occurred_at: chrono::DateTime<chrono::Utc>,
+) -> DomainResult<PriceResolution>
 where
     C: PricingCatalog + Send + Sync,
 {
-    match PricingResolver::new(catalog).resolve(ResolveModelPriceQuery {
-        api_key_id: context.api_key_id,
-        account_group_id: Some(route.group_id),
-        model: route.catalog_key.clone(),
-        billing_meter: meter,
-        supplier_code: Some(route.supplier_code.clone()),
-        account_id: Some(route.account_id),
-        region_code: Some(route.region_code.clone()),
-    }) {
-        Ok(price) => Ok(Some(price)),
-        Err(error)
-            if error
-                .to_string()
-                .contains("official reference price not found") =>
-        {
-            Ok(Some(fallback.clone()))
-        }
-        Err(error) => Err(error),
+    price_service.resolve(
+        catalog,
+        openai_resource_definition(invocation_context, context, route, meter, occurred_at),
+    )
+}
+
+fn openai_resource_definition(
+    invocation_context: &OpenAiInvocationContext,
+    context: &AuthenticatedApiKeyContext,
+    route: &ResolvedOpenAiUpstreamRoute,
+    meter: BillingMeter,
+    occurred_at: chrono::DateTime<chrono::Utc>,
+) -> ResourceDefinition {
+    ResourceDefinition::new(route.catalog_key.clone(), meter, occurred_at)
+        .with_pricing_subject(context.api_key_id, Some(route.group_id))
+        .with_vendor_code(catalog_vendor_code(&route.catalog_key))
+        .with_provider(route.supplier_code.clone(), Some(route.account_id))
+        .with_region_code(route.region_code.clone())
+        .with_model(invocation_context.requested_model.clone())
+        .with_api_code(openai_usage_api_code(invocation_context.endpoint))
+}
+
+fn openai_usage_api_code(endpoint: OpenAiInvocationEndpoint) -> &'static str {
+    match endpoint {
+        OpenAiInvocationEndpoint::ChatCompletions => "openai.chat.completions",
+        OpenAiInvocationEndpoint::Responses => "openai.responses",
+        OpenAiInvocationEndpoint::Embeddings => "openai.embeddings",
     }
 }
 
-fn build_pricing_snapshot(
-    route: &ResolvedOpenAiUpstreamRoute,
-    input_price: &ResolvedModelPrice,
-    output_price: Option<&ResolvedModelPrice>,
-    cache_read_price: Option<&ResolvedModelPrice>,
+fn catalog_vendor_code(catalog_key: &str) -> &str {
+    catalog_key
+        .split_once('/')
+        .map(|(vendor_code, _)| vendor_code)
+        .unwrap_or("")
+}
+
+fn rate_price_resolution(
+    resolution: &PriceResolution,
+    measured_quantity: i64,
+) -> DomainResult<PriceResolution> {
+    let resource = resolution
+        .audit_snapshot
+        .resource
+        .clone()
+        .with_measured_quantity(DecimalValue::parse(&measured_quantity.to_string())?);
+    if let Some(resolved_price) = resolution.resolved_price.as_ref() {
+        return PriceService::new().rate_resolved(resource, resolved_price.clone());
+    }
+    let mut unrated = resolution.clone();
+    unrated.audit_snapshot.resource = resource;
+    Ok(unrated)
+}
+
+fn openai_pricing_snapshot(
+    builder: &GatewayUsageRecordCommandBuilder,
+    resolution: &PriceResolution,
 ) -> String {
     serde_json::json!({
-        "vendor": {
-            "code": input_price.vendor.code()
+        "source": "price_service",
+        "invocation": {
+            "requestId": builder.request_id.as_str(),
+            "path": builder.request_path.as_str(),
         },
-        "model": {
-            "catalogKey": route.catalog_key.as_str(),
-            "model": input_price.model.as_str(),
-            "requestedCatalogKey": route.catalog_key.as_str(),
-            "providerNativeModel": provider_native_model_id(&route.provider_model)
+        "resource": {
+            "catalogKey": builder.catalog_key.as_str(),
+            "requestedModel": builder.requested_model.as_str(),
+            "providerNativeModel": builder.provider_native_model.as_str(),
+            "meterCode": resolution.audit_snapshot.resource.meter.code(),
+            "measuredQuantity": resolution
+                .audit_snapshot
+                .resource
+                .measured_quantity
+                .map(|quantity| quantity.to_fixed_string(12)),
         },
         "supplier": {
-            "code": route.supplier_code.as_str(),
-            "accountId": route.account_id
+            "code": builder.supplier_code.as_str(),
+            "accountId": builder.account_id,
+            "regionCode": builder.region_code.as_str(),
         },
-        "pricingPlan": {
-            "code": input_price.pricing_plan_code.as_str()
+        "pricing": {
+            "serviceAudit": resolution.audit_snapshot.to_json_value(),
         },
-        "group": {
-            "code": input_price.group_code.as_str()
-        },
-        "multipliers": {
-            "sale": input_price.sale_multiplier.to_fixed_string(6),
-            "reference": input_price.reference_multiplier.to_fixed_string(6),
-            "accountContractCost": input_price.account_contract_cost_multiplier.map(|value| value.to_fixed_string(6)),
-            "accountGroupCost": input_price.account_group_cost_multiplier.map(|value| value.to_fixed_string(6)),
-            "procurementCost": input_price.procurement_cost_multiplier.map(|value| value.to_fixed_string(6))
-        },
-        "meters": {
-            "input": pricing_meter_snapshot(input_price),
-            "output": output_price.map(pricing_meter_snapshot),
-            "cacheRead": cache_read_price.map(pricing_meter_snapshot)
-        }
     })
     .to_string()
-}
-
-fn pricing_meter_snapshot(price: &ResolvedModelPrice) -> Value {
-    serde_json::json!({
-        "meter": price.billing_meter.code(),
-        "source": price_source_code(price.source),
-        "officialReferenceUnitPrice": price.official_reference.unit_price.to_fixed_string(6),
-        "customerChargeBeforeSaleMultiplier": price.customer_charge_before_sale_multiplier.to_fixed_string(6),
-        "chargedUnitPrice": price.customer_charge.to_fixed_string(6),
-        "rawUpstreamUnitPrice": price
-            .raw_upstream_cost
-            .as_ref()
-            .map(|upstream| upstream.unit_price.to_fixed_string(6))
-            .unwrap_or_else(|| "0.000000".to_owned()),
-        "procurementCostUnitPrice": price
-            .procurement_cost
-            .as_ref()
-            .map(|cost| cost.to_fixed_string(6))
-            .unwrap_or_else(|| "0.000000".to_owned()),
-        "currency": price.customer_charge.currency.as_str()
-    })
-}
-
-fn price_source_code(source: crate::application::ResolvedPriceSource) -> &'static str {
-    match source {
-        crate::application::ResolvedPriceSource::ExplicitCustomerCharge => {
-            "explicit_customer_charge"
-        }
-        crate::application::ResolvedPriceSource::DerivedFromOfficialReference => {
-            "derived_from_official_reference"
-        }
-    }
-}
-
-fn token_amount(unit_price: DecimalValue, quantity: i64) -> DomainResult<DecimalValue> {
-    unit_price
-        .multiply_i64(quantity)?
-        .divide_i64(TOKEN_BILLING_UNIT_SIZE)
-}
-
-fn sum_decimal_values(values: &[DecimalValue]) -> DomainResult<DecimalValue> {
-    values
-        .iter()
-        .copied()
-        .try_fold(DecimalValue::ZERO, |total, value| total.checked_add(value))
 }
 
 fn billable_input_tokens(prompt_tokens: i64, cached_tokens: i64) -> DomainResult<i64> {
@@ -974,21 +914,6 @@ fn endpoint_metric_label(endpoint: OpenAiInvocationEndpoint) -> &'static str {
         OpenAiInvocationEndpoint::ChatCompletions => "chat_completions",
         OpenAiInvocationEndpoint::Responses => "responses",
         OpenAiInvocationEndpoint::Embeddings => "embeddings",
-    }
-}
-
-fn upstream_unit_price(price: &ResolvedModelPrice) -> DecimalValue {
-    price
-        .procurement_cost
-        .as_ref()
-        .map(|price| price.unit_price)
-        .unwrap_or(DecimalValue::ZERO)
-}
-
-fn zero_money_like(price: &ResolvedModelPrice) -> crate::domain::Money {
-    crate::domain::Money {
-        currency: price.customer_charge.currency.clone(),
-        unit_price: DecimalValue::ZERO,
     }
 }
 

@@ -9,8 +9,8 @@ use crate::infrastructure::sql::routing_config_change::{
 };
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
-    AdminUpstreamModelListEntry, AdminUpstreamResourceInput, AdminUpstreamResourceItem,
-    AdminUpstreamSubject,
+    AdminLlmProtocolConfig, AdminUpstreamModelListEntry, AdminUpstreamResourceInput,
+    AdminUpstreamResourceItem, AdminUpstreamSubject,
 };
 
 pub(super) const DEFAULT_DATA_SCOPE: i32 = 1;
@@ -65,6 +65,14 @@ pub(super) fn parse_model_list(
             })
         })
         .collect())
+}
+
+/** 供应商/账号协议配置 JSONB 字符串 → 协议配置列表（结构一致：[{protocolCode, baseUrl}]） */
+pub(super) fn parse_protocols(
+    value: serde_json::Value,
+) -> DomainResult<Vec<AdminLlmProtocolConfig>> {
+    serde_json::from_value(value)
+        .map_err(|error| DomainError::new(format!("failed to parse upstream protocols: {error}")))
 }
 
 pub(super) fn store_error(context: &str, error: sqlx::Error) -> DomainError {

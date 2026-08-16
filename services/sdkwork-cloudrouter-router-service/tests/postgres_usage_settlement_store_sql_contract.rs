@@ -171,3 +171,33 @@ fn usage_settlement_does_not_persist_plaintext_provider_or_gateway_secrets() {
         );
     }
 }
+
+#[test]
+fn usage_settlement_syncs_charge_line_status_in_the_same_transaction() {
+    for expected in [
+        "UPDATE cloudrouter_charge_line charge",
+        "FROM cloudrouter_rating_decision decision",
+        "JOIN cloudrouter_usage_measurement measurement",
+        "ON measurement.id = decision.measurement_id",
+        "WHERE charge.rating_decision_id = decision.id",
+        "AND measurement.invocation_id = $3",
+        "AND charge.meter_code = $7",
+        "AND charge.charge_status = 'rated'",
+        "SET charge_status = $4,",
+        "settlement_id = $5",
+        "settled_at = $6::timestamp AT TIME ZONE 'UTC'",
+        "sync_charge_line_settlement",
+    ] {
+        assert_sql_contains(POSTGRES_USAGE_SETTLEMENT_STORE, expected);
+    }
+    // Retryable failures keep the charge line rated so a later run settles it;
+    // only success and terminal failure mirror onto the charge ledger.
+    assert!(
+        POSTGRES_USAGE_SETTLEMENT_STORE.contains("\"settled\""),
+        "settled usage facts must mark the shadow charge line settled"
+    );
+    assert!(
+        POSTGRES_USAGE_SETTLEMENT_STORE.contains("\"failed\""),
+        "terminally failed usage facts must mark the shadow charge line failed"
+    );
+}

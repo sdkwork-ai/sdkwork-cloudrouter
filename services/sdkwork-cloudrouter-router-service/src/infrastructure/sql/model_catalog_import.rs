@@ -1416,6 +1416,7 @@ type ModelPriceRowIdentity = (
     Option<String>,
     Option<i64>,
     Option<String>,
+    Option<String>,
 );
 
 fn model_price_row_identity(
@@ -1431,6 +1432,9 @@ fn model_price_row_identity(
         row.supplier_code.clone(),
         row.account_id,
         row.pricing_plan_code.clone(),
+        row.rate_metadata
+            .as_ref()
+            .map(|metadata| metadata.rate_hash.clone()),
     )
 }
 
@@ -1493,6 +1497,96 @@ pub(crate) fn bundled_pricing_dictionary_rows(
             }
             let pricing_catalog_key = pricing_catalog_key(&pricing.vendor_code, &pricing.model_id);
             for price in &pricing.prices {
+                let Ok(minimum_quantity) =
+                    crate::domain::DecimalValue::parse(&price.minimum_quantity)
+                else {
+                    continue;
+                };
+                let Ok(quantity_step) = price
+                    .quantity_step
+                    .as_deref()
+                    .map(crate::domain::DecimalValue::parse)
+                    .transpose()
+                else {
+                    continue;
+                };
+                let currency = price
+                    .currency
+                    .clone()
+                    .unwrap_or_else(|| pricing.currency.clone());
+                let Some(tiers) = price
+                    .tiers
+                    .iter()
+                    .map(|tier| {
+                        Some(crate::domain::PricingRateTier {
+                            tier_code: tier.tier_code.clone(),
+                            lower_bound: crate::domain::DecimalValue::parse(&tier.lower_bound)
+                                .ok()?,
+                            upper_bound: tier
+                                .upper_bound
+                                .as_deref()
+                                .map(crate::domain::DecimalValue::parse)
+                                .transpose()
+                                .ok()?,
+                            unit_size: crate::domain::DecimalValue::parse(&tier.unit_size).ok()?,
+                            unit_price: crate::domain::Money::new(&currency, &tier.unit_price)
+                                .ok()?,
+                            flat_amount: crate::domain::Money::new(&currency, &tier.flat_amount)
+                                .ok()?,
+                        })
+                    })
+                    .collect::<Option<Vec<_>>>()
+                else {
+                    continue;
+                };
+                let formula = match price.formula.as_ref() {
+                    Some(formula) => {
+                        let Some(formula) = (|| {
+                            Some(crate::domain::PricingFormula {
+                                formula_code: formula.formula_code.clone(),
+                                formula_version: formula.formula_version.clone(),
+                                constant_units: crate::domain::DecimalValue::parse(
+                                    &formula.constant_units,
+                                )
+                                .ok()?,
+                                quantity_coefficient: crate::domain::DecimalValue::parse(
+                                    &formula.quantity_coefficient,
+                                )
+                                .ok()?,
+                                minimum_units: formula
+                                    .minimum_units
+                                    .as_deref()
+                                    .map(crate::domain::DecimalValue::parse)
+                                    .transpose()
+                                    .ok()?,
+                                maximum_units: formula
+                                    .maximum_units
+                                    .as_deref()
+                                    .map(crate::domain::DecimalValue::parse)
+                                    .transpose()
+                                    .ok()?,
+                                terms: formula
+                                    .terms
+                                    .iter()
+                                    .map(|term| {
+                                        Some(crate::domain::PricingFormulaTerm {
+                                            term_code: term.term_code.clone(),
+                                            dimension_code: term.dimension_code.clone(),
+                                            coefficient: crate::domain::DecimalValue::parse(
+                                                &term.coefficient,
+                                            )
+                                            .ok()?,
+                                        })
+                                    })
+                                    .collect::<Option<Vec<_>>>()?,
+                            })
+                        })() else {
+                            continue;
+                        };
+                        Some(formula)
+                    }
+                    None => None,
+                };
                 prices.push(crate::infrastructure::sql::rows::ModelPriceRow {
                     tenant_id: 0,
                     organization_id: 0,
@@ -1501,11 +1595,9 @@ pub(crate) fn bundled_pricing_dictionary_rows(
                     region_code: pricing.region_code.clone(),
                     price_side_code: bundled_price_side_label(&price.price_side),
                     billing_meter_code: price.meter_code.clone(),
+                    unit_size: price.unit_size.clone(),
                     unit_price: price.unit_price.clone(),
-                    currency: price
-                        .currency
-                        .clone()
-                        .unwrap_or_else(|| pricing.currency.clone()),
+                    currency,
                     supplier_code: price_supplier_code(
                         &pricing.vendor_code,
                         &pricing.region_code,
@@ -1514,6 +1606,30 @@ pub(crate) fn bundled_pricing_dictionary_rows(
                     ),
                     account_id: None,
                     pricing_plan_code: None,
+                    rate_metadata: Some(crate::domain::PricingRateMetadata {
+                        price_book_code: price.price_book_code.clone(),
+                        rate_hash: price.rate_hash.clone(),
+                        product_code: price.product_code.clone(),
+                        operation_code: price.operation_code.clone(),
+                        billability: price.billability.clone(),
+                        charge_timing: price.charge_timing.clone(),
+                        calculation_mode: price.calculation_mode.clone(),
+                        quantity_aggregation: price.quantity_aggregation.clone(),
+                        minimum_quantity,
+                        quantity_step,
+                        priority: 100,
+                        conditions: price
+                            .conditions
+                            .iter()
+                            .map(|condition| crate::domain::PricingRateCondition {
+                                dimension_code: condition.dimension_code.clone(),
+                                operator_code: condition.operator.clone(),
+                                value: condition.value.clone(),
+                            })
+                            .collect(),
+                        tiers,
+                        formula,
+                    }),
                 });
             }
         }

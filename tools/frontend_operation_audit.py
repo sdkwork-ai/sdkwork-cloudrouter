@@ -1012,6 +1012,8 @@ class FrontendOperationAudit:
     def _sdk_client_factory(self, family: str) -> str | None:
         if family == "cloudrouter-backend-sdk":
             return "getCloudRouterBackendSdkClient"
+        if family == "sdkwork-log-backend-sdk":
+            return "getLogBackendSdkClient"
         match = re.fullmatch(r"sdkwork-([a-z0-9-]+)-backend-sdk", family)
         if match is None:
             return None

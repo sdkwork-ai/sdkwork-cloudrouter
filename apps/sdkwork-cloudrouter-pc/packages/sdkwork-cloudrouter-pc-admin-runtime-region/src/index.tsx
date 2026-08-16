@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { Globe2, Loader2, MapPin, RefreshCw, Route, Save } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { BusinessStatePanel, getLoadErrorMessage} from '@sdkwork/cloudroutes-pc-commons';
+import { getLoadErrorMessage } from '@sdkwork/cloudroutes-pc-commons/runtime';
+import { BusinessStatePanel } from '@sdkwork/cloudroutes-pc-commons';
 import {
   DEFAULT_RUNTIME_REGION_SETTINGS,
   RuntimeRegionService,

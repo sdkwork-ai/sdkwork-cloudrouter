@@ -1,5 +1,6 @@
 import {
   omitAuthProjectionBody,
+  omitAuthProjectionHeaders,
   omitAuthProjectionQuery,
 } from './auth-projection.ts';
 import { createTokenManager, type AuthTokenManager, type AuthTokens } from '@sdkwork/sdk-common';
@@ -161,26 +162,43 @@ export function requiresClientContextSelectorSanitization(path: string): boolean
 }
 
 export function sanitizeSdkHttpRequestOptions(path: string, options: unknown): unknown {
-  if (!requiresClientContextSelectorSanitization(path) || typeof options !== 'object' || options === null) {
+  if (typeof options !== 'object' || options === null || Array.isArray(options)) {
     return options;
   }
 
   const requestOptions = options as Record<string, unknown>;
   const next: Record<string, unknown> = { ...requestOptions };
 
-  if ('params' in requestOptions) {
-    const params = omitAuthProjectionQuery(
-      requestOptions.params as Record<string, string | number | boolean | undefined> | undefined,
+  // Identity projection headers are rejected on every surface (40001), so
+  // they are stripped regardless of the route. Query/body current-tenant
+  // selectors are only stripped on app/open surfaces; backend admin filters
+  // may legitimately filter by tenant id in query parameters.
+  if ('headers' in requestOptions) {
+    const headers = omitAuthProjectionHeaders(
+      requestOptions.headers as Record<string, string> | undefined,
     );
-    if (params) {
-      next.params = params;
+    if (headers) {
+      next.headers = headers;
     } else {
-      delete next.params;
+      delete next.headers;
     }
   }
 
-  if ('body' in requestOptions) {
-    next.body = omitAuthProjectionBody(requestOptions.body);
+  if (requiresClientContextSelectorSanitization(path)) {
+    if ('params' in requestOptions) {
+      const params = omitAuthProjectionQuery(
+        requestOptions.params as Record<string, string | number | boolean | undefined> | undefined,
+      );
+      if (params) {
+        next.params = params;
+      } else {
+        delete next.params;
+      }
+    }
+
+    if ('body' in requestOptions) {
+      next.body = omitAuthProjectionBody(requestOptions.body);
+    }
   }
 
   return next;
@@ -1444,9 +1462,45 @@ function attachCloudRouterSdkSessionAuthBoundary<TClient extends CloudRouterSdkC
   // Locale propagation composes with the auth boundary on the same HTTP
   // transport so every Cloud Router SDK request carries `Accept-Language`
   // and `X-SdkWork-Locale` (`I18N_SPEC.md` §4/§10).
-  return attachSdkworkSdkLocaleBoundary(
+  const withLocale = attachSdkworkSdkLocaleBoundary(
     withAuth as unknown as SdkworkSdkLocaleBoundaryClient,
   ) as unknown as TClient;
+  // Identity projection sanitization is the outermost transport layer:
+  // no request dispatched through the portal SDK boundary may carry
+  // `x-sdkwork-tenant-id` or the legacy `X-Tenant-Id`/`X-Platform`/
+  // `X-User-Id` projection headers (API_SPEC §10.2 / SECURITY_SPEC §5.1,
+  // 40001 surface classification) on any surface.
+  return attachCloudRouterSdkProjectionSanitizationBoundary(withLocale) as unknown as TClient;
+}
+
+function attachCloudRouterSdkProjectionSanitizationBoundary<TClient extends CloudRouterSdkClientWithHttp>(
+  client: TClient,
+): TClient {
+  interface ProjectionSanitizationHttp {
+    request<TResponse>(path: string, options?: unknown): Promise<TResponse>;
+    streamJson?<TResponse>(path: string, options?: unknown): AsyncIterable<TResponse>;
+  }
+
+  const http = client.http as ProjectionSanitizationHttp | undefined;
+  if (!http || typeof http.request !== 'function') {
+    return client;
+  }
+
+  const originalRequest = http.request.bind(http);
+  http.request = async <TResponse>(path: string, options?: unknown): Promise<TResponse> =>
+    originalRequest<TResponse>(path, sanitizeSdkHttpRequestOptions(path, options));
+
+  if (typeof http.streamJson === 'function') {
+    const originalStreamJson = http.streamJson.bind(http);
+    http.streamJson = async function* <TResponse>(
+      path: string,
+      options?: unknown,
+    ): AsyncIterable<TResponse> {
+      yield* originalStreamJson<TResponse>(path, sanitizeSdkHttpRequestOptions(path, options));
+    };
+  }
+
+  return client;
 }
 
 function readBrowserWindow(): BrowserWindowWithLocation | undefined {

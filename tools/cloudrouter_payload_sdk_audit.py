@@ -838,7 +838,7 @@ class CloudRouterPayloadSdkAudit:
 
     def _method_records(self, source: str, method_name: str) -> list[tuple[str, str]]:
         pattern = re.compile(
-            rf"async\s+{re.escape(method_name)}\s*\([^)]*\)\s*:\s*Promise<[^\r\n{{]+>\s*\{{",
+            rf"async\s+{re.escape(method_name)}\s*\([^)]*\)\s*:\s*Promise<(?:[^{{\}}\r\n]+|\{{[^\r\n]*\}})*>\s*\{{",
             re.S,
         )
         records: list[tuple[str, str]] = []
@@ -852,7 +852,7 @@ class CloudRouterPayloadSdkAudit:
 
     def _all_method_records(self, source: str) -> list[tuple[str, str]]:
         pattern = re.compile(
-            r"async\s+[A-Za-z_][A-Za-z0-9_]*\s*\([^)]*\)\s*:\s*Promise<[^\r\n{]+>\s*\{",
+            r"async\s+[A-Za-z_][A-Za-z0-9_]*\s*\([^)]*\)\s*:\s*Promise<(?:[^{{\}}\r\n]+|\{{[^\r\n]*\}})*>\s*\{",
             re.S,
         )
         records: list[tuple[str, str]] = []

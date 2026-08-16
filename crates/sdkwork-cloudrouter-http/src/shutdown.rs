@@ -70,9 +70,15 @@ pub async fn serve_with_graceful_shutdown_deadline(
     grace: std::time::Duration,
 ) -> std::io::Result<()> {
     let server = async {
-        axum::serve(listener, router)
-            .with_graceful_shutdown(wait_for_shutdown_signal())
-            .await
+        // Serve with connect info so downstream layers (request-log capture,
+        // rate limiting) can read the real TCP peer address — plain
+        // `axum::serve` never injects `ConnectInfo<SocketAddr>`.
+        axum::serve(
+            listener,
+            router.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+        )
+        .with_graceful_shutdown(wait_for_shutdown_signal())
+        .await
     };
     tokio::pin!(server);
     tokio::select! {

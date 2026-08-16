@@ -433,7 +433,11 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamSupplierEndpointItem> {
         status: column(&row, "status", "failed to map upstream endpoint status")?,
         vendor_codes: parse_vendor_codes(
             "endpoint",
-            column(&row, "vendor_codes", "failed to map upstream endpoint vendor codes")?,
+            column(
+                &row,
+                "vendor_codes",
+                "failed to map upstream endpoint vendor codes",
+            )?,
         )?,
     })
 }

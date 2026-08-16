@@ -76,12 +76,12 @@ pub use request_transform::RequestTransformInterceptor;
 pub use resource::{InvocationResource, InvocationSurface, ResourceType};
 pub use response_normalization::ResponseNormalizationInterceptor;
 pub use route_planning::RoutePlanningInterceptor;
-pub use routing_filter::{routing_filter_context, FilterRejectionKind, RoutingFilterChain};
 pub use routing::{
     InvocationRouteAttempt, InvocationRouteCandidate, InvocationRouteCandidateKind,
     InvocationRoutePlan, InvocationRouting, StickyMode, StickyRouteConstraint, StickyRouting,
     StickyScope,
 };
+pub use routing_filter::{routing_filter_context, FilterRejectionKind, RoutingFilterChain};
 pub use secrets::SecretResolutionInterceptor;
 pub use settlement::PricingSettlementInterceptor;
 pub use state::{Invocation, InvocationCancellationSignal, InvocationId, InvocationRequest};

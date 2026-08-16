@@ -130,6 +130,7 @@ class ApiContractManifestGenerator:
         "wallet": "commerce",
         "commerce_reports": "commerce",
         "promotions": "promotion",
+        "pricing": "pricing",
         "content": "content",
         "communication": "communication",
         "messaging": "messaging",
@@ -182,6 +183,7 @@ class ApiContractManifestGenerator:
         "payments": "commerce",
         "promotion": "promotion",
         "promotions": "promotion",
+        "pricing": "pricing",
         "recharge": "commerce",
         "recharges": "commerce",
         "refund": "commerce",
@@ -1150,6 +1152,7 @@ class ApiContractManifestGenerator:
             "shipments",
             "wallet",
             "promotions",
+            "pricing",
         }:
             return first
         if first in {"coupon", "payment", "vip", "account", "finance"}:

@@ -107,46 +107,6 @@
       "system_of_record": true
     },
     {
-      "table_name": "ai_pricing_import_snapshot",
-      "owner": "ai-pricing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "event_log",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ai_pricing_plan",
-      "owner": "ai-pricing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "pricing",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ai_pricing_plan_binding",
-      "owner": "ai-pricing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "relation_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ai_pricing_rule",
-      "owner": "ai-pricing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "pricing",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ai_pricing_tier",
-      "owner": "ai-pricing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "pricing",
-      "system_of_record": true
-    },
-    {
       "table_name": "ai_quota_policy",
       "owner": "ai-routing-service",
       "compliance_level": "L2",

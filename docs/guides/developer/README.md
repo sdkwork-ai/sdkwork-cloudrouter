@@ -92,6 +92,12 @@ pnpm.cmd verify
 - The `PortalErrorBoundary` in `apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/PortalErrorBoundary.tsx` catches render errors. Check browser DevTools Console for the boundary payload.
 - E2E debugging: `pnpm.cmd --dir apps/sdkwork-cloudrouter-pc exec playwright test --debug` opens Playwright Inspector.
 
+### Identity Projection Headers
+
+Clients must not send identity projection headers. The Web Framework surface classification rejects any request carrying `x-sdkwork-tenant-id`, `x-sdkwork-organization-id`, `x-sdkwork-user-id`, or the legacy `X-Tenant-Id` / `X-Organization-Id` / `X-Platform` / `X-User-Id` family with `40001` (`detail: "client must not send identity projection header x-sdkwork-tenant-id"`). Tenancy and identity come only from the dual-token credentials (`Authorization: Bearer <auth_token>` plus `Access-Token`) — see `../../sdkwork-specs/API_SPEC.md` §10.2 and `SECURITY_SPEC.md` §5.1.
+
+If 40001 appears on all SDK calls, the client build resolves an old `@sdkwork/sdk-common` (registry ≤1.0.3) that emits these headers from the legacy `setTenantId`/`setPlatform` setters. Keep the root `package.json` `pnpm.overrides` entry `"@sdkwork/sdk-common": "workspace:*"` and re-run `pnpm install` after SDK regeneration so every package resolves the fixed workspace version (1.0.4 in `sdkwork-sdk-commons`). The portal SDK boundary (`sdkwork-cloudrouter-commons` `sdk-clients.ts`) additionally strips projection headers from request options on every surface; feature code must route through that boundary and never call `setTenantId`/`setOrganizationId`/`setUserId`/`setPlatform` on SDK clients.
+
 ### Rust
 
 ```powershell

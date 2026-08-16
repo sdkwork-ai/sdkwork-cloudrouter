@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BusinessStatePanel, getLoadErrorMessage } from '@sdkwork/cloudroutes-pc-commons';
+import { getLoadErrorMessage } from '@sdkwork/cloudroutes-pc-commons/runtime';
+import { BusinessStatePanel } from '@sdkwork/cloudroutes-pc-commons';
 import { MessagesService, type MessageItem } from './messagesService';
 
 function markMessageReadFeedback(messages: MessageItem[], messageId: string): MessageItem[] {

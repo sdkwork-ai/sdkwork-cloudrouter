@@ -2099,12 +2099,7 @@ fn jsonb_string_map_cell(
     Some(
         object
             .iter()
-            .map(|(key, value)| {
-                (
-                    key.clone(),
-                    value.as_str().unwrap_or_default().to_owned(),
-                )
-            })
+            .map(|(key, value)| (key.clone(), value.as_str().unwrap_or_default().to_owned()))
             .collect(),
     )
 }

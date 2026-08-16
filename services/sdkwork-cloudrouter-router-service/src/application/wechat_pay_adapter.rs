@@ -189,7 +189,10 @@ impl fmt::Debug for WeChatPayProviderConfig {
             .field("merchant_private_key_pem", &"<redacted>")
             .field("api_v3_key", &"<redacted>")
             .field("sign_verify_mode", &self.sign_verify_mode)
-            .field("verification_key_pem", &self.verification_key_pem.as_deref().map(|_| "<redacted>"))
+            .field(
+                "verification_key_pem",
+                &self.verification_key_pem.as_deref().map(|_| "<redacted>"),
+            )
             .field("verification_serial_no", &"<redacted>")
             .field("notify_url", &self.notify_url)
             .finish()
@@ -442,9 +445,9 @@ impl PaymentProviderAdapter for WeChatPayProviderAdapter {
                 )
             })?;
             let payload = format!("{timestamp}\n{nonce}\n{body}\n");
-            let verified = self
-                .crypto
-                .verify_with_serial(serial.as_deref(), &payload, &signature)?;
+            let verified =
+                self.crypto
+                    .verify_with_serial(serial.as_deref(), &payload, &signature)?;
             Ok(PaymentWebhookVerificationOutcome {
                 verified,
                 provider_event_id: if verified {
@@ -681,12 +684,7 @@ impl WeChatPayHyperApiClient {
         // 官方要求验证应答签名（Wechatpay-Timestamp/Nonce/Signature/Serial + 原始 body）。
         // 空响应体与账单文件下载接口跳过验签。
         if !bytes.is_empty() && !path.starts_with("/v3/billdownload") {
-            verify_wechat_pay_response_signature(
-                &self.crypto,
-                &self.config,
-                &headers,
-                &bytes,
-            )?;
+            verify_wechat_pay_response_signature(&self.crypto, &self.config, &headers, &bytes)?;
         }
         let body = if bytes.is_empty() {
             json!({})
@@ -720,9 +718,7 @@ impl fmt::Debug for WeChatPayHyperApiClient {
 
 impl WeChatPayApiClient for WeChatPayHyperApiClient {
     fn post_json<'a>(&'a self, path: &'a str, payload: Value) -> PaymentAdapterFuture<'a, Value> {
-        Box::pin(async move {
-            Ok(self.send(Method::POST, path, Some(payload)).await?.body)
-        })
+        Box::pin(async move { Ok(self.send(Method::POST, path, Some(payload)).await?.body) })
     }
 
     fn get<'a>(&'a self, path: &'a str) -> PaymentAdapterFuture<'a, Value> {

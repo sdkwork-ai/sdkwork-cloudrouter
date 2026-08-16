@@ -180,6 +180,15 @@ earlier-window reads. The mounted `/playground` UI is the composed Agents
 Workbench and uses the separately owned Agents session/message APIs; it does
 not claim to consume the Cloud Router Chat history endpoint. The existing scoped
 conversation/message indexes cover the seek prefix.
+
+Routing request trace lists (`/app/v3/api/ai/routing/request_traces` and
+`/app/v3/api/ai/gateway/traces`) use the same keyset discipline: opaque
+base64url cursors carry `(started_at, id)`, the store applies the scoped
+backward tuple predicate on the tenant/organization/user scan, pages are capped
+at 200 with `LIMIT page_size + 1`, `pageInfo.mode` is always `cursor`, and no
+`OFFSET` or `COUNT(*) OVER()` window appears in the trace list path
+(`PAGINATION_SPEC.md` §6/§12 pre-launch zero-debt). The generated App SDK
+exposes `cursor`/`pageSize` params and `pageInfo.nextCursor` for continuation.
 Production-like `EXPLAIN (ANALYZE, BUFFERS)` evidence remains a release gate for
 the target PostgreSQL data distribution.
 
@@ -189,9 +198,19 @@ runtime ID lease. A failed contract parse, missing schema fact, database error,
 or unhealthy ID lease reports not ready.
 
 `ai_runtime_usage_link` links Chat records to runtime and usage facts but is not
-the billing ledger; `ai_metering_usage` (ai-metering module, co-located with the
-account `acct_*` ledger in the federated commerce pool) remains the billing
-source of truth. Invocation events and runtime artifacts are persisted in the
+the billing ledger. The reusable `pricing_*` module owns price books and rates;
+the Cloud Router `cloudrouter_usage_measurement`,
+`cloudrouter_rating_decision`, and `cloudrouter_charge_line` chain owns rated
+charge facts. Runtime pricing enters through the reusable
+`sdkwork-models-catalog-service::PriceService`: callers describe the event as a
+`ResourceDefinition`, then consume `PriceResolution` and strategy-produced
+`BillingStructure`. Invocation, route selection, legacy OpenAI usage, and Edge
+provider-adapter accounting do not calculate amounts or unit conversion
+locally. `cloudrouter_account_rate_card` is the sole runtime subject-to-plan
+binding authority; account-group pricing columns are compatibility projections.
+`ai_metering_usage` remains a `legacy-compat` settlement input only during the
+bounded shadow-write window defined by `MIG-2026-0002`, whose hard runtime cutoff
+is 2026-10-31 23:59:59Z. Invocation events and runtime artifacts are persisted in the
 scoped `ai_runtime_invocation_event` and `ai_runtime_artifact` tables with
 transactional ordinal allocation and a scoped unique sequence index. Agent
 state and memory state remain outside the current ten-table implementation.
@@ -241,7 +260,14 @@ The retired upstream aggregates are not valid production authorities:
    (`sk-`/`sp-` prefixed gateway API key, or product login auth token resolved
    through IAM) and resolve tenant, organization, identity, and the account
    group context — API keys use their default/bound groups; auth-token sessions
-   use the tenant default group (`code="default"`).
+   use the tenant default group (`code="default"`). Auth-token identity
+   resolution is short-TTL cached in Redis (default 10s,
+   `SDKWORK_CLOUDROUTER_AUTH_TOKEN_CACHE_TTL_SECONDS`, `0` disables) keyed by a
+   credential hash so repeat sessions skip the per-request IAM database
+   round-trip; only successful resolutions are cached, Redis errors fail open
+   to database resolution, and group/pricing resolution always re-runs against
+   the in-memory catalog snapshot. Surfaces without Redis (desktop
+   development) resolve per request.
 2. Normalize the API operation, model/resource, capability, region, streaming,
    and idempotency/sticky identity.
 3. Resolve ordered account groups from routing policy and API-key entitlement.
@@ -497,6 +523,7 @@ injection evidence from the release candidate.
 
 ## 9. Architecture Decision Index
 
+- [ADR-20260815: Composable pricing and billing](../decisions/ADR-20260815-composable-pricing-and-billing.md)
 - [ADR-20260728: Standardize upstream supplier routing](../decisions/ADR-20260728-standardize-upstream-supplier-routing.md)
 - [ADR-20260730: Own Chat runtime PostgreSQL authority](../decisions/ADR-20260730-own-chat-runtime-postgres-authority.md)
 - [ADR-20260720: Dedicated cloud ingress](../decisions/ADR-20260720-dedicated-cloud-ingress.md)

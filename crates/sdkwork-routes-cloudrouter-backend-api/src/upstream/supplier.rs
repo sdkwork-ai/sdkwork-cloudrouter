@@ -11,7 +11,7 @@ use sdkwork_cloudrouter_router_service::ports::{
     AdminLlmProtocolConfig, AdminUpstreamResourceInput, AdminUpstreamResourceItem,
     AdminUpstreamSupplierAuthMethodInput, AdminUpstreamSupplierAuthMethodItem,
     AdminUpstreamSupplierEndpointInput, AdminUpstreamSupplierEndpointItem,
-    AdminUpstreamSupplierItem, LlmProtocolCode, SaveAdminUpstreamSupplierCommand,
+    AdminUpstreamSupplierItem, SaveAdminUpstreamSupplierCommand,
 };
 use sdkwork_utils_rust::SdkWorkResultCode;
 use serde::{Deserialize, Serialize};
@@ -19,26 +19,17 @@ use serde::{Deserialize, Serialize};
 use super::shared::{
     bounded_list_response, collection_item_response, decode_json, decode_query, domain_error,
     idempotency_uuid, item_response, list_query, list_response, no_content_response, not_found,
-    optional_text, parse_id, parse_if_match, problem, problem_keyed, requested_at, required_text, subject,
-    ListQuery, RequestResult, UpstreamState, MAX_NESTED_ITEMS,
+    optional_https_base_url, optional_text, parse_id, parse_if_match, parse_protocol_config, problem,
+    problem_keyed, requested_at, required_text, subject, ListQuery, ProtocolConfigInput,
+    RequestResult, UpstreamState, MAX_CODE_LENGTH, MAX_NESTED_ITEMS, MAX_PROTOCOLS, MAX_URL_LENGTH,
 };
 use super::{model_list, ModelListEntryInput, ModelListEntryResponse};
 
-const MAX_CODE_LENGTH: usize = 128;
 const MAX_NAME_LENGTH: usize = 200;
 const MAX_DESCRIPTION_LENGTH: usize = 4_000;
-const MAX_URL_LENGTH: usize = 2_048;
-const MAX_PROTOCOLS: usize = 8;
 /** 官方 vendor 上限，与 OpenAPI 契约 maxItems 保持一致 */
 const MAX_ENDPOINT_VENDORS: usize = 9;
 const SUPPLIER_CREATE_IDEMPOTENCY_SCOPE: i64 = 1_000_001;
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", deny_unknown_fields)]
-struct ProtocolConfigInput {
-    protocol_code: String,
-    base_url: String,
-}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -850,31 +841,7 @@ fn protocol_configs(inputs: Vec<ProtocolConfigInput>) -> RequestResult<Vec<Admin
             format!("protocols must contain at most {MAX_PROTOCOLS} items"),
         ));
     }
-    inputs
-        .into_iter()
-        .map(|item| {
-            let protocol_code =
-                required_text(item.protocol_code, "protocolCode", MAX_CODE_LENGTH)?;
-            let protocol_code = LlmProtocolCode::parse(&protocol_code).ok_or_else(|| {
-                problem_keyed(
-                    SdkWorkResultCode::InvalidParameter,
-                    "validation.admin.upstream.supplier.protocolCode.enum",
-                    serde_json::json!({
-                        "allowed": [
-                            "openai_chat_completions",
-                            "openai_responses",
-                            "anthropic_messages",
-                        ]
-                    }),
-                    "protocolCode is not a supported LLM protocol",
-                )
-            })?;
-            Ok(AdminLlmProtocolConfig {
-                protocol_code,
-                base_url: required_text(item.base_url, "baseUrl", MAX_URL_LENGTH)?,
-            })
-        })
-        .collect()
+    inputs.into_iter().map(parse_protocol_config).collect()
 }
 
 /// 主协议 = protocols 列表首项（验证保证非空），用于列表展示与验证器兼容。
@@ -995,56 +962,6 @@ fn ensure_count(count: usize, field: &str) -> RequestResult<()> {
         codes.push(code.to_owned());
     }
     Ok(codes)
-}
-
-/// 可选 URL 校验（与中转站 baseUrl 规则一致）：绝对 URL、HTTPS（环境 0 的开发端点允许 HTTP）、
-/// 不得携带内嵌凭据/查询串/fragment。空值视为未配置。
-fn optional_https_base_url(
-    value: Option<String>,
-    field: &str,
-    environment: i32,
-) -> RequestResult<Option<String>> {
-    let Some(value) = value else {
-        return Ok(None);
-    };
-    let value = optional_text(Some(value), field, MAX_URL_LENGTH)?.unwrap_or_default();
-    if value.is_empty() {
-        return Ok(None);
-    }
-    let url = url::Url::parse(&value).map_err(|error| {
-        problem_keyed(
-            SdkWorkResultCode::InvalidParameter,
-            "validation.admin.upstream.url.absolute",
-            serde_json::json!({ "field": field }),
-            format!("{field} must be an absolute URL: {error}"),
-        )
-    })?;
-    let development_http = environment == 0 && url.scheme() == "http";
-    if url.scheme() != "https" && !development_http {
-        return Err(problem_keyed(
-            SdkWorkResultCode::InvalidParameter,
-            "validation.admin.upstream.url.https",
-            serde_json::json!({ "field": field, "environment": environment }),
-            format!("{field} must use HTTPS; HTTP is allowed only for environment 0 development"),
-        ));
-    }
-    if !url.username().is_empty() || url.password().is_some() {
-        return Err(problem_keyed(
-            SdkWorkResultCode::InvalidParameter,
-            "validation.admin.upstream.url.credentials",
-            serde_json::json!({ "field": field }),
-            format!("{field} must not contain embedded credentials"),
-        ));
-    }
-    if url.query().is_some() || url.fragment().is_some() {
-        return Err(problem_keyed(
-            SdkWorkResultCode::InvalidParameter,
-            "validation.admin.upstream.url.queryOrFragment",
-            serde_json::json!({ "field": field }),
-            format!("{field} must not contain a query string or fragment"),
-        ));
-    }
-    Ok(Some(value))
 }
 
 impl From<AdminUpstreamSupplierItem> for SupplierResponse {

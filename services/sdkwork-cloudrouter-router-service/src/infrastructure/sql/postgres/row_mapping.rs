@@ -1,6 +1,11 @@
 use sqlx::postgres::PgRow;
 use sqlx::{Executor, Row};
 
+use crate::domain::{
+    DecimalValue, Money, PricingFormula, PricingFormulaTerm, PricingRateCondition,
+    PricingRateMetadata, PricingRateTier,
+};
+
 use crate::infrastructure::sql::rows::{
     AiModelRow, GatewayAccessPolicyRow, GatewayApiKeyRow, GatewayRiskRuleRow, ModelMappingRuleRow,
     ModelPriceRow, ModelVendorRow, PricingPlanRow, QuotaPolicyRow, RoutingPolicyRow,
@@ -87,7 +92,10 @@ pub async fn load_upstream_account_routes(
             endpoint_weight: row.try_get("endpoint_weight")?,
             endpoint_health_status: row.try_get("endpoint_health_status")?,
             base_url: row.try_get("base_url")?,
+            account_default_base_url: row.try_get("account_default_base_url")?,
+            account_protocols_json: row.try_get("account_protocols_json")?,
             supplier_default_base_url: row.try_get("supplier_default_base_url")?,
+            supplier_protocols_json: row.try_get("supplier_protocols_json")?,
             secret_ref: row.try_get("secret_ref")?,
             secret_ciphertext: row.try_get("secret_ciphertext")?,
             secret_key_id: row.try_get("secret_key_id")?,
@@ -192,6 +200,7 @@ pub async fn load_pricing_plans(
 ) -> Result<Vec<PricingPlanRow>, sqlx::Error> {
     map_query(sql, |row| {
         Ok(PricingPlanRow {
+            id: row.try_get("id")?,
             tenant_id: row.try_get("tenant_id")?,
             organization_id: row.try_get("organization_id")?,
             plan_code: row.try_get("plan_code")?,
@@ -217,6 +226,9 @@ pub async fn load_upstream_account_groups(
             name: row.try_get("name")?,
             code: row.try_get("code")?,
             is_default: row.try_get("is_default")?,
+            pricing_plan_tenant_id: row.try_get("pricing_plan_tenant_id")?,
+            pricing_plan_organization_id: row.try_get("pricing_plan_organization_id")?,
+            pricing_plan_id: row.try_get("pricing_plan_id")?,
             pricing_plan_code: row.try_get("pricing_plan_code")?,
             routing_strategy: row.try_get("routing_strategy")?,
             fallback_mode: row.try_get("fallback_mode")?,
@@ -361,6 +373,8 @@ pub async fn load_prices(
     sql: &'static str,
 ) -> Result<Vec<ModelPriceRow>, sqlx::Error> {
     map_query(sql, |row| {
+        let billing_meter_code: String = row.try_get("billing_meter_code")?;
+        let currency: String = row.try_get("currency")?;
         Ok(ModelPriceRow {
             tenant_id: row.try_get("tenant_id")?,
             organization_id: row.try_get("organization_id")?,
@@ -368,16 +382,176 @@ pub async fn load_prices(
             model: row.try_get("model")?,
             region_code: row.try_get("region_code")?,
             price_side_code: row.try_get("price_side_code")?,
-            billing_meter_code: row.try_get("billing_meter_code")?,
+            unit_size: row.try_get("unit_size")?,
+            billing_meter_code,
             unit_price: row.try_get("unit_price")?,
-            currency: row.try_get("currency")?,
+            currency: currency.clone(),
             supplier_code: row.try_get("supplier_code")?,
             account_id: row.try_get("account_id")?,
             pricing_plan_code: row.try_get("pricing_plan_code")?,
+            rate_metadata: Some(pricing_rate_metadata_from_row(&row, &currency)?),
         })
     })
     .fetch(executor)
     .await
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PricingConditionJson {
+    dimension_code: String,
+    operator_code: String,
+    value: serde_json::Value,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PricingTierJson {
+    tier_code: String,
+    lower_bound: String,
+    upper_bound: Option<String>,
+    unit_size: String,
+    unit_price: String,
+    flat_amount: String,
+    currency_code: String,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PricingFormulaJson {
+    formula_code: String,
+    formula_version: String,
+    constant_units: String,
+    quantity_coefficient: String,
+    minimum_units: Option<String>,
+    maximum_units: Option<String>,
+    terms: Vec<PricingFormulaTermJson>,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PricingFormulaTermJson {
+    term_code: String,
+    dimension_code: String,
+    coefficient: String,
+}
+
+fn pricing_rate_metadata_from_row(
+    row: &PgRow,
+    rate_currency: &str,
+) -> Result<PricingRateMetadata, sqlx::Error> {
+    let conditions = serde_json::from_str::<Vec<PricingConditionJson>>(
+        &row.try_get::<String, _>("conditions_json")?,
+    )
+    .map_err(decode_error)?
+    .into_iter()
+    .map(|condition| PricingRateCondition {
+        dimension_code: condition.dimension_code,
+        operator_code: condition.operator_code,
+        value: condition.value,
+    })
+    .collect();
+    let tiers =
+        serde_json::from_str::<Vec<PricingTierJson>>(&row.try_get::<String, _>("tiers_json")?)
+            .map_err(decode_error)?
+            .into_iter()
+            .map(|tier| {
+                if !tier.currency_code.eq_ignore_ascii_case(rate_currency) {
+                    return Err(sqlx::Error::Decode(
+                        format!(
+                            "pricing tier currency {} does not match rate currency {rate_currency}",
+                            tier.currency_code
+                        )
+                        .into(),
+                    ));
+                }
+                Ok(PricingRateTier {
+                    tier_code: tier.tier_code,
+                    lower_bound: DecimalValue::parse(&tier.lower_bound).map_err(decode_error)?,
+                    upper_bound: tier
+                        .upper_bound
+                        .as_deref()
+                        .map(DecimalValue::parse)
+                        .transpose()
+                        .map_err(decode_error)?,
+                    unit_size: DecimalValue::parse(&tier.unit_size).map_err(decode_error)?,
+                    unit_price: Money {
+                        currency: rate_currency.to_owned(),
+                        unit_price: DecimalValue::parse(&tier.unit_price).map_err(decode_error)?,
+                    },
+                    flat_amount: Money {
+                        currency: rate_currency.to_owned(),
+                        unit_price: DecimalValue::parse(&tier.flat_amount).map_err(decode_error)?,
+                    },
+                })
+            })
+            .collect::<Result<Vec<_>, sqlx::Error>>()?;
+    let formula = row
+        .try_get::<Option<String>, _>("formula_json")?
+        .map(|value| serde_json::from_str::<PricingFormulaJson>(&value).map_err(decode_error))
+        .transpose()?
+        .map(|formula| -> Result<PricingFormula, sqlx::Error> {
+            Ok(PricingFormula {
+                formula_code: formula.formula_code,
+                formula_version: formula.formula_version,
+                constant_units: DecimalValue::parse(&formula.constant_units)
+                    .map_err(decode_error)?,
+                quantity_coefficient: DecimalValue::parse(&formula.quantity_coefficient)
+                    .map_err(decode_error)?,
+                minimum_units: formula
+                    .minimum_units
+                    .as_deref()
+                    .map(DecimalValue::parse)
+                    .transpose()
+                    .map_err(decode_error)?,
+                maximum_units: formula
+                    .maximum_units
+                    .as_deref()
+                    .map(DecimalValue::parse)
+                    .transpose()
+                    .map_err(decode_error)?,
+                terms: formula
+                    .terms
+                    .into_iter()
+                    .map(|term| {
+                        Ok(PricingFormulaTerm {
+                            term_code: term.term_code,
+                            dimension_code: term.dimension_code,
+                            coefficient: DecimalValue::parse(&term.coefficient)
+                                .map_err(decode_error)?,
+                        })
+                    })
+                    .collect::<Result<Vec<_>, sqlx::Error>>()?,
+            })
+        })
+        .transpose()?;
+
+    Ok(PricingRateMetadata {
+        price_book_code: row.try_get("price_book_code")?,
+        rate_hash: row.try_get("rate_hash")?,
+        product_code: row.try_get("product_code")?,
+        operation_code: row.try_get("operation_code")?,
+        billability: row.try_get("billability")?,
+        charge_timing: row.try_get("charge_timing")?,
+        calculation_mode: row.try_get("calculation_mode")?,
+        quantity_aggregation: row.try_get("quantity_aggregation")?,
+        minimum_quantity: DecimalValue::parse(&row.try_get::<String, _>("minimum_quantity")?)
+            .map_err(decode_error)?,
+        quantity_step: row
+            .try_get::<Option<String>, _>("quantity_step")?
+            .as_deref()
+            .map(DecimalValue::parse)
+            .transpose()
+            .map_err(decode_error)?,
+        priority: row.try_get("priority")?,
+        conditions,
+        tiers,
+        formula,
+    })
+}
+
+fn decode_error(error: impl std::error::Error + Send + Sync + 'static) -> sqlx::Error {
+    sqlx::Error::Decode(Box::new(error))
 }
 
 struct QueryMapper<T, F>

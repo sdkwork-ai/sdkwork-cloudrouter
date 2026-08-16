@@ -1,5 +1,4 @@
 pub mod common;
-use common::InternalTrustedSubjectHeaders;
 use std::sync::{Arc, Mutex};
 
 use axum::body::Body;
@@ -281,15 +280,25 @@ async fn admin_user_route_returns_not_found_when_api_key_user_is_missing() {
 }
 
 fn signed_request(method: &str, path: &str, body: &str) -> Request<Body> {
-    Request::builder()
-        .method(method)
-        .uri(path)
-        .header("content-type", "application/json")
-        .internal_trusted_subject(100001, 0, 30)
-        .header("Idempotency-Key", "idem-admin-user-test")
-        .header("X-Request-Id", "request-admin-user-test")
-        .body(Body::from(body.to_owned()))
-        .unwrap()
+    let mut request = common::web_framework_backend_request(
+        method,
+        path,
+        Body::from(body.to_owned()),
+        "100001",
+        Some("0"),
+        "30",
+    );
+    request
+        .headers_mut()
+        .insert("content-type", "application/json".parse().unwrap());
+    request
+        .headers_mut()
+        .insert("Idempotency-Key", "idem-admin-user-test".parse().unwrap());
+    request.headers_mut().insert(
+        "X-Request-Id",
+        "request-admin-user-test".parse().unwrap(),
+    );
+    request
 }
 
 async fn json_payload(response: axum::response::Response) -> Value {

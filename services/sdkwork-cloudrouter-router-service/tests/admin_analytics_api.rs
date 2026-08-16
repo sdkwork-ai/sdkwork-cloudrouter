@@ -1,5 +1,4 @@
 pub mod common;
-use common::InternalTrustedSubjectHeaders;
 use std::sync::Arc;
 
 use axum::body::Body;
@@ -154,13 +153,20 @@ async fn admin_analytics_route_rejects_missing_trusted_subject() {
 }
 
 fn signed_request(method: &str, path: &str) -> Request<Body> {
-    Request::builder()
-        .method(method)
-        .uri(path)
-        .header("content-type", "application/json")
-        .internal_trusted_subject(100001, 0, 30)
-        .body(Body::empty())
-        .unwrap()
+    // Inject the subject through the verified web-framework principal
+    // (SECURITY_SPEC §5.1); client-supplied identity headers are not trusted.
+    let mut request = common::web_framework_backend_request(
+        method,
+        path,
+        Body::empty(),
+        "100001",
+        Some("0"),
+        "30",
+    );
+    request
+        .headers_mut()
+        .insert("content-type", "application/json".parse().unwrap());
+    request
 }
 
 async fn json_payload(response: axum::response::Response) -> Value {

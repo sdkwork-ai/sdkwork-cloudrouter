@@ -5,6 +5,7 @@ import {
   resolveSdkworkSdkLocale,
   SDKWORK_SDK_LOCALE_BOUNDARY,
 } from './sdk-locale.ts';
+import { APP_API_PREFIX } from './sdk-clients.ts';
 
 interface FakeRequestOptions {
   headers?: Record<string, string>;
@@ -32,7 +33,7 @@ test('locale boundary injects Accept-Language and X-SdkWork-Locale', async () =>
   const record: { headers?: Record<string, string> } = {};
   const client = { http: createFakeHttp(record) };
   attachSdkworkSdkLocaleBoundary(client);
-  await client.http!.request('/app/v3/api/ai/models');
+  await client.http!.request(`${APP_API_PREFIX}/ai/models`);
   assert.equal(record.headers?.['Accept-Language'], 'zh-CN');
   assert.equal(record.headers?.['X-SdkWork-Locale'], 'zh-CN');
   delete (globalThis as Record<string, unknown>).localStorage;
@@ -45,7 +46,7 @@ test('locale boundary preserves caller headers with caller precedence', async ()
   const record: { headers?: Record<string, string> } = {};
   const client = { http: createFakeHttp(record) };
   attachSdkworkSdkLocaleBoundary(client);
-  await client.http!.request('/app/v3/api/ai/models', {
+  await client.http!.request(`${APP_API_PREFIX}/ai/models`, {
     headers: { 'X-Tenant-Id': '100001', 'Accept-Language': 'de-DE' },
   });
   assert.equal(record.headers?.['X-Tenant-Id'], '100001');

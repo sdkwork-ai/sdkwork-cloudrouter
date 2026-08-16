@@ -1,6 +1,7 @@
 import type { DashboardAnnouncement } from './dashboard-announcement';
 import type { DashboardChartPoint } from './dashboard-chart-point';
 import type { DashboardConfigurationDomain } from './dashboard-configuration-domain';
+import type { DashboardModalityDistribution } from './dashboard-modality-distribution';
 import type { DashboardOverviewSummary } from './dashboard-overview-summary';
 import type { DashboardSparklinePoint } from './dashboard-sparkline-point';
 import type { DashboardTopModel } from './dashboard-top-model';
@@ -13,6 +14,8 @@ export interface DashboardOverviewResponse {
   chartData: DashboardChartPoint[];
   /** Configuration domains field on dashboard overview response. */
   configurationDomains?: DashboardConfigurationDomain[];
+  /** Modality distribution field on dashboard overview response. */
+  modalityDistribution: DashboardModalityDistribution[];
   /** Multimodal sparkline field on dashboard overview response. */
   multimodalSparkline: DashboardSparklinePoint[];
   /** Performance sparkline field on dashboard overview response. */

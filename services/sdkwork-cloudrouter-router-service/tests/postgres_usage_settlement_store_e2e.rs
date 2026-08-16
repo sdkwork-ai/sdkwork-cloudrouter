@@ -12,10 +12,10 @@
 use chrono::{DateTime, Utc};
 use sdkwork_account_service::AppendLedgerEntryCommand;
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::PostgresUsageSettlementStore;
-use sdkwork_cloudrouter_test_support::postgres_account_ledger_append_port;
 use sdkwork_cloudrouter_router_service::ports::{
     UsageSettlementCommand, UsageSettlementStore as _,
 };
+use sdkwork_cloudrouter_test_support::postgres_account_ledger_append_port;
 use sdkwork_contract_service::{
     CommerceAccountAssetType, CommerceLedgerDirection, CommerceMoney, CommerceRequestHash,
 };
@@ -30,6 +30,12 @@ const ACCOUNT_BASELINE: &str = include_str!(
 );
 const AI_METERING_BASELINE: &str = include_str!(
     "../../../database/modules/ai-metering/ddl/baseline/postgres/0001_ai_metering_baseline.sql"
+);
+const PRICING_BASELINE: &str = include_str!(
+    "../../../database/modules/pricing/ddl/baseline/postgres/0001_pricing_baseline.sql"
+);
+const CLOUDROUTER_BILLING_BASELINE: &str = include_str!(
+    "../../../database/modules/cloudrouter-billing/ddl/baseline/postgres/0001_cloudrouter_billing_baseline.sql"
 );
 
 const TENANT_ID: i64 = 100_001;
@@ -51,7 +57,10 @@ async fn settlement_debits_user_token_bank_wallet_and_marks_facts_settled() {
         .await
         .expect("insert pending usage fact");
 
-    let settlement = PostgresUsageSettlementStore::new(ctx.pool.clone(), postgres_account_ledger_append_port(ctx.pool.clone()));
+    let settlement = PostgresUsageSettlementStore::new(
+        ctx.pool.clone(),
+        postgres_account_ledger_append_port(ctx.pool.clone()),
+    );
     let outcome = settlement
         .settle_pending_usage(settlement_command(100))
         .await
@@ -200,6 +209,99 @@ async fn settlement_defers_zero_amount_groups() {
     ctx.cleanup().await;
 }
 
+#[tokio::test]
+async fn settlement_marks_shadow_charge_lines_settled_in_the_same_transaction() {
+    let Some(ctx) = PostgresTestContext::new("usage_settlement_charge_line").await else {
+        return;
+    };
+    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-credit-3", 1000)
+        .await
+        .expect("credit token bank wallet");
+    insert_usage_fact(&ctx.pool, 1, USER_ID, "settle-e2e-charge-1", "10.000000")
+        .await
+        .expect("insert pending usage fact");
+    insert_billing_ledger_chain(&ctx.pool, "settle-e2e-charge-1")
+        .await
+        .expect("insert shadow measurement, decision, and charge line");
+
+    let settlement = PostgresUsageSettlementStore::new(
+        ctx.pool.clone(),
+        postgres_account_ledger_append_port(ctx.pool.clone()),
+    );
+    let outcome = settlement
+        .settle_pending_usage(settlement_command(100))
+        .await
+        .expect("settle pending usage");
+
+    assert_eq!(1, outcome.settled_count);
+    assert_eq!(0, outcome.failed_count);
+
+    let row = sqlx::query(
+        r#"
+        SELECT charge_status, settlement_id, settled_at
+        FROM cloudrouter_charge_line
+        WHERE id = 1
+        "#,
+    )
+    .fetch_one(&ctx.pool)
+    .await
+    .expect("read charge line settlement state");
+    assert_eq!(
+        "settled", row.get::<String, _>("charge_status"),
+        "rated charge line must be settled together with its usage fact"
+    );
+    assert_eq!(
+        1_i64, row.get::<i64, _>("settlement_id"),
+        "charge line settlement must reference the settled usage fact"
+    );
+    assert!(
+        row.get::<Option<DateTime<Utc>>, _>("settled_at").is_some(),
+        "settled charge line must record settled_at"
+    );
+
+    ctx.cleanup().await;
+}
+
+#[tokio::test]
+async fn settlement_terminal_failure_marks_shadow_charge_lines_failed() {
+    let Some(ctx) = PostgresTestContext::new("usage_settlement_charge_line_failed").await else {
+        return;
+    };
+    // An unparseable amount is a terminal failure that must mirror onto the
+    // shadow charge line so the new ledger never shows it as pending forever.
+    insert_usage_fact(&ctx.pool, 1, USER_ID, "settle-e2e-charge-bad", "not-a-number")
+        .await
+        .expect("insert malformed pending usage fact");
+    insert_billing_ledger_chain(&ctx.pool, "settle-e2e-charge-bad")
+        .await
+        .expect("insert shadow measurement, decision, and charge line");
+
+    let settlement = PostgresUsageSettlementStore::new(
+        ctx.pool.clone(),
+        postgres_account_ledger_append_port(ctx.pool.clone()),
+    );
+    let outcome = settlement
+        .settle_pending_usage(settlement_command(100))
+        .await
+        .expect("settle pending usage");
+
+    assert_eq!(0, outcome.settled_count);
+    assert_eq!(1, outcome.failed_count);
+
+    let row = sqlx::query(
+        "SELECT charge_status FROM cloudrouter_charge_line WHERE id = 1",
+    )
+    .fetch_one(&ctx.pool)
+    .await
+    .expect("read charge line settlement state");
+    assert_eq!(
+        "failed", row.get::<String, _>("charge_status"),
+        "terminally failed usage facts must mark the shadow charge line failed"
+    );
+
+    ctx.cleanup().await;
+}
+
 fn settlement_command(limit: i64) -> UsageSettlementCommand {
     UsageSettlementCommand {
         tenant_id: TENANT_ID,
@@ -270,6 +372,171 @@ async fn insert_usage_fact(
     .bind(request_id)
     .bind(amount)
     .execute(pool)
+    .await?;
+    Ok(())
+}
+
+/// Persists the shadow-write billing chain that the gateway usage recorder
+/// writes in one transaction: usage measurement -> rating decision -> charge
+/// line. `invocation_id` mirrors the gateway request id so the settlement
+/// store can link the charge line back to the `ai_metering_usage` fact.
+async fn insert_billing_ledger_chain(pool: &PgPool, request_id: &str) -> Result<(), sqlx::Error> {
+    // Global (tenant 0) pricing identities referenced by the rated decision.
+    sqlx::query(
+        r#"
+        INSERT INTO pricing_product
+            (id, uuid, tenant_id, organization_id, namespace_code, product_code,
+             product_kind, owner_system, display_name)
+        VALUES (1, 'prod-uuid-1', 0, 0, 'models', 'models.chat', 'chat', 'sdkwork-models', 'Chat')
+        "#,
+    )
+    .execute(&mut *pool.acquire().await?)
+    .await?;
+    sqlx::query(
+        r#"
+        INSERT INTO pricing_operation
+            (id, uuid, tenant_id, organization_id, namespace_code, operation_code,
+             operation_kind, charge_timing_default, async_completion_policy,
+             success_status_policy, display_name)
+        VALUES (1, 'op-uuid-1', 0, 0, 'models', 'inference.generate', 'inference',
+                'usage_reported', 'noop', 'success', 'Generate')
+        "#,
+    )
+    .execute(&mut *pool.acquire().await?)
+    .await?;
+    sqlx::query(
+        r#"
+        INSERT INTO pricing_meter
+            (id, uuid, tenant_id, organization_id, namespace_code, meter_code,
+             quantity_kind, unit_code, aggregation_mode, default_unit_size,
+             quantity_precision, display_name)
+        VALUES (1, 'meter-uuid-1', 0, 0, 'models', 'tokens', 'count', 'token',
+                'sum', 1, 0, 'Tokens')
+        "#,
+    )
+    .execute(&mut *pool.acquire().await?)
+    .await?;
+    sqlx::query(
+        r#"
+        INSERT INTO pricing_price_book
+            (id, uuid, tenant_id, organization_id, namespace_code, price_book_code,
+             price_book_version, price_side, source_system, vendor_code, region_code,
+             source_catalog_version, source_hash, lifecycle_state, currency_code,
+             effective_from)
+        VALUES (1, 'book-uuid-1', 0, 0, 'models', 'models.global.official', '1',
+                'official_reference', 'sdkwork_models', 'openai', 'global', '1',
+                'hash-1', 'active', 'USD', '2026-01-01T00:00:00Z')
+        "#,
+    )
+    .execute(&mut *pool.acquire().await?)
+    .await?;
+    sqlx::query(
+        r#"
+        INSERT INTO pricing_rate
+            (id, uuid, tenant_id, organization_id, price_book_id, product_id,
+             operation_id, meter_id, rate_code, rate_hash, billability, charge_timing,
+             calculation_mode, quantity_aggregation, unit_size, unit_price,
+             minimum_quantity, currency_code, priority, effective_from,
+             source_url, source_observed_at)
+        VALUES (1, 'rate-uuid-1', 0, 0, 1, 1, 1, 1, 'rate-1', 'rate-hash-1',
+                'chargeable', 'usage_reported', 'per_unit', 'sum', 1, 10,
+                0, 'USD', 1, '2026-01-01T00:00:00Z', 'https://example.test/pricing',
+                '2026-01-01T00:00:00Z')
+        "#,
+    )
+    .execute(&mut *pool.acquire().await?)
+    .await?;
+    sqlx::query(
+        r#"
+        INSERT INTO cloudrouter_pricing_plan
+            (id, uuid, tenant_id, organization_id, plan_code, plan_name,
+             base_price_side, currency_code, fallback_policy, rounding_mode,
+             minimum_charge_amount, effective_from)
+        VALUES (1, 'plan-uuid-1', 0, 0, 'default', 'Default',
+                'official_reference', 'USD', 'fail_closed', 'half_up', 0,
+                '2026-01-01T00:00:00Z')
+        "#,
+    )
+    .execute(&mut *pool.acquire().await?)
+    .await?;
+    sqlx::query(
+        r#"
+        INSERT INTO cloudrouter_pricing_rule
+            (id, uuid, tenant_id, organization_id, pricing_plan_id, rule_code,
+             formula_mode, multiplier, markup_amount, priority, effective_from)
+        VALUES (1, 'rule-uuid-1', 0, 0, 1, 'plan-default',
+                'multiplier_markup', 1, 0, 1, '2026-01-01T00:00:00Z')
+        "#,
+    )
+    .execute(&mut *pool.acquire().await?)
+    .await?;
+    sqlx::query(
+        r#"
+        INSERT INTO cloudrouter_account_rate_card
+            (id, uuid, tenant_id, organization_id, subject_type, subject_code,
+             pricing_plan_tenant_id, pricing_plan_organization_id, pricing_plan_id,
+             priority, effective_from)
+        VALUES (1, 'card-uuid-1', 0, 0, 'default', 'default', 0, 0, 1, 1,
+                '2026-01-01T00:00:00Z')
+        "#,
+    )
+    .execute(&mut *pool.acquire().await?)
+    .await?;
+
+    let mut connection = pool.acquire().await?;
+    sqlx::query(
+        r#"
+        INSERT INTO cloudrouter_usage_measurement
+            (id, uuid, tenant_id, organization_id, invocation_id, measurement_key,
+             product_code, operation_code, meter_code, vendor_code, quantity,
+             unit_code, measurement_source, dimensions_json, occurred_at)
+        VALUES (1, 'meas-uuid-1', $1, $2, $3, 'tokens:1', 'models.chat',
+                'inference.generate', 'tokens', 'openai', 1, 'token',
+                'provider_response', '{}'::jsonb, CURRENT_TIMESTAMP)
+        "#,
+    )
+    .bind(TENANT_ID)
+    .bind(ORGANIZATION_ID)
+    .bind(request_id)
+    .execute(&mut *connection)
+    .await?;
+    sqlx::query(
+        r#"
+        INSERT INTO cloudrouter_rating_decision
+            (id, uuid, tenant_id, organization_id, invocation_id, measurement_id,
+             decision_status, billability, reason_code, strategy_code,
+             calculation_mode, charge_timing, quantity_aggregation,
+             price_book_tenant_id, price_book_organization_id, price_book_id, rate_id,
+             account_rate_card_tenant_id, account_rate_card_organization_id,
+             account_rate_card_id, pricing_plan_tenant_id, pricing_plan_organization_id,
+             pricing_plan_id, pricing_rule_id, measured_quantity, rated_quantity,
+             unit_size, reference_unit_price, unit_price, reference_amount, amount,
+             currency_code, billing_components, pricing_snapshot, decided_at)
+        VALUES (1, 'decision-uuid-1', $1, $2, $3, 1, 'rated', 'chargeable',
+                'price_service_rated', 'token_usage', 'per_unit', 'usage_reported',
+                'sum', 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1,
+                10, 10, 10, 10, 'USD', '{}'::jsonb, '{}'::jsonb, CURRENT_TIMESTAMP)
+        "#,
+    )
+    .bind(TENANT_ID)
+    .bind(ORGANIZATION_ID)
+    .bind(request_id)
+    .execute(&mut *connection)
+    .await?;
+    sqlx::query(
+        r#"
+        INSERT INTO cloudrouter_charge_line
+            (id, uuid, tenant_id, organization_id, invocation_id, rating_decision_id,
+             charge_status, product_code, operation_code, meter_code, quantity,
+             reference_amount, cost_amount, amount, currency_code, charged_at)
+        VALUES (1, 'charge-uuid-1', $1, $2, $3, 1, 'rated', 'models.chat',
+                'inference.generate', 'tokens', 1, 10, 0, 10, 'USD', CURRENT_TIMESTAMP)
+        "#,
+    )
+    .bind(TENANT_ID)
+    .bind(ORGANIZATION_ID)
+    .bind(request_id)
+    .execute(&mut *connection)
     .await?;
     Ok(())
 }
@@ -422,7 +689,14 @@ impl PostgresTestContext {
 }
 
 async fn create_schema(pool: &PgPool) {
-    for baseline in [ACCOUNT_BASELINE, AI_METERING_BASELINE] {
+    // Order matters: `cloudrouter_*` billing tables reference `pricing_*`
+    // tables (rating decisions carry price-book/rate identities).
+    for baseline in [
+        ACCOUNT_BASELINE,
+        AI_METERING_BASELINE,
+        PRICING_BASELINE,
+        CLOUDROUTER_BILLING_BASELINE,
+    ] {
         for statement in split_statements(baseline) {
             sqlx::query(sqlx::AssertSqlSafe(statement.to_owned()))
                 .execute(pool)

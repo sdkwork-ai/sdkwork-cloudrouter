@@ -1,5 +1,4 @@
 pub mod common;
-use common::InternalTrustedSubjectHeaders;
 use std::sync::{Arc, Mutex};
 
 use axum::body::Body;
@@ -33,16 +32,14 @@ async fn app_notification_route_uses_notification_domain_and_store_contract() {
         sdkwork_cloudrouter_router_service::api::app_notification_router_with_store(store.clone());
 
     let response = router
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri(
-                    "/app/v3/api/notification/notifications?app_id=cloud-router&page=1&page_size=20",
-                )
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(common::web_framework_backend_request(
+            "GET",
+            "/app/v3/api/notification/notifications?app_id=cloud-router&page=1&page_size=20",
+            Body::empty(),
+            "100001",
+            Some("0"),
+            "30",
+        ))
         .await
         .unwrap();
 
@@ -96,12 +93,14 @@ async fn app_notification_route_allows_console_reads_without_frontend_app_id() {
 
     let response = router
         .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/app/v3/api/notification/notifications?page=1&page_size=20")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::empty())
-                .unwrap(),
+            common::web_framework_backend_request(
+            "GET",
+            "/app/v3/api/notification/notifications?page=1&page_size=20",
+            Body::empty(),
+            "100001",
+            Some("0"),
+            "30",
+        )
         )
         .await
         .unwrap();
@@ -140,12 +139,14 @@ async fn app_notification_commands_mark_popup_seen_for_trusted_subject() {
 
     let response = router
         .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/app/v3/api/notification/notifications/notification-1/popup_seen?app_id=cloud-router")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::empty())
-                .unwrap(),
+            common::web_framework_backend_request(
+            "POST",
+            "/app/v3/api/notification/notifications/notification-1/popup_seen?app_id=cloud-router",
+            Body::empty(),
+            "100001",
+            Some("0"),
+            "30",
+        )
         )
         .await
         .unwrap();
@@ -178,12 +179,14 @@ async fn app_notification_rejects_noncanonical_popup_seen_route() {
 
     let response = router
         .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/app/v3/api/notification/notifications/notification-1/popup-seen?app_id=cloud-router")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::empty())
-                .unwrap(),
+            common::web_framework_backend_request(
+            "POST",
+            "/app/v3/api/notification/notifications/notification-1/popup-seen?app_id=cloud-router",
+            Body::empty(),
+            "100001",
+            Some("0"),
+            "30",
+        )
         )
         .await
         .unwrap();
@@ -203,12 +206,14 @@ async fn app_notification_acknowledge_marks_read_and_popup_seen_for_trusted_subj
 
     let response = router
         .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/app/v3/api/notification/notifications/notification-1/acknowledge?app_id=cloud-router")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::empty())
-                .unwrap(),
+            common::web_framework_backend_request(
+            "POST",
+            "/app/v3/api/notification/notifications/notification-1/acknowledge?app_id=cloud-router",
+            Body::empty(),
+            "100001",
+            Some("0"),
+            "30",
+        )
         )
         .await
         .unwrap();
@@ -256,12 +261,14 @@ async fn app_notification_route_rejects_missing_subject_and_invalid_notification
 
     let invalid_id_response = router
         .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/app/v3/api/notification/notifications/bad%2Fid/acknowledge")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::empty())
-                .unwrap(),
+            common::web_framework_backend_request(
+            "POST",
+            "/app/v3/api/notification/notifications/bad%2Fid/acknowledge",
+            Body::empty(),
+            "100001",
+            Some("0"),
+            "30",
+        )
         )
         .await
         .unwrap();

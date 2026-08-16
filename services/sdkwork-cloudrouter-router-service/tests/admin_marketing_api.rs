@@ -1,5 +1,4 @@
 pub mod common;
-use common::InternalTrustedSubjectHeaders;
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
@@ -339,14 +338,22 @@ async fn admin_marketing_route_rejects_inactive_exchange_rules_without_calling_s
 }
 
 fn signed_request(method: &str, path: &str, body: &str) -> Request<Body> {
-    Request::builder()
-        .method(method)
-        .uri(path)
-        .header("content-type", "application/json")
-        .internal_trusted_subject(TEST_TENANT_ID, TEST_ORGANIZATION_ID, TEST_OPERATOR_ID)
-        .header("X-Request-Id", "request-admin-marketing-test")
-        .body(Body::from(body.to_owned()))
-        .unwrap()
+    let mut request = common::web_framework_backend_request(
+        method,
+        path,
+        Body::from(body.to_owned()),
+        "100001",
+        Some("0"),
+        "30",
+    );
+    request
+        .headers_mut()
+        .insert("content-type", "application/json".parse().unwrap());
+    request.headers_mut().insert(
+        "X-Request-Id",
+        "request-admin-marketing-test".parse().unwrap(),
+    );
+    request
 }
 
 async fn request_json(router: axum::Router, request: Request<Body>) -> Value {

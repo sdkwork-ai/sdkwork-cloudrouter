@@ -1233,6 +1233,432 @@
         ],
         "type": "object"
       },
+      "AdminPricingPlan": {
+        "additionalProperties": false,
+        "description": "Admin pricing plan schema exposed by Cloud Router.",
+        "properties": {
+          "basePriceSide": {
+            "description": "Base price side field on admin pricing plan.",
+            "enum": [
+              "official_reference",
+              "upstream_cost",
+              "customer_charge",
+              "internal_transfer"
+            ],
+            "type": "string"
+          },
+          "createdAt": {
+            "description": "Created at field on admin pricing plan.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "currencyCode": {
+            "description": "Currency code field on admin pricing plan.",
+            "maxLength": 10,
+            "pattern": "^[A-Z]{3}$",
+            "type": "string"
+          },
+          "effectiveFrom": {
+            "description": "Effective from field on admin pricing plan.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "effectiveTo": {
+            "description": "Effective to field on admin pricing plan.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "fallbackPolicy": {
+            "description": "Fallback policy field on admin pricing plan.",
+            "maxLength": 32,
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on admin pricing plan.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "minimumChargeAmount": {
+            "description": "Minimum charge amount field on admin pricing plan.",
+            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "type": "string"
+          },
+          "planCode": {
+            "description": "Plan code field on admin pricing plan.",
+            "maxLength": 96,
+            "type": "string"
+          },
+          "planName": {
+            "description": "Plan name field on admin pricing plan.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "roundingMode": {
+            "description": "Rounding mode field on admin pricing plan.",
+            "enum": [
+              "half_up",
+              "half_even",
+              "up",
+              "down"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on admin pricing plan.",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "type": "string"
+          },
+          "updatedAt": {
+            "description": "Updated at field on admin pricing plan.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "version": {
+            "description": "Version field on admin pricing plan.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          }
+        },
+        "required": [
+          "id",
+          "planCode",
+          "planName",
+          "basePriceSide",
+          "currencyCode",
+          "fallbackPolicy",
+          "roundingMode",
+          "minimumChargeAmount",
+          "status"
+        ],
+        "type": "object"
+      },
+      "AdminPricingPlanListResponse": {
+        "additionalProperties": false,
+        "description": "Admin pricing plan list response schema exposed by Cloud Router.",
+        "name": "AdminPricingPlanListResponse",
+        "properties": {
+          "items": {
+            "description": "Items field on admin pricing plan list response.",
+            "items": {
+              "$ref": "#/components/schemas/AdminPricingPlan"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on admin pricing plan list response."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
+      },
+      "AdminPricingRule": {
+        "additionalProperties": false,
+        "description": "Admin pricing rule schema exposed by Cloud Router.",
+        "properties": {
+          "catalogKey": {
+            "description": "Catalog key field on admin pricing rule.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "createdAt": {
+            "description": "Created at field on admin pricing rule.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "effectiveFrom": {
+            "description": "Effective from field on admin pricing rule.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "effectiveTo": {
+            "description": "Effective to field on admin pricing rule.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "formulaMode": {
+            "description": "Formula mode field on admin pricing rule.",
+            "enum": [
+              "multiplier_markup",
+              "unit_price_override"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on admin pricing rule.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "markupAmount": {
+            "description": "Markup amount field on admin pricing rule.",
+            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "type": "string"
+          },
+          "meterCode": {
+            "description": "Meter code field on admin pricing rule.",
+            "maxLength": 96,
+            "type": "string"
+          },
+          "multiplier": {
+            "description": "Multiplier field on admin pricing rule.",
+            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "type": "string"
+          },
+          "operationCode": {
+            "description": "Operation code field on admin pricing rule.",
+            "maxLength": 160,
+            "type": "string"
+          },
+          "planCode": {
+            "description": "Plan code field on admin pricing rule.",
+            "maxLength": 96,
+            "type": "string"
+          },
+          "pricingPlanId": {
+            "description": "Pricing plan id field on admin pricing rule.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "priority": {
+            "description": "Priority field on admin pricing rule.",
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "productCode": {
+            "description": "Product code field on admin pricing rule.",
+            "maxLength": 160,
+            "type": "string"
+          },
+          "providerCode": {
+            "description": "Provider code field on admin pricing rule.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "regionCode": {
+            "description": "Region code field on admin pricing rule.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "ruleCode": {
+            "description": "Rule code field on admin pricing rule.",
+            "maxLength": 96,
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on admin pricing rule.",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "type": "string"
+          },
+          "unitPriceOverride": {
+            "description": "Unit price override field on admin pricing rule.",
+            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "type": "string"
+          },
+          "updatedAt": {
+            "description": "Updated at field on admin pricing rule.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "pricingPlanId",
+          "ruleCode",
+          "formulaMode",
+          "status"
+        ],
+        "type": "object"
+      },
+      "AdminPricingRuleListResponse": {
+        "additionalProperties": false,
+        "description": "Admin pricing rule list response schema exposed by Cloud Router.",
+        "name": "AdminPricingRuleListResponse",
+        "properties": {
+          "items": {
+            "description": "Items field on admin pricing rule list response.",
+            "items": {
+              "$ref": "#/components/schemas/AdminPricingRule"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on admin pricing rule list response."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
+      },
+      "AdminRateCard": {
+        "additionalProperties": false,
+        "description": "Admin rate card schema exposed by Cloud Router.",
+        "properties": {
+          "createdAt": {
+            "description": "Created at field on admin rate card.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "effectiveFrom": {
+            "description": "Effective from field on admin rate card.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "effectiveTo": {
+            "description": "Effective to field on admin rate card.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on admin rate card.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "planCode": {
+            "description": "Plan code field on admin rate card.",
+            "maxLength": 96,
+            "type": "string"
+          },
+          "planName": {
+            "description": "Plan name field on admin rate card.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "pricingPlanId": {
+            "description": "Pricing plan id field on admin rate card.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "priority": {
+            "description": "Priority field on admin rate card.",
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "status": {
+            "description": "Status field on admin rate card.",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "type": "string"
+          },
+          "subjectCode": {
+            "description": "Subject code field on admin rate card.",
+            "maxLength": 160,
+            "type": "string"
+          },
+          "subjectId": {
+            "description": "Subject id field on admin rate card.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "subjectType": {
+            "description": "Subject type field on admin rate card.",
+            "enum": [
+              "default",
+              "api_key",
+              "account_group",
+              "account",
+              "user",
+              "organization"
+            ],
+            "type": "string"
+          },
+          "updatedAt": {
+            "description": "Updated at field on admin rate card.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "subjectType",
+          "pricingPlanId",
+          "status"
+        ],
+        "type": "object"
+      },
+      "AdminRateCardListResponse": {
+        "additionalProperties": false,
+        "description": "Admin rate card list response schema exposed by Cloud Router.",
+        "name": "AdminRateCardListResponse",
+        "properties": {
+          "items": {
+            "description": "Items field on admin rate card list response.",
+            "items": {
+              "$ref": "#/components/schemas/AdminRateCard"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on admin rate card list response."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
+      },
       "AdminRechargePackage": {
         "additionalProperties": {
           "allOf": [
@@ -1308,6 +1734,32 @@
           "method",
           "status",
           "time"
+        ],
+        "type": "object"
+      },
+      "AdminRechargeRecordPage": {
+        "additionalProperties": false,
+        "description": "AdminRechargeRecordPage contract.",
+        "properties": {
+          "items": {
+            "description": "items field on AdminRechargeRecordPage.",
+            "items": {
+              "$ref": "#/components/schemas/AdminRechargeRecord"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on admin recharge record page."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
         ],
         "type": "object"
       },
@@ -4101,6 +4553,12 @@
             "nullable": true,
             "type": "string"
           },
+          "defaultBaseUrl": {
+            "description": "Default base url field on create upstream account request.",
+            "maxLength": 2048,
+            "nullable": true,
+            "type": "string"
+          },
           "environment": {
             "description": "Environment field on create upstream account request.",
             "format": "int32",
@@ -4118,6 +4576,15 @@
             "maxLength": 32,
             "nullable": true,
             "type": "string"
+          },
+          "protocols": {
+            "description": "Protocols field on create upstream account request.",
+            "items": {
+              "$ref": "#/components/schemas/LlmProtocolConfig"
+            },
+            "maxItems": 8,
+            "nullable": true,
+            "type": "array"
           },
           "quotaLimit": {
             "description": "Quota limit field on create upstream account request.",
@@ -5812,30 +6279,12 @@
             "description": "Object schema used by packages list result.",
             "properties": {
               "data": {
-                "additionalProperties": false,
-                "description": "Data field on packages list result.",
-                "properties": {
-                  "items": {
-                    "description": "Items field on packages list result.",
-                    "items": {
-                      "$ref": "#/components/schemas/AdminRechargePackage"
-                    },
-                    "type": "array"
-                  },
-                  "pageInfo": {
-                    "allOf": [
-                      {
-                        "$ref": "#/components/schemas/PageInfo"
-                      }
-                    ],
-                    "description": "Page info field on packages list result."
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/RechargePackagePage"
                   }
-                },
-                "required": [
-                  "items",
-                  "pageInfo"
                 ],
-                "type": "object"
+                "description": "Data field on packages list result."
               }
             },
             "required": [
@@ -6195,6 +6644,480 @@
         ],
         "type": "object"
       },
+      "PlansCreateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by plans create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AdminPricingPlan"
+                  }
+                ],
+                "description": "Data field on plans create result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Plans create result schema exposed by Cloud Router.",
+        "x-operation-id": "plans.create"
+      },
+      "PlansListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by plans list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AdminPricingPlanListResponse"
+                  }
+                ],
+                "description": "Data field on plans list result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Plans list result schema exposed by Cloud Router.",
+        "x-operation-id": "plans.list"
+      },
+      "PlansRetrieveResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by plans retrieve result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AdminPricingPlan"
+                  }
+                ],
+                "description": "Data field on plans retrieve result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Plans retrieve result schema exposed by Cloud Router.",
+        "x-operation-id": "plans.retrieve"
+      },
+      "PlansUpdateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by plans update result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AdminPricingPlan"
+                  }
+                ],
+                "description": "Data field on plans update result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Plans update result schema exposed by Cloud Router.",
+        "x-operation-id": "plans.update"
+      },
+      "PricingPlanCreateRequest": {
+        "additionalProperties": false,
+        "description": "Pricing plan create request schema exposed by Cloud Router.",
+        "name": "PricingPlanCreateRequest",
+        "properties": {
+          "basePriceSide": {
+            "description": "Base price side field on pricing plan create request.",
+            "enum": [
+              "official_reference",
+              "upstream_cost",
+              "customer_charge",
+              "internal_transfer"
+            ],
+            "type": "string"
+          },
+          "currencyCode": {
+            "description": "Currency code field on pricing plan create request.",
+            "maxLength": 10,
+            "pattern": "^[A-Z]{3}$",
+            "type": "string"
+          },
+          "effectiveFrom": {
+            "description": "Effective from field on pricing plan create request.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "effectiveTo": {
+            "description": "Effective to field on pricing plan create request.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "minimumChargeAmount": {
+            "description": "Minimum charge amount field on pricing plan create request.",
+            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "type": "string"
+          },
+          "planCode": {
+            "description": "Plan code field on pricing plan create request.",
+            "maxLength": 96,
+            "type": "string"
+          },
+          "planName": {
+            "description": "Plan name field on pricing plan create request.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "roundingMode": {
+            "description": "Rounding mode field on pricing plan create request.",
+            "enum": [
+              "half_up",
+              "half_even",
+              "up",
+              "down"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on pricing plan create request.",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "planCode",
+          "planName",
+          "basePriceSide",
+          "currencyCode",
+          "roundingMode",
+          "minimumChargeAmount",
+          "status"
+        ],
+        "type": "object"
+      },
+      "PricingPlanUpdateRequest": {
+        "additionalProperties": false,
+        "description": "Pricing plan update request schema exposed by Cloud Router.",
+        "name": "PricingPlanUpdateRequest",
+        "properties": {
+          "basePriceSide": {
+            "description": "Base price side field on pricing plan update request.",
+            "enum": [
+              "official_reference",
+              "upstream_cost",
+              "customer_charge",
+              "internal_transfer"
+            ],
+            "type": "string"
+          },
+          "currencyCode": {
+            "description": "Currency code field on pricing plan update request.",
+            "maxLength": 10,
+            "pattern": "^[A-Z]{3}$",
+            "type": "string"
+          },
+          "effectiveFrom": {
+            "description": "Effective from field on pricing plan update request.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "effectiveTo": {
+            "description": "Effective to field on pricing plan update request.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "minimumChargeAmount": {
+            "description": "Minimum charge amount field on pricing plan update request.",
+            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "type": "string"
+          },
+          "planCode": {
+            "description": "Plan code field on pricing plan update request.",
+            "maxLength": 96,
+            "type": "string"
+          },
+          "planName": {
+            "description": "Plan name field on pricing plan update request.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "roundingMode": {
+            "description": "Rounding mode field on pricing plan update request.",
+            "enum": [
+              "half_up",
+              "half_even",
+              "up",
+              "down"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on pricing plan update request.",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "planName",
+          "basePriceSide",
+          "currencyCode",
+          "roundingMode",
+          "minimumChargeAmount",
+          "status"
+        ],
+        "type": "object"
+      },
+      "PricingRuleCreateRequest": {
+        "additionalProperties": false,
+        "description": "Pricing rule create request schema exposed by Cloud Router.",
+        "name": "PricingRuleCreateRequest",
+        "properties": {
+          "catalogKey": {
+            "description": "Catalog key field on pricing rule create request.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "effectiveFrom": {
+            "description": "Effective from field on pricing rule create request.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "effectiveTo": {
+            "description": "Effective to field on pricing rule create request.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "formulaMode": {
+            "description": "Formula mode field on pricing rule create request.",
+            "enum": [
+              "multiplier_markup",
+              "unit_price_override"
+            ],
+            "type": "string"
+          },
+          "markupAmount": {
+            "description": "Markup amount field on pricing rule create request.",
+            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "type": "string"
+          },
+          "meterCode": {
+            "description": "Meter code field on pricing rule create request.",
+            "maxLength": 96,
+            "type": "string"
+          },
+          "multiplier": {
+            "description": "Multiplier field on pricing rule create request.",
+            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "type": "string"
+          },
+          "operationCode": {
+            "description": "Operation code field on pricing rule create request.",
+            "maxLength": 160,
+            "type": "string"
+          },
+          "pricingPlanId": {
+            "description": "Pricing plan id field on pricing rule create request.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "priority": {
+            "description": "Priority field on pricing rule create request.",
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "productCode": {
+            "description": "Product code field on pricing rule create request.",
+            "maxLength": 160,
+            "type": "string"
+          },
+          "providerCode": {
+            "description": "Provider code field on pricing rule create request.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "regionCode": {
+            "description": "Region code field on pricing rule create request.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "ruleCode": {
+            "description": "Rule code field on pricing rule create request.",
+            "maxLength": 96,
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on pricing rule create request.",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "type": "string"
+          },
+          "unitPriceOverride": {
+            "description": "Unit price override field on pricing rule create request.",
+            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ruleCode",
+          "pricingPlanId",
+          "formulaMode",
+          "status"
+        ],
+        "type": "object"
+      },
+      "PricingRuleUpdateRequest": {
+        "additionalProperties": false,
+        "description": "Pricing rule update request schema exposed by Cloud Router.",
+        "name": "PricingRuleUpdateRequest",
+        "properties": {
+          "catalogKey": {
+            "description": "Catalog key field on pricing rule update request.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "effectiveFrom": {
+            "description": "Effective from field on pricing rule update request.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "effectiveTo": {
+            "description": "Effective to field on pricing rule update request.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "formulaMode": {
+            "description": "Formula mode field on pricing rule update request.",
+            "enum": [
+              "multiplier_markup",
+              "unit_price_override"
+            ],
+            "type": "string"
+          },
+          "markupAmount": {
+            "description": "Markup amount field on pricing rule update request.",
+            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "type": "string"
+          },
+          "meterCode": {
+            "description": "Meter code field on pricing rule update request.",
+            "maxLength": 96,
+            "type": "string"
+          },
+          "multiplier": {
+            "description": "Multiplier field on pricing rule update request.",
+            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "type": "string"
+          },
+          "operationCode": {
+            "description": "Operation code field on pricing rule update request.",
+            "maxLength": 160,
+            "type": "string"
+          },
+          "pricingPlanId": {
+            "description": "Pricing plan id field on pricing rule update request.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "priority": {
+            "description": "Priority field on pricing rule update request.",
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "productCode": {
+            "description": "Product code field on pricing rule update request.",
+            "maxLength": 160,
+            "type": "string"
+          },
+          "providerCode": {
+            "description": "Provider code field on pricing rule update request.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "regionCode": {
+            "description": "Region code field on pricing rule update request.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "ruleCode": {
+            "description": "Rule code field on pricing rule update request.",
+            "maxLength": 96,
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on pricing rule update request.",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "type": "string"
+          },
+          "unitPriceOverride": {
+            "description": "Unit price override field on pricing rule update request.",
+            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "formulaMode",
+          "pricingPlanId",
+          "status"
+        ],
+        "type": "object"
+      },
       "ProblemDetail": {
         "additionalProperties": true,
         "properties": {
@@ -6301,6 +7224,231 @@
         ],
         "description": "Providers update result schema exposed by Cloud Router.",
         "x-operation-id": "providers.update"
+      },
+      "RateCardCreateRequest": {
+        "additionalProperties": false,
+        "description": "Rate card create request schema exposed by Cloud Router.",
+        "name": "RateCardCreateRequest",
+        "properties": {
+          "effectiveFrom": {
+            "description": "Effective from field on rate card create request.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "effectiveTo": {
+            "description": "Effective to field on rate card create request.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "pricingPlanId": {
+            "description": "Pricing plan id field on rate card create request.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "priority": {
+            "description": "Priority field on rate card create request.",
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "status": {
+            "description": "Status field on rate card create request.",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "type": "string"
+          },
+          "subjectCode": {
+            "description": "Subject code field on rate card create request.",
+            "maxLength": 160,
+            "type": "string"
+          },
+          "subjectId": {
+            "description": "Subject id field on rate card create request.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "subjectType": {
+            "description": "Subject type field on rate card create request.",
+            "enum": [
+              "default",
+              "api_key",
+              "account_group",
+              "account",
+              "user",
+              "organization"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "subjectType",
+          "pricingPlanId",
+          "status"
+        ],
+        "type": "object"
+      },
+      "RateCardUpdateRequest": {
+        "additionalProperties": false,
+        "description": "Rate card update request schema exposed by Cloud Router.",
+        "name": "RateCardUpdateRequest",
+        "properties": {
+          "effectiveFrom": {
+            "description": "Effective from field on rate card update request.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "effectiveTo": {
+            "description": "Effective to field on rate card update request.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "pricingPlanId": {
+            "description": "Pricing plan id field on rate card update request.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "priority": {
+            "description": "Priority field on rate card update request.",
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "status": {
+            "description": "Status field on rate card update request.",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "type": "string"
+          },
+          "subjectCode": {
+            "description": "Subject code field on rate card update request.",
+            "maxLength": 160,
+            "type": "string"
+          },
+          "subjectId": {
+            "description": "Subject id field on rate card update request.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "subjectType": {
+            "description": "Subject type field on rate card update request.",
+            "enum": [
+              "default",
+              "api_key",
+              "account_group",
+              "account",
+              "user",
+              "organization"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "subjectType",
+          "pricingPlanId",
+          "status"
+        ],
+        "type": "object"
+      },
+      "RateCardsCreateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by rate cards create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AdminRateCard"
+                  }
+                ],
+                "description": "Data field on rate cards create result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Rate cards create result schema exposed by Cloud Router.",
+        "x-operation-id": "rateCards.create"
+      },
+      "RateCardsListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by rate cards list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AdminRateCardListResponse"
+                  }
+                ],
+                "description": "Data field on rate cards list result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Rate cards list result schema exposed by Cloud Router.",
+        "x-operation-id": "rateCards.list"
+      },
+      "RateCardsUpdateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by rate cards update result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AdminRateCard"
+                  }
+                ],
+                "description": "Data field on rate cards update result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Rate cards update result schema exposed by Cloud Router.",
+        "x-operation-id": "rateCards.update"
       },
       "RateLimitsApiKeysCreateResult": {
         "allOf": [
@@ -6510,6 +7658,32 @@
         ],
         "type": "object"
       },
+      "RechargePackagePage": {
+        "additionalProperties": false,
+        "description": "RechargePackagePage contract.",
+        "properties": {
+          "items": {
+            "description": "items field on RechargePackagePage.",
+            "items": {
+              "$ref": "#/components/schemas/AdminRechargePackage"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on recharge package page."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
+      },
       "RechargeRecordsListResult": {
         "allOf": [
           {
@@ -6520,30 +7694,12 @@
             "description": "Object schema used by recharge records list result.",
             "properties": {
               "data": {
-                "additionalProperties": false,
-                "description": "Data field on recharge records list result.",
-                "properties": {
-                  "items": {
-                    "description": "Items field on recharge records list result.",
-                    "items": {
-                      "$ref": "#/components/schemas/AdminRechargeRecord"
-                    },
-                    "type": "array"
-                  },
-                  "pageInfo": {
-                    "allOf": [
-                      {
-                        "$ref": "#/components/schemas/PageInfo"
-                      }
-                    ],
-                    "description": "Page info field on recharge records list result."
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AdminRechargeRecordPage"
                   }
-                },
-                "required": [
-                  "items",
-                  "pageInfo"
                 ],
-                "type": "object"
+                "description": "Data field on recharge records list result."
               }
             },
             "required": [
@@ -6917,6 +8073,87 @@
           "items"
         ],
         "type": "object"
+      },
+      "RulesCreateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by rules create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AdminPricingRule"
+                  }
+                ],
+                "description": "Data field on rules create result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Rules create result schema exposed by Cloud Router.",
+        "x-operation-id": "rules.create"
+      },
+      "RulesListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by rules list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AdminPricingRuleListResponse"
+                  }
+                ],
+                "description": "Data field on rules list result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Rules list result schema exposed by Cloud Router.",
+        "x-operation-id": "rules.list"
+      },
+      "RulesUpdateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by rules update result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AdminPricingRule"
+                  }
+                ],
+                "description": "Data field on rules update result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Rules update result schema exposed by Cloud Router.",
+        "x-operation-id": "rules.update"
       },
       "RuntimeRegionSettingsRetrieveResult": {
         "allOf": [
@@ -7684,6 +8921,12 @@
             "nullable": true,
             "type": "string"
           },
+          "defaultBaseUrl": {
+            "description": "Default base url field on update upstream account request.",
+            "maxLength": 2048,
+            "nullable": true,
+            "type": "string"
+          },
           "environment": {
             "description": "Environment field on update upstream account request.",
             "format": "int32",
@@ -7701,6 +8944,15 @@
             "maxLength": 32,
             "nullable": true,
             "type": "string"
+          },
+          "protocols": {
+            "description": "Protocols field on update upstream account request.",
+            "items": {
+              "$ref": "#/components/schemas/LlmProtocolConfig"
+            },
+            "maxItems": 8,
+            "nullable": true,
+            "type": "array"
           },
           "quotaLimit": {
             "description": "Quota limit field on update upstream account request.",
@@ -7890,6 +9142,12 @@
             "maxLength": 64,
             "type": "string"
           },
+          "defaultBaseUrl": {
+            "description": "Default base url field on upstream account.",
+            "maxLength": 2048,
+            "nullable": true,
+            "type": "string"
+          },
           "environment": {
             "description": "Environment field on upstream account.",
             "format": "int32",
@@ -7917,6 +9175,14 @@
             "maxLength": 32,
             "nullable": true,
             "type": "string"
+          },
+          "protocols": {
+            "description": "Protocols field on upstream account.",
+            "items": {
+              "$ref": "#/components/schemas/LlmProtocolConfig"
+            },
+            "maxItems": 8,
+            "type": "array"
           },
           "quotaLimit": {
             "description": "Quota limit field on upstream account.",
@@ -7998,6 +9264,8 @@
           "supplierId",
           "supplierCode",
           "preferredEndpointId",
+          "defaultBaseUrl",
+          "protocols",
           "accountCode",
           "accountName",
           "accountType",
@@ -15021,7 +16289,7 @@
         "x-sdkwork-domain": "commerce",
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "rechargeRecords",
-        "x-source-file": "services/sdkwork-cloudrouter-router-service/src/api/admin_marketing.rs",
+        "x-source-file": "sdks/_route-manifests/backend-api/sdkwork-routes-cloudrouter-backend-api.route-manifest.json",
         "x-write-tables": []
       }
     },
@@ -15115,7 +16383,7 @@
         "x-sdkwork-domain": "commerce",
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "rechargeRecords",
-        "x-source-file": "services/sdkwork-cloudrouter-router-service/src/api/admin_marketing.rs",
+        "x-source-file": "sdks/_route-manifests/backend-api/sdkwork-routes-cloudrouter-backend-api.route-manifest.json",
         "x-write-tables": []
       }
     },
@@ -16216,6 +17484,1342 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
         "x-write-tables": [
           "commerce_payment_provider"
+        ]
+      }
+    },
+    "/backend/v3/api/pricing/plans": {
+      "get": {
+        "description": "List pricing plans. Reads cloudrouter_pricing_plan. Writes none. File targets none.",
+        "operationId": "plans.list",
+        "parameters": [
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Base price side query parameter.",
+            "in": "query",
+            "name": "base_price_side",
+            "required": false,
+            "schema": {
+              "enum": [
+                "official_reference",
+                "upstream_cost",
+                "customer_charge",
+                "internal_transfer"
+              ],
+              "maxLength": 32,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Status query parameter.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "maxLength": 32,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlansListResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List pricing plans",
+        "tags": [
+          "pricing"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "cloudrouter_pricing_plan"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "pricing",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "pricing",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "plans",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+        "x-write-tables": []
+      },
+      "post": {
+        "description": "Create pricing plan. Reads cloudrouter_pricing_plan. Writes cloudrouter_pricing_plan, ops_audit_log. File targets none.",
+        "operationId": "plans.create",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PricingPlanCreateRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for create pricing plan.",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlansCreateResult"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Create pricing plan",
+        "tags": [
+          "pricing"
+        ],
+        "x-contract-kind": "create",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "cloudrouter_pricing_plan"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "pricing",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "pricing",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "plans",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+        "x-write-tables": [
+          "cloudrouter_pricing_plan",
+          "ops_audit_log"
+        ]
+      }
+    },
+    "/backend/v3/api/pricing/plans/{planId}": {
+      "get": {
+        "description": "List pricing plan. Reads cloudrouter_pricing_plan. Writes none. File targets none.",
+        "operationId": "plans.retrieve",
+        "parameters": [
+          {
+            "description": "Plan id path parameter.",
+            "in": "path",
+            "name": "planId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlansRetrieveResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List pricing plan",
+        "tags": [
+          "pricing"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "cloudrouter_pricing_plan"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "pricing",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "pricing",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "plans",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+        "x-write-tables": []
+      },
+      "patch": {
+        "description": "Update pricing plan. Reads cloudrouter_pricing_plan. Writes cloudrouter_pricing_plan, ops_audit_log. File targets none.",
+        "operationId": "plans.update",
+        "parameters": [
+          {
+            "description": "Plan id path parameter.",
+            "in": "path",
+            "name": "planId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PricingPlanUpdateRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for update pricing plan.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlansUpdateResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Update pricing plan",
+        "tags": [
+          "pricing"
+        ],
+        "x-contract-kind": "update",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "cloudrouter_pricing_plan"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "pricing",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "pricing",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "plans",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+        "x-write-tables": [
+          "cloudrouter_pricing_plan",
+          "ops_audit_log"
+        ]
+      }
+    },
+    "/backend/v3/api/pricing/rate_cards": {
+      "get": {
+        "description": "List pricing rate cards. Reads cloudrouter_account_rate_card, cloudrouter_pricing_plan. Writes none. File targets none.",
+        "operationId": "rateCards.list",
+        "parameters": [
+          {
+            "description": "Subject type query parameter.",
+            "in": "query",
+            "name": "subject_type",
+            "required": false,
+            "schema": {
+              "enum": [
+                "default",
+                "api_key",
+                "account_group",
+                "account",
+                "user",
+                "organization"
+              ],
+              "maxLength": 32,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Pricing plan id query parameter.",
+            "in": "query",
+            "name": "pricing_plan_id",
+            "required": false,
+            "schema": {
+              "maxLength": 64,
+              "pattern": "^-?[0-9]+$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Status query parameter.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "maxLength": 32,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateCardsListResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List pricing rate cards",
+        "tags": [
+          "pricing"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "cloudrouter_account_rate_card",
+          "cloudrouter_pricing_plan"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "pricing",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "pricing",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "rateCards",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+        "x-write-tables": []
+      },
+      "post": {
+        "description": "Create pricing rate card. Reads cloudrouter_account_rate_card, cloudrouter_pricing_plan. Writes cloudrouter_account_rate_card, ops_audit_log. File targets none.",
+        "operationId": "rateCards.create",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RateCardCreateRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for create pricing rate card.",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateCardsCreateResult"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Create pricing rate card",
+        "tags": [
+          "pricing"
+        ],
+        "x-contract-kind": "create",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "cloudrouter_account_rate_card",
+          "cloudrouter_pricing_plan"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "pricing",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "pricing",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "rateCards",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+        "x-write-tables": [
+          "cloudrouter_account_rate_card",
+          "ops_audit_log"
+        ]
+      }
+    },
+    "/backend/v3/api/pricing/rate_cards/{rateCardId}": {
+      "delete": {
+        "description": "Delete pricing rate card. Reads cloudrouter_account_rate_card, cloudrouter_pricing_plan. Writes cloudrouter_account_rate_card, ops_audit_log. File targets none.",
+        "operationId": "rateCards.delete",
+        "parameters": [
+          {
+            "description": "Rate card id path parameter.",
+            "in": "path",
+            "name": "rateCardId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Delete pricing rate card",
+        "tags": [
+          "pricing"
+        ],
+        "x-contract-kind": "delete",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "cloudrouter_account_rate_card",
+          "cloudrouter_pricing_plan"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "pricing",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "pricing",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "rateCards",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+        "x-write-tables": [
+          "cloudrouter_account_rate_card",
+          "ops_audit_log"
+        ]
+      },
+      "patch": {
+        "description": "Update pricing rate card. Reads cloudrouter_account_rate_card, cloudrouter_pricing_plan. Writes cloudrouter_account_rate_card, ops_audit_log. File targets none.",
+        "operationId": "rateCards.update",
+        "parameters": [
+          {
+            "description": "Rate card id path parameter.",
+            "in": "path",
+            "name": "rateCardId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RateCardUpdateRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for update pricing rate card.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RateCardsUpdateResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Update pricing rate card",
+        "tags": [
+          "pricing"
+        ],
+        "x-contract-kind": "update",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "cloudrouter_account_rate_card",
+          "cloudrouter_pricing_plan"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "pricing",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "pricing",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "rateCards",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+        "x-write-tables": [
+          "cloudrouter_account_rate_card",
+          "ops_audit_log"
+        ]
+      }
+    },
+    "/backend/v3/api/pricing/rules": {
+      "get": {
+        "description": "List pricing rules. Reads cloudrouter_pricing_rule, cloudrouter_pricing_plan. Writes none. File targets none.",
+        "operationId": "rules.list",
+        "parameters": [
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Pricing plan id query parameter.",
+            "in": "query",
+            "name": "pricing_plan_id",
+            "required": false,
+            "schema": {
+              "maxLength": 64,
+              "pattern": "^-?[0-9]+$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Status query parameter.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "maxLength": 32,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RulesListResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List pricing rules",
+        "tags": [
+          "pricing"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "cloudrouter_pricing_rule",
+          "cloudrouter_pricing_plan"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "pricing",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "pricing",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "rules",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+        "x-write-tables": []
+      },
+      "post": {
+        "description": "Create pricing rule. Reads cloudrouter_pricing_rule, cloudrouter_pricing_plan. Writes cloudrouter_pricing_rule, ops_audit_log. File targets none.",
+        "operationId": "rules.create",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PricingRuleCreateRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for create pricing rule.",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RulesCreateResult"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Create pricing rule",
+        "tags": [
+          "pricing"
+        ],
+        "x-contract-kind": "create",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "cloudrouter_pricing_rule",
+          "cloudrouter_pricing_plan"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "pricing",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "pricing",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "rules",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+        "x-write-tables": [
+          "cloudrouter_pricing_rule",
+          "ops_audit_log"
+        ]
+      }
+    },
+    "/backend/v3/api/pricing/rules/{ruleId}": {
+      "delete": {
+        "description": "Delete pricing rule. Reads cloudrouter_pricing_rule, cloudrouter_pricing_plan. Writes cloudrouter_pricing_rule, ops_audit_log. File targets none.",
+        "operationId": "rules.delete",
+        "parameters": [
+          {
+            "description": "Rule id path parameter.",
+            "in": "path",
+            "name": "ruleId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Delete pricing rule",
+        "tags": [
+          "pricing"
+        ],
+        "x-contract-kind": "delete",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "cloudrouter_pricing_rule",
+          "cloudrouter_pricing_plan"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "pricing",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "pricing",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "rules",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+        "x-write-tables": [
+          "cloudrouter_pricing_rule",
+          "ops_audit_log"
+        ]
+      },
+      "patch": {
+        "description": "Update pricing rule. Reads cloudrouter_pricing_rule, cloudrouter_pricing_plan. Writes cloudrouter_pricing_rule, ops_audit_log. File targets none.",
+        "operationId": "rules.update",
+        "parameters": [
+          {
+            "description": "Rule id path parameter.",
+            "in": "path",
+            "name": "ruleId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PricingRuleUpdateRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for update pricing rule.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RulesUpdateResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Update pricing rule",
+        "tags": [
+          "pricing"
+        ],
+        "x-contract-kind": "update",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "cloudrouter_pricing_rule",
+          "cloudrouter_pricing_plan"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "pricing",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "pricing",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "rules",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+        "x-write-tables": [
+          "cloudrouter_pricing_rule",
+          "ops_audit_log"
         ]
       }
     },
@@ -21881,6 +24485,10 @@
     {
       "description": "payments operations exposed by Cloud Router.",
       "name": "payments"
+    },
+    {
+      "description": "pricing operations exposed by Cloud Router.",
+      "name": "pricing"
     },
     {
       "description": "recharges operations exposed by Cloud Router.",

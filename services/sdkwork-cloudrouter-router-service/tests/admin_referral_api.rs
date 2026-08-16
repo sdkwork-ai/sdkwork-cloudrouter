@@ -1,5 +1,4 @@
 pub mod common;
-use common::InternalTrustedSubjectHeaders;
 use std::sync::{Arc, Mutex};
 
 use axum::body::Body;
@@ -8,10 +7,10 @@ use sdkwork_cloudrouter_router_service::application::EntityUuidGenerator;
 use sdkwork_cloudrouter_router_service::domain::DomainResult;
 use sdkwork_cloudrouter_router_service::ports::{
     AdminReferralCommandFuture, AdminReferralListPage, AdminReferralRelationItem,
-    AdminReferralStore, AdminReferralStrategyItem,
-    CreateAdminReferralStrategyCommand, DeleteAdminReferralStrategyCommand,
-    ListAdminReferralRelationsQuery, ListAdminReferralStrategiesQuery,
-    RetrieveAdminReferralStrategyQuery, UpdateAdminReferralStrategyCommand,
+    AdminReferralStore, AdminReferralStrategyItem, CreateAdminReferralStrategyCommand,
+    DeleteAdminReferralStrategyCommand, ListAdminReferralRelationsQuery,
+    ListAdminReferralStrategiesQuery, RetrieveAdminReferralStrategyQuery,
+    UpdateAdminReferralStrategyCommand,
 };
 use serde_json::Value;
 use tower::ServiceExt;
@@ -396,14 +395,22 @@ async fn admin_referral_route_rejects_invalid_strategy_mutations() {
 }
 
 fn signed_request(method: &str, path: &str, body: &str) -> Request<Body> {
-    Request::builder()
-        .method(method)
-        .uri(path)
-        .header("content-type", "application/json")
-        .internal_trusted_subject(TEST_TENANT_ID, TEST_ORGANIZATION_ID, TEST_OPERATOR_ID)
-        .header("X-Request-Id", "request-admin-referral-test")
-        .body(Body::from(body.to_owned()))
-        .unwrap()
+    let mut request = common::web_framework_backend_request(
+        method,
+        path,
+        Body::from(body.to_owned()),
+        "100001",
+        Some("0"),
+        "30",
+    );
+    request
+        .headers_mut()
+        .insert("content-type", "application/json".parse().unwrap());
+    request.headers_mut().insert(
+        "X-Request-Id",
+        "request-admin-referral-test".parse().unwrap(),
+    );
+    request
 }
 
 async fn request_json(router: axum::Router, request: Request<Body>) -> Value {
@@ -440,4 +447,3 @@ async fn request_empty_with_status(
     let response = router.oneshot(request).await.unwrap();
     assert_eq!(expected_status, response.status());
 }
-

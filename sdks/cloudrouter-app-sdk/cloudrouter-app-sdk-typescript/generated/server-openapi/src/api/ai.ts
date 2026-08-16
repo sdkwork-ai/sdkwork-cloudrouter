@@ -1,7 +1,7 @@
 import { appApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
-import type { AppRoutingAccountGroupListResponse, AppRoutingApiKeyListResponse, AppRoutingRequestTraceListResponse, AppRoutingUsageSnapshot, DashboardOverviewResponse, GatewayTracesPage, UsageLogsResponse } from '../types';
+import type { AppRoutingAccountGroupListResponse, AppRoutingApiKeyListResponse, AppRoutingRequestTraceListResponse, AppRoutingUsageSnapshot, DashboardOverviewResponse, GatewayTracesPage, OfficialPricingCatalogResponse, SettlementsDashboardSnapshot, UsageLogsResponse } from '../types';
 
 
 export interface AiUsageLogsListParams {
@@ -46,6 +46,38 @@ export class AiUsageApi {
 
 }
 
+export interface AiSettlementsDashboardRetrieveParams {
+  year?: string;
+}
+
+export class AiSettlementsDashboardApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List settlements dashboard */
+  async retrieve(params?: AiSettlementsDashboardRetrieveParams, requestOptions?: ApiRequestOptions): Promise<SettlementsDashboardSnapshot> {
+    const query = buildQueryString([
+      { name: 'year', value: params?.year, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<SettlementsDashboardSnapshot>(appendQueryString(appApiPath(`/ai/settlements/dashboard`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+  }
+}
+
+export class AiSettlementsApi {
+  private client: HttpClient;
+  public readonly dashboard: AiSettlementsDashboardApi;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+    this.dashboard = new AiSettlementsDashboardApi(client);
+  }
+
+}
+
 export class AiRoutingUsageApi {
   private client: HttpClient;
 
@@ -61,7 +93,7 @@ export class AiRoutingUsageApi {
 }
 
 export interface AiRoutingRequestTracesListParams {
-  page?: number;
+  cursor?: string;
   pageSize?: number;
   q?: string;
 }
@@ -77,7 +109,7 @@ export class AiRoutingRequestTracesApi {
 /** List routing request traces */
   async list(params?: AiRoutingRequestTracesListParams, requestOptions?: ApiRequestOptions): Promise<AppRoutingRequestTraceListResponse> {
     const query = buildQueryString([
-      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
@@ -148,6 +180,50 @@ export class AiRoutingApi {
     this.apiKeys = new AiRoutingApiKeysApi(client);
     this.requestTraces = new AiRoutingRequestTracesApi(client);
     this.usage = new AiRoutingUsageApi(client);
+  }
+
+}
+
+export interface AiPricingRatesListParams {
+  category?: 'all' | 'llm' | 'image' | 'video' | 'audio' | 'music' | 'embedding' | 'sound' | 'api' | 'other';
+  q?: string;
+  vendorCode?: string;
+  regionCode?: string;
+  meterCode?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export class AiPricingRatesApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List official pricing rates */
+  async list(params?: AiPricingRatesListParams, requestOptions?: ApiRequestOptions): Promise<OfficialPricingCatalogResponse> {
+    const query = buildQueryString([
+      { name: 'category', value: params?.category, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+      { name: 'vendor_code', value: params?.vendorCode, style: 'form', explode: true, allowReserved: false },
+      { name: 'region_code', value: params?.regionCode, style: 'form', explode: true, allowReserved: false },
+      { name: 'meter_code', value: params?.meterCode, style: 'form', explode: true, allowReserved: false },
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<OfficialPricingCatalogResponse>(appendQueryString(appApiPath(`/ai/pricing/rates`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  }
+}
+
+export class AiPricingApi {
+  private client: HttpClient;
+  public readonly rates: AiPricingRatesApi;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+    this.rates = new AiPricingRatesApi(client);
   }
 
 }
@@ -228,14 +304,18 @@ export class AiApi {
   private client: HttpClient;
   public readonly dashboard: AiDashboardApi;
   public readonly gateway: AiGatewayApi;
+  public readonly pricing: AiPricingApi;
   public readonly routing: AiRoutingApi;
+  public readonly settlements: AiSettlementsApi;
   public readonly usage: AiUsageApi;
 
   constructor(client: HttpClient) {
     this.client = client;
     this.dashboard = new AiDashboardApi(client);
     this.gateway = new AiGatewayApi(client);
+    this.pricing = new AiPricingApi(client);
     this.routing = new AiRoutingApi(client);
+    this.settlements = new AiSettlementsApi(client);
     this.usage = new AiUsageApi(client);
   }
 

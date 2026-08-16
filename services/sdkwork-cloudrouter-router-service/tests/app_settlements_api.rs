@@ -1,11 +1,10 @@
 pub mod common;
-use common::InternalTrustedSubjectHeaders;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 
 use axum::body::Body;
-use axum::http::{Request, StatusCode};
+use axum::http::StatusCode;
 use sdkwork_cloudrouter_router_service::api::app_settlements_dashboard_router_with_read_store;
 use sdkwork_cloudrouter_router_service::domain::DomainResult;
 use sdkwork_cloudrouter_router_service::ports::{
@@ -16,18 +15,19 @@ use serde_json::Value;
 use tower::ServiceExt;
 
 #[tokio::test]
-async fn app_settlements_dashboard_billing_route_matches_app_sdk_contract() {
+async fn app_settlements_dashboard_route_matches_app_sdk_contract() {
     let read_store = Arc::new(CapturingSettlementsDashboardReadStore::default());
     let router = app_settlements_dashboard_router_with_read_store(read_store.clone());
 
     let response = router
-        .oneshot(
-            Request::builder()
-                .uri("/app/v3/api/billing/settlements/dashboard?year=2026")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::empty())
-                .unwrap(),
-        )
+        .oneshot(common::web_framework_app_request(
+            "GET",
+            "/app/v3/api/ai/settlements/dashboard?year=2026",
+            Body::empty(),
+            "100001",
+            Some("0"),
+            "30",
+        ))
         .await
         .unwrap();
 

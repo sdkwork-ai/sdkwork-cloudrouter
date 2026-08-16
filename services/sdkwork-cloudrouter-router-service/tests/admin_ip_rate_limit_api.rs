@@ -1,5 +1,4 @@
 pub mod common;
-use common::InternalTrustedSubjectHeaders;
 use std::sync::{Arc, Mutex};
 
 use axum::body::Body;
@@ -25,15 +24,16 @@ async fn admin_ip_rate_limit_route_creates_and_lists_ip_rules() {
     let create_response = router
         .clone()
         .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/backend/v3/api/system/rate_limits/ip")
-                .header("content-type", "application/json")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::from(
+            common::web_framework_backend_request(
+            "POST",
+            "/backend/v3/api/system/rate_limits/ip",
+            Body::from(
                     r#"{"ruleName":"\u4e2d\u6587 crawler guard","targetIp":"192.168.1.99/24","rps":10,"rpm":300,"blockDuration":"10m"}"#,
-                ))
-                .unwrap(),
+                ),
+            "100001",
+            Some("0"),
+            "30",
+        )
         )
         .await
         .unwrap();
@@ -53,12 +53,14 @@ async fn admin_ip_rate_limit_route_creates_and_lists_ip_rules() {
 
     let list_response = router
         .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/backend/v3/api/system/rate_limits/ip")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::empty())
-                .unwrap(),
+            common::web_framework_backend_request(
+            "GET",
+            "/backend/v3/api/system/rate_limits/ip",
+            Body::empty(),
+            "100001",
+            Some("0"),
+            "30",
+        )
         )
         .await
         .unwrap();
@@ -83,15 +85,16 @@ async fn admin_ip_rate_limit_route_rejects_invalid_ip_without_calling_store() {
 
     let response = router
         .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/backend/v3/api/system/rate_limits/ip")
-                .header("content-type", "application/json")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::from(
+            common::web_framework_backend_request(
+            "POST",
+            "/backend/v3/api/system/rate_limits/ip",
+            Body::from(
                     r#"{"ruleName":"Invalid","targetIp":"not-an-ip","rps":10,"rpm":300}"#,
-                ))
-                .unwrap(),
+                ),
+            "100001",
+            Some("0"),
+            "30",
+        )
         )
         .await
         .unwrap();

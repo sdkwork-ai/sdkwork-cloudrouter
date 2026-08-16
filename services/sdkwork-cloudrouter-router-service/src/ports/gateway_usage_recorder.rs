@@ -284,7 +284,9 @@ pub struct GatewayUsageRecordCommand {
     pub modality: i64,
     pub usage_type: i64,
     pub billing_meter_code: String,
+    pub unit_size: String,
     pub billable_quantity: String,
+    pub rated_quantity: String,
     pub prompt_tokens: i64,
     pub completion_tokens: i64,
     pub cached_tokens: i64,
@@ -301,6 +303,10 @@ pub struct GatewayUsageRecordCommand {
     pub provider_error_code: Option<String>,
     pub error_type: Option<String>,
     pub error_message_masked: Option<String>,
+    pub decision_status: String,
+    pub billability: String,
+    pub reason_code: String,
+    pub strategy_code: Option<String>,
     pub base_input_unit_price: String,
     pub base_output_unit_price: String,
     pub cache_read_unit_price: String,
@@ -311,7 +317,199 @@ pub struct GatewayUsageRecordCommand {
     pub upstream_cost_amount: String,
     pub currency: String,
     pub pricing_plan_code: String,
+    pub billing_components: String,
     pub pricing_snapshot: String,
+    #[serde(default)]
+    pub official_rate: Option<GatewayOfficialRateReference>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GatewayOfficialRateReference {
+    pub price_book_code: String,
+    pub rate_hash: String,
+    pub product_code: String,
+    pub operation_code: String,
+    pub billability: String,
+    pub charge_timing: String,
+    pub calculation_mode: String,
+    pub quantity_aggregation: String,
+    pub unit_size: String,
+    pub unit_price: String,
+    pub plan_unit_price: String,
+    pub rated_reference_unit_price: String,
+    pub rated_unit_price: String,
+    pub rated_procurement_unit_price: Option<String>,
+    pub minimum_quantity: String,
+    pub quantity_step: Option<String>,
+    pub conditions: Vec<GatewayPricingRateCondition>,
+    pub tiers: Vec<GatewayPricingRateTier>,
+    pub formula: Option<GatewayPricingFormula>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GatewayPricingRateCondition {
+    pub dimension_code: String,
+    pub operator_code: String,
+    pub value: serde_json::Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GatewayPricingRateTier {
+    pub tier_code: String,
+    pub lower_bound: String,
+    pub upper_bound: Option<String>,
+    pub unit_size: String,
+    pub unit_price: String,
+    pub flat_amount: String,
+    pub currency_code: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GatewayPricingFormula {
+    pub formula_code: String,
+    pub formula_version: String,
+    pub constant_units: String,
+    pub quantity_coefficient: String,
+    pub minimum_units: Option<String>,
+    pub maximum_units: Option<String>,
+    pub terms: Vec<GatewayPricingFormulaTerm>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GatewayPricingFormulaTerm {
+    pub term_code: String,
+    pub dimension_code: String,
+    pub coefficient: String,
+}
+
+impl GatewayOfficialRateReference {
+    pub fn validate(&self) -> DomainResult<()> {
+        for (field, value, max_characters) in [
+            ("price_book_code", self.price_book_code.as_str(), 160),
+            ("rate_hash", self.rate_hash.as_str(), 128),
+            ("product_code", self.product_code.as_str(), 160),
+            ("operation_code", self.operation_code.as_str(), 160),
+            ("billability", self.billability.as_str(), 32),
+            ("charge_timing", self.charge_timing.as_str(), 32),
+            ("calculation_mode", self.calculation_mode.as_str(), 32),
+            (
+                "quantity_aggregation",
+                self.quantity_aggregation.as_str(),
+                32,
+            ),
+        ] {
+            required_text(field, value, max_characters)?;
+        }
+        if !matches!(
+            self.billability.as_str(),
+            "chargeable" | "free" | "not_applicable" | "unknown"
+        ) {
+            return Err(DomainError::new(
+                "gateway usage official rate billability is unsupported",
+            ));
+        }
+        if !matches!(
+            self.calculation_mode.as_str(),
+            "per_unit" | "flat" | "graduated" | "volume" | "formula"
+        ) {
+            return Err(DomainError::new(
+                "gateway usage official rate calculation mode is unsupported",
+            ));
+        }
+        let unit_size = positive_decimal_value("official_rate.unit_size", &self.unit_size)?;
+        if self.calculation_mode == "flat" && unit_size != DecimalValue::ONE {
+            return Err(DomainError::new(
+                "flat gateway usage official rate unit_size must equal one",
+            ));
+        }
+        non_negative_decimal("official_rate.unit_price", &self.unit_price)?;
+        non_negative_decimal("official_rate.plan_unit_price", &self.plan_unit_price)?;
+        non_negative_decimal(
+            "official_rate.rated_reference_unit_price",
+            &self.rated_reference_unit_price,
+        )?;
+        non_negative_decimal("official_rate.rated_unit_price", &self.rated_unit_price)?;
+        validate_optional_non_negative_decimal(
+            "official_rate.rated_procurement_unit_price",
+            self.rated_procurement_unit_price.as_deref(),
+        )?;
+        non_negative_decimal("official_rate.minimum_quantity", &self.minimum_quantity)?;
+        validate_optional_non_negative_decimal(
+            "official_rate.quantity_step",
+            self.quantity_step.as_deref(),
+        )?;
+        if self
+            .quantity_step
+            .as_deref()
+            .is_some_and(|value| DecimalValue::parse(value).is_ok_and(|value| value.is_zero()))
+        {
+            return Err(DomainError::new(
+                "official_rate.quantity_step must be positive",
+            ));
+        }
+        for condition in &self.conditions {
+            required_text(
+                "official_rate.condition.dimension_code",
+                &condition.dimension_code,
+                96,
+            )?;
+            required_text(
+                "official_rate.condition.operator_code",
+                &condition.operator_code,
+                16,
+            )?;
+        }
+        for tier in &self.tiers {
+            required_text("official_rate.tier.tier_code", &tier.tier_code, 96)?;
+            non_negative_decimal("official_rate.tier.lower_bound", &tier.lower_bound)?;
+            validate_optional_non_negative_decimal(
+                "official_rate.tier.upper_bound",
+                tier.upper_bound.as_deref(),
+            )?;
+            positive_decimal_value("official_rate.tier.unit_size", &tier.unit_size)?;
+            non_negative_decimal("official_rate.tier.unit_price", &tier.unit_price)?;
+            non_negative_decimal("official_rate.tier.flat_amount", &tier.flat_amount)?;
+            required_text("official_rate.tier.currency_code", &tier.currency_code, 10)?;
+        }
+        if let Some(formula) = self.formula.as_ref() {
+            required_text(
+                "official_rate.formula.formula_code",
+                &formula.formula_code,
+                96,
+            )?;
+            required_text(
+                "official_rate.formula.formula_version",
+                &formula.formula_version,
+                64,
+            )?;
+            non_negative_decimal(
+                "official_rate.formula.constant_units",
+                &formula.constant_units,
+            )?;
+            non_negative_decimal(
+                "official_rate.formula.quantity_coefficient",
+                &formula.quantity_coefficient,
+            )?;
+            validate_optional_non_negative_decimal(
+                "official_rate.formula.minimum_units",
+                formula.minimum_units.as_deref(),
+            )?;
+            validate_optional_non_negative_decimal(
+                "official_rate.formula.maximum_units",
+                formula.maximum_units.as_deref(),
+            )?;
+            for term in &formula.terms {
+                required_text("official_rate.formula.term_code", &term.term_code, 96)?;
+                required_text(
+                    "official_rate.formula.dimension_code",
+                    &term.dimension_code,
+                    96,
+                )?;
+                non_negative_decimal("official_rate.formula.coefficient", &term.coefficient)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -497,13 +695,11 @@ impl GatewayUsageRecordCommand {
         non_negative_i32("usage_type", self.usage_type)?;
         validate_text_width("catalog_key", &self.catalog_key, 256)?;
         required_text("billing_meter_code", &self.billing_meter_code, 64)?;
-        required_text("currency", &self.currency, 10)?;
+        required_text("decision_status", &self.decision_status, 32)?;
+        required_text("billability", &self.billability, 32)?;
+        required_text("reason_code", &self.reason_code, 96)?;
         validate_text_width("pricing_plan_code", &self.pricing_plan_code, 64)?;
-        if self.currency.len() < 3 {
-            return Err(DomainError::new(
-                "currency must contain at least three characters".to_owned(),
-            ));
-        }
+        validate_optional_text_width("strategy_code", self.strategy_code.as_deref(), 32)?;
 
         for (field, value) in [
             ("request_count", self.request_count),
@@ -517,6 +713,7 @@ impl GatewayUsageRecordCommand {
 
         for (field, value) in [
             ("billable_quantity", self.billable_quantity.as_str()),
+            ("rated_quantity", self.rated_quantity.as_str()),
             ("base_input_unit_price", self.base_input_unit_price.as_str()),
             (
                 "base_output_unit_price",
@@ -537,18 +734,66 @@ impl GatewayUsageRecordCommand {
         ] {
             non_negative_decimal(field, value)?;
         }
+        positive_decimal_value("unit_size", &self.unit_size)?;
         validate_optional_non_negative_decimal("audio_seconds", self.audio_seconds.as_deref())?;
         validate_optional_non_negative_decimal("video_seconds", self.video_seconds.as_deref())?;
+        validate_json_array(
+            "billing_components",
+            &self.billing_components,
+            MAX_PRICING_SNAPSHOT_BYTES,
+        )?;
         validate_json_object(
             "pricing_snapshot",
             &self.pricing_snapshot,
             MAX_PRICING_SNAPSHOT_BYTES,
         )?;
+        if let Some(official_rate) = self.official_rate.as_ref() {
+            official_rate.validate()?;
+        }
+        match (self.decision_status.as_str(), self.billability.as_str()) {
+            ("rated", "chargeable") => {
+                required_text("currency", &self.currency, 10)?;
+                required_text("pricing_plan_code", &self.pricing_plan_code, 64)?;
+                if self.currency.len() != 3 {
+                    return Err(DomainError::new(
+                        "rated gateway usage currency must be a three-letter code",
+                    ));
+                }
+                if self.strategy_code.is_none() {
+                    return Err(DomainError::new(
+                        "rated gateway usage requires a billing strategy",
+                    ));
+                }
+                if self
+                    .official_rate
+                    .as_ref()
+                    .is_none_or(|rate| rate.billability != "chargeable")
+                {
+                    return Err(DomainError::new(
+                        "rated gateway usage requires a chargeable official rate",
+                    ));
+                }
+            }
+            ("non_chargeable", "free" | "not_applicable") => {
+                if self.official_rate.is_none() {
+                    return Err(DomainError::new(
+                        "non-chargeable gateway usage requires the matched official rate",
+                    ));
+                }
+            }
+            ("unrated", "chargeable" | "unknown") => {}
+            _ => {
+                return Err(DomainError::new(
+                    "gateway usage decision status and billability are inconsistent",
+                ));
+            }
+        }
         Ok(())
     }
 
     pub fn apply_quantity(&mut self, quantity: GatewayUsageQuantity) {
         self.billable_quantity = quantity.billable_quantity;
+        self.rated_quantity = self.billable_quantity.clone();
         self.request_count = quantity.request_count;
         self.result_count = quantity.result_count;
         self.item_count = quantity.item_count;
@@ -730,6 +975,20 @@ fn validate_json_object(field: &str, value: &str, max_bytes: i32) -> DomainResul
     Ok(())
 }
 
+fn validate_json_array(field: &str, value: &str, max_bytes: i32) -> DomainResult<()> {
+    if value.len() > usize::try_from(max_bytes).unwrap_or(usize::MAX) {
+        return Err(DomainError::new(format!(
+            "{field} exceeds the maximum size of {max_bytes} bytes"
+        )));
+    }
+    let value: serde_json::Value = serde_json::from_str(value)
+        .map_err(|error| DomainError::new(format!("{field} must be valid JSON: {error}")))?;
+    if !value.is_array() {
+        return Err(DomainError::new(format!("{field} must be a JSON array")));
+    }
+    Ok(())
+}
+
 fn positive_i64(field: &str, value: i64) -> DomainResult<()> {
     if value <= 0 {
         return Err(DomainError::new(format!("{field} must be positive")));
@@ -774,6 +1033,44 @@ fn positive_decimal(field: &str, value: &str) -> DomainResult<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn official_rate(calculation_mode: &str, unit_size: &str) -> GatewayOfficialRateReference {
+        GatewayOfficialRateReference {
+            price_book_code: "test-official-book".to_owned(),
+            rate_hash: "test-rate-hash".to_owned(),
+            product_code: "model-inference".to_owned(),
+            operation_code: "responses.create".to_owned(),
+            billability: "chargeable".to_owned(),
+            charge_timing: "usage_reported".to_owned(),
+            calculation_mode: calculation_mode.to_owned(),
+            quantity_aggregation: "sum".to_owned(),
+            unit_size: unit_size.to_owned(),
+            unit_price: "0.01".to_owned(),
+            plan_unit_price: "0.01".to_owned(),
+            rated_reference_unit_price: "0.01".to_owned(),
+            rated_unit_price: "0.01".to_owned(),
+            rated_procurement_unit_price: Some("0.01".to_owned()),
+            minimum_quantity: "0".to_owned(),
+            quantity_step: None,
+            conditions: Vec::new(),
+            tiers: Vec::new(),
+            formula: None,
+        }
+    }
+
+    #[test]
+    fn official_rate_accepts_flat_mode_only_with_a_unit_base() {
+        official_rate("flat", "1")
+            .validate()
+            .expect("flat official rate with unit base must pass");
+
+        let error = official_rate("flat", "2")
+            .validate()
+            .expect_err("flat official rate with a non-unit base must fail");
+        assert!(error
+            .to_string()
+            .contains("flat gateway usage official rate unit_size must equal one"));
+    }
 
     #[test]
     fn pricing_snapshot_is_bounded_by_utf8_bytes_before_json_parsing() {

@@ -31,6 +31,7 @@ pub struct DashboardOverviewSnapshot {
     pub multimodal_sparkline: Vec<DashboardSparklinePoint>,
     pub performance_sparkline: Vec<DashboardSparklinePoint>,
     pub chart_data: Vec<DashboardChartPoint>,
+    pub modality_distribution: Vec<DashboardModalityDistribution>,
     pub top_models: Vec<DashboardTopModel>,
     pub announcements: Vec<DashboardAnnouncement>,
     pub configuration_domains: Vec<DashboardConfigurationDomain>,
@@ -74,6 +75,16 @@ pub struct DashboardChartPoint {
     pub audio_requests: f64,
     #[serde(rename = "music (Suno)")]
     pub music_requests: f64,
+    #[serde(rename = "llm (Text) cost")]
+    pub text_cost: f64,
+    #[serde(rename = "image (Midjourney/DALL-E) cost")]
+    pub image_cost: f64,
+    #[serde(rename = "video (Runway/Sora) cost")]
+    pub video_cost: f64,
+    #[serde(rename = "audio (Whisper) cost")]
+    pub audio_cost: f64,
+    #[serde(rename = "music (Suno) cost")]
+    pub music_cost: f64,
 }
 
 impl DashboardChartPoint {
@@ -85,9 +96,23 @@ impl DashboardChartPoint {
             + self.music_requests
     }
 
+    pub fn total_cost(&self) -> f64 {
+        self.text_cost + self.image_cost + self.video_cost + self.audio_cost + self.music_cost
+    }
+
     pub fn multimodal_requests(&self) -> f64 {
         self.image_requests + self.video_requests + self.audio_requests + self.music_requests
     }
+}
+
+/// Request counts per modality for the full queried window. Computed from all
+/// usage facts (not just the top-N model ranking) so the modality pie chart
+/// reflects the true traffic distribution.
+#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct DashboardModalityDistribution {
+    pub modality: String,
+    pub requests: i64,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq)]

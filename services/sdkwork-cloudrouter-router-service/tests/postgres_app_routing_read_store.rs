@@ -3,7 +3,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::PostgresAppRoutingReadStore;
 use sdkwork_cloudrouter_router_service::ports::{
-    AppRoutingListQuery, AppRoutingReadStore, AppRoutingSubject,
+    AppRoutingListQuery, AppRoutingReadStore, AppRoutingSubject, AppRoutingTraceQuery,
 };
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
@@ -78,11 +78,12 @@ async fn postgres_app_routing_projects_authorized_account_groups_api_keys_and_tr
     assert_eq!("fallback", api_key.account_groups[1].code);
 
     let traces = store
-        .load_routing_request_traces(subject, list_query(), None)
+        .load_routing_request_traces(subject, trace_query(), None)
         .await
         .expect("load routing request traces from PostgreSQL");
-    assert_eq!(1, traces.total);
     assert_eq!(1, traces.items.len());
+    assert!(!traces.has_more);
+    assert!(traces.next_cursor.is_none());
     let trace = &traces.items[0];
     assert_eq!("101", trace.upstream_account_id);
     assert_eq!("openai-primary", trace.upstream_account_code);
@@ -126,6 +127,14 @@ fn list_query() -> AppRoutingListQuery {
         page_no: 1,
         page_size: 20,
         offset: 0,
+        q: None,
+    }
+}
+
+fn trace_query() -> AppRoutingTraceQuery {
+    AppRoutingTraceQuery {
+        cursor: None,
+        page_size: 20,
         q: None,
     }
 }

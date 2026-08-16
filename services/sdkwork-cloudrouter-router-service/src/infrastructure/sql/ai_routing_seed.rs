@@ -11,6 +11,8 @@ use sdkwork_iam_bootstrap::{
     DEFAULT_IAM_TENANT_SQL_ID as DEFAULT_IAM_TENANT_ID,
 };
 
+use crate::infrastructure::sql::account_rate_card::sync_legacy_account_group_rate_cards;
+
 const MANIFEST_JSON: &str = include_str!("../../../../../data/ai-routing/install-manifest.json");
 const CORE_RESOURCES_JSON: &str =
     include_str!("../../../../../data/ai-routing/resources/core-resources.json");
@@ -352,6 +354,12 @@ pub(crate) async fn import_postgres_ai_routing_seed(pool: &PgPool) -> Result<(),
     disable_removed_postgres_resource_groups(&mut tx, &catalog).await?;
     import_postgres_resource_group_items(&mut tx, &catalog).await?;
     import_postgres_default_admin_upstream_topology(&mut tx, &catalog).await?;
+    let rate_card_effective_at = sqlx::query_scalar::<_, String>("SELECT CURRENT_TIMESTAMP::text")
+        .fetch_one(&mut *tx)
+        .await?;
+    sync_legacy_account_group_rate_cards(&mut tx, &rate_card_effective_at)
+        .await
+        .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
     tx.commit().await?;
     Ok(())
 }
@@ -406,12 +414,6 @@ async fn postgres_default_admin_upstream_topology_complete(
                  AND auth_method.auth_method_code = $5
                  AND auth_method.status = 1
                  AND auth_method.deleted_at IS NULL
-                JOIN ai_upstream_account account
-                  ON account.tenant_id = supplier.tenant_id
-                 AND account.organization_id = supplier.organization_id
-                 AND account.supplier_id = supplier.id
-                 AND account.account_code = $6
-                 AND account.deleted_at IS NULL
                 JOIN ai_upstream_supplier_resource supplier_resource
                   ON supplier_resource.tenant_id = supplier.tenant_id
                  AND supplier_resource.organization_id = supplier.organization_id
@@ -425,6 +427,18 @@ async fn postgres_default_admin_upstream_topology_complete(
                   AND supplier.supplier_code = $3
                   AND supplier.status = 1
                   AND supplier.deleted_at IS NULL
+            )
+            -- The default account may have been re-bound to a different
+            -- supplier/auth method by an admin (the seed never rewrites the
+            -- binding of an existing account), so completeness only requires
+            -- an account with the seed account code to exist.
+            AND EXISTS (
+                SELECT 1
+                FROM ai_upstream_account account
+                WHERE account.tenant_id = $1::bigint
+                  AND account.organization_id = $2::bigint
+                  AND account.account_code = $6
+                  AND account.deleted_at IS NULL
             )
             "#,
         )
@@ -1027,14 +1041,14 @@ async fn import_postgres_default_admin_upstream_topology(
                 1.000000000000
             )
             ON CONFLICT (tenant_id, organization_id, account_code) DO UPDATE SET
-                supplier_id = EXCLUDED.supplier_id,
-                supplier_code = EXCLUDED.supplier_code,
-                preferred_endpoint_id = EXCLUDED.preferred_endpoint_id,
-                account_name = EXCLUDED.account_name,
-                account_type = EXCLUDED.account_type,
-                auth_method_code = EXCLUDED.auth_method_code,
-                environment = EXCLUDED.environment,
-                contract_cost_multiplier = EXCLUDED.contract_cost_multiplier,
+                -- An existing account may have been re-configured by an admin
+                -- (supplier, auth method, preferred endpoint, name, pricing)
+                -- and may carry credentials. Rewriting those columns here would
+                -- clobber admin configuration and can violate the credential
+                -- foreign key fk_ai_upstream_account_credential_account (it
+                -- references tenant_id, organization_id, id, auth_method_code),
+                -- so only the seed metadata is refreshed and a soft-deleted
+                -- row is revived.
                 metadata = EXCLUDED.metadata,
                 deleted_at = NULL,
                 deleted_by = NULL

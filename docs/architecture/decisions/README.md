@@ -8,4 +8,5 @@ See `ARCHITECTURE_DECISION_SPEC.md`.
 
 ## Active Decisions
 
+- [ADR-20260815-composable-pricing-and-billing.md](ADR-20260815-composable-pricing-and-billing.md) - reusable pricing authority, Cloud Router rating/charging ownership, and billability boundary.
 - [ADR-20260728-standardize-upstream-supplier-routing.md](ADR-20260728-standardize-upstream-supplier-routing.md) - canonical upstream supplier, account, account-group, credential, routing, and migration model.

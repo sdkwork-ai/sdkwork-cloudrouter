@@ -12,6 +12,13 @@
 ---
 
 ### Task 1: Contract Guards
+> **Superseded (2026-08-16):** this historical execution plan was completed and
+> its pricing concepts were superseded by
+> [ADR-20260815-composable-pricing-and-billing](../../architecture/decisions/ADR-20260815-composable-pricing-and-billing.md).
+> The `ai_pricing_*` tables it introduced were physically removed before launch.
+> Retained as a historical record only.
+
+
 
 **Files:**
 - Create: `tests/test_model_catalog_standard_contract.py`

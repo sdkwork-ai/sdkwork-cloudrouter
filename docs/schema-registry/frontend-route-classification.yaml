@@ -235,6 +235,94 @@ routes:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts
   - docs/schema-registry/frontend-field-contracts.yaml
+- route: /admin/pricing
+  package: '@sdkwork/cloudrouter-pc-admin-pricing'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/pricing/plans
+  - /admin/pricing/plans/{planId}
+  - /admin/pricing/rateCards
+  - /admin/pricing/rateCards/{rateCardId}
+  - /admin/pricing/rules
+  - /admin/pricing/rules/{ruleId}
+  evidence: &pricing-evidence
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
+  - docs/schema-registry/frontend-field-contracts.yaml
+- package: '@sdkwork/cloudrouter-pc-admin-pricing'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  api_surface: backend
+  route: /admin/pricing/plans
+  evidence: *pricing-evidence
+- package: '@sdkwork/cloudrouter-pc-admin-pricing'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  api_surface: backend
+  route: /admin/pricing/rateCards
+  evidence: *pricing-evidence
+- package: '@sdkwork/cloudrouter-pc-admin-pricing'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  api_surface: backend
+  route: /admin/pricing/rules
+  evidence: *pricing-evidence
+- route: /partner-join
+  package: '@sdkwork/cloudrouter-pc-partner-join'
+  owner: admin-control-plane
+  route_scope: public
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-partner-app-sdk
+  api_surface: app
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+- route: /partner-join/apply
+  package: '@sdkwork/cloudrouter-pc-partner-join'
+  owner: admin-control-plane
+  route_scope: public
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-partner-app-sdk
+  api_surface: app
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+- route: /partner-join/status
+  package: '@sdkwork/cloudrouter-pc-partner-join'
+  owner: admin-control-plane
+  route_scope: public
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-partner-app-sdk
+  api_surface: app
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+- route: /admin/community/:sectionId?
+  package: '@sdkwork/cloudrouter-pc-admin-community'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-community-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/community/:sectionId?
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
 - route: /admin/upstream
   package: '@sdkwork/cloudrouter-pc-admin-upstream'
   owner: admin-control-plane
@@ -586,6 +674,20 @@ routes:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
   - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/pages/Playground.tsx
   - docs/schema-registry/frontend-field-contracts.yaml
+- route: /pricing
+  delivery_kind: sdk_backed_business_runtime
+  api_surface: app
+  package: '@sdkwork/cloudrouter-pc-pricing'
+  owner: product-surface
+  route_scope: public
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-app-sdk
+  operation_routes:
+  - /pricing
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
+  - apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-pricing/src/services/pricingService.ts
+  - docs/schema-registry/frontend-field-contracts.yaml
 - route: /product-docs
   package: '@sdkwork/documents-pc-api-reference'
   owner: developer-tools
@@ -666,6 +768,10 @@ routes:
   api_surface: backend
   operation_routes:
   - /admin/marketing/:sectionId?/:batchId?
+  - /admin/marketing/rechargeRecords
+  - /admin/marketing/rechargeRecords/{orderNo}
+  - /admin/marketing/referralStrategies
+  - /admin/marketing/referrals
   evidence:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
 - route: /admin/partner/:sectionId?
@@ -674,7 +780,7 @@ routes:
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-commerce-backend-sdk
+  dependency_sdk_family: sdkwork-partner-backend-sdk
   api_surface: backend
   operation_routes:
   - /admin/partner/:sectionId?
@@ -686,10 +792,14 @@ routes:
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
   dependency_owned: true
-  dependency_sdk_family: sdkwork-commerce-backend-sdk
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
   api_surface: backend
   operation_routes:
   - /admin/recharges/:sectionId?
+  - /admin/recharges/exchangeRules
+  - /admin/recharges/packages
+  - /admin/recharges/packages/{packageId}
+  - /admin/recharges/settings
   evidence:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
 - route: /admin/request-log
@@ -697,7 +807,8 @@ routes:
   owner: admin-control-plane
   route_scope: admin
   delivery_kind: sdk_backed_business_runtime
-  dependency_owned: false
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-log-backend-sdk
   api_surface: backend
   operation_routes:
   - /admin/request-log

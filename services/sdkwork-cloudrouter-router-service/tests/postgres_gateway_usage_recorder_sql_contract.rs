@@ -1,5 +1,11 @@
 const POSTGRES_GATEWAY_USAGE_RECORDER: &str =
     include_str!("../src/infrastructure/sql/postgres/gateway_usage_recorder.rs");
+const PRICING_BASELINE: &str = include_str!(
+    "../../../database/modules/pricing/ddl/baseline/postgres/0001_pricing_baseline.sql"
+);
+const CLOUDROUTER_BILLING_BASELINE: &str = include_str!(
+    "../../../database/modules/cloudrouter-billing/ddl/baseline/postgres/0001_cloudrouter_billing_baseline.sql"
+);
 
 fn compact_sql(value: &str) -> String {
     value.split_whitespace().collect::<Vec<_>>().join(" ")
@@ -53,6 +59,12 @@ fn gateway_usage_recorder_upserts_trace_and_usage_fact_by_business_unique_keys()
         "ON CONFLICT (tenant_id, organization_id, request_id, attempt_no) DO UPDATE SET",
         "INSERT INTO ai_metering_usage",
         "ON CONFLICT (tenant_id, organization_id, request_id, usage_type) DO UPDATE SET",
+        "INSERT INTO cloudrouter_usage_measurement",
+        "ON CONFLICT (tenant_id, organization_id, invocation_id, measurement_key)",
+        "INSERT INTO cloudrouter_rating_decision",
+        "ON CONFLICT (tenant_id, organization_id, measurement_id)",
+        "INSERT INTO cloudrouter_charge_line",
+        "ON CONFLICT (tenant_id, organization_id, rating_decision_id)",
         "to_timestamp($29::double precision / 1000.0)",
         "to_timestamp($30::double precision / 1000.0)",
         "to_timestamp($46::double precision / 1000.0)",
@@ -94,7 +106,7 @@ fn gateway_usage_upsert_placeholder_order_matches_all_postgres_bindings() {
     let postgres_bindings = function_block(
         POSTGRES_GATEWAY_USAGE_RECORDER,
         "async fn upsert_usage_fact(",
-        "fn trace_uuid(",
+        "async fn upsert_billing_ledger(",
     );
     assert_eq!(
         (1..=48).collect::<std::collections::BTreeSet<_>>(),
@@ -105,6 +117,169 @@ fn gateway_usage_upsert_placeholder_order_matches_all_postgres_bindings() {
         postgres_sql,
         "$43, $44, $45::jsonb, to_timestamp($46::double precision / 1000.0), $47, $48",
     );
+}
+
+#[test]
+fn billing_ledger_placeholder_order_matches_all_postgres_bindings() {
+    for (start, end, placeholder_count) in [
+        (
+            "const UPSERT_USAGE_MEASUREMENT: &str = r#\"",
+            "const UPSERT_RATING_DECISION",
+            25,
+        ),
+        (
+            "const UPSERT_RATING_DECISION: &str = r#\"",
+            "const UPSERT_CHARGE_LINE",
+            42,
+        ),
+        (
+            "const UPSERT_CHARGE_LINE: &str = r#\"",
+            "const RESOLVE_ACTIVE_OFFICIAL_RATE",
+            22,
+        ),
+        (
+            "const RESOLVE_ACTIVE_OFFICIAL_RATE: &str = r#\"",
+            "const RESOLVE_ACTIVE_PRICING_PLAN",
+            16,
+        ),
+        (
+            "const RESOLVE_ACTIVE_PRICING_PLAN: &str = r#\"",
+            "#[derive(Debug, sqlx::FromRow)]",
+            11,
+        ),
+    ] {
+        let sql = function_block(POSTGRES_GATEWAY_USAGE_RECORDER, start, end);
+        assert_eq!(
+            (1..=placeholder_count).collect::<std::collections::BTreeSet<_>>(),
+            numbered_placeholders(sql, '$')
+        );
+    }
+
+    let bindings = function_block(
+        POSTGRES_GATEWAY_USAGE_RECORDER,
+        "async fn upsert_billing_ledger(",
+        "fn ledger_product_code(",
+    );
+    assert_eq!(116, bindings.matches(".bind(").count());
+}
+
+#[test]
+fn billing_ledger_only_creates_charge_lines_for_positive_rated_amounts() {
+    let source = POSTGRES_GATEWAY_USAGE_RECORDER;
+    for expected in [
+        "let rated = command.decision_status == \"rated\" && command.billability == \"chargeable\"",
+        "let creates_charge_line = rated && charge_amount > DecimalValue::ZERO",
+        "validate_resolved_identities",
+        "let amount = rated.then_some(command.customer_charge_amount.as_str())",
+        "rating_decision.decision_status != \"rated\"",
+        "rating_decision.billability != \"chargeable\"",
+        "price-service",
+    ] {
+        assert_sql_contains(source, expected);
+    }
+    assert!(!source.contains("expected_amount"));
+    assert!(!source.contains("expected_rated_unit_price"));
+}
+
+#[test]
+fn database_guards_allow_only_explicitly_rated_chargeable_amounts() {
+    for expected in [
+        "ck_pricing_rate_calculation_mode",
+        "calculation_mode IN ('per_unit', 'flat', 'graduated', 'volume', 'formula')",
+        "ck_pricing_rate_flat_unit_size",
+        "calculation_mode <> 'flat' OR unit_size = 1",
+        "ck_pricing_rate_chargeable_price",
+        "billability <> 'chargeable' OR calculation_mode IN ('graduated', 'volume') OR unit_price > 0",
+    ] {
+        assert_sql_contains(PRICING_BASELINE, expected);
+    }
+    for expected in [
+        "ck_cloudrouter_rating_decision_status",
+        "decision_status IN ('rated', 'non_chargeable', 'unrated')",
+        "decision_status = 'rated' AND billability = 'chargeable'",
+        "price_book_id IS NOT NULL AND rate_id IS NOT NULL",
+        "pricing_plan_id IS NOT NULL AND pricing_rule_id IS NOT NULL",
+        "quantity > 0 AND reference_amount >= 0 AND cost_amount >= 0 AND amount > 0",
+    ] {
+        assert_sql_contains(CLOUDROUTER_BILLING_BASELINE, expected);
+    }
+}
+
+#[test]
+fn billing_ledger_resolves_active_bound_rates_and_pricing_rules() {
+    for expected in [
+        "FROM pricing_price_book book JOIN pricing_rate rate",
+        "JOIN pricing_rate_binding rate_binding",
+        "JOIN pricing_product_binding binding",
+        "book.lifecycle_state IN ('active', 'retired')",
+        "rate.rate_hash = $2",
+        "binding.catalog_key = $6",
+        "binding.vendor_code = $7",
+        "binding.provider_code = $8",
+        "(binding.account_id IS NULL OR binding.account_id = $9)",
+        "binding.region_code = $10",
+        "rate.effective_from <= to_timestamp($16::double precision / 1000.0)",
+        "FROM cloudrouter_account_rate_card rate_card JOIN cloudrouter_pricing_plan plan",
+        "rate_card.subject_type = 'account_group'",
+        "rate_card.subject_id = $11",
+        "candidate.pricing_plan_id = plan.id",
+        "plan.plan_code = $3",
+        "candidate.effective_from <= to_timestamp($4::double precision / 1000.0)",
+        ".map(|rate| rate.price_book_id)",
+        ".map(|rate| rate.rate_id)",
+        ".map(|plan| plan.pricing_plan_id)",
+        ".map(|plan| plan.pricing_rule_id)",
+    ] {
+        assert_sql_contains(POSTGRES_GATEWAY_USAGE_RECORDER, expected);
+    }
+}
+
+#[test]
+fn billing_ledger_preserves_cross_scope_price_and_plan_identities() {
+    for expected in [
+        "price_book_tenant_id",
+        "price_book_organization_id",
+        "pricing_plan_tenant_id",
+        "pricing_plan_organization_id",
+        "account_rate_card_tenant_id",
+        "account_rate_card_organization_id",
+        "account_rate_card_id",
+        "fk_cloudrouter_rating_decision_book",
+        "FOREIGN KEY (price_book_tenant_id, price_book_organization_id, price_book_id)",
+        "fk_cloudrouter_rating_decision_plan",
+        "fk_cloudrouter_rating_decision_rate_card",
+        "FOREIGN KEY (pricing_plan_tenant_id, pricing_plan_organization_id, pricing_plan_id)",
+    ] {
+        assert_sql_contains(CLOUDROUTER_BILLING_BASELINE, expected);
+    }
+}
+
+#[test]
+fn billing_ledger_rejects_idempotency_payload_drift() {
+    for expected in [
+        "usage measurement payload changed during replay",
+        "rating decision payload changed during replay",
+        "charge line payload changed during replay",
+        "cloudrouter_usage_measurement.quantity = excluded.quantity",
+        "cloudrouter_rating_decision.amount IS NOT DISTINCT FROM excluded.amount",
+        "cloudrouter_rating_decision.rate_id IS NOT DISTINCT FROM excluded.rate_id",
+        "cloudrouter_rating_decision.account_rate_card_id IS NOT DISTINCT FROM excluded.account_rate_card_id",
+        "cloudrouter_rating_decision.pricing_plan_id IS NOT DISTINCT FROM excluded.pricing_plan_id",
+        "cloudrouter_charge_line.amount = excluded.amount",
+    ] {
+        assert_sql_contains(POSTGRES_GATEWAY_USAGE_RECORDER, expected);
+    }
+}
+
+#[test]
+fn usage_measurement_records_vendor_and_provider_as_distinct_dimensions() {
+    for expected in [
+        "vendor_code, provider_code, region_code",
+        "catalog_vendor_code(&command.catalog_key)",
+        "bounded_code(&command.supplier_code, 64)",
+    ] {
+        assert_sql_contains(POSTGRES_GATEWAY_USAGE_RECORDER, expected);
+    }
 }
 
 #[test]
@@ -147,6 +322,8 @@ fn gateway_usage_recorder_writes_trace_and_usage_in_one_transaction() {
         "self.pool.begin()",
         "upsert_trace(&mut transaction, &trace_command, &context)",
         "upsert_usage_fact(&mut transaction, &command, &context)",
+        "upsert_billing_ledger(&mut transaction, &command, &context)",
+        "if chargeable {",
         "transaction.commit()",
         "settlement_status, idempotency_key",
         ".bind(usage_idempotency_key(command))",
@@ -156,6 +333,23 @@ fn gateway_usage_recorder_writes_trace_and_usage_in_one_transaction() {
             "Postgres gateway usage transaction must include `{expected}`"
         );
     }
+
+    let single_record = function_block(
+        POSTGRES_GATEWAY_USAGE_RECORDER,
+        "fn record_gateway_usage_with_context<'a>(",
+        "async fn upsert_trace(",
+    );
+    let rating_offset = single_record
+        .find("upsert_billing_ledger")
+        .expect("rating must be called");
+    let legacy_usage_offset = single_record
+        .find("upsert_usage_fact")
+        .expect("legacy usage must be called");
+    assert!(rating_offset < legacy_usage_offset);
+    assert_sql_contains(
+        single_record,
+        "let chargeable = upsert_billing_ledger(&mut transaction, &command, &context).await?; if chargeable { upsert_usage_fact",
+    );
 }
 
 #[test]
@@ -202,13 +396,18 @@ fn gateway_usage_recorder_scopes_rows_and_projects_meter_amounts() {
         "upstream_cost_amount, customer_charge_amount",
         "pricing_snapshot",
         "pricing_plan_code",
+        "unit_size",
+        "reference_amount, cost_amount, amount",
         ".bind(&command.requested_model_catalog_key)",
         ".bind(&command.provider_native_model)",
         ".bind(&command.region_code)",
         ".bind(&command.rate_multiplier)",
         ".bind(&command.reference_multiplier)",
         ".bind(&command.official_reference_amount)",
+        ".bind(&command.upstream_cost_amount)",
+        ".bind(&command.customer_charge_amount)",
         ".bind(&command.pricing_snapshot)",
+        ".bind(&command.unit_size)",
         ".bind(&command.billing_meter_code)",
         ".bind(&command.billable_quantity)",
         ".bind(command.request_count)",

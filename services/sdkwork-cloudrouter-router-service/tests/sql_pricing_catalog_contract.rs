@@ -92,7 +92,10 @@ fn upstream_account_route_query_projects_the_complete_callable_route() {
         "account_health.last_latency_ms",
         "e.id AS endpoint_id",
         "e.base_url",
+        "c.default_base_url AS account_default_base_url",
+        "c.protocols::text AS account_protocols_json",
         "s.default_base_url AS supplier_default_base_url",
+        "s.protocols::text AS supplier_protocols_json",
         "cc.id AS credential_id",
         "cc.secret_ciphertext",
         "cc.secret_key_id",
@@ -112,11 +115,20 @@ fn upstream_account_route_query_projects_the_complete_callable_route() {
     assert!(sql.contains("sr.tenant_id = gr.tenant_id"));
     assert!(sql.contains("sr.organization_id = gr.organization_id"));
     assert!(sql.contains("NULLIF(cc.secret_ciphertext, '') IS NOT NULL"));
-    // 无端点但有供应商默认 Base URL 的账号同样可路由（LEFT JOIN + 条件过滤）
+    // 无端点但有供应商或账号级默认/协议 Base URL 的账号同样可路由。
     assert!(sql.contains("LEFT JOIN ai_upstream_supplier_endpoint e"));
-    assert!(sql.contains(
-        "NULLIF(e.base_url, '') IS NOT NULL OR NULLIF(s.default_base_url, '') IS NOT NULL"
-    ));
+    for callable_base_url_source in [
+        "NULLIF(e.base_url, '') IS NOT NULL",
+        "NULLIF(s.default_base_url, '') IS NOT NULL",
+        "s.protocols <> '[]'::jsonb",
+        "NULLIF(c.default_base_url, '') IS NOT NULL",
+        "c.protocols <> '[]'::jsonb",
+    ] {
+        assert!(
+            sql.contains(callable_base_url_source),
+            "upstream account route query must accept {callable_base_url_source}"
+        );
+    }
     // 无端点兜底行必须视为健康，否则 is_account_healthy 会将其从候选过滤中剔除
     assert!(
         sql.contains("WHEN e.id IS NULL THEN 1"),
@@ -185,6 +197,10 @@ fn account_group_query_projects_routing_and_settlement_controls() {
     let sql = PricingCatalogSql::load_upstream_account_groups();
 
     for field in [
+        "rate_card.pricing_plan_tenant_id",
+        "rate_card.pricing_plan_organization_id",
+        "rate_card.pricing_plan_id",
+        "plan.plan_code AS pricing_plan_code",
         "routing_strategy",
         "fallback_mode",
         "priority",
@@ -196,6 +212,19 @@ fn account_group_query_projects_routing_and_settlement_controls() {
             "upstream account group query must project {field}"
         );
     }
+    assert!(sql.contains("JOIN LATERAL"));
+    assert!(sql.contains("FROM cloudrouter_account_rate_card rate_card"));
+    assert!(sql.contains("JOIN cloudrouter_pricing_plan plan"));
+    assert!(sql.contains("rate_card.subject_type = 'account_group'"));
+    assert!(sql.contains("rate_card.subject_id = account_group.id"));
+    assert!(
+        !sql.contains("account_group.pricing_plan_code"),
+        "runtime account-group pricing must not read the legacy plan-code projection"
+    );
+    assert!(
+        !sql.contains("account_group.pricing_plan_id"),
+        "runtime account-group pricing must not read the legacy plan-id projection"
+    );
     for retired in ["rate_multiplier", "official_price_multiplier"] {
         assert!(
             !sql.contains(retired),
@@ -253,6 +282,9 @@ fn account_group_rows_use_decimal_cost_and_sale_multipliers() {
         name: "Primary Accounts".to_owned(),
         code: "primary-accounts".to_owned(),
         is_default: false,
+        pricing_plan_tenant_id: 10,
+        pricing_plan_organization_id: 20,
+        pricing_plan_id: 9001,
         pricing_plan_code: "standard".to_owned(),
         routing_strategy: "least_cost".to_owned(),
         fallback_mode: "same_supplier".to_owned(),
@@ -289,6 +321,9 @@ fn account_group_rows_use_decimal_cost_and_sale_multipliers() {
         name: "Invalid".to_owned(),
         code: "invalid".to_owned(),
         is_default: false,
+        pricing_plan_tenant_id: 10,
+        pricing_plan_organization_id: 20,
+        pricing_plan_id: 9001,
         pricing_plan_code: "standard".to_owned(),
         routing_strategy: "weighted".to_owned(),
         fallback_mode: "sequential".to_owned(),
@@ -455,7 +490,10 @@ fn upstream_account_route_row(account_id: i64) -> UpstreamAccountRouteRow {
         endpoint_weight: 100,
         endpoint_health_status: 1,
         base_url: Some("https://api.openai.com/v1".to_owned()),
+        account_default_base_url: None,
+        account_protocols_json: "[]".to_owned(),
         supplier_default_base_url: None,
+        supplier_protocols_json: "[]".to_owned(),
         secret_ref: Some("managed://upstream-account-credential/7001".to_owned()),
         secret_ciphertext: Some("encrypted-value".to_owned()),
         secret_key_id: Some("test-active".to_owned()),

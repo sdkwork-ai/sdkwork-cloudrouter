@@ -87,8 +87,14 @@ pub struct PostgresUsageSettlementStore {
 }
 
 impl PostgresUsageSettlementStore {
-    pub fn new(pool: PgPool, account_store: Arc<dyn AccountLedgerAppendPort + Send + Sync>) -> Self {
-        Self { pool, account_store }
+    pub fn new(
+        pool: PgPool,
+        account_store: Arc<dyn AccountLedgerAppendPort + Send + Sync>,
+    ) -> Self {
+        Self {
+            pool,
+            account_store,
+        }
     }
 }
 
@@ -109,6 +115,8 @@ struct UsageFactForSettlement {
     tenant_id: i64,
     organization_id: i64,
     user_id: i64,
+    request_id: String,
+    billing_meter_code: String,
     amount: String,
     currency: String,
     pricing_snapshot_bytes: i64,
@@ -208,6 +216,8 @@ async fn load_settleable_usage_facts(
             CAST(tenant_id AS TEXT) AS tenant_id,
             CAST(organization_id AS TEXT) AS organization_id,
             CAST(COALESCE(user_id, owner_id, 0) AS TEXT) AS user_id,
+            request_id,
+            billing_meter_code,
             CAST(COALESCE(NULLIF(CAST(customer_charge_amount AS TEXT), ''), '0') AS TEXT) AS amount,
             COALESCE(NULLIF(currency, ''), 'USD') AS currency,
             CAST(octet_length(CAST(COALESCE(pricing_snapshot, '{}'::jsonb) AS TEXT)) AS TEXT) AS pricing_snapshot_bytes
@@ -242,6 +252,8 @@ async fn load_settleable_usage_facts(
             tenant_id: integer_cell(row, "tenant_id"),
             organization_id: integer_cell(row, "organization_id"),
             user_id: integer_cell(row, "user_id"),
+            request_id: string_cell(row, "request_id"),
+            billing_meter_code: string_cell(row, "billing_meter_code"),
             amount: string_cell(row, "amount"),
             currency: string_cell(row, "currency"),
             pricing_snapshot_bytes: integer_cell(row, "pricing_snapshot_bytes"),
@@ -263,6 +275,7 @@ async fn collect_settlement_groups(
         if usage_fact.pricing_snapshot_bytes > i64::from(MAX_PRICING_SNAPSHOT_BYTES) {
             mark_invalid_usage_fact_failed(
                 tx,
+                command,
                 &usage_fact,
                 "INVALID_PRICING_SNAPSHOT",
                 "usage pricing snapshot exceeds the settlement byte budget",
@@ -276,6 +289,7 @@ async fn collect_settlement_groups(
             Err(error) => {
                 mark_invalid_usage_fact_failed(
                     tx,
+                    command,
                     &usage_fact,
                     "INVALID_USAGE_AMOUNT",
                     &error.to_string(),
@@ -310,12 +324,14 @@ async fn collect_settlement_groups(
 
 async fn mark_invalid_usage_fact_failed(
     tx: &mut Transaction<'_, Postgres>,
+    command: &UsageSettlementCommand,
     usage_fact: &UsageFactForSettlement,
     failure_code: &str,
     failure_message: &str,
 ) -> SettlementResult<()> {
     mark_settlement_terminal_failed(
         tx,
+        command,
         usage_fact,
         usage_fact.id,
         failure_code,
@@ -443,10 +459,11 @@ async fn debit_user_token_bank(
         asset_type: CommerceAccountAssetType::TokenBank,
         currency_code: Some(TOKEN_BANK_CURRENCY_CODE.to_owned()),
         direction: CommerceLedgerDirection::Debit,
-        amount: CommerceMoney::new(&tokens.to_string())
-            .map_err(|error| CommerceServiceError::validation(format!(
+        amount: CommerceMoney::new(&tokens.to_string()).map_err(|error| {
+            CommerceServiceError::validation(format!(
                 "invalid usage settlement token amount: {error}"
-            )))?,
+            ))
+        })?,
         business_type: USAGE_SETTLEMENT_BUSINESS_TYPE.to_owned(),
         transaction_no: transaction_id.to_owned(),
         request_no: transaction_id.to_owned(),
@@ -511,6 +528,59 @@ async fn mark_settlement_success(
     .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to mark usage fact settled", error))?;
+    sync_charge_line_settlement(
+        tx,
+        usage_fact,
+        "settled",
+        Some(settlement_id),
+        Some(&command.requested_at),
+    )
+    .await
+}
+
+/// Mirrors a settled or terminally failed usage fact onto its shadow-write
+/// charge line in the same transaction, so the new billing ledger and the
+/// legacy settlement input can never disagree. Charge lines are linked to the
+/// usage fact through the measurement/decision chain that the gateway usage
+/// recorder persists in one transaction: `measurement.invocation_id` is the
+/// gateway request id and `charge.meter_code` is the billing meter code, which
+/// together identify the exact `(request_id, usage_type)` fact row. Retryable
+/// failures keep the charge line `rated` so a topped-up wallet settles it on a
+/// later run.
+async fn sync_charge_line_settlement(
+    tx: &mut Transaction<'_, Postgres>,
+    usage_fact: &UsageFactForSettlement,
+    charge_status: &str,
+    settlement_id: Option<i64>,
+    settled_at: Option<&str>,
+) -> SettlementResult<()> {
+    sqlx::query(
+        r#"
+        UPDATE cloudrouter_charge_line charge
+        SET charge_status = $4,
+            settlement_id = $5,
+            settled_at = $6::timestamp AT TIME ZONE 'UTC'
+        FROM cloudrouter_rating_decision decision
+        JOIN cloudrouter_usage_measurement measurement
+          ON measurement.id = decision.measurement_id
+        WHERE charge.rating_decision_id = decision.id
+          AND charge.tenant_id = $1
+          AND charge.organization_id = $2
+          AND measurement.invocation_id = $3
+          AND charge.meter_code = $7
+          AND charge.charge_status = 'rated'
+        "#,
+    )
+    .bind(usage_fact.tenant_id)
+    .bind(usage_fact.organization_id)
+    .bind(&usage_fact.request_id)
+    .bind(charge_status)
+    .bind(settlement_id)
+    .bind(settled_at)
+    .bind(&usage_fact.billing_meter_code)
+    .execute(&mut **tx)
+    .await
+    .map_err(|error| store_error("failed to sync charge line settlement", error))?;
     Ok(())
 }
 
@@ -553,6 +623,7 @@ async fn mark_settlement_failed(
 /// permanently instead of churning the batch on every run.
 async fn mark_settlement_terminal_failed(
     tx: &mut Transaction<'_, Postgres>,
+    command: &UsageSettlementCommand,
     usage_fact: &UsageFactForSettlement,
     settlement_id: i64,
     failure_code: &str,
@@ -576,8 +647,20 @@ async fn mark_settlement_terminal_failed(
     .bind(usage_fact.id)
     .execute(&mut **tx)
     .await
-    .map_err(|error| store_error("failed to mark usage fact settlement terminally failed", error))?;
-    Ok(())
+    .map_err(|error| {
+        store_error(
+            "failed to mark usage fact settlement terminally failed",
+            error,
+        )
+    })?;
+    sync_charge_line_settlement(
+        tx,
+        usage_fact,
+        "failed",
+        Some(settlement_id),
+        Some(&command.requested_at),
+    )
+    .await
 }
 
 fn settlement_no(usage_fact_id: i64) -> String {

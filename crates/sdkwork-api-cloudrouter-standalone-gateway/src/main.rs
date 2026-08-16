@@ -1,7 +1,28 @@
+use std::sync::Arc;
+
 use axum::routing::get;
-use sdkwork_api_cloudrouter_assembly as api_assembly;
 use sdkwork_api_cloudrouter_standalone_gateway::portal::{mount_portal_static, PortalStaticConfig};
-use sdkwork_web_bootstrap::{service_router, ServiceRouterConfig};
+use sdkwork_cloudrouter_config::RedisConfig;
+use sdkwork_iam_web_adapter::{
+    build_web_framework_builder_with_open_api_prefixes,
+    iam_web_request_context_resolver_from_env_for_audiences, resolve_iam_postgres_pool_from_env,
+    IamAuditEmitter, IamSecurityEventEmitter,
+};
+use sdkwork_web_bootstrap::{
+    infra_public_path_prefixes, ComposedApiAssembly, CompositeReadinessCheck,
+};
+use sdkwork_web_core::{WebEnvironment, WebRequestContextProfile};
+
+const APPLICATION_ID: &str = "sdkwork-cloudrouter";
+const OPEN_API_PREFIXES: &[&str] = &[
+    "/v1",
+    "/anthropic/v1",
+    "/google/v1beta",
+    "/kling/v1",
+    "/midjourney/v1",
+    "/nano-banana/v1",
+    "/suno/v1",
+];
 
 fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // Windows main-thread stacks default to 1 MiB. The all-in-one assembly
@@ -37,15 +58,17 @@ async fn gateway_main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
                 .and_then(|config| config.server.bind.clone())
         })
         .unwrap_or_else(|| "127.0.0.1:3905".to_owned());
-    let assembly =
-        api_assembly::assemble_api_router(api_assembly::ApiAssemblyContext::default()).await?;
+    let assembly = sdkwork_api_cloudrouter_assembly::assemble_api_router(
+        sdkwork_api_cloudrouter_assembly::ApiAssemblyContext::default(),
+    )
+    .await?;
     let mut portal = PortalStaticConfig::from_env_and_runtime(runtime_toml.as_ref())
         .map_err(std::io::Error::other)?;
     // Commercial license posture (docs/commercial/PRICING.md): community by
     // default, pro/enterprise/oem when a signed license key is configured.
     // The edition is reported in logs and injected into the portal runtime
     // environment so the UI can surface it.
-    use sdkwork_cloudrouter_license::{LicenseStatus, Edition};
+    use sdkwork_cloudrouter_license::{Edition, LicenseStatus};
     let license = sdkwork_cloudrouter_license::resolve_license();
     match &license {
         LicenseStatus::Licensed { info } => tracing::info!(
@@ -71,17 +94,84 @@ async fn gateway_main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
     // anonymously readable script would publish a live credential to every
     // visitor. Development workstations may opt in to a payload-only token
     // through SDKWORK_CLOUDROUTER_PORTAL_DEV_BOOTSTRAP_TOKEN on the edge server.
-    let mut readiness_checks = vec![assembly.readiness_check.clone()];
+    let resolver =
+        iam_web_request_context_resolver_from_env_for_audiences(&[APPLICATION_ID, "cloudrouter"])
+            .await?;
+    let environment = sdkwork_cloudrouter_http::resolve_cloud_web_environment_from_process_env();
+    let open_api_prefixes = OPEN_API_PREFIXES
+        .iter()
+        .map(|prefix| (*prefix).to_owned())
+        .collect::<Vec<_>>();
+    // The IAM adapter helper already excludes open-api prefixes from the
+    // gateway surface (gateway_api_prefixes_excluding). Rebuilding the profile
+    // below must preserve that exclusion: `/v1` is an open-api prefix here,
+    // and reclassifying it as gateway-api would reject the open-api route
+    // manifest auth profiles at startup.
+    let gateway_api_prefixes = WebRequestContextProfile::default()
+        .gateway_api_prefixes
+        .into_iter()
+        .filter(|prefix| !open_api_prefixes.iter().any(|open| open == prefix))
+        .collect::<Vec<_>>();
+    let mut framework = build_web_framework_builder_with_open_api_prefixes(
+        resolver,
+        assembly.route_manifest.clone(),
+        infra_public_path_prefixes(),
+        open_api_prefixes.clone(),
+    )
+    .profile(WebRequestContextProfile {
+        open_api_prefixes,
+        public_path_prefixes: infra_public_path_prefixes(),
+        gateway_api_prefixes,
+        environment: environment.clone(),
+        ..WebRequestContextProfile::default()
+    })
+    .security_policy(sdkwork_cloudrouter_http::cloud_service_security_policy(
+        &environment,
+    ))
+    .metrics_registry(sdkwork_cloudrouter_http::shared_http_metrics_registry())
+    .skip_infra_metrics();
+    if matches!(environment, WebEnvironment::Prod) {
+        let redis = RedisConfig::from_env_or_runtime_toml(runtime_toml.as_ref())?
+            .ok_or("production CloudRouter gateway requires Redis")?;
+        let postgres_pool = resolve_iam_postgres_pool_from_env()
+            .await
+            .ok_or("production CloudRouter gateway requires PostgreSQL IAM audit storage")?;
+        let store_prefix = "sdkwork:cloudrouter:web";
+        framework = framework
+            .production_defaults()
+            .rate_limit_store(sdkwork_web_bootstrap::shared_rate_limit_store(
+                redis.url(),
+                format!("{store_prefix}:rate-limit"),
+            )?)
+            .idempotency_store(sdkwork_web_bootstrap::shared_idempotency_store(
+                redis.url(),
+                format!("{store_prefix}:idempotency"),
+            )?)
+            .concurrent_admission_store(sdkwork_web_bootstrap::shared_concurrent_admission_store(
+                redis.url(),
+                format!("{store_prefix}:concurrent-admission"),
+            )?)
+            .audit_emitter(Arc::new(IamAuditEmitter::new(
+                postgres_pool.as_ref().clone(),
+                APPLICATION_ID,
+                "production",
+            )))
+            .security_event_emitter(Arc::new(IamSecurityEventEmitter::new(
+                postgres_pool.as_ref().clone(),
+                "production",
+            )));
+    }
+    let mut composed =
+        ComposedApiAssembly::try_compose("SDKWork Cloud Router API", vec![assembly])?;
+    let mut readiness_checks = vec![composed.readiness_check.clone()];
     if let Some(portal) = &portal {
         readiness_checks.push(portal.readiness_check());
     }
-    let api_router = service_router(
-        assembly.router,
-        ServiceRouterConfig::default()
-            .with_composite_readiness(readiness_checks)
-            .skip_metrics(),
-    )
-    .route("/metrics", get(sdkwork_cloudrouter_http::metrics));
+    composed.readiness_check = Arc::new(CompositeReadinessCheck::new(readiness_checks));
+    let api_router = composed
+        .into_hosted(framework)
+        .router
+        .route("/metrics", get(sdkwork_cloudrouter_http::metrics));
     let app = mount_portal_static(api_router, portal);
     let bind_address = bind_address.parse()?;
     println!("sdkwork-api-cloudrouter-standalone-gateway listening on http://{bind_address}");

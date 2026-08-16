@@ -40,7 +40,8 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
     PostgresAdminAuthSettingsStore, PostgresAdminCatalogStore, PostgresAdminChainPolicyStore,
     PostgresAdminFinanceStore, PostgresAdminFirewallRuleStore, PostgresAdminIpRateLimitStore,
     PostgresAdminMarketingStore, PostgresAdminMcpStore, PostgresAdminModelRateLimitStore,
-    PostgresAdminRecordStore, PostgresAdminReferralStore, PostgresAdminServiceNodeStore,
+    PostgresAdminPricingStore, PostgresAdminRecordStore, PostgresAdminReferralStore,
+    PostgresAdminServiceNodeStore,
     PostgresAdminStorageStore, PostgresAdminTransactionCenterStore,
     PostgresAdminUpstreamAccountVerifier, PostgresAdminUpstreamStore, PostgresCatalogLoadError,
     PostgresGatewayApiKeyCommandStore, PostgresPricingCatalogLoader,
@@ -51,7 +52,8 @@ use sdkwork_cloudrouter_router_service::ports::{
     AdminAnalyticsReadStore, AdminAnnouncementStore, AdminApiKeyRateLimitStore,
     AdminAuthSettingsStore, AdminCatalogStore, AdminChainPolicyStore, AdminDashboardReadStore,
     AdminFinanceStore, AdminFirewallRuleStore, AdminIpRateLimitStore, AdminMarketingStore,
-    AdminMcpStore, AdminModelRateLimitStore, AdminMonitorReadStore, AdminRecordStore,
+    AdminMcpStore, AdminModelRateLimitStore, AdminMonitorReadStore, AdminPricingStore,
+    AdminRecordStore,
     AdminReferralStore, AdminServiceNodeStore, AdminStorageStore, AdminTransactionCenterStore,
     AdminUpstreamAccountVerifier, AdminUpstreamStore, GatewayApiKeyCommandStore,
     ModelRankingRefreshStore, ModelRankingsReadModelStore, RuntimeRegionSettingsStore,
@@ -102,6 +104,7 @@ type AdminModelRateLimitRuntimeStore = Arc<dyn AdminModelRateLimitStore + Send +
 type AdminModelRuntimeStore = Arc<dyn ModelCatalogAdminStore + Send + Sync>;
 type AdminFinanceRuntimeStore = Arc<dyn AdminFinanceStore + Send + Sync>;
 type AdminMarketingRuntimeStore = Arc<dyn AdminMarketingStore + Send + Sync>;
+type AdminPricingRuntimeStore = Arc<dyn AdminPricingStore + Send + Sync>;
 type AdminMcpRuntimeStore = Arc<dyn AdminMcpStore + Send + Sync>;
 type AdminReferralRuntimeStore = Arc<dyn AdminReferralStore + Send + Sync>;
 type AdminServiceNodeRuntimeStore = Arc<dyn AdminServiceNodeStore + Send + Sync>;
@@ -165,6 +168,7 @@ struct AdminRouterRuntime<'a> {
     model_store: Option<AdminModelRuntimeStore>,
     finance_store: Option<AdminFinanceRuntimeStore>,
     marketing_store: Option<AdminMarketingRuntimeStore>,
+    pricing_store: Option<AdminPricingRuntimeStore>,
     mcp_store: Option<AdminMcpRuntimeStore>,
     referral_store: Option<AdminReferralRuntimeStore>,
     service_node_store: Option<AdminServiceNodeRuntimeStore>,
@@ -310,6 +314,7 @@ where
         model_store,
         finance_store,
         marketing_store,
+        pricing_store,
         mcp_store,
         referral_store,
         service_node_store,
@@ -568,6 +573,15 @@ where
                 ),
             ));
         }
+        if let Some(store) = pricing_store {
+            router = router.merge(layer_with_admin_subject_boundary(
+                admin_subject_boundary_config.clone(),
+                sdkwork_cloudrouter_router_service::api::admin_pricing_router_with_store(
+                    store,
+                    Arc::new(OsApiKeySecretGenerator),
+                ),
+            ));
+        }
         if let Some(store) = referral_store {
             router = router.merge(layer_with_admin_subject_boundary(
                 admin_subject_boundary_config.clone(),
@@ -695,6 +709,10 @@ pub async fn router_with_postgres_product_catalog(
 pub struct PostgresSharedRuntime {
     pub config: DatabaseConfig,
     pub pool: PgPool,
+    /// When true, the request-log capture layer trusts `x-forwarded-for` /
+    /// `x-real-ip` for client-IP capture (only safe behind a controlled
+    /// reverse proxy). Mirrors `[server] trust_forwarded_headers`.
+    pub trust_forwarded_headers: bool,
     /// Canonical process pool handle (normalized identity + pool context).
     /// Embedded capability module lifecycles run against this shared handle
     /// (`DATABASE_SPEC_PROCESS_SHARED_POOL.md` §2/§4).
@@ -749,6 +767,7 @@ pub async fn router_with_postgres_shared_runtime(
         config,
         pool,
         database_pool,
+        trust_forwarded_headers,
         commerce_pool,
         catalog,
         api_key_security_config,
@@ -807,6 +826,8 @@ pub async fn router_with_postgres_shared_runtime(
         Arc::new(PostgresAdminFinanceStore::new(pool.clone()));
     let marketing_store: AdminMarketingRuntimeStore =
         Arc::new(PostgresAdminMarketingStore::new(pool.clone()));
+    let pricing_store: AdminPricingRuntimeStore =
+        Arc::new(PostgresAdminPricingStore::new(pool.clone()));
     let referral_store: AdminReferralRuntimeStore =
         Arc::new(PostgresAdminReferralStore::new(pool.clone()));
     let mcp_store: AdminMcpRuntimeStore = Arc::new(PostgresAdminMcpStore::new(pool.clone()));
@@ -849,6 +870,7 @@ pub async fn router_with_postgres_shared_runtime(
         "sdkwork-cloudrouter",
         Some(build_backend_log_retention_policy()),
         None,
+        runtime.trust_forwarded_headers,
     )
     .await
     .map_err(|error| {
@@ -904,6 +926,7 @@ pub async fn router_with_postgres_shared_runtime(
             model_store: Some(model_store),
             finance_store: Some(finance_store),
             marketing_store: Some(marketing_store),
+            pricing_store: Some(pricing_store),
             mcp_store: Some(mcp_store),
             referral_store: Some(referral_store),
             service_node_store: Some(service_node_store),
@@ -1106,6 +1129,8 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
         Arc::new(PostgresAdminFinanceStore::new(pool.clone()));
     let marketing_store: AdminMarketingRuntimeStore =
         Arc::new(PostgresAdminMarketingStore::new(pool.clone()));
+    let pricing_store: AdminPricingRuntimeStore =
+        Arc::new(PostgresAdminPricingStore::new(pool.clone()));
     let referral_store: AdminReferralRuntimeStore =
         Arc::new(PostgresAdminReferralStore::new(pool.clone()));
     let mcp_store: AdminMcpRuntimeStore = Arc::new(PostgresAdminMcpStore::new(pool.clone()));
@@ -1151,6 +1176,7 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
                     model_store: Some(model_store),
                     finance_store: Some(finance_store),
                     marketing_store: Some(marketing_store),
+                    pricing_store: Some(pricing_store),
                     mcp_store: Some(mcp_store),
                     referral_store: Some(referral_store),
                     service_node_store: Some(service_node_store),

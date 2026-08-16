@@ -1,3 +1,4 @@
+pub(crate) mod account_rate_card;
 pub(crate) mod admin_marketing_recharge;
 pub(crate) mod ai_routing_seed;
 pub mod catalog;
@@ -7,6 +8,7 @@ pub mod iam_scope_resolver;
 pub mod installer;
 pub(crate) mod model_catalog_import;
 pub(crate) mod model_modality;
+pub(crate) mod official_pricing_sync;
 pub mod pool;
 pub mod postgres;
 mod queries;

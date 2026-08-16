@@ -57,8 +57,8 @@
       },
       "version": "1.0.0",
       "runtime": "metadata",
-      "checksumHash": "sha256:777186b53ef5fb5f5a57e980d359d772acabb1dab9b480ba7d8608e3271a7798",
-      "artifactSizeBytes": 2004
+      "checksumHash": "sha256:b59fbc7109fc4db6b7702a14bdc07b051812ea87f327e4cb746097de650b8242",
+      "artifactSizeBytes": 2011
     }
   ],
   "permissions": {

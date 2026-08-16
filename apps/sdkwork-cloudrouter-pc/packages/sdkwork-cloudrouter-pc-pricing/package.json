@@ -1,0 +1,50 @@
+{
+  "name": "@sdkwork/cloudrouter-pc-pricing",
+  "version": "0.1.0",
+  "private": true,
+  "license": "SEE LICENSE IN ../../../../LICENSE",
+  "type": "module",
+  "description": "Official multi-vendor pricing catalog for the Cloud Router PC portal.",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./i18n": {
+      "types": "./src/i18n/index.ts",
+      "import": "./src/i18n/index.ts",
+      "default": "./src/i18n/index.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run src --config ../../vite.config.ts --configLoader native --pool vmThreads"
+  },
+  "dependencies": {
+    "@sdkwork/cloudrouter-app-sdk": "workspace:*",
+    "@sdkwork/cloudroutes-pc-commons": "workspace:*"
+  },
+  "peerDependencies": {
+    "lucide-react": ">=0.500.0 <1.0.0",
+    "react": ">=19.0.0 <20.0.0",
+    "react-i18next": ">=17.0.0 <18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "sdkwork": {
+    "workspace": "sdkwork-cloudrouter",
+    "architecture": "pc-react",
+    "domain": "commerce",
+    "capability": "pricing",
+    "surface": "app",
+    "status": "ready"
+  }
+}

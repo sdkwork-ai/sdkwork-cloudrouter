@@ -25,6 +25,10 @@ const GATEWAY_IAM_DATABASE_MANIFEST: &str =
     include_str!("../../../../../database/modules/gateway-iam/database.manifest.json");
 const OPERATIONS_DATABASE_MANIFEST: &str =
     include_str!("../../../../../database/modules/operations/database.manifest.json");
+const PRICING_DATABASE_MANIFEST: &str =
+    include_str!("../../../../../database/modules/pricing/database.manifest.json");
+const CLOUDROUTER_BILLING_DATABASE_MANIFEST: &str =
+    include_str!("../../../../../database/modules/cloudrouter-billing/database.manifest.json");
 
 const CRITICAL_CHAT_COLUMNS: &[&str] = &[
     "ai_chat_conversation.message_count",
@@ -160,6 +164,8 @@ fn build_expected_database_readiness() -> Result<ExpectedDatabaseReadiness, Stri
         parse_database_readiness_manifest(ROOT_DATABASE_MANIFEST)?,
         parse_database_readiness_manifest(GATEWAY_IAM_DATABASE_MANIFEST)?,
         parse_database_readiness_manifest(OPERATIONS_DATABASE_MANIFEST)?,
+        parse_database_readiness_manifest(PRICING_DATABASE_MANIFEST)?,
+        parse_database_readiness_manifest(CLOUDROUTER_BILLING_DATABASE_MANIFEST)?,
     ];
     let mut module_ids = Vec::with_capacity(manifests.len());
     let mut contract_versions = Vec::with_capacity(manifests.len());
@@ -466,7 +472,13 @@ mod tests {
         let expected = expected_database_readiness().expect("valid database readiness manifests");
 
         assert_eq!(
-            ["cloudrouter", "gateway-iam", "operations"],
+            [
+                "cloudrouter",
+                "gateway-iam",
+                "operations",
+                "pricing",
+                "cloudrouter-billing",
+            ],
             expected.module_ids.as_slice()
         );
         assert!(expected
@@ -484,6 +496,13 @@ mod tests {
             "ai_runtime_usage_link",
             "iam_gateway_api_key",
             "ops_gateway_instance",
+            "pricing_product",
+            "pricing_price_book",
+            "pricing_rate",
+            "pricing_rate_binding",
+            "cloudrouter_usage_measurement",
+            "cloudrouter_rating_decision",
+            "cloudrouter_charge_line",
         ] {
             assert!(
                 expected.table_names.iter().any(|actual| actual == table),

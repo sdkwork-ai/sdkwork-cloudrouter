@@ -13,6 +13,7 @@ mod admin_marketing;
 mod admin_mcp;
 mod admin_model_rate_limit;
 mod admin_monitor;
+mod admin_pricing;
 mod admin_record;
 mod admin_referral;
 mod admin_route_explain;
@@ -30,6 +31,7 @@ mod app_gateway;
 mod app_generation_history;
 mod app_invite;
 mod app_notification;
+mod app_pricing;
 mod app_routing;
 mod app_routing_strategy;
 mod app_runtime;
@@ -73,6 +75,7 @@ pub use admin_marketing::admin_marketing_router_with_store;
 pub use admin_mcp::admin_mcp_router_with_store;
 pub use admin_model_rate_limit::admin_model_rate_limit_router_with_store;
 pub use admin_monitor::admin_monitor_router_with_read_store;
+pub use admin_pricing::admin_pricing_router_with_store;
 pub use admin_record::admin_record_router_with_store;
 pub use admin_referral::admin_referral_router_with_store;
 pub use admin_route_explain::admin_route_explain_router;
@@ -93,6 +96,7 @@ pub use app_generation_history::app_generation_history_router_with_read_store;
 pub use app_invite::app_invite_router_with_store;
 pub use app_notification::app_notification_router;
 pub use app_notification::app_notification_router_with_store;
+pub use app_pricing::{app_pricing_router, app_pricing_router_with_read_store};
 pub use app_routing::app_routing_router;
 pub use app_routing::app_routing_router_with_read_store;
 pub use app_routing_strategy::app_routing_strategy_router;
@@ -146,7 +150,7 @@ pub use openai_invocation::{
     normalize_user_agent_header, OpenAiInvocationContext, OpenAiInvocationEndpoint,
     OpenAiInvocationFault, OpenAiInvocationFaultKind, OpenAiInvocationPlugin,
     OpenAiInvocationPluginError, OpenAiInvocationPluginFuture, OpenAiInvocationPluginRef,
-    OpenAiInvocationRelayOutcome, OpenAiUpstreamRoute,
+    OpenAiInvocationRelayOutcome, OpenAiUpstreamRoute, AUTH_TOKEN_SESSION_NAME_SNAPSHOT,
 };
 pub use openai_models::openai_models_router;
 pub use openai_responses::openai_responses_router;

@@ -104,6 +104,18 @@ entries:
     status: accepted
     owner: cloudrouter-platform
     title: Own Chat runtime PostgreSQL authority
+  - id: ADR-20260815
+    path: docs/architecture/decisions/ADR-20260815-composable-pricing-and-billing.md
+    kind: adr
+    status: accepted
+    owner: cloudrouter-platform
+    title: Composable pricing and billing
+  - id: MIG-2026-0002
+    path: docs/migrations/MIG-2026-0002-composable-pricing-billing.md
+    kind: migration
+    status: active
+    owner: cloudrouter-platform
+    title: Composable pricing and billing migration
   - id: PLAN-2026-0001
     path: docs/engineering/plans/PLAN-2026-0001-commercial-production-readiness.md
     kind: plan

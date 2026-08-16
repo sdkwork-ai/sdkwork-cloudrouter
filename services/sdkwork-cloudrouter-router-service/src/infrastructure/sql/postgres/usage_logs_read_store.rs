@@ -2,6 +2,7 @@ use sqlx::{PgPool, Row};
 
 use crate::domain::{DecimalValue, DomainError};
 use crate::infrastructure::sql::model_modality;
+use crate::infrastructure::sql::postgres::billing_read_projection::with_billable_usage;
 use crate::ports::{
     UsageLogItem, UsageLogsPage, UsageLogsQuery, UsageLogsReadFuture, UsageLogsReadStore,
     UsageLogsStatus, UsageLogsSubject,
@@ -10,7 +11,7 @@ use crate::ports::{
 const USAGE_SPEND_DECIMAL_DIGITS: u32 = 9;
 
 const LOAD_USAGE_LOGS: &str = r#"
-WITH selected_trace AS (
+, selected_trace AS (
     SELECT *
     FROM (
         SELECT
@@ -49,9 +50,8 @@ usage_by_request AS (
         CAST(COALESCE(MAX(COALESCE(base_input_unit_price, 0)), 0) AS TEXT) AS base_input_unit_price,
         CAST(COALESCE(MAX(COALESCE(base_output_unit_price, 0)), 0) AS TEXT) AS base_output_unit_price,
         CAST(COALESCE(MAX(COALESCE(cache_read_unit_price, 0)), 0) AS TEXT) AS cache_read_unit_price
-    FROM ai_metering_usage
-    WHERE status = 1
-      AND tenant_id = $1
+    FROM billable_usage
+    WHERE tenant_id = $1
       AND organization_id = $2
       AND user_id = $3
       AND NULLIF(request_id, '') IS NOT NULL
@@ -181,7 +181,7 @@ impl UsageLogsReadStore for PostgresUsageLogsReadStore {
             let subject = subject.ok_or_else(|| {
                 DomainError::new("trusted request subject is required for usage logs")
             })?;
-            let rows = sqlx::query(LOAD_USAGE_LOGS)
+            let rows = sqlx::query(with_billable_usage(LOAD_USAGE_LOGS))
                 .bind(subject.tenant_id)
                 .bind(subject.organization_id)
                 .bind(subject.user_id)

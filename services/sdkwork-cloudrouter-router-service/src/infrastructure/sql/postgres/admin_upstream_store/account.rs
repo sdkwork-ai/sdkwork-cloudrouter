@@ -2,8 +2,8 @@ use sqlx::postgres::PgRow;
 use sqlx::{PgPool, Postgres, Transaction};
 
 use super::shared::{
-    column, conflict, masked_secret, not_found, record_routing_change, search_pattern, store_error,
-    DEFAULT_DATA_SCOPE,
+    column, conflict, masked_secret, not_found, parse_protocols, record_routing_change,
+    search_pattern, store_error, DEFAULT_DATA_SCOPE,
 };
 use crate::application::{UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext};
 use crate::domain::{DomainError, DomainResult};
@@ -15,9 +15,13 @@ use crate::ports::{
 };
 
 const MAX_CREDENTIAL_SECRET_BYTES: usize = 32 * 1024;
+const MAX_ACCOUNT_PROTOCOLS: usize = 8;
 const ACCOUNT_COLUMNS: &str = r#"
     account.id, account.uuid, account.supplier_id, account.supplier_code,
-    account.preferred_endpoint_id, account.account_code, account.account_name,
+    account.preferred_endpoint_id,
+    account.default_base_url,
+    account.protocols::text AS protocols,
+    account.account_code, account.account_name,
     account.account_type, account.auth_method_code, account.external_account_id,
     account.environment, account.region_code,
     account.quota_limit::text AS quota_limit,
@@ -629,7 +633,7 @@ async fn insert(
             "expectedVersion must be omitted when creating an upstream account",
         ));
     }
-    let supplier_code = validate_supplier_bindings(tx, command).await?;
+    let supplier_code = validate_supplier_bindings(tx, command, true).await?;
     let account_id = next_cloud_runtime_id("upstream account")?;
     sqlx::query(
         r#"
@@ -637,6 +641,7 @@ async fn insert(
             id, uuid, tenant_id, organization_id, data_scope, status,
             created_at, updated_at, version, metadata,
             supplier_id, supplier_code, preferred_endpoint_id,
+            default_base_url, protocols,
             account_code, account_name, account_type, auth_method_code,
             external_account_id, environment, region_code,
             quota_limit, upstream_balance_currency, contract_cost_multiplier,
@@ -645,10 +650,11 @@ async fn insert(
             $1, $2, $3, $4, $5, $6,
             $7::timestamptz, $7::timestamptz, 0, '{}'::jsonb,
             $8, $9, $10,
-            $11, $12, $13, $14,
-            $15, $16, $17,
-            $18::numeric, $19, $20::numeric,
-            $21, $22
+            $11, $12::jsonb,
+            $13, $14, $15, $16,
+            $17, $18, $19,
+            $20::numeric, $21, $22::numeric,
+            $23, $24
         )
         "#,
     )
@@ -662,6 +668,8 @@ async fn insert(
     .bind(command.supplier_id)
     .bind(&supplier_code)
     .bind(command.preferred_endpoint_id)
+    .bind(command.default_base_url.as_deref().map(str::trim))
+    .bind(protocols_json(command))
     .bind(command.account_code.trim())
     .bind(command.account_name.trim())
     .bind(command.account_type.trim())
@@ -754,12 +762,20 @@ async fn update(
         "preferred_endpoint_id",
         "failed to map upstream account preferred endpoint",
     )?;
-    let routing_target_changed = current_supplier_id != command.supplier_id
+    let supplier_changed = current_supplier_id != command.supplier_id;
+    // 供应商变更且首选端点未被显式重绑（缺省保持）时，保留值属于旧供应商，清空以免产生跨供应商悬空引用。
+    let preferred_endpoint_id =
+        if supplier_changed && command.preferred_endpoint_id == current_preferred_endpoint_id {
+            None
+        } else {
+            command.preferred_endpoint_id
+        };
+    // 首选端点只在本次请求实际变更时按「活动端点」校验；缺省保持的既有引用（可能已停用/删除）不阻塞无关字段的编辑。
+    let preferred_endpoint_changed = current_preferred_endpoint_id != preferred_endpoint_id;
+    let routing_target_changed = supplier_changed
         || current_auth_method != command.auth_method_code.trim()
-        || current_preferred_endpoint_id != command.preferred_endpoint_id;
-    if current_supplier_id != command.supplier_id
-        || current_auth_method != command.auth_method_code.trim()
-    {
+        || preferred_endpoint_changed;
+    if supplier_changed || current_auth_method != command.auth_method_code.trim() {
         let credential_count = sqlx::query_scalar::<_, i64>(
             r#"
             SELECT COUNT(*)
@@ -780,34 +796,38 @@ async fn update(
             ));
         }
     }
-    let supplier_code = validate_supplier_bindings(tx, command).await?;
+    let supplier_code = validate_supplier_bindings(tx, command, preferred_endpoint_changed).await?;
     let result = sqlx::query(
         r#"
         UPDATE ai_upstream_account
         SET supplier_id = $1,
             supplier_code = $2,
             preferred_endpoint_id = $3,
-            account_name = $4,
-            account_type = $5,
-            auth_method_code = $6,
-            external_account_id = $7,
-            environment = $8,
-            region_code = $9,
-            quota_limit = $10::numeric,
-            upstream_balance_currency = $11,
-            contract_cost_multiplier = $12::numeric,
-            rpm_limit = $13,
-            timeout_ms = $14,
-            status = $15,
+            default_base_url = $4,
+            protocols = $5::jsonb,
+            account_name = $6,
+            account_type = $7,
+            auth_method_code = $8,
+            external_account_id = $9,
+            environment = $10,
+            region_code = $11,
+            quota_limit = $12::numeric,
+            upstream_balance_currency = $13,
+            contract_cost_multiplier = $14::numeric,
+            rpm_limit = $15,
+            timeout_ms = $16,
+            status = $17,
             version = version + 1,
-            updated_at = $16::timestamptz
-        WHERE tenant_id = $17 AND organization_id = $18
-          AND id = $19 AND version = $20 AND deleted_at IS NULL
+            updated_at = $18::timestamptz
+        WHERE tenant_id = $19 AND organization_id = $20
+          AND id = $21 AND version = $22 AND deleted_at IS NULL
         "#,
     )
     .bind(command.supplier_id)
     .bind(supplier_code)
-    .bind(command.preferred_endpoint_id)
+    .bind(preferred_endpoint_id)
+    .bind(command.default_base_url.as_deref().map(str::trim))
+    .bind(protocols_json(command))
     .bind(command.account_name.trim())
     .bind(command.account_type.trim())
     .bind(command.auth_method_code.trim())
@@ -874,6 +894,7 @@ async fn reset_account_health(
 async fn validate_supplier_bindings(
     tx: &mut Transaction<'_, Postgres>,
     command: &SaveAdminUpstreamAccountCommand,
+    validate_preferred_endpoint: bool,
 ) -> DomainResult<String> {
     let supplier_code = sqlx::query_scalar::<_, String>(
         r#"
@@ -911,27 +932,31 @@ async fn validate_supplier_bindings(
     if !auth_exists {
         return Err(not_found("active upstream supplier auth method"));
     }
-    if let Some(endpoint_id) = command.preferred_endpoint_id {
-        let endpoint_exists = sqlx::query_scalar::<_, bool>(
-            r#"
-            SELECT EXISTS (
-                SELECT 1
-                FROM ai_upstream_supplier_endpoint
-                WHERE tenant_id = $1 AND organization_id = $2
-                  AND supplier_id = $3 AND id = $4
-                  AND status = 1 AND deleted_at IS NULL
+    if validate_preferred_endpoint {
+        if let Some(endpoint_id) = command.preferred_endpoint_id {
+            let endpoint_exists = sqlx::query_scalar::<_, bool>(
+                r#"
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM ai_upstream_supplier_endpoint
+                    WHERE tenant_id = $1 AND organization_id = $2
+                      AND supplier_id = $3 AND id = $4
+                      AND status = 1 AND deleted_at IS NULL
+                )
+                "#,
             )
-            "#,
-        )
-        .bind(command.subject.tenant_id)
-        .bind(command.subject.organization_id)
-        .bind(command.supplier_id)
-        .bind(endpoint_id)
-        .fetch_one(&mut **tx)
-        .await
-        .map_err(|error| store_error("failed to validate preferred upstream endpoint", error))?;
-        if !endpoint_exists {
-            return Err(not_found("active preferred upstream endpoint"));
+            .bind(command.subject.tenant_id)
+            .bind(command.subject.organization_id)
+            .bind(command.supplier_id)
+            .bind(endpoint_id)
+            .fetch_one(&mut **tx)
+            .await
+            .map_err(|error| {
+                store_error("failed to validate preferred upstream endpoint", error)
+            })?;
+            if !endpoint_exists {
+                return Err(not_found("active preferred upstream endpoint"));
+            }
         }
     }
     Ok(supplier_code)
@@ -1078,12 +1103,33 @@ async fn get_credential_in_transaction(
         .transpose()
 }
 
+/// 账号协议覆盖 → JSONB 字符串（结构与供应商一致：[{protocolCode, baseUrl}]）。
+fn protocols_json(command: &SaveAdminUpstreamAccountCommand) -> String {
+    serde_json::to_string(&command.protocols).unwrap_or_else(|_| "[]".to_owned())
+}
+
 fn validate_account_command(command: &SaveAdminUpstreamAccountCommand) -> DomainResult<()> {
     if command.account_code.trim().is_empty() || command.account_name.trim().is_empty() {
         return Err(DomainError::new("accountCode and accountName are required"));
     }
     if command.auth_method_code.trim().is_empty() {
         return Err(DomainError::new("authMethodCode is required"));
+    }
+    if command.protocols.len() > MAX_ACCOUNT_PROTOCOLS {
+        return Err(DomainError::new(format!(
+            "protocols must contain at most {MAX_ACCOUNT_PROTOCOLS} items"
+        )));
+    }
+    let mut seen = std::collections::HashSet::new();
+    for config in &command.protocols {
+        if !seen.insert(config.protocol_code) {
+            return Err(DomainError::new(
+                "protocols must not contain duplicate protocolCode entries",
+            ));
+        }
+        if config.base_url.trim().is_empty() {
+            return Err(DomainError::new("protocols baseUrl must not be blank"));
+        }
     }
     if command
         .contract_cost_multiplier
@@ -1124,6 +1170,16 @@ fn map_account_row(row: PgRow) -> DomainResult<AdminUpstreamAccountItem> {
             "preferred_endpoint_id",
             "failed to map upstream account preferred endpoint",
         )?,
+        default_base_url: column(
+            &row,
+            "default_base_url",
+            "failed to map upstream account default base url",
+        )?,
+        protocols: parse_protocols(column(
+            &row,
+            "protocols",
+            "failed to map upstream account protocols",
+        )?)?,
         account_code: column(&row, "account_code", "failed to map upstream account code")?,
         account_name: column(&row, "account_name", "failed to map upstream account name")?,
         account_type: column(&row, "account_type", "failed to map upstream account type")?,

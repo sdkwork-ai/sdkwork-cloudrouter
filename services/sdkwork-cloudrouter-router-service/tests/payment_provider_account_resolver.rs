@@ -268,7 +268,10 @@ async fn resolver_builds_wechat_pay_credentials_from_key_and_certificate_refs() 
         Some("https://merchant.example/payments/wechat/notify".to_owned()),
         config.notify_url
     );
-    assert_eq!(WeChatPaySignVerifyMode::WeChatPayPublicKey, config.sign_verify_mode);
+    assert_eq!(
+        WeChatPaySignVerifyMode::WeChatPayPublicKey,
+        config.sign_verify_mode
+    );
     assert_eq!(None, config.verification_key_pem);
     assert_eq!(None, config.verification_serial_no);
     assert!(!format!("{config:?}").contains("wechat-api-v3-key"));
@@ -310,7 +313,10 @@ async fn resolver_builds_wechat_pay_public_key_mode_credentials_from_certificate
     let PaymentProviderResolvedCredentials::WeChatPay(config) = credentials else {
         panic!("expected WeChat Pay credentials");
     };
-    assert_eq!(WeChatPaySignVerifyMode::WeChatPayPublicKey, config.sign_verify_mode);
+    assert_eq!(
+        WeChatPaySignVerifyMode::WeChatPayPublicKey,
+        config.sign_verify_mode
+    );
     assert_eq!(
         Some("-----BEGIN PUBLIC KEY-----".to_owned()),
         config.verification_key_pem
@@ -357,7 +363,10 @@ async fn resolver_builds_wechat_pay_platform_certificate_mode_credentials() {
     let PaymentProviderResolvedCredentials::WeChatPay(config) = credentials else {
         panic!("expected WeChat Pay credentials");
     };
-    assert_eq!(WeChatPaySignVerifyMode::PlatformCertificate, config.sign_verify_mode);
+    assert_eq!(
+        WeChatPaySignVerifyMode::PlatformCertificate,
+        config.sign_verify_mode
+    );
     assert_eq!(
         Some("-----BEGIN CERTIFICATE-----".to_owned()),
         config.verification_key_pem

@@ -275,8 +275,7 @@ fn merge_update_request(
             normalize_media_resource("officialAccountQrCode", value)?;
     }
     if let Some(value) = request.community_group_qr_code {
-        current.community_group_qr_code =
-            normalize_media_resource("communityGroupQrCode", value)?;
+        current.community_group_qr_code = normalize_media_resource("communityGroupQrCode", value)?;
     }
     if let Some(value) = request.brand_color {
         current.brand_color = normalize_color_field("brandColor", &value)?;

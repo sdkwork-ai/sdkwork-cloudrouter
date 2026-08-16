@@ -16,6 +16,12 @@ pub use super::openai_runtime::ResolvedOpenAiUpstreamRoute as OpenAiUpstreamRout
 const X_TRACE_ID: &str = "x-trace-id";
 const MAX_HTTP_USER_AGENT_LEN: usize = 1024;
 
+/// `api_key_name_snapshot` value marking a synthetic auth-token session
+/// (resolved by `IamAuthTokenAuthenticator` against the IAM database). Such
+/// sessions carry `api_key_id == 0` by design — no gateway API key backs
+/// them — so billing-subject validation must not demand an API key.
+pub const AUTH_TOKEN_SESSION_NAME_SNAPSHOT: &str = "auth-token-session";
+
 pub type OpenAiInvocationPluginFuture<'a> =
     Pin<Box<dyn Future<Output = Result<(), OpenAiInvocationPluginError>> + Send + 'a>>;
 
@@ -258,8 +264,14 @@ impl OpenAiInvocationPlugin for OpenAiBillingSubjectGuardPlugin {
     ) -> OpenAiInvocationPluginFuture<'a> {
         Box::pin(async move {
             let subject = &context.api_key_context;
+            // Auth-token sessions (api_key_id == 0, synthetic name snapshot)
+            // have no gateway API key by design; the tenant/group fields still
+            // carry the billing scope, so only the API key requirement is
+            // waived for them.
+            let auth_token_session = subject.api_key_id <= 0
+                && subject.api_key_name_snapshot == AUTH_TOKEN_SESSION_NAME_SNAPSHOT;
             let mut missing = Vec::new();
-            if subject.api_key_id <= 0 {
+            if subject.api_key_id <= 0 && !auth_token_session {
                 missing.push("api key");
             }
             if subject.tenant_id <= 0 {

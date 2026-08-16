@@ -70,11 +70,7 @@ fn app_settlements_dashboard_router_with_state(
 ) -> Router {
     Router::new()
         .route(
-            "/app/v3/api/router/settlements/dashboard",
-            get(fetch_settlements_dashboard),
-        )
-        .route(
-            "/app/v3/api/billing/settlements/dashboard",
+            "/app/v3/api/ai/settlements/dashboard",
             get(fetch_settlements_dashboard),
         )
         .with_state(AppSettlementsDashboardState {

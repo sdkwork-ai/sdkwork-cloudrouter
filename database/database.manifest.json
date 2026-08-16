@@ -14,7 +14,9 @@
   "baselineAnchorTable": "ai_upstream_supplier",
   "modules": [
     "gateway-iam",
-    "operations"
+    "operations",
+    "pricing",
+    "cloudrouter-billing"
   ],
   "lifecycle": {
     "autoMigrate": false,
@@ -46,7 +48,7 @@
     "provider": "default",
     "hooks": []
   },
-  "materializedTableCount": 43,
+  "materializedTableCount": 38,
   "materializedTables": [
     "ai_chat_context_snapshot",
     "ai_chat_conversation",
@@ -61,11 +63,6 @@
     "ai_model_mapping_rule",
     "ai_model_mapping_rule_binding",
     "ai_model_mapping_rule_item",
-    "ai_pricing_import_snapshot",
-    "ai_pricing_plan",
-    "ai_pricing_plan_binding",
-    "ai_pricing_rule",
-    "ai_pricing_tier",
     "ai_quota_policy",
     "ai_routing_decision_log",
     "ai_routing_policy",

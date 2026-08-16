@@ -9,6 +9,8 @@
 
 use axum::routing::get;
 
+pub use sdkwork_routes_cloudrouter_app_api;
+
 pub const SERVICE_NAME: &str = "sdkwork-cloudrouter-standalone-gateway";
 
 /// Database-free application-plane router (health checks, smoke tests).

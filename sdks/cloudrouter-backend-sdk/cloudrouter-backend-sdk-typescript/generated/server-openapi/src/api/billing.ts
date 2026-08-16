@@ -1,7 +1,7 @@
 import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
-import type { AdminExchangeRule, AdminExchangeRuleListResponse, AdminReferralRelationListResponse, AdminReferralStatListResponse, AdminReferralStrategy, AdminReferralStrategyListResponse, AdminReferralStrategyMutationRequest, ExchangeRuleMutationRequest } from '../types';
+import type { AdminExchangeRule, AdminExchangeRuleListResponse, AdminRechargeRecord, AdminRechargeRecordPage, AdminReferralRelationListResponse, AdminReferralStatListResponse, AdminReferralStrategy, AdminReferralStrategyListResponse, AdminReferralStrategyMutationRequest, ExchangeRuleMutationRequest } from '../types';
 
 
 export interface BillingReferralStatsListParams {
@@ -99,6 +99,34 @@ export class BillingReferralStrategiesApi {
   }
 }
 
+export interface BillingRechargeRecordsListParams {
+  page?: number;
+  pageSize?: number;
+}
+
+export class BillingRechargeRecordsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List recharge records */
+  async list(params?: BillingRechargeRecordsListParams, requestOptions?: ApiRequestOptions): Promise<AdminRechargeRecordPage> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<AdminRechargeRecordPage>(appendQueryString(backendApiPath(`/billing/recharges/records`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  }
+
+/** List recharge record */
+  async retrieve(orderNo: string, requestOptions?: ApiRequestOptions): Promise<AdminRechargeRecord> {
+    return this.client.request<AdminRechargeRecord>(backendApiPath(`/billing/recharges/records/${serializePathParameter(orderNo, { name: 'orderNo', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+  }
+}
+
 export interface BillingExchangeRulesListParams {
   sourceAssetType?: string;
   targetAssetType?: string;
@@ -136,6 +164,7 @@ export class BillingExchangeRulesApi {
 export class BillingApi {
   private client: HttpClient;
   public readonly exchangeRules: BillingExchangeRulesApi;
+  public readonly rechargeRecords: BillingRechargeRecordsApi;
   public readonly referralStrategies: BillingReferralStrategiesApi;
   public readonly referralRelations: BillingReferralRelationsApi;
   public readonly referralStats: BillingReferralStatsApi;
@@ -143,6 +172,7 @@ export class BillingApi {
   constructor(client: HttpClient) {
     this.client = client;
     this.exchangeRules = new BillingExchangeRulesApi(client);
+    this.rechargeRecords = new BillingRechargeRecordsApi(client);
     this.referralStrategies = new BillingReferralStrategiesApi(client);
     this.referralRelations = new BillingReferralRelationsApi(client);
     this.referralStats = new BillingReferralStatsApi(client);

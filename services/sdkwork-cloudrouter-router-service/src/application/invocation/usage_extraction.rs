@@ -19,11 +19,7 @@ impl InvocationInterceptor for UsageExtractionInterceptor {
         Box::pin(async move {
             if invocation.billing.mode == BillingMode::Free
                 || invocation.billing.quantity_source == BillingQuantitySource::None
-                || (!provider_response_is_success(invocation)
-                    && !matches!(
-                        invocation.billing.quantity_source,
-                        BillingQuantitySource::FixedRequest
-                    ))
+                || !provider_response_is_success(invocation)
             {
                 return Ok(());
             }
@@ -69,6 +65,13 @@ fn adapter_response_status_code(body: &Value) -> Option<u16> {
 }
 
 fn ensure_fixed_request_line(invocation: &mut Invocation) -> Result<(), InvocationError> {
+    if invocation
+        .usage
+        .quote_for_meter(&BillingMeter::ApiRequest)
+        .is_none()
+    {
+        return Ok(());
+    }
     if invocation
         .usage
         .lines

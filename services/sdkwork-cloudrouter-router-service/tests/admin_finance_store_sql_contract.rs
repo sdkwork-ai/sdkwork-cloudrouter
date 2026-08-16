@@ -14,9 +14,12 @@ fn admin_finance_store_reads_transactions_from_the_account_domain_ledger() {
     );
     assert!(source.contains("commerce_statement"));
     assert!(
-        source.contains("ai_metering_usage"),
-        "admin finance statement settlement count must join the ai-metering usage fact"
+        source.contains("LEFT JOIN cloudrouter_charge_line charge")
+            && source.contains("charge.charge_status = 'settled'")
+            && source.contains("charge.settled_at IS NOT NULL"),
+        "admin finance statement settlement count must join settled charge lines"
     );
+    assert!(!source.contains("ai_metering_usage"));
     assert!(
         !source.contains("commerce_settlement"),
         "admin finance must not reference the retired commerce_settlement bridge"

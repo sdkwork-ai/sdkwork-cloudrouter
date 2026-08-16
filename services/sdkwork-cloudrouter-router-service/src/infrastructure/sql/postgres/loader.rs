@@ -247,8 +247,44 @@ impl PostgresPricingCatalogLoader {
                 FROM ai_model_mapping_rule_binding
                 WHERE deleted_at IS NULL
                 UNION ALL
-                SELECT 'pricing:' || COALESCE(MAX(updated_at)::text, '')
-                FROM ai_model_pricing
+                SELECT 'pricing-book:' || COALESCE(MAX(updated_at)::text, '')
+                FROM pricing_price_book
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'pricing-rate:' || COALESCE(MAX(updated_at)::text, '')
+                FROM pricing_rate
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'pricing-binding:' || COALESCE(MAX(updated_at)::text, '')
+                FROM pricing_product_binding
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'pricing-rate-binding:' || COALESCE(MAX(updated_at)::text, '')
+                FROM pricing_rate_binding
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'pricing-condition:' || COALESCE(MAX(updated_at)::text, '')
+                FROM pricing_rate_condition
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'pricing-tier:' || COALESCE(MAX(updated_at)::text, '')
+                FROM pricing_rate_tier
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'pricing-formula:' || COALESCE(MAX(updated_at)::text, '')
+                FROM pricing_rate_formula
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'pricing-formula-term:' || COALESCE(MAX(updated_at)::text, '')
+                FROM pricing_rate_formula_term
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'cloudrouter-pricing-plan:' || COALESCE(MAX(updated_at)::text, '')
+                FROM cloudrouter_pricing_plan
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'cloudrouter-pricing-rule:' || COALESCE(MAX(updated_at)::text, '')
+                FROM cloudrouter_pricing_rule
                 WHERE deleted_at IS NULL
                 UNION ALL
                 SELECT 'resource:' || COALESCE(MAX(updated_at)::text, '')
@@ -552,7 +588,10 @@ mod tests {
             endpoint_weight: 100,
             endpoint_health_status: 1,
             base_url: Some("https://api.openai.com/v1".to_owned()),
+            account_default_base_url: None,
+            account_protocols_json: "[]".to_owned(),
             supplier_default_base_url: None,
+            supplier_protocols_json: "[]".to_owned(),
             secret_ref: Some("managed://upstream-account-credential/12".to_owned()),
             secret_ciphertext: Some(encoded.ciphertext.clone()),
             secret_key_id: Some(encoded.key_id.clone()),

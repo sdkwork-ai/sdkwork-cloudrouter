@@ -1,4 +1,5 @@
-use crate::domain::{BillingMeter, Money};
+use crate::application::{BillingStructure, PriceResolution, PricingAuditSnapshot};
+use crate::domain::{BillingMeter, Money, PricingRateMetadata};
 use crate::ports::{GatewayUsageQuantity, GatewayUsageRecordCommand};
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -23,6 +24,7 @@ impl InvocationUsage {
                 && existing.supplier_code == quote.supplier_code
                 && existing.account_id == quote.account_id
                 && existing.region_code == quote.region_code
+                && quote_rate_hash(existing) == quote_rate_hash(&quote)
         }) {
             return;
         }
@@ -54,6 +56,7 @@ pub struct InvocationUsageLine {
     pub role: InvocationUsageLineRole,
     pub requested_model_catalog_key: Option<String>,
     pub pricing_quote: Option<InvocationPricingQuote>,
+    pub pricing_resolution: Option<PriceResolution>,
 }
 
 impl InvocationUsageLine {
@@ -64,6 +67,7 @@ impl InvocationUsageLine {
             quantity,
             requested_model_catalog_key: None,
             pricing_quote: None,
+            pricing_resolution: None,
         }
     }
 
@@ -88,6 +92,7 @@ pub struct InvocationPricingQuote {
     pub account_id: Option<i64>,
     pub region_code: String,
     pub meter: BillingMeter,
+    pub unit_size: String,
     pub official_reference_unit_price: Money,
     pub raw_upstream_cost_unit_price: Option<Money>,
     pub procurement_cost_unit_price: Option<Money>,
@@ -100,6 +105,16 @@ pub struct InvocationPricingQuote {
     pub reference_multiplier: String,
     pub pricing_plan_code: String,
     pub group_code: String,
+    pub rate_metadata: Option<PricingRateMetadata>,
+    pub billing: Option<BillingStructure>,
+    pub pricing_audit_snapshot: PricingAuditSnapshot,
+}
+
+fn quote_rate_hash(quote: &InvocationPricingQuote) -> Option<&str> {
+    quote
+        .rate_metadata
+        .as_ref()
+        .map(|metadata| metadata.rate_hash.as_str())
 }
 
 fn usage_line_role_for_meter(meter: &BillingMeter) -> InvocationUsageLineRole {

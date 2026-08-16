@@ -1,5 +1,5 @@
 use sdkwork_cloudrouter_router_service::domain::DomainError;
-use sqlx::{PgPool, Row};
+use sqlx::{AssertSqlSafe, PgPool, Row};
 
 use crate::error::{store_error, RepositoryError, RepositoryResult};
 use crate::modality;
@@ -14,13 +14,103 @@ const COLORS: [&str; 10] = [
     "#ea580c", "#475569",
 ];
 
+const BILLABLE_USAGE_SELECT: &str = r#"
+SELECT
+    c.invocation_id,
+    COALESCE(NULLIF(c.request_id, ''), c.invocation_id) AS request_id,
+    c.tenant_id,
+    c.organization_id,
+    c.user_id,
+    COALESCE(
+        NULLIF(trace_snapshot.owner_name_snapshot, ''),
+        NULLIF(CAST(c.user_id AS TEXT), ''),
+        '-'
+    ) AS owner_name_snapshot,
+    COALESCE(NULLIF(trace_snapshot.api_key_name_snapshot, ''), '') AS api_key_name_snapshot,
+    COALESCE(
+        NULLIF(d.pricing_snapshot #>> '{resource,requestedModel}', ''),
+        NULLIF(d.pricing_snapshot #>> '{model,model}', ''),
+        NULLIF(m.catalog_key, ''),
+        '-'
+    ) AS model,
+    m.catalog_key,
+    COALESCE((m.dimensions_json ->> 'modality')::integer, 0) AS modality,
+    COALESCE((m.dimensions_json ->> 'promptTokens')::bigint, 0) AS prompt_tokens,
+    COALESCE((m.dimensions_json ->> 'completionTokens')::bigint, 0) AS completion_tokens,
+    COALESCE((m.dimensions_json ->> 'cachedTokens')::bigint, 0) AS cached_tokens,
+    COALESCE((m.dimensions_json ->> 'totalTokens')::bigint, 0) AS total_tokens,
+    COALESCE((m.dimensions_json ->> 'requestCount')::bigint, 0) AS request_count,
+    c.amount AS customer_charge_amount,
+    c.charged_at AS occurred_at
+FROM cloudrouter_charge_line c
+JOIN cloudrouter_rating_decision d
+  ON d.tenant_id = c.tenant_id
+ AND d.organization_id = c.organization_id
+ AND d.id = c.rating_decision_id
+JOIN cloudrouter_usage_measurement m
+  ON m.tenant_id = d.tenant_id
+ AND m.organization_id = d.organization_id
+ AND m.id = d.measurement_id
+LEFT JOIN LATERAL (
+    SELECT trace.owner_name_snapshot, trace.api_key_name_snapshot
+    FROM ai_metering_request_trace trace
+    WHERE trace.status = 1
+      AND trace.tenant_id = c.tenant_id
+      AND trace.organization_id = c.organization_id
+      AND trace.request_id = c.request_id
+    ORDER BY trace.started_at DESC NULLS LAST, trace.id DESC
+    LIMIT 1
+) trace_snapshot ON TRUE
+WHERE c.status = 1
+  AND c.charge_status IN ('rated', 'settled')
+  AND c.amount > 0
+  AND d.status = 1
+  AND d.decision_status = 'rated'
+  AND d.billability = 'chargeable'
+UNION ALL
+SELECT
+    COALESCE(NULLIF(legacy.request_id, ''), CAST(legacy.id AS TEXT)),
+    COALESCE(NULLIF(legacy.request_id, ''), CAST(legacy.id AS TEXT)),
+    legacy.tenant_id,
+    legacy.organization_id,
+    legacy.user_id,
+    COALESCE(NULLIF(legacy.owner_name_snapshot, ''), NULLIF(CAST(legacy.user_id AS TEXT), ''), '-'),
+    COALESCE(legacy.api_key_name_snapshot, ''),
+    COALESCE(NULLIF(legacy.model, ''), NULLIF(legacy.catalog_key, ''), '-'),
+    legacy.catalog_key,
+    COALESCE(legacy.modality, 0),
+    COALESCE(legacy.prompt_tokens, 0),
+    COALESCE(legacy.completion_tokens, 0),
+    COALESCE(legacy.cached_tokens, 0),
+    COALESCE(legacy.total_tokens, 0),
+    COALESCE(legacy.request_count, 0),
+    legacy.customer_charge_amount,
+    legacy.occurred_at
+FROM ai_metering_usage legacy
+WHERE legacy.status = 1
+  AND COALESCE(legacy.customer_charge_amount, 0) > 0
+  AND NOT EXISTS (
+      SELECT 1
+      FROM cloudrouter_rating_decision current_decision
+      WHERE current_decision.tenant_id = legacy.tenant_id
+        AND current_decision.organization_id = legacy.organization_id
+        AND current_decision.invocation_id = legacy.request_id
+        AND current_decision.status = 1
+  )
+"#;
+
+fn billable_usage_query(body: &str) -> AssertSqlSafe<String> {
+    AssertSqlSafe(format!(
+        "WITH billable_usage AS ({BILLABLE_USAGE_SELECT})\n{body}"
+    ))
+}
+
 const LOAD_USER_CONSUMPTION: &str = r#"
 SELECT
     COALESCE(NULLIF(owner_name_snapshot, ''), NULLIF(CAST(user_id AS TEXT), ''), '-') AS name,
     CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS value
-FROM ai_metering_usage
-WHERE status = 1
-  AND tenant_id = $1
+FROM billable_usage
+WHERE tenant_id = $1
   AND organization_id = $2
   AND occurred_at >= now() - interval '90 days'
 GROUP BY COALESCE(NULLIF(owner_name_snapshot, ''), NULLIF(CAST(user_id AS TEXT), ''), '-')
@@ -33,9 +123,8 @@ const LOAD_MULTIMODAL: &str = r#"
 SELECT
     modality,
     CAST(COALESCE(SUM(COALESCE(request_count, 1)), 0) AS TEXT) AS value
-FROM ai_metering_usage
-WHERE status = 1
-  AND tenant_id = $1
+FROM billable_usage
+WHERE tenant_id = $1
   AND organization_id = $2
   AND occurred_at >= now() - interval '90 days'
   AND modality IS NOT NULL
@@ -50,9 +139,8 @@ SELECT
     CAST(COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS TEXT) AS tokens,
     CAST(COALESCE(SUM(COALESCE(request_count, 1)), 0) AS TEXT) AS requests,
         CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS cost
-FROM ai_metering_usage
-WHERE status = 1
-  AND tenant_id = $1
+FROM billable_usage
+WHERE tenant_id = $1
   AND organization_id = $2
   AND occurred_at >= now() - interval '90 days'
   AND occurred_at IS NOT NULL
@@ -65,9 +153,8 @@ const LOAD_MODEL_DISTRIBUTION: &str = r#"
 SELECT
     COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''), '-') AS name,
     CAST(COALESCE(SUM(COALESCE(request_count, 1)), 0) AS TEXT) AS value
-FROM ai_metering_usage
-WHERE status = 1
-  AND tenant_id = $1
+FROM billable_usage
+WHERE tenant_id = $1
   AND organization_id = $2
   AND occurred_at >= now() - interval '90 days'
 GROUP BY COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''), '-')
@@ -77,7 +164,7 @@ LIMIT 8
 "#;
 
 const LOAD_RECENT_USAGE: &str = r#"
-WITH selected_trace AS (
+, selected_trace AS (
     SELECT *
     FROM (
         SELECT
@@ -108,9 +195,8 @@ usage_by_request AS (
         CAST(COALESCE(SUM(COALESCE(completion_tokens, 0)), 0) AS TEXT) AS completion_tokens,
         CAST(COALESCE(SUM(COALESCE(request_count, 1)), 0) AS TEXT) AS request_count,
         CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS customer_charge_amount
-    FROM ai_metering_usage
-    WHERE status = 1
-      AND tenant_id = $1
+    FROM billable_usage
+    WHERE tenant_id = $1
       AND organization_id = $2
       AND occurred_at >= now() - interval '90 days'
       AND NULLIF(request_id, '') IS NOT NULL
@@ -225,7 +311,7 @@ async fn load_user_consumption(
     tenant_id: i64,
     organization_id: i64,
 ) -> Result<Vec<AdminPieChartItem>, RepositoryError> {
-    let rows = sqlx::query(LOAD_USER_CONSUMPTION)
+    let rows = sqlx::query(billable_usage_query(LOAD_USER_CONSUMPTION))
         .bind(tenant_id)
         .bind(organization_id)
         .fetch_all(pool)
@@ -242,7 +328,7 @@ async fn load_multimodal(
     tenant_id: i64,
     organization_id: i64,
 ) -> Result<Vec<AdminPieChartItem>, RepositoryError> {
-    let rows = sqlx::query(LOAD_MULTIMODAL)
+    let rows = sqlx::query(billable_usage_query(LOAD_MULTIMODAL))
         .bind(tenant_id)
         .bind(organization_id)
         .fetch_all(pool)
@@ -265,7 +351,7 @@ async fn load_traffic(
     tenant_id: i64,
     organization_id: i64,
 ) -> Result<Vec<AdminDashboardTrafficItem>, RepositoryError> {
-    let rows = sqlx::query(LOAD_TRAFFIC)
+    let rows = sqlx::query(billable_usage_query(LOAD_TRAFFIC))
         .bind(tenant_id)
         .bind(organization_id)
         .fetch_all(pool)
@@ -296,7 +382,7 @@ async fn load_model_distribution(
     tenant_id: i64,
     organization_id: i64,
 ) -> Result<Vec<AdminPieChartItem>, RepositoryError> {
-    let rows = sqlx::query(LOAD_MODEL_DISTRIBUTION)
+    let rows = sqlx::query(billable_usage_query(LOAD_MODEL_DISTRIBUTION))
         .bind(tenant_id)
         .bind(organization_id)
         .fetch_all(pool)
@@ -313,7 +399,7 @@ async fn load_recent_usage(
     tenant_id: i64,
     organization_id: i64,
 ) -> Result<Vec<AdminDashboardRecentUsageItem>, RepositoryError> {
-    let rows = sqlx::query(LOAD_RECENT_USAGE)
+    let rows = sqlx::query(billable_usage_query(LOAD_RECENT_USAGE))
         .bind(tenant_id)
         .bind(organization_id)
         .fetch_all(pool)

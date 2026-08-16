@@ -6320,11 +6320,26 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "AdminRechargePackage",
+        "name": "RechargePackagePage",
         "schema": {
-          "additionalProperties": true,
-          "name": "AdminRechargePackage",
-          "properties": {},
+          "additionalProperties": false,
+          "description": "RechargePackagePage contract.",
+          "properties": {
+            "items": {
+              "description": "items field on RechargePackagePage.",
+              "items": {
+                "$ref": "#/components/schemas/AdminRechargePackage"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
           "type": "object"
         }
       },
@@ -7296,6 +7311,2150 @@
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
       "tag": "payments",
       "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/pricing/plans",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#createPricingPlan@/admin/pricing/plans",
+      "kind": "create",
+      "module": "pc-admin-pricing",
+      "openapi_exposed": true,
+      "operation": "createPricingPlan",
+      "operation_id": "plans.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "cloudrouter_pricing_plan"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "PricingPlanCreateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "PricingPlanCreateRequest",
+          "properties": {
+            "basePriceSide": {
+              "enum": [
+                "official_reference",
+                "upstream_cost",
+                "customer_charge",
+                "internal_transfer"
+              ],
+              "type": "string"
+            },
+            "currencyCode": {
+              "maxLength": 10,
+              "pattern": "^[A-Z]{3}$",
+              "type": "string"
+            },
+            "effectiveFrom": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "effectiveTo": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "minimumChargeAmount": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "type": "string"
+            },
+            "planCode": {
+              "maxLength": 96,
+              "type": "string"
+            },
+            "planName": {
+              "maxLength": 256,
+              "type": "string"
+            },
+            "roundingMode": {
+              "enum": [
+                "half_up",
+                "half_even",
+                "up",
+                "down"
+              ],
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "planCode",
+            "planName",
+            "basePriceSide",
+            "currencyCode",
+            "roundingMode",
+            "minimumChargeAmount",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminPricingPlan",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminPricingPlan",
+          "properties": {
+            "basePriceSide": {
+              "enum": [
+                "official_reference",
+                "upstream_cost",
+                "customer_charge",
+                "internal_transfer"
+              ],
+              "type": "string"
+            },
+            "createdAt": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "currencyCode": {
+              "maxLength": 10,
+              "pattern": "^[A-Z]{3}$",
+              "type": "string"
+            },
+            "effectiveFrom": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "effectiveTo": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "fallbackPolicy": {
+              "maxLength": 32,
+              "type": "string"
+            },
+            "id": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "minimumChargeAmount": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "type": "string"
+            },
+            "planCode": {
+              "maxLength": 96,
+              "type": "string"
+            },
+            "planName": {
+              "maxLength": 256,
+              "type": "string"
+            },
+            "roundingMode": {
+              "enum": [
+                "half_up",
+                "half_even",
+                "up",
+                "down"
+              ],
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "type": "string"
+            },
+            "updatedAt": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "version": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            }
+          },
+          "required": [
+            "id",
+            "planCode",
+            "planName",
+            "basePriceSide",
+            "currencyCode",
+            "fallbackPolicy",
+            "roundingMode",
+            "minimumChargeAmount",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/pricing/plans",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "pricing",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "tag": "pricing",
+      "write_tables": [
+        "cloudrouter_pricing_plan",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/pricing/rate_cards",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#createPricingRateCard@/admin/pricing/rateCards",
+      "kind": "create",
+      "module": "pc-admin-pricing",
+      "openapi_exposed": true,
+      "operation": "createPricingRateCard",
+      "operation_id": "rateCards.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "cloudrouter_account_rate_card",
+        "cloudrouter_pricing_plan"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "RateCardCreateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "RateCardCreateRequest",
+          "properties": {
+            "effectiveFrom": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "effectiveTo": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "pricingPlanId": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "priority": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "type": "string"
+            },
+            "subjectCode": {
+              "maxLength": 160,
+              "type": "string"
+            },
+            "subjectId": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "subjectType": {
+              "enum": [
+                "default",
+                "api_key",
+                "account_group",
+                "account",
+                "user",
+                "organization"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "subjectType",
+            "pricingPlanId",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminRateCard",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminRateCard",
+          "properties": {
+            "createdAt": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "effectiveFrom": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "effectiveTo": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "id": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "planCode": {
+              "maxLength": 96,
+              "type": "string"
+            },
+            "planName": {
+              "maxLength": 256,
+              "type": "string"
+            },
+            "pricingPlanId": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "priority": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "type": "string"
+            },
+            "subjectCode": {
+              "maxLength": 160,
+              "type": "string"
+            },
+            "subjectId": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "subjectType": {
+              "enum": [
+                "default",
+                "api_key",
+                "account_group",
+                "account",
+                "user",
+                "organization"
+              ],
+              "type": "string"
+            },
+            "updatedAt": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "subjectType",
+            "pricingPlanId",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/pricing/rateCards",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "pricing",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "tag": "pricing",
+      "write_tables": [
+        "cloudrouter_account_rate_card",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/pricing/rules",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#createPricingRule@/admin/pricing/rules",
+      "kind": "create",
+      "module": "pc-admin-pricing",
+      "openapi_exposed": true,
+      "operation": "createPricingRule",
+      "operation_id": "rules.create",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "cloudrouter_pricing_rule",
+        "cloudrouter_pricing_plan"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "PricingRuleCreateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "PricingRuleCreateRequest",
+          "properties": {
+            "catalogKey": {
+              "maxLength": 256,
+              "type": "string"
+            },
+            "effectiveFrom": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "effectiveTo": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "formulaMode": {
+              "enum": [
+                "multiplier_markup",
+                "unit_price_override"
+              ],
+              "type": "string"
+            },
+            "markupAmount": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "type": "string"
+            },
+            "meterCode": {
+              "maxLength": 96,
+              "type": "string"
+            },
+            "multiplier": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "type": "string"
+            },
+            "operationCode": {
+              "maxLength": 160,
+              "type": "string"
+            },
+            "pricingPlanId": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "priority": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "productCode": {
+              "maxLength": 160,
+              "type": "string"
+            },
+            "providerCode": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "regionCode": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "ruleCode": {
+              "maxLength": 96,
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "type": "string"
+            },
+            "unitPriceOverride": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "ruleCode",
+            "pricingPlanId",
+            "formulaMode",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminPricingRule",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminPricingRule",
+          "properties": {
+            "catalogKey": {
+              "maxLength": 256,
+              "type": "string"
+            },
+            "createdAt": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "effectiveFrom": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "effectiveTo": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "formulaMode": {
+              "enum": [
+                "multiplier_markup",
+                "unit_price_override"
+              ],
+              "type": "string"
+            },
+            "id": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "markupAmount": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "type": "string"
+            },
+            "meterCode": {
+              "maxLength": 96,
+              "type": "string"
+            },
+            "multiplier": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "type": "string"
+            },
+            "operationCode": {
+              "maxLength": 160,
+              "type": "string"
+            },
+            "planCode": {
+              "maxLength": 96,
+              "type": "string"
+            },
+            "pricingPlanId": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "priority": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "productCode": {
+              "maxLength": 160,
+              "type": "string"
+            },
+            "providerCode": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "regionCode": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "ruleCode": {
+              "maxLength": 96,
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "type": "string"
+            },
+            "unitPriceOverride": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "type": "string"
+            },
+            "updatedAt": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "pricingPlanId",
+            "ruleCode",
+            "formulaMode",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/pricing/rules",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "pricing",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "tag": "pricing",
+      "write_tables": [
+        "cloudrouter_pricing_rule",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/pricing/rate_cards/{rateCardId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#deletePricingRateCard@/admin/pricing/rateCards/{rateCardId}",
+      "kind": "delete",
+      "module": "pc-admin-pricing",
+      "openapi_exposed": true,
+      "operation": "deletePricingRateCard",
+      "operation_id": "rateCards.delete",
+      "path_params": [
+        "rateCardId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "cloudrouter_account_rate_card",
+        "cloudrouter_pricing_plan"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/pricing/rateCards/{rateCardId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "pricing",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "tag": "pricing",
+      "write_tables": [
+        "cloudrouter_account_rate_card",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/pricing/rules/{ruleId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#deletePricingRule@/admin/pricing/rules/{ruleId}",
+      "kind": "delete",
+      "module": "pc-admin-pricing",
+      "openapi_exposed": true,
+      "operation": "deletePricingRule",
+      "operation_id": "rules.delete",
+      "path_params": [
+        "ruleId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "cloudrouter_pricing_rule",
+        "cloudrouter_pricing_plan"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "NoData",
+        "schema": {
+          "additionalProperties": false,
+          "name": "NoData",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/pricing/rules/{ruleId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "pricing",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "tag": "pricing",
+      "write_tables": [
+        "cloudrouter_pricing_rule",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/pricing/plans/{planId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#fetchPricingPlan@/admin/pricing/plans/{planId}",
+      "kind": "read",
+      "module": "pc-admin-pricing",
+      "openapi_exposed": true,
+      "operation": "fetchPricingPlan",
+      "operation_id": "plans.retrieve",
+      "path_params": [
+        "planId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "cloudrouter_pricing_plan"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AdminPricingPlan",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminPricingPlan",
+          "properties": {
+            "basePriceSide": {
+              "enum": [
+                "official_reference",
+                "upstream_cost",
+                "customer_charge",
+                "internal_transfer"
+              ],
+              "type": "string"
+            },
+            "createdAt": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "currencyCode": {
+              "maxLength": 10,
+              "pattern": "^[A-Z]{3}$",
+              "type": "string"
+            },
+            "effectiveFrom": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "effectiveTo": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "fallbackPolicy": {
+              "maxLength": 32,
+              "type": "string"
+            },
+            "id": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "minimumChargeAmount": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "type": "string"
+            },
+            "planCode": {
+              "maxLength": 96,
+              "type": "string"
+            },
+            "planName": {
+              "maxLength": 256,
+              "type": "string"
+            },
+            "roundingMode": {
+              "enum": [
+                "half_up",
+                "half_even",
+                "up",
+                "down"
+              ],
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "type": "string"
+            },
+            "updatedAt": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "version": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            }
+          },
+          "required": [
+            "id",
+            "planCode",
+            "planName",
+            "basePriceSide",
+            "currencyCode",
+            "fallbackPolicy",
+            "roundingMode",
+            "minimumChargeAmount",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/pricing/plans/{planId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "pricing",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "tag": "pricing",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/pricing/plans",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#fetchPricingPlans@/admin/pricing/plans",
+      "kind": "read",
+      "module": "pc-admin-pricing",
+      "openapi_exposed": true,
+      "operation": "fetchPricingPlans",
+      "operation_id": "plans.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "base_price_side",
+          "required": false,
+          "schema": {
+            "enum": [
+              "official_reference",
+              "upstream_cost",
+              "customer_charge",
+              "internal_transfer"
+            ],
+            "maxLength": 32,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "maxLength": 32,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "cloudrouter_pricing_plan"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AdminPricingPlanListResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminPricingPlanListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminPricingPlan",
+                "properties": {
+                  "basePriceSide": {
+                    "enum": [
+                      "official_reference",
+                      "upstream_cost",
+                      "customer_charge",
+                      "internal_transfer"
+                    ],
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "format": "date-time",
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "currencyCode": {
+                    "maxLength": 10,
+                    "pattern": "^[A-Z]{3}$",
+                    "type": "string"
+                  },
+                  "effectiveFrom": {
+                    "format": "date-time",
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "effectiveTo": {
+                    "format": "date-time",
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "fallbackPolicy": {
+                    "maxLength": 32,
+                    "type": "string"
+                  },
+                  "id": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "minimumChargeAmount": {
+                    "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+                    "type": "string"
+                  },
+                  "planCode": {
+                    "maxLength": 96,
+                    "type": "string"
+                  },
+                  "planName": {
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "roundingMode": {
+                    "enum": [
+                      "half_up",
+                      "half_even",
+                      "up",
+                      "down"
+                    ],
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "inactive"
+                    ],
+                    "type": "string"
+                  },
+                  "updatedAt": {
+                    "format": "date-time",
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "version": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  }
+                },
+                "required": [
+                  "id",
+                  "planCode",
+                  "planName",
+                  "basePriceSide",
+                  "currencyCode",
+                  "fallbackPolicy",
+                  "roundingMode",
+                  "minimumChargeAmount",
+                  "status"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/pricing/plans",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "pricing",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "tag": "pricing",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/pricing/rate_cards",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#fetchPricingRateCards@/admin/pricing/rateCards",
+      "kind": "read",
+      "module": "pc-admin-pricing",
+      "openapi_exposed": true,
+      "operation": "fetchPricingRateCards",
+      "operation_id": "rateCards.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "subject_type",
+          "required": false,
+          "schema": {
+            "enum": [
+              "default",
+              "api_key",
+              "account_group",
+              "account",
+              "user",
+              "organization"
+            ],
+            "maxLength": 32,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "pricing_plan_id",
+          "required": false,
+          "schema": {
+            "maxLength": 64,
+            "pattern": "^-?[0-9]+$",
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "maxLength": 32,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "cloudrouter_account_rate_card",
+        "cloudrouter_pricing_plan"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AdminRateCardListResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminRateCardListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminRateCard",
+                "properties": {
+                  "createdAt": {
+                    "format": "date-time",
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "effectiveFrom": {
+                    "format": "date-time",
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "effectiveTo": {
+                    "format": "date-time",
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "id": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "planCode": {
+                    "maxLength": 96,
+                    "type": "string"
+                  },
+                  "planName": {
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "pricingPlanId": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "priority": {
+                    "format": "int32",
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "inactive"
+                    ],
+                    "type": "string"
+                  },
+                  "subjectCode": {
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "subjectId": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "subjectType": {
+                    "enum": [
+                      "default",
+                      "api_key",
+                      "account_group",
+                      "account",
+                      "user",
+                      "organization"
+                    ],
+                    "type": "string"
+                  },
+                  "updatedAt": {
+                    "format": "date-time",
+                    "maxLength": 64,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "subjectType",
+                  "pricingPlanId",
+                  "status"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/pricing/rateCards",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "pricing",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "tag": "pricing",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/pricing/rules",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#fetchPricingRules@/admin/pricing/rules",
+      "kind": "read",
+      "module": "pc-admin-pricing",
+      "openapi_exposed": true,
+      "operation": "fetchPricingRules",
+      "operation_id": "rules.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 128,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "pricing_plan_id",
+          "required": false,
+          "schema": {
+            "maxLength": 64,
+            "pattern": "^-?[0-9]+$",
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "status",
+          "required": false,
+          "schema": {
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "maxLength": 32,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "default": 1,
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "default": 20,
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "cloudrouter_pricing_rule",
+        "cloudrouter_pricing_plan"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AdminPricingRuleListResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminPricingRuleListResponse",
+          "properties": {
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "AdminPricingRule",
+                "properties": {
+                  "catalogKey": {
+                    "maxLength": 256,
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "format": "date-time",
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "effectiveFrom": {
+                    "format": "date-time",
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "effectiveTo": {
+                    "format": "date-time",
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "formulaMode": {
+                    "enum": [
+                      "multiplier_markup",
+                      "unit_price_override"
+                    ],
+                    "type": "string"
+                  },
+                  "id": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "markupAmount": {
+                    "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+                    "type": "string"
+                  },
+                  "meterCode": {
+                    "maxLength": 96,
+                    "type": "string"
+                  },
+                  "multiplier": {
+                    "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+                    "type": "string"
+                  },
+                  "operationCode": {
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "planCode": {
+                    "maxLength": 96,
+                    "type": "string"
+                  },
+                  "pricingPlanId": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "priority": {
+                    "format": "int32",
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "productCode": {
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "providerCode": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "regionCode": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "ruleCode": {
+                    "maxLength": 96,
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": [
+                      "active",
+                      "inactive"
+                    ],
+                    "type": "string"
+                  },
+                  "unitPriceOverride": {
+                    "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+                    "type": "string"
+                  },
+                  "updatedAt": {
+                    "format": "date-time",
+                    "maxLength": 64,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "pricingPlanId",
+                  "ruleCode",
+                  "formulaMode",
+                  "status"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/pricing/rules",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "pricing",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "tag": "pricing",
+      "write_tables": []
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/pricing/plans/{planId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#updatePricingPlan@/admin/pricing/plans/{planId}",
+      "kind": "update",
+      "module": "pc-admin-pricing",
+      "openapi_exposed": true,
+      "operation": "updatePricingPlan",
+      "operation_id": "plans.update",
+      "path_params": [
+        "planId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "cloudrouter_pricing_plan"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "PricingPlanUpdateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "PricingPlanUpdateRequest",
+          "properties": {
+            "basePriceSide": {
+              "enum": [
+                "official_reference",
+                "upstream_cost",
+                "customer_charge",
+                "internal_transfer"
+              ],
+              "type": "string"
+            },
+            "currencyCode": {
+              "maxLength": 10,
+              "pattern": "^[A-Z]{3}$",
+              "type": "string"
+            },
+            "effectiveFrom": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "effectiveTo": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "minimumChargeAmount": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "type": "string"
+            },
+            "planCode": {
+              "maxLength": 96,
+              "type": "string"
+            },
+            "planName": {
+              "maxLength": 256,
+              "type": "string"
+            },
+            "roundingMode": {
+              "enum": [
+                "half_up",
+                "half_even",
+                "up",
+                "down"
+              ],
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "planName",
+            "basePriceSide",
+            "currencyCode",
+            "roundingMode",
+            "minimumChargeAmount",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminPricingPlan",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminPricingPlan",
+          "properties": {
+            "basePriceSide": {
+              "enum": [
+                "official_reference",
+                "upstream_cost",
+                "customer_charge",
+                "internal_transfer"
+              ],
+              "type": "string"
+            },
+            "createdAt": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "currencyCode": {
+              "maxLength": 10,
+              "pattern": "^[A-Z]{3}$",
+              "type": "string"
+            },
+            "effectiveFrom": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "effectiveTo": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "fallbackPolicy": {
+              "maxLength": 32,
+              "type": "string"
+            },
+            "id": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "minimumChargeAmount": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "type": "string"
+            },
+            "planCode": {
+              "maxLength": 96,
+              "type": "string"
+            },
+            "planName": {
+              "maxLength": 256,
+              "type": "string"
+            },
+            "roundingMode": {
+              "enum": [
+                "half_up",
+                "half_even",
+                "up",
+                "down"
+              ],
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "type": "string"
+            },
+            "updatedAt": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "version": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            }
+          },
+          "required": [
+            "id",
+            "planCode",
+            "planName",
+            "basePriceSide",
+            "currencyCode",
+            "fallbackPolicy",
+            "roundingMode",
+            "minimumChargeAmount",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/pricing/plans/{planId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "pricing",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "tag": "pricing",
+      "write_tables": [
+        "cloudrouter_pricing_plan",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/pricing/rate_cards/{rateCardId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#updatePricingRateCard@/admin/pricing/rateCards/{rateCardId}",
+      "kind": "update",
+      "module": "pc-admin-pricing",
+      "openapi_exposed": true,
+      "operation": "updatePricingRateCard",
+      "operation_id": "rateCards.update",
+      "path_params": [
+        "rateCardId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "cloudrouter_account_rate_card",
+        "cloudrouter_pricing_plan"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "RateCardUpdateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "RateCardUpdateRequest",
+          "properties": {
+            "effectiveFrom": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "effectiveTo": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "pricingPlanId": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "priority": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "type": "string"
+            },
+            "subjectCode": {
+              "maxLength": 160,
+              "type": "string"
+            },
+            "subjectId": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "subjectType": {
+              "enum": [
+                "default",
+                "api_key",
+                "account_group",
+                "account",
+                "user",
+                "organization"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "subjectType",
+            "pricingPlanId",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminRateCard",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminRateCard",
+          "properties": {
+            "createdAt": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "effectiveFrom": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "effectiveTo": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "id": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "planCode": {
+              "maxLength": 96,
+              "type": "string"
+            },
+            "planName": {
+              "maxLength": 256,
+              "type": "string"
+            },
+            "pricingPlanId": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "priority": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "type": "string"
+            },
+            "subjectCode": {
+              "maxLength": 160,
+              "type": "string"
+            },
+            "subjectId": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "subjectType": {
+              "enum": [
+                "default",
+                "api_key",
+                "account_group",
+                "account",
+                "user",
+                "organization"
+              ],
+              "type": "string"
+            },
+            "updatedAt": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "subjectType",
+            "pricingPlanId",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/pricing/rateCards/{rateCardId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "pricing",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "tag": "pricing",
+      "write_tables": [
+        "cloudrouter_account_rate_card",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/pricing/rules/{ruleId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#updatePricingRule@/admin/pricing/rules/{ruleId}",
+      "kind": "update",
+      "module": "pc-admin-pricing",
+      "openapi_exposed": true,
+      "operation": "updatePricingRule",
+      "operation_id": "rules.update",
+      "path_params": [
+        "ruleId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "cloudrouter_pricing_rule",
+        "cloudrouter_pricing_plan"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "PricingRuleUpdateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "PricingRuleUpdateRequest",
+          "properties": {
+            "catalogKey": {
+              "maxLength": 256,
+              "type": "string"
+            },
+            "effectiveFrom": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "effectiveTo": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "formulaMode": {
+              "enum": [
+                "multiplier_markup",
+                "unit_price_override"
+              ],
+              "type": "string"
+            },
+            "markupAmount": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "type": "string"
+            },
+            "meterCode": {
+              "maxLength": 96,
+              "type": "string"
+            },
+            "multiplier": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "type": "string"
+            },
+            "operationCode": {
+              "maxLength": 160,
+              "type": "string"
+            },
+            "pricingPlanId": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "priority": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "productCode": {
+              "maxLength": 160,
+              "type": "string"
+            },
+            "providerCode": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "regionCode": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "ruleCode": {
+              "maxLength": 96,
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "type": "string"
+            },
+            "unitPriceOverride": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "formulaMode",
+            "pricingPlanId",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminPricingRule",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminPricingRule",
+          "properties": {
+            "catalogKey": {
+              "maxLength": 256,
+              "type": "string"
+            },
+            "createdAt": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "effectiveFrom": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "effectiveTo": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "formulaMode": {
+              "enum": [
+                "multiplier_markup",
+                "unit_price_override"
+              ],
+              "type": "string"
+            },
+            "id": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "markupAmount": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "type": "string"
+            },
+            "meterCode": {
+              "maxLength": 96,
+              "type": "string"
+            },
+            "multiplier": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "type": "string"
+            },
+            "operationCode": {
+              "maxLength": 160,
+              "type": "string"
+            },
+            "planCode": {
+              "maxLength": 96,
+              "type": "string"
+            },
+            "pricingPlanId": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "priority": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "productCode": {
+              "maxLength": 160,
+              "type": "string"
+            },
+            "providerCode": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "regionCode": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "ruleCode": {
+              "maxLength": 96,
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "type": "string"
+            },
+            "unitPriceOverride": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "type": "string"
+            },
+            "updatedAt": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "pricingPlanId",
+            "ruleCode",
+            "formulaMode",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/pricing/rules/{ruleId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "pricing",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "tag": "pricing",
+      "write_tables": [
+        "cloudrouter_pricing_rule",
+        "ops_audit_log"
+      ]
     },
     {
       "api_method": "POST",
@@ -8369,7 +10528,7 @@
       "read_sources": [
         "iam_gateway_chain_policy"
       ],
-      "request_body_required": null,
+      "request_body_required": true,
       "request_id_header": false,
       "request_schema": {
         "name": "ChainPolicyInput",
@@ -11663,6 +13822,11 @@
               "nullable": true,
               "type": "string"
             },
+            "defaultBaseUrl": {
+              "maxLength": 2048,
+              "nullable": true,
+              "type": "string"
+            },
             "environment": {
               "format": "int32",
               "nullable": true,
@@ -11677,6 +13841,14 @@
               "maxLength": 32,
               "nullable": true,
               "type": "string"
+            },
+            "protocols": {
+              "items": {
+                "$ref": "#/components/schemas/LlmProtocolConfig"
+              },
+              "maxItems": 8,
+              "nullable": true,
+              "type": "array"
             },
             "quotaLimit": {
               "maxLength": 64,
@@ -14023,6 +16195,11 @@
                     "maxLength": 64,
                     "type": "string"
                   },
+                  "defaultBaseUrl": {
+                    "maxLength": 2048,
+                    "nullable": true,
+                    "type": "string"
+                  },
                   "environment": {
                     "format": "int32",
                     "nullable": true,
@@ -14045,6 +16222,13 @@
                     "maxLength": 32,
                     "nullable": true,
                     "type": "string"
+                  },
+                  "protocols": {
+                    "items": {
+                      "$ref": "#/components/schemas/LlmProtocolConfig"
+                    },
+                    "maxItems": 8,
+                    "type": "array"
                   },
                   "quotaLimit": {
                     "maxLength": 64,
@@ -14113,6 +16297,8 @@
                   "supplierId",
                   "supplierCode",
                   "preferredEndpointId",
+                  "defaultBaseUrl",
+                  "protocols",
                   "accountCode",
                   "accountName",
                   "accountType",
@@ -14869,6 +17055,11 @@
               "nullable": true,
               "type": "string"
             },
+            "defaultBaseUrl": {
+              "maxLength": 2048,
+              "nullable": true,
+              "type": "string"
+            },
             "environment": {
               "format": "int32",
               "nullable": true,
@@ -14883,6 +17074,14 @@
               "maxLength": 32,
               "nullable": true,
               "type": "string"
+            },
+            "protocols": {
+              "items": {
+                "$ref": "#/components/schemas/LlmProtocolConfig"
+              },
+              "maxItems": 8,
+              "nullable": true,
+              "type": "array"
             },
             "quotaLimit": {
               "maxLength": 64,
@@ -16907,7 +19106,7 @@
         "iam_gateway_access_policy",
         "ai_quota_policy",
         "ai_model_pricing",
-        "ai_pricing_plan"
+        "cloudrouter_pricing_plan"
       ],
       "request_body_required": null,
       "request_id_header": false,
@@ -17567,7 +19766,6 @@
         "ai_request_trace",
         "ai_model_rank_snapshot",
         "ops_notification_message",
-        "ops_metric_snapshot",
         "ops_gateway_instance"
       ],
       "request_body_required": null,
@@ -17625,19 +19823,34 @@
                   "audio (Whisper)": {
                     "type": "number"
                   },
+                  "audio (Whisper) cost": {
+                    "type": "number"
+                  },
                   "image (Midjourney/DALL-E)": {
+                    "type": "number"
+                  },
+                  "image (Midjourney/DALL-E) cost": {
                     "type": "number"
                   },
                   "llm (Text)": {
                     "type": "number"
                   },
+                  "llm (Text) cost": {
+                    "type": "number"
+                  },
                   "music (Suno)": {
+                    "type": "number"
+                  },
+                  "music (Suno) cost": {
                     "type": "number"
                   },
                   "time": {
                     "type": "string"
                   },
                   "video (Runway/Sora)": {
+                    "type": "number"
+                  },
+                  "video (Runway/Sora) cost": {
                     "type": "number"
                   }
                 },
@@ -17647,7 +19860,12 @@
                   "image (Midjourney/DALL-E)",
                   "video (Runway/Sora)",
                   "audio (Whisper)",
-                  "music (Suno)"
+                  "music (Suno)",
+                  "llm (Text) cost",
+                  "image (Midjourney/DALL-E) cost",
+                  "video (Runway/Sora) cost",
+                  "audio (Whisper) cost",
+                  "music (Suno) cost"
                 ],
                 "type": "object"
               },
@@ -17690,6 +19908,38 @@
                   "ip",
                   "status",
                   "remark"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "modalityDistribution": {
+              "items": {
+                "additionalProperties": false,
+                "name": "DashboardModalityDistribution",
+                "properties": {
+                  "modality": {
+                    "enum": [
+                      "text",
+                      "image",
+                      "video",
+                      "audio",
+                      "music",
+                      "unknown"
+                    ],
+                    "type": "string"
+                  },
+                  "requests": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  }
+                },
+                "required": [
+                  "modality",
+                  "requests"
                 ],
                 "type": "object"
               },
@@ -17901,6 +20151,7 @@
             "multimodalSparkline",
             "performanceSparkline",
             "chartData",
+            "modalityDistribution",
             "topModels",
             "announcements",
             "warnings"
@@ -21116,7 +23367,7 @@
       "module": "pc-playground",
       "openapi_exposed": true,
       "operation": "streamRuntimeEvents",
-      "operation_id": "invocations.events.stream.list",
+      "operation_id": "invocations.events.stream.retrieve",
       "path_params": [
         "invocationId"
       ],
@@ -21284,6 +23535,670 @@
       "write_tables": [
         "ai_usage"
       ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/ai/pricing/rates",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-pricing/src/services/pricingService.ts#fetchOfficialPricingRates@/pricing",
+      "kind": "read",
+      "module": "pc-pricing",
+      "openapi_exposed": true,
+      "operation": "fetchOfficialPricingRates",
+      "operation_id": "pricing.rates.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "category",
+          "required": false,
+          "schema": {
+            "enum": [
+              "all",
+              "llm",
+              "image",
+              "video",
+              "audio",
+              "music",
+              "embedding",
+              "sound",
+              "api",
+              "other"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 256,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "vendor_code",
+          "required": false,
+          "schema": {
+            "maxLength": 160,
+            "pattern": "^[A-Za-z0-9._:/-]+$",
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "region_code",
+          "required": false,
+          "schema": {
+            "maxLength": 160,
+            "pattern": "^[A-Za-z0-9._:/-]+$",
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "meter_code",
+          "required": false,
+          "schema": {
+            "maxLength": 160,
+            "pattern": "^[A-Za-z0-9._:/-]+$",
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "pricing_price_book",
+        "pricing_product",
+        "pricing_operation",
+        "pricing_meter",
+        "pricing_product_binding",
+        "pricing_rate",
+        "pricing_rate_binding",
+        "pricing_rate_condition",
+        "pricing_rate_tier",
+        "pricing_rate_formula",
+        "pricing_rate_formula_term"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "OfficialPricingCatalogResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "OfficialPricingCatalogResponse",
+          "properties": {
+            "groups": {
+              "items": {
+                "additionalProperties": false,
+                "name": "OfficialPricingGroupFacet",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "code",
+                  "count"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "OfficialPricingRate",
+                "properties": {
+                  "apiFormat": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "billability": {
+                    "enum": [
+                      "chargeable",
+                      "free",
+                      "not_applicable",
+                      "unknown"
+                    ],
+                    "type": "string"
+                  },
+                  "calculationMode": {
+                    "enum": [
+                      "per_unit",
+                      "flat",
+                      "graduated",
+                      "volume",
+                      "formula"
+                    ],
+                    "type": "string"
+                  },
+                  "capabilities": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  },
+                  "catalogKey": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "chargeTiming": {
+                    "enum": [
+                      "request_accepted",
+                      "successful_result",
+                      "usage_reported"
+                    ],
+                    "type": "string"
+                  },
+                  "conditions": {
+                    "items": {
+                      "additionalProperties": false,
+                      "name": "OfficialPricingRateCondition",
+                      "properties": {
+                        "dimensionCode": {
+                          "type": "string"
+                        },
+                        "operator": {
+                          "enum": [
+                            "eq",
+                            "neq",
+                            "gt",
+                            "gte",
+                            "lt",
+                            "lte",
+                            "in",
+                            "not_in",
+                            "exists"
+                          ],
+                          "type": "string"
+                        },
+                        "value": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "dimensionCode",
+                        "operator",
+                        "value"
+                      ],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "contextTokens": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "currencyCode": {
+                    "pattern": "^[A-Z]{3}$",
+                    "type": "string"
+                  },
+                  "effectiveFrom": {
+                    "type": "string"
+                  },
+                  "effectiveTo": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "endpointCode": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "formula": {
+                    "additionalProperties": false,
+                    "name": "OfficialPricingFormula",
+                    "nullable": true,
+                    "properties": {
+                      "constantUnits": {
+                        "type": "string"
+                      },
+                      "formulaCode": {
+                        "type": "string"
+                      },
+                      "formulaVersion": {
+                        "type": "string"
+                      },
+                      "maximumUnits": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "minimumUnits": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "quantityCoefficient": {
+                        "type": "string"
+                      },
+                      "terms": {
+                        "items": {
+                          "additionalProperties": false,
+                          "name": "OfficialPricingFormulaTerm",
+                          "properties": {
+                            "coefficient": {
+                              "type": "string"
+                            },
+                            "dimensionCode": {
+                              "type": "string"
+                            },
+                            "termCode": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "termCode",
+                            "dimensionCode",
+                            "coefficient"
+                          ],
+                          "type": "object"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "formulaCode",
+                      "formulaVersion",
+                      "constantUnits",
+                      "quantityCoefficient",
+                      "terms"
+                    ],
+                    "type": "object"
+                  },
+                  "groupCodes": {
+                    "items": {
+                      "enum": [
+                        "all",
+                        "llm",
+                        "image",
+                        "video",
+                        "audio",
+                        "music",
+                        "embedding",
+                        "sound",
+                        "api",
+                        "other"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "inputModalities": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  },
+                  "maxInputTokens": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "maxOutputTokens": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "meterCode": {
+                    "type": "string"
+                  },
+                  "meterDisplayName": {
+                    "type": "string"
+                  },
+                  "minimumQuantity": {
+                    "pattern": "^[0-9]+(?:\\.[0-9]+)?$",
+                    "type": "string"
+                  },
+                  "operationCode": {
+                    "type": "string"
+                  },
+                  "operationDisplayName": {
+                    "type": "string"
+                  },
+                  "operationKind": {
+                    "type": "string"
+                  },
+                  "outputModalities": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  },
+                  "priceBookCode": {
+                    "type": "string"
+                  },
+                  "priceBookVersion": {
+                    "type": "string"
+                  },
+                  "productCode": {
+                    "type": "string"
+                  },
+                  "productDisplayName": {
+                    "type": "string"
+                  },
+                  "productKind": {
+                    "type": "string"
+                  },
+                  "providerCode": {
+                    "type": "string"
+                  },
+                  "quantityAggregation": {
+                    "enum": [
+                      "sum",
+                      "maximum",
+                      "minimum",
+                      "last",
+                      "distinct_invocation"
+                    ],
+                    "type": "string"
+                  },
+                  "quantityKind": {
+                    "type": "string"
+                  },
+                  "quantityStep": {
+                    "nullable": true,
+                    "pattern": "^[0-9]+(?:\\.[0-9]+)?$",
+                    "type": "string"
+                  },
+                  "rateCode": {
+                    "type": "string"
+                  },
+                  "rateHash": {
+                    "type": "string"
+                  },
+                  "regionCode": {
+                    "type": "string"
+                  },
+                  "resourceCode": {
+                    "type": "string"
+                  },
+                  "resourceType": {
+                    "type": "string"
+                  },
+                  "sourceObservedAt": {
+                    "type": "string"
+                  },
+                  "sourceUrl": {
+                    "type": "string"
+                  },
+                  "supportsJsonSchema": {
+                    "nullable": true,
+                    "type": "boolean"
+                  },
+                  "supportsStreaming": {
+                    "nullable": true,
+                    "type": "boolean"
+                  },
+                  "supportsTools": {
+                    "nullable": true,
+                    "type": "boolean"
+                  },
+                  "tiers": {
+                    "items": {
+                      "additionalProperties": false,
+                      "name": "OfficialPricingRateTier",
+                      "properties": {
+                        "currencyCode": {
+                          "type": "string"
+                        },
+                        "flatAmount": {
+                          "type": "string"
+                        },
+                        "lowerBound": {
+                          "type": "string"
+                        },
+                        "tierCode": {
+                          "type": "string"
+                        },
+                        "unitPrice": {
+                          "type": "string"
+                        },
+                        "unitSize": {
+                          "type": "string"
+                        },
+                        "upperBound": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "tierCode",
+                        "lowerBound",
+                        "unitSize",
+                        "unitPrice",
+                        "flatAmount",
+                        "currencyCode"
+                      ],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "unitCode": {
+                    "type": "string"
+                  },
+                  "unitPrice": {
+                    "pattern": "^[0-9]+(?:\\.[0-9]+)?$",
+                    "type": "string"
+                  },
+                  "unitSize": {
+                    "pattern": "^[0-9]+(?:\\.[0-9]+)?$",
+                    "type": "string"
+                  },
+                  "usageScopes": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  },
+                  "vendorCode": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "rateCode",
+                  "rateHash",
+                  "groupCodes",
+                  "productCode",
+                  "productKind",
+                  "productDisplayName",
+                  "operationCode",
+                  "operationKind",
+                  "operationDisplayName",
+                  "vendorCode",
+                  "providerCode",
+                  "regionCode",
+                  "resourceType",
+                  "resourceCode",
+                  "priceBookCode",
+                  "priceBookVersion",
+                  "meterCode",
+                  "meterDisplayName",
+                  "quantityKind",
+                  "unitCode",
+                  "billability",
+                  "chargeTiming",
+                  "calculationMode",
+                  "quantityAggregation",
+                  "unitSize",
+                  "unitPrice",
+                  "minimumQuantity",
+                  "currencyCode",
+                  "conditions",
+                  "tiers",
+                  "effectiveFrom",
+                  "sourceUrl",
+                  "sourceObservedAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "meters": {
+              "items": {
+                "additionalProperties": false,
+                "name": "OfficialPricingMeterFacet",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "displayName": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "unitCode": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "code",
+                  "displayName",
+                  "unitCode",
+                  "count"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            },
+            "regions": {
+              "items": {
+                "additionalProperties": false,
+                "name": "OfficialPricingRegionFacet",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "code",
+                  "count"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "vendors": {
+              "items": {
+                "additionalProperties": false,
+                "name": "OfficialPricingValueFacet",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "code",
+                  "count"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo",
+            "groups",
+            "vendors",
+            "regions",
+            "meters"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/pricing",
+      "route_scope": "public",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-app-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-pricing/src/services/pricingService.ts",
+      "tag": "ai",
+      "write_tables": []
     },
     {
       "api_method": "GET",
@@ -22578,13 +25493,11 @@
       "query_parameters": [
         {
           "in": "query",
-          "name": "page",
+          "name": "cursor",
           "required": false,
           "schema": {
-            "default": 1,
-            "format": "int32",
-            "minimum": 1,
-            "type": "integer"
+            "maxLength": 1024,
+            "type": "string"
           }
         },
         {
@@ -22604,7 +25517,7 @@
           "name": "q",
           "required": false,
           "schema": {
-            "maxLength": 256,
+            "maxLength": 128,
             "type": "string"
           }
         }
@@ -24281,7 +27194,11 @@
       "sdk_family": "cloudrouter-app-sdk",
       "source": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
       "tag": "iam",
-      "write_tables": []
+      "write_tables": [
+        "ops_referral_invite_code",
+        "iam_user",
+        "iam_credential"
+      ]
     },
     {
       "api_method": "GET",
@@ -24500,16 +27417,152 @@
     },
     {
       "api_method": "GET",
+      "api_path": "/app/v3/api/ai/settlements/dashboard",
+      "api_surface": "app",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "sdks/_route-manifests/app-api/sdkwork-routes-cloudrouter-app-api.route-manifest.json#fetch_settlements_dashboard@/console/settlements",
+      "kind": "read",
+      "module": "settlements",
+      "openapi_exposed": true,
+      "operation": "fetch_settlements_dashboard",
+      "operation_id": "settlements.dashboard.retrieve",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "year",
+          "required": false,
+          "schema": {
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_metering_usage",
+        "cloudrouter_charge_line",
+        "cloudrouter_rating_decision"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "SettlementsDashboardSnapshot",
+        "schema": {
+          "additionalProperties": false,
+          "name": "SettlementsDashboardSnapshot",
+          "properties": {
+            "bills": {
+              "items": {
+                "additionalProperties": false,
+                "name": "SettlementBill",
+                "properties": {
+                  "endDate": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "period": {
+                    "type": "string"
+                  },
+                  "startDate": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "totalCost": {
+                    "type": "string"
+                  },
+                  "totalTokens": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "period",
+                  "startDate",
+                  "endDate",
+                  "totalTokens",
+                  "totalCost",
+                  "status"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "chartData": {
+              "items": {
+                "additionalProperties": false,
+                "name": "SettlementChartPoint",
+                "properties": {
+                  "audio": {
+                    "$ref": "#/components/schemas/MediaResource"
+                  },
+                  "day": {
+                    "type": "string"
+                  },
+                  "image": {
+                    "$ref": "#/components/schemas/MediaResource"
+                  },
+                  "music": {
+                    "$ref": "#/components/schemas/MediaResource"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "video": {
+                    "$ref": "#/components/schemas/MediaResource"
+                  }
+                },
+                "required": [
+                  "day",
+                  "text",
+                  "image",
+                  "video",
+                  "audio",
+                  "music"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "chartData",
+            "bills"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/console/settlements",
+      "route_scope": "console",
+      "sdk_api_prefix": "/app/v3/api",
+      "sdk_client": "SdkworkAppClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-app-sdk",
+      "source": "sdks/_route-manifests/app-api/sdkwork-routes-cloudrouter-app-api.route-manifest.json",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
       "api_path": "/backend/v3/api/billing/recharges/records/{orderNo}",
       "api_surface": "backend",
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "services/sdkwork-cloudrouter-router-service/src/api/admin_marketing.rs#fetchRechargeRecord@/admin/marketing/rechargeRecords/{orderNo}",
+      "key": "sdks/_route-manifests/backend-api/sdkwork-routes-cloudrouter-backend-api.route-manifest.json#fetch_recharge_record@/admin/marketing/rechargeRecords/{orderNo}",
       "kind": "read",
       "module": "{orderNo}",
       "openapi_exposed": true,
-      "operation": "fetchRechargeRecord",
+      "operation": "fetch_recharge_record",
       "operation_id": "rechargeRecords.retrieve",
       "path_params": [
         "orderNo"
@@ -24584,7 +27637,7 @@
       "sdk_client": "SdkworkBackendClient",
       "sdk_domain": "commerce",
       "sdk_family": "cloudrouter-backend-sdk",
-      "source": "services/sdkwork-cloudrouter-router-service/src/api/admin_marketing.rs",
+      "source": "sdks/_route-manifests/backend-api/sdkwork-routes-cloudrouter-backend-api.route-manifest.json",
       "tag": "billing",
       "write_tables": []
     },
@@ -24595,11 +27648,11 @@
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "services/sdkwork-cloudrouter-router-service/src/api/admin_marketing.rs#fetchRechargeRecords@/admin/marketing/rechargeRecords",
+      "key": "sdks/_route-manifests/backend-api/sdkwork-routes-cloudrouter-backend-api.route-manifest.json#fetch_recharge_records@/admin/marketing/rechargeRecords",
       "kind": "read",
       "module": "rechargeRecords",
       "openapi_exposed": true,
-      "operation": "fetchRechargeRecords",
+      "operation": "fetch_recharge_records",
       "operation_id": "rechargeRecords.list",
       "path_params": [],
       "query_parameters": [
@@ -24630,58 +27683,25 @@
       "request_body_required": null,
       "request_id_header": false,
       "response_schema": {
-        "name": "AdminRechargeRecord",
+        "name": "AdminRechargeRecordPage",
         "schema": {
           "additionalProperties": false,
-          "name": "AdminRechargeRecord",
+          "description": "AdminRechargeRecordPage contract.",
           "properties": {
-            "amount": {
-              "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
-              "type": "string"
+            "items": {
+              "description": "items field on AdminRechargeRecordPage.",
+              "items": {
+                "$ref": "#/components/schemas/AdminRechargeRecord"
+              },
+              "type": "array"
             },
-            "id": {
-              "maxLength": 64,
-              "type": "string"
-            },
-            "method": {
-              "maxLength": 64,
-              "type": "string"
-            },
-            "status": {
-              "maxLength": 64,
-              "type": "string"
-            },
-            "time": {
-              "format": "date-time",
-              "type": "string"
-            },
-            "tradeNo": {
-              "maxLength": 128,
-              "type": "string"
-            },
-            "usdCredited": {
-              "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
-              "type": "string"
-            },
-            "user": {
-              "maxLength": 256,
-              "type": "string"
-            },
-            "userId": {
-              "maxLength": 64,
-              "type": "string"
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
             }
           },
           "required": [
-            "id",
-            "tradeNo",
-            "userId",
-            "user",
-            "amount",
-            "usdCredited",
-            "method",
-            "status",
-            "time"
+            "items",
+            "pageInfo"
           ],
           "type": "object"
         }
@@ -24692,7 +27712,7 @@
       "sdk_client": "SdkworkBackendClient",
       "sdk_domain": "commerce",
       "sdk_family": "cloudrouter-backend-sdk",
-      "source": "services/sdkwork-cloudrouter-router-service/src/api/admin_marketing.rs",
+      "source": "sdks/_route-manifests/backend-api/sdkwork-routes-cloudrouter-backend-api.route-manifest.json",
       "tag": "billing",
       "write_tables": []
     },
@@ -25176,25 +28196,25 @@
   },
   "summary": {
     "api_method_counts": {
-      "DELETE": 18,
-      "GET": 99,
-      "PATCH": 16,
-      "POST": 52,
+      "DELETE": 20,
+      "GET": 105,
+      "PATCH": 19,
+      "POST": 55,
       "PUT": 12
     },
     "api_surface_counts": {
-      "app": 72,
-      "backend": 125
+      "app": 74,
+      "backend": 137
     },
-    "operation_count": 197,
+    "operation_count": 211,
     "route_scope_counts": {
-      "admin": 125,
-      "console": 30,
-      "public": 42
+      "admin": 137,
+      "console": 31,
+      "public": 43
     },
     "sdk_client_counts": {
-      "SdkworkAppClient": 72,
-      "SdkworkBackendClient": 125
+      "SdkworkAppClient": 74,
+      "SdkworkBackendClient": 137
     }
   }
 }

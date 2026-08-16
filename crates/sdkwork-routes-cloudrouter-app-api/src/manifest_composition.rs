@@ -38,6 +38,13 @@ fn capability_manifests() -> Vec<HttpRouteManifest> {
         // the application endpoints as session-protected (API_ASSEMBLY_SPEC
         // §3/§6.1).
         sdkwork_api_partner_assembly::app_api_route_manifest(),
+        // Account commerce surface (`/app/v3/api/wallet/*`,
+        // `/app/v3/api/token_bank/*`, `/app/v3/api/billing/*`) is merged by
+        // the account API assembly entrypoint on the shared commerce pool; its
+        // route manifest enters through the dependency assembly so the Web
+        // Framework enforces the App routes' declared dual-token auth and
+        // permissions (API_ASSEMBLY_SPEC §3/§6.1).
+        sdkwork_api_account_assembly::app_api_route_manifest(),
         // Federated Community surface (`/app/v3/api/community/*`) is merged by
         // `merge_federated_community_app_router`; its route manifest enters
         // through the dependency assembly entrypoint so the Web Framework
@@ -133,10 +140,31 @@ mod tests {
     }
 
     #[test]
+    fn composed_manifest_includes_account_commerce_routes() {
+        let manifest = cloud_router_app_composed_route_manifest();
+        for (method, path) in [
+            ("GET", "/app/v3/api/wallet/portfolio"),
+            ("GET", "/app/v3/api/wallet/ledger_entries"),
+            ("GET", "/app/v3/api/token_bank/holds"),
+            ("GET", "/app/v3/api/token_bank/account"),
+            ("GET", "/app/v3/api/billing/history"),
+        ] {
+            let route = manifest
+                .match_route(method, path)
+                .unwrap_or_else(|| panic!("{method} {path} must be registered"));
+            assert_eq!(
+                RouteAuth::DualToken,
+                route.auth,
+                "{method} {path} must inherit dual-token auth from the account assembly manifest"
+            );
+        }
+    }
+
+    #[test]
     fn composed_manifest_keeps_host_protected_routes() {
         let manifest = cloud_router_app_composed_route_manifest();
         let route = manifest
-            .match_route("GET", "/app/v3/api/chat/conversations")
+            .match_route("GET", "/app/v3/api/notification/notifications")
             .expect("host route must be registered");
         assert_eq!(RouteAuth::DualToken, route.auth);
     }

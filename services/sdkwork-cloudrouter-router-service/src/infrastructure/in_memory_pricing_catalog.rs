@@ -126,7 +126,8 @@ impl InMemoryPricingCatalog {
     }
 
     pub fn set_account_group_model_access(&mut self, access: AccountGroupModelAccess) {
-        self.account_group_model_access.insert(access.group_id, access);
+        self.account_group_model_access
+            .insert(access.group_id, access);
     }
 }
 

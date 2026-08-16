@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "@sdkwork/cloudrouter-pc-pricing",
+    "displayName": "SDKWork Cloud Router Pricing",
+    "version": "0.1.0",
+    "type": "node-package",
+    "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-pricing",
+    "domain": "commerce",
+    "declaredDomain": "commerce",
+    "capability": "pricing",
+    "surface": "app",
+    "status": "ready",
+    "languages": ["typescript"],
+    "generated": false,
+    "private": true,
+    "manifests": ["package.json"]
+  },
+  "canonicalSpecs": [
+    { "file": "COMPONENT_SPEC.md", "path": "../../../../../sdkwork-specs/COMPONENT_SPEC.md", "purpose": "Component ownership and manifest rules." },
+    { "file": "CODE_STYLE_SPEC.md", "path": "../../../../../sdkwork-specs/CODE_STYLE_SPEC.md", "purpose": "Authored source and generated code boundaries." },
+    { "file": "NAMING_SPEC.md", "path": "../../../../../sdkwork-specs/NAMING_SPEC.md", "purpose": "Canonical naming rules." },
+    { "file": "TYPESCRIPT_CODE_SPEC.md", "path": "../../../../../sdkwork-specs/TYPESCRIPT_CODE_SPEC.md", "purpose": "TypeScript package rules." },
+    { "file": "FRONTEND_SPEC.md", "path": "../../../../../sdkwork-specs/FRONTEND_SPEC.md", "purpose": "Frontend UI and service boundaries." },
+    { "file": "I18N_SPEC.md", "path": "../../../../../sdkwork-specs/I18N_SPEC.md", "purpose": "Localized message ownership." },
+    { "file": "SDK_SPEC.md", "path": "../../../../../sdkwork-specs/SDK_SPEC.md", "purpose": "Generated SDK integration rules." },
+    { "file": "TEST_SPEC.md", "path": "../../../../../sdkwork-specs/TEST_SPEC.md", "purpose": "Focused verification requirements." }
+  ],
+  "contracts": {
+    "layerRole": "frontend-feature",
+    "publicExports": [".", "./i18n"],
+    "runtimeEntrypoints": ["package.json#scripts.build", "package.json#scripts.typecheck", "package.json#scripts.test"],
+    "providedPorts": ["cloudrouter.pricing.portal"],
+    "requiredPorts": ["cloudrouter.app-sdk.ai.pricing"],
+    "sdkClients": ["@sdkwork/cloudrouter-app-sdk"],
+    "events": [],
+    "configKeys": [],
+    "routeManifest": "src/routes/pricingRoutes.ts"
+  },
+  "integration": {
+    "authority": "Root SDKWork specs remain authoritative.",
+    "dependencyPolicy": "Consumers use public package exports and the generated SDK runtime boundary.",
+    "sdkPolicy": "The pricing service calls the generated Cloud Router App SDK through cloudroutes-pc-commons/runtime.",
+    "languagePolicy": "TypeScript and React sources follow the PC React architecture."
+  },
+  "verification": {
+    "commands": [
+      "pnpm --filter @sdkwork/cloudrouter-pc-pricing typecheck",
+      "pnpm --filter @sdkwork/cloudrouter-pc-pricing test"
+    ]
+  },
+  "metadata": {
+    "managedBy": "sdkwork-cloudrouter",
+    "standardVersion": "2026-08-16"
+  }
+}

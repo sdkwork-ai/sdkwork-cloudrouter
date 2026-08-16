@@ -5,13 +5,10 @@ use super::{
     InvocationFuture, InvocationInterceptor, InvocationPricingQuote, InvocationUsageLine,
     InvocationUsageLineRole,
 };
-use crate::domain::{
-    provider_native_model_id, BillingMeter, DecimalValue, DomainResult, RoutingCapability,
-};
+use crate::application::{GatewayPricingDecision, PriceResolution, PriceResolutionStatus};
+use crate::domain::{provider_native_model_id, BillingMeter, DecimalValue, RoutingCapability};
 use crate::ports::{GatewayUsageQuantity, GatewayUsageRecordCommand};
 
-const TOKEN_BILLING_UNIT_SIZE: i64 = 1_000_000;
-const USAGE_AMOUNT_DECIMAL_DIGITS: u32 = 12;
 // 10_000.. is reserved for provider-adapter usage lines. Keep the first
 // occurrence of each legacy role at 1..5 for compatibility, and place
 // additional lines in a disjoint deterministic range so request-scoped
@@ -41,31 +38,38 @@ impl InvocationInterceptor for PricingSettlementInterceptor {
             let request_count_line_index = request_count_line_index(&invocation.usage.lines);
             let mut seen_legacy_usage_types = [false; 6];
             for (line_index, line) in invocation.usage.lines.iter().enumerate() {
-                let Some(quote) = line
+                let resolution = line.pricing_resolution.as_ref().ok_or_else(|| {
+                    settlement_error(format!(
+                        "settlement requires a pricing decision for meter {}",
+                        line.meter.code()
+                    ))
+                })?;
+                let quote = line
                     .pricing_quote
                     .as_ref()
-                    .or_else(|| invocation.usage.quote_for_meter(&line.meter))
-                else {
-                    if skippable_without_quote(&line.meter, invocation.billing.mode.clone()) {
-                        continue;
-                    }
-                    return Err(settlement_error(format!(
-                        "settlement requires pricing quote for meter {}",
-                        line.meter.code()
-                    )));
-                };
+                    .or_else(|| invocation.usage.quote_for_meter(&line.meter));
                 let legacy_usage_type = legacy_usage_type_for_line(line);
                 let legacy_usage_type_index = usize::try_from(legacy_usage_type)
                     .unwrap_or_default()
                     .min(seen_legacy_usage_types.len() - 1);
                 let duplicate_role = seen_legacy_usage_types[legacy_usage_type_index];
                 seen_legacy_usage_types[legacy_usage_type_index] = true;
-                let mut command = command_for_line(
-                    invocation,
-                    line,
-                    quote,
-                    usage_type_for_line(line, line_index, duplicate_role),
-                )?;
+                let usage_type = usage_type_for_line(line, line_index, duplicate_role);
+                let mut command = match resolution.status {
+                    PriceResolutionStatus::Rated => command_for_line(
+                        invocation,
+                        line,
+                        quote.ok_or_else(|| {
+                            settlement_error(format!(
+                                "rated pricing decision requires a quote for meter {}",
+                                line.meter.code()
+                            ))
+                        })?,
+                        resolution,
+                        usage_type,
+                    )?,
+                    _ => command_for_resolution(invocation, line, resolution, usage_type)?,
+                };
                 command.request_count = settlement_request_count(
                     invocation,
                     line,
@@ -107,48 +111,110 @@ fn settlement_request_count(
     line.quantity.request_count.max(1)
 }
 
-fn skippable_without_quote(meter: &BillingMeter, mode: BillingMode) -> bool {
-    match mode {
-        BillingMode::ExternalUsageLine => {
-            matches!(meter, BillingMeter::ApiResult | BillingMeter::ApiItem)
-        }
-        BillingMode::Composite => *meter == BillingMeter::LlmCacheReadToken,
-        _ => false,
-    }
-}
-
 fn command_for_line(
     invocation: &Invocation,
     line: &InvocationUsageLine,
     quote: &InvocationPricingQuote,
+    resolution: &PriceResolution,
     usage_type: i64,
+) -> Result<GatewayUsageRecordCommand, InvocationError> {
+    let quantity = &line.quantity;
+    let billing = resolution.billing.as_ref().ok_or_else(|| {
+        settlement_error(format!(
+            "settlement requires rated billing structure for meter {}",
+            line.meter.code()
+        ))
+    })?;
+    let measured_quantity = DecimalValue::parse(&quantity.billable_quantity)
+        .map_err(|error| settlement_error(error.to_string()))?;
+    if billing.meter != line.meter || billing.measured_quantity != measured_quantity {
+        return Err(settlement_error(format!(
+            "rated billing structure does not match usage line meter {} quantity {}",
+            line.meter.code(),
+            quantity.billable_quantity
+        )));
+    }
+    let pricing = GatewayPricingDecision::from_resolution(resolution)
+        .map_err(|error| settlement_error(error.to_string()))?;
+    command_from_pricing_decision(
+        invocation,
+        line,
+        usage_type,
+        quote.catalog_key.clone(),
+        quote.requested_model.clone(),
+        pricing_snapshot(invocation, line, quote),
+        pricing,
+    )
+}
+
+fn command_for_resolution(
+    invocation: &Invocation,
+    line: &InvocationUsageLine,
+    resolution: &PriceResolution,
+    usage_type: i64,
+) -> Result<GatewayUsageRecordCommand, InvocationError> {
+    if matches!(
+        resolution.status,
+        PriceResolutionStatus::Quoted | PriceResolutionStatus::Rated
+    ) {
+        return Err(settlement_error(format!(
+            "{} pricing decision for meter {} requires a rated quote",
+            resolution.status.code(),
+            line.meter.code()
+        )));
+    }
+
+    let quote = resolution.resolved_price.as_ref().map(|_| {
+        super::pricing::quote_from_resolution(
+            invocation,
+            resolution.clone(),
+            line.requested_model_catalog_key.is_some(),
+        )
+    });
+    let catalog_key = quote
+        .as_ref()
+        .map(|quote| quote.catalog_key.clone())
+        .unwrap_or_else(|| resolution.audit_snapshot.resource.catalog_key.clone());
+    let requested_model = quote
+        .as_ref()
+        .map(|quote| quote.requested_model.clone())
+        .or_else(|| resolution.audit_snapshot.resource.model.clone())
+        .unwrap_or_else(|| catalog_key.clone());
+    let pricing_snapshot = quote
+        .as_ref()
+        .map(|quote| pricing_snapshot(invocation, line, quote))
+        .unwrap_or_else(|| pricing_resolution_snapshot(invocation, line, resolution));
+    let pricing = GatewayPricingDecision::from_resolution(resolution)
+        .map_err(|error| settlement_error(error.to_string()))?;
+    command_from_pricing_decision(
+        invocation,
+        line,
+        usage_type,
+        catalog_key,
+        requested_model,
+        pricing_snapshot,
+        pricing,
+    )
+}
+
+fn command_from_pricing_decision(
+    invocation: &Invocation,
+    line: &InvocationUsageLine,
+    usage_type: i64,
+    catalog_key: String,
+    requested_model: String,
+    pricing_snapshot: String,
+    pricing: GatewayPricingDecision,
 ) -> Result<GatewayUsageRecordCommand, InvocationError> {
     let account = invocation
         .account
         .as_ref()
         .ok_or_else(|| settlement_error("settlement requires resolved invocation account"))?;
     let quantity = &line.quantity;
-    let customer_charge_amount = amount_for_line(
-        &line.meter,
-        &quote.customer_charge_unit_price.unit_price,
-        quantity,
-    )
-    .map_err(|error| settlement_error(error.to_string()))?;
-    let official_reference_amount = amount_for_line(
-        &line.meter,
-        &quote.official_reference_unit_price.unit_price,
-        quantity,
-    )
-    .map_err(|error| settlement_error(error.to_string()))?;
-    let upstream_cost_amount = match quote.procurement_cost_unit_price.as_ref() {
-        Some(price) => amount_for_line(&line.meter, &price.unit_price, quantity)
-            .map_err(|error| settlement_error(error.to_string()))?,
-        None => DecimalValue::ZERO,
-    };
-    let (base_input_unit_price, base_output_unit_price, cache_read_unit_price) =
-        unit_price_columns(line, quote);
     let (prompt_tokens, completion_tokens, cached_tokens, total_tokens) =
         token_columns(line, quantity);
+    let (base_input_unit_price, base_output_unit_price, cache_read_unit_price) =
+        unit_price_columns(line, &pricing.base_unit_price);
 
     Ok(GatewayUsageRecordCommand {
         request_id: invocation.request.request_id.clone(),
@@ -172,14 +238,14 @@ fn command_for_line(
             .account_group_code
             .clone()
             .or_else(|| invocation.subject.account_group_code.clone())
-            .unwrap_or_else(|| quote.group_code.clone()),
-        catalog_key: quote.catalog_key.clone(),
-        requested_model: quote.requested_model.clone(),
+            .unwrap_or(pricing.group_code),
+        catalog_key: catalog_key.clone(),
+        requested_model,
         requested_model_catalog_key: line
             .requested_model_catalog_key
             .clone()
             .or_else(|| invocation.resource.requested_model_catalog_key.clone())
-            .unwrap_or_else(|| quote.catalog_key.clone()),
+            .unwrap_or(catalog_key),
         supplier_code: account.supplier_code.clone(),
         account_id: account.account_id,
         provider_model: account
@@ -208,7 +274,9 @@ fn command_for_line(
         modality: modality_for_invocation(invocation, &line.meter),
         usage_type,
         billing_meter_code: line.meter.code().to_owned(),
+        unit_size: pricing.unit_size,
         billable_quantity: quantity.billable_quantity.clone(),
+        rated_quantity: pricing.rated_quantity,
         prompt_tokens,
         completion_tokens,
         cached_tokens,
@@ -225,50 +293,52 @@ fn command_for_line(
         provider_error_code: invocation.telemetry.provider_error_code.clone(),
         error_type: invocation.telemetry.error_type.clone(),
         error_message_masked: invocation.telemetry.error_message_masked.clone(),
+        decision_status: pricing.decision_status,
+        billability: pricing.billability,
+        reason_code: pricing.reason_code,
+        strategy_code: pricing.strategy_code,
         base_input_unit_price,
         base_output_unit_price,
         cache_read_unit_price,
-        rate_multiplier: quote.sale_multiplier.clone(),
-        reference_multiplier: quote.reference_multiplier.clone(),
-        official_reference_amount: official_reference_amount
-            .to_fixed_string(USAGE_AMOUNT_DECIMAL_DIGITS),
-        customer_charge_amount: customer_charge_amount.to_fixed_string(USAGE_AMOUNT_DECIMAL_DIGITS),
-        upstream_cost_amount: upstream_cost_amount.to_fixed_string(USAGE_AMOUNT_DECIMAL_DIGITS),
-        currency: quote.customer_charge_unit_price.currency.clone(),
-        pricing_plan_code: quote.pricing_plan_code.clone(),
-        pricing_snapshot: pricing_snapshot(invocation, line, quote),
+        rate_multiplier: pricing.rate_multiplier,
+        reference_multiplier: pricing.reference_multiplier,
+        official_reference_amount: pricing.official_reference_amount,
+        customer_charge_amount: pricing.customer_charge_amount,
+        upstream_cost_amount: pricing.upstream_cost_amount,
+        currency: pricing.currency,
+        pricing_plan_code: pricing.pricing_plan_code,
+        billing_components: pricing.billing_components,
+        pricing_snapshot,
+        official_rate: pricing.official_rate,
     })
 }
 
-fn amount_for_line(
-    meter: &BillingMeter,
-    unit_price: &DecimalValue,
-    quantity: &GatewayUsageQuantity,
-) -> DomainResult<DecimalValue> {
-    if is_token_meter(meter) {
-        unit_price
-            .multiply_i64(integer_quantity(quantity)?)?
-            .divide_i64(TOKEN_BILLING_UNIT_SIZE)
-    } else {
-        let quantity = DecimalValue::parse(&quantity.billable_quantity)?;
-        unit_price.checked_multiply(quantity)
-    }
-}
-
-fn integer_quantity(quantity: &GatewayUsageQuantity) -> DomainResult<i64> {
-    quantity
-        .billable_quantity
-        .parse::<i64>()
-        .map_err(|_| crate::domain::DomainError::new("settlement quantity must be an integer"))
-}
-
-fn unit_price_columns(
+fn pricing_resolution_snapshot(
+    invocation: &Invocation,
     line: &InvocationUsageLine,
-    quote: &InvocationPricingQuote,
-) -> (String, String, String) {
-    let unit_price = quote
-        .customer_charge_before_sale_multiplier
-        .to_fixed_string(6);
+    resolution: &PriceResolution,
+) -> String {
+    json!({
+        "source": "price_service",
+        "invocation": {
+            "id": invocation.id.0.as_str(),
+            "path": invocation.request.path.as_str(),
+            "routeKey": invocation.resource.route_key.as_str(),
+            "apiCode": invocation.resource.api_code.as_str(),
+        },
+        "meter": {
+            "code": line.meter.code(),
+            "quantity": line.quantity.billable_quantity.as_str(),
+        },
+        "pricing": {
+            "serviceAudit": resolution.audit_snapshot.to_json_value(),
+        },
+    })
+    .to_string()
+}
+
+fn unit_price_columns(line: &InvocationUsageLine, unit_price: &str) -> (String, String, String) {
+    let unit_price = unit_price.to_owned();
     match line.role {
         InvocationUsageLineRole::Output => {
             ("0.000000".to_owned(), unit_price, "0.000000".to_owned())
@@ -483,7 +553,21 @@ fn pricing_snapshot(
             "regionCode": quote.region_code.as_str()
         },
         "pricing": {
+            "serviceAudit": quote.pricing_audit_snapshot.to_json_value(),
+            "strategy": quote.billing.as_ref().map(|billing| billing.strategy.code()),
             "meter": line.meter.code(),
+            "unitSize": quote.unit_size.as_str(),
+            "priceBookCode": quote.rate_metadata.as_ref().map(|metadata| metadata.price_book_code.as_str()),
+            "rateHash": quote.rate_metadata.as_ref().map(|metadata| metadata.rate_hash.as_str()),
+            "productCode": quote.rate_metadata.as_ref().map(|metadata| metadata.product_code.as_str()),
+            "operationCode": quote.rate_metadata.as_ref().map(|metadata| metadata.operation_code.as_str()),
+            "billability": quote.rate_metadata.as_ref().map(|metadata| metadata.billability.as_str()),
+            "chargeTiming": quote.rate_metadata.as_ref().map(|metadata| metadata.charge_timing.as_str()),
+            "calculationMode": quote.rate_metadata.as_ref().map(|metadata| metadata.calculation_mode.as_str()),
+            "quantityAggregation": quote.rate_metadata.as_ref().map(|metadata| metadata.quantity_aggregation.as_str()),
+            "minimumQuantity": quote.rate_metadata.as_ref().map(|metadata| metadata.minimum_quantity.to_fixed_string(12)),
+            "quantityStep": quote.rate_metadata.as_ref().and_then(|metadata| metadata.quantity_step.map(|value| value.to_fixed_string(12))),
+            "conditions": rate_conditions_snapshot(quote),
             "plan": quote.pricing_plan_code.as_str(),
             "group": quote.group_code.as_str(),
             "officialReferenceUnitPrice": quote.official_reference_unit_price.to_fixed_string(6),
@@ -543,6 +627,22 @@ fn adapter_usage_pricing_snapshot(
         "pricingPlan": {
             "code": quote.pricing_plan_code.as_str()
         },
+        "pricing": {
+            "serviceAudit": quote.pricing_audit_snapshot.to_json_value(),
+            "strategy": quote.billing.as_ref().map(|billing| billing.strategy.code()),
+            "priceBookCode": quote.rate_metadata.as_ref().map(|metadata| metadata.price_book_code.as_str()),
+            "rateHash": quote.rate_metadata.as_ref().map(|metadata| metadata.rate_hash.as_str()),
+            "productCode": quote.rate_metadata.as_ref().map(|metadata| metadata.product_code.as_str()),
+            "operationCode": quote.rate_metadata.as_ref().map(|metadata| metadata.operation_code.as_str()),
+            "billability": quote.rate_metadata.as_ref().map(|metadata| metadata.billability.as_str()),
+            "chargeTiming": quote.rate_metadata.as_ref().map(|metadata| metadata.charge_timing.as_str()),
+            "calculationMode": quote.rate_metadata.as_ref().map(|metadata| metadata.calculation_mode.as_str()),
+            "quantityAggregation": quote.rate_metadata.as_ref().map(|metadata| metadata.quantity_aggregation.as_str()),
+            "unitSize": quote.unit_size.as_str(),
+            "minimumQuantity": quote.rate_metadata.as_ref().map(|metadata| metadata.minimum_quantity.to_fixed_string(12)),
+            "quantityStep": quote.rate_metadata.as_ref().and_then(|metadata| metadata.quantity_step.map(|value| value.to_fixed_string(12))),
+            "conditions": rate_conditions_snapshot(quote)
+        },
         "group": {
             "code": quote.group_code.as_str()
         },
@@ -577,6 +677,26 @@ fn adapter_usage_pricing_snapshot(
         }
     })
     .to_string()
+}
+
+fn rate_conditions_snapshot(quote: &InvocationPricingQuote) -> Vec<Value> {
+    quote
+        .rate_metadata
+        .as_ref()
+        .map(|metadata| {
+            metadata
+                .conditions
+                .iter()
+                .map(|condition| {
+                    json!({
+                        "dimensionCode": condition.dimension_code.as_str(),
+                        "operator": condition.operator_code.as_str(),
+                        "value": &condition.value,
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 fn effective_invocation_dispatch_status_code(invocation: &Invocation) -> Option<u16> {

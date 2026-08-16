@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Plus, Search, Globe, Key, Database, X, Lock, Gauge, Trash2, Loader2, AlertTriangle } from 'lucide-react';
-import { AdminTableShell, BottomPagination, BusinessStateTableRow, ConfirmDialog, getLoadErrorMessage } from '@sdkwork/cloudroutes-pc-commons';
+import { getLoadErrorMessage } from '@sdkwork/cloudroutes-pc-commons/runtime';
+import { AdminTableShell, BottomPagination, BusinessStateTableRow, ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons';
 import { RateLimitService, FirewallRule, type ChainPolicy } from './ratelimitService';
 import {
   rateLimitQueryKeys,

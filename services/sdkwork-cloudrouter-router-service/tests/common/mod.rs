@@ -102,13 +102,31 @@ pub fn web_framework_backend_request<B>(
 where
     B: Send + 'static,
 {
+    let mut request = web_framework_backend_request_without_subject(method, uri, body);
+    // The subject is injected through the verified web-framework principal,
+    // never through client-supplied `x-sdkwork-*` headers (SECURITY_SPEC
+    // §5.1). The legacy headers below are kept only for tests that exercise
+    // the internal server-side handoff path; the principal takes precedence.
+    let principal = WebRequestPrincipal::builder()
+        .tenant_id(tenant_id)
+        .organization_id(organization_id.map(str::to_owned))
+        .user_id(user_id)
+        .login_scope(WebLoginScope::Organization)
+        .session_id(Some("session-1".to_owned()))
+        .app_id("sdkwork-cloudrouter")
+        .environment(WebEnvironment::Dev)
+        .deployment_mode(WebDeploymentMode::Private)
+        .auth_level(WebAuthLevel::Password)
+        .build();
+    if let Some(context) = request.extensions_mut().get_mut::<WebRequestContext>() {
+        context.principal = Some(principal);
+    }
     let tenant = tenant_id.parse::<i64>().expect("tenant id");
     let organization = organization_id
         .unwrap_or("0")
         .parse::<i64>()
         .expect("organization id");
     let user = user_id.parse::<i64>().expect("user id");
-    let mut request = web_framework_backend_request_without_subject(method, uri, body);
     request
         .headers_mut()
         .insert(INTERNAL_TENANT_HEADER, tenant.to_string().parse().unwrap());

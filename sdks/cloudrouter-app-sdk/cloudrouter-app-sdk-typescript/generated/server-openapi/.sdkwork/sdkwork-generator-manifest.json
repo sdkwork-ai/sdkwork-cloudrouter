@@ -52,7 +52,7 @@
     },
     {
       "path": "src/api/ai.ts",
-      "sha256": "6815ffb94e51c1240202e8afdba8fe3fcc2951138c4331a5f101daf98f0b3fe7"
+      "sha256": "95cfb2dc6cc63130bc10275fe80bc28e8377d331186a1668c29869c2395dfde8"
     },
     {
       "path": "src/api/base.ts",
@@ -76,7 +76,7 @@
     },
     {
       "path": "src/api/runtime.ts",
-      "sha256": "8720f71cc1612fe7f7ea24b3a77940a437dd56901d9622e258f3f9c25a6b4476"
+      "sha256": "201f74e286d2d0cbc15a20085b63a1393e33e1a20efd3ec1a332680d501a1e4f"
     },
     {
       "path": "src/api/system.ts",
@@ -208,15 +208,19 @@
     },
     {
       "path": "src/types/dashboard-chart-point.ts",
-      "sha256": "e6dbd1ed076da155ba71105b8e8a08bc44023c3708e0a1a7c37e57b3624a8172"
+      "sha256": "b8c2c8e4adc4a0dd2d9f2b8ce63ef9f1f9ca6b04ea4ffee589add2dda8ae99cb"
     },
     {
       "path": "src/types/dashboard-configuration-domain.ts",
       "sha256": "fcc72689a4b0bd3096af7d3651262b2fe67af8433383385a568680f857c1fa67"
     },
     {
+      "path": "src/types/dashboard-modality-distribution.ts",
+      "sha256": "9512bbc9517e8ecb63b3910fd07841443654e855fd0881d33008c15487849937"
+    },
+    {
       "path": "src/types/dashboard-overview-response.ts",
-      "sha256": "47765bd56413668b6080d0ee289c80f6f92079b5753f58b098eae1e0813cdceb"
+      "sha256": "9a7e9b941723cc924585af9a6ef43eb31537f85dd51b8d1556ad75364c7ecd1c"
     },
     {
       "path": "src/types/dashboard-overview-summary.ts",
@@ -244,7 +248,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "b74feef2c2118a128e42f3537c011f94a7b3f2cb2938b3459f703aeb2cdb7fa1"
+      "sha256": "e895e5082600439fdd14a9e426d4a1c7ae18b9091b8314819f9bc5925c3993c3"
     },
     {
       "path": "src/types/json-null.ts",
@@ -293,6 +297,46 @@
     {
       "path": "src/types/notification-list-response.ts",
       "sha256": "192bb46a6a9ce647afaca2b258a3401547f86f3449711ccfd01f8e076dc52c3b"
+    },
+    {
+      "path": "src/types/official-pricing-catalog-response.ts",
+      "sha256": "04e0c88aec53b1d6c20fb3152702fc25b4da718e92ded4f169eddd57bb0cbe84"
+    },
+    {
+      "path": "src/types/official-pricing-formula-term.ts",
+      "sha256": "51d14cf6d3c0ee889f6f8ed1458ea0fcd6321f3ff0e9329c4a48e205b9fcbd19"
+    },
+    {
+      "path": "src/types/official-pricing-formula.ts",
+      "sha256": "cdda3dfa9406e6df7fc6dc56c0068d9e47d8f272bb318e6bd0057f193e8a1416"
+    },
+    {
+      "path": "src/types/official-pricing-group-facet.ts",
+      "sha256": "dcf186d1e6f1aafc148b5ae4bf4c7be5ea8cf1e59c55cf4eadbb7c01b03a60d4"
+    },
+    {
+      "path": "src/types/official-pricing-meter-facet.ts",
+      "sha256": "5a7b7adf84514cb2d9e242a88dcd857018867d395a95c53207cb561564df7fa6"
+    },
+    {
+      "path": "src/types/official-pricing-rate-condition.ts",
+      "sha256": "1fe987bec543291b831b00a19edef97d76434f01161fa2ed6235fe49197f6d4e"
+    },
+    {
+      "path": "src/types/official-pricing-rate-tier.ts",
+      "sha256": "ccc3b6501a1734b6427bcd67d2a0b0623d2e46cc53c14409a83d53fcc649112d"
+    },
+    {
+      "path": "src/types/official-pricing-rate.ts",
+      "sha256": "4e699c288b7cbb4723d102f9d57741e54c37f19a36c31dfed634b496d2abc403"
+    },
+    {
+      "path": "src/types/official-pricing-region-facet.ts",
+      "sha256": "4ed941913808528f9eb345f06841da58cada65013bf9077f81dd65f737c75090"
+    },
+    {
+      "path": "src/types/official-pricing-value-facet.ts",
+      "sha256": "407628162e3668ffa5b11fe77a8ec2928507aea573aa4609038b738916f16fe6"
     },
     {
       "path": "src/types/page-info.ts",
@@ -377,6 +421,18 @@
     {
       "path": "src/types/settings-notifications.ts",
       "sha256": "10734f4a19418e5c9cbee61866fb6b35da09657c34642b907806b24f5afad456"
+    },
+    {
+      "path": "src/types/settlement-bill.ts",
+      "sha256": "9ab90205401e12ea66b5b296073576e1923e9f5d2eec3fe15d0441c376bf445a"
+    },
+    {
+      "path": "src/types/settlement-chart-point.ts",
+      "sha256": "38ebc476c6f3166190594e8ea57be3192ad1219548020f09facedbaf3e05391d"
+    },
+    {
+      "path": "src/types/settlements-dashboard-snapshot.ts",
+      "sha256": "e6b96d7fdcac657a187f70a1649ae5a499f691f7d8947671e4e06bbd52c2c4dc"
     },
     {
       "path": "src/types/site-runtime-settings-response.ts",

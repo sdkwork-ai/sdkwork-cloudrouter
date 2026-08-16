@@ -14,6 +14,19 @@ from tools.relay_retired_admin_surfaces import (
     is_route_manifest_bootstrap_source,
 )
 
+# External media resource types expand to their stable reference fields so
+# contract model fields stay consistent with the MediaResource schema.
+MEDIA_RESOURCE_EXPANSION_FIELDS: dict[str, tuple[str, ...]] = {
+    "CloudRouterMediaResource": (
+        "kind",
+        "source",
+        "id",
+        "fileName",
+        "mimeType",
+        "sizeBytes",
+    ),
+}
+
 FIELD_AUDIT_EXEMPT_SOURCE_SEGMENTS: tuple[str, ...] = (
     "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-i18n/",
 )
@@ -471,9 +484,14 @@ class FrontendFieldAudit:
                     pending_object_field = full_field
                 else:
                     referenced_type = self._referenced_type_name(line)
-                    if referenced_type is not None and referenced_type_fields is not None:
-                        for nested_field in referenced_type_fields(referenced_type):
-                            fields.append(f"{full_field}.{nested_field}")
+                    if referenced_type is not None:
+                        media_fields = MEDIA_RESOURCE_EXPANSION_FIELDS.get(referenced_type)
+                        if media_fields is not None:
+                            for nested_field in media_fields:
+                                fields.append(f"{full_field}.{nested_field}")
+                        elif referenced_type_fields is not None:
+                            for nested_field in referenced_type_fields(referenced_type):
+                                fields.append(f"{full_field}.{nested_field}")
 
             open_count = line.count("{")
             close_count = line.count("}")

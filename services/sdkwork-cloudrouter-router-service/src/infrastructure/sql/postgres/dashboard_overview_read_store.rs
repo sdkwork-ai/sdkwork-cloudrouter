@@ -8,22 +8,67 @@ use crate::infrastructure::sql::service_node_metadata::{
 };
 use crate::ports::{
     DashboardAnnouncement, DashboardChartPoint, DashboardConfigurationDomain,
-    DashboardOverviewQuery, DashboardOverviewReadFuture, DashboardOverviewReadStore,
-    DashboardOverviewSnapshot, DashboardOverviewSubject, DashboardOverviewSummary,
-    DashboardSparklinePoint, DashboardTopModel,
+    DashboardModalityDistribution, DashboardOverviewQuery, DashboardOverviewReadFuture,
+    DashboardOverviewReadStore, DashboardOverviewSnapshot, DashboardOverviewSubject,
+    DashboardOverviewSummary, DashboardSparklinePoint, DashboardTopModel,
 };
 
 const LOAD_USAGE_SUMMARY: &str = r#"
+WITH billable_usage AS (
+    SELECT
+        c.invocation_id,
+        c.amount,
+        COALESCE((m.dimensions_json ->> 'totalTokens')::bigint, 0) AS total_tokens,
+        COALESCE((m.dimensions_json ->> 'modality')::integer, 0) AS modality,
+        c.charged_at AS occurred_at,
+        c.tenant_id,
+        c.organization_id,
+        c.user_id
+    FROM cloudrouter_charge_line c
+    JOIN cloudrouter_rating_decision d
+      ON d.tenant_id = c.tenant_id
+     AND d.organization_id = c.organization_id
+     AND d.id = c.rating_decision_id
+    JOIN cloudrouter_usage_measurement m
+      ON m.tenant_id = d.tenant_id
+     AND m.organization_id = d.organization_id
+     AND m.id = d.measurement_id
+    WHERE c.status = 1
+      AND c.charge_status IN ('rated', 'settled')
+      AND d.status = 1
+      AND d.decision_status = 'rated'
+      AND d.billability = 'chargeable'
+    UNION ALL
+    SELECT
+        COALESCE(NULLIF(legacy.request_id, ''), CAST(legacy.id AS TEXT)),
+        legacy.customer_charge_amount,
+        COALESCE(legacy.total_tokens, 0),
+        COALESCE(legacy.modality, 0),
+        legacy.occurred_at,
+        legacy.tenant_id,
+        legacy.organization_id,
+        legacy.user_id
+    FROM ai_metering_usage legacy
+    WHERE legacy.status = 1
+      AND COALESCE(legacy.customer_charge_amount, 0) > 0
+      AND NOT EXISTS (
+          SELECT 1 FROM cloudrouter_rating_decision current_decision
+          WHERE current_decision.tenant_id = legacy.tenant_id
+            AND current_decision.organization_id = legacy.organization_id
+            AND current_decision.invocation_id = legacy.request_id
+            AND current_decision.status = 1
+      )
+)
 SELECT
-    CAST(COALESCE(SUM(COALESCE(request_count, 0)), 0) AS TEXT) AS request_count,
+    CAST(COUNT(DISTINCT invocation_id) AS TEXT) AS request_count,
     CAST(COALESCE(SUM(COALESCE(total_tokens, 0)), 0) AS TEXT) AS total_tokens,
-    CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS used_credits,
-    CAST(COALESCE(SUM(CASE WHEN modality = 2 THEN COALESCE(request_count, 0) ELSE 0 END), 0) AS TEXT) AS image_requests,
-    CAST(COALESCE(SUM(CASE WHEN modality = 5 THEN COALESCE(request_count, 0) ELSE 0 END), 0) AS TEXT) AS video_requests,
-    CAST(COALESCE(SUM(CASE WHEN modality = 3 THEN COALESCE(request_count, 0) ELSE 0 END), 0) AS TEXT) AS audio_requests,
-    CAST(COALESCE(SUM(CASE WHEN modality = 4 THEN COALESCE(request_count, 0) ELSE 0 END), 0) AS TEXT) AS music_requests
-FROM ai_metering_usage
-WHERE status = 1
+    CAST(COALESCE(SUM(amount), 0) AS TEXT) AS used_credits,
+    CAST(COUNT(DISTINCT CASE WHEN modality = 2 THEN invocation_id END) AS TEXT) AS image_requests,
+    CAST(COUNT(DISTINCT CASE WHEN modality = 5 THEN invocation_id END) AS TEXT) AS video_requests,
+    CAST(COUNT(DISTINCT CASE WHEN modality = 3 THEN invocation_id END) AS TEXT) AS audio_requests,
+    CAST(COUNT(DISTINCT CASE WHEN modality = 4 THEN invocation_id END) AS TEXT) AS music_requests
+FROM billable_usage
+WHERE amount > 0
   AND tenant_id = $1
   AND organization_id = $2
   AND user_id = $3
@@ -49,26 +94,83 @@ WHERE status = 1
 "#;
 
 const LOAD_USAGE_TOTALS: &str = r#"
+WITH billable_usage AS (
+    SELECT c.invocation_id, c.amount, c.tenant_id, c.organization_id, c.user_id
+    FROM cloudrouter_charge_line c
+    JOIN cloudrouter_rating_decision d
+      ON d.tenant_id = c.tenant_id AND d.organization_id = c.organization_id
+     AND d.id = c.rating_decision_id
+    WHERE c.status = 1 AND c.charge_status IN ('rated', 'settled')
+      AND d.status = 1 AND d.decision_status = 'rated' AND d.billability = 'chargeable'
+    UNION ALL
+    SELECT COALESCE(NULLIF(legacy.request_id, ''), CAST(legacy.id AS TEXT)),
+           legacy.customer_charge_amount, legacy.tenant_id, legacy.organization_id, legacy.user_id
+    FROM ai_metering_usage legacy
+    WHERE legacy.status = 1 AND COALESCE(legacy.customer_charge_amount, 0) > 0
+      AND NOT EXISTS (
+          SELECT 1 FROM cloudrouter_rating_decision current_decision
+          WHERE current_decision.tenant_id = legacy.tenant_id
+            AND current_decision.organization_id = legacy.organization_id
+            AND current_decision.invocation_id = legacy.request_id
+            AND current_decision.status = 1
+      )
+)
 SELECT
-    CAST(COALESCE(SUM(COALESCE(request_count, 0)), 0) AS TEXT) AS total_request_count,
-    CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS total_used_credits
-FROM ai_metering_usage
-WHERE status = 1
+    CAST(COUNT(DISTINCT invocation_id) AS TEXT) AS total_request_count,
+    CAST(COALESCE(SUM(amount), 0) AS TEXT) AS total_used_credits
+FROM billable_usage
+WHERE amount > 0
   AND tenant_id = $1
   AND organization_id = $2
   AND user_id = $3
 "#;
 
 const LOAD_USAGE_CHART: &str = r#"
+WITH billable_usage AS (
+    SELECT c.invocation_id, c.amount,
+           COALESCE((m.dimensions_json ->> 'modality')::integer, 0) AS modality,
+           c.charged_at AS occurred_at, c.tenant_id, c.organization_id, c.user_id
+    FROM cloudrouter_charge_line c
+    JOIN cloudrouter_rating_decision d
+      ON d.tenant_id = c.tenant_id AND d.organization_id = c.organization_id
+     AND d.id = c.rating_decision_id
+    JOIN cloudrouter_usage_measurement m
+      ON m.tenant_id = d.tenant_id AND m.organization_id = d.organization_id
+     AND m.id = d.measurement_id
+    WHERE c.status = 1 AND c.charge_status IN ('rated', 'settled')
+      AND d.status = 1 AND d.decision_status = 'rated' AND d.billability = 'chargeable'
+    UNION ALL
+    SELECT COALESCE(NULLIF(legacy.request_id, ''), CAST(legacy.id AS TEXT)),
+           legacy.customer_charge_amount, COALESCE(legacy.modality, 0), legacy.occurred_at,
+           legacy.tenant_id, legacy.organization_id, legacy.user_id
+    FROM ai_metering_usage legacy
+    WHERE legacy.status = 1 AND COALESCE(legacy.customer_charge_amount, 0) > 0
+      AND NOT EXISTS (
+          SELECT 1 FROM cloudrouter_rating_decision current_decision
+          WHERE current_decision.tenant_id = legacy.tenant_id
+            AND current_decision.organization_id = legacy.organization_id
+            AND current_decision.invocation_id = legacy.request_id
+            AND current_decision.status = 1
+      )
+)
 SELECT
-    substr(CAST(occurred_at AS TEXT), 1, $6) AS period,
-    CAST(COALESCE(SUM(CASE WHEN modality = 1 THEN COALESCE(request_count, 0) ELSE 0 END), 0) AS TEXT) AS text_requests,
-    CAST(COALESCE(SUM(CASE WHEN modality = 2 THEN COALESCE(request_count, 0) ELSE 0 END), 0) AS TEXT) AS image_requests,
-    CAST(COALESCE(SUM(CASE WHEN modality = 5 THEN COALESCE(request_count, 0) ELSE 0 END), 0) AS TEXT) AS video_requests,
-    CAST(COALESCE(SUM(CASE WHEN modality = 3 THEN COALESCE(request_count, 0) ELSE 0 END), 0) AS TEXT) AS audio_requests,
-    CAST(COALESCE(SUM(CASE WHEN modality = 4 THEN COALESCE(request_count, 0) ELSE 0 END), 0) AS TEXT) AS music_requests
-FROM ai_metering_usage
-WHERE status = 1
+    -- Bucket by the UTC calendar text of occurred_at so the period keys match
+    -- the UTC series the console builds for its time axis. CAST(timestamptz AS
+    -- TEXT) without AT TIME ZONE would follow the database session timezone
+    -- and shift buckets away from the frontend expectations.
+    substr(CAST(occurred_at AT TIME ZONE 'UTC' AS TEXT), 1, $6) AS period,
+    CAST(COUNT(DISTINCT CASE WHEN modality = 1 THEN invocation_id END) AS TEXT) AS text_requests,
+    CAST(COUNT(DISTINCT CASE WHEN modality = 2 THEN invocation_id END) AS TEXT) AS image_requests,
+    CAST(COUNT(DISTINCT CASE WHEN modality = 5 THEN invocation_id END) AS TEXT) AS video_requests,
+    CAST(COUNT(DISTINCT CASE WHEN modality = 3 THEN invocation_id END) AS TEXT) AS audio_requests,
+    CAST(COUNT(DISTINCT CASE WHEN modality = 4 THEN invocation_id END) AS TEXT) AS music_requests,
+    CAST(COALESCE(SUM(CASE WHEN modality = 1 THEN amount ELSE 0 END), 0) AS TEXT) AS text_cost,
+    CAST(COALESCE(SUM(CASE WHEN modality = 2 THEN amount ELSE 0 END), 0) AS TEXT) AS image_cost,
+    CAST(COALESCE(SUM(CASE WHEN modality = 5 THEN amount ELSE 0 END), 0) AS TEXT) AS video_cost,
+    CAST(COALESCE(SUM(CASE WHEN modality = 3 THEN amount ELSE 0 END), 0) AS TEXT) AS audio_cost,
+    CAST(COALESCE(SUM(CASE WHEN modality = 4 THEN amount ELSE 0 END), 0) AS TEXT) AS music_cost
+FROM billable_usage
+WHERE amount > 0
   AND tenant_id = $1
   AND organization_id = $2
   AND user_id = $3
@@ -78,6 +180,53 @@ WHERE status = 1
 GROUP BY period
 ORDER BY period ASC
 LIMIT 60
+"#;
+
+/// Full-window request counts per modality (modality 1..5 covers text, image,
+/// video, audio, music and matches the dashboard summary classification).
+/// Unlike the top-N model ranking, this is computed from every usage fact so
+/// the modality pie chart shows the true traffic distribution.
+const LOAD_MODALITY_DISTRIBUTION: &str = r#"
+WITH billable_usage AS (
+    SELECT c.invocation_id, c.amount,
+           COALESCE((m.dimensions_json ->> 'modality')::integer, 0) AS modality,
+           c.charged_at AS occurred_at, c.tenant_id, c.organization_id, c.user_id
+    FROM cloudrouter_charge_line c
+    JOIN cloudrouter_rating_decision d
+      ON d.tenant_id = c.tenant_id AND d.organization_id = c.organization_id
+     AND d.id = c.rating_decision_id
+    JOIN cloudrouter_usage_measurement m
+      ON m.tenant_id = d.tenant_id AND m.organization_id = d.organization_id
+     AND m.id = d.measurement_id
+    WHERE c.status = 1 AND c.charge_status IN ('rated', 'settled')
+      AND d.status = 1 AND d.decision_status = 'rated' AND d.billability = 'chargeable'
+    UNION ALL
+    SELECT COALESCE(NULLIF(legacy.request_id, ''), CAST(legacy.id AS TEXT)),
+           legacy.customer_charge_amount, COALESCE(legacy.modality, 0), legacy.occurred_at,
+           legacy.tenant_id, legacy.organization_id, legacy.user_id
+    FROM ai_metering_usage legacy
+    WHERE legacy.status = 1 AND COALESCE(legacy.customer_charge_amount, 0) > 0
+      AND NOT EXISTS (
+          SELECT 1 FROM cloudrouter_rating_decision current_decision
+          WHERE current_decision.tenant_id = legacy.tenant_id
+            AND current_decision.organization_id = legacy.organization_id
+            AND current_decision.invocation_id = legacy.request_id
+            AND current_decision.status = 1
+      )
+)
+SELECT
+    COALESCE(modality, 0) AS modality,
+    CAST(COUNT(DISTINCT invocation_id) AS TEXT) AS request_count
+FROM billable_usage
+WHERE amount > 0
+  AND tenant_id = $1
+  AND organization_id = $2
+  AND user_id = $3
+  AND modality BETWEEN 1 AND 5
+  AND ($4::text IS NULL OR occurred_at >= $4::timestamptz)
+  AND ($5::text IS NULL OR occurred_at <= $5::timestamptz)
+GROUP BY modality
+ORDER BY request_count DESC
 "#;
 
 const LOAD_TOP_MODELS: &str = r#"
@@ -148,15 +297,27 @@ ORDER BY COALESCE(m.priority, 0) DESC, m.published_at DESC NULLS LAST, m.id DESC
 LIMIT 5
 "#;
 
+/// Latency trend for the throughput metric card. Computed live from the
+/// request trace (the previous ops_metric_snapshot source had no writer), one
+/// hourly average per UTC hour bucket over the past 24 hours.
 const LOAD_PERFORMANCE_SPARKLINE: &str = r#"
-SELECT CAST(COALESCE(metric_value, 0) AS TEXT) AS metric_value
-FROM ops_metric_snapshot
-WHERE status = 1
-  AND (tenant_id = $1 OR tenant_id = 0 OR tenant_id IS NULL)
-  AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
-  AND lower(COALESCE(metric_name, '')) IN ('latency_p50_ms', 'latency_p95_ms', 'gateway_latency_ms')
-ORDER BY period_start DESC NULLS LAST, id DESC
-LIMIT 10
+SELECT CAST(COALESCE(AVG(latency_ms), 0) AS TEXT) AS metric_value
+FROM (
+    SELECT
+        substr(CAST(started_at AT TIME ZONE 'UTC' AS TEXT), 1, 13) AS hour_bucket,
+        latency_ms
+    FROM ai_metering_request_trace
+    WHERE status = 1
+      AND tenant_id = $1
+      AND organization_id = $2
+      AND user_id = $3
+      AND started_at IS NOT NULL
+      AND latency_ms IS NOT NULL
+      AND started_at >= CURRENT_TIMESTAMP - INTERVAL '23 hours'
+) hourly_buckets
+GROUP BY hour_bucket
+ORDER BY hour_bucket ASC
+LIMIT 24
 "#;
 
 const LOAD_CONFIGURATION_NODES: &str = r#"
@@ -200,6 +361,8 @@ impl DashboardOverviewReadStore for PostgresDashboardOverviewReadStore {
             })?;
             let mut summary = load_summary(&self.pool, &query, subject).await?;
             let chart_data = load_chart_data(&self.pool, &query, subject).await?;
+            let modality_distribution =
+                load_modality_distribution(&self.pool, &query, subject).await?;
             let top_models = load_top_models(&self.pool, subject).await?;
             let announcements = load_announcements(&self.pool, subject).await?;
             let performance_sparkline = load_performance_sparkline(&self.pool, subject).await?;
@@ -224,6 +387,7 @@ impl DashboardOverviewReadStore for PostgresDashboardOverviewReadStore {
                 ),
                 performance_sparkline,
                 chart_data,
+                modality_distribution,
                 top_models,
                 announcements,
                 configuration_domains,
@@ -332,6 +496,35 @@ async fn load_chart_data(
             video_requests: decimal_cell(&row, "video_requests"),
             audio_requests: decimal_cell(&row, "audio_requests"),
             music_requests: decimal_cell(&row, "music_requests"),
+            text_cost: decimal_cell(&row, "text_cost"),
+            image_cost: decimal_cell(&row, "image_cost"),
+            video_cost: decimal_cell(&row, "video_cost"),
+            audio_cost: decimal_cell(&row, "audio_cost"),
+            music_cost: decimal_cell(&row, "music_cost"),
+        })
+        .collect())
+}
+
+async fn load_modality_distribution(
+    pool: &PgPool,
+    query: &DashboardOverviewQuery,
+    subject: DashboardOverviewSubject,
+) -> Result<Vec<DashboardModalityDistribution>, DomainError> {
+    let rows = sqlx::query(LOAD_MODALITY_DISTRIBUTION)
+        .bind(subject.tenant_id)
+        .bind(subject.organization_id)
+        .bind(subject.user_id)
+        .bind(query.start_time.as_deref())
+        .bind(query.end_time.as_deref())
+        .fetch_all(pool)
+        .await
+        .map_err(sql_error)?;
+
+    Ok(rows
+        .into_iter()
+        .map(|row| DashboardModalityDistribution {
+            modality: modality_label(optional_integer_cell(&row, "modality")).to_owned(),
+            requests: integer_cell(&row, "request_count"),
         })
         .collect())
 }
@@ -397,18 +590,17 @@ async fn load_performance_sparkline(
     let rows = sqlx::query(LOAD_PERFORMANCE_SPARKLINE)
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
+        .bind(subject.user_id)
         .fetch_all(pool)
         .await
         .map_err(sql_error)?;
 
-    let mut points: Vec<DashboardSparklinePoint> = rows
+    Ok(rows
         .into_iter()
         .map(|row| DashboardSparklinePoint {
             value: decimal_cell(&row, "metric_value"),
         })
-        .collect();
-    points.reverse();
-    Ok(points)
+        .collect())
 }
 
 async fn load_configuration_nodes(

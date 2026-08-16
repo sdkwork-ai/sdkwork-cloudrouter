@@ -1,15 +1,13 @@
 pub mod common;
 
-use common::InternalTrustedSubjectHeaders;
 use std::sync::Arc;
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_cloudrouter_router_service::ports::{
     AdminStorageCollection, AdminStorageCommandFuture, AdminStorageCursor, AdminStorageJsonRecord,
-    AdminStorageStore,
-    CreateStorageGarbageCollectionJobCommand,
-    CreateStorageQuotaPolicyCommand, CreateStorageReconciliationRunCommand, ListAdminStorageRecordsQuery,
+    AdminStorageStore, CreateStorageGarbageCollectionJobCommand, CreateStorageQuotaPolicyCommand,
+    CreateStorageReconciliationRunCommand, ListAdminStorageRecordsQuery,
     SetStorageDefaultBucketCommand,
 };
 use serde_json::{json, Map, Value};
@@ -207,7 +205,12 @@ impl AdminStorageStore for TestAdminStorageStore {
         query: ListAdminStorageRecordsQuery,
     ) -> AdminStorageCommandFuture<'a, AdminStorageCollection> {
         if query.limit != 1 {
-            return collection("default-tenant-private", default_bucket_record, query.limit, None);
+            return collection(
+                "default-tenant-private",
+                default_bucket_record,
+                query.limit,
+                None,
+            );
         }
         match query.cursor.map(AdminStorageCursor::id) {
             None => collection(
@@ -385,24 +388,28 @@ fn gc_record(id: &str) -> AdminStorageJsonRecord {
 }
 
 fn trusted_request(method: &str, path: &str) -> Request<Body> {
-    Request::builder()
-        .method(method)
-        .uri(path)
-        .internal_trusted_subject(100001, 0, 30)
-        .body(Body::empty())
-        .unwrap()
+    common::web_framework_backend_request(method, path, Body::empty(), "100001", Some("0"), "30")
 }
 
 fn trusted_json_request(method: &str, path: &str, body: &str) -> Request<Body> {
-    Request::builder()
-        .method(method)
-        .uri(path)
-        .internal_trusted_subject(100001, 0, 30)
-        .header("content-type", "application/json")
-        .header("Idempotency-Key", "idem-test-storage")
-        .header("X-Request-Id", "req-test-storage")
-        .body(Body::from(body.to_owned()))
-        .unwrap()
+    let mut request = common::web_framework_backend_request(
+        method,
+        path,
+        Body::from(body.to_owned()),
+        "100001",
+        Some("0"),
+        "30",
+    );
+    request
+        .headers_mut()
+        .insert("content-type", "application/json".parse().unwrap());
+    request
+        .headers_mut()
+        .insert("Idempotency-Key", "idem-test-storage".parse().unwrap());
+    request
+        .headers_mut()
+        .insert("X-Request-Id", "req-test-storage".parse().unwrap());
+    request
 }
 
 async fn request_json(router: axum::Router, request: Request<Body>) -> Value {

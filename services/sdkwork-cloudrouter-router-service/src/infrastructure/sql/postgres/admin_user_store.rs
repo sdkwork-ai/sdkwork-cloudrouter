@@ -1,6 +1,7 @@
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
 use crate::domain::{DecimalValue, DomainError, DomainResult};
+use crate::infrastructure::sql::account_rate_card::ensure_account_group_rate_card;
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::infrastructure::sql::sql_admin_product_center::{
     media_resource_object_blob_id, media_resource_stable_id, provider_asset_media_resource,
@@ -677,6 +678,15 @@ async fn ensure_default_upstream_account_group(
     if let Some(group_id) =
         find_default_upstream_account_group(tx, tenant_id, organization_id).await?
     {
+        ensure_account_group_rate_card(
+            tx,
+            tenant_id,
+            organization_id,
+            group_id,
+            DEFAULT_PRICING_PLAN_CODE,
+            requested_at,
+        )
+        .await?;
         return Ok(group_id);
     }
 
@@ -715,6 +725,16 @@ async fn ensure_default_upstream_account_group(
     .await
     .map_err(|error| store_error("failed to ensure default channel group", error))?;
 
+    ensure_account_group_rate_card(
+        tx,
+        tenant_id,
+        organization_id,
+        row,
+        DEFAULT_PRICING_PLAN_CODE,
+        requested_at,
+    )
+    .await?;
+
     Ok(row)
 }
 
@@ -726,7 +746,7 @@ async fn find_default_pricing_plan_id(
     sqlx::query_scalar(
         r#"
         SELECT id
-        FROM ai_pricing_plan
+        FROM cloudrouter_pricing_plan
         WHERE status = 1
           AND deleted_at IS NULL
           AND plan_code = $1
@@ -737,8 +757,8 @@ async fn find_default_pricing_plan_id(
             WHEN tenant_id = $2 AND organization_id = 0 THEN 1
             ELSE 2
           END,
-          priority ASC,
-          id ASC
+          effective_from DESC,
+          id DESC
         LIMIT 1
         "#,
     )

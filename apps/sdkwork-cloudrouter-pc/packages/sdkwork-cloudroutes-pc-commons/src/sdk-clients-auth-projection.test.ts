@@ -41,6 +41,64 @@ test('sanitizeSdkHttpRequestOptions leaves backend admin filters intact', () => 
   );
 });
 
+test('sanitizeSdkHttpRequestOptions strips projection headers on every surface', () => {
+  for (const path of [
+    `${APP_API_PREFIX}/notification/notifications`,
+    `${BACKEND_API_PREFIX}/ai/agents`,
+    `${OPEN_API_PREFIX}/chat/completions`,
+  ]) {
+    assert.deepEqual(
+      sanitizeSdkHttpRequestOptions(path, {
+        method: 'GET',
+        headers: {
+          'X-Tenant-Id': '100001',
+          'X-Platform': 'web-admin',
+          'x-sdkwork-tenant-id': '100001',
+          'X-SdkWork-User-Id': 'u-1',
+          'x-sdkwork-organization-id': '30002',
+          Accept: 'application/json',
+        },
+      }),
+      {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+      },
+      `projection headers must be stripped for ${path}`,
+    );
+  }
+});
+
+test('sanitizeSdkHttpRequestOptions keeps approved locale headers and non-projection headers', () => {
+  assert.deepEqual(
+    sanitizeSdkHttpRequestOptions(`${APP_API_PREFIX}/notification/notifications`, {
+      method: 'GET',
+      headers: {
+        'Accept-Language': 'zh-CN',
+        'X-SdkWork-Locale': 'zh-CN',
+        'Idempotency-Key': 'req-1',
+        Authorization: 'Bearer AU-456',
+      },
+    }),
+    {
+      method: 'GET',
+      headers: {
+        'Accept-Language': 'zh-CN',
+        'X-SdkWork-Locale': 'zh-CN',
+        'Idempotency-Key': 'req-1',
+        Authorization: 'Bearer AU-456',
+      },
+    },
+  );
+});
+
+test('sanitizeSdkHttpRequestOptions leaves non-object and header-less options untouched', () => {
+  assert.equal(sanitizeSdkHttpRequestOptions(`${APP_API_PREFIX}/x`, undefined), undefined);
+  assert.deepEqual(
+    sanitizeSdkHttpRequestOptions(`${BACKEND_API_PREFIX}/ai/agents`, { params: { page: '1' } }),
+    { params: { page: '1' } },
+  );
+});
+
 test('resolveRequiredMessagingAppBaseUrl honors an explicit messaging app base URL', () => {
   assert.equal(
     resolveRequiredMessagingAppBaseUrl({ appBaseUrl: 'https://messaging.example.test' }),

@@ -242,10 +242,8 @@ impl PaymentProviderAccountCredentialResolver {
             Some(certificate_ref) => Some(self.resolve_secret(certificate_ref).await?),
             None => None,
         };
-        let verification_serial_no = resolve_wechat_pay_verification_serial_no(
-            &account.metadata,
-            sign_verify_mode,
-        );
+        let verification_serial_no =
+            resolve_wechat_pay_verification_serial_no(&account.metadata, sign_verify_mode);
 
         Ok(PaymentProviderResolvedCredentials::WeChatPay(
             WeChatPayProviderConfig {
@@ -424,12 +422,16 @@ fn resolve_wechat_pay_verification_serial_no(
     mode: WeChatPaySignVerifyMode,
 ) -> Option<String> {
     match mode {
-        WeChatPaySignVerifyMode::WeChatPayPublicKey => {
-            metadata_text(metadata, &["wechatpayPublicKeyId", "wechatpay_public_key_id"])
-        }
+        WeChatPaySignVerifyMode::WeChatPayPublicKey => metadata_text(
+            metadata,
+            &["wechatpayPublicKeyId", "wechatpay_public_key_id"],
+        ),
         WeChatPaySignVerifyMode::PlatformCertificate => metadata_text(
             metadata,
-            &["platformCertificateSerialNo", "platform_certificate_serial_no"],
+            &[
+                "platformCertificateSerialNo",
+                "platform_certificate_serial_no",
+            ],
         ),
     }
 }

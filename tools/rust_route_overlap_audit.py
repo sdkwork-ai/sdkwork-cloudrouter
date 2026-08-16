@@ -281,6 +281,15 @@ class RustRouteOverlapAudit:
     ) -> bool:
         source_paths = {location.source_path for location in locations}
         if (
+            path == "/metrics"
+            and source_paths
+            == {
+                "services/sdkwork-cloudrouter-admin-gateway/src/lib.rs",
+                "services/sdkwork-cloudrouter-standalone-gateway/src/lib.rs",
+            }
+        ):
+            return True
+        if (
             path.startswith("/app/v3/api/auth/")
             and source_paths == {"services/sdkwork-cloudrouter-router-service/src/api/app_auth.rs"}
         ):

@@ -1,5 +1,4 @@
 pub mod common;
-use common::InternalTrustedSubjectHeaders;
 use std::sync::{Arc, Mutex};
 
 use axum::body::Body;
@@ -25,15 +24,16 @@ async fn admin_api_key_rate_limit_route_creates_and_lists_token_limits() {
     let create_response = router
         .clone()
         .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/backend/v3/api/system/rate_limits/api_keys")
-                .header("content-type", "application/json")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::from(
+            common::web_framework_backend_request(
+            "POST",
+            "/backend/v3/api/system/rate_limits/api_keys",
+            Body::from(
                     r#"{"keyPrefix":"sk-test","user":"30","rps":7,"rpd":1200,"burst":14}"#,
-                ))
-                .unwrap(),
+                ),
+            "100001",
+            Some("0"),
+            "30",
+        )
         )
         .await
         .unwrap();
@@ -50,12 +50,14 @@ async fn admin_api_key_rate_limit_route_creates_and_lists_token_limits() {
 
     let list_response = router
         .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/backend/v3/api/system/rate_limits/api_keys")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::empty())
-                .unwrap(),
+            common::web_framework_backend_request(
+            "GET",
+            "/backend/v3/api/system/rate_limits/api_keys",
+            Body::empty(),
+            "100001",
+            Some("0"),
+            "30",
+        )
         )
         .await
         .unwrap();
@@ -78,15 +80,16 @@ async fn admin_api_key_rate_limit_route_rejects_placeholder_prefix_without_calli
 
     let response = router
         .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/backend/v3/api/system/rate_limits/api_keys")
-                .header("content-type", "application/json")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::from(
+            common::web_framework_backend_request(
+            "POST",
+            "/backend/v3/api/system/rate_limits/api_keys",
+            Body::from(
                     r#"{"keyPrefix":"sk-proj-...","user":"30","rps":7,"rpd":1200,"burst":14}"#,
-                ))
-                .unwrap(),
+                ),
+            "100001",
+            Some("0"),
+            "30",
+        )
         )
         .await
         .unwrap();

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use sdkwork_cloudrouter_router_service::domain::DomainError;
-use sqlx::PgPool;
+use sqlx::{AssertSqlSafe, PgPool};
 
 use crate::error::{store_error, RepositoryResult};
 use crate::mapping::{
@@ -14,11 +14,88 @@ use crate::types::{
     SettlementsDashboardSubject,
 };
 
-/// Monthly settlement bills aggregated from the metering facts
-/// (`ai_metering_usage`). The legacy statement tables
-/// (`commerce_usage_statement`/`commerce_usage_settlement`/`commerce_billing_export`)
-/// have no writers since the settlement bridge was retired, so the dashboard
-/// derives bills from the same facts the settlement worker settles.
+const BILLABLE_USAGE_SELECT: &str = r#"
+SELECT
+    c.invocation_id,
+    c.tenant_id,
+    c.organization_id,
+    c.user_id,
+    c.amount AS customer_charge_amount,
+    c.cost_amount AS upstream_cost_amount,
+    COALESCE((m.dimensions_json ->> 'totalTokens')::bigint, 0) AS total_tokens,
+    COALESCE((m.dimensions_json ->> 'requestCount')::bigint, 0) AS request_count,
+    COALESCE((m.dimensions_json ->> 'modality')::integer, 0) AS modality,
+    GREATEST(
+        COALESCE((m.dimensions_json ->> 'resultCount')::bigint, 0),
+        COALESCE((m.dimensions_json ->> 'imageCount')::bigint, 0)
+    ) AS asset_count,
+    COALESCE((m.dimensions_json ->> 'audioSeconds')::numeric, 0)
+        + COALESCE((m.dimensions_json ->> 'videoSeconds')::numeric, 0) AS duration_seconds,
+    COALESCE(
+        NULLIF(d.pricing_snapshot #>> '{resource,requestedModel}', ''),
+        NULLIF(d.pricing_snapshot #>> '{model,model}', ''),
+        NULLIF(m.catalog_key, ''),
+        '-'
+    ) AS model,
+    CASE
+        WHEN c.charge_status = 'settled' OR c.settled_at IS NOT NULL THEN 2
+        WHEN c.charge_status IN ('failed', 'rejected') THEN 3
+        ELSE 0
+    END AS settlement_status,
+    c.charged_at AS occurred_at
+FROM cloudrouter_charge_line c
+JOIN cloudrouter_rating_decision d
+  ON d.tenant_id = c.tenant_id
+ AND d.organization_id = c.organization_id
+ AND d.id = c.rating_decision_id
+JOIN cloudrouter_usage_measurement m
+  ON m.tenant_id = d.tenant_id
+ AND m.organization_id = d.organization_id
+ AND m.id = d.measurement_id
+WHERE c.status = 1
+  AND c.charge_status IN ('rated', 'settled')
+  AND c.amount > 0
+  AND d.status = 1
+  AND d.decision_status = 'rated'
+  AND d.billability = 'chargeable'
+UNION ALL
+SELECT
+    COALESCE(NULLIF(legacy.request_id, ''), CAST(legacy.id AS TEXT)),
+    legacy.tenant_id,
+    legacy.organization_id,
+    legacy.user_id,
+    legacy.customer_charge_amount,
+    COALESCE(legacy.upstream_cost_amount, 0),
+    COALESCE(legacy.total_tokens, 0),
+    COALESCE(legacy.request_count, 0),
+    COALESCE(legacy.modality, 0),
+    GREATEST(COALESCE(legacy.result_count, 0), COALESCE(legacy.image_count, 0)),
+    COALESCE(legacy.audio_seconds, 0) + COALESCE(legacy.video_seconds, 0),
+    COALESCE(NULLIF(legacy.requested_model, ''), NULLIF(legacy.catalog_key, ''), '-'),
+    COALESCE(legacy.settlement_status, 0),
+    legacy.occurred_at
+FROM ai_metering_usage legacy
+WHERE legacy.status = 1
+  AND COALESCE(legacy.customer_charge_amount, 0) > 0
+  AND NOT EXISTS (
+      SELECT 1
+      FROM cloudrouter_rating_decision current_decision
+      WHERE current_decision.tenant_id = legacy.tenant_id
+        AND current_decision.organization_id = legacy.organization_id
+        AND current_decision.invocation_id = legacy.request_id
+        AND current_decision.status = 1
+  )
+"#;
+
+fn billable_usage_query(body: &str) -> AssertSqlSafe<String> {
+    AssertSqlSafe(format!(
+        "WITH billable_usage AS ({BILLABLE_USAGE_SELECT})\n{body}"
+    ))
+}
+
+/// Monthly settlement bills aggregated from the immutable charge ledger.
+/// Legacy metering facts remain a history-only fallback for invocations that
+/// have no rating decision in the current billing system.
 const LOAD_SETTLEMENT_BILLS: &str = r#"
 SELECT
     CAST(to_char(occurred_at, 'YYYYMM') AS BIGINT) AS statement_id,
@@ -34,9 +111,8 @@ SELECT
         ELSE 0
     END AS payment_status,
     2 AS statement_status
-FROM ai_metering_usage
-WHERE status = 1
-  AND tenant_id = $1
+FROM billable_usage
+WHERE tenant_id = $1
   AND organization_id = $2
   AND user_id = $3
   AND occurred_at IS NOT NULL
@@ -50,22 +126,21 @@ const LOAD_SETTLEMENT_ITEMS: &str = r#"
 SELECT
     CAST(to_char(occurred_at, 'YYYYMM') AS BIGINT) AS statement_id,
     modality,
-    COALESCE(NULLIF(requested_model, ''), '-') AS model,
+    model,
     '[]' AS model_list,
     '' AS usage_text,
     CAST(COALESCE(SUM(request_count), 0) AS TEXT) AS request_count,
     CAST(COALESCE(SUM(total_tokens), 0) AS TEXT) AS token_count,
-    '0' AS asset_count,
-    '0' AS duration_seconds,
+    CAST(COALESCE(SUM(asset_count), 0) AS TEXT) AS asset_count,
+    CAST(COALESCE(SUM(duration_seconds), 0) AS TEXT) AS duration_seconds,
     CAST(COALESCE(SUM(customer_charge_amount), 0) AS TEXT) AS cost_amount
-FROM ai_metering_usage
-WHERE status = 1
-  AND tenant_id = $1
+FROM billable_usage
+WHERE tenant_id = $1
   AND organization_id = $2
   AND user_id = $3
   AND occurred_at IS NOT NULL
   AND ($4::text IS NULL OR substr(CAST(occurred_at AS TEXT), 1, 4) = $4)
-GROUP BY to_char(occurred_at, 'YYYYMM'), modality, requested_model
+GROUP BY to_char(occurred_at, 'YYYYMM'), modality, model
 ORDER BY to_char(occurred_at, 'YYYYMM') DESC, modality ASC, model ASC
 "#;
 
@@ -77,9 +152,8 @@ SELECT
     CAST(COALESCE(SUM(CASE WHEN modality = 5 THEN COALESCE(customer_charge_amount, 0) ELSE 0 END), 0) AS TEXT) AS video_cost,
     CAST(COALESCE(SUM(CASE WHEN modality = 3 THEN COALESCE(customer_charge_amount, 0) ELSE 0 END), 0) AS TEXT) AS audio_cost,
     CAST(COALESCE(SUM(CASE WHEN modality = 4 THEN COALESCE(customer_charge_amount, 0) ELSE 0 END), 0) AS TEXT) AS music_cost
-FROM ai_metering_usage
-WHERE status = 1
-  AND tenant_id = $1
+FROM billable_usage
+WHERE tenant_id = $1
   AND organization_id = $2
   AND user_id = $3
   AND occurred_at IS NOT NULL
@@ -126,7 +200,7 @@ async fn load_settlement_bills(
     subject: SettlementsDashboardSubject,
 ) -> RepositoryResult<Vec<SettlementBill>> {
     let year = year_filter(query);
-    let bill_rows = sqlx::query(LOAD_SETTLEMENT_BILLS)
+    let bill_rows = sqlx::query(billable_usage_query(LOAD_SETTLEMENT_BILLS))
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(subject.user_id)
@@ -143,7 +217,7 @@ async fn load_settlement_bills(
         bills.push(row_to_bill(&row)?);
     }
 
-    let item_rows = sqlx::query(LOAD_SETTLEMENT_ITEMS)
+    let item_rows = sqlx::query(billable_usage_query(LOAD_SETTLEMENT_ITEMS))
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(subject.user_id)
@@ -168,7 +242,7 @@ async fn load_settlement_chart(
     subject: SettlementsDashboardSubject,
 ) -> RepositoryResult<Vec<SettlementChartPoint>> {
     let year = year_filter(query);
-    let rows = sqlx::query(LOAD_SETTLEMENT_CHART)
+    let rows = sqlx::query(billable_usage_query(LOAD_SETTLEMENT_CHART))
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(subject.user_id)

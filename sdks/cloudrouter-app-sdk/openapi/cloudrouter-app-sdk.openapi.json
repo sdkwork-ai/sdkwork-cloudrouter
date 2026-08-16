@@ -1662,16 +1662,32 @@
             "description": "Audio whisper field on dashboard chart point.",
             "type": "number"
           },
+          "audio (Whisper) cost": {
+            "description": "Audio whisper cost field on dashboard chart point.",
+            "type": "number"
+          },
           "image (Midjourney/DALL-E)": {
             "description": "Image midjourney field on dashboard chart point.",
+            "type": "number"
+          },
+          "image (Midjourney/DALL-E) cost": {
+            "description": "Image midjourney cost field on dashboard chart point.",
             "type": "number"
           },
           "llm (Text)": {
             "description": "Llm text field on dashboard chart point.",
             "type": "number"
           },
+          "llm (Text) cost": {
+            "description": "Llm text cost field on dashboard chart point.",
+            "type": "number"
+          },
           "music (Suno)": {
             "description": "Music suno field on dashboard chart point.",
+            "type": "number"
+          },
+          "music (Suno) cost": {
+            "description": "Music suno cost field on dashboard chart point.",
             "type": "number"
           },
           "time": {
@@ -1681,6 +1697,10 @@
           "video (Runway/Sora)": {
             "description": "Video runway sora field on dashboard chart point.",
             "type": "number"
+          },
+          "video (Runway/Sora) cost": {
+            "description": "Video runway sora cost field on dashboard chart point.",
+            "type": "number"
           }
         },
         "required": [
@@ -1689,7 +1709,12 @@
           "image (Midjourney/DALL-E)",
           "video (Runway/Sora)",
           "audio (Whisper)",
-          "music (Suno)"
+          "music (Suno)",
+          "llm (Text) cost",
+          "image (Midjourney/DALL-E) cost",
+          "video (Runway/Sora) cost",
+          "audio (Whisper) cost",
+          "music (Suno) cost"
         ],
         "type": "object"
       },
@@ -1738,6 +1763,37 @@
         ],
         "type": "object"
       },
+      "DashboardModalityDistribution": {
+        "additionalProperties": false,
+        "description": "Dashboard modality distribution schema exposed by Cloud Router.",
+        "properties": {
+          "modality": {
+            "description": "Modality field on dashboard modality distribution.",
+            "enum": [
+              "text",
+              "image",
+              "video",
+              "audio",
+              "music",
+              "unknown"
+            ],
+            "type": "string"
+          },
+          "requests": {
+            "description": "Requests field on dashboard modality distribution.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          }
+        },
+        "required": [
+          "modality",
+          "requests"
+        ],
+        "type": "object"
+      },
       "DashboardOverviewResponse": {
         "additionalProperties": false,
         "description": "Dashboard overview response schema exposed by Cloud Router.",
@@ -1761,6 +1817,13 @@
             "description": "Configuration domains field on dashboard overview response.",
             "items": {
               "$ref": "#/components/schemas/DashboardConfigurationDomain"
+            },
+            "type": "array"
+          },
+          "modalityDistribution": {
+            "description": "Modality distribution field on dashboard overview response.",
+            "items": {
+              "$ref": "#/components/schemas/DashboardModalityDistribution"
             },
             "type": "array"
           },
@@ -1815,6 +1878,7 @@
           "multimodalSparkline",
           "performanceSparkline",
           "chartData",
+          "modalityDistribution",
           "topModels",
           "announcements",
           "warnings"
@@ -2428,14 +2492,14 @@
         "description": "Invocations events list result schema exposed by Cloud Router.",
         "x-operation-id": "invocations.events.list"
       },
-      "InvocationsEventsStreamListResult": {
+      "InvocationsEventsStreamRetrieveResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
           },
           {
             "additionalProperties": false,
-            "description": "Object schema used by invocations events stream list result.",
+            "description": "Object schema used by invocations events stream retrieve result.",
             "properties": {
               "data": {
                 "allOf": [
@@ -2452,8 +2516,8 @@
             "type": "object"
           }
         ],
-        "description": "Invocations events stream list result schema exposed by Cloud Router.",
-        "x-operation-id": "invocations.events.stream.list"
+        "description": "Invocations events stream retrieve result schema exposed by Cloud Router.",
+        "x-operation-id": "invocations.events.stream.retrieve"
       },
       "InvocationsListResult": {
         "allOf": [
@@ -3117,6 +3181,688 @@
         "description": "Notifications popup seen create result schema exposed by Cloud Router.",
         "x-operation-id": "notifications.popupSeen.create"
       },
+      "OfficialPricingCatalogResponse": {
+        "additionalProperties": false,
+        "description": "Official pricing catalog response schema exposed by Cloud Router.",
+        "name": "OfficialPricingCatalogResponse",
+        "properties": {
+          "groups": {
+            "description": "Groups field on official pricing catalog response.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingGroupFacet"
+            },
+            "type": "array"
+          },
+          "items": {
+            "description": "Items field on official pricing catalog response.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingRate"
+            },
+            "type": "array"
+          },
+          "meters": {
+            "description": "Meters field on official pricing catalog response.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingMeterFacet"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on official pricing catalog response."
+          },
+          "regions": {
+            "description": "Regions field on official pricing catalog response.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingRegionFacet"
+            },
+            "type": "array"
+          },
+          "vendors": {
+            "description": "Vendors field on official pricing catalog response.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingValueFacet"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo",
+          "groups",
+          "vendors",
+          "regions",
+          "meters"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingFormula": {
+        "additionalProperties": false,
+        "description": "Official pricing formula schema exposed by Cloud Router.",
+        "nullable": true,
+        "properties": {
+          "constantUnits": {
+            "description": "Constant units field on official pricing formula.",
+            "type": "string"
+          },
+          "formulaCode": {
+            "description": "Formula code field on official pricing formula.",
+            "type": "string"
+          },
+          "formulaVersion": {
+            "description": "Formula version field on official pricing formula.",
+            "type": "string"
+          },
+          "maximumUnits": {
+            "description": "Maximum units field on official pricing formula.",
+            "nullable": true,
+            "type": "string"
+          },
+          "minimumUnits": {
+            "description": "Minimum units field on official pricing formula.",
+            "nullable": true,
+            "type": "string"
+          },
+          "quantityCoefficient": {
+            "description": "Quantity coefficient field on official pricing formula.",
+            "type": "string"
+          },
+          "terms": {
+            "description": "Terms field on official pricing formula.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingFormulaTerm"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "formulaCode",
+          "formulaVersion",
+          "constantUnits",
+          "quantityCoefficient",
+          "terms"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingFormulaTerm": {
+        "additionalProperties": false,
+        "description": "Official pricing formula term schema exposed by Cloud Router.",
+        "properties": {
+          "coefficient": {
+            "description": "Coefficient field on official pricing formula term.",
+            "type": "string"
+          },
+          "dimensionCode": {
+            "description": "Dimension code field on official pricing formula term.",
+            "type": "string"
+          },
+          "termCode": {
+            "description": "Term code field on official pricing formula term.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "termCode",
+          "dimensionCode",
+          "coefficient"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingGroupFacet": {
+        "additionalProperties": false,
+        "description": "Official pricing group facet schema exposed by Cloud Router.",
+        "properties": {
+          "code": {
+            "description": "Code field on official pricing group facet.",
+            "type": "string"
+          },
+          "count": {
+            "description": "Count field on official pricing group facet.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "id": {
+            "description": "Id field on official pricing group facet.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "count"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingMeterFacet": {
+        "additionalProperties": false,
+        "description": "Official pricing meter facet schema exposed by Cloud Router.",
+        "properties": {
+          "code": {
+            "description": "Code field on official pricing meter facet.",
+            "type": "string"
+          },
+          "count": {
+            "description": "Count field on official pricing meter facet.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "displayName": {
+            "description": "Display name field on official pricing meter facet.",
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on official pricing meter facet.",
+            "type": "string"
+          },
+          "unitCode": {
+            "description": "Unit code field on official pricing meter facet.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "displayName",
+          "unitCode",
+          "count"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingRate": {
+        "additionalProperties": false,
+        "description": "Official pricing rate schema exposed by Cloud Router.",
+        "properties": {
+          "apiFormat": {
+            "description": "Api format field on official pricing rate.",
+            "nullable": true,
+            "type": "string"
+          },
+          "billability": {
+            "description": "Billability field on official pricing rate.",
+            "enum": [
+              "chargeable",
+              "free",
+              "not_applicable",
+              "unknown"
+            ],
+            "type": "string"
+          },
+          "calculationMode": {
+            "description": "Calculation mode field on official pricing rate.",
+            "enum": [
+              "per_unit",
+              "flat",
+              "graduated",
+              "volume",
+              "formula"
+            ],
+            "type": "string"
+          },
+          "capabilities": {
+            "description": "Capabilities field on official pricing rate.",
+            "items": {
+              "description": "Capabilities field on official pricing rate.",
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "catalogKey": {
+            "description": "Catalog key field on official pricing rate.",
+            "nullable": true,
+            "type": "string"
+          },
+          "chargeTiming": {
+            "description": "Charge timing field on official pricing rate.",
+            "enum": [
+              "request_accepted",
+              "successful_result",
+              "usage_reported"
+            ],
+            "type": "string"
+          },
+          "conditions": {
+            "description": "Conditions field on official pricing rate.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingRateCondition"
+            },
+            "type": "array"
+          },
+          "contextTokens": {
+            "description": "Context tokens field on official pricing rate.",
+            "format": "int64",
+            "nullable": true,
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "currencyCode": {
+            "description": "Currency code field on official pricing rate.",
+            "pattern": "^[A-Z]{3}$",
+            "type": "string"
+          },
+          "effectiveFrom": {
+            "description": "Effective from field on official pricing rate.",
+            "type": "string"
+          },
+          "effectiveTo": {
+            "description": "Effective to field on official pricing rate.",
+            "nullable": true,
+            "type": "string"
+          },
+          "endpointCode": {
+            "description": "Endpoint code field on official pricing rate.",
+            "nullable": true,
+            "type": "string"
+          },
+          "formula": {
+            "description": "Formula field on official pricing rate.",
+            "oneOf": [
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/OfficialPricingFormula"
+                  }
+                ],
+                "description": "Formula field on official pricing rate."
+              },
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/JsonNull"
+                  }
+                ],
+                "description": "Null variant accepted by formula."
+              }
+            ]
+          },
+          "groupCodes": {
+            "description": "Group codes field on official pricing rate.",
+            "items": {
+              "description": "Group codes field on official pricing rate.",
+              "enum": [
+                "all",
+                "llm",
+                "image",
+                "video",
+                "audio",
+                "music",
+                "embedding",
+                "sound",
+                "api",
+                "other"
+              ],
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "inputModalities": {
+            "description": "Input modalities field on official pricing rate.",
+            "items": {
+              "description": "Input modalities field on official pricing rate.",
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "maxInputTokens": {
+            "description": "Max input tokens field on official pricing rate.",
+            "format": "int64",
+            "nullable": true,
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "maxOutputTokens": {
+            "description": "Max output tokens field on official pricing rate.",
+            "format": "int64",
+            "nullable": true,
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "meterCode": {
+            "description": "Meter code field on official pricing rate.",
+            "type": "string"
+          },
+          "meterDisplayName": {
+            "description": "Meter display name field on official pricing rate.",
+            "type": "string"
+          },
+          "minimumQuantity": {
+            "description": "Minimum quantity field on official pricing rate.",
+            "pattern": "^[0-9]+(?:\\.[0-9]+)?$",
+            "type": "string"
+          },
+          "operationCode": {
+            "description": "Operation code field on official pricing rate.",
+            "type": "string"
+          },
+          "operationDisplayName": {
+            "description": "Operation display name field on official pricing rate.",
+            "type": "string"
+          },
+          "operationKind": {
+            "description": "Operation kind field on official pricing rate.",
+            "type": "string"
+          },
+          "outputModalities": {
+            "description": "Output modalities field on official pricing rate.",
+            "items": {
+              "description": "Output modalities field on official pricing rate.",
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "priceBookCode": {
+            "description": "Price book code field on official pricing rate.",
+            "type": "string"
+          },
+          "priceBookVersion": {
+            "description": "Price book version field on official pricing rate.",
+            "type": "string"
+          },
+          "productCode": {
+            "description": "Product code field on official pricing rate.",
+            "type": "string"
+          },
+          "productDisplayName": {
+            "description": "Product display name field on official pricing rate.",
+            "type": "string"
+          },
+          "productKind": {
+            "description": "Product kind field on official pricing rate.",
+            "type": "string"
+          },
+          "providerCode": {
+            "description": "Provider code field on official pricing rate.",
+            "type": "string"
+          },
+          "quantityAggregation": {
+            "description": "Quantity aggregation field on official pricing rate.",
+            "enum": [
+              "sum",
+              "maximum",
+              "minimum",
+              "last",
+              "distinct_invocation"
+            ],
+            "type": "string"
+          },
+          "quantityKind": {
+            "description": "Quantity kind field on official pricing rate.",
+            "type": "string"
+          },
+          "quantityStep": {
+            "description": "Quantity step field on official pricing rate.",
+            "nullable": true,
+            "pattern": "^[0-9]+(?:\\.[0-9]+)?$",
+            "type": "string"
+          },
+          "rateCode": {
+            "description": "Rate code field on official pricing rate.",
+            "type": "string"
+          },
+          "rateHash": {
+            "description": "Rate hash field on official pricing rate.",
+            "type": "string"
+          },
+          "regionCode": {
+            "description": "Region code field on official pricing rate.",
+            "type": "string"
+          },
+          "resourceCode": {
+            "description": "Resource code field on official pricing rate.",
+            "type": "string"
+          },
+          "resourceType": {
+            "description": "Resource type field on official pricing rate.",
+            "type": "string"
+          },
+          "sourceObservedAt": {
+            "description": "Source observed at field on official pricing rate.",
+            "type": "string"
+          },
+          "sourceUrl": {
+            "description": "Source url field on official pricing rate.",
+            "type": "string"
+          },
+          "supportsJsonSchema": {
+            "description": "Supports json schema field on official pricing rate.",
+            "nullable": true,
+            "type": "boolean"
+          },
+          "supportsStreaming": {
+            "description": "Supports streaming field on official pricing rate.",
+            "nullable": true,
+            "type": "boolean"
+          },
+          "supportsTools": {
+            "description": "Supports tools field on official pricing rate.",
+            "nullable": true,
+            "type": "boolean"
+          },
+          "tiers": {
+            "description": "Tiers field on official pricing rate.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingRateTier"
+            },
+            "type": "array"
+          },
+          "unitCode": {
+            "description": "Unit code field on official pricing rate.",
+            "type": "string"
+          },
+          "unitPrice": {
+            "description": "Unit price field on official pricing rate.",
+            "pattern": "^[0-9]+(?:\\.[0-9]+)?$",
+            "type": "string"
+          },
+          "unitSize": {
+            "description": "Unit size field on official pricing rate.",
+            "pattern": "^[0-9]+(?:\\.[0-9]+)?$",
+            "type": "string"
+          },
+          "usageScopes": {
+            "description": "Usage scopes field on official pricing rate.",
+            "items": {
+              "description": "Usage scopes field on official pricing rate.",
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "vendorCode": {
+            "description": "Vendor code field on official pricing rate.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rateCode",
+          "rateHash",
+          "groupCodes",
+          "productCode",
+          "productKind",
+          "productDisplayName",
+          "operationCode",
+          "operationKind",
+          "operationDisplayName",
+          "vendorCode",
+          "providerCode",
+          "regionCode",
+          "resourceType",
+          "resourceCode",
+          "priceBookCode",
+          "priceBookVersion",
+          "meterCode",
+          "meterDisplayName",
+          "quantityKind",
+          "unitCode",
+          "billability",
+          "chargeTiming",
+          "calculationMode",
+          "quantityAggregation",
+          "unitSize",
+          "unitPrice",
+          "minimumQuantity",
+          "currencyCode",
+          "conditions",
+          "tiers",
+          "effectiveFrom",
+          "sourceUrl",
+          "sourceObservedAt"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingRateCondition": {
+        "additionalProperties": false,
+        "description": "Official pricing rate condition schema exposed by Cloud Router.",
+        "properties": {
+          "dimensionCode": {
+            "description": "Dimension code field on official pricing rate condition.",
+            "type": "string"
+          },
+          "operator": {
+            "description": "Operator field on official pricing rate condition.",
+            "enum": [
+              "eq",
+              "neq",
+              "gt",
+              "gte",
+              "lt",
+              "lte",
+              "in",
+              "not_in",
+              "exists"
+            ],
+            "type": "string"
+          },
+          "value": {
+            "description": "Value field on official pricing rate condition.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dimensionCode",
+          "operator",
+          "value"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingRateTier": {
+        "additionalProperties": false,
+        "description": "Official pricing rate tier schema exposed by Cloud Router.",
+        "properties": {
+          "currencyCode": {
+            "description": "Currency code field on official pricing rate tier.",
+            "type": "string"
+          },
+          "flatAmount": {
+            "description": "Flat amount field on official pricing rate tier.",
+            "type": "string"
+          },
+          "lowerBound": {
+            "description": "Lower bound field on official pricing rate tier.",
+            "type": "string"
+          },
+          "tierCode": {
+            "description": "Tier code field on official pricing rate tier.",
+            "type": "string"
+          },
+          "unitPrice": {
+            "description": "Unit price field on official pricing rate tier.",
+            "type": "string"
+          },
+          "unitSize": {
+            "description": "Unit size field on official pricing rate tier.",
+            "type": "string"
+          },
+          "upperBound": {
+            "description": "Upper bound field on official pricing rate tier.",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "tierCode",
+          "lowerBound",
+          "unitSize",
+          "unitPrice",
+          "flatAmount",
+          "currencyCode"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingRegionFacet": {
+        "additionalProperties": false,
+        "description": "Official pricing region facet schema exposed by Cloud Router.",
+        "properties": {
+          "code": {
+            "description": "Code field on official pricing region facet.",
+            "type": "string"
+          },
+          "count": {
+            "description": "Count field on official pricing region facet.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "id": {
+            "description": "Id field on official pricing region facet.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "count"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingValueFacet": {
+        "additionalProperties": false,
+        "description": "Official pricing value facet schema exposed by Cloud Router.",
+        "properties": {
+          "code": {
+            "description": "Code field on official pricing value facet.",
+            "type": "string"
+          },
+          "count": {
+            "description": "Count field on official pricing value facet.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "id": {
+            "description": "Id field on official pricing value facet.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "count"
+        ],
+        "type": "object"
+      },
       "PageInfo": {
         "additionalProperties": false,
         "properties": {
@@ -3158,6 +3904,33 @@
           "mode"
         ],
         "type": "object"
+      },
+      "PricingRatesListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by pricing rates list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/OfficialPricingCatalogResponse"
+                  }
+                ],
+                "description": "Data field on pricing rates list result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Pricing rates list result schema exposed by Cloud Router.",
+        "x-operation-id": "pricing.rates.list"
       },
       "ProblemDetail": {
         "additionalProperties": true,
@@ -4103,6 +4876,158 @@
         ],
         "type": "object"
       },
+      "SettlementBill": {
+        "additionalProperties": false,
+        "description": "Settlement bill schema exposed by Cloud Router.",
+        "properties": {
+          "endDate": {
+            "description": "End date field on settlement bill.",
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on settlement bill.",
+            "type": "string"
+          },
+          "period": {
+            "description": "Period field on settlement bill.",
+            "type": "string"
+          },
+          "startDate": {
+            "description": "Start date field on settlement bill.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on settlement bill.",
+            "type": "string"
+          },
+          "totalCost": {
+            "description": "Total cost field on settlement bill.",
+            "type": "string"
+          },
+          "totalTokens": {
+            "description": "Total tokens field on settlement bill.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "period",
+          "startDate",
+          "endDate",
+          "totalTokens",
+          "totalCost",
+          "status"
+        ],
+        "type": "object"
+      },
+      "SettlementChartPoint": {
+        "additionalProperties": false,
+        "description": "Settlement chart point schema exposed by Cloud Router.",
+        "properties": {
+          "audio": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaResource"
+              }
+            ],
+            "description": "Audio field on settlement chart point."
+          },
+          "day": {
+            "description": "Day field on settlement chart point.",
+            "type": "string"
+          },
+          "image": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaResource"
+              }
+            ],
+            "description": "Image field on settlement chart point."
+          },
+          "music": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaResource"
+              }
+            ],
+            "description": "Music field on settlement chart point."
+          },
+          "text": {
+            "description": "Text field on settlement chart point.",
+            "type": "string"
+          },
+          "video": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MediaResource"
+              }
+            ],
+            "description": "Video field on settlement chart point."
+          }
+        },
+        "required": [
+          "day",
+          "text",
+          "image",
+          "video",
+          "audio",
+          "music"
+        ],
+        "type": "object"
+      },
+      "SettlementsDashboardRetrieveResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by settlements dashboard retrieve result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/SettlementsDashboardSnapshot"
+                  }
+                ],
+                "description": "Data field on settlements dashboard retrieve result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Settlements dashboard retrieve result schema exposed by Cloud Router.",
+        "x-operation-id": "settlements.dashboard.retrieve"
+      },
+      "SettlementsDashboardSnapshot": {
+        "additionalProperties": false,
+        "description": "Settlements dashboard snapshot schema exposed by Cloud Router.",
+        "name": "SettlementsDashboardSnapshot",
+        "properties": {
+          "bills": {
+            "description": "Bills field on settlements dashboard snapshot.",
+            "items": {
+              "$ref": "#/components/schemas/SettlementBill"
+            },
+            "type": "array"
+          },
+          "chartData": {
+            "description": "Chart data field on settlements dashboard snapshot.",
+            "items": {
+              "$ref": "#/components/schemas/SettlementChartPoint"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "chartData",
+          "bills"
+        ],
+        "type": "object"
+      },
       "SiteRuntimeRetrieveResult": {
         "allOf": [
           {
@@ -4974,7 +5899,7 @@
   "paths": {
     "/app/v3/api/ai/dashboard/overview": {
       "get": {
-        "description": "List dashboard overview. Reads ai_usage, ai_request_trace, ai_model_rank_snapshot, ops_notification_message, ops_metric_snapshot, ops_gateway_instance. Writes none. File targets none.",
+        "description": "List dashboard overview. Reads ai_usage, ai_request_trace, ai_model_rank_snapshot, ops_notification_message, ops_gateway_instance. Writes none. File targets none.",
         "operationId": "dashboard.overview.retrieve",
         "parameters": [
           {
@@ -5082,7 +6007,6 @@
           "ai_request_trace",
           "ai_model_rank_snapshot",
           "ops_notification_message",
-          "ops_metric_snapshot",
           "ops_gateway_instance"
         ],
         "x-route-scope": "console",
@@ -5211,6 +6135,188 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "gateway.traces",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway/src/gatewayService.ts",
+        "x-write-tables": []
+      }
+    },
+    "/app/v3/api/ai/pricing/rates": {
+      "get": {
+        "description": "List official pricing rates. Reads pricing_price_book, pricing_product, pricing_operation, pricing_meter, pricing_product_binding, pricing_rate, pricing_rate_binding, pricing_rate_condition, pricing_rate_tier, pricing_rate_formula, pricing_rate_formula_term. Writes none. File targets none.",
+        "operationId": "pricing.rates.list",
+        "parameters": [
+          {
+            "description": "Category query parameter.",
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "enum": [
+                "all",
+                "llm",
+                "image",
+                "video",
+                "audio",
+                "music",
+                "embedding",
+                "sound",
+                "api",
+                "other"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 256,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Vendor code query parameter.",
+            "in": "query",
+            "name": "vendor_code",
+            "required": false,
+            "schema": {
+              "maxLength": 160,
+              "pattern": "^[A-Za-z0-9._:/-]+$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Region code query parameter.",
+            "in": "query",
+            "name": "region_code",
+            "required": false,
+            "schema": {
+              "maxLength": 160,
+              "pattern": "^[A-Za-z0-9._:/-]+$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Meter code query parameter.",
+            "in": "query",
+            "name": "meter_code",
+            "required": false,
+            "schema": {
+              "maxLength": 160,
+              "pattern": "^[A-Za-z0-9._:/-]+$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PricingRatesListResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List official pricing rates",
+        "tags": [
+          "ai"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "pricing_price_book",
+          "pricing_product",
+          "pricing_operation",
+          "pricing_meter",
+          "pricing_product_binding",
+          "pricing_rate",
+          "pricing_rate_binding",
+          "pricing_rate_condition",
+          "pricing_rate_tier",
+          "pricing_rate_formula",
+          "pricing_rate_formula_term"
+        ],
+        "x-route-scope": "public",
+        "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "pricing.rates",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-pricing/src/services/pricingService.ts",
         "x-write-tables": []
       }
     },
@@ -5467,15 +6573,13 @@
         "operationId": "routing.requestTraces.list",
         "parameters": [
           {
-            "description": "Page query parameter.",
+            "description": "Cursor query parameter.",
             "in": "query",
-            "name": "page",
+            "name": "cursor",
             "required": false,
             "schema": {
-              "default": 1,
-              "format": "int32",
-              "minimum": 1,
-              "type": "integer"
+              "maxLength": 1024,
+              "type": "string"
             }
           },
           {
@@ -5497,7 +6601,7 @@
             "name": "q",
             "required": false,
             "schema": {
-              "maxLength": 256,
+              "maxLength": 128,
               "type": "string"
             }
           }
@@ -5670,6 +6774,106 @@
         "x-write-tables": []
       }
     },
+    "/app/v3/api/ai/settlements/dashboard": {
+      "get": {
+        "description": "List settlements dashboard. Reads ai_metering_usage, cloudrouter_charge_line, cloudrouter_rating_decision. Writes none. File targets none.",
+        "operationId": "settlements.dashboard.retrieve",
+        "parameters": [
+          {
+            "description": "Year query parameter.",
+            "in": "query",
+            "name": "year",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettlementsDashboardRetrieveResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List settlements dashboard",
+        "tags": [
+          "ai"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_metering_usage",
+          "cloudrouter_charge_line",
+          "cloudrouter_rating_decision"
+        ],
+        "x-route-scope": "console",
+        "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.app",
+        "x-sdkwork-api-surface": "app-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "settlements.dashboard",
+        "x-source-file": "sdks/_route-manifests/app-api/sdkwork-routes-cloudrouter-app-api.route-manifest.json",
+        "x-write-tables": []
+      }
+    },
     "/app/v3/api/ai/usage/logs": {
       "get": {
         "description": "List logs. Reads ai_request_trace, ai_usage, ai_routing_decision_log. Writes none. File targets none.",
@@ -5829,7 +7033,7 @@
     },
     "/app/v3/api/iam/api_keys": {
       "get": {
-        "description": "List keys. Reads iam_gateway_api_key, ai_upstream_account_group, ai_upstream_account_group_metric_snapshot, iam_gateway_access_policy, ai_quota_policy, ai_model_pricing, ai_pricing_plan. Writes none. File targets none.",
+        "description": "List keys. Reads iam_gateway_api_key, ai_upstream_account_group, ai_upstream_account_group_metric_snapshot, iam_gateway_access_policy, ai_quota_policy, ai_model_pricing, cloudrouter_pricing_plan. Writes none. File targets none.",
         "operationId": "apiKeys.list",
         "parameters": [
           {
@@ -5939,7 +7143,7 @@
           "iam_gateway_access_policy",
           "ai_quota_policy",
           "ai_model_pricing",
-          "ai_pricing_plan"
+          "cloudrouter_pricing_plan"
         ],
         "x-route-scope": "console",
         "x-sdk-domain": "iam",
@@ -8003,7 +9207,7 @@
     "/app/v3/api/runtime/invocations/{invocationId}/events/stream": {
       "get": {
         "description": "Stream runtime events. Reads ai_runtime_invocation, ai_runtime_invocation_event. Writes none. File targets none.",
-        "operationId": "invocations.events.stream.list",
+        "operationId": "invocations.events.stream.retrieve",
         "parameters": [
           {
             "description": "Invocation id path parameter.",
@@ -8034,7 +9238,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InvocationsEventsStreamListResult"
+                  "$ref": "#/components/schemas/InvocationsEventsStreamRetrieveResult"
                 }
               }
             },

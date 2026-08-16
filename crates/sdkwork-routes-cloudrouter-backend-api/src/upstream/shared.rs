@@ -7,8 +7,9 @@ use axum::Json;
 use sdkwork_cloudrouter_router_service::api::admin_sql_subject::SqlScopedAdminSubject;
 use sdkwork_cloudrouter_router_service::domain::{DecimalValue, DomainError};
 use sdkwork_cloudrouter_router_service::ports::{
-    AdminUpstreamAccountVerificationError, AdminUpstreamAccountVerifier, AdminUpstreamListQuery,
-    AdminUpstreamPage, AdminUpstreamStore, AdminUpstreamSubject,
+    AdminLlmProtocolConfig, AdminUpstreamAccountVerificationError, AdminUpstreamAccountVerifier,
+    AdminUpstreamListQuery, AdminUpstreamPage, AdminUpstreamStore, AdminUpstreamSubject,
+    LlmProtocolCode,
 };
 use sdkwork_models_contract_service::AdminAiResourceStore;
 use sdkwork_utils_rust::{
@@ -21,6 +22,92 @@ pub(super) const MAX_NESTED_ITEMS: usize = 200;
 pub(super) const MAX_LIST_PAGE_SIZE: usize = 200;
 const MAX_SEARCH_LENGTH: usize = 256;
 const MAX_IDEMPOTENCY_KEY_LENGTH: usize = 128;
+pub(super) const MAX_CODE_LENGTH: usize = 128;
+pub(super) const MAX_URL_LENGTH: usize = 2_048;
+pub(super) const MAX_PROTOCOLS: usize = 8;
+
+/// 单个 LLM 协议配置输入（供应商与账号共用）：协议代码 + 该协议独立的 Base URL。
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(super) struct ProtocolConfigInput {
+    pub protocol_code: String,
+    pub base_url: String,
+}
+
+/// 解析单个协议配置：协议代码必须能被 `LlmProtocolCode` 解析，Base URL 必填。
+pub(super) fn parse_protocol_config(
+    item: ProtocolConfigInput,
+) -> RequestResult<AdminLlmProtocolConfig> {
+    let protocol_code = required_text(item.protocol_code, "protocolCode", MAX_CODE_LENGTH)?;
+    let protocol_code = LlmProtocolCode::parse(&protocol_code).ok_or_else(|| {
+        problem_keyed(
+            SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.supplier.protocolCode.enum",
+            serde_json::json!({
+                "allowed": [
+                    "openai_chat_completions",
+                    "openai_responses",
+                    "anthropic_messages",
+                ]
+            }),
+            "protocolCode is not a supported LLM protocol",
+        )
+    })?;
+    Ok(AdminLlmProtocolConfig {
+        protocol_code,
+        base_url: required_text(item.base_url, "baseUrl", MAX_URL_LENGTH)?,
+    })
+}
+
+/// 可选 URL 校验（与中转站 baseUrl 规则一致）：绝对 URL、HTTPS（环境 0 的开发端点允许 HTTP）、
+/// 不得携带内嵌凭据/查询串/fragment。空值视为未配置。
+pub(super) fn optional_https_base_url(
+    value: Option<String>,
+    field: &str,
+    environment: i32,
+) -> RequestResult<Option<String>> {
+    let Some(value) = value else {
+        return Ok(None);
+    };
+    let value = optional_text(Some(value), field, MAX_URL_LENGTH)?.unwrap_or_default();
+    if value.is_empty() {
+        return Ok(None);
+    }
+    let url = url::Url::parse(&value).map_err(|error| {
+        problem_keyed(
+            SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.url.absolute",
+            serde_json::json!({ "field": field }),
+            format!("{field} must be an absolute URL: {error}"),
+        )
+    })?;
+    let development_http = environment == 0 && url.scheme() == "http";
+    if url.scheme() != "https" && !development_http {
+        return Err(problem_keyed(
+            SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.url.https",
+            serde_json::json!({ "field": field, "environment": environment }),
+            format!("{field} must use HTTPS; HTTP is allowed only for environment 0 development"),
+        ));
+    }
+    if !url.username().is_empty() || url.password().is_some() {
+        return Err(problem_keyed(
+            SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.url.credentials",
+            serde_json::json!({ "field": field }),
+            format!("{field} must not contain embedded credentials"),
+        ));
+    }
+    if url.query().is_some() || url.fragment().is_some() {
+        return Err(problem_keyed(
+            SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.url.queryOrFragment",
+            serde_json::json!({ "field": field }),
+            format!("{field} must not contain a query string or fragment"),
+        ));
+    }
+    Ok(Some(value))
+}
 
 pub(super) type UpstreamStore = Arc<dyn AdminUpstreamStore + Send + Sync>;
 pub(super) type UpstreamVerifier = Arc<dyn AdminUpstreamAccountVerifier + Send + Sync>;

@@ -27,6 +27,7 @@ export type { CreateRuntimeInvocationRequest } from './create-runtime-invocation
 export type { DashboardAnnouncement } from './dashboard-announcement';
 export type { DashboardChartPoint } from './dashboard-chart-point';
 export type { DashboardConfigurationDomain } from './dashboard-configuration-domain';
+export type { DashboardModalityDistribution } from './dashboard-modality-distribution';
 export type { DashboardOverviewResponse } from './dashboard-overview-response';
 
 export type { DashboardOverviewSummary } from './dashboard-overview-summary';
@@ -50,7 +51,18 @@ export type { MediaSource } from './media-source';
 export type { NotificationItem } from './notification-item';
 export type { NotificationListResponse } from './notification-list-response';
 
+export type { OfficialPricingCatalogResponse } from './official-pricing-catalog-response';
+export type { OfficialPricingFormula } from './official-pricing-formula';
+export type { OfficialPricingFormulaTerm } from './official-pricing-formula-term';
+export type { OfficialPricingGroupFacet } from './official-pricing-group-facet';
+export type { OfficialPricingMeterFacet } from './official-pricing-meter-facet';
+export type { OfficialPricingRate } from './official-pricing-rate';
+export type { OfficialPricingRateCondition } from './official-pricing-rate-condition';
+export type { OfficialPricingRateTier } from './official-pricing-rate-tier';
+export type { OfficialPricingRegionFacet } from './official-pricing-region-facet';
+export type { OfficialPricingValueFacet } from './official-pricing-value-facet';
 export type { PageInfo } from './page-info';
+
 export type { ProblemDetail } from './problem-detail';
 
 export type { RuntimeArtifactItem } from './runtime-artifact-item';
@@ -72,6 +84,10 @@ export type { SdkWorkResourceData } from './sdk-work-resource-data';
 export type { SdkWorkResourceResponse } from './sdk-work-resource-response';
 export type { SettingsDataResponse } from './settings-data-response';
 export type { SettingsNotifications } from './settings-notifications';
+export type { SettlementBill } from './settlement-bill';
+export type { SettlementChartPoint } from './settlement-chart-point';
+
+export type { SettlementsDashboardSnapshot } from './settlements-dashboard-snapshot';
 
 export type { SiteRuntimeSettingsResponse } from './site-runtime-settings-response';
 export type { UpdateApiKeyRequest } from './update-api-key-request';

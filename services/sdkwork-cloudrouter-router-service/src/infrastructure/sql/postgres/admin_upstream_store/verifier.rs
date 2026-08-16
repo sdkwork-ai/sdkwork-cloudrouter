@@ -4,15 +4,19 @@ use std::time::Duration;
 use sqlx::{PgPool, Row};
 
 use super::shared::store_error;
-use crate::application::{UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext};
+use crate::application::{
+    protocol_code_from_api_code, resolve_upstream_base_url, UpstreamCredentialSecretCodec,
+    UpstreamCredentialSecretContext,
+};
 use crate::domain::{
     resolve_upstream_runtime_auth_profile, DomainError, DomainResult, ProviderAuthProfile,
+    RoutingCapability,
 };
 use crate::infrastructure::provider::UpstreamProviderEndpoint;
 use crate::ports::{
-    AdminUpstreamAccountVerificationError, AdminUpstreamAccountVerificationFuture,
-    AdminUpstreamAccountVerificationItem, AdminUpstreamAccountVerifier,
-    VerifyAdminUpstreamAccountCommand,
+    AccountBaseUrlConfig, AdminLlmProtocolConfig, AdminUpstreamAccountVerificationError,
+    AdminUpstreamAccountVerificationFuture, AdminUpstreamAccountVerificationItem,
+    AdminUpstreamAccountVerifier, LlmProtocolCode, VerifyAdminUpstreamAccountCommand,
 };
 
 const HEALTHY: i32 = 1;
@@ -65,6 +69,52 @@ struct VerificationTarget {
     secret_key_id: String,
     auth_type: String,
     runtime_auth_config_json: String,
+    account_default_base_url: Option<String>,
+    account_protocols_json: Option<String>,
+    supplier_default_base_url: Option<String>,
+    supplier_protocols_json: Option<String>,
+}
+
+/// 验证时的最终调用 Base URL：与运行时解析链一致（账号配置 > 供应商配置 > 端点地址），
+/// 使「连接验证」实际命中的地址与真实调用相同。
+fn effective_verification_base_url(target: &VerificationTarget) -> String {
+    let account_config = AccountBaseUrlConfig {
+        account_default_base_url: target.account_default_base_url.clone(),
+        account_protocol_base_urls: parse_protocol_configs(
+            target.account_protocols_json.as_deref(),
+        ),
+        supplier_protocol_base_urls: parse_protocol_configs(
+            target.supplier_protocols_json.as_deref(),
+        ),
+    };
+    resolve_upstream_base_url(
+        RoutingCapability::Chat,
+        verification_protocol_code(&target.protocol_code),
+        Some(&account_config),
+        target.supplier_default_base_url.clone(),
+        Some(target.base_url.clone()),
+    )
+    .unwrap_or_else(|| target.base_url.clone())
+}
+
+fn parse_protocol_configs(value: Option<&str>) -> Vec<AdminLlmProtocolConfig> {
+    value
+        .map(|value| serde_json::from_str::<Vec<AdminLlmProtocolConfig>>(value).unwrap_or_default())
+        .unwrap_or_default()
+}
+
+/// 端点协议 → LLM 协议映射（与运行时一致）；历史 openai 兼容协议
+/// （openai / openai_v1 / openai_compatible / openai_compat）归为 chat completions，
+/// 使账号协议覆盖对旧端点同样生效。
+fn verification_protocol_code(protocol_code: &str) -> Option<LlmProtocolCode> {
+    let normalized = protocol_code.trim().to_ascii_lowercase();
+    if let Some(code) = protocol_code_from_api_code(Some(&normalized)) {
+        return Some(code);
+    }
+    if normalized.starts_with("openai") {
+        return Some(LlmProtocolCode::OpenaiChatCompletions);
+    }
+    None
 }
 
 async fn verify_account(
@@ -88,7 +138,7 @@ async fn verify_account(
         )
         .map_err(|_| AdminUpstreamAccountVerificationError::InvalidConfiguration)?;
     let auth_profile = verification_auth_profile(&target)?;
-    let endpoint = UpstreamProviderEndpoint::new(&target.base_url, secret)
+    let endpoint = UpstreamProviderEndpoint::new(&effective_verification_base_url(&target), secret)
         .map_err(|_| AdminUpstreamAccountVerificationError::InvalidConfiguration)?
         .with_auth_profile(auth_profile);
     let outcome = endpoint
@@ -136,7 +186,11 @@ async fn load_verification_target(
             credential.secret_ciphertext,
             credential.secret_key_id,
             auth_method.auth_type,
-            auth_method.runtime_auth_config::text AS runtime_auth_config_json
+            auth_method.runtime_auth_config::text AS runtime_auth_config_json,
+            account.default_base_url AS account_default_base_url,
+            account.protocols::text AS account_protocols_json,
+            supplier.default_base_url AS supplier_default_base_url,
+            supplier.protocols::text AS supplier_protocols_json
         FROM ai_upstream_account account
         JOIN ai_upstream_supplier supplier
           ON supplier.tenant_id = account.tenant_id
@@ -240,6 +294,18 @@ async fn load_verification_target(
             .map_err(|_| AdminUpstreamAccountVerificationError::Internal)?,
         runtime_auth_config_json: row
             .try_get("runtime_auth_config_json")
+            .map_err(|_| AdminUpstreamAccountVerificationError::Internal)?,
+        account_default_base_url: row
+            .try_get("account_default_base_url")
+            .map_err(|_| AdminUpstreamAccountVerificationError::Internal)?,
+        account_protocols_json: row
+            .try_get("account_protocols_json")
+            .map_err(|_| AdminUpstreamAccountVerificationError::Internal)?,
+        supplier_default_base_url: row
+            .try_get("supplier_default_base_url")
+            .map_err(|_| AdminUpstreamAccountVerificationError::Internal)?,
+        supplier_protocols_json: row
+            .try_get("supplier_protocols_json")
             .map_err(|_| AdminUpstreamAccountVerificationError::Internal)?,
     })
 }
@@ -437,6 +503,10 @@ mod tests {
             auth_type: auth_type.to_owned(),
             runtime_auth_config_json: r#"{"credentialTransport":"bearer","defaultHeaders":{}}"#
                 .to_owned(),
+            account_default_base_url: None,
+            account_protocols_json: None,
+            supplier_default_base_url: None,
+            supplier_protocols_json: None,
         }
     }
 
@@ -459,6 +529,50 @@ mod tests {
         assert_eq!(
             AdminUpstreamAccountVerificationError::InvalidConfiguration,
             verification_auth_profile(&target("unsupported")).unwrap_err()
+        );
+    }
+
+    #[test]
+    fn verification_base_url_prefers_account_config_then_supplier_config_then_endpoint() {
+        // 账号协议覆盖优先于端点地址（历史 openai_v1 端点协议归为 chat completions）
+        let mut override_target = target("api_key");
+        override_target.account_protocols_json = Some(
+            r#"[{"protocolCode":"openai_chat_completions","baseUrl":"https://account-chat.example.com"}]"#
+                .to_owned(),
+        );
+        assert_eq!(
+            "https://account-chat.example.com",
+            effective_verification_base_url(&override_target)
+        );
+
+        // 账号默认地址优先于供应商协议与端点地址
+        let mut default_target = target("api_key");
+        default_target.account_default_base_url =
+            Some("https://account-default.example.com".to_owned());
+        default_target.supplier_protocols_json = Some(
+            r#"[{"protocolCode":"openai_chat_completions","baseUrl":"https://supplier-chat.example.com"}]"#
+                .to_owned(),
+        );
+        assert_eq!(
+            "https://account-default.example.com",
+            effective_verification_base_url(&default_target)
+        );
+
+        // 供应商协议地址优先于端点地址
+        let mut supplier_target = target("api_key");
+        supplier_target.supplier_protocols_json = Some(
+            r#"[{"protocolCode":"openai_chat_completions","baseUrl":"https://supplier-chat.example.com"}]"#
+                .to_owned(),
+        );
+        assert_eq!(
+            "https://supplier-chat.example.com",
+            effective_verification_base_url(&supplier_target)
+        );
+
+        // 无任何账号/供应商配置时回退端点地址
+        assert_eq!(
+            "https://api.openai.com",
+            effective_verification_base_url(&target("api_key"))
         );
     }
 

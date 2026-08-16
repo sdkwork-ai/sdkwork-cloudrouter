@@ -25,7 +25,7 @@ SELECT
     CAST(COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS TEXT) AS total_tokens,
     CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS total_points,
     CAST(COALESCE(SUM(COALESCE(upstream_cost_amount, 0)), 0) AS TEXT) AS upstream_cost
-FROM ai_metering_usage usage
+FROM billable_usage usage
 LEFT JOIN (
     SELECT DISTINCT tenant_id, organization_id, request_id
     FROM ai_metering_request_trace
@@ -50,6 +50,99 @@ WHERE usage.status = 1
   AND usage.occurred_at <= $4::timestamptz
 "#;
 
+const BILLABLE_USAGE_SELECT: &str = r#"
+SELECT
+    c.invocation_id,
+    COALESCE(NULLIF(c.request_id, ''), c.invocation_id) AS request_id,
+    c.tenant_id,
+    c.organization_id,
+    c.user_id,
+    c.user_id AS owner_id,
+    COALESCE(
+        NULLIF(trace_snapshot.owner_name_snapshot, ''),
+        NULLIF(CAST(c.user_id AS TEXT), ''),
+        'unknown'
+    ) AS owner_name_snapshot,
+    COALESCE(
+        NULLIF(d.pricing_snapshot #>> '{resource,requestedModel}', ''),
+        NULLIF(d.pricing_snapshot #>> '{model,model}', ''),
+        NULLIF(m.catalog_key, ''),
+        'unknown'
+    ) AS model,
+    m.catalog_key,
+    COALESCE((m.dimensions_json ->> 'modality')::integer, 0) AS modality,
+    COALESCE((m.dimensions_json ->> 'promptTokens')::bigint, 0) AS prompt_tokens,
+    COALESCE((m.dimensions_json ->> 'completionTokens')::bigint, 0) AS completion_tokens,
+    COALESCE((m.dimensions_json ->> 'cachedTokens')::bigint, 0) AS cached_tokens,
+    COALESCE((m.dimensions_json ->> 'totalTokens')::bigint, 0) AS total_tokens,
+    COALESCE((m.dimensions_json ->> 'requestCount')::bigint, 0) AS request_count,
+    c.amount AS customer_charge_amount,
+    c.cost_amount AS upstream_cost_amount,
+    c.charged_at AS occurred_at
+FROM cloudrouter_charge_line c
+JOIN cloudrouter_rating_decision d
+  ON d.tenant_id = c.tenant_id
+ AND d.organization_id = c.organization_id
+ AND d.id = c.rating_decision_id
+JOIN cloudrouter_usage_measurement m
+  ON m.tenant_id = d.tenant_id
+ AND m.organization_id = d.organization_id
+ AND m.id = d.measurement_id
+LEFT JOIN LATERAL (
+    SELECT trace.owner_name_snapshot
+    FROM ai_metering_request_trace trace
+    WHERE trace.status = 1
+      AND trace.tenant_id = c.tenant_id
+      AND trace.organization_id = c.organization_id
+      AND trace.request_id = c.request_id
+    ORDER BY trace.started_at DESC NULLS LAST, trace.id DESC
+    LIMIT 1
+) trace_snapshot ON TRUE
+WHERE c.status = 1
+  AND c.charge_status IN ('rated', 'settled')
+  AND c.amount > 0
+  AND d.status = 1
+  AND d.decision_status = 'rated'
+  AND d.billability = 'chargeable'
+UNION ALL
+SELECT
+    COALESCE(NULLIF(legacy.request_id, ''), CAST(legacy.id AS TEXT)),
+    COALESCE(NULLIF(legacy.request_id, ''), CAST(legacy.id AS TEXT)),
+    legacy.tenant_id,
+    legacy.organization_id,
+    legacy.user_id,
+    legacy.owner_id,
+    COALESCE(NULLIF(legacy.owner_name_snapshot, ''), NULLIF(CAST(legacy.user_id AS TEXT), ''), 'unknown'),
+    COALESCE(NULLIF(legacy.model, ''), NULLIF(legacy.catalog_key, ''), 'unknown'),
+    legacy.catalog_key,
+    COALESCE(legacy.modality, 0),
+    COALESCE(legacy.prompt_tokens, 0),
+    COALESCE(legacy.completion_tokens, 0),
+    COALESCE(legacy.cached_tokens, 0),
+    COALESCE(legacy.total_tokens, 0),
+    COALESCE(legacy.request_count, 0),
+    legacy.customer_charge_amount,
+    COALESCE(legacy.upstream_cost_amount, 0),
+    legacy.occurred_at
+FROM ai_metering_usage legacy
+WHERE legacy.status = 1
+  AND COALESCE(legacy.customer_charge_amount, 0) > 0
+  AND NOT EXISTS (
+      SELECT 1
+      FROM cloudrouter_rating_decision current_decision
+      WHERE current_decision.tenant_id = legacy.tenant_id
+        AND current_decision.organization_id = legacy.organization_id
+        AND current_decision.invocation_id = legacy.request_id
+        AND current_decision.status = 1
+  )
+"#;
+
+fn billable_usage_query(body: &str) -> sqlx::AssertSqlSafe<String> {
+    sqlx::AssertSqlSafe(format!(
+        "WITH billable_usage AS ({BILLABLE_USAGE_SELECT})\n{body}"
+    ))
+}
+
 const USER_POINTS_ORDER: &str = "points_sort DESC, request_count_sort DESC, user_name ASC";
 const USER_TOKENS_ORDER: &str = "total_tokens_sort DESC, request_count_sort DESC, user_name ASC";
 const USER_REQUESTS_ORDER: &str =
@@ -61,16 +154,15 @@ const MODEL_REQUESTS_ORDER: &str =
     "request_count_sort DESC, total_tokens_sort DESC, points_sort DESC, model ASC";
 
 fn user_model_distribution_sql() -> sqlx::AssertSqlSafe<String> {
-    sqlx::AssertSqlSafe(format!(
+    billable_usage_query(&format!(
         r#"
-WITH agg AS (
+, agg AS (
     SELECT
         COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown') AS user_id,
         COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''), 'unknown') AS name,
         COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS value
-    FROM ai_metering_usage
-    WHERE status = 1
-      AND tenant_id = $1
+    FROM billable_usage
+    WHERE tenant_id = $1
       AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
       AND occurred_at >= $3::timestamptz
       AND occurred_at <= $4::timestamptz
@@ -116,15 +208,14 @@ ORDER BY user_id ASC, value_decimal DESC, name ASC
 }
 
 fn model_distribution_sql() -> sqlx::AssertSqlSafe<String> {
-    sqlx::AssertSqlSafe(format!(
+    billable_usage_query(&format!(
         r#"
-WITH agg AS (
+, agg AS (
     SELECT
         COALESCE(NULLIF(model, ''), NULLIF(catalog_key, ''), 'unknown') AS name,
         COALESCE(SUM(COALESCE(request_count, 1)), 0) AS value
-    FROM ai_metering_usage
-    WHERE status = 1
-      AND tenant_id = $1
+    FROM billable_usage
+    WHERE tenant_id = $1
       AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
       AND occurred_at >= $3::timestamptz
       AND occurred_at <= $4::timestamptz
@@ -165,15 +256,14 @@ ORDER BY value_decimal DESC, name ASC
 }
 
 fn modality_distribution_sql() -> sqlx::AssertSqlSafe<String> {
-    sqlx::AssertSqlSafe(format!(
+    billable_usage_query(&format!(
         r#"
-WITH agg AS (
+, agg AS (
     SELECT
         COALESCE(modality, 0) AS modality,
         COALESCE(SUM(COALESCE(request_count, 1)), 0) AS value
-    FROM ai_metering_usage
-    WHERE status = 1
-      AND tenant_id = $1
+    FROM billable_usage
+    WHERE tenant_id = $1
       AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
       AND occurred_at >= $3::timestamptz
       AND occurred_at <= $4::timestamptz
@@ -404,7 +494,7 @@ async fn load_summary(
     start_time: &str,
     end_time: &str,
 ) -> RepositoryResult<AnalyticsSummaryRow> {
-    let row = sqlx::query(LOAD_SUMMARY)
+    let row = sqlx::query(billable_usage_query(LOAD_SUMMARY))
         .bind(tenant_id)
         .bind(organization_id)
         .bind(start_time)
@@ -444,9 +534,8 @@ async fn load_trend(
                 CAST(COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS TEXT) AS tokens,
                 CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS points,
                 COUNT(DISTINCT COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown')) AS users
-            FROM ai_metering_usage
-            WHERE status = 1
-              AND tenant_id = $1
+            FROM billable_usage
+            WHERE tenant_id = $1
               AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
               AND occurred_at IS NOT NULL
               AND occurred_at >= $3::timestamptz
@@ -459,7 +548,7 @@ async fn load_trend(
         "#,
         period_expr = period_expr,
     );
-    let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
+    let rows = sqlx::query(billable_usage_query(&sql))
         .bind(tenant_id)
         .bind(organization_id)
         .bind(start_time)
@@ -515,9 +604,8 @@ async fn load_user_rankings(
             CAST(COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS TEXT) AS total_tokens,
             COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS points_sort,
             CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS points
-        FROM ai_metering_usage
-        WHERE status = 1
-          AND tenant_id = $1
+        FROM billable_usage
+        WHERE tenant_id = $1
           AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
           AND occurred_at >= $3::timestamptz
           AND occurred_at <= $4::timestamptz
@@ -526,7 +614,7 @@ async fn load_user_rankings(
         LIMIT $5
         "#
     );
-    let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
+    let rows = sqlx::query(billable_usage_query(&sql))
         .bind(tenant_id)
         .bind(organization_id)
         .bind(start_time)
@@ -573,7 +661,7 @@ async fn load_model_rankings(
             CAST(COALESCE(SUM(COALESCE(upstream_cost_amount, 0)), 0) AS TEXT) AS upstream_cost,
             COUNT(DISTINCT COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown')) AS user_count,
             COUNT(DISTINCT CASE WHEN failed_request.request_id IS NULL THEN NULL ELSE usage.request_id END) AS failed_requests
-        FROM ai_metering_usage usage
+        FROM billable_usage usage
         LEFT JOIN (
             SELECT DISTINCT tenant_id, organization_id, request_id
             FROM ai_metering_request_trace
@@ -591,8 +679,7 @@ async fn load_model_rankings(
           ON failed_request.tenant_id = usage.tenant_id
          AND failed_request.organization_id IS NOT DISTINCT FROM usage.organization_id
          AND failed_request.request_id = usage.request_id
-        WHERE usage.status = 1
-          AND usage.tenant_id = $1
+        WHERE usage.tenant_id = $1
           AND (usage.organization_id = $2 OR usage.organization_id = 0 OR usage.organization_id = '0')
           AND usage.occurred_at >= $3::timestamptz
           AND usage.occurred_at <= $4::timestamptz
@@ -604,7 +691,7 @@ async fn load_model_rankings(
         LIMIT $5
         "#
     );
-    let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
+    let rows = sqlx::query(billable_usage_query(&sql))
         .bind(tenant_id)
         .bind(organization_id)
         .bind(start_time)

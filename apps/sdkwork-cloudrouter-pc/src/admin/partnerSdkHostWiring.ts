@@ -14,7 +14,7 @@
 //! provides to every other backend SDK family, plus the dependency base URL
 //! resolution used for the portal's own `@sdkwork/partner-backend-sdk` client
 //! (the partner admin API is served by the cloudrouter gateway under
-//! `/backend/v3/api`).
+//! under the backend API surface).
 
 import { configurePartnerBackendSdkClient } from '@sdkwork/partner-pc-admin-core';
 import {

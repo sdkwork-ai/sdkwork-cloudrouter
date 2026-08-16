@@ -115,6 +115,14 @@
       "packageByLanguage": {
         "typescript": "@sdkwork/drive-backend-sdk"
       }
+    },
+    {
+      "workspace": "sdkwork-community-backend-sdk",
+      "surface": "backend"
+    },
+    {
+      "workspace": "sdkwork-log-backend-sdk",
+      "surface": "backend"
     }
   ],
   "languages": [

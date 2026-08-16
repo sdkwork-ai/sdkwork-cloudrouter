@@ -11,6 +11,11 @@ import {
 import {
   getSdkworkCommunityBackendSdkClient,
 } from '@sdkwork/cloudroutes-pc-commons/sdk-clients';
+import {
+  readMediaResource,
+  readMediaResourceUrl,
+  type CloudRouterMediaResource,
+} from '@sdkwork/cloudroutes-pc-commons/runtime';
 
 type BackendCommunityService = ReturnType<typeof getSdkworkCommunityBackendSdkClient>['community'];
 
@@ -35,8 +40,8 @@ export interface CommunityAdminCategoryItem {
   slug: string;
   title: string;
   description?: string;
-  coverImage?: string;
-  avatar?: string;
+  coverImage?: CloudRouterMediaResource;
+  avatar?: CloudRouterMediaResource;
   ownerId?: string;
   memberCount: string;
   memberLimit?: string;
@@ -65,8 +70,8 @@ export interface CommunityAdminCategoryCreateInput {
 export interface CommunityAdminCircleUpdateInput {
   title: string;
   description?: string;
-  coverImage?: string;
-  avatar?: string;
+  coverImage?: CloudRouterMediaResource;
+  avatar?: CloudRouterMediaResource;
   isPaid?: boolean;
   memberLimit?: number;
   price?: number;
@@ -554,8 +559,8 @@ function normalizeAdminCategory(value: unknown): CommunityAdminCategoryItem {
     slug: requireRecordString(item, 'slug', 'Community category slug is required'),
     title: requireRecordString(item, 'title', 'Community category title is required'),
     description: description || undefined,
-    coverImage: readString(item, 'coverImage').trim() || undefined,
-    avatar: readString(item, 'avatar').trim() || undefined,
+    coverImage: readMediaResource(item['coverImage']),
+    avatar: readMediaResource(item['avatar']),
     ownerId: readString(item, 'ownerId').trim() || undefined,
     memberCount: readString(item, 'memberCount').trim() || '0',
     memberLimit: memberLimit || undefined,
@@ -673,8 +678,8 @@ function buildCircleMutationRequest(input: CommunityAdminCircleUpdateInput) {
   return {
     title: requiredCommunityText(input.title, 'title'),
     description: optionalBoundedText(input.description),
-    coverImage: optionalBoundedText(input.coverImage),
-    avatar: optionalBoundedText(input.avatar),
+    coverImage: readMediaResourceUrl(input.coverImage),
+    avatar: readMediaResourceUrl(input.avatar),
     isPaid: input.isPaid,
     memberLimit: optionalNonNegativeInt64String(input.memberLimit, 'memberLimit'),
     price: optionalMoneyNumber(input.price, 'price'),

@@ -10,6 +10,7 @@ import {
   upstreamSharedMessages,
   upstreamSupplierMessages,
 } from '@sdkwork/cloudrouter-pc-admin-upstream/i18n';
+import { pricingAdminMessages } from '@sdkwork/cloudrouter-pc-admin-pricing/i18n';
 import { adminPartnerMessages } from '@sdkwork/partner-pc-admin-partner/i18n';
 import { adminCommissionMessages } from '@sdkwork/partner-pc-admin-commission/i18n';
 import { adminWithdrawalMessages } from '@sdkwork/partner-pc-admin-withdrawal/i18n';
@@ -67,6 +68,7 @@ import { playgroundModalitiesMessages } from './playground/modalities';
 import { playgroundPreviewMessages } from './playground/preview';
 import { publicModelsMessages } from './public/models';
 import { publicRankingsMessages } from './public/rankings';
+import { pricingMessages } from '@sdkwork/cloudrouter-pc-pricing/i18n';
 import { sharedCommonMessages } from './shared/common';
 import { sharedNavigationMessages } from './shared/navigation';
 
@@ -133,6 +135,7 @@ export const resources = mergeI18nBundles([
   publicDocsMessages,
   publicModelsMessages,
   publicRankingsMessages,
+  pricingMessages,
   publicSdkReferenceMessages,
   sharedCommonMessages,
   sharedNavigationMessages,

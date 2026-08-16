@@ -1,4 +1,12 @@
 # Cloud Router鎶€鏈€哄姟娓呯悊涓庡畬缇庡榻愭姤鍛?- 鏈€缁堢増鏈?
+> **Superseded (2026-08-16):** this alignment report describes the pre-launch
+> schema state including the removed legacy `ai_pricing_*` tables. The current
+> authority is the schema registry
+> (`docs/schema-registry/sdkwork-cloudrouter.tables.yaml`) and
+> ADR-20260815-composable-pricing-and-billing. Retained as a historical record
+> only.
+
+
 ## 馃帄 瀹岀編杈炬垚鎬荤粨
 
 **瀹炴柦鏃堕棿**: 2026-06-27

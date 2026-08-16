@@ -19,7 +19,6 @@ use serde_json::json;
 use tower::ServiceExt;
 
 pub mod common;
-use common::InternalTrustedSubjectHeaders;
 
 struct TestUuidGenerator;
 
@@ -364,15 +363,23 @@ fn trusted_json_request(
     idempotency_key: Option<&str>,
     body: &str,
 ) -> Request<Body> {
-    let mut builder = Request::builder()
-        .method(method)
-        .uri(path)
-        .header("content-type", "application/json")
-        .internal_trusted_subject(100001, 0, 30);
+    let mut request = common::web_framework_backend_request(
+        method,
+        path,
+        Body::from(body.to_owned()),
+        "100001",
+        Some("0"),
+        "30",
+    );
+    request
+        .headers_mut()
+        .insert("content-type", "application/json".parse().unwrap());
     if let Some(idempotency_key) = idempotency_key {
-        builder = builder.header("Idempotency-Key", idempotency_key);
+        request
+            .headers_mut()
+            .insert("Idempotency-Key", idempotency_key.parse().unwrap());
     }
-    builder.body(Body::from(body.to_owned())).unwrap()
+    request
 }
 
 async fn response_json(response: axum::response::Response) -> serde_json::Value {

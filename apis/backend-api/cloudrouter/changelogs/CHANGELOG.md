@@ -1,5 +1,36 @@
 # Cloud Router Backend API Changelog
 
+## 0.15.0
+
+- New `pricing` admin surface for the billing/rating engine (tag `pricing`, prefix
+  `/backend/v3/api/pricing/`):
+  - `GET/POST /backend/v3/api/pricing/plans` and `GET/PATCH /backend/v3/api/pricing/plans/{planId}`
+    (`plans.list/create/retrieve/update`): manage pricing plans against
+    `cloudrouter_pricing_plan` — plan code/name, base price side, currency, rounding
+    mode, minimum charge amount, effective window, and status. `fallbackPolicy` is
+    fixed to `fail_closed` server-side.
+  - `GET/POST /backend/v3/api/pricing/rate_cards` and
+    `PATCH/DELETE /backend/v3/api/pricing/rate_cards/{rateCardId}`
+    (`rateCards.list/create/update/delete`): bind a pricing plan to a subject
+    (`default`/`api_key`/`account_group`/`account`/`user`/`organization`, exactly one
+    of `subjectId`/`subjectCode`) with priority and effective window against
+    `cloudrouter_account_rate_card`.
+  - `GET/POST /backend/v3/api/pricing/rules` and
+    `PATCH/DELETE /backend/v3/api/pricing/rules/{ruleId}`
+    (`rules.list/create/update/delete`): configure plan-level pricing rules against
+    `cloudrouter_pricing_rule` — `multiplier_markup` (multiplier + markup amount) or
+    `unit_price_override`, optional product/operation/meter/provider/region/catalog
+    scoping, priority and effective window.
+- All mutations are dual-token admin operations with tenant/org SQL isolation, offset
+  pagination (`page`/`page_size`, max 200), decimal-string money fields (at most 6
+  fractional digits), int64-string ids, and `ops_audit_log` write-audit entries.
+  Rate cards and rules are soft-deleted (`deleted_at`); plans have no delete
+  operation — deactivate via status. Referencing a missing pricing plan returns
+  HTTP 404; duplicate `plan_code`/`rule_code`/subject bindings return HTTP 409.
+- The `pricing` tag/domain is added to the contract manifest tooling; the
+  `@sdkwork/cloudrouter-backend-sdk` TypeScript package exposes
+  `client.pricing.plans|rateCards|rules` operations.
+
 ## 0.14.0
 
 - `AdminRechargeSettings.basePointsPerCny`, `RechargeSettingsUpdateRequest.basePointsPerCny`,

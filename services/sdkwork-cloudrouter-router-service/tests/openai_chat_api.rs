@@ -29,6 +29,34 @@ use sdkwork_cloudrouter_router_service::ports::{
 use sdkwork_cloudrouter_test_support::assert_server_generated_request_id;
 use tower::ServiceExt;
 
+fn assert_chat_meter_records(records: &[GatewayUsageRecordCommand]) {
+    assert_eq!(3, records.len());
+    for meter_code in [
+        "llm_input_token",
+        "llm_output_token",
+        "llm_cache_read_token",
+    ] {
+        assert_eq!(
+            1,
+            records
+                .iter()
+                .filter(|record| record.billing_meter_code == meter_code)
+                .count(),
+            "expected exactly one {meter_code} usage record"
+        );
+    }
+}
+
+fn usage_record_for_meter<'a>(
+    records: &'a [GatewayUsageRecordCommand],
+    meter_code: &str,
+) -> &'a GatewayUsageRecordCommand {
+    records
+        .iter()
+        .find(|record| record.billing_meter_code == meter_code)
+        .unwrap_or_else(|| panic!("missing {meter_code} usage record"))
+}
+
 fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
     let mut catalog = catalog_with_hashed_api_key_without_routing(key_hash);
     add_group_routing_policy(
@@ -2841,12 +2869,20 @@ async fn openai_chat_completions_fails_over_to_next_account_after_primary_relay_
     assert_eq!("openrouter-fallback", captured[1].supplier_code);
 
     let usage_records = usage_records.lock().unwrap();
-    assert_eq!(1, usage_records.len());
-    assert_server_generated_request_id(&usage_records[0].request_id, "req-failover");
-    assert_eq!("openrouter-fallback", usage_records[0].supplier_code);
-    assert_eq!(3002, usage_records[0].account_id);
-    assert_eq!(2, usage_records[0].prompt_tokens);
-    assert_eq!(3, usage_records[0].completion_tokens);
+    assert_chat_meter_records(&usage_records);
+    for command in usage_records.iter() {
+        assert_server_generated_request_id(&command.request_id, "req-failover");
+        assert_eq!("openrouter-fallback", command.supplier_code);
+        assert_eq!(3002, command.account_id);
+    }
+    assert_eq!(
+        2,
+        usage_record_for_meter(&usage_records, "llm_input_token").prompt_tokens
+    );
+    assert_eq!(
+        3,
+        usage_record_for_meter(&usage_records, "llm_output_token").completion_tokens
+    );
 
     assert_eq!(
         vec!["error:502:provider_relay_failed:openrouter"],
@@ -3234,11 +3270,13 @@ async fn openai_chat_completions_stream_fails_over_to_next_account_before_respon
     assert_eq!("openrouter-fallback", captured[1].supplier_code);
 
     let usage_records = usage_records.lock().unwrap();
-    assert_eq!(1, usage_records.len());
-    assert_server_generated_request_id(&usage_records[0].request_id, "req-stream-failover");
-    assert!(usage_records[0].streaming);
-    assert_eq!("openrouter-fallback", usage_records[0].supplier_code);
-    assert_eq!(3002, usage_records[0].account_id);
+    assert_chat_meter_records(&usage_records);
+    for command in usage_records.iter() {
+        assert_server_generated_request_id(&command.request_id, "req-stream-failover");
+        assert!(command.streaming);
+        assert_eq!("openrouter-fallback", command.supplier_code);
+        assert_eq!(3002, command.account_id);
+    }
 
     let events = events.lock().unwrap();
     assert!(events.contains(&"route_fault:openrouter:provider_relay_failed".to_owned()));
@@ -3556,8 +3594,10 @@ async fn openai_chat_completions_records_non_stream_usage_after_provider_success
     assert_eq!(StatusCode::OK, response.status());
 
     let captured = usage_captured.lock().unwrap();
-    assert_eq!(1, captured.len());
-    let command = &captured[0];
+    assert_chat_meter_records(&captured);
+    let command = usage_record_for_meter(&captured, "llm_input_token");
+    let output = usage_record_for_meter(&captured, "llm_output_token");
+    let cache = usage_record_for_meter(&captured, "llm_cache_read_token");
     assert_server_generated_request_id(&command.request_id, "req-chat-usage-1");
     assert_eq!(Some("trace-chat-usage-1"), command.trace_id.as_deref());
     assert_eq!(10, command.tenant_id);
@@ -3579,34 +3619,43 @@ async fn openai_chat_completions_records_non_stream_usage_after_provider_success
     assert_eq!(200, command.http_status);
     assert!(!command.streaming);
     assert_eq!(1, command.prompt_tokens);
-    assert_eq!(1, command.completion_tokens);
+    assert_eq!(1, output.completion_tokens);
     assert_eq!(0, command.cached_tokens);
-    assert_eq!(2, command.total_tokens);
-    assert_eq!("0.180000", command.base_input_unit_price);
-    assert_eq!("0.720000", command.base_output_unit_price);
-    assert_eq!("0.090000", command.cache_read_unit_price);
+    assert_eq!(0, cache.cached_tokens);
+    assert_eq!(
+        2,
+        captured
+            .iter()
+            .map(|record| record.total_tokens)
+            .sum::<i64>()
+    );
+    assert_eq!("0.180000000000", command.base_input_unit_price);
+    assert_eq!("0.720000000000", output.base_output_unit_price);
+    assert_eq!("0.090000000000", cache.cache_read_unit_price);
     assert_eq!("1.100000", command.rate_multiplier);
     assert_eq!("1.200000", command.reference_multiplier);
-    assert_eq!("0.000000750000", command.official_reference_amount);
-    assert_eq!("0.000000990000", command.customer_charge_amount);
-    assert_eq!("0.000000550000", command.upstream_cost_amount);
+    assert_eq!("0.000000150000", command.official_reference_amount);
+    assert_eq!("0.000000198000", command.customer_charge_amount);
+    assert_eq!("0.000000110000", command.upstream_cost_amount);
+    assert_eq!("0.000000600000", output.official_reference_amount);
+    assert_eq!("0.000000792000", output.customer_charge_amount);
+    assert_eq!("0.000000440000", output.upstream_cost_amount);
+    assert_eq!("0.000000000000", cache.customer_charge_amount);
     assert_eq!("USD", command.currency);
     assert_eq!("standard", command.pricing_plan_code);
     let pricing_snapshot: serde_json::Value =
         serde_json::from_str(&command.pricing_snapshot).unwrap();
     assert_eq!(
-        "openai",
-        pricing_snapshot["vendor"]["code"].as_str().unwrap()
+        "price_service",
+        pricing_snapshot["source"].as_str().unwrap()
     );
     assert_eq!(
         "openai/gpt-4o-mini",
-        pricing_snapshot["model"]["catalogKey"].as_str().unwrap()
+        pricing_snapshot["resource"]["catalogKey"].as_str().unwrap()
     );
     assert_eq!(
-        "0.198000",
-        pricing_snapshot["meters"]["input"]["chargedUnitPrice"]
-            .as_str()
-            .unwrap()
+        "llm_input_token",
+        pricing_snapshot["resource"]["meterCode"].as_str().unwrap()
     );
 }
 
@@ -3644,16 +3693,22 @@ async fn openai_chat_completions_records_spend_per_million_with_cache_read_price
     assert_eq!(StatusCode::OK, response.status());
 
     let captured = usage_captured.lock().unwrap();
-    assert_eq!(1, captured.len());
-    let command = &captured[0];
-    assert_eq!(1_000_000, command.prompt_tokens);
-    assert_eq!(250_000, command.cached_tokens);
-    assert_eq!(500_000, command.completion_tokens);
-    assert_eq!("0.180000", command.base_input_unit_price);
-    assert_eq!("0.090000", command.cache_read_unit_price);
-    assert_eq!("0.720000", command.base_output_unit_price);
-    assert_eq!("0.569250000000", command.customer_charge_amount);
-    assert_eq!("0.316250000000", command.upstream_cost_amount);
+    assert_chat_meter_records(&captured);
+    let input = usage_record_for_meter(&captured, "llm_input_token");
+    let output = usage_record_for_meter(&captured, "llm_output_token");
+    let cache = usage_record_for_meter(&captured, "llm_cache_read_token");
+    assert_eq!(750_000, input.prompt_tokens);
+    assert_eq!(250_000, cache.cached_tokens);
+    assert_eq!(500_000, output.completion_tokens);
+    assert_eq!("0.180000000000", input.base_input_unit_price);
+    assert_eq!("0.090000000000", cache.cache_read_unit_price);
+    assert_eq!("0.720000000000", output.base_output_unit_price);
+    assert_eq!("0.148500000000", input.customer_charge_amount);
+    assert_eq!("0.024750000000", cache.customer_charge_amount);
+    assert_eq!("0.396000000000", output.customer_charge_amount);
+    assert_eq!("0.082500000000", input.upstream_cost_amount);
+    assert_eq!("0.013750000000", cache.upstream_cost_amount);
+    assert_eq!("0.220000000000", output.upstream_cost_amount);
 }
 
 #[tokio::test]
@@ -3694,12 +3749,21 @@ async fn openai_chat_completions_records_usage_even_when_after_relay_observer_fa
         *events.lock().unwrap()
     );
     let captured = usage_captured.lock().unwrap();
-    assert_eq!(1, captured.len());
-    assert_server_generated_request_id(
-        &captured[0].request_id,
-        "req-chat-after-relay-observer-fails",
+    assert_chat_meter_records(&captured);
+    for command in captured.iter() {
+        assert_server_generated_request_id(
+            &command.request_id,
+            "req-chat-after-relay-observer-fails",
+        );
+    }
+    assert_eq!(
+        "0.000000198000",
+        usage_record_for_meter(&captured, "llm_input_token").customer_charge_amount
     );
-    assert_eq!("0.000000990000", captured[0].customer_charge_amount);
+    assert_eq!(
+        "0.000000792000",
+        usage_record_for_meter(&captured, "llm_output_token").customer_charge_amount
+    );
 }
 
 #[tokio::test]
@@ -3932,8 +3996,9 @@ async fn openai_chat_completions_records_stream_usage_after_provider_success() {
     assert!(body.contains("chatcmpl-stream"));
 
     let captured = usage_captured.lock().unwrap();
-    assert_eq!(1, captured.len());
-    let command = &captured[0];
+    assert_chat_meter_records(&captured);
+    let command = usage_record_for_meter(&captured, "llm_input_token");
+    let output = usage_record_for_meter(&captured, "llm_output_token");
     assert_server_generated_request_id(&command.request_id, "req-chat-stream-usage-1");
     assert_eq!(
         Some("trace-chat-stream-usage-1"),
@@ -3941,10 +4006,11 @@ async fn openai_chat_completions_records_stream_usage_after_provider_success() {
     );
     assert!(command.streaming);
     assert_eq!(1, command.prompt_tokens);
-    assert_eq!(1, command.completion_tokens);
-    assert_eq!(2, command.total_tokens);
-    assert_eq!("0.000000990000", command.customer_charge_amount);
-    assert_eq!("0.000000550000", command.upstream_cost_amount);
+    assert_eq!(1, output.completion_tokens);
+    assert_eq!("0.000000198000", command.customer_charge_amount);
+    assert_eq!("0.000000110000", command.upstream_cost_amount);
+    assert_eq!("0.000000792000", output.customer_charge_amount);
+    assert_eq!("0.000000440000", output.upstream_cost_amount);
 }
 
 #[tokio::test]
@@ -3992,15 +4058,17 @@ async fn openai_chat_completions_records_stream_usage_from_crlf_sse_events() {
     assert!(body.contains("chatcmpl-stream-crlf"));
 
     let captured = usage_captured.lock().unwrap();
-    assert_eq!(1, captured.len());
-    let command = &captured[0];
+    assert_chat_meter_records(&captured);
+    let command = usage_record_for_meter(&captured, "llm_input_token");
+    let output = usage_record_for_meter(&captured, "llm_output_token");
     assert_server_generated_request_id(&command.request_id, "req-chat-stream-usage-crlf-1");
     assert!(command.streaming);
     assert_eq!(3, command.prompt_tokens);
-    assert_eq!(5, command.completion_tokens);
-    assert_eq!(8, command.total_tokens);
-    assert_eq!("0.000004554000", command.customer_charge_amount);
-    assert_eq!("0.000002530000", command.upstream_cost_amount);
+    assert_eq!(5, output.completion_tokens);
+    assert_eq!("0.000000594000", command.customer_charge_amount);
+    assert_eq!("0.000000330000", command.upstream_cost_amount);
+    assert_eq!("0.000003960000", output.customer_charge_amount);
+    assert_eq!("0.000002200000", output.upstream_cost_amount);
 }
 
 #[tokio::test]
@@ -4054,8 +4122,14 @@ async fn openai_chat_completions_accepts_large_chunks_composed_of_bounded_sse_ev
         .unwrap();
     assert!(body.len() > 256 * 1024);
     let captured = usage_captured.lock().unwrap();
-    assert_eq!(1, captured.len());
-    assert_eq!(8, captured[0].total_tokens);
+    assert_chat_meter_records(&captured);
+    assert_eq!(
+        8,
+        captured
+            .iter()
+            .map(|record| record.total_tokens)
+            .sum::<i64>()
+    );
 }
 
 #[tokio::test]

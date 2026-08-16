@@ -5,6 +5,18 @@
 鏃ユ湡锛?026-04-28
 绾︽潫锛氫笉鏀瑰彉 `apps/sdkwork-cloudrouter-pc` 鐨?UI 瑙嗚璁捐锛涘悗绔暟鎹粨鏋勫拰 API DTO 閫傞厤鏃㈡湁椤甸潰銆?
 ## 1. 缁撹
+> **Superseded (2026-08-16):** the pricing architecture described in this
+> document (legacy `ai_pricing_plan` / `ai_pricing_rule` / `ai_pricing_tier`
+> as pricing authority) was replaced by
+> [ADR-20260815-composable-pricing-and-billing](../decisions/ADR-20260815-composable-pricing-and-billing.md).
+> The reusable `pricing` module owns official price books and rates,
+> `cloudrouter-billing` owns plans, rules, rate cards, measurements, rating
+> decisions, and charge lines, and the legacy `ai_pricing_*` tables were
+> physically removed before launch (see
+> [MIG-2026-0002](../../migrations/MIG-2026-0002-composable-pricing-billing.md)).
+> This document is retained as a historical design record only.
+
+
 
 Cloud Router 涓嶉噰鐢?`ai_pricing_group` 浣滀负琛ㄥ悕鎴栭鍩熷悕銆備骇鍝侀噷鐨?Group 鏄笟鍔″垎缁勶紝鐢?`ai_channel_group` 琛ㄨ揪锛涘垱寤?API Key 鏃堕€夋嫨璇ュ垎缁勶紝钀藉埌 `iam_gateway_api_key.channel_group_id`銆備环鏍煎彧浣滀负鍒嗙粍鐨勪竴椤归粯璁ょ瓥鐣ワ紝閫氳繃 `ai_channel_group.pricing_plan_id` 鎸囧悜 `ai_pricing_plan`銆?
 瀹氫环鏍稿績鎷嗘垚浜斿眰锛?

@@ -5,7 +5,8 @@ use std::sync::Arc;
 
 use crate::api::openai_error::openai_error;
 use crate::application::{
-    ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
+    protocol_code_from_api_code, resolve_upstream_base_url, ApiKeyAuthenticator,
+    ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
     SelectUpstreamModelRouteQuery, SelectedUpstreamModelRoute, UpstreamRouteSelectionError,
     UpstreamRouteSelectionErrorKind, UpstreamRouteSelector,
 };
@@ -317,7 +318,7 @@ fn openai_api_code(capability_label: &str) -> &'static str {
 }
 
 fn resolve_model_route(
-    catalog: &(impl PricingCatalog + ?Sized),
+    catalog: &(impl PricingCatalog + UpstreamAccountRouteCatalog + ?Sized),
     _context: &AuthenticatedApiKeyContext,
     requested_model: &str,
     vendor_code: &str,
@@ -337,14 +338,6 @@ fn resolve_model_route(
         return Err(upstream_route_selection_error(
             UpstreamRouteSelectionError::upstream_route_unavailable(format!(
                 "upstream route is not available for configured upstream account route: selected upstream account {} supplier mismatch for model {}",
-                model_route.account_id, catalog_key
-            )),
-        ));
-    }
-    if !has_text(model_route.base_url.as_deref()) || !has_text(model_route.secret_ref.as_deref()) {
-        return Err(upstream_route_selection_error(
-            UpstreamRouteSelectionError::upstream_route_unavailable(format!(
-                "upstream route is not available for configured upstream account route: selected upstream account {} is missing callable base URL or credential for model {}",
                 model_route.account_id, catalog_key
             )),
         ));
@@ -425,6 +418,27 @@ fn resolve_model_route(
         account_metadata.as_ref(),
         tenant_region_code,
     );
+    // 账号级 Base URL 覆盖优先（账号配置 > 供应商配置 > 端点解析结果），
+    // 与 route_planning 的解析链保持一致（见 application::upstream_base_url）。
+    let account_config = account_metadata
+        .as_ref()
+        .map(|route| route.account_id)
+        .and_then(|account_id| catalog.account_base_url_config(account_id));
+    let provider_base_url = resolve_upstream_base_url(
+        RoutingCapability::Chat,
+        protocol_code_from_api_code(model_route.api_code.as_deref()),
+        account_config.as_ref(),
+        catalog.supplier_default_base_url(&model_route.supplier_code),
+        model_route.base_url,
+    );
+    if !has_text(provider_base_url.as_deref()) || !has_text(model_route.secret_ref.as_deref()) {
+        return Err(upstream_route_selection_error(
+            UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                "upstream route is not available for configured upstream account route: selected upstream account {} is missing callable base URL or credential for model {}",
+                model_route.account_id, model_route.catalog_key
+            )),
+        ));
+    }
 
     Ok(ResolvedOpenAiUpstreamRoute {
         catalog_key: model_route.catalog_key,
@@ -437,7 +451,7 @@ fn resolve_model_route(
         region_code,
         account_id: model_route.account_id,
         provider_model,
-        provider_base_url: model_route.base_url,
+        provider_base_url,
         provider_secret_ref: model_route.secret_ref,
         provider_auth_profile: model_route.auth_profile,
         provider_timeout_ms: model_route.timeout_ms,

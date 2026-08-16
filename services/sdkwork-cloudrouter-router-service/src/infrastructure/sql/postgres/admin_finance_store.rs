@@ -132,18 +132,19 @@ WITH billing_entries AS (
         END AS normalized_status,
         CAST(COALESCE(s.due_at, pi.issued_at, s.period_end, s.updated_at, s.created_at) AS TEXT) AS due_date,
         CAST(COALESCE(s.period_end, s.updated_at, s.created_at) AS TEXT) AS sort_time,
-        COUNT(DISTINCT us.id) AS settlement_count
+        COUNT(DISTINCT charge.id) AS settlement_count
     FROM commerce_statement s
     LEFT JOIN commerce_invoice pi
       ON pi.id = s.invoice_id
      AND pi.tenant_id = CAST(s.tenant_id AS TEXT)
      AND pi.organization_id = CAST(s.organization_id AS TEXT)
-    LEFT JOIN ai_metering_usage us
-      ON us.settlement_status = 2
-     AND us.tenant_id = s.tenant_id
-     AND us.organization_id = s.organization_id
-     AND us.settled_at >= s.period_start
-     AND us.settled_at <= s.period_end
+    LEFT JOIN cloudrouter_charge_line charge
+      ON charge.status = 1
+     AND (charge.charge_status = 'settled' OR charge.settled_at IS NOT NULL)
+     AND charge.tenant_id = s.tenant_id
+     AND charge.organization_id = s.organization_id
+     AND charge.settled_at >= s.period_start
+     AND charge.settled_at <= s.period_end
     WHERE s.status = 1
       AND s.tenant_id = $1
       AND s.organization_id = $2

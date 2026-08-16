@@ -14,6 +14,7 @@ mod admin_mcp_store;
 mod admin_model_rate_limit_store;
 mod admin_model_store;
 mod admin_monitor_read_store;
+mod admin_pricing_store;
 mod admin_record_store;
 mod admin_referral_store;
 mod admin_service_node_store;
@@ -43,6 +44,7 @@ mod gateway_usage_recorder;
 mod invocation_dispatcher;
 mod model_ranking_refresh_store;
 mod model_rankings_read_store;
+mod official_pricing_catalog_read_store;
 mod pricing_catalog;
 mod provider_adapter_route_resolver;
 mod provider_secret_resolver;
@@ -138,6 +140,16 @@ pub use admin_marketing_store::{
     ListAdminRechargeRecordsQuery, ListAdminReferralStatsQuery, LoadAdminRechargeRecordQuery,
     RechargeSettingsUpdateCommand, UpdateAdminExchangeRuleCommand,
     UpdateAdminRechargePackageCommand,
+};
+pub use admin_pricing_store::{
+    AdminPricingBasePriceSide, AdminPricingCommandFuture, AdminPricingFormulaMode,
+    AdminPricingListPage, AdminPricingPlanItem, AdminPricingRoundingMode, AdminPricingRuleItem,
+    AdminPricingStatus, AdminPricingStore, AdminPricingSubject, AdminRateCardItem,
+    AdminRateCardSubjectType, CreateAdminPricingPlanCommand, CreateAdminPricingRuleCommand,
+    CreateAdminRateCardCommand, DeleteAdminPricingRuleCommand, DeleteAdminRateCardCommand,
+    ListAdminPricingPlansQuery, ListAdminPricingRulesQuery, ListAdminRateCardsQuery,
+    LoadAdminPricingPlanQuery, UpdateAdminPricingPlanCommand, UpdateAdminPricingRuleCommand,
+    UpdateAdminRateCardCommand,
 };
 pub use admin_mcp_store::{
     AdminMcpBindingItem, AdminMcpCommandFuture, AdminMcpDiscoveryResult, AdminMcpHealthCheckItem,
@@ -247,9 +259,9 @@ pub use app_notification_store::{
 pub use app_routing_read_store::{
     AppRoutingAccountGroupItem, AppRoutingAccountGroupListPage, AppRoutingApiKeyAccountGroupItem,
     AppRoutingApiKeyItem, AppRoutingApiKeyListPage, AppRoutingItems, AppRoutingListQuery,
-    AppRoutingModelStats, AppRoutingReadFuture, AppRoutingReadStore, AppRoutingRequestTraceItem,
-    AppRoutingRequestTraceListPage, AppRoutingSubject, AppRoutingUsageData,
-    AppRoutingUsageSnapshot,
+    AppRoutingModelStats, AppRoutingReadFuture, AppRoutingReadStore, AppRoutingRequestTraceCursor,
+    AppRoutingRequestTraceItem, AppRoutingRequestTraceListPage, AppRoutingSubject,
+    AppRoutingTraceQuery, AppRoutingUsageData, AppRoutingUsageSnapshot,
 };
 pub use app_routing_strategy_store::{
     AppRoutingMappingRule, AppRoutingStrategyFuture, AppRoutingStrategySnapshot,
@@ -276,9 +288,9 @@ pub use chat_completion_stream_relay::{
 };
 pub use dashboard_overview_read_store::{
     DashboardAnnouncement, DashboardChartPoint, DashboardConfigurationDomain,
-    DashboardOverviewQuery, DashboardOverviewReadFuture, DashboardOverviewReadStore,
-    DashboardOverviewSnapshot, DashboardOverviewSubject, DashboardOverviewSummary,
-    DashboardSparklinePoint, DashboardTopModel,
+    DashboardModalityDistribution, DashboardOverviewQuery, DashboardOverviewReadFuture,
+    DashboardOverviewReadStore, DashboardOverviewSnapshot, DashboardOverviewSubject,
+    DashboardOverviewSummary, DashboardSparklinePoint, DashboardTopModel,
 };
 pub use embeddings_relay::{
     EmbeddingsRelay, EmbeddingsRelayFuture, EmbeddingsRelayRequest, EmbeddingsRelayResponse,
@@ -294,9 +306,11 @@ pub use gateway_chain_policy_store::{
 };
 pub(crate) use gateway_usage_recorder::MAX_PRICING_SNAPSHOT_BYTES;
 pub use gateway_usage_recorder::{
-    hash_optional_text, GatewayAccountingRecordContext, GatewayRequestTraceCommand,
-    GatewayTraceAttribution, GatewayUsageQuantity, GatewayUsageRecordCommand,
-    GatewayUsageRecordFuture, GatewayUsageRecorder,
+    hash_optional_text, GatewayAccountingRecordContext, GatewayOfficialRateReference,
+    GatewayPricingFormula, GatewayPricingFormulaTerm, GatewayPricingRateCondition,
+    GatewayPricingRateTier, GatewayRequestTraceCommand, GatewayTraceAttribution,
+    GatewayUsageQuantity, GatewayUsageRecordCommand, GatewayUsageRecordFuture,
+    GatewayUsageRecorder,
 };
 pub use invocation_dispatcher::{
     InvocationDispatchError, InvocationDispatcher, InvocationDispatcherFuture,
@@ -318,6 +332,12 @@ pub use model_rankings_read_store::{
     ModelRankingsReadModelStore, ModelRankingsReadStore, ModelRankingsSnapshot,
     ModelRankingsSource, ModelRankingsSubject, DEFAULT_MODEL_RANKING_RANK_SCOPE,
     DEFAULT_MODEL_RANKING_SNAPSHOT_PERIOD,
+};
+pub use official_pricing_catalog_read_store::{
+    OfficialPricingCatalogQuery, OfficialPricingCatalogReadFuture, OfficialPricingCatalogReadStore,
+    OfficialPricingCatalogSnapshot, OfficialPricingFormula, OfficialPricingFormulaTerm,
+    OfficialPricingGroupFacet, OfficialPricingMeterFacet, OfficialPricingRate,
+    OfficialPricingRateCondition, OfficialPricingRateTier, OfficialPricingValueFacet,
 };
 pub use pricing_catalog::PricingCatalog;
 pub use provider_adapter_route_resolver::ProviderAdapterRouteResolver;
@@ -353,8 +373,8 @@ pub use sticky_route_store::{
     StickyRouteStoreFuture,
 };
 pub use upstream_account_route_catalog::{
-    AccountGroupModelAccess, SupplierModelAccess, UpstreamAccountRouteCatalog,
-    VendorModelListEntry,
+    AccountBaseUrlConfig, AccountGroupModelAccess, SupplierModelAccess,
+    UpstreamAccountRouteCatalog, VendorModelListEntry,
 };
 pub use upstream_credential_rotation_store::{
     CredentialRotationAccount, CredentialRotationAction, CredentialRotationSweepCommand,

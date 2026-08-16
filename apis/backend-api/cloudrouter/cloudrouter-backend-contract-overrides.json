@@ -2390,6 +2390,96 @@
           "type": "boolean"
         }
       }
+    },
+    "RechargeRecordsListResult": {
+      "allOf": [
+        {
+          "$ref": "#/components/schemas/SdkWorkApiResponse"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Object schema used by recharge records list result.",
+          "properties": {
+            "data": {
+              "additionalProperties": false,
+              "description": "Data field on recharge records list result.",
+              "properties": {
+                "items": {
+                  "description": "Items field on recharge records list result.",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminRechargeRecord"
+                  },
+                  "type": "array"
+                },
+                "pageInfo": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PageInfo"
+                    }
+                  ],
+                  "description": "Page info field on recharge records list result."
+                }
+              },
+              "required": [
+                "items",
+                "pageInfo"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "data"
+          ],
+          "type": "object"
+        }
+      ],
+      "description": "Recharge records list result schema exposed by Cloud Router.",
+      "x-operation-id": "rechargeRecords.list"
+    },
+    "PackagesListResult": {
+      "allOf": [
+        {
+          "$ref": "#/components/schemas/SdkWorkApiResponse"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Object schema used by packages list result.",
+          "properties": {
+            "data": {
+              "additionalProperties": false,
+              "description": "Data field on packages list result.",
+              "properties": {
+                "items": {
+                  "description": "Items field on packages list result.",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminRechargePackage"
+                  },
+                  "type": "array"
+                },
+                "pageInfo": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PageInfo"
+                    }
+                  ],
+                  "description": "Page info field on packages list result."
+                }
+              },
+              "required": [
+                "items",
+                "pageInfo"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "data"
+          ],
+          "type": "object"
+        }
+      ],
+      "description": "Packages list result schema exposed by Cloud Router.",
+      "x-operation-id": "packages.list"
     }
   },
   "operations": {

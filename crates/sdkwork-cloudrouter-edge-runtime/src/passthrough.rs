@@ -21,6 +21,7 @@ use axum::http::{StatusCode, Uri};
 use axum::response::{IntoResponse, Response};
 use axum::routing::MethodRouter;
 use axum::{Json, Router};
+use chrono::Utc;
 use http_body_util::{BodyExt, LengthLimitError, Limited};
 use sdkwork_cloudrouter_config::{
     ProviderAdapterConfig, ProviderPassthroughAuth, ProviderPassthroughAuthType,
@@ -41,12 +42,12 @@ use sdkwork_cloudrouter_provider_adapter_registry::{
 };
 use sdkwork_cloudrouter_router_service::api::normalize_user_agent_header;
 use sdkwork_cloudrouter_router_service::application::{
-    find_builtin_ai_route, ApiKeySecretHasher, AuthenticatedApiKeyContext, InvocationError,
-    InvocationErrorKind, PricingResolver, ResolveModelPriceQuery,
+    find_builtin_ai_route, ApiKeySecretHasher, AuthenticatedApiKeyContext, GatewayPricingDecision,
+    InvocationError, InvocationErrorKind, PriceResolution, PriceResolutionStatus, PriceService,
 };
 use sdkwork_cloudrouter_router_service::domain::{
-    ensure_canonical_model_catalog_key, provider_native_model_id, BillingMeter, DecimalValue,
-    DomainError, DomainResult,
+    ensure_canonical_model_catalog_key, parse_model_catalog_identity, provider_native_model_id,
+    BillingMeter, DecimalValue, DomainError, DomainResult, ResourceDefinition,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::provider::{
     ProviderRelayHttpPoolConfig, DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS,
@@ -64,8 +65,6 @@ use std::time::Duration;
 type UsageRecorder = Arc<dyn GatewayUsageRecorder + Send + Sync>;
 
 const ADAPTER_USAGE_TYPE_BASE: i64 = 10_000;
-const TOKEN_BILLING_UNIT_SIZE_DECIMAL: &str = "1000000";
-const USAGE_AMOUNT_DECIMAL_DIGITS: u32 = 12;
 const MAX_ADAPTER_USAGE_LINES: usize = 64;
 const MODALITY_TEXT: i64 = 1;
 const MODALITY_IMAGE: i64 = 2;
@@ -142,7 +141,7 @@ struct AdapterUsagePricingSnapshotInput<'a> {
     requested_model: &'a str,
     provider_native_model: &'a str,
     billing_meter: &'a BillingMeter,
-    price: &'a sdkwork_cloudrouter_router_service::application::ResolvedModelPrice,
+    resolution: &'a PriceResolution,
 }
 
 const PROVIDER_NATIVE_PASSTHROUGH_PROVIDERS: &[&str] = &[
@@ -1053,7 +1052,13 @@ where
                 )
             })
         })
-        .collect::<Result<Vec<_>, _>>()?;
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
+    if commands.is_empty() {
+        return Ok(());
+    }
     usage_recorder
         .record_gateway_usage_batch(commands)
         .await
@@ -1078,7 +1083,7 @@ fn adapter_usage_line_command<C>(
     usage_line: &AdapterUsageLine,
     line_index: usize,
     user_agent: Option<&str>,
-) -> DomainResult<GatewayUsageRecordCommand>
+) -> DomainResult<Option<GatewayUsageRecordCommand>>
 where
     C: PricingCatalog + Send + Sync + 'static,
 {
@@ -1099,6 +1104,10 @@ where
         billing_meter.clone(),
         usage_line.billable_quantity.as_str(),
     )?;
+    let measured_quantity = DecimalValue::parse(&quantity.billable_quantity)?;
+    if measured_quantity.is_zero() {
+        return Ok(None);
+    }
     let requested_model_catalog_key = adapter_requested_model_catalog_key(invocation, usage_line)?;
     let catalog_key = requested_model_catalog_key.clone();
     let provider_native_model = usage_line
@@ -1110,33 +1119,42 @@ where
         .unwrap_or_else(|| provider_native_model_id(&invocation.provider.provider_model));
     let requested_model = provider_native_model.clone();
     let region_code = adapter_provider_region_code(invocation)?;
-    let price = PricingResolver::new(catalog).resolve(ResolveModelPriceQuery {
-        api_key_id: context.api_key_id,
-        account_group_id: Some(context.group_id),
-        model: catalog_key.clone(),
-        billing_meter: billing_meter.clone(),
-        supplier_code: Some(invocation.provider.supplier_code.clone()),
-        account_id: Some(invocation.provider.account_id),
-        region_code: Some(region_code.clone()),
+    let mut resource = ResourceDefinition::new(&catalog_key, billing_meter.clone(), Utc::now())
+        .with_pricing_subject(context.api_key_id, Some(context.group_id))
+        .with_provider(
+            &invocation.provider.supplier_code,
+            Some(invocation.provider.account_id),
+        )
+        .with_region_code(&region_code)
+        .with_model(&requested_model)
+        .with_api_code(&invocation.invocation.endpoint_key)
+        .with_measured_quantity(measured_quantity);
+    if let Some(identity) = parse_model_catalog_identity(&catalog_key) {
+        resource = resource.with_vendor_code(identity.vendor_code);
+    }
+    let resolution = PriceService::new().resolve(catalog, resource)?;
+    if matches!(
+        resolution.status,
+        PriceResolutionStatus::NonChargeable | PriceResolutionStatus::Unrated
+    ) {
+        return Ok(None);
+    }
+    if resolution.status != PriceResolutionStatus::Rated {
+        return Err(DomainError::new(format!(
+            "adapter usage line price service returned {} without a billing structure",
+            resolution.status.code()
+        )));
+    }
+    let billing = resolution.billing.as_ref().ok_or_else(|| {
+        DomainError::new("adapter usage line rated resolution is missing billing structure")
     })?;
-    let official_reference_amount = adapter_meter_amount(
-        price.official_reference.unit_price.unit_price,
-        quantity.billable_quantity.as_str(),
-        &billing_meter,
-    )?;
-    let upstream_cost_amount = match price.procurement_cost.as_ref() {
-        Some(procurement_cost) => adapter_meter_amount(
-            procurement_cost.unit_price,
-            quantity.billable_quantity.as_str(),
-            &billing_meter,
-        )?,
-        None => DecimalValue::ZERO,
-    };
-    let customer_charge_amount = adapter_meter_amount(
-        price.customer_charge.unit_price,
-        quantity.billable_quantity.as_str(),
-        &billing_meter,
-    )?;
+    if billing.meter != billing_meter || billing.measured_quantity != measured_quantity {
+        return Err(DomainError::new(format!(
+            "adapter usage line rated billing does not match meter {} quantity {}",
+            billing_meter.code(),
+            quantity.billable_quantity
+        )));
+    }
     let token_counts = adapter_token_counts(&billing_meter, quantity.billable_quantity.as_str())?;
     let pricing_snapshot = adapter_usage_pricing_snapshot(AdapterUsagePricingSnapshotInput {
         invocation,
@@ -1147,10 +1165,13 @@ where
         requested_model: &requested_model,
         provider_native_model: &provider_native_model,
         billing_meter: &billing_meter,
-        price: &price,
+        resolution: &resolution,
     });
+    let pricing = GatewayPricingDecision::from_resolution(&resolution)?;
+    let (base_input_unit_price, base_output_unit_price, cache_read_unit_price) =
+        adapter_unit_price_columns(&billing_meter, &pricing.base_unit_price);
 
-    Ok(GatewayUsageRecordCommand {
+    Ok(Some(GatewayUsageRecordCommand {
         request_id: invocation
             .invocation
             .request_id
@@ -1180,7 +1201,9 @@ where
         modality: adapter_modality_for_usage_line(invocation, &billing_meter),
         usage_type: adapter_usage_type_for_line(&billing_meter, line_index),
         billing_meter_code: billing_meter.code().to_owned(),
+        unit_size: pricing.unit_size,
         billable_quantity: quantity.billable_quantity,
+        rated_quantity: pricing.rated_quantity,
         prompt_tokens: token_counts.prompt_tokens,
         completion_tokens: token_counts.completion_tokens,
         cached_tokens: token_counts.cached_tokens,
@@ -1197,21 +1220,43 @@ where
         provider_error_code: None,
         error_type: None,
         error_message_masked: None,
-        base_input_unit_price: price
-            .customer_charge_before_sale_multiplier
-            .to_fixed_string(6),
-        base_output_unit_price: "0.000000".to_owned(),
-        cache_read_unit_price: "0.000000".to_owned(),
-        rate_multiplier: price.sale_multiplier.to_fixed_string(6),
-        reference_multiplier: price.reference_multiplier.to_fixed_string(6),
-        official_reference_amount: official_reference_amount
-            .to_fixed_string(USAGE_AMOUNT_DECIMAL_DIGITS),
-        customer_charge_amount: customer_charge_amount.to_fixed_string(USAGE_AMOUNT_DECIMAL_DIGITS),
-        upstream_cost_amount: upstream_cost_amount.to_fixed_string(USAGE_AMOUNT_DECIMAL_DIGITS),
-        currency: price.customer_charge.currency,
-        pricing_plan_code: price.pricing_plan_code,
+        decision_status: pricing.decision_status,
+        billability: pricing.billability,
+        reason_code: pricing.reason_code,
+        strategy_code: pricing.strategy_code,
+        base_input_unit_price,
+        base_output_unit_price,
+        cache_read_unit_price,
+        rate_multiplier: pricing.rate_multiplier,
+        reference_multiplier: pricing.reference_multiplier,
+        official_reference_amount: pricing.official_reference_amount,
+        customer_charge_amount: pricing.customer_charge_amount,
+        upstream_cost_amount: pricing.upstream_cost_amount,
+        currency: pricing.currency,
+        pricing_plan_code: pricing.pricing_plan_code,
+        billing_components: pricing.billing_components,
         pricing_snapshot,
-    })
+        official_rate: pricing.official_rate,
+    }))
+}
+
+fn adapter_unit_price_columns(
+    billing_meter: &BillingMeter,
+    unit_price: &str,
+) -> (String, String, String) {
+    let unit_price = unit_price.to_owned();
+    match billing_meter {
+        BillingMeter::LlmOutputToken
+        | BillingMeter::AudioOutputToken
+        | BillingMeter::ImageOutputToken
+        | BillingMeter::VideoOutputToken => {
+            ("0.000000".to_owned(), unit_price, "0.000000".to_owned())
+        }
+        BillingMeter::LlmCacheReadToken => {
+            ("0.000000".to_owned(), "0.000000".to_owned(), unit_price)
+        }
+        _ => (unit_price, "0.000000".to_owned(), "0.000000".to_owned()),
+    }
 }
 
 fn adapter_requested_model_catalog_key(
@@ -1244,19 +1289,6 @@ fn adapter_provider_region_code(invocation: &AdapterInvocationRequest) -> Domain
         ));
     }
     Ok(region_code.to_owned())
-}
-
-fn adapter_meter_amount(
-    unit_price: DecimalValue,
-    billable_quantity: &str,
-    billing_meter: &BillingMeter,
-) -> DomainResult<DecimalValue> {
-    let amount = unit_price.checked_multiply(DecimalValue::parse(billable_quantity)?)?;
-    if adapter_meter_uses_million_token_unit(billing_meter) {
-        amount.checked_divide(DecimalValue::parse(TOKEN_BILLING_UNIT_SIZE_DECIMAL)?)
-    } else {
-        Ok(amount)
-    }
 }
 
 fn adapter_meter_uses_million_token_unit(billing_meter: &BillingMeter) -> bool {
@@ -1468,8 +1500,16 @@ fn adapter_usage_pricing_snapshot(input: AdapterUsagePricingSnapshotInput<'_>) -
         requested_model,
         provider_native_model,
         billing_meter,
-        price,
+        resolution,
     } = input;
+    let price = resolution
+        .resolved_price
+        .as_ref()
+        .expect("rated adapter pricing snapshot requires resolved price");
+    let billing = resolution
+        .billing
+        .as_ref()
+        .expect("rated adapter pricing snapshot requires billing structure");
     json!({
         "source": "provider_adapter_usage_line",
         "lineIndex": line_index,
@@ -1526,6 +1566,21 @@ fn adapter_usage_pricing_snapshot(input: AdapterUsagePricingSnapshotInput<'_>) -
                 .unwrap_or_else(|| "0.000000".to_owned()),
             "currency": price.customer_charge.currency.as_str()
         },
+        "billing": {
+            "strategy": billing.strategy.code(),
+            "measuredQuantity": billing.measured_quantity.to_fixed_string(12),
+            "ratedQuantity": billing.rated_quantity.to_fixed_string(12),
+            "unitSize": billing.unit_size.to_fixed_string(12),
+            "calculationMode": billing.calculation_mode.as_str(),
+            "quantityAggregation": billing.quantity_aggregation.as_str(),
+            "officialReferenceAmount": billing.official_reference_amount.to_fixed_string(12),
+            "customerChargeAmount": billing.customer_charge_amount.to_fixed_string(12),
+            "procurementCostAmount": billing
+                .procurement_cost_amount
+                .as_ref()
+                .map(|amount| amount.to_fixed_string(12))
+        },
+        "priceService": resolution.audit_snapshot.to_json_value(),
         "adapter": {
             "invocationId": invocation.invocation.id.as_str(),
             "endpointKey": invocation.invocation.endpoint_key.as_str(),
@@ -2049,7 +2104,7 @@ mod tests {
     use sdkwork_cloudrouter_router_service::domain::ModelVendor;
     use sdkwork_cloudrouter_router_service::domain::{
         AiModel, GatewayApiKey, ModelPrice, ModelUpstreamRoute, ModelVendorDefinition, Money,
-        PriceSide, PricingPlan, UpstreamAccountGroup, UpstreamAccountRoute,
+        PriceSide, PricingPlan, PricingRateMetadata, UpstreamAccountGroup, UpstreamAccountRoute,
     };
     use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
 
@@ -2158,25 +2213,6 @@ mod tests {
     }
 
     #[test]
-    fn adapter_meter_amount_charges_token_meters_per_million_and_duration_directly() {
-        let token_amount = adapter_meter_amount(
-            DecimalValue::parse("2.000000").unwrap(),
-            "500000",
-            &BillingMeter::LlmInputToken,
-        )
-        .unwrap();
-        assert_eq!("1.000000000000", token_amount.to_fixed_string(12));
-
-        let duration_amount = adapter_meter_amount(
-            DecimalValue::parse("0.100000").unwrap(),
-            "8.000000000000",
-            &BillingMeter::VideoOutputSecond,
-        )
-        .unwrap();
-        assert_eq!("0.800000000000", duration_amount.to_fixed_string(12));
-    }
-
-    #[test]
     fn adapter_token_counts_preserve_input_output_and_cache_dimensions() {
         let input = adapter_token_counts(&BillingMeter::LlmInputToken, "12").unwrap();
         assert_eq!(12, input.prompt_tokens);
@@ -2195,6 +2231,34 @@ mod tests {
         assert_eq!(0, cache.completion_tokens);
         assert_eq!(5, cache.cached_tokens);
         assert_eq!(5, cache.total_tokens);
+    }
+
+    #[test]
+    fn adapter_unit_price_columns_follow_meter_semantics() {
+        assert_eq!(
+            (
+                "1.250000000000".to_owned(),
+                "0.000000".to_owned(),
+                "0.000000".to_owned()
+            ),
+            adapter_unit_price_columns(&BillingMeter::LlmInputToken, "1.250000000000")
+        );
+        assert_eq!(
+            (
+                "0.000000".to_owned(),
+                "2.500000000000".to_owned(),
+                "0.000000".to_owned()
+            ),
+            adapter_unit_price_columns(&BillingMeter::LlmOutputToken, "2.500000000000")
+        );
+        assert_eq!(
+            (
+                "0.000000".to_owned(),
+                "0.000000".to_owned(),
+                "0.625000000000".to_owned()
+            ),
+            adapter_unit_price_columns(&BillingMeter::LlmCacheReadToken, "0.625000000000")
+        );
     }
 
     #[test]
@@ -2281,63 +2345,13 @@ mod tests {
 
     #[test]
     fn adapter_usage_line_resolves_pricing_with_canonical_model_key() {
-        let mut catalog = InMemoryPricingCatalog::default();
-        catalog.add_vendor(ModelVendorDefinition::new(
-            "tencent-cloud",
-            ModelVendor::Custom,
-            "Tencent Cloud",
-        ));
-        catalog.add_model(AiModel::new(
-            "vidu2.0",
-            "Vidu 2.0",
-            "tencent-cloud",
-            vec!["video"],
-        ));
-        catalog.add_model_upstream_route(
-            ModelUpstreamRoute::new_for_catalog_key(
-                "tencent-cloud/vidu2.0",
-                "vidu2.0",
-                "tencent-cloud",
-                9301,
-                "vidu2.0",
-            )
-            .with_upstream_endpoint(Some("https://example.invalid/vidu"), Some("vault://test")),
-        );
-        catalog.add_upstream_account_route(
-            UpstreamAccountRoute::new("tencent-cloud", 9301)
-                .with_account_group_binding(10, 10, 100),
-        );
-        catalog.add_plan(PricingPlan::new(
-            "standard",
-            PriceSide::OfficialReference,
-            DecimalValue::parse("1.000000").unwrap(),
-            Money::usd("0.000000").unwrap(),
-        ));
-        catalog.add_upstream_account_group(UpstreamAccountGroup::new(
-            10,
-            "standard-group",
-            "standard",
-            DecimalValue::parse("1.000000").unwrap(),
-            DecimalValue::parse("1.000000").unwrap(),
-        ));
-        catalog.add_api_key(GatewayApiKey::new(100, 10, "sk-test", "hash-test"));
-        catalog.add_price(ModelPrice::new_for_catalog_key(
+        let catalog = adapter_usage_catalog(ModelPrice::new_for_catalog_key(
             "tencent-cloud/vidu2.0",
             "vidu2.0",
             PriceSide::OfficialReference,
             BillingMeter::ApiRequest,
             Money::usd("0.020000").unwrap(),
         ));
-        catalog.add_price(
-            ModelPrice::new_for_catalog_key(
-                "tencent-cloud/vidu2.0",
-                "vidu2.0",
-                PriceSide::UpstreamCost,
-                BillingMeter::ApiRequest,
-                Money::usd("0.010000").unwrap(),
-            )
-            .for_upstream_account("tencent-cloud", 9301),
-        );
         let context = AuthenticatedApiKeyContext {
             tenant_id: 100001,
             organization_id: 0,
@@ -2367,7 +2381,8 @@ mod tests {
             0,
             Some("Mozilla/5.0"),
         )
-        .unwrap();
+        .unwrap()
+        .expect("chargeable usage line creates a command");
 
         assert_eq!("tencent-cloud/vidu2.0", command.catalog_key);
         assert_eq!("tencent-cloud/vidu2.0", command.requested_model_catalog_key);
@@ -2381,6 +2396,80 @@ mod tests {
         assert!(command
             .pricing_snapshot
             .contains(r#""requestedCatalogKey":"tencent-cloud/vidu2.0""#));
+    }
+
+    #[test]
+    fn adapter_usage_line_does_not_create_a_command_for_a_free_rate() {
+        let free_rate = ModelPrice::new_for_catalog_key(
+            "tencent-cloud/vidu2.0",
+            "vidu2.0",
+            PriceSide::OfficialReference,
+            BillingMeter::ApiRequest,
+            Money::usd("0").unwrap(),
+        )
+        .with_rate_metadata(PricingRateMetadata {
+            price_book_code: "tencent-cloud-global-usd".to_owned(),
+            rate_hash: "free-api-request".to_owned(),
+            product_code: "video-generation".to_owned(),
+            operation_code: "start-end-to-video".to_owned(),
+            billability: "free".to_owned(),
+            charge_timing: "request_accepted".to_owned(),
+            calculation_mode: "per_unit".to_owned(),
+            quantity_aggregation: "sum".to_owned(),
+            minimum_quantity: DecimalValue::ZERO,
+            quantity_step: None,
+            priority: 10,
+            conditions: Vec::new(),
+            tiers: Vec::new(),
+            formula: None,
+        });
+        let catalog = adapter_usage_catalog(free_rate);
+        let context = test_api_key_context();
+        let invocation =
+            test_adapter_invocation("video.start_end2video", "/vidu/ent/v2/start-end2video");
+        let response = AdapterInvocationResponse::json_task(
+            202,
+            json!({"id": "adapter-task-free", "status": "queued"}),
+        );
+        let usage_line = AdapterUsageLine::new("api_request", "1")
+            .with_request_count(1)
+            .with_provider_native_model("vidu2.0");
+
+        let command = adapter_usage_line_command(
+            &catalog,
+            &context,
+            &invocation,
+            &response,
+            &usage_line,
+            0,
+            None,
+        )
+        .expect("free rate resolves without an accounting error");
+
+        assert!(command.is_none());
+    }
+
+    #[test]
+    fn adapter_usage_line_does_not_create_a_command_for_zero_quantity() {
+        let catalog = InMemoryPricingCatalog::default();
+        let context = test_api_key_context();
+        let invocation = test_adapter_invocation("openai.responses", "/v1/responses");
+        let response =
+            AdapterInvocationResponse::json(200, json!({"id": "response-with-zero-cache-usage"}));
+        let usage_line = AdapterUsageLine::new("llm_cache_read_token", "0");
+
+        let command = adapter_usage_line_command(
+            &catalog,
+            &context,
+            &invocation,
+            &response,
+            &usage_line,
+            0,
+            None,
+        )
+        .expect("zero quantity is ignored before price resolution");
+
+        assert!(command.is_none());
     }
 
     #[test]
@@ -2504,7 +2593,8 @@ mod tests {
             0,
             Some("Mozilla/5.0"),
         )
-        .unwrap();
+        .unwrap()
+        .expect("chargeable usage line creates a command");
 
         assert_eq!("cn", command.region_code);
         assert_eq!("CNY", command.currency);
@@ -2629,7 +2719,8 @@ mod tests {
             0,
             None,
         )
-        .unwrap();
+        .unwrap()
+        .expect("chargeable usage line creates a command");
 
         assert_eq!("openrouter/anthropic/claude-3-opus", command.catalog_key);
         assert_eq!(
@@ -2683,6 +2774,61 @@ mod tests {
             group_code: "standard-group".to_owned(),
             pricing_plan_code: "standard".to_owned(),
         }
+    }
+
+    fn adapter_usage_catalog(official_reference: ModelPrice) -> InMemoryPricingCatalog {
+        let mut catalog = InMemoryPricingCatalog::default();
+        catalog.add_vendor(ModelVendorDefinition::new(
+            "tencent-cloud",
+            ModelVendor::Custom,
+            "Tencent Cloud",
+        ));
+        catalog.add_model(AiModel::new(
+            "vidu2.0",
+            "Vidu 2.0",
+            "tencent-cloud",
+            vec!["video"],
+        ));
+        catalog.add_model_upstream_route(
+            ModelUpstreamRoute::new_for_catalog_key(
+                "tencent-cloud/vidu2.0",
+                "vidu2.0",
+                "tencent-cloud",
+                9301,
+                "vidu2.0",
+            )
+            .with_upstream_endpoint(Some("https://example.invalid/vidu"), Some("vault://test")),
+        );
+        catalog.add_upstream_account_route(
+            UpstreamAccountRoute::new("tencent-cloud", 9301)
+                .with_account_group_binding(10, 10, 100),
+        );
+        catalog.add_plan(PricingPlan::new(
+            "standard",
+            PriceSide::OfficialReference,
+            DecimalValue::ONE,
+            Money::usd("0").unwrap(),
+        ));
+        catalog.add_upstream_account_group(UpstreamAccountGroup::new(
+            10,
+            "standard-group",
+            "standard",
+            DecimalValue::ONE,
+            DecimalValue::ONE,
+        ));
+        catalog.add_api_key(GatewayApiKey::new(100, 10, "sk-test", "hash-test"));
+        catalog.add_price(official_reference);
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                "tencent-cloud/vidu2.0",
+                "vidu2.0",
+                PriceSide::UpstreamCost,
+                BillingMeter::ApiRequest,
+                Money::usd("0.010000").unwrap(),
+            )
+            .for_upstream_account("tencent-cloud", 9301),
+        );
+        catalog
     }
 
     fn test_adapter_invocation(

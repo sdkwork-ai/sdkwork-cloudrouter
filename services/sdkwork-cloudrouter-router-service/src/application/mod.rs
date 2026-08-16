@@ -9,6 +9,7 @@ mod gateway_accounting_retry;
 mod gateway_chain_policy;
 mod gateway_invocation_policy;
 mod gateway_invocation_rate_limit;
+mod gateway_pricing_decision;
 mod iam_runtime_context;
 mod invocation;
 mod password_hash;
@@ -29,6 +30,7 @@ mod paypal_payment_adapter;
 mod runtime_stream_bus;
 mod stripe_payment_adapter;
 mod upstream_account_route_planner;
+mod upstream_base_url;
 mod upstream_cache_invalidation;
 mod upstream_credential_rotation;
 mod upstream_credential_secret_codec;
@@ -81,6 +83,7 @@ pub use gateway_invocation_policy::{
     client_ip_allowed_by_allowlist, GatewayInvocationPolicyGuard, GatewayInvocationPolicyViolation,
 };
 pub use gateway_invocation_rate_limit::{GatewayInvocationRateLimiter, GatewayRateLimitSpec};
+pub use gateway_pricing_decision::GatewayPricingDecision;
 pub use iam_runtime_context::IamRuntimeContext;
 pub use invocation::{
     AccountResolutionInterceptor, BillingMode, BillingPolicyInterceptor, BillingQuantitySource,
@@ -185,17 +188,20 @@ pub use paypal_payment_adapter::{
 pub use runtime_stream_bus::{InMemoryRuntimeStreamBus, RuntimeStreamBus, RuntimeStreamBusFuture};
 pub use sdkwork_models_catalog_service::{
     ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
-    ListModelCatalogQuery, ModelCatalogGroup, ModelCatalogItem, ModelCatalogPage,
-    ModelCatalogPriceView, ModelCatalogQueryService, ModelCatalogReferencePriceView,
-    ModelRankingRefreshWorker, ModelRankingRefreshWorkerConfig, ModelRankingsService,
-    PriceAvailability, PricingResolver, ResolveModelPriceQuery, ResolvedModelPrice,
-    ResolvedPriceSource, MODEL_RANKING_REFRESH_TRIGGER_MANUAL,
-    MODEL_RANKING_REFRESH_TRIGGER_SCHEDULED,
+    BillingStrategyKind, BillingStrategyRegistry, BillingStructure, ListModelCatalogQuery,
+    ModelCatalogGroup, ModelCatalogItem, ModelCatalogPage, ModelCatalogPriceView,
+    ModelCatalogQueryService, ModelCatalogReferencePriceView, ModelRankingRefreshWorker,
+    ModelRankingRefreshWorkerConfig, ModelRankingsService, PriceAvailability, PriceResolution,
+    PriceResolutionFailure, PriceResolutionFailureCode, PriceResolutionStatus, PriceService,
+    PricingAuditSnapshot, PricingResolver, ResolveModelPriceQuery, ResolvedModelPrice,
+    ResolvedPriceSource, ResolvedRateIdentity, ResourceBillability,
+    MODEL_RANKING_REFRESH_TRIGGER_MANUAL, MODEL_RANKING_REFRESH_TRIGGER_SCHEDULED,
 };
 pub use stripe_payment_adapter::{
     StripeHyperPaymentHttpClient, StripePaymentHttpClient, StripePaymentProviderAdapter,
     StripePaymentProviderConfig,
 };
+pub(crate) use upstream_base_url::{protocol_code_from_api_code, resolve_upstream_base_url};
 pub use upstream_cache_invalidation::AiRoutingCacheInvalidatingAdminUpstreamStore;
 pub use upstream_credential_rotation::{
     resolve_upstream_credential_rotation_config,

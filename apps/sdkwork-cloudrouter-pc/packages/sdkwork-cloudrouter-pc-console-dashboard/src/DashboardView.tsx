@@ -152,7 +152,9 @@ export function DashboardView() {
     return snapshot.chartData.map((item) => {
       const row: Record<string, number | string> = { time: item.time };
       for (const series of SERIES) {
-        const value = item[series.key];
+        const value = metricType === 'cost'
+          ? (item[`${series.key} cost`] ?? 0)
+          : item[series.key];
         row[series.key] = metricType === 'cost' ? value : Math.round(value);
       }
       return row;
@@ -170,9 +172,11 @@ export function DashboardView() {
   const xAxisInterval = chartData.length > 12 ? Math.ceil(chartData.length / 10) : 0;
 
   const pieData = useMemo(() => {
-    const totalRequests = snapshot.topModels.reduce((sum, item) => sum + item.requests, 0);
+    // Distribution over the full queried window from backend modality facts;
+    // unknown modalities are excluded from the five visible series.
+    const totalRequests = snapshot.modalityDistribution.reduce((sum, item) => sum + item.requests, 0);
     return SERIES.map((series) => {
-      const requests = snapshot.topModels
+      const requests = snapshot.modalityDistribution
         .filter((item) => item.modality === series.modality)
         .reduce((sum, item) => sum + item.requests, 0);
       const percentage = totalRequests > 0 ? Math.round((requests / totalRequests) * 100) : 0;
@@ -183,7 +187,7 @@ export function DashboardView() {
         color: series.color,
       };
     });
-  }, [snapshot.topModels, t]);
+  }, [snapshot.modalityDistribution, t]);
   const hasModalityData = pieData.some((item) => item.value > 0);
 
   const chartTooltipStyle = {

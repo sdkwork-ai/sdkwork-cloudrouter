@@ -24,8 +24,8 @@ use crate::api::openai_contract::{
 };
 use crate::api::openai_error::openai_error;
 use crate::application::{
-    model_access_forbidden_reason, ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery,
-    AuthenticatedApiKeyContext,
+    model_access_forbidden_reason, ApiKeyAuthenticator, ApiKeySecretHasher,
+    AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
 };
 use crate::domain::UpstreamAccountRoute;
 use crate::ports::{PricingCatalog, UpstreamAccountRouteCatalog};
@@ -159,7 +159,8 @@ where
             return true;
         }
         if let Some(access) = model_access.as_ref() {
-            if model_access_forbidden_reason(Some(&model.vendor_code), &model.model, access).is_some()
+            if model_access_forbidden_reason(Some(&model.vendor_code), &model.model, access)
+                .is_some()
             {
                 return true;
             }
@@ -262,8 +263,17 @@ mod list_group_scoped_vendors_tests {
 
     fn catalog() -> InMemoryPricingCatalog {
         let mut catalog = InMemoryPricingCatalog::default();
-        catalog.add_vendor(ModelVendorDefinition::new("openai", ModelVendor::OpenAi, "OpenAI"));
-        catalog.add_model(AiModel::new("gpt-4o-mini", "GPT-4o mini", "openai", vec!["chat"]));
+        catalog.add_vendor(ModelVendorDefinition::new(
+            "openai",
+            ModelVendor::OpenAi,
+            "OpenAI",
+        ));
+        catalog.add_model(AiModel::new(
+            "gpt-4o-mini",
+            "GPT-4o mini",
+            "openai",
+            vec!["chat"],
+        ));
         catalog.add_model(AiModel::new("gpt-4o", "GPT-4o", "openai", vec!["chat"]));
         catalog.add_upstream_account_group(UpstreamAccountGroup::new(
             10,

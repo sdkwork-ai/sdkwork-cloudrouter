@@ -18,8 +18,8 @@ use crate::infrastructure::sql::rows::{
     UpstreamAccountGroupRow, UpstreamAccountRouteRow, UpstreamSupplierModelAccessRow,
 };
 use crate::ports::{
-    AccountGroupModelAccess, PricingCatalog, SupplierModelAccess, UpstreamAccountRouteCatalog,
-    VendorModelListEntry,
+    AccountBaseUrlConfig, AccountGroupModelAccess, AdminLlmProtocolConfig, PricingCatalog,
+    SupplierModelAccess, UpstreamAccountRouteCatalog, VendorModelListEntry,
 };
 
 #[derive(Default)]
@@ -64,6 +64,7 @@ pub struct SqlPricingCatalogSnapshotSummary {
 
 #[derive(Clone)]
 struct ScopedPricingPlan {
+    id: i64,
     tenant_id: i64,
     organization_id: i64,
     value: PricingPlan,
@@ -85,6 +86,7 @@ struct ModelPriceBusinessIdentity {
     supplier_code: Option<String>,
     account_id: Option<i64>,
     pricing_plan_code: Option<String>,
+    rate_hash: Option<String>,
 }
 
 impl From<&ModelPrice> for ModelPriceBusinessIdentity {
@@ -97,6 +99,10 @@ impl From<&ModelPrice> for ModelPriceBusinessIdentity {
             supplier_code: price.supplier_code.clone(),
             account_id: price.account_id,
             pricing_plan_code: price.pricing_plan_code.clone(),
+            rate_hash: price
+                .rate_metadata
+                .as_ref()
+                .map(|metadata| metadata.rate_hash.clone()),
         }
     }
 }
@@ -121,6 +127,7 @@ pub struct SqlPricingCatalogSnapshot {
     account_group_model_access_by_id: HashMap<i64, AccountGroupModelAccess>,
     supplier_model_access_by_code: HashMap<String, SupplierModelAccess>,
     supplier_default_base_url_by_code: HashMap<String, String>,
+    account_base_url_config_by_id: HashMap<i64, AccountBaseUrlConfig>,
     // --- Indexes for O(1) hot-path lookups ---
     models_by_key: HashMap<String, AiModel>,
     models_by_name: HashMap<String, Vec<String>>,
@@ -184,6 +191,35 @@ impl SqlPricingCatalogSnapshot {
                     .map(|value| (row.supplier_code.clone(), value.to_owned()))
             })
             .collect::<HashMap<_, _>>();
+        // 账号 Base URL 配置映射（账号覆盖 + 供应商协议 URL；账号优先于供应商的解析数据源）
+        let account_base_url_config_by_id = rows
+            .upstream_account_routes
+            .iter()
+            .filter_map(|row| {
+                let account_protocol_base_urls =
+                    parse_protocol_configs(&row.account_protocols_json);
+                let supplier_protocol_base_urls =
+                    parse_protocol_configs(&row.supplier_protocols_json);
+                let has_config = row
+                    .account_default_base_url
+                    .as_deref()
+                    .map(str::trim)
+                    .is_some_and(|value| !value.is_empty())
+                    || !account_protocol_base_urls.is_empty()
+                    || !supplier_protocol_base_urls.is_empty();
+                if !has_config {
+                    return None;
+                }
+                Some((
+                    row.account_id,
+                    AccountBaseUrlConfig {
+                        account_default_base_url: row.account_default_base_url.clone(),
+                        account_protocol_base_urls,
+                        supplier_protocol_base_urls,
+                    },
+                ))
+            })
+            .collect::<HashMap<_, _>>();
         let mut snapshot = Self {
             vendors: map_rows(rows.vendors, ModelVendorRow::try_into_domain)?,
             models: map_rows(rows.models, AiModelRow::try_into_domain)?,
@@ -223,6 +259,7 @@ impl SqlPricingCatalogSnapshot {
             account_group_model_access_by_id,
             supplier_model_access_by_code,
             supplier_default_base_url_by_code,
+            account_base_url_config_by_id,
             models_by_key: HashMap::new(),
             models_by_name: HashMap::new(),
             api_keys_by_hash: HashMap::new(),
@@ -246,18 +283,15 @@ impl SqlPricingCatalogSnapshot {
             .iter()
             .map(|model| (model.catalog_key.clone(), model.clone()))
             .collect();
-        self.models_by_name =
-            self.models
-                .iter()
-                .fold(HashMap::new(), |mut index, model| {
-                    for name in [&model.catalog_key, &model.model] {
-                        let keys = index.entry(name.clone()).or_default();
-                        if !keys.contains(&model.catalog_key) {
-                            keys.push(model.catalog_key.clone());
-                        }
-                    }
-                    index
-                });
+        self.models_by_name = self.models.iter().fold(HashMap::new(), |mut index, model| {
+            for name in [&model.catalog_key, &model.model] {
+                let keys = index.entry(name.clone()).or_default();
+                if !keys.contains(&model.catalog_key) {
+                    keys.push(model.catalog_key.clone());
+                }
+            }
+            index
+        });
         self.api_keys_by_hash = self
             .api_keys
             .iter()
@@ -471,8 +505,16 @@ impl UpstreamAccountRouteCatalog for RefreshableSqlPricingCatalog {
             .cloned()
     }
 
+    fn account_base_url_config(&self, account_id: i64) -> Option<AccountBaseUrlConfig> {
+        self.current_snapshot()
+            .account_base_url_config_by_id
+            .get(&account_id)
+            .cloned()
+    }
+
     fn model_catalog_keys_by_name(&self, model_name: &str) -> Vec<String> {
-        self.current_snapshot().model_catalog_keys_by_name(model_name)
+        self.current_snapshot()
+            .model_catalog_keys_by_name(model_name)
     }
 }
 
@@ -601,6 +643,21 @@ impl PricingCatalog for RefreshableSqlPricingCatalog {
     ) -> Option<PricingPlan> {
         self.current_snapshot()
             .find_pricing_plan_for_scope(tenant_id, organization_id, plan_code)
+    }
+
+    fn find_pricing_plan_by_identity(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+        pricing_plan_id: i64,
+        plan_code: &str,
+    ) -> Option<PricingPlan> {
+        self.current_snapshot().find_pricing_plan_by_identity(
+            tenant_id,
+            organization_id,
+            pricing_plan_id,
+            plan_code,
+        )
     }
 
     fn find_model(&self, model: &str) -> Option<AiModel> {
@@ -809,6 +866,24 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
         self.scoped_pricing_plan(tenant_id, organization_id, plan_code)
     }
 
+    fn find_pricing_plan_by_identity(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+        pricing_plan_id: i64,
+        plan_code: &str,
+    ) -> Option<PricingPlan> {
+        self.pricing_plans
+            .iter()
+            .find(|plan| {
+                plan.id == pricing_plan_id
+                    && plan.tenant_id == tenant_id
+                    && plan.organization_id == organization_id
+                    && plan.value.plan_code == plan_code
+            })
+            .map(|plan| plan.value.clone())
+    }
+
     fn find_model(&self, model: &str) -> Option<AiModel> {
         self.models_by_key.get(model.trim()).cloned()
     }
@@ -886,7 +961,9 @@ impl UpstreamAccountRouteCatalog for SqlPricingCatalogSnapshot {
     }
 
     fn account_group_model_access(&self, group_id: i64) -> Option<AccountGroupModelAccess> {
-        self.account_group_model_access_by_id.get(&group_id).cloned()
+        self.account_group_model_access_by_id
+            .get(&group_id)
+            .cloned()
     }
 
     fn supplier_model_access(&self, supplier_code: &str) -> Option<SupplierModelAccess> {
@@ -901,13 +978,26 @@ impl UpstreamAccountRouteCatalog for SqlPricingCatalogSnapshot {
             .cloned()
     }
 
+    fn account_base_url_config(&self, account_id: i64) -> Option<AccountBaseUrlConfig> {
+        self.account_base_url_config_by_id.get(&account_id).cloned()
+    }
+
     fn model_catalog_keys_by_name(&self, model_name: &str) -> Vec<String> {
-        self.models_by_name.get(model_name).cloned().unwrap_or_default()
+        self.models_by_name
+            .get(model_name)
+            .cloned()
+            .unwrap_or_default()
     }
 }
 
 fn map_rows<R, T>(rows: Vec<R>, mapper: impl Fn(R) -> DomainResult<T>) -> DomainResult<Vec<T>> {
     rows.into_iter().map(mapper).collect()
+}
+
+/// 协议配置 JSON 字符串（[{"protocolCode","baseUrl"}]）→ 配置列表；解析失败/空串按空处理
+/// （快照加载容错：管理面写入时已校验，这里仅作防御性解析）。
+fn parse_protocol_configs(value: &str) -> Vec<AdminLlmProtocolConfig> {
+    serde_json::from_str::<Vec<AdminLlmProtocolConfig>>(value).unwrap_or_default()
 }
 
 fn parse_vendor_model_list(value: &str) -> DomainResult<Vec<VendorModelListEntry>> {
@@ -943,7 +1033,10 @@ fn parse_vendor_model_list(value: &str) -> DomainResult<Vec<VendorModelListEntry
                         .collect::<Vec<_>>()
                 })
                 .unwrap_or_default();
-            Ok(VendorModelListEntry { vendor_code, models })
+            Ok(VendorModelListEntry {
+                vendor_code,
+                models,
+            })
         })
         .collect()
 }
@@ -957,6 +1050,7 @@ fn scoped_pricing_plans_with_standard_fallback(
             let tenant_id = row.tenant_id;
             let organization_id = row.organization_id;
             Ok(ScopedPricingPlan {
+                id: row.id,
                 tenant_id,
                 organization_id,
                 value: row.try_into_domain()?,
@@ -969,6 +1063,7 @@ fn scoped_pricing_plans_with_standard_fallback(
             || plan.value.plan_code.trim() != "standard"
     }) {
         pricing_plans.push(ScopedPricingPlan {
+            id: 0,
             tenant_id: 0,
             organization_id: 0,
             value: PricingPlan::new(

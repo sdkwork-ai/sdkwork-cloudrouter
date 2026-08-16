@@ -1,11 +1,14 @@
 use axum::http::Method;
 use sdkwork_cloudrouter_router_service::application::{
     AuthenticatedApiKeyContext, BillingMode, BillingQuantitySource, Invocation, InvocationBilling,
-    InvocationClassificationRequest, InvocationDispatch, InvocationInterceptor, InvocationRequest,
-    InvocationResource, InvocationResourceClassifier, InvocationSubject, InvocationSurface,
-    OpenAiResourceClassifier, ResourceType, UsageExtractionInterceptor,
+    InvocationClassificationRequest, InvocationDispatch, InvocationInterceptor,
+    InvocationPricingQuote, InvocationRequest, InvocationResource, InvocationResourceClassifier,
+    InvocationSubject, InvocationSurface, OpenAiResourceClassifier, PriceResolutionStatus,
+    PricingAuditSnapshot, ResourceBillability, ResourceType, UsageExtractionInterceptor,
 };
-use sdkwork_cloudrouter_router_service::domain::{BillingMeter, RoutingCapability};
+use sdkwork_cloudrouter_router_service::domain::{
+    BillingMeter, Money, ResourceDefinition, RoutingCapability,
+};
 use serde_json::json;
 
 fn subject() -> InvocationSubject {
@@ -36,6 +39,45 @@ fn openai_invocation(method: Method, path: &str) -> Invocation {
     );
     invocation.routing = routing;
     invocation
+}
+
+fn api_request_quote() -> InvocationPricingQuote {
+    let price = Money::usd("0.010000").expect("valid test price");
+    InvocationPricingQuote {
+        catalog_key: "provider/api".to_owned(),
+        requested_model: "provider-api".to_owned(),
+        supplier_code: Some("provider".to_owned()),
+        account_id: Some(100),
+        region_code: "global".to_owned(),
+        meter: BillingMeter::ApiRequest,
+        unit_size: "1".to_owned(),
+        official_reference_unit_price: price.clone(),
+        raw_upstream_cost_unit_price: Some(price.clone()),
+        procurement_cost_unit_price: Some(price.clone()),
+        account_contract_cost_multiplier: Some("1.000000".to_owned()),
+        account_group_cost_multiplier: Some("1.000000".to_owned()),
+        procurement_cost_multiplier: Some("1.000000".to_owned()),
+        customer_charge_before_sale_multiplier: price.clone(),
+        customer_charge_unit_price: price,
+        sale_multiplier: "1.000000".to_owned(),
+        reference_multiplier: "1.000000".to_owned(),
+        pricing_plan_code: "standard".to_owned(),
+        group_code: "standard-group".to_owned(),
+        rate_metadata: None,
+        billing: None,
+        pricing_audit_snapshot: PricingAuditSnapshot {
+            resource: ResourceDefinition::new(
+                "provider/api",
+                BillingMeter::ApiRequest,
+                chrono::Utc::now(),
+            ),
+            status: PriceResolutionStatus::Quoted,
+            billability: ResourceBillability::Chargeable,
+            rate_identity: None,
+            strategy: None,
+            failure: None,
+        },
+    }
 }
 
 #[tokio::test]
@@ -258,6 +300,8 @@ async fn extracts_embeddings_usage_line() {
 async fn preserves_fixed_api_request_usage_line() {
     let mut invocation = openai_invocation(Method::POST, "/v1/files");
     invocation.billing = InvocationBilling::api_request(BillingMeter::ApiRequest);
+    invocation.usage.add_pricing_quote(api_request_quote());
+    invocation.dispatch = InvocationDispatch::json_response(200, json!({"id": "file-1"}));
 
     UsageExtractionInterceptor
         .after(&mut invocation)
@@ -409,6 +453,36 @@ async fn skips_adapter_usage_extraction_when_adapter_wrapper_status_is_not_succe
         .expect("usage extraction");
 
     assert!(invocation.usage.lines.is_empty());
+}
+
+#[tokio::test]
+async fn fixed_request_requires_a_successful_response_and_chargeable_price() {
+    let mut invocation = openai_invocation(Method::POST, "/v1/files");
+    invocation.billing = InvocationBilling::api_request(BillingMeter::ApiRequest);
+    invocation.usage.add_pricing_quote(api_request_quote());
+    invocation.dispatch = InvocationDispatch::json_response(500, json!({"error": "failed"}));
+
+    UsageExtractionInterceptor
+        .after(&mut invocation)
+        .await
+        .expect("failed response usage extraction");
+    assert!(invocation.usage.lines.is_empty());
+
+    invocation.dispatch = InvocationDispatch::json_response(200, json!({"id": "file-1"}));
+    invocation.usage.pricing_quotes.clear();
+    UsageExtractionInterceptor
+        .after(&mut invocation)
+        .await
+        .expect("unpriced response usage extraction");
+    assert!(invocation.usage.lines.is_empty());
+
+    invocation.usage.add_pricing_quote(api_request_quote());
+    UsageExtractionInterceptor
+        .after(&mut invocation)
+        .await
+        .expect("chargeable response usage extraction");
+    assert_eq!(1, invocation.usage.lines.len());
+    assert_eq!(BillingMeter::ApiRequest, invocation.usage.lines[0].meter);
 }
 
 #[tokio::test]

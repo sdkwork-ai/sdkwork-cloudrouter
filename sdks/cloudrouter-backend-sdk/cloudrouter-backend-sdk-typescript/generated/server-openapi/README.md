@@ -57,6 +57,7 @@ const client = new SdkworkBackendClient({
 - `client.ai` - ai API
 - `client.billing` - billing API
 - `client.payments` - payments API
+- `client.pricing` - pricing API
 - `client.recharges` - recharges API
 - `client.storage` - storage API
 - `client.system` - system API
@@ -73,12 +74,12 @@ const result = await client.ai.upstreamResourceCatalog.retrieve();
 ### billing
 
 ```typescript
-// List referral stats
+// List recharge records
 const params = {
   page: 1,
   page_size: 2,
 };
-const result = await client.billing.referralStats.list(params);
+const result = await client.billing.rechargeRecords.list(params);
 ```
 
 ### payments
@@ -92,6 +93,20 @@ const params = {
   provider_code: 'wechat_pay',
 };
 const result = await client.payments.providers.list(params);
+```
+
+### pricing
+
+```typescript
+// List pricing plans
+const params = {
+  q: 'q',
+  base_price_side: 'official_reference',
+  status: 'active',
+  page: 4,
+  page_size: 5,
+};
+const result = await client.pricing.plans.list(params);
 ```
 
 ### recharges

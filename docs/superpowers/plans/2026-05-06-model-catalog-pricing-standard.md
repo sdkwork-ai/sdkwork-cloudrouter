@@ -1,4 +1,11 @@
 # Model Catalog Pricing Standard Implementation Plan
+> **Superseded (2026-08-16):** this historical execution plan was completed and
+> its pricing concepts were superseded by
+> [ADR-20260815-composable-pricing-and-billing](../../architecture/decisions/ADR-20260815-composable-pricing-and-billing.md).
+> The `ai_pricing_*` tables it introduced were physically removed before launch.
+> Retained as a historical record only.
+
+
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

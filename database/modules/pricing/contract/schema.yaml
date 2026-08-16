@@ -1,0 +1,2642 @@
+schema_version: 1
+kind: sdkwork.database.schema
+database_role: authoritative-server
+module_id: pricing
+contract_version: 0.4.0
+owner_team: pricing-service
+compliance_level: L2
+engines:
+  - postgres
+table_prefix: pricing_
+source_registry: docs/schema-registry/sdkwork-cloudrouter.tables.yaml
+tables:
+  - name: pricing_import_run
+    domain: commerce
+    profile: event_log
+    compliance_level: L2
+    write_owner: pricing-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: null
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      user_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      request_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      trace_id:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      payload_hash:
+        type: string(128)
+        required: false
+        postgres_type: VARCHAR(128)
+        constraints: ''
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      retention_until:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      legal_hold:
+        type: bool
+        required: true
+        postgres_type: BOOLEAN
+        constraints: NOT NULL DEFAULT FALSE
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      source_system:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      source_catalog_version:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL
+      source_hash:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL
+      import_state:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL
+      row_count:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      accepted_count:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      rejected_count:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      staged_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL
+      activated_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      failure_summary:
+        type: string(1024)
+        required: false
+        postgres_type: VARCHAR(1024)
+        constraints: ''
+    constraints:
+      - name: pk_pricing_import_run
+        type: primary_key
+        columns:
+          - id
+      - name: ck_pricing_import_run_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_pricing_import_run_uuid
+        type: unique
+        columns: &id001
+          - uuid
+        where: null
+      - name: uk_pricing_import_run_scope_id
+        type: unique
+        columns: &id002
+          - tenant_id
+          - organization_id
+          - id
+        where: null
+      - name: uk_pricing_import_run_source
+        type: unique
+        columns: &id003
+          - tenant_id
+          - organization_id
+          - source_system
+          - source_catalog_version
+          - source_hash
+        where: null
+      - name: ck_pricing_import_run_counts
+        type: check
+        columns: []
+        expression: row_count >= 0 AND accepted_count >= 0 AND rejected_count >= 0 AND accepted_count + rejected_count <=
+          row_count
+      - name: ck_pricing_import_run_state
+        type: check
+        columns: []
+        expression: import_state IN ('staging', 'validated', 'activated', 'rejected', 'failed')
+    indexes:
+      - name: uk_pricing_import_run_uuid
+        columns: *id001
+        unique: true
+        where: null
+      - name: uk_pricing_import_run_scope_id
+        columns: *id002
+        unique: true
+        where: null
+      - name: uk_pricing_import_run_source
+        columns: *id003
+        unique: true
+        where: null
+      - name: uq_pricing_import_run_scope_reference
+        columns:
+          - tenant_id
+          - organization_id
+          - id
+        unique: true
+        where: null
+      - name: idx_pricing_import_run_latest
+        columns:
+          - tenant_id
+          - organization_id
+          - source_system
+          - import_state
+          - staged_at
+          - id
+        unique: false
+        where: null
+      - name: idx_pricing_import_run_retention
+        columns:
+          - retention_until
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle:
+      storage_strategy: indexed_append_only
+      retention:
+        online_retention: 24mo
+        archive_retention: 7y
+        grace_period: 24h
+      cleanup:
+        owner: pricing-service
+        scope: platform_cross_tenant
+        authorization:
+          mode: service_identity
+          service: pricing-service
+          audit_required: true
+        candidate_recheck:
+          required: true
+          operations:
+            - archive
+            - delete
+          key_columns:
+            - tenant_id
+            - organization_id
+            - id
+        batch_size: 1000
+        predicate: retention_until IS NOT NULL AND retention_until <= :now AND legal_hold = false
+        archive_before_delete: true
+        retry:
+          max_attempts: 5
+          backoff:
+            strategy: exponential
+            initial: 1s
+            maximum: 5m
+        monitoring:
+          metrics:
+            - cleanup_candidates
+            - cleanup_archived
+            - cleanup_deleted
+            - cleanup_failures
+          alerts:
+            - retention_lag
+            - retry_exhausted
+        dry_run:
+          supported: true
+          default: true
+    semantic_contracts: null
+    frontend_routes: []
+  - name: pricing_meter
+    domain: commerce
+    profile: tenant_entity
+    compliance_level: L2
+    write_owner: pricing-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      namespace_code:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      meter_code:
+        type: string(96)
+        required: true
+        postgres_type: VARCHAR(96)
+        constraints: NOT NULL
+      quantity_kind:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      unit_code:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      aggregation_mode:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL
+      default_unit_size:
+        type: decimal
+        required: true
+        postgres_type: NUMERIC(38, 12)
+        constraints: NOT NULL
+      quantity_precision:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL
+      display_name:
+        type: string(256)
+        required: true
+        postgres_type: VARCHAR(256)
+        constraints: NOT NULL
+    constraints:
+      - name: pk_pricing_meter
+        type: primary_key
+        columns:
+          - id
+      - name: ck_pricing_meter_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_pricing_meter_uuid
+        type: unique
+        columns: &id004
+          - uuid
+        where: null
+      - name: uk_pricing_meter_scope_id
+        type: unique
+        columns: &id005
+          - tenant_id
+          - organization_id
+          - id
+        where: null
+      - name: uk_pricing_meter_code
+        type: unique
+        columns: &id006
+          - tenant_id
+          - organization_id
+          - namespace_code
+          - meter_code
+        where: null
+      - name: ck_pricing_meter_unit_size
+        type: check
+        columns: []
+        expression: default_unit_size > 0
+      - name: ck_pricing_meter_precision
+        type: check
+        columns: []
+        expression: quantity_precision BETWEEN 0 AND 12
+      - name: ck_pricing_meter_aggregation
+        type: check
+        columns: []
+        expression: aggregation_mode IN ('sum', 'maximum', 'minimum', 'last', 'distinct_invocation')
+    indexes:
+      - name: uk_pricing_meter_uuid
+        columns: *id004
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_meter_scope_id
+        columns: *id005
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_meter_code
+        columns: *id006
+        unique: true
+        where: deleted_at IS NULL
+      - name: uq_pricing_meter_scope_reference
+        columns:
+          - tenant_id
+          - organization_id
+          - id
+        unique: true
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes: []
+  - name: pricing_operation
+    domain: commerce
+    profile: tenant_entity
+    compliance_level: L2
+    write_owner: pricing-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      namespace_code:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      operation_code:
+        type: string(160)
+        required: true
+        postgres_type: VARCHAR(160)
+        constraints: NOT NULL
+      operation_kind:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      charge_timing_default:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL
+      async_completion_policy:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL
+      success_status_policy:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL
+      display_name:
+        type: string(256)
+        required: true
+        postgres_type: VARCHAR(256)
+        constraints: NOT NULL
+    constraints:
+      - name: pk_pricing_operation
+        type: primary_key
+        columns:
+          - id
+      - name: ck_pricing_operation_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_pricing_operation_uuid
+        type: unique
+        columns: &id007
+          - uuid
+        where: null
+      - name: uk_pricing_operation_scope_id
+        type: unique
+        columns: &id008
+          - tenant_id
+          - organization_id
+          - id
+        where: null
+      - name: uk_pricing_operation_code
+        type: unique
+        columns: &id009
+          - tenant_id
+          - organization_id
+          - namespace_code
+          - operation_code
+        where: null
+      - name: ck_pricing_operation_charge_timing
+        type: check
+        columns: []
+        expression: charge_timing_default IN ('request_accepted', 'successful_result', 'usage_reported', 'rate_defined')
+    indexes:
+      - name: uk_pricing_operation_uuid
+        columns: *id007
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_operation_scope_id
+        columns: *id008
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_operation_code
+        columns: *id009
+        unique: true
+        where: deleted_at IS NULL
+      - name: uq_pricing_operation_scope_reference
+        columns:
+          - tenant_id
+          - organization_id
+          - id
+        unique: true
+        where: null
+      - name: idx_pricing_operation_lookup
+        columns:
+          - tenant_id
+          - organization_id
+          - operation_kind
+          - status
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes: []
+  - name: pricing_price_book
+    domain: commerce
+    profile: tenant_entity
+    compliance_level: L2
+    write_owner: pricing-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      import_run_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      namespace_code:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      price_book_code:
+        type: string(160)
+        required: true
+        postgres_type: VARCHAR(160)
+        constraints: NOT NULL
+      price_book_version:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL
+      price_side:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL
+      source_system:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      vendor_code:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      region_code:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      source_catalog_version:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL
+      source_hash:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL
+      lifecycle_state:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL
+      currency_code:
+        type: string(10)
+        required: true
+        postgres_type: VARCHAR(10)
+        constraints: NOT NULL
+      effective_from:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL
+      effective_to:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      activated_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+    constraints:
+      - name: pk_pricing_price_book
+        type: primary_key
+        columns:
+          - id
+      - name: ck_pricing_price_book_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_pricing_price_book_uuid
+        type: unique
+        columns: &id010
+          - uuid
+        where: null
+      - name: uk_pricing_price_book_scope_id
+        type: unique
+        columns: &id011
+          - tenant_id
+          - organization_id
+          - id
+        where: null
+      - name: uk_pricing_price_book_version
+        type: unique
+        columns: &id012
+          - tenant_id
+          - organization_id
+          - namespace_code
+          - price_book_code
+          - vendor_code
+          - region_code
+          - price_book_version
+        where: null
+      - name: uk_pricing_price_book_source
+        type: unique
+        columns: &id013
+          - tenant_id
+          - organization_id
+          - source_system
+          - vendor_code
+          - region_code
+          - source_catalog_version
+          - price_book_code
+          - source_hash
+        where: null
+      - name: uk_pricing_price_book_active
+        type: unique
+        columns: &id014
+          - tenant_id
+          - organization_id
+          - namespace_code
+          - price_book_code
+          - vendor_code
+          - region_code
+        where: lifecycle_state = 'active' AND deleted_at IS NULL
+      - name: fk_pricing_price_book_import
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - import_run_id
+        references_table: pricing_import_run
+        references_columns:
+          - tenant_id
+          - organization_id
+          - id
+        on_delete: RESTRICT
+      - name: ck_pricing_price_book_state
+        type: check
+        columns: []
+        expression: lifecycle_state IN ('draft', 'staged', 'active', 'retired', 'rejected')
+      - name: ck_pricing_price_book_side
+        type: check
+        columns: []
+        expression: price_side IN ('official_reference', 'upstream_cost', 'customer_charge', 'internal_transfer')
+      - name: ck_pricing_price_book_currency
+        type: check
+        columns: []
+        expression: currency_code ~ '^[A-Z]{3}$'
+      - name: ck_pricing_price_book_interval
+        type: check
+        columns: []
+        expression: effective_to IS NULL OR effective_to > effective_from
+    indexes:
+      - name: uk_pricing_price_book_uuid
+        columns: *id010
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_price_book_scope_id
+        columns: *id011
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_price_book_version
+        columns: *id012
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_price_book_source
+        columns: *id013
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_price_book_active
+        columns: *id014
+        unique: true
+        where: lifecycle_state = 'active' AND deleted_at IS NULL
+      - name: uq_pricing_price_book_scope_reference
+        columns:
+          - tenant_id
+          - organization_id
+          - id
+        unique: true
+        where: null
+      - name: idx_pricing_price_book_active
+        columns:
+          - tenant_id
+          - organization_id
+          - namespace_code
+          - lifecycle_state
+          - effective_from
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes: []
+  - name: pricing_product
+    domain: commerce
+    profile: tenant_entity
+    compliance_level: L2
+    write_owner: pricing-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      namespace_code:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      product_code:
+        type: string(160)
+        required: true
+        postgres_type: VARCHAR(160)
+        constraints: NOT NULL
+      product_kind:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      owner_system:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      display_name:
+        type: string(256)
+        required: true
+        postgres_type: VARCHAR(256)
+        constraints: NOT NULL
+      description:
+        type: string(1024)
+        required: false
+        postgres_type: VARCHAR(1024)
+        constraints: ''
+    constraints:
+      - name: pk_pricing_product
+        type: primary_key
+        columns:
+          - id
+      - name: ck_pricing_product_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_pricing_product_uuid
+        type: unique
+        columns: &id015
+          - uuid
+        where: null
+      - name: uk_pricing_product_scope_id
+        type: unique
+        columns: &id016
+          - tenant_id
+          - organization_id
+          - id
+        where: null
+      - name: uk_pricing_product_code
+        type: unique
+        columns: &id017
+          - tenant_id
+          - organization_id
+          - namespace_code
+          - product_code
+        where: null
+    indexes:
+      - name: uk_pricing_product_uuid
+        columns: *id015
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_product_scope_id
+        columns: *id016
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_product_code
+        columns: *id017
+        unique: true
+        where: deleted_at IS NULL
+      - name: uq_pricing_product_scope_reference
+        columns:
+          - tenant_id
+          - organization_id
+          - id
+        unique: true
+        where: null
+      - name: idx_pricing_product_lookup
+        columns:
+          - tenant_id
+          - organization_id
+          - owner_system
+          - product_kind
+          - status
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes: []
+  - name: pricing_product_binding
+    domain: commerce
+    profile: relation_entity
+    compliance_level: L2
+    write_owner: pricing-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      product_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      operation_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      vendor_code:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      provider_code:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      account_id:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      region_code:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      resource_type:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      resource_code:
+        type: string(256)
+        required: true
+        postgres_type: VARCHAR(256)
+        constraints: NOT NULL
+      catalog_key:
+        type: string(256)
+        required: false
+        postgres_type: VARCHAR(256)
+        constraints: ''
+      api_format:
+        type: string(64)
+        required: false
+        postgres_type: VARCHAR(64)
+        constraints: ''
+      endpoint_code:
+        type: string(160)
+        required: false
+        postgres_type: VARCHAR(160)
+        constraints: ''
+    constraints:
+      - name: pk_pricing_product_binding
+        type: primary_key
+        columns:
+          - id
+      - name: ck_pricing_product_binding_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_pricing_product_binding_uuid
+        type: unique
+        columns: &id018
+          - uuid
+        where: null
+      - name: uk_pricing_product_binding_scope_id
+        type: unique
+        columns: &id019
+          - tenant_id
+          - organization_id
+          - id
+        where: null
+      - name: uk_pricing_product_binding_provider
+        type: unique
+        columns: &id020
+          - tenant_id
+          - organization_id
+          - product_id
+          - operation_id
+          - vendor_code
+          - provider_code
+          - region_code
+          - resource_type
+          - resource_code
+        where: account_id IS NULL AND deleted_at IS NULL
+      - name: uk_pricing_product_binding_account
+        type: unique
+        columns: &id021
+          - tenant_id
+          - organization_id
+          - product_id
+          - operation_id
+          - vendor_code
+          - provider_code
+          - account_id
+          - region_code
+          - resource_type
+          - resource_code
+        where: account_id IS NOT NULL AND deleted_at IS NULL
+      - name: fk_pricing_product_binding_product
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - product_id
+        references_table: pricing_product
+        references_columns:
+          - tenant_id
+          - organization_id
+          - id
+        on_delete: RESTRICT
+      - name: fk_pricing_product_binding_operation
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - operation_id
+        references_table: pricing_operation
+        references_columns:
+          - tenant_id
+          - organization_id
+          - id
+        on_delete: RESTRICT
+    indexes:
+      - name: uk_pricing_product_binding_uuid
+        columns: *id018
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_product_binding_scope_id
+        columns: *id019
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_product_binding_provider
+        columns: *id020
+        unique: true
+        where: account_id IS NULL AND deleted_at IS NULL
+      - name: uk_pricing_product_binding_account
+        columns: *id021
+        unique: true
+        where: account_id IS NOT NULL AND deleted_at IS NULL
+      - name: uq_pricing_product_binding_scope_reference
+        columns:
+          - tenant_id
+          - organization_id
+          - id
+        unique: true
+        where: null
+      - name: idx_pricing_product_binding_catalog
+        columns:
+          - tenant_id
+          - organization_id
+          - vendor_code
+          - provider_code
+          - account_id
+          - region_code
+          - catalog_key
+          - status
+          - id
+        unique: false
+        where: null
+      - name: idx_pricing_product_binding_endpoint
+        columns:
+          - tenant_id
+          - organization_id
+          - endpoint_code
+          - api_format
+          - status
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes: []
+  - name: pricing_rate
+    domain: commerce
+    profile: tenant_entity
+    compliance_level: L2
+    write_owner: pricing-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      price_book_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      product_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      operation_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      meter_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      rate_code:
+        type: string(192)
+        required: true
+        postgres_type: VARCHAR(192)
+        constraints: NOT NULL
+      rate_hash:
+        type: string(128)
+        required: true
+        postgres_type: VARCHAR(128)
+        constraints: NOT NULL
+      billability:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL
+      charge_timing:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL
+      calculation_mode:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL
+      quantity_aggregation:
+        type: string(32)
+        required: true
+        postgres_type: VARCHAR(32)
+        constraints: NOT NULL
+      unit_size:
+        type: decimal
+        required: true
+        postgres_type: NUMERIC(38, 12)
+        constraints: NOT NULL
+      unit_price:
+        type: decimal
+        required: true
+        postgres_type: NUMERIC(38, 12)
+        constraints: NOT NULL
+      minimum_quantity:
+        type: decimal
+        required: true
+        postgres_type: NUMERIC(38, 12)
+        constraints: NOT NULL
+      quantity_step:
+        type: decimal
+        required: false
+        postgres_type: NUMERIC(38, 12)
+        constraints: ''
+      currency_code:
+        type: string(10)
+        required: true
+        postgres_type: VARCHAR(10)
+        constraints: NOT NULL
+      priority:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL
+      effective_from:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL
+      effective_to:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      source_url:
+        type: string(2048)
+        required: true
+        postgres_type: VARCHAR(2048)
+        constraints: NOT NULL
+      source_observed_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL
+    constraints:
+      - name: pk_pricing_rate
+        type: primary_key
+        columns:
+          - id
+      - name: ck_pricing_rate_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_pricing_rate_uuid
+        type: unique
+        columns: &id022
+          - uuid
+        where: null
+      - name: uk_pricing_rate_scope_id
+        type: unique
+        columns: &id023
+          - tenant_id
+          - organization_id
+          - id
+        where: null
+      - name: uk_pricing_rate_book_code
+        type: unique
+        columns: &id024
+          - tenant_id
+          - organization_id
+          - price_book_id
+          - rate_code
+        where: null
+      - name: uk_pricing_rate_book_hash
+        type: unique
+        columns: &id025
+          - tenant_id
+          - organization_id
+          - price_book_id
+          - rate_hash
+        where: null
+      - name: fk_pricing_rate_book
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - price_book_id
+        references_table: pricing_price_book
+        references_columns:
+          - tenant_id
+          - organization_id
+          - id
+        on_delete: RESTRICT
+      - name: fk_pricing_rate_product
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - product_id
+        references_table: pricing_product
+        references_columns:
+          - tenant_id
+          - organization_id
+          - id
+        on_delete: RESTRICT
+      - name: fk_pricing_rate_operation
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - operation_id
+        references_table: pricing_operation
+        references_columns:
+          - tenant_id
+          - organization_id
+          - id
+        on_delete: RESTRICT
+      - name: fk_pricing_rate_meter
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - meter_id
+        references_table: pricing_meter
+        references_columns:
+          - tenant_id
+          - organization_id
+          - id
+        on_delete: RESTRICT
+      - name: ck_pricing_rate_quantities
+        type: check
+        columns: []
+        expression: unit_size > 0 AND unit_price >= 0 AND minimum_quantity >= 0 AND (quantity_step IS NULL OR quantity_step
+          > 0)
+      - name: ck_pricing_rate_interval
+        type: check
+        columns: []
+        expression: effective_to IS NULL OR effective_to > effective_from
+      - name: ck_pricing_rate_billability
+        type: check
+        columns: []
+        expression: billability IN ('chargeable', 'free', 'not_applicable', 'unknown')
+      - name: ck_pricing_rate_charge_timing
+        type: check
+        columns: []
+        expression: charge_timing IN ('request_accepted', 'successful_result', 'usage_reported')
+      - name: ck_pricing_rate_calculation_mode
+        type: check
+        columns: []
+        expression: calculation_mode IN ('per_unit', 'flat', 'graduated', 'volume', 'formula')
+      - name: ck_pricing_rate_quantity_aggregation
+        type: check
+        columns: []
+        expression: quantity_aggregation IN ('sum', 'maximum', 'minimum', 'last', 'distinct_invocation')
+      - name: ck_pricing_rate_flat_unit_size
+        type: check
+        columns: []
+        expression: calculation_mode <> 'flat' OR unit_size = 1
+      - name: ck_pricing_rate_chargeable_price
+        type: check
+        columns: []
+        expression: billability <> 'chargeable' OR calculation_mode IN ('graduated', 'volume') OR unit_price > 0
+      - name: ck_pricing_rate_non_chargeable_price
+        type: check
+        columns: []
+        expression: billability NOT IN ('free', 'not_applicable') OR unit_price = 0
+      - name: ck_pricing_rate_currency
+        type: check
+        columns: []
+        expression: currency_code ~ '^[A-Z]{3}$'
+    indexes:
+      - name: uk_pricing_rate_uuid
+        columns: *id022
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_rate_scope_id
+        columns: *id023
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_rate_book_code
+        columns: *id024
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_rate_book_hash
+        columns: *id025
+        unique: true
+        where: deleted_at IS NULL
+      - name: uq_pricing_rate_scope_reference
+        columns:
+          - tenant_id
+          - organization_id
+          - id
+        unique: true
+        where: null
+      - name: uq_pricing_rate_scope_book_reference
+        columns:
+          - tenant_id
+          - organization_id
+          - id
+          - price_book_id
+        unique: true
+        where: null
+      - name: uq_pricing_rate_scope_currency_reference
+        columns:
+          - tenant_id
+          - organization_id
+          - id
+          - currency_code
+        unique: true
+        where: null
+      - name: idx_pricing_rate_resolve
+        columns:
+          - tenant_id
+          - organization_id
+          - product_id
+          - operation_id
+          - meter_id
+          - billability
+          - status
+          - priority
+          - effective_from
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes: []
+  - name: pricing_rate_binding
+    domain: commerce
+    profile: relation_entity
+    compliance_level: L2
+    write_owner: pricing-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      rate_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      product_binding_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+    constraints:
+      - name: pk_pricing_rate_binding
+        type: primary_key
+        columns:
+          - id
+      - name: ck_pricing_rate_binding_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_pricing_rate_binding_uuid
+        type: unique
+        columns: &id026
+          - uuid
+        where: null
+      - name: uk_pricing_rate_binding_scope_id
+        type: unique
+        columns: &id027
+          - tenant_id
+          - organization_id
+          - id
+        where: null
+      - name: uk_pricing_rate_binding_relation
+        type: unique
+        columns: &id028
+          - tenant_id
+          - organization_id
+          - rate_id
+          - product_binding_id
+        where: null
+      - name: fk_pricing_rate_binding_rate
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - rate_id
+        references_table: pricing_rate
+        references_columns:
+          - tenant_id
+          - organization_id
+          - id
+        on_delete: RESTRICT
+      - name: fk_pricing_rate_binding_product_binding
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - product_binding_id
+        references_table: pricing_product_binding
+        references_columns:
+          - tenant_id
+          - organization_id
+          - id
+        on_delete: RESTRICT
+    indexes:
+      - name: uk_pricing_rate_binding_uuid
+        columns: *id026
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_rate_binding_scope_id
+        columns: *id027
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_rate_binding_relation
+        columns: *id028
+        unique: true
+        where: deleted_at IS NULL
+      - name: idx_pricing_rate_binding_product
+        columns:
+          - tenant_id
+          - organization_id
+          - product_binding_id
+          - status
+          - rate_id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes: []
+  - name: pricing_rate_condition
+    domain: commerce
+    profile: relation_entity
+    compliance_level: L2
+    write_owner: pricing-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      rate_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      dimension_code:
+        type: string(96)
+        required: true
+        postgres_type: VARCHAR(96)
+        constraints: NOT NULL
+      operator_code:
+        type: string(16)
+        required: true
+        postgres_type: VARCHAR(16)
+        constraints: NOT NULL
+      value_type:
+        type: string(16)
+        required: true
+        postgres_type: VARCHAR(16)
+        constraints: NOT NULL
+      value_string:
+        type: string(512)
+        required: false
+        postgres_type: VARCHAR(512)
+        constraints: ''
+      value_decimal:
+        type: decimal
+        required: false
+        postgres_type: NUMERIC(38, 12)
+        constraints: ''
+      value_boolean:
+        type: bool
+        required: false
+        postgres_type: BOOLEAN
+        constraints: ''
+      value_json:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
+      sort_order:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL
+    constraints:
+      - name: pk_pricing_rate_condition
+        type: primary_key
+        columns:
+          - id
+      - name: ck_pricing_rate_condition_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_pricing_rate_condition_uuid
+        type: unique
+        columns: &id029
+          - uuid
+        where: null
+      - name: uk_pricing_rate_condition_scope_id
+        type: unique
+        columns: &id030
+          - tenant_id
+          - organization_id
+          - id
+        where: null
+      - name: uk_pricing_rate_condition_slot
+        type: unique
+        columns: &id031
+          - tenant_id
+          - organization_id
+          - rate_id
+          - dimension_code
+          - operator_code
+          - sort_order
+        where: null
+      - name: fk_pricing_rate_condition_rate
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - rate_id
+        references_table: pricing_rate
+        references_columns:
+          - tenant_id
+          - organization_id
+          - id
+        on_delete: RESTRICT
+      - name: ck_pricing_rate_condition_operator
+        type: check
+        columns: []
+        expression: operator_code IN ('eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'in', 'not_in', 'exists')
+      - name: ck_pricing_rate_condition_value_type
+        type: check
+        columns: []
+        expression: value_type IN ('string', 'decimal', 'boolean', 'json')
+      - name: ck_pricing_rate_condition_value
+        type: check
+        columns: []
+        expression: (value_type = 'string' AND value_string IS NOT NULL AND value_decimal IS NULL AND value_boolean IS NULL
+          AND value_json IS NULL) OR (value_type = 'decimal' AND value_string IS NULL AND value_decimal IS NOT NULL AND value_boolean
+          IS NULL AND value_json IS NULL) OR (value_type = 'boolean' AND value_string IS NULL AND value_decimal IS NULL AND
+          value_boolean IS NOT NULL AND value_json IS NULL) OR (value_type = 'json' AND value_string IS NULL AND value_decimal
+          IS NULL AND value_boolean IS NULL AND value_json IS NOT NULL)
+      - name: ck_pricing_rate_condition_operator_value
+        type: check
+        columns: []
+        expression: (operator_code <> 'exists' OR value_type = 'boolean') AND (operator_code NOT IN ('in', 'not_in') OR value_type
+          = 'json')
+      - name: ck_pricing_rate_condition_sort_order
+        type: check
+        columns: []
+        expression: sort_order >= 0
+    indexes:
+      - name: uk_pricing_rate_condition_uuid
+        columns: *id029
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_rate_condition_scope_id
+        columns: *id030
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_rate_condition_slot
+        columns: *id031
+        unique: true
+        where: deleted_at IS NULL
+      - name: idx_pricing_rate_condition_match
+        columns:
+          - tenant_id
+          - organization_id
+          - rate_id
+          - dimension_code
+          - operator_code
+          - sort_order
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes: []
+  - name: pricing_rate_formula
+    domain: commerce
+    profile: relation_entity
+    compliance_level: L2
+    write_owner: pricing-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      rate_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      formula_code:
+        type: string(96)
+        required: true
+        postgres_type: VARCHAR(96)
+        constraints: NOT NULL
+      formula_version:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      constant_units:
+        type: decimal
+        required: true
+        postgres_type: NUMERIC(38, 12)
+        constraints: NOT NULL
+      quantity_coefficient:
+        type: decimal
+        required: true
+        postgres_type: NUMERIC(38, 12)
+        constraints: NOT NULL
+      minimum_units:
+        type: decimal
+        required: false
+        postgres_type: NUMERIC(38, 12)
+        constraints: ''
+      maximum_units:
+        type: decimal
+        required: false
+        postgres_type: NUMERIC(38, 12)
+        constraints: ''
+    constraints:
+      - name: pk_pricing_rate_formula
+        type: primary_key
+        columns:
+          - id
+      - name: ck_pricing_rate_formula_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_pricing_rate_formula_uuid
+        type: unique
+        columns: &id032
+          - uuid
+        where: null
+      - name: uk_pricing_rate_formula_scope_id
+        type: unique
+        columns: &id033
+          - tenant_id
+          - organization_id
+          - id
+        where: null
+      - name: uk_pricing_rate_formula_rate
+        type: unique
+        columns: &id034
+          - tenant_id
+          - organization_id
+          - rate_id
+        where: null
+      - name: fk_pricing_rate_formula_rate
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - rate_id
+        references_table: pricing_rate
+        references_columns:
+          - tenant_id
+          - organization_id
+          - id
+        on_delete: RESTRICT
+      - name: ck_pricing_rate_formula_coefficients
+        type: check
+        columns: []
+        expression: constant_units >= 0 AND quantity_coefficient >= 0
+      - name: ck_pricing_rate_formula_bounds
+        type: check
+        columns: []
+        expression: (minimum_units IS NULL OR minimum_units >= 0) AND (maximum_units IS NULL OR maximum_units >= 0) AND (minimum_units
+          IS NULL OR maximum_units IS NULL OR maximum_units >= minimum_units)
+    indexes:
+      - name: uk_pricing_rate_formula_uuid
+        columns: *id032
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_rate_formula_scope_id
+        columns: *id033
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_rate_formula_rate
+        columns: *id034
+        unique: true
+        where: deleted_at IS NULL
+      - name: uq_pricing_rate_formula_scope_reference
+        columns:
+          - tenant_id
+          - organization_id
+          - id
+        unique: true
+        where: null
+      - name: idx_pricing_rate_formula_code
+        columns:
+          - tenant_id
+          - organization_id
+          - formula_code
+          - formula_version
+          - status
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes: []
+  - name: pricing_rate_formula_term
+    domain: commerce
+    profile: relation_entity
+    compliance_level: L2
+    write_owner: pricing-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      formula_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      term_index:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL
+      term_code:
+        type: string(96)
+        required: true
+        postgres_type: VARCHAR(96)
+        constraints: NOT NULL
+      dimension_code:
+        type: string(96)
+        required: true
+        postgres_type: VARCHAR(96)
+        constraints: NOT NULL
+      coefficient:
+        type: decimal
+        required: true
+        postgres_type: NUMERIC(38, 12)
+        constraints: NOT NULL
+    constraints:
+      - name: pk_pricing_rate_formula_term
+        type: primary_key
+        columns:
+          - id
+      - name: ck_pricing_rate_formula_term_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_pricing_rate_formula_term_uuid
+        type: unique
+        columns: &id035
+          - uuid
+        where: null
+      - name: uk_pricing_rate_formula_term_scope_id
+        type: unique
+        columns: &id036
+          - tenant_id
+          - organization_id
+          - id
+        where: null
+      - name: uk_pricing_rate_formula_term_index
+        type: unique
+        columns: &id037
+          - tenant_id
+          - organization_id
+          - formula_id
+          - term_index
+        where: null
+      - name: uk_pricing_rate_formula_term_code
+        type: unique
+        columns: &id038
+          - tenant_id
+          - organization_id
+          - formula_id
+          - term_code
+        where: null
+      - name: uk_pricing_rate_formula_term_dimension
+        type: unique
+        columns: &id039
+          - tenant_id
+          - organization_id
+          - formula_id
+          - dimension_code
+        where: null
+      - name: fk_pricing_rate_formula_term_formula
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - formula_id
+        references_table: pricing_rate_formula
+        references_columns:
+          - tenant_id
+          - organization_id
+          - id
+        on_delete: RESTRICT
+      - name: ck_pricing_rate_formula_term_index
+        type: check
+        columns: []
+        expression: term_index >= 0
+      - name: ck_pricing_rate_formula_term_coefficient
+        type: check
+        columns: []
+        expression: coefficient >= 0
+    indexes:
+      - name: uk_pricing_rate_formula_term_uuid
+        columns: *id035
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_rate_formula_term_scope_id
+        columns: *id036
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_rate_formula_term_index
+        columns: *id037
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_rate_formula_term_code
+        columns: *id038
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_rate_formula_term_dimension
+        columns: *id039
+        unique: true
+        where: deleted_at IS NULL
+      - name: idx_pricing_rate_formula_term_resolve
+        columns:
+          - tenant_id
+          - organization_id
+          - formula_id
+          - term_index
+          - status
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes: []
+  - name: pricing_rate_tier
+    domain: commerce
+    profile: relation_entity
+    compliance_level: L2
+    write_owner: pricing-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      rate_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      tier_index:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL
+      tier_code:
+        type: string(96)
+        required: true
+        postgres_type: VARCHAR(96)
+        constraints: NOT NULL
+      lower_bound:
+        type: decimal
+        required: true
+        postgres_type: NUMERIC(38, 12)
+        constraints: NOT NULL
+      upper_bound:
+        type: decimal
+        required: false
+        postgres_type: NUMERIC(38, 12)
+        constraints: ''
+      unit_size:
+        type: decimal
+        required: true
+        postgres_type: NUMERIC(38, 12)
+        constraints: NOT NULL
+      unit_price:
+        type: decimal
+        required: true
+        postgres_type: NUMERIC(38, 12)
+        constraints: NOT NULL
+      flat_amount:
+        type: decimal
+        required: true
+        postgres_type: NUMERIC(38, 12)
+        constraints: NOT NULL
+      currency_code:
+        type: string(10)
+        required: true
+        postgres_type: VARCHAR(10)
+        constraints: NOT NULL
+    constraints:
+      - name: pk_pricing_rate_tier
+        type: primary_key
+        columns:
+          - id
+      - name: ck_pricing_rate_tier_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_pricing_rate_tier_uuid
+        type: unique
+        columns: &id040
+          - uuid
+        where: null
+      - name: uk_pricing_rate_tier_scope_id
+        type: unique
+        columns: &id041
+          - tenant_id
+          - organization_id
+          - id
+        where: null
+      - name: uk_pricing_rate_tier_index
+        type: unique
+        columns: &id042
+          - tenant_id
+          - organization_id
+          - rate_id
+          - tier_index
+        where: null
+      - name: uk_pricing_rate_tier_code
+        type: unique
+        columns: &id043
+          - tenant_id
+          - organization_id
+          - rate_id
+          - tier_code
+        where: null
+      - name: fk_pricing_rate_tier_rate
+        type: foreign_key
+        columns:
+          - tenant_id
+          - organization_id
+          - rate_id
+          - currency_code
+        references_table: pricing_rate
+        references_columns:
+          - tenant_id
+          - organization_id
+          - id
+          - currency_code
+        on_delete: RESTRICT
+      - name: ck_pricing_rate_tier_index
+        type: check
+        columns: []
+        expression: tier_index >= 0
+      - name: ck_pricing_rate_tier_bounds
+        type: check
+        columns: []
+        expression: lower_bound >= 0 AND (upper_bound IS NULL OR upper_bound > lower_bound)
+      - name: ck_pricing_rate_tier_amounts
+        type: check
+        columns: []
+        expression: unit_size > 0 AND unit_price >= 0 AND flat_amount >= 0
+      - name: ck_pricing_rate_tier_currency
+        type: check
+        columns: []
+        expression: currency_code ~ '^[A-Z]{3}$'
+    indexes:
+      - name: uk_pricing_rate_tier_uuid
+        columns: *id040
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_rate_tier_scope_id
+        columns: *id041
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_rate_tier_index
+        columns: *id042
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_rate_tier_code
+        columns: *id043
+        unique: true
+        where: deleted_at IS NULL
+      - name: idx_pricing_rate_tier_resolve
+        columns:
+          - tenant_id
+          - organization_id
+          - rate_id
+          - tier_index
+          - lower_bound
+          - upper_bound
+          - status
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes: []

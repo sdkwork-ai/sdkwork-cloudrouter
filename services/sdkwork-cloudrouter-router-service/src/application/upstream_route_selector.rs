@@ -1,16 +1,18 @@
 use crate::application::{
     upstream_account_route_planner::plan_upstream_account_routes, AuthenticatedApiKeyContext,
-    PricingResolver, ResolveModelPriceQuery,
+    PriceResolution, PriceResolutionStatus, PriceService,
 };
+use chrono::Utc;
 use std::cmp::Reverse;
 use std::collections::BTreeMap;
 use std::fmt::{Display, Formatter};
 
 use crate::domain::{
     has_text, parse_model_catalog_identity, provider_native_model_id, BillingMeter, DomainError,
-    DomainResult, GatewayApiKeyAccountGroupBinding, ModelUpstreamRoute, RouteCandidate,
-    RoutingCapability, RoutingPolicy, RoutingPolicyScope, RoutingRule, UpstreamAccountGroup,
-    UpstreamAccountGroupBinding, UpstreamAccountRoute, UpstreamAccountRoutingStrategy,
+    DomainResult, GatewayApiKeyAccountGroupBinding, ModelUpstreamRoute, ResourceDefinition,
+    RouteCandidate, RoutingCapability, RoutingPolicy, RoutingPolicyScope, RoutingRule,
+    UpstreamAccountGroup, UpstreamAccountGroupBinding, UpstreamAccountRoute,
+    UpstreamAccountRoutingStrategy,
 };
 use crate::ports::{AccountGroupModelAccess, UpstreamAccountRouteCatalog};
 
@@ -219,9 +221,7 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             };
             match self.select_model_route_plan_for_context(scoped_query) {
                 Ok(selection) => return Ok(selection),
-                Err(error)
-                    if error.kind() == UpstreamRouteSelectionErrorKind::ModelForbidden =>
-                {
+                Err(error) if error.kind() == UpstreamRouteSelectionErrorKind::ModelForbidden => {
                     // A model forbidden by a bound group is a hard rejection
                     // of the request: the group's blacklist denies the model
                     // for the whole group, so no other bound group is tried.
@@ -272,7 +272,10 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         // Checked before any account/resource resolution so a forbidden model
         // fails fast with a model-forbidden error instead of a misleading
         // route-unavailable one.
-        if let Some(access) = self.catalog.account_group_model_access(query.context.group_id) {
+        if let Some(access) = self
+            .catalog
+            .account_group_model_access(query.context.group_id)
+        {
             let vendor_code = self
                 .catalog
                 .find_model(&query.catalog_key)
@@ -284,7 +287,11 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             );
             if let Some(rule) = reason {
                 return Err(UpstreamRouteSelectionError::model_forbidden(
-                    model_access_forbidden_message(&rule, &query.requested_model, &query.context.group_code),
+                    model_access_forbidden_message(
+                        &rule,
+                        &query.requested_model,
+                        &query.context.group_code,
+                    ),
                 ));
             }
         }
@@ -1040,7 +1047,10 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             };
             let routes = match plan_upstream_account_routes(
                 &group,
-                self.binding_strategy_for_group(query.context.api_key_id, candidate.account_group_id),
+                self.binding_strategy_for_group(
+                    query.context.api_key_id,
+                    candidate.account_group_id,
+                ),
                 candidate_routes,
             ) {
                 Ok(routes) => routes,
@@ -1074,19 +1084,25 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         query: &SelectUpstreamAccountRouteQuery,
         route: &UpstreamAccountRoute,
     ) -> DomainResult<()> {
-        let resolved = PricingResolver::new(self.catalog).resolve(ResolveModelPriceQuery {
-            api_key_id: query.context.api_key_id,
-            account_group_id: Some(query.context.group_id),
-            model: query.route_key.clone(),
-            billing_meter: BillingMeter::ApiRequest,
-            supplier_code: Some(route.supplier_code.clone()),
-            account_id: Some(route.account_id),
-            region_code: Some(route.region_code.clone()),
-        })?;
-        if resolved.procurement_cost.is_none() {
+        let mut resource =
+            ResourceDefinition::new(&query.route_key, BillingMeter::ApiRequest, Utc::now())
+                .with_pricing_subject(query.context.api_key_id, Some(query.context.group_id))
+                .with_provider(&route.supplier_code, Some(route.account_id))
+                .with_region_code(&route.region_code)
+                .with_model(&query.route_key)
+                .with_api_code(&query.api_code);
+        if let Some(identity) = parse_model_catalog_identity(&query.route_key) {
+            resource = resource.with_vendor_code(identity.vendor_code);
+        }
+        let resolution = PriceService::new().resolve(self.catalog, resource)?;
+        if !has_quoted_procurement_cost(&resolution) {
             return Err(DomainError::new(format!(
-                "upstream cost price not found for route {}, supplier {}, account {}, and region {}",
-                query.route_key, route.supplier_code, route.account_id, route.region_code
+                "upstream cost price not found for route {}, supplier {}, account {}, and region {}{}",
+                query.route_key,
+                route.supplier_code,
+                route.account_id,
+                route.region_code,
+                price_resolution_failure_suffix(&resolution)
             )));
         }
         Ok(())
@@ -1187,22 +1203,28 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
     ) -> DomainResult<()> {
         let meters = composite_pricing_meters(&query.billing_meter);
         for meter in meters {
-            let resolved = PricingResolver::new(self.catalog).resolve(ResolveModelPriceQuery {
-                api_key_id: query.context.api_key_id,
-                account_group_id: Some(query.context.group_id),
-                model: route.catalog_key.clone(),
-                billing_meter: meter.clone(),
-                supplier_code: Some(route.supplier_code.clone()),
-                account_id: Some(route.account_id),
-                region_code: Some(route.region_code.clone()),
-            });
-            match resolved {
-                Ok(resolved) if resolved.procurement_cost.is_some() => {}
+            let mut resource =
+                ResourceDefinition::new(&route.catalog_key, meter.clone(), Utc::now())
+                    .with_pricing_subject(query.context.api_key_id, Some(query.context.group_id))
+                    .with_provider(&route.supplier_code, Some(route.account_id))
+                    .with_region_code(&route.region_code)
+                    .with_model(&query.requested_model)
+                    .with_api_code(&query.api_code);
+            if let Some(identity) = parse_model_catalog_identity(&route.catalog_key) {
+                resource = resource.with_vendor_code(identity.vendor_code);
+            }
+            let resolution = PriceService::new().resolve(self.catalog, resource);
+            match resolution {
+                Ok(resolution) if has_quoted_procurement_cost(&resolution) => {}
                 Ok(_) if meter == BillingMeter::LlmCacheReadToken => {}
-                Ok(_) => {
+                Ok(resolution) => {
                     return Err(DomainError::new(format!(
-                        "upstream cost price not found for model {}, supplier {}, account {}, and region {}",
-                        route.catalog_key, route.supplier_code, route.account_id, route.region_code
+                        "upstream cost price not found for model {}, supplier {}, account {}, and region {}{}",
+                        route.catalog_key,
+                        route.supplier_code,
+                        route.account_id,
+                        route.region_code,
+                        price_resolution_failure_suffix(&resolution)
                     )));
                 }
                 Err(_) if meter == BillingMeter::LlmCacheReadToken => {}
@@ -1211,6 +1233,23 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         }
         Ok(())
     }
+}
+
+fn has_quoted_procurement_cost(resolution: &PriceResolution) -> bool {
+    resolution.status == PriceResolutionStatus::Quoted
+        && resolution
+            .resolved_price
+            .as_ref()
+            .and_then(|price| price.procurement_cost.as_ref())
+            .is_some()
+}
+
+fn price_resolution_failure_suffix(resolution: &PriceResolution) -> String {
+    resolution
+        .failure
+        .as_ref()
+        .map(|failure| format!(": {} ({})", failure.message, failure.code.code()))
+        .unwrap_or_default()
 }
 
 /// Meters that must be priced for a route candidate before dispatch.
@@ -1921,7 +1960,11 @@ pub fn model_access_forbidden_reason_lists(
     None
 }
 
-pub fn model_access_forbidden_message(rule: &str, requested_model: &str, group_code: &str) -> String {
+pub fn model_access_forbidden_message(
+    rule: &str,
+    requested_model: &str,
+    group_code: &str,
+) -> String {
     match rule {
         "blacklist" => format!(
             "model {requested_model} is forbidden by account group {group_code} (model blacklist)"

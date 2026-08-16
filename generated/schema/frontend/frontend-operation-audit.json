@@ -1,6 +1,48 @@
 {
   "operations": [
     {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/log/request_logs/{id}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "detail",
+      "operation_scope": null,
+      "read_sources": [
+        "log"
+      ],
+      "route": "/admin/request-log",
+      "sdk_operations": [
+        {
+          "operation_id": "log.requestLogs.detail",
+          "sdk_family": "sdkwork-log-backend-sdk"
+        }
+      ],
+      "source": "../sdkwork-log/apps/sdkwork-log-pc/packages/sdkwork-log-pc-request-log/src/requestLogService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/log/request_logs",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "list",
+      "operation_scope": null,
+      "read_sources": [
+        "log"
+      ],
+      "route": "/admin/request-log",
+      "sdk_operations": [
+        {
+          "operation_id": "log.requestLogs.list",
+          "sdk_family": "sdkwork-log-backend-sdk"
+        }
+      ],
+      "source": "../sdkwork-log/apps/sdkwork-log-pc/packages/sdkwork-log-pc-request-log/src/requestLogService.ts",
+      "write_tables": []
+    },
+    {
       "api_method": "POST",
       "api_path": "/backend/v3/api/ai/models",
       "api_surface": "backend",
@@ -664,6 +706,531 @@
       ]
     },
     {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/community/categories",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "createCommunityAdminCategory",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "categories.create",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/community/groups",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "createCommunityAdminGroup",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "groups.create",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/community/tiers",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "createCommunityAdminTier",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "tiers.create",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/community/categories/{categoryId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "delete",
+      "operation": "deleteCommunityAdminCategory",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "categories.delete",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/community/entries/{entryId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "delete",
+      "operation": "deleteCommunityAdminEntry",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "entries.delete",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/community/groups/{groupId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "delete",
+      "operation": "deleteCommunityAdminGroup",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "groups.delete",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/community/tiers/{tierId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "delete",
+      "operation": "deleteCommunityAdminTier",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "tiers.delete",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/community/categories",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchCommunityAdminCategories",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "categories.management.list",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/community/entries",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchCommunityAdminEntries",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "entries.management.list",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/community/groups",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchCommunityAdminGroups",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "groups.management.list",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/community/members",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchCommunityAdminMembers",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "members.management.list",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/community/moderation/queue",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchCommunityAdminModerationQueue",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "moderation.queue.list",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/community/tiers",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchCommunityAdminTiers",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "tiers.management.list",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/community/tiers/{tierId}/publish",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "action",
+      "operation": "publishCommunityAdminTier",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "tiers.publish",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/community/recommendations/rebuild",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "action",
+      "operation": "rebuildCommunityAdminRecommendations",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "recommendations.rebuild",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/community/members/{memberId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "delete",
+      "operation": "removeCommunityAdminMember",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "members.delete",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/community/entries/{entryId}/feature",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "action",
+      "operation": "setCommunityAdminEntryFeatured",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "entries.feature",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/community/entries/{entryId}/pin",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "action",
+      "operation": "setCommunityAdminEntryPinned",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "entries.pin",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/community/tiers/{tierId}/unpublish",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "action",
+      "operation": "unpublishCommunityAdminTier",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "tiers.unpublish",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/community/categories/{categoryId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "updateCommunityAdminCategory",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "categories.update",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/community/circles/{categoryId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "updateCommunityAdminCircle",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "circles.update",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/community/groups/{groupId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "updateCommunityAdminGroup",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "groups.update",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/community/members/{memberId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "updateCommunityAdminMember",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "members.update",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/community/entries/{entryId}/moderation",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "action",
+      "operation": "updateCommunityAdminModeration",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "entries.moderation.create",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/community/tiers/{tierId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "updateCommunityAdminTier",
+      "operation_scope": null,
+      "read_sources": [
+        "community"
+      ],
+      "route": "/admin/community/:sectionId?",
+      "sdk_operations": [
+        {
+          "operation_id": "tiers.update",
+          "sdk_family": "sdkwork-community-backend-sdk"
+        }
+      ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts",
+      "write_tables": []
+    },
+    {
       "api_method": "GET",
       "api_path": "/backend/v3/api/system/dashboard/admin/overview",
       "api_surface": "backend",
@@ -699,6 +1266,34 @@
       "route": "/admin/dashboard",
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard/src/dashboardService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPromotionCampaignsList",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPromotionCodeBatchesList",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
       "write_tables": []
     },
     {
@@ -786,6 +1381,20 @@
       "write_tables": []
     },
     {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPromotionDistributionTasksList",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": []
+    },
+    {
       "api_method": "GET",
       "api_path": "/backend/v3/api/promotions/offers",
       "api_surface": "backend",
@@ -828,6 +1437,186 @@
       "write_tables": []
     },
     {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "createCouponOffer",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "createPromotionCampaign",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "createPromotionCodeBatch",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "createPromotionCouponStock",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "createPromotionDistributionTask",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "createPromotionOffer",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/billing/referral_strategies",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "createReferralStrategy",
+      "operation_scope": null,
+      "read_sources": [
+        "ops_referral_strategy"
+      ],
+      "route": "/admin/marketing/referralStrategies",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": [
+        "ops_referral_strategy",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "deletePromotionCampaign",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "deletePromotionOffer",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/billing/referral_strategies/{strategy_id}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "delete",
+      "operation": "deleteReferralStrategy",
+      "operation_scope": null,
+      "read_sources": [
+        "ops_referral_strategy"
+      ],
+      "route": "/admin/marketing/referralStrategies",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": [
+        "ops_referral_strategy",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "fetchPromotionOverview",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/billing/referrals/relations",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchReferralRelations",
+      "operation_scope": null,
+      "read_sources": [
+        "ops_referral_relation"
+      ],
+      "route": "/admin/marketing/referrals",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": []
+    },
+    {
       "api_method": "GET",
       "api_path": "/backend/v3/api/billing/referrals/stats",
       "api_surface": "backend",
@@ -839,6 +1628,127 @@
         "growth_referral_stats"
       ],
       "route": "/admin/marketing/referrals",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/billing/referral_strategies",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchReferralStrategies",
+      "operation_scope": null,
+      "read_sources": [
+        "ops_referral_strategy"
+      ],
+      "route": "/admin/marketing/referralStrategies",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "retrievePromotionCampaign",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "retrievePromotionOffer",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/billing/referral_strategies/{strategy_id}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "retrieveReferralStrategy",
+      "operation_scope": null,
+      "read_sources": [
+        "ops_referral_strategy"
+      ],
+      "route": "/admin/marketing/referralStrategies",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "updatePromotionCampaign",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "updatePromotionOfferStatus",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/billing/referral_strategies/{strategy_id}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "updateReferralStrategy",
+      "operation_scope": null,
+      "read_sources": [
+        "ops_referral_strategy"
+      ],
+      "route": "/admin/marketing/referralStrategies",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
+      "write_tables": [
+        "ops_referral_strategy",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "updateReferralStrategyStatus",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts",
       "write_tables": []
@@ -997,6 +1907,20 @@
       ]
     },
     {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "fetchMembershipAdminCatalogMeta",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
+      "write_tables": []
+    },
+    {
       "api_method": "GET",
       "api_path": "/backend/v3/api/memberships/entitlements",
       "api_surface": "backend",
@@ -1014,6 +1938,20 @@
           "sdk_family": "sdkwork-membership-backend-sdk"
         }
       ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "fetchMembershipAdminExchangeRules",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": []
     },
@@ -1113,12 +2051,7 @@
         "recharges"
       ],
       "route": "/admin/memberships/rechargePackages",
-      "sdk_operations": [
-        {
-          "operation_id": "packages.list",
-          "sdk_family": "cloudrouter-backend-sdk"
-        }
-      ],
+      "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": []
     },
@@ -1140,6 +2073,20 @@
           "sdk_family": "cloudrouter-backend-sdk"
         }
       ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "updateMembershipAdminExchangeRule",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": []
     },
@@ -1239,12 +2186,7 @@
         "recharges"
       ],
       "route": "/admin/memberships/rechargePackages",
-      "sdk_operations": [
-        {
-          "operation_id": "packages.update",
-          "sdk_family": "cloudrouter-backend-sdk"
-        }
-      ],
+      "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": [
         "recharges",
@@ -1263,12 +2205,7 @@
         "recharges"
       ],
       "route": "/admin/memberships/rechargePackages",
-      "sdk_operations": [
-        {
-          "operation_id": "settings.update",
-          "sdk_family": "cloudrouter-backend-sdk"
-        }
-      ],
+      "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts",
       "write_tables": [
         "recharges",
@@ -1325,6 +2262,304 @@
       "write_tables": []
     },
     {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendBaseDataCountriesList",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendBaseDataCurrenciesList",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendBaseDataDictionariesList",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPaymentChannelsCreate",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPaymentChannelsDelete",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPaymentChannelsUpdate",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPaymentDevCheckAttemptStatus",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPaymentDevSandboxTrigger",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPaymentDevTestPayment",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPaymentIntentsRetrieve",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPaymentMethodsCreate",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPaymentMethodsUpdate",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/payments/providers/{providerId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "backendPaymentProvidersUpdate",
+      "operation_scope": null,
+      "read_sources": [
+        "commerce_payment_provider"
+      ],
+      "route": "/admin/payments/providers",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": [
+        "commerce_payment_provider"
+      ]
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPaymentReconciliationRunsCreate",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPaymentRefundsCreate",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPaymentRefundsRetrieve",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPaymentRefundsRetry",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPaymentRouteRulesCreate",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPaymentRouteRulesDelete",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPaymentRouteRulesUpdate",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPaymentWebhookEventsReplay",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
       "api_method": "GET",
       "api_path": "/backend/v3/api/payments/attempts",
       "api_surface": "backend",
@@ -1363,6 +2598,20 @@
           "sdk_family": "sdkwork-payment-backend-sdk"
         }
       ],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPaymentsChannelsListFiltered",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
       "write_tables": []
     },
@@ -1446,6 +2695,20 @@
       "write_tables": []
     },
     {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendPaymentsRefundsList",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
+      "write_tables": []
+    },
+    {
       "api_method": "GET",
       "api_path": "/backend/v3/api/payments/route_rules",
       "api_surface": "backend",
@@ -1486,6 +2749,230 @@
       ],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
       "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/pricing/plans",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "createPricingPlan",
+      "operation_scope": null,
+      "read_sources": [
+        "cloudrouter_pricing_plan"
+      ],
+      "route": "/admin/pricing/plans",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": [
+        "cloudrouter_pricing_plan",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/pricing/rate_cards",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "createPricingRateCard",
+      "operation_scope": null,
+      "read_sources": [
+        "cloudrouter_account_rate_card",
+        "cloudrouter_pricing_plan"
+      ],
+      "route": "/admin/pricing/rateCards",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": [
+        "cloudrouter_account_rate_card",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/pricing/rules",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "createPricingRule",
+      "operation_scope": null,
+      "read_sources": [
+        "cloudrouter_pricing_rule",
+        "cloudrouter_pricing_plan"
+      ],
+      "route": "/admin/pricing/rules",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": [
+        "cloudrouter_pricing_rule",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/pricing/rate_cards/{rateCardId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "delete",
+      "operation": "deletePricingRateCard",
+      "operation_scope": null,
+      "read_sources": [
+        "cloudrouter_account_rate_card",
+        "cloudrouter_pricing_plan"
+      ],
+      "route": "/admin/pricing/rateCards/{rateCardId}",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": [
+        "cloudrouter_account_rate_card",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/pricing/rules/{ruleId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "delete",
+      "operation": "deletePricingRule",
+      "operation_scope": null,
+      "read_sources": [
+        "cloudrouter_pricing_rule",
+        "cloudrouter_pricing_plan"
+      ],
+      "route": "/admin/pricing/rules/{ruleId}",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": [
+        "cloudrouter_pricing_rule",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/pricing/plans/{planId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchPricingPlan",
+      "operation_scope": null,
+      "read_sources": [
+        "cloudrouter_pricing_plan"
+      ],
+      "route": "/admin/pricing/plans/{planId}",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/pricing/plans",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchPricingPlans",
+      "operation_scope": null,
+      "read_sources": [
+        "cloudrouter_pricing_plan"
+      ],
+      "route": "/admin/pricing/plans",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/pricing/rate_cards",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchPricingRateCards",
+      "operation_scope": null,
+      "read_sources": [
+        "cloudrouter_account_rate_card",
+        "cloudrouter_pricing_plan"
+      ],
+      "route": "/admin/pricing/rateCards",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/pricing/rules",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchPricingRules",
+      "operation_scope": null,
+      "read_sources": [
+        "cloudrouter_pricing_rule",
+        "cloudrouter_pricing_plan"
+      ],
+      "route": "/admin/pricing/rules",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/pricing/plans/{planId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "updatePricingPlan",
+      "operation_scope": null,
+      "read_sources": [
+        "cloudrouter_pricing_plan"
+      ],
+      "route": "/admin/pricing/plans/{planId}",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": [
+        "cloudrouter_pricing_plan",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/pricing/rate_cards/{rateCardId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "updatePricingRateCard",
+      "operation_scope": null,
+      "read_sources": [
+        "cloudrouter_account_rate_card",
+        "cloudrouter_pricing_plan"
+      ],
+      "route": "/admin/pricing/rateCards/{rateCardId}",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": [
+        "cloudrouter_account_rate_card",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/pricing/rules/{ruleId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "updatePricingRule",
+      "operation_scope": null,
+      "read_sources": [
+        "cloudrouter_pricing_rule",
+        "cloudrouter_pricing_plan"
+      ],
+      "route": "/admin/pricing/rules/{ruleId}",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": [
+        "cloudrouter_pricing_rule",
+        "ops_audit_log"
+      ]
     },
     {
       "api_method": "POST",
@@ -1564,6 +3051,38 @@
         "ai_quota_policy",
         "ops_audit_log"
       ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/system/chains/policy/keys/{apiKeyId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchApiKeyChainPolicy",
+      "operation_scope": null,
+      "read_sources": [
+        "iam_gateway_chain_policy"
+      ],
+      "route": "/admin/ratelimit",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/system/chains/policy",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchChainPolicy",
+      "operation_scope": null,
+      "read_sources": [
+        "iam_gateway_chain_policy"
+      ],
+      "route": "/admin/ratelimit",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
+      "write_tables": []
     },
     {
       "api_method": "GET",
@@ -1647,6 +3166,25 @@
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
       "write_tables": [
         "iam_gateway_risk_rule",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/system/chains/policy",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "updateChainPolicy",
+      "operation_scope": null,
+      "read_sources": [
+        "iam_gateway_chain_policy"
+      ],
+      "route": "/admin/ratelimit",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts",
+      "write_tables": [
+        "iam_gateway_chain_policy",
         "ops_audit_log"
       ]
     },
@@ -1862,40 +3400,6 @@
       ]
     },
     {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/storage/buckets",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "backendStorageBucketCreate",
-      "operation_scope": null,
-      "read_sources": [
-        "storage"
-      ],
-      "route": "/admin/storage/buckets",
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/storage/buckets",
-      "api_surface": "backend",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "backendStorageBucketsList",
-      "operation_scope": null,
-      "read_sources": [
-        "storage"
-      ],
-      "route": "/admin/storage/buckets",
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
-      "write_tables": []
-    },
-    {
       "api_method": "PATCH",
       "api_path": "/backend/v3/api/storage/default_buckets/{logicalScope}",
       "api_surface": "backend",
@@ -1964,53 +3468,71 @@
       "write_tables": []
     },
     {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/storage/providers",
-      "api_surface": "backend",
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
       "file_targets": [],
-      "kind": "create",
+      "kind": null,
       "operation": "backendStorageProviderCreate",
       "operation_scope": null,
-      "read_sources": [
-        "storage"
-      ],
-      "route": "/admin/storage/providers",
+      "read_sources": [],
+      "route": null,
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
+      "write_tables": []
     },
     {
-      "api_method": "POST",
-      "api_path": "/backend/v3/api/storage/providers/{providerId}/health_check",
-      "api_surface": "backend",
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
       "file_targets": [],
-      "kind": "create",
+      "kind": null,
+      "operation": "backendStorageProviderDelete",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
       "operation": "backendStorageProviderHealthCheck",
       "operation_scope": null,
-      "read_sources": [
-        "storage"
-      ],
-      "route": "/admin/storage/providers/{providerId}",
+      "read_sources": [],
+      "route": null,
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
-      "write_tables": [
-        "ops_audit_log"
-      ]
+      "write_tables": []
     },
     {
-      "api_method": "GET",
-      "api_path": "/backend/v3/api/storage/providers",
-      "api_surface": "backend",
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
       "file_targets": [],
-      "kind": "read",
+      "kind": null,
+      "operation": "backendStorageProviderUpdate",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
       "operation": "backendStorageProvidersList",
       "operation_scope": null,
-      "read_sources": [
-        "storage"
-      ],
-      "route": "/admin/storage/providers",
+      "read_sources": [],
+      "route": null,
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
       "write_tables": []
@@ -2296,6 +3818,23 @@
     },
     {
       "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/upstream_resource_catalog",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchUpstreamResourceCatalog",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_resource",
+        "ai_resource_group"
+      ],
+      "route": "/admin/upstream",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
       "api_path": "/backend/v3/api/ai/upstream_accounts/{accountId}",
       "api_surface": "backend",
       "file_targets": [],
@@ -2407,6 +3946,25 @@
       "operation_scope": null,
       "read_sources": [
         "ai_upstream_account_group"
+      ],
+      "route": "/admin/upstream",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/upstream_accounts/{accountId}/resources",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "listUpstreamAccountResources",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_upstream_account",
+        "ai_upstream_account_resource",
+        "ai_resource",
+        "ai_resource_group"
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
@@ -2585,6 +4143,32 @@
       "write_tables": [
         "ai_upstream_account_group",
         "ai_upstream_account_group_resource",
+        "ai_resource",
+        "ai_resource_group",
+        "ops_audit_log",
+        "ops_config_snapshot"
+      ]
+    },
+    {
+      "api_method": "PUT",
+      "api_path": "/backend/v3/api/ai/upstream_accounts/{accountId}/resources",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "updateUpstreamAccountResources",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_upstream_account",
+        "ai_upstream_account_resource",
+        "ai_resource",
+        "ai_resource_group"
+      ],
+      "route": "/admin/upstream",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
+      "write_tables": [
+        "ai_upstream_account",
+        "ai_upstream_account_resource",
         "ai_resource",
         "ai_resource_group",
         "ops_audit_log",
@@ -2782,7 +4366,7 @@
         "iam_gateway_access_policy",
         "ai_quota_policy",
         "ai_model_pricing",
-        "ai_pricing_plan"
+        "cloudrouter_pricing_plan"
       ],
       "route": "/console/api-keys",
       "sdk_operations": [],
@@ -2826,7 +4410,6 @@
         "ai_request_trace",
         "ai_model_rank_snapshot",
         "ops_notification_message",
-        "ops_metric_snapshot",
         "ops_gateway_instance"
       ],
       "route": "/console/dashboard",
@@ -2976,6 +4559,26 @@
     },
     {
       "api_method": "GET",
+      "api_path": "/app/v3/api/ai/routing/account_groups",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchAccountGroupSaleMultipliers",
+      "operation_scope": "app_shell",
+      "read_sources": [
+        "ai_upstream_account_group",
+        "ai_upstream_account_group_member",
+        "ai_upstream_account_group_resource",
+        "ai_upstream_account",
+        "ai_upstream_supplier"
+      ],
+      "route": "/models",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-models/src/modelService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
       "api_path": "/app/v3/api/ai/models",
       "api_surface": "app",
       "file_targets": [],
@@ -3041,35 +4644,6 @@
     },
     {
       "api_method": "POST",
-      "api_path": "/app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "completeChatTurnResponse",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_chat_conversation",
-        "ai_chat_turn",
-        "ai_chat_item",
-        "ai_chat_message",
-        "ai_chat_message_part",
-        "ai_runtime_invocation",
-        "ai_usage"
-      ],
-      "route": "/playground",
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "write_tables": [
-        "ai_chat_turn",
-        "ai_chat_item",
-        "ai_chat_message",
-        "ai_chat_message_part",
-        "ai_chat_context_snapshot",
-        "ai_runtime_usage_link"
-      ]
-    },
-    {
-      "api_method": "POST",
       "api_path": "/app/v3/api/runtime/invocations/{invocationId}/completions",
       "api_surface": "app",
       "file_targets": [],
@@ -3084,81 +4658,6 @@
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
       "write_tables": [
         "ai_runtime_invocation"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/chat/conversations",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createChatConversation",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_chat_conversation"
-      ],
-      "route": "/playground",
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "write_tables": [
-        "ai_chat_conversation"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/chat/conversations/{conversationId}/turns",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createChatTurn",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_chat_conversation"
-      ],
-      "route": "/playground",
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "write_tables": [
-        "ai_chat_turn",
-        "ai_chat_item",
-        "ai_chat_message",
-        "ai_chat_message_part"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/memory/spaces/{spaceId}/entries",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createMemoryEntry",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_agent"
-      ],
-      "route": "/playground",
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "write_tables": [
-        "ai_agent"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/memory/spaces",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "createMemorySpace",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_agent"
-      ],
-      "route": "/playground",
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "write_tables": [
-        "ai_agent"
       ]
     },
     {
@@ -3216,73 +4715,6 @@
       "write_tables": [
         "ai_runtime_invocation"
       ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/chat/conversations",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listChatConversations",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_chat_conversation"
-      ],
-      "route": "/playground",
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/chat/conversations/{conversationId}/messages",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listChatMessages",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_chat_conversation",
-        "ai_chat_turn",
-        "ai_chat_message",
-        "ai_runtime_usage_link"
-      ],
-      "route": "/playground",
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/memory/spaces/{spaceId}/entries",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listMemoryEntries",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_agent"
-      ],
-      "route": "/playground",
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/memory/spaces",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "listMemorySpaces",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_agent"
-      ],
-      "route": "/playground",
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "write_tables": []
     },
     {
       "api_method": "GET",
@@ -3355,54 +4787,6 @@
     },
     {
       "api_method": "GET",
-      "api_path": "/app/v3/api/chat/conversations/{conversationId}",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "retrieveChatConversation",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_chat_conversation"
-      ],
-      "route": "/playground",
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/memory/entries/{entryId}",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "retrieveMemoryEntry",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_agent"
-      ],
-      "route": "/playground",
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/memory/spaces/{spaceId}",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "retrieveMemorySpace",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_agent"
-      ],
-      "route": "/playground",
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
       "api_path": "/app/v3/api/runtime/invocations/{invocationId}",
       "api_surface": "app",
       "file_targets": [],
@@ -3436,105 +4820,6 @@
     },
     {
       "api_method": "POST",
-      "api_path": "/app/v3/api/runtime/invocations/{invocationId}/completions",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "cancelRuntimeInvocation",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_runtime_invocation"
-      ],
-      "route": "/playground",
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts",
-      "write_tables": [
-        "ai_runtime_invocation"
-      ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/chat/conversations/{conversationId}/messages",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchMessages",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_chat_conversation",
-        "ai_chat_turn",
-        "ai_chat_message",
-        "ai_runtime_usage_link"
-      ],
-      "route": "/playground",
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/chat/conversations",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchSessions",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_chat_conversation"
-      ],
-      "route": "/playground",
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/runtime/invocations/{invocationId}/completions",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "action",
-      "operation": "resumeMessage",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_chat_conversation",
-        "ai_chat_turn",
-        "ai_runtime_invocation",
-        "ai_runtime_invocation_event"
-      ],
-      "route": "/playground",
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts",
-      "write_tables": [
-        "ai_chat_turn",
-        "ai_chat_item",
-        "ai_chat_message",
-        "ai_chat_message_part",
-        "ai_runtime_invocation",
-        "ai_runtime_usage_link"
-      ]
-    },
-    {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/runtime/invocations",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "create",
-      "operation": "sendMessage",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_request_trace",
-        "ai_usage"
-      ],
-      "route": "/playground",
-      "sdk_operations": [],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/components/chat/chatService.ts",
-      "write_tables": [
-        "ai_request_trace",
-        "ai_usage"
-      ]
-    },
-    {
-      "api_method": "POST",
       "api_path": "/app/v3/api/runtime/invocations",
       "api_surface": "app",
       "file_targets": [],
@@ -3552,51 +4837,43 @@
       ]
     },
     {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/generations/workspace",
-      "api_surface": "app",
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
       "file_targets": [],
-      "kind": "read",
+      "kind": null,
       "operation": "fetchPlaygroundGenerationHistoryFromService",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_agent"
-      ],
-      "route": "/playground",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundGenerationsService.ts",
       "write_tables": []
     },
     {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/generations/images/text_to_image",
-      "api_surface": "app",
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
       "file_targets": [],
-      "kind": "create",
+      "kind": null,
       "operation": "runPlaygroundAssetGeneration",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_agent"
-      ],
-      "route": "/playground",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundGenerationsService.ts",
-      "write_tables": [
-        "ai_usage"
-      ]
+      "write_tables": []
     },
     {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/generations",
-      "api_surface": "app",
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
       "file_targets": [],
-      "kind": "read",
+      "kind": null,
       "operation": "fetchGenerationHistory",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_agent"
-      ],
-      "route": "/playground",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundService.ts",
       "write_tables": []
@@ -3636,22 +4913,44 @@
       ]
     },
     {
-      "api_method": "POST",
-      "api_path": "/app/v3/api/generations/images/text_to_image",
-      "api_surface": "app",
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
       "file_targets": [],
-      "kind": "create",
+      "kind": null,
       "operation": "runGeneration",
-      "operation_scope": "app_shell",
-      "read_sources": [
-        "ai_agent"
-      ],
-      "route": "/playground",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundService.ts",
-      "write_tables": [
-        "ai_usage"
-      ]
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/ai/pricing/rates",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchOfficialPricingRates",
+      "operation_scope": null,
+      "read_sources": [
+        "pricing_price_book",
+        "pricing_product",
+        "pricing_operation",
+        "pricing_meter",
+        "pricing_product_binding",
+        "pricing_rate",
+        "pricing_rate_binding",
+        "pricing_rate_condition",
+        "pricing_rate_tier",
+        "pricing_rate_formula",
+        "pricing_rate_formula_term"
+      ],
+      "route": "/pricing",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-pricing/src/services/pricingService.ts",
+      "write_tables": []
     },
     {
       "api_method": "GET",
@@ -4332,11 +5631,66 @@
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/src/auth/cloudRouterAuthSettingsService.ts",
       "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/app/v3/api/iam/invites/claim",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "claimInviteRelation",
+      "operation_scope": null,
+      "read_sources": [
+        "ops_referral_invite_code",
+        "ops_referral_relation"
+      ],
+      "route": "/auth/register",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
+      "write_tables": [
+        "ops_referral_relation"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/app/v3/api/iam/invite/policy",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchInvitePolicy",
+      "operation_scope": null,
+      "read_sources": [
+        "ops_config_snapshot"
+      ],
+      "route": "/auth/register",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/app/v3/api/iam/invites/validate",
+      "api_surface": "app",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "validateInviteCode",
+      "operation_scope": null,
+      "read_sources": [
+        "ops_referral_invite_code"
+      ],
+      "route": "/auth/register",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
+      "write_tables": [
+        "ops_referral_invite_code",
+        "iam_user",
+        "iam_credential"
+      ]
     }
   ],
   "summary": {
-    "operation_count": 228,
-    "source_file_count": 38,
-    "write_operation_count": 110
+    "operation_count": 310,
+    "source_file_count": 42,
+    "write_operation_count": 132
   }
 }

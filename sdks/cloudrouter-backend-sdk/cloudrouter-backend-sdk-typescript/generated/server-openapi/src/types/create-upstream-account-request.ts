@@ -1,3 +1,5 @@
+import type { LlmProtocolConfig } from './llm-protocol-config';
+
 /** Create upstream account request schema exposed by Cloud Router. */
 export interface CreateUpstreamAccountRequest {
   /** Account code field on create upstream account request. */
@@ -12,12 +14,16 @@ export interface CreateUpstreamAccountRequest {
   authMethodCode: string;
   /** Contract cost multiplier field on create upstream account request. */
   contractCostMultiplier?: string | null;
+  /** Default base url field on create upstream account request. */
+  defaultBaseUrl?: string | null;
   /** Environment field on create upstream account request. */
   environment?: number | null;
   /** External account id field on create upstream account request. */
   externalAccountId?: string | null;
   /** Preferred endpoint id field on create upstream account request. */
   preferredEndpointId?: string | null;
+  /** Protocols field on create upstream account request. */
+  protocols?: LlmProtocolConfig[] | null;
   /** Quota limit field on create upstream account request. */
   quotaLimit?: string | null;
   /** Region code field on create upstream account request. */

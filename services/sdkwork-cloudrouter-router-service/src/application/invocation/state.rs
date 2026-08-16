@@ -181,6 +181,7 @@ mod cancellation_tests {
 #[derive(Debug)]
 pub struct Invocation {
     pub id: InvocationId,
+    pub occurred_at: chrono::DateTime<chrono::Utc>,
     pub request: InvocationRequest,
     pub subject: InvocationSubject,
     pub resource: InvocationResource,
@@ -227,6 +228,7 @@ impl Invocation {
         let trace_id = request.trace_id.clone();
         Self {
             id,
+            occurred_at: chrono::Utc::now(),
             request,
             subject,
             resource,

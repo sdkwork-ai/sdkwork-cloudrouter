@@ -38,11 +38,32 @@ pub struct AppRoutingApiKeyListPage {
     pub page_size: i64,
 }
 
+/// Opaque keyset cursor for routing request trace pagination. The cursor
+/// captures the `(started_at_micros, id)` sort key of the last item on a page
+/// so the next page seeks strictly older rows at the authoritative store
+/// (`PAGINATION_SPEC.md` §6 keyset/seek pagination). Clients receive the
+/// base64url-encoded form via `pageInfo.nextCursor` and `MUST NOT` construct it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AppRoutingRequestTraceCursor {
+    pub started_at_micros: i64,
+    pub id: i64,
+}
+
+/// Cursor-mode list input for routing request traces (`PAGINATION_SPEC.md` §3
+/// cursor mode). `cursor` is `None` for the first page; subsequent pages pass
+/// the opaque `nextCursor` from the prior response.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AppRoutingTraceQuery {
+    pub cursor: Option<AppRoutingRequestTraceCursor>,
+    pub page_size: i64,
+    pub q: Option<String>,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct AppRoutingRequestTraceListPage {
     pub items: Vec<AppRoutingRequestTraceItem>,
-    pub total: i64,
-    pub page_no: i64,
+    pub next_cursor: Option<AppRoutingRequestTraceCursor>,
+    pub has_more: bool,
     pub page_size: i64,
 }
 
@@ -173,7 +194,7 @@ pub trait AppRoutingReadStore {
     fn load_routing_request_traces<'a>(
         &'a self,
         subject: Option<AppRoutingSubject>,
-        query: AppRoutingListQuery,
+        query: AppRoutingTraceQuery,
         locale: Option<&'a str>,
     ) -> AppRoutingReadFuture<'a, AppRoutingRequestTraceListPage>;
 

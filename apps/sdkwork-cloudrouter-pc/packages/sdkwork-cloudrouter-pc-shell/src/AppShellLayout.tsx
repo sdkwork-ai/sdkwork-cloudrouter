@@ -14,6 +14,7 @@ export type AppShellLayoutProps = AppShellRouteProps & {
   Models: ComponentType;
   ModelDetails: ComponentType;
   Rankings: ComponentType;
+  Pricing: ComponentType;
   Docs: ComponentType;
   ApiReference: ComponentType;
   ProductDocs: ComponentType;
@@ -48,7 +49,7 @@ export function RouteFallback() {
 }
 
 const PORTAL_HOST_OFFSET_ROUTE_PATTERN =
-  /^\/(?:product-docs|docs|api-reference|token-plan|partner-join)(?:\/|$)/;
+  /^\/(?:pricing|product-docs|docs|api-reference|token-plan|partner-join)(?:\/|$)/;
 
 export function AppShellLayout({
   isDark,
@@ -57,6 +58,7 @@ export function AppShellLayout({
   Models,
   ModelDetails,
   Rankings,
+  Pricing,
   Docs,
   ApiReference,
   ProductDocs,
@@ -100,6 +102,7 @@ export function AppShellLayout({
           <Route path="/models/:id" element={<ModelDetails />} />
           <Route path="/models/:provider/:model" element={<ModelDetails />} />
           <Route path="/rankings" element={<Rankings />} />
+          <Route path="/pricing" element={<Pricing />} />
           <Route path="/product-docs" element={<ProductDocs />} />
           <Route path="/docs" element={<Docs />} />
           <Route path="/api-reference" element={<ApiReference />} />

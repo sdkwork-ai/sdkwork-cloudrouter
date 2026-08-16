@@ -1,5 +1,4 @@
 pub mod common;
-use common::InternalTrustedSubjectHeaders;
 use std::sync::Arc;
 
 use axum::body::Body;
@@ -295,18 +294,25 @@ fn admin_service_node_list_query_exposes_only_standard_q_search_param() {
 }
 
 fn signed_request(method: &str, path: &str, body: Option<Value>) -> Request<Body> {
-    let mut builder = Request::builder()
-        .method(method)
-        .uri(path)
-        .internal_trusted_subject(100001, 0, 30);
+    let mut request = common::web_framework_backend_request(
+        method,
+        path,
+        Body::empty(),
+        "100001",
+        Some("0"),
+        "30",
+    );
     let body = match body {
         Some(value) => {
-            builder = builder.header("content-type", "application/json");
+            request
+                .headers_mut()
+                .insert("content-type", "application/json".parse().unwrap());
             Body::from(value.to_string())
         }
         None => Body::empty(),
     };
-    builder.body(body).unwrap()
+    *request.body_mut() = body;
+    request
 }
 
 async fn json_payload(response: axum::response::Response) -> Value {

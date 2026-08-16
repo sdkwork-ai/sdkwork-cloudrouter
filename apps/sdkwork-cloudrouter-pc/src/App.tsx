@@ -29,6 +29,7 @@ const Home = lazyRoute(() => import('@sdkwork/cloudrouter-pc-home'), 'Home');
 const Models = lazyRoute(() => import('@sdkwork/cloudrouter-pc-models/models'), 'Models');
 const ModelDetails = lazyRoute(() => import('@sdkwork/cloudrouter-pc-models/details'), 'ModelDetails');
 const Rankings = lazyRoute(() => import('@sdkwork/cloudrouter-pc-rankings'), 'Rankings');
+const Pricing = lazyRoute(() => import('@sdkwork/cloudrouter-pc-pricing'), 'PricingPage');
 const Docs = lazyRoute(() => import('@sdkwork/documents-pc-api-reference'), 'Docs');
 const ApiReference = lazyRoute(() => import('@sdkwork/documents-pc-api-reference'), 'ApiReference');
 const ProductDocs = lazyRoute(() => import('@sdkwork/documents-pc-api-reference'), 'ProductDocs');
@@ -70,6 +71,7 @@ function MainLayout({ isDark, toggleTheme }: { isDark: boolean, toggleTheme: () 
       Models={Models}
       ModelDetails={ModelDetails}
       Rankings={Rankings}
+      Pricing={Pricing}
       Docs={Docs}
       ApiReference={ApiReference}
       ProductDocs={ProductDocs}

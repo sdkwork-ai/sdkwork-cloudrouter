@@ -23,6 +23,16 @@ use sdkwork_cloudrouter_router_service::ports::{
 use sdkwork_cloudrouter_test_support::assert_server_generated_request_id;
 use tower::ServiceExt;
 
+fn usage_record_for_meter<'a>(
+    records: &'a [GatewayUsageRecordCommand],
+    meter_code: &str,
+) -> &'a GatewayUsageRecordCommand {
+    records
+        .iter()
+        .find(|record| record.billing_meter_code == meter_code)
+        .unwrap_or_else(|| panic!("missing {meter_code} usage record"))
+}
+
 fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
     let mut catalog = InMemoryPricingCatalog::default();
     catalog.add_vendor(ModelVendorDefinition::new(
@@ -762,8 +772,10 @@ async fn openai_responses_records_usage_after_provider_success() {
     assert_eq!(StatusCode::OK, response.status());
 
     let captured = usage_captured.lock().unwrap();
-    assert_eq!(1, captured.len());
-    let command = &captured[0];
+    assert_eq!(3, captured.len());
+    let command = usage_record_for_meter(&captured, "llm_input_token");
+    let output = usage_record_for_meter(&captured, "llm_output_token");
+    let cache = usage_record_for_meter(&captured, "llm_cache_read_token");
     assert_server_generated_request_id(&command.request_id, "req-responses-usage-1");
     assert_eq!(Some("trace-responses-usage-1"), command.trace_id.as_deref());
     assert_eq!("openai/gpt-4.1-mini", command.catalog_key);
@@ -778,19 +790,28 @@ async fn openai_responses_records_usage_after_provider_success() {
     assert_eq!(200, command.http_status);
     assert!(!command.streaming);
     assert_eq!(1, command.prompt_tokens);
-    assert_eq!(1, command.completion_tokens);
+    assert_eq!(1, output.completion_tokens);
     assert_eq!(0, command.cached_tokens);
-    assert_eq!(2, command.total_tokens);
+    assert_eq!(0, cache.cached_tokens);
+    assert_eq!(
+        2,
+        captured
+            .iter()
+            .map(|record| record.total_tokens)
+            .sum::<i64>()
+    );
     assert_eq!(1, command.modality);
     assert_eq!(1, command.usage_type);
     assert_eq!("llm_input_token", command.billing_meter_code);
-    assert_eq!("0.180000", command.base_input_unit_price);
-    assert_eq!("0.720000", command.base_output_unit_price);
-    assert_eq!("0.090000", command.cache_read_unit_price);
+    assert_eq!("0.180000000000", command.base_input_unit_price);
+    assert_eq!("0.720000000000", output.base_output_unit_price);
+    assert_eq!("0.090000000000", cache.cache_read_unit_price);
     assert_eq!("1.100000", command.rate_multiplier);
     assert_eq!("1.200000", command.reference_multiplier);
-    assert_eq!("0.000000990000", command.customer_charge_amount);
-    assert_eq!("0.000000550000", command.upstream_cost_amount);
+    assert_eq!("0.000000198000", command.customer_charge_amount);
+    assert_eq!("0.000000110000", command.upstream_cost_amount);
+    assert_eq!("0.000000792000", output.customer_charge_amount);
+    assert_eq!("0.000000440000", output.upstream_cost_amount);
     assert_eq!("USD", command.currency);
     assert_eq!("standard", command.pricing_plan_code);
 }

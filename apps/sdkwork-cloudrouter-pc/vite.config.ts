@@ -27,7 +27,7 @@ const RUNTIME_ENV_SCRIPT_PATH = '/runtime-env.js';
 const DEFAULT_PORTAL_DEV_PORT = 3901;
 const DEFAULT_BROWSER_DEV_PROXY_GATEWAY_TARGET = 'http://127.0.0.1:3900';
 const LOCAL_ROUTE_PACKAGE_PATTERN =
-  /\/packages\/(sdkwork-cloudrouter-pc-(?:(?:admin|console)-(?!core(?:\/|$)|shell(?:\/|$))[^/]+|downloads|home|models|playground|rankings))\//u;
+  /\/packages\/(sdkwork-cloudrouter-pc-(?:(?:admin|console)-(?!core(?:\/|$)|shell(?:\/|$))[^/]+|downloads|home|models|playground|pricing|rankings))\//u;
 const BROWSER_DEV_PROXY_ENV_KEYS = {
   openApi: 'SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_OPEN_API_ORIGIN',
   backendApi: 'SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_BACKEND_API_ORIGIN',

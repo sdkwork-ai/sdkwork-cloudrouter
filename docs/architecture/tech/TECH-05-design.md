@@ -2,6 +2,18 @@
 > Owner: SDKWork maintainers
 
 ## 1. 璁捐渚濇嵁
+> **Superseded (2026-08-16):** the pricing architecture described in this
+> document (legacy `ai_pricing_plan` / `ai_pricing_rule` / `ai_pricing_tier`
+> as pricing authority) was replaced by
+> [ADR-20260815-composable-pricing-and-billing](../decisions/ADR-20260815-composable-pricing-and-billing.md).
+> The reusable `pricing` module owns official price books and rates,
+> `cloudrouter-billing` owns plans, rules, rate cards, measurements, rating
+> decisions, and charge lines, and the legacy `ai_pricing_*` tables were
+> physically removed before launch (see
+> [MIG-2026-0002](../../migrations/MIG-2026-0002-composable-pricing-billing.md)).
+> This document is retained as a historical design record only.
+
+
 
 鏁版嵁搴撹璁′互鏈」鐩牴鐩綍锟?[../DATABASE_SPEC.md](../DATABASE_SPEC.md) 涓哄己绾︽潫銆傝瑙勮寖瑕佹眰锟?
 - 鏂拌〃鍏堝啓鏁版嵁濂戠害锛屽啀鐢熸垚鎴栨牎锟?DDL銆丱RM銆丏TO銆丼DK锟?- 鏂颁笟鍔¤〃绗竴娈靛繀椤绘槸鍙楁帶涓氬姟妯″潡鍓嶇紑锛屼笉鑳戒娇鐢ㄤ骇鍝佸悕銆侀」鐩悕鎴栨妧鏈爤鍚嶏拷?- 澶氱鎴枫€佽处鎴枫€佹潈闄愩€佹秷鎭€乄ebhook銆佽法鏈嶅姟鍐欏叆琛ㄨ嚦锟?L2锟?- 璧勯噾銆佸嚟璇併€侀殣绉併€佹硶鍔＄暀瀛樸€佸叧閿璁¤〃锟?L3 璁捐锟?- `id` 涓哄唴锟?int64锛孉PI 搴忓垪鍖栦负 string锟?- 閲戦浣跨敤 decimal锛孉PI 搴忓垪鍖栦负 string锟?- 鏂拌〃楂橀绉熸埛绱㈠紩蹇呴』锟?`tenant_id` 寮€濮嬶拷?

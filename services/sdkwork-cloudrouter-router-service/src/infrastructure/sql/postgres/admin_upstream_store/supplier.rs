@@ -2,14 +2,14 @@ use sqlx::postgres::PgRow;
 use sqlx::{PgPool, Postgres, Transaction};
 
 use super::shared::{
-    column, conflict, model_list_json, not_found, parse_model_list, record_routing_change,
-    search_pattern, store_error, DEFAULT_DATA_SCOPE,
+    column, conflict, model_list_json, not_found, parse_model_list, parse_protocols,
+    record_routing_change, search_pattern, store_error, DEFAULT_DATA_SCOPE,
 };
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::ports::{
-    AdminLlmProtocolConfig, AdminUpstreamListQuery, AdminUpstreamPage, AdminUpstreamSubject,
-    AdminUpstreamSupplierItem, SaveAdminUpstreamSupplierCommand,
+    AdminUpstreamListQuery, AdminUpstreamPage, AdminUpstreamSubject, AdminUpstreamSupplierItem,
+    SaveAdminUpstreamSupplierCommand,
 };
 
 const SUPPLIER_COLUMNS: &str = r#"
@@ -636,12 +636,6 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamSupplierItem> {
             "updated_at",
             "failed to map upstream supplier updated time",
         )?,
-    })
-}
-
-fn parse_protocols(value: serde_json::Value) -> DomainResult<Vec<AdminLlmProtocolConfig>> {
-    serde_json::from_value(value).map_err(|error| {
-        DomainError::new(format!("failed to parse upstream supplier protocols: {error}"))
     })
 }
 

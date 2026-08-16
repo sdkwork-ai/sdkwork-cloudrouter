@@ -144,6 +144,7 @@ export function Navbar({ authenticatedActionsStart, isDark, toggleTheme }: Navba
   const navLinks = [
     { name: t('nav.home'), href: '/' },
     { name: t('nav.models'), href: '/models' },
+    { name: t('nav.pricing'), href: '/pricing' },
     { name: t('nav.rankings'), href: '/rankings', showFrom: 'xl' as const },
     { name: t('nav.productDocs'), href: '/product-docs', showFrom: 'xl' as const },
     { name: t('nav.docs'), href: '/docs' },

@@ -185,10 +185,10 @@ mod tests {
     }
 
     #[test]
-    fn user_owned_chat_routes_require_dual_token_authentication() {
+    fn pricing_catalog_routes_require_dual_token_authentication() {
         assert_dual_token_route(
             "GET",
-            "/app/v3/api/chat/conversations/{conversationId}/messages",
+            "/app/v3/api/ai/pricing/rates",
         );
     }
 }

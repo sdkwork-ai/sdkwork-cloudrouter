@@ -47,6 +47,29 @@ test('cloud router i18n resources compose the canonical upstream administration 
   assert.equal(resources.zh.translation['common.pagination.page'], '第 {{page}} 页');
 });
 
+test('cloud router i18n resources compose the pricing administration catalog', async () => {
+  const { mergeI18nBundles } = await import('./packages/sdkwork-cloudrouter-pc-i18n/src/resources/merge.ts');
+  const { adminCoreNavigationMessages } = await import('./packages/sdkwork-cloudrouter-pc-i18n/src/resources/admin/core-navigation.ts');
+  const { pricingAdminMessages } = await import('./packages/sdkwork-cloudrouter-pc-admin-pricing/src/i18n/index.ts');
+  const resources = mergeI18nBundles([
+    adminCoreNavigationMessages,
+    pricingAdminMessages,
+  ]);
+
+  assert.equal(resources.en.translation['admin.menu.home.pricingManagement'], 'Price Management');
+  assert.equal(resources.zh.translation['admin.menu.home.pricingManagement'], '价格管理');
+  assert.equal(resources.en.translation['admin.menu.pricing.plans'], 'Pricing Plans');
+  assert.equal(resources.zh.translation['admin.menu.pricing.plans'], '价格计划');
+  assert.equal(resources.en.translation['admin.menu.pricing.rateCards'], 'Rate Cards');
+  assert.equal(resources.zh.translation['admin.menu.pricing.rateCards'], '费率卡');
+  assert.equal(resources.en.translation['admin.menu.pricing.rules'], 'Pricing Rules');
+  assert.equal(resources.zh.translation['admin.menu.pricing.rules'], '定价规则');
+  assert.equal(resources.en.translation['admin.pricing.plans.actions.new'], 'New plan');
+  assert.equal(resources.zh.translation['admin.pricing.plans.actions.new'], '新建计划');
+  assert.equal(resources.en.translation['admin.pricing.rules.form.unitPriceOverride'], 'Unit price override');
+  assert.equal(resources.zh.translation['admin.pricing.rules.form.unitPriceOverride'], '覆盖单价');
+});
+
 test('portal bootstrap composes Cloud Router and Agents catalogs through the SDKWork provider', () => {
   const mainSource = readFileSync(new URL('./src/main.tsx', import.meta.url), 'utf8');
   const i18nSource = readFileSync(

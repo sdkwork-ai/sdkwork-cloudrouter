@@ -239,7 +239,16 @@ mod tests {
             .map(|module| module.manifest().module_id.as_str())
             .collect::<Vec<_>>();
 
-        assert_eq!(vec!["cloudrouter", "gateway-iam", "operations", "ai-metering"], module_ids);
+        assert_eq!(
+            vec![
+                "cloudrouter",
+                "gateway-iam",
+                "operations",
+                "pricing",
+                "cloudrouter-billing",
+            ],
+            module_ids
+        );
         assert!(modules.iter().all(|module| {
             module.manifest().engines.as_slice() == ["postgres"]
                 && module.manifest().default_engine.as_deref() == Some("postgres")
@@ -288,6 +297,16 @@ mod tests {
             "ai_runtime_usage_link",
             "iam_gateway_api_key",
             "ops_gateway_instance",
+            "pricing_product",
+            "pricing_operation",
+            "pricing_meter",
+            "pricing_price_book",
+            "pricing_rate",
+            "pricing_rate_binding",
+            "cloudrouter_pricing_plan",
+            "cloudrouter_usage_measurement",
+            "cloudrouter_rating_decision",
+            "cloudrouter_charge_line",
         ] {
             let present: bool = sqlx::query_scalar("SELECT to_regclass($1) IS NOT NULL")
                 .bind(table)

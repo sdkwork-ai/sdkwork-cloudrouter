@@ -18,6 +18,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
+        "/app/v3/api/ai/pricing/rates",
+        "ai",
+        "pricing.rates.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
         "/app/v3/api/ai/routing/account_groups",
         "ai",
         "routing.accountGroups.list",
@@ -170,13 +176,19 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/app/v3/api/runtime/invocations/{invocationId}/events/stream",
         "runtime",
-        "invocations.events.stream.list",
+        "invocations.events.stream.retrieve",
     ),
     HttpRoute::public(
         HttpMethod::Get,
         "/app/v3/api/system/site/runtime",
         "system",
         "site.runtime.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/app/v3/api/ai/settlements/dashboard",
+        "ai",
+        "settlements.dashboard.retrieve",
     ),
 ];
 
@@ -242,10 +254,10 @@ mod tests {
     }
 
     #[test]
-    fn user_owned_chat_routes_require_dual_token_authentication() {
+    fn pricing_catalog_routes_require_dual_token_authentication() {
         assert_dual_token_route(
             "GET",
-            "/app/v3/api/chat/conversations/{conversationId}/messages",
+            "/app/v3/api/ai/pricing/rates",
         );
     }
 }

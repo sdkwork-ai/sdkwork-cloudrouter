@@ -10,9 +10,9 @@ use crate::infrastructure::sql::sql_admin_storage::{
 };
 use crate::ports::{
     AdminStorageCollection, AdminStorageCommandFuture, AdminStorageCursor, AdminStorageJsonRecord,
-    AdminStorageStore, CreateStorageGarbageCollectionJobCommand,
-    CreateStorageQuotaPolicyCommand, CreateStorageReconciliationRunCommand,
-    ListAdminStorageRecordsQuery, SetStorageDefaultBucketCommand,
+    AdminStorageStore, CreateStorageGarbageCollectionJobCommand, CreateStorageQuotaPolicyCommand,
+    CreateStorageReconciliationRunCommand, ListAdminStorageRecordsQuery,
+    SetStorageDefaultBucketCommand,
 };
 
 #[derive(Debug, Clone)]
@@ -858,7 +858,6 @@ fn optional_parsed_id(value: Option<&str>, field_name: &str) -> DomainResult<Opt
         .transpose()
 }
 
-
 fn request_id_or<'a>(request_id: &'a Option<String>, fallback: &'a str) -> &'a str {
     request_id.as_deref().unwrap_or(fallback)
 }
@@ -929,8 +928,6 @@ enum Field {
     Bool(&'static str),
     GcComputed,
 }
-
-
 
 const DEFAULT_BUCKET_FIELDS: &[Field] = &[
     Field::String("id"),

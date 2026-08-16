@@ -556,6 +556,8 @@
         "vendorCode",
         "modalityCode",
         "apiEndpointCode",
+        "method",
+        "path",
         "catalogKey",
         "model",
         "providerNativeModel",
@@ -641,6 +643,8 @@
         "vendorCode",
         "modalityCode",
         "apiEndpointCode",
+        "method",
+        "path",
         "catalogKey",
         "model",
         "providerNativeModel",
@@ -1081,6 +1085,310 @@
     },
     {
       "data_sources": [
+        "community"
+      ],
+      "fields": [
+        "slug",
+        "title",
+        "description",
+        "priority",
+        "enabled"
+      ],
+      "file_targets": [],
+      "interface": "CommunityAdminCategoryCreateInput",
+      "route": "/admin/community/:sectionId?",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts"
+    },
+    {
+      "data_sources": [
+        "community"
+      ],
+      "fields": [
+        "id",
+        "slug",
+        "title",
+        "description",
+        "coverImage",
+        "coverImage.kind",
+        "coverImage.source",
+        "coverImage.id",
+        "coverImage.fileName",
+        "coverImage.mimeType",
+        "coverImage.sizeBytes",
+        "avatar",
+        "avatar.kind",
+        "avatar.source",
+        "avatar.id",
+        "avatar.fileName",
+        "avatar.mimeType",
+        "avatar.sizeBytes",
+        "ownerId",
+        "memberCount",
+        "memberLimit",
+        "postCount",
+        "isPaid",
+        "price",
+        "revenueRaised",
+        "revenueTarget",
+        "tags",
+        "tabs",
+        "priority",
+        "enabled",
+        "isAgentCircle",
+        "isRecommended",
+        "isJoined"
+      ],
+      "file_targets": [],
+      "interface": "CommunityAdminCategoryItem",
+      "route": "/admin/community/:sectionId?",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts"
+    },
+    {
+      "data_sources": [
+        "community"
+      ],
+      "fields": [
+        "title",
+        "description",
+        "coverImage",
+        "coverImage.kind",
+        "coverImage.source",
+        "coverImage.id",
+        "coverImage.fileName",
+        "coverImage.mimeType",
+        "coverImage.sizeBytes",
+        "avatar",
+        "avatar.kind",
+        "avatar.source",
+        "avatar.id",
+        "avatar.fileName",
+        "avatar.mimeType",
+        "avatar.sizeBytes",
+        "isPaid",
+        "memberLimit",
+        "price",
+        "revenueTarget",
+        "tags",
+        "tabs"
+      ],
+      "file_targets": [],
+      "interface": "CommunityAdminCircleUpdateInput",
+      "route": "/admin/community/:sectionId?",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts"
+    },
+    {
+      "data_sources": [
+        "community"
+      ],
+      "fields": [
+        "categoryId",
+        "kind",
+        "q",
+        "reviewState",
+        "tag",
+        "page",
+        "pageSize"
+      ],
+      "file_targets": [],
+      "interface": "CommunityAdminEntriesListParams",
+      "route": "/admin/community/:sectionId?",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts"
+    },
+    {
+      "data_sources": [
+        "community"
+      ],
+      "fields": [
+        "id",
+        "categoryId",
+        "categoryLabel",
+        "authorId",
+        "authorName",
+        "slug",
+        "kind",
+        "title",
+        "excerpt",
+        "reviewState",
+        "isFeatured",
+        "isPinned",
+        "hasAcceptedAnswer",
+        "commentCount",
+        "reactionCount",
+        "shareCount",
+        "viewCount",
+        "tags",
+        "publishedAt",
+        "lastActivityAt",
+        "updatedAt"
+      ],
+      "file_targets": [],
+      "interface": "CommunityAdminEntryItem",
+      "route": "/admin/community/:sectionId?",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts"
+    },
+    {
+      "data_sources": [
+        "community"
+      ],
+      "fields": [
+        "id",
+        "name",
+        "platform",
+        "description",
+        "memberCount",
+        "qrCodes",
+        "qrCodes.url",
+        "qrCodes.description",
+        "createdAt",
+        "updatedAt"
+      ],
+      "file_targets": [],
+      "interface": "CommunityAdminGroupItem",
+      "route": "/admin/community/:sectionId?",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts"
+    },
+    {
+      "data_sources": [
+        "community"
+      ],
+      "fields": [
+        "name",
+        "platform",
+        "description",
+        "memberCount",
+        "qrCodes",
+        "qrCodes.url",
+        "qrCodes.description"
+      ],
+      "file_targets": [],
+      "interface": "CommunityAdminGroupMutationInput",
+      "route": "/admin/community/:sectionId?",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts"
+    },
+    {
+      "data_sources": [
+        "community"
+      ],
+      "fields": [
+        "url",
+        "description"
+      ],
+      "file_targets": [],
+      "interface": "CommunityAdminGroupQrInput",
+      "route": "/admin/community/:sectionId?",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts"
+    },
+    {
+      "data_sources": [
+        "community"
+      ],
+      "fields": [
+        "id",
+        "userId",
+        "userName",
+        "role",
+        "status",
+        "bio",
+        "tierId",
+        "tierName",
+        "membershipExpiresAt",
+        "agentLevel",
+        "lastOrderId",
+        "joinedAt"
+      ],
+      "file_targets": [],
+      "interface": "CommunityAdminMemberItem",
+      "route": "/admin/community/:sectionId?",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts"
+    },
+    {
+      "data_sources": [
+        "community"
+      ],
+      "fields": [
+        "role",
+        "status"
+      ],
+      "file_targets": [],
+      "interface": "CommunityAdminMemberPatchInput",
+      "route": "/admin/community/:sectionId?",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts"
+    },
+    {
+      "data_sources": [
+        "community"
+      ],
+      "fields": [
+        "reviewState",
+        "reason"
+      ],
+      "file_targets": [],
+      "interface": "CommunityAdminModerationInput",
+      "route": "/admin/community/:sectionId?",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts"
+    },
+    {
+      "data_sources": [
+        "community"
+      ],
+      "fields": [
+        "mode",
+        "page",
+        "pageSize",
+        "totalItems",
+        "totalPages",
+        "nextCursor",
+        "hasMore"
+      ],
+      "file_targets": [],
+      "interface": "CommunityAdminPageInfo",
+      "route": "/admin/community/:sectionId?",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts"
+    },
+    {
+      "data_sources": [
+        "community"
+      ],
+      "fields": [
+        "id",
+        "name",
+        "description",
+        "price",
+        "durationDays",
+        "lifetimePrice",
+        "lifetimePackageId",
+        "benefits",
+        "agentLevel",
+        "catalogPackageId",
+        "sortOrder",
+        "enabled"
+      ],
+      "file_targets": [],
+      "interface": "CommunityAdminTierItem",
+      "route": "/admin/community/:sectionId?",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts"
+    },
+    {
+      "data_sources": [
+        "community"
+      ],
+      "fields": [
+        "name",
+        "description",
+        "price",
+        "durationDays",
+        "lifetimePrice",
+        "benefits",
+        "agentLevel",
+        "sortOrder"
+      ],
+      "file_targets": [],
+      "interface": "CommunityAdminTierMutationInput",
+      "route": "/admin/community/:sectionId?",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-community/src/communityService.ts"
+    },
+    {
+      "data_sources": [
         "ai_usage",
         "ai_request_trace"
       ],
@@ -1241,6 +1549,123 @@
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-dashboard/src/dashboardService.ts"
     },
     {
+      "data_sources": [],
+      "fields": [
+        "displayName",
+        "description",
+        "channelScope",
+        "audienceScope",
+        "startsAt",
+        "endsAt",
+        "status"
+      ],
+      "file_targets": [],
+      "interface": "CampaignFormValues",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "stockId",
+        "codeType",
+        "quantity",
+        "codeLength",
+        "codePrefix",
+        "startsAt",
+        "expiresAt"
+      ],
+      "file_targets": [],
+      "interface": "CodeBatchCreateFormValues",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "kind",
+        "grantAmount",
+        "bonusAmount",
+        "grantPoints",
+        "period",
+        "durationDays",
+        "dailyQuota",
+        "totalQuota"
+      ],
+      "file_targets": [],
+      "interface": "CouponBenefitDisplay",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "campaignId",
+        "displayName",
+        "offerType",
+        "description",
+        "audienceScope",
+        "combinability",
+        "goodsScope",
+        "priority",
+        "startsAt",
+        "endsAt",
+        "status",
+        "benefitKind",
+        "grantAmount",
+        "bonusAmount",
+        "grantPoints",
+        "currencyCode",
+        "period",
+        "durationDays",
+        "dailyQuota",
+        "totalQuota",
+        "stockType",
+        "codeIssueMode",
+        "totalQuantity",
+        "perUserLimit",
+        "claimStartsAt",
+        "claimEndsAt",
+        "batchQuantity",
+        "batchCodeLength",
+        "batchCodePrefix",
+        "batchStartsAt",
+        "batchExpiresAt"
+      ],
+      "file_targets": [],
+      "interface": "CouponOfferCreateFormValues",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "offerRequest",
+        "stockRequest",
+        "codeBatchRequest"
+      ],
+      "file_targets": [],
+      "interface": "CouponOfferCreateRequests",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "id",
+        "inviter",
+        "invitee",
+        "inviteCode",
+        "source",
+        "rewardStatus",
+        "claimedAt"
+      ],
+      "file_targets": [],
+      "interface": "ReferralRelation",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts"
+    },
+    {
       "data_sources": [
         "growth_referral_stats"
       ],
@@ -1256,6 +1681,62 @@
       "interface": "ReferralStat",
       "route": "/admin/marketing/:sectionId?",
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "id",
+        "name",
+        "description",
+        "status",
+        "rewardType",
+        "rewardValue",
+        "rewardTarget",
+        "triggerEvent",
+        "maxRewardsPerInviter",
+        "startsAt",
+        "endsAt",
+        "updatedAt"
+      ],
+      "file_targets": [],
+      "interface": "ReferralStrategy",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "name",
+        "description",
+        "status",
+        "rewardType",
+        "rewardValue",
+        "rewardTarget",
+        "triggerEvent",
+        "maxRewardsPerInviter",
+        "startsAt",
+        "endsAt"
+      ],
+      "file_targets": [],
+      "interface": "ReferralStrategyMutation",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-marketing/src/marketingService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "categories",
+        "planStatuses",
+        "packageStatuses",
+        "packageGroupStatuses",
+        "billingCycles",
+        "benefitTypes",
+        "subscriptionStatuses"
+      ],
+      "file_targets": [],
+      "interface": "MembershipsAdminCatalogMeta",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
       "data_sources": [
@@ -1307,9 +1788,11 @@
       ],
       "fields": [
         "id",
+        "category",
         "code",
         "name",
         "description",
+        "autoProvisioned",
         "planId",
         "billingCycle",
         "durationDays",
@@ -1327,6 +1810,7 @@
         "memberships"
       ],
       "fields": [
+        "category",
         "code",
         "name",
         "description",
@@ -1347,6 +1831,7 @@
       "fields": [
         "page",
         "pageSize",
+        "category",
         "status"
       ],
       "file_targets": [],
@@ -1360,6 +1845,7 @@
       ],
       "fields": [
         "id",
+        "category",
         "packageNo",
         "groupId",
         "planId",
@@ -1369,6 +1855,7 @@
         "currencyCode",
         "durationDays",
         "recurrenceCycle",
+        "discount",
         "status"
       ],
       "file_targets": [],
@@ -1381,6 +1868,7 @@
         "memberships"
       ],
       "fields": [
+        "category",
         "code",
         "packageGroupId",
         "planId",
@@ -1388,6 +1876,7 @@
         "priceAmount",
         "currencyCode",
         "durationDays",
+        "discount",
         "status"
       ],
       "file_targets": [],
@@ -1402,6 +1891,7 @@
       "fields": [
         "page",
         "pageSize",
+        "category",
         "packageGroupId",
         "planId",
         "status"
@@ -1440,6 +1930,12 @@
         "type",
         "description",
         "icon",
+        "icon.kind",
+        "icon.source",
+        "icon.id",
+        "icon.fileName",
+        "icon.mimeType",
+        "icon.sizeBytes",
         "usageLimit",
         "usedCount",
         "claimed"
@@ -1454,6 +1950,7 @@
         "memberships"
       ],
       "fields": [
+        "category",
         "code",
         "name",
         "rank",
@@ -1465,6 +1962,12 @@
         "benefits.type",
         "benefits.description",
         "benefits.icon",
+        "benefits.icon.kind",
+        "benefits.icon.source",
+        "benefits.icon.id",
+        "benefits.icon.fileName",
+        "benefits.icon.mimeType",
+        "benefits.icon.sizeBytes",
         "benefits.usageLimit",
         "benefits.usedCount",
         "benefits.claimed"
@@ -1480,6 +1983,7 @@
       ],
       "fields": [
         "id",
+        "category",
         "planNo",
         "levelCode",
         "name",
@@ -1493,10 +1997,17 @@
         "benefits.type",
         "benefits.description",
         "benefits.icon",
+        "benefits.icon.kind",
+        "benefits.icon.source",
+        "benefits.icon.id",
+        "benefits.icon.fileName",
+        "benefits.icon.mimeType",
+        "benefits.icon.sizeBytes",
         "benefits.usageLimit",
         "benefits.usedCount",
         "benefits.claimed",
-        "updatedAt"
+        "updatedAt",
+        "autoProvisioned"
       ],
       "file_targets": [],
       "interface": "MembershipsAdminPlanItem",
@@ -1508,6 +2019,7 @@
         "memberships"
       ],
       "fields": [
+        "category",
         "code",
         "name",
         "rank",
@@ -1519,6 +2031,12 @@
         "benefits.type",
         "benefits.description",
         "benefits.icon",
+        "benefits.icon.kind",
+        "benefits.icon.source",
+        "benefits.icon.id",
+        "benefits.icon.fileName",
+        "benefits.icon.mimeType",
+        "benefits.icon.sizeBytes",
         "benefits.usageLimit",
         "benefits.usedCount",
         "benefits.claimed"
@@ -1535,6 +2053,7 @@
       "fields": [
         "page",
         "pageSize",
+        "category",
         "status"
       ],
       "file_targets": [],
@@ -1554,6 +2073,7 @@
         "priceAmount",
         "currencyCode",
         "bonusPoints",
+        "discount",
         "grantAmount",
         "points",
         "status",
@@ -1572,11 +2092,23 @@
         "priceAmount",
         "currencyCode",
         "bonusPoints",
+        "discount",
         "status"
       ],
       "file_targets": [],
       "interface": "MembershipsAdminRechargePackageMutationInput",
       "route": "/admin/memberships/:sectionId?",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "page",
+        "pageSize"
+      ],
+      "file_targets": [],
+      "interface": "MembershipsAdminRechargePackagesListParams",
+      "route": null,
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
@@ -1605,6 +2137,32 @@
       "file_targets": [],
       "interface": "MembershipsAdminRechargeSettingsUpdateInput",
       "route": "/admin/memberships/:sectionId?",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "id",
+        "sourceAssetType",
+        "targetAssetType",
+        "rate",
+        "status"
+      ],
+      "file_targets": [],
+      "interface": "TokenBankAdminExchangeRuleItem",
+      "route": null,
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts"
+    },
+    {
+      "data_sources": [],
+      "fields": [
+        "sourceAssetType",
+        "targetAssetType",
+        "rate"
+      ],
+      "file_targets": [],
+      "interface": "TokenBankAdminExchangeRuleUpdateInput",
+      "route": null,
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-memberships/src/membershipsService.ts"
     },
     {
@@ -1676,6 +2234,233 @@
       "interface": "SysNode",
       "route": "/admin/monitor",
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-monitor/src/monitorService.ts"
+    },
+    {
+      "data_sources": [
+        "cloudrouter_pricing_plan",
+        "ops_audit_log"
+      ],
+      "fields": [
+        "page",
+        "pageSize",
+        "q",
+        "status",
+        "basePriceSide",
+        "subjectType",
+        "pricingPlanId"
+      ],
+      "file_targets": [],
+      "interface": "AdminPricingListParams",
+      "route": "/admin/pricing/plans",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts"
+    },
+    {
+      "data_sources": [
+        "cloudrouter_pricing_plan",
+        "ops_audit_log"
+      ],
+      "fields": [
+        "mode",
+        "page",
+        "pageSize",
+        "totalItems",
+        "totalPages",
+        "nextCursor",
+        "hasMore"
+      ],
+      "file_targets": [],
+      "interface": "AdminPricingPageInfo",
+      "route": "/admin/pricing/plans",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts"
+    },
+    {
+      "data_sources": [
+        "cloudrouter_pricing_plan",
+        "ops_audit_log"
+      ],
+      "fields": [
+        "id",
+        "planCode",
+        "planName",
+        "basePriceSide",
+        "currencyCode",
+        "fallbackPolicy",
+        "roundingMode",
+        "minimumChargeAmount",
+        "effectiveFrom",
+        "effectiveTo",
+        "status",
+        "createdAt",
+        "updatedAt",
+        "version"
+      ],
+      "file_targets": [],
+      "interface": "AdminPricingPlanItem",
+      "route": "/admin/pricing/plans",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts"
+    },
+    {
+      "data_sources": [
+        "cloudrouter_pricing_plan",
+        "ops_audit_log"
+      ],
+      "fields": [
+        "planCode",
+        "planName",
+        "basePriceSide",
+        "currencyCode",
+        "roundingMode",
+        "minimumChargeAmount",
+        "effectiveFrom",
+        "effectiveTo",
+        "status"
+      ],
+      "file_targets": [],
+      "interface": "AdminPricingPlanMutationInput",
+      "route": "/admin/pricing/plans",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts"
+    },
+    {
+      "data_sources": [
+        "cloudrouter_pricing_rule",
+        "cloudrouter_pricing_plan",
+        "ops_audit_log"
+      ],
+      "fields": [
+        "id",
+        "pricingPlanId",
+        "planCode",
+        "ruleCode",
+        "productCode",
+        "operationCode",
+        "meterCode",
+        "providerCode",
+        "regionCode",
+        "catalogKey",
+        "formulaMode",
+        "multiplier",
+        "markupAmount",
+        "unitPriceOverride",
+        "priority",
+        "effectiveFrom",
+        "effectiveTo",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ],
+      "file_targets": [],
+      "interface": "AdminPricingRuleItem",
+      "route": "/admin/pricing/rules",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts"
+    },
+    {
+      "data_sources": [
+        "cloudrouter_pricing_rule",
+        "cloudrouter_pricing_plan",
+        "ops_audit_log"
+      ],
+      "fields": [
+        "ruleCode",
+        "pricingPlanId",
+        "productCode",
+        "operationCode",
+        "meterCode",
+        "providerCode",
+        "regionCode",
+        "catalogKey",
+        "formulaMode",
+        "multiplier",
+        "markupAmount",
+        "unitPriceOverride",
+        "priority",
+        "effectiveFrom",
+        "effectiveTo",
+        "status"
+      ],
+      "file_targets": [],
+      "interface": "AdminPricingRuleMutationInput",
+      "route": "/admin/pricing/rules",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts"
+    },
+    {
+      "data_sources": [
+        "cloudrouter_account_rate_card",
+        "cloudrouter_pricing_plan",
+        "ops_audit_log"
+      ],
+      "fields": [
+        "id",
+        "subjectType",
+        "subjectId",
+        "subjectCode",
+        "pricingPlanId",
+        "planCode",
+        "planName",
+        "priority",
+        "effectiveFrom",
+        "effectiveTo",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ],
+      "file_targets": [],
+      "interface": "AdminRateCardItem",
+      "route": "/admin/pricing/rateCards",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts"
+    },
+    {
+      "data_sources": [
+        "cloudrouter_account_rate_card",
+        "cloudrouter_pricing_plan",
+        "ops_audit_log"
+      ],
+      "fields": [
+        "subjectType",
+        "subjectId",
+        "subjectCode",
+        "pricingPlanId",
+        "priority",
+        "effectiveFrom",
+        "effectiveTo",
+        "status"
+      ],
+      "file_targets": [],
+      "interface": "AdminRateCardMutationInput",
+      "route": "/admin/pricing/rateCards",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts"
+    },
+    {
+      "data_sources": [
+        "ops_chain_policy"
+      ],
+      "fields": [
+        "mode",
+        "allowlist",
+        "denylist"
+      ],
+      "file_targets": [],
+      "interface": "ChainIpAccessPolicy",
+      "route": "/admin/ratelimit",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts"
+    },
+    {
+      "data_sources": [
+        "ops_chain_policy"
+      ],
+      "fields": [
+        "policyName",
+        "concurrency",
+        "concurrency.maxInflight",
+        "concurrency.maxInflightPerScope",
+        "ipAccess",
+        "stages",
+        "stages.enabledOnly",
+        "stages.disabled"
+      ],
+      "file_targets": [],
+      "interface": "ChainPolicy",
+      "route": "/admin/ratelimit",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-ratelimit/src/ratelimitService.ts"
     },
     {
       "data_sources": [
@@ -1931,6 +2716,25 @@
     },
     {
       "data_sources": [
+        "storage"
+      ],
+      "fields": [
+        "name",
+        "endpointUrl",
+        "region",
+        "bucket",
+        "pathStyle",
+        "strictTls",
+        "credentialRef",
+        "status"
+      ],
+      "file_targets": [],
+      "interface": "StorageProviderUpdateInput",
+      "route": "/admin/storage/:sectionId?",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts"
+    },
+    {
+      "data_sources": [
         "ai_upstream_account_group"
       ],
       "fields": [
@@ -1938,7 +2742,11 @@
         "code",
         "name",
         "description",
-        "rate"
+        "rate",
+        "routingStrategy",
+        "vendorCode",
+        "modalities",
+        "tags"
       ],
       "file_targets": [],
       "interface": "AccountGroup",
@@ -1953,7 +2761,7 @@
         "iam_gateway_access_policy",
         "ai_quota_policy",
         "ai_model_pricing",
-        "ai_pricing_plan"
+        "cloudrouter_pricing_plan"
       ],
       "fields": [
         "id",
@@ -1963,6 +2771,12 @@
         "rawKey",
         "accountGroup",
         "accountGroupName",
+        "accountGroups",
+        "groupBindings",
+        "groupBindings.accountGroup",
+        "groupBindings.routingStrategy",
+        "groupBindings.weight",
+        "groupBindings.priority",
         "rate",
         "quota",
         "usedQuota",
@@ -1980,13 +2794,47 @@
     },
     {
       "data_sources": [
+        "iam_gateway_api_key"
+      ],
+      "fields": [
+        "accountGroup",
+        "routingStrategy",
+        "weight",
+        "priority"
+      ],
+      "file_targets": [],
+      "interface": "ApiKeyGroupBinding",
+      "route": "/console/api-keys",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts"
+    },
+    {
+      "data_sources": [
+        "iam_gateway_api_key"
+      ],
+      "fields": [
+        "accountGroup",
+        "routingStrategy",
+        "weight"
+      ],
+      "file_targets": [],
+      "interface": "ApiKeyGroupRoutingPolicy",
+      "route": "/console/api-keys",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts"
+    },
+    {
+      "data_sources": [
         "ai_upstream_account_group",
         "iam_gateway_access_policy",
         "ai_quota_policy"
       ],
       "fields": [
         "name",
-        "accountGroup",
+        "chain",
+        "accountGroups",
+        "groupRoutingPolicies",
+        "groupRoutingPolicies.accountGroup",
+        "groupRoutingPolicies.routingStrategy",
+        "groupRoutingPolicies.weight",
         "quota",
         "isUnlimitedQuota",
         "modalities",
@@ -2012,6 +2860,12 @@
         "key.rawKey",
         "key.accountGroup",
         "key.accountGroupName",
+        "key.accountGroups",
+        "key.groupBindings",
+        "key.groupBindings.accountGroup",
+        "key.groupBindings.routingStrategy",
+        "key.groupBindings.weight",
+        "key.groupBindings.priority",
         "key.rate",
         "key.quota",
         "key.usedQuota",
@@ -2072,10 +2926,29 @@
         "image (Midjourney/DALL-E)",
         "video (Runway/Sora)",
         "audio (Whisper)",
-        "music (Suno)"
+        "music (Suno)",
+        "llm (Text) cost",
+        "image (Midjourney/DALL-E) cost",
+        "video (Runway/Sora) cost",
+        "audio (Whisper) cost",
+        "music (Suno) cost"
       ],
       "file_targets": [],
       "interface": "DashboardData",
+      "route": "/console/dashboard",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/dashboardService.ts"
+    },
+    {
+      "data_sources": [
+        "ai_usage",
+        "ai_request_trace"
+      ],
+      "fields": [
+        "modality",
+        "requests"
+      ],
+      "file_targets": [],
+      "interface": "ModalityDistribution",
       "route": "/console/dashboard",
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/dashboardService.ts"
     },
@@ -2279,7 +3152,8 @@
       "fields": [
         "key",
         "label",
-        "modelCount"
+        "modelCount",
+        "saleMultiplier"
       ],
       "file_targets": [],
       "interface": "ModelCatalogGroup",
@@ -2332,6 +3206,7 @@
         "groups.key",
         "groups.label",
         "groups.modelCount",
+        "groups.saleMultiplier",
         "pageInfo",
         "pageInfo.total",
         "pageInfo.page",
@@ -2431,11 +3306,23 @@
         "referenceAssets.name",
         "referenceAssets.mimeType",
         "referenceAssets.resource",
+        "referenceAssets.resource.kind",
+        "referenceAssets.resource.source",
+        "referenceAssets.resource.id",
+        "referenceAssets.resource.fileName",
+        "referenceAssets.resource.mimeType",
+        "referenceAssets.resource.sizeBytes",
         "referenceAssets.sizeBytes",
         "referenceImages",
         "referenceImages.name",
         "referenceImages.mimeType",
         "referenceImages.resource",
+        "referenceImages.resource.kind",
+        "referenceImages.resource.source",
+        "referenceImages.resource.id",
+        "referenceImages.resource.fileName",
+        "referenceImages.resource.mimeType",
+        "referenceImages.resource.sizeBytes",
         "referenceImages.sizeBytes",
         "referenceMode",
         "onDelta",
@@ -2484,6 +3371,12 @@
         "name",
         "mimeType",
         "resource",
+        "resource.kind",
+        "resource.source",
+        "resource.id",
+        "resource.fileName",
+        "resource.mimeType",
+        "resource.sizeBytes",
         "sizeBytes"
       ],
       "file_targets": [],
@@ -2499,6 +3392,12 @@
         "name",
         "mimeType",
         "resource",
+        "resource.kind",
+        "resource.source",
+        "resource.id",
+        "resource.fileName",
+        "resource.mimeType",
+        "resource.sizeBytes",
         "sizeBytes"
       ],
       "file_targets": [],
@@ -2578,7 +3477,7 @@
     }
   ],
   "summary": {
-    "interface_count": 112,
-    "source_file_count": 24
+    "interface_count": 152,
+    "source_file_count": 27
   }
 }

@@ -13,10 +13,14 @@ use axum::{
     Router,
 };
 use sdkwork_account_repository_sqlx::PostgresCommerceAccountStore;
-use sdkwork_cloudrouter_http::{open_api_capability_for_request, OpenApiCapability};
-use sdkwork_web_bootstrap::{CompositeReadinessCheck, ReadinessCheck, ReadinessFuture};
+use sdkwork_cloudrouter_http::{
+    open_api_capability_for_request, remove_internal_trusted_subject_headers, OpenApiCapability,
+};
+use sdkwork_web_bootstrap::{
+    ApiAssemblyContribution, CompositeReadinessCheck, ReadinessCheck, ReadinessFuture,
+};
 use sdkwork_web_contract::{merge_openapi_documents, route_inventory_from_routes, HttpRoute};
-use sdkwork_web_core::{DomainContextInjector, HttpRouteManifest};
+use sdkwork_web_core::HttpRouteManifest;
 use serde_json::{Map, Value};
 use tower::ServiceExt;
 
@@ -45,14 +49,7 @@ impl Default for ApiAssemblyContext {
     }
 }
 
-pub struct ApiAssembly {
-    pub router: Router,
-    pub route_manifest: HttpRouteManifest,
-    pub openapi: serde_json::Value,
-    pub permission_catalog: Vec<&'static str>,
-    pub domain_context_injectors: Vec<Arc<dyn DomainContextInjector>>,
-    pub readiness_check: Arc<dyn ReadinessCheck>,
-}
+pub type ApiAssembly = ApiAssemblyContribution;
 
 pub type ApiAssemblyError = anyhow::Error;
 
@@ -126,6 +123,9 @@ impl ReadinessCheck for RouterReadinessCheck {
 pub async fn assemble_api_router(
     context: ApiAssemblyContext,
 ) -> Result<ApiAssembly, ApiAssemblyError> {
+    sdkwork_api_models_assembly::bootstrap_database_from_env()
+        .await
+        .map_err(anyhow::Error::msg)?;
     let upstreams =
         sdkwork_cloudrouter_edge_runtime::runtime::all_in_one_in_process_upstreams_from_env()
             .await?;
@@ -149,7 +149,8 @@ pub async fn assemble_api_router(
 /// account host runs that domain's schema lifecycle in the shared workspace
 /// database. The store is idempotent, so reusing it for later provisioning
 /// calls is safe.
-async fn resolve_account_provisioner() -> Result<Arc<PostgresCommerceAccountStore>, ApiAssemblyError> {
+async fn resolve_account_provisioner() -> Result<Arc<PostgresCommerceAccountStore>, ApiAssemblyError>
+{
     let pool = sdkwork_account_service_host::AccountServiceHost::from_env()
         .await
         .map_err(anyhow::Error::msg)?
@@ -236,7 +237,12 @@ fn assemble_api_router_with_in_process_upstreams(
         account_provisioner,
     };
     let router = Router::new()
-        .fallback(dispatch_application_request)
+        // Surface dispatcher is mounted as an explicit catch-all route, not as
+        // a fallback: `ComposedApiAssembly::into_hosted` installs the web
+        // framework contract fallback (manifest-known -> 501, unknown -> 404),
+        // which would otherwise shadow a fallback-based dispatcher and turn
+        // every app/backend/open-api request into a contract error.
+        .route("/{*path}", axum::routing::any(dispatch_application_request))
         .with_state(routers);
     let mut routes = Vec::new();
     routes.extend_from_slice(app_manifest.routes());
@@ -245,17 +251,19 @@ fn assemble_api_router_with_in_process_upstreams(
     let route_manifest = HttpRouteManifest::from_owned_routes(routes);
     let permission_catalog = permission_catalog(route_manifest.routes());
 
-    Ok(ApiAssembly {
+    ApiAssemblyContribution::try_new(
+        "sdkwork-cloudrouter",
         router,
         route_manifest,
         openapi,
         permission_catalog,
-        domain_context_injectors: vec![
+        vec![
             sdkwork_routes_cloudrouter_app_api::cloud_router_app_domain_context_injector(),
             sdkwork_routes_cloudrouter_backend_api::cloud_router_backend_domain_context_injector(),
         ],
         readiness_check,
-    })
+    )
+    .map_err(anyhow::Error::msg)
 }
 
 fn parse_openapi(owner: &str, source: &str) -> Result<Value, ApiAssemblyError> {
@@ -400,7 +408,7 @@ fn permission_catalog(routes: &[HttpRoute]) -> Vec<&'static str> {
 
 async fn dispatch_application_request(
     State(routers): State<ApplicationRouters>,
-    request: Request<Body>,
+    mut request: Request<Body>,
 ) -> Response {
     let method = request.method().clone();
     let path = request.uri().path().to_owned();
@@ -435,6 +443,26 @@ async fn dispatch_application_request(
     let Some(router) = router else {
         return StatusCode::NOT_FOUND.into_response();
     };
+
+    // The outer Web Framework pipeline has already authenticated the request
+    // and its domain injector projected the principal into internal
+    // `x-sdkwork-tenant-id`/`x-sdkwork-organization-id`/`x-sdkwork-user-id`
+    // headers. The in-process upstream runs its own Web Framework pipeline,
+    // whose surface classification rejects those headers as client-supplied
+    // identity projection (40001). Strip them before dispatch so the upstream
+    // re-authenticates from the dual tokens and re-projects its own subject.
+    remove_internal_trusted_subject_headers(request.headers_mut());
+
+    // Reset extensions before running the upstream: axum appends (rather than
+    // replaces) matched path params on the request extension, so the outer
+    // `/{*path}` capture would leak into the upstream match and every
+    // single-capture `Path<T>` extractor would observe the wildcard plus its
+    // own capture (40001 "Expected 1 but got 2"). Each surface router re-runs
+    // its own Web Framework pipeline, which re-creates the request context,
+    // locale, and domain projections from a clean slate.
+    let (mut parts, body) = request.into_parts();
+    parts.extensions = axum::http::Extensions::new();
+    let request = Request::from_parts(parts, body);
 
     let response = match router.oneshot(request).await {
         Ok(response) => response,
@@ -544,7 +572,8 @@ fn is_app_path(path: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use axum::{
-        body::Body,
+        body::{to_bytes, Body},
+        extract::Path,
         http::{Request, StatusCode},
         routing::{get as route_get, post as route_post},
         Router,
@@ -685,6 +714,10 @@ mod tests {
                 "/app/v3/api/memberships/package_groups",
                 route_get(|| async { "membership" }),
             )
+            .route(
+                "/app/v3/api/ai/agents/{agentId}",
+                route_get(|Path(agent_id): Path<String>| async move { agent_id }),
+            )
             .route("/readyz", route_get(|| async { "ready" }));
         let dependency_router = Router::new()
             .route(
@@ -716,6 +749,26 @@ mod tests {
             .await
             .expect("router response");
         assert_eq!(expected, response.status());
+    }
+
+    #[tokio::test]
+    async fn dispatcher_does_not_leak_catch_all_param_into_upstream_path_extractor() {
+        // The catch-all dispatcher route captures `{*path}`; axum appends
+        // matched params to the existing extension instead of replacing
+        // them, so an upstream single-capture `Path<T>` extractor would
+        // observe the outer wildcard plus its own capture and fail with
+        // 40001 "Expected 1 but got 2". Dispatch must reset path params.
+        let router = test_assembly(ApiAssemblyContext::default());
+        let response = router
+            .clone()
+            .oneshot(get("/app/v3/api/ai/agents/agent.chat.default"))
+            .await
+            .expect("router response");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("response body should be readable");
+        assert_eq!(&body[..], b"agent.chat.default");
     }
 
     fn get(path: &str) -> Request<Body> {
@@ -781,8 +834,79 @@ mod tests {
             "message": "conflict",
             "traceId": "trace-3"
         });
-        assert_eq!(registration_user_subject(&serde_json::to_vec(&body).expect("json")), None);
+        assert_eq!(
+            registration_user_subject(&serde_json::to_vec(&body).expect("json")),
+            None
+        );
         assert_eq!(registration_user_subject(b"not json"), None);
         assert_eq!(registration_user_subject(b"{}"), None);
+    }
+
+    #[test]
+    fn merged_route_manifest_passes_standalone_gateway_surface_auth_validation() {
+        use sdkwork_web_core::{classify_api_surface, WebApiSurface, WebEnvironment};
+
+        let app_manifest = sdkwork_routes_cloudrouter_app_api::http_route_manifest();
+        let backend_manifest = sdkwork_routes_cloudrouter_backend_api::http_route_manifest();
+        let open_manifest = crate::generated_open_http_route_manifest::http_route_manifest();
+        super::validate_no_route_collisions(&[
+            ("sdkwork-cloudrouter-app-api", &app_manifest),
+            ("sdkwork-cloudrouter-backend-api", &backend_manifest),
+            ("sdkwork-cloudrouter-open-api", &open_manifest),
+        ])
+        .expect("merged route manifests must not collide");
+        let mut routes = Vec::new();
+        routes.extend_from_slice(app_manifest.routes());
+        routes.extend_from_slice(backend_manifest.routes());
+        routes.extend_from_slice(open_manifest.routes());
+        let manifest = sdkwork_web_core::HttpRouteManifest::from_owned_routes(routes);
+
+        // Mirror sdkwork-api-cloudrouter-standalone-gateway::main: `/v1` and
+        // the vendor prefixes are open-api surfaces, and the gateway surface
+        // must exclude them. Otherwise open-api auth profiles
+        // (api-key-or-dual-token) are rejected as gateway-api routes during
+        // framework startup validation.
+        let open_api_prefixes = [
+            "/v1",
+            "/anthropic/v1",
+            "/google/v1beta",
+            "/kling/v1",
+            "/midjourney/v1",
+            "/nano-banana/v1",
+            "/suno/v1",
+        ]
+        .iter()
+        .map(|prefix| (*prefix).to_owned())
+        .collect::<Vec<_>>();
+        let gateway_api_prefixes = sdkwork_web_core::WebRequestContextProfile::default()
+            .gateway_api_prefixes
+            .into_iter()
+            .filter(|prefix| !open_api_prefixes.iter().any(|open| open == prefix))
+            .collect::<Vec<_>>();
+        assert!(
+            gateway_api_prefixes.is_empty(),
+            "the standalone gateway profile must not treat /v1 as a gateway surface"
+        );
+        let profile = sdkwork_web_core::WebRequestContextProfile {
+            open_api_prefixes,
+            gateway_api_prefixes,
+            environment: WebEnvironment::Dev,
+            ..sdkwork_web_core::WebRequestContextProfile::default()
+        };
+
+        for path in [
+            "/v1/assistants",
+            "/v1/chat/completions",
+            "/anthropic/v1/messages",
+        ] {
+            assert_eq!(
+                classify_api_surface(path, &profile),
+                WebApiSurface::OpenApi,
+                "{path} must classify as open-api for the standalone gateway"
+            );
+        }
+        manifest
+            .validate_route_auth_for_surfaces(&profile)
+            .expect("standalone gateway route manifest must satisfy surface auth validation");
     }
 }

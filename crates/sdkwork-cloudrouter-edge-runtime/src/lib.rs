@@ -4,6 +4,7 @@ mod edge_server_runtime_config;
 mod gateway_api_key_auth;
 mod gateway_balance_account;
 mod iam_auth_token_authenticator;
+mod iam_auth_token_cache;
 mod internal_gateway_replay_store;
 mod invocation_dispatcher;
 mod invocation_http;

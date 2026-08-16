@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 2,
+  "kind": "sdkwork.database.module",
+  "databaseRole": "authoritative-server",
+  "moduleId": "cloudrouter-billing",
+  "serviceCode": "CLOUD_ROUTER_BILLING",
+  "displayName": "Cloud Router Rating And Charging Database",
+  "owner": "cloud-router-platform",
+  "engines": [
+    "postgres"
+  ],
+  "defaultEngine": "postgres",
+  "tablePrefixes": [
+    "cloudrouter_"
+  ],
+  "contractVersion": "0.4.0",
+  "baselineStrategy": "baseline-plus-migrations",
+  "baselineAnchorTable": "cloudrouter_pricing_plan",
+  "modules": [],
+  "lifecycle": {
+    "autoMigrate": false,
+    "seedOnBoot": false,
+    "defaultSeedLocale": "zh-CN",
+    "defaultSeedProfile": "standard",
+    "supportedSeedLocales": [
+      "zh-CN",
+      "en-US"
+    ],
+    "activeSeedLocales": [
+      "zh-CN"
+    ],
+    "driftCheckIntervalSec": 60
+  },
+  "paths": {
+    "contract": "contract/schema.yaml",
+    "migrations": "migrations",
+    "seeds": "seeds",
+    "driftPolicy": "drift/policy.yaml"
+  },
+  "spi": {
+    "provider": "default",
+    "hooks": []
+  },
+  "materializedTableCount": 6,
+  "materializedTables": [
+    "cloudrouter_account_rate_card",
+    "cloudrouter_charge_line",
+    "cloudrouter_pricing_plan",
+    "cloudrouter_pricing_rule",
+    "cloudrouter_rating_decision",
+    "cloudrouter_usage_measurement"
+  ]
+}

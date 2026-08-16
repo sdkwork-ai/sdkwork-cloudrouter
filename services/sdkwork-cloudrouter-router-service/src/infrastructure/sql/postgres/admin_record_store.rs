@@ -2,13 +2,14 @@ use sqlx::{PgPool, Row};
 
 use crate::domain::{DecimalValue, DomainError};
 use crate::infrastructure::sql::model_modality;
+use crate::infrastructure::sql::postgres::billing_read_projection::with_billable_usage;
 use crate::ports::{
     AdminRecordListPage, AdminRecordLogItem, AdminRecordReadFuture, AdminRecordStore,
     ListAdminRecordLogsQuery,
 };
 
 const LIST_ADMIN_RECORD_LOGS: &str = r#"
-WITH selected_trace AS (
+, selected_trace AS (
     SELECT *
     FROM (
         SELECT
@@ -47,9 +48,8 @@ usage_by_request AS (
         CAST(COALESCE(MAX(COALESCE(base_input_unit_price, 0)), 0) AS TEXT) AS base_input_unit_price,
         CAST(COALESCE(MAX(COALESCE(base_output_unit_price, 0)), 0) AS TEXT) AS base_output_unit_price,
         CAST(COALESCE(MAX(COALESCE(cache_read_unit_price, 0)), 0) AS TEXT) AS cache_read_unit_price
-    FROM ai_metering_usage
-    WHERE status = 1
-      AND tenant_id = $1
+    FROM billable_usage
+    WHERE tenant_id = $1
       AND organization_id = $2
       AND NULLIF(request_id, '') IS NOT NULL
     GROUP BY tenant_id, organization_id, request_id
@@ -176,7 +176,7 @@ impl AdminRecordStore for PostgresAdminRecordStore {
         query: ListAdminRecordLogsQuery,
     ) -> AdminRecordReadFuture<'a, AdminRecordListPage> {
         Box::pin(async move {
-            let rows = sqlx::query(LIST_ADMIN_RECORD_LOGS)
+            let rows = sqlx::query(with_billable_usage(LIST_ADMIN_RECORD_LOGS))
                 .bind(query.subject.tenant_id)
                 .bind(query.subject.organization_id)
                 .bind(like_filter(query.user.as_deref()))

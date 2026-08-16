@@ -20,7 +20,9 @@
   "dependencies": {
     "@sdkwork/cloudrouter-pc-admin-iam": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-rtc": "workspace:*",
+    "@sdkwork/cloudrouter-pc-admin-pricing": "workspace:*",
     "@sdkwork/cloudrouter-pc-admin-upstream": "workspace:*",
+    "@sdkwork/cloudrouter-pc-pricing": "workspace:*",
     "@sdkwork/i18n-pc-react": "workspace:*",
     "@sdkwork/order-pc-admin-orders": "workspace:*",
     "@sdkwork/order-pc-admin-trade": "workspace:*",

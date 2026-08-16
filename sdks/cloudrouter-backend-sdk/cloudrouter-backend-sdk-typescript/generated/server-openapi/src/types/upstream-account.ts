@@ -1,3 +1,5 @@
+import type { LlmProtocolConfig } from './llm-protocol-config';
+
 /** Upstream account schema exposed by Cloud Router. */
 export interface UpstreamAccount {
   /** Account code field on upstream account. */
@@ -10,6 +12,8 @@ export interface UpstreamAccount {
   authMethodCode: string;
   /** Contract cost multiplier field on upstream account. */
   contractCostMultiplier: string;
+  /** Default base url field on upstream account. */
+  defaultBaseUrl: string | null;
   /** Environment field on upstream account. */
   environment: number | null;
   /** External account id field on upstream account. */
@@ -20,6 +24,8 @@ export interface UpstreamAccount {
   id: string;
   /** Preferred endpoint id field on upstream account. */
   preferredEndpointId: string | null;
+  /** Protocols field on upstream account. */
+  protocols: LlmProtocolConfig[];
   /** Quota limit field on upstream account. */
   quotaLimit: string | null;
   /** Quota used field on upstream account. */

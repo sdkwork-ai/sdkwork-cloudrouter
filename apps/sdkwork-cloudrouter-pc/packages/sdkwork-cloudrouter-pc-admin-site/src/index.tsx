@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useId, useState } from 'react';
 import { Image, Loader2, Palette, QrCode, RefreshCw, Save, Settings2, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { FileUpload, type FileUploadItem } from '@sdkwork/ui-pc-react';
-import { BusinessStatePanel, getLoadErrorMessage} from '@sdkwork/cloudroutes-pc-commons';
+import { getLoadErrorMessage } from '@sdkwork/cloudroutes-pc-commons/runtime';
+import { BusinessStatePanel } from '@sdkwork/cloudroutes-pc-commons';
 import {
   readMediaResourceUrl,
   toExternalUrlMediaResource,

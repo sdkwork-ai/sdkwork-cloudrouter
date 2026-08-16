@@ -16,6 +16,7 @@ use crate::infrastructure::sql::model_catalog_import::{
     catalog_scope_vendor_codes, catalog_with_selected_vendors, load_catalog_root_with_pin,
     DEFAULT_CATALOG_REFRESH_SOURCE,
 };
+use crate::infrastructure::sql::official_pricing_sync::sync_official_pricing_catalog;
 use crate::ports::{AdminModelStore, AdminModelSubject, SyncAdminModelCatalogCommand};
 
 /// The database contract version reported by the bootstrap surface.
@@ -65,6 +66,17 @@ const MODEL_CATALOG_TABLES: &[&str] = &[
     "ai_resource_group_item",
     "ai_vendor_api_endpoint",
     "ai_vendor_modality",
+];
+
+const PRICING_TABLES: &[&str] = &[
+    "pricing_import_run",
+    "pricing_meter",
+    "pricing_operation",
+    "pricing_price_book",
+    "pricing_product",
+    "pricing_product_binding",
+    "pricing_rate",
+    "pricing_rate_condition",
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -314,6 +326,7 @@ impl DatabaseInstaller {
         }
         self.require_application_schema().await?;
         self.require_model_catalog_schema().await?;
+        self.require_pricing_schema().await?;
 
         let service_node_changed = self.ensure_default_service_node().await?;
 
@@ -345,6 +358,7 @@ impl DatabaseInstaller {
         self.require_application_schema().await?;
         self.require_model_catalog_schema().await?;
         let options = normalize_catalog_refresh_options(options)?;
+        let sync_pricing = options.mode != "dry_run";
         let install_options =
             self.install_options_for_catalog_root(options.catalog_root.clone())?;
         let catalog_root = options
@@ -388,6 +402,12 @@ impl DatabaseInstaller {
             .sync_catalog(command)
             .await
             .map_err(|error| DatabaseInstallError::InvalidState(error.to_string()))?;
+
+        if sync_pricing {
+            sync_official_pricing_catalog(&self.pool, &catalog)
+                .await
+                .map_err(|error| DatabaseInstallError::InvalidState(error.to_string()))?;
+        }
 
         if item.synced {
             import_postgres_ai_routing_seed(&self.pool).await?;
@@ -444,6 +464,9 @@ impl DatabaseInstaller {
             return Ok(InstallationStatus::NotInstalled);
         }
         if !self.model_catalog_schema_ready().await? {
+            return Ok(InstallationStatus::Incomplete);
+        }
+        if !self.pricing_schema_ready().await? {
             return Ok(InstallationStatus::Incomplete);
         }
         let catalog = match load_install_model_catalog(options) {
@@ -504,6 +527,16 @@ impl DatabaseInstaller {
         ))
     }
 
+    async fn require_pricing_schema(&self) -> Result<(), DatabaseInstallError> {
+        if self.pricing_schema_ready().await? {
+            return Ok(());
+        }
+        Err(DatabaseInstallError::InvalidState(
+            "pricing module schema is not current; migrate the pricing database module before catalog bootstrap"
+                .to_owned(),
+        ))
+    }
+
     async fn application_schema_ready(&self) -> Result<bool, DatabaseInstallError> {
         postgres_table_exists(&self.pool, "ai_upstream_supplier")
             .await
@@ -514,6 +547,15 @@ impl DatabaseInstaller {
         for table in MODEL_CATALOG_TABLES {
             let exists = postgres_table_exists(&self.pool, table).await?;
             if !exists {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
+    async fn pricing_schema_ready(&self) -> Result<bool, DatabaseInstallError> {
+        for table in PRICING_TABLES {
+            if !postgres_table_exists(&self.pool, table).await? {
                 return Ok(false);
             }
         }

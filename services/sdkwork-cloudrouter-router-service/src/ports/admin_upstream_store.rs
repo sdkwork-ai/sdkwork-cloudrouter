@@ -32,7 +32,7 @@ pub struct AdminUpstreamPage<T> {
 
 /// LLM API 协议枚举。工具（OpenAI Codex、Claude Code）运行在底层协议之上，
 /// 不属于协议值本身；历史数据中的 `openai_compatible` 仅保留在旧记录列上。
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Deserialize, serde::Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum LlmProtocolCode {
     OpenaiChatCompletions,
@@ -202,6 +202,10 @@ pub struct AdminUpstreamAccountItem {
     pub supplier_id: i64,
     pub supplier_code: String,
     pub preferred_endpoint_id: Option<i64>,
+    /// 账号级默认 Base URL（非 LLM 资源及兜底）；账号配置优先于供应商配置。
+    pub default_base_url: Option<String>,
+    /// 账号级各 LLM 协议独立 Base URL 覆盖；空列表 = 继承供应商配置。
+    pub protocols: Vec<AdminLlmProtocolConfig>,
     pub account_code: String,
     pub account_name: String,
     pub account_type: String,
@@ -230,6 +234,10 @@ pub struct SaveAdminUpstreamAccountCommand {
     pub uuid: String,
     pub supplier_id: i64,
     pub preferred_endpoint_id: Option<i64>,
+    /// 账号级默认 Base URL；None = 未配置（继承供应商默认）。
+    pub default_base_url: Option<String>,
+    /// 账号级各 LLM 协议独立 Base URL 覆盖；空列表 = 继承供应商配置。
+    pub protocols: Vec<AdminLlmProtocolConfig>,
     pub account_code: String,
     pub account_name: String,
     pub account_type: String,

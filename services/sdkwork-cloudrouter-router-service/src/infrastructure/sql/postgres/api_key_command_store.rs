@@ -5,6 +5,7 @@ use crate::domain::{
     DomainError, DomainResult, GatewayAccessPolicy, GatewayApiKey,
     GatewayApiKeyAccountGroupBinding, QuotaPolicy, UpstreamAccountGroup,
 };
+use crate::infrastructure::sql::account_rate_card::ensure_account_group_rate_card;
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
@@ -204,6 +205,17 @@ async fn ensure_default_upstream_account_group(
     .await
     .map_err(|error| store_error("failed to ensure default channel group", error))?;
 
+    let persisted_group_id = group.try_get::<i64, _>("id").map_err(row_error)?;
+    ensure_account_group_rate_card(
+        tx,
+        command.tenant_id,
+        command.organization_id,
+        persisted_group_id,
+        &command.pricing_plan_code,
+        &command.requested_at,
+    )
+    .await?;
+
     upstream_account_group_from_row(group)
 }
 
@@ -214,7 +226,7 @@ async fn find_pricing_plan_id(
     sqlx::query_scalar(
         r#"
         SELECT id
-        FROM ai_pricing_plan
+        FROM cloudrouter_pricing_plan
         WHERE status = 1
           AND deleted_at IS NULL
           AND plan_code = $1
@@ -225,8 +237,8 @@ async fn find_pricing_plan_id(
             WHEN tenant_id = $2 AND organization_id = 0 THEN 1
             ELSE 2
           END,
-          priority ASC,
-          id ASC
+          effective_from DESC,
+          id DESC
         LIMIT 1
         "#,
     )

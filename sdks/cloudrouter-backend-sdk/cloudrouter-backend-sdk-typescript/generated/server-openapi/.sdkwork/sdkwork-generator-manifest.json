@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "86a497642bc505e4afa025c1a2a1c069780c52439b3d28c68d744dd47f3c1745"
+      "sha256": "444e2110150e4acccc6bb6cd8410682f2d01c0228c66047529c942c5173b1538"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -60,11 +60,11 @@
     },
     {
       "path": "src/api/billing.ts",
-      "sha256": "19de01777d26644e342a8b568a55bc804e59f7f75086f41fd8037c820c216e8e"
+      "sha256": "a2c69493edc8145d6576e263744cf562433416ea3063989944c70a475ffcef91"
     },
     {
       "path": "src/api/index.ts",
-      "sha256": "cc0b12a8549082cfd7bb03b4851c442282fdc4e907ea786f8bc392005b1a9b97"
+      "sha256": "5373cdced6828478e8604f5e39c4efdbebd6b625960040d8350a80ecaf64f5bd"
     },
     {
       "path": "src/api/paths.ts",
@@ -75,8 +75,12 @@
       "sha256": "4732a7ba524ff5f2a6a732e5faeaaf740eec4ade8c80a7e72152bf69d178fd7c"
     },
     {
+      "path": "src/api/pricing.ts",
+      "sha256": "c17f19c416c039ac4b27b5fa7a847fd223f57c187d537c3bbef26e02533acc72"
+    },
+    {
       "path": "src/api/recharges.ts",
-      "sha256": "c814a256e46b40f2360dc9d358379642d9871918dc9f3d2449746340f3143446"
+      "sha256": "fc7a2236590e3432a1e071a5f4bf751f161662befa02b2661d291e58815f05f3"
     },
     {
       "path": "src/api/storage.ts",
@@ -104,7 +108,7 @@
     },
     {
       "path": "src/sdk.ts",
-      "sha256": "313831c2fc07c836075b0c3063c0a9c562cc729a2a70042125718268dc98aedd"
+      "sha256": "24458d72e337ef7f63dc331697cf14a197c24e367461fe4b3e113f50bd064488"
     },
     {
       "path": "src/types/admin-analytics-insight.ts",
@@ -193,6 +197,42 @@
     {
       "path": "src/types/admin-model-limit-create-request.ts",
       "sha256": "5cdd8cb435cd01831eff2519c787a4da86e1d1785e07e161124c1a181deda325"
+    },
+    {
+      "path": "src/types/admin-pricing-plan-list-response.ts",
+      "sha256": "dac64ffd1a5b0288d87ae5a41328eb2c8f3f1d48c530b69d7f8b29148987e9a3"
+    },
+    {
+      "path": "src/types/admin-pricing-plan.ts",
+      "sha256": "e0a342ecae0b401752f651ba65117c82f77cb45e528fd95cea1fb1676a253ada"
+    },
+    {
+      "path": "src/types/admin-pricing-rule-list-response.ts",
+      "sha256": "d6531d165350d2b48a04804bdf14aeb3924bad891093a5b0f1bb49d39a7476db"
+    },
+    {
+      "path": "src/types/admin-pricing-rule.ts",
+      "sha256": "f6c254966320c6a3fbe8459a2ac93b23aadd3a7f31e5c91ff37464f2fb683906"
+    },
+    {
+      "path": "src/types/admin-rate-card-list-response.ts",
+      "sha256": "15e6e33d0307c8634319e4fa6f215d8bec19828083fce216d0bb2e51609dbf53"
+    },
+    {
+      "path": "src/types/admin-rate-card.ts",
+      "sha256": "cafd920f1f64625ac7113b1ec9eba665bf145eb7659cf6451d1150487671afbd"
+    },
+    {
+      "path": "src/types/admin-recharge-package.ts",
+      "sha256": "55d35bd3a29f4a302c4764f2873b1bba44ce2c21d16e2bfa78bc241667b993e1"
+    },
+    {
+      "path": "src/types/admin-recharge-record-page.ts",
+      "sha256": "5ad7ffb6405a175ca45e9bedcad4d17337743792ecddf050e0b4aa7e005ed8cf"
+    },
+    {
+      "path": "src/types/admin-recharge-record.ts",
+      "sha256": "25a60c56fdc126f995ffa63ef7534c97be281dbfceadb8e02939de11909b03b3"
     },
     {
       "path": "src/types/admin-recharge-settings.ts",
@@ -376,7 +416,7 @@
     },
     {
       "path": "src/types/create-upstream-account-request.ts",
-      "sha256": "bf575e5fce31c0130dfbabd5b6fbe4b8c64010cc59be07cb00881fa2118a83c1"
+      "sha256": "04c9f0df4e05d60726906ed71175425de6ac4cbd7ebd961bd189b3270a91e5a8"
     },
     {
       "path": "src/types/create-upstream-supplier-request.ts",
@@ -404,7 +444,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "ae773544a275c0d00aff59b8c9d8a4ca255d6b152a09f64465313c988f87455a"
+      "sha256": "5af0ed1d76f7a89a4979e31c0aaae0a3ae11ff12a87defe9e0a06d0a915e70aa"
     },
     {
       "path": "src/types/installation-status-response.ts",
@@ -495,12 +535,44 @@
       "sha256": "5643811315b210f27467ef3abeb0e42f35e6ce604d61a89780995ca8fd34a3fd"
     },
     {
+      "path": "src/types/pricing-plan-create-request.ts",
+      "sha256": "8b77912a7f97d39c35faf567607737567feea2f3044c3fcf6207cfdc045371ca"
+    },
+    {
+      "path": "src/types/pricing-plan-update-request.ts",
+      "sha256": "c0bb79936f2395387fd8fdc946cb77a3efb53204c9b4c56f6160d0d8e24a37eb"
+    },
+    {
+      "path": "src/types/pricing-rule-create-request.ts",
+      "sha256": "ada07b3c876b237a6a2ee8fcde757750e184876d5373c7b4ee39c1caa961334c"
+    },
+    {
+      "path": "src/types/pricing-rule-update-request.ts",
+      "sha256": "9da96cb7a6d9b1e938a650fbcdb3cc4c6c80cc6b7a9a36e3a373f86bfdd6e665"
+    },
+    {
       "path": "src/types/problem-detail.ts",
       "sha256": "98f0722417f5d85aa7c9ea5b56ca06f0b59a81e6016cfc116e7f4bd01ef9f275"
     },
     {
+      "path": "src/types/rate-card-create-request.ts",
+      "sha256": "b5839538e19ed67d902a3fa81263b4a94c5d1f83cf0b6749b8c8452743625cab"
+    },
+    {
+      "path": "src/types/rate-card-update-request.ts",
+      "sha256": "f5d249f21f58d69240015c77ab20c7c1467ef895b753430567fc1ce311a64be7"
+    },
+    {
       "path": "src/types/recharge-package-mutation-request.ts",
       "sha256": "8fe4a08f56994d346d118aa5a1163c2317fea89a93aa7515ed3787bf57a8b26b"
+    },
+    {
+      "path": "src/types/recharge-package-page.ts",
+      "sha256": "7ec4c5597601d3badac643042f0542e6e5df2dc0279e39af9b0c73cfcec09e02"
+    },
+    {
+      "path": "src/types/recharge-settings-update-request.ts",
+      "sha256": "6b181df8d6c3ac68476451a1e045565c36fafdbb01f23f57e75a1996afea1413"
     },
     {
       "path": "src/types/replace-upstream-account-group-members-request.ts",
@@ -576,7 +648,7 @@
     },
     {
       "path": "src/types/update-upstream-account-request.ts",
-      "sha256": "240496e90230848a3434e7ccdcb66b1873748ae83a066fd10837f961d4f9846f"
+      "sha256": "24f2ed1d6c2df001127a1ea8a52860d1ee58030a231834ba4257e1f7b836924a"
     },
     {
       "path": "src/types/update-upstream-supplier-request.ts",
@@ -680,7 +752,7 @@
     },
     {
       "path": "src/types/upstream-account.ts",
-      "sha256": "91bd66c048301615199f4a378ef58d4a4a7d021846271409df6b022968a7de9d"
+      "sha256": "cb110057298704fe7fd4fd3c54b64c0d6ad54c81b8a90a542c995cc66a9eee6f"
     },
     {
       "path": "src/types/upstream-resource-catalog-item.ts",

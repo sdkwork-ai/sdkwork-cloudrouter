@@ -1053,9 +1053,7 @@ async fn invocation_router_uses_supplier_default_base_url_for_non_llm_resources(
         .as_ref()
         .expect("provider request");
     assert_eq!(
-        Some(
-            "http://default.openrouter.internal/v1/images/generations?model=gpt-4o-mini%2Blatest"
-        ),
+        Some("http://default.openrouter.internal/v1/images/generations?model=gpt-4o-mini%2Blatest"),
         provider_request.url.as_deref()
     );
 

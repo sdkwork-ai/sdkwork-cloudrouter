@@ -15,11 +15,11 @@ import {
  * `@sdkwork/rtc-backend-sdk` client and the portal's shared token manager —
  * mirroring the IAM admin service pattern. The RTC backend surface is a
  * dependency surface served by the Cloud Router gateway under
- * `/backend/v3/api` (same-origin dependency composition, API_ASSEMBLY_SPEC
+ * the backend API surface (same-origin dependency composition, API_ASSEMBLY_SPEC
  * §6.1), so the base URL follows the portal dependency-SDK resolution chain:
  * `VITE_SDKWORK_RTC_BACKEND_API_BASE_URL`, then
  * `VITE_CLOUDROUTER_BACKEND_API_BASE_URL`, then `PORTAL_PUBLIC_SDK_BASE_URL`
- * + `/backend/v3/api`, then the same-origin prefix.
+ * + the backend API surface, then the same-origin prefix.
  */
 
 let cloudRouterRtcAdminService: RtcAdminCenterServices | null = null;

@@ -12,7 +12,7 @@
 //! The portal injects the same global app-session token manager it already
 //! provides to every other backend SDK family, plus the dependency base URL
 //! resolution used for the portal's own backend SDK family (the order admin
-//! API is served by the cloudrouter gateway under `/backend/v3/api`).
+//! API is served by the cloudrouter gateway under the backend API surface).
 
 import { bootstrapSdkworkOrderBackendSdk } from '@sdkwork/order-service';
 import {

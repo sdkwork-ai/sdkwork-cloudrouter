@@ -6,7 +6,7 @@ use axum::routing::get;
 use axum::{Json, Router};
 use sdkwork_cloudrouter_router_service::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use sdkwork_cloudrouter_router_service::ports::{
-    AdminUpstreamAccountCredentialItem, AdminUpstreamAccountItem,
+    AdminLlmProtocolConfig, AdminUpstreamAccountCredentialItem, AdminUpstreamAccountItem,
     AdminUpstreamAccountVerificationItem, AdminUpstreamResourceInput,
     CreateAdminUpstreamAccountCredentialCommand, SaveAdminUpstreamAccountCommand,
     VerifyAdminUpstreamAccountCommand,
@@ -17,12 +17,13 @@ use serde::{Deserialize, Serialize};
 use super::shared::{
     bounded_list_response, collection_item_response, decode_json, decode_query, domain_error,
     idempotency_uuid, item_response, list_query, list_response, no_content_response, not_found,
-    optional_text, parse_id, parse_if_match, positive_decimal, problem, problem_keyed, requested_at,
-    required_text, subject, verification_error, ListQuery, RequestResult, UpstreamState,
+    optional_https_base_url, optional_text, parse_id, parse_if_match, parse_protocol_config,
+    positive_decimal, problem, problem_keyed, requested_at, required_text, subject,
+    verification_error, ListQuery, ProtocolConfigInput, RequestResult, UpstreamState, MAX_CODE_LENGTH,
+    MAX_PROTOCOLS,
 };
 use super::supplier::ResourceResponse;
 
-const MAX_CODE_LENGTH: usize = 128;
 const MAX_NAME_LENGTH: usize = 200;
 const MAX_SECRET_LENGTH: usize = 65_536;
 const ACCOUNT_CREATE_IDEMPOTENCY_SCOPE: i64 = 1_000_002;
@@ -32,6 +33,10 @@ const ACCOUNT_CREATE_IDEMPOTENCY_SCOPE: i64 = 1_000_002;
 struct AccountCreateRequest {
     supplier_id: String,
     preferred_endpoint_id: Option<String>,
+    /// 账号级默认 Base URL；空/缺省 = 未配置（继承供应商默认）。
+    default_base_url: Option<String>,
+    /// 账号级各 LLM 协议独立 Base URL 覆盖；空/缺省 = 继承供应商配置。
+    protocols: Option<Vec<ProtocolConfigInput>>,
     account_code: Option<String>,
     account_name: String,
     account_type: Option<String>,
@@ -52,7 +57,15 @@ struct AccountCreateRequest {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct AccountUpdateRequest {
     supplier_id: Option<String>,
-    preferred_endpoint_id: Option<String>,
+    /// 更新语义：字段缺省 = 保持当前值；显式 null = 清除（恢复自动选择）；字符串 = 设置为该端点。
+    /// 外层 Option 区分「字段是否提交」（缺省经 #[serde(default)] 为 None），
+    /// 内层 Option 区分「显式 null」与「具体端点 id」（见 deserialize_preferred_endpoint）。
+    #[serde(default, deserialize_with = "deserialize_preferred_endpoint")]
+    preferred_endpoint_id: Option<Option<String>>,
+    /// 更新语义：缺省 = 保持；空串 = 清除（继承供应商默认）。
+    default_base_url: Option<String>,
+    /// 更新语义：缺省 = 保持；空数组 = 清除全部协议覆盖（继承供应商配置）。
+    protocols: Option<Vec<ProtocolConfigInput>>,
     account_name: Option<String>,
     account_type: Option<String>,
     auth_method_code: Option<String>,
@@ -108,6 +121,8 @@ struct AccountResponse {
     supplier_id: String,
     supplier_code: String,
     preferred_endpoint_id: Option<String>,
+    default_base_url: Option<String>,
+    protocols: Vec<AdminLlmProtocolConfig>,
     account_code: String,
     account_name: String,
     account_type: String,
@@ -594,6 +609,12 @@ fn create_command(
             .preferred_endpoint_id
             .map(|value| parse_id(value, "preferredEndpointId"))
             .transpose()?,
+        default_base_url: optional_https_base_url(
+            request.default_base_url,
+            "defaultBaseUrl",
+            request.environment.unwrap_or(1),
+        )?,
+        protocols: account_protocol_configs(request.protocols)?,
         account_code: match request.account_code {
             Some(value) => required_text(value, "accountCode", MAX_CODE_LENGTH)?,
             None => generate_account_code()?,
@@ -641,6 +662,49 @@ fn create_command(
     })
 }
 
+/// 账号级协议覆盖：与供应商 `protocols` 结构一致，但可空（0 个 = 继承供应商配置）。
+/// 上限 MAX_PROTOCOLS 个，protocolCode 必须可解析且不重复。
+fn account_protocol_configs(
+    inputs: Option<Vec<ProtocolConfigInput>>,
+) -> RequestResult<Vec<AdminLlmProtocolConfig>> {
+    let Some(inputs) = inputs else {
+        return Ok(Vec::new());
+    };
+    if inputs.len() > MAX_PROTOCOLS {
+        return Err(problem_keyed(
+            SdkWorkResultCode::InvalidParameter,
+            "validation.admin.upstream.account.protocols.maxItems",
+            serde_json::json!({ "field": "protocols", "max": MAX_PROTOCOLS }),
+            format!("protocols must contain at most {MAX_PROTOCOLS} items"),
+        ));
+    }
+    let mut seen = std::collections::HashSet::new();
+    let mut configs = Vec::with_capacity(inputs.len());
+    for input in inputs {
+        let config = parse_protocol_config(input)?;
+        if !seen.insert(config.protocol_code) {
+            return Err(problem_keyed(
+                SdkWorkResultCode::InvalidParameter,
+                "validation.admin.upstream.account.protocols.unique",
+                serde_json::json!({ "protocolCode": config.protocol_code.as_str() }),
+                "protocols must not contain duplicate protocolCode entries",
+            ));
+        }
+        configs.push(config);
+    }
+    Ok(configs)
+}
+
+fn deserialize_preferred_endpoint<'de, D>(deserializer: D) -> Result<Option<Option<String>>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    // 普通 serde 的 Option<Option<T>> 无法区分「字段缺省」与「显式 null」（两者都折叠为外层 None），
+    // 这里自定义反序列化：null → Some(None)（显式清除）；字符串 → Some(Some(id))（设置）；
+    // 字段缺省由 #[serde(default)] 提供外层 None（保持当前值）。
+    Option::<String>::deserialize(deserializer).map(Some)
+}
+
 fn update_command(
     subject: sdkwork_cloudrouter_router_service::ports::AdminUpstreamSubject,
     existing: AdminUpstreamAccountItem,
@@ -657,11 +721,27 @@ fn update_command(
             .map(|value| parse_id(value, "supplierId"))
             .transpose()?
             .unwrap_or(existing.supplier_id),
-        preferred_endpoint_id: request
-            .preferred_endpoint_id
-            .map(|value| parse_id(value, "preferredEndpointId"))
-            .transpose()?
-            .or(existing.preferred_endpoint_id),
+        preferred_endpoint_id: match request.preferred_endpoint_id {
+            // 字段缺省：保持当前首选端点（不视为新绑定，避免既有失效引用阻塞无关字段的编辑）
+            None => existing.preferred_endpoint_id,
+            // 显式 null：清除首选端点，恢复为按可用端点自动路由
+            Some(None) => None,
+            Some(Some(value)) => Some(parse_id(value, "preferredEndpointId")?),
+        },
+        default_base_url: match request.default_base_url {
+            // 缺省：保持当前账号默认 Base URL；空串 = 清除（继承供应商默认）
+            Some(value) => optional_https_base_url(
+                Some(value),
+                "defaultBaseUrl",
+                request.environment.unwrap_or(existing.environment.unwrap_or(1)),
+            )?,
+            None => existing.default_base_url,
+        },
+        protocols: match request.protocols {
+            // 缺省：保持当前协议覆盖；空数组 = 清除全部协议覆盖（继承供应商配置）
+            Some(inputs) => account_protocol_configs(Some(inputs))?,
+            None => existing.protocols,
+        },
         account_code: existing.account_code,
         account_name: request
             .account_name
@@ -823,6 +903,8 @@ impl From<AdminUpstreamAccountItem> for AccountResponse {
             supplier_id: item.supplier_id.to_string(),
             supplier_code: item.supplier_code,
             preferred_endpoint_id: item.preferred_endpoint_id.map(|value| value.to_string()),
+            default_base_url: item.default_base_url,
+            protocols: item.protocols,
             account_code: item.account_code,
             account_name: item.account_name,
             account_type: item.account_type,
@@ -885,6 +967,7 @@ impl From<AdminUpstreamAccountVerificationItem> for AccountVerificationResponse 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sdkwork_cloudrouter_router_service::ports::LlmProtocolCode;
 
     #[test]
     fn generated_account_code_matches_expected_format() {
@@ -962,5 +1045,290 @@ mod tests {
         assert!(!serialized.contains("rawSecret"));
         assert!(!serialized.contains("secretCiphertext"));
         assert!(!serialized.contains("\"secret\""));
+    }
+
+    #[test]
+    fn update_request_distinguishes_absent_null_and_value_preferred_endpoint() {
+        let absent = serde_json::from_str::<AccountUpdateRequest>("{}").expect("empty update");
+        assert_eq!(None, absent.preferred_endpoint_id);
+
+        let cleared = serde_json::from_str::<AccountUpdateRequest>(r#"{"preferredEndpointId":null}"#)
+            .expect("explicit null update");
+        assert_eq!(Some(None), cleared.preferred_endpoint_id);
+
+        let rebound = serde_json::from_str::<AccountUpdateRequest>(
+            r#"{"preferredEndpointId":"42"}"#,
+        )
+        .expect("rebound update");
+        assert_eq!(Some(Some("42".to_owned())), rebound.preferred_endpoint_id);
+    }
+
+    #[test]
+    fn update_command_resolves_preferred_endpoint_keep_clear_and_set() {
+        let subject = sdkwork_cloudrouter_router_service::ports::AdminUpstreamSubject {
+            tenant_id: 1,
+            organization_id: 2,
+            operator_id: 3,
+            operator_type: 1,
+        };
+        let existing = AdminUpstreamAccountItem {
+            id: 9,
+            uuid: "account-uuid".to_owned(),
+            supplier_id: 11,
+            supplier_code: "openai".to_owned(),
+            preferred_endpoint_id: Some(101),
+            default_base_url: Some("https://api.openai.com/v1".to_owned()),
+            protocols: vec![AdminLlmProtocolConfig {
+                protocol_code: LlmProtocolCode::OpenaiChatCompletions,
+                base_url: "https://api.openai.com/v1".to_owned(),
+            }],
+            account_code: "openai-main".to_owned(),
+            account_name: "OpenAI main".to_owned(),
+            account_type: "standard".to_owned(),
+            auth_method_code: "api-key".to_owned(),
+            external_account_id: None,
+            environment: Some(1),
+            region_code: None,
+            quota_limit: None,
+            quota_used: None,
+            upstream_balance_amount: None,
+            upstream_balance_currency: None,
+            contract_cost_multiplier: "1.000000000000".to_owned(),
+            rpm_limit: None,
+            timeout_ms: None,
+            health_status: 1,
+            status: 1,
+            version: 3,
+            updated_at: "2026-07-28T12:00:00.000Z".to_owned(),
+        };
+
+        let kept = update_command(
+            subject.clone(),
+            existing.clone(),
+            3,
+            AccountUpdateRequest {
+                supplier_id: None,
+                preferred_endpoint_id: None,
+                default_base_url: None,
+                protocols: None,
+                account_name: None,
+                account_type: None,
+                auth_method_code: None,
+                external_account_id: None,
+                environment: None,
+                region_code: None,
+                quota_limit: None,
+                upstream_balance_currency: None,
+                contract_cost_multiplier: None,
+                rpm_limit: None,
+                timeout_ms: None,
+                status: None,
+            },
+        )
+        .expect("keep preferred endpoint");
+        assert_eq!(Some(101), kept.preferred_endpoint_id);
+        assert_eq!(
+            Some("https://api.openai.com/v1".to_owned()),
+            kept.default_base_url
+        );
+        assert_eq!(1, kept.protocols.len());
+
+        let cleared = update_command(
+            subject.clone(),
+            existing.clone(),
+            3,
+            AccountUpdateRequest {
+                supplier_id: None,
+                preferred_endpoint_id: Some(None),
+                default_base_url: Some(String::new()),
+                protocols: Some(Vec::new()),
+                account_name: None,
+                account_type: None,
+                auth_method_code: None,
+                external_account_id: None,
+                environment: None,
+                region_code: None,
+                quota_limit: None,
+                upstream_balance_currency: None,
+                contract_cost_multiplier: None,
+                rpm_limit: None,
+                timeout_ms: None,
+                status: None,
+            },
+        )
+        .expect("clear preferred endpoint");
+        assert_eq!(None, cleared.preferred_endpoint_id);
+        assert_eq!(None, cleared.default_base_url);
+        assert!(cleared.protocols.is_empty());
+
+        let rebound = update_command(
+            subject,
+            existing,
+            3,
+            AccountUpdateRequest {
+                supplier_id: None,
+                preferred_endpoint_id: Some(Some("202".to_owned())),
+                default_base_url: None,
+                protocols: None,
+                account_name: None,
+                account_type: None,
+                auth_method_code: None,
+                external_account_id: None,
+                environment: None,
+                region_code: None,
+                quota_limit: None,
+                upstream_balance_currency: None,
+                contract_cost_multiplier: None,
+                rpm_limit: None,
+                timeout_ms: None,
+                status: None,
+            },
+        )
+        .expect("rebind preferred endpoint");
+        assert_eq!(Some(202), rebound.preferred_endpoint_id);
+    }
+
+    #[test]
+    fn account_protocol_configs_accepts_empty_and_valid_overrides() {
+        assert!(account_protocol_configs(None).unwrap().is_empty());
+        assert!(account_protocol_configs(Some(Vec::new())).unwrap().is_empty());
+        let configs = account_protocol_configs(Some(vec![
+            ProtocolConfigInput {
+                protocol_code: "openai_chat_completions".to_owned(),
+                base_url: "https://relay.example.com/v1".to_owned(),
+            },
+            ProtocolConfigInput {
+                protocol_code: "anthropic_messages".to_owned(),
+                base_url: "https://relay.example.com/anthropic".to_owned(),
+            },
+        ]))
+        .unwrap();
+        assert_eq!(2, configs.len());
+        assert_eq!(
+            LlmProtocolCode::OpenaiChatCompletions,
+            configs[0].protocol_code
+        );
+        assert_eq!(
+            LlmProtocolCode::AnthropicMessages,
+            configs[1].protocol_code
+        );
+    }
+
+    #[test]
+    fn account_protocol_configs_rejects_unsupported_duplicate_and_oversized() {
+        let unsupported = account_protocol_configs(Some(vec![ProtocolConfigInput {
+            protocol_code: "azure_openai".to_owned(),
+            base_url: "https://azure.example.com".to_owned(),
+        }]))
+        .unwrap_err();
+        assert_eq!(
+            StatusCode::BAD_REQUEST,
+            unsupported.into_response().status()
+        );
+
+        let duplicate = account_protocol_configs(Some(vec![
+            ProtocolConfigInput {
+                protocol_code: "openai_responses".to_owned(),
+                base_url: "https://a.example.com".to_owned(),
+            },
+            ProtocolConfigInput {
+                protocol_code: "openai_responses".to_owned(),
+                base_url: "https://b.example.com".to_owned(),
+            },
+        ]))
+        .unwrap_err();
+        assert_eq!(StatusCode::BAD_REQUEST, duplicate.into_response().status());
+
+        let oversized = account_protocol_configs(Some(
+            (0..=MAX_PROTOCOLS)
+                .map(|index| ProtocolConfigInput {
+                    protocol_code: match index % 3 {
+                        0 => "openai_chat_completions".to_owned(),
+                        1 => "openai_responses".to_owned(),
+                        _ => "anthropic_messages".to_owned(),
+                    },
+                    base_url: format!("https://{index}.example.com"),
+                })
+                .collect(),
+        ))
+        .unwrap_err();
+        assert_eq!(StatusCode::BAD_REQUEST, oversized.into_response().status());
+    }
+
+    #[test]
+    fn create_command_validates_default_base_url_https() {
+        let subject = sdkwork_cloudrouter_router_service::ports::AdminUpstreamSubject {
+            tenant_id: 1,
+            organization_id: 2,
+            operator_id: 3,
+            operator_type: 1,
+        };
+        let http_rejected = create_command(
+            subject.clone(),
+            "account-uuid".to_owned(),
+            AccountCreateRequest {
+                supplier_id: "11".to_owned(),
+                preferred_endpoint_id: None,
+                default_base_url: Some("http://relay.example.com/v1".to_owned()),
+                protocols: None,
+                account_code: None,
+                account_name: "HTTP relay".to_owned(),
+                account_type: None,
+                auth_method_code: "api-key".to_owned(),
+                external_account_id: None,
+                environment: Some(1),
+                region_code: None,
+                quota_limit: None,
+                upstream_balance_currency: None,
+                contract_cost_multiplier: None,
+                rpm_limit: None,
+                timeout_ms: None,
+                status: None,
+                api_key: None,
+            },
+        )
+        .unwrap_err();
+        assert_eq!(
+            StatusCode::BAD_REQUEST,
+            http_rejected.into_response().status()
+        );
+
+        let accepted = create_command(
+            subject,
+            "account-uuid".to_owned(),
+            AccountCreateRequest {
+                supplier_id: "11".to_owned(),
+                preferred_endpoint_id: None,
+                default_base_url: Some("https://relay.example.com/v1".to_owned()),
+                protocols: Some(vec![ProtocolConfigInput {
+                    protocol_code: "openai_chat_completions".to_owned(),
+                    base_url: "https://relay.example.com/chat".to_owned(),
+                }]),
+                account_code: None,
+                account_name: "Relay account".to_owned(),
+                account_type: None,
+                auth_method_code: "api-key".to_owned(),
+                external_account_id: None,
+                environment: Some(1),
+                region_code: None,
+                quota_limit: None,
+                upstream_balance_currency: None,
+                contract_cost_multiplier: None,
+                rpm_limit: None,
+                timeout_ms: None,
+                status: None,
+                api_key: None,
+            },
+        )
+        .expect("create command with account base url config");
+        assert_eq!(
+            Some("https://relay.example.com/v1".to_owned()),
+            accepted.default_base_url
+        );
+        assert_eq!(1, accepted.protocols.len());
+        assert_eq!(
+            "https://relay.example.com/chat",
+            accepted.protocols[0].base_url
+        );
     }
 }

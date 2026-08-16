@@ -2,13 +2,21 @@ use std::env;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::PostgresGatewayUsageRecorder;
-use sdkwork_cloudrouter_router_service::ports::{GatewayUsageRecordCommand, GatewayUsageRecorder};
+use sdkwork_cloudrouter_router_service::ports::{
+    GatewayOfficialRateReference, GatewayUsageRecordCommand, GatewayUsageRecorder,
+};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{PgPool, Row};
 
 const POSTGRES_TEST_DATABASE_URL: &str = "SDKWORK_DATABASE_URL";
 const ACCOUNT_BASELINE: &str = include_str!(
     "../../../../sdkwork-account/database/ddl/baseline/postgres/0001_account_baseline.sql"
+);
+const PRICING_BASELINE: &str = include_str!(
+    "../../../database/modules/pricing/ddl/baseline/postgres/0001_pricing_baseline.sql"
+);
+const CLOUDROUTER_BILLING_BASELINE: &str = include_str!(
+    "../../../database/modules/cloudrouter-billing/ddl/baseline/postgres/0001_cloudrouter_billing_baseline.sql"
 );
 
 #[tokio::test]
@@ -89,6 +97,31 @@ async fn postgres_gateway_usage_recorder_preserves_non_pending_usage_fact_on_dup
         "Postgres gateway usage recorder must freeze trace rows once usage settlement starts"
     );
     assert_eq!(200_i32, trace.get::<i32, _>("http_status"));
+
+    let mut unrated = usage_command("pg-usage-unrated", 200);
+    unrated.official_rate = None;
+    recorder.record_gateway_usage(unrated).await.unwrap();
+    let unrated_counts = sqlx::query(
+        r#"
+        SELECT
+            (SELECT COUNT(*) FROM cloudrouter_usage_measurement
+             WHERE invocation_id = 'pg-usage-unrated') AS measurement_count,
+            (SELECT COUNT(*) FROM cloudrouter_rating_decision
+             WHERE invocation_id = 'pg-usage-unrated'
+               AND decision_status = 'unrated') AS unrated_count,
+            (SELECT COUNT(*) FROM cloudrouter_charge_line
+             WHERE invocation_id = 'pg-usage-unrated') AS charge_count,
+            (SELECT COUNT(*) FROM ai_metering_usage
+             WHERE request_id = 'pg-usage-unrated') AS legacy_usage_count
+        "#,
+    )
+    .fetch_one(&ctx.pool)
+    .await
+    .unwrap();
+    assert_eq!(1_i64, unrated_counts.get::<i64, _>("measurement_count"));
+    assert_eq!(1_i64, unrated_counts.get::<i64, _>("unrated_count"));
+    assert_eq!(0_i64, unrated_counts.get::<i64, _>("charge_count"));
+    assert_eq!(0_i64, unrated_counts.get::<i64, _>("legacy_usage_count"));
 
     ctx.cleanup().await;
 }
@@ -185,11 +218,17 @@ async fn create_schema(pool: &PgPool) {
     // Recharge credits write through the account-domain ledger
     // (`acct_account`/`acct_ledger_entry`); the legacy `commerce_account` and
     // `commerce_account_ledger_entry` tables are retired (S5).
-    for statement in split_statements(ACCOUNT_BASELINE) {
-        sqlx::query(sqlx::AssertSqlSafe(statement.to_owned()))
-            .execute(pool)
-            .await
-            .unwrap();
+    for baseline in [
+        ACCOUNT_BASELINE,
+        PRICING_BASELINE,
+        CLOUDROUTER_BILLING_BASELINE,
+    ] {
+        for statement in split_statements(baseline) {
+            sqlx::query(sqlx::AssertSqlSafe(statement.to_owned()))
+                .execute(pool)
+                .await
+                .unwrap();
+        }
     }
     for statement in [
         r#"CREATE TABLE commerce_payment_webhook_event (
@@ -427,6 +466,84 @@ async fn create_schema(pool: &PgPool) {
     ] {
         sqlx::query(statement).execute(pool).await.unwrap();
     }
+    seed_chargeable_pricing(pool).await;
+}
+
+async fn seed_chargeable_pricing(pool: &PgPool) {
+    for statement in [
+        r#"INSERT INTO pricing_product
+            (id, uuid, tenant_id, organization_id, namespace_code, product_code,
+             product_kind, owner_system, display_name)
+            VALUES (1, 'pricing-product-1', 0, 0, 'models', 'model-inference',
+                    'model', 'sdkwork-models', 'Model inference')"#,
+        r#"INSERT INTO pricing_operation
+            (id, uuid, tenant_id, organization_id, namespace_code, operation_code,
+             operation_kind, charge_timing_default, async_completion_policy,
+             success_status_policy, display_name)
+            VALUES (2, 'pricing-operation-2', 0, 0, 'models', 'chat-completions',
+                    'inference', 'usage_reported', 'not_applicable',
+                    'successful_response', 'Chat completions')"#,
+        r#"INSERT INTO pricing_meter
+            (id, uuid, tenant_id, organization_id, namespace_code, meter_code,
+             quantity_kind, unit_code, aggregation_mode, default_unit_size,
+             quantity_precision, display_name)
+            VALUES (3, 'pricing-meter-3', 0, 0, 'models', 'llm_input_token',
+                    'token', 'token', 'sum', 1000000, 0, 'LLM input token')"#,
+        r#"INSERT INTO pricing_price_book
+            (id, uuid, tenant_id, organization_id, namespace_code,
+             price_book_code, price_book_version, price_side, source_system,
+             vendor_code, region_code, source_catalog_version, source_hash,
+             lifecycle_state, currency_code, effective_from, activated_at)
+            VALUES (4, 'pricing-book-4', 0, 0, 'models', 'test-official-book',
+                    '1', 'official_reference', 'sdkwork-models', 'openai', 'global',
+                    'test-catalog', 'test-source-hash', 'active', 'USD',
+                    TIMESTAMPTZ '2020-01-01 00:00:00+00', CURRENT_TIMESTAMP)"#,
+        r#"INSERT INTO pricing_product_binding
+            (id, uuid, tenant_id, organization_id, product_id, operation_id,
+             vendor_code, provider_code, region_code, resource_type,
+             resource_code, catalog_key)
+            VALUES (5, 'pricing-binding-5', 0, 0, 1, 2, 'openai', 'openai',
+                    'global', 'model', 'openai/gpt-4o-mini',
+                    'openai/gpt-4o-mini')"#,
+        r#"INSERT INTO pricing_rate
+            (id, uuid, tenant_id, organization_id, price_book_id, product_id,
+             operation_id, meter_id, rate_code, rate_hash, billability,
+             charge_timing, calculation_mode, quantity_aggregation, unit_size,
+             unit_price, minimum_quantity, quantity_step, currency_code,
+             priority, effective_from, source_url, source_observed_at)
+            VALUES (6, 'pricing-rate-6', 0, 0, 4, 1, 2, 3,
+                    'test-input-rate', 'test-rate-hash', 'chargeable',
+                    'usage_reported', 'per_unit', 'sum', 1000000, 0.15,
+                    0, NULL, 'USD', 100,
+                    TIMESTAMPTZ '2020-01-01 00:00:00+00',
+                    'https://example.test/pricing',
+                    TIMESTAMPTZ '2020-01-01 00:00:00+00')"#,
+        r#"INSERT INTO pricing_rate_binding
+            (id, uuid, tenant_id, organization_id, rate_id, product_binding_id)
+            VALUES (7, 'pricing-rate-binding-7', 0, 0, 6, 5)"#,
+        r#"INSERT INTO cloudrouter_pricing_plan
+            (id, uuid, tenant_id, organization_id, plan_code, plan_name,
+             base_price_side, currency_code, fallback_policy, rounding_mode,
+             minimum_charge_amount, effective_from)
+            VALUES (8, 'cloudrouter-plan-8', 100001, 0, 'standard', 'Standard',
+                    'official_reference', 'USD', 'fail_closed', 'half_up', 0,
+                    TIMESTAMPTZ '2020-01-01 00:00:00+00')"#,
+        r#"INSERT INTO cloudrouter_pricing_rule
+            (id, uuid, tenant_id, organization_id, pricing_plan_id, rule_code,
+             formula_mode, multiplier, markup_amount, priority, effective_from)
+            VALUES (9, 'cloudrouter-rule-9', 100001, 0, 8, 'default',
+                    'multiplier_markup', 1, 0, 100,
+                    TIMESTAMPTZ '2020-01-01 00:00:00+00')"#,
+        r#"INSERT INTO cloudrouter_account_rate_card
+            (id, uuid, tenant_id, organization_id, subject_type, subject_id,
+             pricing_plan_tenant_id, pricing_plan_organization_id, pricing_plan_id,
+             priority, effective_from)
+            VALUES (10, 'cloudrouter-rate-card-10', 100001, 0,
+                    'account_group', 10, 100001, 0, 8, 100,
+                    TIMESTAMPTZ '2020-01-01 00:00:00+00')"#,
+    ] {
+        sqlx::query(statement).execute(pool).await.unwrap();
+    }
 }
 
 fn usage_command(request_id: &str, http_status: u16) -> GatewayUsageRecordCommand {
@@ -456,7 +573,9 @@ fn usage_command(request_id: &str, http_status: u16) -> GatewayUsageRecordComman
         modality: 1,
         usage_type: 1,
         billing_meter_code: "llm_input_token".to_owned(),
+        unit_size: "1000000".to_owned(),
         billable_quantity: "18".to_owned(),
+        rated_quantity: "18".to_owned(),
         prompt_tokens: 11,
         completion_tokens: 7,
         cached_tokens: 2,
@@ -473,17 +592,43 @@ fn usage_command(request_id: &str, http_status: u16) -> GatewayUsageRecordComman
         provider_error_code: None,
         error_type: None,
         error_message_masked: None,
+        decision_status: "rated".to_owned(),
+        billability: "chargeable".to_owned(),
+        reason_code: "price_service_rated".to_owned(),
+        strategy_code: Some("token_usage".to_owned()),
         base_input_unit_price: "0.198000".to_owned(),
         base_output_unit_price: "0.792000".to_owned(),
         cache_read_unit_price: "0.099000".to_owned(),
         rate_multiplier: "1.000000".to_owned(),
         reference_multiplier: "1.320000".to_owned(),
-        official_reference_amount: "5.850000000000".to_owned(),
-        customer_charge_amount: "7.722000".to_owned(),
+        official_reference_amount: "0.000002700000".to_owned(),
+        customer_charge_amount: "0.000002700000".to_owned(),
         upstream_cost_amount: "4.290000".to_owned(),
         currency: "USD".to_owned(),
         pricing_plan_code: "standard".to_owned(),
+        billing_components: "[]".to_owned(),
         pricing_snapshot: r#"{"vendor":{"code":"openai"},"model":{"catalogKey":"openai/gpt-4o-mini"},"provider":{"code":"openrouter"},"pricingPlan":{"code":"standard"},"multipliers":{"rate":"1.000000","reference":"1.320000"},"meters":{"input":{"customerUnitPrice":"0.198000"},"output":{"customerUnitPrice":"0.792000"},"cacheRead":{"customerUnitPrice":"0.099000"}}}"#.to_owned(),
+        official_rate: Some(GatewayOfficialRateReference {
+            price_book_code: "test-official-book".to_owned(),
+            rate_hash: "test-rate-hash".to_owned(),
+            product_code: "model-inference".to_owned(),
+            operation_code: "chat-completions".to_owned(),
+            billability: "chargeable".to_owned(),
+            charge_timing: "usage_reported".to_owned(),
+            calculation_mode: "per_unit".to_owned(),
+            quantity_aggregation: "sum".to_owned(),
+            unit_size: "1000000".to_owned(),
+            unit_price: "0.150000000000".to_owned(),
+            plan_unit_price: "0.150000000000".to_owned(),
+            rated_reference_unit_price: "0.150000000000".to_owned(),
+            rated_unit_price: "0.150000000000".to_owned(),
+            rated_procurement_unit_price: Some("0.110000000000".to_owned()),
+            minimum_quantity: "0".to_owned(),
+            quantity_step: None,
+            conditions: Vec::new(),
+            tiers: Vec::new(),
+            formula: None,
+        }),
     }
 }
 

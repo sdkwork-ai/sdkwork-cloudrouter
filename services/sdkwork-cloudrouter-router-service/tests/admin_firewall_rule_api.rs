@@ -1,5 +1,4 @@
 pub mod common;
-use common::InternalTrustedSubjectHeaders;
 use std::sync::{Arc, Mutex};
 
 use axum::body::Body;
@@ -26,15 +25,16 @@ async fn admin_firewall_rule_route_creates_lists_and_deletes_rules() {
     let create_response = router
         .clone()
         .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/backend/v3/api/system/firewalls/rules")
-                .header("content-type", "application/json")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::from(
+            common::web_framework_backend_request(
+            "POST",
+            "/backend/v3/api/system/firewalls/rules",
+            Body::from(
                     r#"{"type":"IP blacklist","value":"192.168.1.99/24","reason":"\u4e2d\u6587 crawler source"}"#,
-                ))
-                .unwrap(),
+                ),
+            "100001",
+            Some("0"),
+            "30",
+        )
         )
         .await
         .unwrap();
@@ -56,12 +56,14 @@ async fn admin_firewall_rule_route_creates_lists_and_deletes_rules() {
     let list_response = router
         .clone()
         .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/backend/v3/api/system/firewalls/rules")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::empty())
-                .unwrap(),
+            common::web_framework_backend_request(
+            "GET",
+            "/backend/v3/api/system/firewalls/rules",
+            Body::empty(),
+            "100001",
+            Some("0"),
+            "30",
+        )
         )
         .await
         .unwrap();
@@ -74,12 +76,14 @@ async fn admin_firewall_rule_route_creates_lists_and_deletes_rules() {
     let delete_response = router
         .clone()
         .oneshot(
-            Request::builder()
-                .method("DELETE")
-                .uri("/backend/v3/api/system/firewalls/rules/1")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::empty())
-                .unwrap(),
+            common::web_framework_backend_request(
+            "DELETE",
+            "/backend/v3/api/system/firewalls/rules/1",
+            Body::empty(),
+            "100001",
+            Some("0"),
+            "30",
+        )
         )
         .await
         .unwrap();
@@ -92,12 +96,14 @@ async fn admin_firewall_rule_route_creates_lists_and_deletes_rules() {
 
     let final_list_response = router
         .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri("/backend/v3/api/system/firewalls/rules")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::empty())
-                .unwrap(),
+            common::web_framework_backend_request(
+            "GET",
+            "/backend/v3/api/system/firewalls/rules",
+            Body::empty(),
+            "100001",
+            Some("0"),
+            "30",
+        )
         )
         .await
         .unwrap();
@@ -123,15 +129,16 @@ async fn admin_firewall_rule_route_rejects_invalid_value_without_calling_store()
 
     let response = router
         .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/backend/v3/api/system/firewalls/rules")
-                .header("content-type", "application/json")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::from(
+            common::web_framework_backend_request(
+            "POST",
+            "/backend/v3/api/system/firewalls/rules",
+            Body::from(
                     r#"{"type":"IP blacklist","value":"not-an-address","reason":"bad source"}"#,
-                ))
-                .unwrap(),
+                ),
+            "100001",
+            Some("0"),
+            "30",
+        )
         )
         .await
         .unwrap();

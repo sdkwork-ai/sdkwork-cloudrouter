@@ -111,6 +111,26 @@ AUXILIARY_MODULES = (
         baseline_file="0001_operations_baseline.sql",
         relative_root="database/modules/operations",
     ),
+    DatabaseModuleSpec(
+        module_id="pricing",
+        service_code="SDKWORK_PRICING",
+        display_name="SDKWork Reusable Pricing Database",
+        owner="pricing-service",
+        table_prefix="pricing_",
+        baseline_anchor_table="pricing_product",
+        baseline_file="0001_pricing_baseline.sql",
+        relative_root="database/modules/pricing",
+    ),
+    DatabaseModuleSpec(
+        module_id="cloudrouter-billing",
+        service_code="CLOUD_ROUTER_BILLING",
+        display_name="Cloud Router Rating And Charging Database",
+        owner="cloud-router-platform",
+        table_prefix="cloudrouter_",
+        baseline_anchor_table="cloudrouter_pricing_plan",
+        baseline_file="0001_cloudrouter_billing_baseline.sql",
+        relative_root="database/modules/cloudrouter-billing",
+    ),
 )
 
 

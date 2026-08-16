@@ -21,6 +21,15 @@ export type { AdminExchangeRuleListResponse } from './admin-exchange-rule-list-r
 export type { AdminFirewallRuleCreateRequest } from './admin-firewall-rule-create-request';
 export type { AdminIpLimitCreateRequest } from './admin-ip-limit-create-request';
 export type { AdminModelLimitCreateRequest } from './admin-model-limit-create-request';
+export type { AdminPricingPlan } from './admin-pricing-plan';
+export type { AdminPricingPlanListResponse } from './admin-pricing-plan-list-response';
+export type { AdminPricingRule } from './admin-pricing-rule';
+export type { AdminPricingRuleListResponse } from './admin-pricing-rule-list-response';
+export type { AdminRateCard } from './admin-rate-card';
+export type { AdminRateCardListResponse } from './admin-rate-card-list-response';
+export type { AdminRechargePackage } from './admin-recharge-package';
+export type { AdminRechargeRecord } from './admin-recharge-record';
+export type { AdminRechargeRecordPage } from './admin-recharge-record-page';
 export type { AdminRechargeSettings } from './admin-recharge-settings';
 export type { AdminRecordLogItem } from './admin-record-log-item';
 export type { AdminRecordPage } from './admin-record-page';
@@ -104,9 +113,20 @@ export type { PageInfo } from './page-info';
 export type { PaymentProviderInventoryItem } from './payment-provider-inventory-item';
 export type { PaymentProviderInventoryListResponse } from './payment-provider-inventory-list-response';
 export type { PaymentProviderMutationResponse } from './payment-provider-mutation-response';
+
+export type { PricingPlanCreateRequest } from './pricing-plan-create-request';
+export type { PricingPlanUpdateRequest } from './pricing-plan-update-request';
+export type { PricingRuleCreateRequest } from './pricing-rule-create-request';
+export type { PricingRuleUpdateRequest } from './pricing-rule-update-request';
 export type { ProblemDetail } from './problem-detail';
 
+export type { RateCardCreateRequest } from './rate-card-create-request';
+export type { RateCardUpdateRequest } from './rate-card-update-request';
+
 export type { RechargePackageMutationRequest } from './recharge-package-mutation-request';
+export type { RechargePackagePage } from './recharge-package-page';
+
+export type { RechargeSettingsUpdateRequest } from './recharge-settings-update-request';
 
 export type { ReplaceUpstreamAccountGroupMembersRequest } from './replace-upstream-account-group-members-request';
 export type { ReplaceUpstreamAccountGroupResourcesRequest } from './replace-upstream-account-group-resources-request';

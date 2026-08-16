@@ -6,10 +6,13 @@ use super::shared::{
     search_pattern, store_error, DEFAULT_DATA_SCOPE,
 };
 use crate::domain::{DomainError, DomainResult};
+use crate::infrastructure::sql::account_rate_card::{
+    ensure_account_group_rate_card, retire_account_group_rate_cards,
+};
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::ports::{
-    AdminUpstreamAccountGroupItem, AdminUpstreamListQuery, AdminUpstreamPage,
-    AdminUpstreamSubject, SaveAdminUpstreamAccountGroupCommand,
+    AdminUpstreamAccountGroupItem, AdminUpstreamListQuery, AdminUpstreamPage, AdminUpstreamSubject,
+    SaveAdminUpstreamAccountGroupCommand,
 };
 
 const GROUP_COLUMNS: &str = r#"
@@ -135,6 +138,15 @@ pub(super) async fn save(
         Some(account_group_id) => update(&mut tx, account_group_id, &command).await?,
         None => insert(&mut tx, &command).await?,
     };
+    ensure_account_group_rate_card(
+        &mut tx,
+        command.subject.tenant_id,
+        command.subject.organization_id,
+        account_group_id,
+        "standard",
+        &command.requested_at,
+    )
+    .await?;
     let action = if command.account_group_id.is_some() {
         "update_upstream_account_group"
     } else {
@@ -269,6 +281,14 @@ pub(super) async fn delete(
             "upstream account group version changed during deletion",
         ));
     }
+    retire_account_group_rate_cards(
+        &mut tx,
+        subject.tenant_id,
+        subject.organization_id,
+        account_group_id,
+        &requested_at,
+    )
+    .await?;
     record_routing_change(
         &mut tx,
         &subject,

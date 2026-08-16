@@ -4,6 +4,7 @@ use sdkwork_cloudrouter_config::{
     DatabaseConfig, DatabaseEngine, DeploymentMode, RuntimeConfigProfile,
 };
 use sdkwork_cloudrouter_database_host::connect_cloud_router_database;
+use sdkwork_cloudrouter_router_service::infrastructure::sql::bootstrap_cloud_runtime_id_generator;
 use sdkwork_cloudrouter_router_service::infrastructure::sql::installer::{
     CatalogRefreshOptions, CatalogRefreshReport, DatabaseInstallError, DatabaseInstallOptions,
     DatabaseInstaller, InstallationReport, InstallationStatus,
@@ -26,6 +27,15 @@ mod federated;
 
 const SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD_ENV: &str =
     "SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD";
+
+/// Node lease service identity for `cloudrouterctl` writes.
+///
+/// The CLI is a separate process from the server assembly, so it acquires its
+/// own database-backed Snowflake node lease (independent of
+/// `sdkwork-cloudrouter-edge-runtime` / `sdkwork-cloudrouter-*-gateway`) when
+/// it writes runtime-ID-backed rows during install, upgrade, ensure, or
+/// catalog refresh.
+const CLOUDROUTERCTL_SERVICE_NAME: &str = "sdkwork-cloudrouter-installer";
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -89,6 +99,18 @@ async fn run_postgres(config: DatabaseConfig, command: InstallerCommand) -> anyh
                 "federated commerce database bootstrap failed: {error}"
             ))
         })?;
+    }
+    // Commands that write runtime-ID-backed rows (official pricing sync)
+    // need the database-leased Snowflake generator installed first, mirroring
+    // the server assembly startup sequence.
+    if command.requires_runtime_id_generator() {
+        bootstrap_cloud_runtime_id_generator(&database_pool, CLOUDROUTERCTL_SERVICE_NAME)
+            .await
+            .map_err(|error| {
+                InstallerCliError::InvalidState(format!(
+                    "runtime ID generator bootstrap failed: {error}"
+                ))
+            })?;
     }
     let pool = database_pool.as_postgres().cloned().ok_or_else(|| {
         InstallerCliError::DatabaseConnection("expected PostgreSQL pool".to_owned())
@@ -589,6 +611,14 @@ impl InstallerCommand {
     fn requires_schema_migration(&self) -> bool {
         matches!(self, Self::Install | Self::Upgrade | Self::Ensure)
     }
+
+    fn requires_runtime_id_generator(&self) -> bool {
+        match self {
+            Self::Install | Self::Upgrade | Self::Ensure => true,
+            Self::RefreshCatalog(options) => options.mode != "dry_run",
+            Self::Status | Self::Backup(_) | Self::Restore(_) | Self::ResetAdmin(_) => false,
+        }
+    }
 }
 
 impl ResetAdminOptions {
@@ -995,6 +1025,66 @@ mod tests {
             ),
             "federated bootstrap must use the canonical seed locale override"
         );
+    }
+
+    #[test]
+    fn write_commands_bootstrap_the_runtime_id_generator_after_migrations() {
+        let source = include_str!("main.rs");
+
+        let bootstrap_call = source
+            .find(
+                "bootstrap_cloud_runtime_id_generator(&database_pool, CLOUDROUTERCTL_SERVICE_NAME)",
+            )
+            .expect("write commands must install the database-leased Snowflake generator");
+        let migration_gate = source
+            .find("command.requires_schema_migration()")
+            .expect("runtime ID bootstrap must follow the explicit migration gate");
+        let dispatch = source
+            .find("run_command(")
+            .expect("runtime ID bootstrap must run before installer dispatch");
+        assert!(
+            bootstrap_call > migration_gate && bootstrap_call < dispatch,
+            "runtime ID bootstrap must run after migrations and before installer dispatch"
+        );
+    }
+
+    #[test]
+    fn runtime_id_generator_is_required_only_for_write_commands() {
+        let dry_run = CatalogRefreshOptions {
+            mode: "dry_run".to_owned(),
+            ..CatalogRefreshOptions::default()
+        };
+        let official_refresh = CatalogRefreshOptions {
+            mode: "official_refresh".to_owned(),
+            ..CatalogRefreshOptions::default()
+        };
+
+        for command in [
+            InstallerCommand::Install,
+            InstallerCommand::Upgrade,
+            InstallerCommand::Ensure,
+            InstallerCommand::RefreshCatalog(official_refresh),
+        ] {
+            assert!(
+                command.requires_runtime_id_generator(),
+                "write commands must require the runtime ID generator"
+            );
+        }
+        for command in [
+            InstallerCommand::Status,
+            InstallerCommand::RefreshCatalog(dry_run),
+            InstallerCommand::Backup(crate::backup::BackupOptions { output: None }),
+            InstallerCommand::Restore(crate::backup::RestoreOptions {
+                input: PathBuf::from("backup.sql"),
+                database_only: true,
+            }),
+            InstallerCommand::ResetAdmin(ResetAdminOptions::default()),
+        ] {
+            assert!(
+                !command.requires_runtime_id_generator(),
+                "read-only commands must not require the runtime ID generator"
+            );
+        }
     }
 
     #[test]

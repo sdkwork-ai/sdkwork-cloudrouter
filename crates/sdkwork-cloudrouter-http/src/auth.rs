@@ -277,8 +277,13 @@ impl TrustedRequestSubject {
         extensions.get::<Self>().copied()
     }
 
-    /// Resolves the trusted subject from request extensions, web-framework context,
-    /// or legacy signed headers when the web framework is disabled.
+    /// Resolves the trusted subject from request extensions or web-framework
+    /// context. Client-supplied `x-sdkwork-*` identity headers are never
+    /// trusted: in legacy no-boundary mode the subject must come from a
+    /// verified app-session boundary or signed inter-service subject
+    /// projection, never from unsigned request headers (SECURITY_SPEC §5.1).
+    /// `from_headers` remains only for the internal server-side handoff that
+    /// runs after a boundary has already verified the subject.
     pub fn resolve_optional(headers: &HeaderMap, extensions: &Extensions) -> Option<Self> {
         if let Some(subject) = Self::from_extensions(extensions) {
             return Some(subject);
@@ -297,10 +302,8 @@ impl TrustedRequestSubject {
                 return Some(subject);
             }
         }
-        if crate::web_framework_compat::cloud_web_framework_enabled_from_env() {
-            return None;
-        }
-        Self::from_headers(headers).ok()
+        let _ = headers;
+        None
     }
 
     pub fn resolve_optional_from_parts(parts: &Parts) -> Option<Self> {
@@ -1130,7 +1133,14 @@ fn current_unix_seconds() -> Result<i64, String> {
         })
 }
 
-fn remove_internal_trusted_subject_headers(headers: &mut HeaderMap) {
+/// Removes the internal `x-sdkwork-*` trusted-subject projection headers.
+///
+/// Composite hosts that re-dispatch a request into another Web Framework
+/// pipeline (for example the all-in-one gateway dispatching into the in-process
+/// app/backend routers) must strip these before forwarding: the downstream
+/// surface classification rejects them as client-supplied projection headers
+/// (40001) even though they were injected by this host's own context injector.
+pub fn remove_internal_trusted_subject_headers(headers: &mut HeaderMap) {
     headers.remove(X_SDKWORK_TENANT_ID);
     headers.remove(X_SDKWORK_ORGANIZATION_ID);
     headers.remove(X_SDKWORK_USER_ID);

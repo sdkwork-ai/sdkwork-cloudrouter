@@ -360,10 +360,8 @@ async fn create_key_inner(
         .iter()
         .map(|group| group.code.clone())
         .collect::<Vec<_>>();
-    let binding_policies = resolve_group_routing_policies(
-        &group_codes,
-        request.group_routing_policies.as_deref(),
-    )?;
+    let binding_policies =
+        resolve_group_routing_policies(&group_codes, request.group_routing_policies.as_deref())?;
     let name = normalize_name(request.name.as_deref())?;
     let quota_limit = normalize_quota_limit(&request)?;
     let requested_modalities = normalize_modalities(request.modalities)?;
@@ -840,7 +838,10 @@ fn resolve_group_routing_policies(
         .map(|code| {
             (
                 code.clone(),
-                (BINDING_STRATEGY_PRICE_FIRST.to_owned(), BINDING_DEFAULT_WEIGHT),
+                (
+                    BINDING_STRATEGY_PRICE_FIRST.to_owned(),
+                    BINDING_DEFAULT_WEIGHT,
+                ),
             )
         })
         .collect::<BTreeMap<_, _>>();
@@ -890,9 +891,9 @@ fn resolve_group_routing_policies(
 /// `auto` and unknown values fall back to the default `price_first`.
 fn normalized_binding_strategy(value: &str) -> String {
     match value.trim() {
-        BINDING_STRATEGY_WEIGHTED | BINDING_STRATEGY_PRICE_FIRST | BINDING_STRATEGY_QUALITY_FIRST => {
-            value.trim().to_owned()
-        }
+        BINDING_STRATEGY_WEIGHTED
+        | BINDING_STRATEGY_PRICE_FIRST
+        | BINDING_STRATEGY_QUALITY_FIRST => value.trim().to_owned(),
         _ => BINDING_STRATEGY_PRICE_FIRST.to_owned(),
     }
 }
@@ -1562,7 +1563,11 @@ mod tests {
         values.iter().map(|value| (*value).to_owned()).collect()
     }
 
-    fn policy(account_group: &str, strategy: Option<&str>, weight: Option<i32>) -> GroupRoutingPolicy {
+    fn policy(
+        account_group: &str,
+        strategy: Option<&str>,
+        weight: Option<i32>,
+    ) -> GroupRoutingPolicy {
         GroupRoutingPolicy {
             account_group: Some(account_group.to_owned()),
             routing_strategy: strategy.map(str::to_owned),
@@ -1572,8 +1577,7 @@ mod tests {
 
     #[test]
     fn missing_policies_default_to_price_first_weight_100() {
-        let resolved =
-            resolve_group_routing_policies(&codes(&["g1", "g2"]), None).unwrap();
+        let resolved = resolve_group_routing_policies(&codes(&["g1", "g2"]), None).unwrap();
         assert_eq!(
             resolved.get("g1"),
             Some(&(BINDING_STRATEGY_PRICE_FIRST.to_owned(), 100))
@@ -1605,8 +1609,7 @@ mod tests {
     #[test]
     fn legacy_auto_strategy_is_treated_as_price_first() {
         let policies = vec![policy("g1", Some("auto"), None)];
-        let resolved =
-            resolve_group_routing_policies(&codes(&["g1"]), Some(&policies)).unwrap();
+        let resolved = resolve_group_routing_policies(&codes(&["g1"]), Some(&policies)).unwrap();
         assert_eq!(
             resolved.get("g1"),
             Some(&(BINDING_STRATEGY_PRICE_FIRST.to_owned(), 100))
@@ -1616,36 +1619,42 @@ mod tests {
     #[test]
     fn unknown_group_is_rejected() {
         let policies = vec![policy("missing", Some("weighted"), None)];
-        let error = resolve_group_routing_policies(&codes(&["g1"]), Some(&policies))
-            .unwrap_err();
+        let error = resolve_group_routing_policies(&codes(&["g1"]), Some(&policies)).unwrap_err();
         assert!(matches!(error, AppApiKeyCreateError::BadRequest(_)));
     }
 
     #[test]
     fn unknown_strategy_is_rejected() {
         let policies = vec![policy("g1", Some("round_robin"), None)];
-        let error = resolve_group_routing_policies(&codes(&["g1"]), Some(&policies))
-            .unwrap_err();
+        let error = resolve_group_routing_policies(&codes(&["g1"]), Some(&policies)).unwrap_err();
         assert!(matches!(error, AppApiKeyCreateError::BadRequest(_)));
     }
 
     #[test]
     fn weight_out_of_range_is_rejected() {
         let policies = vec![policy("g1", None, Some(10001))];
-        let error = resolve_group_routing_policies(&codes(&["g1"]), Some(&policies))
-            .unwrap_err();
+        let error = resolve_group_routing_policies(&codes(&["g1"]), Some(&policies)).unwrap_err();
         assert!(matches!(error, AppApiKeyCreateError::BadRequest(_)));
     }
 
     #[test]
     fn normalized_strategy_maps_legacy_values_to_price_first() {
-        assert_eq!(normalized_binding_strategy("auto"), BINDING_STRATEGY_PRICE_FIRST);
-        assert_eq!(normalized_binding_strategy(""), BINDING_STRATEGY_PRICE_FIRST);
+        assert_eq!(
+            normalized_binding_strategy("auto"),
+            BINDING_STRATEGY_PRICE_FIRST
+        );
+        assert_eq!(
+            normalized_binding_strategy(""),
+            BINDING_STRATEGY_PRICE_FIRST
+        );
         assert_eq!(
             normalized_binding_strategy("least_cost"),
             BINDING_STRATEGY_PRICE_FIRST
         );
-        assert_eq!(normalized_binding_strategy("weighted"), BINDING_STRATEGY_WEIGHTED);
+        assert_eq!(
+            normalized_binding_strategy("weighted"),
+            BINDING_STRATEGY_WEIGHTED
+        );
         assert_eq!(
             normalized_binding_strategy("quality_first"),
             BINDING_STRATEGY_QUALITY_FIRST

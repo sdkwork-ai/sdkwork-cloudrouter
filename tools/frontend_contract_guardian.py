@@ -294,6 +294,15 @@ class FrontendContractGuardian:
             "getSdkworkPromptsBackendSdkClient",
             "@sdkwork/prompts-backend-sdk",
         },
+        "community": {
+            "getSdkworkCommunityBackendSdkClient",
+            "@sdkwork/community-backend-sdk",
+        },
+        "log": {
+            "getSdkworkLogBackendSdkClient",
+            "getLogBackendSdkClient",
+            "@sdkwork/log-backend-sdk",
+        },
     }
     BUSINESS_API_PREFIXES = ("/app/v3/api", "/backend/v3/api")
     SDK_CLIENT_BOUNDARY_FILE = (
@@ -381,6 +390,8 @@ class FrontendContractGuardian:
     RAW_BROWSER_NETWORK_ALLOWLIST = frozenset(
         {
             "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-core/src/index.ts",
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/quick-import/quickImport.ts",
+            "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/modelKitIntegration.ts",
             "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/apiReferenceSchemaTabs.ts",
             "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/codeSnippetClient.ts",
             "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/components/ApiPlayground.tsx",
@@ -399,6 +410,9 @@ class FrontendContractGuardian:
             "sdkwork-iam-backend-sdk",
             "sdkwork-cloudrouter-app-sdk",
             "sdkwork-cloudrouter-backend-sdk",
+            "sdkwork-log-backend-sdk",
+            "sdkwork-partner-backend-sdk",
+            "sdkwork-partner-app-sdk",
         }
     )
     WORKSPACE_DOCUMENTS_PACKAGE_SRC: dict[str, str] = {
@@ -474,7 +488,7 @@ class FrontendContractGuardian:
         / "schema-registry"
         / "frontend-field-contracts"
         / "operations"
-        / "backend-commerce-catalog.yaml",
+        / "backend-admin-commerce.yaml",
     )
     STATIC_SOURCE_METADATA_LABELS = {
         "curated_seed_content": "curated seed",
@@ -570,12 +584,32 @@ class FrontendContractGuardian:
             if route not in contract_route_values:
                 messages.append(f"frontend route missing field contract: {route}")
 
+        parameterized_hosts = sorted(
+            (
+                candidate
+                for candidate in contract_route_values
+                if candidate.endswith("/:sectionId?")
+            ),
+            key=len,
+            reverse=True,
+        )
+
+        def is_section_child_route(route: str) -> bool:
+            for candidate in parameterized_hosts:
+                prefix = candidate.removesuffix("/:sectionId?")
+                if route == prefix or route.startswith(f"{prefix}/"):
+                    return True
+            return False
+
         for item in contract_routes:
             if not isinstance(item, dict) or not isinstance(item.get("route"), str):
                 continue
             route = item["route"]
             dependency_owned = self._is_dependency_owned_contract_route(item)
-            if route not in actual_routes:
+            # Detail routes (`{param}`) and section-child routes are API-level
+            # route contracts; the portal hosts them through detail pages or a
+            # `/:sectionId?` section route, so they are not portal routes.
+            if route not in actual_routes and "{" not in route and not is_section_child_route(route):
                 messages.append(f"frontend contract route is not in portal App.tsx: {route}")
 
             route_tables = self._manifest_route_tables(routes.get(route))
@@ -1182,7 +1216,12 @@ class FrontendContractGuardian:
                 if self.GENERATED_SDK_CLIENT_CONSTRUCTION_PATTERN.search(source):
                     messages.append(f"{self.GENERATED_SDK_CLIENT_CONSTRUCTION_BOUNDARY_MESSAGE}: {relative}")
 
-            if any(prefix in source for prefix in self.BUSINESS_API_PREFIXES) and relative not in self.SDK_CLIENT_BOUNDARY_FILES and relative not in self.DOCUMENTS_RUNTIME_BOUNDARY_FILES:
+            if (
+                any(prefix in source for prefix in self.BUSINESS_API_PREFIXES)
+                and relative not in self.SDK_CLIENT_BOUNDARY_FILES
+                and relative not in self.DOCUMENTS_RUNTIME_BOUNDARY_FILES
+                and "/resources/" not in f"/{relative}"
+            ):
                 messages.append(f"{self.BUSINESS_API_PREFIX_BOUNDARY_MESSAGE}: {relative}")
 
             if self._contains_manual_admin_session_token_usage(relative, source):
@@ -1424,6 +1463,8 @@ class FrontendContractGuardian:
             expected_client = "getSdkworkPromptsBackendSdkClient"
         elif dependency_sdk_family == "sdkwork-agent-backend-sdk":
             expected_client = "getSdkworkAgentBackendSdkClient"
+        elif dependency_sdk_family == "sdkwork-community-backend-sdk":
+            expected_client = "getSdkworkCommunityBackendSdkClient"
         if not any(
             self._operation_uses_allowed_sdk_client_boundary(operation, expected_client)
             for operation in matching_operations
@@ -1593,6 +1634,10 @@ class FrontendContractGuardian:
             return "drive"
         if normalized in {"prompt", "prompts"}:
             return "prompts"
+        if normalized in {"community", "circles"}:
+            return "community"
+        if normalized in {"log", "logs"}:
+            return "log"
         return ""
 
     def _resolve_relative_import(self, source_path: Path, import_spec: str) -> Path | None:

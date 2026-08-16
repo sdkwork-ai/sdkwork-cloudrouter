@@ -1,7 +1,6 @@
 pub mod common;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
-use common::InternalTrustedSubjectHeaders;
 use sdkwork_cloudrouter_router_service::application::{
     CacheInstanceSpec, CacheNamespacePolicy, CacheRuntime, CacheRuntimeTarget, RuntimeCacheManager,
 };
@@ -566,12 +565,7 @@ async fn admin_cache_route_reports_disabled_management_operations_as_conflict() 
 }
 
 fn signed_request(method: &str, path: &str) -> Request<Body> {
-    Request::builder()
-        .method(method)
-        .uri(path)
-        .internal_trusted_subject(100001, 0, 30)
-        .body(Body::empty())
-        .unwrap()
+    common::web_framework_backend_request(method, path, Body::empty(), "100001", Some("0"), "30")
 }
 
 async fn json_payload(response: axum::response::Response) -> Value {

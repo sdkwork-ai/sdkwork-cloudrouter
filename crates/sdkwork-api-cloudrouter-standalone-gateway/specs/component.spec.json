@@ -74,7 +74,8 @@
     "requiredPorts": [
       {
         "name": "cloudrouterApiAssembly",
-        "export": "sdkwork_api_cloudrouter_assembly::assemble_api_router"
+        "export": "sdkwork_api_cloudrouter_assembly::assemble_api_router",
+        "provider": "sdkwork-api-cloudrouter-assembly"
       }
     ],
     "runtimeEntrypoints": [

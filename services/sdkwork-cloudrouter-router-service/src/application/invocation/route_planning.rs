@@ -5,16 +5,19 @@ use super::{
     InvocationInterceptor, InvocationRouteCandidate, InvocationRouteCandidateKind,
     InvocationRoutePlan, InvocationSurface, ResourceType, StickyRouteConstraint,
 };
+use crate::application::upstream_base_url::{
+    protocol_code_from_api_code, resolve_upstream_base_url,
+};
 use crate::application::{
     model_access_forbidden_message, model_access_forbidden_reason, AuthenticatedApiKeyContext,
     SelectUpstreamAccountRouteQuery, SelectUpstreamModelRouteQuery, SelectedUpstreamAccountRoute,
     SelectedUpstreamModelRoute, UpstreamRouteSelectionErrorKind, UpstreamRouteSelector,
 };
 use crate::domain::{
-    has_text, provider_native_model_id, BillingMeter, ModelUpstreamRoute, RoutingCapability,
-    ResolveModelMappingContext, UpstreamAccountRoute,
+    has_text, provider_native_model_id, BillingMeter, ModelUpstreamRoute,
+    ResolveModelMappingContext, RoutingCapability, UpstreamAccountRoute,
 };
-use crate::ports::UpstreamAccountRouteCatalog;
+use crate::ports::{AccountBaseUrlConfig, UpstreamAccountRouteCatalog};
 
 #[derive(Clone)]
 pub struct RoutePlanningInterceptor<C>
@@ -227,10 +230,16 @@ where
         credential_rotation: account_route
             .as_ref()
             .map(|route| route.credential_rotation.clone()),
-        base_url: effective_base_url(
+        base_url: resolve_upstream_base_url(
             invocation.resource.capability,
-            account_route.as_ref().and_then(|route| route.base_url.clone()),
+            protocol_code_from_api_code(Some(invocation.resource.api_code.as_str())),
+            catalog
+                .account_base_url_config(sticky_route.account_id)
+                .as_ref(),
             catalog.supplier_default_base_url(&sticky_route.supplier_code),
+            account_route
+                .as_ref()
+                .and_then(|route| route.base_url.clone()),
         ),
         secret_ref: account_route
             .as_ref()
@@ -281,7 +290,16 @@ where
     let model = route.model.clone();
     let provider_model = route.provider_model.clone();
     let supplier_default_base_url = catalog.supplier_default_base_url(&route.supplier_code);
-    let mut candidate = model_candidate(selection, capability, supplier_default_base_url);
+    let account_config = catalog.account_base_url_config(route.account_id);
+    // 克隆 api_code：其借用指向 selection.route，须在移动 selection 前解耦
+    let api_code = route.api_code.clone();
+    let mut candidate = model_candidate(
+        selection,
+        capability,
+        supplier_default_base_url,
+        api_code.as_deref(),
+        account_config.as_ref(),
+    );
     candidate.provider_model = Some(
         account_mapping
             .as_ref()
@@ -345,28 +363,17 @@ fn normalized_resolved_provider_model(
     }
 }
 
-/// 按请求资源能力判定最终调用 Base URL：Chat（LLM）走协议端点 Base URL；
-/// 非 LLM 资源（图片/视频/音频等）优先使用供应商默认 Base URL，未配置时回退端点地址。
-fn effective_base_url(
-    capability: RoutingCapability,
-    endpoint_base_url: Option<String>,
-    supplier_default_base_url: Option<String>,
-) -> Option<String> {
-    if capability != RoutingCapability::Chat {
-        if let Some(default_url) = supplier_default_base_url {
-            let trimmed = default_url.trim();
-            if !trimmed.is_empty() {
-                return Some(trimmed.to_owned());
-            }
-        }
-    }
-    endpoint_base_url
-}
+/// 按请求资源能力与 LLM 协议判定最终调用 Base URL（详见
+/// `application::upstream_base_url::resolve_upstream_base_url`）。
+/// 优先级：账号配置 > 供应商配置 > 端点解析结果（`route_base_url` 已含
+/// 端点 Base URL 与供应商默认 Base URL 兜底，见 rows.rs）。
 
 fn model_candidate(
     selection: SelectedUpstreamModelRoute,
     capability: RoutingCapability,
     supplier_default_base_url: Option<String>,
+    api_code: Option<&str>,
+    account_config: Option<&AccountBaseUrlConfig>,
 ) -> InvocationRouteCandidate {
     let route = selection.route;
     InvocationRouteCandidate {
@@ -385,10 +392,12 @@ fn model_candidate(
         region_code: route.region_code.clone(),
         credential_id: route.credential_id,
         credential_rotation: Some(route.credential_rotation.clone()),
-        base_url: effective_base_url(
+        base_url: resolve_upstream_base_url(
             capability,
-            route.base_url.clone(),
+            protocol_code_from_api_code(api_code),
+            account_config,
             supplier_default_base_url,
+            route.base_url.clone(),
         ),
         secret_ref: route.secret_ref.clone(),
         auth_profile: route.auth_profile.clone(),
@@ -422,10 +431,12 @@ where
         region_code: route.region_code.clone(),
         credential_id: route.credential_id,
         credential_rotation: Some(route.credential_rotation.clone()),
-        base_url: effective_base_url(
+        base_url: resolve_upstream_base_url(
             invocation.resource.capability,
-            route.base_url.clone(),
+            protocol_code_from_api_code(Some(invocation.resource.api_code.as_str())),
+            catalog.account_base_url_config(route.account_id).as_ref(),
             catalog.supplier_default_base_url(&route.supplier_code),
+            route.base_url.clone(),
         ),
         secret_ref: route.secret_ref.clone(),
         auth_profile: route.auth_profile.clone(),
@@ -460,10 +471,12 @@ where
         region_code: route.region_code.clone(),
         credential_id: route.credential_id,
         credential_rotation: Some(route.credential_rotation.clone()),
-        base_url: effective_base_url(
+        base_url: resolve_upstream_base_url(
             invocation.resource.capability,
-            route.base_url.clone(),
+            protocol_code_from_api_code(Some(invocation.resource.api_code.as_str())),
+            catalog.account_base_url_config(route.account_id).as_ref(),
             catalog.supplier_default_base_url(&route.supplier_code),
+            route.base_url.clone(),
         ),
         secret_ref: route.secret_ref.clone(),
         auth_profile: route.auth_profile.clone(),
@@ -624,11 +637,9 @@ where
                     .ok()
                     .and_then(|catalog_key| catalog.find_model(&catalog_key))
                     .map(|model| model.vendor_code);
-                if let Some(rule) = model_access_forbidden_reason(
-                    vendor_code.as_deref(),
-                    requested_model,
-                    &access,
-                ) {
+                if let Some(rule) =
+                    model_access_forbidden_reason(vendor_code.as_deref(), requested_model, &access)
+                {
                     return Some(model_access_forbidden_message(
                         rule,
                         requested_model,

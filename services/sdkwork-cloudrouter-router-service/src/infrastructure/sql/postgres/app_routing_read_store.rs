@@ -4,9 +4,9 @@ use crate::domain::{DomainError, DomainResult};
 use crate::ports::{
     AppRoutingAccountGroupItem, AppRoutingAccountGroupListPage, AppRoutingApiKeyAccountGroupItem,
     AppRoutingApiKeyItem, AppRoutingApiKeyListPage, AppRoutingListQuery, AppRoutingModelStats,
-    AppRoutingReadFuture, AppRoutingReadStore, AppRoutingRequestTraceItem,
-    AppRoutingRequestTraceListPage, AppRoutingSubject, AppRoutingUsageData,
-    AppRoutingUsageSnapshot,
+    AppRoutingReadFuture, AppRoutingReadStore, AppRoutingRequestTraceCursor,
+    AppRoutingRequestTraceItem, AppRoutingRequestTraceListPage, AppRoutingSubject,
+    AppRoutingTraceQuery, AppRoutingUsageData, AppRoutingUsageSnapshot,
 };
 
 const LOAD_ROUTING_ACCOUNT_GROUPS: &str = r#"
@@ -163,16 +163,52 @@ SELECT
     COALESCE(NULLIF(k.key_display_masked, ''), NULLIF(k.key_prefix, ''), '') AS key_display_masked,
     k.status AS api_key_status,
     CAST(k.created_at AS TEXT) AS created_at,
-    CAST(COALESCE(SUM(COALESCE(u.request_count, 0)), 0) AS TEXT) AS total_usage,
+    CAST(COALESCE(u.total_usage, 0) AS TEXT) AS total_usage,
     ag.account_groups_json,
     COUNT(*) OVER() AS total
 FROM iam_gateway_api_key k
-LEFT JOIN ai_metering_usage u
-  ON u.tenant_id = k.tenant_id
- AND u.organization_id = k.organization_id
- AND u.user_id = k.user_id
- AND u.api_key_id = k.id
- AND u.status = 1
+LEFT JOIN LATERAL (
+    SELECT COALESCE(SUM(billable.request_count), 0) AS total_usage
+    FROM (
+        SELECT COALESCE((m.dimensions_json ->> 'requestCount')::bigint, 0) AS request_count
+        FROM cloudrouter_charge_line charge
+        JOIN cloudrouter_rating_decision decision
+          ON decision.tenant_id = charge.tenant_id
+         AND decision.organization_id = charge.organization_id
+         AND decision.id = charge.rating_decision_id
+        JOIN cloudrouter_usage_measurement m
+          ON m.tenant_id = decision.tenant_id
+         AND m.organization_id = decision.organization_id
+         AND m.id = decision.measurement_id
+        WHERE charge.status = 1
+          AND charge.charge_status IN ('rated', 'settled')
+          AND charge.amount > 0
+          AND decision.status = 1
+          AND decision.decision_status = 'rated'
+          AND decision.billability = 'chargeable'
+          AND charge.tenant_id = k.tenant_id
+          AND charge.organization_id = k.organization_id
+          AND charge.user_id = k.user_id
+          AND m.api_key_id = k.id
+        UNION ALL
+        SELECT COALESCE(legacy.request_count, 0)
+        FROM ai_metering_usage legacy
+        WHERE legacy.status = 1
+          AND COALESCE(legacy.customer_charge_amount, 0) > 0
+          AND legacy.tenant_id = k.tenant_id
+          AND legacy.organization_id = k.organization_id
+          AND legacy.user_id = k.user_id
+          AND legacy.api_key_id = k.id
+          AND NOT EXISTS (
+              SELECT 1
+              FROM cloudrouter_rating_decision current_decision
+              WHERE current_decision.tenant_id = legacy.tenant_id
+                AND current_decision.organization_id = legacy.organization_id
+                AND current_decision.invocation_id = legacy.request_id
+                AND current_decision.status = 1
+          )
+    ) billable
+) u ON TRUE
 LEFT JOIN LATERAL (
     SELECT COALESCE(
         jsonb_agg(
@@ -209,13 +245,48 @@ WHERE k.tenant_id = $1
   AND k.user_id = $3
   AND k.deleted_at IS NULL
   AND ($4::text IS NULL OR lower(COALESCE(k.name, k.key_prefix, k.key_display_masked, '')) LIKE lower($4))
-GROUP BY k.id, k.name, k.key_prefix, k.key_display_masked, k.metadata, k.status, k.created_at, ag.account_groups_json
 ORDER BY k.updated_at DESC NULLS LAST, k.id DESC
 LIMIT $5 OFFSET $6
 "#;
 
 const LOAD_ROUTING_REQUEST_TRACES: &str = r#"
-WITH selected_trace AS (
+WITH measured_usage AS (
+    SELECT
+        m.tenant_id,
+        m.organization_id,
+        m.user_id,
+        m.invocation_id AS request_id,
+        m.catalog_key,
+        COALESCE((m.dimensions_json ->> 'totalTokens')::bigint, 0) AS total_tokens
+    FROM cloudrouter_usage_measurement m
+    WHERE m.status = 1
+      AND m.tenant_id = $1
+      AND m.organization_id = $2
+      AND m.user_id = $3
+    UNION ALL
+    SELECT
+        legacy.tenant_id,
+        legacy.organization_id,
+        legacy.user_id,
+        legacy.request_id,
+        legacy.catalog_key,
+        COALESCE(legacy.total_tokens, 0)
+    FROM ai_metering_usage legacy
+    WHERE legacy.status = 1
+      AND legacy.tenant_id = $1
+      AND legacy.organization_id = $2
+      AND legacy.user_id = $3
+      AND NULLIF(legacy.request_id, '') IS NOT NULL
+      AND NOT EXISTS (
+          SELECT 1
+          FROM cloudrouter_usage_measurement current_measurement
+          WHERE current_measurement.tenant_id = legacy.tenant_id
+            AND current_measurement.organization_id = legacy.organization_id
+            AND current_measurement.invocation_id = legacy.request_id
+            AND current_measurement.status = 1
+      )
+),
+selected_trace AS (
     SELECT
         id,
         request_id,
@@ -296,9 +367,8 @@ usage_by_request AS (
         request_id,
         MAX(catalog_key) AS catalog_key,
         COALESCE(SUM(COALESCE(total_tokens, 0)), 0) AS total_tokens
-    FROM ai_metering_usage
-    WHERE status = 1
-      AND tenant_id = $1
+    FROM measured_usage
+    WHERE tenant_id = $1
       AND organization_id = $2
       AND user_id = $3
       AND NULLIF(request_id, '') IS NOT NULL
@@ -306,6 +376,8 @@ usage_by_request AS (
 )
 SELECT
     CAST(t.id AS TEXT) AS id,
+    CAST(TRUNC(EXTRACT(EPOCH FROM COALESCE(t.started_at, t.created_at)) * 1000000) AS BIGINT) AS cursor_started_at_micros,
+    t.id AS cursor_id,
     COALESCE(CAST(t.started_at AS TEXT), CAST(t.created_at AS TEXT), '') AS trace_time,
     COALESCE(NULLIF(t.trace_id, ''), '') AS trace_id,
     COALESCE(NULLIF(t.request_id, ''), '') AS request_id,
@@ -315,7 +387,7 @@ SELECT
     COALESCE(NULLIF(t.account_name_snapshot, ''), NULLIF(a.account_name, ''), '') AS upstream_account_name,
     COALESCE(CAST(t.account_group_id AS TEXT), '') AS upstream_account_group_id,
     COALESCE(NULLIF(g.group_code, ''), '') AS upstream_account_group_code,
-    COALESCE(NULLIF(t.account_group_snapshot, ''), NULLIF(g.group_name_i18n->>$7, ''), NULLIF(g.group_name, ''), '') AS upstream_account_group_name,
+    COALESCE(NULLIF(t.account_group_snapshot, ''), NULLIF(g.group_name_i18n->>$8, ''), NULLIF(g.group_name, ''), '') AS upstream_account_group_name,
     COALESCE(NULLIF(t.request_path, ''), '') AS request_path,
     COALESCE(NULLIF(t.http_method, ''), '') AS http_method,
     t.http_status AS http_status,
@@ -330,8 +402,7 @@ SELECT
     COALESCE(CAST(t.ended_at AS TEXT), '') AS ended_at,
     CASE WHEN COALESCE(t.streaming, false) THEN 1 ELSE 0 END AS streaming,
     t.latency_ms AS latency_ms,
-    CAST(COALESCE(u.total_tokens, t.total_tokens, 0) AS BIGINT) AS total_tokens,
-    COUNT(*) OVER() AS total
+    CAST(COALESCE(u.total_tokens, t.total_tokens, 0) AS BIGINT) AS total_tokens
 FROM selected_trace t
 LEFT JOIN ai_routing_decision_log d
   ON d.status = 1
@@ -370,8 +441,16 @@ WHERE (
         d.resolved_model
     )) LIKE lower($4)
 )
-ORDER BY t.started_at DESC NULLS LAST, t.id DESC
-LIMIT $5 OFFSET $6
+AND (
+    $5::bigint IS NULL
+    OR COALESCE(t.started_at, t.created_at) < TIMESTAMPTZ 'epoch' + ($5::bigint * INTERVAL '1 microsecond')
+    OR (
+        COALESCE(t.started_at, t.created_at) = TIMESTAMPTZ 'epoch' + ($5::bigint * INTERVAL '1 microsecond')
+        AND t.id < $6
+    )
+)
+ORDER BY COALESCE(t.started_at, t.created_at) DESC, t.id DESC
+LIMIT $7
 "#;
 
 const LOAD_ROUTING_USAGE_CHART: &str = r#"
@@ -395,7 +474,43 @@ ORDER BY bucket_time ASC
 "#;
 
 const LOAD_ROUTING_MODEL_STATS: &str = r#"
-WITH trace_by_model AS (
+WITH measured_usage AS (
+    SELECT
+        m.tenant_id,
+        m.organization_id,
+        m.user_id,
+        m.invocation_id AS request_id,
+        m.catalog_key,
+        COALESCE((m.dimensions_json ->> 'totalTokens')::bigint, 0) AS total_tokens
+    FROM cloudrouter_usage_measurement m
+    WHERE m.status = 1
+      AND m.tenant_id = $1
+      AND m.organization_id = $2
+      AND m.user_id = $3
+    UNION ALL
+    SELECT
+        legacy.tenant_id,
+        legacy.organization_id,
+        legacy.user_id,
+        legacy.request_id,
+        legacy.catalog_key,
+        COALESCE(legacy.total_tokens, 0)
+    FROM ai_metering_usage legacy
+    WHERE legacy.status = 1
+      AND legacy.tenant_id = $1
+      AND legacy.organization_id = $2
+      AND legacy.user_id = $3
+      AND NULLIF(legacy.request_id, '') IS NOT NULL
+      AND NOT EXISTS (
+          SELECT 1
+          FROM cloudrouter_usage_measurement current_measurement
+          WHERE current_measurement.tenant_id = legacy.tenant_id
+            AND current_measurement.organization_id = legacy.organization_id
+            AND current_measurement.invocation_id = legacy.request_id
+            AND current_measurement.status = 1
+      )
+),
+trace_by_model AS (
     SELECT
         COALESCE(NULLIF(u.catalog_key, ''), NULLIF(d.resolved_model, ''), NULLIF(t.provider_model, ''), NULLIF(t.requested_model, ''), 'unknown') AS model,
         COUNT(1) AS request_count,
@@ -415,9 +530,8 @@ WITH trace_by_model AS (
             organization_id,
             request_id,
             MAX(catalog_key) AS catalog_key
-        FROM ai_metering_usage
-        WHERE status = 1
-          AND tenant_id = $1
+        FROM measured_usage
+        WHERE tenant_id = $1
           AND organization_id = $2
           AND user_id = $3
           AND NULLIF(request_id, '') IS NOT NULL
@@ -441,9 +555,8 @@ usage_by_model AS (
     SELECT
         COALESCE(NULLIF(catalog_key, ''), 'unknown') AS model,
         COALESCE(SUM(COALESCE(total_tokens, 0)), 0) AS total_tokens
-    FROM ai_metering_usage
-    WHERE status = 1
-      AND tenant_id = $1
+    FROM measured_usage
+    WHERE tenant_id = $1
       AND organization_id = $2
       AND user_id = $3
     GROUP BY COALESCE(NULLIF(catalog_key, ''), 'unknown')
@@ -550,35 +663,47 @@ impl AppRoutingReadStore for PostgresAppRoutingReadStore {
     fn load_routing_request_traces<'a>(
         &'a self,
         subject: Option<AppRoutingSubject>,
-        query: AppRoutingListQuery,
+        query: AppRoutingTraceQuery,
         locale: Option<&'a str>,
     ) -> AppRoutingReadFuture<'a, AppRoutingRequestTraceListPage> {
         Box::pin(async move {
             let subject = require_subject(subject)?;
             let search = query.q.as_deref().map(|value| format!("%{value}%"));
+            let cursor_started_at_micros =
+                query.cursor.as_ref().map(|cursor| cursor.started_at_micros);
+            let cursor_id = query.cursor.as_ref().map(|cursor| cursor.id);
+            let fetch_limit = query.page_size.checked_add(1).ok_or_else(|| {
+                DomainError::new("routing request traces page size exceeds the supported range")
+            })?;
             let rows = sqlx::query(LOAD_ROUTING_REQUEST_TRACES)
                 .bind(subject.tenant_id)
                 .bind(subject.organization_id)
                 .bind(subject.user_id)
                 .bind(search)
-                .bind(query.page_size.max(1))
-                .bind(query.offset.max(0))
+                .bind(cursor_started_at_micros)
+                .bind(cursor_id)
+                .bind(fetch_limit)
                 .bind(locale)
                 .fetch_all(&self.pool)
                 .await
                 .map_err(sql_error)?;
-            let total = rows
-                .first()
-                .and_then(|row| row.try_get::<i64, _>("total").ok())
-                .unwrap_or(0);
-            let items = rows
+
+            let page_size = usize::try_from(query.page_size)
+                .map_err(|_| DomainError::new("routing request traces page size is invalid"))?;
+            let has_more = rows.len() > page_size;
+            let mut mapped_rows = rows
                 .into_iter()
-                .map(row_to_request_trace)
+                .take(page_size)
+                .map(row_to_request_trace_with_cursor)
                 .collect::<DomainResult<Vec<_>>>()?;
+            let next_cursor = has_more
+                .then(|| mapped_rows.last().map(|row| row.cursor.clone()))
+                .flatten();
+            let items = mapped_rows.drain(..).map(|row| row.item).collect();
             Ok(AppRoutingRequestTraceListPage {
                 items,
-                total,
-                page_no: query.page_no,
+                next_cursor,
+                has_more,
                 page_size: query.page_size,
             })
         })
@@ -675,6 +800,24 @@ fn row_to_request_trace(row: sqlx::postgres::PgRow) -> DomainResult<AppRoutingRe
         started_at: string_cell(&row, "started_at"),
         ended_at: string_cell(&row, "ended_at"),
         streaming: integer_cell(&row, "streaming") != 0,
+    })
+}
+
+struct MappedRequestTraceRow {
+    item: AppRoutingRequestTraceItem,
+    cursor: AppRoutingRequestTraceCursor,
+}
+
+fn row_to_request_trace_with_cursor(
+    row: sqlx::postgres::PgRow,
+) -> DomainResult<MappedRequestTraceRow> {
+    let cursor = AppRoutingRequestTraceCursor {
+        started_at_micros: required_integer_cell(&row, "cursor_started_at_micros")?,
+        id: required_integer_cell(&row, "cursor_id")?,
+    };
+    Ok(MappedRequestTraceRow {
+        item: row_to_request_trace(row)?,
+        cursor,
     })
 }
 

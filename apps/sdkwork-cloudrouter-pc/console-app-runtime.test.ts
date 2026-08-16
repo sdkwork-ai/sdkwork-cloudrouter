@@ -1104,6 +1104,24 @@ test("shared notification service reads notification items returned by the gener
       const result = await NotificationService.fetchNotifications();
 
       assert.equal(captured[0].url, "/app/v3/api/notification/notifications?include_archived=false&page=1&page_size=50");
+      // Surface classification rejects identity projection headers with 40001;
+      // the portal SDK boundary must never emit them on the notification path.
+      const headerNames = Object.keys(captured[0].headers).map((name) => name.toLowerCase());
+      for (const forbidden of [
+        "x-sdkwork-tenant-id",
+        "x-sdkwork-organization-id",
+        "x-sdkwork-user-id",
+        "x-tenant-id",
+        "x-organization-id",
+        "x-platform",
+        "x-user-id",
+      ]) {
+        assert.equal(
+          headerNames.includes(forbidden),
+          false,
+          `notification list request must not carry projection header ${forbidden}`,
+        );
+      }
       assert.deepEqual(result.map((item) => item.id), ["notif-1", "notif-2"]);
       assert.equal(result[0].type, "warning");
       assert.equal(result[0].read, false);

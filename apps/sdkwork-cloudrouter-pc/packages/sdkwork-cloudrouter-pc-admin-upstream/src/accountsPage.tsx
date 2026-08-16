@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { CheckCircle2, ChevronRight, Edit3, Layers3, Plus, Power, PowerOff, RefreshCw, Search, Settings2, SlidersHorizontal, Trash2, X, XCircle } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Edit3, Eye, EyeOff, Layers3, Plus, Power, PowerOff, RefreshCw, Search, Settings2, SlidersHorizontal, Trash2, X, XCircle } from 'lucide-react';
 import { SdkworkSearchableSelect } from '@sdkwork/appbase-pc-react';
 import { AdminTableShell, BottomPagination, ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons';
 import { formatDecimalDisplay } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { useTranslation } from 'react-i18next';
 import type {
   CreateUpstreamAccountRequest,
+  LlmProtocolConfig,
   UpstreamAccount,
   UpstreamAccountCredential,
   UpstreamAccountGroup,
@@ -65,6 +66,34 @@ const DEFAULT_ACCOUNT_AUTH_METHOD: UpstreamSupplierAuthMethodInput = {
   configSchema: {},
   runtimeAuthConfig: { credentialTransport: 'bearer', credentialParameter: null, defaultHeaders: {} },
 };
+
+/** 账号级协议 Base URL 覆盖行：勾选 = 覆盖供应商配置；未勾选 = 继承供应商配置 */
+interface ProtocolOverride {
+  enabled: boolean;
+  baseUrl: string;
+}
+
+/** 仅提交勾选且已填写的协议覆盖（留空行视为继承供应商，不提交） */
+function enabledProtocolConfigs(overrides: Record<string, ProtocolOverride>): LlmProtocolConfig[] {
+  return Object.entries(overrides)
+    .filter(([, entry]) => entry.enabled && entry.baseUrl.trim() !== '')
+    .map(([protocolCode, entry]) => ({ protocolCode: protocolCode as LlmProtocolConfig['protocolCode'], baseUrl: entry.baseUrl.trim() }));
+}
+
+function parseProtocolConfigs(form: FormData): LlmProtocolConfig[] {
+  const raw = String(form.get('protocols') ?? '[]').trim();
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item): item is LlmProtocolConfig =>
+      typeof item === 'object' && item !== null
+      && typeof (item as LlmProtocolConfig).protocolCode === 'string'
+      && typeof (item as LlmProtocolConfig).baseUrl === 'string');
+  } catch {
+    return [];
+  }
+}
 
 /** 新建账号默认认证方式：优先标准 API Key（code api-key），其次任意 api_key 类型，再取首个 */
 function defaultAuthMethodCode(methods: UpstreamSupplierAuthMethod[]): string {
@@ -544,10 +573,48 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
   const [selection, setSelection] = useState<ResourceSelection>(emptyResourceSelection());
   const [apiKeyMasked, setApiKeyMasked] = useState('');
   const [apiKeyInput, setApiKeyInput] = useState('');
+  const [preferredEndpointId, setPreferredEndpointId] = useState('');
+  const [preferredEndpointStale, setPreferredEndpointStale] = useState(false);
   const [resourcesLoading, setResourcesLoading] = useState(true);
   const [groupMissing, setGroupMissing] = useState(false);
   const [seedingAuth, setSeedingAuth] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [showApiKey, setShowApiKey] = useState(false);
+  // Base URL 配置区：账号级默认地址 + 各 LLM 协议独立覆盖（账号配置优先于供应商配置）
+  const [defaultBaseUrl, setDefaultBaseUrl] = useState(account?.defaultBaseUrl ?? '');
+  const [protocolOverrides, setProtocolOverrides] = useState<Record<string, ProtocolOverride>>({});
+  const [protocolUrlError, setProtocolUrlError] = useState(false);
+
+  // 供应商/账号切换时同步协议覆盖区：账号覆盖是相对供应商的配置，
+  // 仅保留与当前供应商协议匹配的覆盖行；编辑模式回填账号自身配置，其余继承供应商
+  useEffect(() => {
+    const supplier = suppliers.find((item) => item.id === supplierId) ?? null;
+    const supplierProtocols = supplier?.protocols ?? [];
+    const accountIsCurrent = !!account && account.supplierId === supplierId;
+    setProtocolUrlError(false);
+    setProtocolOverrides((current) => {
+      const next: Record<string, ProtocolOverride> = {};
+      for (const protocol of supplierProtocols) {
+        const accountOverride = accountIsCurrent
+          ? (account?.protocols ?? []).find((item) => item.protocolCode === protocol.protocolCode)
+          : undefined;
+        const previous = current[protocol.protocolCode];
+        next[protocol.protocolCode] = {
+          enabled: accountOverride ? true : (previous?.enabled ?? false),
+          baseUrl: accountOverride?.baseUrl ?? previous?.baseUrl ?? protocol.baseUrl,
+        };
+      }
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supplierId, account]);
+
+  // 账号默认 Base URL 是账号级配置（与供应商选择无关）：仅在切换编辑目标时回填，
+  // 不随供应商切换清除，也不覆盖创建模式下的用户输入
+  useEffect(() => {
+    if (account) setDefaultBaseUrl(account?.defaultBaseUrl ?? '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account]);
 
   useEffect(() => {
     if (!supplierId) return;
@@ -557,6 +624,18 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
     ]).then(([nextMethods, nextEndpoints]) => {
       setAuthMethods(nextMethods);
       setEndpoints(nextEndpoints);
+      // 编辑模式：端点加载完成后回填当前首选端点；该端点已停用/不存在时回退为「自动选择」并提示，
+      // 保存时提交 null，由后端清除失效绑定（更新语义：缺省=保持、null=清除、id=设置）。
+      if (account) {
+        const current = account.preferredEndpointId ?? '';
+        const currentStillActive = current !== '' && nextEndpoints.some((endpoint) => endpoint.id === current && endpoint.status === 1);
+        // 仅在未切换供应商、而当前首选端点已停用/删除时提示；切换供应商属于正常重绑流程，不提示
+        setPreferredEndpointStale(current !== '' && !currentStillActive && account.supplierId === supplierId);
+        setPreferredEndpointId((previous) => {
+          if (previous !== '' && nextEndpoints.some((endpoint) => endpoint.id === previous && endpoint.status === 1)) return previous;
+          return currentStillActive ? current : '';
+        });
+      }
       // 创建模式：默认选中 API Key（优先 code api-key，其次 api_key 类型）；切换供应商时重置选择，
       // 避免残留上一供应商的认证方式
       if (!account) {
@@ -614,12 +693,31 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
   // 认证方式为 APIKEY 时显示 API Key 输入：创建模式必填，编辑模式仅展示掩码提示，
   // 输入新值表示轮换密钥，留空表示保持当前密钥（写后只读，无法查看明文）。
   const showApiKeyInput = selectedAuthMethod?.authType === 'api_key';
+  const selectedSupplier = suppliers.find((item) => item.id === supplierId) ?? null;
+  const protocolRows = (selectedSupplier?.protocols ?? []).map((protocol) => ({
+    protocolCode: protocol.protocolCode,
+    enabled: protocolOverrides[protocol.protocolCode]?.enabled ?? false,
+    baseUrl: protocolOverrides[protocol.protocolCode]?.baseUrl ?? protocol.baseUrl,
+  }));
+  const setProtocolOverride = (protocolCode: string, enabled: boolean) => {
+    setProtocolOverrides((current) => ({ ...current, [protocolCode]: { enabled, baseUrl: current[protocolCode]?.baseUrl ?? '' } }));
+    setProtocolUrlError(false);
+  };
+  const setProtocolOverrideBaseUrl = (protocolCode: string, baseUrl: string) => {
+    setProtocolOverrides((current) => ({ ...current, [protocolCode]: { enabled: current[protocolCode]?.enabled ?? false, baseUrl } }));
+    setProtocolUrlError(false);
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     // 新建账号必须归属某个账号分组
     if (!account && !groupId) {
       setGroupMissing(true);
+      return;
+    }
+    // 已勾选的协议覆盖必须填写 Base URL（留空视为继承供应商，不提交）
+    if (protocolRows.some((row) => row.enabled && !row.baseUrl.trim())) {
+      setProtocolUrlError(true);
       return;
     }
     onSubmit(event, selection, apiKeyMasked, groupId);
@@ -642,7 +740,33 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
               emptyText={t('admin.upstream.account.form.supplierEmpty')}
             />
           </RowField>
-          {account ? <RowField label={t('admin.upstream.account.form.preferredBaseUrl')}><select name="preferredEndpointId" className={selectClass} defaultValue={account?.preferredEndpointId ?? ''}><option value="">{t('admin.upstream.account.form.automatic')}</option>{endpoints.map((endpoint) => <option key={endpoint.id} value={endpoint.id}>{endpoint.endpointName} ({endpoint.baseUrl})</option>)}</select></RowField> : null}
+          <RowField label={t('admin.upstream.account.form.defaultBaseUrl')}>
+            <div className="min-w-0">
+              <input name="defaultBaseUrl" className={inputClass} placeholder={selectedSupplier?.defaultBaseUrl ?? 'https://api.example.com/v1'} value={defaultBaseUrl} onChange={(event) => setDefaultBaseUrl(event.currentTarget.value)} />
+              <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{t('admin.upstream.account.form.defaultBaseUrlHint')}</p>
+            </div>
+          </RowField>
+          <div className="grid gap-2 rounded-md border border-slate-200 p-3 dark:border-white/10">
+            <div>
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{t('admin.upstream.account.form.protocols.title')}</p>
+              <p className="mt-0.5 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{t('admin.upstream.account.form.protocols.description')}</p>
+            </div>
+            {protocolRows.length === 0 ? <p className="text-xs text-slate-500 dark:text-slate-400">{t('admin.upstream.account.form.protocols.none')}</p> : protocolRows.map((row) => (
+              <div key={row.protocolCode} className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
+                <input type="checkbox" aria-label={t('admin.upstream.account.form.protocols.override')} checked={row.enabled} onChange={(event) => setProtocolOverride(row.protocolCode, event.currentTarget.checked)} className="h-4 w-4 accent-lobster-600" />
+                <div className="min-w-0">
+                  <span className="mb-0.5 block text-xs font-medium text-slate-600 dark:text-slate-300">{row.protocolCode}</span>
+                  <input className={inputClass} value={row.baseUrl} disabled={!row.enabled} onChange={(event) => setProtocolOverrideBaseUrl(row.protocolCode, event.currentTarget.value)} placeholder="https://api.example.com/v1" />
+                </div>
+              </div>
+            ))}
+            {protocolUrlError ? <p className="text-xs text-red-500">{t('admin.upstream.account.form.protocols.baseUrlRequired')}</p> : null}
+            <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">{t('admin.upstream.account.form.baseUrlPriority.hint')}</p>
+          </div>
+          {/* 编辑模式且账号供应商不在列表中（无法展示协议行）时提交空串，
+              更新请求据此省略 protocols 字段（缺省=保持），避免意外清除既有协议覆盖 */}
+          <input type="hidden" name="protocols" value={account && !selectedSupplier ? '' : JSON.stringify(enabledProtocolConfigs(protocolOverrides))} />
+          {account ? <RowField label={t('admin.upstream.account.form.preferredBaseUrl')}><div className="min-w-0"><select name="preferredEndpointId" className={selectClass} value={preferredEndpointId} onChange={(event) => setPreferredEndpointId(event.currentTarget.value)}><option value="">{t('admin.upstream.account.form.automatic')}</option>{endpoints.filter((endpoint) => endpoint.status === 1).map((endpoint) => <option key={endpoint.id} value={endpoint.id}>{endpoint.endpointName} ({endpoint.baseUrl})</option>)}</select>{preferredEndpointStale ? <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">{t('admin.upstream.account.errors.preferredEndpointStale')}</p> : null}</div></RowField> : null}
           <RowField label={t('admin.upstream.account.form.authMethod')} required>
             <div className="min-w-0">
               <select name="authMethodCode" className={selectClass} value={authMethodCode} onChange={(event) => setAuthMethodCode(event.currentTarget.value)} required disabled={authMethods.length === 0}><option value="">{t('admin.upstream.account.form.selectMethod')}</option>{authMethods.map((method) => <option key={method.id} value={method.authMethodCode}>{method.authMethodName}</option>)}</select>
@@ -655,7 +779,7 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
               {authError ? <p className="mt-1 text-xs text-red-500">{authError}</p> : null}
             </div>
           </RowField>
-          {showApiKeyInput ? <RowField label={t('admin.upstream.account.form.apiKey')} required={!account}><div className="flex items-center gap-2"><input name="apiKey" type="password" autoComplete="new-password" className={inputClass} value={apiKeyInput} onChange={(event) => setApiKeyInput(event.currentTarget.value)} placeholder={account ? t('admin.upstream.account.form.apiKeyRotatePlaceholder') : t('admin.upstream.account.form.apiKeyPlaceholder')} required={!account} /></div></RowField> : null}
+          {showApiKeyInput ? <RowField label={t('admin.upstream.account.form.apiKey')} required={!account}><div className="relative min-w-0 flex-1"><input name="apiKey" type={showApiKey ? 'text' : 'password'} autoComplete="new-password" className={`${inputClass} pr-10`} value={apiKeyInput} onChange={(event) => setApiKeyInput(event.currentTarget.value)} placeholder={account ? t('admin.upstream.account.form.apiKeyRotatePlaceholder') : t('admin.upstream.account.form.apiKeyPlaceholder')} required={!account} /><button type="button" title={showApiKey ? t('admin.upstream.account.form.hideApiKey') : t('admin.upstream.account.form.showApiKey')} aria-label={showApiKey ? t('admin.upstream.account.form.hideApiKey') : t('admin.upstream.account.form.showApiKey')} className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-slate-200" onClick={() => setShowApiKey((current) => !current)}>{showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></RowField> : null}
           {!account ? <RowField label={t('admin.upstream.account.form.accountGroup')} required>
             <div className="min-w-0">
               <SdkworkSearchableSelect
@@ -718,6 +842,7 @@ function AccountCredentials({ account, supplier, onAccountChanged, onClose }: { 
   const [verification, setVerification] = useState<UpstreamAccountVerification | null>(null);
   const [credentialId, setCredentialId] = useState('');
   const [endpointId, setEndpointId] = useState('');
+  const [showSecret, setShowSecret] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -871,13 +996,15 @@ function AccountCredentials({ account, supplier, onAccountChanged, onClose }: { 
           </div>
         </Section>
       </div>
-      {createOpen ? <Modal title={t('admin.upstream.account.credentials.createTitle')} busy={busy} submitLabel={t('admin.upstream.account.credentials.store')} onSubmit={createCredential} onClose={() => setCreateOpen(false)}><div className="grid gap-4"><Field label={t('admin.upstream.account.credentials.name')} required><input name="credentialName" className={inputClass} required /></Field><Field label={t('admin.upstream.account.credentials.secret')} required hint={t('admin.upstream.account.credentials.secretHint')}><input name="secret" type="password" autoComplete="new-password" className={inputClass} required /></Field><div className="grid gap-4 sm:grid-cols-2"><Field label={t('admin.upstream.common.fields.priority')}><input name="priority" type="number" min="0" className={inputClass} defaultValue="100" /></Field><Field label={t('admin.upstream.account.credentials.expiresAt')}><input name="expiresAt" type="datetime-local" className={inputClass} /></Field></div></div></Modal> : null}
+      {createOpen ? <Modal title={t('admin.upstream.account.credentials.createTitle')} busy={busy} submitLabel={t('admin.upstream.account.credentials.store')} onSubmit={createCredential} onClose={() => setCreateOpen(false)}><div className="grid gap-4"><Field label={t('admin.upstream.account.credentials.name')} required><input name="credentialName" className={inputClass} required /></Field><Field label={t('admin.upstream.account.credentials.secret')} required hint={t('admin.upstream.account.credentials.secretHint')}><div className="relative"><input name="secret" type={showSecret ? 'text' : 'password'} autoComplete="new-password" className={`${inputClass} pr-10`} required /><button type="button" title={showSecret ? t('admin.upstream.account.credentials.hideSecret') : t('admin.upstream.account.credentials.showSecret')} aria-label={showSecret ? t('admin.upstream.account.credentials.hideSecret') : t('admin.upstream.account.credentials.showSecret')} className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-slate-200" onClick={() => setShowSecret((current) => !current)}>{showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></Field><div className="grid gap-4 sm:grid-cols-2"><Field label={t('admin.upstream.common.fields.priority')}><input name="priority" type="number" min="0" className={inputClass} defaultValue="100" /></Field><Field label={t('admin.upstream.account.credentials.expiresAt')}><input name="expiresAt" type="datetime-local" className={inputClass} /></Field></div></div></Modal> : null}
     </SidePanel>
   );
 }
 
 function createAccountInput(form: FormData, t: TranslationFunction): CreateUpstreamAccountRequest {
   const apiKey = optional(form, 'apiKey');
+  const defaultBaseUrl = optional(form, 'defaultBaseUrl');
+  const protocols = parseProtocolConfigs(form);
   return {
     accountName: required(form, 'accountName', t('admin.upstream.account.form.accountName'), t),
     supplierId: required(form, 'supplierId', t('admin.upstream.account.form.supplier'), t),
@@ -887,16 +1014,25 @@ function createAccountInput(form: FormData, t: TranslationFunction): CreateUpstr
     rpmLimit: optional(form, 'rpmLimit'),
     timeoutMs: numeric(form, 'timeoutMs', 120000, t('admin.upstream.account.form.timeoutMs'), t),
     status: numeric(form, 'status', 1),
+    ...(defaultBaseUrl ? { defaultBaseUrl } : {}),
+    ...(protocols.length > 0 ? { protocols } : {}),
     ...(apiKey ? { apiKey } : {}),
   };
 }
 
 function updateAccountInput(form: FormData, t: TranslationFunction): UpdateUpstreamAccountRequest {
+  // protocols 字段为空串 = 协议区不可用（账号供应商不在列表中），省略字段（缺省=保持），
+  // 避免意外清除既有协议覆盖；非空 JSON（含 '[]'）按正常更新语义提交
+  const protocolsRaw = String(form.get('protocols') ?? '').trim();
+  const protocols = protocolsRaw ? parseProtocolConfigs(form) : undefined;
   return {
     accountName: required(form, 'accountName', t('admin.upstream.account.form.accountName'), t),
     supplierId: required(form, 'supplierId', t('admin.upstream.account.form.supplier'), t),
     authMethodCode: required(form, 'authMethodCode', t('admin.upstream.account.form.authMethod'), t),
     preferredEndpointId: optional(form, 'preferredEndpointId'),
+    // 更新语义：空串 = 清除账号默认地址（继承供应商）；空数组 = 清除协议覆盖（继承供应商）
+    defaultBaseUrl: optional(form, 'defaultBaseUrl') ?? '',
+    ...(protocols !== undefined ? { protocols } : {}),
     contractCostMultiplier: required(form, 'contractCostMultiplier', t('admin.upstream.account.form.contractCostMultiplier'), t),
     quotaLimit: optional(form, 'quotaLimit'),
     rpmLimit: optional(form, 'rpmLimit'),

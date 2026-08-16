@@ -12,6 +12,7 @@ path = "src/main.rs"
 anyhow.workspace = true
 axum.workspace = true
 sdkwork-api-cloudrouter-assembly.workspace = true
+sdkwork-routes-cloudrouter-app-api.workspace = true
 sdkwork-cloudrouter-config.workspace = true
 sdkwork-cloudrouter-http.workspace = true
 sdkwork-cloudrouter-observability.workspace = true

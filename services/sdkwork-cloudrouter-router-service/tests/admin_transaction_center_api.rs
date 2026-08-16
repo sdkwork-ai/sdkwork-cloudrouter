@@ -1,14 +1,11 @@
 pub mod common;
-use common::InternalTrustedSubjectHeaders;
 use std::sync::{Arc, Mutex};
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_cloudrouter_router_service::ports::{
     AdminTransactionCenterFuture, AdminTransactionCenterStore, AdminTransactionCollection,
-    AdminTransactionJsonRecord,
-    ListAdminTransactionRecordsQuery,
-    UpdatePaymentProviderCommand,
+    AdminTransactionJsonRecord, ListAdminTransactionRecordsQuery, UpdatePaymentProviderCommand,
 };
 use serde_json::{json, Map, Value};
 use tower::ServiceExt;
@@ -158,14 +155,22 @@ async fn admin_transaction_center_provider_update_validates_required_and_unknown
 }
 
 fn signed_request(method: &str, path: &str, body: &str) -> Request<Body> {
-    Request::builder()
-        .method(method)
-        .uri(path)
-        .header("content-type", "application/json")
-        .header("Idempotency-Key", "transaction-center-test-idempotency-key")
-        .internal_trusted_subject(TEST_TENANT_ID, TEST_ORGANIZATION_ID, TEST_OPERATOR_ID)
-        .body(Body::from(body.to_owned()))
-        .unwrap()
+    let mut request = common::web_framework_backend_request(
+        method,
+        path,
+        Body::from(body.to_owned()),
+        "100001",
+        Some("0"),
+        "30",
+    );
+    request
+        .headers_mut()
+        .insert("content-type", "application/json".parse().unwrap());
+    request.headers_mut().insert(
+        "Idempotency-Key",
+        "transaction-center-test-idempotency-key".parse().unwrap(),
+    );
+    request
 }
 
 async fn request_json(

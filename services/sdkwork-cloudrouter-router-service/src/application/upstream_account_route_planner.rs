@@ -587,8 +587,7 @@ mod tests {
         let mut route = UpstreamAccountRoute::new(supplier, account_id)
             .with_contract_cost_multiplier(decimal(cost))
             .with_last_latency_ms(latency_ms);
-        route.account_group_bindings =
-            vec![UpstreamAccountGroupBinding::new(GROUP_ID, 100, 100)];
+        route.account_group_bindings = vec![UpstreamAccountGroupBinding::new(GROUP_ID, 100, 100)];
         route.account_health_status = health_status;
         route.account_consecutive_error_count = consecutive_errors;
         route
@@ -598,11 +597,15 @@ mod tests {
         binding_strategy: Option<UpstreamAccountRoutingStrategy>,
         routes: Vec<UpstreamAccountRoute>,
     ) -> Vec<i64> {
-        plan_upstream_account_routes(&group(UpstreamAccountRoutingStrategy::Weighted), binding_strategy, routes)
-            .unwrap()
-            .iter()
-            .map(|route| route.account_id)
-            .collect()
+        plan_upstream_account_routes(
+            &group(UpstreamAccountRoutingStrategy::Weighted),
+            binding_strategy,
+            routes,
+        )
+        .unwrap()
+        .iter()
+        .map(|route| route.account_id)
+        .collect()
     }
 
     #[test]
@@ -615,10 +618,7 @@ mod tests {
             route("openai", 3, "1.000000", Some(10), 0, Some(0)),
             route("openai", 4, "1.000000", Some(1), 2, Some(0)),
         ];
-        let planned = planned_accounts(
-            Some(UpstreamAccountRoutingStrategy::QualityFirst),
-            routes,
-        );
+        let planned = planned_accounts(Some(UpstreamAccountRoutingStrategy::QualityFirst), routes);
         assert_eq!(planned, vec![2, 1, 3, 4]);
     }
 
@@ -631,10 +631,7 @@ mod tests {
             route("openai", 2, "1.000000", Some(200), 1, None),
             route("openai", 3, "1.000000", Some(200), 1, Some(1)),
         ];
-        let planned = planned_accounts(
-            Some(UpstreamAccountRoutingStrategy::QualityFirst),
-            routes,
-        );
+        let planned = planned_accounts(Some(UpstreamAccountRoutingStrategy::QualityFirst), routes);
         assert_eq!(planned, vec![2, 3, 1]);
     }
 

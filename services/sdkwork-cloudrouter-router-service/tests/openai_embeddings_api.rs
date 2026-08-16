@@ -768,9 +768,9 @@ async fn openai_embeddings_records_usage_after_provider_success() {
     assert_eq!(6, command.modality);
     assert_eq!(1, command.usage_type);
     assert_eq!("embedding_input_token", command.billing_meter_code);
-    assert_eq!("0.024000", command.base_input_unit_price);
-    assert_eq!("0.000000", command.base_output_unit_price);
-    assert_eq!("0.000000", command.cache_read_unit_price);
+    assert_eq!("0.024000000000", command.base_input_unit_price);
+    assert_eq!("0.000000000000", command.base_output_unit_price);
+    assert_eq!("0.000000000000", command.cache_read_unit_price);
     assert_eq!("1.100000", command.rate_multiplier);
     assert_eq!("1.200000", command.reference_multiplier);
     assert_eq!("0.000000026400", command.customer_charge_amount);

@@ -8,8 +8,9 @@ use sdkwork_cloudrouter_router_service::application::{
 };
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
-    ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, ProviderAuthProfile,
-    RoutingCapability, UpstreamAccountGroup, UpstreamAccountRoute,
+    ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, PricingRateCondition,
+    PricingRateMetadata, ProviderAuthProfile, RoutingCapability, UpstreamAccountGroup,
+    UpstreamAccountRoute,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use sdkwork_cloudrouter_router_service::ports::GatewayUsageQuantity;
@@ -98,6 +99,19 @@ fn catalog_with_chat_prices() -> InMemoryPricingCatalog {
         PriceSide::UpstreamCost,
         "0.480000",
     );
+    for (meter, official, upstream) in [
+        (BillingMeter::LlmReasoningToken, "0.150000", "0.110000"),
+        (BillingMeter::LlmCacheReadToken, "0.150000", "0.110000"),
+        (BillingMeter::EmbeddingImage, "0.150000", "0.110000"),
+    ] {
+        add_price(
+            &mut catalog,
+            meter.clone(),
+            PriceSide::OfficialReference,
+            official,
+        );
+        add_price(&mut catalog, meter, PriceSide::UpstreamCost, upstream);
+    }
     catalog.add_model_upstream_route(
         ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
@@ -232,6 +246,40 @@ fn add_provider_price(
     );
 }
 
+fn conditional_rate_metadata() -> PricingRateMetadata {
+    PricingRateMetadata {
+        price_book_code: "models-openai-global-usd-2026-08-15".to_owned(),
+        rate_hash: "sha256:conditional-input-rate".to_owned(),
+        product_code: "model-inference".to_owned(),
+        operation_code: "chat-completions".to_owned(),
+        billability: "chargeable".to_owned(),
+        charge_timing: "postpaid".to_owned(),
+        calculation_mode: "per_unit".to_owned(),
+        quantity_aggregation: "sum".to_owned(),
+        minimum_quantity: DecimalValue::parse("10").unwrap(),
+        quantity_step: Some(DecimalValue::parse("4").unwrap()),
+        priority: 10,
+        conditions: [
+            ("tier_code", "eq", json!("priority")),
+            ("quality", "eq", json!("hd")),
+            ("duration_seconds", "gte", json!(10)),
+            ("result_count", "eq", json!(3)),
+            ("context_tokens", "gte", json!(128000)),
+        ]
+        .into_iter()
+        .map(
+            |(dimension_code, operator_code, value)| PricingRateCondition {
+                dimension_code: dimension_code.to_owned(),
+                operator_code: operator_code.to_owned(),
+                value,
+            },
+        )
+        .collect(),
+        tiers: Vec::new(),
+        formula: None,
+    }
+}
+
 fn subject() -> InvocationSubject {
     InvocationSubject::from_api_key_context(AuthenticatedApiKeyContext {
         tenant_id: 100001,
@@ -316,7 +364,7 @@ async fn pricing_preflight_quotes_token_input_and_output_prices() {
     let catalog = Arc::new(catalog_with_chat_prices());
     let mut invocation = chat_invocation();
 
-    PricingPreflightInterceptor::new(catalog)
+    PricingPreflightInterceptor::new(Arc::clone(&catalog))
         .before(&mut invocation)
         .await
         .expect("pricing");
@@ -357,6 +405,78 @@ async fn pricing_preflight_quotes_token_input_and_output_prices() {
 }
 
 #[tokio::test]
+async fn conditional_rate_dimensions_and_quantity_steps_drive_final_charge() {
+    let mut catalog = catalog_with_chat_prices();
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "openai/gpt-4o-mini",
+            "gpt-4o-mini",
+            PriceSide::OfficialReference,
+            BillingMeter::LlmInputToken,
+            Money::usd("0.250000").unwrap(),
+        )
+        .with_rate_metadata(conditional_rate_metadata()),
+    );
+    let catalog = Arc::new(catalog);
+    let mut invocation = chat_invocation();
+    invocation.request = InvocationRequest::new(Method::POST, "/v1/chat/completions")
+        .with_request_id("req-conditional-price")
+        .with_body(InvocationBody::json(json!({
+            "model": "gpt-4o-mini",
+            "messages": [{"role": "user", "content": "ping"}],
+            "service_tier": "priority",
+            "quality": "hd",
+            "duration_seconds": 10,
+            "n": 3,
+            "context_tokens": 128000
+        })));
+
+    PricingPreflightInterceptor::new(Arc::clone(&catalog))
+        .before(&mut invocation)
+        .await
+        .expect("conditional pricing");
+    let preflight = invocation
+        .usage
+        .quote_for_meter(&BillingMeter::LlmInputToken)
+        .expect("conditional input quote");
+    assert_eq!(
+        Some("sha256:conditional-input-rate"),
+        preflight
+            .rate_metadata
+            .as_ref()
+            .map(|metadata| metadata.rate_hash.as_str())
+    );
+
+    invocation.usage.add_line(
+        sdkwork_cloudrouter_router_service::application::InvocationUsageLine::new(
+            BillingMeter::LlmInputToken,
+            GatewayUsageQuantity::tokens(5).unwrap(),
+        ),
+    );
+    PricingFinalizationInterceptor::new(catalog)
+        .after(&mut invocation)
+        .await
+        .expect("conditional final pricing");
+    PricingSettlementInterceptor
+        .after(&mut invocation)
+        .await
+        .expect("conditional settlement");
+
+    let command = invocation.usage.settlement_commands.first().unwrap();
+    assert_eq!("5", command.billable_quantity);
+    assert_eq!("12.000000000000", command.rated_quantity);
+    assert_eq!("0.000003000000", command.customer_charge_amount);
+    let official_rate = command.official_rate.as_ref().expect("official rate");
+    assert_eq!("sha256:conditional-input-rate", official_rate.rate_hash);
+    assert_eq!(5, official_rate.conditions.len());
+    assert_eq!("10.000000000000", official_rate.minimum_quantity);
+    assert_eq!(
+        Some("4.000000000000"),
+        official_rate.quantity_step.as_deref()
+    );
+}
+
+#[tokio::test]
 async fn pricing_preflight_creates_fixed_api_request_usage_line() {
     let catalog = Arc::new(catalog_with_chat_prices());
     let mut invocation = chat_invocation();
@@ -370,7 +490,7 @@ async fn pricing_preflight_creates_fixed_api_request_usage_line() {
         prepaid_required: false,
     };
 
-    PricingPreflightInterceptor::new(catalog)
+    PricingPreflightInterceptor::new(Arc::clone(&catalog))
         .before(&mut invocation)
         .await
         .expect("pricing");
@@ -401,7 +521,7 @@ async fn pricing_preflight_prices_api_request_resources_by_route_key_without_mod
         prepaid_required: false,
     };
 
-    PricingPreflightInterceptor::new(catalog)
+    PricingPreflightInterceptor::new(Arc::clone(&catalog))
         .before(&mut invocation)
         .await
         .expect("pricing");
@@ -415,6 +535,33 @@ async fn pricing_preflight_prices_api_request_resources_by_route_key_without_mod
     assert_eq!(1, invocation.usage.lines.len());
     assert_eq!(BillingMeter::ApiRequest, invocation.usage.lines[0].meter);
     assert_eq!("1", invocation.usage.lines[0].quantity.billable_quantity);
+}
+
+#[tokio::test]
+async fn pricing_preflight_keeps_missing_official_price_for_unrated_settlement() {
+    let catalog = Arc::new(catalog_with_chat_prices());
+    let mut invocation = chat_invocation();
+    invocation.resource.resource_type = ResourceType::File;
+    invocation.resource.route_key = "openai/management/unpriced".to_owned();
+    invocation.resource.api_code = "openai.unpriced".to_owned();
+    invocation.resource.requested_model = None;
+    invocation.resource.requested_model_catalog_key = None;
+    invocation.billing = InvocationBilling::api_request(BillingMeter::ApiRequest);
+
+    PricingPreflightInterceptor::new(Arc::clone(&catalog))
+        .before(&mut invocation)
+        .await
+        .expect("missing price must not fail the provider call");
+
+    assert!(invocation.billing.pricing_required);
+    assert!(invocation.billing.settlement_required);
+    assert_eq!(
+        BillingQuantitySource::FixedRequest,
+        invocation.billing.quantity_source
+    );
+    assert!(invocation.usage.pricing_quotes.is_empty());
+    assert_eq!(1, invocation.usage.lines.len());
+    assert_eq!(BillingMeter::ApiRequest, invocation.usage.lines[0].meter);
 }
 
 #[tokio::test]
@@ -444,7 +591,7 @@ async fn pricing_preflight_uses_route_key_for_model_ignored_api_resources_even_w
         prepaid_required: false,
     };
 
-    PricingPreflightInterceptor::new(catalog)
+    PricingPreflightInterceptor::new(Arc::clone(&catalog))
         .before(&mut invocation)
         .await
         .expect("pricing");
@@ -471,7 +618,7 @@ async fn pricing_preflight_skips_free_calls() {
         InvocationBilling::free(),
     );
 
-    PricingPreflightInterceptor::new(catalog)
+    PricingPreflightInterceptor::new(Arc::clone(&catalog))
         .before(&mut invocation)
         .await
         .expect("pricing");
@@ -484,7 +631,7 @@ async fn pricing_preflight_skips_free_calls() {
 async fn settlement_produces_usage_commands_for_each_usage_line() {
     let catalog = Arc::new(catalog_with_chat_prices());
     let mut invocation = chat_invocation();
-    PricingPreflightInterceptor::new(catalog)
+    PricingPreflightInterceptor::new(Arc::clone(&catalog))
         .before(&mut invocation)
         .await
         .expect("pricing");
@@ -500,6 +647,11 @@ async fn settlement_produces_usage_commands_for_each_usage_line() {
             GatewayUsageQuantity::tokens(8).unwrap(),
         ),
     );
+
+    PricingFinalizationInterceptor::new(Arc::clone(&catalog))
+        .after(&mut invocation)
+        .await
+        .expect("final pricing");
 
     PricingSettlementInterceptor
         .after(&mut invocation)
@@ -517,7 +669,7 @@ async fn settlement_produces_usage_commands_for_each_usage_line() {
     assert_eq!(12, input.prompt_tokens);
     assert_eq!(0, input.completion_tokens);
     assert_eq!(1, input.request_count);
-    assert_eq!("0.150000", input.base_input_unit_price);
+    assert_eq!("0.150000000000", input.base_input_unit_price);
     assert_eq!("0.000001800000", input.customer_charge_amount);
 
     let output = &invocation.usage.settlement_commands[1];
@@ -526,7 +678,7 @@ async fn settlement_produces_usage_commands_for_each_usage_line() {
     assert_eq!(0, output.prompt_tokens);
     assert_eq!(8, output.completion_tokens);
     assert_eq!(0, output.request_count);
-    assert_eq!("0.600000", output.base_output_unit_price);
+    assert_eq!("0.600000000000", output.base_output_unit_price);
     assert_eq!("0.000004800000", output.customer_charge_amount);
 }
 
@@ -534,48 +686,39 @@ async fn settlement_produces_usage_commands_for_each_usage_line() {
 async fn settlement_assigns_unique_usage_types_to_same_request_usage_lines() {
     let catalog = Arc::new(catalog_with_chat_prices());
     let mut invocation = chat_invocation();
-    PricingPreflightInterceptor::new(catalog)
+    PricingPreflightInterceptor::new(Arc::clone(&catalog))
         .before(&mut invocation)
         .await
         .expect("pricing");
-    let input_quote = invocation
-        .usage
-        .quote_for_meter(&BillingMeter::LlmInputToken)
-        .expect("input quote")
-        .clone();
-    let output_quote = invocation
-        .usage
-        .quote_for_meter(&BillingMeter::LlmOutputToken)
-        .expect("output quote")
-        .clone();
     invocation.usage.add_line(
         sdkwork_cloudrouter_router_service::application::InvocationUsageLine::new(
             BillingMeter::LlmInputToken,
             GatewayUsageQuantity::tokens(12).unwrap(),
-        )
-        .with_pricing_quote(input_quote.clone()),
+        ),
     );
     invocation.usage.add_line(
         sdkwork_cloudrouter_router_service::application::InvocationUsageLine::new(
             BillingMeter::LlmReasoningToken,
             GatewayUsageQuantity::tokens(3).unwrap(),
-        )
-        .with_pricing_quote(input_quote.clone()),
+        ),
     );
     invocation.usage.add_line(
         sdkwork_cloudrouter_router_service::application::InvocationUsageLine::new(
             BillingMeter::LlmCacheReadToken,
             GatewayUsageQuantity::tokens(2).unwrap(),
-        )
-        .with_pricing_quote(input_quote),
+        ),
     );
     invocation.usage.add_line(
         sdkwork_cloudrouter_router_service::application::InvocationUsageLine::new(
             BillingMeter::LlmOutputToken,
             GatewayUsageQuantity::tokens(8).unwrap(),
-        )
-        .with_pricing_quote(output_quote),
+        ),
     );
+
+    PricingFinalizationInterceptor::new(Arc::clone(&catalog))
+        .after(&mut invocation)
+        .await
+        .expect("final pricing");
 
     PricingSettlementInterceptor
         .after(&mut invocation)
@@ -659,23 +802,21 @@ async fn settlement_assigns_unique_usage_types_to_same_request_usage_lines() {
 async fn settlement_charges_embedding_images_per_image_without_token_projection() {
     let catalog = Arc::new(catalog_with_chat_prices());
     let mut invocation = chat_invocation();
-    PricingPreflightInterceptor::new(catalog)
+    PricingPreflightInterceptor::new(Arc::clone(&catalog))
         .before(&mut invocation)
         .await
         .expect("pricing");
-    let mut image_quote = invocation
-        .usage
-        .quote_for_meter(&BillingMeter::LlmInputToken)
-        .expect("input quote")
-        .clone();
-    image_quote.meter = BillingMeter::EmbeddingImage;
     invocation.usage.add_line(
         sdkwork_cloudrouter_router_service::application::InvocationUsageLine::new(
             BillingMeter::EmbeddingImage,
             GatewayUsageQuantity::images(2).unwrap(),
-        )
-        .with_pricing_quote(image_quote),
+        ),
     );
+
+    PricingFinalizationInterceptor::new(Arc::clone(&catalog))
+        .after(&mut invocation)
+        .await
+        .expect("final pricing");
 
     PricingSettlementInterceptor
         .after(&mut invocation)
@@ -740,7 +881,7 @@ async fn pricing_after_requotes_usage_lines_for_final_failover_account() {
 }
 
 #[tokio::test]
-async fn settlement_prefers_line_level_adapter_quotes_over_meter_quotes() {
+async fn finalization_rates_adapter_usage_through_price_service() {
     let mut invocation = chat_invocation();
     invocation.billing = InvocationBilling {
         mode: BillingMode::ExternalUsageLine,
@@ -751,26 +892,21 @@ async fn settlement_prefers_line_level_adapter_quotes_over_meter_quotes() {
         prepaid_required: false,
     };
     let catalog = Arc::new(catalog_with_chat_prices());
-    PricingPreflightInterceptor::new(catalog)
+    PricingPreflightInterceptor::new(Arc::clone(&catalog))
         .before(&mut invocation)
         .await
         .expect("pricing");
-    let mut quote = invocation
-        .usage
-        .quote_for_meter(&BillingMeter::ApiResult)
-        .expect("api result quote")
-        .clone();
-    quote.customer_charge_before_sale_multiplier =
-        Money::usd("0.040000").expect("line-level unit price");
-    quote.customer_charge_unit_price = Money::usd("0.040000").expect("line-level unit price");
-    quote.pricing_plan_code = "line-level-plan".to_owned();
     invocation.usage.add_line(
         sdkwork_cloudrouter_router_service::application::InvocationUsageLine::new(
             BillingMeter::ApiResult,
             GatewayUsageQuantity::results(3).unwrap(),
-        )
-        .with_pricing_quote(quote),
+        ),
     );
+
+    PricingFinalizationInterceptor::new(Arc::clone(&catalog))
+        .after(&mut invocation)
+        .await
+        .expect("final pricing");
 
     PricingSettlementInterceptor
         .after(&mut invocation)
@@ -781,7 +917,9 @@ async fn settlement_prefers_line_level_adapter_quotes_over_meter_quotes() {
     assert_eq!("api_result", command.billing_meter_code);
     assert_eq!("3", command.billable_quantity);
     assert_eq!(3, command.result_count);
-    assert_eq!("0.040000", command.base_input_unit_price);
-    assert_eq!("0.120000000000", command.customer_charge_amount);
-    assert!(command.pricing_snapshot.contains("\"line-level-plan\""));
+    assert_eq!("0.020000000000", command.base_input_unit_price);
+    assert_eq!("0.060000000000", command.customer_charge_amount);
+    assert!(command
+        .pricing_snapshot
+        .contains("\"strategy\":\"unit_quantity\""));
 }

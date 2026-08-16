@@ -16,12 +16,12 @@ sdkwork-cloudrouter-config.workspace = true
 sdkwork-cloudrouter-http.workspace = true
 sdkwork-cloudrouter-observability.workspace = true
 sdkwork-database-sqlx.workspace = true
+sdkwork-routes-cloudrouter-backend-api.workspace = true
 sdkwork-web-bootstrap.workspace = true
 tokio.workspace = true
 
 [dev-dependencies]
 axum.workspace = true
-sdkwork-routes-cloudrouter-backend-api.workspace = true
 sdkwork-cloudrouter-standalone-gateway.workspace = true
 sdkwork-cloudrouter-http.workspace = true
 sdkwork-cloudrouter-router-service.workspace = true

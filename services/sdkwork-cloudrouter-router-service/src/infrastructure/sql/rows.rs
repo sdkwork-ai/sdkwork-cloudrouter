@@ -3,10 +3,10 @@ use crate::domain::{
     BillingMeter, DecimalValue, DomainError, DomainResult, GatewayAccessPolicy, GatewayApiKey,
     GatewayApiKeyAccountGroupBinding, GatewayRiskRule, ModelMappingBindingType, ModelMappingRule,
     ModelPrice, ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide,
-    PricingPlan, ProviderRetryPolicy, QuotaPolicy, RouteCandidate, RoutingCapability,
-    RoutingFallbackMode, RoutingPolicy, RoutingPolicyScope, RoutingRule, UpstreamAccountGroup,
-    UpstreamAccountGroupBinding, UpstreamAccountGroupMetricSnapshot, UpstreamAccountRoute,
-    UpstreamResourceEntitlement,
+    PricingPlan, PricingRateMetadata, ProviderRetryPolicy, QuotaPolicy, RouteCandidate,
+    RoutingCapability, RoutingFallbackMode, RoutingPolicy, RoutingPolicyScope, RoutingRule,
+    UpstreamAccountGroup, UpstreamAccountGroupBinding, UpstreamAccountGroupMetricSnapshot,
+    UpstreamAccountRoute, UpstreamResourceEntitlement,
 };
 
 pub struct ModelVendorRow {
@@ -160,7 +160,13 @@ pub struct UpstreamAccountRouteRow {
     pub endpoint_weight: i32,
     pub endpoint_health_status: i32,
     pub base_url: Option<String>,
+    /// 账号级默认 Base URL（优先于供应商默认）；仅参与调用面解析，不改变领域路由行的 base_url。
+    pub account_default_base_url: Option<String>,
+    /// 账号级各 LLM 协议独立 Base URL 覆盖 JSON（[{"protocolCode","baseUrl"}]，空数组 = 未覆盖）。
+    pub account_protocols_json: String,
     pub supplier_default_base_url: Option<String>,
+    /// 供应商级各 LLM 协议独立 Base URL JSON（账号覆盖缺省时作为第二优先级）。
+    pub supplier_protocols_json: String,
     pub secret_ref: Option<String>,
     pub secret_ciphertext: Option<String>,
     pub secret_key_id: Option<String>,
@@ -634,6 +640,9 @@ pub struct UpstreamAccountGroupRow {
     pub name: String,
     pub code: String,
     pub is_default: bool,
+    pub pricing_plan_tenant_id: i64,
+    pub pricing_plan_organization_id: i64,
+    pub pricing_plan_id: i64,
     pub pricing_plan_code: String,
     pub routing_strategy: String,
     pub fallback_mode: String,
@@ -768,6 +777,9 @@ impl UpstreamAccountGroupRow {
             },
             code: self.code,
             is_default: self.is_default,
+            pricing_plan_tenant_id: self.pricing_plan_tenant_id,
+            pricing_plan_organization_id: self.pricing_plan_organization_id,
+            pricing_plan_id: self.pricing_plan_id,
             pricing_plan_code: self.pricing_plan_code,
             routing_strategy: crate::domain::UpstreamAccountRoutingStrategy::from_code(
                 &self.routing_strategy,
@@ -783,6 +795,7 @@ impl UpstreamAccountGroupRow {
 }
 
 pub struct PricingPlanRow {
+    pub id: i64,
     pub tenant_id: i64,
     pub organization_id: i64,
     pub plan_code: String,
@@ -811,18 +824,20 @@ pub struct ModelPriceRow {
     pub region_code: String,
     pub price_side_code: String,
     pub billing_meter_code: String,
+    pub unit_size: String,
     pub unit_price: String,
     pub currency: String,
     pub supplier_code: Option<String>,
     pub account_id: Option<i64>,
     pub pricing_plan_code: Option<String>,
+    pub rate_metadata: Option<PricingRateMetadata>,
 }
 
 impl ModelPriceRow {
     pub fn try_into_domain(self) -> DomainResult<ModelPrice> {
         ensure_base_catalog_key(
             &self.catalog_key,
-            "ai_model_pricing.catalog_key must use vendor/model identity",
+            "pricing_product_binding.catalog_key must use vendor/model identity",
         )?;
         Ok(ModelPrice {
             catalog_key: self.catalog_key,
@@ -830,10 +845,12 @@ impl ModelPriceRow {
             region_code: normalized_region_code(self.region_code),
             price_side: parse_price_side(&self.price_side_code)?,
             billing_meter: BillingMeter::from_code(&self.billing_meter_code),
+            unit_size: DecimalValue::parse(&self.unit_size)?,
             unit_price: money_from_decimal(self.currency, self.unit_price)?,
             supplier_code: self.supplier_code,
             account_id: self.account_id,
             pricing_plan_code: self.pricing_plan_code,
+            rate_metadata: self.rate_metadata,
         })
     }
 }

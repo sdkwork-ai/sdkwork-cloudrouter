@@ -2,6 +2,13 @@
 > Owner: SDKWork maintainers
 
 ## Goal
+> **Superseded (2026-08-16):** this historical execution plan was completed and
+> its pricing concepts were superseded by
+> [ADR-20260815-composable-pricing-and-billing](../../architecture/decisions/ADR-20260815-composable-pricing-and-billing.md).
+> The `ai_pricing_*` tables it introduced were physically removed before launch.
+> Retained as a historical record only.
+
+
 
 Build Cloud Router's canonical AI model catalog and pricing standard for a new product with no legacy compatibility. The Java backend, Rust runtime, PostgreSQL schema, OpenAPI contracts, generated SDKs, and environment seed data must use the same source-of-truth design.
 

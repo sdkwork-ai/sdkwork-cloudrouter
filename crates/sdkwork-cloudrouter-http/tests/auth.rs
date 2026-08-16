@@ -369,6 +369,21 @@ fn trusted_request_subject_extension_is_absent_without_verified_boundary() {
 }
 
 #[test]
+fn trusted_request_subject_never_resolves_from_client_supplied_headers() {
+    let mut headers = HeaderMap::new();
+    headers.insert("x-sdkwork-tenant-id", HeaderValue::from_static("100001"));
+    headers.insert("x-sdkwork-organization-id", HeaderValue::from_static("0"));
+    headers.insert("x-sdkwork-user-id", HeaderValue::from_static("30"));
+
+    let subject = TrustedRequestSubject::resolve_optional(&headers, &Default::default());
+
+    assert!(
+        subject.is_none(),
+        "client-supplied identity projection headers must never resolve a trusted subject"
+    );
+}
+
+#[test]
 fn trusted_request_subject_boundary_strips_direct_headers_and_returns_signed_subject() {
     let config =
         TrustedSubjectConfig::from_signing_secret("0123456789abcdef0123456789abcdef").unwrap();
@@ -889,4 +904,28 @@ fn app_session_token_rejects_tampering_without_echoing_token() {
 
     assert_eq!("app session token signature is invalid", error.to_string());
     assert!(!format!("{error:?}").contains(&tampered));
+}
+
+#[test]
+fn remove_internal_trusted_subject_headers_strips_projection_headers_only() {
+    use sdkwork_cloudrouter_http::remove_internal_trusted_subject_headers;
+
+    let mut headers = HeaderMap::new();
+    headers.insert("x-sdkwork-tenant-id", HeaderValue::from_static("100001"));
+    headers.insert("x-sdkwork-organization-id", HeaderValue::from_static("0"));
+    headers.insert("x-sdkwork-user-id", HeaderValue::from_static("30"));
+    headers.insert("authorization", HeaderValue::from_static("Bearer auth-1"));
+    headers.insert("access-token", HeaderValue::from_static("access-1"));
+    headers.insert("accept", HeaderValue::from_static("application/json"));
+
+    remove_internal_trusted_subject_headers(&mut headers);
+
+    assert!(headers.get("x-sdkwork-tenant-id").is_none());
+    assert!(headers.get("x-sdkwork-organization-id").is_none());
+    assert!(headers.get("x-sdkwork-user-id").is_none());
+    // Dual-token credentials and ordinary headers must survive so the
+    // downstream pipeline can authenticate and re-project the subject.
+    assert_eq!("Bearer auth-1", headers.get("authorization").unwrap());
+    assert_eq!("access-1", headers.get("access-token").unwrap());
+    assert_eq!("application/json", headers.get("accept").unwrap());
 }

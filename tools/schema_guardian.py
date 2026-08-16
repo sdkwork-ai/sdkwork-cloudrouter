@@ -201,28 +201,32 @@ REQUIRED_TABLE_COLUMNS = {
         "effective_to",
     },
     "ai_billing_meter": {"meter_code", "billing_mode", "default_unit", "quantity_source"},
-    "ai_pricing_plan": {"plan_code", "plan_scope", "base_price_side", "default_multiplier", "default_markup_amount"},
-    "ai_pricing_plan_binding": {"pricing_plan_id", "subject_type", "subject_id", "priority", "effective_from"},
-    "ai_pricing_rule": {
+    "cloudrouter_pricing_plan": {
+        "plan_code",
+        "plan_name",
+        "base_price_side",
+        "currency_code",
+        "fallback_policy",
+        "rounding_mode",
+        "minimum_charge_amount",
+        "effective_from",
+    },
+    "cloudrouter_pricing_rule": {
         "pricing_plan_id",
-        "price_side",
-        "reference_price_side",
-        "billing_mode",
-        "billing_meter_code",
+        "rule_code",
         "formula_mode",
         "multiplier",
-        "expression",
+        "markup_amount",
+        "priority",
+        "effective_from",
     },
-    "ai_pricing_tier": {
-        "pricing_rule_id",
-        "billing_mode",
-        "billing_meter_code",
-        "input_unit_price",
-        "output_unit_price",
-        "image_unit_price",
-        "audio_unit_price",
-        "video_unit_price",
-        "per_request_price",
+    "pricing_rate_tier": {
+        "rate_id",
+        "lower_bound",
+        "upper_bound",
+        "unit_size",
+        "unit_price",
+        "flat_amount",
     },
     "iam_gateway_api_key": {
         "account_group_id",
@@ -724,8 +728,16 @@ class SchemaGuardian:
                     messages.append(
                         f"{source.relative_to(self.root)} required column {table}.{column} is a bare media URL column; use MediaResource stable reference fields"
                     )
-            for field_path in self._iter_frontend_schema_field_paths(payload):
+            field_paths = self._iter_frontend_schema_field_paths(payload)
+            expanded_media_fields = {
+                path[0]
+                for path in field_paths
+                if len(path) > 1 and path[0] in BARE_MEDIA_FRONTEND_FIELD_NAMES
+            }
+            for field_path in field_paths:
                 field_name = field_path[-1] if field_path else ""
+                if field_name in expanded_media_fields and len(field_path) == 1:
+                    continue
                 if self._is_bare_media_frontend_field(field_name, field_path):
                     messages.append(
                         f"{source.relative_to(self.root)} field {'.'.join(field_path)} is a bare media URL field; use MediaResource"
@@ -1053,8 +1065,8 @@ class SchemaGuardian:
                 table = persistence.get("table")
                 if isinstance(table, str) and table not in by_table:
                     messages.append(f"{name} persistence table must be registered: {table}")
-                if name == "pricing_plan" and table != "ai_pricing_plan":
-                    messages.append("pricing_plan persistence table must be ai_pricing_plan")
+                if name == "pricing_plan" and table != "cloudrouter_pricing_plan":
+                    messages.append("pricing_plan persistence table must be cloudrouter_pricing_plan")
 
             if name in DOMAIN_NAMES_REQUIRING_TYPE_BINDINGS:
                 type_bindings = definition.get("type_bindings", {})

@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use crate::gateway_balance_account::PostgresGatewayBalanceStore;
 use crate::iam_auth_token_authenticator::IamAuthTokenAuthenticator;
+use crate::iam_auth_token_cache::resolve_auth_token_cache;
 use axum::Router;
 use sdkwork_account_repository_sqlx::PostgresCommerceAccountStore;
 use sdkwork_cloudrouter_config::{
@@ -709,6 +710,9 @@ fn catalog_refresh_failures_total() -> prometheus::IntCounterVec {
 struct AllInOneRuntimeContext {
     database_config: DatabaseConfig,
     database_pool: DatabasePool,
+    /// Request-log client-IP capture trust for `x-forwarded-for` / `x-real-ip`
+    /// (mirrors `[server] trust_forwarded_headers`; spoof-safe default false).
+    trust_forwarded_headers: bool,
     database_installer: Arc<DatabaseInstaller>,
     catalog: Arc<RefreshableSqlPricingCatalog>,
     api_key_security_config: ApiKeySecurityConfig,
@@ -1510,10 +1514,13 @@ async fn router_with_database_bootstrap(
             // Token Bank wallet (`acct_*` tables); other surfaces fall back
             // to the zero-balance store inside router_with_database_runtime_routes.
             gateway_balance_store: None,
-            auth_token_authenticator: Some(Arc::new(IamAuthTokenAuthenticator::new(
-                database_pool.clone(),
-                catalog.clone(),
-            ))),
+            // The auth-token identity cache short-circuits the per-request IAM
+            // database round-trip; it is absent on surfaces without Redis so
+            // the authenticator keeps resolving per request (desktop fallback).
+            auth_token_authenticator: Some(Arc::new(
+                IamAuthTokenAuthenticator::new(database_pool.clone(), catalog.clone())
+                    .with_cache(resolve_auth_token_cache(runtime_toml).await),
+            )),
         })
     }
 }
@@ -1665,6 +1672,7 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
         sdkwork_routes_cloudrouter_backend_api::router_with_postgres_shared_runtime(
             sdkwork_routes_cloudrouter_backend_api::PostgresSharedRuntime {
                 config: context.database_config.clone(),
+                trust_forwarded_headers: context.trust_forwarded_headers,
                 pool: pool.clone(),
                 database_pool: context.database_pool.clone(),
                 commerce_pool,
@@ -1888,6 +1896,7 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
         "sdkwork-cloudrouter-open",
         Some(open_retention_policy),
         Some(open_surface_resolver),
+        context.trust_forwarded_headers,
     )
     .await
     .map_err(anyhow::Error::msg)?;
@@ -1909,6 +1918,12 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
     );
     let profile = RuntimeConfigProfile::from_env_or_runtime_toml(runtime_toml_ref)
         .unwrap_or(RuntimeConfigProfile::Server);
+    let trust_forwarded_headers = sdkwork_cloudrouter_config::runtime::config_bool(
+        crate::edge_server_runtime_config::ENV_EDGE_TRUST_FORWARDED_HEADERS,
+        runtime_toml_ref.and_then(|config| config.server.trust_forwarded_headers),
+    )
+    .map_err(anyhow::Error::msg)?
+    .unwrap_or(false);
     let database_config = DatabaseConfig::from_env_or_runtime_toml_or_initialize(runtime_toml_ref)
         .map_err(anyhow::Error::msg)?
         .ok_or_else(|| {
@@ -2116,6 +2131,7 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
         Ok(AllInOneRuntimeContext {
             database_config,
             database_pool,
+            trust_forwarded_headers,
             database_installer,
             catalog,
             api_key_security_config,
@@ -2232,10 +2248,10 @@ async fn build_gateway_router_from_all_in_one_context(
         // (vendor compatibility surface, API_SPEC §4.5.2). Mirrors the
         // database-runtime wiring in
         // `router_with_database_api_key_and_provider_configs`.
-        auth_token_authenticator: Some(Arc::new(IamAuthTokenAuthenticator::new(
-            context.database_pool.clone(),
-            Arc::clone(&context.catalog),
-        ))),
+        auth_token_authenticator: Some(Arc::new(
+            IamAuthTokenAuthenticator::new(context.database_pool.clone(), Arc::clone(&context.catalog))
+                .with_cache(resolve_auth_token_cache(runtime_toml.as_ref()).await),
+        )),
     })
     .map_err(anyhow::Error::new)
 }
@@ -3701,9 +3717,8 @@ gateway_invocation_body_max_bytes = 37
         // assembly backend contribution on the process-shared database pool
         // (API_ASSEMBLY_SPEC §3/§6.1), never through a direct route-crate
         // import.
-        assert!(source.contains(
-            "sdkwork_api_rtc_assembly::assemble_backend_api_contribution_with_pool("
-        ));
+        assert!(source
+            .contains("sdkwork_api_rtc_assembly::assemble_backend_api_contribution_with_pool("));
         let forbidden_route_crate_import = ["sdkwork_routes_rtc", "_backend_api::"].concat();
         assert!(
             !source.contains(&forbidden_route_crate_import),

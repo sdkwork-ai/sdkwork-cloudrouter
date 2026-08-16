@@ -1,5 +1,4 @@
 pub mod common;
-use common::InternalTrustedSubjectHeaders;
 use std::sync::Arc;
 
 use axum::body::Body;
@@ -87,12 +86,7 @@ async fn admin_monitor_route_rejects_missing_trusted_subject() {
 }
 
 fn signed_request(method: &str, path: &str) -> Request<Body> {
-    Request::builder()
-        .method(method)
-        .uri(path)
-        .internal_trusted_subject(100001, 0, 30)
-        .body(Body::empty())
-        .unwrap()
+    common::web_framework_backend_request(method, path, Body::empty(), "100001", Some("0"), "30")
 }
 
 async fn json_payload(response: axum::response::Response) -> Value {

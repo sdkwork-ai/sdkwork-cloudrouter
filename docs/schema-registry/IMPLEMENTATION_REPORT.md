@@ -1,4 +1,12 @@
 # Cloud Router表命名与模块划分优化方案 - 最终实施报告（已纠正）
+> **Superseded (2026-08-16):** this alignment report describes the pre-launch
+> schema state including the removed legacy `ai_pricing_*` tables. The current
+> authority is the schema registry
+> (`docs/schema-registry/sdkwork-cloudrouter.tables.yaml`) and
+> ADR-20260815-composable-pricing-and-billing. Retained as a historical record
+> only.
+
+
 
 ## 🚨 关键架构纠正
 

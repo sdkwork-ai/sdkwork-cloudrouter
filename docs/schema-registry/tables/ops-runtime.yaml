@@ -655,8 +655,8 @@ tables:
   - metric_value
   - source_version
   source_tables:
-  - ai_usage
-  - ai_request_trace
+  - ai_metering_usage
+  - ai_metering_request_trace
   - ops_gateway_instance
   - ops_gateway_heartbeat
   unique_constraints:
@@ -983,6 +983,29 @@ tables:
     updated_at:
       type: instant
       constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+  source_tables:
+  - ops_referral_relation
+  - ops_referral_strategy
+  semantic_contracts:
+    projection_lineage:
+      watermark:
+        field: snapshot_at
+        strategy: high_watermark
+      source_version:
+        field: snapshot_at
+        strategy: max_source_version
+      algorithm_version: ops-referral-stat-snapshot-v1
+      freshness:
+        target_seconds: 300
+        max_staleness_seconds: 900
+      rebuild:
+        strategy: full_recompute
+        owner: cloudrouter-ops-runtime
+      aggregation_grain:
+      - tenant_id
+      - organization_id
+      - inviter_user_id
+      - snapshot_at
   unique_constraints:
   - name: uk_ops_referral_stat_snapshot
     columns:

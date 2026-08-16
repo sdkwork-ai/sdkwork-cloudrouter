@@ -1,8 +1,20 @@
 use std::sync::Arc;
 
 use crate::domain::UpstreamAccountRoute;
+use crate::ports::AdminLlmProtocolConfig;
 
 use super::PricingCatalog;
+
+/// 账号级 Base URL 配置快照：账号覆盖（默认 + 各协议）与供应商协议 URL。
+/// 运行时按「账号配置 > 供应商配置 > 端点」的优先级解析调用地址：
+/// - LLM（协议 P）：account.protocols[P] → account.default → supplier.protocols[P] → 端点解析结果
+/// - 非 LLM / 无协议：account.default → supplier.default → 端点解析结果
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct AccountBaseUrlConfig {
+    pub account_default_base_url: Option<String>,
+    pub account_protocol_base_urls: Vec<AdminLlmProtocolConfig>,
+    pub supplier_protocol_base_urls: Vec<AdminLlmProtocolConfig>,
+}
 
 /// One vendor + model list entry of an account group's model access rule:
 /// `vendor_code` is the model vendor, `models` are the model names (an empty
@@ -57,6 +69,15 @@ pub trait UpstreamAccountRouteCatalog: PricingCatalog {
     /// LLM API protocol endpoint. `None` when the supplier declares none.
     fn supplier_default_base_url(&self, supplier_code: &str) -> Option<String> {
         let _ = supplier_code;
+        None
+    }
+
+    /// Returns the account-level Base URL configuration (account default +
+    /// per-protocol overrides, plus the supplier per-protocol URLs) used to
+    /// resolve the callable Base URL with account-first priority. `None` when
+    /// the account declares neither overrides nor supplier protocol URLs.
+    fn account_base_url_config(&self, account_id: i64) -> Option<AccountBaseUrlConfig> {
+        let _ = account_id;
         None
     }
 

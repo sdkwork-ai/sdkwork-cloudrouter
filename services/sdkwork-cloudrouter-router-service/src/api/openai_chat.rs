@@ -616,7 +616,10 @@ where
                 .and_then(|value| value.to_str().ok())
                 .map(|value| value.trim())
                 .filter(|value| !value.is_empty());
-            match authenticator.authenticate(credential_secret, access_token).await {
+            match authenticator
+                .authenticate(credential_secret, access_token)
+                .await
+            {
                 Ok(context) => context,
                 Err(response) => return *response,
             }
@@ -1590,8 +1593,8 @@ impl StreamingUsageRecordingBody {
             self.trace_recorded = true;
             return;
         };
-        let command = match command_builder.build(usage) {
-            Ok(command) => command,
+        let commands = match command_builder.build(usage) {
+            Ok(commands) => commands,
             Err(error) => {
                 tracing::warn!(error = %redact_error_message(&error), "failed to build streaming chat usage record");
                 self.terminal_error = Some(error.to_string());
@@ -1599,7 +1602,7 @@ impl StreamingUsageRecordingBody {
             }
         };
         let future: GatewayUsageRecordFuture<'static> =
-            Box::pin(async move { usage_recorder.record_gateway_usage(command).await });
+            Box::pin(async move { usage_recorder.record_gateway_usage_batch(commands).await });
         self.recording = Some(future);
         self.recording_is_trace_only = false;
     }

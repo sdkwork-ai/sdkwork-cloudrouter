@@ -98,11 +98,20 @@ fn postgres_model_ranking_refresh_reads_previous_rank_from_same_scope_period_and
 }
 
 #[test]
-fn postgres_model_ranking_refresh_uses_explicit_customer_charge_amount() {
-    assert_sql_contains(
-        production_store_source(),
+fn postgres_model_ranking_refresh_uses_rated_charge_ledger_amounts() {
+    for expected in [
+        "FROM cloudrouter_charge_line c",
+        "JOIN cloudrouter_rating_decision d",
+        "JOIN cloudrouter_usage_measurement m",
+        "d.decision_status = 'rated'",
+        "d.billability = 'chargeable'",
+        "c.amount > 0",
         "SUM(COALESCE(u.customer_charge_amount, 0)) AS cost_amount",
-    );
+        "FROM ai_metering_usage legacy",
+        "current_decision.invocation_id = legacy.request_id",
+    ] {
+        assert_sql_contains(production_store_source(), expected);
+    }
     assert_sql_not_contains(production_store_source(), "u.cost_amount");
 }
 
@@ -164,7 +173,7 @@ fn postgres_model_ranking_refresh_records_typed_audit_job_with_json_payload() {
         "\"consecutiveFailureCount\": command.consecutive_failure_count.max(0)",
         "\"alertRecommended\": command.alert_recommended",
         "\"alertSeverity\": command.alert_severity",
-        "\"sourceTables\": [\"ai_metering_usage\", \"ai_model\", \"ai_model_rank_snapshot\"]",
+        "\"sourceTables\": [\"cloudrouter_charge_line\", \"cloudrouter_rating_decision\", \"cloudrouter_usage_measurement\", \"ai_metering_usage\", \"ai_model\", \"ai_model_rank_snapshot\"]",
     ] {
         assert_sql_contains(production_store_source(), expected);
     }

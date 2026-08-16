@@ -4,7 +4,6 @@ use std::sync::Arc;
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
-use common::InternalTrustedSubjectHeaders;
 use sdkwork_cloudrouter_router_service::domain::{
     DecimalValue, GatewayApiKey, UpstreamAccountGroup,
 };
@@ -47,15 +46,16 @@ fn explain_request(api_key_id: i64, account_group_id: Option<i64>) -> Request<Bo
         "billingMeter": "api_request"
     });
     let account_group_id = account_group_id.unwrap_or(10);
-    Request::builder()
-        .method("POST")
-        .uri(format!(
+    common::web_framework_backend_request(
+            "POST",
+            &format!(
             "/backend/v3/api/ai/upstream_account_groups/{account_group_id}/route_explain"
-        ))
-        .header("content-type", "application/json")
-        .internal_trusted_subject(100001, 7, 31)
-        .body(Body::from(payload.to_string()))
-        .unwrap()
+        ),
+            Body::from(payload.to_string()),
+            "100001",
+            Some("7"),
+            "31",
+        )
 }
 
 async fn payload(response: axum::response::Response) -> serde_json::Value {

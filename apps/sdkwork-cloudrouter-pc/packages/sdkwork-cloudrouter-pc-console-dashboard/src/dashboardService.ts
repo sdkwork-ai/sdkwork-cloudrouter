@@ -1,9 +1,6 @@
 import {
-  APP_API_PREFIX,
-  OPEN_API_PREFIX,
   ensureSdkworkApiSuccess,
   isRecord,
-  readCloudRouterRuntimeEnv,
   readRequiredApiItem,
   readRequiredNonNegativeNumber,
   type ApiRecord,
@@ -39,6 +36,16 @@ export interface DashboardData {
   'video (Runway/Sora)': number;
   'audio (Whisper)': number;
   'music (Suno)': number;
+  'llm (Text) cost': number;
+  'image (Midjourney/DALL-E) cost': number;
+  'video (Runway/Sora) cost': number;
+  'audio (Whisper) cost': number;
+  'music (Suno) cost': number;
+}
+
+export interface ModalityDistribution {
+  modality: 'text' | 'image' | 'video' | 'audio' | 'music' | 'unknown';
+  requests: number;
 }
 
 export interface ModelUsage {
@@ -82,6 +89,7 @@ interface DashboardSnapshot {
   multimodalSparkline: Array<{ value: number }>;
   performanceSparkline: Array<{ value: number }>;
   chartData: DashboardData[];
+  modalityDistribution: ModalityDistribution[];
   topModels: ModelUsage[];
   announcements: Announcement[];
   configurationDomains: ConfigurationDomain[];
@@ -94,6 +102,16 @@ const MODALITY_KEYS = {
   video: 'video (Runway/Sora)',
   audio: 'audio (Whisper)',
   music: 'music (Suno)',
+} as const;
+
+/** Cost series keys mirror the request series so the metric toggle can render
+ * the real billed amount per modality instead of reusing request counts. */
+const MODALITY_COST_KEYS = {
+  text: 'llm (Text) cost',
+  image: 'image (Midjourney/DALL-E) cost',
+  video: 'video (Runway/Sora) cost',
+  audio: 'audio (Whisper) cost',
+  music: 'music (Suno) cost',
 } as const;
 
 const CONFIGURATION_DOMAIN_KEYS = [
@@ -226,9 +244,10 @@ function createInitialDashboardSnapshot(timeRange: DashboardTimeRange): Dashboar
     multimodalSparkline: sparkline,
     performanceSparkline: sparkline,
     chartData,
+    modalityDistribution: [],
     topModels: [],
     announcements: [],
-    configurationDomains: createInitialConfigurationDomains(),
+    configurationDomains: [],
     warnings: [],
   };
 }
@@ -239,24 +258,28 @@ function normalizeDashboardSnapshot(record: ApiRecord, timeRange: DashboardTimeR
   const chartData = normalizedChartData.length > 0 ? normalizedChartData : initialSnapshot.chartData;
   const normalizedTopModels = normalizeTopModels(record);
   const normalizedAnnouncements = normalizeAnnouncements(record);
+  // Configuration domains come exclusively from backend gateway nodes; when
+  // none are reported the panel shows its empty state instead of hardcoded
+  // entries that would look like fabricated data.
   const normalizedConfigurationDomains = normalizeConfigurationDomains(record);
   const requestSparkline = normalizeSparkline(record, ['requestSparkline', 'request_sparkline'], 'request', chartData, (item) => totalModalityValue(item));
   const multimodalSparkline = normalizeSparkline(record, ['multimodalSparkline', 'multimodal_sparkline'], 'multimodal', chartData, (item) => {
     return item[MODALITY_KEYS.image] + item[MODALITY_KEYS.video] + item[MODALITY_KEYS.audio] + item[MODALITY_KEYS.music];
   });
+  // The performance sparkline derives from real backend latency buckets; an
+  // empty backend result renders no sparkline instead of a flat zero line.
   const performanceSparkline = normalizeSparkline(record, ['performanceSparkline', 'performance_sparkline'], 'performance', [], () => 0);
 
   return {
     summary: normalizeSummary(record.summary, initialSnapshot.summary),
-    requestSparkline: requestSparkline.length > 0 ? requestSparkline : initialSnapshot.requestSparkline,
-    multimodalSparkline: multimodalSparkline.length > 0 ? multimodalSparkline : initialSnapshot.multimodalSparkline,
-    performanceSparkline: performanceSparkline.length > 0 ? performanceSparkline : initialSnapshot.performanceSparkline,
+    requestSparkline,
+    multimodalSparkline,
+    performanceSparkline,
     chartData,
+    modalityDistribution: normalizeModalityDistribution(record),
     topModels: normalizedTopModels,
     announcements: normalizedAnnouncements,
-    configurationDomains: normalizedConfigurationDomains.length > 0
-      ? normalizedConfigurationDomains
-      : initialSnapshot.configurationDomains,
+    configurationDomains: normalizedConfigurationDomains,
     warnings: normalizeWarnings(record),
   };
 }
@@ -269,6 +292,11 @@ function createInitialChartData(timeRange: DashboardTimeRange): DashboardData[] 
     [MODALITY_KEYS.video]: 0,
     [MODALITY_KEYS.audio]: 0,
     [MODALITY_KEYS.music]: 0,
+    [MODALITY_COST_KEYS.text]: 0,
+    [MODALITY_COST_KEYS.image]: 0,
+    [MODALITY_COST_KEYS.video]: 0,
+    [MODALITY_COST_KEYS.audio]: 0,
+    [MODALITY_COST_KEYS.music]: 0,
   }));
 }
 
@@ -335,31 +363,6 @@ function createZeroSparkline(length: number): Array<{ value: number }> {
   return Array.from({ length: Math.max(1, length) }, () => ({ value: 0 }));
 }
 
-function createInitialConfigurationDomains(): ConfigurationDomain[] {
-  return dedupeConfigurationDomains([
-    {
-      id: 'gateway-openai-compatible',
-      name: 'OpenAI-compatible Gateway',
-      domain: normalizeConfigurationDomainUrl(
-        readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_OPEN_API_BASE_URL')
-          ?? readCloudRouterRuntimeEnv('VITE_API_BASE_URL')
-          ?? OPEN_API_PREFIX,
-      ),
-      ip: '',
-      status: 'unknown',
-      remark: 'Primary OpenAI-compatible API base for model requests.',
-    },
-    {
-      id: 'app-product-api',
-      name: 'App Product API',
-      domain: normalizeConfigurationDomainUrl(readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_APP_API_BASE_URL') ?? APP_API_PREFIX),
-      ip: '',
-      status: 'unknown',
-      remark: 'Product console API base for user-facing operations.',
-    },
-  ]);
-}
-
 function pad2(value: number): string {
   return String(value).padStart(2, '0');
 }
@@ -375,11 +378,16 @@ function normalizeChartData(record: ApiRecord, timeRange: DashboardTimeRange): D
         video: readRequiredFirstNumber(item, ['video (Runway/Sora)', 'video', 'videoRequests'], 'Dashboard overview video requests are required'),
         audio: readRequiredFirstNumber(item, ['audio (Whisper)', 'audio', 'audioRequests'], 'Dashboard overview audio requests are required'),
         music: readRequiredFirstNumber(item, ['music (Suno)', 'music', 'musicRequests'], 'Dashboard overview music requests are required'),
+        textCost: readRequiredFirstNumber(item, ['llm (Text) cost', 'textCost', 'text_cost'], 'Dashboard overview text cost is required'),
+        imageCost: readRequiredFirstNumber(item, ['image (Midjourney/DALL-E) cost', 'imageCost', 'image_cost'], 'Dashboard overview image cost is required'),
+        videoCost: readRequiredFirstNumber(item, ['video (Runway/Sora) cost', 'videoCost', 'video_cost'], 'Dashboard overview video cost is required'),
+        audioCost: readRequiredFirstNumber(item, ['audio (Whisper) cost', 'audioCost', 'audio_cost'], 'Dashboard overview audio cost is required'),
+        musicCost: readRequiredFirstNumber(item, ['music (Suno) cost', 'musicCost', 'music_cost'], 'Dashboard overview music cost is required'),
       };
     });
 
   const expected = buildExpectedChartPeriods(timeRange);
-  const backendByPeriod = new Map<string, { text: number; image: number; video: number; audio: number; music: number }>();
+  const backendByPeriod = new Map<string, { text: number; image: number; video: number; audio: number; music: number; textCost: number; imageCost: number; videoCost: number; audioCost: number; musicCost: number }>();
   for (const row of backendRows) {
     backendByPeriod.set(row.period, row);
   }
@@ -395,8 +403,24 @@ function normalizeChartData(record: ApiRecord, timeRange: DashboardTimeRange): D
       [MODALITY_KEYS.video]: row?.video ?? 0,
       [MODALITY_KEYS.audio]: row?.audio ?? 0,
       [MODALITY_KEYS.music]: row?.music ?? 0,
+      [MODALITY_COST_KEYS.text]: row?.textCost ?? 0,
+      [MODALITY_COST_KEYS.image]: row?.imageCost ?? 0,
+      [MODALITY_COST_KEYS.video]: row?.videoCost ?? 0,
+      [MODALITY_COST_KEYS.audio]: row?.audioCost ?? 0,
+      [MODALITY_COST_KEYS.music]: row?.musicCost ?? 0,
     };
   });
+}
+
+/** Full-window modality request distribution computed by the backend from all
+ * usage facts, so the modality pie chart reflects true traffic (not just the
+ * top-N model ranking). */
+function normalizeModalityDistribution(record: ApiRecord): ModalityDistribution[] {
+  return readOptionalFirstRecordArray(record, ['modalityDistribution', 'modality_distribution'], 'Dashboard modality distribution record is required')
+    .map((item) => ({
+      modality: normalizeModality(readRequiredFirstString(item, ['modality', 'type'], 'Dashboard modality distribution modality is required')),
+      requests: readRequiredFirstNumber(item, ['requests', 'requestCount', 'request_count'], 'Dashboard modality distribution requests are required'),
+    }));
 }
 
 function normalizeTopModels(record: ApiRecord): ModelUsage[] {
@@ -707,16 +731,4 @@ function createConfigurationDomainId(name: string, domain: string, index: number
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
   return base || `configuration-domain-${index + 1}`;
-}
-
-function dedupeConfigurationDomains(items: ConfigurationDomain[]): ConfigurationDomain[] {
-  const seen = new Set<string>();
-  return items.filter((item) => {
-    const key = item.domain.toLowerCase();
-    if (seen.has(key)) {
-      return false;
-    }
-    seen.add(key);
-    return true;
-  });
 }

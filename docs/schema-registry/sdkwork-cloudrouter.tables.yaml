@@ -209,9 +209,10 @@ schema_registry:
 description: Cloud Router Schema Registry. Machine-readable source of truth for Cloud Router-owned runtime tables; generated
   SQL, manifests, OpenAPI snapshots, SDKs, services, and frontends must align to this contract.
 table_fragments:
+- tables/pricing-core.yaml
+- tables/cloudrouter-billing.yaml
 - tables/ai-routing.yaml
 - tables/ai-metering.yaml
-- tables/ai-pricing.yaml
 - tables/iam-gateway.yaml
 - tables/ops-runtime.yaml
 - tables/ai-chat-runtime.yaml
@@ -265,18 +266,6 @@ modules:
     tables:
     - ai_metering_usage
     - ai_metering_request_trace
-    ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
-  ai-pricing:
-    owner: cloud-router-platform
-    description: AI pricing plans, bindings, rules, tiers, and import snapshots.
-    compliance_level: L2
-    tables_count: 5
-    tables:
-    - ai_pricing_import_snapshot
-    - ai_pricing_plan
-    - ai_pricing_plan_binding
-    - ai_pricing_rule
-    - ai_pricing_tier
     ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
   iam-gateway:
     owner: cloud-router-platform
@@ -500,19 +489,18 @@ data_flow:
     - "ops-runtime\u672C\u5730\u8868\u63D0\u4F9B\u53EF\u5206\u9875\u7684\u76D1\u63A7\u3001\u901A\u77E5\u548C\u5BA1\u8BA1\u8BFB\u6A21\u578B"
     - "ops_metric_snapshot\u3001ops_job_execution\u3001ops_audit_log\u5199\u5165\uFF08cloud-router\u672C\u5730\uFF09"
 statistics:
-  cloud_router_local_tables: 53
+  cloud_router_local_tables: 48
   composed_dependency_tables: 19
-  total_tables: 72
+  total_tables: 67
   table_prefix_distribution:
-    ai_: 58
+    ai_: 53
     iam_: 4
     ops_: 10
   module_distribution:
-    cloud-router: 53
+    cloud-router: 48
     sdkwork-models: 19
     ai-routing: 24
     ai-metering: 2
-    ai-pricing: 5
     iam-gateway: 5
     ops-runtime: 10
     ai-chat-runtime: 10

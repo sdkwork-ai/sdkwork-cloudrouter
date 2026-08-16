@@ -1,5 +1,4 @@
 pub mod common;
-use common::InternalTrustedSubjectHeaders;
 use std::sync::Arc;
 
 use axum::body::Body;
@@ -19,11 +18,14 @@ async fn admin_dashboard_route_serializes_active_users_as_int64_string() {
 
     let response = router
         .oneshot(
-            Request::builder()
-                .uri("/backend/v3/api/system/dashboard/admin/overview")
-                .internal_trusted_subject(100001, 0, 30)
-                .body(Body::empty())
-                .unwrap(),
+            common::web_framework_backend_request(
+            "GET",
+            "/backend/v3/api/system/dashboard/admin/overview",
+            Body::empty(),
+            "100001",
+            Some("0"),
+            "30",
+        )
         )
         .await
         .unwrap();

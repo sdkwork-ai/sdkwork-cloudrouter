@@ -9,10 +9,10 @@ use sdkwork_cloudrouter_router_service::infrastructure::crypto::RingAeadCredenti
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::PostgresAdminUpstreamStore;
 use sdkwork_cloudrouter_router_service::infrastructure::sql::PricingCatalogSql;
 use sdkwork_cloudrouter_router_service::ports::{
-    AdminUpstreamAccountGroupItem, AdminUpstreamAccountGroupMemberInput, AdminUpstreamListQuery,
-    AdminUpstreamResourceInput, AdminUpstreamStore, AdminUpstreamSubject,
+    AdminLlmProtocolConfig, AdminUpstreamAccountGroupItem, AdminUpstreamAccountGroupMemberInput,
+    AdminUpstreamListQuery, AdminUpstreamResourceInput, AdminUpstreamStore, AdminUpstreamSubject,
     AdminUpstreamSupplierAuthMethodInput, AdminUpstreamSupplierEndpointInput,
-    CreateAdminUpstreamAccountCredentialCommand, SaveAdminUpstreamAccountCommand,
+    CreateAdminUpstreamAccountCredentialCommand, LlmProtocolCode, SaveAdminUpstreamAccountCommand,
     SaveAdminUpstreamAccountGroupCommand, SaveAdminUpstreamSupplierCommand,
 };
 use sqlx::postgres::PgPoolOptions;
@@ -147,6 +147,11 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
             uuid: "test-upstream-account-openai-main".to_owned(),
             supplier_id: supplier.id,
             preferred_endpoint_id: Some(endpoints[0].id),
+            default_base_url: Some("https://account.openai.com/v1".to_owned()),
+            protocols: vec![AdminLlmProtocolConfig {
+                protocol_code: LlmProtocolCode::OpenaiChatCompletions,
+                base_url: "https://account-chat.openai.com/v1".to_owned(),
+            }],
             account_code: "openai-main".to_owned(),
             account_name: "OpenAI main account".to_owned(),
             account_type: "standard".to_owned(),
@@ -165,6 +170,18 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
         })
         .await
         .expect("create upstream account");
+    // 账号级 Base URL 配置持久化：默认地址与各协议覆盖保存/重读一致
+    assert_eq!(
+        Some("https://account.openai.com/v1".to_owned()),
+        account.default_base_url
+    );
+    assert_eq!(
+        vec![AdminLlmProtocolConfig {
+            protocol_code: LlmProtocolCode::OpenaiChatCompletions,
+            base_url: "https://account-chat.openai.com/v1".to_owned(),
+        }],
+        account.protocols
+    );
 
     let long_secret = format!("sk-test-{}", "x".repeat(1024));
     let credential_command = CreateAdminUpstreamAccountCredentialCommand {
@@ -314,6 +331,37 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
         100,
         runtime_row.try_get::<i32, _>("endpoint_weight").unwrap()
     );
+    // 运行时快照携带账号/供应商 Base URL 配置列（调用面按「账号 > 供应商 > 端点」解析）
+    assert_eq!(
+        Some("https://account.openai.com/v1".to_owned()),
+        runtime_row
+            .try_get::<Option<String>, _>("account_default_base_url")
+            .expect("account default base url")
+    );
+    let account_protocols: serde_json::Value = serde_json::from_str(
+        &runtime_row
+            .try_get::<String, _>("account_protocols_json")
+            .expect("account protocols json"),
+    )
+    .expect("parse account protocols");
+    assert_eq!(
+        Some("https://account-chat.openai.com/v1"),
+        account_protocols[0]["baseUrl"].as_str()
+    );
+    let supplier_protocols: serde_json::Value = serde_json::from_str(
+        &runtime_row
+            .try_get::<String, _>("supplier_protocols_json")
+            .expect("supplier protocols json"),
+    )
+    .expect("parse supplier protocols");
+    assert_eq!(
+        Some("https://default.openai.com/v1"),
+        runtime_row
+            .try_get::<Option<String>, _>("supplier_default_base_url")
+            .expect("supplier default base url")
+            .as_deref()
+    );
+    assert_eq!(0, supplier_protocols.as_array().map(Vec::len).unwrap_or(0));
     let bindings: serde_json::Value = serde_json::from_str(
         &runtime_row
             .try_get::<String, _>("account_group_bindings_json")
@@ -485,6 +533,8 @@ async fn postgres_upstream_store_creates_initial_credential_atomically_with_acco
             uuid: "test-upstream-account-atomic-with-key".to_owned(),
             supplier_id: supplier.id,
             preferred_endpoint_id: None,
+            default_base_url: None,
+            protocols: Vec::new(),
             account_code: "atomic-with-key".to_owned(),
             account_name: "Atomic account with key".to_owned(),
             account_type: "standard".to_owned(),
@@ -524,6 +574,8 @@ async fn postgres_upstream_store_creates_initial_credential_atomically_with_acco
             uuid: "test-upstream-account-atomic-no-key".to_owned(),
             supplier_id: supplier.id,
             preferred_endpoint_id: None,
+            default_base_url: None,
+            protocols: Vec::new(),
             account_code: "atomic-no-key".to_owned(),
             account_name: "Atomic account without key".to_owned(),
             account_type: "standard".to_owned(),
@@ -700,6 +752,8 @@ async fn postgres_upstream_store_account_resources_scope_runtime_routes() {
             uuid: "test-upstream-account-scope".to_owned(),
             supplier_id: supplier.id,
             preferred_endpoint_id: None,
+            default_base_url: None,
+            protocols: Vec::new(),
             account_code: "scope-main".to_owned(),
             account_name: "Scope main account".to_owned(),
             account_type: "standard".to_owned(),
@@ -1019,6 +1073,241 @@ async fn postgres_upstream_store_enforces_single_default_account_group() {
     context.cleanup().await;
 }
 
+#[tokio::test]
+async fn postgres_upstream_store_stale_preferred_endpoint_does_not_block_edits() {
+    let Some(context) = PostgresTestContext::new("admin_upstream_stale_preferred").await else {
+        return;
+    };
+    let codec = Arc::new(
+        RingAeadCredentialSecretCodec::new("0123456789abcdef0123456789abcdef")
+            .expect("credential codec"),
+    );
+    let store = PostgresAdminUpstreamStore::new(context.pool.clone(), codec.clone());
+    let subject = upstream_subject(100003, 200003);
+
+    let supplier = store
+        .save_supplier(SaveAdminUpstreamSupplierCommand {
+            subject: subject.clone(),
+            supplier_id: None,
+            expected_version: None,
+            uuid: "test-upstream-supplier-stale-preferred".to_owned(),
+            supplier_code: "stale-supplier".to_owned(),
+            default_vendor_code: None,
+            default_base_url: None,
+            supplier_name: "Stale preferred supplier".to_owned(),
+            display_name: "Stale preferred supplier".to_owned(),
+            description: None,
+            supplier_type: "official".to_owned(),
+            adapter_code: "openai".to_owned(),
+            protocol_code: "openai".to_owned(),
+            protocols: Vec::new(),
+            model_blacklist: Vec::new(),
+            model_whitelist: Vec::new(),
+            website_url: None,
+            docs_url: None,
+            region_code: None,
+            environment: 1,
+            sort_order: 10,
+            status: 1,
+            requested_at: REQUESTED_AT.to_owned(),
+        })
+        .await
+        .expect("create supplier");
+    store
+        .replace_supplier_auth_methods(
+            subject.clone(),
+            supplier.id,
+            supplier.version,
+            vec![AdminUpstreamSupplierAuthMethodInput {
+                auth_method_code: "api-key".to_owned(),
+                auth_method_name: "API key".to_owned(),
+                auth_type: "api_key".to_owned(),
+                config_schema: serde_json::json!({"type": "string"}),
+                runtime_auth_config: serde_json::json!({
+                    "credentialTransport": "bearer",
+                    "defaultHeaders": {}
+                }),
+                priority: 10,
+                status: 1,
+            }],
+            REQUESTED_AT.to_owned(),
+        )
+        .await
+        .expect("replace auth methods");
+    let endpoints = store
+        .replace_supplier_endpoints(
+            subject.clone(),
+            supplier.id,
+            1,
+            vec![
+                AdminUpstreamSupplierEndpointInput {
+                    endpoint_code: "primary".to_owned(),
+                    endpoint_name: "Primary API".to_owned(),
+                    base_url: "https://primary.example.com/v1".to_owned(),
+                    protocol_code: Some("openai".to_owned()),
+                    region_code: Some("global".to_owned()),
+                    environment: 1,
+                    priority: 10,
+                    routing_weight: 100,
+                    timeout_ms: Some(30_000),
+                    status: 1,
+                    vendor_codes: Vec::new(),
+                },
+                AdminUpstreamSupplierEndpointInput {
+                    endpoint_code: "backup".to_owned(),
+                    endpoint_name: "Backup API".to_owned(),
+                    base_url: "https://backup.example.com/v1".to_owned(),
+                    protocol_code: Some("openai".to_owned()),
+                    region_code: Some("global".to_owned()),
+                    environment: 1,
+                    priority: 20,
+                    routing_weight: 50,
+                    timeout_ms: Some(30_000),
+                    status: 1,
+                    vendor_codes: Vec::new(),
+                },
+            ],
+            REQUESTED_AT.to_owned(),
+        )
+        .await
+        .expect("replace endpoints");
+    assert_eq!(2, endpoints.len());
+
+    let account = store
+        .save_account(SaveAdminUpstreamAccountCommand {
+            subject: subject.clone(),
+            account_id: None,
+            expected_version: None,
+            uuid: "test-upstream-account-stale-preferred".to_owned(),
+            supplier_id: supplier.id,
+            preferred_endpoint_id: Some(endpoints[0].id),
+            default_base_url: None,
+            protocols: Vec::new(),
+            account_code: "stale-preferred".to_owned(),
+            account_name: "Stale preferred account".to_owned(),
+            account_type: "standard".to_owned(),
+            auth_method_code: "api-key".to_owned(),
+            external_account_id: None,
+            environment: Some(1),
+            region_code: None,
+            quota_limit: None,
+            upstream_balance_currency: None,
+            contract_cost_multiplier: "1.000000000000".to_owned(),
+            rpm_limit: None,
+            timeout_ms: None,
+            status: 1,
+            api_key: None,
+            requested_at: REQUESTED_AT.to_owned(),
+        })
+        .await
+        .expect("create account with preferred endpoint");
+
+    // 停用当前首选端点后，编辑账号（保持首选端点不变）不再被既有失效引用阻塞
+    sqlx::query("UPDATE ai_upstream_supplier_endpoint SET status = 0 WHERE id = $1")
+        .bind(endpoints[0].id)
+        .execute(&context.pool)
+        .await
+        .expect("deactivate preferred endpoint");
+    let renamed = store
+        .save_account(SaveAdminUpstreamAccountCommand {
+            subject: subject.clone(),
+            account_id: Some(account.id),
+            expected_version: Some(account.version),
+            uuid: account.uuid.clone(),
+            supplier_id: supplier.id,
+            preferred_endpoint_id: Some(endpoints[0].id),
+            default_base_url: None,
+            protocols: Vec::new(),
+            account_code: account.account_code.clone(),
+            account_name: "Stale preferred renamed".to_owned(),
+            account_type: account.account_type.clone(),
+            auth_method_code: account.auth_method_code.clone(),
+            external_account_id: account.external_account_id.clone(),
+            environment: account.environment,
+            region_code: account.region_code.clone(),
+            quota_limit: account.quota_limit.clone(),
+            upstream_balance_currency: account.upstream_balance_currency.clone(),
+            contract_cost_multiplier: account.contract_cost_multiplier.clone(),
+            rpm_limit: account.rpm_limit,
+            timeout_ms: account.timeout_ms,
+            status: account.status,
+            api_key: None,
+            requested_at: REQUESTED_AT.to_owned(),
+        })
+        .await
+        .expect("edit account while preferred endpoint is inactive");
+    assert_eq!(Some(endpoints[0].id), renamed.preferred_endpoint_id);
+
+    // 显式清除（null）语义：恢复自动选择
+    let cleared = store
+        .save_account(SaveAdminUpstreamAccountCommand {
+            subject: subject.clone(),
+            account_id: Some(account.id),
+            expected_version: Some(renamed.version),
+            uuid: account.uuid.clone(),
+            supplier_id: supplier.id,
+            preferred_endpoint_id: None,
+            default_base_url: None,
+            protocols: Vec::new(),
+            account_code: account.account_code.clone(),
+            account_name: renamed.account_name.clone(),
+            account_type: account.account_type.clone(),
+            auth_method_code: account.auth_method_code.clone(),
+            external_account_id: account.external_account_id.clone(),
+            environment: account.environment,
+            region_code: account.region_code.clone(),
+            quota_limit: account.quota_limit.clone(),
+            upstream_balance_currency: account.upstream_balance_currency.clone(),
+            contract_cost_multiplier: account.contract_cost_multiplier.clone(),
+            rpm_limit: account.rpm_limit,
+            timeout_ms: account.timeout_ms,
+            status: account.status,
+            api_key: None,
+            requested_at: REQUESTED_AT.to_owned(),
+        })
+        .await
+        .expect("clear stale preferred endpoint");
+    assert_eq!(None, cleared.preferred_endpoint_id);
+
+    // 将停用的端点显式设为新的首选端点 → 拒绝
+    sqlx::query("UPDATE ai_upstream_supplier_endpoint SET status = 0 WHERE id = $1")
+        .bind(endpoints[1].id)
+        .execute(&context.pool)
+        .await
+        .expect("deactivate backup endpoint");
+    let blocked = store
+        .save_account(SaveAdminUpstreamAccountCommand {
+            subject: subject.clone(),
+            account_id: Some(account.id),
+            expected_version: Some(cleared.version),
+            uuid: account.uuid.clone(),
+            supplier_id: supplier.id,
+            preferred_endpoint_id: Some(endpoints[1].id),
+            default_base_url: None,
+            protocols: Vec::new(),
+            account_code: account.account_code.clone(),
+            account_name: renamed.account_name.clone(),
+            account_type: account.account_type.clone(),
+            auth_method_code: account.auth_method_code.clone(),
+            external_account_id: account.external_account_id.clone(),
+            environment: account.environment,
+            region_code: account.region_code.clone(),
+            quota_limit: account.quota_limit.clone(),
+            upstream_balance_currency: account.upstream_balance_currency.clone(),
+            contract_cost_multiplier: account.contract_cost_multiplier.clone(),
+            rpm_limit: account.rpm_limit,
+            timeout_ms: account.timeout_ms,
+            status: account.status,
+            api_key: None,
+            requested_at: REQUESTED_AT.to_owned(),
+        })
+        .await
+        .expect_err("binding an inactive endpoint must be rejected");
+    assert!(blocked.is_not_found());
+
+    context.cleanup().await;
+}
+
 async fn promote_default(
     store: &PostgresAdminUpstreamStore,
     subject: &AdminUpstreamSubject,
@@ -1167,6 +1456,12 @@ impl PostgresTestContext {
         .execute(&pool)
         .await
         .expect("apply upstream supplier default base URL migration");
+        sqlx::raw_sql(include_str!(
+            "../../../database/migrations/postgres/0030_add_upstream_account_base_urls.up.sql"
+        ))
+        .execute(&pool)
+        .await
+        .expect("apply upstream account base URL migration");
         create_resource_catalog(&pool).await;
         Some(Self {
             pool,

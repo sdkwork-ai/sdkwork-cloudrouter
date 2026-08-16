@@ -33,7 +33,8 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
     PostgresAppRoutingReadStore, PostgresAppRoutingStrategyStore, PostgresAppRuntimeStore,
     PostgresCatalogLoadError, PostgresDashboardOverviewReadStore,
     PostgresGatewayApiKeyCommandStore, PostgresPaymentIntentRuntimeStore,
-    PostgresPricingCatalogLoader, PostgresSettingsStore, PostgresSiteSettingsStore,
+    PostgresOfficialPricingCatalogReadStore, PostgresPricingCatalogLoader, PostgresSettingsStore,
+    PostgresSiteSettingsStore,
     PostgresUsageLogsReadStore,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::{
@@ -47,7 +48,8 @@ use sdkwork_cloudrouter_router_service::ports::{
     AppNotificationStore, AppRoutingReadStore, AppRoutingStrategyStore, AppRuntimeStore,
     DashboardOverviewReadStore, GatewayApiKeyCommandStore, GatewayApiKeyManagementReadStore,
     ModelRankingRefreshOutcome, ModelRankingRefreshRunStatus, ModelRankingRefreshStore,
-    ModelRankingsCacheInvalidation, ModelRankingsReadModelStore, SettingsStore,
+    ModelRankingsCacheInvalidation, ModelRankingsReadModelStore, OfficialPricingCatalogReadStore,
+    SettingsStore,
     SettlementsDashboardReadStore, SiteSettingsStore, UsageLogsReadStore,
 };
 use sdkwork_cloudrouter_settlements_dashboard_repository_sqlx::PostgresSettlementsDashboardReadStore;
@@ -125,6 +127,7 @@ type AppRoutingStore = Arc<dyn AppRoutingReadStore + Send + Sync>;
 type AppRoutingStrategyRuntimeStore = Arc<dyn AppRoutingStrategyStore + Send + Sync>;
 type AppSiteSettingsRuntimeStore = Arc<dyn SiteSettingsStore + Send + Sync>;
 type DashboardReadStore = Arc<dyn DashboardOverviewReadStore + Send + Sync>;
+type OfficialPricingReadStore = Arc<dyn OfficialPricingCatalogReadStore + Send + Sync>;
 type EntityUuidGen = Arc<dyn EntityUuidGenerator + Send + Sync>;
 type PaymentIntentAggregateRuntimeStore = Arc<dyn PaymentAggregateRuntimeStore>;
 type SettlementsDashboardStore = Arc<dyn SettlementsDashboardReadStore + Send + Sync>;
@@ -350,6 +353,7 @@ struct AppRouterRuntime<'a> {
     payment_intent_runtime_store: Option<PaymentIntentAggregateRuntimeStore>,
     payment_provider_registry: PaymentProviderRegistry,
     dashboard_read_store: Option<DashboardReadStore>,
+    official_pricing_read_store: Option<OfficialPricingReadStore>,
     settlements_dashboard_read_store: Option<SettlementsDashboardStore>,
     settings_store: Option<SettingsRuntimeStore>,
     usage_logs_read_store: Option<UsageLogsStore>,
@@ -382,6 +386,7 @@ fn router_with_runtime_stores_and_database_status(runtime: AppRouterRuntime<'_>)
         payment_intent_runtime_store,
         payment_provider_registry,
         dashboard_read_store,
+        official_pricing_read_store,
         settlements_dashboard_read_store,
         settings_store,
         usage_logs_read_store,
@@ -446,6 +451,12 @@ fn router_with_runtime_stores_and_database_status(runtime: AppRouterRuntime<'_>)
         None => {
             router.merge(sdkwork_cloudrouter_router_service::api::app_dashboard_overview_router())
         }
+    };
+    router = match official_pricing_read_store {
+        Some(read_store) => router.merge(
+            sdkwork_cloudrouter_router_service::api::app_pricing_router_with_read_store(read_store),
+        ),
+        None => router.merge(sdkwork_cloudrouter_router_service::api::app_pricing_router()),
     };
     router = match usage_logs_read_store {
         Some(read_store) => sdkwork_cloudrouter_http::merge_web_framework_scoped_app_read_router(
@@ -621,6 +632,8 @@ pub async fn router_with_postgres_product_catalog(
         Arc::new(PostgresPaymentIntentRuntimeStore::new(pool.clone()));
     let payment_provider_registry = bootstrap_postgres_payment_provider_registry(&pool).await;
     let dashboard_read_store = Arc::new(PostgresDashboardOverviewReadStore::new(pool.clone()));
+    let official_pricing_read_store =
+        Arc::new(PostgresOfficialPricingCatalogReadStore::new(pool.clone()));
     let settlements_dashboard_read_store =
         Arc::new(PostgresSettlementsDashboardReadStore::new(pool.clone()));
     let settings_store = Arc::new(PostgresSettingsStore::new(pool.clone()));
@@ -653,6 +666,7 @@ pub async fn router_with_postgres_product_catalog(
             payment_intent_runtime_store: Some(payment_intent_runtime_store),
             payment_provider_registry,
             dashboard_read_store: Some(dashboard_read_store),
+            official_pricing_read_store: Some(official_pricing_read_store),
             settlements_dashboard_read_store: Some(settlements_dashboard_read_store),
             settings_store: Some(settings_store),
             usage_logs_read_store: Some(usage_logs_read_store),
@@ -750,6 +764,8 @@ pub async fn router_with_postgres_shared_runtime(
     let dashboard_read_store = Arc::new(PostgresDashboardOverviewReadStore::new(
         commerce_pool.clone(),
     ));
+    let official_pricing_read_store =
+        Arc::new(PostgresOfficialPricingCatalogReadStore::new(pool.clone()));
     let settlements_dashboard_read_store = Arc::new(PostgresSettlementsDashboardReadStore::new(
         commerce_pool.clone(),
     ));
@@ -782,6 +798,7 @@ pub async fn router_with_postgres_shared_runtime(
             payment_intent_runtime_store: Some(payment_intent_runtime_store),
             payment_provider_registry,
             dashboard_read_store: Some(dashboard_read_store),
+            official_pricing_read_store: Some(official_pricing_read_store),
             settlements_dashboard_read_store: Some(settlements_dashboard_read_store),
             settings_store: Some(settings_store),
             usage_logs_read_store: Some(usage_logs_read_store),
@@ -992,6 +1009,8 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
         Arc::new(PostgresPaymentIntentRuntimeStore::new(pool.clone()));
     let payment_provider_registry = bootstrap_postgres_payment_provider_registry(&pool).await;
     let dashboard_read_store = Arc::new(PostgresDashboardOverviewReadStore::new(pool.clone()));
+    let official_pricing_read_store =
+        Arc::new(PostgresOfficialPricingCatalogReadStore::new(pool.clone()));
     let settlements_dashboard_read_store =
         Arc::new(PostgresSettlementsDashboardReadStore::new(pool.clone()));
     let settings_store = Arc::new(PostgresSettingsStore::new(pool.clone()));
@@ -1029,6 +1048,7 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
             payment_intent_runtime_store: Some(payment_intent_runtime_store),
             payment_provider_registry,
             dashboard_read_store: Some(dashboard_read_store),
+            official_pricing_read_store: Some(official_pricing_read_store),
             settlements_dashboard_read_store: Some(settlements_dashboard_read_store),
             settings_store: Some(settings_store),
             usage_logs_read_store: Some(usage_logs_read_store),

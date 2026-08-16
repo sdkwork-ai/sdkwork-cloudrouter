@@ -12,8 +12,8 @@ use sdkwork_cloudrouter_router_service::domain::{
     AiRouteModelRequirement, BillingMeter, DomainError, RoutingCapability,
 };
 use sdkwork_cloudrouter_router_service::ports::{
-    GatewayRequestTraceCommand, GatewayUsageQuantity, GatewayUsageRecordCommand,
-    GatewayUsageRecordFuture, GatewayUsageRecorder,
+    GatewayOfficialRateReference, GatewayRequestTraceCommand, GatewayUsageQuantity,
+    GatewayUsageRecordCommand, GatewayUsageRecordFuture, GatewayUsageRecorder,
 };
 use serde_json::json;
 
@@ -292,7 +292,9 @@ fn usage_command() -> GatewayUsageRecordCommand {
         modality: 1,
         usage_type: 1,
         billing_meter_code: "llm_input_token".to_owned(),
+        unit_size: "1000000".to_owned(),
         billable_quantity: "3".to_owned(),
+        rated_quantity: "3".to_owned(),
         prompt_tokens: 3,
         completion_tokens: 0,
         cached_tokens: 0,
@@ -309,6 +311,10 @@ fn usage_command() -> GatewayUsageRecordCommand {
         provider_error_code: None,
         error_type: None,
         error_message_masked: None,
+        decision_status: "rated".to_owned(),
+        billability: "chargeable".to_owned(),
+        reason_code: "price_service_rated".to_owned(),
+        strategy_code: Some("token_usage".to_owned()),
         base_input_unit_price: "0.150000".to_owned(),
         base_output_unit_price: "0.000000".to_owned(),
         cache_read_unit_price: "0.000000".to_owned(),
@@ -319,7 +325,29 @@ fn usage_command() -> GatewayUsageRecordCommand {
         upstream_cost_amount: "0.000000330000".to_owned(),
         currency: "USD".to_owned(),
         pricing_plan_code: "standard".to_owned(),
+        billing_components: "[]".to_owned(),
         pricing_snapshot: "{}".to_owned(),
+        official_rate: Some(GatewayOfficialRateReference {
+            price_book_code: "test-official-book".to_owned(),
+            rate_hash: "test-rate-hash".to_owned(),
+            product_code: "model-inference".to_owned(),
+            operation_code: "chat-completions".to_owned(),
+            billability: "chargeable".to_owned(),
+            charge_timing: "usage_reported".to_owned(),
+            calculation_mode: "per_unit".to_owned(),
+            quantity_aggregation: "sum".to_owned(),
+            unit_size: "1000000".to_owned(),
+            unit_price: "0.150000".to_owned(),
+            plan_unit_price: "0.150000".to_owned(),
+            rated_reference_unit_price: "0.150000".to_owned(),
+            rated_unit_price: "0.150000".to_owned(),
+            rated_procurement_unit_price: Some("0.110000".to_owned()),
+            minimum_quantity: "0".to_owned(),
+            quantity_step: None,
+            conditions: Vec::new(),
+            tiers: Vec::new(),
+            formula: None,
+        }),
     }
 }
 

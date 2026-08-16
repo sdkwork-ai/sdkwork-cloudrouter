@@ -202,10 +202,9 @@ async fn app_model_rankings_route_accepts_contract_page_and_page_size_query() {
     // The generated app SDK always sends page=1&page_size=N for modelRankings.list.
     // The server must accept the contract-declared `page` query parameter instead of
     // rejecting it as an unknown field (40002 Malformed request).
-    let router =
-        sdkwork_cloudrouter_router_service::api::app_model_rankings_router_with_read_store(
-            Arc::new(StubModelRankingsReadStore),
-        );
+    let router = sdkwork_cloudrouter_router_service::api::app_model_rankings_router_with_read_store(
+        Arc::new(StubModelRankingsReadStore),
+    );
     let response = router
         .oneshot(common::web_framework_app_request(
             "GET",

@@ -93,7 +93,10 @@ namespace Sdkwork.CloudRouter.Open.Http
 
         public void SetAccessToken(string token)
         {
-            if (!ApiKeyHeader.Equals("Access-Token", StringComparison.OrdinalIgnoreCase)
+            // Dual-token mode keeps the `Authorization` bearer set by
+            // SetAuthToken; only a stale API key header (when the API key
+            // header is not `Authorization`) is cleared here.
+            if (!ApiKeyHeader.Equals("Authorization", StringComparison.OrdinalIgnoreCase)
                 && _client.DefaultRequestHeaders.Contains(ApiKeyHeader))
             {
                 _client.DefaultRequestHeaders.Remove(ApiKeyHeader);

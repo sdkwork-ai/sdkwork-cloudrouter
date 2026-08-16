@@ -5,6 +5,18 @@
 > 鏃ユ湡锟?026-04-28
 > 鑼冨洿锛歚sdkwork-cloudrouter` 鏂板鏁版嵁鍩熴€佸瓨锟?`plus_*` 琛ㄥ鐢ㄨ竟鐣屻€佹牳蹇冭〃濂戠害銆佺储寮曘€佺暀瀛樸€佷簨浠朵竴鑷存€у拰 CI 鏍￠獙锟?> 渚濇嵁锛歔DATABASE_SPEC.md](../DATABASE_SPEC.md)銆乕05-鏁版嵁搴撹锟?md](./05-鏁版嵁搴撹锟?md)銆乕12-鍓嶇鍔熻兘妯″潡涓庢暟鎹簱琛ㄧ粨鏋勬槧锟?md](./12-鍓嶇鍔熻兘妯″潡涓庢暟鎹簱琛ㄧ粨鏋勬槧锟?md)銆乕13-椤甸潰绾ф暟鎹粨鏋勮鐩栦笌SchemaRegistry钀藉湴璁捐.md](./13-椤甸潰绾ф暟鎹粨鏋勮鐩栦笌SchemaRegistry钀藉湴璁捐.md)銆乣legacy-java-plus-entity` 鏃㈡湁瀹炰綋銆乣legacy-java-plus-app-api`銆乣legacy-java-plus-backend-api`锟?
 ## 1. 鏂囨。瀹氫綅
+> **Superseded (2026-08-16):** the pricing architecture described in this
+> document (legacy `ai_pricing_plan` / `ai_pricing_rule` / `ai_pricing_tier`
+> as pricing authority) was replaced by
+> [ADR-20260815-composable-pricing-and-billing](../decisions/ADR-20260815-composable-pricing-and-billing.md).
+> The reusable `pricing` module owns official price books and rates,
+> `cloudrouter-billing` owns plans, rules, rate cards, measurements, rating
+> decisions, and charge lines, and the legacy `ai_pricing_*` tables were
+> physically removed before launch (see
+> [MIG-2026-0002](../../migrations/MIG-2026-0002-composable-pricing-billing.md)).
+> This document is retained as a historical design record only.
+
+
 
 鏈枃涓嶆槸 SQL 杩佺Щ鑴氭湰锛屼篃涓嶆槸 ORM 瀹炰綋娓呭崟锛岃€屾槸寤鸿〃鍓嶇殑鏁版嵁濂戠害銆傚悗缁换锟?DDL銆丣PA Entity銆丷epository銆丱penAPI銆乀ypeScript/Java SDK DTO銆佹暟鎹悓姝ヤ换鍔″拰 CI schema linter 閮藉簲浠庢湰鏂囧绾︾敓鎴愭垨鍙嶅悜鏍￠獙锟?
 鏈疆鍙墦纾ㄨ璁★紝涓嶄慨锟?`legacy-java-plus-entity` 鏃㈡湁琛ㄧ粨鏋勶紝涓嶇敓鎴愮敓浜ц縼绉伙拷?

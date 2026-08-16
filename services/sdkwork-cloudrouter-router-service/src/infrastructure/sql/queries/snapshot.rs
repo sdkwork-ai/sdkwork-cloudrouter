@@ -637,7 +637,10 @@ SELECT
         ELSE endpoint_health.health_status
     END AS endpoint_health_status,
     e.base_url,
+    c.default_base_url AS account_default_base_url,
+    c.protocols::text AS account_protocols_json,
     s.default_base_url AS supplier_default_base_url,
+    s.protocols::text AS supplier_protocols_json,
     'managed://upstream-account-credential/' || cc.id::text AS secret_ref,
     cc.secret_ciphertext,
     cc.secret_key_id,
@@ -854,7 +857,15 @@ WHERE c.deleted_at IS NULL
         AND (member.effective_to IS NULL OR member.effective_to > CURRENT_TIMESTAMP)
   )
   AND NULLIF(cc.secret_ciphertext, '') IS NOT NULL
-  AND (NULLIF(e.base_url, '') IS NOT NULL OR NULLIF(s.default_base_url, '') IS NOT NULL)
+  -- 可调用判定：端点 URL、供应商默认/协议 URL、账号默认/协议 URL 任一存在即可路由
+  -- （账号级配置优先于供应商级配置，见 rows.rs / route_planning 的解析链）
+  AND (
+        NULLIF(e.base_url, '') IS NOT NULL
+        OR NULLIF(s.default_base_url, '') IS NOT NULL
+        OR s.protocols <> '[]'::jsonb
+        OR NULLIF(c.default_base_url, '') IS NOT NULL
+        OR c.protocols <> '[]'::jsonb
+  )
 ORDER BY CASE WHEN e.id = c.preferred_endpoint_id THEN 0 ELSE 1 END ASC,
          COALESCE(e.priority, 100) ASC,
          COALESCE(e.routing_weight, 100) DESC,
@@ -970,49 +981,94 @@ ORDER BY
     pub fn load_pricing_plans() -> &'static str {
         r#"
 SELECT
-    tenant_id,
-    organization_id,
-    plan_code,
-    CASE base_price_side
-        WHEN 1 THEN 'official_reference'
-        WHEN 2 THEN 'upstream_cost'
-        WHEN 3 THEN 'customer_charge'
-        WHEN 4 THEN 'internal_transfer'
-        ELSE 'unknown'
-    END AS base_price_side_code,
-    default_multiplier::text AS default_multiplier,
-    default_markup_amount::text AS default_markup_amount,
-    currency
-FROM ai_pricing_plan
-WHERE deleted_at IS NULL
-  AND status = 1
-  AND (effective_from IS NULL OR effective_from <= CURRENT_TIMESTAMP)
-  AND (effective_to IS NULL OR effective_to > CURRENT_TIMESTAMP)
-ORDER BY priority ASC, effective_from DESC, id DESC
+    plan.id,
+    plan.tenant_id,
+    plan.organization_id,
+    plan.plan_code,
+    plan.base_price_side AS base_price_side_code,
+    default_rule.multiplier::text AS default_multiplier,
+    default_rule.markup_amount::text AS default_markup_amount,
+    plan.currency_code AS currency
+FROM cloudrouter_pricing_plan plan
+JOIN LATERAL (
+    SELECT rule.multiplier, rule.markup_amount
+    FROM cloudrouter_pricing_rule rule
+    WHERE rule.tenant_id = plan.tenant_id
+      AND rule.organization_id = plan.organization_id
+      AND rule.pricing_plan_id = plan.id
+      AND rule.formula_mode = 'multiplier_markup'
+      AND rule.product_code IS NULL
+      AND rule.operation_code IS NULL
+      AND rule.meter_code IS NULL
+      AND rule.provider_code IS NULL
+      AND rule.region_code IS NULL
+      AND rule.catalog_key IS NULL
+      AND rule.status = 1
+      AND rule.deleted_at IS NULL
+      AND rule.effective_from <= CURRENT_TIMESTAMP
+      AND (rule.effective_to IS NULL OR rule.effective_to > CURRENT_TIMESTAMP)
+    ORDER BY rule.priority ASC, rule.effective_from DESC, rule.id DESC
+    LIMIT 1
+) default_rule ON TRUE
+WHERE plan.deleted_at IS NULL
+  AND plan.status = 1
+  AND plan.fallback_policy = 'fail_closed'
+  AND plan.effective_from <= CURRENT_TIMESTAMP
+  AND (plan.effective_to IS NULL OR plan.effective_to > CURRENT_TIMESTAMP)
+ORDER BY plan.effective_from DESC, plan.id DESC
 "#
     }
 
     pub fn load_upstream_account_groups() -> &'static str {
         r#"
 SELECT
-    id,
-    COALESCE(tenant_id, 0) AS tenant_id,
-    COALESCE(organization_id, 0) AS organization_id,
-    COALESCE(NULLIF(group_name, ''), group_code) AS name,
-    group_code AS code,
-    COALESCE(is_default, FALSE) AS is_default,
-    COALESCE(NULLIF(BTRIM(pricing_plan_code), ''), 'standard') AS pricing_plan_code,
-    routing_strategy,
-    fallback_mode,
-    priority,
-    cost_multiplier::text AS cost_multiplier,
-    sale_multiplier::text AS sale_multiplier,
-    model_blacklist::text AS model_blacklist,
-    model_whitelist::text AS model_whitelist
-FROM ai_upstream_account_group
-WHERE deleted_at IS NULL
-  AND status = 1
-ORDER BY updated_at DESC, id DESC
+    account_group.id,
+    account_group.tenant_id,
+    account_group.organization_id,
+    COALESCE(NULLIF(account_group.group_name, ''), account_group.group_code) AS name,
+    account_group.group_code AS code,
+    COALESCE(account_group.is_default, FALSE) AS is_default,
+    selected_plan.pricing_plan_tenant_id,
+    selected_plan.pricing_plan_organization_id,
+    selected_plan.pricing_plan_id,
+    selected_plan.pricing_plan_code,
+    account_group.routing_strategy,
+    account_group.fallback_mode,
+    account_group.priority,
+    account_group.cost_multiplier::text AS cost_multiplier,
+    account_group.sale_multiplier::text AS sale_multiplier,
+    account_group.model_blacklist::text AS model_blacklist,
+    account_group.model_whitelist::text AS model_whitelist
+FROM ai_upstream_account_group account_group
+JOIN LATERAL (
+    SELECT
+        rate_card.pricing_plan_tenant_id,
+        rate_card.pricing_plan_organization_id,
+        rate_card.pricing_plan_id,
+        plan.plan_code AS pricing_plan_code
+    FROM cloudrouter_account_rate_card rate_card
+    JOIN cloudrouter_pricing_plan plan
+      ON plan.tenant_id = rate_card.pricing_plan_tenant_id
+     AND plan.organization_id = rate_card.pricing_plan_organization_id
+     AND plan.id = rate_card.pricing_plan_id
+     AND plan.status = 1
+     AND plan.deleted_at IS NULL
+     AND plan.effective_from <= CURRENT_TIMESTAMP
+     AND (plan.effective_to IS NULL OR plan.effective_to > CURRENT_TIMESTAMP)
+    WHERE rate_card.tenant_id = account_group.tenant_id
+      AND rate_card.organization_id = account_group.organization_id
+      AND rate_card.subject_type = 'account_group'
+      AND rate_card.subject_id = account_group.id
+      AND rate_card.status = 1
+      AND rate_card.deleted_at IS NULL
+      AND rate_card.effective_from <= CURRENT_TIMESTAMP
+      AND (rate_card.effective_to IS NULL OR rate_card.effective_to > CURRENT_TIMESTAMP)
+    ORDER BY rate_card.priority ASC, rate_card.effective_from DESC, rate_card.id DESC
+    LIMIT 1
+) selected_plan ON TRUE
+WHERE account_group.deleted_at IS NULL
+  AND account_group.status = 1
+ORDER BY account_group.updated_at DESC, account_group.id DESC
 "#
     }
 
@@ -1042,7 +1098,7 @@ SELECT
             jsonb_build_object(
                 'groupId', binding.account_group_id,
                 'groupCode', COALESCE(NULLIF(binding.account_group_code, ''), g.group_code, ''),
-                'pricingPlanCode', COALESCE(NULLIF(g.pricing_plan_code, ''), 'standard'),
+                'pricingPlanCode', COALESCE(selected_plan.plan_code, ''),
                 'bindingRole', COALESCE(NULLIF(binding.binding_role, ''), 'route'),
                 'routingStrategy', COALESCE(NULLIF(binding.routing_strategy, ''), 'auto'),
                 'priority', COALESCE(binding.priority, 100),
@@ -1095,6 +1151,28 @@ SELECT
          AND g.tenant_id = iam_gateway_api_key.tenant_id
          AND g.organization_id = iam_gateway_api_key.organization_id
          AND g.id = binding.account_group_id
+        LEFT JOIN LATERAL (
+            SELECT plan.plan_code
+            FROM cloudrouter_account_rate_card rate_card
+            JOIN cloudrouter_pricing_plan plan
+              ON plan.tenant_id = rate_card.pricing_plan_tenant_id
+             AND plan.organization_id = rate_card.pricing_plan_organization_id
+             AND plan.id = rate_card.pricing_plan_id
+             AND plan.status = 1
+             AND plan.deleted_at IS NULL
+             AND plan.effective_from <= CURRENT_TIMESTAMP
+             AND (plan.effective_to IS NULL OR plan.effective_to > CURRENT_TIMESTAMP)
+            WHERE rate_card.tenant_id = g.tenant_id
+              AND rate_card.organization_id = g.organization_id
+              AND rate_card.subject_type = 'account_group'
+              AND rate_card.subject_id = g.id
+              AND rate_card.status = 1
+              AND rate_card.deleted_at IS NULL
+              AND rate_card.effective_from <= CURRENT_TIMESTAMP
+              AND (rate_card.effective_to IS NULL OR rate_card.effective_to > CURRENT_TIMESTAMP)
+            ORDER BY rate_card.priority ASC, rate_card.effective_from DESC, rate_card.id DESC
+            LIMIT 1
+        ) selected_plan ON TRUE
     ), '[]') AS account_group_bindings_json,
     COALESCE(name, '') AS name,
     COALESCE(key_prefix, '') AS key_prefix,
@@ -1197,30 +1275,145 @@ ORDER BY account_group_id ASC, snapshot_at DESC, id DESC
     pub fn load_prices() -> &'static str {
         r#"
 SELECT
-    tenant_id,
-    organization_id,
-    catalog_key,
-    model,
-    COALESCE(NULLIF(region_code, ''), 'global') AS region_code,
-    CASE price_side
-        WHEN 1 THEN 'official_reference'
-        WHEN 2 THEN 'upstream_cost'
-        WHEN 3 THEN 'customer_charge'
-        WHEN 4 THEN 'internal_transfer'
-        ELSE 'unknown'
-    END AS price_side_code,
-    billing_meter_code,
-    unit_price::text AS unit_price,
-    currency,
-    supplier_code,
-    account_id,
-    pricing_plan_code
-FROM ai_model_pricing
-WHERE deleted_at IS NULL
-  AND status = 1
-  AND (effective_from IS NULL OR effective_from <= CURRENT_TIMESTAMP)
-  AND (effective_to IS NULL OR effective_to > CURRENT_TIMESTAMP)
-ORDER BY priority ASC, effective_from DESC, id DESC
+    rate.tenant_id,
+    rate.organization_id,
+    COALESCE(NULLIF(binding.catalog_key, ''), binding.resource_code) AS catalog_key,
+    COALESCE(model.model, NULLIF(binding.catalog_key, ''), binding.resource_code) AS model,
+    COALESCE(NULLIF(binding.region_code, ''), book.region_code, 'global') AS region_code,
+    book.price_side AS price_side_code,
+    meter.meter_code AS billing_meter_code,
+    rate.unit_size::text AS unit_size,
+    rate.unit_price::text AS unit_price,
+    rate.currency_code AS currency,
+    CASE WHEN book.price_side = 'upstream_cost' THEN NULLIF(binding.provider_code, '') END AS supplier_code,
+    CASE WHEN book.price_side = 'upstream_cost' THEN binding.account_id END AS account_id,
+    NULL::text AS pricing_plan_code,
+    book.price_book_code,
+    rate.rate_hash,
+    product.product_code,
+    operation.operation_code,
+    rate.billability,
+    rate.charge_timing,
+    rate.calculation_mode,
+    rate.quantity_aggregation,
+    rate.minimum_quantity::text AS minimum_quantity,
+    rate.quantity_step::text AS quantity_step,
+    rate.priority,
+    COALESCE((
+        SELECT jsonb_agg(
+            jsonb_build_object(
+                'dimensionCode', condition.dimension_code,
+                'operatorCode', condition.operator_code,
+                'value', CASE condition.value_type
+                    WHEN 'string' THEN to_jsonb(condition.value_string)
+                    WHEN 'decimal' THEN to_jsonb(condition.value_decimal::text)
+                    WHEN 'boolean' THEN to_jsonb(condition.value_boolean)
+                    WHEN 'json' THEN condition.value_json
+                    ELSE 'null'::jsonb
+                END
+            ) ORDER BY condition.sort_order, condition.id
+        )
+        FROM pricing_rate_condition condition
+        WHERE condition.tenant_id = rate.tenant_id
+          AND condition.organization_id = rate.organization_id
+          AND condition.rate_id = rate.id
+          AND condition.status = 1
+          AND condition.deleted_at IS NULL
+    ), '[]'::jsonb)::text AS conditions_json,
+    COALESCE((
+        SELECT jsonb_agg(
+            jsonb_build_object(
+                'tierCode', tier.tier_code,
+                'lowerBound', tier.lower_bound::text,
+                'upperBound', tier.upper_bound::text,
+                'unitSize', tier.unit_size::text,
+                'unitPrice', tier.unit_price::text,
+                'flatAmount', tier.flat_amount::text,
+                'currencyCode', tier.currency_code
+            ) ORDER BY tier.tier_index, tier.id
+        )
+        FROM pricing_rate_tier tier
+        WHERE tier.tenant_id = rate.tenant_id
+          AND tier.organization_id = rate.organization_id
+          AND tier.rate_id = rate.id
+          AND tier.status = 1
+          AND tier.deleted_at IS NULL
+    ), '[]'::jsonb)::text AS tiers_json,
+    (
+        SELECT jsonb_build_object(
+            'formulaCode', formula.formula_code,
+            'formulaVersion', formula.formula_version,
+            'constantUnits', formula.constant_units::text,
+            'quantityCoefficient', formula.quantity_coefficient::text,
+            'minimumUnits', formula.minimum_units::text,
+            'maximumUnits', formula.maximum_units::text,
+            'terms', COALESCE((
+                SELECT jsonb_agg(
+                    jsonb_build_object(
+                        'termCode', term.term_code,
+                        'dimensionCode', term.dimension_code,
+                        'coefficient', term.coefficient::text
+                    ) ORDER BY term.term_index, term.id
+                )
+                FROM pricing_rate_formula_term term
+                WHERE term.tenant_id = formula.tenant_id
+                  AND term.organization_id = formula.organization_id
+                  AND term.formula_id = formula.id
+                  AND term.status = 1
+                  AND term.deleted_at IS NULL
+            ), '[]'::jsonb)
+        )::text
+        FROM pricing_rate_formula formula
+        WHERE formula.tenant_id = rate.tenant_id
+          AND formula.organization_id = rate.organization_id
+          AND formula.rate_id = rate.id
+          AND formula.status = 1
+          AND formula.deleted_at IS NULL
+        LIMIT 1
+    ) AS formula_json
+FROM pricing_rate rate
+JOIN pricing_price_book book
+  ON book.tenant_id = rate.tenant_id
+ AND book.organization_id = rate.organization_id
+ AND book.id = rate.price_book_id
+JOIN pricing_product product
+  ON product.tenant_id = rate.tenant_id
+ AND product.organization_id = rate.organization_id
+ AND product.id = rate.product_id
+JOIN pricing_operation operation
+  ON operation.tenant_id = rate.tenant_id
+ AND operation.organization_id = rate.organization_id
+ AND operation.id = rate.operation_id
+JOIN pricing_meter meter
+  ON meter.tenant_id = rate.tenant_id
+ AND meter.organization_id = rate.organization_id
+ AND meter.id = rate.meter_id
+JOIN pricing_rate_binding rate_binding
+  ON rate_binding.tenant_id = rate.tenant_id
+ AND rate_binding.organization_id = rate.organization_id
+ AND rate_binding.rate_id = rate.id
+ AND rate_binding.status = 1
+ AND rate_binding.deleted_at IS NULL
+JOIN pricing_product_binding binding
+  ON binding.tenant_id = rate_binding.tenant_id
+ AND binding.organization_id = rate_binding.organization_id
+ AND binding.id = rate_binding.product_binding_id
+LEFT JOIN ai_model model
+  ON model.catalog_key = binding.catalog_key
+ AND model.deleted_at IS NULL
+ AND model.status = 1
+WHERE book.lifecycle_state = 'active'
+  AND book.status = 1
+  AND book.deleted_at IS NULL
+  AND binding.status = 1
+  AND binding.deleted_at IS NULL
+  AND rate.status = 1
+  AND rate.deleted_at IS NULL
+  AND book.effective_from <= CURRENT_TIMESTAMP
+  AND (book.effective_to IS NULL OR book.effective_to > CURRENT_TIMESTAMP)
+  AND rate.effective_from <= CURRENT_TIMESTAMP
+  AND (rate.effective_to IS NULL OR rate.effective_to > CURRENT_TIMESTAMP)
+ORDER BY rate.priority ASC, rate.effective_from DESC, rate.id DESC, binding.id ASC
 "#
     }
 }

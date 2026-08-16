@@ -2,6 +2,18 @@
 > Owner: SDKWork maintainers
 
 ## 目标
+> **Superseded (2026-08-16):** the pricing architecture described in this
+> document (legacy `ai_pricing_plan` / `ai_pricing_rule` / `ai_pricing_tier`
+> as pricing authority) was replaced by
+> [ADR-20260815-composable-pricing-and-billing](../decisions/ADR-20260815-composable-pricing-and-billing.md).
+> The reusable `pricing` module owns official price books and rates,
+> `cloudrouter-billing` owns plans, rules, rate cards, measurements, rating
+> decisions, and charge lines, and the legacy `ai_pricing_*` tables were
+> physically removed before launch (see
+> [MIG-2026-0002](../../migrations/MIG-2026-0002-composable-pricing-billing.md)).
+> This document is retained as a historical design record only.
+
+
 
 `tools.schema_guardian` 将数据设计中的关键约束固化为可执行校验，作为 `sdkwork-cloudrouter` 后续数据库、API、Entity、DTO、OpenAPI 和 SDK 生成前的第一道质量门禁。
 

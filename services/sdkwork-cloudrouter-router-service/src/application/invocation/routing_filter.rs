@@ -251,11 +251,13 @@ impl RoutingFilterChain {
         }
     }
 
-    /// 自定义过滤器列表（测试或扩展装配）。
+    /// 自定义过滤器列表，供模块测试验证过滤顺序和短路行为。
+    #[cfg(test)]
     pub fn with_filters(filters: Vec<Box<dyn CandidateFilter>>) -> Self {
         Self { filters }
     }
 
+    #[cfg(test)]
     pub fn filters(&self) -> &[Box<dyn CandidateFilter>] {
         &self.filters
     }
@@ -298,8 +300,18 @@ impl RoutingFilterChain {
 fn candidate_is_callable(candidate: &InvocationRouteCandidate) -> bool {
     !candidate.supplier_code.trim().is_empty()
         && candidate.account_id > 0
-        && !candidate.base_url.as_deref().unwrap_or("").trim().is_empty()
-        && (!candidate.secret_ref.as_deref().unwrap_or("").trim().is_empty()
+        && !candidate
+            .base_url
+            .as_deref()
+            .unwrap_or("")
+            .trim()
+            .is_empty()
+        && (!candidate
+            .secret_ref
+            .as_deref()
+            .unwrap_or("")
+            .trim()
+            .is_empty()
             || !candidate.auth_profile.default_headers.is_empty())
 }
 
@@ -598,13 +610,22 @@ mod tests {
         let catalog = test_catalog();
         let log = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
         let chain = RoutingFilterChain::with_filters(vec![
-            Box::new(RecordingFilter { name: "first", log: log.clone() }),
-            Box::new(RecordingFilter { name: "second", log: log.clone() }),
+            Box::new(RecordingFilter {
+                name: "first",
+                log: log.clone(),
+            }),
+            Box::new(RecordingFilter {
+                name: "second",
+                log: log.clone(),
+            }),
         ]);
         let mut context = ctx(&catalog);
         context.requested_model = None;
         chain
-            .select_account(&context, vec![candidate(1, None, InvocationRouteCandidateKind::Model)])
+            .select_account(
+                &context,
+                vec![candidate(1, None, InvocationRouteCandidateKind::Model)],
+            )
             .expect("selected");
         assert_eq!(vec!["first", "second"], *log.lock().unwrap());
         assert_eq!(2, chain.filters().len());
@@ -615,14 +636,23 @@ mod tests {
         let catalog = test_catalog();
         let log = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
         let chain = RoutingFilterChain::with_filters(vec![
-            Box::new(RecordingFilter { name: "first", log: log.clone() }),
+            Box::new(RecordingFilter {
+                name: "first",
+                log: log.clone(),
+            }),
             Box::new(RejectAllFilter),
-            Box::new(RecordingFilter { name: "third", log: log.clone() }),
+            Box::new(RecordingFilter {
+                name: "third",
+                log: log.clone(),
+            }),
         ]);
         let mut context = ctx(&catalog);
         context.requested_model = None;
         let rejection = chain
-            .select_account(&context, vec![candidate(1, None, InvocationRouteCandidateKind::Model)])
+            .select_account(
+                &context,
+                vec![candidate(1, None, InvocationRouteCandidateKind::Model)],
+            )
             .expect_err("rejected by second filter");
         assert_eq!(FilterRejectionKind::RouteUnavailable, rejection.kind);
         // 短路语义：拒绝后的过滤器不再执行
