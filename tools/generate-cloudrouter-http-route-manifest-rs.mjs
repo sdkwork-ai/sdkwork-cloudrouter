@@ -186,10 +186,7 @@ mod tests {
 
     #[test]
     fn pricing_catalog_routes_require_dual_token_authentication() {
-        assert_dual_token_route(
-            "GET",
-            "/app/v3/api/ai/pricing/rates",
-        );
+        assert_dual_token_route("GET", "/app/v3/api/ai/pricing/rates");
     }
 }
 `

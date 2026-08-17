@@ -154,10 +154,43 @@ async fn apply_explicit_schema_lifecycle_if_required(
         .await
         .map_err(anyhow::Error::msg)?;
     let host = connect_cloud_router_database(pool.clone()).map_err(anyhow::Error::msg)?;
-    host.migrate("cloudrouterctl")
-        .await
-        .map_err(anyhow::Error::msg)?;
+    match host.migrate("cloudrouterctl").await {
+        Ok(_) => {}
+        Err(error)
+            if should_attempt_development_pricing_history_repair(command, error.as_str()) =>
+        {
+            let repaired =
+                sdkwork_cloudrouter_database_host::repair_known_pricing_migration_history(pool)
+                    .await
+                    .map_err(anyhow::Error::msg)?;
+            if !repaired {
+                return Err(anyhow::Error::msg(error));
+            }
+            host.migrate("cloudrouterctl")
+                .await
+                .map_err(anyhow::Error::msg)?;
+        }
+        Err(error) => return Err(anyhow::Error::msg(error)),
+    }
     Ok(())
+}
+
+fn should_attempt_development_pricing_history_repair(
+    command: &InstallerCommand,
+    error: &str,
+) -> bool {
+    command.requires_schema_migration()
+        && current_install_environment() == "development"
+        && error.contains("checksum_mismatch for migration 0002")
+}
+
+fn current_install_environment() -> String {
+    std::env::var(
+        sdkwork_cloudrouter_router_service::infrastructure::sql::installer::ENV_INSTALL_ENVIRONMENT,
+    )
+    .unwrap_or_default()
+    .trim()
+    .to_ascii_lowercase()
 }
 
 fn database_connection_error_message(database_url: &str, error: impl std::fmt::Display) -> String {
@@ -302,9 +335,9 @@ where
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--output" => {
-                let value = args
-                    .next()
-                    .ok_or_else(|| InstallerCliError::InvalidArgument("backup --output requires a path".to_owned()))?;
+                let value = args.next().ok_or_else(|| {
+                    InstallerCliError::InvalidArgument("backup --output requires a path".to_owned())
+                })?;
                 output = Some(PathBuf::from(value));
             }
             other => {
@@ -328,9 +361,9 @@ where
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--input" => {
-                let value = args
-                    .next()
-                    .ok_or_else(|| InstallerCliError::InvalidArgument("restore --input requires a path".to_owned()))?;
+                let value = args.next().ok_or_else(|| {
+                    InstallerCliError::InvalidArgument("restore --input requires a path".to_owned())
+                })?;
                 input = Some(PathBuf::from(value));
             }
             "--database-only" => database_only = true,
@@ -345,7 +378,10 @@ where
     let input = input.ok_or_else(|| {
         InstallerCliError::InvalidArgument("restore requires --input <backup file>".to_owned())
     })?;
-    Ok(backup::RestoreOptions { input, database_only })
+    Ok(backup::RestoreOptions {
+        input,
+        database_only,
+    })
 }
 
 fn reject_extra_args<I>(command: &str, args: I) -> anyhow::Result<()>

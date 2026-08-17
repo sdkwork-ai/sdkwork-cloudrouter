@@ -6,7 +6,7 @@ use crate::application::{
 use crate::domain::{DomainError, DomainResult, PriceSide};
 use crate::ports::{
     GatewayOfficialRateReference, GatewayPricingFormula, GatewayPricingFormulaTerm,
-    GatewayPricingRateCondition, GatewayPricingRateTier,
+    GatewayPricingRateCondition, GatewayPricingRateTier, GatewayRatingRecordIdentity,
 };
 
 const AMOUNT_DECIMAL_DIGITS: u32 = 12;
@@ -145,6 +145,7 @@ fn official_rate_reference(resolution: &PriceResolution) -> Option<GatewayOffici
     let metadata = resolved.official_reference.rate_metadata.as_ref()?;
     let billing = resolution.billing.as_ref();
     Some(GatewayOfficialRateReference {
+        record_identity: pricing_record_identity(resolved),
         price_book_code: metadata.price_book_code.clone(),
         rate_hash: metadata.rate_hash.clone(),
         product_code: metadata.product_code.clone(),
@@ -244,6 +245,32 @@ fn official_rate_reference(resolution: &PriceResolution) -> Option<GatewayOffici
                     })
                     .collect(),
             }),
+    })
+}
+
+fn pricing_record_identity(resolved: &crate::application::ResolvedModelPrice) -> Option<GatewayRatingRecordIdentity> {
+    let rate = resolved
+        .official_reference
+        .rate_metadata
+        .as_ref()?
+        .record_identity?;
+    let rate_card = resolved.pricing_record_identity.account_rate_card?;
+    let plan = resolved.pricing_record_identity.pricing_plan?;
+    let rule = resolved.pricing_record_identity.pricing_rule?;
+    Some(GatewayRatingRecordIdentity {
+        price_book_tenant_id: rate.price_book_tenant_id,
+        price_book_organization_id: rate.price_book_organization_id,
+        price_book_id: rate.price_book_id,
+        rate_id: rate.rate_id,
+        account_rate_card_tenant_id: rate_card.tenant_id,
+        account_rate_card_organization_id: rate_card.organization_id,
+        account_rate_card_id: rate_card.id,
+        pricing_plan_tenant_id: plan.tenant_id,
+        pricing_plan_organization_id: plan.organization_id,
+        pricing_plan_id: plan.id,
+        pricing_rule_tenant_id: rule.tenant_id,
+        pricing_rule_organization_id: rule.organization_id,
+        pricing_rule_id: rule.id,
     })
 }
 

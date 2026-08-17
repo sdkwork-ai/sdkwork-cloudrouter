@@ -52,16 +52,14 @@ async fn admin_ip_rate_limit_route_creates_and_lists_ip_rules() {
     assert_eq!("active", create_payload["data"]["item"]["status"]);
 
     let list_response = router
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "GET",
             "/backend/v3/api/system/rate_limits/ip",
             Body::empty(),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -84,18 +82,14 @@ async fn admin_ip_rate_limit_route_rejects_invalid_ip_without_calling_store() {
     );
 
     let response = router
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "POST",
             "/backend/v3/api/system/rate_limits/ip",
-            Body::from(
-                    r#"{"ruleName":"Invalid","targetIp":"not-an-ip","rps":10,"rpm":300}"#,
-                ),
+            Body::from(r#"{"ruleName":"Invalid","targetIp":"not-an-ip","rps":10,"rpm":300}"#),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
 

@@ -71,6 +71,9 @@ pub struct OfficialPricingRate {
     pub conditions: Vec<OfficialPricingRateCondition>,
     pub tiers: Vec<OfficialPricingRateTier>,
     pub formula: Option<OfficialPricingFormula>,
+    pub priority: i32,
+    pub rate_variant: String,
+    pub schedule: Option<serde_json::Value>,
     pub effective_from: String,
     pub effective_to: Option<String>,
     pub source_url: String,
@@ -97,8 +100,8 @@ pub struct OfficialPricingRate {
 #[serde(rename_all = "camelCase")]
 pub struct OfficialPricingRateCondition {
     pub dimension_code: String,
-    pub operator: String,
-    pub value: String,
+    pub operator_code: String,
+    pub value: serde_json::Value,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]

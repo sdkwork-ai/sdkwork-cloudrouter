@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "55245de914899d7f2becb922659374654eda4541409086ad3febbdd29b372d95",
+  "changeFingerprint": "af8f76f0227b2b6616fd805293cae6407b7090136de54a45910f5d0b2433169e",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -148,6 +148,16 @@
           "src/types/monitor-alert-page.ts",
           "src/types/monitor-node-page.ts",
           "src/types/monitor-performance-page.ts",
+          "src/types/official-pricing-catalog-response.ts",
+          "src/types/official-pricing-formula-term.ts",
+          "src/types/official-pricing-formula.ts",
+          "src/types/official-pricing-group-facet.ts",
+          "src/types/official-pricing-meter-facet.ts",
+          "src/types/official-pricing-rate-condition.ts",
+          "src/types/official-pricing-rate-tier.ts",
+          "src/types/official-pricing-rate.ts",
+          "src/types/official-pricing-region-facet.ts",
+          "src/types/official-pricing-value-facet.ts",
           "src/types/page-info.ts",
           "src/types/payment-provider-inventory-item.ts",
           "src/types/payment-provider-inventory-list-response.ts",
@@ -399,10 +409,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 310,
-    "models": 280,
+    "totalFiles": 321,
+    "models": 291,
     "apis": 7,
-    "types": 282
+    "types": 293
   },
   "warnings": [
     {
@@ -449,12 +459,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 214,
+    "writtenFiles": 224,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "55245de914899d7f2becb922659374654eda4541409086ad3febbdd29b372d95",
+    "changeFingerprint": "af8f76f0227b2b6616fd805293cae6407b7090136de54a45910f5d0b2433169e",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -584,6 +594,16 @@
         "src/types/monitor-alert-page.ts",
         "src/types/monitor-node-page.ts",
         "src/types/monitor-performance-page.ts",
+        "src/types/official-pricing-catalog-response.ts",
+        "src/types/official-pricing-formula-term.ts",
+        "src/types/official-pricing-formula.ts",
+        "src/types/official-pricing-group-facet.ts",
+        "src/types/official-pricing-meter-facet.ts",
+        "src/types/official-pricing-rate-condition.ts",
+        "src/types/official-pricing-rate-tier.ts",
+        "src/types/official-pricing-rate.ts",
+        "src/types/official-pricing-region-facet.ts",
+        "src/types/official-pricing-value-facet.ts",
         "src/types/page-info.ts",
         "src/types/payment-provider-inventory-item.ts",
         "src/types/payment-provider-inventory-list-response.ts",
@@ -815,6 +835,16 @@
             "src/types/monitor-alert-page.ts",
             "src/types/monitor-node-page.ts",
             "src/types/monitor-performance-page.ts",
+            "src/types/official-pricing-catalog-response.ts",
+            "src/types/official-pricing-formula-term.ts",
+            "src/types/official-pricing-formula.ts",
+            "src/types/official-pricing-group-facet.ts",
+            "src/types/official-pricing-meter-facet.ts",
+            "src/types/official-pricing-rate-condition.ts",
+            "src/types/official-pricing-rate-tier.ts",
+            "src/types/official-pricing-rate.ts",
+            "src/types/official-pricing-region-facet.ts",
+            "src/types/official-pricing-value-facet.ts",
             "src/types/page-info.ts",
             "src/types/payment-provider-inventory-item.ts",
             "src/types/payment-provider-inventory-list-response.ts",

@@ -16,7 +16,7 @@ export async function fetchOfficialPricingRates(
       page: filters.page,
       pageSize: filters.pageSize,
     },
-    { signal },
+    { signal, timeout: undefined },
   );
 }
 

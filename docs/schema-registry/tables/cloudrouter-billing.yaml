@@ -74,6 +74,8 @@ tables:
     multiplier: { type: decimal, constraints: NOT NULL }
     markup_amount: { type: decimal, constraints: NOT NULL }
     unit_price_override: decimal
+    conditions: { type: json, constraints: "NOT NULL DEFAULT '[]'::jsonb" }
+    schedule: json
     priority: { type: int32, constraints: NOT NULL }
     effective_from: { type: instant, constraints: NOT NULL }
     effective_to: instant
@@ -88,6 +90,8 @@ tables:
   - { name: ck_cloudrouter_pricing_rule_amounts, expression: multiplier >= 0 AND markup_amount >= 0 AND (unit_price_override IS NULL OR unit_price_override >= 0) }
   - name: ck_cloudrouter_pricing_rule_formula
     expression: (formula_mode = 'multiplier_markup' AND unit_price_override IS NULL) OR (formula_mode = 'unit_price_override' AND unit_price_override IS NOT NULL AND multiplier = 1 AND markup_amount = 0)
+  - { name: ck_cloudrouter_pricing_rule_conditions_json, expression: "jsonb_typeof(conditions) = 'array'" }
+  - { name: ck_cloudrouter_pricing_rule_schedule_json, expression: "schedule IS NULL OR jsonb_typeof(schedule) = 'object'" }
   - { name: ck_cloudrouter_pricing_rule_interval, expression: effective_to IS NULL OR effective_to > effective_from }
   indexes:
   - { name: uq_cloudrouter_pricing_rule_plan_reference, columns: [id, pricing_plan_id], unique: true }

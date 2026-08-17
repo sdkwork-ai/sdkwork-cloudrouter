@@ -2,18 +2,6 @@
 > Owner: SDKWork maintainers
 
 ## 目标
-> **Superseded (2026-08-16):** the pricing architecture described in this
-> document (legacy `ai_pricing_plan` / `ai_pricing_rule` / `ai_pricing_tier`
-> as pricing authority) was replaced by
-> [ADR-20260815-composable-pricing-and-billing](../decisions/ADR-20260815-composable-pricing-and-billing.md).
-> The reusable `pricing` module owns official price books and rates,
-> `cloudrouter-billing` owns plans, rules, rate cards, measurements, rating
-> decisions, and charge lines, and the legacy `ai_pricing_*` tables were
-> physically removed before launch (see
-> [MIG-2026-0002](../../migrations/MIG-2026-0002-composable-pricing-billing.md)).
-> This document is retained as a historical design record only.
-
-
 
 `tools.schema_guardian` 将数据设计中的关键约束固化为可执行校验，作为 `sdkwork-cloudrouter` 后续数据库、API、Entity、DTO、OpenAPI 和 SDK 生成前的第一道质量门禁。
 
@@ -26,8 +14,9 @@
 - Java 实体存在性校验：注册表里声明的 Java 实体必须能在真实工程或测试工程的 `legacy-java-plus-entity/src/main/java` 下找到。
 - 统一领域名称：`ModelVendor`、`BillingMeter` 等需要持久化的领域名必须有注册表表定义，并具备 Java/Rust/TypeScript/OpenAPI 类型绑定。
 - 多模态计费：`BillingMode`、`BillingMeter` 必须覆盖 LLM、图片、音频、视频、音效、API 按次、API 按结果、API 按个数等计费维度。
-- 定价方案：禁止退化为 `ai_pricing_group`，统一使用 `ai_pricing_plan`、`ai_pricing_plan_binding`、`ai_pricing_rule`、`ai_pricing_tier` 组合，支持官方价、供应商成本价、客户销售价、倍率、表达式和阶梯。
-- API Key 分组：`iam_gateway_api_key` 必须能绑定 `ai_channel_group`，分组必须能选择 `ai_pricing_plan`，并允许通过 `ai_pricing_plan_binding` 扩展到 API Key、分组、VIP、租户、用户等主体。
+- 定价与计费（[ADR-20260815](../decisions/ADR-20260815-composable-pricing-and-billing.md)）：禁止注册已删除的 `ai_pricing_*` 与 `cloudrouter_pricing_adjustment` 表；官方价权威在 `pricing_*` 模块（`pricing_price_book`、`pricing_rate`、`pricing_import_run`）；Cloud Router 计费策略在 `cloudrouter-billing` 模块（`cloudrouter_pricing_plan`、`cloudrouter_pricing_rule`、`cloudrouter_account_rate_card`、`cloudrouter_usage_measurement`、`cloudrouter_rating_decision`、`cloudrouter_charge_line`）。`ai_model_pricing` 仅作 sdkwork-models 目录展示投影，不是计费权威。
+- 主体定价绑定：`iam_gateway_api_key` 与 `ai_upstream_account_group` 通过 `cloudrouter_account_rate_card` 绑定 `cloudrouter_pricing_plan`；不得引用已删除的 `ai_pricing_plan_binding`。
+- 时段定价约束：`pricing_rate` 与 `cloudrouter_pricing_rule` 的时段结构必须使用 IANA 时区、ISO 星期、`HH:MM:SS` 时间、`endDayOffset` 跨午夜语义以及有界且互斥的 include/exclude 日期；按 `occurred_at` 选择，等优先级冲突必须闭锁。
 - API 路径标准：`api_prefixes.app` 必须是 `/app/v3/api`，`api_prefixes.backend` 必须是 `/backend/v3/api`，OpenAI 兼容面必须是 `/v1`。
 - 前端路由覆盖：`/admin/*` 页面必须声明 `backend` API surface，非 `/admin/*` 页面必须声明 `app` API surface，确保 admin 与 console/public 可以按 Java app/backend 标准自由切换。
 - 命名标准：非 legacy 新表不得使用 `cloud_`、`router_`、`sdkwork_`、`console_`、`admin_`、`portal_` 等产品名或部署名前缀。
@@ -109,4 +98,3 @@ docs/schema-registry/sdkwork-cloudrouter.tables.yaml
 
 - 敏感表是否声明审计、脱敏、留存周期、幂等键和唯一索引。
 - Schema Registry 到 DDL、Entity、DTO、OpenAPI 的生成产物是否一致。
-

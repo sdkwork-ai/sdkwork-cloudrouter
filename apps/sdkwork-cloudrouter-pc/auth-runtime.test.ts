@@ -949,13 +949,13 @@ test("cloud router app auth composes the appbase IAM OAuth dependency SDK withou
   const appbaseAppOpenApiSource = readPortalFile("../../../sdkwork-iam/sdks/sdkwork-iam-app-sdk/openapi/sdkwork-iam-app-api.openapi.yaml");
   const appSdkAssemblySource = readPortalFile("../../sdks/cloudrouter-app-sdk/sdk-manifest.json");
   const appSdkComponentSource = readPortalFile("../../sdks/cloudrouter-app-sdk/specs/component.spec.json");
-  const appSdkSource = readPortalFile("../../sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/generated/server-openapi/src/sdk.ts");
-  const backendSdkSystemSource = readPortalFile("../../sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/generated/server-openapi/src/api/system.ts");
-  const backendSdkIndexSource = readPortalFile("../../sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/generated/server-openapi/src/sdk.ts");
-  const backendSdkAuthSettingsUpdateSource = readPortalFile("../../sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/generated/server-openapi/src/types/admin-auth-settings-update-request.ts");
+  const appSdkSource = readPortalFile("../../sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/src/index.ts/sdk.ts");
+  const backendSdkSystemSource = readPortalFile("../../sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/src/index.ts/api/system.ts");
+  const backendSdkIndexSource = readPortalFile("../../sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/src/index.ts/sdk.ts");
+  const backendSdkAuthSettingsUpdateSource = readPortalFile("../../sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/src/index.ts/types/admin-auth-settings-update-request.ts");
   const adminCoreSdkSource = readPortalFile("./packages/sdkwork-cloudrouter-pc-admin-core/src/sdk/index.ts");
-  const appSdkTypesSource = readPortalFile("../../sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/generated/server-openapi/src/types/index.ts");
-  const backendSdkTypesSource = readPortalFile("../../sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/generated/server-openapi/src/types/index.ts");
+  const appSdkTypesSource = readPortalFile("../../sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/src/index.ts/types/index.ts");
+  const backendSdkTypesSource = readPortalFile("../../sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/src/index.ts/types/index.ts");
   const appbaseAuthServiceSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-service.ts");
   const appbaseIamRuntimeSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-iam-runtime.ts");
   const appbaseIamSdkPortsSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-sdk-ports/src/index.ts");
@@ -1386,7 +1386,7 @@ test("admin auth settings form preserves flexible OAuth providers and validates 
 });
 
 test("generated appbase app SDK surface satisfies the IAM SDK port contract", async () => {
-  const productSdkSource = readPortalFile("../../sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/generated/server-openapi/src/sdk.ts");
+  const productSdkSource = readPortalFile("../../sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/src/index.ts/sdk.ts");
   const iamSdkPortsSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-sdk-ports/src/index.ts");
   const authServiceSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-service.ts");
   const iamRuntimeSource = readPortalFile("../../../sdkwork-iam/apps/sdkwork-iam-pc/packages/sdkwork-auth-pc-react/src/auth-iam-runtime.ts");

@@ -319,17 +319,9 @@ frontend_operations:
     sdk_domain: ai
     read_sources:
       - pricing_price_book
-      - pricing_product
-      - pricing_operation
-      - pricing_meter
-      - pricing_product_binding
       - pricing_rate
-      - pricing_rate_binding
-      - pricing_rate_condition
-      - pricing_rate_tier
-      - pricing_rate_formula
-      - pricing_rate_formula_term
-    response_schema:
+      - pricing_import_run
+    response_schema: &official-pricing-catalog-response
       name: OfficialPricingCatalogResponse
       schema:
         additionalProperties: false
@@ -376,6 +368,44 @@ frontend_operations:
                 minimumQuantity: { type: string, pattern: '^[0-9]+(?:\.[0-9]+)?$' }
                 quantityStep: { type: string, pattern: '^[0-9]+(?:\.[0-9]+)?$', nullable: true }
                 currencyCode: {type: string, pattern: '^[A-Z]{3}$'}
+                priority: { type: integer, format: int32, minimum: 0 }
+                rateVariant: { type: string, enum: [standard, time_window] }
+                schedule:
+                  nullable: true
+                  additionalProperties: false
+                  type: object
+                  properties:
+                    timeZone: { type: string, minLength: 1, maxLength: 128 }
+                    weeklyWindows:
+                      type: array
+                      minItems: 1
+                      maxItems: 64
+                      items:
+                        additionalProperties: false
+                        type: object
+                        properties:
+                          windowCode: { type: string, minLength: 1, maxLength: 96 }
+                          daysOfWeek:
+                            type: array
+                            minItems: 1
+                            maxItems: 7
+                            uniqueItems: true
+                            items: { type: integer, format: int32, minimum: 1, maximum: 7 }
+                          startTime: { type: string, pattern: '^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$' }
+                          endTime: { type: string, pattern: '^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$' }
+                          endDayOffset: { type: integer, format: int32, enum: [0, 1] }
+                        required: [windowCode, daysOfWeek, startTime, endTime, endDayOffset]
+                    includeDates:
+                      type: array
+                      maxItems: 366
+                      uniqueItems: true
+                      items: { type: string, format: date, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' }
+                    excludeDates:
+                      type: array
+                      maxItems: 366
+                      uniqueItems: true
+                      items: { type: string, format: date, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' }
+                  required: [timeZone, weeklyWindows, includeDates, excludeDates]
                 conditions:
                   type: array
                   items:
@@ -384,9 +414,14 @@ frontend_operations:
                     type: object
                     properties:
                       dimensionCode: { type: string }
-                      operator: { type: string, enum: [eq, neq, gt, gte, lt, lte, in, not_in, exists] }
-                      value: { type: string }
-                    required: [dimensionCode, operator, value]
+                      operatorCode: { type: string, enum: [eq, neq, gt, gte, lt, lte, in, not_in, exists] }
+                      value:
+                        oneOf:
+                          - { type: string }
+                          - { type: number }
+                          - { type: boolean }
+                          - { type: array, maxItems: 64, items: { oneOf: [{ type: string }, { type: number }, { type: boolean }] } }
+                    required: [dimensionCode, operatorCode, value]
                 tiers:
                   type: array
                   items:
@@ -558,7 +593,7 @@ frontend_operations:
               required: [id, code, displayName, unitCode, count]
         required: [items, pageInfo, groups, vendors, regions, currencies, meters]
         type: object
-    query_parameters:
+    query_parameters: &official-pricing-query-parameters
       - name: category
         schema: { type: string, enum: [all, llm, image, video, audio, music, embedding, sound, api, other] }
       - name: q
@@ -575,6 +610,22 @@ frontend_operations:
         schema: { type: integer, format: int32, minimum: 1 }
       - name: page_size
         schema: { type: integer, format: int32, minimum: 1, maximum: 200 }
+  - route: /admin/pricing/settings
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
+    operation: fetchAdminOfficialPricingRates
+    operation_id: officialRates.list
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/pricing/official_rates
+    sdk_domain: pricing
+    read_sources:
+      - pricing_price_book
+      - pricing_rate
+      - pricing_import_run
+    response_schema:
+      <<: *official-pricing-catalog-response
+    query_parameters: *official-pricing-query-parameters
   - route: /console/gateway
     source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway/src/gatewayService.ts
     operation: fetchTraces
@@ -4299,7 +4350,7 @@ frontend_operations:
     api_path: /backend/v3/api/ai/model_vendors
     sdk_domain: ai
     read_sources:
-      - ai_pricing_import_snapshot
+      - ai_model_vendor
     response_schema:
       name: NoData
       schema:
@@ -4309,6 +4360,7 @@ frontend_operations:
         type: object
     request_body_required: false
     write_tables:
+      - ai_model_vendor
       - ops_audit_log
   - route: /admin/model
     source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
@@ -4539,7 +4591,7 @@ frontend_operations:
     api_path: /backend/v3/api/ai/models
     sdk_domain: ai
     read_sources:
-      - ai_pricing_import_snapshot
+      - ai_model_vendor
     response_schema:
       name: NoData
       schema:
@@ -4559,7 +4611,10 @@ frontend_operations:
     api_path: /backend/v3/api/ai/models
     sdk_domain: ai
     read_sources:
-      - ai_pricing_import_snapshot
+      - ai_model_vendor
+      - ai_model
+      - ai_model_capability
+      - ai_model_pricing
     response_schema:
       name: NoData
       schema:
@@ -4569,6 +4624,9 @@ frontend_operations:
         type: object
     request_body_required: false
     write_tables:
+      - ai_model
+      - ai_model_capability
+      - ai_model_pricing
       - ops_audit_log
   - route: /admin/model
     source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
@@ -4580,7 +4638,7 @@ frontend_operations:
     api_path: /backend/v3/api/ai/models/sync
     sdk_domain: ai
     read_sources:
-      - ai_pricing_import_snapshot
+      - ai_model_catalog_sync_run
     response_schema:
       name: NoData
       schema:
@@ -4590,7 +4648,7 @@ frontend_operations:
         type: object
     request_body_required: false
     write_tables:
-      - ai_pricing_import_snapshot
+      - ai_model_catalog_sync_run
       - ops_audit_log
   - route: /admin/model
     source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
@@ -4602,7 +4660,7 @@ frontend_operations:
     api_path: /backend/v3/api/ai/models/{modelId}
     sdk_domain: ai
     read_sources:
-      - ai_pricing_import_snapshot
+      - ai_model
     response_schema:
       name: NoData
       schema:
@@ -4611,6 +4669,9 @@ frontend_operations:
         properties: {}
         type: object
     write_tables:
+      - ai_model
+      - ai_model_capability
+      - ai_model_pricing
       - ops_audit_log
   - route: /admin/model
     source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
@@ -4622,7 +4683,10 @@ frontend_operations:
     api_path: /backend/v3/api/ai/models/{modelId}
     sdk_domain: ai
     read_sources:
-      - ai_pricing_import_snapshot
+      - ai_model_vendor
+      - ai_model
+      - ai_model_capability
+      - ai_model_pricing
     response_schema:
       name: NoData
       schema:
@@ -4632,6 +4696,9 @@ frontend_operations:
         type: object
     request_body_required: false
     write_tables:
+      - ai_model
+      - ai_model_capability
+      - ai_model_pricing
       - ops_audit_log
   - route: /admin/model/resources
     source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-resource/src/resourceGroupService.ts
@@ -11160,6 +11227,52 @@ frontend_operations:
                 ruleCode: { maxLength: 96, type: string }
                 status: { enum: [active, inactive], type: string }
                 unitPriceOverride: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+                conditions: &admin-pricing-rule-conditions
+                  type: array
+                  maxItems: 32
+                  items:
+                    additionalProperties: false
+                    properties:
+                      dimensionCode: { type: string, minLength: 1, maxLength: 96 }
+                      operatorCode: { type: string, enum: [exists, eq, neq, gt, gte, lt, lte, in, not_in] }
+                      value:
+                        oneOf:
+                          - { type: string, maxLength: 512 }
+                          - { type: number, format: double }
+                          - { type: boolean }
+                          - type: array
+                            minItems: 1
+                            maxItems: 64
+                            items:
+                              oneOf:
+                                - { type: string, maxLength: 512 }
+                                - { type: number, format: double }
+                                - { type: boolean }
+                    required: [dimensionCode, operatorCode, value]
+                    type: object
+                schedule: &admin-pricing-rule-schedule
+                  additionalProperties: false
+                  nullable: true
+                  properties:
+                    timeZone: { type: string, minLength: 1, maxLength: 128 }
+                    weeklyWindows:
+                      type: array
+                      minItems: 1
+                      maxItems: 64
+                      items:
+                        additionalProperties: false
+                        properties:
+                          windowCode: { type: string, minLength: 1, maxLength: 96 }
+                          daysOfWeek: { type: array, minItems: 1, maxItems: 7, items: { type: integer, minimum: 1, maximum: 7 } }
+                          startTime: { type: string, pattern: '^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$' }
+                          endTime: { type: string, pattern: '^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$' }
+                          endDayOffset: { type: integer, enum: [0, 1] }
+                        required: [windowCode, daysOfWeek, startTime, endTime, endDayOffset]
+                        type: object
+                    includeDates: { type: array, maxItems: 366, items: { type: string, format: date, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' } }
+                    excludeDates: { type: array, maxItems: 366, items: { type: string, format: date, pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' } }
+                  required: [timeZone, weeklyWindows, includeDates, excludeDates]
+                  type: object
                 updatedAt: { format: date-time, maxLength: 64, type: string }
               required: [id, pricingPlanId, ruleCode, formulaMode, status]
               type: object
@@ -11226,6 +11339,8 @@ frontend_operations:
           ruleCode: { maxLength: 96, type: string }
           status: { enum: [active, inactive], type: string }
           unitPriceOverride: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+          conditions: *admin-pricing-rule-conditions
+          schedule: *admin-pricing-rule-schedule
           updatedAt: { format: date-time, maxLength: 64, type: string }
         required: [id, pricingPlanId, ruleCode, formulaMode, status]
         type: object
@@ -11256,6 +11371,8 @@ frontend_operations:
           ruleCode: { maxLength: 96, type: string }
           status: { enum: [active, inactive], type: string }
           unitPriceOverride: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+          conditions: *admin-pricing-rule-conditions
+          schedule: *admin-pricing-rule-schedule
         required: [ruleCode, pricingPlanId, formulaMode, status]
         type: object
     request_body_required: true
@@ -11309,6 +11426,8 @@ frontend_operations:
           ruleCode: { maxLength: 96, type: string }
           status: { enum: [active, inactive], type: string }
           unitPriceOverride: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+          conditions: *admin-pricing-rule-conditions
+          schedule: *admin-pricing-rule-schedule
           updatedAt: { format: date-time, maxLength: 64, type: string }
         required: [id, pricingPlanId, ruleCode, formulaMode, status]
         type: object
@@ -11339,6 +11458,8 @@ frontend_operations:
           ruleCode: { maxLength: 96, type: string }
           status: { enum: [active, inactive], type: string }
           unitPriceOverride: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+          conditions: *admin-pricing-rule-conditions
+          schedule: *admin-pricing-rule-schedule
         required: [formulaMode, pricingPlanId, status]
         type: object
     request_body_required: true
@@ -11472,7 +11593,7 @@ routes:
       - ai_model_pricing
       - ai_model_rank_snapshot
       - ai_model_vendor
-      - ai_pricing_import_snapshot
+      - ai_model_catalog_sync_run
       - ai_usage
       - ops_audit_log
       - ops_job_execution
@@ -11909,16 +12030,8 @@ routes:
   - route: /pricing
     required_tables:
       - pricing_price_book
-      - pricing_product
-      - pricing_operation
-      - pricing_meter
-      - pricing_product_binding
       - pricing_rate
-      - pricing_rate_binding
-      - pricing_rate_condition
-      - pricing_rate_tier
-      - pricing_rate_formula
-      - pricing_rate_formula_term
+      - pricing_import_run
     dependency_owned: true
     dependency_sdk_family: sdkwork-cloudrouter-app-sdk
   - route: /product-docs
@@ -11982,6 +12095,13 @@ routes:
     required_tables:
       - cloudrouter_pricing_plan
       - cloudrouter_account_rate_card
+      - cloudrouter_pricing_rule
+      - ops_audit_log
+  - route: /admin/pricing/settings
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+    required_tables:
+      - cloudrouter_pricing_plan
       - cloudrouter_pricing_rule
       - ops_audit_log
   - route: /partner-join
@@ -12122,7 +12242,7 @@ frontend_models:
       - ai_model_capability
       - ai_model_pricing
       - ai_model_rank_snapshot
-      - ai_pricing_import_snapshot
+      - ai_model_catalog_sync_run
       - ops_audit_log
   - route: /admin/model
     source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
@@ -12241,7 +12361,7 @@ frontend_models:
       - ai_model
       - ai_model_capability
       - ai_model_pricing
-      - ai_pricing_import_snapshot
+      - ai_model_catalog_sync_run
       - ops_audit_log
   - route: /admin/model
     source: ../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts
@@ -14253,6 +14373,20 @@ frontend_models:
       - multiplier
       - markupAmount
       - unitPriceOverride
+      - conditions
+      - conditions.dimensionCode
+      - conditions.operatorCode
+      - conditions.value
+      - schedule
+      - schedule.timeZone
+      - schedule.weeklyWindows
+      - schedule.weeklyWindows.windowCode
+      - schedule.weeklyWindows.daysOfWeek
+      - schedule.weeklyWindows.startTime
+      - schedule.weeklyWindows.endTime
+      - schedule.weeklyWindows.endDayOffset
+      - schedule.includeDates
+      - schedule.excludeDates
       - priority
       - effectiveFrom
       - effectiveTo
@@ -14279,6 +14413,93 @@ frontend_models:
       - multiplier
       - markupAmount
       - unitPriceOverride
+      - conditions
+      - conditions.dimensionCode
+      - conditions.operatorCode
+      - conditions.value
+      - schedule
+      - schedule.timeZone
+      - schedule.weeklyWindows
+      - schedule.weeklyWindows.windowCode
+      - schedule.weeklyWindows.daysOfWeek
+      - schedule.weeklyWindows.startTime
+      - schedule.weeklyWindows.endTime
+      - schedule.weeklyWindows.endDayOffset
+      - schedule.includeDates
+      - schedule.excludeDates
+      - priority
+      - effectiveFrom
+      - effectiveTo
+      - status
+    data_sources:
+      - cloudrouter_pricing_rule
+      - cloudrouter_pricing_plan
+      - ops_audit_log
+  - route: /admin/pricing/rules
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
+    interface: AdminPricingCondition
+    fields:
+      - dimensionCode
+      - operatorCode
+      - value
+    data_sources:
+      - cloudrouter_pricing_rule
+  - route: /admin/pricing/rules
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
+    interface: AdminPricingScheduleWindow
+    fields:
+      - windowCode
+      - daysOfWeek
+      - startTime
+      - endTime
+      - endDayOffset
+    data_sources:
+      - cloudrouter_pricing_rule
+  - route: /admin/pricing/rules
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
+    interface: AdminPricingSchedule
+    fields:
+      - timeZone
+      - weeklyWindows
+      - weeklyWindows.windowCode
+      - weeklyWindows.daysOfWeek
+      - weeklyWindows.startTime
+      - weeklyWindows.endTime
+      - weeklyWindows.endDayOffset
+      - includeDates
+      - excludeDates
+    data_sources:
+      - cloudrouter_pricing_rule
+  - route: /admin/pricing/settings
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
+    interface: AdminPricingRuleMutationInput
+    fields:
+      - ruleCode
+      - pricingPlanId
+      - productCode
+      - operationCode
+      - meterCode
+      - providerCode
+      - regionCode
+      - catalogKey
+      - formulaMode
+      - multiplier
+      - markupAmount
+      - unitPriceOverride
+      - conditions
+      - conditions.dimensionCode
+      - conditions.operatorCode
+      - conditions.value
+      - schedule
+      - schedule.timeZone
+      - schedule.weeklyWindows
+      - schedule.weeklyWindows.windowCode
+      - schedule.weeklyWindows.daysOfWeek
+      - schedule.weeklyWindows.startTime
+      - schedule.weeklyWindows.endTime
+      - schedule.weeklyWindows.endDayOffset
+      - schedule.includeDates
+      - schedule.excludeDates
       - priority
       - effectiveFrom
       - effectiveTo

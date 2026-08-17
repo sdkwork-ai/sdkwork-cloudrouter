@@ -15,24 +15,24 @@ REGISTRY_PATH = ROOT / "docs" / "schema-registry" / "sdkwork-cloudrouter.tables.
 
 RETENTION_INDEXES = {
     "ai_config_change_event": "idx_ai_config_change_event_retention",
-    "ai_pricing_import_snapshot": "idx_ai_pricing_import_snapshot_retention",
-    "ai_usage": "idx_ai_usage_retention",
+    "ai_metering_usage": "idx_ai_metering_usage_retention",
     "ops_alert_event": "idx_ops_alert_event_retention",
     "ops_audit_log": "idx_ops_audit_log_retention",
     "ops_config_snapshot": "idx_ops_config_snapshot_retention",
     "ops_gateway_heartbeat": "idx_ops_gateway_heartbeat_retention",
     "ops_job_execution": "idx_ops_job_execution_retention",
+    "pricing_import_run": "idx_pricing_import_run_retention",
 }
 
 CLEANUP_OWNERS = {
     "ai_config_change_event": "ai-routing-service",
-    "ai_pricing_import_snapshot": "ai-pricing-service",
-    "ai_usage": "router-service",
+    "ai_metering_usage": "router-service",
     "ops_alert_event": "cloudrouter-ops-runtime",
     "ops_audit_log": "cloudrouter-ops-runtime",
     "ops_config_snapshot": "cloudrouter-ops-runtime",
     "ops_gateway_heartbeat": "cloudrouter-ops-runtime",
     "ops_job_execution": "cloudrouter-ops-runtime",
+    "pricing_import_run": "pricing-service",
 }
 
 OPS_QUERY_INDEXES = {
@@ -60,8 +60,7 @@ OPS_QUERY_INDEXES = {
 
 ROOT_MATERIALIZED_RETENTION_TABLES = {
     "ai_config_change_event",
-    "ai_pricing_import_snapshot",
-    "ai_usage",
+    "ai_metering_usage",
 }
 
 

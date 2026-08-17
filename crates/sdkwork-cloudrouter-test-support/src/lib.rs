@@ -195,7 +195,5 @@ mod tests {
 pub fn postgres_account_ledger_append_port(
     pool: sqlx::PgPool,
 ) -> std::sync::Arc<dyn sdkwork_account_service::AccountLedgerAppendPort + Send + Sync> {
-    std::sync::Arc::new(
-        sdkwork_account_repository_sqlx::PostgresCommerceAccountStore::new(pool),
-    )
+    std::sync::Arc::new(sdkwork_account_repository_sqlx::PostgresCommerceAccountStore::new(pool))
 }

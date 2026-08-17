@@ -66,7 +66,7 @@ async function fetchCompareModel(
 ): Promise<CompareModel | null> {
   const result = await getModelsAppSdkClient().ai.models.list(
     { q: rate.resourceCode, vendorCodes: [rate.vendorCode], pageSize: 200 },
-    { signal },
+    { signal, timeout: undefined },
   );
   const data = readComparePageData(result);
   const items = Array.isArray(data?.items) ? (data.items as CompareModelItem[]) : [];

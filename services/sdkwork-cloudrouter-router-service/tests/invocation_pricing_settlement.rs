@@ -9,12 +9,13 @@ use sdkwork_cloudrouter_router_service::application::{
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
     ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, PricingRateCondition,
-    PricingRateMetadata, ProviderAuthProfile, RoutingCapability, UpstreamAccountGroup,
+    PricingRateMetadata, PricingRateVariant, ProviderAuthProfile, RoutingCapability, UpstreamAccountGroup,
     UpstreamAccountRoute,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use sdkwork_cloudrouter_router_service::ports::GatewayUsageQuantity;
 use serde_json::json;
+use chrono::Utc;
 use std::sync::Arc;
 
 fn catalog_with_chat_prices() -> InMemoryPricingCatalog {
@@ -248,6 +249,7 @@ fn add_provider_price(
 
 fn conditional_rate_metadata() -> PricingRateMetadata {
     PricingRateMetadata {
+        record_identity: None,
         price_book_code: "models-openai-global-usd-2026-08-15".to_owned(),
         rate_hash: "sha256:conditional-input-rate".to_owned(),
         product_code: "model-inference".to_owned(),
@@ -259,6 +261,10 @@ fn conditional_rate_metadata() -> PricingRateMetadata {
         minimum_quantity: DecimalValue::parse("10").unwrap(),
         quantity_step: Some(DecimalValue::parse("4").unwrap()),
         priority: 10,
+        effective_from: Utc::now(),
+        effective_to: None,
+        rate_variant: PricingRateVariant::Standard,
+        schedule: None,
         conditions: [
             ("tier_code", "eq", json!("priority")),
             ("quality", "eq", json!("hd")),

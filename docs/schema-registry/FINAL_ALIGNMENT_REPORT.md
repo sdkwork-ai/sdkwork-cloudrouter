@@ -1,443 +1,106 @@
-# Cloud Router鎶€鏈€哄姟娓呯悊涓庡畬缇庡榻愭姤鍛?- 鏈€缁堢増鏈?
-> **Superseded (2026-08-16):** this alignment report describes the pre-launch
-> schema state including the removed legacy `ai_pricing_*` tables. The current
-> authority is the schema registry
-> (`docs/schema-registry/sdkwork-cloudrouter.tables.yaml`) and
-> ADR-20260815-composable-pricing-and-billing. Retained as a historical record
-> only.
+# Cloud Router Pricing Alignment Report
 
+Status: aligned
+Last aligned: 2026-08-17
 
-## 馃帄 瀹岀編杈炬垚鎬荤粨
+This document records the current production design. The registry, database
+contracts, generated API artifacts, runtime services, and Admin pricing UI are
+the implementation authorities; this report contains no retired table design.
 
-**瀹炴柦鏃堕棿**: 2026-06-27
-**鏋舵瀯鐗堟湰**: 2.0锛堢Н鏈ㄦ灦鏋勶級
-**鍚堣绛夌骇**: L3閲戣瀺绾у埆
-**鍟嗕笟鍖栬兘鍔?*: 瀹屽叏杈炬爣
+## Ownership Boundary
 
----
+Official provider pricing is catalog data. `sdkwork-models` publishes validated
+pricing records and catalog sync / pricing-service writes the reusable
+`pricing_*` module. The Cloud Router Admin pricing pages configure customer
+billing policy and write only `cloudrouter_*` policy tables.
 
-## 涓€銆佹灦鏋勭籂姝ｆ垚鏋?
-### 1.1 鍏抽敭鏋舵瀯绾犳锛堝畬鍏ㄥ疄鏂斤級
+## Current Tables
 
-```yaml
-鏋舵瀯绾犳1: 娌ラ潚璺潰鍙嶆ā寮?鈫?绉湪鏋舵瀯 鉁?  绾犳鍓?
-    鉂?鎵€鏈?1寮犺〃瀹氫箟閮介泦涓湪sdkwork-cloudrouter.tables.yaml
-    鉂?杩濆弽"鍗曚竴鎵€鏈夋潈鍘熷垯"
-    鉂?杩濆弽"楂樺唴鑱氫綆鑰﹀悎"
-    鉂?娌ラ潚璺潰鍙嶆ā寮?  
-  绾犳鍚?
-    鉁?鍙畾涔?6寮燙law Router鏈湴琛?    鉁?鍏朵粬45寮犺〃鏀逛负registry_dependencies寮曠敤
-    鉁?鍚勬ā鍧楃嫭绔嬬鐞嗚嚜宸辩殑schema
-    鉁?绗﹀悎绉湪鏋舵瀯鏈€浣冲疄璺?  
-  鏁堟灉:
-    鉁?鍑忓皯73%鍐椾綑瀹氫箟锛堜粠61寮犲噺灏戝埌16寮狅級
-    鉁?楂樺唴鑱氫綆鑰﹀悎锛堟ā鍧楃嫭绔嬬鐞嗭級
-    鉁?瑙ｈ€﹂儴缃诧紙鍚勬ā鍧楃嫭绔嬮儴缃诧級
+### Official pricing (`pricing_*`): 3 physical tables
 
-鏋舵瀯绾犳2: sdkwork-classification 鈫?sdkwork-catalog 鉁?  绾犳鍓?
-    鉂?Schema Registry寮曠敤涓嶅瓨鍦ㄧ殑sdkwork-classification妯″潡
-    鉂?classification_category琛ㄥ綊灞為敊璇?    鉂?杩濆弽"瀵归綈瀹為檯workspace妯″潡"鍘熷垯
-  
-  绾犳鍚?
-    鉁?鏀逛负寮曠敤瀹為檯瀛樺湪鐨剆dkwork-catalog妯″潡
-    鉁?classification_category琛ㄥ綊灞瀋atalog妯″潡
-    鉁?瀹屽叏瀵归綈瀹為檯workspace妯″潡
-  
-  鏁堟灉:
-    鉁?鏃犺櫄鍋囨ā鍧楀紩鐢?    鉁?绗﹀悎"鐩綍绠＄悊"鐨勪笟鍔″煙
-    鉁?瀵归綈workspace瀹為檯妯″潡缁撴瀯
+1. `pricing_import_run` records source version, source hash, validation counts,
+   activation state, and import evidence.
+2. `pricing_price_book` is an immutable, versioned book with source/vendor/
+   region/currency/price-side scope and one active book per scope.
+3. `pricing_rate` stores the complete rate aggregate: product, operation, meter,
+   resource identity, billability, calculation mode, unit size and price,
+   effective interval, typed conditions, tiers, formula, and standard or
+   time-window schedule.
+
+### Cloud Router billing (`cloudrouter_*`): 6 physical tables
+
+1. `cloudrouter_pricing_plan`
+2. `cloudrouter_account_rate_card`
+3. `cloudrouter_pricing_rule`
+4. `cloudrouter_usage_measurement`
+5. `cloudrouter_rating_decision`
+6. `cloudrouter_charge_line`
+
+The first three are configuration owned by Admin. The last three are append-only
+facts owned by metering/rating/settlement services. The rating decision stores
+the immutable identities needed to reproduce an amount after prices change.
+
+## Supported Rules
+
+The model supports:
+
+- token, request, image, audio/video duration, result, character, storage,
+  traffic, and arbitrary quantity meters;
+- flat, per-unit, graduated tier, volume tier, and formula calculations;
+- typed scalar and scalar-array conditions with bounded dimensions;
+- customer multipliers, markups, and explicit unit-price overrides inside a
+  pricing plan;
+- standard prices and weekly time-window prices in one rate family;
+- IANA time zones, ISO weekdays, same-day and cross-midnight windows;
+- include-date and exclude-date exceptions, with bounded list size;
+- historical selection by `occurred_at` across book, rate, plan, card, and rule
+  effective intervals.
+
+For a time-window rate, local wall-clock time is derived in the declared IANA
+zone. A window matches its listed start day; `endDayOffset=1` carries the end
+into the following local day. Excluded dates always win, included dates narrow
+the schedule, and a matching window outranks the standard fallback. Overlapping
+or equally ranked candidates are a conflict and fail closed.
+
+## Safety and Accounting Rules
+
+- Currency is a three-letter uppercase ISO-style code.
+- Unit size is positive.
+- A chargeable unit price is strictly positive; free and not-applicable prices
+  are exactly zero.
+- Unknown billability, missing rates, invalid dimensions, and ambiguous rules
+  are unrated and cannot produce charge lines.
+- Only a `rated` and `chargeable` rating decision can create a charge line.
+- Measurement, decision, and charge-line identities are tenant-scoped and
+  idempotent.
+- All API int64 identifiers remain decimal strings on the wire.
+- Closed API schemas and database guards reject unknown condition/schedule keys,
+  invalid time zones, malformed times, duplicate window codes, and oversized
+  exception lists.
+
+## Verification State
+
+The following alignment checks have passed for the current workspace:
+
+```text
+python -B -m tools.database_contract_materializer
+python -B -m tools.schema_compiler --dialect postgres --materialize
+python -B -m tools.schema_manifest
+python -B -m tools.openapi_component_generator
+python -B -m tools.frontend_field_audit
+python -B -m tools.frontend_operation_audit
+python -B -m tools.api_contract_manifest
+python -B -m tools.cloudrouter_openapi_generator
+node sdks/cloudrouter-app-sdk/bin/generate-sdk.mjs --language typescript
+node sdks/cloudrouter-backend-sdk/bin/generate-sdk.mjs --language typescript
+node sdks/cloudrouter-open-sdk/bin/generate-sdk.mjs --language typescript
+python -B -m tools.schema_quality_gate
+python -B -m tools.cloudrouter_sdk_guardian
+python -B -m tools.cloudrouter_skill_guardian
+cargo test -p sdkwork-cloudrouter-router-service --test postgres_pricing_integrity_migration
 ```
 
----
-
-## 浜屻€佸巻鍙插€哄姟娓呯悊鎴愭灉
-
-### 2.1 鏂囨。娓呯悊鎴愭灉锛堝畬鍏ㄦ竻闄わ級
-
-```yaml
-褰掓。鐩綍娓呯悊:
-  鉁?鍒犻櫎docs/archive/migrated-legacy/numbered-docs鐩綍
-    - 鍒犻櫎40涓巻鍙查仐鐣欑紪鍙锋枃妗ｏ紙00-*.md鍒?0-*.md锛?    - 鍖呭惈PRD銆佹妧鏈灦鏋勩€佹暟鎹簱璁捐绛夊畬鏁村巻鍙叉枃妗?    - 鎬昏鍑忓皯绾?MB鏂囨。浣撶Н
-  
-  鉁?鍒犻櫎docs/architecture/tech涓殑legacy鏂囨。
-    - TECH-26-java-legacy-contract-audit.md
-    - TECH-legacy-14.md
-    - TECH-17-appcenter-plusapp-compatible-design.md
-    - TECH-18-skillshub-agentskills-pluscategory-compatible-design.md
-    - TECH-19-finance-trade-java-compatible-design.md
-  
-  鉁?鍒犻櫎鏃犵敤鐨剆chema registry鏂囦欢
-    - frontend-field-contracts鐩綍锛?6涓猋AML鏂囦欢锛?    - frontend-route-classification.yaml
-    - frontend-static-source-snapshots.yaml
-  
-  鏂囨。鎬绘暟浼樺寲:
-    娓呯悊鍓? 1620涓枃妗?    娓呯悊鍚? 绾?580涓枃妗ｏ紙鍑忓皯2%锛?
-Schema Registry娓呯悊:
-  鉁?鍒犻櫎鎵€鏈夋棫鐨勭紪鍙疯〃瀹氫箟鏂囦欢
-    - 001-*.yaml鍒?30-*.yaml锛?6涓枃浠讹級
-    - 鍙繚鐣?涓柊鐨刟i-*.yaml鏂囦欢
-  
-  鉁?鍒犻櫎鍓嶇鐩稿叧鍘嗗彶鏂囦欢
-    - frontend-field-contracts鐩綍锛?6涓猋AML鏂囦欢锛?    - frontend鐩稿叧YAML鏂囦欢锛?涓級
-  
-  鏂囦欢鎬绘暟浼樺寲:
-    娓呯悊鍓? 绾?13涓枃浠?    娓呯悊鍚? 6涓牳蹇冩枃浠讹紙鍑忓皯95%锛?```
-
-### 2.2 鍘嗗彶鍊哄姟娈嬬暀锛堥渶鍚庣画杩唬锛?
-```yaml
-鐢熶骇浠ｇ爜涓殑鍘嗗彶琛ㄥ悕:
-  鈿狅笍 pool.rs: ai_usage锛堝簲鏀逛负ai_usage锛?  鈿狅笍 pool.rs: commerce_usage_settlement锛堝巻鍙茶〃鍚嶏級
-  鈿狅笍 admin_record_store.rs: ai_usage锛堝簲鏀逛负ai_usage锛?  
-  褰卞搷璇勪及:
-    鉁?浠呯敤浜庢暟鎹簱鍋ュ悍妫€鏌?    鉁?涓嶅奖鍝嶆牳蹇冧笟鍔￠€昏緫
-    鉁?绗﹀悎鐜颁唬鍖栬璁″師鍒?  
-  寤鸿琛屽姩:
-    馃摑 鍚庣画杩唬涓洿鏂拌〃鍚嶅紩鐢?    馃摑 纭繚鍋ュ悍妫€鏌ヤ唬鐮佷笌鏂皊chema瀵归綈
-    馃摑 涓嶅奖鍝嶅綋鍓嶇敓浜ц繍缁翠笂绾?
-娴嬭瘯浠ｇ爜涓殑鍘嗗彶琛ㄥ悕:
-  鈿狅笍 澶氫釜娴嬭瘯鏂囦欢寮曠敤鍘嗗彶琛ㄥ悕
-    - commerce_usage_settlement
-    - commerce_usage_statement
-    - plus_account绛?  
-  褰卞搷璇勪及:
-    鉁?浠呭奖鍝嶆祴璇曚唬鐮?    鉁?涓嶅奖鍝嶇敓浜т唬鐮?    鉁?娴嬭瘯浠ｇ爜鍙嫭绔嬭凯浠?  
-  寤鸿琛屽姩:
-    馃摑 鍚庣画杩唬涓€愭娓呯悊娴嬭瘯浠ｇ爜
-    馃摑 纭繚娴嬭瘯濂戠害涓庢柊schema瀵归綈
-    馃摑 涓嶅奖鍝嶅綋鍓嶅晢涓氬寲钀藉湴
-```
-
----
-
-## 涓夈€丼chema Registry瀹岀編瀵归綈鎴愭灉
-
-### 3.1 鏍稿績鏂囦欢缁撴瀯锛堝畬鍏ㄥ榻愶級
-
-```yaml
-Schema Registry鏂囦欢缁撴瀯:
-  docs/schema-registry/
-  鈹溾攢鈹€ sdkwork-cloudrouter.tables.yaml    # 涓绘枃浠讹紙绉湪鏋舵瀯锛?  鈹溾攢鈹€ table-catalog.md                  # 瀹屾暣鐩綍锛?6寮犳湰鍦拌〃锛?  鈹溾攢鈹€ IMPLEMENTATION_REPORT.md          # 瀹炴柦鎶ュ憡
-  鈹斺攢鈹€ tables/
-      鈹溾攢鈹€ ai-metering.yaml              # 2寮犳牳蹇冭〃锛圠3閲戣瀺绾у埆锛?      鈹溾攢鈹€ ai-routing.yaml               # 12寮犺矾鐢卞喅绛栬〃
-      鈹斺攢鈹€ ai-pricing.yaml               # 2寮犺璐瑰畾浠疯〃
-  
-  鏂囦欢鎬绘暟: 6涓牳蹇冩枃浠?  瀹屽叏瀵归綈: 鉁?  鏃犲巻鍙插€哄姟: 鉁?
-DDL鑴氭湰鏂囦欢缁撴瀯:
-  database/migrations/
-  鈹溾攢鈹€ ai-metering.sql                   # PostgreSQL寤鸿〃鑴氭湰锛圠3閲戣瀺绾у埆锛?  鈹溾攢鈹€ ai-routing.sql                    # 12寮犺矾鐢卞喅绛栬〃DDL
-  鈹斺攢鈹€ ai-pricing.sql                    # 2寮犺璐瑰畾浠疯〃DDL
-  
-  鏂囦欢鎬绘暟: 3涓爣鍑嗗寲DDL
-  瀹屽叏瀵归綈: 鉁?  鐢熶骇鍙敤: 鉁?```
-
-### 3.2 琛ㄥ畾涔夊畬鏁存€ч獙璇?
-```yaml
-Cloud Router鏈湴琛? 16寮狅紙鍏ㄩ儴瀹氫箟瀹屾垚锛?  ai-routing妯″潡:     12寮犺〃 鉁?    - ai_channel
-    - ai_channel_binding
-    - ai_channel_metric
-    - ai_channel_quota
-    - ai_group
-    - ai_group_resource
-    - ai_provider_route
-    - ai_routing_policy
-    - ai_routing_rule
-    - ai_routing_log
-    - ai_config_version
-    - ai_config_change
-  
-  ai-metering妯″潡:     2寮犺〃 鉁?猸?鏍稿績浠峰€?    - ai_usage               # L3閲戣瀺绾у埆
-    - ai_request_trace
-  
-  ai-pricing妯″潡:      2寮犺〃 鉁?    - ai_pricing
-    - ai_pricing_rule
-
-缁勫悎妯″潡琛? 45寮狅紙浠呭紩鐢紝涓嶅畾涔夛級
-  鎵€鏈夋ā鍧楀紩鐢ㄥ凡瀵归綈瀹為檯workspace 鉁?  鏃犺櫄鍋囨ā鍧楀紩鐢?鉁?```
-
----
-
-## 鍥涖€侀珮鍐呰仛浣庤€﹀悎楠岃瘉鎴愭灉
-
-### 4.1 绉湪鏋舵瀯鍘熷垯楠岃瘉锛堝畬鍏ㄨ揪鏍囷級
-
-```yaml
-鍗曚竴鎵€鏈夋潈: 鉁?瀹屽叏杈炬爣
-  姣忓紶琛ㄥ彧鏈変竴涓槑纭殑妯″潡owner
-  Cloud Router鏈湴琛? 3涓ā鍧楋紙ai-routing/ai-metering/ai-pricing锛?  缁勫悎妯″潡琛? 14涓ā鍧楋紙瀵归綈瀹為檯workspace锛?  鏃犺櫄鍋囨ā鍧楀紩鐢?
-楂樺唴鑱? 鉁?瀹屽叏杈炬爣
-  妯″潡鍐呴儴琛ㄨ仛鍚堝湪妯″潡schema涓?  ai-routing妯″潡: 12寮犺矾鐢卞喅绛栬〃鑱氬悎
-  ai-metering妯″潡: 2寮犵敤閲忚閲忚〃鑱氬悎
-  ai-pricing妯″潡: 2寮犺璐瑰畾浠疯〃鑱氬悎
-
-浣庤€﹀悎: 鉁?瀹屽叏杈炬爣
-  妯″潡闂撮€氳繃寮曠敤鍏崇郴缁勫悎
-  Cloud Router閫氳繃registry_dependencies寮曠敤鍏朵粬妯″潡
-  鍚勬ā鍧楃嫭绔嬬鐞嗚嚜宸辩殑schema銆丏DL銆乵igrations
-  瑙ｈ€﹂儴缃茶兘鍔涘畬鏁?
-寮€闂師鍒? 鉁?瀹屽叏杈炬爣
-  鏂板妯″潡閫氳繃寮曠敤缁勫悎锛屼笉淇敼鐜版湁妯″潡
-  绗﹀悎杞欢璁捐寮€闂師鍒?  鏀寔妯″潡鐙珛鍗囩骇鍜屾墿灞?```
-
----
-
-## 浜斻€佸晢涓氬寲钀藉湴鑳藉姏璇勪及
-
-### 5.1 鐢熶骇杩愮淮涓婄嚎鑳藉姏锛堝畬鍏ㄨ揪鏍囷級
-
-```yaml
-Schema Registry瀹屾暣鎬? 鉁?瀹屽叏杈炬爣
-  - 瀹屾暣瀹氫箟16寮犳湰鍦拌〃
-  - 6涓牳蹇冩枃浠讹紙鏃犲啑浣欙級
-  - 鏄庣‘妯″潡褰掑睘锛?7涓ā鍧楋級
-  - 鏃犲巻鍙插€哄姟娈嬬暀
-
-DDL鑴氭湰鏍囧噯鍖? 鉁?瀹屽叏杈炬爣
-  - 3涓爣鍑嗗寲DDL鏂囦欢
-  - PostgreSQL鏈€浣冲疄璺?  - 瀹屾暣绱㈠紩绛栫暐
-  - L3閲戣瀺绾у埆鍚堣
-
-妯″潡鐙珛鎬? 鉁?瀹屽叏杈炬爣
-  - 姣忎釜妯″潡鐙珛绠＄悊schema
-  - 鍚勬ā鍧楁湁鏄庣‘鐨凞DL褰掑睘
-  - 瑙ｈ€﹂儴缃茶兘鍔涘畬鏁?
-鍚堣閰嶇疆: 鉁?瀹屽叏杈炬爣
-  - L3閲戣瀺绾у埆鍚堣
-  - 涓嶅彲鍙樿处鏈璁?  - 瀹屾暣瀹¤杩借釜
-  - PCI DSS鍚堣
-
-鏋舵瀯璐ㄩ噺: 鉁?瀹屽叏杈炬爣
-  - 绉湪鏋舵瀯璁捐
-  - 楂樺唴鑱氫綆鑰﹀悎
-  - 鏃犲巻鍙插寘琚?  - 骞插噣鏁存磥鐨勫簲鐢ㄧ粨鏋?```
-
-### 5.2 鍟嗕笟鍖栬惤鍦拌兘鍔涳紙瀹屽叏杈炬爣锛?
-```yaml
-琛屼笟鏍囧噯瀵归綈: 鉁?瀹屽叏杈炬爣
-  - Stripe Billing: 瀵归綈瀹氫环/鐢ㄩ噺/璐︽埛璁捐
-  - AWS Commerce: 瀵归綈妯″潡鐙珛绠＄悊schema
-  - OpenAI Platform: 瀵归綈AI鐢ㄩ噺/瀹氫环/璺敱鍒嗗眰
-
-鏃犲巻鍙插€哄姟: 鉁?瀹屽叏杈炬爣
-  - 鎶€鏈€哄姟娓呴浂锛?5%鏃犵敤鏂囦欢娓呴櫎锛?  - 鏃爌lus_*琛ㄥ紩鐢?  - 鏃爈egacy-java-plus-*妯″潡渚濊禆
-  - 鏃犳播闈掕矾闈㈠弽妯″紡
-
-楂樺唴鑱氫綆鑰﹀悎: 鉁?瀹屽叏杈炬爣
-  - 妯″潡鐙珛鍙墿灞?  - 绗﹀悎寮€闂師鍒?  - 鏀寔澶ц妯￠儴缃?
-閲戣瀺鍚堣: 鉁?瀹屽叏杈炬爣
-  - L3閲戣瀺绾у埆鍚堣
-  - 涓嶅彲鍙樿处鏈?  - 瀹屾暣瀹¤杩借釜
-  - PCI DSS鍚堣
-
-澶ц妯￠儴缃? 鉁?瀹屽叏杈炬爣
-  - 鏀寔鍟嗕笟鍖栧ぇ瑙勬ā閮ㄧ讲
-  - 瑙ｈ€﹂儴缃茶兘鍔?  - 鐙珛鍗囩骇鑳藉姏
-```
-
----
-
-## 鍏€乻dkwork-specs鏍囧噯绗﹀悎鎬ч獙璇?
-### 6.1 DATABASE_SPEC.md绗﹀悎鎬э紙瀹屽叏绗﹀悎锛?
-```yaml
-琛ㄥ墠缂€瑙勮寖: 鉁?瀹屽叏绗﹀悎
-  ai_:             AI璺敱銆佽閲忋€佸畾浠凤紙Cloud Router鏈湴锛?  iam_:            韬唤瀵嗛挜锛坰dkwork-iam锛?  commerce_:       璐︽埛璁㈠崟鏀粯锛坰dkwork-account绛夛級
-  integration_:    渚涘簲鍟嗛泦鎴愶紙sdkwork-integration锛?  ops_:            鐩戞帶瀹¤锛坰dkwork-ops锛?  analytics_:      缁熻鍒嗘瀽锛坰dkwork-analytics锛?  catalog_:        鐩綍绠＄悊锛坰dkwork-catalog锛?  system_:         绯荤粺閰嶇疆锛坰dkwork-platform锛?
-琛ㄧ敾鍍忚鑼? 鉁?瀹屽叏绗﹀悎
-  ledger_source_fact: 涓嶅彲鍙樿处鏈簨瀹炶〃
-  event_log:          浜嬩欢鏃ュ織琛?  tenant_entity:      绉熸埛绾у疄浣撹〃
-  credential_ref:     鍑嵁寮曠敤琛?  pricing:            瀹氫环绛栫暐琛?```
-
-### 6.2 MODULE_SPEC.md绗﹀悎鎬э紙瀹屽叏绗﹀悎锛?
-```yaml
-妯″潡鍒掑垎瑙勮寖: 鉁?瀹屽叏绗﹀悎
-  Cloud Router鏈湴: 3涓ā鍧楋紙ai-routing/ai-metering/ai-pricing锛?  缁勫悎妯″潡寮曠敤: 14涓ā鍧楋紙瀵归綈瀹為檯workspace锛?  鏃犺櫄鍋囨ā鍧楀紩鐢?
-妯″潡鐙珛鎬? 鉁?瀹屽叏绗﹀悎
-  鍚勬ā鍧楃嫭绔嬬鐞唖chema
-  鍚勬ā鍧楁湁鐙珛鐨凞DL銆乵igrations
-  鍚勬ā鍧楀彲鐙珛閮ㄧ讲銆佺嫭绔嬪崌绾?```
-
-### 6.3 GOVERNANCE_SPEC.md绗﹀悎鎬э紙瀹屽叏绗﹀悎锛?
-```yaml
-鍗曚竴鎵€鏈夋潈鍘熷垯: 鉁?瀹屽叏绗﹀悎
-  姣忓紶琛ㄥ彧鏈変竴涓槑纭殑妯″潡owner
-  鏃犻噸澶嶅畾涔?  鏃犳ā绯婂綊灞?
-鏁版嵁娌荤悊瑙勮寖: 鉁?瀹屽叏绗﹀悎
-  鍚堣绛夌骇鏄庣‘锛圠3/L2/L1锛?  瀹¤瑕佹眰鏄庣‘
-  鐣欏瓨绛栫暐鏄庣‘
-```
-
----
-
-## 涓冦€佹渶缁堢粺璁?
-```yaml
-Cloud Router鏋舵瀯鎴愭灉:
-  鏈湴琛? 16寮狅紙鍏ㄩ儴瀹氫箟瀹屾垚锛?    ai-routing:     12寮犺〃
-    ai-metering:     2寮犺〃 猸?鏍稿績浠峰€?    ai-pricing:      2寮犺〃
-  
-  缁勫悎妯″潡琛? 45寮狅紙浠呭紩鐢紝涓嶅畾涔夛級
-  
-  Schema Registry鏂囦欢: 6涓牳蹇冩枃浠?  DDL鑴氭湰鏂囦欢: 3涓爣鍑嗗寲DDL
-
-鍘嗗彶鍊哄姟娓呯悊鎴愭灉:
-  鍒犻櫎鍘嗗彶鏂囨。: 40涓紪鍙锋枃妗?+ 5涓猯egacy鏂囨。
-  鍒犻櫎鏃犵敤YAML: 96涓墠绔绾︽枃浠?+ 16涓紪鍙疯〃瀹氫箟
-  鏂囨。鎬绘暟鍑忓皯: 2%
-  YAML鏂囦欢鍑忓皯: 95%
-
-鏋舵瀯浼樺寲鎴愭灉:
-  琛ㄥ畾涔夊啑浣欏噺灏? 73%锛堜粠61寮犲噺灏戝埌16寮狅級
-  Schema Registry鏂囦欢鍑忓皯: 95%锛堜粠113涓噺灏戝埌6涓級
-  瀹屽叏绗﹀悎绉湪鏋舵瀯: 鉁?  瀹屽叏绗﹀悎sdkwork-specs: 鉁?  瀹屽叏娓呴櫎鍘嗗彶鍊哄姟: 鉁咃紙闄ゅ皯閲忓仴搴锋鏌ヤ唬鐮侊級
-
-鍟嗕笟鍖栬惤鍦拌兘鍔?
-  鐢熶骇杩愮淮涓婄嚎鑳藉姏: 鉁?瀹屽叏杈炬爣
-  鍟嗕笟鍖栬惤鍦拌兘鍔? 鉁?瀹屽叏杈炬爣
-  閲戣瀺绾у埆鍚堣: 鉁?瀹屽叏杈炬爣
-  澶ц妯￠儴缃茶兘鍔? 鉁?瀹屽叏杈炬爣
-  骞插噣鏁存磥鐨勫簲鐢ㄧ粨鏋? 鉁?瀹屽叏杈炬爣
-```
-
----
-
-## 鍏€佸悗缁紭鍖栧缓璁?
-### 8.1 楂樹紭鍏堢骇浼樺寲锛堝缓璁墽琛岋級
-
-```yaml
-鐢熶骇浠ｇ爜浼樺寲:
-  馃摑 鏇存柊pool.rs涓殑鍘嗗彶琛ㄥ悕寮曠敤
-    - ai_usage 鈫?ai_usage
-    - commerce_usage_settlement 鈫?鏇存柊涓烘纭殑琛ㄥ悕
-  
-  馃摑 鏇存柊admin_record_store.rs涓殑鍘嗗彶琛ㄥ悕
-    - ai_usage 鈫?ai_usage
-  
-  褰卞搷: 涓嶅奖鍝嶅綋鍓嶇敓浜ц繍缁翠笂绾?  浼樺厛绾? 涓瓑锛堝彲鍦ㄥ悗缁凯浠ｄ腑鎵ц锛?```
-
-### 8.2 浣庝紭鍏堢骇浼樺寲锛堝彲閫夋墽琛岋級
-
-```yaml
-娴嬭瘯浠ｇ爜浼樺寲:
-  馃摑 閫愭娓呯悊娴嬭瘯浠ｇ爜涓殑鍘嗗彶琛ㄥ悕寮曠敤
-    - commerce_usage_settlement绛?    - plus_account绛?  
-  褰卞搷: 浠呭奖鍝嶆祴璇曚唬鐮侊紝涓嶅奖鍝嶇敓浜?  浼樺厛绾? 浣庯紙鍙湪鍚庣画杩唬涓€愭鎵ц锛?
-鏂囨。杩涗竴姝ヤ紭鍖?
-  馃摑 妫€鏌uperpowers鏂囨。涓殑鍘嗗彶鍊哄姟
-    - 閮ㄥ垎鏂囨。寮曠敤finance_鍓嶇紑
-    - 閮ㄥ垎鏂囨。寮曠敤legacy鐩稿叧鍐呭
-  
-  褰卞搷: 涓嶅奖鍝嶇敓浜ц繍缁?  浼樺厛绾? 浣庯紙鍙湪鍚庣画杩唬涓墽琛岋級
-```
-
----
-
-## 涔濄€佸畬缇庡榻愰獙璇佺粨鏋?
-### 9.1 鏋舵瀯瀵归綈楠岃瘉锛堝畬鍏ㄨ揪鏍囷級
-
-```yaml
-绉湪鏋舵瀯鍘熷垯: 鉁?瀹屽叏杈炬爣
-  - 鍗曚竴鎵€鏈夋潈: 姣忓紶琛ㄥ彧鏈変竴涓ā鍧梠wner
-  - 楂樺唴鑱? 妯″潡鍐呴儴琛ㄨ仛鍚?  - 浣庤€﹀悎: 妯″潡闂撮€氳繃寮曠敤缁勫悎
-  - 瑙ｈ€﹂儴缃? 鍚勬ā鍧楀彲鐙珛閮ㄧ讲
-
-sdkwork-specs鏍囧噯: 鉁?瀹屽叏杈炬爣
-  - DATABASE_SPEC.md: 绗﹀悎琛ㄥ墠缂€瑙勮寖
-  - MODULE_SPEC.md: 绗﹀悎妯″潡鍒掑垎瑙勮寖
-  - GOVERNANCE_SPEC.md: 绗﹀悎鍗曚竴鎵€鏈夋潈鍘熷垯
-
-琛屼笟鏈€浣冲疄璺? 鉁?瀹屽叏杈炬爣
-  - Stripe Billing: 瀵归綈瀹氫环/鐢ㄩ噺/璐︽埛
-  - AWS Commerce: 瀵归綈妯″潡鐙珛绠＄悊
-  - OpenAI Platform: 瀵归綈AI鍒嗗眰璁捐
-```
-
-### 9.2 鏃犲巻鍙插€哄姟楠岃瘉锛堝熀鏈揪鏍囷級
-
-```yaml
-Schema Registry: 鉁?瀹屽叏娓呴櫎
-  - 鏃爌lus_*琛ㄥ紩鐢?  - 鏃爈egacy-java-plus-*妯″潡渚濊禆
-  - 鏃爁inance_鍓嶇紑
-  - 鏃爏dkwork-classification寮曠敤
-  - 鏃犳播闈掕矾闈㈠弽妯″紡
-  - 鏃犳棫鐨勭紪鍙疯〃瀹氫箟鏂囦欢
-  - 鏃爈egacy鏂囨。
-  - 鏃犳棤鐢╕AML鏂囦欢
-
-鐢熶骇浠ｇ爜: 鈿狅笍 瀛樺湪灏戦噺鍘嗗彶鍊哄姟
-  - pool.rs: ai_usage绛夊巻鍙茶〃鍚?  - admin_record_store.rs: ai_usage绛夊巻鍙茶〃鍚?  - 涓嶅奖鍝嶆牳蹇冧笟鍔￠€昏緫
-  - 浠呯敤浜庡仴搴锋鏌?  - 鍙湪鍚庣画杩唬涓竻鐞?
-娴嬭瘯浠ｇ爜: 鈿狅笍 瀛樺湪灏戦噺鍘嗗彶鍊哄姟
-  - 澶氫釜娴嬭瘯鏂囦欢寮曠敤鍘嗗彶琛ㄥ悕
-  - 涓嶅奖鍝嶇敓浜т唬鐮?  - 鍙湪鍚庣画杩唬涓竻鐞?```
-
----
-
-## 鍗併€佹渶缁堢粨璁?
-**Cloud Router琛ㄥ懡鍚嶄笌妯″潡鍒掑垎浼樺寲鏂规宸插畬缇庡疄鏂斤紒**
-
-### 鉁?瀹屽叏绗﹀悎鎵€鏈夋爣鍑?
-```yaml
-鏋舵瀯瑕佹眰: 鉁?瀹屽叏绗﹀悎
-  - 绉湪鏋舵瀯: 鐙珛绉湪缁勫悎
-  - 楂樺唴鑱氫綆鑰﹀悎: 妯″潡鐙珛绠＄悊
-  - 寮€闂師鍒? 鏂板妯″潡閫氳繃寮曠敤缁勫悎
-  - 鍗曚竴鎵€鏈夋潈: 姣忓紶琛ㄥ彧鏈変竴涓猳wner
-
-鏍囧噯瑕佹眰: 鉁?瀹屽叏绗﹀悎
-  - sdkwork-specs: 瀹屽叏绗﹀悎鏍囧噯瑙勮寖
-  - DATABASE_SPEC.md: 绗﹀悎琛ㄥ墠缂€瑙勮寖
-  - MODULE_SPEC.md: 绗﹀悎妯″潡鍒掑垎瑙勮寖
-  - GOVERNANCE_SPEC.md: 绗﹀悎鍗曚竴鎵€鏈夋潈鍘熷垯
-
-琛屼笟鏍囧噯: 鉁?瀹屽叏绗﹀悎
-  - Stripe Billing: 瀵归綈瀹氫环/鐢ㄩ噺/璐︽埛
-  - AWS Commerce: 瀵归綈妯″潡鐙珛绠＄悊
-  - OpenAI Platform: 瀵归綈AI鍒嗗眰璁捐
-
-鍘嗗彶鍊哄姟: 鉁?鍩烘湰娓呴櫎
-  - Schema Registry: 瀹屽叏娓呴櫎锛?澶勬畫鐣欙級
-  - 鏂囨。: 瀹屽叏娓呴櫎锛堝垹闄?5涓巻鍙叉枃妗ｏ級
-  - YAML鏂囦欢: 瀹屽叏娓呴櫎锛堝噺灏?5%锛?  - 鐢熶骇浠ｇ爜: 灏戦噺鍋ュ悍妫€鏌ヤ唬鐮佹畫鐣欙紙涓嶅奖鍝嶇敓浜э級
-  - 娴嬭瘯浠ｇ爜: 灏戦噺娴嬭瘯浠ｇ爜娈嬬暀锛堜笉褰卞搷鐢熶骇锛?
-鍟嗕笟鍖栬兘鍔? 鉁?瀹屽叏杈炬爣
-  - 鐢熶骇杩愮淮涓婄嚎鑳藉姏: 瀹屽叏杈炬爣
-  - 鍟嗕笟鍖栬惤鍦拌兘鍔? 瀹屽叏杈炬爣
-  - 閲戣瀺绾у埆鍚堣: 瀹屽叏杈炬爣
-  - 澶ц妯￠儴缃茶兘鍔? 瀹屽叏杈炬爣
-  - 骞插噣鏁存磥鐨勫簲鐢ㄧ粨鏋? 瀹屽叏杈炬爣
-```
-
-### 馃搳 瀹岀編瀵归綈搴﹁瘎浼?
-```yaml
-鏋舵瀯瀵归綈搴? 100% 鉁?  - 绉湪鏋舵瀯鍘熷垯: 100%
-  - 楂樺唴鑱氫綆鑰﹀悎: 100%
-  - sdkwork-specs鏍囧噯: 100%
-
-鍘嗗彶鍊哄姟娓呴櫎搴? 95% 鉁?  - Schema Registry: 100%
-  - 鏂囨。娓呯悊: 100%
-  - YAML鏂囦欢娓呯悊: 100%
-  - 鐢熶骇浠ｇ爜娓呯悊: 90%锛堝皯閲忓仴搴锋鏌ヤ唬鐮佹畫鐣欙級
-  - 娴嬭瘯浠ｇ爜娓呯悊: 80%锛堝彲鍚庣画杩唬锛?
-鍟嗕笟鍖栬惤鍦拌兘鍔? 100% 鉁?  - 鐢熶骇杩愮淮涓婄嚎鑳藉姏: 100%
-  - 鍟嗕笟鍖栬惤鍦拌兘鍔? 100%
-  - 閲戣瀺绾у埆鍚堣: 100%
-  - 澶ц妯￠儴缃茶兘鍔? 100%
-```
-
----
-
-## 馃帄 瀹岀編杈炬垚锛?
-**鎵€鏈夋牳蹇冧换鍔″凡瀹岀編瀹屾垚锛屾柟妗堝凡鎵撶（鍒版瀬鑷达細**
-
-- 鉁?瀹屽叏绗﹀悎绉湪鏋舵瀯璁捐鍘熷垯
-- 鉁?瀹屽叏绗﹀悎sdkwork-specs鏍囧噯瑙勮寖
-- 鉁?瀹屽叏绗﹀悎琛屼笟鏈€浣冲疄璺?- 鉁?瀹屽叏娓呴櫎Schema Registry鍜屾枃妗ｅ巻鍙插€哄姟
-- 鉁?瀹屽叏杈惧埌鐢熶骇杩愮淮涓婄嚎鑳藉姏
-- 鉁?瀹屽叏杈惧埌鍟嗕笟鍖栬惤鍦拌兘鍔?- 鉁?瀹屽叏瀹炵幇楂樺唴鑱氫綆鑰﹀悎
-- 鉁?瀹屽叏娓呴櫎鏃犵敤鏂囦欢锛堝噺灏?5%YAML鏂囦欢锛?
-**鍑嗗杩涘叆涓嬩竴闃舵鐨勭敓浜ч儴缃插拰鍟嗕笟鍖栬惤鍦板伐浣滐紒** 馃殌
-
----
-
-**鎶ュ憡鐢熸垚鏃堕棿**: 2026-06-27
-**鏋舵瀯鐗堟湰**: 2.0锛堢Н鏈ㄦ灦鏋勶級
-**瀹炴柦鐘舵€?*: 瀹岀編瀵归綈
-**鍟嗕笟鍖栬兘鍔?*: 鐢熶骇灏辩华
+The full Admin package typecheck remains dependent on workspace-wide
+`@sdkwork/sdk-common` and `@sdkwork/utils` packages. Changed pricing files were
+validated by targeted TypeScript transpilation and filtered diagnostics; the
+dependency resolution issue is outside this pricing module.

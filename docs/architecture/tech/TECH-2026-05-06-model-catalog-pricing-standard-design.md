@@ -144,27 +144,23 @@ Meter codes are stable API and Rust/Java enum contracts.
 - reference price and multiplier/markup for derived prices.
 - price origin, import snapshot, region, source URL, source hash, published/observed time, effective window.
 
-### Plans, Rules, And Tiers
+### Plans, Rules, And Tiers (retired — do not implement)
 
-`ai_pricing_plan`, `ai_pricing_plan_binding`, `ai_pricing_rule`, and `ai_pricing_tier` implement customer-facing price resolution:
+The pre-launch `ai_pricing_plan`, `ai_pricing_plan_binding`, `ai_pricing_rule`, and
+`ai_pricing_tier` tables were removed before launch. Customer-facing price resolution
+now uses the composable billing stack:
 
-1. Resolve canonical model.
-2. Resolve effective price rows by price side, scope, provider/channel, plan, region, and service tier.
-3. Apply rule overrides and tier ranges.
-4. Apply rounding and minimum charge.
-5. Return decimal string amounts.
+1. Official rates: `pricing_price_book` + `pricing_rate` (owned by the `pricing` module).
+2. Policy: `cloudrouter_pricing_plan` + `cloudrouter_pricing_rule` + `cloudrouter_account_rate_card`.
+3. Ledger: `cloudrouter_usage_measurement` → `cloudrouter_rating_decision` → `cloudrouter_charge_line`.
 
-Tiers must support long-context thresholds, quality/resolution bands, request volume bands, generated duration bands, and batch discounts.
+Authority: [ADR-20260815-composable-pricing-and-billing](../decisions/ADR-20260815-composable-pricing-and-billing.md).
 
-### Import Snapshot
+### Import Snapshot (retired — do not implement)
 
-`ai_pricing_import_snapshot` records evidence for curated or imported pricing:
-
-- source name, source URL, source hash, observed time, published time, version, actor.
-- import mode: curated official, provider sync, manual admin, test seed, demo seed.
-- counts and validation status.
-
-Seed prices are not "latest" unless supported by an observed snapshot.
+The pre-launch `ai_pricing_import_snapshot` table was removed. Official import evidence
+now lives in `pricing_import_run` (owned by the `pricing` module). Catalog display
+prices remain in `ai_model_pricing` as a sdkwork-models projection only.
 
 ## Lifecycle And Shelf State
 

@@ -1,12 +1,13 @@
 use crate::domain::{
-    ensure_canonical_model_catalog_key, provider_native_model_id, AiModel, AiModelPublicMetadata,
-    BillingMeter, DecimalValue, DomainError, DomainResult, GatewayAccessPolicy, GatewayApiKey,
-    GatewayApiKeyAccountGroupBinding, GatewayRiskRule, ModelMappingBindingType, ModelMappingRule,
-    ModelPrice, ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide,
-    PricingPlan, PricingRateMetadata, ProviderRetryPolicy, QuotaPolicy, RouteCandidate,
-    RoutingCapability, RoutingFallbackMode, RoutingPolicy, RoutingPolicyScope, RoutingRule,
-    UpstreamAccountGroup, UpstreamAccountGroupBinding, UpstreamAccountGroupMetricSnapshot,
-    UpstreamAccountRoute, UpstreamResourceEntitlement,
+    ensure_canonical_model_catalog_key, provider_native_model_id, AccountRateCard, AiModel,
+    AiModelPublicMetadata, BillingMeter, DecimalValue, DomainError, DomainResult,
+    GatewayAccessPolicy, GatewayApiKey, GatewayApiKeyAccountGroupBinding, GatewayRiskRule,
+    ModelMappingBindingType, ModelMappingRule, ModelPrice, ModelUpstreamRoute, ModelVendor,
+    ModelVendorDefinition, Money, PriceSide, PricingPlan, PricingRateMetadata, PricingRule,
+    ProviderRetryPolicy, QuotaPolicy, RouteCandidate, RoutingCapability, RoutingFallbackMode,
+    RoutingPolicy, RoutingPolicyScope, RoutingRule, UpstreamAccountGroup,
+    UpstreamAccountGroupBinding, UpstreamAccountGroupMetricSnapshot, UpstreamAccountRoute,
+    UpstreamResourceEntitlement,
 };
 
 pub struct ModelVendorRow {
@@ -803,17 +804,41 @@ pub struct PricingPlanRow {
     pub default_multiplier: String,
     pub default_markup_amount: String,
     pub currency: String,
+    pub rounding_mode: String,
+    pub minimum_charge_amount: String,
+    pub fallback_policy: String,
 }
 
 impl PricingPlanRow {
     pub fn try_into_domain(self) -> DomainResult<PricingPlan> {
         Ok(PricingPlan {
+            id: self.id,
+            tenant_id: self.tenant_id,
+            organization_id: self.organization_id,
             plan_code: self.plan_code,
             base_price_side: parse_price_side(&self.base_price_side_code)?,
             default_multiplier: DecimalValue::parse(&self.default_multiplier)?,
-            default_markup_amount: money_from_decimal(self.currency, self.default_markup_amount)?,
+            default_markup_amount: money_from_decimal(
+                self.currency.clone(),
+                self.default_markup_amount,
+            )?,
+            rounding_mode: self.rounding_mode,
+            minimum_charge_amount: money_from_decimal(self.currency, self.minimum_charge_amount)?,
+            fail_closed: self.fallback_policy == "fail_closed",
         })
     }
+}
+
+#[derive(Clone)]
+pub struct PricingRuleRow {
+    pub tenant_id: i64,
+    pub organization_id: i64,
+    pub value: PricingRule,
+}
+
+#[derive(Clone)]
+pub struct AccountRateCardRow {
+    pub value: AccountRateCard,
 }
 
 pub struct ModelPriceRow {
@@ -837,7 +862,7 @@ impl ModelPriceRow {
     pub fn try_into_domain(self) -> DomainResult<ModelPrice> {
         ensure_base_catalog_key(
             &self.catalog_key,
-            "pricing_product_binding.catalog_key must use vendor/model identity",
+            "pricing_rate.catalog_key must use vendor/model identity",
         )?;
         Ok(ModelPrice {
             catalog_key: self.catalog_key,

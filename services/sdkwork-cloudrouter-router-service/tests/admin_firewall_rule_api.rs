@@ -55,16 +55,14 @@ async fn admin_firewall_rule_route_creates_lists_and_deletes_rules() {
 
     let list_response = router
         .clone()
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "GET",
             "/backend/v3/api/system/firewalls/rules",
             Body::empty(),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -75,16 +73,14 @@ async fn admin_firewall_rule_route_creates_lists_and_deletes_rules() {
 
     let delete_response = router
         .clone()
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "DELETE",
             "/backend/v3/api/system/firewalls/rules/1",
             Body::empty(),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -95,16 +91,14 @@ async fn admin_firewall_rule_route_creates_lists_and_deletes_rules() {
     assert!(delete_body.is_empty());
 
     let final_list_response = router
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "GET",
             "/backend/v3/api/system/firewalls/rules",
             Body::empty(),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -128,18 +122,14 @@ async fn admin_firewall_rule_route_rejects_invalid_value_without_calling_store()
     );
 
     let response = router
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "POST",
             "/backend/v3/api/system/firewalls/rules",
-            Body::from(
-                    r#"{"type":"IP blacklist","value":"not-an-address","reason":"bad source"}"#,
-                ),
+            Body::from(r#"{"type":"IP blacklist","value":"not-an-address","reason":"bad source"}"#),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
 

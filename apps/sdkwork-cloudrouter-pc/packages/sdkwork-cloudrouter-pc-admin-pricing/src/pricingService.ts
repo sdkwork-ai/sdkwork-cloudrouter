@@ -10,6 +10,8 @@ import {
 } from '@sdkwork/cloudroutes-pc-commons/sdk-clients';
 
 type BackendPricingService = ReturnType<typeof getCloudRouterBackendSdkClient>['pricing'];
+export type AdminOfficialPricingCatalog = Awaited<ReturnType<BackendPricingService['officialRates']['list']>>;
+export type AdminOfficialPricingRateItem = AdminOfficialPricingCatalog['items'][number];
 
 export type AdminPricingStatus = 'active' | 'inactive';
 export type AdminBasePriceSide =
@@ -26,6 +28,28 @@ export type AdminRateCardSubjectType =
   | 'user'
   | 'organization';
 export type AdminFormulaMode = 'multiplier_markup' | 'unit_price_override';
+export type AdminPricingConditionScalar = string | number | boolean;
+
+export interface AdminPricingCondition {
+  dimensionCode: string;
+  operatorCode: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'not_in' | 'exists';
+  value: AdminPricingConditionScalar | AdminPricingConditionScalar[];
+}
+
+export interface AdminPricingScheduleWindow {
+  windowCode: string;
+  daysOfWeek: number[];
+  startTime: string;
+  endTime: string;
+  endDayOffset: 0 | 1;
+}
+
+export interface AdminPricingSchedule {
+  timeZone: string;
+  weeklyWindows: AdminPricingScheduleWindow[];
+  includeDates: string[];
+  excludeDates: string[];
+}
 
 export interface AdminPricingPlanItem {
   id: string;
@@ -75,6 +99,8 @@ export interface AdminPricingRuleItem {
   multiplier: string;
   markupAmount: string;
   unitPriceOverride?: string;
+  conditions: AdminPricingCondition[];
+  schedule?: AdminPricingSchedule;
   priority: number;
   effectiveFrom?: string;
   effectiveTo?: string;
@@ -119,6 +145,8 @@ export interface AdminPricingRuleMutationInput {
   multiplier?: string;
   markupAmount?: string;
   unitPriceOverride?: string;
+  conditions?: AdminPricingCondition[];
+  schedule?: AdminPricingSchedule;
   priority: number;
   effectiveFrom?: string;
   effectiveTo?: string;
@@ -211,6 +239,18 @@ async function backendRulesUpdate(
 
 async function backendRulesDelete(ruleId: string) {
   return getCloudRouterBackendSdkClient().pricing.rules.delete(ruleId);
+}
+
+async function backendOfficialRatesList(
+  params?: Parameters<BackendPricingService['officialRates']['list']>[0],
+) {
+  return getCloudRouterBackendSdkClient().pricing.officialRates.list(params);
+}
+
+export async function fetchAdminOfficialPricingRates(
+  params: Parameters<BackendPricingService['officialRates']['list']>[0] = {},
+): Promise<AdminOfficialPricingCatalog> {
+  return backendOfficialRatesList(params);
 }
 
 export async function fetchPricingPlans(
@@ -329,6 +369,9 @@ export async function deletePricingRule(ruleId: string): Promise<void> {
 }
 
 export const pricingService = {
+  officialRates: {
+    list: fetchAdminOfficialPricingRates,
+  },
   plans: {
     list: fetchPricingPlans,
     retrieve: fetchPricingPlan,
@@ -405,6 +448,8 @@ function normalizePricingRule(value: unknown): AdminPricingRuleItem {
     multiplier: readString(item, 'multiplier').trim() || '1',
     markupAmount: readString(item, 'markupAmount').trim() || '0',
     unitPriceOverride: optionalTrimmed(item, 'unitPriceOverride'),
+    conditions: normalizePricingConditions(item.conditions),
+    schedule: normalizePricingSchedule(item.schedule),
     priority: readNumber(item, 'priority', 100),
     effectiveFrom: optionalTrimmed(item, 'effectiveFrom'),
     effectiveTo: optionalTrimmed(item, 'effectiveTo'),
@@ -473,6 +518,8 @@ function buildRuleCreateRequest(input: AdminPricingRuleMutationInput) {
     multiplier: normalizeOptionalDecimal(input.multiplier),
     markupAmount: normalizeOptionalDecimal(input.markupAmount),
     unitPriceOverride: normalizeOptionalDecimal(input.unitPriceOverride),
+    conditions: input.conditions ?? [],
+    schedule: input.schedule,
     priority: requiredPriority(input.priority),
     effectiveFrom: optionalPricingText(input.effectiveFrom),
     effectiveTo: optionalPricingText(input.effectiveTo),
@@ -493,6 +540,8 @@ function buildRuleUpdateRequest(input: AdminPricingRuleMutationInput) {
     multiplier: normalizeOptionalDecimal(input.multiplier),
     markupAmount: normalizeOptionalDecimal(input.markupAmount),
     unitPriceOverride: normalizeOptionalDecimal(input.unitPriceOverride),
+    conditions: input.conditions ?? [],
+    schedule: input.schedule,
     priority: requiredPriority(input.priority),
     effectiveFrom: optionalPricingText(input.effectiveFrom),
     effectiveTo: optionalPricingText(input.effectiveTo),
@@ -536,6 +585,94 @@ function normalizeOptionalDecimal(value: string | undefined): string | undefined
     return undefined;
   }
   return normalizeDecimal(value, 'value');
+}
+
+function normalizePricingConditions(value: unknown): AdminPricingCondition[] {
+  if (value === undefined || value === null) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    throw new Error('conditions must be an array');
+  }
+  return value.map((item, index) => {
+    if (!isRecord(item)) {
+      throw new Error(`conditions[${index}] must be an object`);
+    }
+    const dimensionCode = readString(item, 'dimensionCode').trim();
+    const operatorCode = readString(item, 'operatorCode').trim().toLowerCase();
+    if (!dimensionCode || !operatorCode) {
+      throw new Error(`conditions[${index}] requires dimensionCode and operatorCode`);
+    }
+    if (!['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'in', 'not_in', 'exists'].includes(operatorCode)) {
+      throw new Error(`conditions[${index}] has an unsupported operatorCode`);
+    }
+    const conditionValue = item.value;
+    if (!isPricingConditionValue(conditionValue)) {
+      throw new Error(`conditions[${index}].value must be a scalar or scalar array`);
+    }
+    return {
+      dimensionCode,
+      operatorCode: operatorCode as AdminPricingCondition['operatorCode'],
+      value: conditionValue,
+    };
+  });
+}
+
+function normalizePricingSchedule(value: unknown): AdminPricingSchedule | undefined {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (!isRecord(value)) {
+    throw new Error('schedule must be an object');
+  }
+  const timeZone = readString(value, 'timeZone').trim();
+  const windows = value.weeklyWindows;
+  const includeDates = value.includeDates;
+  const excludeDates = value.excludeDates;
+  if (!timeZone || !Array.isArray(windows) || !Array.isArray(includeDates) || !Array.isArray(excludeDates)) {
+    throw new Error('schedule requires timeZone, weeklyWindows, includeDates, and excludeDates');
+  }
+  const normalizedWindows = windows.map((item, index): AdminPricingScheduleWindow => {
+    if (!isRecord(item)) {
+      throw new Error(`schedule.weeklyWindows[${index}] must be an object`);
+    }
+    const endDayOffset = item.endDayOffset;
+    if (endDayOffset !== 0 && endDayOffset !== 1) {
+      throw new Error(`schedule.weeklyWindows[${index}].endDayOffset must be 0 or 1`);
+    }
+    const daysOfWeek = item.daysOfWeek;
+    if (!Array.isArray(daysOfWeek) || daysOfWeek.some((day) => !Number.isInteger(day) || day < 1 || day > 7)) {
+      throw new Error(`schedule.weeklyWindows[${index}].daysOfWeek is invalid`);
+    }
+    return {
+      windowCode: readString(item, 'windowCode').trim(),
+      daysOfWeek: daysOfWeek as number[],
+      startTime: readString(item, 'startTime').trim(),
+      endTime: readString(item, 'endTime').trim(),
+      endDayOffset,
+    };
+  });
+  const normalizeDateList = (list: unknown, field: string): string[] => {
+    if (!Array.isArray(list) || list.some((date) => typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date))) {
+      throw new Error(`schedule.${field} must contain ISO dates`);
+    }
+    return list as string[];
+  };
+  return {
+    timeZone,
+    weeklyWindows: normalizedWindows,
+    includeDates: normalizeDateList(includeDates, 'includeDates'),
+    excludeDates: normalizeDateList(excludeDates, 'excludeDates'),
+  };
+}
+
+function isPricingConditionValue(value: unknown): value is AdminPricingCondition['value'] {
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return Number.isFinite(value as number) || typeof value !== 'number';
+  }
+  return Array.isArray(value)
+    && value.length <= 64
+    && value.every((item) => typeof item === 'string' || typeof item === 'boolean' || (typeof item === 'number' && Number.isFinite(item)));
 }
 
 function requiredPriority(value: number): number {

@@ -92,16 +92,14 @@ async fn app_notification_route_allows_console_reads_without_frontend_app_id() {
         sdkwork_cloudrouter_router_service::api::app_notification_router_with_store(store.clone());
 
     let response = router
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "GET",
             "/app/v3/api/notification/notifications?page=1&page_size=20",
             Body::empty(),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -138,16 +136,14 @@ async fn app_notification_commands_mark_popup_seen_for_trusted_subject() {
         sdkwork_cloudrouter_router_service::api::app_notification_router_with_store(store.clone());
 
     let response = router
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "POST",
             "/app/v3/api/notification/notifications/notification-1/popup_seen?app_id=cloud-router",
             Body::empty(),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -178,16 +174,14 @@ async fn app_notification_rejects_noncanonical_popup_seen_route() {
         sdkwork_cloudrouter_router_service::api::app_notification_router_with_store(store.clone());
 
     let response = router
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "POST",
             "/app/v3/api/notification/notifications/notification-1/popup-seen?app_id=cloud-router",
             Body::empty(),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -205,16 +199,14 @@ async fn app_notification_acknowledge_marks_read_and_popup_seen_for_trusted_subj
         sdkwork_cloudrouter_router_service::api::app_notification_router_with_store(store.clone());
 
     let response = router
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "POST",
             "/app/v3/api/notification/notifications/notification-1/acknowledge?app_id=cloud-router",
             Body::empty(),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -260,16 +252,14 @@ async fn app_notification_route_rejects_missing_subject_and_invalid_notification
     assert_eq!(StatusCode::UNAUTHORIZED, missing_subject_response.status());
 
     let invalid_id_response = router
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "POST",
             "/app/v3/api/notification/notifications/bad%2Fid/acknowledge",
             Body::empty(),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
     assert_eq!(StatusCode::BAD_REQUEST, invalid_id_response.status());

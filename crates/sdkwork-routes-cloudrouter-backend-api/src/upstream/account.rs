@@ -19,8 +19,8 @@ use super::shared::{
     idempotency_uuid, item_response, list_query, list_response, no_content_response, not_found,
     optional_https_base_url, optional_text, parse_id, parse_if_match, parse_protocol_config,
     positive_decimal, problem, problem_keyed, requested_at, required_text, subject,
-    verification_error, ListQuery, ProtocolConfigInput, RequestResult, UpstreamState, MAX_CODE_LENGTH,
-    MAX_PROTOCOLS,
+    verification_error, ListQuery, ProtocolConfigInput, RequestResult, UpstreamState,
+    MAX_CODE_LENGTH, MAX_PROTOCOLS,
 };
 use super::supplier::ResourceResponse;
 
@@ -506,7 +506,13 @@ async fn replace_resources(
     };
     match state
         .store
-        .replace_account_resources(subject(scoped), account_id, expected_version, items, requested_at())
+        .replace_account_resources(
+            subject(scoped),
+            account_id,
+            expected_version,
+            items,
+            requested_at(),
+        )
         .await
     {
         Ok(items) => collection_item_response(
@@ -695,7 +701,9 @@ fn account_protocol_configs(
     Ok(configs)
 }
 
-fn deserialize_preferred_endpoint<'de, D>(deserializer: D) -> Result<Option<Option<String>>, D::Error>
+fn deserialize_preferred_endpoint<'de, D>(
+    deserializer: D,
+) -> Result<Option<Option<String>>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -733,7 +741,9 @@ fn update_command(
             Some(value) => optional_https_base_url(
                 Some(value),
                 "defaultBaseUrl",
-                request.environment.unwrap_or(existing.environment.unwrap_or(1)),
+                request
+                    .environment
+                    .unwrap_or(existing.environment.unwrap_or(1)),
             )?,
             None => existing.default_base_url,
         },
@@ -974,7 +984,9 @@ mod tests {
         let code = generate_account_code().unwrap();
         assert!(code.starts_with("account-"));
         assert_eq!("account-".len() + 16, code.len());
-        assert!(code["account-".len()..].chars().all(|c| c.is_ascii_hexdigit()));
+        assert!(code["account-".len()..]
+            .chars()
+            .all(|c| c.is_ascii_hexdigit()));
     }
 
     #[test]
@@ -1052,14 +1064,14 @@ mod tests {
         let absent = serde_json::from_str::<AccountUpdateRequest>("{}").expect("empty update");
         assert_eq!(None, absent.preferred_endpoint_id);
 
-        let cleared = serde_json::from_str::<AccountUpdateRequest>(r#"{"preferredEndpointId":null}"#)
-            .expect("explicit null update");
+        let cleared =
+            serde_json::from_str::<AccountUpdateRequest>(r#"{"preferredEndpointId":null}"#)
+                .expect("explicit null update");
         assert_eq!(Some(None), cleared.preferred_endpoint_id);
 
-        let rebound = serde_json::from_str::<AccountUpdateRequest>(
-            r#"{"preferredEndpointId":"42"}"#,
-        )
-        .expect("rebound update");
+        let rebound =
+            serde_json::from_str::<AccountUpdateRequest>(r#"{"preferredEndpointId":"42"}"#)
+                .expect("rebound update");
         assert_eq!(Some(Some("42".to_owned())), rebound.preferred_endpoint_id);
     }
 
@@ -1191,7 +1203,9 @@ mod tests {
     #[test]
     fn account_protocol_configs_accepts_empty_and_valid_overrides() {
         assert!(account_protocol_configs(None).unwrap().is_empty());
-        assert!(account_protocol_configs(Some(Vec::new())).unwrap().is_empty());
+        assert!(account_protocol_configs(Some(Vec::new()))
+            .unwrap()
+            .is_empty());
         let configs = account_protocol_configs(Some(vec![
             ProtocolConfigInput {
                 protocol_code: "openai_chat_completions".to_owned(),
@@ -1208,10 +1222,7 @@ mod tests {
             LlmProtocolCode::OpenaiChatCompletions,
             configs[0].protocol_code
         );
-        assert_eq!(
-            LlmProtocolCode::AnthropicMessages,
-            configs[1].protocol_code
-        );
+        assert_eq!(LlmProtocolCode::AnthropicMessages, configs[1].protocol_code);
     }
 
     #[test]

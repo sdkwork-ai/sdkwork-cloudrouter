@@ -92,7 +92,11 @@ where
             None => None,
         };
         let (tenant_id, organization_id, user_id) = match cached {
-            Some(identity) => (identity.tenant_id, identity.organization_id, identity.user_id),
+            Some(identity) => (
+                identity.tenant_id,
+                identity.organization_id,
+                identity.user_id,
+            ),
             None => {
                 // SDKWork login sessions issue a dual-token pair (auth +
                 // access) persisted on the `iam_session` row

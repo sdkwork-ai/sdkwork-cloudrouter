@@ -134,16 +134,16 @@ fn billing_ledger_placeholder_order_matches_all_postgres_bindings() {
         ),
         (
             "const UPSERT_CHARGE_LINE: &str = r#\"",
-            "const RESOLVE_ACTIVE_OFFICIAL_RATE",
+            "const LOAD_OFFICIAL_RATE_IDENTITY",
             22,
         ),
         (
-            "const RESOLVE_ACTIVE_OFFICIAL_RATE: &str = r#\"",
-            "const RESOLVE_ACTIVE_PRICING_PLAN",
-            16,
+            "const LOAD_OFFICIAL_RATE_IDENTITY: &str = r#\"",
+            "const LOAD_PRICING_POLICY_IDENTITY",
+            20,
         ),
         (
-            "const RESOLVE_ACTIVE_PRICING_PLAN: &str = r#\"",
+            "const LOAD_PRICING_POLICY_IDENTITY: &str = r#\"",
             "#[derive(Debug, sqlx::FromRow)]",
             11,
         ),
@@ -160,7 +160,7 @@ fn billing_ledger_placeholder_order_matches_all_postgres_bindings() {
         "async fn upsert_billing_ledger(",
         "fn ledger_product_code(",
     );
-    assert_eq!(116, bindings.matches(".bind(").count());
+    assert_eq!(120, bindings.matches(".bind(").count());
 }
 
 #[test]
@@ -189,7 +189,7 @@ fn database_guards_allow_only_explicitly_rated_chargeable_amounts() {
         "ck_pricing_rate_flat_unit_size",
         "calculation_mode <> 'flat' OR unit_size = 1",
         "ck_pricing_rate_chargeable_price",
-        "billability <> 'chargeable' OR calculation_mode IN ('graduated', 'volume') OR unit_price > 0",
+        "billability <> 'chargeable' OR unit_price > 0",
     ] {
         assert_sql_contains(PRICING_BASELINE, expected);
     }
@@ -206,25 +206,25 @@ fn database_guards_allow_only_explicitly_rated_chargeable_amounts() {
 }
 
 #[test]
-fn billing_ledger_resolves_active_bound_rates_and_pricing_rules() {
+fn billing_ledger_validates_the_exact_price_service_record_identities() {
     for expected in [
         "FROM pricing_price_book book JOIN pricing_rate rate",
-        "JOIN pricing_rate_binding rate_binding",
-        "JOIN pricing_product_binding binding",
+        "book.tenant_id = $1",
+        "book.organization_id = $2",
+        "book.id = $3",
+        "rate.id = $4",
         "book.lifecycle_state IN ('active', 'retired')",
-        "rate.rate_hash = $2",
-        "binding.catalog_key = $6",
-        "binding.vendor_code = $7",
-        "binding.provider_code = $8",
-        "(binding.account_id IS NULL OR binding.account_id = $9)",
-        "binding.region_code = $10",
-        "rate.effective_from <= to_timestamp($16::double precision / 1000.0)",
+        "rate.rate_hash = $6",
+        "rate.catalog_key = $10",
+        "rate.conditions = $19::jsonb",
+        "rate.effective_from <= to_timestamp($20::double precision / 1000.0)",
         "FROM cloudrouter_account_rate_card rate_card JOIN cloudrouter_pricing_plan plan",
-        "rate_card.subject_type = 'account_group'",
-        "rate_card.subject_id = $11",
-        "candidate.pricing_plan_id = plan.id",
-        "plan.plan_code = $3",
-        "candidate.effective_from <= to_timestamp($4::double precision / 1000.0)",
+        "rate_card.tenant_id = $1",
+        "rate_card.organization_id = $2",
+        "rate_card.id = $3",
+        "plan.id = $6",
+        "rule.id = $10",
+        "plan.plan_code = $7",
         ".map(|rate| rate.price_book_id)",
         ".map(|rate| rate.rate_id)",
         ".map(|plan| plan.pricing_plan_id)",
@@ -232,6 +232,22 @@ fn billing_ledger_resolves_active_bound_rates_and_pricing_rules() {
     ] {
         assert_sql_contains(POSTGRES_GATEWAY_USAGE_RECORDER, expected);
     }
+    let official = function_block(
+        POSTGRES_GATEWAY_USAGE_RECORDER,
+        "const LOAD_OFFICIAL_RATE_IDENTITY: &str = r#\"",
+        "const LOAD_PRICING_POLICY_IDENTITY",
+    );
+    let policy = function_block(
+        POSTGRES_GATEWAY_USAGE_RECORDER,
+        "const LOAD_PRICING_POLICY_IDENTITY: &str = r#\"",
+        "#[derive(Debug, sqlx::FromRow)]",
+    );
+    assert!(!official.contains("namespace_code = 'models'"));
+    assert!(!official.contains("ORDER BY"));
+    assert!(!official.contains("LIMIT 1"));
+    assert!(!policy.contains("subject_type = 'account_group'"));
+    assert!(!policy.contains("ORDER BY"));
+    assert!(!policy.contains("LIMIT 1"));
 }
 
 #[test]

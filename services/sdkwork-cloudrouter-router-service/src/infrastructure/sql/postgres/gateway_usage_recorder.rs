@@ -262,7 +262,7 @@ WHERE cloudrouter_charge_line.idempotency_key IS NOT DISTINCT FROM excluded.idem
   AND cloudrouter_charge_line.charged_at = excluded.charged_at
 "#;
 
-const RESOLVE_ACTIVE_OFFICIAL_RATE: &str = r#"
+const LOAD_OFFICIAL_RATE_IDENTITY: &str = r#"
 SELECT
     book.tenant_id AS price_book_tenant_id,
     book.organization_id AS price_book_organization_id,
@@ -276,84 +276,39 @@ JOIN pricing_rate rate
   ON rate.tenant_id = book.tenant_id
  AND rate.organization_id = book.organization_id
  AND rate.price_book_id = book.id
-JOIN pricing_product product
-  ON product.tenant_id = rate.tenant_id
- AND product.organization_id = rate.organization_id
- AND product.id = rate.product_id
-JOIN pricing_operation operation
-  ON operation.tenant_id = rate.tenant_id
- AND operation.organization_id = rate.organization_id
- AND operation.id = rate.operation_id
-JOIN pricing_meter meter
-  ON meter.tenant_id = rate.tenant_id
- AND meter.organization_id = rate.organization_id
- AND meter.id = rate.meter_id
-JOIN pricing_rate_binding rate_binding
-  ON rate_binding.tenant_id = rate.tenant_id
- AND rate_binding.organization_id = rate.organization_id
- AND rate_binding.rate_id = rate.id
- AND rate_binding.status = 1
- AND rate_binding.deleted_at IS NULL
-JOIN pricing_product_binding binding
-  ON binding.tenant_id = rate_binding.tenant_id
- AND binding.organization_id = rate_binding.organization_id
- AND binding.id = rate_binding.product_binding_id
- AND binding.status = 1
- AND binding.deleted_at IS NULL
-WHERE book.tenant_id = 0
-  AND book.organization_id = 0
-  AND book.namespace_code = 'models'
-  AND book.price_book_code = $1
+WHERE book.tenant_id = $1
+  AND book.organization_id = $2
+  AND book.id = $3
+  AND rate.id = $4
+  AND book.price_book_code = $5
   AND book.lifecycle_state IN ('active', 'retired')
   AND book.status = 1
   AND book.deleted_at IS NULL
-  AND rate.rate_hash = $2
-  AND product.product_code = $3
-  AND operation.operation_code = $4
-  AND meter.meter_code = $5
-  AND binding.catalog_key = $6
-  AND book.vendor_code = $7
-  AND book.region_code = $10
-  AND binding.vendor_code = $7
-  AND binding.provider_code = $8
-  AND (binding.account_id IS NULL OR binding.account_id = $9)
-  AND binding.region_code = $10
-  AND rate.billability = $11
-  AND rate.charge_timing = $12
-  AND rate.calculation_mode = $13
-  AND rate.quantity_aggregation = $14
-  AND COALESCE((
-        SELECT jsonb_agg(
-            jsonb_build_object(
-                'dimension_code', condition.dimension_code,
-                'operator_code', condition.operator_code,
-                'value', CASE condition.value_type
-                    WHEN 'string' THEN to_jsonb(condition.value_string)
-                    WHEN 'decimal' THEN to_jsonb(condition.value_decimal)
-                    WHEN 'boolean' THEN to_jsonb(condition.value_boolean)
-                    WHEN 'json' THEN condition.value_json
-                    ELSE 'null'::jsonb
-                END
-            ) ORDER BY condition.sort_order, condition.id
-        )
-        FROM pricing_rate_condition condition
-        WHERE condition.tenant_id = rate.tenant_id
-          AND condition.organization_id = rate.organization_id
-          AND condition.rate_id = rate.id
-          AND condition.status = 1
-          AND condition.deleted_at IS NULL
-  ), '[]'::jsonb) = $15::jsonb
+  AND rate.rate_hash = $6
+  AND rate.product_code = $7
+  AND rate.operation_code = $8
+  AND rate.meter_code = $9
+  AND rate.catalog_key = $10
+  AND book.vendor_code = $11
+  AND book.region_code = $14
+  AND rate.vendor_code = $11
+  AND rate.provider_code = $12
+  AND (rate.account_id IS NULL OR rate.account_id = $13)
+  AND rate.region_code = $14
+  AND rate.billability = $15
+  AND rate.charge_timing = $16
+  AND rate.calculation_mode = $17
+  AND rate.quantity_aggregation = $18
+  AND rate.conditions = $19::jsonb
   AND rate.status = 1
   AND rate.deleted_at IS NULL
-  AND book.effective_from <= to_timestamp($16::double precision / 1000.0)
-  AND (book.effective_to IS NULL OR book.effective_to > to_timestamp($16::double precision / 1000.0))
-  AND rate.effective_from <= to_timestamp($16::double precision / 1000.0)
-  AND (rate.effective_to IS NULL OR rate.effective_to > to_timestamp($16::double precision / 1000.0))
-ORDER BY (binding.account_id IS NOT NULL) DESC, rate.priority ASC, rate.effective_from DESC, rate.id DESC
-LIMIT 1
+  AND book.effective_from <= to_timestamp($20::double precision / 1000.0)
+  AND (book.effective_to IS NULL OR book.effective_to > to_timestamp($20::double precision / 1000.0))
+  AND rate.effective_from <= to_timestamp($20::double precision / 1000.0)
+  AND (rate.effective_to IS NULL OR rate.effective_to > to_timestamp($20::double precision / 1000.0))
 "#;
 
-const RESOLVE_ACTIVE_PRICING_PLAN: &str = r#"
+const LOAD_PRICING_POLICY_IDENTITY: &str = r#"
 SELECT
     rate_card.tenant_id AS account_rate_card_tenant_id,
     rate_card.organization_id AS account_rate_card_organization_id,
@@ -372,58 +327,32 @@ JOIN cloudrouter_pricing_plan plan
   ON plan.tenant_id = rate_card.pricing_plan_tenant_id
  AND plan.organization_id = rate_card.pricing_plan_organization_id
  AND plan.id = rate_card.pricing_plan_id
-JOIN LATERAL (
-    SELECT candidate.*
-    FROM cloudrouter_pricing_rule candidate
-    WHERE candidate.tenant_id = plan.tenant_id
-      AND candidate.organization_id = plan.organization_id
-      AND candidate.pricing_plan_id = plan.id
-      AND candidate.status = 1
-      AND candidate.deleted_at IS NULL
-      AND (candidate.product_code IS NULL OR candidate.product_code = $5)
-      AND (candidate.operation_code IS NULL OR candidate.operation_code = $6)
-      AND (candidate.meter_code IS NULL OR candidate.meter_code = $7)
-      AND (candidate.provider_code IS NULL OR candidate.provider_code = $8)
-      AND (candidate.region_code IS NULL OR candidate.region_code = $9)
-      AND (candidate.catalog_key IS NULL OR candidate.catalog_key = $10)
-      AND candidate.effective_from <= to_timestamp($4::double precision / 1000.0)
-      AND (candidate.effective_to IS NULL OR candidate.effective_to > to_timestamp($4::double precision / 1000.0))
-    ORDER BY
-        ((candidate.product_code IS NOT NULL)::integer
-         + (candidate.operation_code IS NOT NULL)::integer
-         + (candidate.meter_code IS NOT NULL)::integer
-         + (candidate.provider_code IS NOT NULL)::integer
-         + (candidate.region_code IS NOT NULL)::integer
-         + (candidate.catalog_key IS NOT NULL)::integer) DESC,
-        candidate.priority ASC,
-        candidate.effective_from DESC,
-        candidate.id DESC
-    LIMIT 1
-) rule ON TRUE
-WHERE ((rate_card.tenant_id = $1 AND rate_card.organization_id IN ($2, 0)) OR (rate_card.tenant_id = 0 AND rate_card.organization_id = 0))
-  AND rate_card.subject_type = 'account_group'
-  AND rate_card.subject_id = $11
+JOIN cloudrouter_pricing_rule rule
+  ON rule.tenant_id = plan.tenant_id
+ AND rule.organization_id = plan.organization_id
+ AND rule.pricing_plan_id = plan.id
+WHERE rate_card.tenant_id = $1
+  AND rate_card.organization_id = $2
+  AND rate_card.id = $3
+  AND plan.tenant_id = $4
+  AND plan.organization_id = $5
+  AND plan.id = $6
+  AND plan.plan_code = $7
+  AND rule.tenant_id = $8
+  AND rule.organization_id = $9
+  AND rule.id = $10
   AND rate_card.status = 1
   AND rate_card.deleted_at IS NULL
-  AND rate_card.effective_from <= to_timestamp($4::double precision / 1000.0)
-  AND (rate_card.effective_to IS NULL OR rate_card.effective_to > to_timestamp($4::double precision / 1000.0))
-  AND plan.plan_code = $3
+  AND rate_card.effective_from <= to_timestamp($11::double precision / 1000.0)
+  AND (rate_card.effective_to IS NULL OR rate_card.effective_to > to_timestamp($11::double precision / 1000.0))
   AND plan.status = 1
   AND plan.deleted_at IS NULL
-  AND plan.effective_from <= to_timestamp($4::double precision / 1000.0)
-  AND (plan.effective_to IS NULL OR plan.effective_to > to_timestamp($4::double precision / 1000.0))
-ORDER BY
-    CASE
-        WHEN rate_card.tenant_id = $1 AND rate_card.organization_id = $2 THEN 3
-        WHEN rate_card.tenant_id = $1 AND rate_card.organization_id = 0 THEN 2
-        ELSE 1
-    END DESC,
-    rate_card.priority ASC,
-    rate_card.effective_from DESC,
-    rate_card.id DESC,
-    plan.effective_from DESC,
-    plan.id DESC
-LIMIT 1
+  AND plan.effective_from <= to_timestamp($11::double precision / 1000.0)
+  AND (plan.effective_to IS NULL OR plan.effective_to > to_timestamp($11::double precision / 1000.0))
+  AND rule.status = 1
+  AND rule.deleted_at IS NULL
+  AND rule.effective_from <= to_timestamp($11::double precision / 1000.0)
+  AND (rule.effective_to IS NULL OR rule.effective_to > to_timestamp($11::double precision / 1000.0))
 "#;
 
 #[derive(Debug, sqlx::FromRow)]
@@ -825,8 +754,8 @@ async fn upsert_billing_ledger(
             idempotency_conflict(command, "usage measurement payload changed during replay")
         })?;
 
-    let resolved_official_rate = resolve_active_official_rate(connection, command, context).await?;
-    let resolved_pricing_plan = resolve_active_pricing_plan(connection, command, context).await?;
+    let resolved_official_rate = load_official_rate_identity(connection, command, context).await?;
+    let resolved_pricing_plan = load_pricing_policy_identity(connection, command, context).await?;
     validate_resolved_identities(
         command,
         resolved_official_rate.as_ref(),
@@ -1012,7 +941,7 @@ async fn upsert_billing_ledger(
     Ok(true)
 }
 
-async fn resolve_active_official_rate(
+async fn load_official_rate_identity(
     connection: &mut PgConnection,
     command: &GatewayUsageRecordCommand,
     context: &GatewayAccountingRecordContext,
@@ -1020,12 +949,30 @@ async fn resolve_active_official_rate(
     let Some(reference) = command.official_rate.as_ref() else {
         return Ok(None);
     };
-    let conditions = serde_json::to_string(&reference.conditions).map_err(|error| {
+    let identity = reference.record_identity.as_ref().ok_or_else(|| {
+        pricing_identity_error(command, "official rate record identity is missing")
+    })?;
+    let conditions = serde_json::to_string(
+        &reference
+            .conditions
+            .iter()
+            .map(|condition| serde_json::json!({
+                "dimensionCode": condition.dimension_code,
+                "operatorCode": condition.operator_code,
+                "value": condition.value,
+            }))
+            .collect::<Vec<_>>(),
+    )
+    .map_err(|error| {
         DomainError::new(format!(
             "failed to serialize official pricing conditions: {error}"
         ))
     })?;
-    sqlx::query_as::<_, ActiveOfficialRateRow>(RESOLVE_ACTIVE_OFFICIAL_RATE)
+    sqlx::query_as::<_, ActiveOfficialRateRow>(LOAD_OFFICIAL_RATE_IDENTITY)
+        .bind(identity.price_book_tenant_id)
+        .bind(identity.price_book_organization_id)
+        .bind(identity.price_book_id)
+        .bind(identity.rate_id)
         .bind(&reference.price_book_code)
         .bind(&reference.rate_hash)
         .bind(&reference.product_code)
@@ -1047,7 +994,7 @@ async fn resolve_active_official_rate(
         .map_err(|error| store_error("failed to resolve active official pricing rate", error))
 }
 
-async fn resolve_active_pricing_plan(
+async fn load_pricing_policy_identity(
     connection: &mut PgConnection,
     command: &GatewayUsageRecordCommand,
     context: &GatewayAccountingRecordContext,
@@ -1055,20 +1002,23 @@ async fn resolve_active_pricing_plan(
     if command.pricing_plan_code.trim().is_empty() {
         return Ok(None);
     }
-    let product_code = ledger_product_code(command);
-    let operation_code = ledger_operation_code(command);
-    sqlx::query_as::<_, ActivePricingPlanRow>(RESOLVE_ACTIVE_PRICING_PLAN)
-        .bind(command.tenant_id)
-        .bind(command.organization_id)
+    let identity = command
+        .official_rate
+        .as_ref()
+        .and_then(|reference| reference.record_identity.as_ref())
+        .ok_or_else(|| pricing_identity_error(command, "pricing policy record identity is missing"))?;
+    sqlx::query_as::<_, ActivePricingPlanRow>(LOAD_PRICING_POLICY_IDENTITY)
+        .bind(identity.account_rate_card_tenant_id)
+        .bind(identity.account_rate_card_organization_id)
+        .bind(identity.account_rate_card_id)
+        .bind(identity.pricing_plan_tenant_id)
+        .bind(identity.pricing_plan_organization_id)
+        .bind(identity.pricing_plan_id)
         .bind(&command.pricing_plan_code)
+        .bind(identity.pricing_rule_tenant_id)
+        .bind(identity.pricing_rule_organization_id)
+        .bind(identity.pricing_rule_id)
         .bind(context.ended_at_epoch_millis)
-        .bind(product_code)
-        .bind(operation_code)
-        .bind(&command.billing_meter_code)
-        .bind(&command.supplier_code)
-        .bind(&command.region_code)
-        .bind(&command.catalog_key)
-        .bind(command.account_group_id)
         .fetch_optional(&mut *connection)
         .await
         .map_err(|error| store_error("failed to resolve active pricing plan", error))

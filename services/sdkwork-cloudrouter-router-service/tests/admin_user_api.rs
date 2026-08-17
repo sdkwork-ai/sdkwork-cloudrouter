@@ -294,10 +294,9 @@ fn signed_request(method: &str, path: &str, body: &str) -> Request<Body> {
     request
         .headers_mut()
         .insert("Idempotency-Key", "idem-admin-user-test".parse().unwrap());
-    request.headers_mut().insert(
-        "X-Request-Id",
-        "request-admin-user-test".parse().unwrap(),
-    );
+    request
+        .headers_mut()
+        .insert("X-Request-Id", "request-admin-user-test".parse().unwrap());
     request
 }
 

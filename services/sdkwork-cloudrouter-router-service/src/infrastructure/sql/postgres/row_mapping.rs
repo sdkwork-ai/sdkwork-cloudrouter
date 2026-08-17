@@ -1,16 +1,18 @@
+use chrono::{DateTime, NaiveDate, NaiveTime, Utc};
 use sqlx::postgres::PgRow;
 use sqlx::{Executor, Row};
 
 use crate::domain::{
     DecimalValue, Money, PricingFormula, PricingFormulaTerm, PricingRateCondition,
-    PricingRateMetadata, PricingRateTier,
+    PricingRateMetadata, PricingRateTier, PricingRateVariant, PricingRule, PricingSchedule,
+    PricingWeeklyWindow,
 };
 
 use crate::infrastructure::sql::rows::{
-    AiModelRow, GatewayAccessPolicyRow, GatewayApiKeyRow, GatewayRiskRuleRow, ModelMappingRuleRow,
-    ModelPriceRow, ModelVendorRow, PricingPlanRow, QuotaPolicyRow, RoutingPolicyRow,
-    RoutingRuleRow, UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow,
-    UpstreamAccountRouteRow, UpstreamSupplierModelAccessRow,
+    AccountRateCardRow, AiModelRow, GatewayAccessPolicyRow, GatewayApiKeyRow, GatewayRiskRuleRow,
+    ModelMappingRuleRow, ModelPriceRow, ModelVendorRow, PricingPlanRow, PricingRuleRow,
+    QuotaPolicyRow, RoutingPolicyRow, RoutingRuleRow, UpstreamAccountGroupMetricSnapshotRow,
+    UpstreamAccountGroupRow, UpstreamAccountRouteRow, UpstreamSupplierModelAccessRow,
 };
 
 pub async fn load_vendors(
@@ -208,6 +210,9 @@ pub async fn load_pricing_plans(
             default_multiplier: row.try_get("default_multiplier")?,
             default_markup_amount: row.try_get("default_markup_amount")?,
             currency: row.try_get("currency")?,
+            rounding_mode: row.try_get("rounding_mode")?,
+            minimum_charge_amount: row.try_get("minimum_charge_amount")?,
+            fallback_policy: row.try_get("fallback_policy")?,
         })
     })
     .fetch(executor)
@@ -237,6 +242,97 @@ pub async fn load_upstream_account_groups(
             sale_multiplier: row.try_get("sale_multiplier")?,
             model_blacklist_json: row.try_get("model_blacklist")?,
             model_whitelist_json: row.try_get("model_whitelist")?,
+        })
+    })
+    .fetch(executor)
+    .await
+}
+
+pub async fn load_pricing_rules(
+    executor: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
+    sql: &'static str,
+) -> Result<Vec<PricingRuleRow>, sqlx::Error> {
+    map_query(sql, |row| {
+        let currency: String = row.try_get("currency_code")?;
+        let conditions = serde_json::from_str::<Vec<PricingConditionJson>>(
+            &row.try_get::<String, _>("conditions_json")?,
+        )
+        .map_err(decode_error)?
+        .into_iter()
+        .map(|condition| PricingRateCondition {
+            dimension_code: condition.dimension_code,
+            operator_code: condition.operator_code,
+            value: condition.value,
+        })
+        .collect();
+        let schedule = row
+            .try_get::<Option<String>, _>("schedule_json")?
+            .map(|value| parse_pricing_schedule(&value))
+            .transpose()?;
+        let tenant_id = row.try_get("tenant_id")?;
+        let organization_id = row.try_get("organization_id")?;
+        let pricing_plan_id = row.try_get("pricing_plan_id")?;
+        Ok(PricingRuleRow {
+            tenant_id,
+            organization_id,
+            value: PricingRule {
+                id: row.try_get("id")?,
+                pricing_plan_id,
+                tenant_id,
+                organization_id,
+                rule_code: row.try_get("rule_code")?,
+                plan_code: row.try_get("plan_code")?,
+                product_code: row.try_get("product_code")?,
+                operation_code: row.try_get("operation_code")?,
+                meter_code: row.try_get("meter_code")?,
+                provider_code: row.try_get("provider_code")?,
+                region_code: row.try_get("region_code")?,
+                catalog_key: row.try_get("catalog_key")?,
+                formula_mode: row.try_get("formula_mode")?,
+                multiplier: DecimalValue::parse(&row.try_get::<String, _>("multiplier")?)
+                    .map_err(decode_error)?,
+                markup_amount: Money::new(&currency, &row.try_get::<String, _>("markup_amount")?)
+                    .map_err(decode_error)?,
+                unit_price_override: row
+                    .try_get::<Option<String>, _>("unit_price_override")?
+                    .as_deref()
+                    .map(|value| Money::new(&currency, value))
+                    .transpose()
+                    .map_err(decode_error)?,
+                priority: row.try_get("priority")?,
+                effective_from: row.try_get("effective_from")?,
+                effective_to: row.try_get("effective_to")?,
+                conditions,
+                schedule,
+            },
+        })
+    })
+    .fetch(executor)
+    .await
+}
+
+pub async fn load_account_rate_cards(
+    executor: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
+    sql: &'static str,
+) -> Result<Vec<AccountRateCardRow>, sqlx::Error> {
+    map_query(sql, |row| {
+        Ok(AccountRateCardRow {
+            value: crate::domain::AccountRateCard {
+                id: row.try_get("id")?,
+                rate_card_code: row.try_get("rate_card_code")?,
+                tenant_id: row.try_get("tenant_id")?,
+                organization_id: row.try_get("organization_id")?,
+                subject_type: row.try_get("subject_type")?,
+                subject_id: row.try_get("subject_id")?,
+                subject_code: row.try_get("subject_code")?,
+                pricing_plan_tenant_id: row.try_get("pricing_plan_tenant_id")?,
+                pricing_plan_organization_id: row.try_get("pricing_plan_organization_id")?,
+                pricing_plan_id: row.try_get("pricing_plan_id")?,
+                pricing_plan_code: row.try_get("pricing_plan_code")?,
+                priority: row.try_get("priority")?,
+                effective_from: row.try_get("effective_from")?,
+                effective_to: row.try_get("effective_to")?,
+            },
         })
     })
     .fetch(executor)
@@ -436,10 +532,42 @@ struct PricingFormulaTermJson {
     coefficient: String,
 }
 
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PricingScheduleJson {
+    time_zone: String,
+    weekly_windows: Vec<PricingWeeklyWindowJson>,
+    #[serde(default)]
+    include_dates: Vec<String>,
+    #[serde(default)]
+    exclude_dates: Vec<String>,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PricingWeeklyWindowJson {
+    window_code: String,
+    days_of_week: Vec<u8>,
+    start_time: String,
+    end_time: String,
+    end_day_offset: u8,
+}
+
 fn pricing_rate_metadata_from_row(
     row: &PgRow,
     rate_currency: &str,
 ) -> Result<PricingRateMetadata, sqlx::Error> {
+    let rate_variant_code = row.try_get::<String, _>("rate_variant")?;
+    let rate_variant = PricingRateVariant::from_code(&rate_variant_code).ok_or_else(|| {
+        decode_error(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!("invalid pricing rate variant {rate_variant_code}"),
+        ))
+    })?;
+    let schedule = row
+        .try_get::<Option<String>, _>("schedule_json")?
+        .map(|value| parse_pricing_schedule(&value))
+        .transpose()?;
     let conditions = serde_json::from_str::<Vec<PricingConditionJson>>(
         &row.try_get::<String, _>("conditions_json")?,
     )
@@ -527,6 +655,12 @@ fn pricing_rate_metadata_from_row(
         .transpose()?;
 
     Ok(PricingRateMetadata {
+        record_identity: Some(crate::domain::PricingRateRecordIdentity {
+            price_book_tenant_id: row.try_get("price_book_tenant_id")?,
+            price_book_organization_id: row.try_get("price_book_organization_id")?,
+            price_book_id: row.try_get("price_book_id")?,
+            rate_id: row.try_get("rate_id")?,
+        }),
         price_book_code: row.try_get("price_book_code")?,
         rate_hash: row.try_get("rate_hash")?,
         product_code: row.try_get("product_code")?,
@@ -544,9 +678,45 @@ fn pricing_rate_metadata_from_row(
             .transpose()
             .map_err(decode_error)?,
         priority: row.try_get("priority")?,
+        effective_from: row.try_get::<DateTime<Utc>, _>("effective_from")?,
+        effective_to: row.try_get::<Option<DateTime<Utc>>, _>("effective_to")?,
+        rate_variant,
+        schedule,
         conditions,
         tiers,
         formula,
+    })
+}
+
+fn parse_pricing_schedule(value: &str) -> Result<PricingSchedule, sqlx::Error> {
+    let schedule = serde_json::from_str::<PricingScheduleJson>(value).map_err(decode_error)?;
+    Ok(PricingSchedule {
+        time_zone: schedule.time_zone.parse().map_err(decode_error)?,
+        weekly_windows: schedule
+            .weekly_windows
+            .into_iter()
+            .map(|window| {
+                Ok(PricingWeeklyWindow {
+                    window_code: window.window_code,
+                    days_of_week: window.days_of_week,
+                    start_time: NaiveTime::parse_from_str(&window.start_time, "%H:%M:%S")
+                        .map_err(decode_error)?,
+                    end_time: NaiveTime::parse_from_str(&window.end_time, "%H:%M:%S")
+                        .map_err(decode_error)?,
+                    end_day_offset: window.end_day_offset,
+                })
+            })
+            .collect::<Result<Vec<_>, sqlx::Error>>()?,
+        include_dates: schedule
+            .include_dates
+            .into_iter()
+            .map(|value| NaiveDate::parse_from_str(&value, "%Y-%m-%d").map_err(decode_error))
+            .collect::<Result<Vec<_>, sqlx::Error>>()?,
+        exclude_dates: schedule
+            .exclude_dates
+            .into_iter()
+            .map(|value| NaiveDate::parse_from_str(&value, "%Y-%m-%d").map_err(decode_error))
+            .collect::<Result<Vec<_>, sqlx::Error>>()?,
     })
 }
 

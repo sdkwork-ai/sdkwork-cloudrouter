@@ -1,17 +1,21 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Edit3, Plus, Trash2 } from 'lucide-react';
-import { AdminTableShell, BottomPagination, ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons';
+import { BottomPagination, ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons';
 import { useTranslation } from 'react-i18next';
 import {
   pricingService,
   type AdminFormulaMode,
+  type AdminPricingCondition,
   type AdminPricingPlanItem,
   type AdminPricingRuleItem,
   type AdminPricingRuleMutationInput,
+  type AdminPricingSchedule,
   type AdminPricingStatus,
 } from './pricingService';
 import {
+  AdminListToolbar,
   AdminPageShell,
+  AdminTableArea,
   dangerButtonClass,
   errorMessageI18n,
   Field,
@@ -24,6 +28,7 @@ import {
   SidePanel,
   StatusBadge,
   TableState,
+  toolbarSelectClass,
 } from './components';
 
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
@@ -44,6 +49,8 @@ interface RuleFormState {
   multiplier: string;
   markupAmount: string;
   unitPriceOverride: string;
+  conditionsJson: string;
+  scheduleJson: string;
   priority: string;
   effectiveFrom: string;
   effectiveTo: string;
@@ -63,6 +70,8 @@ const EMPTY_RULE_FORM: RuleFormState = {
   multiplier: '1',
   markupAmount: '0',
   unitPriceOverride: '',
+  conditionsJson: '[]',
+  scheduleJson: '',
   priority: '100',
   effectiveFrom: '',
   effectiveTo: '',
@@ -143,6 +152,8 @@ export function PricingRulesAdmin() {
       multiplier: item.multiplier,
       markupAmount: item.markupAmount,
       unitPriceOverride: item.unitPriceOverride ?? '',
+      conditionsJson: JSON.stringify(item.conditions ?? [], null, 2),
+      scheduleJson: item.schedule ? JSON.stringify(item.schedule, null, 2) : '',
       priority: String(item.priority),
       effectiveFrom: item.effectiveFrom ?? '',
       effectiveTo: item.effectiveTo ?? '',
@@ -205,115 +216,59 @@ export function PricingRulesAdmin() {
 
   return (
     <AdminPageShell>
-      <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-white/10">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900 dark:text-white">{t('admin.pricing.rules.title')}</h1>
-          <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{t('admin.menu.home.pricingManagement')}</p>
-        </div>
-        <button type="button" className={primaryButtonClass} onClick={openCreate}>
-          <Plus className="h-4 w-4" />
-          {t('admin.pricing.rules.actions.new')}
-        </button>
-      </div>
-      <div className="flex flex-wrap items-center gap-3 px-5 py-3">
-        <SearchBox value={search} onChange={setSearch} placeholder={t('admin.pricing.rules.search.placeholder')} />
-        <button
-          type="button"
-          className={secondaryButtonClass}
-          onClick={() => setAppliedSearch(search.trim())}
-        >
-          {t('admin.pricing.common.search.placeholder')}
-        </button>
-        <select
-          className={`${selectClass} w-52`}
-          value={planFilter}
-          onChange={(event) => {
-            setPlanFilter(event.target.value);
-            setPage(1);
-          }}
-        >
-          <option value="">{t('admin.pricing.rules.form.pricingPlanId')}: All</option>
-          {plans.map((plan) => (
-            <option key={plan.id} value={plan.id}>
-              {plan.planName} ({plan.planCode})
-            </option>
-          ))}
-        </select>
-        <select
-          className={`${selectClass} w-36`}
-          value={statusFilter}
-          onChange={(event) => {
-            setStatusFilter(event.target.value as AdminPricingStatus | 'all');
-            setPage(1);
-          }}
-        >
-          <option value="all">{t('admin.pricing.common.table.status')}: All</option>
-          {STATUSES.map((status) => (
-            <option key={status} value={status}>
-              {t(`admin.pricing.common.status.${status}`)}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="min-h-0 flex-1 overflow-auto px-5 pb-4">
-        <AdminTableShell>
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-400 dark:border-white/10">
-              <tr>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.rules.table.ruleCode')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.rules.table.plan')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.rules.table.formulaMode')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.rules.table.multiplier')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.rules.table.markupAmount')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.rules.table.unitPriceOverride')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.rules.table.priority')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.common.table.status')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.common.table.actions')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-              {loading || items.length === 0 ? (
-                <TableState loading={loading} empty={t('admin.pricing.rules.empty')} colSpan={9} />
-              ) : (
-                items.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
-                    <td className="px-3 py-2.5 font-medium text-slate-900 dark:text-white">{item.ruleCode}</td>
-                    <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">
-                      {item.planCode ?? item.pricingPlanId}
-                    </td>
-                    <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">
-                      {t(`admin.pricing.formulaMode.${item.formulaMode}`)}
-                    </td>
-                    <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.multiplier}</td>
-                    <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.markupAmount}</td>
-                    <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.unitPriceOverride ?? '—'}</td>
-                    <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.priority}</td>
-                    <td className="px-3 py-2.5">
-                      <StatusBadge status={item.status} />
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex items-center gap-2">
-                        <button type="button" className={dangerButtonClass} onClick={() => openEdit(item)}>
-                          <Edit3 className="h-3.5 w-3.5" />
-                          {t('admin.pricing.common.actions.edit')}
-                        </button>
-                        <button
-                          type="button"
-                          className={dangerButtonClass}
-                          onClick={() => setDeleteTarget(item)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          {t('admin.pricing.common.actions.delete')}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </AdminTableShell>
-        <div className="mt-3">
+      <AdminListToolbar
+        filters={
+          <>
+            <SearchBox
+              value={search}
+              onChange={setSearch}
+              onSubmit={(value) => {
+                setAppliedSearch(value);
+                setPage(1);
+              }}
+              placeholder={t('admin.pricing.rules.search.placeholder')}
+            />
+            <select
+              className={toolbarSelectClass}
+              value={planFilter}
+              onChange={(event) => {
+                setPlanFilter(event.target.value);
+                setPage(1);
+              }}
+            >
+              <option value="">{t('admin.pricing.rules.form.pricingPlanId')}: All</option>
+              {plans.map((plan) => (
+                <option key={plan.id} value={plan.id}>
+                  {plan.planName} ({plan.planCode})
+                </option>
+              ))}
+            </select>
+            <select
+              className={toolbarSelectClass}
+              value={statusFilter}
+              onChange={(event) => {
+                setStatusFilter(event.target.value as AdminPricingStatus | 'all');
+                setPage(1);
+              }}
+            >
+              <option value="all">{t('admin.pricing.common.table.status')}: All</option>
+              {STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {t(`admin.pricing.common.status.${status}`)}
+                </option>
+              ))}
+            </select>
+          </>
+        }
+        actions={
+          <button type="button" className={primaryButtonClass} onClick={openCreate}>
+            <Plus className="h-4 w-4" />
+            {t('admin.pricing.rules.actions.new')}
+          </button>
+        }
+      />
+      <AdminTableArea
+        footer={
           <BottomPagination
             page={page}
             pageSize={pageSize}
@@ -332,8 +287,64 @@ export function PricingRulesAdmin() {
             }}
             pageSizeOptions={[20, 50, 100]}
           />
-        </div>
-      </div>
+        }
+      >
+        <table className="w-full text-left text-sm">
+          <thead className="sticky top-0 z-10 border-b border-slate-200 bg-white text-xs uppercase tracking-wide text-slate-400 dark:border-white/10 dark:bg-slate-900">
+            <tr>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.rules.table.ruleCode')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.rules.table.plan')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.rules.table.formulaMode')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.rules.table.multiplier')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.rules.table.markupAmount')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.rules.table.unitPriceOverride')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.rules.table.priority')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.common.table.status')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.common.table.actions')}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+            {loading || items.length === 0 ? (
+              <TableState loading={loading} empty={t('admin.pricing.rules.empty')} colSpan={9} />
+            ) : (
+              items.map((item) => (
+                <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
+                  <td className="px-3 py-2.5 font-medium text-slate-900 dark:text-white">{item.ruleCode}</td>
+                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">
+                    {item.planCode ?? item.pricingPlanId}
+                  </td>
+                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">
+                    {t(`admin.pricing.formulaMode.${item.formulaMode}`)}
+                  </td>
+                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.multiplier}</td>
+                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.markupAmount}</td>
+                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.unitPriceOverride ?? '—'}</td>
+                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.priority}</td>
+                  <td className="px-3 py-2.5">
+                    <StatusBadge status={item.status} />
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <button type="button" className={dangerButtonClass} onClick={() => openEdit(item)}>
+                        <Edit3 className="h-3.5 w-3.5" />
+                        {t('admin.pricing.common.actions.edit')}
+                      </button>
+                      <button
+                        type="button"
+                        className={dangerButtonClass}
+                        onClick={() => setDeleteTarget(item)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        {t('admin.pricing.common.actions.delete')}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </AdminTableArea>
       <InlineError message={error} />
       {creating || editing ? (
         <SidePanel
@@ -417,6 +428,23 @@ export function PricingRulesAdmin() {
                 />
               </Field>
             )}
+            <Field label={t('admin.pricing.rules.form.conditions', 'Conditions JSON')} hint={t('admin.pricing.rules.form.conditionsHint', 'Use dimensionCode, operatorCode, and a scalar or scalar array value.')}>
+              <textarea
+                className={`${inputClass} min-h-24 font-mono text-xs`}
+                value={form.conditionsJson}
+                onChange={(event) => setField('conditionsJson', event.target.value)}
+                spellCheck={false}
+              />
+            </Field>
+            <Field label={t('admin.pricing.rules.form.schedule', 'Schedule JSON')} hint={t('admin.pricing.rules.form.scheduleHint', 'Leave empty for standard pricing; provide IANA timeZone and weeklyWindows for time-window pricing.')}>
+              <textarea
+                className={`${inputClass} min-h-32 font-mono text-xs`}
+                value={form.scheduleJson}
+                onChange={(event) => setField('scheduleJson', event.target.value)}
+                placeholder={'{"timeZone":"Asia/Shanghai","weeklyWindows":[],"includeDates":[],"excludeDates":[]}' }
+                spellCheck={false}
+              />
+            </Field>
             <div className="grid grid-cols-2 gap-4">
               <Field label={`${t('admin.pricing.rules.form.productCode')} (${t('admin.pricing.rules.form.optional')})`}>
                 <input
@@ -551,6 +579,8 @@ function buildRuleInput(
       form.formulaMode === 'unit_price_override'
         ? form.unitPriceOverride.trim() || undefined
         : undefined,
+    conditions: parseJsonField<AdminPricingCondition[]>(form.conditionsJson, 'conditions', []),
+    schedule: parseOptionalJsonField<AdminPricingSchedule>(form.scheduleJson, 'schedule'),
     priority,
     effectiveFrom: form.effectiveFrom.trim() || undefined,
     effectiveTo: form.effectiveTo.trim() || undefined,
@@ -560,4 +590,19 @@ function buildRuleInput(
 
 function fail(message: string): null {
   throw new Error(message);
+}
+
+function parseJsonField<T>(value: string, fieldName: string, fallback: T): T {
+  if (!value.trim()) {
+    return fallback;
+  }
+  try {
+    return JSON.parse(value);
+  } catch {
+    throw new Error(`${fieldName} must be valid JSON`);
+  }
+}
+
+function parseOptionalJsonField<T>(value: string, fieldName: string): T | undefined {
+  return value.trim() ? parseJsonField<T>(value, fieldName, undefined as T) : undefined;
 }

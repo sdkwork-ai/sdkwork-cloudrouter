@@ -20,7 +20,7 @@ const ACCOUNT_COLUMNS: &str = r#"
     account.id, account.uuid, account.supplier_id, account.supplier_code,
     account.preferred_endpoint_id,
     account.default_base_url,
-    account.protocols::text AS protocols,
+    account.protocols,
     account.account_code, account.account_name,
     account.account_type, account.auth_method_code, account.external_account_id,
     account.environment, account.region_code,

@@ -107,6 +107,7 @@ export const resources = mergeI18nBundles([
   upstreamSupplierMessages,
   upstreamAccountMessages,
   upstreamAccountGroupMessages,
+  pricingAdminMessages,
   cloudRouterIamAdminMessages,
   cloudRouterRtcAdminMessages,
   rtcAdminMessages,

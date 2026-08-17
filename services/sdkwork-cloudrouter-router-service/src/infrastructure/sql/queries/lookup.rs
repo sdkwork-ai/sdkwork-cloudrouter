@@ -78,35 +78,28 @@ ORDER BY rank_score DESC, display_name ASC, id ASC
     pub fn list_model_prices() -> &'static str {
         r#"
 SELECT
-    binding.catalog_key,
-    COALESCE(model.model, binding.resource_code) AS model,
-    binding.region_code,
+    rate.catalog_key,
+    COALESCE(model.model, rate.resource_code) AS model,
+    rate.region_code,
     book.price_side AS price_side_code,
-    meter.meter_code AS billing_meter_code,
+    rate.meter_code AS billing_meter_code,
     rate.unit_size::text AS unit_size,
     rate.unit_price::text AS unit_price,
     rate.currency_code AS currency,
-    CASE WHEN book.price_side = 'upstream_cost' THEN NULLIF(binding.provider_code, '') END AS supplier_code,
-    CASE WHEN book.price_side = 'upstream_cost' THEN binding.account_id END AS account_id,
+    CASE WHEN book.price_side = 'upstream_cost' THEN NULLIF(rate.provider_code, '') END AS supplier_code,
+    CASE WHEN book.price_side = 'upstream_cost' THEN rate.account_id END AS account_id,
     NULL::text AS pricing_plan_code
 FROM pricing_rate rate
 JOIN pricing_price_book book ON book.id = rate.price_book_id
-JOIN pricing_meter meter ON meter.id = rate.meter_id
-JOIN pricing_rate_binding rate_binding ON rate_binding.rate_id = rate.id
-JOIN pricing_product_binding binding ON binding.id = rate_binding.product_binding_id
-LEFT JOIN ai_model model ON model.catalog_key = binding.catalog_key AND model.deleted_at IS NULL
+LEFT JOIN ai_model model ON model.catalog_key = rate.catalog_key AND model.deleted_at IS NULL
 WHERE rate.deleted_at IS NULL
   AND rate.status = 1
   AND book.deleted_at IS NULL
   AND book.status = 1
   AND book.lifecycle_state = 'active'
-  AND rate_binding.deleted_at IS NULL
-  AND rate_binding.status = 1
-  AND binding.deleted_at IS NULL
-  AND binding.status = 1
-  AND binding.catalog_key = $1
+  AND rate.catalog_key = $1
   AND book.price_side = CASE $2 WHEN 1 THEN 'official_reference' WHEN 2 THEN 'upstream_cost' WHEN 3 THEN 'customer_charge' WHEN 4 THEN 'internal_transfer' ELSE 'unknown' END
-  AND meter.meter_code = $3
+  AND rate.meter_code = $3
   AND rate.effective_from <= CURRENT_TIMESTAMP
   AND (rate.effective_to IS NULL OR rate.effective_to > CURRENT_TIMESTAMP)
 ORDER BY rate.priority ASC, rate.effective_from DESC, rate.id DESC
@@ -202,7 +195,10 @@ SELECT
     plan.base_price_side AS base_price_side_code,
     default_rule.multiplier::text AS default_multiplier,
     default_rule.markup_amount::text AS default_markup_amount,
-    plan.currency_code AS currency
+    plan.currency_code AS currency,
+    plan.rounding_mode,
+    plan.minimum_charge_amount::text AS minimum_charge_amount,
+    plan.fallback_policy
 FROM cloudrouter_pricing_plan plan
 JOIN LATERAL (
     SELECT rule.multiplier, rule.markup_amount
@@ -325,36 +321,29 @@ LIMIT 1
     pub fn find_model_price() -> &'static str {
         r#"
 SELECT
-    binding.catalog_key,
-    COALESCE(model.model, binding.resource_code) AS model,
-    binding.region_code,
+    rate.catalog_key,
+    COALESCE(model.model, rate.resource_code) AS model,
+    rate.region_code,
     book.price_side AS price_side_code,
-    meter.meter_code AS billing_meter_code,
+    rate.meter_code AS billing_meter_code,
     rate.unit_size::text AS unit_size,
     rate.unit_price::text AS unit_price,
     rate.currency_code AS currency,
-    CASE WHEN book.price_side = 'upstream_cost' THEN NULLIF(binding.provider_code, '') END AS supplier_code,
-    CASE WHEN book.price_side = 'upstream_cost' THEN binding.account_id END AS account_id,
+    CASE WHEN book.price_side = 'upstream_cost' THEN NULLIF(rate.provider_code, '') END AS supplier_code,
+    CASE WHEN book.price_side = 'upstream_cost' THEN rate.account_id END AS account_id,
     NULL::text AS pricing_plan_code
 FROM pricing_rate rate
 JOIN pricing_price_book book ON book.id = rate.price_book_id
-JOIN pricing_meter meter ON meter.id = rate.meter_id
-JOIN pricing_rate_binding rate_binding ON rate_binding.rate_id = rate.id
-JOIN pricing_product_binding binding ON binding.id = rate_binding.product_binding_id
-LEFT JOIN ai_model model ON model.catalog_key = binding.catalog_key AND model.deleted_at IS NULL
+LEFT JOIN ai_model model ON model.catalog_key = rate.catalog_key AND model.deleted_at IS NULL
 WHERE rate.deleted_at IS NULL
   AND rate.status = 1
   AND book.deleted_at IS NULL
   AND book.status = 1
   AND book.lifecycle_state = 'active'
-  AND rate_binding.deleted_at IS NULL
-  AND rate_binding.status = 1
-  AND binding.deleted_at IS NULL
-  AND binding.status = 1
-  AND binding.catalog_key = $1
+  AND rate.catalog_key = $1
   AND book.price_side = CASE $2 WHEN 1 THEN 'official_reference' WHEN 2 THEN 'upstream_cost' WHEN 3 THEN 'customer_charge' WHEN 4 THEN 'internal_transfer' ELSE 'unknown' END
-  AND meter.meter_code = $3
-  AND (($4 IS NULL AND NULLIF(binding.provider_code, '') IS NULL) OR binding.provider_code = $4)
+  AND rate.meter_code = $3
+  AND (($4 IS NULL AND NULLIF(rate.provider_code, '') IS NULL) OR rate.provider_code = $4)
   AND $5::text IS NULL
   AND rate.effective_from <= CURRENT_TIMESTAMP
   AND (rate.effective_to IS NULL OR rate.effective_to > CURRENT_TIMESTAMP)

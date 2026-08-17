@@ -212,6 +212,27 @@ The admin pricing management surface (`/admin/pricing/*`: pricing plans, rate
 cards, and pricing rules) operates these entities through the
 `@sdkwork/cloudrouter-backend-sdk` `pricing` family with full audit logging,
 so operators configure the billing engine without touching runtime code.
+The physical pricing model is intentionally compact. The reusable official
+price authority has exactly three tables: `pricing_import_run` (staging,
+validation, activation, and lineage), `pricing_price_book` (immutable scoped
+source/vendor/region/currency/price-side versions), and `pricing_rate` (the
+complete product/operation/meter/resource rate aggregate). Product, operation,
+meter, resource binding, conditions, tiers, formulas, and schedules are bounded
+fields or closed JSON structures in `pricing_rate`; they are not auxiliary
+pricing tables. Cloud Router policy and billing facts have exactly six tables:
+`cloudrouter_pricing_plan`, `cloudrouter_account_rate_card`,
+`cloudrouter_pricing_rule`, `cloudrouter_usage_measurement`,
+`cloudrouter_rating_decision`, and `cloudrouter_charge_line`. Only the first
+three are Admin configuration; the latter three are service-owned facts.
+
+Rates support standard and weekly time-window variants. A schedule declares an
+IANA time zone, ISO weekdays, wall-clock start/end times, same-day or
+cross-midnight `endDayOffset`, and bounded include/exclude dates. Resolution
+uses `occurred_at` against every effective interval, gives a matching time
+window precedence over the standard fallback, and fails closed on equally
+ranked overlapping candidates. Unknown, free, not-applicable, missing, or
+ambiguous rates never produce a charge line.
+
 `ai_metering_usage` remains a `legacy-compat` settlement input only during the
 bounded shadow-write window defined by `MIG-2026-0002`, whose hard runtime cutoff
 is 2026-10-31 23:59:59Z. Invocation events and runtime artifacts are persisted in the

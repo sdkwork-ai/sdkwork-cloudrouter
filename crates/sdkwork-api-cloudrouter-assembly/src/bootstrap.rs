@@ -19,7 +19,9 @@ use sdkwork_cloudrouter_http::{
 use sdkwork_web_bootstrap::{
     ApiAssemblyContribution, CompositeReadinessCheck, ReadinessCheck, ReadinessFuture,
 };
-use sdkwork_web_contract::{merge_openapi_documents, route_inventory_from_routes, HttpRoute};
+use sdkwork_web_contract::{
+    build_openapi_document, merge_openapi_documents, route_inventory_from_routes, HttpRoute,
+};
 use sdkwork_web_core::HttpRouteManifest;
 use serde_json::{Map, Value};
 use tower::ServiceExt;
@@ -168,7 +170,12 @@ fn assemble_api_router_with_in_process_upstreams(
     upstreams: sdkwork_cloudrouter_edge_runtime::EdgeInProcessUpstreams,
     account_provisioner: Option<Arc<PostgresCommerceAccountStore>>,
 ) -> Result<ApiAssembly, ApiAssemblyError> {
-    let app_manifest = sdkwork_routes_cloudrouter_app_api::http_route_manifest();
+    // The app router includes dependency-owned assemblies (commerce,
+    // promotion, membership, and others). Bind the same composed manifest at
+    // the application assembly boundary so the outer Web Framework sees the
+    // dependency routes and their declared auth profiles too.
+    let app_manifest =
+        sdkwork_routes_cloudrouter_app_api::cloud_router_app_composed_route_manifest();
     let backend_manifest = sdkwork_routes_cloudrouter_backend_api::http_route_manifest();
     let open_manifest = crate::generated_open_http_route_manifest::http_route_manifest();
     validate_no_route_collisions(&[
@@ -177,10 +184,11 @@ fn assemble_api_router_with_in_process_upstreams(
         ("sdkwork-cloudrouter-open-api", &open_manifest),
     ])?;
 
-    let app_openapi = parse_openapi(
+    let mut app_openapi = parse_openapi(
         "sdkwork-cloudrouter-app-api",
         include_str!("../../../apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"),
     )?;
+    augment_openapi_with_missing_routes(&mut app_openapi, app_manifest.routes())?;
     let backend_openapi = parse_openapi(
         "sdkwork-cloudrouter-backend-api",
         include_str!("../../../apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json"),
@@ -271,6 +279,66 @@ fn parse_openapi(owner: &str, source: &str) -> Result<Value, ApiAssemblyError> {
         .with_context(|| format!("invalid {owner} OpenAPI authority"))?;
     normalize_openapi_for_composition(owner, &mut document)?;
     Ok(document)
+}
+
+/// The Cloud Router app router mounts dependency-owned app routes into its
+/// executable surface manifest. The authored Cloud Router OpenAPI authority
+/// intentionally contains only host-owned operations, so add framework-built
+/// operations for mounted routes that are absent from that authority before
+/// the assembly contribution validates route/OpenAPI parity.
+fn augment_openapi_with_missing_routes(
+    document: &mut Value,
+    routes: &[HttpRoute],
+) -> Result<(), ApiAssemblyError> {
+    let paths = document
+        .get_mut("paths")
+        .and_then(Value::as_object_mut)
+        .context("Cloud Router app OpenAPI authority paths must be an object")?;
+    let missing_routes = routes
+        .iter()
+        .filter(|route| {
+            let method = match route.method {
+                sdkwork_web_contract::HttpMethod::Get => "get",
+                sdkwork_web_contract::HttpMethod::Post => "post",
+                sdkwork_web_contract::HttpMethod::Put => "put",
+                sdkwork_web_contract::HttpMethod::Patch => "patch",
+                sdkwork_web_contract::HttpMethod::Delete => "delete",
+            };
+            paths
+                .get(route.path)
+                .and_then(Value::as_object)
+                .and_then(|path_item| path_item.get(method))
+                .is_none()
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    if missing_routes.is_empty() {
+        return Ok(());
+    }
+
+    let generated =
+        build_openapi_document("SDKWork Cloud Router mounted app routes", &missing_routes);
+    let generated_paths = generated
+        .get("paths")
+        .and_then(Value::as_object)
+        .context("generated mounted app OpenAPI paths must be an object")?;
+    for (path, path_item) in generated_paths {
+        let target = paths
+            .entry(path.clone())
+            .or_insert_with(|| Value::Object(Map::new()));
+        let target = target
+            .as_object_mut()
+            .with_context(|| format!("Cloud Router app OpenAPI path {path} must be an object"))?;
+        let source = path_item.as_object().with_context(|| {
+            format!("generated mounted app OpenAPI path {path} must be an object")
+        })?;
+        for (method, operation) in source {
+            target
+                .entry(method.clone())
+                .or_insert_with(|| operation.clone());
+        }
+    }
+    Ok(())
 }
 
 fn normalize_openapi_for_composition(
@@ -846,7 +914,8 @@ mod tests {
     fn merged_route_manifest_passes_standalone_gateway_surface_auth_validation() {
         use sdkwork_web_core::{classify_api_surface, WebApiSurface, WebEnvironment};
 
-        let app_manifest = sdkwork_routes_cloudrouter_app_api::http_route_manifest();
+        let app_manifest =
+            sdkwork_routes_cloudrouter_app_api::cloud_router_app_composed_route_manifest();
         let backend_manifest = sdkwork_routes_cloudrouter_backend_api::http_route_manifest();
         let open_manifest = crate::generated_open_http_route_manifest::http_route_manifest();
         super::validate_no_route_collisions(&[
@@ -908,5 +977,19 @@ mod tests {
         manifest
             .validate_route_auth_for_surfaces(&profile)
             .expect("standalone gateway route manifest must satisfy surface auth validation");
+
+        for path in [
+            "/app/v3/api/promotions/offers",
+            "/app/v3/api/promotions/offers/demo-offer",
+        ] {
+            let route = manifest
+                .match_route("GET", path)
+                .unwrap_or_else(|| panic!("{path} must be present in the API assembly manifest"));
+            assert_eq!(
+                sdkwork_web_contract::RouteAuth::Public,
+                route.auth,
+                "{path} must preserve the promotion assembly public auth profile"
+            );
+        }
     }
 }

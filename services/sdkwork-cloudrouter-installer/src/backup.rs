@@ -129,10 +129,8 @@ pub async fn run_backup(
     }
 
     let output = options.output.unwrap_or_else(|| {
-        PathBuf::from(DEFAULT_BACKUP_DIR).join(format!(
-            "{BACKUP_FILE_PREFIX}-{}.tar.gz",
-            timestamp_now()
-        ))
+        PathBuf::from(DEFAULT_BACKUP_DIR)
+            .join(format!("{BACKUP_FILE_PREFIX}-{}.tar.gz", timestamp_now()))
     });
     if let Some(parent) = output.parent() {
         std::fs::create_dir_all(parent)
@@ -150,7 +148,11 @@ pub async fn run_backup(
     // 1. PostgreSQL dump (custom format).
     let dump_path = dump_dir.join("cloudrouter.dump");
     let mut dump_args = target.pg_args();
-    dump_args.extend(["-Fc".to_owned(), "-f".to_owned(), dump_path.display().to_string()]);
+    dump_args.extend([
+        "-Fc".to_owned(),
+        "-f".to_owned(),
+        dump_path.display().to_string(),
+    ]);
     let mut dump_command = Command::new("pg_dump");
     dump_command.args(&dump_args);
     target.apply_password(&mut dump_command);

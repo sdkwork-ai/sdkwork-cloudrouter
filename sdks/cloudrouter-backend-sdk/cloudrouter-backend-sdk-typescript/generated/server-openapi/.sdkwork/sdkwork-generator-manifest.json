@@ -76,7 +76,7 @@
     },
     {
       "path": "src/api/pricing.ts",
-      "sha256": "c17f19c416c039ac4b27b5fa7a847fd223f57c187d537c3bbef26e02533acc72"
+      "sha256": "5d972b6a336d62239a8fc88475861f74589ccaae95634dec492ae064dc2b303b"
     },
     {
       "path": "src/api/recharges.ts",
@@ -212,7 +212,7 @@
     },
     {
       "path": "src/types/admin-pricing-rule.ts",
-      "sha256": "f6c254966320c6a3fbe8459a2ac93b23aadd3a7f31e5c91ff37464f2fb683906"
+      "sha256": "96cbb623e7bcc9ce3688bd4443e1cff03e4dececfbbdb6a5abb93d008ae9097e"
     },
     {
       "path": "src/types/admin-rate-card-list-response.ts",
@@ -444,7 +444,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "5af0ed1d76f7a89a4979e31c0aaae0a3ae11ff12a87defe9e0a06d0a915e70aa"
+      "sha256": "ec5cda8541950d7d579991544ff38f1a76728f796ded7b6c2d388c44a1b07ea8"
     },
     {
       "path": "src/types/installation-status-response.ts",
@@ -519,6 +519,46 @@
       "sha256": "f7103e6d79d4f74a75ef176db6589588d6ed1c36ab81aef7de21e465f1892588"
     },
     {
+      "path": "src/types/official-pricing-catalog-response.ts",
+      "sha256": "2de4079c0ed7636563e0167099c4993ce4ce122d32b5355e65f7eed847b677c4"
+    },
+    {
+      "path": "src/types/official-pricing-formula-term.ts",
+      "sha256": "51d14cf6d3c0ee889f6f8ed1458ea0fcd6321f3ff0e9329c4a48e205b9fcbd19"
+    },
+    {
+      "path": "src/types/official-pricing-formula.ts",
+      "sha256": "cdda3dfa9406e6df7fc6dc56c0068d9e47d8f272bb318e6bd0057f193e8a1416"
+    },
+    {
+      "path": "src/types/official-pricing-group-facet.ts",
+      "sha256": "dcf186d1e6f1aafc148b5ae4bf4c7be5ea8cf1e59c55cf4eadbb7c01b03a60d4"
+    },
+    {
+      "path": "src/types/official-pricing-meter-facet.ts",
+      "sha256": "5a7b7adf84514cb2d9e242a88dcd857018867d395a95c53207cb561564df7fa6"
+    },
+    {
+      "path": "src/types/official-pricing-rate-condition.ts",
+      "sha256": "a46e2862d76f21be7026ad57047c96d7bc08f4a11da5a49c9c69e3480642e03e"
+    },
+    {
+      "path": "src/types/official-pricing-rate-tier.ts",
+      "sha256": "ccc3b6501a1734b6427bcd67d2a0b0623d2e46cc53c14409a83d53fcc649112d"
+    },
+    {
+      "path": "src/types/official-pricing-rate.ts",
+      "sha256": "2a7aeee03e6a6457f5d6fea4eb0c2deaa3d9efdb2e2f65d15714494d1e2f51b6"
+    },
+    {
+      "path": "src/types/official-pricing-region-facet.ts",
+      "sha256": "4ed941913808528f9eb345f06841da58cada65013bf9077f81dd65f737c75090"
+    },
+    {
+      "path": "src/types/official-pricing-value-facet.ts",
+      "sha256": "407628162e3668ffa5b11fe77a8ec2928507aea573aa4609038b738916f16fe6"
+    },
+    {
       "path": "src/types/page-info.ts",
       "sha256": "bd3b491ded2459bc73241f8e5f27473c488a59c448e5b955516ba1aaa76a5e42"
     },
@@ -544,11 +584,11 @@
     },
     {
       "path": "src/types/pricing-rule-create-request.ts",
-      "sha256": "ada07b3c876b237a6a2ee8fcde757750e184876d5373c7b4ee39c1caa961334c"
+      "sha256": "2f7e565f30f8b39e4b06afc17ecc313be119ce0483a8504405c738b26b31ef7b"
     },
     {
       "path": "src/types/pricing-rule-update-request.ts",
-      "sha256": "9da96cb7a6d9b1e938a650fbcdb3cc4c6c80cc6b7a9a36e3a373f86bfdd6e665"
+      "sha256": "675f835aee7251a85fad69ecc37dacde2d24912cf70e350732a33c968619595a"
     },
     {
       "path": "src/types/problem-detail.ts",

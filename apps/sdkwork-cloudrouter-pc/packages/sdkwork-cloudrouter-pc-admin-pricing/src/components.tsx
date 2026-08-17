@@ -1,11 +1,15 @@
+import { AdminTableShell } from '@sdkwork/cloudroutes-pc-commons';
 import { useTranslation } from 'react-i18next';
 import type { FormEvent, ReactNode } from 'react';
 import { Search, X } from 'lucide-react';
 
 export const inputClass = 'h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-white/5 dark:text-white';
 export const selectClass = inputClass;
-export const secondaryButtonClass = 'inline-flex h-9 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10';
-export const primaryButtonClass = 'inline-flex h-9 items-center justify-center gap-2 rounded-md bg-lobster-600 px-3 text-sm font-semibold text-white transition hover:bg-lobster-700 disabled:cursor-not-allowed disabled:opacity-50';
+/** Toolbar filter selects must not use `w-full` or they stretch across the row. */
+export const toolbarSelectClass =
+  'h-9 w-auto shrink-0 rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 dark:border-white/10 dark:bg-white/5 dark:text-white';
+export const secondaryButtonClass = 'inline-flex h-9 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10';
+export const primaryButtonClass = 'inline-flex h-9 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md bg-lobster-600 px-3 text-sm font-semibold text-white transition hover:bg-lobster-700 disabled:cursor-not-allowed disabled:opacity-50';
 export const dangerButtonClass = 'inline-flex h-8 items-center justify-center gap-1 rounded-md px-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-500/10';
 
 export function Field({
@@ -31,32 +35,96 @@ export function Field({
 export function SearchBox({
   value,
   onChange,
+  onSubmit,
   placeholder,
+  className = '',
 }: {
   value: string;
   onChange: (value: string) => void;
+  onSubmit: (value: string) => void;
   placeholder: string;
+  className?: string;
 }) {
   const { t } = useTranslation();
+  const clearable = value.trim() !== '';
   return (
-    <div className="relative w-full max-w-xs">
-      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+    <form
+      className={`relative w-56 shrink-0 ${className}`}
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSubmit(value.trim());
+      }}
+    >
       <input
-        className={`${inputClass} pl-9 pr-8`}
+        className={`${inputClass} pr-20`}
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
       />
-      {value ? (
+      {clearable ? (
         <button
           type="button"
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-slate-400 hover:text-slate-600"
-          onClick={() => onChange('')}
-          aria-label={t('admin.pricing.common.aria.clear', 'Clear search')}
+          className="absolute right-11 top-1/2 -translate-y-1/2 rounded p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/10 dark:hover:text-slate-300"
+          onClick={() => {
+            onChange('');
+            onSubmit('');
+          }}
+          title={t('common.actions.clear', 'Clear')}
+          aria-label={t('common.actions.clear', 'Clear')}
         >
-          <X className="h-4 w-4" />
+          <X className="h-3.5 w-3.5" />
         </button>
       ) : null}
+      <button
+        type="submit"
+        className="absolute right-1 top-1 flex h-7 w-7 items-center justify-center rounded-md bg-lobster-600 text-white transition hover:bg-lobster-700"
+        title={t('common.actions.search')}
+        aria-label={t('common.actions.search')}
+      >
+        <Search className="h-4 w-4" />
+      </button>
+    </form>
+  );
+}
+
+export function AdminListToolbar({
+  filters,
+  actions,
+}: {
+  filters: ReactNode;
+  actions?: ReactNode;
+}) {
+  return (
+    <div
+      className="flex shrink-0 items-center gap-3 overflow-x-auto px-5 py-3"
+      data-admin-pricing-toolbar
+    >
+      <div className="flex flex-nowrap items-center gap-2">{filters}</div>
+      {actions ? <div className="ml-auto flex shrink-0 items-center gap-2">{actions}</div> : null}
+    </div>
+  );
+}
+
+/** Table region that fills remaining viewport height; body scrolls inside AdminTableShell. */
+export function AdminTableArea({
+  children,
+  footer,
+}: {
+  children: ReactNode;
+  footer?: ReactNode;
+}) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col px-5 pb-4">
+      <AdminTableShell
+        className="min-h-0 flex-1 shadow-none"
+        footer={
+          footer ? (
+            <div className="border-t border-slate-200 px-3 py-2 dark:border-white/10">{footer}</div>
+          ) : undefined
+        }
+      >
+        {children}
+      </AdminTableShell>
     </div>
   );
 }

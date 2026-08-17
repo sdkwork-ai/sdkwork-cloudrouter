@@ -120,7 +120,11 @@ impl CloudRouterLocalePolicy {
     ///
     /// Priority (`I18N_SPEC.md` §2): SDK locale header > `Accept-Language` >
     /// application `defaultLocale` > explicit `fallbackLocale`.
-    pub fn resolve(&self, sdk_locale: Option<&str>, accept_language: Option<&str>) -> RequestLocale {
+    pub fn resolve(
+        &self,
+        sdk_locale: Option<&str>,
+        accept_language: Option<&str>,
+    ) -> RequestLocale {
         if let Some(tag) = sdk_locale.and_then(normalize_locale_tag) {
             if self.supports(&tag) {
                 return RequestLocale {
@@ -150,7 +154,9 @@ impl CloudRouterLocalePolicy {
     }
 
     fn supports(&self, tag: &str) -> bool {
-        self.supported_locales.iter().any(|supported| supported == tag)
+        self.supported_locales
+            .iter()
+            .any(|supported| supported == tag)
     }
 }
 
@@ -225,7 +231,10 @@ fn best_accept_language_match(
         if !policy.supports(&canonical) {
             continue;
         }
-        if best.as_ref().map_or(true, |(_, best_quality)| quality > *best_quality) {
+        if best
+            .as_ref()
+            .map_or(true, |(_, best_quality)| quality > *best_quality)
+        {
             best = Some((canonical, quality));
         }
     }
@@ -245,8 +254,14 @@ impl EmbeddedMessageCatalog {
     fn load() -> Self {
         let mut by_locale = HashMap::new();
         for (locale, raw) in [
-            ("en-US", include_str!("../resources/i18n/en-US/cloudrouter/errors/result.json")),
-            ("zh-CN", include_str!("../resources/i18n/zh-CN/cloudrouter/errors/result.json")),
+            (
+                "en-US",
+                include_str!("../resources/i18n/en-US/cloudrouter/errors/result.json"),
+            ),
+            (
+                "zh-CN",
+                include_str!("../resources/i18n/zh-CN/cloudrouter/errors/result.json"),
+            ),
         ] {
             match serde_json::from_str::<HashMap<String, String>>(raw) {
                 Ok(entries) => {
@@ -398,7 +413,9 @@ async fn request_locale_middleware(
 
     let mut response = next.run(request).await;
     if let Ok(value) = HeaderValue::from_str(&locale.effective) {
-        response.headers_mut().insert(header::CONTENT_LANGUAGE, value);
+        response
+            .headers_mut()
+            .insert(header::CONTENT_LANGUAGE, value);
     }
     append_vary_accept_language(&mut response);
 
@@ -551,7 +568,10 @@ mod tests {
 
     #[test]
     fn interpolation_is_incomplete_without_params() {
-        assert_eq!(None, interpolate_template("{{entity}} was not found", &json!({})));
+        assert_eq!(
+            None,
+            interpolate_template("{{entity}} was not found", &json!({}))
+        );
         assert_eq!(None, interpolate_template("{{entity}}", &Value::Null));
     }
 
@@ -655,7 +675,12 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(StatusCode::OK, response.status());
-        assert_eq!("zh-CN", axum::body::to_bytes(response.into_body(), 1024).await.unwrap());
+        assert_eq!(
+            "zh-CN",
+            axum::body::to_bytes(response.into_body(), 1024)
+                .await
+                .unwrap()
+        );
     }
 
     #[tokio::test]
@@ -702,11 +727,16 @@ mod tests {
             "Accept-Language",
             response.headers().get(header::VARY).unwrap()
         );
-        let bytes = axum::body::to_bytes(response.into_body(), 1024).await.unwrap();
+        let bytes = axum::body::to_bytes(response.into_body(), 1024)
+            .await
+            .unwrap();
         let payload: Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!("zh-CN", payload["locale"].as_str().unwrap());
         // Generic `errors.result.<code>` keys never replace handler detail;
         // frontends translate those keys themselves.
-        assert_eq!("supplier was not found", payload["detail"].as_str().unwrap());
+        assert_eq!(
+            "supplier was not found",
+            payload["detail"].as_str().unwrap()
+        );
     }
 }

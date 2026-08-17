@@ -51,8 +51,6 @@ async fn baseline_initializes_canonical_upstream_routing_schema() {
     .unwrap();
 
     for (table, canonical_column, retired_column) in [
-        ("ai_pricing_rule", "supplier_code", "provider_code"),
-        ("ai_pricing_rule", "account_id", "channel_id"),
         ("ai_quota_policy", "account_group_id", "channel_group_id"),
         ("ai_metering_request_trace", "supplier_id", "provider_id"),
         ("ai_metering_request_trace", "account_id", "channel_id"),

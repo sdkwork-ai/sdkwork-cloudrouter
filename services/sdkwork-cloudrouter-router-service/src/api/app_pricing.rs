@@ -79,8 +79,21 @@ pub fn app_pricing_router() -> Router {
 pub fn app_pricing_router_with_read_store(
     read_store: Arc<dyn OfficialPricingCatalogReadStore + Send + Sync>,
 ) -> Router {
+    official_pricing_router_with_read_store("/app/v3/api/ai/pricing/rates", read_store)
+}
+
+pub fn admin_official_pricing_router_with_read_store(
+    read_store: Arc<dyn OfficialPricingCatalogReadStore + Send + Sync>,
+) -> Router {
+    official_pricing_router_with_read_store("/backend/v3/api/pricing/official_rates", read_store)
+}
+
+fn official_pricing_router_with_read_store(
+    path: &'static str,
+    read_store: Arc<dyn OfficialPricingCatalogReadStore + Send + Sync>,
+) -> Router {
     Router::new()
-        .route("/app/v3/api/ai/pricing/rates", get(list_pricing_rates))
+        .route(path, get(list_pricing_rates))
         .with_state(AppPricingState { read_store })
 }
 
@@ -164,7 +177,11 @@ fn normalize_currency_code(value: Option<String>) -> Result<Option<String>, Stri
         return Ok(None);
     }
     let normalized = value.to_ascii_uppercase();
-    if normalized.len() != 3 || !normalized.chars().all(|character| character.is_ascii_alphabetic()) {
+    if normalized.len() != 3
+        || !normalized
+            .chars()
+            .all(|character| character.is_ascii_alphabetic())
+    {
         return Err("pricing currency_code must be an ISO 4217 code".to_owned());
     }
     Ok(Some(normalized))

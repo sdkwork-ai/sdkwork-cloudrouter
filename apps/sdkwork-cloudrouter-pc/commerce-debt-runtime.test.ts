@@ -271,7 +271,7 @@ test('frontend field contract exposes standalone business centers and excludes r
 
 test('backend SDK exposes system settings resources for admin control-plane pages', () => {
   const systemApiSource = readRepoFile(
-    'sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/generated/server-openapi/src/api/system.ts',
+    'sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/src/index.ts/api/system.ts',
   );
   const siteServiceSource = readPortalFile('./packages/sdkwork-cloudrouter-pc-admin-site/src/SiteSettingsService.ts');
   const authServiceSource = readPortalFile('./packages/sdkwork-cloudrouter-pc-admin-site/src/AuthSettingsService.ts');

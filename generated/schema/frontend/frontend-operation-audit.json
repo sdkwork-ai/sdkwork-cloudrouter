@@ -51,12 +51,18 @@
       "operation": "addModel",
       "operation_scope": null,
       "read_sources": [
-        "ai_pricing_import_snapshot"
+        "ai_model_vendor",
+        "ai_model",
+        "ai_model_capability",
+        "ai_model_pricing"
       ],
       "route": "/admin/model",
       "sdk_operations": [],
       "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": [
+        "ai_model",
+        "ai_model_capability",
+        "ai_model_pricing",
         "ops_audit_log"
       ]
     },
@@ -69,12 +75,13 @@
       "operation": "addVendor",
       "operation_scope": null,
       "read_sources": [
-        "ai_pricing_import_snapshot"
+        "ai_model_vendor"
       ],
       "route": "/admin/model",
       "sdk_operations": [],
       "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": [
+        "ai_model_vendor",
         "ops_audit_log"
       ]
     },
@@ -110,12 +117,15 @@
       "operation": "deleteModel",
       "operation_scope": null,
       "read_sources": [
-        "ai_pricing_import_snapshot"
+        "ai_model"
       ],
       "route": "/admin/model",
       "sdk_operations": [],
       "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": [
+        "ai_model",
+        "ai_model_capability",
+        "ai_model_pricing",
         "ops_audit_log"
       ]
     },
@@ -151,7 +161,7 @@
       "operation": "fetchInitializedCatalog",
       "operation_scope": null,
       "read_sources": [
-        "ai_pricing_import_snapshot"
+        "ai_model_vendor"
       ],
       "route": "/admin/model",
       "sdk_operations": [],
@@ -310,13 +320,13 @@
       "operation": "syncVendorsAndModels",
       "operation_scope": null,
       "read_sources": [
-        "ai_pricing_import_snapshot"
+        "ai_model_catalog_sync_run"
       ],
       "route": "/admin/model",
       "sdk_operations": [],
       "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": [
-        "ai_pricing_import_snapshot",
+        "ai_model_catalog_sync_run",
         "ops_audit_log"
       ]
     },
@@ -349,12 +359,18 @@
       "operation": "updateModel",
       "operation_scope": null,
       "read_sources": [
-        "ai_pricing_import_snapshot"
+        "ai_model_vendor",
+        "ai_model",
+        "ai_model_capability",
+        "ai_model_pricing"
       ],
       "route": "/admin/model",
       "sdk_operations": [],
       "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "write_tables": [
+        "ai_model",
+        "ai_model_capability",
+        "ai_model_pricing",
         "ops_audit_log"
       ]
     },
@@ -4965,16 +4981,8 @@
       "operation_scope": null,
       "read_sources": [
         "pricing_price_book",
-        "pricing_product",
-        "pricing_operation",
-        "pricing_meter",
-        "pricing_product_binding",
         "pricing_rate",
-        "pricing_rate_binding",
-        "pricing_rate_condition",
-        "pricing_rate_tier",
-        "pricing_rate_formula",
-        "pricing_rate_formula_term"
+        "pricing_import_run"
       ],
       "route": "/pricing",
       "sdk_operations": [],

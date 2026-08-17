@@ -2,7 +2,8 @@ use sdkwork_cloudrouter_http::{ensure_row_tenant_matches, record_tenant_isolatio
 
 #[test]
 fn ensure_row_tenant_matches_accepts_matching_scope() {
-    ensure_row_tenant_matches("ai_metering_usage", "test", 100_001, 100_001).expect("matching tenant");
+    ensure_row_tenant_matches("ai_metering_usage", "test", 100_001, 100_001)
+        .expect("matching tenant");
 }
 
 #[test]

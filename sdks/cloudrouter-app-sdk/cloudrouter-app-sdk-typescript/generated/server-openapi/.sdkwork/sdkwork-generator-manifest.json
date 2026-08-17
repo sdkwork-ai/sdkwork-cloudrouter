@@ -320,7 +320,7 @@
     },
     {
       "path": "src/types/official-pricing-rate-condition.ts",
-      "sha256": "1fe987bec543291b831b00a19edef97d76434f01161fa2ed6235fe49197f6d4e"
+      "sha256": "a46e2862d76f21be7026ad57047c96d7bc08f4a11da5a49c9c69e3480642e03e"
     },
     {
       "path": "src/types/official-pricing-rate-tier.ts",
@@ -328,7 +328,7 @@
     },
     {
       "path": "src/types/official-pricing-rate.ts",
-      "sha256": "4e699c288b7cbb4723d102f9d57741e54c37f19a36c31dfed634b496d2abc403"
+      "sha256": "2a7aeee03e6a6457f5d6fea4eb0c2deaa3d9efdb2e2f65d15714494d1e2f51b6"
     },
     {
       "path": "src/types/official-pricing-region-facet.ts",

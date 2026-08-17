@@ -4,18 +4,19 @@ use std::sync::Arc;
 use arc_swap::ArcSwap;
 
 use crate::domain::{
-    has_text, AiModel, BillingMeter, DecimalValue, DomainError, DomainResult, GatewayAccessPolicy,
-    GatewayApiKey, GatewayRiskRule, ModelMappingRule, ModelPrice, ModelUpstreamRoute,
-    ModelVendorDefinition, Money, PriceSide, PricingPlan, QuotaPolicy, ResolveModelMappingContext,
-    RoutingPolicy, RoutingRule, UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot,
-    UpstreamAccountRoute,
+    has_text, AccountRateCard, AiModel, BillingMeter, DecimalValue, DomainError, DomainResult,
+    GatewayAccessPolicy, GatewayApiKey, GatewayRiskRule, ModelMappingRule, ModelPrice,
+    ModelUpstreamRoute, ModelVendorDefinition, Money, PriceSide, PricingPlan, PricingRule,
+    QuotaPolicy, ResolveModelMappingContext, RoutingPolicy, RoutingRule, UpstreamAccountGroup,
+    UpstreamAccountGroupMetricSnapshot, UpstreamAccountRoute,
 };
 use crate::infrastructure::in_memory_pricing_catalog::resolve_model_mapping_from_rules;
 use crate::infrastructure::sql::rows::{
-    AiModelRow, GatewayAccessPolicyRow, GatewayApiKeyRow, GatewayRiskRuleRow, ModelMappingRuleRow,
-    ModelPriceRow, ModelUpstreamRouteRow, ModelVendorRow, PricingPlanRow, QuotaPolicyRow,
-    RoutingPolicyRow, RoutingRuleRow, UpstreamAccountGroupMetricSnapshotRow,
-    UpstreamAccountGroupRow, UpstreamAccountRouteRow, UpstreamSupplierModelAccessRow,
+    AccountRateCardRow, AiModelRow, GatewayAccessPolicyRow, GatewayApiKeyRow, GatewayRiskRuleRow,
+    ModelMappingRuleRow, ModelPriceRow, ModelUpstreamRouteRow, ModelVendorRow, PricingPlanRow,
+    PricingRuleRow, QuotaPolicyRow, RoutingPolicyRow, RoutingRuleRow,
+    UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow, UpstreamAccountRouteRow,
+    UpstreamSupplierModelAccessRow,
 };
 use crate::ports::{
     AccountBaseUrlConfig, AccountGroupModelAccess, AdminLlmProtocolConfig, PricingCatalog,
@@ -32,6 +33,8 @@ pub struct PricingCatalogRows {
     pub routing_rules: Vec<RoutingRuleRow>,
     pub model_mappings: Vec<ModelMappingRuleRow>,
     pub pricing_plans: Vec<PricingPlanRow>,
+    pub pricing_rules: Vec<PricingRuleRow>,
+    pub account_rate_cards: Vec<AccountRateCardRow>,
     pub upstream_account_groups: Vec<UpstreamAccountGroupRow>,
     pub upstream_supplier_model_access: Vec<UpstreamSupplierModelAccessRow>,
     pub api_keys: Vec<GatewayApiKeyRow>,
@@ -55,6 +58,7 @@ pub struct SqlPricingCatalogSnapshotSummary {
     pub routing_rules: usize,
     pub model_mappings: usize,
     pub pricing_plans: usize,
+    pub pricing_rules: usize,
     pub upstream_account_groups: usize,
     pub upstream_suppliers: usize,
     pub api_keys: usize,
@@ -116,6 +120,8 @@ pub struct SqlPricingCatalogSnapshot {
     routing_rules: Vec<RoutingRule>,
     model_mappings: Vec<ModelMappingRule>,
     pricing_plans: Vec<ScopedPricingPlan>,
+    pricing_rules: Vec<PricingRule>,
+    account_rate_cards: Vec<AccountRateCard>,
     upstream_account_groups: Vec<UpstreamAccountGroup>,
     api_keys: Vec<GatewayApiKey>,
     access_policies: Vec<GatewayAccessPolicy>,
@@ -236,6 +242,16 @@ impl SqlPricingCatalogSnapshot {
             routing_rules: map_rows(rows.routing_rules, RoutingRuleRow::try_into_domain)?,
             model_mappings: map_rows(rows.model_mappings, ModelMappingRuleRow::try_into_domain)?,
             pricing_plans,
+            pricing_rules: rows
+                .pricing_rules
+                .into_iter()
+                .map(|row| row.value)
+                .collect(),
+            account_rate_cards: rows
+                .account_rate_cards
+                .into_iter()
+                .map(|row| row.value)
+                .collect(),
             upstream_account_groups: map_rows(
                 rows.upstream_account_groups,
                 UpstreamAccountGroupRow::try_into_domain,
@@ -373,6 +389,7 @@ impl SqlPricingCatalogSnapshot {
             routing_rules: self.routing_rules.len(),
             model_mappings: self.model_mappings.len(),
             pricing_plans: self.pricing_plans.len(),
+            pricing_rules: self.pricing_rules.len(),
             upstream_account_groups: self.upstream_account_groups.len(),
             upstream_suppliers: self.supplier_model_access_by_code.len(),
             api_keys: self.api_keys.len(),
@@ -635,6 +652,30 @@ impl PricingCatalog for RefreshableSqlPricingCatalog {
         self.current_snapshot().find_pricing_plan(plan_code)
     }
 
+    fn list_pricing_rules_for_plan(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+        pricing_plan_id: i64,
+        plan_code: &str,
+    ) -> Vec<PricingRule> {
+        self.current_snapshot().list_pricing_rules_for_plan(
+            tenant_id,
+            organization_id,
+            pricing_plan_id,
+            plan_code,
+        )
+    }
+
+    fn list_account_rate_cards(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+    ) -> Vec<AccountRateCard> {
+        self.current_snapshot()
+            .list_account_rate_cards(tenant_id, organization_id)
+    }
+
     fn find_pricing_plan_for_scope(
         &self,
         tenant_id: i64,
@@ -855,6 +896,40 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
 
     fn find_pricing_plan(&self, plan_code: &str) -> Option<PricingPlan> {
         self.scoped_pricing_plan(0, 0, plan_code)
+    }
+
+    fn list_pricing_rules_for_plan(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+        pricing_plan_id: i64,
+        plan_code: &str,
+    ) -> Vec<PricingRule> {
+        self.pricing_rules
+            .iter()
+            .filter(|rule| {
+                rule.tenant_id == tenant_id
+                    && rule.organization_id == organization_id
+                    && rule.pricing_plan_id == pricing_plan_id
+                    && rule.plan_code == plan_code
+            })
+            .cloned()
+            .collect()
+    }
+
+    fn list_account_rate_cards(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+    ) -> Vec<AccountRateCard> {
+        self.account_rate_cards
+            .iter()
+            .filter(|card| {
+                (card.tenant_id == tenant_id && card.organization_id == organization_id)
+                    || (card.tenant_id == 0 && card.organization_id == 0)
+            })
+            .cloned()
+            .collect()
     }
 
     fn find_pricing_plan_for_scope(

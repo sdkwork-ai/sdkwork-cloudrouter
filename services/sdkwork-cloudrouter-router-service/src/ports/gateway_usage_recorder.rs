@@ -325,6 +325,8 @@ pub struct GatewayUsageRecordCommand {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct GatewayOfficialRateReference {
+    #[serde(default)]
+    pub record_identity: Option<GatewayRatingRecordIdentity>,
     pub price_book_code: String,
     pub rate_hash: String,
     pub product_code: String,
@@ -344,6 +346,66 @@ pub struct GatewayOfficialRateReference {
     pub conditions: Vec<GatewayPricingRateCondition>,
     pub tiers: Vec<GatewayPricingRateTier>,
     pub formula: Option<GatewayPricingFormula>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GatewayRatingRecordIdentity {
+    pub price_book_tenant_id: i64,
+    pub price_book_organization_id: i64,
+    pub price_book_id: i64,
+    pub rate_id: i64,
+    pub account_rate_card_tenant_id: i64,
+    pub account_rate_card_organization_id: i64,
+    pub account_rate_card_id: i64,
+    pub pricing_plan_tenant_id: i64,
+    pub pricing_plan_organization_id: i64,
+    pub pricing_plan_id: i64,
+    pub pricing_rule_tenant_id: i64,
+    pub pricing_rule_organization_id: i64,
+    pub pricing_rule_id: i64,
+}
+
+impl GatewayRatingRecordIdentity {
+    fn validate(&self) -> DomainResult<()> {
+        for (field, value) in [
+            ("price_book_tenant_id", self.price_book_tenant_id),
+            ("price_book_organization_id", self.price_book_organization_id),
+            ("account_rate_card_tenant_id", self.account_rate_card_tenant_id),
+            (
+                "account_rate_card_organization_id",
+                self.account_rate_card_organization_id,
+            ),
+            ("pricing_plan_tenant_id", self.pricing_plan_tenant_id),
+            (
+                "pricing_plan_organization_id",
+                self.pricing_plan_organization_id,
+            ),
+            ("pricing_rule_tenant_id", self.pricing_rule_tenant_id),
+            (
+                "pricing_rule_organization_id",
+                self.pricing_rule_organization_id,
+            ),
+        ] {
+            non_negative_i64(field, value)?;
+        }
+        for (field, value) in [
+            ("price_book_id", self.price_book_id),
+            ("rate_id", self.rate_id),
+            ("account_rate_card_id", self.account_rate_card_id),
+            ("pricing_plan_id", self.pricing_plan_id),
+            ("pricing_rule_id", self.pricing_rule_id),
+        ] {
+            positive_i64(field, value)?;
+        }
+        if self.pricing_rule_tenant_id != self.pricing_plan_tenant_id
+            || self.pricing_rule_organization_id != self.pricing_plan_organization_id
+        {
+            return Err(DomainError::new(
+                "pricing rule identity must share the pricing plan scope",
+            ));
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -749,6 +811,9 @@ impl GatewayUsageRecordCommand {
         )?;
         if let Some(official_rate) = self.official_rate.as_ref() {
             official_rate.validate()?;
+            if let Some(identity) = official_rate.record_identity.as_ref() {
+                identity.validate()?;
+            }
         }
         match (self.decision_status.as_str(), self.billability.as_str()) {
             ("rated", "chargeable") => {
@@ -771,6 +836,16 @@ impl GatewayUsageRecordCommand {
                 {
                     return Err(DomainError::new(
                         "rated gateway usage requires a chargeable official rate",
+                    ));
+                }
+                if self
+                    .official_rate
+                    .as_ref()
+                    .and_then(|rate| rate.record_identity.as_ref())
+                    .is_none()
+                {
+                    return Err(DomainError::new(
+                        "rated gateway usage requires a complete persisted pricing identity",
                     ));
                 }
             }
@@ -1036,6 +1111,7 @@ mod tests {
 
     fn official_rate(calculation_mode: &str, unit_size: &str) -> GatewayOfficialRateReference {
         GatewayOfficialRateReference {
+            record_identity: None,
             price_book_code: "test-official-book".to_owned(),
             rate_hash: "test-rate-hash".to_owned(),
             product_code: "model-inference".to_owned(),

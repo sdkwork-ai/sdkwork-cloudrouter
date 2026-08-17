@@ -43,7 +43,7 @@ const RETIRED_UPSTREAM_TABLES: [&str; 10] = [
 #[test]
 fn snapshot_query_set_is_complete_and_uses_only_postgresql_upstream_authorities() {
     let queries = PricingCatalogSql::snapshot_load_queries();
-    assert_eq!(15, queries.len());
+    assert_eq!(17, queries.len());
 
     let sql = queries.join("\n");
     for table in CANONICAL_UPSTREAM_TABLES {
@@ -56,6 +56,36 @@ fn snapshot_query_set_is_complete_and_uses_only_postgresql_upstream_authorities(
         assert!(
             !sql.contains(table),
             "PostgreSQL catalog snapshot must not use retired table {table}"
+        );
+    }
+}
+
+#[test]
+fn price_snapshot_uses_only_the_consolidated_pricing_tables() {
+    let sql = PricingCatalogSql::load_prices();
+
+    for table in ["pricing_price_book", "pricing_rate"] {
+        assert!(
+            sql.contains(table),
+            "price snapshot must read consolidated pricing table {table}"
+        );
+    }
+    for projection in [
+        "rate.rate_variant",
+        "rate.schedule::text AS schedule_json",
+        "GREATEST(rate.effective_from, book.effective_from)",
+    ] {
+        assert!(sql.contains(projection), "price snapshot must project {projection}");
+    }
+    assert!(!sql.contains("CURRENT_TIMESTAMP"), "price snapshot eligibility must be evaluated against ResourceDefinition.occurred_at");
+    for retired_reference in [
+        "pricing_product_binding",
+        "pricing_rate_binding",
+        "binding.id",
+    ] {
+        assert!(
+            !sql.contains(retired_reference),
+            "price snapshot must not reference retired pricing structure {retired_reference}"
         );
     }
 }

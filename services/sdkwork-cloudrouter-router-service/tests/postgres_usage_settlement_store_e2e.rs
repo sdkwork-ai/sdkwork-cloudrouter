@@ -247,11 +247,13 @@ async fn settlement_marks_shadow_charge_lines_settled_in_the_same_transaction() 
     .await
     .expect("read charge line settlement state");
     assert_eq!(
-        "settled", row.get::<String, _>("charge_status"),
+        "settled",
+        row.get::<String, _>("charge_status"),
         "rated charge line must be settled together with its usage fact"
     );
     assert_eq!(
-        1_i64, row.get::<i64, _>("settlement_id"),
+        1_i64,
+        row.get::<i64, _>("settlement_id"),
         "charge line settlement must reference the settled usage fact"
     );
     assert!(
@@ -269,9 +271,15 @@ async fn settlement_terminal_failure_marks_shadow_charge_lines_failed() {
     };
     // An unparseable amount is a terminal failure that must mirror onto the
     // shadow charge line so the new ledger never shows it as pending forever.
-    insert_usage_fact(&ctx.pool, 1, USER_ID, "settle-e2e-charge-bad", "not-a-number")
-        .await
-        .expect("insert malformed pending usage fact");
+    insert_usage_fact(
+        &ctx.pool,
+        1,
+        USER_ID,
+        "settle-e2e-charge-bad",
+        "not-a-number",
+    )
+    .await
+    .expect("insert malformed pending usage fact");
     insert_billing_ledger_chain(&ctx.pool, "settle-e2e-charge-bad")
         .await
         .expect("insert shadow measurement, decision, and charge line");
@@ -288,14 +296,13 @@ async fn settlement_terminal_failure_marks_shadow_charge_lines_failed() {
     assert_eq!(0, outcome.settled_count);
     assert_eq!(1, outcome.failed_count);
 
-    let row = sqlx::query(
-        "SELECT charge_status FROM cloudrouter_charge_line WHERE id = 1",
-    )
-    .fetch_one(&ctx.pool)
-    .await
-    .expect("read charge line settlement state");
+    let row = sqlx::query("SELECT charge_status FROM cloudrouter_charge_line WHERE id = 1")
+        .fetch_one(&ctx.pool)
+        .await
+        .expect("read charge line settlement state");
     assert_eq!(
-        "failed", row.get::<String, _>("charge_status"),
+        "failed",
+        row.get::<String, _>("charge_status"),
         "terminally failed usage facts must mark the shadow charge line failed"
     );
 
@@ -384,40 +391,6 @@ async fn insert_billing_ledger_chain(pool: &PgPool, request_id: &str) -> Result<
     // Global (tenant 0) pricing identities referenced by the rated decision.
     sqlx::query(
         r#"
-        INSERT INTO pricing_product
-            (id, uuid, tenant_id, organization_id, namespace_code, product_code,
-             product_kind, owner_system, display_name)
-        VALUES (1, 'prod-uuid-1', 0, 0, 'models', 'models.chat', 'chat', 'sdkwork-models', 'Chat')
-        "#,
-    )
-    .execute(&mut *pool.acquire().await?)
-    .await?;
-    sqlx::query(
-        r#"
-        INSERT INTO pricing_operation
-            (id, uuid, tenant_id, organization_id, namespace_code, operation_code,
-             operation_kind, charge_timing_default, async_completion_policy,
-             success_status_policy, display_name)
-        VALUES (1, 'op-uuid-1', 0, 0, 'models', 'inference.generate', 'inference',
-                'usage_reported', 'noop', 'success', 'Generate')
-        "#,
-    )
-    .execute(&mut *pool.acquire().await?)
-    .await?;
-    sqlx::query(
-        r#"
-        INSERT INTO pricing_meter
-            (id, uuid, tenant_id, organization_id, namespace_code, meter_code,
-             quantity_kind, unit_code, aggregation_mode, default_unit_size,
-             quantity_precision, display_name)
-        VALUES (1, 'meter-uuid-1', 0, 0, 'models', 'tokens', 'count', 'token',
-                'sum', 1, 0, 'Tokens')
-        "#,
-    )
-    .execute(&mut *pool.acquire().await?)
-    .await?;
-    sqlx::query(
-        r#"
         INSERT INTO pricing_price_book
             (id, uuid, tenant_id, organization_id, namespace_code, price_book_code,
              price_book_version, price_side, source_system, vendor_code, region_code,
@@ -433,14 +406,20 @@ async fn insert_billing_ledger_chain(pool: &PgPool, request_id: &str) -> Result<
     sqlx::query(
         r#"
         INSERT INTO pricing_rate
-            (id, uuid, tenant_id, organization_id, price_book_id, product_id,
-             operation_id, meter_id, rate_code, rate_hash, billability, charge_timing,
+            (id, uuid, tenant_id, organization_id, price_book_id, rate_code, rate_hash,
+             product_code, product_kind, product_display_name, operation_code,
+             operation_kind, operation_display_name, meter_code, meter_display_name,
+             quantity_kind, unit_code, vendor_code, provider_code, region_code,
+             resource_type, resource_code, catalog_key, billability, charge_timing,
              calculation_mode, quantity_aggregation, unit_size, unit_price,
-             minimum_quantity, currency_code, priority, effective_from,
+             minimum_quantity, currency_code, conditions, tiers, priority, effective_from,
              source_url, source_observed_at)
-        VALUES (1, 'rate-uuid-1', 0, 0, 1, 1, 1, 1, 'rate-1', 'rate-hash-1',
-                'chargeable', 'usage_reported', 'per_unit', 'sum', 1, 10,
-                0, 'USD', 1, '2026-01-01T00:00:00Z', 'https://example.test/pricing',
+        VALUES (1, 'rate-uuid-1', 0, 0, 1, 'rate-1', 'rate-hash-1', 'models.chat',
+                'chat', 'Chat', 'inference.generate', 'inference', 'Generate', 'tokens',
+                'Tokens', 'count', 'token', 'openai', 'openai', 'global', 'model',
+                'gpt-4o', 'openai/gpt-4o', 'chargeable', 'usage_reported', 'per_unit',
+                'sum', 1, 10, 0, 'USD', '[]'::jsonb, '[]'::jsonb, 1,
+                '2026-01-01T00:00:00Z', 'https://example.test/pricing',
                 '2026-01-01T00:00:00Z')
         "#,
     )

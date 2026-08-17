@@ -19,8 +19,8 @@ use serde::{Deserialize, Serialize};
 use super::shared::{
     bounded_list_response, collection_item_response, decode_json, decode_query, domain_error,
     idempotency_uuid, item_response, list_query, list_response, no_content_response, not_found,
-    optional_https_base_url, optional_text, parse_id, parse_if_match, parse_protocol_config, problem,
-    problem_keyed, requested_at, required_text, subject, ListQuery, ProtocolConfigInput,
+    optional_https_base_url, optional_text, parse_id, parse_if_match, parse_protocol_config,
+    problem, problem_keyed, requested_at, required_text, subject, ListQuery, ProtocolConfigInput,
     RequestResult, UpstreamState, MAX_CODE_LENGTH, MAX_NESTED_ITEMS, MAX_PROTOCOLS, MAX_URL_LENGTH,
 };
 use super::{model_list, ModelListEntryInput, ModelListEntryResponse};
@@ -824,7 +824,9 @@ fn supplier_type(value: String) -> RequestResult<String> {
     Ok(value)
 }
 
-fn protocol_configs(inputs: Vec<ProtocolConfigInput>) -> RequestResult<Vec<AdminLlmProtocolConfig>> {
+fn protocol_configs(
+    inputs: Vec<ProtocolConfigInput>,
+) -> RequestResult<Vec<AdminLlmProtocolConfig>> {
     if inputs.is_empty() {
         return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
@@ -914,7 +916,8 @@ fn ensure_count(count: usize, field: &str) -> RequestResult<()> {
     Ok(())
 }
 
-/** 官方 vendor 多选：必填、去重、限长（与 OpenAPI vendorCodes minItems/maxItems 一致） */fn endpoint_vendor_codes(value: Option<Vec<String>>) -> RequestResult<Vec<String>> {
+/** 官方 vendor 多选：必填、去重、限长（与 OpenAPI vendorCodes minItems/maxItems 一致） */
+fn endpoint_vendor_codes(value: Option<Vec<String>>) -> RequestResult<Vec<String>> {
     let Some(items) = value else {
         return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,

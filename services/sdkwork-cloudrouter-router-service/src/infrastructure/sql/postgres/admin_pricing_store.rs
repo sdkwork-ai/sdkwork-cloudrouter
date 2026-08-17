@@ -1,16 +1,16 @@
+use serde_json::Value;
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
-    AdminPricingCommandFuture, AdminPricingListPage, AdminPricingPlanItem,
-    AdminPricingRuleItem, AdminPricingStatus, AdminPricingStore, AdminPricingSubject,
-    AdminRateCardItem, CreateAdminPricingPlanCommand,
-    CreateAdminPricingRuleCommand, CreateAdminRateCardCommand, DeleteAdminPricingRuleCommand,
-    DeleteAdminRateCardCommand, ListAdminPricingPlansQuery, ListAdminPricingRulesQuery,
-    ListAdminRateCardsQuery, LoadAdminPricingPlanQuery, UpdateAdminPricingPlanCommand,
-    UpdateAdminPricingRuleCommand, UpdateAdminRateCardCommand,
+    AdminPricingCommandFuture, AdminPricingListPage, AdminPricingPlanItem, AdminPricingRuleItem,
+    AdminPricingStatus, AdminPricingStore, AdminPricingSubject, AdminRateCardItem,
+    CreateAdminPricingPlanCommand, CreateAdminPricingRuleCommand, CreateAdminRateCardCommand,
+    DeleteAdminPricingRuleCommand, DeleteAdminRateCardCommand, ListAdminPricingPlansQuery,
+    ListAdminPricingRulesQuery, ListAdminRateCardsQuery, LoadAdminPricingPlanQuery,
+    UpdateAdminPricingPlanCommand, UpdateAdminPricingRuleCommand, UpdateAdminRateCardCommand,
 };
 
 const TARGET_TYPE_PRICING_PLAN: i32 = 79;
@@ -279,7 +279,10 @@ async fn create_pricing_plan(
     pool: &PgPool,
     command: CreateAdminPricingPlanCommand,
 ) -> DomainResult<AdminPricingPlanItem> {
-    let mut tx = pool.begin().await.map_err(|error| store_error("failed to begin pricing plan transaction", error))?;
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|error| store_error("failed to begin pricing plan transaction", error))?;
     let plan_id = insert_pricing_plan_row(&mut tx, &command).await?;
     insert_audit_log_for_target_uuid(
         &mut tx,
@@ -299,7 +302,9 @@ async fn create_pricing_plan(
     )
     .await?;
     let item = load_pricing_plan_in_transaction(&mut tx, plan_id, command.subject).await?;
-    tx.commit().await.map_err(|error| store_error("failed to commit pricing plan create", error))?;
+    tx.commit()
+        .await
+        .map_err(|error| store_error("failed to commit pricing plan create", error))?;
     item.ok_or_else(|| DomainError::new("pricing plan was not found after create"))
 }
 
@@ -349,7 +354,10 @@ async fn update_pricing_plan(
     command: UpdateAdminPricingPlanCommand,
 ) -> DomainResult<Option<AdminPricingPlanItem>> {
     let plan_id = parse_pricing_id(&command.plan_id, "plan id")?;
-    let mut tx = pool.begin().await.map_err(|error| store_error("failed to begin pricing plan transaction", error))?;
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|error| store_error("failed to begin pricing plan transaction", error))?;
     let updated = sqlx::query(
         r#"
         UPDATE cloudrouter_pricing_plan
@@ -385,7 +393,9 @@ async fn update_pricing_plan(
     .await
     .map_err(|error| store_error("failed to update pricing plan", error))?;
     if updated.rows_affected() == 0 {
-        tx.commit().await.map_err(|error| store_error("failed to commit pricing plan update", error))?;
+        tx.commit()
+            .await
+            .map_err(|error| store_error("failed to commit pricing plan update", error))?;
         return Ok(None);
     }
     insert_audit_log_for_target_uuid(
@@ -406,7 +416,9 @@ async fn update_pricing_plan(
     )
     .await?;
     let item = load_pricing_plan_in_transaction(&mut tx, plan_id, command.subject).await?;
-    tx.commit().await.map_err(|error| store_error("failed to commit pricing plan update", error))?;
+    tx.commit()
+        .await
+        .map_err(|error| store_error("failed to commit pricing plan update", error))?;
     Ok(item)
 }
 
@@ -532,7 +544,10 @@ async fn create_rate_card(
     command: CreateAdminRateCardCommand,
 ) -> DomainResult<AdminRateCardItem> {
     let pricing_plan_id = parse_pricing_id(&command.pricing_plan_id, "pricing plan id")?;
-    let mut tx = pool.begin().await.map_err(|error| store_error("failed to begin rate card transaction", error))?;
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|error| store_error("failed to begin rate card transaction", error))?;
     require_plan_exists(&mut tx, pricing_plan_id, command.subject).await?;
     let rate_card_id = insert_rate_card_row(&mut tx, &command, pricing_plan_id).await?;
     insert_audit_log_for_target_uuid(
@@ -553,7 +568,9 @@ async fn create_rate_card(
     )
     .await?;
     let item = load_rate_card_in_transaction(&mut tx, rate_card_id, command.subject).await?;
-    tx.commit().await.map_err(|error| store_error("failed to commit rate card create", error))?;
+    tx.commit()
+        .await
+        .map_err(|error| store_error("failed to commit rate card create", error))?;
     item.ok_or_else(|| DomainError::new("rate card was not found after create"))
 }
 
@@ -634,7 +651,10 @@ async fn update_rate_card(
 ) -> DomainResult<Option<AdminRateCardItem>> {
     let rate_card_id = parse_pricing_id(&command.rate_card_id, "rate card id")?;
     let pricing_plan_id = parse_pricing_id(&command.pricing_plan_id, "pricing plan id")?;
-    let mut tx = pool.begin().await.map_err(|error| store_error("failed to begin rate card transaction", error))?;
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|error| store_error("failed to begin rate card transaction", error))?;
     require_plan_exists(&mut tx, pricing_plan_id, command.subject).await?;
     let updated = sqlx::query(
         r#"
@@ -675,7 +695,9 @@ async fn update_rate_card(
     .await
     .map_err(|error| store_error("failed to update rate card", error))?;
     if updated.rows_affected() == 0 {
-        tx.commit().await.map_err(|error| store_error("failed to commit rate card update", error))?;
+        tx.commit()
+            .await
+            .map_err(|error| store_error("failed to commit rate card update", error))?;
         return Ok(None);
     }
     insert_audit_log_for_target_uuid(
@@ -696,7 +718,9 @@ async fn update_rate_card(
     )
     .await?;
     let item = load_rate_card_in_transaction(&mut tx, rate_card_id, command.subject).await?;
-    tx.commit().await.map_err(|error| store_error("failed to commit rate card update", error))?;
+    tx.commit()
+        .await
+        .map_err(|error| store_error("failed to commit rate card update", error))?;
     Ok(item)
 }
 
@@ -747,7 +771,10 @@ async fn delete_rate_card(
     command: DeleteAdminRateCardCommand,
 ) -> DomainResult<bool> {
     let rate_card_id = parse_pricing_id(&command.rate_card_id, "rate card id")?;
-    let mut tx = pool.begin().await.map_err(|error| store_error("failed to begin rate card transaction", error))?;
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|error| store_error("failed to begin rate card transaction", error))?;
     let result = sqlx::query(
         r#"
         UPDATE cloudrouter_account_rate_card
@@ -770,7 +797,9 @@ async fn delete_rate_card(
     .await
     .map_err(|error| store_error("failed to delete rate card", error))?;
     if result.rows_affected() == 0 {
-        tx.commit().await.map_err(|error| store_error("failed to commit rate card delete", error))?;
+        tx.commit()
+            .await
+            .map_err(|error| store_error("failed to commit rate card delete", error))?;
         return Ok(false);
     }
     insert_audit_log_for_target_uuid(
@@ -786,7 +815,9 @@ async fn delete_rate_card(
         serde_json::json!({ "action": "delete" }),
     )
     .await?;
-    tx.commit().await.map_err(|error| store_error("failed to commit rate card delete", error))?;
+    tx.commit()
+        .await
+        .map_err(|error| store_error("failed to commit rate card delete", error))?;
     Ok(true)
 }
 
@@ -811,6 +842,8 @@ async fn list_pricing_rules(
             COALESCE(pricing_rule.multiplier, 1)::text AS multiplier,
             COALESCE(pricing_rule.markup_amount, 0)::text AS markup_amount,
             pricing_rule.unit_price_override::text AS unit_price_override,
+            pricing_rule.conditions::text AS conditions_json,
+            pricing_rule.schedule::text AS schedule_json,
             pricing_rule.priority,
             pricing_rule.status,
             pricing_rule.effective_from::text AS effective_from,
@@ -851,7 +884,8 @@ async fn list_pricing_rules(
             .bind(query.subject.tenant_id)
             .bind(query.subject.organization_id);
         if let Some(pricing_plan_id) = query.pricing_plan_id.as_deref() {
-            query_builder = query_builder.bind(parse_pricing_id(pricing_plan_id, "pricing plan id")?);
+            query_builder =
+                query_builder.bind(parse_pricing_id(pricing_plan_id, "pricing plan id")?);
         }
         if let Some(status) = query.status {
             query_builder = query_builder.bind(status.db_value());
@@ -910,7 +944,10 @@ async fn create_pricing_rule(
     command: CreateAdminPricingRuleCommand,
 ) -> DomainResult<AdminPricingRuleItem> {
     let pricing_plan_id = parse_pricing_id(&command.pricing_plan_id, "pricing plan id")?;
-    let mut tx = pool.begin().await.map_err(|error| store_error("failed to begin pricing rule transaction", error))?;
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|error| store_error("failed to begin pricing rule transaction", error))?;
     require_plan_exists(&mut tx, pricing_plan_id, command.subject).await?;
     let rule_id = insert_pricing_rule_row(&mut tx, &command, pricing_plan_id).await?;
     insert_audit_log_for_target_uuid(
@@ -931,7 +968,9 @@ async fn create_pricing_rule(
     )
     .await?;
     let item = load_pricing_rule_in_transaction(&mut tx, rule_id, command.subject).await?;
-    tx.commit().await.map_err(|error| store_error("failed to commit pricing rule create", error))?;
+    tx.commit()
+        .await
+        .map_err(|error| store_error("failed to commit pricing rule create", error))?;
     item.ok_or_else(|| DomainError::new("pricing rule was not found after create"))
 }
 
@@ -947,13 +986,13 @@ async fn insert_pricing_rule_row(
             (id, uuid, tenant_id, organization_id, data_scope, status, metadata,
              pricing_plan_id, rule_code, product_code, operation_code, meter_code,
              provider_code, region_code, catalog_key, formula_mode, multiplier,
-             markup_amount, unit_price_override, priority, effective_from,
+             markup_amount, unit_price_override, conditions, schedule, priority, effective_from,
              effective_to, created_at, updated_at)
         VALUES
             ($1, $2, $3, $4, 0, $5, $6::jsonb,
              $7, $8, $9, $10, $11, $12, $13, $14, $15, $16::numeric,
-             $17::numeric, $18::numeric, $19, $20::timestamptz,
-             $21::timestamptz, $22, $22)
+             $17::numeric, $18::numeric, $19::jsonb, $20::jsonb, $21,
+             $22::timestamptz, $23::timestamptz, $24, $24)
         "#,
     )
     .bind(rule_id)
@@ -974,6 +1013,8 @@ async fn insert_pricing_rule_row(
     .bind(&command.multiplier)
     .bind(&command.markup_amount)
     .bind(command.unit_price_override.as_deref())
+    .bind(command.conditions.to_string())
+    .bind(command.schedule.as_ref().map(Value::to_string))
     .bind(command.priority)
     .bind(&command.effective_from)
     .bind(command.effective_to.as_deref())
@@ -990,7 +1031,10 @@ async fn update_pricing_rule(
 ) -> DomainResult<Option<AdminPricingRuleItem>> {
     let rule_id = parse_pricing_id(&command.rule_id, "rule id")?;
     let pricing_plan_id = parse_pricing_id(&command.pricing_plan_id, "pricing plan id")?;
-    let mut tx = pool.begin().await.map_err(|error| store_error("failed to begin pricing rule transaction", error))?;
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|error| store_error("failed to begin pricing rule transaction", error))?;
     require_plan_exists(&mut tx, pricing_plan_id, command.subject).await?;
     let updated = sqlx::query(
         r#"
@@ -1005,16 +1049,18 @@ async fn update_pricing_rule(
             multiplier = $8::numeric,
             markup_amount = $9::numeric,
             unit_price_override = $10::numeric,
-            priority = $11,
-            effective_from = $12::timestamptz,
-            effective_to = $13::timestamptz,
-            status = $14,
-            updated_at = $15,
+            conditions = $11::jsonb,
+            schedule = $12::jsonb,
+            priority = $13,
+            effective_from = $14::timestamptz,
+            effective_to = $15::timestamptz,
+            status = $16,
+            updated_at = $17,
             version = cloudrouter_pricing_rule.version + 1
-        WHERE id = $16
-          AND tenant_id = $17
-          AND organization_id = $18
-          AND pricing_plan_id = $19
+        WHERE id = $18
+          AND tenant_id = $19
+          AND organization_id = $20
+          AND pricing_plan_id = $21
           AND deleted_at IS NULL
         "#,
     )
@@ -1028,6 +1074,8 @@ async fn update_pricing_rule(
     .bind(&command.multiplier)
     .bind(&command.markup_amount)
     .bind(command.unit_price_override.as_deref())
+    .bind(command.conditions.to_string())
+    .bind(command.schedule.as_ref().map(Value::to_string))
     .bind(command.priority)
     .bind(&command.effective_from)
     .bind(command.effective_to.as_deref())
@@ -1041,7 +1089,9 @@ async fn update_pricing_rule(
     .await
     .map_err(|error| store_error("failed to update pricing rule", error))?;
     if updated.rows_affected() == 0 {
-        tx.commit().await.map_err(|error| store_error("failed to commit pricing rule update", error))?;
+        tx.commit()
+            .await
+            .map_err(|error| store_error("failed to commit pricing rule update", error))?;
         return Ok(None);
     }
     insert_audit_log_for_target_uuid(
@@ -1061,7 +1111,9 @@ async fn update_pricing_rule(
     )
     .await?;
     let item = load_pricing_rule_in_transaction(&mut tx, rule_id, command.subject).await?;
-    tx.commit().await.map_err(|error| store_error("failed to commit pricing rule update", error))?;
+    tx.commit()
+        .await
+        .map_err(|error| store_error("failed to commit pricing rule update", error))?;
     Ok(item)
 }
 
@@ -1087,6 +1139,8 @@ async fn load_pricing_rule_in_transaction(
             COALESCE(pricing_rule.multiplier, 1)::text AS multiplier,
             COALESCE(pricing_rule.markup_amount, 0)::text AS markup_amount,
             pricing_rule.unit_price_override::text AS unit_price_override,
+            pricing_rule.conditions::text AS conditions_json,
+            pricing_rule.schedule::text AS schedule_json,
             pricing_rule.priority,
             pricing_rule.status,
             pricing_rule.effective_from::text AS effective_from,
@@ -1119,7 +1173,10 @@ async fn delete_pricing_rule(
     command: DeleteAdminPricingRuleCommand,
 ) -> DomainResult<bool> {
     let rule_id = parse_pricing_id(&command.rule_id, "rule id")?;
-    let mut tx = pool.begin().await.map_err(|error| store_error("failed to begin pricing rule transaction", error))?;
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|error| store_error("failed to begin pricing rule transaction", error))?;
     let result = sqlx::query(
         r#"
         UPDATE cloudrouter_pricing_rule
@@ -1142,7 +1199,9 @@ async fn delete_pricing_rule(
     .await
     .map_err(|error| store_error("failed to delete pricing rule", error))?;
     if result.rows_affected() == 0 {
-        tx.commit().await.map_err(|error| store_error("failed to commit pricing rule delete", error))?;
+        tx.commit()
+            .await
+            .map_err(|error| store_error("failed to commit pricing rule delete", error))?;
         return Ok(false);
     }
     insert_audit_log_for_target_uuid(
@@ -1158,7 +1217,9 @@ async fn delete_pricing_rule(
         serde_json::json!({ "action": "delete" }),
     )
     .await?;
-    tx.commit().await.map_err(|error| store_error("failed to commit pricing rule delete", error))?;
+    tx.commit()
+        .await
+        .map_err(|error| store_error("failed to commit pricing rule delete", error))?;
     Ok(true)
 }
 
@@ -1174,7 +1235,10 @@ fn pricing_plan_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<AdminPrici
         minimum_charge_amount: string_cell(row, "minimum_charge_amount"),
         effective_from: optional_string_cell(row, "effective_from"),
         effective_to: optional_string_cell(row, "effective_to"),
-        status: AdminPricingStatus::from_db(i32::try_from(integer_cell(row, "status")).unwrap_or(0)).to_owned(),
+        status: AdminPricingStatus::from_db(
+            i32::try_from(integer_cell(row, "status")).unwrap_or(0),
+        )
+        .to_owned(),
         created_at: optional_string_cell(row, "created_at"),
         updated_at: optional_string_cell(row, "updated_at"),
         version: integer_cell(row, "version"),
@@ -1195,7 +1259,10 @@ fn rate_card_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<AdminRateCard
         priority: integer_cell(row, "priority"),
         effective_from: optional_string_cell(row, "effective_from"),
         effective_to: optional_string_cell(row, "effective_to"),
-        status: AdminPricingStatus::from_db(i32::try_from(integer_cell(row, "status")).unwrap_or(0)).to_owned(),
+        status: AdminPricingStatus::from_db(
+            i32::try_from(integer_cell(row, "status")).unwrap_or(0),
+        )
+        .to_owned(),
         created_at: optional_string_cell(row, "created_at"),
         updated_at: optional_string_cell(row, "updated_at"),
     })
@@ -1218,10 +1285,20 @@ fn pricing_rule_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<AdminPrici
         multiplier: string_cell(row, "multiplier"),
         markup_amount: string_cell(row, "markup_amount"),
         unit_price_override: unit_price_override.filter(|value| !value.is_empty()),
+        conditions: serde_json::from_str(&string_cell(row, "conditions_json")).map_err(
+            |error| DomainError::new(format!("invalid pricing rule conditions: {error}")),
+        )?,
+        schedule: optional_string_cell(row, "schedule_json")
+            .map(|value| serde_json::from_str(&value))
+            .transpose()
+            .map_err(|error| DomainError::new(format!("invalid pricing rule schedule: {error}")))?,
         priority: integer_cell(row, "priority"),
         effective_from: optional_string_cell(row, "effective_from"),
         effective_to: optional_string_cell(row, "effective_to"),
-        status: AdminPricingStatus::from_db(i32::try_from(integer_cell(row, "status")).unwrap_or(0)).to_owned(),
+        status: AdminPricingStatus::from_db(
+            i32::try_from(integer_cell(row, "status")).unwrap_or(0),
+        )
+        .to_owned(),
         created_at: optional_string_cell(row, "created_at"),
         updated_at: optional_string_cell(row, "updated_at"),
     })

@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -7,6 +8,7 @@ use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, patch};
 use axum::{Json, Router};
+use chrono::{NaiveDate, NaiveTime};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -18,8 +20,8 @@ use crate::api::response::{
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::ports::{
-    AdminPricingBasePriceSide, AdminPricingFormulaMode, AdminPricingListPage, AdminPricingRoundingMode,
-    AdminPricingStatus, AdminPricingStore, AdminRateCardSubjectType,
+    AdminPricingBasePriceSide, AdminPricingFormulaMode, AdminPricingListPage,
+    AdminPricingRoundingMode, AdminPricingStatus, AdminPricingStore, AdminRateCardSubjectType,
     CreateAdminPricingPlanCommand, CreateAdminPricingRuleCommand, CreateAdminRateCardCommand,
     DeleteAdminPricingRuleCommand, DeleteAdminRateCardCommand, ListAdminPricingPlansQuery,
     ListAdminPricingRulesQuery, ListAdminRateCardsQuery, LoadAdminPricingPlanQuery,
@@ -101,6 +103,8 @@ struct PricingRuleMutationRequest {
     multiplier: Option<Value>,
     markup_amount: Option<Value>,
     unit_price_override: Option<Value>,
+    conditions: Option<Value>,
+    schedule: Option<Value>,
     priority: Option<Value>,
     effective_from: Option<String>,
     effective_to: Option<String>,
@@ -146,6 +150,8 @@ struct NormalizedPricingRuleMutation {
     multiplier: String,
     markup_amount: String,
     unit_price_override: Option<String>,
+    conditions: Value,
+    schedule: Option<Value>,
     priority: i64,
     effective_from: Option<String>,
     effective_to: Option<String>,
@@ -213,11 +219,11 @@ async fn fetch_pricing_plans(
         Ok(value) => value,
         Err(message) => return bad_request(message),
     };
-    let base_price_side = match normalize_optional_base_price_side(params.base_price_side.as_deref())
-    {
-        Ok(value) => value,
-        Err(message) => return bad_request(message),
-    };
+    let base_price_side =
+        match normalize_optional_base_price_side(params.base_price_side.as_deref()) {
+            Ok(value) => value,
+            Err(message) => return bad_request(message),
+        };
     let status = match normalize_optional_pricing_status(params.status.as_deref()) {
         Ok(value) => value,
         Err(message) => return bad_request(message),
@@ -255,9 +261,7 @@ async fn create_pricing_plan(
         Ok(mutation) => mutation,
         Err(error) => return command_build_error_response(error),
     };
-    let plan_code = mutation
-        .plan_code
-        .unwrap_or_default();
+    let plan_code = mutation.plan_code.unwrap_or_default();
     let command = CreateAdminPricingPlanCommand {
         subject,
         plan_uuid: match generate_entity_uuid(&state) {
@@ -274,7 +278,9 @@ async fn create_pricing_plan(
         currency_code: mutation.currency_code,
         rounding_mode: mutation.rounding_mode,
         minimum_charge_amount: mutation.minimum_charge_amount,
-        effective_from: mutation.effective_from.unwrap_or_else(current_timestamp_string),
+        effective_from: mutation
+            .effective_from
+            .unwrap_or_else(current_timestamp_string),
         effective_to: mutation.effective_to,
         status: mutation.status,
         request_id: match generate_server_request_id() {
@@ -348,7 +354,9 @@ async fn update_pricing_plan(
         currency_code: mutation.currency_code,
         rounding_mode: mutation.rounding_mode,
         minimum_charge_amount: mutation.minimum_charge_amount,
-        effective_from: mutation.effective_from.unwrap_or_else(current_timestamp_string),
+        effective_from: mutation
+            .effective_from
+            .unwrap_or_else(current_timestamp_string),
         effective_to: mutation.effective_to,
         status: mutation.status,
         request_id: match generate_server_request_id() {
@@ -376,11 +384,11 @@ async fn fetch_rate_cards(
         Ok(parsed) => parsed,
         Err(error) => return error.into_response(),
     };
-    let subject_type = match normalize_optional_rate_card_subject_type(params.subject_type.as_deref())
-    {
-        Ok(value) => value,
-        Err(message) => return bad_request(message),
-    };
+    let subject_type =
+        match normalize_optional_rate_card_subject_type(params.subject_type.as_deref()) {
+            Ok(value) => value,
+            Err(message) => return bad_request(message),
+        };
     let pricing_plan_id = match normalize_optional_pricing_id(params.pricing_plan_id.as_deref()) {
         Ok(value) => value,
         Err(message) => return bad_request(message),
@@ -437,7 +445,9 @@ async fn create_rate_card(
         subject_code: mutation.subject_code,
         pricing_plan_id: mutation.pricing_plan_id,
         priority: mutation.priority,
-        effective_from: mutation.effective_from.unwrap_or_else(current_timestamp_string),
+        effective_from: mutation
+            .effective_from
+            .unwrap_or_else(current_timestamp_string),
         effective_to: mutation.effective_to,
         status: mutation.status,
         request_id: match generate_server_request_id() {
@@ -490,7 +500,9 @@ async fn update_rate_card(
         subject_code: mutation.subject_code,
         pricing_plan_id: mutation.pricing_plan_id,
         priority: mutation.priority,
-        effective_from: mutation.effective_from.unwrap_or_else(current_timestamp_string),
+        effective_from: mutation
+            .effective_from
+            .unwrap_or_else(current_timestamp_string),
         effective_to: mutation.effective_to,
         status: mutation.status,
         request_id: match generate_server_request_id() {
@@ -617,8 +629,12 @@ async fn create_pricing_rule(
         multiplier: mutation.multiplier,
         markup_amount: mutation.markup_amount,
         unit_price_override: mutation.unit_price_override,
+        conditions: mutation.conditions,
+        schedule: mutation.schedule,
         priority: mutation.priority,
-        effective_from: mutation.effective_from.unwrap_or_else(current_timestamp_string),
+        effective_from: mutation
+            .effective_from
+            .unwrap_or_else(current_timestamp_string),
         effective_to: mutation.effective_to,
         status: mutation.status,
         request_id: match generate_server_request_id() {
@@ -677,8 +693,12 @@ async fn update_pricing_rule(
         multiplier: mutation.multiplier,
         markup_amount: mutation.markup_amount,
         unit_price_override: mutation.unit_price_override,
+        conditions: mutation.conditions,
+        schedule: mutation.schedule,
         priority: mutation.priority,
-        effective_from: mutation.effective_from.unwrap_or_else(current_timestamp_string),
+        effective_from: mutation
+            .effective_from
+            .unwrap_or_else(current_timestamp_string),
         effective_to: mutation.effective_to,
         status: mutation.status,
         request_id: match generate_server_request_id() {
@@ -731,8 +751,7 @@ fn parse_pricing_list_query(
     page: Option<i64>,
     page_size: Option<i64>,
 ) -> Result<ParsedOffsetListQuery, crate::api::response::ApiResponseError> {
-    parse_offset_list_query(page, page_size)
-        .map_err(|message| bad_request(message).into())
+    parse_offset_list_query(page, page_size).map_err(|message| bad_request(message).into())
 }
 
 fn pricing_list_response<T>(page: AdminPricingListPage<T>) -> Response
@@ -779,7 +798,10 @@ fn normalize_pricing_plan_mutation(
             request.minimum_charge_amount.as_ref(),
             "minimumChargeAmount",
         )?,
-        effective_from: normalize_optional_datetime(request.effective_from.as_deref(), "effectiveFrom")?,
+        effective_from: normalize_optional_datetime(
+            request.effective_from.as_deref(),
+            "effectiveFrom",
+        )?,
         effective_to: normalize_optional_datetime(request.effective_to.as_deref(), "effectiveTo")?,
         status: normalize_pricing_status(request.status.as_deref())?,
     })
@@ -789,7 +811,8 @@ fn normalize_rate_card_mutation(
     request: RateCardMutationRequest,
 ) -> Result<NormalizedRateCardMutation, AdminPricingCommandBuildError> {
     let subject_id = normalize_optional_pricing_id(request.subject_id.as_deref())?;
-    let subject_code = normalize_optional_text(request.subject_code.as_deref(), "subjectCode", MAX_TEXT_LEN)?;
+    let subject_code =
+        normalize_optional_text(request.subject_code.as_deref(), "subjectCode", MAX_TEXT_LEN)?;
     match (subject_id.is_some(), subject_code.is_some()) {
         (false, false) => {
             return Err(AdminPricingCommandBuildError::BadRequest(
@@ -809,9 +832,15 @@ fn normalize_rate_card_mutation(
         subject_type: normalize_rate_card_subject_type(request.subject_type.as_deref())?,
         subject_id,
         subject_code,
-        pricing_plan_id: normalize_required_pricing_id(request.pricing_plan_id.as_deref(), "pricingPlanId")?,
+        pricing_plan_id: normalize_required_pricing_id(
+            request.pricing_plan_id.as_deref(),
+            "pricingPlanId",
+        )?,
         priority,
-        effective_from: normalize_optional_datetime(request.effective_from.as_deref(), "effectiveFrom")?,
+        effective_from: normalize_optional_datetime(
+            request.effective_from.as_deref(),
+            "effectiveFrom",
+        )?,
         effective_to: normalize_optional_datetime(request.effective_to.as_deref(), "effectiveTo")?,
         status: normalize_pricing_status(request.status.as_deref())?,
     })
@@ -869,20 +898,44 @@ fn normalize_pricing_rule_mutation(
     };
     Ok(NormalizedPricingRuleMutation {
         rule_code,
-        pricing_plan_id: normalize_required_pricing_id(request.pricing_plan_id.as_deref(), "pricingPlanId")?,
-        product_code: normalize_optional_text(request.product_code.as_deref(), "productCode", MAX_TEXT_LEN)?,
-        operation_code: normalize_optional_text(request.operation_code.as_deref(), "operationCode", MAX_TEXT_LEN)?,
-        meter_code: normalize_optional_text(request.meter_code.as_deref(), "meterCode", MAX_CODE_LEN)?,
-        provider_code: normalize_optional_text(request.provider_code.as_deref(), "providerCode", 64)?,
+        pricing_plan_id: normalize_required_pricing_id(
+            request.pricing_plan_id.as_deref(),
+            "pricingPlanId",
+        )?,
+        product_code: normalize_optional_text(
+            request.product_code.as_deref(),
+            "productCode",
+            MAX_TEXT_LEN,
+        )?,
+        operation_code: normalize_optional_text(
+            request.operation_code.as_deref(),
+            "operationCode",
+            MAX_TEXT_LEN,
+        )?,
+        meter_code: normalize_optional_text(
+            request.meter_code.as_deref(),
+            "meterCode",
+            MAX_CODE_LEN,
+        )?,
+        provider_code: normalize_optional_text(
+            request.provider_code.as_deref(),
+            "providerCode",
+            64,
+        )?,
         region_code: normalize_optional_text(request.region_code.as_deref(), "regionCode", 64)?,
         catalog_key: normalize_optional_text(request.catalog_key.as_deref(), "catalogKey", 256)?,
         formula_mode,
         multiplier,
         markup_amount,
         unit_price_override,
+        conditions: normalize_pricing_conditions(request.conditions.as_ref())?,
+        schedule: normalize_pricing_schedule(request.schedule.as_ref())?,
         priority: normalize_optional_non_negative_integer(request.priority.as_ref(), "priority")?
             .unwrap_or(100),
-        effective_from: normalize_optional_datetime(request.effective_from.as_deref(), "effectiveFrom")?,
+        effective_from: normalize_optional_datetime(
+            request.effective_from.as_deref(),
+            "effectiveFrom",
+        )?,
         effective_to: normalize_optional_datetime(request.effective_to.as_deref(), "effectiveTo")?,
         status: normalize_pricing_status(request.status.as_deref())?,
     })
@@ -893,9 +946,10 @@ fn normalize_required_code(
     field_name: &str,
 ) -> Result<String, AdminPricingCommandBuildError> {
     let normalized = normalize_required_text(value, field_name, MAX_CODE_LEN)?;
-    if !normalized.bytes().all(|byte| {
-        byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'_'
-    }) {
+    if !normalized
+        .bytes()
+        .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'_')
+    {
         return Err(AdminPricingCommandBuildError::BadRequest(format!(
             "{field_name} may only contain letters, numbers, -, and _"
         )));
@@ -954,9 +1008,7 @@ fn normalize_optional_datetime(
     }
 }
 
-fn normalize_pricing_search(
-    value: Option<&str>,
-) -> Result<Option<String>, String> {
+fn normalize_pricing_search(value: Option<&str>) -> Result<Option<String>, String> {
     let Some(value) = value else {
         return Ok(None);
     };
@@ -964,13 +1016,17 @@ fn normalize_pricing_search(
     let normalized = value.trim();
     if normalized.is_empty() {
         return if contains_control_character {
-            Err(format!("q must be visible text and at most {MAX_SEARCH_LEN} characters"))
+            Err(format!(
+                "q must be visible text and at most {MAX_SEARCH_LEN} characters"
+            ))
         } else {
             Ok(None)
         };
     }
     if contains_control_character || normalized.chars().count() > MAX_SEARCH_LEN {
-        return Err(format!("q must be visible text and at most {MAX_SEARCH_LEN} characters"));
+        return Err(format!(
+            "q must be visible text and at most {MAX_SEARCH_LEN} characters"
+        ));
     }
     Ok(Some(normalized.to_owned()))
 }
@@ -1089,9 +1145,141 @@ fn normalize_formula_mode(
     }
 }
 
-fn normalize_currency_code(
-    value: Option<&str>,
-) -> Result<String, AdminPricingCommandBuildError> {
+fn normalize_pricing_conditions(
+    value: Option<&Value>,
+) -> Result<Value, AdminPricingCommandBuildError> {
+    let Some(value) = value else {
+        return Ok(Value::Array(Vec::new()));
+    };
+    let items = value.as_array().ok_or_else(|| {
+        AdminPricingCommandBuildError::BadRequest("conditions must be an array".to_owned())
+    })?;
+    let mut dimensions = BTreeSet::new();
+    let mut normalized = Vec::with_capacity(items.len());
+    for item in items {
+        let object = item.as_object().ok_or_else(|| {
+            AdminPricingCommandBuildError::BadRequest(
+                "each pricing condition must be an object".to_owned(),
+            )
+        })?;
+        let dimension = object
+            .get("dimensionCode")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .ok_or_else(|| {
+                AdminPricingCommandBuildError::BadRequest(
+                    "condition dimensionCode is required".to_owned(),
+                )
+            })?;
+        if !dimensions.insert(dimension) {
+            return Err(AdminPricingCommandBuildError::BadRequest(
+                "condition dimensionCode must be unique within a rule".to_owned(),
+            ));
+        }
+        let operator = object
+            .get("operatorCode")
+            .or_else(|| object.get("operator"))
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        if !matches!(
+            operator,
+            "eq" | "neq" | "gt" | "gte" | "lt" | "lte" | "in" | "not_in" | "exists"
+        ) {
+            return Err(AdminPricingCommandBuildError::BadRequest(
+                "condition operatorCode is invalid".to_owned(),
+            ));
+        }
+        if !object.contains_key("value") {
+            return Err(AdminPricingCommandBuildError::BadRequest(
+                "condition value is required".to_owned(),
+            ));
+        }
+        normalized.push(serde_json::json!({
+            "dimensionCode": dimension,
+            "operatorCode": operator,
+            "value": object.get("value").cloned().unwrap_or(Value::Null),
+        }));
+    }
+    Ok(Value::Array(normalized))
+}
+
+fn normalize_pricing_schedule(
+    value: Option<&Value>,
+) -> Result<Option<Value>, AdminPricingCommandBuildError> {
+    let Some(value) = value else {
+        return Ok(None);
+    };
+    let schedule = serde_json::from_value::<sdkwork_models::PriceSchedule>(value.clone()).map_err(
+        |error| AdminPricingCommandBuildError::BadRequest(format!("schedule is invalid: {error}")),
+    )?;
+    schedule.time_zone.parse::<chrono_tz::Tz>().map_err(|_| {
+        AdminPricingCommandBuildError::BadRequest(
+            "schedule timeZone must be an IANA time-zone identifier".to_owned(),
+        )
+    })?;
+    if schedule.weekly_windows.is_empty() {
+        return Err(AdminPricingCommandBuildError::BadRequest(
+            "schedule weeklyWindows must not be empty".to_owned(),
+        ));
+    }
+    let mut codes = BTreeSet::new();
+    for window in &schedule.weekly_windows {
+        let days = window.days_of_week.iter().copied().collect::<BTreeSet<_>>();
+        let start = NaiveTime::parse_from_str(&window.start_time, "%H:%M:%S").map_err(|_| {
+            AdminPricingCommandBuildError::BadRequest(
+                "schedule startTime must use HH:mm:ss".to_owned(),
+            )
+        })?;
+        let end = NaiveTime::parse_from_str(&window.end_time, "%H:%M:%S").map_err(|_| {
+            AdminPricingCommandBuildError::BadRequest(
+                "schedule endTime must use HH:mm:ss".to_owned(),
+            )
+        })?;
+        if window.window_code.trim().is_empty()
+            || !codes.insert(window.window_code.as_str())
+            || days.is_empty()
+            || days.len() != window.days_of_week.len()
+            || days.iter().any(|day| !(1..=7).contains(day))
+            || !matches!(window.end_day_offset, 0 | 1)
+            || (window.end_day_offset == 0 && end <= start)
+            || (window.end_day_offset == 1 && end >= start)
+        {
+            return Err(AdminPricingCommandBuildError::BadRequest(
+                "schedule weekly window is invalid".to_owned(),
+            ));
+        }
+    }
+    let include_dates = parse_schedule_dates(&schedule.include_dates)?;
+    let exclude_dates = parse_schedule_dates(&schedule.exclude_dates)?;
+    if include_dates.intersection(&exclude_dates).next().is_some() {
+        return Err(AdminPricingCommandBuildError::BadRequest(
+            "schedule date cannot be both included and excluded".to_owned(),
+        ));
+    }
+    Ok(Some(value.clone()))
+}
+
+fn parse_schedule_dates(
+    values: &[String],
+) -> Result<BTreeSet<NaiveDate>, AdminPricingCommandBuildError> {
+    let mut dates = BTreeSet::new();
+    for value in values {
+        let date = NaiveDate::parse_from_str(value, "%Y-%m-%d").map_err(|_| {
+            AdminPricingCommandBuildError::BadRequest(
+                "schedule dates must use YYYY-MM-DD".to_owned(),
+            )
+        })?;
+        if !dates.insert(date) {
+            return Err(AdminPricingCommandBuildError::BadRequest(
+                "schedule dates must be unique".to_owned(),
+            ));
+        }
+    }
+    Ok(dates)
+}
+
+fn normalize_currency_code(value: Option<&str>) -> Result<String, AdminPricingCommandBuildError> {
     let normalized = normalize_required_text(value, "currencyCode", 10)?;
     let uppercase = normalized.to_ascii_uppercase();
     if !uppercase
@@ -1170,9 +1358,7 @@ fn canonicalize_decimal(value: &str) -> String {
     }
 }
 
-fn normalize_optional_pricing_id(
-    value: Option<&str>,
-) -> Result<Option<String>, String> {
+fn normalize_optional_pricing_id(value: Option<&str>) -> Result<Option<String>, String> {
     let Some(value) = value else {
         return Ok(None);
     };

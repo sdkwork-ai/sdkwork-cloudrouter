@@ -56,11 +56,20 @@ pub struct CachedAuthTokenIdentity {
 pub trait AuthTokenCache: Send + Sync {
     /// Returns a cached identity for the credential pair, or `None` on miss
     /// or any cache error (fail-open).
-    async fn get(&self, raw_bearer_token: &str, access_token: Option<&str>) -> Option<CachedAuthTokenIdentity>;
+    async fn get(
+        &self,
+        raw_bearer_token: &str,
+        access_token: Option<&str>,
+    ) -> Option<CachedAuthTokenIdentity>;
 
     /// Stores a freshly resolved identity. Best-effort: write errors are
     /// logged and ignored so they never fail the request.
-    async fn set(&self, raw_bearer_token: &str, access_token: Option<&str>, identity: &CachedAuthTokenIdentity);
+    async fn set(
+        &self,
+        raw_bearer_token: &str,
+        access_token: Option<&str>,
+        identity: &CachedAuthTokenIdentity,
+    );
 }
 
 /// Redis-backed auth-token identity cache.
@@ -86,7 +95,11 @@ impl RedisAuthTokenCache {
 
 /// Builds an opaque Redis key for the credential pair. Extracted from the
 /// method so key derivation can be unit-tested without a live connection.
-fn auth_token_cache_key(key_prefix: &str, raw_bearer_token: &str, access_token: Option<&str>) -> String {
+fn auth_token_cache_key(
+    key_prefix: &str,
+    raw_bearer_token: &str,
+    access_token: Option<&str>,
+) -> String {
     let mut hasher = Sha256::new();
     hasher.update(b"cloudrouter-auth-token:v1:");
     hasher.update(raw_bearer_token);
@@ -97,7 +110,11 @@ fn auth_token_cache_key(key_prefix: &str, raw_bearer_token: &str, access_token: 
 
 #[async_trait]
 impl AuthTokenCache for RedisAuthTokenCache {
-    async fn get(&self, raw_bearer_token: &str, access_token: Option<&str>) -> Option<CachedAuthTokenIdentity> {
+    async fn get(
+        &self,
+        raw_bearer_token: &str,
+        access_token: Option<&str>,
+    ) -> Option<CachedAuthTokenIdentity> {
         let key = self.cache_key(raw_bearer_token, access_token);
         // ConnectionManager clones share the pooled connection; the mutable
         // receiver is a per-call handle (mirrors the accounting retry queue).
@@ -112,7 +129,12 @@ impl AuthTokenCache for RedisAuthTokenCache {
             })
     }
 
-    async fn set(&self, raw_bearer_token: &str, access_token: Option<&str>, identity: &CachedAuthTokenIdentity) {
+    async fn set(
+        &self,
+        raw_bearer_token: &str,
+        access_token: Option<&str>,
+        identity: &CachedAuthTokenIdentity,
+    ) {
         let key = self.cache_key(raw_bearer_token, access_token);
         let Ok(value) = serde_json::to_string(identity) else {
             return;
@@ -120,7 +142,10 @@ impl AuthTokenCache for RedisAuthTokenCache {
         let ttl_seconds = self.ttl.as_secs().max(1);
         let mut conn = self.conn.clone();
         if let Err(error) = conn.set_ex::<_, _, ()>(&key, value, ttl_seconds).await {
-            tracing::debug!(error_kind = redis_error_kind(&error), "auth token cache write failed; failing open");
+            tracing::debug!(
+                error_kind = redis_error_kind(&error),
+                "auth token cache write failed; failing open"
+            );
         }
     }
 }
@@ -137,13 +162,17 @@ pub async fn resolve_auth_token_cache(
     if ttl_seconds == 0 {
         return None;
     }
-    let redis_config = RedisConfig::from_env_or_runtime_toml(runtime_toml).ok().flatten()?;
+    let redis_config = RedisConfig::from_env_or_runtime_toml(runtime_toml)
+        .ok()
+        .flatten()?;
     let url = redis_config.url();
     let client = redis::Client::open(url).ok()?;
     let conn = ConnectionManager::new(client).await.ok()?;
     let key_prefix = format!(
         "{}:auth-token:",
-        redis_config.key_prefix().unwrap_or("sdkwork:cloudrouter:web")
+        redis_config
+            .key_prefix()
+            .unwrap_or("sdkwork:cloudrouter:web")
     );
     let ttl = Duration::from_secs(ttl_seconds.min(MAX_AUTH_TOKEN_CACHE_TTL_SECONDS));
     Some(Arc::new(RedisAuthTokenCache::new(conn, key_prefix, ttl)))
@@ -190,7 +219,10 @@ mod tests {
         let b = auth_token_cache_key(KEY_PREFIX, "bearer-1", Some("access-1"));
         assert_eq!(a, b);
         assert_ne!(a, auth_token_cache_key(KEY_PREFIX, "bearer-1", None));
-        assert_ne!(a, auth_token_cache_key(KEY_PREFIX, "bearer-2", Some("access-1")));
+        assert_ne!(
+            a,
+            auth_token_cache_key(KEY_PREFIX, "bearer-2", Some("access-1"))
+        );
         assert!(a.starts_with(KEY_PREFIX));
         // The raw credential must not appear in the opaque key.
         assert!(!a.contains("bearer"));
@@ -221,6 +253,9 @@ mod tests {
         std::env::set_var("SDKWORK_CLOUDROUTER_AUTH_TOKEN_CACHE_TTL_SECONDS", "0");
         let cache = resolve_auth_token_cache(None).await;
         std::env::remove_var("SDKWORK_CLOUDROUTER_AUTH_TOKEN_CACHE_TTL_SECONDS");
-        assert!(cache.is_none(), "a zero TTL must disable the cache before any Redis attempt");
+        assert!(
+            cache.is_none(),
+            "a zero TTL must disable the cache before any Redis attempt"
+        );
     }
 }

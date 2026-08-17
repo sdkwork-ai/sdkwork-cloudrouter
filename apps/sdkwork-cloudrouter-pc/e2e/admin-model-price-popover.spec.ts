@@ -138,7 +138,8 @@ async function captureVisual(page: Page, fileName: string): Promise<void> {
   });
 }
 
-async function openPricePopover(page: Page) {
+async function selectVendorAndOpenPricePopover(page: Page) {
+  await page.getByRole('button', { name: MODEL_VENDOR.name }).click();
   const summary = page.locator(`[data-admin-model-price-summary="${PRICED_MODEL.id}"]`);
   await expect(summary).toBeVisible();
   await summary.click();
@@ -153,7 +154,7 @@ test.describe('Admin model price details popover', () => {
     await prepareAdminModelCatalog(page);
     await page.goto('/admin/model', { waitUntil: 'domcontentloaded' });
 
-    const popover = await openPricePopover(page);
+    const popover = await selectVendorAndOpenPricePopover(page);
     const appearance = await popover.evaluate((element) => {
       const style = getComputedStyle(element);
       const rect = element.getBoundingClientRect();
@@ -193,7 +194,7 @@ test.describe('Admin model price details popover', () => {
     await prepareAdminModelCatalog(page);
     await page.goto('/admin/model', { waitUntil: 'domcontentloaded' });
 
-    const popover = await openPricePopover(page);
+    const popover = await selectVendorAndOpenPricePopover(page);
     const appearance = await popover.evaluate((element) => {
       const style = getComputedStyle(element);
       const rect = element.getBoundingClientRect();

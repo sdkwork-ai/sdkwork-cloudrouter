@@ -151,3 +151,16 @@ fn postgres_admin_analytics_read_store_includes_default_scope_usage_rows() {
         "Postgres analytics SQL must not require exact organization scope for analytics subqueries"
     );
 }
+
+#[test]
+fn postgres_admin_analytics_read_store_does_not_filter_billable_usage_by_missing_status() {
+    let actual = compact_sql(POSTGRES_ADMIN_ANALYTICS_READ_STORE);
+    assert!(
+        actual.contains("WITH billable_usage AS"),
+        "Postgres analytics SQL must project billable usage through the charge/legacy CTE"
+    );
+    assert!(
+        !actual.contains("WHERE usage.status = 1") && !actual.contains("AND usage.status = 1"),
+        "Postgres analytics SQL must not filter billable_usage by status; status is applied inside the CTE"
+    );
+}

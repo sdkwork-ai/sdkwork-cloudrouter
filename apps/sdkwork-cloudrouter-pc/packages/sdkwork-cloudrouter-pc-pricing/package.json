@@ -26,7 +26,6 @@
     "test": "vitest run src --config ../../vite.config.ts --configLoader native --pool vmThreads"
   },
   "dependencies": {
-    "@sdkwork/cloudrouter-app-sdk": "workspace:*",
     "@sdkwork/cloudroutes-pc-commons": "workspace:*"
   },
   "peerDependencies": {

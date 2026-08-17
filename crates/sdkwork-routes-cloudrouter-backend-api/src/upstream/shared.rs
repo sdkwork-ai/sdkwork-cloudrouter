@@ -137,10 +137,8 @@ impl IntoResponse for RequestProblem {
         if let Some(params) = self.params {
             payload["params"] = params;
         }
-        let status = StatusCode::from_u16(
-            payload["status"].as_u64().unwrap_or(500) as u16,
-        )
-        .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let status = StatusCode::from_u16(payload["status"].as_u64().unwrap_or(500) as u16)
+            .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
         let mut response = (
             status,
             [(header::CONTENT_TYPE, "application/problem+json")],

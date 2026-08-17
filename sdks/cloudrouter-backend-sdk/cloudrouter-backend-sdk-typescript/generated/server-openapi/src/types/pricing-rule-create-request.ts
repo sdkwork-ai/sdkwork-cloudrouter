@@ -2,6 +2,8 @@
 export interface PricingRuleCreateRequest {
   /** Catalog key field on pricing rule create request. */
   catalogKey?: string;
+  /** Conditions field on pricing rule create request. */
+  conditions?: ({ dimensionCode: string; operatorCode: 'exists' | 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'not_in'; value: string | number | boolean | (string | number | boolean)[]; })[];
   /** Effective from field on pricing rule create request. */
   effectiveFrom?: string;
   /** Effective to field on pricing rule create request. */
@@ -28,6 +30,8 @@ export interface PricingRuleCreateRequest {
   regionCode?: string;
   /** Rule code field on pricing rule create request. */
   ruleCode: string;
+  /** Schedule field on pricing rule create request. */
+  schedule?: { excludeDates: string[]; includeDates: string[]; timeZone: string; weeklyWindows: ({ daysOfWeek: number[]; endDayOffset: 0 | 1; endTime: string; startTime: string; windowCode: string; })[]; } | null;
   /** Status field on pricing rule create request. */
   status: 'active' | 'inactive';
   /** Unit price override field on pricing rule create request. */

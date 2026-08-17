@@ -3,7 +3,7 @@ kind: sdkwork.database.schema-registry
 owner: cloud-router-platform
 schema_registry:
   name: sdkwork-cloudrouter
-  version: 0.4.0
+  version: 0.5.0
   standard: ../../../../sdkwork-specs/DATABASE_SPEC.md
   common_column_groups:
     tenant_entity:
@@ -206,6 +206,27 @@ schema_registry:
       tenant_scope: tenant_with_global_fallback
     user_entity:
       tenant_scope: tenant_required
+  legacy_compatibility_guardrails:
+    rule: Cloud-router generated ownership is limited to gateway routing, metering,
+      pricing, upstream suppliers, accounts, account groups, commerce usage projections,
+      gateway IAM extensions, ops telemetry, and system installation metadata. Agent/chat/MCP/runtime/prompt
+      tables are owned by sdkwork-kernel. Model catalog dictionary tables are owned
+      by sdkwork-models and composed at install time. Notification tables are owned
+      by sdkwork-appbase-messaging. IAM base, verification, commerce, promotion, messaging,
+      appstore, and drive tables are external sibling modules and must not be generated
+      in cloud-router schema.sql.
+    allowed_projection_exception: Router-owned commerce_usage_* tables may only add
+      usage settlement, statement, export, and analytics projections. c_category remains
+      a transitional appstore-aligned classification projection until sdkwork-appstore
+      publishes canonical DDL.
+    forbidden_synonym_tables:
+    - ai_pricing_group
+    - ai_pricing_import_snapshot
+    - ai_pricing_plan
+    - ai_pricing_plan_binding
+    - ai_pricing_rule
+    - ai_pricing_tier
+    - cloudrouter_pricing_adjustment
 description: Cloud Router Schema Registry. Machine-readable source of truth for Cloud
   Router-owned runtime tables; generated SQL, manifests, OpenAPI snapshots, SDKs,
   services, and frontends must align to this contract.
@@ -5378,6 +5399,678 @@ tables:
   generated_by_this_project: false
   imported: true
   imported_from_module: sdkwork-models
+- table: appstore_app
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_app_dependency
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_app_template
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_app_template_usage
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_app_template_version
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_catalog_chart_snapshot
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_catalog_collection
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_catalog_collection_item
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_catalog_collection_localization
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_catalog_featured_slot
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_category
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_category_localization
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_compliance_permission_disclosure
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_compliance_profile
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_download_grant
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_entitlement
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_idempotency_key
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_install_event
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_listing
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_listing_category_binding
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_listing_localization
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_listing_media
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_listing_metric_snapshot
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_listing_submission
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_listing_tag_binding
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_market_channel
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_market_release
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_moderation_decision
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_moderation_review
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_publisher
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_publisher_member
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_publisher_verification
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_regional_availability
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_release
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_release_artifact
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_release_channel
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_release_note_localization
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_release_rollout
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_tag
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_tag_localization
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_user_library_item
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
+- table: appstore_user_wishlist_item
+  domain: appstore
+  profile: appstore_entity
+  compliance_level: L2
+  system_of_record: true
+  generated_by_this_project: false
+  write_owner: appstore-platform
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  columns:
+    id: int64
+  imported: true
+  imported_from_module: appstore
 - table: cloudrouter_account_rate_card
   domain: commerce
   profile: tenant_entity
@@ -5734,6 +6427,10 @@ tables:
       type: decimal
       constraints: NOT NULL
     unit_price_override: decimal
+    conditions:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
+    schedule: json
     priority:
       type: int32
       constraints: NOT NULL
@@ -5779,6 +6476,10 @@ tables:
     expression: (formula_mode = 'multiplier_markup' AND unit_price_override IS NULL)
       OR (formula_mode = 'unit_price_override' AND unit_price_override IS NOT NULL
       AND multiplier = 1 AND markup_amount = 0)
+  - name: ck_cloudrouter_pricing_rule_conditions_json
+    expression: jsonb_typeof(conditions) = 'array'
+  - name: ck_cloudrouter_pricing_rule_schedule_json
+    expression: schedule IS NULL OR jsonb_typeof(schedule) = 'object'
   - name: ck_cloudrouter_pricing_rule_interval
     expression: effective_to IS NULL OR effective_to > effective_from
   indexes:
@@ -8041,131 +8742,6 @@ tables:
         supported: true
         default: true
   imported: false
-- table: pricing_meter
-  domain: commerce
-  profile: tenant_entity
-  compliance_level: L2
-  system_of_record: true
-  write_owner: pricing-service
-  common_columns: tenant_entity
-  columns:
-    namespace_code:
-      type: string(64)
-      constraints: NOT NULL
-    meter_code:
-      type: string(96)
-      constraints: NOT NULL
-    quantity_kind:
-      type: string(64)
-      constraints: NOT NULL
-    unit_code:
-      type: string(64)
-      constraints: NOT NULL
-    aggregation_mode:
-      type: string(32)
-      constraints: NOT NULL
-    default_unit_size:
-      type: decimal
-      constraints: NOT NULL
-    quantity_precision:
-      type: int32
-      constraints: NOT NULL
-    display_name:
-      type: string(256)
-      constraints: NOT NULL
-  unique_constraints:
-  - name: uk_pricing_meter_uuid
-    columns:
-    - uuid
-  - name: uk_pricing_meter_scope_id
-    columns:
-    - tenant_id
-    - organization_id
-    - id
-  - name: uk_pricing_meter_code
-    columns:
-    - tenant_id
-    - organization_id
-    - namespace_code
-    - meter_code
-  check_constraints:
-  - name: ck_pricing_meter_unit_size
-    expression: default_unit_size > 0
-  - name: ck_pricing_meter_precision
-    expression: quantity_precision BETWEEN 0 AND 12
-  - name: ck_pricing_meter_aggregation
-    expression: aggregation_mode IN ('sum', 'maximum', 'minimum', 'last', 'distinct_invocation')
-  indexes:
-  - name: uq_pricing_meter_scope_reference
-    columns:
-    - tenant_id
-    - organization_id
-    - id
-    unique: true
-  imported: false
-- table: pricing_operation
-  domain: commerce
-  profile: tenant_entity
-  compliance_level: L2
-  system_of_record: true
-  write_owner: pricing-service
-  common_columns: tenant_entity
-  columns:
-    namespace_code:
-      type: string(64)
-      constraints: NOT NULL
-    operation_code:
-      type: string(160)
-      constraints: NOT NULL
-    operation_kind:
-      type: string(64)
-      constraints: NOT NULL
-    charge_timing_default:
-      type: string(32)
-      constraints: NOT NULL
-    async_completion_policy:
-      type: string(32)
-      constraints: NOT NULL
-    success_status_policy:
-      type: string(32)
-      constraints: NOT NULL
-    display_name:
-      type: string(256)
-      constraints: NOT NULL
-  unique_constraints:
-  - name: uk_pricing_operation_uuid
-    columns:
-    - uuid
-  - name: uk_pricing_operation_scope_id
-    columns:
-    - tenant_id
-    - organization_id
-    - id
-  - name: uk_pricing_operation_code
-    columns:
-    - tenant_id
-    - organization_id
-    - namespace_code
-    - operation_code
-  check_constraints:
-  - name: ck_pricing_operation_charge_timing
-    expression: charge_timing_default IN ('request_accepted', 'successful_result',
-      'usage_reported', 'rate_defined')
-  indexes:
-  - name: uq_pricing_operation_scope_reference
-    columns:
-    - tenant_id
-    - organization_id
-    - id
-    unique: true
-  - name: idx_pricing_operation_lookup
-    columns:
-    - tenant_id
-    - organization_id
-    - operation_kind
-    - status
-    - id
-  imported: false
 - table: pricing_price_book
   domain: commerce
   profile: tenant_entity
@@ -8206,7 +8782,7 @@ tables:
       type: string(32)
       constraints: NOT NULL
     currency_code:
-      type: string(10)
+      type: string(3)
       constraints: NOT NULL
     effective_from:
       type: instant
@@ -8278,6 +8854,15 @@ tables:
     - organization_id
     - id
     unique: true
+  - name: uq_pricing_price_book_rate_dimensions
+    columns:
+    - tenant_id
+    - organization_id
+    - id
+    - vendor_code
+    - region_code
+    - currency_code
+    unique: true
   - name: idx_pricing_price_book_active
     columns:
     - tenant_id
@@ -8287,7 +8872,7 @@ tables:
     - effective_from
     - id
   imported: false
-- table: pricing_product
+- table: pricing_rate
   domain: commerce
   profile: tenant_entity
   compliance_level: L2
@@ -8295,8 +8880,14 @@ tables:
   write_owner: pricing-service
   common_columns: tenant_entity
   columns:
-    namespace_code:
-      type: string(64)
+    price_book_id:
+      type: int64
+      constraints: NOT NULL
+    rate_code:
+      type: string(192)
+      constraints: NOT NULL
+    rate_hash:
+      type: string(128)
       constraints: NOT NULL
     product_code:
       type: string(160)
@@ -8304,57 +8895,29 @@ tables:
     product_kind:
       type: string(64)
       constraints: NOT NULL
-    owner_system:
-      type: string(64)
-      constraints: NOT NULL
-    display_name:
+    product_display_name:
       type: string(256)
       constraints: NOT NULL
-    description: string(1024)
-  unique_constraints:
-  - name: uk_pricing_product_uuid
-    columns:
-    - uuid
-  - name: uk_pricing_product_scope_id
-    columns:
-    - tenant_id
-    - organization_id
-    - id
-  - name: uk_pricing_product_code
-    columns:
-    - tenant_id
-    - organization_id
-    - namespace_code
-    - product_code
-  indexes:
-  - name: uq_pricing_product_scope_reference
-    columns:
-    - tenant_id
-    - organization_id
-    - id
-    unique: true
-  - name: idx_pricing_product_lookup
-    columns:
-    - tenant_id
-    - organization_id
-    - owner_system
-    - product_kind
-    - status
-    - id
-  imported: false
-- table: pricing_product_binding
-  domain: commerce
-  profile: relation_entity
-  compliance_level: L2
-  system_of_record: true
-  write_owner: pricing-service
-  common_columns: relation_entity
-  columns:
-    product_id:
-      type: int64
+    operation_code:
+      type: string(160)
       constraints: NOT NULL
-    operation_id:
-      type: int64
+    operation_kind:
+      type: string(64)
+      constraints: NOT NULL
+    operation_display_name:
+      type: string(256)
+      constraints: NOT NULL
+    meter_code:
+      type: string(96)
+      constraints: NOT NULL
+    meter_display_name:
+      type: string(256)
+      constraints: NOT NULL
+    quantity_kind:
+      type: string(64)
+      constraints: NOT NULL
+    unit_code:
+      type: string(64)
       constraints: NOT NULL
     vendor_code:
       type: string(64)
@@ -8375,114 +8938,6 @@ tables:
     catalog_key: string(256)
     api_format: string(64)
     endpoint_code: string(160)
-  unique_constraints:
-  - name: uk_pricing_product_binding_uuid
-    columns:
-    - uuid
-  - name: uk_pricing_product_binding_scope_id
-    columns:
-    - tenant_id
-    - organization_id
-    - id
-  - name: uk_pricing_product_binding_provider
-    columns:
-    - tenant_id
-    - organization_id
-    - product_id
-    - operation_id
-    - vendor_code
-    - provider_code
-    - region_code
-    - resource_type
-    - resource_code
-    where: account_id IS NULL AND deleted_at IS NULL
-  - name: uk_pricing_product_binding_account
-    columns:
-    - tenant_id
-    - organization_id
-    - product_id
-    - operation_id
-    - vendor_code
-    - provider_code
-    - account_id
-    - region_code
-    - resource_type
-    - resource_code
-    where: account_id IS NOT NULL AND deleted_at IS NULL
-  foreign_keys:
-  - name: fk_pricing_product_binding_product
-    columns:
-    - tenant_id
-    - organization_id
-    - product_id
-    references_table: pricing_product
-    references_columns:
-    - tenant_id
-    - organization_id
-    - id
-  - name: fk_pricing_product_binding_operation
-    columns:
-    - tenant_id
-    - organization_id
-    - operation_id
-    references_table: pricing_operation
-    references_columns:
-    - tenant_id
-    - organization_id
-    - id
-  indexes:
-  - name: uq_pricing_product_binding_scope_reference
-    columns:
-    - tenant_id
-    - organization_id
-    - id
-    unique: true
-  - name: idx_pricing_product_binding_catalog
-    columns:
-    - tenant_id
-    - organization_id
-    - vendor_code
-    - provider_code
-    - account_id
-    - region_code
-    - catalog_key
-    - status
-    - id
-  - name: idx_pricing_product_binding_endpoint
-    columns:
-    - tenant_id
-    - organization_id
-    - endpoint_code
-    - api_format
-    - status
-    - id
-  imported: false
-- table: pricing_rate
-  domain: commerce
-  profile: tenant_entity
-  compliance_level: L2
-  system_of_record: true
-  write_owner: pricing-service
-  common_columns: tenant_entity
-  columns:
-    price_book_id:
-      type: int64
-      constraints: NOT NULL
-    product_id:
-      type: int64
-      constraints: NOT NULL
-    operation_id:
-      type: int64
-      constraints: NOT NULL
-    meter_id:
-      type: int64
-      constraints: NOT NULL
-    rate_code:
-      type: string(192)
-      constraints: NOT NULL
-    rate_hash:
-      type: string(128)
-      constraints: NOT NULL
     billability:
       type: string(32)
       constraints: NOT NULL
@@ -8506,11 +8961,22 @@ tables:
       constraints: NOT NULL
     quantity_step: decimal
     currency_code:
-      type: string(10)
+      type: string(3)
       constraints: NOT NULL
+    conditions:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
+    tiers:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
+    formula: json
     priority:
       type: int32
       constraints: NOT NULL
+    rate_variant:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'standard'
+    schedule: json
     effective_from:
       type: instant
       constraints: NOT NULL
@@ -8553,36 +9019,22 @@ tables:
     - tenant_id
     - organization_id
     - id
-  - name: fk_pricing_rate_product
+  - name: fk_pricing_rate_book_dimensions
     columns:
     - tenant_id
     - organization_id
-    - product_id
-    references_table: pricing_product
+    - price_book_id
+    - vendor_code
+    - region_code
+    - currency_code
+    references_table: pricing_price_book
     references_columns:
     - tenant_id
     - organization_id
     - id
-  - name: fk_pricing_rate_operation
-    columns:
-    - tenant_id
-    - organization_id
-    - operation_id
-    references_table: pricing_operation
-    references_columns:
-    - tenant_id
-    - organization_id
-    - id
-  - name: fk_pricing_rate_meter
-    columns:
-    - tenant_id
-    - organization_id
-    - meter_id
-    references_table: pricing_meter
-    references_columns:
-    - tenant_id
-    - organization_id
-    - id
+    - vendor_code
+    - region_code
+    - currency_code
   check_constraints:
   - name: ck_pricing_rate_quantities
     expression: unit_size > 0 AND unit_price >= 0 AND minimum_quantity >= 0 AND (quantity_step
@@ -8600,12 +9052,27 @@ tables:
   - name: ck_pricing_rate_flat_unit_size
     expression: calculation_mode <> 'flat' OR unit_size = 1
   - name: ck_pricing_rate_chargeable_price
-    expression: billability <> 'chargeable' OR calculation_mode IN ('graduated', 'volume')
-      OR unit_price > 0
+    expression: billability <> 'chargeable' OR unit_price > 0
   - name: ck_pricing_rate_non_chargeable_price
     expression: billability NOT IN ('free', 'not_applicable') OR unit_price = 0
   - name: ck_pricing_rate_currency
     expression: currency_code ~ '^[A-Z]{3}$'
+  - name: ck_pricing_rate_conditions_json
+    expression: jsonb_typeof(conditions) = 'array'
+  - name: ck_pricing_rate_tiers_json
+    expression: jsonb_typeof(tiers) = 'array'
+  - name: ck_pricing_rate_formula_json
+    expression: formula IS NULL OR jsonb_typeof(formula) = 'object'
+  - name: ck_pricing_rate_variant
+    expression: rate_variant IN ('standard', 'time_window')
+  - name: ck_pricing_rate_schedule_json
+    expression: schedule IS NULL OR jsonb_typeof(schedule) = 'object'
+  - name: ck_pricing_rate_schedule_variant
+    expression: (rate_variant = 'standard' AND schedule IS NULL) OR (rate_variant
+      = 'time_window' AND schedule IS NOT NULL)
+  - name: ck_pricing_rate_calculation_payload
+    expression: (calculation_mode IN ('graduated', 'volume')) = (jsonb_array_length(tiers)
+      > 0) AND (calculation_mode = 'formula') = (formula IS NOT NULL)
   indexes:
   - name: uq_pricing_rate_scope_reference
     columns:
@@ -8620,404 +9087,19 @@ tables:
     - id
     - price_book_id
     unique: true
-  - name: uq_pricing_rate_scope_currency_reference
-    columns:
-    - tenant_id
-    - organization_id
-    - id
-    - currency_code
-    unique: true
   - name: idx_pricing_rate_resolve
     columns:
     - tenant_id
     - organization_id
-    - product_id
-    - operation_id
-    - meter_id
+    - catalog_key
+    - product_code
+    - operation_code
+    - meter_code
+    - provider_code
+    - region_code
     - billability
     - status
     - priority
     - effective_from
-    - id
-  imported: false
-- table: pricing_rate_binding
-  domain: commerce
-  profile: relation_entity
-  compliance_level: L2
-  system_of_record: true
-  write_owner: pricing-service
-  common_columns: relation_entity
-  columns:
-    rate_id:
-      type: int64
-      constraints: NOT NULL
-    product_binding_id:
-      type: int64
-      constraints: NOT NULL
-  unique_constraints:
-  - name: uk_pricing_rate_binding_uuid
-    columns:
-    - uuid
-  - name: uk_pricing_rate_binding_scope_id
-    columns:
-    - tenant_id
-    - organization_id
-    - id
-  - name: uk_pricing_rate_binding_relation
-    columns:
-    - tenant_id
-    - organization_id
-    - rate_id
-    - product_binding_id
-  foreign_keys:
-  - name: fk_pricing_rate_binding_rate
-    columns:
-    - tenant_id
-    - organization_id
-    - rate_id
-    references_table: pricing_rate
-    references_columns:
-    - tenant_id
-    - organization_id
-    - id
-  - name: fk_pricing_rate_binding_product_binding
-    columns:
-    - tenant_id
-    - organization_id
-    - product_binding_id
-    references_table: pricing_product_binding
-    references_columns:
-    - tenant_id
-    - organization_id
-    - id
-  indexes:
-  - name: idx_pricing_rate_binding_product
-    columns:
-    - tenant_id
-    - organization_id
-    - product_binding_id
-    - status
-    - rate_id
-  imported: false
-- table: pricing_rate_condition
-  domain: commerce
-  profile: relation_entity
-  compliance_level: L2
-  system_of_record: true
-  write_owner: pricing-service
-  common_columns: relation_entity
-  columns:
-    rate_id:
-      type: int64
-      constraints: NOT NULL
-    dimension_code:
-      type: string(96)
-      constraints: NOT NULL
-    operator_code:
-      type: string(16)
-      constraints: NOT NULL
-    value_type:
-      type: string(16)
-      constraints: NOT NULL
-    value_string: string(512)
-    value_decimal: decimal
-    value_boolean: bool
-    value_json: json
-    sort_order:
-      type: int32
-      constraints: NOT NULL
-  unique_constraints:
-  - name: uk_pricing_rate_condition_uuid
-    columns:
-    - uuid
-  - name: uk_pricing_rate_condition_scope_id
-    columns:
-    - tenant_id
-    - organization_id
-    - id
-  - name: uk_pricing_rate_condition_slot
-    columns:
-    - tenant_id
-    - organization_id
-    - rate_id
-    - dimension_code
-    - operator_code
-    - sort_order
-  foreign_keys:
-  - name: fk_pricing_rate_condition_rate
-    columns:
-    - tenant_id
-    - organization_id
-    - rate_id
-    references_table: pricing_rate
-    references_columns:
-    - tenant_id
-    - organization_id
-    - id
-  check_constraints:
-  - name: ck_pricing_rate_condition_operator
-    expression: operator_code IN ('eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'in', 'not_in',
-      'exists')
-  - name: ck_pricing_rate_condition_value_type
-    expression: value_type IN ('string', 'decimal', 'boolean', 'json')
-  - name: ck_pricing_rate_condition_value
-    expression: (value_type = 'string' AND value_string IS NOT NULL AND value_decimal
-      IS NULL AND value_boolean IS NULL AND value_json IS NULL) OR (value_type = 'decimal'
-      AND value_string IS NULL AND value_decimal IS NOT NULL AND value_boolean IS
-      NULL AND value_json IS NULL) OR (value_type = 'boolean' AND value_string IS
-      NULL AND value_decimal IS NULL AND value_boolean IS NOT NULL AND value_json
-      IS NULL) OR (value_type = 'json' AND value_string IS NULL AND value_decimal
-      IS NULL AND value_boolean IS NULL AND value_json IS NOT NULL)
-  - name: ck_pricing_rate_condition_operator_value
-    expression: (operator_code <> 'exists' OR value_type = 'boolean') AND (operator_code
-      NOT IN ('in', 'not_in') OR value_type = 'json')
-  - name: ck_pricing_rate_condition_sort_order
-    expression: sort_order >= 0
-  indexes:
-  - name: idx_pricing_rate_condition_match
-    columns:
-    - tenant_id
-    - organization_id
-    - rate_id
-    - dimension_code
-    - operator_code
-    - sort_order
-    - id
-  imported: false
-- table: pricing_rate_formula
-  domain: commerce
-  profile: relation_entity
-  compliance_level: L2
-  system_of_record: true
-  write_owner: pricing-service
-  common_columns: relation_entity
-  columns:
-    rate_id:
-      type: int64
-      constraints: NOT NULL
-    formula_code:
-      type: string(96)
-      constraints: NOT NULL
-    formula_version:
-      type: string(64)
-      constraints: NOT NULL
-    constant_units:
-      type: decimal
-      constraints: NOT NULL
-    quantity_coefficient:
-      type: decimal
-      constraints: NOT NULL
-    minimum_units: decimal
-    maximum_units: decimal
-  unique_constraints:
-  - name: uk_pricing_rate_formula_uuid
-    columns:
-    - uuid
-  - name: uk_pricing_rate_formula_scope_id
-    columns:
-    - tenant_id
-    - organization_id
-    - id
-  - name: uk_pricing_rate_formula_rate
-    columns:
-    - tenant_id
-    - organization_id
-    - rate_id
-  foreign_keys:
-  - name: fk_pricing_rate_formula_rate
-    columns:
-    - tenant_id
-    - organization_id
-    - rate_id
-    references_table: pricing_rate
-    references_columns:
-    - tenant_id
-    - organization_id
-    - id
-  check_constraints:
-  - name: ck_pricing_rate_formula_coefficients
-    expression: constant_units >= 0 AND quantity_coefficient >= 0
-  - name: ck_pricing_rate_formula_bounds
-    expression: (minimum_units IS NULL OR minimum_units >= 0) AND (maximum_units IS
-      NULL OR maximum_units >= 0) AND (minimum_units IS NULL OR maximum_units IS NULL
-      OR maximum_units >= minimum_units)
-  indexes:
-  - name: uq_pricing_rate_formula_scope_reference
-    columns:
-    - tenant_id
-    - organization_id
-    - id
-    unique: true
-  - name: idx_pricing_rate_formula_code
-    columns:
-    - tenant_id
-    - organization_id
-    - formula_code
-    - formula_version
-    - status
-    - id
-  imported: false
-- table: pricing_rate_formula_term
-  domain: commerce
-  profile: relation_entity
-  compliance_level: L2
-  system_of_record: true
-  write_owner: pricing-service
-  common_columns: relation_entity
-  columns:
-    formula_id:
-      type: int64
-      constraints: NOT NULL
-    term_index:
-      type: int32
-      constraints: NOT NULL
-    term_code:
-      type: string(96)
-      constraints: NOT NULL
-    dimension_code:
-      type: string(96)
-      constraints: NOT NULL
-    coefficient:
-      type: decimal
-      constraints: NOT NULL
-  unique_constraints:
-  - name: uk_pricing_rate_formula_term_uuid
-    columns:
-    - uuid
-  - name: uk_pricing_rate_formula_term_scope_id
-    columns:
-    - tenant_id
-    - organization_id
-    - id
-  - name: uk_pricing_rate_formula_term_index
-    columns:
-    - tenant_id
-    - organization_id
-    - formula_id
-    - term_index
-  - name: uk_pricing_rate_formula_term_code
-    columns:
-    - tenant_id
-    - organization_id
-    - formula_id
-    - term_code
-  - name: uk_pricing_rate_formula_term_dimension
-    columns:
-    - tenant_id
-    - organization_id
-    - formula_id
-    - dimension_code
-  foreign_keys:
-  - name: fk_pricing_rate_formula_term_formula
-    columns:
-    - tenant_id
-    - organization_id
-    - formula_id
-    references_table: pricing_rate_formula
-    references_columns:
-    - tenant_id
-    - organization_id
-    - id
-  check_constraints:
-  - name: ck_pricing_rate_formula_term_index
-    expression: term_index >= 0
-  - name: ck_pricing_rate_formula_term_coefficient
-    expression: coefficient >= 0
-  indexes:
-  - name: idx_pricing_rate_formula_term_resolve
-    columns:
-    - tenant_id
-    - organization_id
-    - formula_id
-    - term_index
-    - status
-    - id
-  imported: false
-- table: pricing_rate_tier
-  domain: commerce
-  profile: relation_entity
-  compliance_level: L2
-  system_of_record: true
-  write_owner: pricing-service
-  common_columns: relation_entity
-  columns:
-    rate_id:
-      type: int64
-      constraints: NOT NULL
-    tier_index:
-      type: int32
-      constraints: NOT NULL
-    tier_code:
-      type: string(96)
-      constraints: NOT NULL
-    lower_bound:
-      type: decimal
-      constraints: NOT NULL
-    upper_bound: decimal
-    unit_size:
-      type: decimal
-      constraints: NOT NULL
-    unit_price:
-      type: decimal
-      constraints: NOT NULL
-    flat_amount:
-      type: decimal
-      constraints: NOT NULL
-    currency_code:
-      type: string(10)
-      constraints: NOT NULL
-  unique_constraints:
-  - name: uk_pricing_rate_tier_uuid
-    columns:
-    - uuid
-  - name: uk_pricing_rate_tier_scope_id
-    columns:
-    - tenant_id
-    - organization_id
-    - id
-  - name: uk_pricing_rate_tier_index
-    columns:
-    - tenant_id
-    - organization_id
-    - rate_id
-    - tier_index
-  - name: uk_pricing_rate_tier_code
-    columns:
-    - tenant_id
-    - organization_id
-    - rate_id
-    - tier_code
-  foreign_keys:
-  - name: fk_pricing_rate_tier_rate
-    columns:
-    - tenant_id
-    - organization_id
-    - rate_id
-    - currency_code
-    references_table: pricing_rate
-    references_columns:
-    - tenant_id
-    - organization_id
-    - id
-    - currency_code
-  check_constraints:
-  - name: ck_pricing_rate_tier_index
-    expression: tier_index >= 0
-  - name: ck_pricing_rate_tier_bounds
-    expression: lower_bound >= 0 AND (upper_bound IS NULL OR upper_bound > lower_bound)
-  - name: ck_pricing_rate_tier_amounts
-    expression: unit_size > 0 AND unit_price >= 0 AND flat_amount >= 0
-  - name: ck_pricing_rate_tier_currency
-    expression: currency_code ~ '^[A-Z]{3}$'
-  indexes:
-  - name: idx_pricing_rate_tier_resolve
-    columns:
-    - tenant_id
-    - organization_id
-    - rate_id
-    - tier_index
-    - lower_bound
-    - upper_bound
-    - status
     - id
   imported: false

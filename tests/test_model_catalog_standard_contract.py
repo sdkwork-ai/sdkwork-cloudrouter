@@ -138,6 +138,15 @@ OBSOLETE_ROUTER_TABLES = {
     "integration_service_provider_contract_version",
     "integration_service_provider_price_change_request",
 }
+RETIRED_LEGACY_PRICING_TABLES = {
+    "ai_pricing_group",
+    "ai_pricing_import_snapshot",
+    "ai_pricing_plan",
+    "ai_pricing_plan_binding",
+    "ai_pricing_rule",
+    "ai_pricing_tier",
+    "cloudrouter_pricing_adjustment",
+}
 RUNTIME_MODEL_IDENTITY_FIXTURE_PATHS = (
     ROOT / "services" / "sdkwork-cloudrouter-router-service" / "tests" / "openai_chat_adapter_api.rs",
     ROOT / "services" / "sdkwork-cloudrouter-router-service" / "tests" / "openai_embeddings_adapter_api.rs",
@@ -214,11 +223,6 @@ CANONICAL_TABLES = {
     "ai_model_catalog_sync_run",
     "ai_billing_meter",
     "ai_model_pricing",
-    "ai_pricing_plan",
-    "ai_pricing_plan_binding",
-    "ai_pricing_rule",
-    "ai_pricing_tier",
-    "ai_pricing_import_snapshot",
     "ai_model_rank_snapshot",
 }
 
@@ -276,11 +280,6 @@ CANONICAL_TABLE_PROFILES = {
     "ai_model_catalog_sync_run": "event_log",
     "ai_billing_meter": "tenant_entity",
     "ai_model_pricing": "tenant_entity",
-    "ai_pricing_plan": "pricing",
-    "ai_pricing_plan_binding": "relation_entity",
-    "ai_pricing_rule": "pricing",
-    "ai_pricing_tier": "pricing",
-    "ai_pricing_import_snapshot": "event_log",
     "ai_model_rank_snapshot": "projection",
 }
 
@@ -747,8 +746,8 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
         ):
             self.assertRegex(pricing_block, rf"\b{column}\s+NUMERIC\(38,\s*12\)")
 
-        usage_fact_block = create_table_block(read_text(GENERATED_SCHEMA_PATH), "ai_usage")
-        self.assertTrue(usage_fact_block, "ai_usage table must exist in generated schema")
+        usage_fact_block = create_table_block(read_text(GENERATED_SCHEMA_PATH), "ai_metering_usage")
+        self.assertTrue(usage_fact_block, "ai_metering_usage table must exist in generated schema")
         for column in (
             "currency",
             "pricing_id",
@@ -765,7 +764,7 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
             self.assertRegex(
                 usage_fact_block,
                 rf"\b{column}\b",
-                f"ai_usage missing pricing/settlement column {column}",
+                f"ai_metering_usage missing pricing/settlement column {column}",
             )
 
     def test_installer_runtime_schema_uses_only_canonical_model_catalog_tables(self) -> None:
@@ -944,6 +943,33 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
                             text,
                             f"{table_name} must not be recreated in runtime schema, SQL, or fixtures.",
                         )
+
+    def test_retired_legacy_pricing_tables_stay_removed_from_active_contracts(self) -> None:
+        registry = load_registry()
+        tables = {item["table"] for item in registry.get("tables", []) if isinstance(item, dict)}
+        generated_schema = read_text(GENERATED_SCHEMA_PATH)
+        effective_schema = read_text(
+            ROOT / "generated" / "schema" / "registry" / "sdkwork-cloudrouter.tables.effective.yaml"
+        )
+        frontend_contract = read_text(ROOT / "docs" / "schema-registry" / "frontend-field-contracts.yaml")
+        forbidden_block = re.search(
+            r"forbidden_synonym_tables:\s*\n((?:\s+-\s+\S+\n)+)",
+            effective_schema,
+        )
+        self.assertIsNotNone(forbidden_block, "effective schema must declare forbidden_synonym_tables")
+        forbidden_tables = set(
+            re.findall(r"^\s+-\s+(\S+)\s*$", forbidden_block.group(1), flags=re.MULTILINE)
+        )
+
+        for table_name in RETIRED_LEGACY_PRICING_TABLES:
+            with self.subTest(table=table_name):
+                self.assertNotIn(table_name, tables)
+                self.assertNotRegex(
+                    generated_schema,
+                    rf"CREATE TABLE IF NOT EXISTS\s+{re.escape(table_name)}\b",
+                )
+                self.assertIn(table_name, forbidden_tables)
+                self.assertNotIn(table_name, frontend_contract)
 
     def test_ai_upstream_route_runtime_uses_account_group_vocabulary(self) -> None:
         forbidden_fragments = (
@@ -1587,11 +1613,10 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
             "ai_model_modality": ("model",),
             "ai_model_api_endpoint": ("model", "provider_native_model"),
             "ai_model_pricing": ("model", "provider_model"),
-            "ai_pricing_rule": ("model", "provider_model"),
             "ai_model_rank_snapshot": ("model",),
             "ai_routing_decision_log": ("requested_model", "resolved_model"),
-            "ai_request_trace": ("requested_model", "provider_model", "provider_native_model"),
-            "ai_usage": ("model", "provider_native_model"),
+            "ai_metering_request_trace": ("requested_model", "provider_model", "provider_native_model"),
+            "ai_metering_usage": ("model", "provider_native_model"),
             "ai_resource": ("model", "provider_native_model"),
         }
         for table_name, column_names in expected_model_identity_columns.items():
@@ -1903,7 +1928,7 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
             / "gateway_usage_recorder.rs"
         )
 
-        for table_name in ("ai_request_trace", "ai_usage"):
+        for table_name in ("ai_metering_request_trace", "ai_metering_usage"):
             with self.subTest(table=table_name):
                 table = tables[table_name]
                 self.assertIn("region_code", table.get("columns", {}))

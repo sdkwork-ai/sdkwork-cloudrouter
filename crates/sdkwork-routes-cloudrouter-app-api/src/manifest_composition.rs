@@ -127,6 +127,8 @@ mod tests {
             ("GET", "/app/v3/api/ai/model_vendors"),
             ("GET", "/app/v3/api/ai/models"),
             ("GET", "/app/v3/api/ai/model_rankings"),
+            ("GET", "/app/v3/api/promotions/offers"),
+            ("GET", "/app/v3/api/promotions/offers/demo-offer"),
         ] {
             let route = manifest
                 .match_route(method, path)

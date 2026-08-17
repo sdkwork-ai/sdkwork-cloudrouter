@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
--- Registry version: 0.4.0.
--- Registry SHA-256: d4449d6d013098bf825b1970275e2cee4eb1fbfa7f9a92874595855b0391fb69.
+-- Registry version: 0.5.0.
+-- Registry SHA-256: 844ff985022a052a4a2e7dfc22f1d755b798a282a688acc99f8de38c1360015a.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -146,6 +146,8 @@ CREATE TABLE IF NOT EXISTS cloudrouter_pricing_rule (
     multiplier NUMERIC(38, 12) NOT NULL,
     markup_amount NUMERIC(38, 12) NOT NULL,
     unit_price_override NUMERIC(38, 12),
+    conditions JSONB NOT NULL DEFAULT '[]'::jsonb,
+    schedule JSONB,
     priority INTEGER NOT NULL,
     effective_from TIMESTAMPTZ NOT NULL,
     effective_to TIMESTAMPTZ,
@@ -153,6 +155,8 @@ CREATE TABLE IF NOT EXISTS cloudrouter_pricing_rule (
     CONSTRAINT fk_cloudrouter_pricing_rule_plan FOREIGN KEY (tenant_id, organization_id, pricing_plan_id) REFERENCES cloudrouter_pricing_plan (tenant_id, organization_id, id),
     CONSTRAINT ck_cloudrouter_pricing_rule_amounts CHECK (multiplier >= 0 AND markup_amount >= 0 AND (unit_price_override IS NULL OR unit_price_override >= 0)),
     CONSTRAINT ck_cloudrouter_pricing_rule_formula CHECK ((formula_mode = 'multiplier_markup' AND unit_price_override IS NULL) OR (formula_mode = 'unit_price_override' AND unit_price_override IS NOT NULL AND multiplier = 1 AND markup_amount = 0)),
+    CONSTRAINT ck_cloudrouter_pricing_rule_conditions_json CHECK (jsonb_typeof(conditions) = 'array'),
+    CONSTRAINT ck_cloudrouter_pricing_rule_schedule_json CHECK (schedule IS NULL OR jsonb_typeof(schedule) = 'object'),
     CONSTRAINT ck_cloudrouter_pricing_rule_interval CHECK (effective_to IS NULL OR effective_to > effective_from)
 );
 

@@ -146,7 +146,9 @@ iteration:
    `SDKWORK_MODELS_CATALOG_ROOT` to a newer catalog artifact.
 2. Run catalog validation and freshness checks.
 3. Trigger admin model catalog sync.
-4. Verify `ai_model_catalog_sync_run` and `ai_pricing_import_snapshot` records.
+4. Verify `ai_model_catalog_sync_run` records (catalog sync evidence). Official
+   price-book import evidence, when applicable, lives in `pricing_import_run`
+   rather than the removed `ai_pricing_import_snapshot`.
 
 Supported refresh modes are:
 

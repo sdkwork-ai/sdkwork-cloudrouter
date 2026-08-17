@@ -36,14 +36,8 @@ const TEST_ORGANIZATION_ID: i64 = 0;
 const TEST_USER_ID: i64 = 30;
 
 fn runtime_json_request(method: &str, uri: &str, body: Body) -> Request<Body> {
-    let mut request = common::web_framework_backend_request(
-        method,
-        uri,
-        body,
-        "100001",
-        Some("0"),
-        "30",
-    );
+    let mut request =
+        common::web_framework_backend_request(method, uri, body, "100001", Some("0"), "30");
     request
         .headers_mut()
         .insert("content-type", "application/json".parse().unwrap());
@@ -62,12 +56,11 @@ async fn app_runtime_create_invocation_uses_product_runtime_namespace_and_store_
     );
 
     let response = router
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "POST",
             "/app/v3/api/runtime/invocations",
             Body::from(
-                    r#"{
+                r#"{
                       "invocationType":"chat_response",
                       "runtime":"claude_code",
                       "endpoint":"messages.create",
@@ -82,9 +75,8 @@ async fn app_runtime_create_invocation_uses_product_runtime_namespace_and_store_
                       "requestJson":{"prompt":"hello"},
                       "metadata":{"surface":"chat"}
                     }"#,
-                ),
-        )
-        )
+            ),
+        ))
         .await
         .unwrap();
 
@@ -132,21 +124,19 @@ async fn app_runtime_records_events_and_artifacts_under_invocation() {
 
     let response = router
         .clone()
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "POST",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/events",
             Body::from(
-                    r#"{
+                r#"{
                       "eventType":"response.output_text.delta",
                       "eventSource":"provider",
                       "payloadJson":{"delta":"hello"},
                       "textDelta":"hello",
                       "metadata":{"sequence":"first"}
                     }"#,
-                ),
-        )
-        )
+            ),
+        ))
         .await
         .unwrap();
     assert_eq!(StatusCode::CREATED, response.status());
@@ -160,12 +150,11 @@ async fn app_runtime_records_events_and_artifacts_under_invocation() {
     assert_eq!("hello", payload["data"]["item"]["payloadJson"]["delta"]);
 
     let response = router
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "POST",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/artifacts",
             Body::from(
-                    r##"{
+                r##"{
                       "artifactType":"file",
                       "name":"summary.md",
                       "mimeType":"text/markdown",
@@ -176,9 +165,8 @@ async fn app_runtime_records_events_and_artifacts_under_invocation() {
                       "sizeBytes":"9",
                       "metadata":{"source":"codex"}
                     }"##,
-                ),
-        )
-        )
+            ),
+        ))
         .await
         .unwrap();
     assert_eq!(StatusCode::CREATED, response.status());
@@ -242,13 +230,11 @@ async fn app_runtime_lists_invocations_events_and_artifacts_for_trusted_subject(
 
     let response = router
         .clone()
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "GET",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/events",
             Body::empty(),
-        )
-        )
+        ))
         .await
         .unwrap();
     assert_eq!(StatusCode::OK, response.status());
@@ -257,13 +243,11 @@ async fn app_runtime_lists_invocations_events_and_artifacts_for_trusted_subject(
     assert_eq!("hello", payload["data"]["items"][0]["payloadJson"]["delta"]);
 
     let response = router
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "GET",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/artifacts",
             Body::empty(),
-        )
-        )
+        ))
         .await
         .unwrap();
     assert_eq!(StatusCode::OK, response.status());
@@ -300,13 +284,11 @@ async fn app_runtime_streams_invocation_events_as_sse_for_trusted_subject() {
     );
 
     let response = router
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "GET",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream",
             Body::empty(),
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -405,13 +387,11 @@ async fn app_runtime_stream_executes_openai_compatible_invocation_and_persists_d
         );
 
     let response = router
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "GET",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream",
             Body::empty(),
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -484,13 +464,11 @@ async fn app_runtime_stream_persists_usage_only_provider_chunks_for_chat_billing
         );
 
     let response = router
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "GET",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream",
             Body::empty(),
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -556,13 +534,11 @@ async fn app_runtime_stream_routes_catalog_model_through_channel_route_without_m
         );
 
     let response = router
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "GET",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream",
             Body::empty(),
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -615,13 +591,11 @@ async fn app_runtime_stream_flushes_runtime_events_before_provider_stream_finish
         );
 
     let response = router
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "GET",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream",
             Body::empty(),
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -681,13 +655,11 @@ async fn app_runtime_stream_execution_continues_after_client_disconnect_and_reco
 
     let response = router
         .clone()
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "GET",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream",
             Body::empty(),
-        )
-        )
+        ))
         .await
         .unwrap();
     assert_eq!(StatusCode::OK, response.status());
@@ -723,13 +695,11 @@ async fn app_runtime_stream_execution_continues_after_client_disconnect_and_reco
     }
 
     let response = router
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "GET",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream",
             Body::empty(),
-        )
-        )
+        ))
         .await
         .unwrap();
     assert_eq!(StatusCode::OK, response.status());
@@ -787,13 +757,11 @@ async fn app_runtime_stream_reconnect_on_another_node_uses_shared_stream_bus_wit
         );
 
     let response = router_a
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "GET",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream",
             Body::empty(),
-        )
-        )
+        ))
         .await
         .unwrap();
     assert_eq!(StatusCode::OK, response.status());
@@ -811,13 +779,11 @@ async fn app_runtime_stream_reconnect_on_another_node_uses_shared_stream_bus_wit
     drop(disconnected_body);
 
     let response = router_b
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "GET",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream?after_event_no=1",
             Body::empty(),
-        )
-        )
+        ))
         .await
         .unwrap();
     assert_eq!(StatusCode::OK, response.status());
@@ -882,15 +848,15 @@ async fn app_runtime_stream_parallel_subscribers_on_different_nodes_receive_comp
         );
 
     let request_a = runtime_json_request(
-            "GET",
-            "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream",
-            Body::empty(),
-        );
+        "GET",
+        "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream",
+        Body::empty(),
+    );
     let request_b = runtime_json_request(
-            "GET",
-            "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream",
-            Body::empty(),
-        );
+        "GET",
+        "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream",
+        Body::empty(),
+    );
     let (response_a, response_b) =
         tokio::join!(router_a.oneshot(request_a), router_b.oneshot(request_b));
     let response_a = response_a.unwrap();
@@ -967,13 +933,11 @@ async fn app_runtime_stream_cancel_on_another_node_stops_provider_execution() {
         );
 
     let response = router_a
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "GET",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream",
             Body::empty(),
-        )
-        )
+        ))
         .await
         .unwrap();
     assert_eq!(StatusCode::OK, response.status());
@@ -990,19 +954,17 @@ async fn app_runtime_stream_cancel_on_another_node_stops_provider_execution() {
     );
 
     let cancel_response = router_b
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "POST",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/completions",
             Body::from(
-                    r#"{
+                r#"{
                       "status":"cancelled",
                       "finishReason":"stop",
                       "metadata":{"stopRequested":true}
                     }"#,
-                ),
-        )
-        )
+            ),
+        ))
         .await
         .unwrap();
     assert_eq!(StatusCode::OK, cancel_response.status());
@@ -1083,13 +1045,11 @@ async fn app_runtime_stream_completion_preserves_existing_cancelled_terminal_eve
         );
 
     let response = router
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "GET",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream",
             Body::empty(),
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -1160,13 +1120,11 @@ async fn app_runtime_stream_reconnect_after_terminal_event_does_not_restart_prov
         );
 
     let response = router
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "GET",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream?after_event_no=1",
             Body::empty(),
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -1215,13 +1173,11 @@ async fn app_runtime_stream_rechecks_terminal_event_after_execution_claim() {
         );
 
     let response = router
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "GET",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream",
             Body::empty(),
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -1267,13 +1223,11 @@ async fn app_runtime_stream_completed_invocation_without_events_does_not_restart
         );
 
     let response = router
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "GET",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream",
             Body::empty(),
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -1318,13 +1272,11 @@ async fn app_runtime_stream_failed_terminal_event_is_serialized_before_done() {
         );
 
     let response = router
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "GET",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream",
             Body::empty(),
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -1373,13 +1325,11 @@ async fn app_runtime_stream_start_failure_returns_failed_sse_event_without_http_
         );
 
     let response = router
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "GET",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream",
             Body::empty(),
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -1407,12 +1357,11 @@ async fn app_runtime_complete_invocation_updates_status_and_response_snapshot() 
     );
 
     let response = router
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "POST",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/completions",
             Body::from(
-                    r#"{
+                r#"{
                       "status":"completed",
                       "providerResponseId":"msg_123",
                       "finishReason":"stop",
@@ -1422,9 +1371,8 @@ async fn app_runtime_complete_invocation_updates_status_and_response_snapshot() 
                       "responseJson":{"id":"msg_123"},
                       "usageJson":{"inputTokens":10,"outputTokens":20}
                     }"#,
-                ),
-        )
-        )
+            ),
+        ))
         .await
         .unwrap();
 
@@ -1456,19 +1404,17 @@ async fn app_runtime_cancel_complete_preserves_existing_completed_terminal_event
     );
 
     let response = router
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "POST",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/completions",
             Body::from(
-                    r#"{
+                r#"{
                       "status":"cancelled",
                       "finishReason":"stop",
                       "metadata":{"stopRequested":true}
                     }"#,
-                ),
-        )
-        )
+            ),
+        ))
         .await
         .unwrap();
 
@@ -1493,13 +1439,11 @@ async fn app_runtime_does_not_expose_playground_backend_namespace() {
     );
 
     let response = router
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "POST",
             "/app/v3/api/playground/runtime/invocations",
             Body::from("{}"),
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -1541,13 +1485,11 @@ async fn app_runtime_gateway_executor_routes_openai_chat_invocations_to_gateway_
         );
 
     let response = router
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "GET",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream",
             Body::empty(),
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -3413,13 +3355,11 @@ async fn app_runtime_gateway_executor_routes_elevenlabs_sfx_generation_and_keeps
 
 async fn runtime_stream_request(router: axum::Router) -> axum::response::Response {
     router
-        .oneshot(
-            runtime_json_request(
+        .oneshot(runtime_json_request(
             "GET",
             "/app/v3/api/runtime/invocations/runtime-invocation-1/events/stream",
             Body::empty(),
-        )
-        )
+        ))
         .await
         .unwrap()
 }

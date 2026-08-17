@@ -33,8 +33,7 @@ pub fn resolve_cloud_web_environment_from_process_env() -> WebEnvironment {
 
 /// Cloud Router HTTP service security policy aligned with IAM/Drive dev bootstrap behavior.
 pub fn cloud_service_security_policy(environment: &WebEnvironment) -> SecurityPolicy {
-    let configured_origins =
-        sdkwork_web_bootstrap::cors_allowed_origins_from_process_env();
+    let configured_origins = sdkwork_web_bootstrap::cors_allowed_origins_from_process_env();
     let mut security_policy = if matches!(environment, WebEnvironment::Dev | WebEnvironment::Test) {
         SecurityPolicy::default()
     } else {

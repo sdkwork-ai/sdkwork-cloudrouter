@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use sdkwork_database_config::DatabaseConfig;
@@ -7,6 +7,7 @@ use sdkwork_database_lifecycle::{
 };
 use sdkwork_database_spi::{DatabaseModuleRegistry, DefaultDatabaseModule};
 use sdkwork_database_sqlx::{create_pool_from_config, DatabasePool};
+use sha2::{Digest, Sha256};
 
 pub struct CloudRouterDatabaseHost {
     pool: DatabasePool,
@@ -163,6 +164,139 @@ pub async fn bootstrap_cloud_router_database_from_env() -> Result<CloudRouterDat
     bootstrap_cloud_router_database(pool).await
 }
 
+/// Repairs known development-only migration-history changes introduced by the
+/// composable pricing/billing split. These repairs only accept checksums from
+/// migration files replaced during that split; arbitrary drift remains a hard
+/// lifecycle error.
+///
+/// Returns `Ok(true)` when the repair was applied, `Ok(false)` when the
+/// database is not in that legacy state, and `Err` when the repair attempt
+/// itself failed.
+pub async fn repair_known_pricing_migration_history(pool: &DatabasePool) -> Result<bool, String> {
+    const POSTGRES_ENGINE: &str = "postgres";
+    const LEGACY_PRICING_0002_CHECKSUM: &str =
+        "7e33bc1320ecb80d40e22dd8f133ef81051d3a6256a98fa07f9d005fa2e0e3ea";
+    const LEGACY_BILLING_0002_CHECKSUM: &str =
+        "53d2a36ac048aeee016d73d851b05329f3e1f7ef010e1923c487f0cbe2d94f22";
+
+    let postgres = pool
+        .as_postgres()
+        .ok_or_else(|| "expected PostgreSQL pool".to_owned())?;
+    let pricing_checksum: Option<String> = sqlx::query_scalar(
+        r#"
+        SELECT checksum
+        FROM ops_schema_migration_history
+        WHERE module_id = $1
+          AND version = '0002'
+          AND engine = $2
+        "#,
+    )
+    .bind("pricing")
+    .bind(POSTGRES_ENGINE)
+    .fetch_optional(postgres)
+    .await
+    .map_err(|error| format!("inspect pricing migration 0002 checksum failed: {error}"))?;
+
+    let billing_checksum: Option<String> = sqlx::query_scalar(
+        r#"
+        SELECT checksum
+        FROM ops_schema_migration_history
+        WHERE module_id = $1
+          AND version = '0002'
+          AND engine = $2
+        "#,
+    )
+    .bind("cloudrouter-billing")
+    .bind(POSTGRES_ENGINE)
+    .fetch_optional(postgres)
+    .await
+    .map_err(|error| {
+        format!("inspect cloudrouter-billing migration 0002 checksum failed: {error}")
+    })?;
+
+    let repair_pricing = pricing_checksum.as_deref() == Some(LEGACY_PRICING_0002_CHECKSUM);
+    let repair_billing = billing_checksum.as_deref() == Some(LEGACY_BILLING_0002_CHECKSUM);
+    if !repair_pricing && !repair_billing {
+        return Ok(false);
+    }
+
+    let app_root = resolve_app_root();
+    let mut tx = postgres
+        .begin()
+        .await
+        .map_err(|error| format!("begin migration history repair transaction failed: {error}"))?;
+
+    if repair_pricing {
+        let migration_root = app_root.join("database/modules/pricing/migrations/postgres");
+        let migration_0001 = migration_root.join("0001_pricing_rate_book_dimension_columns.up.sql");
+        let migration_0002 = migration_root.join("0002_pricing_integrity_guards.up.sql");
+        let checksum_0001 = file_checksum(&migration_0001)?;
+        let checksum_0002 = file_checksum(&migration_0002)?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO ops_schema_migration_history (
+                module_id, version, name, engine, checksum, applied_by
+            )
+            VALUES (
+                'pricing', '0001', 'pricing_rate_book_dimension_columns', 'postgres', $1,
+                'cloudrouterctl:dev-history-repair'
+            )
+            ON CONFLICT (module_id, version, engine) DO UPDATE
+            SET checksum = EXCLUDED.checksum
+            "#,
+        )
+        .bind(&checksum_0001)
+        .execute(&mut *tx)
+        .await
+        .map_err(|error| format!("record pricing migration 0001 repair failed: {error}"))?;
+
+        update_migration_checksum(&mut tx, "pricing", &checksum_0002).await?;
+    }
+
+    if repair_billing {
+        let migration = app_root.join(
+            "database/modules/cloudrouter-billing/migrations/postgres/0002_pricing_rule_integrity_guards.up.sql",
+        );
+        let checksum = file_checksum(&migration)?;
+        update_migration_checksum(&mut tx, "cloudrouter-billing", &checksum).await?;
+    }
+
+    tx.commit()
+        .await
+        .map_err(|error| format!("commit migration history repair failed: {error}"))?;
+    Ok(true)
+}
+
+async fn update_migration_checksum(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    module_id: &str,
+    checksum: &str,
+) -> Result<(), String> {
+    let updated = sqlx::query(
+        r#"
+        UPDATE ops_schema_migration_history
+        SET checksum = $1,
+            applied_by = COALESCE(applied_by, 'cloudrouterctl:dev-history-repair')
+        WHERE module_id = $2
+          AND version = '0002'
+          AND engine = 'postgres'
+        "#,
+    )
+    .bind(checksum)
+    .bind(module_id)
+    .execute(&mut **tx)
+    .await
+    .map_err(|error| format!("update {module_id} migration 0002 repair failed: {error}"))?;
+
+    if updated.rows_affected() == 0 {
+        return Err(format!(
+            "{module_id} migration 0002 repair found no recorded history row"
+        ));
+    }
+    Ok(())
+}
+
 fn resolve_app_root() -> PathBuf {
     std::env::var("SDKWORK_CLOUDROUTER_ROUTER_APP_ROOT")
         .map(PathBuf::from)
@@ -224,6 +358,12 @@ fn production_like_environment(value: &str) -> bool {
         value.trim().to_ascii_lowercase().as_str(),
         "production" | "prod" | "staging"
     )
+}
+
+fn file_checksum(path: &Path) -> Result<String, String> {
+    let bytes = std::fs::read(path)
+        .map_err(|error| format!("failed to read {}: {error}", path.display()))?;
+    Ok(hex::encode(Sha256::digest(bytes)))
 }
 
 #[cfg(test)]
@@ -297,12 +437,8 @@ mod tests {
             "ai_runtime_usage_link",
             "iam_gateway_api_key",
             "ops_gateway_instance",
-            "pricing_product",
-            "pricing_operation",
-            "pricing_meter",
             "pricing_price_book",
             "pricing_rate",
-            "pricing_rate_binding",
             "cloudrouter_pricing_plan",
             "cloudrouter_usage_measurement",
             "cloudrouter_rating_decision",

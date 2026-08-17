@@ -2,6 +2,8 @@
 export interface AdminPricingRule {
   /** Catalog key field on admin pricing rule. */
   catalogKey?: string;
+  /** Conditions field on admin pricing rule. */
+  conditions?: ({ dimensionCode: string; operatorCode: 'exists' | 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'in' | 'not_in'; value: string | number | boolean | (string | number | boolean)[]; })[];
   /** Created at field on admin pricing rule. */
   createdAt?: string;
   /** Effective from field on admin pricing rule. */
@@ -34,6 +36,8 @@ export interface AdminPricingRule {
   regionCode?: string;
   /** Rule code field on admin pricing rule. */
   ruleCode: string;
+  /** Schedule field on admin pricing rule. */
+  schedule?: { excludeDates: string[]; includeDates: string[]; timeZone: string; weeklyWindows: ({ daysOfWeek: number[]; endDayOffset: 0 | 1; endTime: string; startTime: string; windowCode: string; })[]; } | null;
   /** Status field on admin pricing rule. */
   status: 'active' | 'inactive';
   /** Unit price override field on admin pricing rule. */

@@ -129,7 +129,7 @@ test("generated app model reference price contract includes regionCode", () => {
   const appOpenApi = JSON.parse(readFileSync(new URL("../../../sdkwork-models/apis/app-api/intelligence/openapi.json", import.meta.url), "utf8"));
   const referencePriceSchema = appOpenApi.components?.schemas?.AppModelCatalogReferencePrice;
   const appSdkReferencePriceType = readFileSync(
-    new URL("../../../sdkwork-models/sdks/sdkwork-models-app-sdk/sdkwork-models-app-sdk-typescript/generated/server-openapi/src/types/app-model-catalog-reference-price.ts", import.meta.url),
+    new URL("../../../sdkwork-models/sdks/sdkwork-models-app-sdk/sdkwork-models-app-sdk-typescript/src/index.ts/types/app-model-catalog-reference-price.ts", import.meta.url),
     "utf8",
   );
 

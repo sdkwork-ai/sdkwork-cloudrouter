@@ -31,7 +31,7 @@
 - `/console/recharge` now includes `plus_order`, `plus_order_item`, and `plus_payment` because `submitRecharge` creates a trade/payment workflow, not only a recharge pack selection.
 - `/console/commerce` now includes `commerce_account_ledger_entry` because coupon redemption changes account balance and must leave an appbase-compatible account ledger entry.
 - `/console/routing` now includes `iam_gateway_api_key` because the routing console service fetches API keys for route/key context.
-- `/admin/model` now includes `ai_model_capability`, `ai_pricing_import_snapshot`, and `ops_audit_log` for model sync and admin model mutations.
+- `/admin/model` now includes `ai_model_capability`, `ai_model_catalog_sync_run`, and `ops_audit_log` for model sync and admin model mutations.
 - Admin write surfaces for channel, group, marketing, ratelimit, user, model, and announcement now include `ops_audit_log` where the actual service exposes mutating operations.
 
 ## Commands

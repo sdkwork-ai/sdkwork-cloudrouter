@@ -168,12 +168,14 @@ async function withBackendSdkFetch<T>(
     sessionId: "test-session",
   });
   resetCloudRouterSdkClients();
+  ModelService.resetRankingCallStatsCache();
 
   try {
     return await fn(captured);
   } finally {
     clearStoredAppSessionToken();
     resetCloudRouterSdkClients();
+    ModelService.resetRankingCallStatsCache();
     globalThis.fetch = originalFetch;
     if (originalWindowDescriptor) {
       Object.defineProperty(globalThis, "window", originalWindowDescriptor);
@@ -266,6 +268,38 @@ test("admin model page groups rows by vendor code when persisted vendor ids diff
   assert.match(source, /vendorCode: vendor\.vendorCode/);
   assert.doesNotMatch(source, /models\.filter\(m => m\.vendorId === selectedVendorId/);
   assert.doesNotMatch(source, /models\.filter\(m => m\.vendorId === v\.id/);
+});
+
+test("admin model page loads vendor models and rankings only after a vendor is selected", () => {
+  const source = readFileSync(
+    resolve(PORTAL_ROOT, "../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/index.tsx"),
+    "utf8",
+  );
+  const serviceSource = readFileSync(
+    resolve(PORTAL_ROOT, "../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts"),
+    "utf8",
+  );
+
+  assert.match(source, /const \[selectedVendorId, setSelectedVendorId\] = useState<string>\(''\)/);
+  assert.match(source, /onClick=\{\(\) => setSelectedVendorId\(v\.id\)\}/);
+  assert.match(source, /if \(!selectedVendorId \|\| vendors\.length === 0\)/);
+  assert.match(source, /void loadVendorModels\(\);/);
+  assert.match(source, /\[vendors, selectedVendorId, page, pageSize, search, modalityFilters\]/);
+  assert.doesNotMatch(source, /selectPreferredModelVendorId\(initialized\.vendors/);
+  assert.doesNotMatch(source, /Promise\.all\(initialized\.vendors\.map/);
+  assert.doesNotMatch(
+    source,
+    /initialized\.vendors\.map\(async \(vendor\) => \{[\s\S]*?fetchModelsPage\(\{ vendorCode: vendor\.vendorCode, page: 1, pageSize: 1 \}\)/,
+  );
+  assert.doesNotMatch(source, /page: 1, pageSize: 1/);
+  assert.match(
+    serviceSource,
+    /static async fetchInitializedCatalog\(\): Promise<InitializedModelCatalog> \{\s*const vendors = await ModelService\.fetchVendors\(\);/,
+  );
+  assert.doesNotMatch(
+    serviceSource,
+    /fetchModelsPage\(\{ page: 1, pageSize: 1 \}\)/,
+  );
 });
 
 test("admin model page visible copy uses the admin model i18n namespace", () => {
@@ -1012,12 +1046,6 @@ test("admin model service initializes empty catalog through generated backend SD
       if (url === "/backend/v3/api/ai/model_vendors" && method === "GET") {
         return { items: [] };
       }
-      if (url.split("?")[0] === "/backend/v3/api/ai/models" && method === "GET") {
-        return { items: [] };
-      }
-      if (url === "/backend/v3/api/ai/model_rankings?page_size=200" && method === "GET") {
-        return { items: [] };
-      }
       if (url === "/backend/v3/api/ai/models/sync" && method === "POST") {
         return {
           synced: true,
@@ -1075,12 +1103,10 @@ test("admin model service initializes empty catalog through generated backend SD
         captured.map((request) => `${request.method} ${request.url}`),
         [
           "GET /backend/v3/api/ai/model_vendors",
-          "GET /backend/v3/api/ai/models?page=1&page_size=1",
-          "GET /backend/v3/api/ai/model_rankings?page_size=200",
           "POST /backend/v3/api/ai/models/sync",
         ],
       );
-      assert.deepEqual(JSON.parse(captured[3].body), {
+      assert.deepEqual(JSON.parse(captured[1].body), {
         source: "sdkwork_models",
         mode: "official_refresh",
         force: true,
@@ -1088,6 +1114,123 @@ test("admin model service initializes empty catalog through generated backend SD
       for (const request of captured) {
         assert.equal(request.headers["x-request-id"], undefined);
       }
+    },
+  );
+});
+
+test("admin model initialized catalog loads vendors without probing models or rankings", async () => {
+  await withBackendSdkFetch(
+    (url, init) => {
+      const method = init?.method ?? "GET";
+      if (url === "/backend/v3/api/ai/model_vendors" && method === "GET") {
+        return {
+          items: [
+            adminVendor({
+              id: "vendor-mureka",
+              vendorCode: "mureka",
+              name: "Mureka",
+            }),
+            adminVendor({
+              id: "vendor-openai",
+              vendorCode: "openai",
+              name: "OpenAI",
+            }),
+          ],
+        };
+      }
+      throw new Error(`Unexpected SDK request ${method} ${url}`);
+    },
+    async (captured) => {
+      const catalog = await ModelService.fetchInitializedCatalog();
+
+      assert.equal(catalog.initialized, true);
+      assert.equal(catalog.vendors.length, 2);
+      assert.equal(catalog.models.length, 0);
+      assert.deepEqual(
+        captured.map((request) => `${request.method} ${request.url}`),
+        ["GET /backend/v3/api/ai/model_vendors"],
+      );
+    },
+  );
+});
+
+test("admin model service loads selected vendor models and rankings without probing other vendors", async () => {
+  await withBackendSdkFetch(
+    (url, init) => {
+      const method = init?.method ?? "GET";
+      if (url === "/backend/v3/api/ai/model_vendors" && method === "GET") {
+        return {
+          items: [
+            adminVendor({
+              id: "vendor-mureka",
+              vendorCode: "mureka",
+              name: "Mureka",
+            }),
+            adminVendor({
+              id: "vendor-openai",
+              vendorCode: "openai",
+              name: "OpenAI",
+            }),
+          ],
+        };
+      }
+      if (url === "/backend/v3/api/ai/models?page=1&page_size=20&vendor_codes=mureka" && method === "GET") {
+        return {
+          items: [
+            adminModel({
+              id: "model-mureka-auto",
+              vendorId: "vendor-mureka",
+              vendorCode: "mureka",
+              model: "mureka-auto",
+              type: "Music",
+              modalities: ["music"],
+              inputModalities: ["text", "audio"],
+              outputModalities: ["audio"],
+            }),
+          ],
+          pageInfo: {
+            mode: "offset",
+            page: 1,
+            pageSize: 20,
+            totalItems: "1",
+            totalPages: 1,
+            hasMore: false,
+          },
+        };
+      }
+      if (url === "/backend/v3/api/ai/model_rankings?page_size=200" && method === "GET") {
+        return { items: [] };
+      }
+      throw new Error(`Unexpected SDK request ${method} ${url}`);
+    },
+    async (captured) => {
+      const catalog = await ModelService.fetchInitializedCatalog();
+      assert.deepEqual(
+        captured.map((request) => `${request.method} ${request.url}`),
+        ["GET /backend/v3/api/ai/model_vendors"],
+      );
+
+      const models = await ModelService.fetchModelsPage({
+        vendorCode: "mureka",
+        page: 1,
+        pageSize: 20,
+      });
+
+      assert.equal(catalog.vendors.length, 2);
+      assert.equal(models.items.length, 1);
+      assert.equal(models.items[0].vendorCode, "mureka");
+      assert.equal(
+        captured.some((request) => request.url.includes("page_size=1")),
+        false,
+      );
+      assert.deepEqual(
+        captured.map((request) => `${request.method} ${request.url}`),
+        [
+          "GET /backend/v3/api/ai/model_vendors",
+          "GET /backend/v3/api/ai/models?page=1&page_size=20&vendor_codes=mureka",
+          "GET /backend/v3/api/ai/model_rankings?page_size=200",
+        ],
+      );
     },
   );
 });
@@ -1137,18 +1280,20 @@ test("admin model service keeps initialized catalog rows when returned models ha
     },
     async (captured) => {
       const catalog = await ModelService.fetchInitializedCatalog();
+      const models = await ModelService.fetchModelsPage({ vendorCode: "openai" });
 
       assert.equal(catalog.initialized, true);
       assert.equal(catalog.vendors.length, 1);
       assert.equal(catalog.vendors[0].name, "OpenAI");
-      assert.equal(catalog.models.length, 2);
-      assert.equal(catalog.models[0].model, "gpt-image-1.5");
-      assert.deepEqual(catalog.models[0].regionPrices, []);
+      assert.equal(catalog.models.length, 0);
+      assert.equal(models.items.length, 2);
+      assert.equal(models.items[0].model, "gpt-image-1.5");
+      assert.deepEqual(models.items[0].regionPrices, []);
       assert.deepEqual(
         captured.map((request) => `${request.method} ${request.url}`),
         [
           "GET /backend/v3/api/ai/model_vendors",
-          "GET /backend/v3/api/ai/models?page=1&page_size=1",
+          "GET /backend/v3/api/ai/models?vendor_codes=openai",
           "GET /backend/v3/api/ai/model_rankings?page_size=200",
         ],
       );

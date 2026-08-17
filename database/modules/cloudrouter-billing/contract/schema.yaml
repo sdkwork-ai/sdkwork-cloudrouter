@@ -2,7 +2,7 @@ schema_version: 1
 kind: sdkwork.database.schema
 database_role: authoritative-server
 module_id: cloudrouter-billing
-contract_version: 0.4.0
+contract_version: 0.5.0
 owner_team: cloud-router-platform
 compliance_level: L2
 engines:
@@ -871,6 +871,16 @@ tables:
         required: false
         postgres_type: NUMERIC(38, 12)
         constraints: ''
+      conditions:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '[]'::jsonb
+      schedule:
+        type: json
+        required: false
+        postgres_type: JSONB
+        constraints: ''
       priority:
         type: int32
         required: true
@@ -944,6 +954,14 @@ tables:
         columns: []
         expression: (formula_mode = 'multiplier_markup' AND unit_price_override IS NULL) OR (formula_mode = 'unit_price_override'
           AND unit_price_override IS NOT NULL AND multiplier = 1 AND markup_amount = 0)
+      - name: ck_cloudrouter_pricing_rule_conditions_json
+        type: check
+        columns: []
+        expression: jsonb_typeof(conditions) = 'array'
+      - name: ck_cloudrouter_pricing_rule_schedule_json
+        type: check
+        columns: []
+        expression: schedule IS NULL OR jsonb_typeof(schedule) = 'object'
       - name: ck_cloudrouter_pricing_rule_interval
         type: check
         columns: []

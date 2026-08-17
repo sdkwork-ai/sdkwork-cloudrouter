@@ -11,22 +11,6 @@
       "system_of_record": true
     },
     {
-      "table_name": "pricing_meter",
-      "owner": "pricing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "tenant_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "pricing_operation",
-      "owner": "pricing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "tenant_entity",
-      "system_of_record": true
-    },
-    {
       "table_name": "pricing_price_book",
       "owner": "pricing-service",
       "compliance_level": "L2",
@@ -35,67 +19,11 @@
       "system_of_record": true
     },
     {
-      "table_name": "pricing_product",
-      "owner": "pricing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "tenant_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "pricing_product_binding",
-      "owner": "pricing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "relation_entity",
-      "system_of_record": true
-    },
-    {
       "table_name": "pricing_rate",
       "owner": "pricing-service",
       "compliance_level": "L2",
       "lifecycle_status": "active",
       "profile": "tenant_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "pricing_rate_binding",
-      "owner": "pricing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "relation_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "pricing_rate_condition",
-      "owner": "pricing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "relation_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "pricing_rate_formula",
-      "owner": "pricing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "relation_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "pricing_rate_formula_term",
-      "owner": "pricing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "relation_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "pricing_rate_tier",
-      "owner": "pricing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "relation_entity",
       "system_of_record": true
     }
   ]

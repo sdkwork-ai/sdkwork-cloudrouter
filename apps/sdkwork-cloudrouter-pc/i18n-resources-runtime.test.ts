@@ -89,6 +89,8 @@ test('portal bootstrap composes Cloud Router and Agents catalogs through the SDK
   );
 
   assert.match(resourcesSource, /@sdkwork\/cloudrouter-pc-admin-upstream\/i18n/);
+  assert.match(resourcesSource, /@sdkwork\/cloudrouter-pc-admin-pricing\/i18n/);
+  assert.match(resourcesSource, /pricingAdminMessages/);
   assert.match(i18nSource, /defineSdkworkI18nRuntimeConfig/);
   assert.match(i18nSource, /defaultLocale: 'en-US'/);
   assert.match(i18nSource, /fallbackLocale: 'en-US'/);

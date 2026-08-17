@@ -281,6 +281,20 @@ routes:
   api_surface: backend
   route: /admin/pricing/rules
   evidence: *pricing-evidence
+- package: '@sdkwork/cloudrouter-pc-admin-pricing'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+  api_surface: backend
+  route: /admin/pricing/settings
+  operation_routes:
+  - /admin/pricing/settings
+  - /admin/pricing/plans
+  - /admin/pricing/rules
+  - /admin/pricing/rules/{ruleId}
+  evidence: *pricing-evidence
 - route: /partner-join
   package: '@sdkwork/cloudrouter-pc-partner-join'
   owner: admin-control-plane

@@ -21,22 +21,18 @@ unknown or non-applicable rate.
 
 ## Decision
 
-The reusable `pricing` database module is the price authority. It owns:
+The reusable `pricing` database module is the price authority. It owns three
+physical tables: `pricing_import_run` for staged import, validation, activation,
+lineage, and replay evidence; immutable, versioned `pricing_price_book` records
+scoped by source, vendor, region, and currency; and `pricing_rate`, which stores
+the product, operation, meter, resource binding, billability, charge timing,
+calculation mode, quantity aggregation, unit size, unit price, effective
+interval, and constrained condition/tier/formula JSON payloads in one row.
 
-- `pricing_product` and `pricing_operation` for sellable capability identity;
-- `pricing_meter` for token, request, item, result, character, image, duration,
-  pixel, storage, and bandwidth measurement units;
-- `pricing_product_binding` for mapping products and operations to vendor,
-  region, catalog model, API format, endpoint, and other external resources;
-- immutable, versioned `pricing_price_book` records scoped by source, vendor,
-  region, and currency;
-- `pricing_rate` with explicit billability, charge timing, calculation mode,
-  quantity aggregation, unit size, unit price, and effective interval;
-- `pricing_rate_binding` for explicitly reusing one rate across one or more
-  product-resource bindings without parsing identity from `rate_code`;
-- `pricing_rate_condition` for typed rate dimensions;
-- `pricing_import_run` for staged import, validation, activation, lineage, and
-  replay evidence.
+The former product, operation, meter, binding, condition, tier, and formula
+tables were intentionally collapsed before launch. Catalog sync and the
+pricing service are the only writers; Admin pricing pages write only the
+`cloudrouter_*` policy tables.
 
 `sdkwork-models` is the official-price source. Every official rate declares
 `priceBookCode`, `productCode`, `operationCode`, `billability`, `unitSize`, and

@@ -17,7 +17,10 @@
       "query_parameters": [],
       "query_parameters_declared": false,
       "read_sources": [
-        "ai_pricing_import_snapshot"
+        "ai_model_vendor",
+        "ai_model",
+        "ai_model_capability",
+        "ai_model_pricing"
       ],
       "request_body_required": false,
       "request_id_header": false,
@@ -39,6 +42,9 @@
       "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "tag": "ai",
       "write_tables": [
+        "ai_model",
+        "ai_model_capability",
+        "ai_model_pricing",
         "ops_audit_log"
       ]
     },
@@ -59,7 +65,7 @@
       "query_parameters": [],
       "query_parameters_declared": false,
       "read_sources": [
-        "ai_pricing_import_snapshot"
+        "ai_model_vendor"
       ],
       "request_body_required": false,
       "request_id_header": false,
@@ -81,6 +87,7 @@
       "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "tag": "ai",
       "write_tables": [
+        "ai_model_vendor",
         "ops_audit_log"
       ]
     },
@@ -150,7 +157,7 @@
       "query_parameters": [],
       "query_parameters_declared": false,
       "read_sources": [
-        "ai_pricing_import_snapshot"
+        "ai_model"
       ],
       "request_body_required": null,
       "request_id_header": false,
@@ -172,6 +179,9 @@
       "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "tag": "ai",
       "write_tables": [
+        "ai_model",
+        "ai_model_capability",
+        "ai_model_pricing",
         "ops_audit_log"
       ]
     },
@@ -241,7 +251,7 @@
       "query_parameters": [],
       "query_parameters_declared": true,
       "read_sources": [
-        "ai_pricing_import_snapshot"
+        "ai_model_vendor"
       ],
       "request_body_required": null,
       "request_id_header": false,
@@ -2056,7 +2066,7 @@
       "query_parameters": [],
       "query_parameters_declared": false,
       "read_sources": [
-        "ai_pricing_import_snapshot"
+        "ai_model_catalog_sync_run"
       ],
       "request_body_required": false,
       "request_id_header": false,
@@ -2078,7 +2088,7 @@
       "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "tag": "ai",
       "write_tables": [
-        "ai_pricing_import_snapshot",
+        "ai_model_catalog_sync_run",
         "ops_audit_log"
       ]
     },
@@ -2266,7 +2276,10 @@
       "query_parameters": [],
       "query_parameters_declared": false,
       "read_sources": [
-        "ai_pricing_import_snapshot"
+        "ai_model_vendor",
+        "ai_model",
+        "ai_model_capability",
+        "ai_model_pricing"
       ],
       "request_body_required": false,
       "request_id_header": false,
@@ -2288,6 +2301,9 @@
       "source": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
       "tag": "ai",
       "write_tables": [
+        "ai_model",
+        "ai_model_capability",
+        "ai_model_pricing",
         "ops_audit_log"
       ]
     },
@@ -7743,6 +7759,75 @@
               "maxLength": 256,
               "type": "string"
             },
+            "conditions": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "dimensionCode": {
+                    "maxLength": 96,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "operatorCode": {
+                    "enum": [
+                      "exists",
+                      "eq",
+                      "neq",
+                      "gt",
+                      "gte",
+                      "lt",
+                      "lte",
+                      "in",
+                      "not_in"
+                    ],
+                    "type": "string"
+                  },
+                  "value": {
+                    "oneOf": [
+                      {
+                        "maxLength": 512,
+                        "type": "string"
+                      },
+                      {
+                        "format": "double",
+                        "type": "number"
+                      },
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "items": {
+                          "oneOf": [
+                            {
+                              "maxLength": 512,
+                              "type": "string"
+                            },
+                            {
+                              "format": "double",
+                              "type": "number"
+                            },
+                            {
+                              "type": "boolean"
+                            }
+                          ]
+                        },
+                        "maxItems": 64,
+                        "minItems": 1,
+                        "type": "array"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "dimensionCode",
+                  "operatorCode",
+                  "value"
+                ],
+                "type": "object"
+              },
+              "maxItems": 32,
+              "type": "array"
+            },
             "effectiveFrom": {
               "format": "date-time",
               "maxLength": 64,
@@ -7804,6 +7889,90 @@
               "maxLength": 96,
               "type": "string"
             },
+            "schedule": {
+              "additionalProperties": false,
+              "nullable": true,
+              "properties": {
+                "excludeDates": {
+                  "items": {
+                    "format": "date",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                    "type": "string"
+                  },
+                  "maxItems": 366,
+                  "type": "array"
+                },
+                "includeDates": {
+                  "items": {
+                    "format": "date",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                    "type": "string"
+                  },
+                  "maxItems": 366,
+                  "type": "array"
+                },
+                "timeZone": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "weeklyWindows": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "daysOfWeek": {
+                        "items": {
+                          "maximum": 7,
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "maxItems": 7,
+                        "minItems": 1,
+                        "type": "array"
+                      },
+                      "endDayOffset": {
+                        "enum": [
+                          0,
+                          1
+                        ],
+                        "type": "integer"
+                      },
+                      "endTime": {
+                        "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                        "type": "string"
+                      },
+                      "startTime": {
+                        "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                        "type": "string"
+                      },
+                      "windowCode": {
+                        "maxLength": 96,
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "windowCode",
+                      "daysOfWeek",
+                      "startTime",
+                      "endTime",
+                      "endDayOffset"
+                    ],
+                    "type": "object"
+                  },
+                  "maxItems": 64,
+                  "minItems": 1,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "timeZone",
+                "weeklyWindows",
+                "includeDates",
+                "excludeDates"
+              ],
+              "type": "object"
+            },
             "status": {
               "enum": [
                 "active",
@@ -7834,6 +8003,75 @@
             "catalogKey": {
               "maxLength": 256,
               "type": "string"
+            },
+            "conditions": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "dimensionCode": {
+                    "maxLength": 96,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "operatorCode": {
+                    "enum": [
+                      "exists",
+                      "eq",
+                      "neq",
+                      "gt",
+                      "gte",
+                      "lt",
+                      "lte",
+                      "in",
+                      "not_in"
+                    ],
+                    "type": "string"
+                  },
+                  "value": {
+                    "oneOf": [
+                      {
+                        "maxLength": 512,
+                        "type": "string"
+                      },
+                      {
+                        "format": "double",
+                        "type": "number"
+                      },
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "items": {
+                          "oneOf": [
+                            {
+                              "maxLength": 512,
+                              "type": "string"
+                            },
+                            {
+                              "format": "double",
+                              "type": "number"
+                            },
+                            {
+                              "type": "boolean"
+                            }
+                          ]
+                        },
+                        "maxItems": 64,
+                        "minItems": 1,
+                        "type": "array"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "dimensionCode",
+                  "operatorCode",
+                  "value"
+                ],
+                "type": "object"
+              },
+              "maxItems": 32,
+              "type": "array"
             },
             "createdAt": {
               "format": "date-time",
@@ -7911,6 +8149,90 @@
             "ruleCode": {
               "maxLength": 96,
               "type": "string"
+            },
+            "schedule": {
+              "additionalProperties": false,
+              "nullable": true,
+              "properties": {
+                "excludeDates": {
+                  "items": {
+                    "format": "date",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                    "type": "string"
+                  },
+                  "maxItems": 366,
+                  "type": "array"
+                },
+                "includeDates": {
+                  "items": {
+                    "format": "date",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                    "type": "string"
+                  },
+                  "maxItems": 366,
+                  "type": "array"
+                },
+                "timeZone": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "weeklyWindows": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "daysOfWeek": {
+                        "items": {
+                          "maximum": 7,
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "maxItems": 7,
+                        "minItems": 1,
+                        "type": "array"
+                      },
+                      "endDayOffset": {
+                        "enum": [
+                          0,
+                          1
+                        ],
+                        "type": "integer"
+                      },
+                      "endTime": {
+                        "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                        "type": "string"
+                      },
+                      "startTime": {
+                        "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                        "type": "string"
+                      },
+                      "windowCode": {
+                        "maxLength": 96,
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "windowCode",
+                      "daysOfWeek",
+                      "startTime",
+                      "endTime",
+                      "endDayOffset"
+                    ],
+                    "type": "object"
+                  },
+                  "maxItems": 64,
+                  "minItems": 1,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "timeZone",
+                "weeklyWindows",
+                "includeDates",
+                "excludeDates"
+              ],
+              "type": "object"
             },
             "status": {
               "enum": [
@@ -8043,6 +8365,829 @@
         "cloudrouter_pricing_rule",
         "ops_audit_log"
       ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/pricing/official_rates",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#fetchAdminOfficialPricingRates@/admin/pricing/settings",
+      "kind": "read",
+      "module": "pc-admin-pricing",
+      "openapi_exposed": true,
+      "operation": "fetchAdminOfficialPricingRates",
+      "operation_id": "officialRates.list",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "category",
+          "required": false,
+          "schema": {
+            "enum": [
+              "all",
+              "llm",
+              "image",
+              "video",
+              "audio",
+              "music",
+              "embedding",
+              "sound",
+              "api",
+              "other"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "q",
+          "required": false,
+          "schema": {
+            "maxLength": 256,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "vendor_code",
+          "required": false,
+          "schema": {
+            "maxLength": 160,
+            "pattern": "^[A-Za-z0-9._:/-]+$",
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "region_code",
+          "required": false,
+          "schema": {
+            "maxLength": 160,
+            "pattern": "^[A-Za-z0-9._:/-]+$",
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "meter_code",
+          "required": false,
+          "schema": {
+            "maxLength": 160,
+            "pattern": "^[A-Za-z0-9._:/-]+$",
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "currency_code",
+          "required": false,
+          "schema": {
+            "maxLength": 3,
+            "pattern": "^[A-Z]{3}$",
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page",
+          "required": false,
+          "schema": {
+            "format": "int32",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        {
+          "in": "query",
+          "name": "page_size",
+          "required": false,
+          "schema": {
+            "format": "int32",
+            "maximum": 200,
+            "minimum": 1,
+            "type": "integer"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "pricing_price_book",
+        "pricing_rate",
+        "pricing_import_run"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "OfficialPricingCatalogResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "OfficialPricingCatalogResponse",
+          "properties": {
+            "currencies": {
+              "items": {
+                "additionalProperties": false,
+                "name": "OfficialPricingValueFacet",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "code",
+                  "count"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "groups": {
+              "items": {
+                "additionalProperties": false,
+                "name": "OfficialPricingGroupFacet",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "code",
+                  "count"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "items": {
+              "items": {
+                "additionalProperties": false,
+                "name": "OfficialPricingRate",
+                "properties": {
+                  "apiFormat": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "billability": {
+                    "enum": [
+                      "chargeable",
+                      "free",
+                      "not_applicable",
+                      "unknown"
+                    ],
+                    "type": "string"
+                  },
+                  "calculationMode": {
+                    "enum": [
+                      "per_unit",
+                      "flat",
+                      "graduated",
+                      "volume",
+                      "formula"
+                    ],
+                    "type": "string"
+                  },
+                  "capabilities": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  },
+                  "catalogKey": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "chargeTiming": {
+                    "enum": [
+                      "request_accepted",
+                      "successful_result",
+                      "usage_reported"
+                    ],
+                    "type": "string"
+                  },
+                  "conditions": {
+                    "items": {
+                      "additionalProperties": false,
+                      "name": "OfficialPricingRateCondition",
+                      "properties": {
+                        "dimensionCode": {
+                          "type": "string"
+                        },
+                        "operatorCode": {
+                          "enum": [
+                            "eq",
+                            "neq",
+                            "gt",
+                            "gte",
+                            "lt",
+                            "lte",
+                            "in",
+                            "not_in",
+                            "exists"
+                          ],
+                          "type": "string"
+                        },
+                        "value": {
+                          "oneOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "boolean"
+                            },
+                            {
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "boolean"
+                                  }
+                                ]
+                              },
+                              "maxItems": 64,
+                              "type": "array"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "dimensionCode",
+                        "operatorCode",
+                        "value"
+                      ],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "contextTokens": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "currencyCode": {
+                    "pattern": "^[A-Z]{3}$",
+                    "type": "string"
+                  },
+                  "effectiveFrom": {
+                    "type": "string"
+                  },
+                  "effectiveTo": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "endpointCode": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "formula": {
+                    "additionalProperties": false,
+                    "name": "OfficialPricingFormula",
+                    "nullable": true,
+                    "properties": {
+                      "constantUnits": {
+                        "type": "string"
+                      },
+                      "formulaCode": {
+                        "type": "string"
+                      },
+                      "formulaVersion": {
+                        "type": "string"
+                      },
+                      "maximumUnits": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "minimumUnits": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "quantityCoefficient": {
+                        "type": "string"
+                      },
+                      "terms": {
+                        "items": {
+                          "additionalProperties": false,
+                          "name": "OfficialPricingFormulaTerm",
+                          "properties": {
+                            "coefficient": {
+                              "type": "string"
+                            },
+                            "dimensionCode": {
+                              "type": "string"
+                            },
+                            "termCode": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "termCode",
+                            "dimensionCode",
+                            "coefficient"
+                          ],
+                          "type": "object"
+                        },
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "formulaCode",
+                      "formulaVersion",
+                      "constantUnits",
+                      "quantityCoefficient",
+                      "terms"
+                    ],
+                    "type": "object"
+                  },
+                  "groupCodes": {
+                    "items": {
+                      "enum": [
+                        "all",
+                        "llm",
+                        "image",
+                        "video",
+                        "audio",
+                        "music",
+                        "embedding",
+                        "sound",
+                        "api",
+                        "other"
+                      ],
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "inputModalities": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  },
+                  "maxInputTokens": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "maxOutputTokens": {
+                    "format": "int64",
+                    "nullable": true,
+                    "pattern": "^[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "meterCode": {
+                    "type": "string"
+                  },
+                  "meterDisplayName": {
+                    "type": "string"
+                  },
+                  "minimumQuantity": {
+                    "pattern": "^[0-9]+(?:\\.[0-9]+)?$",
+                    "type": "string"
+                  },
+                  "operationCode": {
+                    "type": "string"
+                  },
+                  "operationDisplayName": {
+                    "type": "string"
+                  },
+                  "operationKind": {
+                    "type": "string"
+                  },
+                  "outputModalities": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  },
+                  "priceBookCode": {
+                    "type": "string"
+                  },
+                  "priceBookVersion": {
+                    "type": "string"
+                  },
+                  "priority": {
+                    "format": "int32",
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "productCode": {
+                    "type": "string"
+                  },
+                  "productDisplayName": {
+                    "type": "string"
+                  },
+                  "productKind": {
+                    "type": "string"
+                  },
+                  "providerCode": {
+                    "type": "string"
+                  },
+                  "quantityAggregation": {
+                    "enum": [
+                      "sum",
+                      "maximum",
+                      "minimum",
+                      "last",
+                      "distinct_invocation"
+                    ],
+                    "type": "string"
+                  },
+                  "quantityKind": {
+                    "type": "string"
+                  },
+                  "quantityStep": {
+                    "nullable": true,
+                    "pattern": "^[0-9]+(?:\\.[0-9]+)?$",
+                    "type": "string"
+                  },
+                  "rateCode": {
+                    "type": "string"
+                  },
+                  "rateHash": {
+                    "type": "string"
+                  },
+                  "rateVariant": {
+                    "enum": [
+                      "standard",
+                      "time_window"
+                    ],
+                    "type": "string"
+                  },
+                  "regionCode": {
+                    "type": "string"
+                  },
+                  "resourceCode": {
+                    "type": "string"
+                  },
+                  "resourceType": {
+                    "type": "string"
+                  },
+                  "schedule": {
+                    "additionalProperties": false,
+                    "nullable": true,
+                    "properties": {
+                      "excludeDates": {
+                        "items": {
+                          "format": "date",
+                          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                          "type": "string"
+                        },
+                        "maxItems": 366,
+                        "type": "array",
+                        "uniqueItems": true
+                      },
+                      "includeDates": {
+                        "items": {
+                          "format": "date",
+                          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                          "type": "string"
+                        },
+                        "maxItems": 366,
+                        "type": "array",
+                        "uniqueItems": true
+                      },
+                      "timeZone": {
+                        "maxLength": 128,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "weeklyWindows": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "daysOfWeek": {
+                              "items": {
+                                "format": "int32",
+                                "maximum": 7,
+                                "minimum": 1,
+                                "type": "integer"
+                              },
+                              "maxItems": 7,
+                              "minItems": 1,
+                              "type": "array",
+                              "uniqueItems": true
+                            },
+                            "endDayOffset": {
+                              "enum": [
+                                0,
+                                1
+                              ],
+                              "format": "int32",
+                              "type": "integer"
+                            },
+                            "endTime": {
+                              "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                              "type": "string"
+                            },
+                            "startTime": {
+                              "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                              "type": "string"
+                            },
+                            "windowCode": {
+                              "maxLength": 96,
+                              "minLength": 1,
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "windowCode",
+                            "daysOfWeek",
+                            "startTime",
+                            "endTime",
+                            "endDayOffset"
+                          ],
+                          "type": "object"
+                        },
+                        "maxItems": 64,
+                        "minItems": 1,
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "timeZone",
+                      "weeklyWindows",
+                      "includeDates",
+                      "excludeDates"
+                    ],
+                    "type": "object"
+                  },
+                  "sourceObservedAt": {
+                    "type": "string"
+                  },
+                  "sourceUrl": {
+                    "type": "string"
+                  },
+                  "supportsJsonSchema": {
+                    "nullable": true,
+                    "type": "boolean"
+                  },
+                  "supportsStreaming": {
+                    "nullable": true,
+                    "type": "boolean"
+                  },
+                  "supportsTools": {
+                    "nullable": true,
+                    "type": "boolean"
+                  },
+                  "tiers": {
+                    "items": {
+                      "additionalProperties": false,
+                      "name": "OfficialPricingRateTier",
+                      "properties": {
+                        "currencyCode": {
+                          "type": "string"
+                        },
+                        "flatAmount": {
+                          "type": "string"
+                        },
+                        "lowerBound": {
+                          "type": "string"
+                        },
+                        "tierCode": {
+                          "type": "string"
+                        },
+                        "unitPrice": {
+                          "type": "string"
+                        },
+                        "unitSize": {
+                          "type": "string"
+                        },
+                        "upperBound": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "tierCode",
+                        "lowerBound",
+                        "unitSize",
+                        "unitPrice",
+                        "flatAmount",
+                        "currencyCode"
+                      ],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "unitCode": {
+                    "type": "string"
+                  },
+                  "unitPrice": {
+                    "pattern": "^[0-9]+(?:\\.[0-9]+)?$",
+                    "type": "string"
+                  },
+                  "unitSize": {
+                    "pattern": "^[0-9]+(?:\\.[0-9]+)?$",
+                    "type": "string"
+                  },
+                  "usageScopes": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "nullable": true,
+                    "type": "array"
+                  },
+                  "vendorCode": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "rateCode",
+                  "rateHash",
+                  "groupCodes",
+                  "productCode",
+                  "productKind",
+                  "productDisplayName",
+                  "operationCode",
+                  "operationKind",
+                  "operationDisplayName",
+                  "vendorCode",
+                  "providerCode",
+                  "regionCode",
+                  "resourceType",
+                  "resourceCode",
+                  "priceBookCode",
+                  "priceBookVersion",
+                  "meterCode",
+                  "meterDisplayName",
+                  "quantityKind",
+                  "unitCode",
+                  "billability",
+                  "chargeTiming",
+                  "calculationMode",
+                  "quantityAggregation",
+                  "unitSize",
+                  "unitPrice",
+                  "minimumQuantity",
+                  "currencyCode",
+                  "conditions",
+                  "tiers",
+                  "effectiveFrom",
+                  "sourceUrl",
+                  "sourceObservedAt"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "meters": {
+              "items": {
+                "additionalProperties": false,
+                "name": "OfficialPricingMeterFacet",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "displayName": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "unitCode": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "code",
+                  "displayName",
+                  "unitCode",
+                  "count"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "pageInfo": {
+              "$ref": "#/components/schemas/PageInfo"
+            },
+            "regions": {
+              "items": {
+                "additionalProperties": false,
+                "name": "OfficialPricingRegionFacet",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "code",
+                  "count"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "vendors": {
+              "items": {
+                "additionalProperties": false,
+                "name": "OfficialPricingValueFacet",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "code",
+                  "count"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "items",
+            "pageInfo",
+            "groups",
+            "vendors",
+            "regions",
+            "currencies",
+            "meters"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/pricing/settings",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "pricing",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "tag": "pricing",
+      "write_tables": []
     },
     {
       "api_method": "GET",
@@ -8686,6 +9831,75 @@
                     "maxLength": 256,
                     "type": "string"
                   },
+                  "conditions": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "dimensionCode": {
+                          "maxLength": 96,
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "operatorCode": {
+                          "enum": [
+                            "exists",
+                            "eq",
+                            "neq",
+                            "gt",
+                            "gte",
+                            "lt",
+                            "lte",
+                            "in",
+                            "not_in"
+                          ],
+                          "type": "string"
+                        },
+                        "value": {
+                          "oneOf": [
+                            {
+                              "maxLength": 512,
+                              "type": "string"
+                            },
+                            {
+                              "format": "double",
+                              "type": "number"
+                            },
+                            {
+                              "type": "boolean"
+                            },
+                            {
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "maxLength": 512,
+                                    "type": "string"
+                                  },
+                                  {
+                                    "format": "double",
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "boolean"
+                                  }
+                                ]
+                              },
+                              "maxItems": 64,
+                              "minItems": 1,
+                              "type": "array"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "dimensionCode",
+                        "operatorCode",
+                        "value"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 32,
+                    "type": "array"
+                  },
                   "createdAt": {
                     "format": "date-time",
                     "maxLength": 64,
@@ -8762,6 +9976,90 @@
                   "ruleCode": {
                     "maxLength": 96,
                     "type": "string"
+                  },
+                  "schedule": {
+                    "additionalProperties": false,
+                    "nullable": true,
+                    "properties": {
+                      "excludeDates": {
+                        "items": {
+                          "format": "date",
+                          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                          "type": "string"
+                        },
+                        "maxItems": 366,
+                        "type": "array"
+                      },
+                      "includeDates": {
+                        "items": {
+                          "format": "date",
+                          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                          "type": "string"
+                        },
+                        "maxItems": 366,
+                        "type": "array"
+                      },
+                      "timeZone": {
+                        "maxLength": 128,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "weeklyWindows": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "daysOfWeek": {
+                              "items": {
+                                "maximum": 7,
+                                "minimum": 1,
+                                "type": "integer"
+                              },
+                              "maxItems": 7,
+                              "minItems": 1,
+                              "type": "array"
+                            },
+                            "endDayOffset": {
+                              "enum": [
+                                0,
+                                1
+                              ],
+                              "type": "integer"
+                            },
+                            "endTime": {
+                              "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                              "type": "string"
+                            },
+                            "startTime": {
+                              "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                              "type": "string"
+                            },
+                            "windowCode": {
+                              "maxLength": 96,
+                              "minLength": 1,
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "windowCode",
+                            "daysOfWeek",
+                            "startTime",
+                            "endTime",
+                            "endDayOffset"
+                          ],
+                          "type": "object"
+                        },
+                        "maxItems": 64,
+                        "minItems": 1,
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "timeZone",
+                      "weeklyWindows",
+                      "includeDates",
+                      "excludeDates"
+                    ],
+                    "type": "object"
                   },
                   "status": {
                     "enum": [
@@ -9248,6 +10546,75 @@
               "maxLength": 256,
               "type": "string"
             },
+            "conditions": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "dimensionCode": {
+                    "maxLength": 96,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "operatorCode": {
+                    "enum": [
+                      "exists",
+                      "eq",
+                      "neq",
+                      "gt",
+                      "gte",
+                      "lt",
+                      "lte",
+                      "in",
+                      "not_in"
+                    ],
+                    "type": "string"
+                  },
+                  "value": {
+                    "oneOf": [
+                      {
+                        "maxLength": 512,
+                        "type": "string"
+                      },
+                      {
+                        "format": "double",
+                        "type": "number"
+                      },
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "items": {
+                          "oneOf": [
+                            {
+                              "maxLength": 512,
+                              "type": "string"
+                            },
+                            {
+                              "format": "double",
+                              "type": "number"
+                            },
+                            {
+                              "type": "boolean"
+                            }
+                          ]
+                        },
+                        "maxItems": 64,
+                        "minItems": 1,
+                        "type": "array"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "dimensionCode",
+                  "operatorCode",
+                  "value"
+                ],
+                "type": "object"
+              },
+              "maxItems": 32,
+              "type": "array"
+            },
             "effectiveFrom": {
               "format": "date-time",
               "maxLength": 64,
@@ -9309,6 +10676,90 @@
               "maxLength": 96,
               "type": "string"
             },
+            "schedule": {
+              "additionalProperties": false,
+              "nullable": true,
+              "properties": {
+                "excludeDates": {
+                  "items": {
+                    "format": "date",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                    "type": "string"
+                  },
+                  "maxItems": 366,
+                  "type": "array"
+                },
+                "includeDates": {
+                  "items": {
+                    "format": "date",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                    "type": "string"
+                  },
+                  "maxItems": 366,
+                  "type": "array"
+                },
+                "timeZone": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "weeklyWindows": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "daysOfWeek": {
+                        "items": {
+                          "maximum": 7,
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "maxItems": 7,
+                        "minItems": 1,
+                        "type": "array"
+                      },
+                      "endDayOffset": {
+                        "enum": [
+                          0,
+                          1
+                        ],
+                        "type": "integer"
+                      },
+                      "endTime": {
+                        "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                        "type": "string"
+                      },
+                      "startTime": {
+                        "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                        "type": "string"
+                      },
+                      "windowCode": {
+                        "maxLength": 96,
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "windowCode",
+                      "daysOfWeek",
+                      "startTime",
+                      "endTime",
+                      "endDayOffset"
+                    ],
+                    "type": "object"
+                  },
+                  "maxItems": 64,
+                  "minItems": 1,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "timeZone",
+                "weeklyWindows",
+                "includeDates",
+                "excludeDates"
+              ],
+              "type": "object"
+            },
             "status": {
               "enum": [
                 "active",
@@ -9338,6 +10789,75 @@
             "catalogKey": {
               "maxLength": 256,
               "type": "string"
+            },
+            "conditions": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "dimensionCode": {
+                    "maxLength": 96,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "operatorCode": {
+                    "enum": [
+                      "exists",
+                      "eq",
+                      "neq",
+                      "gt",
+                      "gte",
+                      "lt",
+                      "lte",
+                      "in",
+                      "not_in"
+                    ],
+                    "type": "string"
+                  },
+                  "value": {
+                    "oneOf": [
+                      {
+                        "maxLength": 512,
+                        "type": "string"
+                      },
+                      {
+                        "format": "double",
+                        "type": "number"
+                      },
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "items": {
+                          "oneOf": [
+                            {
+                              "maxLength": 512,
+                              "type": "string"
+                            },
+                            {
+                              "format": "double",
+                              "type": "number"
+                            },
+                            {
+                              "type": "boolean"
+                            }
+                          ]
+                        },
+                        "maxItems": 64,
+                        "minItems": 1,
+                        "type": "array"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "dimensionCode",
+                  "operatorCode",
+                  "value"
+                ],
+                "type": "object"
+              },
+              "maxItems": 32,
+              "type": "array"
             },
             "createdAt": {
               "format": "date-time",
@@ -9415,6 +10935,90 @@
             "ruleCode": {
               "maxLength": 96,
               "type": "string"
+            },
+            "schedule": {
+              "additionalProperties": false,
+              "nullable": true,
+              "properties": {
+                "excludeDates": {
+                  "items": {
+                    "format": "date",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                    "type": "string"
+                  },
+                  "maxItems": 366,
+                  "type": "array"
+                },
+                "includeDates": {
+                  "items": {
+                    "format": "date",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                    "type": "string"
+                  },
+                  "maxItems": 366,
+                  "type": "array"
+                },
+                "timeZone": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "weeklyWindows": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "daysOfWeek": {
+                        "items": {
+                          "maximum": 7,
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "maxItems": 7,
+                        "minItems": 1,
+                        "type": "array"
+                      },
+                      "endDayOffset": {
+                        "enum": [
+                          0,
+                          1
+                        ],
+                        "type": "integer"
+                      },
+                      "endTime": {
+                        "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                        "type": "string"
+                      },
+                      "startTime": {
+                        "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                        "type": "string"
+                      },
+                      "windowCode": {
+                        "maxLength": 96,
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "windowCode",
+                      "daysOfWeek",
+                      "startTime",
+                      "endTime",
+                      "endDayOffset"
+                    ],
+                    "type": "object"
+                  },
+                  "maxItems": 64,
+                  "minItems": 1,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "timeZone",
+                "weeklyWindows",
+                "includeDates",
+                "excludeDates"
+              ],
+              "type": "object"
             },
             "status": {
               "enum": [
@@ -23722,16 +25326,8 @@
       "query_parameters_declared": true,
       "read_sources": [
         "pricing_price_book",
-        "pricing_product",
-        "pricing_operation",
-        "pricing_meter",
-        "pricing_product_binding",
         "pricing_rate",
-        "pricing_rate_binding",
-        "pricing_rate_condition",
-        "pricing_rate_tier",
-        "pricing_rate_formula",
-        "pricing_rate_formula_term"
+        "pricing_import_run"
       ],
       "request_body_required": null,
       "request_id_header": false,
@@ -23852,7 +25448,7 @@
                         "dimensionCode": {
                           "type": "string"
                         },
-                        "operator": {
+                        "operatorCode": {
                           "enum": [
                             "eq",
                             "neq",
@@ -23867,12 +25463,39 @@
                           "type": "string"
                         },
                         "value": {
-                          "type": "string"
+                          "oneOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "boolean"
+                            },
+                            {
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "boolean"
+                                  }
+                                ]
+                              },
+                              "maxItems": 64,
+                              "type": "array"
+                            }
+                          ]
                         }
                       },
                       "required": [
                         "dimensionCode",
-                        "operator",
+                        "operatorCode",
                         "value"
                       ],
                       "type": "object"
@@ -24034,6 +25657,11 @@
                   "priceBookVersion": {
                     "type": "string"
                   },
+                  "priority": {
+                    "format": "int32",
+                    "minimum": 0,
+                    "type": "integer"
+                  },
                   "productCode": {
                     "type": "string"
                   },
@@ -24070,6 +25698,13 @@
                   "rateHash": {
                     "type": "string"
                   },
+                  "rateVariant": {
+                    "enum": [
+                      "standard",
+                      "time_window"
+                    ],
+                    "type": "string"
+                  },
                   "regionCode": {
                     "type": "string"
                   },
@@ -24078,6 +25713,95 @@
                   },
                   "resourceType": {
                     "type": "string"
+                  },
+                  "schedule": {
+                    "additionalProperties": false,
+                    "nullable": true,
+                    "properties": {
+                      "excludeDates": {
+                        "items": {
+                          "format": "date",
+                          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                          "type": "string"
+                        },
+                        "maxItems": 366,
+                        "type": "array",
+                        "uniqueItems": true
+                      },
+                      "includeDates": {
+                        "items": {
+                          "format": "date",
+                          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                          "type": "string"
+                        },
+                        "maxItems": 366,
+                        "type": "array",
+                        "uniqueItems": true
+                      },
+                      "timeZone": {
+                        "maxLength": 128,
+                        "minLength": 1,
+                        "type": "string"
+                      },
+                      "weeklyWindows": {
+                        "items": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "daysOfWeek": {
+                              "items": {
+                                "format": "int32",
+                                "maximum": 7,
+                                "minimum": 1,
+                                "type": "integer"
+                              },
+                              "maxItems": 7,
+                              "minItems": 1,
+                              "type": "array",
+                              "uniqueItems": true
+                            },
+                            "endDayOffset": {
+                              "enum": [
+                                0,
+                                1
+                              ],
+                              "format": "int32",
+                              "type": "integer"
+                            },
+                            "endTime": {
+                              "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                              "type": "string"
+                            },
+                            "startTime": {
+                              "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                              "type": "string"
+                            },
+                            "windowCode": {
+                              "maxLength": 96,
+                              "minLength": 1,
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "windowCode",
+                            "daysOfWeek",
+                            "startTime",
+                            "endTime",
+                            "endDayOffset"
+                          ],
+                          "type": "object"
+                        },
+                        "maxItems": 64,
+                        "minItems": 1,
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "timeZone",
+                      "weeklyWindows",
+                      "includeDates",
+                      "excludeDates"
+                    ],
+                    "type": "object"
                   },
                   "sourceObservedAt": {
                     "type": "string"
@@ -28313,24 +30037,24 @@
   "summary": {
     "api_method_counts": {
       "DELETE": 20,
-      "GET": 106,
+      "GET": 107,
       "PATCH": 19,
       "POST": 55,
       "PUT": 12
     },
     "api_surface_counts": {
       "app": 75,
-      "backend": 137
+      "backend": 138
     },
-    "operation_count": 212,
+    "operation_count": 213,
     "route_scope_counts": {
-      "admin": 137,
+      "admin": 138,
       "console": 31,
       "public": 44
     },
     "sdk_client_counts": {
       "SdkworkAppClient": 75,
-      "SdkworkBackendClient": 137
+      "SdkworkBackendClient": 138
     }
   }
 }

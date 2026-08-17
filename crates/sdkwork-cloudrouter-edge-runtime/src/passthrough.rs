@@ -2419,9 +2419,14 @@ mod tests {
             minimum_quantity: DecimalValue::ZERO,
             quantity_step: None,
             priority: 10,
+            effective_from: Utc::now(),
+            effective_to: None,
+            rate_variant: sdkwork_cloudrouter_router_service::domain::PricingRateVariant::Standard,
+            schedule: None,
             conditions: Vec::new(),
             tiers: Vec::new(),
             formula: None,
+            record_identity: None,
         });
         let catalog = adapter_usage_catalog(free_rate);
         let context = test_api_key_context();

@@ -43,8 +43,7 @@ LEFT JOIN (
   ON failed_request.tenant_id = usage.tenant_id
  AND failed_request.organization_id IS NOT DISTINCT FROM usage.organization_id
  AND failed_request.request_id = usage.request_id
-WHERE usage.status = 1
-  AND usage.tenant_id = $1
+WHERE usage.tenant_id = $1
   AND (usage.organization_id = $2 OR usage.organization_id = 0 OR usage.organization_id = '0')
   AND usage.occurred_at >= $3::timestamptz
   AND usage.occurred_at <= $4::timestamptz

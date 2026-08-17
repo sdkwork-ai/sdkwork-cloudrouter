@@ -3584,6 +3584,12 @@
             "description": "Price book version field on official pricing rate.",
             "type": "string"
           },
+          "priority": {
+            "description": "Priority field on official pricing rate.",
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
           "productCode": {
             "description": "Product code field on official pricing rate.",
             "type": "string"
@@ -3629,6 +3635,14 @@
             "description": "Rate hash field on official pricing rate.",
             "type": "string"
           },
+          "rateVariant": {
+            "description": "Rate variant field on official pricing rate.",
+            "enum": [
+              "standard",
+              "time_window"
+            ],
+            "type": "string"
+          },
           "regionCode": {
             "description": "Region code field on official pricing rate.",
             "type": "string"
@@ -3640,6 +3654,109 @@
           "resourceType": {
             "description": "Resource type field on official pricing rate.",
             "type": "string"
+          },
+          "schedule": {
+            "additionalProperties": false,
+            "description": "Schedule field on official pricing rate.",
+            "nullable": true,
+            "properties": {
+              "excludeDates": {
+                "description": "Exclude dates field on official pricing rate.",
+                "items": {
+                  "description": "Schedule field on official pricing rate.",
+                  "format": "date",
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "maxItems": 366,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "includeDates": {
+                "description": "Include dates field on official pricing rate.",
+                "items": {
+                  "description": "Schedule field on official pricing rate.",
+                  "format": "date",
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "maxItems": 366,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "timeZone": {
+                "description": "Time zone field on official pricing rate.",
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              "weeklyWindows": {
+                "description": "Weekly windows field on official pricing rate.",
+                "items": {
+                  "additionalProperties": false,
+                  "description": "Schedule field on official pricing rate.",
+                  "properties": {
+                    "daysOfWeek": {
+                      "description": "Days of week field on official pricing rate.",
+                      "items": {
+                        "description": "Schedule field on official pricing rate.",
+                        "format": "int32",
+                        "maximum": 7,
+                        "minimum": 1,
+                        "type": "integer"
+                      },
+                      "maxItems": 7,
+                      "minItems": 1,
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "endDayOffset": {
+                      "description": "End day offset field on official pricing rate.",
+                      "enum": [
+                        0,
+                        1
+                      ],
+                      "format": "int32",
+                      "type": "integer"
+                    },
+                    "endTime": {
+                      "description": "End time field on official pricing rate.",
+                      "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                      "type": "string"
+                    },
+                    "startTime": {
+                      "description": "Start time field on official pricing rate.",
+                      "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                      "type": "string"
+                    },
+                    "windowCode": {
+                      "description": "Window code field on official pricing rate.",
+                      "maxLength": 96,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "windowCode",
+                    "daysOfWeek",
+                    "startTime",
+                    "endTime",
+                    "endDayOffset"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 64,
+                "minItems": 1,
+                "type": "array"
+              }
+            },
+            "required": [
+              "timeZone",
+              "weeklyWindows",
+              "includeDates",
+              "excludeDates"
+            ],
+            "type": "object"
           },
           "sourceObservedAt": {
             "description": "Source observed at field on official pricing rate.",
@@ -3744,8 +3861,8 @@
             "description": "Dimension code field on official pricing rate condition.",
             "type": "string"
           },
-          "operator": {
-            "description": "Operator field on official pricing rate condition.",
+          "operatorCode": {
+            "description": "Operator code field on official pricing rate condition.",
             "enum": [
               "eq",
               "neq",
@@ -3761,12 +3878,47 @@
           },
           "value": {
             "description": "Value field on official pricing rate condition.",
-            "type": "string"
+            "oneOf": [
+              {
+                "description": "String variant accepted by value.",
+                "type": "string"
+              },
+              {
+                "description": "Number variant accepted by value.",
+                "type": "number"
+              },
+              {
+                "description": "Boolean variant accepted by value.",
+                "type": "boolean"
+              },
+              {
+                "description": "Array variant accepted by value.",
+                "items": {
+                  "description": "Value field on official pricing rate condition.",
+                  "oneOf": [
+                    {
+                      "description": "String variant accepted by value.",
+                      "type": "string"
+                    },
+                    {
+                      "description": "Number variant accepted by value.",
+                      "type": "number"
+                    },
+                    {
+                      "description": "Boolean variant accepted by value.",
+                      "type": "boolean"
+                    }
+                  ]
+                },
+                "maxItems": 64,
+                "type": "array"
+              }
+            ]
           }
         },
         "required": [
           "dimensionCode",
-          "operator",
+          "operatorCode",
           "value"
         ],
         "type": "object"
@@ -6148,7 +6300,7 @@
     },
     "/app/v3/api/ai/pricing/rates": {
       "get": {
-        "description": "List official pricing rates. Reads pricing_price_book, pricing_product, pricing_operation, pricing_meter, pricing_product_binding, pricing_rate, pricing_rate_binding, pricing_rate_condition, pricing_rate_tier, pricing_rate_formula, pricing_rate_formula_term. Writes none. File targets none.",
+        "description": "List official pricing rates. Reads pricing_price_book, pricing_rate, pricing_import_run. Writes none. File targets none.",
         "operationId": "pricing.rates.list",
         "parameters": [
           {
@@ -6316,16 +6468,8 @@
         "x-file-targets": [],
         "x-read-sources": [
           "pricing_price_book",
-          "pricing_product",
-          "pricing_operation",
-          "pricing_meter",
-          "pricing_product_binding",
           "pricing_rate",
-          "pricing_rate_binding",
-          "pricing_rate_condition",
-          "pricing_rate_tier",
-          "pricing_rate_formula",
-          "pricing_rate_formula_term"
+          "pricing_import_run"
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "intelligence",

@@ -63,32 +63,19 @@ test("selecting partner stats highlights only stats, not the partner workbench",
   assert.deepEqual(getActiveSidebarItemPaths("/admin/partner", partnerMenu), ["/admin/partner"]);
 });
 
-test("admin sidebar exposes an independent pricing management group with plan, rate card, and rule entries", () => {
+test("admin sidebar exposes only product price settings", () => {
   const homeMenu = getAdminModuleMenu("home");
   const pricingGroup = homeMenu.groups.find((group) => group.groupKey === "admin.menu.home.pricingManagement");
 
   assert.ok(pricingGroup, "pricing management group must exist");
   assert.deepEqual(pricingGroup.items.map((item) => item.path), [
-    "/admin/pricing/plans",
-    "/admin/pricing/rateCards",
-    "/admin/pricing/rules",
+    "/admin/pricing/settings",
   ]);
 
-  const plansItem = pricingGroup.items.find((item) => item.path === "/admin/pricing/plans");
-  const rateCardsItem = pricingGroup.items.find((item) => item.path === "/admin/pricing/rateCards");
-  const rulesItem = pricingGroup.items.find((item) => item.path === "/admin/pricing/rules");
+  const settingsItem = pricingGroup.items.find((item) => item.path === "/admin/pricing/settings");
 
-  assert.ok(plansItem, "pricing plans menu item must exist");
-  assert.ok(rateCardsItem, "pricing rate cards menu item must exist");
-  assert.ok(rulesItem, "pricing rules menu item must exist");
+  assert.ok(settingsItem, "price settings menu item must exist");
 
-  assert.deepEqual(getActiveSidebarItemPaths("/admin/pricing/plans", homeMenu), ["/admin/pricing/plans"]);
-  assert.equal(isSidebarItemActive("/admin/pricing/plans", plansItem, homeMenu), true);
-  assert.equal(isSidebarItemActive("/admin/pricing/plans", rateCardsItem, homeMenu), false);
-
-  assert.deepEqual(getActiveSidebarItemPaths("/admin/pricing/rateCards", homeMenu), ["/admin/pricing/rateCards"]);
-  assert.equal(isSidebarItemActive("/admin/pricing/rateCards", rateCardsItem, homeMenu), true);
-
-  assert.deepEqual(getActiveSidebarItemPaths("/admin/pricing/rules", homeMenu), ["/admin/pricing/rules"]);
-  assert.equal(isSidebarItemActive("/admin/pricing/rules", rulesItem, homeMenu), true);
+  assert.deepEqual(getActiveSidebarItemPaths("/admin/pricing/settings", homeMenu), ["/admin/pricing/settings"]);
+  assert.equal(isSidebarItemActive("/admin/pricing/settings", settingsItem, homeMenu), true);
 });

@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
--- Registry version: 0.4.0.
--- Registry SHA-256: d4449d6d013098bf825b1970275e2cee4eb1fbfa7f9a92874595855b0391fb69.
+-- Registry version: 0.5.0.
+-- Registry SHA-256: 844ff985022a052a4a2e7dfc22f1d755b798a282a688acc99f8de38c1360015a.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -1561,7 +1561,7 @@ CREATE TABLE IF NOT EXISTS pricing_price_book (
     source_catalog_version VARCHAR(128) NOT NULL,
     source_hash VARCHAR(128) NOT NULL,
     lifecycle_state VARCHAR(32) NOT NULL,
-    currency_code VARCHAR(10) NOT NULL,
+    currency_code VARCHAR(3) NOT NULL,
     effective_from TIMESTAMPTZ NOT NULL,
     effective_to TIMESTAMPTZ,
     activated_at TIMESTAMPTZ,
@@ -1579,97 +1579,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_price_book_version ON pricing_price
 CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_price_book_source ON pricing_price_book (tenant_id, organization_id, source_system, vendor_code, region_code, source_catalog_version, price_book_code, source_hash) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_price_book_active ON pricing_price_book (tenant_id, organization_id, namespace_code, price_book_code, vendor_code, region_code) WHERE lifecycle_state = 'active' AND deleted_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_price_book_scope_reference ON pricing_price_book (tenant_id, organization_id, id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_price_book_rate_dimensions ON pricing_price_book (tenant_id, organization_id, id, vendor_code, region_code, currency_code);
 CREATE INDEX IF NOT EXISTS idx_pricing_price_book_active ON pricing_price_book (tenant_id, organization_id, namespace_code, lifecycle_state, effective_from, id);
-
-CREATE TABLE IF NOT EXISTS pricing_product (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    namespace_code VARCHAR(64) NOT NULL,
-    product_code VARCHAR(160) NOT NULL,
-    product_kind VARCHAR(64) NOT NULL,
-    owner_system VARCHAR(64) NOT NULL,
-    display_name VARCHAR(256) NOT NULL,
-    description VARCHAR(1024),
-    CONSTRAINT ck_pricing_product_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_product_uuid ON pricing_product (uuid) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_product_scope_id ON pricing_product (tenant_id, organization_id, id) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_product_code ON pricing_product (tenant_id, organization_id, namespace_code, product_code) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_product_scope_reference ON pricing_product (tenant_id, organization_id, id);
-CREATE INDEX IF NOT EXISTS idx_pricing_product_lookup ON pricing_product (tenant_id, organization_id, owner_system, product_kind, status, id);
-
-CREATE TABLE IF NOT EXISTS pricing_operation (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    namespace_code VARCHAR(64) NOT NULL,
-    operation_code VARCHAR(160) NOT NULL,
-    operation_kind VARCHAR(64) NOT NULL,
-    charge_timing_default VARCHAR(32) NOT NULL,
-    async_completion_policy VARCHAR(32) NOT NULL,
-    success_status_policy VARCHAR(32) NOT NULL,
-    display_name VARCHAR(256) NOT NULL,
-    CONSTRAINT ck_pricing_operation_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT ck_pricing_operation_charge_timing CHECK (charge_timing_default IN ('request_accepted', 'successful_result', 'usage_reported', 'rate_defined'))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_operation_uuid ON pricing_operation (uuid) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_operation_scope_id ON pricing_operation (tenant_id, organization_id, id) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_operation_code ON pricing_operation (tenant_id, organization_id, namespace_code, operation_code) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_operation_scope_reference ON pricing_operation (tenant_id, organization_id, id);
-CREATE INDEX IF NOT EXISTS idx_pricing_operation_lookup ON pricing_operation (tenant_id, organization_id, operation_kind, status, id);
-
-CREATE TABLE IF NOT EXISTS pricing_meter (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    namespace_code VARCHAR(64) NOT NULL,
-    meter_code VARCHAR(96) NOT NULL,
-    quantity_kind VARCHAR(64) NOT NULL,
-    unit_code VARCHAR(64) NOT NULL,
-    aggregation_mode VARCHAR(32) NOT NULL,
-    default_unit_size NUMERIC(38, 12) NOT NULL,
-    quantity_precision INTEGER NOT NULL,
-    display_name VARCHAR(256) NOT NULL,
-    CONSTRAINT ck_pricing_meter_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT ck_pricing_meter_unit_size CHECK (default_unit_size > 0),
-    CONSTRAINT ck_pricing_meter_precision CHECK (quantity_precision BETWEEN 0 AND 12),
-    CONSTRAINT ck_pricing_meter_aggregation CHECK (aggregation_mode IN ('sum', 'maximum', 'minimum', 'last', 'distinct_invocation'))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_meter_uuid ON pricing_meter (uuid) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_meter_scope_id ON pricing_meter (tenant_id, organization_id, id) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_meter_code ON pricing_meter (tenant_id, organization_id, namespace_code, meter_code) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_meter_scope_reference ON pricing_meter (tenant_id, organization_id, id);
 
 CREATE TABLE IF NOT EXISTS pricing_rate (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -1685,11 +1596,27 @@ CREATE TABLE IF NOT EXISTS pricing_rate (
     deleted_by BIGINT,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
     price_book_id BIGINT NOT NULL,
-    product_id BIGINT NOT NULL,
-    operation_id BIGINT NOT NULL,
-    meter_id BIGINT NOT NULL,
     rate_code VARCHAR(192) NOT NULL,
     rate_hash VARCHAR(128) NOT NULL,
+    product_code VARCHAR(160) NOT NULL,
+    product_kind VARCHAR(64) NOT NULL,
+    product_display_name VARCHAR(256) NOT NULL,
+    operation_code VARCHAR(160) NOT NULL,
+    operation_kind VARCHAR(64) NOT NULL,
+    operation_display_name VARCHAR(256) NOT NULL,
+    meter_code VARCHAR(96) NOT NULL,
+    meter_display_name VARCHAR(256) NOT NULL,
+    quantity_kind VARCHAR(64) NOT NULL,
+    unit_code VARCHAR(64) NOT NULL,
+    vendor_code VARCHAR(64) NOT NULL,
+    provider_code VARCHAR(64) NOT NULL,
+    account_id BIGINT,
+    region_code VARCHAR(64) NOT NULL,
+    resource_type VARCHAR(64) NOT NULL,
+    resource_code VARCHAR(256) NOT NULL,
+    catalog_key VARCHAR(256),
+    api_format VARCHAR(64),
+    endpoint_code VARCHAR(160),
     billability VARCHAR(32) NOT NULL,
     charge_timing VARCHAR(32) NOT NULL,
     calculation_mode VARCHAR(32) NOT NULL,
@@ -1698,17 +1625,20 @@ CREATE TABLE IF NOT EXISTS pricing_rate (
     unit_price NUMERIC(38, 12) NOT NULL,
     minimum_quantity NUMERIC(38, 12) NOT NULL,
     quantity_step NUMERIC(38, 12),
-    currency_code VARCHAR(10) NOT NULL,
+    currency_code VARCHAR(3) NOT NULL,
+    conditions JSONB NOT NULL DEFAULT '[]'::jsonb,
+    tiers JSONB NOT NULL DEFAULT '[]'::jsonb,
+    formula JSONB,
     priority INTEGER NOT NULL,
+    rate_variant VARCHAR(32) NOT NULL DEFAULT 'standard',
+    schedule JSONB,
     effective_from TIMESTAMPTZ NOT NULL,
     effective_to TIMESTAMPTZ,
     source_url VARCHAR(2048) NOT NULL,
     source_observed_at TIMESTAMPTZ NOT NULL,
     CONSTRAINT ck_pricing_rate_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
     CONSTRAINT fk_pricing_rate_book FOREIGN KEY (tenant_id, organization_id, price_book_id) REFERENCES pricing_price_book (tenant_id, organization_id, id),
-    CONSTRAINT fk_pricing_rate_product FOREIGN KEY (tenant_id, organization_id, product_id) REFERENCES pricing_product (tenant_id, organization_id, id),
-    CONSTRAINT fk_pricing_rate_operation FOREIGN KEY (tenant_id, organization_id, operation_id) REFERENCES pricing_operation (tenant_id, organization_id, id),
-    CONSTRAINT fk_pricing_rate_meter FOREIGN KEY (tenant_id, organization_id, meter_id) REFERENCES pricing_meter (tenant_id, organization_id, id),
+    CONSTRAINT fk_pricing_rate_book_dimensions FOREIGN KEY (tenant_id, organization_id, price_book_id, vendor_code, region_code, currency_code) REFERENCES pricing_price_book (tenant_id, organization_id, id, vendor_code, region_code, currency_code),
     CONSTRAINT ck_pricing_rate_quantities CHECK (unit_size > 0 AND unit_price >= 0 AND minimum_quantity >= 0 AND (quantity_step IS NULL OR quantity_step > 0)),
     CONSTRAINT ck_pricing_rate_interval CHECK (effective_to IS NULL OR effective_to > effective_from),
     CONSTRAINT ck_pricing_rate_billability CHECK (billability IN ('chargeable', 'free', 'not_applicable', 'unknown')),
@@ -1716,9 +1646,16 @@ CREATE TABLE IF NOT EXISTS pricing_rate (
     CONSTRAINT ck_pricing_rate_calculation_mode CHECK (calculation_mode IN ('per_unit', 'flat', 'graduated', 'volume', 'formula')),
     CONSTRAINT ck_pricing_rate_quantity_aggregation CHECK (quantity_aggregation IN ('sum', 'maximum', 'minimum', 'last', 'distinct_invocation')),
     CONSTRAINT ck_pricing_rate_flat_unit_size CHECK (calculation_mode <> 'flat' OR unit_size = 1),
-    CONSTRAINT ck_pricing_rate_chargeable_price CHECK (billability <> 'chargeable' OR calculation_mode IN ('graduated', 'volume') OR unit_price > 0),
+    CONSTRAINT ck_pricing_rate_chargeable_price CHECK (billability <> 'chargeable' OR unit_price > 0),
     CONSTRAINT ck_pricing_rate_non_chargeable_price CHECK (billability NOT IN ('free', 'not_applicable') OR unit_price = 0),
-    CONSTRAINT ck_pricing_rate_currency CHECK (currency_code ~ '^[A-Z]{3}$')
+    CONSTRAINT ck_pricing_rate_currency CHECK (currency_code ~ '^[A-Z]{3}$'),
+    CONSTRAINT ck_pricing_rate_conditions_json CHECK (jsonb_typeof(conditions) = 'array'),
+    CONSTRAINT ck_pricing_rate_tiers_json CHECK (jsonb_typeof(tiers) = 'array'),
+    CONSTRAINT ck_pricing_rate_formula_json CHECK (formula IS NULL OR jsonb_typeof(formula) = 'object'),
+    CONSTRAINT ck_pricing_rate_variant CHECK (rate_variant IN ('standard', 'time_window')),
+    CONSTRAINT ck_pricing_rate_schedule_json CHECK (schedule IS NULL OR jsonb_typeof(schedule) = 'object'),
+    CONSTRAINT ck_pricing_rate_schedule_variant CHECK ((rate_variant = 'standard' AND schedule IS NULL) OR (rate_variant = 'time_window' AND schedule IS NOT NULL)),
+    CONSTRAINT ck_pricing_rate_calculation_payload CHECK ((calculation_mode IN ('graduated', 'volume')) = (jsonb_array_length(tiers) > 0) AND (calculation_mode = 'formula') = (formula IS NOT NULL))
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_uuid ON pricing_rate (uuid) WHERE deleted_at IS NULL;
@@ -1727,8 +1664,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_book_code ON pricing_rate (ten
 CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_book_hash ON pricing_rate (tenant_id, organization_id, price_book_id, rate_hash) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_rate_scope_reference ON pricing_rate (tenant_id, organization_id, id);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_rate_scope_book_reference ON pricing_rate (tenant_id, organization_id, id, price_book_id);
-CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_rate_scope_currency_reference ON pricing_rate (tenant_id, organization_id, id, currency_code);
-CREATE INDEX IF NOT EXISTS idx_pricing_rate_resolve ON pricing_rate (tenant_id, organization_id, product_id, operation_id, meter_id, billability, status, priority, effective_from, id);
+CREATE INDEX IF NOT EXISTS idx_pricing_rate_resolve ON pricing_rate (tenant_id, organization_id, catalog_key, product_code, operation_code, meter_code, provider_code, region_code, billability, status, priority, effective_from, id);
 
 CREATE TABLE IF NOT EXISTS cloudrouter_pricing_rule (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -1755,6 +1691,8 @@ CREATE TABLE IF NOT EXISTS cloudrouter_pricing_rule (
     multiplier NUMERIC(38, 12) NOT NULL,
     markup_amount NUMERIC(38, 12) NOT NULL,
     unit_price_override NUMERIC(38, 12),
+    conditions JSONB NOT NULL DEFAULT '[]'::jsonb,
+    schedule JSONB,
     priority INTEGER NOT NULL,
     effective_from TIMESTAMPTZ NOT NULL,
     effective_to TIMESTAMPTZ,
@@ -1762,6 +1700,8 @@ CREATE TABLE IF NOT EXISTS cloudrouter_pricing_rule (
     CONSTRAINT fk_cloudrouter_pricing_rule_plan FOREIGN KEY (tenant_id, organization_id, pricing_plan_id) REFERENCES cloudrouter_pricing_plan (tenant_id, organization_id, id),
     CONSTRAINT ck_cloudrouter_pricing_rule_amounts CHECK (multiplier >= 0 AND markup_amount >= 0 AND (unit_price_override IS NULL OR unit_price_override >= 0)),
     CONSTRAINT ck_cloudrouter_pricing_rule_formula CHECK ((formula_mode = 'multiplier_markup' AND unit_price_override IS NULL) OR (formula_mode = 'unit_price_override' AND unit_price_override IS NOT NULL AND multiplier = 1 AND markup_amount = 0)),
+    CONSTRAINT ck_cloudrouter_pricing_rule_conditions_json CHECK (jsonb_typeof(conditions) = 'array'),
+    CONSTRAINT ck_cloudrouter_pricing_rule_schedule_json CHECK (schedule IS NULL OR jsonb_typeof(schedule) = 'object'),
     CONSTRAINT ck_cloudrouter_pricing_rule_interval CHECK (effective_to IS NULL OR effective_to > effective_from)
 );
 
@@ -2547,200 +2487,3 @@ CREATE TABLE IF NOT EXISTS ops_referral_strategy (
 );
 
 CREATE INDEX IF NOT EXISTS idx_ops_referral_strategy_tenant_status ON ops_referral_strategy (tenant_id, organization_id, status, created_at, id);
-
-CREATE TABLE IF NOT EXISTS pricing_product_binding (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    product_id BIGINT NOT NULL,
-    operation_id BIGINT NOT NULL,
-    vendor_code VARCHAR(64) NOT NULL,
-    provider_code VARCHAR(64) NOT NULL,
-    account_id BIGINT,
-    region_code VARCHAR(64) NOT NULL,
-    resource_type VARCHAR(64) NOT NULL,
-    resource_code VARCHAR(256) NOT NULL,
-    catalog_key VARCHAR(256),
-    api_format VARCHAR(64),
-    endpoint_code VARCHAR(160),
-    CONSTRAINT ck_pricing_product_binding_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT fk_pricing_product_binding_product FOREIGN KEY (tenant_id, organization_id, product_id) REFERENCES pricing_product (tenant_id, organization_id, id),
-    CONSTRAINT fk_pricing_product_binding_operation FOREIGN KEY (tenant_id, organization_id, operation_id) REFERENCES pricing_operation (tenant_id, organization_id, id)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_product_binding_uuid ON pricing_product_binding (uuid) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_product_binding_scope_id ON pricing_product_binding (tenant_id, organization_id, id) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_product_binding_provider ON pricing_product_binding (tenant_id, organization_id, product_id, operation_id, vendor_code, provider_code, region_code, resource_type, resource_code) WHERE account_id IS NULL AND deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_product_binding_account ON pricing_product_binding (tenant_id, organization_id, product_id, operation_id, vendor_code, provider_code, account_id, region_code, resource_type, resource_code) WHERE account_id IS NOT NULL AND deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_product_binding_scope_reference ON pricing_product_binding (tenant_id, organization_id, id);
-CREATE INDEX IF NOT EXISTS idx_pricing_product_binding_catalog ON pricing_product_binding (tenant_id, organization_id, vendor_code, provider_code, account_id, region_code, catalog_key, status, id);
-CREATE INDEX IF NOT EXISTS idx_pricing_product_binding_endpoint ON pricing_product_binding (tenant_id, organization_id, endpoint_code, api_format, status, id);
-
-CREATE TABLE IF NOT EXISTS pricing_rate_binding (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    rate_id BIGINT NOT NULL,
-    product_binding_id BIGINT NOT NULL,
-    CONSTRAINT ck_pricing_rate_binding_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT fk_pricing_rate_binding_rate FOREIGN KEY (tenant_id, organization_id, rate_id) REFERENCES pricing_rate (tenant_id, organization_id, id),
-    CONSTRAINT fk_pricing_rate_binding_product_binding FOREIGN KEY (tenant_id, organization_id, product_binding_id) REFERENCES pricing_product_binding (tenant_id, organization_id, id)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_binding_uuid ON pricing_rate_binding (uuid) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_binding_scope_id ON pricing_rate_binding (tenant_id, organization_id, id) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_binding_relation ON pricing_rate_binding (tenant_id, organization_id, rate_id, product_binding_id) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_pricing_rate_binding_product ON pricing_rate_binding (tenant_id, organization_id, product_binding_id, status, rate_id);
-
-CREATE TABLE IF NOT EXISTS pricing_rate_condition (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    rate_id BIGINT NOT NULL,
-    dimension_code VARCHAR(96) NOT NULL,
-    operator_code VARCHAR(16) NOT NULL,
-    value_type VARCHAR(16) NOT NULL,
-    value_string VARCHAR(512),
-    value_decimal NUMERIC(38, 12),
-    value_boolean BOOLEAN,
-    value_json JSONB,
-    sort_order INTEGER NOT NULL,
-    CONSTRAINT ck_pricing_rate_condition_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT fk_pricing_rate_condition_rate FOREIGN KEY (tenant_id, organization_id, rate_id) REFERENCES pricing_rate (tenant_id, organization_id, id),
-    CONSTRAINT ck_pricing_rate_condition_operator CHECK (operator_code IN ('eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'in', 'not_in', 'exists')),
-    CONSTRAINT ck_pricing_rate_condition_value_type CHECK (value_type IN ('string', 'decimal', 'boolean', 'json')),
-    CONSTRAINT ck_pricing_rate_condition_value CHECK ((value_type = 'string' AND value_string IS NOT NULL AND value_decimal IS NULL AND value_boolean IS NULL AND value_json IS NULL) OR (value_type = 'decimal' AND value_string IS NULL AND value_decimal IS NOT NULL AND value_boolean IS NULL AND value_json IS NULL) OR (value_type = 'boolean' AND value_string IS NULL AND value_decimal IS NULL AND value_boolean IS NOT NULL AND value_json IS NULL) OR (value_type = 'json' AND value_string IS NULL AND value_decimal IS NULL AND value_boolean IS NULL AND value_json IS NOT NULL)),
-    CONSTRAINT ck_pricing_rate_condition_operator_value CHECK ((operator_code <> 'exists' OR value_type = 'boolean') AND (operator_code NOT IN ('in', 'not_in') OR value_type = 'json')),
-    CONSTRAINT ck_pricing_rate_condition_sort_order CHECK (sort_order >= 0)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_condition_uuid ON pricing_rate_condition (uuid) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_condition_scope_id ON pricing_rate_condition (tenant_id, organization_id, id) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_condition_slot ON pricing_rate_condition (tenant_id, organization_id, rate_id, dimension_code, operator_code, sort_order) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_pricing_rate_condition_match ON pricing_rate_condition (tenant_id, organization_id, rate_id, dimension_code, operator_code, sort_order, id);
-
-CREATE TABLE IF NOT EXISTS pricing_rate_formula (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    rate_id BIGINT NOT NULL,
-    formula_code VARCHAR(96) NOT NULL,
-    formula_version VARCHAR(64) NOT NULL,
-    constant_units NUMERIC(38, 12) NOT NULL,
-    quantity_coefficient NUMERIC(38, 12) NOT NULL,
-    minimum_units NUMERIC(38, 12),
-    maximum_units NUMERIC(38, 12),
-    CONSTRAINT ck_pricing_rate_formula_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT fk_pricing_rate_formula_rate FOREIGN KEY (tenant_id, organization_id, rate_id) REFERENCES pricing_rate (tenant_id, organization_id, id),
-    CONSTRAINT ck_pricing_rate_formula_coefficients CHECK (constant_units >= 0 AND quantity_coefficient >= 0),
-    CONSTRAINT ck_pricing_rate_formula_bounds CHECK ((minimum_units IS NULL OR minimum_units >= 0) AND (maximum_units IS NULL OR maximum_units >= 0) AND (minimum_units IS NULL OR maximum_units IS NULL OR maximum_units >= minimum_units))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_formula_uuid ON pricing_rate_formula (uuid) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_formula_scope_id ON pricing_rate_formula (tenant_id, organization_id, id) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_formula_rate ON pricing_rate_formula (tenant_id, organization_id, rate_id) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_rate_formula_scope_reference ON pricing_rate_formula (tenant_id, organization_id, id);
-CREATE INDEX IF NOT EXISTS idx_pricing_rate_formula_code ON pricing_rate_formula (tenant_id, organization_id, formula_code, formula_version, status, id);
-
-CREATE TABLE IF NOT EXISTS pricing_rate_formula_term (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    formula_id BIGINT NOT NULL,
-    term_index INTEGER NOT NULL,
-    term_code VARCHAR(96) NOT NULL,
-    dimension_code VARCHAR(96) NOT NULL,
-    coefficient NUMERIC(38, 12) NOT NULL,
-    CONSTRAINT ck_pricing_rate_formula_term_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT fk_pricing_rate_formula_term_formula FOREIGN KEY (tenant_id, organization_id, formula_id) REFERENCES pricing_rate_formula (tenant_id, organization_id, id),
-    CONSTRAINT ck_pricing_rate_formula_term_index CHECK (term_index >= 0),
-    CONSTRAINT ck_pricing_rate_formula_term_coefficient CHECK (coefficient >= 0)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_formula_term_uuid ON pricing_rate_formula_term (uuid) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_formula_term_scope_id ON pricing_rate_formula_term (tenant_id, organization_id, id) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_formula_term_index ON pricing_rate_formula_term (tenant_id, organization_id, formula_id, term_index) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_formula_term_code ON pricing_rate_formula_term (tenant_id, organization_id, formula_id, term_code) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_formula_term_dimension ON pricing_rate_formula_term (tenant_id, organization_id, formula_id, dimension_code) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_pricing_rate_formula_term_resolve ON pricing_rate_formula_term (tenant_id, organization_id, formula_id, term_index, status, id);
-
-CREATE TABLE IF NOT EXISTS pricing_rate_tier (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    rate_id BIGINT NOT NULL,
-    tier_index INTEGER NOT NULL,
-    tier_code VARCHAR(96) NOT NULL,
-    lower_bound NUMERIC(38, 12) NOT NULL,
-    upper_bound NUMERIC(38, 12),
-    unit_size NUMERIC(38, 12) NOT NULL,
-    unit_price NUMERIC(38, 12) NOT NULL,
-    flat_amount NUMERIC(38, 12) NOT NULL,
-    currency_code VARCHAR(10) NOT NULL,
-    CONSTRAINT ck_pricing_rate_tier_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT fk_pricing_rate_tier_rate FOREIGN KEY (tenant_id, organization_id, rate_id, currency_code) REFERENCES pricing_rate (tenant_id, organization_id, id, currency_code),
-    CONSTRAINT ck_pricing_rate_tier_index CHECK (tier_index >= 0),
-    CONSTRAINT ck_pricing_rate_tier_bounds CHECK (lower_bound >= 0 AND (upper_bound IS NULL OR upper_bound > lower_bound)),
-    CONSTRAINT ck_pricing_rate_tier_amounts CHECK (unit_size > 0 AND unit_price >= 0 AND flat_amount >= 0),
-    CONSTRAINT ck_pricing_rate_tier_currency CHECK (currency_code ~ '^[A-Z]{3}$')
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_tier_uuid ON pricing_rate_tier (uuid) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_tier_scope_id ON pricing_rate_tier (tenant_id, organization_id, id) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_tier_index ON pricing_rate_tier (tenant_id, organization_id, rate_id, tier_index) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_rate_tier_code ON pricing_rate_tier (tenant_id, organization_id, rate_id, tier_code) WHERE deleted_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_pricing_rate_tier_resolve ON pricing_rate_tier (tenant_id, organization_id, rate_id, tier_index, lower_bound, upper_bound, status, id);

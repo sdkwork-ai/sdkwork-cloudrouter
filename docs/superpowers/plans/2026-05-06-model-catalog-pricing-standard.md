@@ -39,7 +39,7 @@
 - Modify: `generated/schema/postgres/schema.sql`
 - Modify: `docs/schema-registry/sdkwork-cloudrouter.tables.yaml`
 
-- [ ] Replace old model catalog DDL with canonical `ai_model_vendor`, `ai_model_family`, `ai_model`, `ai_model_capability`, `ai_billing_meter`, `ai_model_pricing`, `ai_pricing_plan`, `ai_pricing_plan_binding`, `ai_pricing_rule`, `ai_pricing_tier`, `ai_pricing_import_snapshot`, and `ai_model_rank_snapshot`.
+- [ ] Replace old model catalog DDL with canonical `ai_model_vendor`, `ai_model_family`, `ai_model`, `ai_model_capability`, `ai_billing_meter`, `ai_model_pricing`, and `ai_model_rank_snapshot`. Billing policy tables live in `cloudrouter-billing` (`cloudrouter_pricing_plan`, `cloudrouter_pricing_rule`, `cloudrouter_account_rate_card`); official rates live in `pricing_*` (`pricing_price_book`, `pricing_rate`, `pricing_import_run`). Do not recreate removed `ai_pricing_*` tables.
 - [ ] Apply `DATABASE_SPEC.md` to every canonical table: `uuid NOT NULL`, `tenant_id BIGINT NOT NULL DEFAULT 0`, `organization_id BIGINT NOT NULL DEFAULT 0`, lifecycle and soft-delete fields, UUID unique constraints, and tenant-leading indexes.
 - [ ] Add lifecycle, shelf, and routing state columns to `ai_model`.
 - [ ] Remove old governance tables or re-express required concepts through canonical capability, pricing, plan, and policy tables.

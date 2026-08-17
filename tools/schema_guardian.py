@@ -101,7 +101,15 @@ DOMAIN_NAME_REQUIRED_CODES = {
 
 DOMAIN_NAMES_REQUIRING_TYPE_BINDINGS = {"model_vendor", "billing_meter", "integration_provider_type"}
 
-FORBIDDEN_PRICING_TABLES = {"ai_pricing_group"}
+FORBIDDEN_PRICING_TABLES = {
+    "ai_pricing_group",
+    "ai_pricing_import_snapshot",
+    "ai_pricing_plan",
+    "ai_pricing_plan_binding",
+    "ai_pricing_rule",
+    "ai_pricing_tier",
+    "cloudrouter_pricing_adjustment",
+}
 
 FORBIDDEN_LEGACY_IDENTITY_TABLES = {
     "plus_api_key",
@@ -220,13 +228,24 @@ REQUIRED_TABLE_COLUMNS = {
         "priority",
         "effective_from",
     },
-    "pricing_rate_tier": {
-        "rate_id",
-        "lower_bound",
-        "upper_bound",
+    "pricing_rate": {
+        "price_book_id",
+        "rate_code",
+        "product_code",
+        "operation_code",
+        "meter_code",
+        "vendor_code",
+        "provider_code",
+        "region_code",
+        "resource_type",
+        "resource_code",
+        "billability",
         "unit_size",
         "unit_price",
-        "flat_amount",
+        "currency_code",
+        "conditions",
+        "tiers",
+        "effective_from",
     },
     "iam_gateway_api_key": {
         "account_group_id",

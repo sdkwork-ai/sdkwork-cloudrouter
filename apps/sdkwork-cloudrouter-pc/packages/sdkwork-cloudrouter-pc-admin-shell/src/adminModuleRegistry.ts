@@ -211,9 +211,7 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
         itemBlock({ path: '/admin/analytics', labelKey: 'admin.menu.analytics', icon: BarChart3 }),
       ]),
       groupBlock('admin.menu.home.pricingManagement', [
-        itemBlock({ path: '/admin/pricing/plans', labelKey: 'admin.menu.pricing.plans', icon: BadgePercent, iconColor: 'text-lobster-400' }),
-        itemBlock({ path: '/admin/pricing/rateCards', labelKey: 'admin.menu.pricing.rateCards', icon: WalletCards, iconColor: 'text-lobster-400' }),
-        itemBlock({ path: '/admin/pricing/rules', labelKey: 'admin.menu.pricing.rules', icon: ReceiptText, iconColor: 'text-lobster-400' }),
+        itemBlock({ path: '/admin/pricing/settings', labelKey: 'admin.menu.pricing.settings', icon: BadgePercent, iconColor: 'text-lobster-400' }),
       ]),
     ],
   },

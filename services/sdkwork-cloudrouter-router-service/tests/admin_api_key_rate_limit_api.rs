@@ -23,18 +23,14 @@ async fn admin_api_key_rate_limit_route_creates_and_lists_token_limits() {
 
     let create_response = router
         .clone()
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "POST",
             "/backend/v3/api/system/rate_limits/api_keys",
-            Body::from(
-                    r#"{"keyPrefix":"sk-test","user":"30","rps":7,"rpd":1200,"burst":14}"#,
-                ),
+            Body::from(r#"{"keyPrefix":"sk-test","user":"30","rps":7,"rpd":1200,"burst":14}"#),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -49,16 +45,14 @@ async fn admin_api_key_rate_limit_route_creates_and_lists_token_limits() {
     assert_eq!("active", create_payload["data"]["item"]["status"]);
 
     let list_response = router
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "GET",
             "/backend/v3/api/system/rate_limits/api_keys",
             Body::empty(),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -79,18 +73,14 @@ async fn admin_api_key_rate_limit_route_rejects_placeholder_prefix_without_calli
         );
 
     let response = router
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "POST",
             "/backend/v3/api/system/rate_limits/api_keys",
-            Body::from(
-                    r#"{"keyPrefix":"sk-proj-...","user":"30","rps":7,"rpd":1200,"burst":14}"#,
-                ),
+            Body::from(r#"{"keyPrefix":"sk-proj-...","user":"30","rps":7,"rpd":1200,"burst":14}"#),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
 

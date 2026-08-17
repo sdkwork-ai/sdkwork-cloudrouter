@@ -5048,10 +5048,12 @@ name = "sdkwork-cloudrouter-database-host"
 version = "0.3.0"
 dependencies = [
  "dotenvy",
+ "hex",
  "sdkwork-database-config",
  "sdkwork-database-lifecycle",
  "sdkwork-database-spi",
  "sdkwork-database-sqlx",
+ "sha2 0.10.9",
  "sqlx",
  "tokio",
 ]
@@ -5316,6 +5318,7 @@ dependencies = [
  "base64",
  "bytes",
  "chrono",
+ "chrono-tz",
  "dashmap",
  "futures-util",
  "getrandom 0.3.4",
@@ -6405,6 +6408,8 @@ dependencies = [
 name = "sdkwork-models"
 version = "0.1.0"
 dependencies = [
+ "chrono",
+ "chrono-tz",
  "serde",
  "serde_json",
 ]
@@ -6432,6 +6437,7 @@ dependencies = [
  "axum 0.8.9",
  "bytes",
  "chrono",
+ "chrono-tz",
  "sdkwork-cloudrouter-http",
  "sdkwork-models",
  "sdkwork-models-contract-service",
@@ -6469,6 +6475,8 @@ dependencies = [
 name = "sdkwork-models-service-host"
 version = "0.1.0"
 dependencies = [
+ "chrono",
+ "chrono-tz",
  "dotenvy",
  "sdkwork-database-sqlx",
  "sdkwork-models",

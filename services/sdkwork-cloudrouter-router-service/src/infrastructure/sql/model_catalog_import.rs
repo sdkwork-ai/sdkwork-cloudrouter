@@ -2,6 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
+use chrono::{DateTime, NaiveDate, NaiveTime, Utc};
 use sha2::{Digest, Sha256};
 
 use sdkwork_models::{ClientApiCompatibility, ModelCatalog, ModelInfo, VendorCatalog};
@@ -1589,6 +1590,33 @@ pub(crate) fn bundled_pricing_dictionary_rows(
                     }
                     None => None,
                 };
+                let Some(effective_from) = parse_pricing_effective_instant(&price.effective_from)
+                else {
+                    continue;
+                };
+                let effective_to = match price.effective_to.as_deref() {
+                    Some(value) => {
+                        let Some(value) = parse_pricing_effective_instant(value) else {
+                            continue;
+                        };
+                        Some(value)
+                    }
+                    None => None,
+                };
+                let Some(rate_variant) =
+                    crate::domain::PricingRateVariant::from_code(&price.rate_variant)
+                else {
+                    continue;
+                };
+                let schedule = match price.schedule.as_ref() {
+                    Some(schedule) => {
+                        let Some(schedule) = parse_bundled_pricing_schedule(schedule) else {
+                            continue;
+                        };
+                        Some(schedule)
+                    }
+                    None => None,
+                };
                 prices.push(crate::infrastructure::sql::rows::ModelPriceRow {
                     tenant_id: 0,
                     organization_id: 0,
@@ -1609,6 +1637,7 @@ pub(crate) fn bundled_pricing_dictionary_rows(
                     account_id: None,
                     pricing_plan_code: None,
                     rate_metadata: Some(crate::domain::PricingRateMetadata {
+                        record_identity: None,
                         price_book_code: price.price_book_code.clone(),
                         rate_hash: price.rate_hash.clone(),
                         product_code: price.product_code.clone(),
@@ -1619,7 +1648,11 @@ pub(crate) fn bundled_pricing_dictionary_rows(
                         quantity_aggregation: price.quantity_aggregation.clone(),
                         minimum_quantity,
                         quantity_step,
-                        priority: 100,
+                        priority: price.priority,
+                        effective_from,
+                        effective_to,
+                        rate_variant,
+                        schedule,
                         conditions: price
                             .conditions
                             .iter()
@@ -1642,6 +1675,49 @@ pub(crate) fn bundled_pricing_dictionary_rows(
         models,
         prices,
     }
+}
+
+fn parse_pricing_effective_instant(value: &str) -> Option<DateTime<Utc>> {
+    DateTime::parse_from_rfc3339(value.trim())
+        .map(|value| value.with_timezone(&Utc))
+        .ok()
+        .or_else(|| {
+            NaiveDate::parse_from_str(value.trim(), "%Y-%m-%d")
+                .ok()
+                .and_then(|date| date.and_hms_opt(0, 0, 0))
+                .map(|value| value.and_utc())
+        })
+}
+
+fn parse_bundled_pricing_schedule(
+    schedule: &sdkwork_models::PriceSchedule,
+) -> Option<crate::domain::PricingSchedule> {
+    Some(crate::domain::PricingSchedule {
+        time_zone: schedule.time_zone.parse().ok()?,
+        weekly_windows: schedule
+            .weekly_windows
+            .iter()
+            .map(|window| {
+                Some(crate::domain::PricingWeeklyWindow {
+                    window_code: window.window_code.clone(),
+                    days_of_week: window.days_of_week.clone(),
+                    start_time: NaiveTime::parse_from_str(&window.start_time, "%H:%M:%S").ok()?,
+                    end_time: NaiveTime::parse_from_str(&window.end_time, "%H:%M:%S").ok()?,
+                    end_day_offset: window.end_day_offset,
+                })
+            })
+            .collect::<Option<Vec<_>>>()?,
+        include_dates: schedule
+            .include_dates
+            .iter()
+            .map(|value| NaiveDate::parse_from_str(value, "%Y-%m-%d").ok())
+            .collect::<Option<Vec<_>>>()?,
+        exclude_dates: schedule
+            .exclude_dates
+            .iter()
+            .map(|value| NaiveDate::parse_from_str(value, "%Y-%m-%d").ok())
+            .collect::<Option<Vec<_>>>()?,
+    })
 }
 
 fn bundled_price_side_label(value: &str) -> String {
@@ -1698,7 +1774,11 @@ mod tests {
             "payments-provider-update",
         ] {
             let uuid = stable_uuid(prefix, &["scope", "standard"]);
-            assert!(uuid.len() <= 64, "{prefix} produced {}-char uuid", uuid.len());
+            assert!(
+                uuid.len() <= 64,
+                "{prefix} produced {}-char uuid",
+                uuid.len()
+            );
         }
     }
 }

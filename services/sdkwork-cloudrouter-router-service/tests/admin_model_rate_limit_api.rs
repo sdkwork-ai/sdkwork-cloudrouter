@@ -58,16 +58,14 @@ async fn admin_model_rate_limit_route_creates_and_lists_model_limits() {
     assert_eq!("active", create_payload["data"]["item"]["status"]);
 
     let list_response = router
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "GET",
             "/backend/v3/api/system/rate_limits/models",
             Body::empty(),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -90,18 +88,16 @@ async fn admin_model_rate_limit_route_rejects_invalid_model_without_calling_stor
     );
 
     let response = router
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "POST",
             "/backend/v3/api/system/rate_limits/models",
             Body::from(
-                    r#"{"model":"gpt 4o","accountGroup":"standard-group","rpm":600,"tpm":120000}"#,
-                ),
+                r#"{"model":"gpt 4o","accountGroup":"standard-group","rpm":600,"tpm":120000}"#,
+            ),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -121,18 +117,16 @@ async fn admin_model_rate_limit_route_rejects_invalid_limit_without_calling_stor
     );
 
     let response = router
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "POST",
             "/backend/v3/api/system/rate_limits/models",
             Body::from(
-                    r#"{"model":"gpt-4o-mini","accountGroup":"standard-group","rpm":0,"tpm":120000}"#,
-                ),
+                r#"{"model":"gpt-4o-mini","accountGroup":"standard-group","rpm":0,"tpm":120000}"#,
+            ),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
 

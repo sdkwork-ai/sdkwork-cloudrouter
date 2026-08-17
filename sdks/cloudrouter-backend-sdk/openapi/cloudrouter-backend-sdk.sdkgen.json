@@ -1381,6 +1381,88 @@
             "maxLength": 256,
             "type": "string"
           },
+          "conditions": {
+            "description": "Conditions field on admin pricing rule.",
+            "items": {
+              "additionalProperties": false,
+              "description": "Conditions field on admin pricing rule.",
+              "properties": {
+                "dimensionCode": {
+                  "description": "Dimension code field on admin pricing rule.",
+                  "maxLength": 96,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "operatorCode": {
+                  "description": "Operator code field on admin pricing rule.",
+                  "enum": [
+                    "exists",
+                    "eq",
+                    "neq",
+                    "gt",
+                    "gte",
+                    "lt",
+                    "lte",
+                    "in",
+                    "not_in"
+                  ],
+                  "type": "string"
+                },
+                "value": {
+                  "description": "Value field on admin pricing rule.",
+                  "oneOf": [
+                    {
+                      "description": "String variant accepted by conditions.",
+                      "maxLength": 512,
+                      "type": "string"
+                    },
+                    {
+                      "description": "Number variant accepted by conditions.",
+                      "format": "double",
+                      "type": "number"
+                    },
+                    {
+                      "description": "Boolean variant accepted by conditions.",
+                      "type": "boolean"
+                    },
+                    {
+                      "description": "Array variant accepted by conditions.",
+                      "items": {
+                        "description": "Conditions field on admin pricing rule.",
+                        "oneOf": [
+                          {
+                            "description": "String variant accepted by conditions.",
+                            "maxLength": 512,
+                            "type": "string"
+                          },
+                          {
+                            "description": "Number variant accepted by conditions.",
+                            "format": "double",
+                            "type": "number"
+                          },
+                          {
+                            "description": "Boolean variant accepted by conditions.",
+                            "type": "boolean"
+                          }
+                        ]
+                      },
+                      "maxItems": 64,
+                      "minItems": 1,
+                      "type": "array"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "dimensionCode",
+                "operatorCode",
+                "value"
+              ],
+              "type": "object"
+            },
+            "maxItems": 32,
+            "type": "array"
+          },
           "createdAt": {
             "description": "Created at field on admin pricing rule.",
             "format": "date-time",
@@ -1473,6 +1555,104 @@
             "description": "Rule code field on admin pricing rule.",
             "maxLength": 96,
             "type": "string"
+          },
+          "schedule": {
+            "additionalProperties": false,
+            "description": "Schedule field on admin pricing rule.",
+            "nullable": true,
+            "properties": {
+              "excludeDates": {
+                "description": "Exclude dates field on admin pricing rule.",
+                "items": {
+                  "description": "Schedule field on admin pricing rule.",
+                  "format": "date",
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "maxItems": 366,
+                "type": "array"
+              },
+              "includeDates": {
+                "description": "Include dates field on admin pricing rule.",
+                "items": {
+                  "description": "Schedule field on admin pricing rule.",
+                  "format": "date",
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "maxItems": 366,
+                "type": "array"
+              },
+              "timeZone": {
+                "description": "Time zone field on admin pricing rule.",
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              "weeklyWindows": {
+                "description": "Weekly windows field on admin pricing rule.",
+                "items": {
+                  "additionalProperties": false,
+                  "description": "Schedule field on admin pricing rule.",
+                  "properties": {
+                    "daysOfWeek": {
+                      "description": "Days of week field on admin pricing rule.",
+                      "items": {
+                        "description": "Schedule field on admin pricing rule.",
+                        "maximum": 7,
+                        "minimum": 1,
+                        "type": "integer"
+                      },
+                      "maxItems": 7,
+                      "minItems": 1,
+                      "type": "array"
+                    },
+                    "endDayOffset": {
+                      "description": "End day offset field on admin pricing rule.",
+                      "enum": [
+                        0,
+                        1
+                      ],
+                      "type": "integer"
+                    },
+                    "endTime": {
+                      "description": "End time field on admin pricing rule.",
+                      "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                      "type": "string"
+                    },
+                    "startTime": {
+                      "description": "Start time field on admin pricing rule.",
+                      "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                      "type": "string"
+                    },
+                    "windowCode": {
+                      "description": "Window code field on admin pricing rule.",
+                      "maxLength": 96,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "windowCode",
+                    "daysOfWeek",
+                    "startTime",
+                    "endTime",
+                    "endDayOffset"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 64,
+                "minItems": 1,
+                "type": "array"
+              }
+            },
+            "required": [
+              "timeZone",
+              "weeklyWindows",
+              "includeDates",
+              "excludeDates"
+            ],
+            "type": "object"
           },
           "status": {
             "description": "Status field on admin pricing rule.",
@@ -6107,6 +6287,875 @@
         "properties": {},
         "type": "object"
       },
+      "OfficialPricingCatalogResponse": {
+        "additionalProperties": false,
+        "description": "Official pricing catalog response schema exposed by Cloud Router.",
+        "name": "OfficialPricingCatalogResponse",
+        "properties": {
+          "currencies": {
+            "description": "Currencies field on official pricing catalog response.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingValueFacet"
+            },
+            "type": "array"
+          },
+          "groups": {
+            "description": "Groups field on official pricing catalog response.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingGroupFacet"
+            },
+            "type": "array"
+          },
+          "items": {
+            "description": "Items field on official pricing catalog response.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingRate"
+            },
+            "type": "array"
+          },
+          "meters": {
+            "description": "Meters field on official pricing catalog response.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingMeterFacet"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on official pricing catalog response."
+          },
+          "regions": {
+            "description": "Regions field on official pricing catalog response.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingRegionFacet"
+            },
+            "type": "array"
+          },
+          "vendors": {
+            "description": "Vendors field on official pricing catalog response.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingValueFacet"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo",
+          "groups",
+          "vendors",
+          "regions",
+          "currencies",
+          "meters"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingFormula": {
+        "additionalProperties": false,
+        "description": "Official pricing formula schema exposed by Cloud Router.",
+        "nullable": true,
+        "properties": {
+          "constantUnits": {
+            "description": "Constant units field on official pricing formula.",
+            "type": "string"
+          },
+          "formulaCode": {
+            "description": "Formula code field on official pricing formula.",
+            "type": "string"
+          },
+          "formulaVersion": {
+            "description": "Formula version field on official pricing formula.",
+            "type": "string"
+          },
+          "maximumUnits": {
+            "description": "Maximum units field on official pricing formula.",
+            "nullable": true,
+            "type": "string"
+          },
+          "minimumUnits": {
+            "description": "Minimum units field on official pricing formula.",
+            "nullable": true,
+            "type": "string"
+          },
+          "quantityCoefficient": {
+            "description": "Quantity coefficient field on official pricing formula.",
+            "type": "string"
+          },
+          "terms": {
+            "description": "Terms field on official pricing formula.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingFormulaTerm"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "formulaCode",
+          "formulaVersion",
+          "constantUnits",
+          "quantityCoefficient",
+          "terms"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingFormulaTerm": {
+        "additionalProperties": false,
+        "description": "Official pricing formula term schema exposed by Cloud Router.",
+        "properties": {
+          "coefficient": {
+            "description": "Coefficient field on official pricing formula term.",
+            "type": "string"
+          },
+          "dimensionCode": {
+            "description": "Dimension code field on official pricing formula term.",
+            "type": "string"
+          },
+          "termCode": {
+            "description": "Term code field on official pricing formula term.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "termCode",
+          "dimensionCode",
+          "coefficient"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingGroupFacet": {
+        "additionalProperties": false,
+        "description": "Official pricing group facet schema exposed by Cloud Router.",
+        "properties": {
+          "code": {
+            "description": "Code field on official pricing group facet.",
+            "type": "string"
+          },
+          "count": {
+            "description": "Count field on official pricing group facet.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "id": {
+            "description": "Id field on official pricing group facet.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "count"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingMeterFacet": {
+        "additionalProperties": false,
+        "description": "Official pricing meter facet schema exposed by Cloud Router.",
+        "properties": {
+          "code": {
+            "description": "Code field on official pricing meter facet.",
+            "type": "string"
+          },
+          "count": {
+            "description": "Count field on official pricing meter facet.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "displayName": {
+            "description": "Display name field on official pricing meter facet.",
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on official pricing meter facet.",
+            "type": "string"
+          },
+          "unitCode": {
+            "description": "Unit code field on official pricing meter facet.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "displayName",
+          "unitCode",
+          "count"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingRate": {
+        "additionalProperties": false,
+        "description": "Official pricing rate schema exposed by Cloud Router.",
+        "properties": {
+          "apiFormat": {
+            "description": "Api format field on official pricing rate.",
+            "nullable": true,
+            "type": "string"
+          },
+          "billability": {
+            "description": "Billability field on official pricing rate.",
+            "enum": [
+              "chargeable",
+              "free",
+              "not_applicable",
+              "unknown"
+            ],
+            "type": "string"
+          },
+          "calculationMode": {
+            "description": "Calculation mode field on official pricing rate.",
+            "enum": [
+              "per_unit",
+              "flat",
+              "graduated",
+              "volume",
+              "formula"
+            ],
+            "type": "string"
+          },
+          "capabilities": {
+            "description": "Capabilities field on official pricing rate.",
+            "items": {
+              "description": "Capabilities field on official pricing rate.",
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "catalogKey": {
+            "description": "Catalog key field on official pricing rate.",
+            "nullable": true,
+            "type": "string"
+          },
+          "chargeTiming": {
+            "description": "Charge timing field on official pricing rate.",
+            "enum": [
+              "request_accepted",
+              "successful_result",
+              "usage_reported"
+            ],
+            "type": "string"
+          },
+          "conditions": {
+            "description": "Conditions field on official pricing rate.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingRateCondition"
+            },
+            "type": "array"
+          },
+          "contextTokens": {
+            "description": "Context tokens field on official pricing rate.",
+            "format": "int64",
+            "nullable": true,
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "currencyCode": {
+            "description": "Currency code field on official pricing rate.",
+            "pattern": "^[A-Z]{3}$",
+            "type": "string"
+          },
+          "effectiveFrom": {
+            "description": "Effective from field on official pricing rate.",
+            "type": "string"
+          },
+          "effectiveTo": {
+            "description": "Effective to field on official pricing rate.",
+            "nullable": true,
+            "type": "string"
+          },
+          "endpointCode": {
+            "description": "Endpoint code field on official pricing rate.",
+            "nullable": true,
+            "type": "string"
+          },
+          "formula": {
+            "description": "Formula field on official pricing rate.",
+            "oneOf": [
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/OfficialPricingFormula"
+                  }
+                ],
+                "description": "Formula field on official pricing rate."
+              },
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/JsonNull"
+                  }
+                ],
+                "description": "Null variant accepted by formula."
+              }
+            ]
+          },
+          "groupCodes": {
+            "description": "Group codes field on official pricing rate.",
+            "items": {
+              "description": "Group codes field on official pricing rate.",
+              "enum": [
+                "all",
+                "llm",
+                "image",
+                "video",
+                "audio",
+                "music",
+                "embedding",
+                "sound",
+                "api",
+                "other"
+              ],
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "inputModalities": {
+            "description": "Input modalities field on official pricing rate.",
+            "items": {
+              "description": "Input modalities field on official pricing rate.",
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "maxInputTokens": {
+            "description": "Max input tokens field on official pricing rate.",
+            "format": "int64",
+            "nullable": true,
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "maxOutputTokens": {
+            "description": "Max output tokens field on official pricing rate.",
+            "format": "int64",
+            "nullable": true,
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "meterCode": {
+            "description": "Meter code field on official pricing rate.",
+            "type": "string"
+          },
+          "meterDisplayName": {
+            "description": "Meter display name field on official pricing rate.",
+            "type": "string"
+          },
+          "minimumQuantity": {
+            "description": "Minimum quantity field on official pricing rate.",
+            "pattern": "^[0-9]+(?:\\.[0-9]+)?$",
+            "type": "string"
+          },
+          "operationCode": {
+            "description": "Operation code field on official pricing rate.",
+            "type": "string"
+          },
+          "operationDisplayName": {
+            "description": "Operation display name field on official pricing rate.",
+            "type": "string"
+          },
+          "operationKind": {
+            "description": "Operation kind field on official pricing rate.",
+            "type": "string"
+          },
+          "outputModalities": {
+            "description": "Output modalities field on official pricing rate.",
+            "items": {
+              "description": "Output modalities field on official pricing rate.",
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "priceBookCode": {
+            "description": "Price book code field on official pricing rate.",
+            "type": "string"
+          },
+          "priceBookVersion": {
+            "description": "Price book version field on official pricing rate.",
+            "type": "string"
+          },
+          "priority": {
+            "description": "Priority field on official pricing rate.",
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "productCode": {
+            "description": "Product code field on official pricing rate.",
+            "type": "string"
+          },
+          "productDisplayName": {
+            "description": "Product display name field on official pricing rate.",
+            "type": "string"
+          },
+          "productKind": {
+            "description": "Product kind field on official pricing rate.",
+            "type": "string"
+          },
+          "providerCode": {
+            "description": "Provider code field on official pricing rate.",
+            "type": "string"
+          },
+          "quantityAggregation": {
+            "description": "Quantity aggregation field on official pricing rate.",
+            "enum": [
+              "sum",
+              "maximum",
+              "minimum",
+              "last",
+              "distinct_invocation"
+            ],
+            "type": "string"
+          },
+          "quantityKind": {
+            "description": "Quantity kind field on official pricing rate.",
+            "type": "string"
+          },
+          "quantityStep": {
+            "description": "Quantity step field on official pricing rate.",
+            "nullable": true,
+            "pattern": "^[0-9]+(?:\\.[0-9]+)?$",
+            "type": "string"
+          },
+          "rateCode": {
+            "description": "Rate code field on official pricing rate.",
+            "type": "string"
+          },
+          "rateHash": {
+            "description": "Rate hash field on official pricing rate.",
+            "type": "string"
+          },
+          "rateVariant": {
+            "description": "Rate variant field on official pricing rate.",
+            "enum": [
+              "standard",
+              "time_window"
+            ],
+            "type": "string"
+          },
+          "regionCode": {
+            "description": "Region code field on official pricing rate.",
+            "type": "string"
+          },
+          "resourceCode": {
+            "description": "Resource code field on official pricing rate.",
+            "type": "string"
+          },
+          "resourceType": {
+            "description": "Resource type field on official pricing rate.",
+            "type": "string"
+          },
+          "schedule": {
+            "additionalProperties": false,
+            "description": "Schedule field on official pricing rate.",
+            "nullable": true,
+            "properties": {
+              "excludeDates": {
+                "description": "Exclude dates field on official pricing rate.",
+                "items": {
+                  "description": "Schedule field on official pricing rate.",
+                  "format": "date",
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "maxItems": 366,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "includeDates": {
+                "description": "Include dates field on official pricing rate.",
+                "items": {
+                  "description": "Schedule field on official pricing rate.",
+                  "format": "date",
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "maxItems": 366,
+                "type": "array",
+                "uniqueItems": true
+              },
+              "timeZone": {
+                "description": "Time zone field on official pricing rate.",
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              "weeklyWindows": {
+                "description": "Weekly windows field on official pricing rate.",
+                "items": {
+                  "additionalProperties": false,
+                  "description": "Schedule field on official pricing rate.",
+                  "properties": {
+                    "daysOfWeek": {
+                      "description": "Days of week field on official pricing rate.",
+                      "items": {
+                        "description": "Schedule field on official pricing rate.",
+                        "format": "int32",
+                        "maximum": 7,
+                        "minimum": 1,
+                        "type": "integer"
+                      },
+                      "maxItems": 7,
+                      "minItems": 1,
+                      "type": "array",
+                      "uniqueItems": true
+                    },
+                    "endDayOffset": {
+                      "description": "End day offset field on official pricing rate.",
+                      "enum": [
+                        0,
+                        1
+                      ],
+                      "format": "int32",
+                      "type": "integer"
+                    },
+                    "endTime": {
+                      "description": "End time field on official pricing rate.",
+                      "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                      "type": "string"
+                    },
+                    "startTime": {
+                      "description": "Start time field on official pricing rate.",
+                      "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                      "type": "string"
+                    },
+                    "windowCode": {
+                      "description": "Window code field on official pricing rate.",
+                      "maxLength": 96,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "windowCode",
+                    "daysOfWeek",
+                    "startTime",
+                    "endTime",
+                    "endDayOffset"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 64,
+                "minItems": 1,
+                "type": "array"
+              }
+            },
+            "required": [
+              "timeZone",
+              "weeklyWindows",
+              "includeDates",
+              "excludeDates"
+            ],
+            "type": "object"
+          },
+          "sourceObservedAt": {
+            "description": "Source observed at field on official pricing rate.",
+            "type": "string"
+          },
+          "sourceUrl": {
+            "description": "Source url field on official pricing rate.",
+            "type": "string"
+          },
+          "supportsJsonSchema": {
+            "description": "Supports json schema field on official pricing rate.",
+            "nullable": true,
+            "type": "boolean"
+          },
+          "supportsStreaming": {
+            "description": "Supports streaming field on official pricing rate.",
+            "nullable": true,
+            "type": "boolean"
+          },
+          "supportsTools": {
+            "description": "Supports tools field on official pricing rate.",
+            "nullable": true,
+            "type": "boolean"
+          },
+          "tiers": {
+            "description": "Tiers field on official pricing rate.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingRateTier"
+            },
+            "type": "array"
+          },
+          "unitCode": {
+            "description": "Unit code field on official pricing rate.",
+            "type": "string"
+          },
+          "unitPrice": {
+            "description": "Unit price field on official pricing rate.",
+            "pattern": "^[0-9]+(?:\\.[0-9]+)?$",
+            "type": "string"
+          },
+          "unitSize": {
+            "description": "Unit size field on official pricing rate.",
+            "pattern": "^[0-9]+(?:\\.[0-9]+)?$",
+            "type": "string"
+          },
+          "usageScopes": {
+            "description": "Usage scopes field on official pricing rate.",
+            "items": {
+              "description": "Usage scopes field on official pricing rate.",
+              "type": "string"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "vendorCode": {
+            "description": "Vendor code field on official pricing rate.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rateCode",
+          "rateHash",
+          "groupCodes",
+          "productCode",
+          "productKind",
+          "productDisplayName",
+          "operationCode",
+          "operationKind",
+          "operationDisplayName",
+          "vendorCode",
+          "providerCode",
+          "regionCode",
+          "resourceType",
+          "resourceCode",
+          "priceBookCode",
+          "priceBookVersion",
+          "meterCode",
+          "meterDisplayName",
+          "quantityKind",
+          "unitCode",
+          "billability",
+          "chargeTiming",
+          "calculationMode",
+          "quantityAggregation",
+          "unitSize",
+          "unitPrice",
+          "minimumQuantity",
+          "currencyCode",
+          "conditions",
+          "tiers",
+          "effectiveFrom",
+          "sourceUrl",
+          "sourceObservedAt"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingRateCondition": {
+        "additionalProperties": false,
+        "description": "Official pricing rate condition schema exposed by Cloud Router.",
+        "properties": {
+          "dimensionCode": {
+            "description": "Dimension code field on official pricing rate condition.",
+            "type": "string"
+          },
+          "operatorCode": {
+            "description": "Operator code field on official pricing rate condition.",
+            "enum": [
+              "eq",
+              "neq",
+              "gt",
+              "gte",
+              "lt",
+              "lte",
+              "in",
+              "not_in",
+              "exists"
+            ],
+            "type": "string"
+          },
+          "value": {
+            "description": "Value field on official pricing rate condition.",
+            "oneOf": [
+              {
+                "description": "String variant accepted by value.",
+                "type": "string"
+              },
+              {
+                "description": "Number variant accepted by value.",
+                "type": "number"
+              },
+              {
+                "description": "Boolean variant accepted by value.",
+                "type": "boolean"
+              },
+              {
+                "description": "Array variant accepted by value.",
+                "items": {
+                  "description": "Value field on official pricing rate condition.",
+                  "oneOf": [
+                    {
+                      "description": "String variant accepted by value.",
+                      "type": "string"
+                    },
+                    {
+                      "description": "Number variant accepted by value.",
+                      "type": "number"
+                    },
+                    {
+                      "description": "Boolean variant accepted by value.",
+                      "type": "boolean"
+                    }
+                  ]
+                },
+                "maxItems": 64,
+                "type": "array"
+              }
+            ]
+          }
+        },
+        "required": [
+          "dimensionCode",
+          "operatorCode",
+          "value"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingRateTier": {
+        "additionalProperties": false,
+        "description": "Official pricing rate tier schema exposed by Cloud Router.",
+        "properties": {
+          "currencyCode": {
+            "description": "Currency code field on official pricing rate tier.",
+            "type": "string"
+          },
+          "flatAmount": {
+            "description": "Flat amount field on official pricing rate tier.",
+            "type": "string"
+          },
+          "lowerBound": {
+            "description": "Lower bound field on official pricing rate tier.",
+            "type": "string"
+          },
+          "tierCode": {
+            "description": "Tier code field on official pricing rate tier.",
+            "type": "string"
+          },
+          "unitPrice": {
+            "description": "Unit price field on official pricing rate tier.",
+            "type": "string"
+          },
+          "unitSize": {
+            "description": "Unit size field on official pricing rate tier.",
+            "type": "string"
+          },
+          "upperBound": {
+            "description": "Upper bound field on official pricing rate tier.",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "tierCode",
+          "lowerBound",
+          "unitSize",
+          "unitPrice",
+          "flatAmount",
+          "currencyCode"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingRegionFacet": {
+        "additionalProperties": false,
+        "description": "Official pricing region facet schema exposed by Cloud Router.",
+        "properties": {
+          "code": {
+            "description": "Code field on official pricing region facet.",
+            "type": "string"
+          },
+          "count": {
+            "description": "Count field on official pricing region facet.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "id": {
+            "description": "Id field on official pricing region facet.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "count"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingValueFacet": {
+        "additionalProperties": false,
+        "description": "Official pricing value facet schema exposed by Cloud Router.",
+        "properties": {
+          "code": {
+            "description": "Code field on official pricing value facet.",
+            "type": "string"
+          },
+          "count": {
+            "description": "Count field on official pricing value facet.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "id": {
+            "description": "Id field on official pricing value facet.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "count"
+        ],
+        "type": "object"
+      },
+      "OfficialRatesListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by official rates list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/OfficialPricingCatalogResponse"
+                  }
+                ],
+                "description": "Data field on official rates list result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Official rates list result schema exposed by Cloud Router.",
+        "x-operation-id": "officialRates.list"
+      },
       "OssQuotasCreateResult": {
         "allOf": [
           {
@@ -6917,6 +7966,88 @@
             "maxLength": 256,
             "type": "string"
           },
+          "conditions": {
+            "description": "Conditions field on pricing rule create request.",
+            "items": {
+              "additionalProperties": false,
+              "description": "Conditions field on pricing rule create request.",
+              "properties": {
+                "dimensionCode": {
+                  "description": "Dimension code field on pricing rule create request.",
+                  "maxLength": 96,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "operatorCode": {
+                  "description": "Operator code field on pricing rule create request.",
+                  "enum": [
+                    "exists",
+                    "eq",
+                    "neq",
+                    "gt",
+                    "gte",
+                    "lt",
+                    "lte",
+                    "in",
+                    "not_in"
+                  ],
+                  "type": "string"
+                },
+                "value": {
+                  "description": "Value field on pricing rule create request.",
+                  "oneOf": [
+                    {
+                      "description": "String variant accepted by conditions.",
+                      "maxLength": 512,
+                      "type": "string"
+                    },
+                    {
+                      "description": "Number variant accepted by conditions.",
+                      "format": "double",
+                      "type": "number"
+                    },
+                    {
+                      "description": "Boolean variant accepted by conditions.",
+                      "type": "boolean"
+                    },
+                    {
+                      "description": "Array variant accepted by conditions.",
+                      "items": {
+                        "description": "Conditions field on pricing rule create request.",
+                        "oneOf": [
+                          {
+                            "description": "String variant accepted by conditions.",
+                            "maxLength": 512,
+                            "type": "string"
+                          },
+                          {
+                            "description": "Number variant accepted by conditions.",
+                            "format": "double",
+                            "type": "number"
+                          },
+                          {
+                            "description": "Boolean variant accepted by conditions.",
+                            "type": "boolean"
+                          }
+                        ]
+                      },
+                      "maxItems": 64,
+                      "minItems": 1,
+                      "type": "array"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "dimensionCode",
+                "operatorCode",
+                "value"
+              ],
+              "type": "object"
+            },
+            "maxItems": 32,
+            "type": "array"
+          },
           "effectiveFrom": {
             "description": "Effective from field on pricing rule create request.",
             "format": "date-time",
@@ -6991,6 +8122,104 @@
             "maxLength": 96,
             "type": "string"
           },
+          "schedule": {
+            "additionalProperties": false,
+            "description": "Schedule field on pricing rule create request.",
+            "nullable": true,
+            "properties": {
+              "excludeDates": {
+                "description": "Exclude dates field on pricing rule create request.",
+                "items": {
+                  "description": "Schedule field on pricing rule create request.",
+                  "format": "date",
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "maxItems": 366,
+                "type": "array"
+              },
+              "includeDates": {
+                "description": "Include dates field on pricing rule create request.",
+                "items": {
+                  "description": "Schedule field on pricing rule create request.",
+                  "format": "date",
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "maxItems": 366,
+                "type": "array"
+              },
+              "timeZone": {
+                "description": "Time zone field on pricing rule create request.",
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              "weeklyWindows": {
+                "description": "Weekly windows field on pricing rule create request.",
+                "items": {
+                  "additionalProperties": false,
+                  "description": "Schedule field on pricing rule create request.",
+                  "properties": {
+                    "daysOfWeek": {
+                      "description": "Days of week field on pricing rule create request.",
+                      "items": {
+                        "description": "Schedule field on pricing rule create request.",
+                        "maximum": 7,
+                        "minimum": 1,
+                        "type": "integer"
+                      },
+                      "maxItems": 7,
+                      "minItems": 1,
+                      "type": "array"
+                    },
+                    "endDayOffset": {
+                      "description": "End day offset field on pricing rule create request.",
+                      "enum": [
+                        0,
+                        1
+                      ],
+                      "type": "integer"
+                    },
+                    "endTime": {
+                      "description": "End time field on pricing rule create request.",
+                      "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                      "type": "string"
+                    },
+                    "startTime": {
+                      "description": "Start time field on pricing rule create request.",
+                      "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                      "type": "string"
+                    },
+                    "windowCode": {
+                      "description": "Window code field on pricing rule create request.",
+                      "maxLength": 96,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "windowCode",
+                    "daysOfWeek",
+                    "startTime",
+                    "endTime",
+                    "endDayOffset"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 64,
+                "minItems": 1,
+                "type": "array"
+              }
+            },
+            "required": [
+              "timeZone",
+              "weeklyWindows",
+              "includeDates",
+              "excludeDates"
+            ],
+            "type": "object"
+          },
           "status": {
             "description": "Status field on pricing rule create request.",
             "enum": [
@@ -7022,6 +8251,88 @@
             "description": "Catalog key field on pricing rule update request.",
             "maxLength": 256,
             "type": "string"
+          },
+          "conditions": {
+            "description": "Conditions field on pricing rule update request.",
+            "items": {
+              "additionalProperties": false,
+              "description": "Conditions field on pricing rule update request.",
+              "properties": {
+                "dimensionCode": {
+                  "description": "Dimension code field on pricing rule update request.",
+                  "maxLength": 96,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "operatorCode": {
+                  "description": "Operator code field on pricing rule update request.",
+                  "enum": [
+                    "exists",
+                    "eq",
+                    "neq",
+                    "gt",
+                    "gte",
+                    "lt",
+                    "lte",
+                    "in",
+                    "not_in"
+                  ],
+                  "type": "string"
+                },
+                "value": {
+                  "description": "Value field on pricing rule update request.",
+                  "oneOf": [
+                    {
+                      "description": "String variant accepted by conditions.",
+                      "maxLength": 512,
+                      "type": "string"
+                    },
+                    {
+                      "description": "Number variant accepted by conditions.",
+                      "format": "double",
+                      "type": "number"
+                    },
+                    {
+                      "description": "Boolean variant accepted by conditions.",
+                      "type": "boolean"
+                    },
+                    {
+                      "description": "Array variant accepted by conditions.",
+                      "items": {
+                        "description": "Conditions field on pricing rule update request.",
+                        "oneOf": [
+                          {
+                            "description": "String variant accepted by conditions.",
+                            "maxLength": 512,
+                            "type": "string"
+                          },
+                          {
+                            "description": "Number variant accepted by conditions.",
+                            "format": "double",
+                            "type": "number"
+                          },
+                          {
+                            "description": "Boolean variant accepted by conditions.",
+                            "type": "boolean"
+                          }
+                        ]
+                      },
+                      "maxItems": 64,
+                      "minItems": 1,
+                      "type": "array"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "dimensionCode",
+                "operatorCode",
+                "value"
+              ],
+              "type": "object"
+            },
+            "maxItems": 32,
+            "type": "array"
           },
           "effectiveFrom": {
             "description": "Effective from field on pricing rule update request.",
@@ -7096,6 +8407,104 @@
             "description": "Rule code field on pricing rule update request.",
             "maxLength": 96,
             "type": "string"
+          },
+          "schedule": {
+            "additionalProperties": false,
+            "description": "Schedule field on pricing rule update request.",
+            "nullable": true,
+            "properties": {
+              "excludeDates": {
+                "description": "Exclude dates field on pricing rule update request.",
+                "items": {
+                  "description": "Schedule field on pricing rule update request.",
+                  "format": "date",
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "maxItems": 366,
+                "type": "array"
+              },
+              "includeDates": {
+                "description": "Include dates field on pricing rule update request.",
+                "items": {
+                  "description": "Schedule field on pricing rule update request.",
+                  "format": "date",
+                  "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                  "type": "string"
+                },
+                "maxItems": 366,
+                "type": "array"
+              },
+              "timeZone": {
+                "description": "Time zone field on pricing rule update request.",
+                "maxLength": 128,
+                "minLength": 1,
+                "type": "string"
+              },
+              "weeklyWindows": {
+                "description": "Weekly windows field on pricing rule update request.",
+                "items": {
+                  "additionalProperties": false,
+                  "description": "Schedule field on pricing rule update request.",
+                  "properties": {
+                    "daysOfWeek": {
+                      "description": "Days of week field on pricing rule update request.",
+                      "items": {
+                        "description": "Schedule field on pricing rule update request.",
+                        "maximum": 7,
+                        "minimum": 1,
+                        "type": "integer"
+                      },
+                      "maxItems": 7,
+                      "minItems": 1,
+                      "type": "array"
+                    },
+                    "endDayOffset": {
+                      "description": "End day offset field on pricing rule update request.",
+                      "enum": [
+                        0,
+                        1
+                      ],
+                      "type": "integer"
+                    },
+                    "endTime": {
+                      "description": "End time field on pricing rule update request.",
+                      "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                      "type": "string"
+                    },
+                    "startTime": {
+                      "description": "Start time field on pricing rule update request.",
+                      "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                      "type": "string"
+                    },
+                    "windowCode": {
+                      "description": "Window code field on pricing rule update request.",
+                      "maxLength": 96,
+                      "minLength": 1,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "windowCode",
+                    "daysOfWeek",
+                    "startTime",
+                    "endTime",
+                    "endDayOffset"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 64,
+                "minItems": 1,
+                "type": "array"
+              }
+            },
+            "required": [
+              "timeZone",
+              "weeklyWindows",
+              "includeDates",
+              "excludeDates"
+            ],
+            "type": "object"
           },
           "status": {
             "description": "Status field on pricing rule update request.",
@@ -17485,6 +18894,191 @@
         "x-write-tables": [
           "commerce_payment_provider"
         ]
+      }
+    },
+    "/backend/v3/api/pricing/official_rates": {
+      "get": {
+        "description": "List admin official pricing rates. Reads pricing_price_book, pricing_rate, pricing_import_run. Writes none. File targets none.",
+        "operationId": "officialRates.list",
+        "parameters": [
+          {
+            "description": "Category query parameter.",
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "enum": [
+                "all",
+                "llm",
+                "image",
+                "video",
+                "audio",
+                "music",
+                "embedding",
+                "sound",
+                "api",
+                "other"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 256,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Vendor code query parameter.",
+            "in": "query",
+            "name": "vendor_code",
+            "required": false,
+            "schema": {
+              "maxLength": 160,
+              "pattern": "^[A-Za-z0-9._:/-]+$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Region code query parameter.",
+            "in": "query",
+            "name": "region_code",
+            "required": false,
+            "schema": {
+              "maxLength": 160,
+              "pattern": "^[A-Za-z0-9._:/-]+$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Meter code query parameter.",
+            "in": "query",
+            "name": "meter_code",
+            "required": false,
+            "schema": {
+              "maxLength": 160,
+              "pattern": "^[A-Za-z0-9._:/-]+$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Currency code query parameter.",
+            "in": "query",
+            "name": "currency_code",
+            "required": false,
+            "schema": {
+              "maxLength": 3,
+              "pattern": "^[A-Z]{3}$",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfficialRatesListResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List admin official pricing rates",
+        "tags": [
+          "pricing"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "pricing_price_book",
+          "pricing_rate",
+          "pricing_import_run"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "pricing",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "pricing",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "officialRates",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/pricing/plans": {

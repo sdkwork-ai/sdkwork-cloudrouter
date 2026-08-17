@@ -24,11 +24,7 @@ fn admin_pricing_plans_use_cloudrouter_pricing_plan_table() {
             "async fn insert_pricing_plan_row",
             "async fn update_pricing_plan"
         ),
-        source_section(
-            source,
-            "fn pricing_plan_from_row",
-            "fn rate_card_from_row"
-        ),
+        source_section(source, "fn pricing_plan_from_row", "fn rate_card_from_row"),
     );
 
     assert!(plan_sections.contains("cloudrouter_pricing_plan"));
@@ -61,11 +57,7 @@ fn admin_rate_cards_use_cloudrouter_account_rate_card_table() {
             "async fn insert_rate_card_row",
             "async fn require_plan_exists"
         ),
-        source_section(
-            source,
-            "fn rate_card_from_row",
-            "fn pricing_rule_from_row"
-        ),
+        source_section(source, "fn rate_card_from_row", "fn pricing_rule_from_row"),
     );
 
     assert!(card_sections.contains("cloudrouter_account_rate_card"));
@@ -117,7 +109,10 @@ fn admin_pricing_mutations_write_audit_logs_and_soft_delete() {
 
     assert!(source.contains("ops_audit_log"));
     assert!(source.contains("insert_audit_log_for_target_uuid"));
-    assert!(source.contains("deleted_at"), "rate card and rule deletes must soft-delete");
+    assert!(
+        source.contains("deleted_at"),
+        "rate card and rule deletes must soft-delete"
+    );
     assert!(
         !source.contains("DELETE FROM cloudrouter_pricing_plan"),
         "pricing plans must not be hard-deleted; deactivate via status"
@@ -130,8 +125,7 @@ fn admin_pricing_mutations_write_audit_logs_and_soft_delete() {
 
 #[test]
 fn admin_pricing_status_wire_values_match_billing_module_columns() {
-    const PORTS_ADMIN_PRICING_STORE: &str =
-        include_str!("../src/ports/admin_pricing_store.rs");
+    const PORTS_ADMIN_PRICING_STORE: &str = include_str!("../src/ports/admin_pricing_store.rs");
     let source = POSTGRES_ADMIN_PRICING_STORE;
     let ports = PORTS_ADMIN_PRICING_STORE;
 

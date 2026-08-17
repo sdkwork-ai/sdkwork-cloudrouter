@@ -16,8 +16,7 @@ use serde::{Deserialize, Serialize};
 /// SDKWork license signing public key — the raw 32-byte Ed25519 public key,
 /// base64url encoded. The private key is held by the SDKWork commercial team
 /// and never distributed.
-pub const SDKWORK_LICENSE_ED25519_PUBLIC_KEY: &str =
-    "W0dHSvM-bc8-yxowrh5enOr-GVvH7uihrAQcqrhWzAA";
+pub const SDKWORK_LICENSE_ED25519_PUBLIC_KEY: &str = "W0dHSvM-bc8-yxowrh5enOr-GVvH7uihrAQcqrhWzAA";
 
 /// License key environment variable.
 pub const LICENSE_KEY_ENV: &str = "SDKWORK_CLOUDROUTER_LICENSE_KEY";
@@ -168,10 +167,7 @@ pub fn resolve_license() -> LicenseStatus {
 
     match verify_license_key(&license_key) {
         Ok(info) if info.is_expired() => LicenseStatus::Invalid {
-            reason: format!(
-                "license expired at {}",
-                info.expires_at.unwrap_or_default()
-            ),
+            reason: format!("license expired at {}", info.expires_at.unwrap_or_default()),
         },
         Ok(info) => LicenseStatus::Licensed { info },
         Err(reason) => LicenseStatus::Invalid { reason },
@@ -212,9 +208,45 @@ mod tests {
 
     #[test]
     fn edition_mapping_covers_all_tiers() {
-        assert_eq!(LicenseInfo { tier: "pro".into(), customer: "x".into(), issued_at: "".into(), expires_at: None }.edition(), Edition::Pro);
-        assert_eq!(LicenseInfo { tier: "enterprise".into(), customer: "x".into(), issued_at: "".into(), expires_at: None }.edition(), Edition::Enterprise);
-        assert_eq!(LicenseInfo { tier: "oem".into(), customer: "x".into(), issued_at: "".into(), expires_at: None }.edition(), Edition::Oem);
-        assert_eq!(LicenseInfo { tier: "community".into(), customer: "x".into(), issued_at: "".into(), expires_at: None }.edition(), Edition::Community);
+        assert_eq!(
+            LicenseInfo {
+                tier: "pro".into(),
+                customer: "x".into(),
+                issued_at: "".into(),
+                expires_at: None
+            }
+            .edition(),
+            Edition::Pro
+        );
+        assert_eq!(
+            LicenseInfo {
+                tier: "enterprise".into(),
+                customer: "x".into(),
+                issued_at: "".into(),
+                expires_at: None
+            }
+            .edition(),
+            Edition::Enterprise
+        );
+        assert_eq!(
+            LicenseInfo {
+                tier: "oem".into(),
+                customer: "x".into(),
+                issued_at: "".into(),
+                expires_at: None
+            }
+            .edition(),
+            Edition::Oem
+        );
+        assert_eq!(
+            LicenseInfo {
+                tier: "community".into(),
+                customer: "x".into(),
+                issued_at: "".into(),
+                expires_at: None
+            }
+            .edition(),
+            Edition::Community
+        );
     }
 }

@@ -23,7 +23,7 @@ const LIST_ADMIN_RECORD_LOGS: &str = r#"
           AND t.tenant_id = $1
           AND t.organization_id = $2
           AND t.started_at IS NOT NULL
-    )
+    ) ranked_trace
     WHERE trace_rank = 1
 ),
 usage_by_request AS (
@@ -33,7 +33,7 @@ usage_by_request AS (
         request_id,
         MAX(owner_name_snapshot) AS owner_name_snapshot,
         MAX(api_key_name_snapshot) AS api_key_name_snapshot,
-        MAX(account_group_snapshot) AS upstream_account_group_snapshot,
+        MAX(upstream_account_group_snapshot) AS upstream_account_group_snapshot,
         MAX(catalog_key) AS catalog_key,
         MAX(requested_model_catalog_key) AS requested_model_catalog_key,
         MAX(model) AS model,
@@ -389,6 +389,27 @@ mod tests {
                 .to_string()
                 .contains("invalid admin record amount: not-money"),
             "{unsupported}"
+        );
+    }
+
+    #[test]
+    fn list_logs_aggregates_upstream_account_group_from_billable_usage_cte() {
+        assert!(
+            LIST_ADMIN_RECORD_LOGS
+                .contains("MAX(upstream_account_group_snapshot) AS upstream_account_group_snapshot"),
+            "admin record Postgres SQL must aggregate the billable_usage CTE column upstream_account_group_snapshot"
+        );
+        assert!(
+            !LIST_ADMIN_RECORD_LOGS.contains("MAX(account_group_snapshot)"),
+            "admin record Postgres SQL must not aggregate a missing billable_usage column named account_group_snapshot"
+        );
+    }
+
+    #[test]
+    fn list_logs_aliases_ranked_trace_subquery() {
+        assert!(
+            LIST_ADMIN_RECORD_LOGS.contains(") ranked_trace"),
+            "admin record Postgres SQL must alias the ROW_NUMBER subquery so PostgreSQL can parse FROM (SELECT ...)"
         );
     }
 

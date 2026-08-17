@@ -2260,8 +2260,11 @@ async fn build_gateway_router_from_all_in_one_context(
         // database-runtime wiring in
         // `router_with_database_api_key_and_provider_configs`.
         auth_token_authenticator: Some(Arc::new(
-            IamAuthTokenAuthenticator::new(context.database_pool.clone(), Arc::clone(&context.catalog))
-                .with_cache(resolve_auth_token_cache(runtime_toml.as_ref()).await),
+            IamAuthTokenAuthenticator::new(
+                context.database_pool.clone(),
+                Arc::clone(&context.catalog),
+            )
+            .with_cache(resolve_auth_token_cache(runtime_toml.as_ref()).await),
         )),
     })
     .map_err(anyhow::Error::new)
@@ -3728,9 +3731,9 @@ gateway_invocation_body_max_bytes = 37
         // messaging API assembly contribution on the messaging database host
         // (API_ASSEMBLY_SPEC §3/§6.1), never through a direct route-crate
         // import.
-        assert!(source.contains(
-            "sdkwork_api_messaging_assembly::assemble_backend_api_contribution()"
-        ));
+        assert!(
+            source.contains("sdkwork_api_messaging_assembly::assemble_backend_api_contribution()")
+        );
         let forbidden_route_crate_import = ["sdkwork_routes_messaging", "_backend_api::"].concat();
         assert!(
             !source.contains(&forbidden_route_crate_import),

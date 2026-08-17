@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Edit3, Plus } from 'lucide-react';
-import { AdminTableShell, BottomPagination } from '@sdkwork/cloudroutes-pc-commons';
+import { BottomPagination } from '@sdkwork/cloudroutes-pc-commons';
 import { useTranslation } from 'react-i18next';
 import {
   pricingService,
@@ -11,7 +11,9 @@ import {
   type AdminRoundingMode,
 } from './pricingService';
 import {
+  AdminListToolbar,
   AdminPageShell,
+  AdminTableArea,
   dangerButtonClass,
   errorMessageI18n,
   Field,
@@ -24,6 +26,7 @@ import {
   SidePanel,
   StatusBadge,
   TableState,
+  toolbarSelectClass,
 } from './components';
 
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
@@ -167,109 +170,59 @@ export function PricePlansAdmin() {
 
   return (
     <AdminPageShell>
-      <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-white/10">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900 dark:text-white">{t('admin.pricing.plans.title')}</h1>
-          <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{t('admin.menu.home.pricingManagement')}</p>
-        </div>
-        <button type="button" className={primaryButtonClass} onClick={openCreate}>
-          <Plus className="h-4 w-4" />
-          {t('admin.pricing.plans.actions.new')}
-        </button>
-      </div>
-      <div className="flex flex-wrap items-center gap-3 px-5 py-3">
-        <SearchBox value={search} onChange={setSearch} placeholder={t('admin.pricing.plans.search.placeholder')} />
-        <button
-          type="button"
-          className={secondaryButtonClass}
-          onClick={() => setAppliedSearch(search.trim())}
-        >
-          {t('admin.pricing.common.search.placeholder')}
-        </button>
-        <select
-          className={`${selectClass} w-44`}
-          value={sideFilter}
-          onChange={(event) => {
-            setSideFilter(event.target.value as AdminBasePriceSide | 'all');
-            setPage(1);
-          }}
-        >
-          <option value="all">{t('admin.pricing.plans.form.basePriceSide')}: All</option>
-          {BASE_PRICE_SIDES.map((side) => (
-            <option key={side} value={side}>
-              {t(`admin.pricing.basePriceSide.${side}`)}
-            </option>
-          ))}
-        </select>
-        <select
-          className={`${selectClass} w-36`}
-          value={statusFilter}
-          onChange={(event) => {
-            setStatusFilter(event.target.value as AdminPricingStatus | 'all');
-            setPage(1);
-          }}
-        >
-          <option value="all">{t('admin.pricing.common.table.status')}: All</option>
-          {STATUSES.map((status) => (
-            <option key={status} value={status}>
-              {t(`admin.pricing.common.status.${status}`)}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="min-h-0 flex-1 overflow-auto px-5 pb-4">
-        <AdminTableShell>
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-400 dark:border-white/10">
-              <tr>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.plans.table.planCode')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.plans.table.planName')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.plans.table.basePriceSide')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.plans.table.currencyCode')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.plans.table.roundingMode')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.plans.table.minimumChargeAmount')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.common.table.status')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.common.updatedAt')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.common.table.actions')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-              {loading || items.length === 0 ? (
-                <TableState
-                  loading={loading}
-                  empty={t('admin.pricing.plans.empty')}
-                  colSpan={9}
-                />
-              ) : (
-                items.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
-                    <td className="px-3 py-2.5 font-medium text-slate-900 dark:text-white">{item.planCode}</td>
-                    <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.planName}</td>
-                    <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">
-                      {t(`admin.pricing.basePriceSide.${item.basePriceSide}`)}
-                    </td>
-                    <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.currencyCode}</td>
-                    <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">
-                      {t(`admin.pricing.roundingMode.${item.roundingMode}`)}
-                    </td>
-                    <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.minimumChargeAmount}</td>
-                    <td className="px-3 py-2.5">
-                      <StatusBadge status={item.status} />
-                    </td>
-                    <td className="px-3 py-2.5 text-slate-400 dark:text-slate-500">{item.updatedAt ?? '—'}</td>
-                    <td className="px-3 py-2.5">
-                      <button type="button" className={dangerButtonClass} onClick={() => openEdit(item)}>
-                        <Edit3 className="h-3.5 w-3.5" />
-                        {t('admin.pricing.common.actions.edit')}
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </AdminTableShell>
-        <div className="mt-3">
+      <AdminListToolbar
+        filters={
+          <>
+            <SearchBox
+              value={search}
+              onChange={setSearch}
+              onSubmit={(value) => {
+                setAppliedSearch(value);
+                setPage(1);
+              }}
+              placeholder={t('admin.pricing.plans.search.placeholder')}
+            />
+            <select
+              className={toolbarSelectClass}
+              value={sideFilter}
+              onChange={(event) => {
+                setSideFilter(event.target.value as AdminBasePriceSide | 'all');
+                setPage(1);
+              }}
+            >
+              <option value="all">{t('admin.pricing.plans.form.basePriceSide')}: All</option>
+              {BASE_PRICE_SIDES.map((side) => (
+                <option key={side} value={side}>
+                  {t(`admin.pricing.basePriceSide.${side}`)}
+                </option>
+              ))}
+            </select>
+            <select
+              className={toolbarSelectClass}
+              value={statusFilter}
+              onChange={(event) => {
+                setStatusFilter(event.target.value as AdminPricingStatus | 'all');
+                setPage(1);
+              }}
+            >
+              <option value="all">{t('admin.pricing.common.table.status')}: All</option>
+              {STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {t(`admin.pricing.common.status.${status}`)}
+                </option>
+              ))}
+            </select>
+          </>
+        }
+        actions={
+          <button type="button" className={primaryButtonClass} onClick={openCreate}>
+            <Plus className="h-4 w-4" />
+            {t('admin.pricing.plans.actions.new')}
+          </button>
+        }
+      />
+      <AdminTableArea
+        footer={
           <BottomPagination
             page={page}
             pageSize={pageSize}
@@ -288,8 +241,58 @@ export function PricePlansAdmin() {
             }}
             pageSizeOptions={[20, 50, 100]}
           />
-        </div>
-      </div>
+        }
+      >
+        <table className="w-full text-left text-sm">
+          <thead className="sticky top-0 z-10 border-b border-slate-200 bg-white text-xs uppercase tracking-wide text-slate-400 dark:border-white/10 dark:bg-slate-900">
+            <tr>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.plans.table.planCode')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.plans.table.planName')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.plans.table.basePriceSide')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.plans.table.currencyCode')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.plans.table.roundingMode')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.plans.table.minimumChargeAmount')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.common.table.status')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.common.updatedAt')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.common.table.actions')}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+            {loading || items.length === 0 ? (
+              <TableState
+                loading={loading}
+                empty={t('admin.pricing.plans.empty')}
+                colSpan={9}
+              />
+            ) : (
+              items.map((item) => (
+                <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
+                  <td className="px-3 py-2.5 font-medium text-slate-900 dark:text-white">{item.planCode}</td>
+                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.planName}</td>
+                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">
+                    {t(`admin.pricing.basePriceSide.${item.basePriceSide}`)}
+                  </td>
+                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.currencyCode}</td>
+                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">
+                    {t(`admin.pricing.roundingMode.${item.roundingMode}`)}
+                  </td>
+                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.minimumChargeAmount}</td>
+                  <td className="px-3 py-2.5">
+                    <StatusBadge status={item.status} />
+                  </td>
+                  <td className="px-3 py-2.5 text-slate-400 dark:text-slate-500">{item.updatedAt ?? '—'}</td>
+                  <td className="px-3 py-2.5">
+                    <button type="button" className={dangerButtonClass} onClick={() => openEdit(item)}>
+                      <Edit3 className="h-3.5 w-3.5" />
+                      {t('admin.pricing.common.actions.edit')}
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </AdminTableArea>
       <InlineError message={error} />
       {creating || editing ? (
         <SidePanel

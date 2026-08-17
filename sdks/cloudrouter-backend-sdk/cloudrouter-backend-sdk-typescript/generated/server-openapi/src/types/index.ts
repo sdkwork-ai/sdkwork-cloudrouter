@@ -108,6 +108,16 @@ export type { MonitorAlertPage } from './monitor-alert-page';
 export type { MonitorNodePage } from './monitor-node-page';
 
 export type { MonitorPerformancePage } from './monitor-performance-page';
+export type { OfficialPricingCatalogResponse } from './official-pricing-catalog-response';
+export type { OfficialPricingFormula } from './official-pricing-formula';
+export type { OfficialPricingFormulaTerm } from './official-pricing-formula-term';
+export type { OfficialPricingGroupFacet } from './official-pricing-group-facet';
+export type { OfficialPricingMeterFacet } from './official-pricing-meter-facet';
+export type { OfficialPricingRate } from './official-pricing-rate';
+export type { OfficialPricingRateCondition } from './official-pricing-rate-condition';
+export type { OfficialPricingRateTier } from './official-pricing-rate-tier';
+export type { OfficialPricingRegionFacet } from './official-pricing-region-facet';
+export type { OfficialPricingValueFacet } from './official-pricing-value-facet';
 
 export type { PageInfo } from './page-info';
 export type { PaymentProviderInventoryItem } from './payment-provider-inventory-item';

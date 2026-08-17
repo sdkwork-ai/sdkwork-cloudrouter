@@ -133,6 +133,16 @@ impl PostgresPricingCatalogLoader {
                 PricingCatalogSql::load_pricing_plans(),
             )
             .await?,
+            pricing_rules: row_mapping::load_pricing_rules(
+                &mut *tx,
+                PricingCatalogSql::load_pricing_rules(),
+            )
+            .await?,
+            account_rate_cards: row_mapping::load_account_rate_cards(
+                &mut *tx,
+                PricingCatalogSql::load_account_rate_cards(),
+            )
+            .await?,
             upstream_account_groups: row_mapping::load_upstream_account_groups(
                 &mut *tx,
                 PricingCatalogSql::load_upstream_account_groups(),
@@ -253,30 +263,6 @@ impl PostgresPricingCatalogLoader {
                 UNION ALL
                 SELECT 'pricing-rate:' || COALESCE(MAX(updated_at)::text, '')
                 FROM pricing_rate
-                WHERE deleted_at IS NULL
-                UNION ALL
-                SELECT 'pricing-binding:' || COALESCE(MAX(updated_at)::text, '')
-                FROM pricing_product_binding
-                WHERE deleted_at IS NULL
-                UNION ALL
-                SELECT 'pricing-rate-binding:' || COALESCE(MAX(updated_at)::text, '')
-                FROM pricing_rate_binding
-                WHERE deleted_at IS NULL
-                UNION ALL
-                SELECT 'pricing-condition:' || COALESCE(MAX(updated_at)::text, '')
-                FROM pricing_rate_condition
-                WHERE deleted_at IS NULL
-                UNION ALL
-                SELECT 'pricing-tier:' || COALESCE(MAX(updated_at)::text, '')
-                FROM pricing_rate_tier
-                WHERE deleted_at IS NULL
-                UNION ALL
-                SELECT 'pricing-formula:' || COALESCE(MAX(updated_at)::text, '')
-                FROM pricing_rate_formula
-                WHERE deleted_at IS NULL
-                UNION ALL
-                SELECT 'pricing-formula-term:' || COALESCE(MAX(updated_at)::text, '')
-                FROM pricing_rate_formula_term
                 WHERE deleted_at IS NULL
                 UNION ALL
                 SELECT 'cloudrouter-pricing-plan:' || COALESCE(MAX(updated_at)::text, '')

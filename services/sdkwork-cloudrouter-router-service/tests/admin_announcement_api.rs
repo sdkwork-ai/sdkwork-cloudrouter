@@ -55,18 +55,14 @@ async fn admin_announcement_route_creates_lists_updates_and_soft_deletes_items()
 
     let update_response = router
         .clone()
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "PATCH",
             "/backend/v3/api/content/announcements/1",
-            Body::from(
-                    r#"{"status":"published","target":"vip","showAsPopup":false}"#,
-                ),
+            Body::from(r#"{"status":"published","target":"vip","showAsPopup":false}"#),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -82,16 +78,14 @@ async fn admin_announcement_route_creates_lists_updates_and_soft_deletes_items()
 
     let list_response = router
         .clone()
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "GET",
             "/backend/v3/api/content/announcements",
             Body::empty(),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -105,16 +99,14 @@ async fn admin_announcement_route_creates_lists_updates_and_soft_deletes_items()
 
     let delete_response = router
         .clone()
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "DELETE",
             "/backend/v3/api/content/announcements/1",
             Body::empty(),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
 
@@ -122,16 +114,14 @@ async fn admin_announcement_route_creates_lists_updates_and_soft_deletes_items()
     assert_empty_body(delete_response).await;
 
     let final_list_response = router
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "GET",
             "/backend/v3/api/content/announcements",
             Body::empty(),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
     let final_payload = json_payload(final_list_response).await;
@@ -176,18 +166,14 @@ async fn admin_announcement_route_rejects_invalid_payload_without_calling_store(
     );
 
     let response = router
-        .oneshot(
-            common::web_framework_backend_request(
+        .oneshot(common::web_framework_backend_request(
             "POST",
             "/backend/v3/api/content/announcements",
-            Body::from(
-                    r#"{"title":"","target":"all","status":"published","content":"x"}"#,
-                ),
+            Body::from(r#"{"title":"","target":"all","status":"published","content":"x"}"#),
             "100001",
             Some("0"),
             "30",
-        )
-        )
+        ))
         .await
         .unwrap();
 

@@ -16,8 +16,9 @@ use serde::{Deserialize, Serialize};
 use super::shared::{
     bounded_list_response, collection_item_response, decode_json, decode_query, domain_error,
     idempotency_uuid, item_response, list_query, list_response, no_content_response, not_found,
-    optional_text, parse_id, parse_if_match, positive_decimal, problem, problem_keyed, requested_at,
-    required_text, subject, ListQuery, RequestResult, UpstreamState, MAX_NESTED_ITEMS,
+    optional_text, parse_id, parse_if_match, positive_decimal, problem, problem_keyed,
+    requested_at, required_text, subject, ListQuery, RequestResult, UpstreamState,
+    MAX_NESTED_ITEMS,
 };
 use super::supplier::ResourceResponse;
 use super::{model_list, ModelListEntryInput, ModelListEntryResponse};
@@ -27,8 +28,20 @@ const MAX_NAME_LENGTH: usize = 200;
 const MAX_DESCRIPTION_LENGTH: usize = 4_000;
 const MAX_VENDOR_CODE_LENGTH: usize = 64;
 const SUPPORTED_MODALITIES: [&str; 5] = ["text", "audio", "image", "video", "music"];
-const SUPPORTED_GROUP_TYPES: [&str; 7] = ["mixed", "llm", "image", "video", "audio", "music", "other"];
-const SUPPORTED_TAGS: [&str; 10] = ["stable", "hot", "recommended", "promotion", "new", "premium", "high_value", "official", "beta", "limited"];
+const SUPPORTED_GROUP_TYPES: [&str; 7] =
+    ["mixed", "llm", "image", "video", "audio", "music", "other"];
+const SUPPORTED_TAGS: [&str; 10] = [
+    "stable",
+    "hot",
+    "recommended",
+    "promotion",
+    "new",
+    "premium",
+    "high_value",
+    "official",
+    "beta",
+    "limited",
+];
 const MAX_GROUP_TAGS: usize = 5;
 const ACCOUNT_GROUP_CREATE_IDEMPOTENCY_SCOPE: i64 = 1_000_003;
 
@@ -632,12 +645,18 @@ fn resource_inputs(
 
 fn group_type(value: String) -> RequestResult<String> {
     let value = required_text(value, "groupType", 32)?;
-    if !SUPPORTED_GROUP_TYPES.iter().any(|group_type| *group_type == value) {
+    if !SUPPORTED_GROUP_TYPES
+        .iter()
+        .any(|group_type| *group_type == value)
+    {
         return Err(problem_keyed(
             SdkWorkResultCode::InvalidParameter,
             "validation.admin.upstream.accountGroup.groupType.enum",
             serde_json::json!({ "allowed": SUPPORTED_GROUP_TYPES }),
-            format!("groupType must be one of {}", SUPPORTED_GROUP_TYPES.join(", ")),
+            format!(
+                "groupType must be one of {}",
+                SUPPORTED_GROUP_TYPES.join(", ")
+            ),
         ));
     }
     Ok(value)
@@ -755,7 +774,6 @@ fn status(value: i32) -> RequestResult<i32> {
     }
     Ok(value)
 }
-
 
 fn non_negative(value: i32, field: &str) -> RequestResult<i32> {
     if value < 0 {

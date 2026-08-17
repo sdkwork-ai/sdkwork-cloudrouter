@@ -15,14 +15,8 @@ use serde_json::Value;
 use tower::ServiceExt;
 
 fn chat_json_request(method: &str, uri: &str, body: Body) -> Request<Body> {
-    let mut request = common::web_framework_backend_request(
-        method,
-        uri,
-        body,
-        "100001",
-        Some("0"),
-        "30",
-    );
+    let mut request =
+        common::web_framework_backend_request(method, uri, body, "100001", Some("0"), "30");
     request
         .headers_mut()
         .insert("content-type", "application/json".parse().unwrap());
@@ -38,12 +32,11 @@ async fn app_chat_create_conversation_uses_product_chat_namespace_and_store_cont
     );
 
     let response = router
-        .oneshot(
-            chat_json_request(
+        .oneshot(chat_json_request(
             "POST",
             "/app/v3/api/chat/conversations",
             Body::from(
-                    r#"{
+                r#"{
                       "title":"Router design",
                       "sourceSurface":"playground",
                       "defaultModel":"gpt-5.1",
@@ -51,9 +44,8 @@ async fn app_chat_create_conversation_uses_product_chat_namespace_and_store_cont
                       "agentId":"agent-1",
                       "memorySpaceId":"memory-space-1"
                     }"#,
-                )
-        )
-        )
+            ),
+        ))
         .await
         .unwrap();
 
@@ -88,13 +80,11 @@ async fn app_chat_list_conversations_uses_trusted_subject_and_returns_items() {
     );
 
     let response = router
-        .oneshot(
-            chat_json_request(
+        .oneshot(chat_json_request(
             "GET",
             "/app/v3/api/chat/conversations?page=1&page_size=20",
-            Body::empty()
-        )
-        )
+            Body::empty(),
+        ))
         .await
         .unwrap();
 
@@ -120,13 +110,11 @@ async fn app_chat_default_router_fails_closed_without_store_and_redacts_configur
     let router = sdkwork_cloudrouter_router_service::api::app_chat_router();
 
     let response = router
-        .oneshot(
-            chat_json_request(
+        .oneshot(chat_json_request(
             "GET",
             "/app/v3/api/chat/conversations?page=1&page_size=20",
-            Body::empty()
-        )
-        )
+            Body::empty(),
+        ))
         .await
         .unwrap();
 
@@ -164,13 +152,11 @@ async fn app_chat_list_rejects_forbidden_or_ambiguous_pagination_parameters() {
         let query = format!("{key}={value}");
         let response = router
             .clone()
-            .oneshot(
-                chat_json_request(
+            .oneshot(chat_json_request(
                 "GET",
                 &format!("/app/v3/api/chat/conversations?{query}"),
-                Body::empty()
-        )
-            )
+                Body::empty(),
+            ))
             .await
             .unwrap();
 
@@ -247,13 +233,11 @@ async fn app_chat_list_messages_returns_an_exhausted_empty_cursor_page() {
     );
 
     let response = router
-        .oneshot(
-            chat_json_request(
+        .oneshot(chat_json_request(
             "GET",
             "/app/v3/api/chat/conversations/chat-conversation-1/messages",
-            Body::empty()
-        )
-        )
+            Body::empty(),
+        ))
         .await
         .unwrap();
 
@@ -306,15 +290,11 @@ async fn app_chat_list_messages_rejects_noncanonical_ambiguous_and_invalid_curso
     for query in queries {
         let response = router
             .clone()
-            .oneshot(
-                chat_json_request(
+            .oneshot(chat_json_request(
                 "GET",
-                &format!(
-                        "/app/v3/api/chat/conversations/chat-conversation-1/messages?{query}"
-                    ),
-                Body::empty()
-        )
-            )
+                &format!("/app/v3/api/chat/conversations/chat-conversation-1/messages?{query}"),
+                Body::empty(),
+            ))
             .await
             .unwrap();
 
@@ -338,15 +318,11 @@ async fn app_chat_list_messages_fails_closed_when_store_cursor_does_not_advance(
     let cursor = sdkwork_utils_rust::base64url_encode(br#"{"message_no":20,"id":8001}"#);
 
     let response = router
-        .oneshot(
-            chat_json_request(
-                "GET",
-                &format!(
-                    "/app/v3/api/chat/conversations/chat-conversation-1/messages?cursor={cursor}"
-                ),
-                Body::empty()
-        )
-        )
+        .oneshot(chat_json_request(
+            "GET",
+            &format!("/app/v3/api/chat/conversations/chat-conversation-1/messages?cursor={cursor}"),
+            Body::empty(),
+        ))
         .await
         .unwrap();
 
@@ -371,12 +347,11 @@ async fn app_chat_create_turn_carries_message_agent_and_model_context() {
     );
 
     let response = router
-        .oneshot(
-            chat_json_request(
+        .oneshot(chat_json_request(
             "POST",
             "/app/v3/api/chat/conversations/chat-conversation-1/turns",
             Body::from(
-                    r#"{
+                r#"{
                       "message":"Design the chat schema",
                       "mode":"agent",
                       "agentId":"agent-1",
@@ -385,9 +360,8 @@ async fn app_chat_create_turn_carries_message_agent_and_model_context() {
                       "provider":"anthropic",
                       "metadata":{"client":"playground"}
                     }"#,
-                )
-        )
-        )
+            ),
+        ))
         .await
         .unwrap();
 
@@ -530,23 +504,21 @@ async fn app_chat_complete_turn_response_preserves_markdown_response_whitespace(
 
     let markdown = "\n### Answer\n\n```ts\n  const first = 1;\n  const second = 2;\n```\n";
     let response = router
-        .oneshot(
-            chat_json_request(
-                "POST",
-                "/app/v3/api/chat/conversations/chat-conversation-1/turns/chat-turn-1/response",
-                Body::from(
-                    serde_json::json!({
-                        "message": markdown,
-                        "status": "completed",
-                        "model": "claude-sonnet-4-5",
-                        "provider": "anthropic",
-                        "runtime": "openai_compatible",
-                        "runtimeInvocationId": "runtime-invocation-1"
-                    })
-                    .to_string(),
-                )
-        )
-        )
+        .oneshot(chat_json_request(
+            "POST",
+            "/app/v3/api/chat/conversations/chat-conversation-1/turns/chat-turn-1/response",
+            Body::from(
+                serde_json::json!({
+                    "message": markdown,
+                    "status": "completed",
+                    "model": "claude-sonnet-4-5",
+                    "provider": "anthropic",
+                    "runtime": "openai_compatible",
+                    "runtimeInvocationId": "runtime-invocation-1"
+                })
+                .to_string(),
+            ),
+        ))
         .await
         .unwrap();
 
@@ -572,19 +544,17 @@ async fn app_chat_complete_turn_response_rejects_non_numeric_usage_fact_id() {
     );
 
     let response = router
-        .oneshot(
-            chat_json_request(
-                "POST",
-                "/app/v3/api/chat/conversations/chat-conversation-1/turns/chat-turn-1/response",
-                Body::from(
-                    r#"{
+        .oneshot(chat_json_request(
+            "POST",
+            "/app/v3/api/chat/conversations/chat-conversation-1/turns/chat-turn-1/response",
+            Body::from(
+                r#"{
                       "message":"invalid usage id",
                       "usageFactId":"usage-fact-abc",
                       "usage":{"inputTokens":"100"}
                     }"#,
-                )
-        )
-        )
+            ),
+        ))
         .await
         .unwrap();
 
@@ -607,13 +577,11 @@ async fn app_chat_does_not_expose_playground_backend_namespace() {
     );
 
     let response = router
-        .oneshot(
-            chat_json_request(
+        .oneshot(chat_json_request(
             "POST",
             "/app/v3/api/playground/chat/conversations",
-            Body::from("{}")
-        )
-        )
+            Body::from("{}"),
+        ))
         .await
         .unwrap();
 

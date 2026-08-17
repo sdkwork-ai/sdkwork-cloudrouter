@@ -96,7 +96,10 @@ pub use app_generation_history::app_generation_history_router_with_read_store;
 pub use app_invite::app_invite_router_with_store;
 pub use app_notification::app_notification_router;
 pub use app_notification::app_notification_router_with_store;
-pub use app_pricing::{app_pricing_router, app_pricing_router_with_read_store};
+pub use app_pricing::{
+    admin_official_pricing_router_with_read_store, app_pricing_router,
+    app_pricing_router_with_read_store,
+};
 pub use app_routing::app_routing_router;
 pub use app_routing::app_routing_router_with_read_store;
 pub use app_routing_strategy::app_routing_strategy_router;

@@ -36,18 +36,20 @@ class SchemaCompilerTest(unittest.TestCase):
             "ai_upstream_account",
             "ai_upstream_account_group",
             "ai_routing_policy",
-            "ai_usage",
-            "ai_request_trace",
-            "ai_pricing_plan",
+            "ai_metering_usage",
+            "ai_metering_request_trace",
+            "cloudrouter_pricing_plan",
         ]:
             self.assertIn(f"CREATE TABLE IF NOT EXISTS {table} (", sql)
         self.assertNotIn("CREATE TABLE IF NOT EXISTS ai_channel (", sql)
         self.assertNotIn("CREATE TABLE IF NOT EXISTS ai_usage_service_provider_edge (", sql)
         self.assertNotIn("CREATE TABLE IF NOT EXISTS ai_pricing (", sql)
         self.assertNotIn("CREATE TABLE IF NOT EXISTS ai_usage_trace (", sql)
+        self.assertNotIn("CREATE TABLE IF NOT EXISTS ai_pricing_plan (", sql)
+        self.assertNotIn("CREATE TABLE IF NOT EXISTS ai_pricing_rule (", sql)
 
         ai_usage_columns = re.search(
-            r"CREATE TABLE IF NOT EXISTS ai_usage \((.*?)\n\);",
+            r"CREATE TABLE IF NOT EXISTS ai_metering_usage \((.*?)\n\);",
             sql,
             flags=re.DOTALL,
         )

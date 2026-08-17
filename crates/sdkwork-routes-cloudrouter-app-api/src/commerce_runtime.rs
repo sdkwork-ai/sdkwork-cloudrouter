@@ -138,11 +138,10 @@ async fn wire_commerce_app_router(payment: Arc<PaymentServiceHost>) -> Result<Ro
 }
 
 async fn build_membership_router_from_pool(pool: &DatabasePool) -> Result<Router, String> {
-    let contribution = sdkwork_api_membership_assembly::assemble_app_api_contribution_with_pool(
-        pool,
-    )
-    .await
-    .map_err(|error| format!("compose membership app-api contribution failed: {error}"))?;
+    let contribution =
+        sdkwork_api_membership_assembly::assemble_app_api_contribution_with_pool(pool)
+            .await
+            .map_err(|error| format!("compose membership app-api contribution failed: {error}"))?;
     Ok(contribution.router)
 }
 
@@ -221,20 +220,14 @@ mod tests {
         assert!(
             source.contains("sdkwork_api_order_assembly::assemble_app_api_contribution_with_pool(")
         );
-        assert!(
-            source.contains(
-                "sdkwork_api_payment_assembly::assemble_federated_app_api_contribution("
-            )
-        );
-        assert!(source.contains(
-            "sdkwork_api_promotion_assembly::assemble_app_api_contribution_with_pool("
-        ));
-        assert!(source.contains(
-            "sdkwork_api_account_assembly::assemble_app_api_contribution_with_pool("
-        ));
-        assert!(source.contains(
-            "sdkwork_api_membership_assembly::assemble_app_api_contribution_with_pool("
-        ));
+        assert!(source
+            .contains("sdkwork_api_payment_assembly::assemble_federated_app_api_contribution("));
+        assert!(source
+            .contains("sdkwork_api_promotion_assembly::assemble_app_api_contribution_with_pool("));
+        assert!(source
+            .contains("sdkwork_api_account_assembly::assemble_app_api_contribution_with_pool("));
+        assert!(source
+            .contains("sdkwork_api_membership_assembly::assemble_app_api_contribution_with_pool("));
         let forbidden_direct_route_crates = [
             "sdkwork_routes_order",
             "sdkwork_routes_payment",

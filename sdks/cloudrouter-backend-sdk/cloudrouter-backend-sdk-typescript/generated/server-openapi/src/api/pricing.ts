@@ -1,7 +1,7 @@
 import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
-import type { AdminPricingPlan, AdminPricingPlanListResponse, AdminPricingRule, AdminPricingRuleListResponse, AdminRateCard, AdminRateCardListResponse, PricingPlanCreateRequest, PricingPlanUpdateRequest, PricingRuleCreateRequest, PricingRuleUpdateRequest, RateCardCreateRequest, RateCardUpdateRequest } from '../types';
+import type { AdminPricingPlan, AdminPricingPlanListResponse, AdminPricingRule, AdminPricingRuleListResponse, AdminRateCard, AdminRateCardListResponse, OfficialPricingCatalogResponse, PricingPlanCreateRequest, PricingPlanUpdateRequest, PricingRuleCreateRequest, PricingRuleUpdateRequest, RateCardCreateRequest, RateCardUpdateRequest } from '../types';
 
 
 export interface PricingRulesListParams {
@@ -136,14 +136,51 @@ export class PricingPlansApi {
   }
 }
 
+export interface PricingOfficialRatesListParams {
+  category?: 'all' | 'llm' | 'image' | 'video' | 'audio' | 'music' | 'embedding' | 'sound' | 'api' | 'other';
+  q?: string;
+  vendorCode?: string;
+  regionCode?: string;
+  meterCode?: string;
+  currencyCode?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export class PricingOfficialRatesApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List admin official pricing rates */
+  async list(params?: PricingOfficialRatesListParams, requestOptions?: ApiRequestOptions): Promise<OfficialPricingCatalogResponse> {
+    const query = buildQueryString([
+      { name: 'category', value: params?.category, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+      { name: 'vendor_code', value: params?.vendorCode, style: 'form', explode: true, allowReserved: false },
+      { name: 'region_code', value: params?.regionCode, style: 'form', explode: true, allowReserved: false },
+      { name: 'meter_code', value: params?.meterCode, style: 'form', explode: true, allowReserved: false },
+      { name: 'currency_code', value: params?.currencyCode, style: 'form', explode: true, allowReserved: false },
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<OfficialPricingCatalogResponse>(appendQueryString(backendApiPath(`/pricing/official_rates`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  }
+}
+
 export class PricingApi {
   private client: HttpClient;
+  public readonly officialRates: PricingOfficialRatesApi;
   public readonly plans: PricingPlansApi;
   public readonly rateCards: PricingRateCardsApi;
   public readonly rules: PricingRulesApi;
 
   constructor(client: HttpClient) {
     this.client = client;
+    this.officialRates = new PricingOfficialRatesApi(client);
     this.plans = new PricingPlansApi(client);
     this.rateCards = new PricingRateCardsApi(client);
     this.rules = new PricingRulesApi(client);

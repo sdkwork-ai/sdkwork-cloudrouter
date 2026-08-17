@@ -5,6 +5,17 @@ import {
 } from './auth-projection.ts';
 import { createTokenManager, type AuthTokenManager, type AuthTokens } from '@sdkwork/sdk-common';
 import { SdkworkAppClient, type SdkworkAppConfig } from '@sdkwork/cloudrouter-app-sdk';
+export type {
+  OfficialPricingCatalogResponse,
+  OfficialPricingFormula,
+  OfficialPricingGroupFacet,
+  OfficialPricingMeterFacet,
+  OfficialPricingRate,
+  OfficialPricingRateCondition,
+  OfficialPricingRateTier,
+  OfficialPricingRegionFacet,
+  OfficialPricingValueFacet,
+} from '@sdkwork/cloudrouter-app-sdk';
 import { SdkworkBackendClient, type SdkworkBackendConfig } from '@sdkwork/cloudrouter-backend-sdk';
 import {
   createDriveAdminStorageClient,

@@ -7,7 +7,7 @@
         "ai_model_capability",
         "ai_model_pricing",
         "ai_model_rank_snapshot",
-        "ai_pricing_import_snapshot",
+        "ai_model_catalog_sync_run",
         "ops_audit_log"
       ],
       "fields": [
@@ -115,7 +115,7 @@
         "ai_model",
         "ai_model_capability",
         "ai_model_pricing",
-        "ai_pricing_import_snapshot",
+        "ai_model_catalog_sync_run",
         "ops_audit_log"
       ],
       "fields": [
@@ -2237,6 +2237,20 @@
     },
     {
       "data_sources": [
+        "cloudrouter_pricing_rule"
+      ],
+      "fields": [
+        "dimensionCode",
+        "operatorCode",
+        "value"
+      ],
+      "file_targets": [],
+      "interface": "AdminPricingCondition",
+      "route": "/admin/pricing/rules",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts"
+    },
+    {
+      "data_sources": [
         "cloudrouter_pricing_plan",
         "ops_audit_log"
       ],
@@ -2341,6 +2355,20 @@
         "multiplier",
         "markupAmount",
         "unitPriceOverride",
+        "conditions",
+        "conditions.dimensionCode",
+        "conditions.operatorCode",
+        "conditions.value",
+        "schedule",
+        "schedule.timeZone",
+        "schedule.weeklyWindows",
+        "schedule.weeklyWindows.windowCode",
+        "schedule.weeklyWindows.daysOfWeek",
+        "schedule.weeklyWindows.startTime",
+        "schedule.weeklyWindows.endTime",
+        "schedule.weeklyWindows.endDayOffset",
+        "schedule.includeDates",
+        "schedule.excludeDates",
         "priority",
         "effectiveFrom",
         "effectiveTo",
@@ -2372,6 +2400,20 @@
         "multiplier",
         "markupAmount",
         "unitPriceOverride",
+        "conditions",
+        "conditions.dimensionCode",
+        "conditions.operatorCode",
+        "conditions.value",
+        "schedule",
+        "schedule.timeZone",
+        "schedule.weeklyWindows",
+        "schedule.weeklyWindows.windowCode",
+        "schedule.weeklyWindows.daysOfWeek",
+        "schedule.weeklyWindows.startTime",
+        "schedule.weeklyWindows.endTime",
+        "schedule.weeklyWindows.endDayOffset",
+        "schedule.includeDates",
+        "schedule.excludeDates",
         "priority",
         "effectiveFrom",
         "effectiveTo",
@@ -2379,6 +2421,42 @@
       ],
       "file_targets": [],
       "interface": "AdminPricingRuleMutationInput",
+      "route": "/admin/pricing/settings",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts"
+    },
+    {
+      "data_sources": [
+        "cloudrouter_pricing_rule"
+      ],
+      "fields": [
+        "timeZone",
+        "weeklyWindows",
+        "weeklyWindows.windowCode",
+        "weeklyWindows.daysOfWeek",
+        "weeklyWindows.startTime",
+        "weeklyWindows.endTime",
+        "weeklyWindows.endDayOffset",
+        "includeDates",
+        "excludeDates"
+      ],
+      "file_targets": [],
+      "interface": "AdminPricingSchedule",
+      "route": "/admin/pricing/rules",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts"
+    },
+    {
+      "data_sources": [
+        "cloudrouter_pricing_rule"
+      ],
+      "fields": [
+        "windowCode",
+        "daysOfWeek",
+        "startTime",
+        "endTime",
+        "endDayOffset"
+      ],
+      "file_targets": [],
+      "interface": "AdminPricingScheduleWindow",
       "route": "/admin/pricing/rules",
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts"
     },
@@ -3522,7 +3600,7 @@
     }
   ],
   "summary": {
-    "interface_count": 154,
+    "interface_count": 157,
     "source_file_count": 28
   }
 }

@@ -3928,7 +3928,7 @@
         "x-write-tables": []
       },
       "post": {
-        "description": "Create vendor. Reads ai_pricing_import_snapshot. Writes ops_audit_log. File targets none.",
+        "description": "Create vendor. Reads ai_model_vendor. Writes ai_model_vendor, ops_audit_log. File targets none.",
         "operationId": "modelVendors.create",
         "parameters": [],
         "responses": {
@@ -3996,7 +3996,7 @@
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai_pricing_import_snapshot"
+          "ai_model_vendor"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -4009,6 +4009,7 @@
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
         "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
         "x-write-tables": [
+          "ai_model_vendor",
           "ops_audit_log"
         ]
       }
@@ -4154,7 +4155,7 @@
         "x-write-tables": []
       },
       "post": {
-        "description": "Create model. Reads ai_pricing_import_snapshot. Writes ops_audit_log. File targets none.",
+        "description": "Create model. Reads ai_model_vendor, ai_model, ai_model_capability, ai_model_pricing. Writes ai_model, ai_model_capability, ai_model_pricing, ops_audit_log. File targets none.",
         "operationId": "models.create",
         "parameters": [],
         "responses": {
@@ -4222,7 +4223,10 @@
         "x-contract-kind": "create",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai_pricing_import_snapshot"
+          "ai_model_vendor",
+          "ai_model",
+          "ai_model_capability",
+          "ai_model_pricing"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -4235,13 +4239,16 @@
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
         "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
         "x-write-tables": [
+          "ai_model",
+          "ai_model_capability",
+          "ai_model_pricing",
           "ops_audit_log"
         ]
       }
     },
     "/backend/v3/api/ai/models/sync": {
       "post": {
-        "description": "Sync vendors and models. Reads ai_pricing_import_snapshot. Writes ai_pricing_import_snapshot, ops_audit_log. File targets none.",
+        "description": "Sync vendors and models. Reads ai_model_catalog_sync_run. Writes ai_model_catalog_sync_run, ops_audit_log. File targets none.",
         "operationId": "models.sync",
         "parameters": [],
         "responses": {
@@ -4309,7 +4316,7 @@
         "x-contract-kind": "action",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai_pricing_import_snapshot"
+          "ai_model_catalog_sync_run"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -4322,14 +4329,14 @@
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
         "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
         "x-write-tables": [
-          "ai_pricing_import_snapshot",
+          "ai_model_catalog_sync_run",
           "ops_audit_log"
         ]
       }
     },
     "/backend/v3/api/ai/models/{modelId}": {
       "delete": {
-        "description": "Delete model. Reads ai_pricing_import_snapshot. Writes ops_audit_log. File targets none.",
+        "description": "Delete model. Reads ai_model. Writes ai_model, ai_model_capability, ai_model_pricing, ops_audit_log. File targets none.",
         "operationId": "models.delete",
         "parameters": [
           {
@@ -4400,7 +4407,7 @@
         "x-contract-kind": "delete",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai_pricing_import_snapshot"
+          "ai_model"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -4413,11 +4420,14 @@
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
         "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
         "x-write-tables": [
+          "ai_model",
+          "ai_model_capability",
+          "ai_model_pricing",
           "ops_audit_log"
         ]
       },
       "patch": {
-        "description": "Update model. Reads ai_pricing_import_snapshot. Writes ops_audit_log. File targets none.",
+        "description": "Update model. Reads ai_model_vendor, ai_model, ai_model_capability, ai_model_pricing. Writes ai_model, ai_model_capability, ai_model_pricing, ops_audit_log. File targets none.",
         "operationId": "models.update",
         "parameters": [
           {
@@ -4495,7 +4505,10 @@
         "x-contract-kind": "update",
         "x-file-targets": [],
         "x-read-sources": [
-          "ai_pricing_import_snapshot"
+          "ai_model_vendor",
+          "ai_model",
+          "ai_model_capability",
+          "ai_model_pricing"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -4508,6 +4521,9 @@
         "x-sdkwork-source-route-crate": "sdkwork-routes-models-catalog-backend-api",
         "x-source-file": "../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-admin-catalog/src/modelService.ts",
         "x-write-tables": [
+          "ai_model",
+          "ai_model_capability",
+          "ai_model_pricing",
           "ops_audit_log"
         ]
       }

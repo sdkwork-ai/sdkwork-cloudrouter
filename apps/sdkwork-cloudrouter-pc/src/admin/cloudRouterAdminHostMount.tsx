@@ -48,6 +48,7 @@ const RechargeAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin
 const PricePlansAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-pricing'), 'PricePlansAdmin');
 const RateCardsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-pricing'), 'RateCardsAdmin');
 const PricingRulesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-pricing'), 'PricingRulesAdmin');
+const PriceSettingsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-pricing'), 'PriceSettingsAdmin');
 const CommunityAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-community'), 'CommunityAdmin');
 const MarketingAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-marketing'), 'MarketingAdmin');
 const PartnerAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-partner'), 'CloudRouterPartnerAdmin');
@@ -133,7 +134,8 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
   route('memberships/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-memberships', ['sdkwork-membership-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={MembershipsAdmin} />),
   route('community/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-community', ['sdkwork-community-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={CommunityAdmin} />),
   route('recharges/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-memberships', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={RechargeAdmin} />),
-  route('pricing', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-pricing', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <Navigate to="/admin/pricing/plans" replace />),
+  route('pricing', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-pricing', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <Navigate to="/admin/pricing/settings" replace />),
+  route('pricing/settings', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-pricing', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <PriceSettingsAdmin />),
   route('pricing/plans', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-pricing', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <PricePlansAdmin />),
   route('pricing/rateCards', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-pricing', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <RateCardsAdmin />),
   route('pricing/rules', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-pricing', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <PricingRulesAdmin />),

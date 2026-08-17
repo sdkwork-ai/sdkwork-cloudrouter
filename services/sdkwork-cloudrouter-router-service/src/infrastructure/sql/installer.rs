@@ -70,13 +70,8 @@ const MODEL_CATALOG_TABLES: &[&str] = &[
 
 const PRICING_TABLES: &[&str] = &[
     "pricing_import_run",
-    "pricing_meter",
-    "pricing_operation",
     "pricing_price_book",
-    "pricing_product",
-    "pricing_product_binding",
     "pricing_rate",
-    "pricing_rate_condition",
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq)]

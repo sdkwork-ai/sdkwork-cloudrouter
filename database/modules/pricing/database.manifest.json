@@ -13,9 +13,9 @@
   "tablePrefixes": [
     "pricing_"
   ],
-  "contractVersion": "0.4.0",
+  "contractVersion": "0.5.0",
   "baselineStrategy": "baseline-plus-migrations",
-  "baselineAnchorTable": "pricing_product",
+  "baselineAnchorTable": "pricing_import_run",
   "modules": [],
   "lifecycle": {
     "autoMigrate": false,
@@ -41,19 +41,10 @@
     "provider": "default",
     "hooks": []
   },
-  "materializedTableCount": 12,
+  "materializedTableCount": 3,
   "materializedTables": [
     "pricing_import_run",
-    "pricing_meter",
-    "pricing_operation",
     "pricing_price_book",
-    "pricing_product",
-    "pricing_product_binding",
-    "pricing_rate",
-    "pricing_rate_binding",
-    "pricing_rate_condition",
-    "pricing_rate_formula",
-    "pricing_rate_formula_term",
-    "pricing_rate_tier"
+    "pricing_rate"
   ]
 }

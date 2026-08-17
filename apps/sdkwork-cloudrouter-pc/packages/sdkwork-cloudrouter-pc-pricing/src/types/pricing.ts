@@ -8,7 +8,7 @@ import type {
   OfficialPricingRateTier,
   OfficialPricingRegionFacet,
   OfficialPricingValueFacet,
-} from '@sdkwork/cloudrouter-app-sdk';
+} from '@sdkwork/cloudroutes-pc-commons/runtime';
 
 export const PRICING_CATEGORY_CODES = [
   'all',

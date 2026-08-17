@@ -33,15 +33,21 @@ async fn dashboard_overview_route_returns_standard_empty_read_model_without_data
     assert_eq!(0, payload["data"]["item"]["summary"]["errorCount"]);
     assert_eq!(
         Some(0),
-        payload["data"]["item"]["chartData"].as_array().map(Vec::len)
+        payload["data"]["item"]["chartData"]
+            .as_array()
+            .map(Vec::len)
     );
     assert_eq!(
         Some(0),
-        payload["data"]["item"]["topModels"].as_array().map(Vec::len)
+        payload["data"]["item"]["topModels"]
+            .as_array()
+            .map(Vec::len)
     );
     assert_eq!(
         Some(0),
-        payload["data"]["item"]["announcements"].as_array().map(Vec::len)
+        payload["data"]["item"]["announcements"]
+            .as_array()
+            .map(Vec::len)
     );
     assert_eq!(
         Some(0),
@@ -137,7 +143,10 @@ async fn assert_standard_bad_request(response: axum::response::Response, expecte
     let payload: Value = serde_json::from_str(&body_text).unwrap();
 
     assert_eq!(40001, payload["code"].as_i64().unwrap());
-    assert!(payload["detail"].as_str().unwrap().contains(expected_message));
+    assert!(payload["detail"]
+        .as_str()
+        .unwrap()
+        .contains(expected_message));
     assert_eq!(None, payload.get("message"));
     assert_eq!(None, payload.get("msg"));
     assert!(body_text.contains(expected_message));

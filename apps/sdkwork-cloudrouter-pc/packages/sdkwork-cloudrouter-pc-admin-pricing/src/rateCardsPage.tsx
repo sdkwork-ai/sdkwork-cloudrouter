@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Edit3, Plus, Trash2 } from 'lucide-react';
-import { AdminTableShell, BottomPagination, ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons';
+import { BottomPagination, ConfirmDialog } from '@sdkwork/cloudroutes-pc-commons';
 import { useTranslation } from 'react-i18next';
 import {
   pricingService,
@@ -11,19 +11,21 @@ import {
   type AdminRateCardSubjectType,
 } from './pricingService';
 import {
+  AdminListToolbar,
   AdminPageShell,
+  AdminTableArea,
   dangerButtonClass,
   errorMessageI18n,
   Field,
   InlineError,
   inputClass,
   primaryButtonClass,
-  SearchBox,
   secondaryButtonClass,
   selectClass,
   SidePanel,
   StatusBadge,
   TableState,
+  toolbarSelectClass,
 } from './components';
 
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
@@ -185,107 +187,50 @@ export function RateCardsAdmin() {
 
   return (
     <AdminPageShell>
-      <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 dark:border-white/10">
-        <div>
-          <h1 className="text-lg font-semibold text-slate-900 dark:text-white">{t('admin.pricing.rateCards.title')}</h1>
-          <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{t('admin.menu.home.pricingManagement')}</p>
-        </div>
-        <button type="button" className={primaryButtonClass} onClick={openCreate}>
-          <Plus className="h-4 w-4" />
-          {t('admin.pricing.rateCards.actions.new')}
-        </button>
-      </div>
-      <div className="flex flex-wrap items-center gap-3 px-5 py-3">
-        <select
-          className={`${selectClass} w-44`}
-          value={subjectTypeFilter}
-          onChange={(event) => {
-            setSubjectTypeFilter(event.target.value as AdminRateCardSubjectType | 'all');
-            setPage(1);
-          }}
-        >
-          <option value="all">{t('admin.pricing.rateCards.table.subjectType')}: All</option>
-          {SUBJECT_TYPES.map((subjectType) => (
-            <option key={subjectType} value={subjectType}>
-              {t(`admin.pricing.subjectType.${subjectType}`)}
-            </option>
-          ))}
-        </select>
-        <select
-          className={`${selectClass} w-36`}
-          value={statusFilter}
-          onChange={(event) => {
-            setStatusFilter(event.target.value as AdminPricingStatus | 'all');
-            setPage(1);
-          }}
-        >
-          <option value="all">{t('admin.pricing.common.table.status')}: All</option>
-          {STATUSES.map((status) => (
-            <option key={status} value={status}>
-              {t(`admin.pricing.common.status.${status}`)}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="min-h-0 flex-1 overflow-auto px-5 pb-4">
-        <AdminTableShell>
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-400 dark:border-white/10">
-              <tr>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.rateCards.table.subjectType')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.rateCards.table.subject')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.rateCards.table.plan')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.rateCards.table.priority')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.rateCards.table.effectiveFrom')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.rateCards.table.effectiveTo')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.common.table.status')}</th>
-                <th className="px-3 py-2 font-medium">{t('admin.pricing.common.table.actions')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-              {loading || items.length === 0 ? (
-                <TableState loading={loading} empty={t('admin.pricing.rateCards.empty')} colSpan={8} />
-              ) : (
-                items.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
-                    <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">
-                      {t(`admin.pricing.subjectType.${item.subjectType}`)}
-                    </td>
-                    <td className="px-3 py-2.5 font-medium text-slate-900 dark:text-white">
-                      {item.subjectId ?? item.subjectCode ?? '—'}
-                    </td>
-                    <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">
-                      {item.planName ?? item.planCode ?? item.pricingPlanId}
-                    </td>
-                    <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.priority}</td>
-                    <td className="px-3 py-2.5 text-slate-400 dark:text-slate-500">{item.effectiveFrom ?? '—'}</td>
-                    <td className="px-3 py-2.5 text-slate-400 dark:text-slate-500">{item.effectiveTo ?? '—'}</td>
-                    <td className="px-3 py-2.5">
-                      <StatusBadge status={item.status} />
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex items-center gap-2">
-                        <button type="button" className={dangerButtonClass} onClick={() => openEdit(item)}>
-                          <Edit3 className="h-3.5 w-3.5" />
-                          {t('admin.pricing.common.actions.edit')}
-                        </button>
-                        <button
-                          type="button"
-                          className={dangerButtonClass}
-                          onClick={() => setDeleteTarget(item)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          {t('admin.pricing.common.actions.delete')}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </AdminTableShell>
-        <div className="mt-3">
+      <AdminListToolbar
+        filters={
+          <>
+            <select
+              className={toolbarSelectClass}
+              value={subjectTypeFilter}
+              onChange={(event) => {
+                setSubjectTypeFilter(event.target.value as AdminRateCardSubjectType | 'all');
+                setPage(1);
+              }}
+            >
+              <option value="all">{t('admin.pricing.rateCards.table.subjectType')}: All</option>
+              {SUBJECT_TYPES.map((subjectType) => (
+                <option key={subjectType} value={subjectType}>
+                  {t(`admin.pricing.subjectType.${subjectType}`)}
+                </option>
+              ))}
+            </select>
+            <select
+              className={toolbarSelectClass}
+              value={statusFilter}
+              onChange={(event) => {
+                setStatusFilter(event.target.value as AdminPricingStatus | 'all');
+                setPage(1);
+              }}
+            >
+              <option value="all">{t('admin.pricing.common.table.status')}: All</option>
+              {STATUSES.map((status) => (
+                <option key={status} value={status}>
+                  {t(`admin.pricing.common.status.${status}`)}
+                </option>
+              ))}
+            </select>
+          </>
+        }
+        actions={
+          <button type="button" className={primaryButtonClass} onClick={openCreate}>
+            <Plus className="h-4 w-4" />
+            {t('admin.pricing.rateCards.actions.new')}
+          </button>
+        }
+      />
+      <AdminTableArea
+        footer={
           <BottomPagination
             page={page}
             pageSize={pageSize}
@@ -304,8 +249,64 @@ export function RateCardsAdmin() {
             }}
             pageSizeOptions={[20, 50, 100]}
           />
-        </div>
-      </div>
+        }
+      >
+        <table className="w-full text-left text-sm">
+          <thead className="sticky top-0 z-10 border-b border-slate-200 bg-white text-xs uppercase tracking-wide text-slate-400 dark:border-white/10 dark:bg-slate-900">
+            <tr>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.rateCards.table.subjectType')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.rateCards.table.subject')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.rateCards.table.plan')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.rateCards.table.priority')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.rateCards.table.effectiveFrom')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.rateCards.table.effectiveTo')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.common.table.status')}</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.common.table.actions')}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+            {loading || items.length === 0 ? (
+              <TableState loading={loading} empty={t('admin.pricing.rateCards.empty')} colSpan={8} />
+            ) : (
+              items.map((item) => (
+                <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-white/5">
+                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">
+                    {t(`admin.pricing.subjectType.${item.subjectType}`)}
+                  </td>
+                  <td className="px-3 py-2.5 font-medium text-slate-900 dark:text-white">
+                    {item.subjectId ?? item.subjectCode ?? '—'}
+                  </td>
+                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">
+                    {item.planName ?? item.planCode ?? item.pricingPlanId}
+                  </td>
+                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.priority}</td>
+                  <td className="px-3 py-2.5 text-slate-400 dark:text-slate-500">{item.effectiveFrom ?? '—'}</td>
+                  <td className="px-3 py-2.5 text-slate-400 dark:text-slate-500">{item.effectiveTo ?? '—'}</td>
+                  <td className="px-3 py-2.5">
+                    <StatusBadge status={item.status} />
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <button type="button" className={dangerButtonClass} onClick={() => openEdit(item)}>
+                        <Edit3 className="h-3.5 w-3.5" />
+                        {t('admin.pricing.common.actions.edit')}
+                      </button>
+                      <button
+                        type="button"
+                        className={dangerButtonClass}
+                        onClick={() => setDeleteTarget(item)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        {t('admin.pricing.common.actions.delete')}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </AdminTableArea>
       <InlineError message={error} />
       {creating || editing ? (
         <SidePanel

@@ -117,7 +117,7 @@ AUXILIARY_MODULES = (
         display_name="SDKWork Reusable Pricing Database",
         owner="pricing-service",
         table_prefix="pricing_",
-        baseline_anchor_table="pricing_product",
+        baseline_anchor_table="pricing_import_run",
         baseline_file="0001_pricing_baseline.sql",
         relative_root="database/modules/pricing",
     ),

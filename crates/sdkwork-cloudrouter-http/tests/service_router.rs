@@ -2345,11 +2345,7 @@ async fn service_router_surface_openapi_documents_local_business_centers_only() 
             "providers.update",
         ),
         ("get", "/backend/v3/api/recharges/packages", "packages.list"),
-        (
-            "get",
-            "/backend/v3/api/storage/usage",
-            "oss.usage.list",
-        ),
+        ("get", "/backend/v3/api/storage/usage", "oss.usage.list"),
         (
             "patch",
             "/backend/v3/api/storage/default_buckets/{logicalScope}",
@@ -2417,11 +2413,7 @@ async fn service_router_backend_openapi_documents_local_standalone_business_cent
             "providers.update",
         ),
         ("get", "/backend/v3/api/recharges/packages", "packages.list"),
-        (
-            "get",
-            "/backend/v3/api/storage/usage",
-            "oss.usage.list",
-        ),
+        ("get", "/backend/v3/api/storage/usage", "oss.usage.list"),
         (
             "patch",
             "/backend/v3/api/storage/default_buckets/{logicalScope}",

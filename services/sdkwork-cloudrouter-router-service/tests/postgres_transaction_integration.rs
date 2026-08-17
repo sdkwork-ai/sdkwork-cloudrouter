@@ -471,24 +471,6 @@ async fn create_schema(pool: &PgPool) {
 
 async fn seed_chargeable_pricing(pool: &PgPool) {
     for statement in [
-        r#"INSERT INTO pricing_product
-            (id, uuid, tenant_id, organization_id, namespace_code, product_code,
-             product_kind, owner_system, display_name)
-            VALUES (1, 'pricing-product-1', 0, 0, 'models', 'model-inference',
-                    'model', 'sdkwork-models', 'Model inference')"#,
-        r#"INSERT INTO pricing_operation
-            (id, uuid, tenant_id, organization_id, namespace_code, operation_code,
-             operation_kind, charge_timing_default, async_completion_policy,
-             success_status_policy, display_name)
-            VALUES (2, 'pricing-operation-2', 0, 0, 'models', 'chat-completions',
-                    'inference', 'usage_reported', 'not_applicable',
-                    'successful_response', 'Chat completions')"#,
-        r#"INSERT INTO pricing_meter
-            (id, uuid, tenant_id, organization_id, namespace_code, meter_code,
-             quantity_kind, unit_code, aggregation_mode, default_unit_size,
-             quantity_precision, display_name)
-            VALUES (3, 'pricing-meter-3', 0, 0, 'models', 'llm_input_token',
-                    'token', 'token', 'sum', 1000000, 0, 'LLM input token')"#,
         r#"INSERT INTO pricing_price_book
             (id, uuid, tenant_id, organization_id, namespace_code,
              price_book_code, price_book_version, price_side, source_system,
@@ -498,29 +480,25 @@ async fn seed_chargeable_pricing(pool: &PgPool) {
                     '1', 'official_reference', 'sdkwork-models', 'openai', 'global',
                     'test-catalog', 'test-source-hash', 'active', 'USD',
                     TIMESTAMPTZ '2020-01-01 00:00:00+00', CURRENT_TIMESTAMP)"#,
-        r#"INSERT INTO pricing_product_binding
-            (id, uuid, tenant_id, organization_id, product_id, operation_id,
-             vendor_code, provider_code, region_code, resource_type,
-             resource_code, catalog_key)
-            VALUES (5, 'pricing-binding-5', 0, 0, 1, 2, 'openai', 'openai',
-                    'global', 'model', 'openai/gpt-4o-mini',
-                    'openai/gpt-4o-mini')"#,
         r#"INSERT INTO pricing_rate
-            (id, uuid, tenant_id, organization_id, price_book_id, product_id,
-             operation_id, meter_id, rate_code, rate_hash, billability,
-             charge_timing, calculation_mode, quantity_aggregation, unit_size,
-             unit_price, minimum_quantity, quantity_step, currency_code,
-             priority, effective_from, source_url, source_observed_at)
-            VALUES (6, 'pricing-rate-6', 0, 0, 4, 1, 2, 3,
-                    'test-input-rate', 'test-rate-hash', 'chargeable',
-                    'usage_reported', 'per_unit', 'sum', 1000000, 0.15,
-                    0, NULL, 'USD', 100,
+            (id, uuid, tenant_id, organization_id, price_book_id, rate_code, rate_hash,
+             product_code, product_kind, product_display_name, operation_code,
+             operation_kind, operation_display_name, meter_code, meter_display_name,
+             quantity_kind, unit_code, vendor_code, provider_code, region_code,
+             resource_type, resource_code, catalog_key, billability, charge_timing,
+             calculation_mode, quantity_aggregation, unit_size, unit_price,
+             minimum_quantity, currency_code, conditions, tiers, priority, effective_from,
+             source_url, source_observed_at)
+            VALUES (6, 'pricing-rate-6', 0, 0, 4, 'test-input-rate', 'test-rate-hash',
+                    'model-inference', 'model', 'Model inference', 'chat-completions',
+                    'inference', 'Chat completions', 'llm_input_token',
+                    'LLM input token', 'token', 'token', 'openai', 'openai', 'global',
+                    'model', 'openai/gpt-4o-mini', 'openai/gpt-4o-mini', 'chargeable',
+                    'usage_reported', 'per_unit', 'sum', 1000000, 0.15, 0, 'USD',
+                    '[]'::jsonb, '[]'::jsonb, 100,
                     TIMESTAMPTZ '2020-01-01 00:00:00+00',
                     'https://example.test/pricing',
                     TIMESTAMPTZ '2020-01-01 00:00:00+00')"#,
-        r#"INSERT INTO pricing_rate_binding
-            (id, uuid, tenant_id, organization_id, rate_id, product_binding_id)
-            VALUES (7, 'pricing-rate-binding-7', 0, 0, 6, 5)"#,
         r#"INSERT INTO cloudrouter_pricing_plan
             (id, uuid, tenant_id, organization_id, plan_code, plan_name,
              base_price_side, currency_code, fallback_policy, rounding_mode,
@@ -609,6 +587,21 @@ fn usage_command(request_id: &str, http_status: u16) -> GatewayUsageRecordComman
         billing_components: "[]".to_owned(),
         pricing_snapshot: r#"{"vendor":{"code":"openai"},"model":{"catalogKey":"openai/gpt-4o-mini"},"provider":{"code":"openrouter"},"pricingPlan":{"code":"standard"},"multipliers":{"rate":"1.000000","reference":"1.320000"},"meters":{"input":{"customerUnitPrice":"0.198000"},"output":{"customerUnitPrice":"0.792000"},"cacheRead":{"customerUnitPrice":"0.099000"}}}"#.to_owned(),
         official_rate: Some(GatewayOfficialRateReference {
+            record_identity: Some(sdkwork_cloudrouter_router_service::ports::GatewayRatingRecordIdentity {
+                price_book_tenant_id: 0,
+                price_book_organization_id: 0,
+                price_book_id: 4,
+                rate_id: 6,
+                account_rate_card_tenant_id: 100001,
+                account_rate_card_organization_id: 0,
+                account_rate_card_id: 10,
+                pricing_plan_tenant_id: 100001,
+                pricing_plan_organization_id: 0,
+                pricing_plan_id: 8,
+                pricing_rule_tenant_id: 100001,
+                pricing_rule_organization_id: 0,
+                pricing_rule_id: 9,
+            }),
             price_book_code: "test-official-book".to_owned(),
             rate_hash: "test-rate-hash".to_owned(),
             product_code: "model-inference".to_owned(),

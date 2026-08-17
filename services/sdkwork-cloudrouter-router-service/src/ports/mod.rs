@@ -141,16 +141,6 @@ pub use admin_marketing_store::{
     RechargeSettingsUpdateCommand, UpdateAdminExchangeRuleCommand,
     UpdateAdminRechargePackageCommand,
 };
-pub use admin_pricing_store::{
-    AdminPricingBasePriceSide, AdminPricingCommandFuture, AdminPricingFormulaMode,
-    AdminPricingListPage, AdminPricingPlanItem, AdminPricingRoundingMode, AdminPricingRuleItem,
-    AdminPricingStatus, AdminPricingStore, AdminPricingSubject, AdminRateCardItem,
-    AdminRateCardSubjectType, CreateAdminPricingPlanCommand, CreateAdminPricingRuleCommand,
-    CreateAdminRateCardCommand, DeleteAdminPricingRuleCommand, DeleteAdminRateCardCommand,
-    ListAdminPricingPlansQuery, ListAdminPricingRulesQuery, ListAdminRateCardsQuery,
-    LoadAdminPricingPlanQuery, UpdateAdminPricingPlanCommand, UpdateAdminPricingRuleCommand,
-    UpdateAdminRateCardCommand,
-};
 pub use admin_mcp_store::{
     AdminMcpBindingItem, AdminMcpCommandFuture, AdminMcpDiscoveryResult, AdminMcpHealthCheckItem,
     AdminMcpListPage, AdminMcpServerItem, AdminMcpServerRevisionItem, AdminMcpStore,
@@ -179,6 +169,16 @@ pub use admin_model_store::{
 pub use admin_monitor_read_store::{
     AdminMonitorAlert, AdminMonitorCollection, AdminMonitorNode, AdminMonitorPerformanceDatum,
     AdminMonitorQuery, AdminMonitorReadFuture, AdminMonitorReadStore, AdminMonitorSubject,
+};
+pub use admin_pricing_store::{
+    AdminPricingBasePriceSide, AdminPricingCommandFuture, AdminPricingFormulaMode,
+    AdminPricingListPage, AdminPricingPlanItem, AdminPricingRoundingMode, AdminPricingRuleItem,
+    AdminPricingStatus, AdminPricingStore, AdminPricingSubject, AdminRateCardItem,
+    AdminRateCardSubjectType, CreateAdminPricingPlanCommand, CreateAdminPricingRuleCommand,
+    CreateAdminRateCardCommand, DeleteAdminPricingRuleCommand, DeleteAdminRateCardCommand,
+    ListAdminPricingPlansQuery, ListAdminPricingRulesQuery, ListAdminRateCardsQuery,
+    LoadAdminPricingPlanQuery, UpdateAdminPricingPlanCommand, UpdateAdminPricingRuleCommand,
+    UpdateAdminRateCardCommand,
 };
 pub use admin_record_store::{
     AdminRecordListPage, AdminRecordLogItem, AdminRecordReadFuture, AdminRecordStore,
@@ -308,7 +308,8 @@ pub(crate) use gateway_usage_recorder::MAX_PRICING_SNAPSHOT_BYTES;
 pub use gateway_usage_recorder::{
     hash_optional_text, GatewayAccountingRecordContext, GatewayOfficialRateReference,
     GatewayPricingFormula, GatewayPricingFormulaTerm, GatewayPricingRateCondition,
-    GatewayPricingRateTier, GatewayRequestTraceCommand, GatewayTraceAttribution,
+    GatewayPricingRateTier, GatewayRatingRecordIdentity, GatewayRequestTraceCommand,
+    GatewayTraceAttribution,
     GatewayUsageQuantity, GatewayUsageRecordCommand, GatewayUsageRecordFuture,
     GatewayUsageRecorder,
 };

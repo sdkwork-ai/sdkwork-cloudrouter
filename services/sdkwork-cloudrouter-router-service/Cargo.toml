@@ -11,6 +11,7 @@ axum.workspace = true
 base64.workspace = true
 bytes.workspace = true
 chrono.workspace = true
+chrono-tz.workspace = true
 dashmap.workspace = true
 futures-util.workspace = true
 getrandom.workspace = true
@@ -65,4 +66,3 @@ serde_json.workspace = true
 tower.workspace = true
 sdkwork-cloudrouter-test-support.workspace = true
 sdkwork_commerce_promotion_service.workspace = true
-

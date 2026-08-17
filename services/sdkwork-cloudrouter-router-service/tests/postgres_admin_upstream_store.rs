@@ -182,7 +182,6 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
         }],
         account.protocols
     );
-
     let long_secret = format!("sk-test-{}", "x".repeat(1024));
     let credential_command = CreateAdminUpstreamAccountCredentialCommand {
         subject: subject.clone(),
@@ -458,6 +457,76 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
         assert!(!payload.contains(&long_secret));
         assert!(!payload.contains(&secret_ciphertext));
     }
+
+    context.cleanup().await;
+}
+
+#[tokio::test]
+async fn postgres_upstream_account_list_decodes_protocols_as_jsonb() {
+    let Some(context) = PostgresTestContext::new("admin_upstream_account_list").await else {
+        return;
+    };
+    let subject = upstream_subject(100001, 200001);
+    sqlx::raw_sql(
+        r#"
+        INSERT INTO ai_upstream_supplier (
+            id, uuid, tenant_id, organization_id, data_scope, status,
+            supplier_code, supplier_name, display_name, supplier_type,
+            adapter_code, protocol_code, protocols, model_blacklist, model_whitelist,
+            environment, sort_order
+        ) VALUES (
+            91001, 'upstream-list-supplier', 100001, 200001, 1, 1,
+            'openai', 'OpenAI', 'OpenAI', 'official',
+            'openai', 'openai', '[]'::jsonb, '[]'::jsonb, '[]'::jsonb,
+            1, 10
+        );
+
+        INSERT INTO ai_upstream_supplier_auth_method (
+            id, uuid, tenant_id, organization_id, data_scope, status,
+            supplier_id, supplier_code, auth_method_code, auth_method_name,
+            auth_type, config_schema, runtime_auth_config, priority
+        ) VALUES (
+            91002, 'upstream-list-auth', 100001, 200001, 1, 1,
+            91001, 'openai', 'api-key', 'API key',
+            'api_key', '{}'::jsonb, '{}'::jsonb, 10
+        );
+
+        INSERT INTO ai_upstream_account (
+            id, uuid, tenant_id, organization_id, data_scope, status,
+            supplier_id, supplier_code, default_base_url, protocols,
+            account_code, account_name, auth_method_code
+        ) VALUES (
+            91003, 'upstream-list-account', 100001, 200001, 1, 1,
+            91001, 'openai', 'https://api.openai.com/v1',
+            '[{"protocolCode":"openai_chat_completions","baseUrl":"https://api.openai.com/v1"}]'::jsonb,
+            'openai-primary', 'OpenAI primary', 'api-key'
+        );
+        "#,
+    )
+    .execute(&context.pool)
+    .await
+    .expect("seed upstream account list fixture");
+
+    let codec = Arc::new(
+        RingAeadCredentialSecretCodec::new("0123456789abcdef0123456789abcdef")
+            .expect("credential codec"),
+    );
+    let store = PostgresAdminUpstreamStore::new(context.pool.clone(), codec);
+    let page = store
+        .list_accounts(list_query(subject))
+        .await
+        .expect("list upstream accounts with JSONB protocol configuration");
+
+    assert_eq!(1, page.total);
+    assert_eq!(1, page.items.len());
+    assert_eq!(
+        LlmProtocolCode::OpenaiChatCompletions,
+        page.items[0].protocols[0].protocol_code
+    );
+    assert_eq!(
+        "https://api.openai.com/v1",
+        page.items[0].protocols[0].base_url
+    );
 
     context.cleanup().await;
 }
@@ -1444,6 +1513,18 @@ impl PostgresTestContext {
         .execute(&pool)
         .await
         .expect("apply upstream account group default flag migration");
+        sqlx::raw_sql(include_str!(
+            "../../../database/migrations/postgres/0025_upstream_account_group_model_lists.up.sql"
+        ))
+        .execute(&pool)
+        .await
+        .expect("apply upstream account group model lists migration");
+        sqlx::raw_sql(include_str!(
+            "../../../database/migrations/postgres/0026_add_upstream_supplier_model_lists.up.sql"
+        ))
+        .execute(&pool)
+        .await
+        .expect("apply upstream supplier model lists migration");
         sqlx::raw_sql(include_str!(
             "../../../database/migrations/postgres/0027_add_upstream_supplier_endpoint_vendors.up.sql"
         ))

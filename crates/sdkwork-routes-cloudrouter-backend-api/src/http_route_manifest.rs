@@ -282,6 +282,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
+        "/backend/v3/api/pricing/official_rates",
+        "pricing",
+        "officialRates.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
         "/backend/v3/api/pricing/plans",
         "pricing",
         "plans.list",

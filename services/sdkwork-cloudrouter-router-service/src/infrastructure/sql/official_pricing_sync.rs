@@ -1,10 +1,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::{Display, Formatter};
 
-use sdkwork_models::{
-    BillingMeter, ModelCatalog, ModelPrice, PriceFormula, PriceFormulaTerm, PriceRateTier,
-};
-use serde_json::Value;
+use sdkwork_models::{BillingMeter, ModelCatalog, ModelPrice, PriceFormula, PriceRateTier};
+use serde::Serialize;
+use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
@@ -71,7 +70,6 @@ impl From<DomainError> for OfficialPricingSyncError {
 struct ProductProjection {
     product_code: String,
     product_kind: String,
-    owner_system: String,
     display_name: String,
 }
 
@@ -87,9 +85,6 @@ struct MeterProjection {
     meter_code: String,
     quantity_kind: String,
     unit_code: String,
-    aggregation_mode: String,
-    default_unit_size: String,
-    quantity_precision: i32,
     display_name: String,
 }
 
@@ -141,6 +136,9 @@ struct RateProjection {
     minimum_quantity: String,
     quantity_step: Option<String>,
     currency_code: String,
+    priority: i32,
+    rate_variant: String,
+    schedule: Option<Value>,
     effective_from: String,
     effective_to: Option<String>,
     source_url: String,
@@ -150,7 +148,8 @@ struct RateProjection {
     formula: Option<PriceFormula>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct ConditionProjection {
     dimension_code: String,
     operator_code: String,
@@ -176,43 +175,12 @@ pub(crate) async fn sync_official_pricing_catalog(
     let mut transaction = pool.begin().await?;
     let import_id = stage_import_run(&mut transaction, catalog, &projection).await?;
 
-    let mut product_ids = BTreeMap::new();
-    for product in projection.products.values() {
-        let id = ensure_product(&mut transaction, product).await?;
-        product_ids.insert(product.product_code.clone(), id);
-    }
-
-    let mut operation_ids = BTreeMap::new();
-    for operation in projection.operations.values() {
-        let id = ensure_operation(&mut transaction, operation).await?;
-        operation_ids.insert(operation.operation_code.clone(), id);
-    }
-
-    let mut meter_ids = BTreeMap::new();
-    for meter in projection.meters.values() {
-        let id = ensure_meter(&mut transaction, meter).await?;
-        meter_ids.insert(meter.meter_code.clone(), id);
-    }
-
     let mut price_book_ids = BTreeMap::new();
     for (price_book_key, price_book) in &projection.price_books {
         let id = ensure_price_book(&mut transaction, import_id, catalog, price_book).await?;
         price_book_ids.insert(price_book_key.clone(), id);
     }
 
-    let mut binding_ids = BTreeMap::new();
-    for binding in &projection.bindings {
-        let product_id = required_id(&product_ids, &binding.product_code, "product")?;
-        let operation_id = required_id(&operation_ids, &binding.operation_code, "operation")?;
-        let binding_id =
-            ensure_product_binding(&mut transaction, binding, product_id, operation_id).await?;
-        binding_ids.insert(binding.clone(), binding_id);
-    }
-
-    let mut condition_count = 0;
-    let mut tier_count = 0;
-    let mut formula_count = 0;
-    let mut formula_term_count = 0;
     for rate in &projection.rates {
         let price_book_id = price_book_ids
             .get(&rate.price_book_key)
@@ -226,51 +194,19 @@ pub(crate) async fn sync_official_pricing_catalog(
                     rate.price_book_key.price_book_code
                 ))
             })?;
-        let product_id = required_id(&product_ids, &rate.product_code, "product")?;
-        let operation_id = required_id(&operation_ids, &rate.operation_code, "operation")?;
-        let meter_id = required_id(&meter_ids, &rate.meter_code, "meter")?;
-        let rate_id = ensure_rate(
+        let product = required_projection(&projection.products, &rate.product_code, "product")?;
+        let operation =
+            required_projection(&projection.operations, &rate.operation_code, "operation")?;
+        let meter = required_projection(&projection.meters, &rate.meter_code, "meter")?;
+        ensure_rate(
             &mut transaction,
             rate,
             price_book_id,
-            product_id,
-            operation_id,
-            meter_id,
+            product,
+            operation,
+            meter,
         )
         .await?;
-        let product_binding_id = binding_ids.get(&rate.binding).copied().ok_or_else(|| {
-            OfficialPricingSyncError::InvalidCatalog(format!(
-                "rate {} references a missing product binding",
-                rate.rate_code
-            ))
-        })?;
-        ensure_rate_binding(&mut transaction, rate_id, product_binding_id).await?;
-        for (sort_order, condition) in rate.conditions.iter().enumerate() {
-            ensure_rate_condition(
-                &mut transaction,
-                rate_id,
-                condition,
-                i32::try_from(sort_order).unwrap_or(i32::MAX),
-            )
-            .await?;
-            condition_count += 1;
-        }
-        for (tier_index, tier) in rate.tiers.iter().enumerate() {
-            ensure_rate_tier(
-                &mut transaction,
-                rate_id,
-                tier,
-                i32::try_from(tier_index).unwrap_or(i32::MAX),
-                &rate.currency_code,
-            )
-            .await?;
-            tier_count += 1;
-        }
-        if let Some(formula) = rate.formula.as_ref() {
-            ensure_rate_formula(&mut transaction, rate_id, formula).await?;
-            formula_count += 1;
-            formula_term_count += formula.terms.len();
-        }
     }
 
     activate_price_books(&mut transaction, &price_book_ids).await?;
@@ -298,10 +234,23 @@ pub(crate) async fn sync_official_pricing_catalog(
         binding_count: projection.bindings.len(),
         rate_binding_count: projection.rates.len(),
         rate_count: projection.rates.len(),
-        condition_count,
-        tier_count,
-        formula_count,
-        formula_term_count,
+        condition_count: projection
+            .rates
+            .iter()
+            .map(|rate| rate.conditions.len())
+            .sum(),
+        tier_count: projection.rates.iter().map(|rate| rate.tiers.len()).sum(),
+        formula_count: projection
+            .rates
+            .iter()
+            .filter(|rate| rate.formula.is_some())
+            .count(),
+        formula_term_count: projection
+            .rates
+            .iter()
+            .filter_map(|rate| rate.formula.as_ref())
+            .map(|formula| formula.terms.len())
+            .sum(),
         pricing_plan_count,
         pricing_rule_count,
         account_rate_card_count,
@@ -341,7 +290,6 @@ fn project_catalog(
                 let product = ProductProjection {
                     product_code: price.product_code.clone(),
                     product_kind: "model_api".to_owned(),
-                    owner_system: "sdkwork-models".to_owned(),
                     display_name: format!(
                         "{} {}",
                         vendor.vendor.display_name, model.primary_capability
@@ -405,6 +353,14 @@ fn project_catalog(
                     minimum_quantity: price.minimum_quantity.clone(),
                     quantity_step: price.quantity_step.clone(),
                     currency_code: currency.clone(),
+                    priority: price.priority,
+                    rate_variant: price.rate_variant.clone(),
+                    schedule: price
+                        .schedule
+                        .as_ref()
+                        .map(serde_json::to_value)
+                        .transpose()
+                        .map_err(|error| invalid_json("rate schedule", error))?,
                     effective_from: price.effective_from.clone(),
                     effective_to: price.effective_to.clone(),
                     source_url: price.source.source_url.clone(),
@@ -529,13 +485,6 @@ fn project_meter(meter: &BillingMeter) -> MeterProjection {
             .default_unit
             .clone()
             .unwrap_or_else(|| "unit".to_owned()),
-        aggregation_mode: if meter.meter_code == "api_request" {
-            "distinct_invocation".to_owned()
-        } else {
-            "sum".to_owned()
-        },
-        default_unit_size: meter.default_unit_size.clone(),
-        quantity_precision: meter.quantity_precision.unwrap_or(0),
         display_name: meter.display_name.clone(),
     }
 }
@@ -561,12 +510,12 @@ fn hash_parts<'a>(parts: impl IntoIterator<Item = &'a str>) -> String {
     hex::encode(hasher.finalize())
 }
 
-fn required_id(
-    ids: &BTreeMap<String, i64>,
+fn required_projection<'a, T>(
+    projections: &'a BTreeMap<String, T>,
     code: &str,
     kind: &str,
-) -> Result<i64, OfficialPricingSyncError> {
-    ids.get(code).copied().ok_or_else(|| {
+) -> Result<&'a T, OfficialPricingSyncError> {
+    projections.get(code).ok_or_else(|| {
         OfficialPricingSyncError::InvalidCatalog(format!("rate references missing {kind} {code}"))
     })
 }
@@ -620,160 +569,6 @@ async fn stage_import_run(
     .bind(&projection.source_hash)
     .fetch_one(&mut **transaction)
     .await?)
-}
-
-async fn ensure_product(
-    transaction: &mut Transaction<'_, Postgres>,
-    product: &ProductProjection,
-) -> Result<i64, OfficialPricingSyncError> {
-    if let Some(id) = scoped_entity_id(
-        transaction,
-        "pricing_product",
-        "product_code",
-        &product.product_code,
-    )
-    .await?
-    {
-        return Ok(id);
-    }
-    let id = next_cloud_runtime_id("pricing_product")?;
-    sqlx::query(
-        r#"INSERT INTO pricing_product
-           (id, uuid, tenant_id, organization_id, namespace_code, product_code,
-            product_kind, owner_system, display_name)
-           VALUES ($1, $2, 0, 0, 'models', $3, $4, $5, $6)
-           ON CONFLICT DO NOTHING"#,
-    )
-    .bind(id)
-    .bind(stable_uuid("pricing-product", &[&product.product_code]))
-    .bind(&product.product_code)
-    .bind(&product.product_kind)
-    .bind(&product.owner_system)
-    .bind(&product.display_name)
-    .execute(&mut **transaction)
-    .await?;
-    scoped_entity_id(
-        transaction,
-        "pricing_product",
-        "product_code",
-        &product.product_code,
-    )
-    .await?
-    .ok_or_else(|| {
-        OfficialPricingSyncError::InvalidCatalog(
-            "failed to resolve product after insert".to_owned(),
-        )
-    })
-}
-
-async fn ensure_operation(
-    transaction: &mut Transaction<'_, Postgres>,
-    operation: &OperationProjection,
-) -> Result<i64, OfficialPricingSyncError> {
-    if let Some(id) = scoped_entity_id(
-        transaction,
-        "pricing_operation",
-        "operation_code",
-        &operation.operation_code,
-    )
-    .await?
-    {
-        return Ok(id);
-    }
-    let id = next_cloud_runtime_id("pricing_operation")?;
-    sqlx::query(
-        r#"INSERT INTO pricing_operation
-           (id, uuid, tenant_id, organization_id, namespace_code, operation_code,
-            operation_kind, charge_timing_default, async_completion_policy,
-            success_status_policy, display_name)
-           VALUES ($1, $2, 0, 0, 'models', $3, $4, 'rate_defined',
-                   'result_terminal', 'successful_completion', $5)
-           ON CONFLICT DO NOTHING"#,
-    )
-    .bind(id)
-    .bind(stable_uuid(
-        "pricing-operation",
-        &[&operation.operation_code],
-    ))
-    .bind(&operation.operation_code)
-    .bind(&operation.operation_kind)
-    .bind(&operation.display_name)
-    .execute(&mut **transaction)
-    .await?;
-    scoped_entity_id(
-        transaction,
-        "pricing_operation",
-        "operation_code",
-        &operation.operation_code,
-    )
-    .await?
-    .ok_or_else(|| {
-        OfficialPricingSyncError::InvalidCatalog(
-            "failed to resolve operation after insert".to_owned(),
-        )
-    })
-}
-
-async fn ensure_meter(
-    transaction: &mut Transaction<'_, Postgres>,
-    meter: &MeterProjection,
-) -> Result<i64, OfficialPricingSyncError> {
-    if let Some(id) = scoped_entity_id(
-        transaction,
-        "pricing_meter",
-        "meter_code",
-        &meter.meter_code,
-    )
-    .await?
-    {
-        return Ok(id);
-    }
-    let id = next_cloud_runtime_id("pricing_meter")?;
-    sqlx::query(
-        r#"INSERT INTO pricing_meter
-           (id, uuid, tenant_id, organization_id, namespace_code, meter_code,
-            quantity_kind, unit_code, aggregation_mode, default_unit_size,
-            quantity_precision, display_name)
-           VALUES ($1, $2, 0, 0, 'models', $3, $4, $5, $6, $7::numeric, $8, $9)
-           ON CONFLICT DO NOTHING"#,
-    )
-    .bind(id)
-    .bind(stable_uuid("pricing-meter", &[&meter.meter_code]))
-    .bind(&meter.meter_code)
-    .bind(&meter.quantity_kind)
-    .bind(&meter.unit_code)
-    .bind(&meter.aggregation_mode)
-    .bind(&meter.default_unit_size)
-    .bind(meter.quantity_precision)
-    .bind(&meter.display_name)
-    .execute(&mut **transaction)
-    .await?;
-    scoped_entity_id(
-        transaction,
-        "pricing_meter",
-        "meter_code",
-        &meter.meter_code,
-    )
-    .await?
-    .ok_or_else(|| {
-        OfficialPricingSyncError::InvalidCatalog("failed to resolve meter after insert".to_owned())
-    })
-}
-
-async fn scoped_entity_id(
-    transaction: &mut Transaction<'_, Postgres>,
-    table: &'static str,
-    code_column: &'static str,
-    code: &str,
-) -> Result<Option<i64>, OfficialPricingSyncError> {
-    let query = format!(
-        "SELECT id FROM {table} WHERE tenant_id = 0 AND organization_id = 0 AND {code_column} = $1 AND deleted_at IS NULL"
-    );
-    Ok(sqlx::query(sqlx::AssertSqlSafe(query))
-        .bind(code)
-        .fetch_optional(&mut **transaction)
-        .await?
-        .map(|row| row.get::<i64, _>("id")))
 }
 
 async fn ensure_price_book(
@@ -840,98 +635,13 @@ async fn ensure_price_book(
     Ok(id)
 }
 
-async fn ensure_product_binding(
-    transaction: &mut Transaction<'_, Postgres>,
-    binding: &BindingProjection,
-    product_id: i64,
-    operation_id: i64,
-) -> Result<i64, OfficialPricingSyncError> {
-    if let Some(id) = sqlx::query_scalar::<_, i64>(
-        r#"SELECT id FROM pricing_product_binding
-           WHERE tenant_id = 0 AND organization_id = 0
-             AND product_id = $1 AND operation_id = $2
-             AND vendor_code = $3 AND provider_code = $4 AND region_code = $5
-             AND resource_type = 'model' AND resource_code = $6
-             AND deleted_at IS NULL"#,
-    )
-    .bind(product_id)
-    .bind(operation_id)
-    .bind(&binding.vendor_code)
-    .bind(&binding.provider_code)
-    .bind(&binding.region_code)
-    .bind(&binding.resource_code)
-    .fetch_optional(&mut **transaction)
-    .await?
-    {
-        return Ok(id);
-    }
-    let id = next_cloud_runtime_id("pricing_product_binding")?;
-    sqlx::query(
-        r#"INSERT INTO pricing_product_binding
-           (id, uuid, tenant_id, organization_id, product_id, operation_id,
-            vendor_code, provider_code, account_id, region_code, resource_type,
-            resource_code, catalog_key, api_format, endpoint_code)
-           VALUES ($1, $2, 0, 0, $3, $4, $5, $6, NULL, $7, 'model', $8, $9,
-                   $10, $11)
-           ON CONFLICT DO NOTHING"#,
-    )
-    .bind(id)
-    .bind(stable_uuid(
-        "pricing-binding",
-        &[
-            &binding.product_code,
-            &binding.operation_code,
-            &binding.vendor_code,
-            &binding.provider_code,
-            &binding.region_code,
-            &binding.resource_code,
-        ],
-    ))
-    .bind(product_id)
-    .bind(operation_id)
-    .bind(&binding.vendor_code)
-    .bind(&binding.provider_code)
-    .bind(&binding.region_code)
-    .bind(&binding.resource_code)
-    .bind(&binding.catalog_key)
-    .bind(&binding.api_format)
-    .bind(&binding.operation_code)
-    .execute(&mut **transaction)
-    .await?;
-    Ok(id)
-}
-
-async fn ensure_rate_binding(
-    transaction: &mut Transaction<'_, Postgres>,
-    rate_id: i64,
-    product_binding_id: i64,
-) -> Result<(), OfficialPricingSyncError> {
-    let id = next_cloud_runtime_id("pricing_rate_binding")?;
-    sqlx::query(
-        r#"INSERT INTO pricing_rate_binding
-           (id, uuid, tenant_id, organization_id, rate_id, product_binding_id)
-           VALUES ($1, $2, 0, 0, $3, $4)
-           ON CONFLICT DO NOTHING"#,
-    )
-    .bind(id)
-    .bind(stable_uuid(
-        "pricing-rate-binding",
-        &[&rate_id.to_string(), &product_binding_id.to_string()],
-    ))
-    .bind(rate_id)
-    .bind(product_binding_id)
-    .execute(&mut **transaction)
-    .await?;
-    Ok(())
-}
-
 async fn ensure_rate(
     transaction: &mut Transaction<'_, Postgres>,
     rate: &RateProjection,
     price_book_id: i64,
-    product_id: i64,
-    operation_id: i64,
-    meter_id: i64,
+    product: &ProductProjection,
+    operation: &OperationProjection,
+    meter: &MeterProjection,
 ) -> Result<i64, OfficialPricingSyncError> {
     if let Some(row) = sqlx::query(
         r#"SELECT id, rate_hash FROM pricing_rate
@@ -953,17 +663,48 @@ async fn ensure_rate(
         return Ok(row.get("id"));
     }
     let id = next_cloud_runtime_id("pricing_rate")?;
+    let conditions = json_string(&rate.conditions, "rate conditions")?;
+    let tiers = serde_json::to_string(
+        &rate
+            .tiers
+            .iter()
+            .map(|tier| {
+                json!({
+                    "tierCode": tier.tier_code,
+                    "lowerBound": tier.lower_bound,
+                    "upperBound": tier.upper_bound,
+                    "unitSize": tier.unit_size,
+                    "unitPrice": tier.unit_price,
+                    "flatAmount": tier.flat_amount,
+                    "currencyCode": rate.currency_code,
+                })
+            })
+            .collect::<Vec<_>>(),
+    )
+    .map_err(|error| invalid_json("rate tiers", error))?;
+    let formula = rate
+        .formula
+        .as_ref()
+        .map(|formula| json_string(formula, "rate formula"))
+        .transpose()?;
     sqlx::query(
         r#"INSERT INTO pricing_rate
-           (id, uuid, tenant_id, organization_id, price_book_id, product_id,
-            operation_id, meter_id, rate_code, rate_hash, billability,
-            charge_timing, calculation_mode, quantity_aggregation, unit_size,
-            unit_price, minimum_quantity, quantity_step, currency_code, priority,
-            effective_from, effective_to, source_url, source_observed_at)
-           VALUES ($1, $2, 0, 0, $3, $4, $5, $6, $7, $8, $9, $10, $11,
-                   $12, $13::numeric, $14::numeric, $15::numeric, $16::numeric,
-                   $17, 100, $18::timestamptz, $19::timestamptz, $20,
-                   $21::timestamptz)"#,
+           (id, uuid, tenant_id, organization_id, price_book_id, rate_code,
+            rate_hash, product_code, product_kind, product_display_name,
+            operation_code, operation_kind, operation_display_name, meter_code,
+            meter_display_name, quantity_kind, unit_code, vendor_code,
+            provider_code, account_id, region_code, resource_type, resource_code,
+            catalog_key, api_format, endpoint_code, billability, charge_timing,
+            calculation_mode, quantity_aggregation, unit_size, unit_price,
+            minimum_quantity, quantity_step, currency_code, conditions, tiers,
+            formula, priority, rate_variant, schedule, effective_from, effective_to, source_url,
+            source_observed_at)
+           VALUES ($1, $2, 0, 0, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
+                   $13, $14, $15, $16, $17, NULL, $18, 'model', $19, $20, $21,
+                   $22, $23, $24, $25, $26, $27::numeric, $28::numeric,
+                   $29::numeric, $30::numeric, $31, $32::jsonb, $33::jsonb,
+                   $34::jsonb, $35, $36, $37::jsonb, $38::timestamptz,
+                   $39::timestamptz, $40, $41::timestamptz)"#,
     )
     .bind(id)
     .bind(stable_uuid(
@@ -977,11 +718,25 @@ async fn ensure_rate(
         ],
     ))
     .bind(price_book_id)
-    .bind(product_id)
-    .bind(operation_id)
-    .bind(meter_id)
     .bind(&rate.rate_code)
     .bind(&rate.rate_hash)
+    .bind(&product.product_code)
+    .bind(&product.product_kind)
+    .bind(&product.display_name)
+    .bind(&operation.operation_code)
+    .bind(&operation.operation_kind)
+    .bind(&operation.display_name)
+    .bind(&meter.meter_code)
+    .bind(&meter.display_name)
+    .bind(&meter.quantity_kind)
+    .bind(&meter.unit_code)
+    .bind(&rate.binding.vendor_code)
+    .bind(&rate.binding.provider_code)
+    .bind(&rate.binding.region_code)
+    .bind(&rate.binding.resource_code)
+    .bind(&rate.binding.catalog_key)
+    .bind(&rate.binding.api_format)
+    .bind(&rate.binding.operation_code)
     .bind(&rate.billability)
     .bind(&rate.charge_timing)
     .bind(&rate.calculation_mode)
@@ -991,6 +746,12 @@ async fn ensure_rate(
     .bind(&rate.minimum_quantity)
     .bind(rate.quantity_step.as_deref())
     .bind(&rate.currency_code)
+    .bind(conditions)
+    .bind(tiers)
+    .bind(formula)
+    .bind(rate.priority)
+    .bind(&rate.rate_variant)
+    .bind(rate.schedule.as_ref().map(Value::to_string))
     .bind(&rate.effective_from)
     .bind(rate.effective_to.as_deref())
     .bind(&rate.source_url)
@@ -1000,207 +761,12 @@ async fn ensure_rate(
     Ok(id)
 }
 
-async fn ensure_rate_condition(
-    transaction: &mut Transaction<'_, Postgres>,
-    rate_id: i64,
-    condition: &ConditionProjection,
-    sort_order: i32,
-) -> Result<(), OfficialPricingSyncError> {
-    let (value_type, value_string, value_decimal, value_boolean, value_json) =
-        condition_columns(&condition.value)?;
-    let id = next_cloud_runtime_id("pricing_rate_condition")?;
-    sqlx::query(
-        r#"INSERT INTO pricing_rate_condition
-           (id, uuid, tenant_id, organization_id, rate_id, dimension_code,
-            operator_code, value_type, value_string, value_decimal,
-            value_boolean, value_json, sort_order)
-           VALUES ($1, $2, 0, 0, $3, $4, $5, $6, $7, $8::numeric, $9,
-                   $10::jsonb, $11)
-           ON CONFLICT DO NOTHING"#,
-    )
-    .bind(id)
-    .bind(rate_condition_uuid(rate_id, condition, sort_order))
-    .bind(rate_id)
-    .bind(&condition.dimension_code)
-    .bind(&condition.operator_code)
-    .bind(value_type)
-    .bind(value_string)
-    .bind(value_decimal)
-    .bind(value_boolean)
-    .bind(value_json)
-    .bind(sort_order)
-    .execute(&mut **transaction)
-    .await?;
-    Ok(())
+fn json_string<T: Serialize>(value: &T, label: &str) -> Result<String, OfficialPricingSyncError> {
+    serde_json::to_string(value).map_err(|error| invalid_json(label, error))
 }
 
-async fn ensure_rate_tier(
-    transaction: &mut Transaction<'_, Postgres>,
-    rate_id: i64,
-    tier: &PriceRateTier,
-    tier_index: i32,
-    currency_code: &str,
-) -> Result<(), OfficialPricingSyncError> {
-    let id = next_cloud_runtime_id("pricing_rate_tier")?;
-    sqlx::query(
-        r#"INSERT INTO pricing_rate_tier
-           (id, uuid, tenant_id, organization_id, rate_id, tier_index, tier_code,
-            lower_bound, upper_bound, unit_size, unit_price, flat_amount,
-            currency_code)
-           VALUES ($1, $2, 0, 0, $3, $4, $5, $6::numeric, $7::numeric,
-                   $8::numeric, $9::numeric, $10::numeric, $11)
-           ON CONFLICT DO NOTHING"#,
-    )
-    .bind(id)
-    .bind(stable_uuid(
-        "pricing-rate-tier",
-        &[
-            &rate_id.to_string(),
-            &tier_index.to_string(),
-            &tier.tier_code,
-        ],
-    ))
-    .bind(rate_id)
-    .bind(tier_index)
-    .bind(&tier.tier_code)
-    .bind(&tier.lower_bound)
-    .bind(tier.upper_bound.as_deref())
-    .bind(&tier.unit_size)
-    .bind(&tier.unit_price)
-    .bind(&tier.flat_amount)
-    .bind(currency_code)
-    .execute(&mut **transaction)
-    .await?;
-    Ok(())
-}
-
-async fn ensure_rate_formula(
-    transaction: &mut Transaction<'_, Postgres>,
-    rate_id: i64,
-    formula: &PriceFormula,
-) -> Result<(), OfficialPricingSyncError> {
-    let formula_id = match sqlx::query_scalar::<_, i64>(
-        "SELECT id FROM pricing_rate_formula WHERE tenant_id = 0 AND organization_id = 0 AND rate_id = $1 AND deleted_at IS NULL",
-    )
-    .bind(rate_id)
-    .fetch_optional(&mut **transaction)
-    .await?
-    {
-        Some(id) => id,
-        None => {
-            let id = next_cloud_runtime_id("pricing_rate_formula")?;
-            sqlx::query(
-                r#"INSERT INTO pricing_rate_formula
-                   (id, uuid, tenant_id, organization_id, rate_id, formula_code,
-                    formula_version, constant_units, quantity_coefficient,
-                    minimum_units, maximum_units)
-                   VALUES ($1, $2, 0, 0, $3, $4, $5, $6::numeric, $7::numeric,
-                           $8::numeric, $9::numeric)
-                   ON CONFLICT DO NOTHING"#,
-            )
-            .bind(id)
-            .bind(stable_uuid(
-                "pricing-rate-formula",
-                &[&rate_id.to_string(), &formula.formula_code, &formula.formula_version],
-            ))
-            .bind(rate_id)
-            .bind(&formula.formula_code)
-            .bind(&formula.formula_version)
-            .bind(&formula.constant_units)
-            .bind(&formula.quantity_coefficient)
-            .bind(formula.minimum_units.as_deref())
-            .bind(formula.maximum_units.as_deref())
-            .execute(&mut **transaction)
-            .await?;
-            sqlx::query_scalar::<_, i64>(
-                "SELECT id FROM pricing_rate_formula WHERE tenant_id = 0 AND organization_id = 0 AND rate_id = $1 AND deleted_at IS NULL",
-            )
-            .bind(rate_id)
-            .fetch_one(&mut **transaction)
-            .await?
-        }
-    };
-    for (term_index, term) in formula.terms.iter().enumerate() {
-        ensure_rate_formula_term(
-            transaction,
-            formula_id,
-            term,
-            i32::try_from(term_index).unwrap_or(i32::MAX),
-        )
-        .await?;
-    }
-    Ok(())
-}
-
-async fn ensure_rate_formula_term(
-    transaction: &mut Transaction<'_, Postgres>,
-    formula_id: i64,
-    term: &PriceFormulaTerm,
-    term_index: i32,
-) -> Result<(), OfficialPricingSyncError> {
-    let id = next_cloud_runtime_id("pricing_rate_formula_term")?;
-    sqlx::query(
-        r#"INSERT INTO pricing_rate_formula_term
-           (id, uuid, tenant_id, organization_id, formula_id, term_index,
-            term_code, dimension_code, coefficient)
-           VALUES ($1, $2, 0, 0, $3, $4, $5, $6, $7::numeric)
-           ON CONFLICT DO NOTHING"#,
-    )
-    .bind(id)
-    .bind(stable_uuid(
-        "pricing-rate-formula-term",
-        &[
-            &formula_id.to_string(),
-            &term_index.to_string(),
-            &term.term_code,
-            &term.dimension_code,
-        ],
-    ))
-    .bind(formula_id)
-    .bind(term_index)
-    .bind(&term.term_code)
-    .bind(&term.dimension_code)
-    .bind(&term.coefficient)
-    .execute(&mut **transaction)
-    .await?;
-    Ok(())
-}
-
-fn rate_condition_uuid(rate_id: i64, condition: &ConditionProjection, sort_order: i32) -> String {
-    stable_uuid(
-        "pricing-condition",
-        &[
-            &rate_id.to_string(),
-            &condition.dimension_code,
-            &condition.operator_code,
-            &sort_order.to_string(),
-        ],
-    )
-}
-
-fn condition_columns(
-    value: &Value,
-) -> Result<
-    (
-        &'static str,
-        Option<String>,
-        Option<String>,
-        Option<bool>,
-        Option<String>,
-    ),
-    OfficialPricingSyncError,
-> {
-    Ok(match value {
-        Value::String(value) => ("string", Some(value.clone()), None, None, None),
-        Value::Number(value) => ("decimal", None, Some(value.to_string()), None, None),
-        Value::Bool(value) => ("boolean", None, None, Some(*value), None),
-        Value::Null => {
-            return Err(OfficialPricingSyncError::InvalidCatalog(
-                "pricing conditions cannot contain null values".to_owned(),
-            ));
-        }
-        value => ("json", None, None, None, Some(value.to_string())),
-    })
+fn invalid_json(label: &str, error: serde_json::Error) -> OfficialPricingSyncError {
+    OfficialPricingSyncError::InvalidCatalog(format!("failed to encode {label}: {error}"))
 }
 
 async fn activate_price_books(
@@ -1335,9 +901,7 @@ async fn bootstrap_default_pricing_plans(
 
 #[cfg(test)]
 mod tests {
-    use serde_json::json;
-
-    use super::{normalize_price_side, project_catalog, rate_condition_uuid, ConditionProjection};
+    use super::{normalize_price_side, project_catalog};
 
     #[test]
     fn catalog_price_side_aliases_project_to_database_contract_values() {
@@ -1392,26 +956,4 @@ mod tests {
             .all(|book| book.price_side == "official_reference"));
     }
 
-    #[test]
-    fn rate_condition_identity_preserves_multiple_bounds_for_one_dimension() {
-        let lower_bound = ConditionProjection {
-            dimension_code: "duration_seconds".to_owned(),
-            operator_code: "gte".to_owned(),
-            value: json!(5),
-        };
-        let upper_bound = ConditionProjection {
-            dimension_code: "duration_seconds".to_owned(),
-            operator_code: "lt".to_owned(),
-            value: json!(10),
-        };
-
-        assert_ne!(
-            rate_condition_uuid(42, &lower_bound, 0),
-            rate_condition_uuid(42, &upper_bound, 1)
-        );
-        assert_ne!(
-            rate_condition_uuid(42, &lower_bound, 0),
-            rate_condition_uuid(42, &lower_bound, 1)
-        );
-    }
 }

@@ -1,5 +1,13 @@
 # sdkwork-models Install Flow Implementation Plan
 
+> **Superseded (2026-08-16):** current install/refresh authority is
+> [TECH-33-sdkwork-models-install-flow](../../architecture/tech/TECH-33-sdkwork-models-install-flow.md).
+> Pricing authority moved to
+> [ADR-20260815-composable-pricing-and-billing](../../architecture/decisions/ADR-20260815-composable-pricing-and-billing.md);
+> legacy `ai_pricing_*` tables were removed before launch (see
+> [MIG-2026-0002](../../migrations/MIG-2026-0002-composable-pricing-billing.md)).
+> This plan is retained as a historical execution record only.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Implement the standalone `sdkwork-models` catalog standard and migrate CloudRouter installation so model, pricing, meter, and ranking initialization comes from the new vendor-scoped JSON catalog.
@@ -1346,7 +1354,7 @@ It must support:
 - selected `vendorCodes`
 - dry-run diff summary
 - refresh run record in `ai_model_catalog_sync_run`
-- import snapshot in `ai_pricing_import_snapshot`
+- official price-book import evidence in `pricing_import_run` (not the removed `ai_pricing_import_snapshot`)
 
 - [ ] **Step 4: Add CLI command**
 
