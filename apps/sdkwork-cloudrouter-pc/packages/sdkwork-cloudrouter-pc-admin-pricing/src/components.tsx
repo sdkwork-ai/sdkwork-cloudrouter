@@ -234,18 +234,20 @@ export function SidePanel({
   children,
   footer,
   onClose,
+  wide = false,
 }: {
   title: string;
   description?: string;
   children: ReactNode;
   footer: ReactNode;
   onClose: () => void;
+  wide?: boolean;
 }) {
   const { t } = useTranslation();
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/30" onClick={onClose}>
       <div
-        className="flex h-full w-full max-w-2xl flex-col bg-white shadow-2xl dark:bg-slate-900"
+        className={`flex h-full w-full ${wide ? 'max-w-4xl' : 'max-w-2xl'} flex-col bg-white shadow-2xl dark:bg-slate-900`}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-white/10">

@@ -7,6 +7,8 @@ use crate::domain::DomainResult;
 
 pub type OfficialPricingCatalogReadFuture<'a> =
     Pin<Box<dyn Future<Output = DomainResult<OfficialPricingCatalogSnapshot>> + Send + 'a>>;
+pub type OfficialPricingProductCatalogReadFuture<'a> =
+    Pin<Box<dyn Future<Output = DomainResult<OfficialPricingProductCatalogSnapshot>> + Send + 'a>>;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct OfficialPricingCatalogQuery {
@@ -16,6 +18,15 @@ pub struct OfficialPricingCatalogQuery {
     pub region_code: Option<String>,
     pub meter_code: Option<String>,
     pub currency_code: Option<String>,
+    pub page_size: i64,
+    pub offset: i64,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct OfficialPricingProductCatalogQuery {
+    pub category: String,
+    pub search_query: Option<String>,
+    pub region_code: Option<String>,
     pub page_size: i64,
     pub offset: i64,
 }
@@ -31,6 +42,36 @@ pub struct OfficialPricingCatalogSnapshot {
     pub meters: Vec<OfficialPricingMeterFacet>,
     #[serde(skip_serializing)]
     pub total_items: i64,
+}
+
+#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct OfficialPricingProductCatalogSnapshot {
+    pub items: Vec<OfficialPricingProductGroup>,
+    pub groups: Vec<OfficialPricingGroupFacet>,
+    pub regions: Vec<OfficialPricingValueFacet>,
+    #[serde(skip_serializing)]
+    pub total_items: i64,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct OfficialPricingProductGroup {
+    pub group_key: String,
+    pub group_codes: Vec<String>,
+    pub product_code: String,
+    pub product_kind: String,
+    pub product_display_name: String,
+    pub vendor_code: String,
+    pub provider_code: String,
+    pub region_code: String,
+    pub resource_type: String,
+    pub resource_code: String,
+    pub catalog_key: Option<String>,
+    pub currency_code: String,
+    pub price_book_code: String,
+    pub price_book_version: String,
+    pub rates: Vec<OfficialPricingRate>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -167,4 +208,9 @@ pub trait OfficialPricingCatalogReadStore {
         &'a self,
         query: OfficialPricingCatalogQuery,
     ) -> OfficialPricingCatalogReadFuture<'a>;
+
+    fn load_official_pricing_product_catalog<'a>(
+        &'a self,
+        query: OfficialPricingProductCatalogQuery,
+    ) -> OfficialPricingProductCatalogReadFuture<'a>;
 }

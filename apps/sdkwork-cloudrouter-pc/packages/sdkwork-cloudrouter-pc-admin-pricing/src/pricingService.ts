@@ -12,6 +12,8 @@ import {
 type BackendPricingService = ReturnType<typeof getCloudRouterBackendSdkClient>['pricing'];
 export type AdminOfficialPricingCatalog = Awaited<ReturnType<BackendPricingService['officialRates']['list']>>;
 export type AdminOfficialPricingRateItem = AdminOfficialPricingCatalog['items'][number];
+export type AdminOfficialPricingProductCatalog = Awaited<ReturnType<BackendPricingService['officialProducts']['list']>>;
+export type AdminOfficialPricingProductItem = AdminOfficialPricingProductCatalog['items'][number];
 
 export type AdminPricingStatus = 'active' | 'inactive';
 export type AdminBasePriceSide =
@@ -247,10 +249,22 @@ async function backendOfficialRatesList(
   return getCloudRouterBackendSdkClient().pricing.officialRates.list(params);
 }
 
+async function backendOfficialProductsList(
+  params?: Parameters<BackendPricingService['officialProducts']['list']>[0],
+) {
+  return getCloudRouterBackendSdkClient().pricing.officialProducts.list(params);
+}
+
 export async function fetchAdminOfficialPricingRates(
   params: Parameters<BackendPricingService['officialRates']['list']>[0] = {},
 ): Promise<AdminOfficialPricingCatalog> {
   return backendOfficialRatesList(params);
+}
+
+export async function fetchAdminOfficialPricingProducts(
+  params: Parameters<BackendPricingService['officialProducts']['list']>[0] = {},
+): Promise<AdminOfficialPricingProductCatalog> {
+  return backendOfficialProductsList(params);
 }
 
 export async function fetchPricingPlans(
@@ -369,6 +383,9 @@ export async function deletePricingRule(ruleId: string): Promise<void> {
 }
 
 export const pricingService = {
+  officialProducts: {
+    list: fetchAdminOfficialPricingProducts,
+  },
   officialRates: {
     list: fetchAdminOfficialPricingRates,
   },

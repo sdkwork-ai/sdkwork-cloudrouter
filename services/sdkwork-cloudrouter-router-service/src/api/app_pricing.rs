@@ -15,7 +15,9 @@ use crate::api::response::{
 use crate::ports::{
     OfficialPricingCatalogQuery, OfficialPricingCatalogReadFuture, OfficialPricingCatalogReadStore,
     OfficialPricingCatalogSnapshot, OfficialPricingGroupFacet, OfficialPricingMeterFacet,
-    OfficialPricingRate, OfficialPricingValueFacet,
+    OfficialPricingProductCatalogQuery, OfficialPricingProductCatalogReadFuture,
+    OfficialPricingProductCatalogSnapshot, OfficialPricingProductGroup, OfficialPricingRate,
+    OfficialPricingValueFacet,
 };
 
 const SUPPORTED_CATEGORIES: [&str; 10] = [
@@ -49,6 +51,15 @@ struct AppPricingQuery {
     page_size: Option<i64>,
 }
 
+#[derive(Debug, Default, Deserialize)]
+struct AdminProductPricingQuery {
+    category: Option<String>,
+    q: Option<String>,
+    region_code: Option<String>,
+    page: Option<i64>,
+    page_size: Option<i64>,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct AppPricingResponse {
@@ -61,6 +72,15 @@ struct AppPricingResponse {
     meters: Vec<OfficialPricingMeterFacet>,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AdminProductPricingResponse {
+    items: Vec<OfficialPricingProductGroup>,
+    page_info: PageInfo,
+    groups: Vec<OfficialPricingGroupFacet>,
+    regions: Vec<OfficialPricingValueFacet>,
+}
+
 struct EmptyOfficialPricingCatalogReadStore;
 
 impl OfficialPricingCatalogReadStore for EmptyOfficialPricingCatalogReadStore {
@@ -69,6 +89,13 @@ impl OfficialPricingCatalogReadStore for EmptyOfficialPricingCatalogReadStore {
         _query: OfficialPricingCatalogQuery,
     ) -> OfficialPricingCatalogReadFuture<'a> {
         Box::pin(async { Ok(OfficialPricingCatalogSnapshot::default()) })
+    }
+
+    fn load_official_pricing_product_catalog<'a>(
+        &'a self,
+        _query: OfficialPricingProductCatalogQuery,
+    ) -> OfficialPricingProductCatalogReadFuture<'a> {
+        Box::pin(async { Ok(OfficialPricingProductCatalogSnapshot::default()) })
     }
 }
 
@@ -85,7 +112,16 @@ pub fn app_pricing_router_with_read_store(
 pub fn admin_official_pricing_router_with_read_store(
     read_store: Arc<dyn OfficialPricingCatalogReadStore + Send + Sync>,
 ) -> Router {
-    official_pricing_router_with_read_store("/backend/v3/api/pricing/official_rates", read_store)
+    Router::new()
+        .route(
+            "/backend/v3/api/pricing/official_rates",
+            get(list_pricing_rates),
+        )
+        .route(
+            "/backend/v3/api/pricing/official_products",
+            get(list_pricing_products),
+        )
+        .with_state(AppPricingState { read_store })
 }
 
 fn official_pricing_router_with_read_store(
@@ -136,25 +172,49 @@ async fn list_pricing_rates(
     }
 }
 
+async fn list_pricing_products(
+    State(state): State<AppPricingState>,
+    request_context: Option<Extension<WebRequestContext>>,
+    Query(query): Query<AdminProductPricingQuery>,
+) -> Response {
+    let ctx = request_context.map(|context| context.0);
+    let (store_query, page_no, page_size) = match validate_product_query(query) {
+        Ok(value) => value,
+        Err(message) => {
+            return validation_problem_for_context(ctx.as_ref(), message).into_response();
+        }
+    };
+
+    match state
+        .read_store
+        .load_official_pricing_product_catalog(store_query)
+        .await
+    {
+        Ok(snapshot) => json_success_response(
+            ctx.as_ref(),
+            AdminProductPricingResponse {
+                page_info: offset_page_info(page_no, page_size, snapshot.total_items),
+                items: snapshot.items,
+                groups: snapshot.groups,
+                regions: snapshot.regions,
+            },
+        ),
+        Err(error) => problem_from_wire_code_for_context(
+            ctx.as_ref(),
+            "5000",
+            format!("official product pricing catalog is unavailable: {error}"),
+        )
+        .into_response(),
+    }
+}
+
 fn validate_query(
     query: AppPricingQuery,
 ) -> Result<(OfficialPricingCatalogQuery, i64, i64), String> {
     let pagination = parse_offset_list_query(query.page, query.page_size)?;
-    let category = query
-        .category
-        .map(|value| value.trim().to_ascii_lowercase())
-        .filter(|value| !value.is_empty())
-        .unwrap_or_else(|| "all".to_owned());
-    if !SUPPORTED_CATEGORIES.contains(&category.as_str()) {
-        return Err(format!(
-            "pricing category must be one of {}",
-            SUPPORTED_CATEGORIES.join(", ")
-        ));
-    }
-
     Ok((
         OfficialPricingCatalogQuery {
-            category,
+            category: normalize_category(query.category)?,
             search_query: normalize_list_search_query(query.q, "q")?,
             vendor_code: normalize_facet_code(query.vendor_code, "vendor_code")?,
             region_code: normalize_facet_code(query.region_code, "region_code")?,
@@ -166,6 +226,37 @@ fn validate_query(
         pagination.page_no,
         pagination.page_size,
     ))
+}
+
+fn validate_product_query(
+    query: AdminProductPricingQuery,
+) -> Result<(OfficialPricingProductCatalogQuery, i64, i64), String> {
+    let pagination = parse_offset_list_query(query.page, query.page_size)?;
+    Ok((
+        OfficialPricingProductCatalogQuery {
+            category: normalize_category(query.category)?,
+            search_query: normalize_list_search_query(query.q, "q")?,
+            region_code: normalize_facet_code(query.region_code, "region_code")?,
+            page_size: pagination.page_size,
+            offset: pagination.offset,
+        },
+        pagination.page_no,
+        pagination.page_size,
+    ))
+}
+
+fn normalize_category(value: Option<String>) -> Result<String, String> {
+    let category = value
+        .map(|value| value.trim().to_ascii_lowercase())
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "all".to_owned());
+    if !SUPPORTED_CATEGORIES.contains(&category.as_str()) {
+        return Err(format!(
+            "pricing category must be one of {}",
+            SUPPORTED_CATEGORIES.join(", ")
+        ));
+    }
+    Ok(category)
 }
 
 fn normalize_currency_code(value: Option<String>) -> Result<Option<String>, String> {
@@ -255,5 +346,20 @@ mod tests {
             ..AppPricingQuery::default()
         })
         .is_err());
+    }
+
+    #[test]
+    fn product_pricing_query_pages_products_and_normalizes_category() {
+        let (query, page, page_size) = validate_product_query(AdminProductPricingQuery {
+            category: Some("LLM".to_owned()),
+            q: Some("claude".to_owned()),
+            page: Some(3),
+            page_size: Some(20),
+        })
+        .unwrap();
+        assert_eq!("llm", query.category);
+        assert_eq!(Some("claude".to_owned()), query.search_query);
+        assert_eq!(40, query.offset);
+        assert_eq!((3, 20), (page, page_size));
     }
 }

@@ -98,15 +98,14 @@ const result = await client.payments.providers.list(params);
 ### pricing
 
 ```typescript
-// List pricing plans
+// List admin official pricing products
 const params = {
+  category: 'all',
   q: 'q',
-  base_price_side: 'official_reference',
-  status: 'active',
-  page: 4,
-  page_size: 5,
+  page: 3,
+  page_size: 4,
 };
-const result = await client.pricing.plans.list(params);
+const result = await client.pricing.officialProducts.list(params);
 ```
 
 ### recharges

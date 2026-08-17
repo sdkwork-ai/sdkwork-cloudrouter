@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "444e2110150e4acccc6bb6cd8410682f2d01c0228c66047529c942c5173b1538"
+      "sha256": "cf1fb7d442909a89a75dc5986f088f35d143d63424917f7b6db1eb08b8771230"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -76,7 +76,7 @@
     },
     {
       "path": "src/api/pricing.ts",
-      "sha256": "5d972b6a336d62239a8fc88475861f74589ccaae95634dec492ae064dc2b303b"
+      "sha256": "90bbe59124fdf5bd9fcaf3c2dc59c742bf91e449655509f74887d1f1ed24646e"
     },
     {
       "path": "src/api/recharges.ts",
@@ -444,7 +444,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "ec5cda8541950d7d579991544ff38f1a76728f796ded7b6c2d388c44a1b07ea8"
+      "sha256": "146c77bda65ddd75b3f06751e1b717b14f48ca9bb4f090ff17f49af5d6017ba6"
     },
     {
       "path": "src/types/installation-status-response.ts",
@@ -537,6 +537,18 @@
     {
       "path": "src/types/official-pricing-meter-facet.ts",
       "sha256": "5a7b7adf84514cb2d9e242a88dcd857018867d395a95c53207cb561564df7fa6"
+    },
+    {
+      "path": "src/types/official-pricing-product-catalog-response.ts",
+      "sha256": "79e3a1b1bf83cc786914b5b5671a70a221227201a98c95a3b95d5453b044e7b9"
+    },
+    {
+      "path": "src/types/official-pricing-product-group-facet.ts",
+      "sha256": "8401a8f020657c2214aeaa68992069bac0073f67674f878eed74565e91fbf010"
+    },
+    {
+      "path": "src/types/official-pricing-product-group.ts",
+      "sha256": "a056cc978993ea91ab112d76264ca8619cd905c57cb7e1ed7294bc147e2498a1"
     },
     {
       "path": "src/types/official-pricing-rate-condition.ts",

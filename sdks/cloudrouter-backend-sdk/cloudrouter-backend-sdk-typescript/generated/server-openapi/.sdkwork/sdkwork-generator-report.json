@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "af8f76f0227b2b6616fd805293cae6407b7090136de54a45910f5d0b2433169e",
+  "changeFingerprint": "0161c06a6d10ca1b41f56cca4660e56d862325d4cad57c6844c51ba90336c8f3",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -153,6 +153,9 @@
           "src/types/official-pricing-formula.ts",
           "src/types/official-pricing-group-facet.ts",
           "src/types/official-pricing-meter-facet.ts",
+          "src/types/official-pricing-product-catalog-response.ts",
+          "src/types/official-pricing-product-group-facet.ts",
+          "src/types/official-pricing-product-group.ts",
           "src/types/official-pricing-rate-condition.ts",
           "src/types/official-pricing-rate-tier.ts",
           "src/types/official-pricing-rate.ts",
@@ -409,10 +412,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 321,
-    "models": 291,
+    "totalFiles": 325,
+    "models": 295,
     "apis": 7,
-    "types": 293
+    "types": 297
   },
   "warnings": [
     {
@@ -459,12 +462,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 224,
+    "writtenFiles": 227,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "af8f76f0227b2b6616fd805293cae6407b7090136de54a45910f5d0b2433169e",
+    "changeFingerprint": "0161c06a6d10ca1b41f56cca4660e56d862325d4cad57c6844c51ba90336c8f3",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -599,6 +602,9 @@
         "src/types/official-pricing-formula.ts",
         "src/types/official-pricing-group-facet.ts",
         "src/types/official-pricing-meter-facet.ts",
+        "src/types/official-pricing-product-catalog-response.ts",
+        "src/types/official-pricing-product-group-facet.ts",
+        "src/types/official-pricing-product-group.ts",
         "src/types/official-pricing-rate-condition.ts",
         "src/types/official-pricing-rate-tier.ts",
         "src/types/official-pricing-rate.ts",
@@ -840,6 +846,9 @@
             "src/types/official-pricing-formula.ts",
             "src/types/official-pricing-group-facet.ts",
             "src/types/official-pricing-meter-facet.ts",
+            "src/types/official-pricing-product-catalog-response.ts",
+            "src/types/official-pricing-product-group-facet.ts",
+            "src/types/official-pricing-product-group.ts",
             "src/types/official-pricing-rate-condition.ts",
             "src/types/official-pricing-rate-tier.ts",
             "src/types/official-pricing-rate.ts",

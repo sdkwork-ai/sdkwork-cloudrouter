@@ -5,6 +5,7 @@
   "type": "module",
   "main": "./src/index.tsx",
   "scripts": {
+    "test": "pnpm -C ../.. exec vitest run packages/sdkwork-cloudrouter-pc-admin-pricing/src/priceSettingModel.test.ts --config vite.config.ts --configLoader native --pool vmThreads",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -309,9 +309,8 @@ pub use gateway_usage_recorder::{
     hash_optional_text, GatewayAccountingRecordContext, GatewayOfficialRateReference,
     GatewayPricingFormula, GatewayPricingFormulaTerm, GatewayPricingRateCondition,
     GatewayPricingRateTier, GatewayRatingRecordIdentity, GatewayRequestTraceCommand,
-    GatewayTraceAttribution,
-    GatewayUsageQuantity, GatewayUsageRecordCommand, GatewayUsageRecordFuture,
-    GatewayUsageRecorder,
+    GatewayTraceAttribution, GatewayUsageQuantity, GatewayUsageRecordCommand,
+    GatewayUsageRecordFuture, GatewayUsageRecorder,
 };
 pub use invocation_dispatcher::{
     InvocationDispatchError, InvocationDispatcher, InvocationDispatcherFuture,
@@ -337,8 +336,10 @@ pub use model_rankings_read_store::{
 pub use official_pricing_catalog_read_store::{
     OfficialPricingCatalogQuery, OfficialPricingCatalogReadFuture, OfficialPricingCatalogReadStore,
     OfficialPricingCatalogSnapshot, OfficialPricingFormula, OfficialPricingFormulaTerm,
-    OfficialPricingGroupFacet, OfficialPricingMeterFacet, OfficialPricingRate,
-    OfficialPricingRateCondition, OfficialPricingRateTier, OfficialPricingValueFacet,
+    OfficialPricingGroupFacet, OfficialPricingMeterFacet, OfficialPricingProductCatalogQuery,
+    OfficialPricingProductCatalogReadFuture, OfficialPricingProductCatalogSnapshot,
+    OfficialPricingProductGroup, OfficialPricingRate, OfficialPricingRateCondition,
+    OfficialPricingRateTier, OfficialPricingValueFacet,
 };
 pub use pricing_catalog::PricingCatalog;
 pub use provider_adapter_route_resolver::ProviderAdapterRouteResolver;

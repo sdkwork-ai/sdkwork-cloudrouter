@@ -6492,6 +6492,175 @@
         ],
         "type": "object"
       },
+      "OfficialPricingProductCatalogResponse": {
+        "additionalProperties": false,
+        "description": "Official pricing product catalog response schema exposed by Cloud Router.",
+        "name": "OfficialPricingProductCatalogResponse",
+        "properties": {
+          "groups": {
+            "description": "Groups field on official pricing product catalog response.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingProductGroupFacet"
+            },
+            "type": "array"
+          },
+          "items": {
+            "description": "Items field on official pricing product catalog response.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingProductGroup"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on official pricing product catalog response."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo",
+          "groups"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingProductGroup": {
+        "additionalProperties": false,
+        "description": "Official pricing product group schema exposed by Cloud Router.",
+        "properties": {
+          "catalogKey": {
+            "description": "Catalog key field on official pricing product group.",
+            "nullable": true,
+            "type": "string"
+          },
+          "currencyCode": {
+            "description": "Currency code field on official pricing product group.",
+            "pattern": "^[A-Z]{3}$",
+            "type": "string"
+          },
+          "groupCodes": {
+            "description": "Group codes field on official pricing product group.",
+            "items": {
+              "description": "Group codes field on official pricing product group.",
+              "enum": [
+                "all",
+                "llm",
+                "image",
+                "video",
+                "audio",
+                "music",
+                "embedding",
+                "sound",
+                "api",
+                "other"
+              ],
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "groupKey": {
+            "description": "Group key field on official pricing product group.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "priceBookCode": {
+            "description": "Price book code field on official pricing product group.",
+            "type": "string"
+          },
+          "priceBookVersion": {
+            "description": "Price book version field on official pricing product group.",
+            "type": "string"
+          },
+          "productCode": {
+            "description": "Product code field on official pricing product group.",
+            "type": "string"
+          },
+          "productDisplayName": {
+            "description": "Product display name field on official pricing product group.",
+            "type": "string"
+          },
+          "productKind": {
+            "description": "Product kind field on official pricing product group.",
+            "type": "string"
+          },
+          "providerCode": {
+            "description": "Provider code field on official pricing product group.",
+            "type": "string"
+          },
+          "rates": {
+            "description": "Rates field on official pricing product group.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingRate"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "regionCode": {
+            "description": "Region code field on official pricing product group.",
+            "type": "string"
+          },
+          "resourceCode": {
+            "description": "Resource code field on official pricing product group.",
+            "type": "string"
+          },
+          "resourceType": {
+            "description": "Resource type field on official pricing product group.",
+            "type": "string"
+          },
+          "vendorCode": {
+            "description": "Vendor code field on official pricing product group.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "groupKey",
+          "groupCodes",
+          "productCode",
+          "productKind",
+          "productDisplayName",
+          "vendorCode",
+          "providerCode",
+          "regionCode",
+          "resourceType",
+          "resourceCode",
+          "currencyCode",
+          "priceBookCode",
+          "priceBookVersion",
+          "rates"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingProductGroupFacet": {
+        "additionalProperties": false,
+        "description": "Official pricing product group facet schema exposed by Cloud Router.",
+        "properties": {
+          "code": {
+            "description": "Code field on official pricing product group facet.",
+            "type": "string"
+          },
+          "count": {
+            "description": "Count field on official pricing product group facet.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "id": {
+            "description": "Id field on official pricing product group facet.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "count"
+        ],
+        "type": "object"
+      },
       "OfficialPricingRate": {
         "additionalProperties": false,
         "description": "Official pricing rate schema exposed by Cloud Router.",
@@ -7128,6 +7297,33 @@
           "count"
         ],
         "type": "object"
+      },
+      "OfficialProductsListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by official products list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/OfficialPricingProductCatalogResponse"
+                  }
+                ],
+                "description": "Data field on official products list result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Official products list result schema exposed by Cloud Router.",
+        "x-operation-id": "officialProducts.list"
       },
       "OfficialRatesListResult": {
         "allOf": [
@@ -18894,6 +19090,147 @@
         "x-write-tables": [
           "commerce_payment_provider"
         ]
+      }
+    },
+    "/backend/v3/api/pricing/official_products": {
+      "get": {
+        "description": "List admin official pricing products. Reads pricing_price_book, pricing_rate, pricing_import_run. Writes none. File targets none.",
+        "operationId": "officialProducts.list",
+        "parameters": [
+          {
+            "description": "Category query parameter.",
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "enum": [
+                "all",
+                "llm",
+                "image",
+                "video",
+                "audio",
+                "music",
+                "embedding",
+                "sound",
+                "api",
+                "other"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 256,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfficialProductsListResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List admin official pricing products",
+        "tags": [
+          "pricing"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "pricing_price_book",
+          "pricing_rate",
+          "pricing_import_run"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "pricing",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "pricing",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "officialProducts",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/pricing/official_rates": {

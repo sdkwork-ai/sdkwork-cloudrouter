@@ -5,6 +5,8 @@ use crate::ports::{
     OfficialPricingCatalogQuery, OfficialPricingCatalogReadFuture, OfficialPricingCatalogReadStore,
     OfficialPricingCatalogSnapshot, OfficialPricingFormula, OfficialPricingFormulaTerm,
     OfficialPricingGroupFacet, OfficialPricingMeterFacet, OfficialPricingRate,
+    OfficialPricingProductCatalogQuery, OfficialPricingProductCatalogReadFuture,
+    OfficialPricingProductCatalogSnapshot, OfficialPricingProductGroup,
     OfficialPricingRateCondition, OfficialPricingRateTier, OfficialPricingValueFacet,
 };
 
@@ -33,6 +35,9 @@ const LOAD_RATES_PREFIX: &str = r#"
 WITH eligible AS (
     SELECT
         r.id, r.rate_code, r.rate_hash, __CATEGORY_CODES__ AS group_codes,
+        md5(concat_ws(chr(31), r.vendor_code, r.provider_code, r.region_code,
+            r.currency_code, book.price_book_code, book.price_book_version,
+            COALESCE(r.catalog_key, ''), r.product_code, r.resource_code)) AS product_group_key,
         r.product_code, r.product_kind, r.product_display_name,
         r.operation_code, r.operation_kind, r.operation_display_name,
         r.vendor_code, r.provider_code, r.region_code, r.resource_type,
@@ -93,6 +98,51 @@ ORDER BY product_display_name, resource_code, operation_code, meter_code, rate_c
 LIMIT $7 OFFSET $8
 "#;
 
+const COUNT_PRODUCT_GROUPS_SUFFIX: &str = "\nSELECT COUNT(DISTINCT product_group_key) AS total FROM filtered\n";
+const LOAD_PRODUCT_GROUP_RATES_SUFFIX: &str = r#"
+, product_groups AS (
+    SELECT product_group_key, MIN(product_display_name) AS product_display_name,
+        MIN(resource_code) AS resource_code, MIN(rate_code) AS first_rate_code
+    FROM filtered GROUP BY product_group_key
+), paged_products AS (
+    SELECT product_group_key FROM product_groups
+    ORDER BY product_display_name, resource_code, first_rate_code, product_group_key
+    LIMIT $7 OFFSET $8
+)
+SELECT filtered.* FROM filtered
+JOIN paged_products USING (product_group_key)
+ORDER BY product_display_name, resource_code, product_group_key,
+    operation_code, meter_code, rate_code
+"#;
+
+const LOAD_PRODUCT_GROUP_FACETS_SUFFIX: &str = r#"
+, searched AS (
+    SELECT * FROM eligible
+    WHERE ($1::text IS NULL OR lower(product_code) LIKE $1 OR lower(product_display_name) LIKE $1
+      OR lower(operation_code) LIKE $1 OR lower(vendor_code) LIKE $1 OR lower(provider_code) LIKE $1
+      OR lower(resource_code) LIKE $1 OR lower(COALESCE(catalog_key, '')) LIKE $1
+      OR lower(meter_code) LIKE $1 OR lower(meter_display_name) LIKE $1)
+)
+SELECT group_code AS code, COUNT(DISTINCT product_group_key)::text AS facet_count
+FROM searched CROSS JOIN LATERAL unnest(group_codes) AS group_code
+GROUP BY group_code ORDER BY group_code
+"#;
+
+const LOAD_PRODUCT_REGION_FACETS_SUFFIX: &str = r#"
+, searched AS (
+    SELECT * FROM eligible
+    WHERE ($1::text IS NULL OR lower(product_code) LIKE $1 OR lower(product_display_name) LIKE $1
+      OR lower(operation_code) LIKE $1 OR lower(vendor_code) LIKE $1 OR lower(provider_code) LIKE $1
+      OR lower(resource_code) LIKE $1 OR lower(COALESCE(catalog_key, '')) LIKE $1
+      OR lower(meter_code) LIKE $1 OR lower(meter_display_name) LIKE $1)
+      AND ($2 = 'all' OR $2 = ANY(group_codes))
+)
+SELECT region_code AS code, COUNT(DISTINCT product_group_key)::text AS facet_count
+FROM searched
+WHERE region_code <> ''
+GROUP BY region_code ORDER BY region_code
+"#;
+
 const LOAD_FACETS_SUFFIX: &str = r#"
 , searched AS (
     SELECT * FROM eligible
@@ -124,6 +174,10 @@ impl PostgresOfficialPricingCatalogReadStore {
 impl OfficialPricingCatalogReadStore for PostgresOfficialPricingCatalogReadStore {
     fn load_official_pricing_catalog<'a>(&'a self, query: OfficialPricingCatalogQuery) -> OfficialPricingCatalogReadFuture<'a> {
         Box::pin(async move { load_catalog(&self.pool, query).await })
+    }
+
+    fn load_official_pricing_product_catalog<'a>(&'a self, query: OfficialPricingProductCatalogQuery) -> OfficialPricingProductCatalogReadFuture<'a> {
+        Box::pin(async move { load_product_catalog(&self.pool, query).await })
     }
 }
 
@@ -158,6 +212,63 @@ async fn load_catalog(pool: &PgPool, query: OfficialPricingCatalogQuery) -> Resu
         }
     }
     Ok(snapshot)
+}
+
+async fn load_product_catalog(pool: &PgPool, query: OfficialPricingProductCatalogQuery) -> Result<OfficialPricingProductCatalogSnapshot, DomainError> {
+    let base_sql = LOAD_RATES_PREFIX.replace("__CATEGORY_CODES__", CATEGORY_CODES_SQL);
+    let filtered = format!("{base_sql}{FILTERED_RATES_CTE_SUFFIX}");
+    let search = keyword_like(query.search_query.as_deref());
+    let total = sqlx::query(sqlx::AssertSqlSafe(format!("{filtered}{COUNT_PRODUCT_GROUPS_SUFFIX}")))
+        .bind(&query.category).bind(search.as_deref()).bind(Option::<&str>::None)
+        .bind(query.region_code.as_deref()).bind(Option::<&str>::None).bind(Option::<&str>::None)
+        .fetch_one(pool).await.map_err(sql_error)?;
+    let rows = sqlx::query(sqlx::AssertSqlSafe(format!("{filtered}{LOAD_PRODUCT_GROUP_RATES_SUFFIX}")))
+        .bind(&query.category).bind(search.as_deref()).bind(Option::<&str>::None)
+        .bind(query.region_code.as_deref()).bind(Option::<&str>::None).bind(Option::<&str>::None)
+        .bind(query.page_size).bind(query.offset).fetch_all(pool).await.map_err(sql_error)?;
+    let facets = sqlx::query(sqlx::AssertSqlSafe(format!("{base_sql}{LOAD_PRODUCT_GROUP_FACETS_SUFFIX}")))
+        .bind(search.as_deref()).fetch_all(pool).await.map_err(sql_error)?;
+    let region_facets = sqlx::query(sqlx::AssertSqlSafe(format!("{base_sql}{LOAD_PRODUCT_REGION_FACETS_SUFFIX}")))
+        .bind(search.as_deref()).bind(&query.category).fetch_all(pool).await.map_err(sql_error)?;
+
+    let mut items: Vec<OfficialPricingProductGroup> = Vec::new();
+    for row in rows {
+        let group_key = string_cell(&row, "product_group_key");
+        let rate = rate_from_row(row)?;
+        if let Some(group) = items.last_mut().filter(|group| group.group_key == group_key) {
+            merge_group_codes(&mut group.group_codes, &rate.group_codes);
+            group.rates.push(rate);
+        } else {
+            items.push(product_group_from_rate(group_key, rate));
+        }
+    }
+    let groups = facets.into_iter().map(|row| {
+        let code = string_cell(&row, "code");
+        OfficialPricingGroupFacet { id: code.clone(), code, count: string_cell(&row, "facet_count") }
+    }).collect();
+    let regions = region_facets.into_iter().map(|row| {
+        let code = string_cell(&row, "code");
+        OfficialPricingValueFacet { id: code.clone(), code, count: string_cell(&row, "facet_count") }
+    }).collect();
+    Ok(OfficialPricingProductCatalogSnapshot { items, groups, regions, total_items: integer_cell(&total, "total") })
+}
+
+fn product_group_from_rate(group_key: String, rate: OfficialPricingRate) -> OfficialPricingProductGroup {
+    OfficialPricingProductGroup {
+        group_key, group_codes: rate.group_codes.clone(), product_code: rate.product_code.clone(),
+        product_kind: rate.product_kind.clone(), product_display_name: rate.product_display_name.clone(),
+        vendor_code: rate.vendor_code.clone(), provider_code: rate.provider_code.clone(),
+        region_code: rate.region_code.clone(), resource_type: rate.resource_type.clone(),
+        resource_code: rate.resource_code.clone(), catalog_key: rate.catalog_key.clone(),
+        currency_code: rate.currency_code.clone(), price_book_code: rate.price_book_code.clone(),
+        price_book_version: rate.price_book_version.clone(), rates: vec![rate],
+    }
+}
+
+fn merge_group_codes(target: &mut Vec<String>, source: &[String]) {
+    for code in source {
+        if !target.contains(code) { target.push(code.clone()); }
+    }
 }
 
 fn rate_from_row(row: sqlx::postgres::PgRow) -> Result<OfficialPricingRate, DomainError> {
@@ -201,4 +312,5 @@ mod tests {
     #[test] fn official_catalog_query_is_scoped_to_active_reference_prices() { assert!(LOAD_RATES_PREFIX.contains("book.price_side = 'official_reference'")); assert!(LOAD_RATES_PREFIX.contains("book.lifecycle_state = 'active'")); assert!(LOAD_RATES_PREFIX.contains("r.effective_from <= CURRENT_TIMESTAMP")); }
     #[test] fn category_projection_supports_domain_and_api_overlap() { assert!(CATEGORY_CODES_SQL.contains("THEN 'music'")); assert!(CATEGORY_CODES_SQL.contains("THEN 'api'")); assert!(CATEGORY_CODES_SQL.contains("THEN 'sound'")); assert!(!CATEGORY_CODES_SQL.contains("ESCAPE")); }
     #[test] fn official_catalog_total_is_independent_from_requested_page() { assert!(COUNT_RATES_SUFFIX.contains("COUNT(*) AS total")); assert!(!LOAD_RATES_SUFFIX.contains("COUNT(*) OVER()")); }
+    #[test] fn official_product_catalog_pages_product_groups_before_loading_rates() { assert!(COUNT_PRODUCT_GROUPS_SUFFIX.contains("COUNT(DISTINCT product_group_key)")); assert!(LOAD_PRODUCT_GROUP_RATES_SUFFIX.contains("LIMIT $7 OFFSET $8")); assert!(LOAD_PRODUCT_GROUP_RATES_SUFFIX.contains("JOIN paged_products")); }
 }

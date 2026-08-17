@@ -329,7 +329,7 @@ frontend_operations:
         properties:
           items:
             type: array
-            items:
+            items: &official-pricing-rate-schema
               additionalProperties: false
               name: OfficialPricingRate
               type: object
@@ -626,6 +626,102 @@ frontend_operations:
     response_schema:
       <<: *official-pricing-catalog-response
     query_parameters: *official-pricing-query-parameters
+  - route: /admin/pricing/settings
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
+    operation: fetchAdminOfficialPricingProducts
+    operation_id: officialProducts.list
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/pricing/official_products
+    sdk_domain: pricing
+    read_sources:
+      - pricing_price_book
+      - pricing_rate
+      - pricing_import_run
+    response_schema:
+      name: OfficialPricingProductCatalogResponse
+      schema:
+        additionalProperties: false
+        name: OfficialPricingProductCatalogResponse
+        type: object
+        properties:
+          items:
+            type: array
+            items:
+              additionalProperties: false
+              name: OfficialPricingProductGroup
+              type: object
+              properties:
+                groupKey: { type: string, minLength: 1 }
+                groupCodes:
+                  type: array
+                  items: { type: string, enum: [all, llm, image, video, audio, music, embedding, sound, api, other] }
+                productCode: { type: string }
+                productKind: { type: string }
+                productDisplayName: { type: string }
+                vendorCode: { type: string }
+                providerCode: { type: string }
+                regionCode: { type: string }
+                resourceType: { type: string }
+                resourceCode: { type: string }
+                catalogKey: { type: string, nullable: true }
+                currencyCode: { type: string, pattern: '^[A-Z]{3}$' }
+                priceBookCode: { type: string }
+                priceBookVersion: { type: string }
+                rates:
+                  type: array
+                  minItems: 1
+                  items: *official-pricing-rate-schema
+              required: [groupKey, groupCodes, productCode, productKind, productDisplayName,
+                vendorCode, providerCode, regionCode, resourceType, resourceCode, currencyCode,
+                priceBookCode, priceBookVersion, rates]
+          pageInfo:
+            $ref: '#/components/schemas/PageInfo'
+          groups:
+            type: array
+            items:
+              additionalProperties: false
+              name: OfficialPricingProductGroupFacet
+              type: object
+              properties:
+                id: { type: string }
+                code: { type: string }
+                count:
+                  type: string
+                  format: int64
+                  pattern: ^-?[0-9]+$
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
+              required: [id, code, count]
+          regions:
+            type: array
+            items:
+              additionalProperties: false
+              name: OfficialPricingProductRegionFacet
+              type: object
+              properties:
+                id: { type: string }
+                code: { type: string }
+                count:
+                  type: string
+                  format: int64
+                  pattern: ^-?[0-9]+$
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
+              required: [id, code, count]
+        required: [items, pageInfo, groups, regions]
+    query_parameters:
+      - name: category
+        schema: { type: string, enum: [all, llm, image, video, audio, music, embedding, sound, api, other] }
+      - name: q
+        schema: { type: string, maxLength: 256 }
+      - name: region_code
+        schema: { type: string, maxLength: 160, pattern: '^[A-Za-z0-9._:/-]+$' }
+      - name: page
+        schema: { type: integer, format: int32, minimum: 1 }
+      - name: page_size
+        schema: { type: integer, format: int32, minimum: 1, maximum: 200 }
   - route: /console/gateway
     source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway/src/gatewayService.ts
     operation: fetchTraces
