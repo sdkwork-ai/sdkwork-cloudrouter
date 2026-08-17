@@ -2867,6 +2867,24 @@
     },
     {
       "api_method": "GET",
+      "api_path": "/backend/v3/api/pricing/official_rates",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchAdminOfficialPricingRates",
+      "operation_scope": null,
+      "read_sources": [
+        "pricing_price_book",
+        "pricing_rate",
+        "pricing_import_run"
+      ],
+      "route": "/admin/pricing/settings",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
       "api_path": "/backend/v3/api/pricing/plans/{planId}",
       "api_surface": "backend",
       "file_targets": [],
@@ -5726,7 +5744,7 @@
     }
   ],
   "summary": {
-    "operation_count": 311,
+    "operation_count": 312,
     "source_file_count": 43,
     "write_operation_count": 132
   }
