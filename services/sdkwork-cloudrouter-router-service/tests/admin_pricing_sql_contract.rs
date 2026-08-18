@@ -8,6 +8,7 @@
 
 const POSTGRES_ADMIN_PRICING_STORE: &str =
     include_str!("../src/infrastructure/sql/postgres/admin_pricing_store.rs");
+const ADMIN_PRICING_API: &str = include_str!("../src/api/admin_pricing.rs");
 
 #[test]
 fn admin_pricing_plans_use_cloudrouter_pricing_plan_table() {
@@ -32,6 +33,7 @@ fn admin_pricing_plans_use_cloudrouter_pricing_plan_table() {
     assert!(plan_sections.contains("base_price_side"));
     assert!(plan_sections.contains("rounding_mode"));
     assert!(plan_sections.contains("minimum_charge_amount"));
+    assert!(plan_sections.contains("settlementMode"));
     assert!(
         !source.contains("ai_pricing_plan"),
         "admin pricing plan path must not reference the removed legacy ai_pricing_plan table"
@@ -134,6 +136,31 @@ fn admin_pricing_status_wire_values_match_billing_module_columns() {
     assert!(ports.contains("AdminPricingStatus::Inactive => 0"));
     // The postgres store binds the wire status through the port enum.
     assert!(source.contains("command.status.db_value()"));
+}
+
+#[test]
+fn admin_pricing_settlement_mode_defaults_to_synchronous_and_is_parameterized_on_update() {
+    let source = POSTGRES_ADMIN_PRICING_STORE;
+    assert!(source.contains("COALESCE(metadata->>'settlementMode', 'synchronous')"));
+    assert!(source.contains("'{settlementMode}'"));
+    assert!(source.contains("updated_at = $11"));
+    assert!(source.contains("WHERE id = $12"));
+}
+
+#[test]
+fn admin_pricing_patch_preserves_unprovided_billing_modes() {
+    assert!(
+        ADMIN_PRICING_API.contains("normalize_optional_charge_mode"),
+        "pricing plan PATCH must distinguish omitted chargeMode from the create default"
+    );
+    assert!(
+        ADMIN_PRICING_API.contains("normalize_optional_settlement_mode"),
+        "pricing plan PATCH must distinguish omitted settlementMode from the create default"
+    );
+    assert!(
+        ADMIN_PRICING_API.contains("load_pricing_plan(LoadAdminPricingPlanQuery"),
+        "pricing plan PATCH must load existing billing modes before applying partial input"
+    );
 }
 
 fn source_section<'a>(source: &'a str, start: &str, end: &str) -> &'a str {

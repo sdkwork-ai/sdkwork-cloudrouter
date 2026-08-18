@@ -53,10 +53,45 @@ fn capability_manifests() -> Vec<HttpRouteManifest> {
     ]
 }
 
-/// Composed app-surface route manifest: host-owned routes plus every mounted
-/// capability manifest. Fails fast when a capability declares a method+path
-/// that the host or another capability already owns.
-pub fn cloud_router_app_composed_route_manifest() -> HttpRouteManifest {
+/// Capability workspaces whose app surfaces the platform cloud gateway mounts
+/// as separate assembly contributions (API_ASSEMBLY_SPEC §6.1 same-origin
+/// composition). Their app routes are excluded from the platform-gateway
+/// composed surface below so the platform gateway's exact route registry
+/// never sees one method+path owned by two services; the routes still mount
+/// through the capability contributions themselves.
+const PLATFORM_GATEWAY_MOUNTED_CAPABILITIES: &[&str] = &[
+    "sdkwork-account",
+    "sdkwork-community",
+    "sdkwork-invoice",
+    "sdkwork-membership",
+    "sdkwork-payment",
+    "sdkwork-promotion",
+];
+
+/// Capability app-API manifests for the platform cloud gateway surface:
+/// the capabilities the platform gateway wires itself are omitted.
+fn capability_manifests_for_platform_gateway() -> Vec<HttpRouteManifest> {
+    vec![
+        sdkwork_api_models_assembly::app_api_route_manifest(),
+        sdkwork_api_partner_assembly::app_api_route_manifest(),
+    ]
+}
+
+/// Capability workspace names in [`capability_manifests`] order.
+fn capability_workspaces() -> Vec<&'static str> {
+    vec![
+        "sdkwork-models",
+        "sdkwork-membership",
+        "sdkwork-payment",
+        "sdkwork-promotion",
+        "sdkwork-invoice",
+        "sdkwork-partner",
+        "sdkwork-account",
+        "sdkwork-community",
+    ]
+}
+
+fn compose_capability_manifests(capabilities: Vec<HttpRouteManifest>) -> HttpRouteManifest {
     let owned = http_route_manifest();
     let mut routes = owned.routes().to_vec();
     let mut seen: BTreeSet<(String, String)> = routes
@@ -68,7 +103,7 @@ pub fn cloud_router_app_composed_route_manifest() -> HttpRouteManifest {
             )
         })
         .collect();
-    for manifest in capability_manifests() {
+    for manifest in capabilities {
         for route in manifest.routes() {
             let identity = (
                 method_label(route.method).to_owned(),
@@ -86,6 +121,28 @@ pub fn cloud_router_app_composed_route_manifest() -> HttpRouteManifest {
         }
     }
     HttpRouteManifest::from_owned_routes(routes)
+}
+
+/// Composed app-surface route manifest: host-owned routes plus every mounted
+/// capability manifest. Fails fast when a capability declares a method+path
+/// that the host or another capability already owns.
+pub fn cloud_router_app_composed_route_manifest() -> HttpRouteManifest {
+    compose_capability_manifests(capability_manifests())
+}
+
+/// Composed app-surface route manifest for the platform cloud gateway
+/// (`ApiAssemblyContext::cloud_gateway`): host-owned routes plus the
+/// capability manifests whose workspaces the platform gateway does not mount
+/// as separate contributions. Capabilities listed in
+/// [`PLATFORM_GATEWAY_MOUNTED_CAPABILITIES`] mount their app routes through
+/// their own gateway contributions, so including them here would duplicate
+/// every route in the platform gateway's combined manifest and fail its exact
+/// route registry.
+pub fn cloud_router_app_composed_route_manifest_for_platform_gateway() -> HttpRouteManifest {
+    debug_assert!(PLATFORM_GATEWAY_MOUNTED_CAPABILITIES
+        .iter()
+        .all(|workspace| capability_workspaces().contains(workspace)));
+    compose_capability_manifests(capability_manifests_for_platform_gateway())
 }
 
 fn method_label(method: HttpMethod) -> &'static str {

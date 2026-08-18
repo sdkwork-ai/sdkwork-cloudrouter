@@ -23,7 +23,7 @@ export class BillingReferralStatsApi {
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AdminReferralStatListResponse>(appendQueryString(backendApiPath(`/billing/referrals/stats`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<AdminReferralStatListResponse>(appendQueryString(backendApiPath(`/billing/referrals/stats`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 
@@ -48,7 +48,7 @@ export class BillingReferralRelationsApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AdminReferralRelationListResponse>(appendQueryString(backendApiPath(`/billing/referrals/relations`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<AdminReferralRelationListResponse>(appendQueryString(backendApiPath(`/billing/referrals/relations`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 
@@ -75,27 +75,27 @@ export class BillingReferralStrategiesApi {
       { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AdminReferralStrategyListResponse>(appendQueryString(backendApiPath(`/billing/referral_strategies`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<AdminReferralStrategyListResponse>(appendQueryString(backendApiPath(`/billing/referral_strategies`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Create referral strategy */
   async create(body: AdminReferralStrategyMutationRequest, requestOptions?: ApiRequestOptions): Promise<AdminReferralStrategy> {
-    return this.client.request<AdminReferralStrategy>(backendApiPath(`/billing/referral_strategies`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminReferralStrategy>(backendApiPath(`/billing/referral_strategies`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 
 /** Delete referral strategy */
   async delete(strategyId: string, requestOptions?: ApiRequestOptions): Promise<void> {
-    return this.client.request<void>(backendApiPath(`/billing/referral_strategies/${serializePathParameter(strategyId, { name: 'strategyId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<void>(backendApiPath(`/billing/referral_strategies/${serializePathParameter(strategyId, { name: 'strategyId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Retrieve referral strategy */
   async retrieve(strategyId: string, requestOptions?: ApiRequestOptions): Promise<AdminReferralStrategy> {
-    return this.client.request<AdminReferralStrategy>(backendApiPath(`/billing/referral_strategies/${serializePathParameter(strategyId, { name: 'strategyId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminReferralStrategy>(backendApiPath(`/billing/referral_strategies/${serializePathParameter(strategyId, { name: 'strategyId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 
 /** Update referral strategy */
   async update(strategyId: string, body: AdminReferralStrategyMutationRequest, requestOptions?: ApiRequestOptions): Promise<AdminReferralStrategy> {
-    return this.client.request<AdminReferralStrategy>(backendApiPath(`/billing/referral_strategies/${serializePathParameter(strategyId, { name: 'strategyId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminReferralStrategy>(backendApiPath(`/billing/referral_strategies/${serializePathParameter(strategyId, { name: 'strategyId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -118,12 +118,12 @@ export class BillingRechargeRecordsApi {
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AdminRechargeRecordPage>(appendQueryString(backendApiPath(`/billing/recharges/records`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<AdminRechargeRecordPage>(appendQueryString(backendApiPath(`/billing/recharges/records`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** List recharge record */
   async retrieve(orderNo: string, requestOptions?: ApiRequestOptions): Promise<AdminRechargeRecord> {
-    return this.client.request<AdminRechargeRecord>(backendApiPath(`/billing/recharges/records/${serializePathParameter(orderNo, { name: 'orderNo', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminRechargeRecord>(backendApiPath(`/billing/recharges/records/${serializePathParameter(orderNo, { name: 'orderNo', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -152,17 +152,16 @@ export class BillingExchangeRulesApi {
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AdminExchangeRuleListResponse>(appendQueryString(backendApiPath(`/billing/exchange_rules`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<AdminExchangeRuleListResponse>(appendQueryString(backendApiPath(`/billing/exchange_rules`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Update */
   async update(body: ExchangeRuleMutationRequest, requestOptions?: ApiRequestOptions): Promise<AdminExchangeRule> {
-    return this.client.request<AdminExchangeRule>(backendApiPath(`/billing/exchange_rules`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminExchangeRule>(backendApiPath(`/billing/exchange_rules`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PUT' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 
 export class BillingApi {
-  private client: HttpClient;
   public readonly exchangeRules: BillingExchangeRulesApi;
   public readonly rechargeRecords: BillingRechargeRecordsApi;
   public readonly referralStrategies: BillingReferralStrategiesApi;
@@ -170,7 +169,6 @@ export class BillingApi {
   public readonly referralStats: BillingReferralStatsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.exchangeRules = new BillingExchangeRulesApi(client);
     this.rechargeRecords = new BillingRechargeRecordsApi(client);
     this.referralStrategies = new BillingReferralStrategiesApi(client);

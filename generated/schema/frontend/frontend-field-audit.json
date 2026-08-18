@@ -2304,6 +2304,8 @@
         "effectiveFrom",
         "effectiveTo",
         "status",
+        "chargeMode",
+        "settlementMode",
         "createdAt",
         "updatedAt",
         "version"
@@ -2327,7 +2329,9 @@
         "minimumChargeAmount",
         "effectiveFrom",
         "effectiveTo",
-        "status"
+        "status",
+        "chargeMode",
+        "settlementMode"
       ],
       "file_targets": [],
       "interface": "AdminPricingPlanMutationInput",

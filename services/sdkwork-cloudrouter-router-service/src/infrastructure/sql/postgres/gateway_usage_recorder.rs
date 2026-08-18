@@ -956,11 +956,13 @@ async fn load_official_rate_identity(
         &reference
             .conditions
             .iter()
-            .map(|condition| serde_json::json!({
-                "dimensionCode": condition.dimension_code,
-                "operatorCode": condition.operator_code,
-                "value": condition.value,
-            }))
+            .map(|condition| {
+                serde_json::json!({
+                    "dimensionCode": condition.dimension_code,
+                    "operatorCode": condition.operator_code,
+                    "value": condition.value,
+                })
+            })
             .collect::<Vec<_>>(),
     )
     .map_err(|error| {
@@ -1006,7 +1008,9 @@ async fn load_pricing_policy_identity(
         .official_rate
         .as_ref()
         .and_then(|reference| reference.record_identity.as_ref())
-        .ok_or_else(|| pricing_identity_error(command, "pricing policy record identity is missing"))?;
+        .ok_or_else(|| {
+            pricing_identity_error(command, "pricing policy record identity is missing")
+        })?;
     sqlx::query_as::<_, ActivePricingPlanRow>(LOAD_PRICING_POLICY_IDENTITY)
         .bind(identity.account_rate_card_tenant_id)
         .bind(identity.account_rate_card_organization_id)

@@ -1247,6 +1247,15 @@
             ],
             "type": "string"
           },
+          "chargeMode": {
+            "default": "prepaid_adjustment",
+            "description": "Charge mode field on admin pricing plan.",
+            "enum": [
+              "prepaid_adjustment",
+              "postpaid"
+            ],
+            "type": "string"
+          },
           "createdAt": {
             "description": "Created at field on admin pricing plan.",
             "format": "date-time",
@@ -1286,7 +1295,7 @@
           },
           "minimumChargeAmount": {
             "description": "Minimum charge amount field on admin pricing plan.",
-            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
             "type": "string"
           },
           "planCode": {
@@ -1306,6 +1315,15 @@
               "half_even",
               "up",
               "down"
+            ],
+            "type": "string"
+          },
+          "settlementMode": {
+            "default": "synchronous",
+            "description": "Settlement mode field on admin pricing plan.",
+            "enum": [
+              "synchronous",
+              "asynchronous"
             ],
             "type": "string"
           },
@@ -1499,7 +1517,7 @@
           },
           "markupAmount": {
             "description": "Markup amount field on admin pricing rule.",
-            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
             "type": "string"
           },
           "meterCode": {
@@ -1509,7 +1527,7 @@
           },
           "multiplier": {
             "description": "Multiplier field on admin pricing rule.",
-            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
             "type": "string"
           },
           "operationCode": {
@@ -1664,7 +1682,7 @@
           },
           "unitPriceOverride": {
             "description": "Unit price override field on admin pricing rule.",
-            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
             "type": "string"
           },
           "updatedAt": {
@@ -6518,12 +6536,28 @@
               }
             ],
             "description": "Page info field on official pricing product catalog response."
+          },
+          "regions": {
+            "description": "Regions field on official pricing product catalog response.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingProductRegionFacet"
+            },
+            "type": "array"
+          },
+          "vendors": {
+            "description": "Vendors field on official pricing product catalog response.",
+            "items": {
+              "$ref": "#/components/schemas/OfficialPricingProductVendorFacet"
+            },
+            "type": "array"
           }
         },
         "required": [
           "items",
           "pageInfo",
-          "groups"
+          "groups",
+          "vendors",
+          "regions"
         ],
         "type": "object"
       },
@@ -6606,6 +6640,10 @@
             "description": "Resource code field on official pricing product group.",
             "type": "string"
           },
+          "resourceDisplayName": {
+            "description": "Resource display name field on official pricing product group.",
+            "type": "string"
+          },
           "resourceType": {
             "description": "Resource type field on official pricing product group.",
             "type": "string"
@@ -6626,6 +6664,7 @@
           "regionCode",
           "resourceType",
           "resourceCode",
+          "resourceDisplayName",
           "currencyCode",
           "priceBookCode",
           "priceBookVersion",
@@ -6651,6 +6690,62 @@
           },
           "id": {
             "description": "Id field on official pricing product group facet.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "count"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingProductRegionFacet": {
+        "additionalProperties": false,
+        "description": "Official pricing product region facet schema exposed by Cloud Router.",
+        "properties": {
+          "code": {
+            "description": "Code field on official pricing product region facet.",
+            "type": "string"
+          },
+          "count": {
+            "description": "Count field on official pricing product region facet.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "id": {
+            "description": "Id field on official pricing product region facet.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "count"
+        ],
+        "type": "object"
+      },
+      "OfficialPricingProductVendorFacet": {
+        "additionalProperties": false,
+        "description": "Official pricing product vendor facet schema exposed by Cloud Router.",
+        "properties": {
+          "code": {
+            "description": "Code field on official pricing product vendor facet.",
+            "type": "string"
+          },
+          "count": {
+            "description": "Count field on official pricing product vendor facet.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          },
+          "id": {
+            "description": "Id field on official pricing product vendor facet.",
             "type": "string"
           }
         },
@@ -8012,6 +8107,15 @@
             ],
             "type": "string"
           },
+          "chargeMode": {
+            "default": "prepaid_adjustment",
+            "description": "Charge mode field on pricing plan create request.",
+            "enum": [
+              "prepaid_adjustment",
+              "postpaid"
+            ],
+            "type": "string"
+          },
           "currencyCode": {
             "description": "Currency code field on pricing plan create request.",
             "maxLength": 10,
@@ -8032,7 +8136,7 @@
           },
           "minimumChargeAmount": {
             "description": "Minimum charge amount field on pricing plan create request.",
-            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
             "type": "string"
           },
           "planCode": {
@@ -8052,6 +8156,15 @@
               "half_even",
               "up",
               "down"
+            ],
+            "type": "string"
+          },
+          "settlementMode": {
+            "default": "synchronous",
+            "description": "Settlement mode field on pricing plan create request.",
+            "enum": [
+              "synchronous",
+              "asynchronous"
             ],
             "type": "string"
           },
@@ -8090,6 +8203,15 @@
             ],
             "type": "string"
           },
+          "chargeMode": {
+            "default": "prepaid_adjustment",
+            "description": "Charge mode field on pricing plan update request.",
+            "enum": [
+              "prepaid_adjustment",
+              "postpaid"
+            ],
+            "type": "string"
+          },
           "currencyCode": {
             "description": "Currency code field on pricing plan update request.",
             "maxLength": 10,
@@ -8110,7 +8232,7 @@
           },
           "minimumChargeAmount": {
             "description": "Minimum charge amount field on pricing plan update request.",
-            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
             "type": "string"
           },
           "planCode": {
@@ -8130,6 +8252,15 @@
               "half_even",
               "up",
               "down"
+            ],
+            "type": "string"
+          },
+          "settlementMode": {
+            "default": "synchronous",
+            "description": "Settlement mode field on pricing plan update request.",
+            "enum": [
+              "synchronous",
+              "asynchronous"
             ],
             "type": "string"
           },
@@ -8266,7 +8397,7 @@
           },
           "markupAmount": {
             "description": "Markup amount field on pricing rule create request.",
-            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
             "type": "string"
           },
           "meterCode": {
@@ -8276,7 +8407,7 @@
           },
           "multiplier": {
             "description": "Multiplier field on pricing rule create request.",
-            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
             "type": "string"
           },
           "operationCode": {
@@ -8426,7 +8557,7 @@
           },
           "unitPriceOverride": {
             "description": "Unit price override field on pricing rule create request.",
-            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
             "type": "string"
           }
         },
@@ -8552,7 +8683,7 @@
           },
           "markupAmount": {
             "description": "Markup amount field on pricing rule update request.",
-            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
             "type": "string"
           },
           "meterCode": {
@@ -8562,7 +8693,7 @@
           },
           "multiplier": {
             "description": "Multiplier field on pricing rule update request.",
-            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
             "type": "string"
           },
           "operationCode": {
@@ -8712,7 +8843,7 @@
           },
           "unitPriceOverride": {
             "description": "Unit price override field on pricing rule update request.",
-            "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+            "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
             "type": "string"
           }
         },
@@ -19125,6 +19256,35 @@
             "required": false,
             "schema": {
               "maxLength": 256,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Vendor codes query parameter.",
+            "explode": false,
+            "in": "query",
+            "name": "vendor_codes",
+            "required": false,
+            "schema": {
+              "items": {
+                "maxLength": 160,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9._:/-]+$",
+                "type": "string"
+              },
+              "maxItems": 200,
+              "type": "array"
+            },
+            "style": "form"
+          },
+          {
+            "description": "Region code query parameter.",
+            "in": "query",
+            "name": "region_code",
+            "required": false,
+            "schema": {
+              "maxLength": 160,
+              "pattern": "^[A-Za-z0-9._:/-]+$",
               "type": "string"
             }
           },

@@ -14,65 +14,55 @@ export class VideosVolcengineApiV3ContentsGenerationsTasksApi {
 
 /** Volcengine Ark content generation task */
   async create(body: VolcengineContentGenerationTaskCreateRequest, requestOptions?: ApiRequestOptions): Promise<VolcengineContentGenerationTaskCreateResponse> {
-    return this.client.request<VolcengineContentGenerationTaskCreateResponse>(aiApiPath(`/volcengine/api/v3/contents/generations/tasks`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<VolcengineContentGenerationTaskCreateResponse>(aiApiPath(`/volcengine/api/v3/contents/generations/tasks`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Volcengine Ark retrieve content generation task */
   async retrieve(taskId: string, requestOptions?: ApiRequestOptions): Promise<VolcengineContentGenerationTask> {
-    return this.client.request<VolcengineContentGenerationTask>(aiApiPath(`/volcengine/api/v3/contents/generations/tasks/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<VolcengineContentGenerationTask>(aiApiPath(`/volcengine/api/v3/contents/generations/tasks/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 
 export class VideosVolcengineApiV3ContentsGenerationsApi {
-  private client: HttpClient;
   public readonly tasks: VideosVolcengineApiV3ContentsGenerationsTasksApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.tasks = new VideosVolcengineApiV3ContentsGenerationsTasksApi(client);
   }
 
 }
 
 export class VideosVolcengineApiV3ContentsApi {
-  private client: HttpClient;
   public readonly generations: VideosVolcengineApiV3ContentsGenerationsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.generations = new VideosVolcengineApiV3ContentsGenerationsApi(client);
   }
 
 }
 
 export class VideosVolcengineApiV3Api {
-  private client: HttpClient;
   public readonly contents: VideosVolcengineApiV3ContentsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.contents = new VideosVolcengineApiV3ContentsApi(client);
   }
 
 }
 
 export class VideosVolcengineApiApi {
-  private client: HttpClient;
   public readonly v3: VideosVolcengineApiV3Api;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.v3 = new VideosVolcengineApiV3Api(client);
   }
 
 }
 
 export class VideosVolcengineApi {
-  private client: HttpClient;
   public readonly api: VideosVolcengineApiApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.api = new VideosVolcengineApiApi(client);
   }
 
@@ -82,13 +72,7 @@ export function createVideosVolcengineApi(client: HttpClient): VideosVolcengineA
   return new VideosVolcengineApi(client);
 }
 
-function appendQueryString(path: string, rawQueryString: string): string {
-  const query = rawQueryString.replace(/^\?+/, '');
-  if (!query) {
-    return path;
-  }
-  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
-}
+
 
 interface PathParameterSpec {
   name: string;

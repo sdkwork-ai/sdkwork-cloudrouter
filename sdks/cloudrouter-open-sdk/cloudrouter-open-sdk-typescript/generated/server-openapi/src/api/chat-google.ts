@@ -14,7 +14,7 @@ export class ChatGoogleV1betaModelsModelStreamGenerateContentApi {
 
 /** Google Gemini stream generate content */
   async create(model: string, body: GoogleGenerateContentRequest, requestOptions?: ApiRequestOptions): Promise<GoogleGenerateContentResponse> {
-    return this.client.request<GoogleGenerateContentResponse>(aiApiPath(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:streamGenerateContent`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<GoogleGenerateContentResponse>(aiApiPath(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:streamGenerateContent`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -28,7 +28,7 @@ export class ChatGoogleV1betaModelsModelGenerateContentApi {
 
 /** Google Gemini generate content */
   async create(model: string, body: GoogleGenerateContentRequest, requestOptions?: ApiRequestOptions): Promise<GoogleGenerateContentResponse> {
-    return this.client.request<GoogleGenerateContentResponse>(aiApiPath(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:generateContent`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<GoogleGenerateContentResponse>(aiApiPath(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:generateContent`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -42,18 +42,16 @@ export class ChatGoogleV1betaModelsModelCountTokensApi {
 
 /** Google Gemini count tokens */
   async create(model: string, body: GoogleCountTokensRequest, requestOptions?: ApiRequestOptions): Promise<GoogleCountTokensResponse> {
-    return this.client.request<GoogleCountTokensResponse>(aiApiPath(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:countTokens`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<GoogleCountTokensResponse>(aiApiPath(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:countTokens`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
 export class ChatGoogleV1betaModelsApi {
-  private client: HttpClient;
   public readonly modelCountTokens: ChatGoogleV1betaModelsModelCountTokensApi;
   public readonly modelGenerateContent: ChatGoogleV1betaModelsModelGenerateContentApi;
   public readonly modelStreamGenerateContent: ChatGoogleV1betaModelsModelStreamGenerateContentApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.modelCountTokens = new ChatGoogleV1betaModelsModelCountTokensApi(client);
     this.modelGenerateContent = new ChatGoogleV1betaModelsModelGenerateContentApi(client);
     this.modelStreamGenerateContent = new ChatGoogleV1betaModelsModelStreamGenerateContentApi(client);
@@ -62,22 +60,18 @@ export class ChatGoogleV1betaModelsApi {
 }
 
 export class ChatGoogleV1betaApi {
-  private client: HttpClient;
   public readonly models: ChatGoogleV1betaModelsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.models = new ChatGoogleV1betaModelsApi(client);
   }
 
 }
 
 export class ChatGoogleApi {
-  private client: HttpClient;
   public readonly v1beta: ChatGoogleV1betaApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.v1beta = new ChatGoogleV1betaApi(client);
   }
 
@@ -87,13 +81,7 @@ export function createChatGoogleApi(client: HttpClient): ChatGoogleApi {
   return new ChatGoogleApi(client);
 }
 
-function appendQueryString(path: string, rawQueryString: string): string {
-  const query = rawQueryString.replace(/^\?+/, '');
-  if (!query) {
-    return path;
-  }
-  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
-}
+
 
 interface PathParameterSpec {
   name: string;

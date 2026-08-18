@@ -248,7 +248,9 @@ fn official_rate_reference(resolution: &PriceResolution) -> Option<GatewayOffici
     })
 }
 
-fn pricing_record_identity(resolved: &crate::application::ResolvedModelPrice) -> Option<GatewayRatingRecordIdentity> {
+fn pricing_record_identity(
+    resolved: &crate::application::ResolvedModelPrice,
+) -> Option<GatewayRatingRecordIdentity> {
     let rate = resolved
         .official_reference
         .rate_metadata

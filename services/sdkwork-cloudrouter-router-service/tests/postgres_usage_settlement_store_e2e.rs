@@ -179,6 +179,50 @@ async fn settlement_replays_idempotently_without_double_debit() {
 }
 
 #[tokio::test]
+async fn settlement_recovers_after_sync_ledger_commit_without_double_debit() {
+    let Some(ctx) = PostgresTestContext::new("usage_settlement_sync_recovery").await else {
+        return;
+    };
+    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-sync-recovery-credit", 1000)
+        .await
+        .expect("credit token bank wallet");
+    let request_id = "settle-e2e-sync-recovery";
+    insert_usage_fact(&ctx.pool, 1, USER_ID, request_id, "20.000000")
+        .await
+        .expect("insert pending usage fact");
+
+    // Model the failure window after synchronous account settlement commits
+    // but before the usage fact status update. The worker must discover this
+    // deterministic request-scoped ledger entry and only finish the status
+    // transition, without appending a second debit.
+    append_token_bank_ledger(
+        &ctx.pool,
+        USER_ID,
+        CommerceLedgerDirection::Debit,
+        200,
+        "gateway_invocation_billing",
+        &format!("cloudrouter:{request_id}:postpaid"),
+    )
+    .await
+    .expect("append existing synchronous settlement");
+
+    let settlement = PostgresUsageSettlementStore::new(
+        ctx.pool.clone(),
+        postgres_account_ledger_append_port(ctx.pool.clone()),
+    );
+    let outcome = settlement
+        .settle_pending_usage(settlement_command(100))
+        .await
+        .expect("settle pending usage");
+
+    assert_eq!(1, outcome.settled_count);
+    assert_eq!(0, outcome.debited_tokens);
+    assert_eq!(800, token_bank_balance(&ctx.pool, USER_ID).await);
+
+    ctx.cleanup().await;
+}
+
+#[tokio::test]
 async fn settlement_defers_zero_amount_groups() {
     let Some(ctx) = PostgresTestContext::new("usage_settlement_zero").await else {
         return;
@@ -205,6 +249,129 @@ async fn settlement_defers_zero_amount_groups() {
         0, status,
         "sub-point usage facts must stay pending for deferral until they aggregate"
     );
+
+    ctx.cleanup().await;
+}
+
+#[tokio::test]
+async fn settlement_marks_exact_zero_amount_as_settled() {
+    let Some(ctx) = PostgresTestContext::new("usage_settlement_exact_zero").await else {
+        return;
+    };
+    insert_usage_fact(&ctx.pool, 1, USER_ID, "settle-e2e-exact-zero", "0")
+        .await
+        .expect("insert exact zero usage fact");
+
+    let settlement = PostgresUsageSettlementStore::new(
+        ctx.pool.clone(),
+        postgres_account_ledger_append_port(ctx.pool.clone()),
+    );
+    let outcome = settlement
+        .settle_pending_usage(settlement_command(100))
+        .await
+        .expect("settle exact zero usage");
+
+    assert_eq!(1, outcome.settled_count);
+    assert_eq!(0, outcome.failed_count);
+    assert_eq!(0, outcome.debited_tokens);
+    let (status, _) = usage_fact_settlement(&ctx.pool, 1).await;
+    assert_eq!(2, status, "zero-priced facts must leave the pending queue");
+
+    ctx.cleanup().await;
+}
+
+#[tokio::test]
+async fn settlement_recovers_after_async_adjustment_without_double_credit() {
+    let Some(ctx) = PostgresTestContext::new("usage_settlement_async_recovery").await else {
+        return;
+    };
+    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-async-recovery-credit", 1000)
+        .await
+        .expect("credit token bank wallet");
+    let request_id = "settle-e2e-async-recovery";
+    insert_usage_fact(&ctx.pool, 1, USER_ID, request_id, "20.000000")
+        .await
+        .expect("insert pending usage fact");
+
+    // Model an asynchronous precharge (300 tokens) followed by a committed
+    // 100-token refund where the worker crashed before marking usage settled.
+    append_token_bank_ledger_with_request_no(
+        &ctx.pool,
+        USER_ID,
+        CommerceLedgerDirection::Debit,
+        300,
+        "gateway_invocation_billing",
+        &format!("cloudrouter:{request_id}:precharge"),
+        request_id,
+    )
+    .await
+    .expect("append precharge");
+    append_token_bank_ledger_with_request_no(
+        &ctx.pool,
+        USER_ID,
+        CommerceLedgerDirection::Credit,
+        100,
+        "usage_settlement",
+        &format!("cloudrouter:{request_id}:async-adjust-credit"),
+        request_id,
+    )
+    .await
+    .expect("append existing async adjustment");
+
+    let settlement = PostgresUsageSettlementStore::new(
+        ctx.pool.clone(),
+        postgres_account_ledger_append_port(ctx.pool.clone()),
+    );
+    let outcome = settlement
+        .settle_pending_usage(settlement_command(100))
+        .await
+        .expect("recover async settlement");
+
+    assert_eq!(1, outcome.settled_count);
+    assert_eq!(0, outcome.debited_tokens);
+    assert_eq!(800, token_bank_balance(&ctx.pool, USER_ID).await);
+    let (status, _) = usage_fact_settlement(&ctx.pool, 1).await;
+    assert_eq!(2, status);
+
+    ctx.cleanup().await;
+}
+
+#[tokio::test]
+async fn settlement_flushes_positive_micro_amount_after_bounded_wait() {
+    let Some(ctx) = PostgresTestContext::new("usage_settlement_micro_flush").await else {
+        return;
+    };
+    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-micro-credit", 10)
+        .await
+        .expect("credit token bank wallet");
+    insert_usage_fact(
+        &ctx.pool,
+        1,
+        USER_ID,
+        "settle-e2e-micro-old",
+        "0.0000000001",
+    )
+    .await
+    .expect("insert pending micro usage fact");
+    sqlx::query(
+        "UPDATE ai_metering_usage SET occurred_at = CURRENT_TIMESTAMP - interval '16 minutes' WHERE id = 1",
+    )
+    .execute(&ctx.pool)
+    .await
+    .expect("age micro usage fact");
+
+    let settlement = PostgresUsageSettlementStore::new(
+        ctx.pool.clone(),
+        postgres_account_ledger_append_port(ctx.pool.clone()),
+    );
+    let outcome = settlement
+        .settle_pending_usage(settlement_command(100))
+        .await
+        .expect("settle pending usage");
+
+    assert_eq!(1, outcome.settled_count);
+    assert_eq!(1, outcome.debited_tokens);
+    assert_eq!(9, token_bank_balance(&ctx.pool, USER_ID).await);
 
     ctx.cleanup().await;
 }
@@ -324,6 +491,46 @@ async fn credit_token_bank(
     idempotency_key: &str,
     tokens: i64,
 ) -> Result<(), String> {
+    append_token_bank_ledger(
+        pool,
+        user_id,
+        CommerceLedgerDirection::Credit,
+        tokens,
+        "token_bank_recharge",
+        idempotency_key,
+    )
+    .await
+}
+
+async fn append_token_bank_ledger(
+    pool: &PgPool,
+    user_id: i64,
+    direction: CommerceLedgerDirection,
+    tokens: i64,
+    business_type: &str,
+    transaction_no: &str,
+) -> Result<(), String> {
+    append_token_bank_ledger_with_request_no(
+        pool,
+        user_id,
+        direction,
+        tokens,
+        business_type,
+        transaction_no,
+        transaction_no,
+    )
+    .await
+}
+
+async fn append_token_bank_ledger_with_request_no(
+    pool: &PgPool,
+    user_id: i64,
+    direction: CommerceLedgerDirection,
+    tokens: i64,
+    business_type: &str,
+    transaction_no: &str,
+    request_no: &str,
+) -> Result<(), String> {
     let store = postgres_account_ledger_append_port(pool.clone());
     let append = AppendLedgerEntryCommand {
         tenant_id: TENANT_ID.to_string(),
@@ -332,18 +539,18 @@ async fn credit_token_bank(
         account_id: String::new(),
         asset_type: CommerceAccountAssetType::TokenBank,
         currency_code: Some("TOKEN_BANK".to_owned()),
-        direction: CommerceLedgerDirection::Credit,
+        direction,
         amount: CommerceMoney::new(&tokens.to_string()).map_err(|error| error.to_string())?,
-        business_type: "token_bank_recharge".to_owned(),
-        transaction_no: idempotency_key.to_owned(),
-        request_no: idempotency_key.to_owned(),
-        idempotency_key: idempotency_key.to_owned(),
+        business_type: business_type.to_owned(),
+        transaction_no: transaction_no.to_owned(),
+        request_no: request_no.to_owned(),
+        idempotency_key: transaction_no.to_owned(),
         owner_type: None,
         account_purpose: None,
         expires_at: None,
         reversed_ledger_id: None,
     };
-    let digest = sha256_hash(idempotency_key.as_bytes());
+    let digest = sha256_hash(transaction_no.as_bytes());
     let request_hash =
         CommerceRequestHash::new(&digest).map_err(|error| error.message().to_owned())?;
     store

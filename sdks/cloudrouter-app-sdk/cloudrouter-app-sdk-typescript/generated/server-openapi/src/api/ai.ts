@@ -31,16 +31,14 @@ export class AiUsageLogsApi {
       { name: 'start_time', value: params?.startTime, style: 'form', explode: true, allowReserved: false },
       { name: 'end_time', value: params?.endTime, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<UsageLogsResponse>(appendQueryString(appApiPath(`/ai/usage/logs`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<UsageLogsResponse>(appendQueryString(appApiPath(`/ai/usage/logs`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 
 export class AiUsageApi {
-  private client: HttpClient;
   public readonly logs: AiUsageLogsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.logs = new AiUsageLogsApi(client);
   }
 
@@ -63,16 +61,14 @@ export class AiSettlementsDashboardApi {
     const query = buildQueryString([
       { name: 'year', value: params?.year, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<SettlementsDashboardSnapshot>(appendQueryString(appApiPath(`/ai/settlements/dashboard`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<SettlementsDashboardSnapshot>(appendQueryString(appApiPath(`/ai/settlements/dashboard`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
 export class AiSettlementsApi {
-  private client: HttpClient;
   public readonly dashboard: AiSettlementsDashboardApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.dashboard = new AiSettlementsDashboardApi(client);
   }
 
@@ -88,7 +84,7 @@ export class AiRoutingUsageApi {
 
 /** List routing usage */
   async retrieve(requestOptions?: ApiRequestOptions): Promise<AppRoutingUsageSnapshot> {
-    return this.client.request<AppRoutingUsageSnapshot>(appApiPath(`/ai/routing/usage`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<AppRoutingUsageSnapshot>(appApiPath(`/ai/routing/usage`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -113,7 +109,7 @@ export class AiRoutingRequestTracesApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AppRoutingRequestTraceListResponse>(appendQueryString(appApiPath(`/ai/routing/request_traces`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<AppRoutingRequestTraceListResponse>(appendQueryString(appApiPath(`/ai/routing/request_traces`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 
@@ -138,7 +134,7 @@ export class AiRoutingApiKeysApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AppRoutingApiKeyListResponse>(appendQueryString(appApiPath(`/ai/routing/api_keys`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<AppRoutingApiKeyListResponse>(appendQueryString(appApiPath(`/ai/routing/api_keys`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 
@@ -163,19 +159,17 @@ export class AiRoutingAccountGroupsApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AppRoutingAccountGroupListResponse>(appendQueryString(appApiPath(`/ai/routing/account_groups`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<AppRoutingAccountGroupListResponse>(appendQueryString(appApiPath(`/ai/routing/account_groups`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 
 export class AiRoutingApi {
-  private client: HttpClient;
   public readonly accountGroups: AiRoutingAccountGroupsApi;
   public readonly apiKeys: AiRoutingApiKeysApi;
   public readonly requestTraces: AiRoutingRequestTracesApi;
   public readonly usage: AiRoutingUsageApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.accountGroups = new AiRoutingAccountGroupsApi(client);
     this.apiKeys = new AiRoutingApiKeysApi(client);
     this.requestTraces = new AiRoutingRequestTracesApi(client);
@@ -215,16 +209,14 @@ export class AiPricingRatesApi {
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OfficialPricingCatalogResponse>(appendQueryString(appApiPath(`/ai/pricing/rates`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<OfficialPricingCatalogResponse>(appendQueryString(appApiPath(`/ai/pricing/rates`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 
 export class AiPricingApi {
-  private client: HttpClient;
   public readonly rates: AiPricingRatesApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.rates = new AiPricingRatesApi(client);
   }
 
@@ -251,16 +243,14 @@ export class AiGatewayTracesApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<GatewayTracesPage>(appendQueryString(appApiPath(`/ai/gateway/traces`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<GatewayTracesPage>(appendQueryString(appApiPath(`/ai/gateway/traces`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 
 export class AiGatewayApi {
-  private client: HttpClient;
   public readonly traces: AiGatewayTracesApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.traces = new AiGatewayTracesApi(client);
   }
 
@@ -287,23 +277,20 @@ export class AiDashboardOverviewApi {
       { name: 'start_time', value: params?.startTime, style: 'form', explode: true, allowReserved: false },
       { name: 'end_time', value: params?.endTime, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<DashboardOverviewResponse>(appendQueryString(appApiPath(`/ai/dashboard/overview`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<DashboardOverviewResponse>(appendQueryString(appApiPath(`/ai/dashboard/overview`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
 export class AiDashboardApi {
-  private client: HttpClient;
   public readonly overview: AiDashboardOverviewApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.overview = new AiDashboardOverviewApi(client);
   }
 
 }
 
 export class AiApi {
-  private client: HttpClient;
   public readonly dashboard: AiDashboardApi;
   public readonly gateway: AiGatewayApi;
   public readonly pricing: AiPricingApi;
@@ -312,7 +299,6 @@ export class AiApi {
   public readonly usage: AiUsageApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.dashboard = new AiDashboardApi(client);
     this.gateway = new AiGatewayApi(client);
     this.pricing = new AiPricingApi(client);

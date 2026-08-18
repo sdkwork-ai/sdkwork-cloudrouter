@@ -13,18 +13,18 @@ use sdkwork_cloudrouter_config::{
 use sdkwork_cloudrouter_http::QueryStringApiKeyPolicy;
 use sdkwork_cloudrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::application::{
-    AccountResolutionInterceptor, BillingPolicyInterceptor, CircuitBreakerConfig,
-    CircuitBreakerInterceptor, DispatchExecutor, GatewayInvocationPolicyGuard,
-    GatewayInvocationRateLimiter, IdempotencyInterceptor, InvocationPipeline, MetricsInterceptor,
-    PayloadExtractionInterceptor, PricingFinalizationInterceptor, PricingPreflightInterceptor,
-    PricingSettlementInterceptor, ProviderAdapterDispatchInterceptor,
-    ResponseNormalizationInterceptor, RoutePlanningInterceptor, RoutingDecisionLogInterceptor,
-    StickyCommitInterceptor, StickyResolutionInterceptor, TenantInflightConfig,
-    TenantInflightInterceptor, TraceTelemetryInterceptor, UsageExtractionInterceptor,
-    UsageRecordingInterceptor,
+    AccountResolutionInterceptor, BillingPolicyInterceptor, BillingSettlementInterceptor,
+    BillingTransactionInterceptor, CircuitBreakerConfig, CircuitBreakerInterceptor,
+    DispatchExecutor, GatewayInvocationPolicyGuard, GatewayInvocationRateLimiter,
+    IdempotencyInterceptor, InvocationPipeline, MetricsInterceptor, PayloadExtractionInterceptor,
+    PricingFinalizationInterceptor, PricingPreflightInterceptor, PricingSettlementInterceptor,
+    ProviderAdapterDispatchInterceptor, ResponseNormalizationInterceptor, RoutePlanningInterceptor,
+    RoutingDecisionLogInterceptor, StickyCommitInterceptor, StickyResolutionInterceptor,
+    TenantInflightConfig, TenantInflightInterceptor, TraceTelemetryInterceptor,
+    UsageExtractionInterceptor, UsageRecordingInterceptor,
 };
 use sdkwork_cloudrouter_router_service::ports::{
-    GatewayUsageRecorder, InvocationDispatcher, ProviderAdapterRouteResolver,
+    GatewayBillingStore, GatewayUsageRecorder, InvocationDispatcher, ProviderAdapterRouteResolver,
     ProviderSecretResolver, RoutingDecisionLogRecorder, StickyRouteStore,
     UpstreamAccountRouteCatalog,
 };
@@ -116,6 +116,7 @@ pub struct InvocationRouterOptions<'a> {
     /// Open-API guard chain (IP access + concurrency) inserted before the
     /// tenant in-flight bound. `None` keeps the chain off entirely.
     pub call_chain: Option<CallChainInterceptor>,
+    pub billing_store: Option<Arc<dyn GatewayBillingStore + Send + Sync>>,
 }
 
 impl Default for InvocationRouterOptions<'_> {
@@ -135,6 +136,7 @@ impl Default for InvocationRouterOptions<'_> {
             query_string_api_key_policy: QueryStringApiKeyPolicy::default(),
             internal_gateway_verifier: None,
             call_chain: None,
+            billing_store: None,
         }
     }
 }
@@ -163,6 +165,7 @@ where
         query_string_api_key_policy,
         internal_gateway_verifier,
         call_chain,
+        billing_store,
     } = options;
     let adapter_resolver = provider_adapter_config
         .and_then(InvocationProviderAdapterResolver::from_config)
@@ -178,6 +181,7 @@ where
         redis_config,
         tenant_inflight_config,
         call_chain,
+        billing_store,
     });
     invocation_router_with_state(InvocationRouterState {
         catalog,
@@ -419,6 +423,7 @@ struct InvocationPipelineInput<'a, C> {
     redis_config: Option<&'a RedisConfig>,
     tenant_inflight_config: Option<TenantInflightConfig>,
     call_chain: Option<CallChainInterceptor>,
+    billing_store: Option<Arc<dyn GatewayBillingStore + Send + Sync>>,
 }
 
 fn invocation_pipeline_with_redis<C>(input: InvocationPipelineInput<'_, C>) -> InvocationPipeline
@@ -436,6 +441,7 @@ where
         redis_config,
         tenant_inflight_config,
         call_chain,
+        billing_store,
     } = input;
     let idempotency = IdempotencyInterceptor::try_with_redis_config(
         sdkwork_cloudrouter_router_service::application::IdempotencyConfig::default(),
@@ -479,6 +485,16 @@ where
     }
 
     pipeline = pipeline.with_interceptor(PricingPreflightInterceptor::new(Arc::clone(&catalog)));
+    if let Some(billing_store) = billing_store {
+        pipeline = pipeline
+            .with_interceptor(BillingTransactionInterceptor::new(Arc::clone(
+                &billing_store,
+            )))
+            // This stage has no `before` work and is intentionally adjacent
+            // to precharge: its `after` hook runs after usage recording while
+            // still remaining before dispatch in the forward pipeline.
+            .with_interceptor(BillingSettlementInterceptor::new(billing_store));
+    }
 
     pipeline = pipeline.with_interceptor(ResponseNormalizationInterceptor);
 

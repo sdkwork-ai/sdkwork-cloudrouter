@@ -484,7 +484,7 @@ mod tests {
         assert!(expected
             .contract_versions
             .iter()
-            .all(|version| version == "0.4.0"));
+            .all(|version| version == "0.5.0"));
         for table in [
             "ai_chat_conversation",
             "ai_chat_turn",

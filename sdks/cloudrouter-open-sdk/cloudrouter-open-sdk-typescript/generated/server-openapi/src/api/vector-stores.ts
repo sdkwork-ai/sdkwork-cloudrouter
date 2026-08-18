@@ -27,27 +27,27 @@ export class VectorStoresFilesApi {
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OpenAiVectorStoreFileList>(appendQueryString(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/files`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiVectorStoreFileList>(appendQueryString(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/files`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Create vector store file */
   async create(vectorStoreId: string, body: OpenAiVectorStoreFileCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStoreFile> {
-    return this.client.request<OpenAiVectorStoreFile>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/files`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiVectorStoreFile>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/files`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete vector store file */
   async delete(vectorStoreId: string, fileId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
-    return this.client.request<DeleteResult>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<DeleteResult>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Retrieve vector store file */
   async retrieve(vectorStoreId: string, fileId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStoreFile> {
-    return this.client.request<OpenAiVectorStoreFile>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiVectorStoreFile>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Modify vector store file */
   async update(vectorStoreId: string, fileId: string, body: OpenAiVectorStoreFileUpdateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStoreFile> {
-    return this.client.request<OpenAiVectorStoreFile>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiVectorStoreFile>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -68,17 +68,17 @@ export class VectorStoresFileBatchesApi {
 
 /** Create vector store file batch */
   async create(vectorStoreId: string, body: OpenAiVectorStoreFileBatchCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStoreFileBatch> {
-    return this.client.request<OpenAiVectorStoreFileBatch>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/file_batches`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiVectorStoreFileBatch>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/file_batches`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Retrieve vector store file batch */
   async retrieve(vectorStoreId: string, batchId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStoreFileBatch> {
-    return this.client.request<OpenAiVectorStoreFileBatch>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/file_batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiVectorStoreFileBatch>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/file_batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Cancel vector store file batch */
   async cancel(vectorStoreId: string, batchId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStoreFileBatch> {
-    return this.client.request<OpenAiVectorStoreFileBatch>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/file_batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}/cancel`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
+    return this.client.request<OpenAiVectorStoreFileBatch>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/file_batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}/cancel`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any });
   }
 
 /** List vector store file batch files */
@@ -89,7 +89,7 @@ export class VectorStoresFileBatchesApi {
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OpenAiVectorStoreFileList>(appendQueryString(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/file_batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}/files`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiVectorStoreFileList>(appendQueryString(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/file_batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}/files`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 
@@ -120,32 +120,32 @@ export class VectorStoresApi {
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OpenAiVectorStoreList>(appendQueryString(aiApiPath(`/vector_stores`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiVectorStoreList>(appendQueryString(aiApiPath(`/vector_stores`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Create vector store */
   async create(body: OpenAiVectorStoreCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStore> {
-    return this.client.request<OpenAiVectorStore>(aiApiPath(`/vector_stores`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiVectorStore>(aiApiPath(`/vector_stores`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete vector store */
   async delete(vectorStoreId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
-    return this.client.request<DeleteResult>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<DeleteResult>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Retrieve vector store */
   async retrieve(vectorStoreId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStore> {
-    return this.client.request<OpenAiVectorStore>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiVectorStore>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Modify vector store */
   async update(vectorStoreId: string, body: OpenAiVectorStoreUpdateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStore> {
-    return this.client.request<OpenAiVectorStore>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiVectorStore>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Search vector store */
   async search(vectorStoreId: string, body: OpenAiVectorStoreSearchRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVectorStoreSearchResponse> {
-    return this.client.request<OpenAiVectorStoreSearchResponse>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/search`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiVectorStoreSearchResponse>(aiApiPath(`/vector_stores/${serializePathParameter(vectorStoreId, { name: 'vector_store_id', style: 'simple', explode: false })}/search`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 

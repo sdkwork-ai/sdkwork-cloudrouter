@@ -12,7 +12,7 @@
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "8043a2985c27cd6e62249883bd63cb1bd173f50eb32ba3e24864e4d3bce7dc13"
+      "sha256": "e2fa80aec3c0ced1b7e73030b00c4867e3aa48ca5fecff6759ba44f4708ab30f"
     },
     {
       "path": "bin/publish.ps1",
@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "cf1fb7d442909a89a75dc5986f088f35d143d63424917f7b6db1eb08b8771230"
+      "sha256": "0da0f6fb9bbd77cb39410686e20a8ea3b4ef22e1915688c1bd65fc7d6852bece"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -52,15 +52,15 @@
     },
     {
       "path": "src/api/ai.ts",
-      "sha256": "d3005eb079d22cfe3f013690e812f72e982e1df45c95e2fb56a099ad225a2885"
+      "sha256": "e9da9860d702526cc22cfc522d26e9433ad80cc35cd683cbea9ef8be37821f72"
     },
     {
       "path": "src/api/base.ts",
-      "sha256": "02ad25e6bf331ff241ba387c2947ddf1900dd849038e08c2757416a3aa788a04"
+      "sha256": "94d136c54a008dfe7602e373a0b2c79176bbf2fc6e7c899fc23b1f12f750380f"
     },
     {
       "path": "src/api/billing.ts",
-      "sha256": "a2c69493edc8145d6576e263744cf562433416ea3063989944c70a475ffcef91"
+      "sha256": "d90b43a1ae63342232baa7c4dfb7aae863ac5716a052c9335ab8c175bb171572"
     },
     {
       "path": "src/api/index.ts",
@@ -72,23 +72,23 @@
     },
     {
       "path": "src/api/payments.ts",
-      "sha256": "4732a7ba524ff5f2a6a732e5faeaaf740eec4ade8c80a7e72152bf69d178fd7c"
+      "sha256": "e2591e10137e22ddefaba91b6ec1055c77fcc8bdbd5831f6f305490b5e0e85bf"
     },
     {
       "path": "src/api/pricing.ts",
-      "sha256": "90bbe59124fdf5bd9fcaf3c2dc59c742bf91e449655509f74887d1f1ed24646e"
+      "sha256": "a8a85d699fea5da8c2fe7ae92de0e78d046a5d31d9d58d52f6689d6785b50838"
     },
     {
       "path": "src/api/recharges.ts",
-      "sha256": "fc7a2236590e3432a1e071a5f4bf751f161662befa02b2661d291e58815f05f3"
+      "sha256": "19f35c7726a720cf2308dc92af28e7ae4726881a8307efd0113eb0e5f555e77b"
     },
     {
       "path": "src/api/storage.ts",
-      "sha256": "6c7f8422b8498a74727f3bb69ae75db9cf601f3913fb19498e2be8f71b756dee"
+      "sha256": "7079767c97d395648c4eb1f95d9077934d3db1e30b8074684f712aca836c8986"
     },
     {
       "path": "src/api/system.ts",
-      "sha256": "f0722542821e58a431a7da64bbb6615bc73a37bc26c4ee68370709dde9b43dab"
+      "sha256": "96a67db0c2e43f9b0756d8e0180cd3e6adb498d051a7afa73cca399c4be31f0c"
     },
     {
       "path": "src/auth/index.ts",
@@ -96,7 +96,7 @@
     },
     {
       "path": "src/http/client.ts",
-      "sha256": "959c2a1f20f3029fe15077f2c8f67dc913cd6a397740bc599b6b96fd81022a71"
+      "sha256": "bab0f740731f04f1f6e3c591cba91b1577f0ca521054d187755f437925d3dc6d"
     },
     {
       "path": "src/http/index.ts",
@@ -204,7 +204,7 @@
     },
     {
       "path": "src/types/admin-pricing-plan.ts",
-      "sha256": "e0a342ecae0b401752f651ba65117c82f77cb45e528fd95cea1fb1676a253ada"
+      "sha256": "3b07ae06fba50203a3dcd7c05ed7a1f80850747edc08712a4d10560115eb89d4"
     },
     {
       "path": "src/types/admin-pricing-rule-list-response.ts",
@@ -444,7 +444,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "146c77bda65ddd75b3f06751e1b717b14f48ca9bb4f090ff17f49af5d6017ba6"
+      "sha256": "e7157928ce3f685a5d339da8b92727e8185b09cbcb2faf84947808b9553958ea"
     },
     {
       "path": "src/types/installation-status-response.ts",
@@ -540,7 +540,7 @@
     },
     {
       "path": "src/types/official-pricing-product-catalog-response.ts",
-      "sha256": "79e3a1b1bf83cc786914b5b5671a70a221227201a98c95a3b95d5453b044e7b9"
+      "sha256": "51a1c2a4b98252a40ce0bc95be9ef18a10fa6a11e24cc08d2585d142c9bf0558"
     },
     {
       "path": "src/types/official-pricing-product-group-facet.ts",
@@ -548,7 +548,15 @@
     },
     {
       "path": "src/types/official-pricing-product-group.ts",
-      "sha256": "a056cc978993ea91ab112d76264ca8619cd905c57cb7e1ed7294bc147e2498a1"
+      "sha256": "b0bc4d33152dc50106860d3b6e98e0e59d564f4303970c4b1b42d1132913303a"
+    },
+    {
+      "path": "src/types/official-pricing-product-region-facet.ts",
+      "sha256": "e478b4d8e1a527db45e3ee5a6fb66cfe251efea5a08bb2801eb1d554f14d6c27"
+    },
+    {
+      "path": "src/types/official-pricing-product-vendor-facet.ts",
+      "sha256": "bb07e3c70a73c4c77c7a307bac1892d1626ef99bbf7a702e7f162e229faa6e91"
     },
     {
       "path": "src/types/official-pricing-rate-condition.ts",
@@ -588,11 +596,11 @@
     },
     {
       "path": "src/types/pricing-plan-create-request.ts",
-      "sha256": "8b77912a7f97d39c35faf567607737567feea2f3044c3fcf6207cfdc045371ca"
+      "sha256": "fffbb36c2e371ca24c8f659522b9620ed99fd2d81b5174e6dd0fbdaa009d65c3"
     },
     {
       "path": "src/types/pricing-plan-update-request.ts",
-      "sha256": "c0bb79936f2395387fd8fdc946cb77a3efb53204c9b4c56f6160d0d8e24a37eb"
+      "sha256": "8a86264904bfecf0379bd822e04f67615e4d11acf266a21071b7d43bbbbc17cd"
     },
     {
       "path": "src/types/pricing-rule-create-request.ts",

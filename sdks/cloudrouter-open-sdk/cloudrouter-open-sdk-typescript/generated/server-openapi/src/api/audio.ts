@@ -27,17 +27,17 @@ export class AudioVoicesApi {
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OpenAiVoiceList>(appendQueryString(aiApiPath(`/audio/voices`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiVoiceList>(appendQueryString(aiApiPath(`/audio/voices`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Create voice */
   async create(body: OpenAiVoiceCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVoice> {
-    return this.client.request<OpenAiVoice>(aiApiPath(`/audio/voices`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiVoice>(aiApiPath(`/audio/voices`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Retrieve voice */
   async retrieve(voiceId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiVoice> {
-    return this.client.request<OpenAiVoice>(aiApiPath(`/audio/voices/${serializePathParameter(voiceId, { name: 'voice_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiVoice>(aiApiPath(`/audio/voices/${serializePathParameter(voiceId, { name: 'voice_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 
@@ -64,27 +64,27 @@ export class AudioVoiceConsentsApi {
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OpenAiVoiceConsentList>(appendQueryString(aiApiPath(`/audio/voice_consents`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiVoiceConsentList>(appendQueryString(aiApiPath(`/audio/voice_consents`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Create voice consent */
   async create(body: OpenAiVoiceConsentCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVoiceConsent> {
-    return this.client.request<OpenAiVoiceConsent>(aiApiPath(`/audio/voice_consents`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiVoiceConsent>(aiApiPath(`/audio/voice_consents`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete voice consent */
   async delete(consentId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
-    return this.client.request<DeleteResult>(aiApiPath(`/audio/voice_consents/${serializePathParameter(consentId, { name: 'consent_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<DeleteResult>(aiApiPath(`/audio/voice_consents/${serializePathParameter(consentId, { name: 'consent_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Retrieve voice consent */
   async retrieve(consentId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiVoiceConsent> {
-    return this.client.request<OpenAiVoiceConsent>(aiApiPath(`/audio/voice_consents/${serializePathParameter(consentId, { name: 'consent_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiVoiceConsent>(aiApiPath(`/audio/voice_consents/${serializePathParameter(consentId, { name: 'consent_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Update voice consent */
   async update(consentId: string, body: OpenAiVoiceConsentUpdateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVoiceConsent> {
-    return this.client.request<OpenAiVoiceConsent>(aiApiPath(`/audio/voice_consents/${serializePathParameter(consentId, { name: 'consent_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiVoiceConsent>(aiApiPath(`/audio/voice_consents/${serializePathParameter(consentId, { name: 'consent_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -98,7 +98,7 @@ export class AudioTranslationsApi {
 
 /** Create translation */
   async create(body: OpenAiAudioTranslationRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiAudioTranslation> {
-    return this.client.request<OpenAiAudioTranslation>(aiApiPath(`/audio/translations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiAudioTranslation>(aiApiPath(`/audio/translations`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -112,7 +112,7 @@ export class AudioTranscriptionsApi {
 
 /** Create transcription */
   async create(body: OpenAiAudioTranscriptionRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiAudioTranscription> {
-    return this.client.request<OpenAiAudioTranscription>(aiApiPath(`/audio/transcriptions`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiAudioTranscription>(aiApiPath(`/audio/transcriptions`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -126,12 +126,11 @@ export class AudioSpeechApi {
 
 /** Create speech */
   async create(body: OpenAiSpeechCreateRequest, requestOptions?: ApiRequestOptions): Promise<Blob> {
-    return this.client.request<Blob>(aiApiPath(`/audio/speech`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<Blob>(aiApiPath(`/audio/speech`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
 export class AudioApi {
-  private client: HttpClient;
   public readonly speech: AudioSpeechApi;
   public readonly transcriptions: AudioTranscriptionsApi;
   public readonly translations: AudioTranslationsApi;
@@ -139,7 +138,6 @@ export class AudioApi {
   public readonly voices: AudioVoicesApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.speech = new AudioSpeechApi(client);
     this.transcriptions = new AudioTranscriptionsApi(client);
     this.translations = new AudioTranslationsApi(client);

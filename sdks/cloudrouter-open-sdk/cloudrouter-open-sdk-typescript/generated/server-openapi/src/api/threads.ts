@@ -27,27 +27,27 @@ export class ThreadsMessagesApi {
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OpenAiThreadMessageList>(appendQueryString(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/messages`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiThreadMessageList>(appendQueryString(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/messages`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Create thread message */
   async create(threadId: string, body: OpenAiThreadMessageCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiThreadMessage> {
-    return this.client.request<OpenAiThreadMessage>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/messages`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiThreadMessage>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/messages`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete thread message */
   async delete(threadId: string, messageId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
-    return this.client.request<DeleteResult>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/messages/${serializePathParameter(messageId, { name: 'message_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<DeleteResult>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/messages/${serializePathParameter(messageId, { name: 'message_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Retrieve thread message */
   async retrieve(threadId: string, messageId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiThreadMessage> {
-    return this.client.request<OpenAiThreadMessage>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/messages/${serializePathParameter(messageId, { name: 'message_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiThreadMessage>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/messages/${serializePathParameter(messageId, { name: 'message_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Modify thread message */
   async update(threadId: string, messageId: string, body: OpenAiThreadMessageUpdateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiThreadMessage> {
-    return this.client.request<OpenAiThreadMessage>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/messages/${serializePathParameter(messageId, { name: 'message_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiThreadMessage>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/messages/${serializePathParameter(messageId, { name: 'message_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -74,12 +74,12 @@ export class ThreadsRunsStepsApi {
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OpenAiRunStepList>(appendQueryString(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}/steps`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiRunStepList>(appendQueryString(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}/steps`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Retrieve run step */
   async retrieve(threadId: string, runId: string, stepId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiRunStep> {
-    return this.client.request<OpenAiRunStep>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}/steps/${serializePathParameter(stepId, { name: 'step_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiRunStep>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}/steps/${serializePathParameter(stepId, { name: 'step_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 
@@ -102,7 +102,7 @@ export class ThreadsRunsApi {
 
 /** Create thread and run */
   async create(body: OpenAiThreadAndRunCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiRun> {
-    return this.client.request<OpenAiRun>(aiApiPath(`/threads/runs`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiRun>(aiApiPath(`/threads/runs`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** List thread runs */
@@ -113,27 +113,27 @@ export class ThreadsRunsApi {
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OpenAiRunList>(appendQueryString(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiRunList>(appendQueryString(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Retrieve thread run */
   async retrieve(threadId: string, runId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiRun> {
-    return this.client.request<OpenAiRun>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiRun>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Modify thread run */
   async update(threadId: string, runId: string, body: OpenAiRunUpdateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiRun> {
-    return this.client.request<OpenAiRun>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiRun>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Cancel thread run */
   async cancel(threadId: string, runId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiRun> {
-    return this.client.request<OpenAiRun>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}/cancel`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
+    return this.client.request<OpenAiRun>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}/cancel`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any });
   }
 
 /** Submit run tool outputs */
   async submitToolOutputs(threadId: string, runId: string, body: OpenAiRunSubmitToolOutputsRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiRun> {
-    return this.client.request<OpenAiRun>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}/submit_tool_outputs`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiRun>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}/runs/${serializePathParameter(runId, { name: 'run_id', style: 'simple', explode: false })}/submit_tool_outputs`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -151,22 +151,22 @@ export class ThreadsApi {
 
 /** Create thread */
   async create(body: OpenAiThreadCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiThread> {
-    return this.client.request<OpenAiThread>(aiApiPath(`/threads`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiThread>(aiApiPath(`/threads`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete thread */
   async delete(threadId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
-    return this.client.request<DeleteResult>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<DeleteResult>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Retrieve thread */
   async retrieve(threadId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiThread> {
-    return this.client.request<OpenAiThread>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiThread>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Modify thread */
   async update(threadId: string, body: OpenAiThreadUpdateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiThread> {
-    return this.client.request<OpenAiThread>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiThread>(aiApiPath(`/threads/${serializePathParameter(threadId, { name: 'thread_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 

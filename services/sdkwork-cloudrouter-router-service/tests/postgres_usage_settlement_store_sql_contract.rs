@@ -81,7 +81,7 @@ fn usage_settlement_uses_batch_no_as_idempotency_key_and_transaction_no() {
     for expected in [
         "USAGE_SETTLEMENT_BUSINESS_TYPE",
         "transaction_no: transaction_id.to_owned()",
-        "request_no: transaction_id.to_owned()",
+        "request_no: usage_fact.request_id.clone()",
         "idempotency_key: transaction_id.to_owned()",
         "settlement_request_hash",
         "CommerceAccountAssetType::TokenBank",
@@ -93,6 +93,39 @@ fn usage_settlement_uses_batch_no_as_idempotency_key_and_transaction_no() {
         assert!(
             POSTGRES_USAGE_SETTLEMENT_STORE.contains(expected),
             "Postgres usage settlement store must keep account-port contract `{expected}`"
+        );
+    }
+    assert!(
+        POSTGRES_USAGE_SETTLEMENT_STORE.contains("original invocation request number"),
+        "settlement entries must remain recoverable by the original request number"
+    );
+}
+
+#[test]
+fn usage_settlement_detects_precharge_by_account_ledger_transaction_number() {
+    assert_sql_contains(
+        POSTGRES_USAGE_SETTLEMENT_STORE,
+        "let transaction_no = format!(\"cloudrouter:{}:precharge\", usage_fact.request_id)",
+    );
+    assert!(
+        !POSTGRES_USAGE_SETTLEMENT_STORE
+            .contains("let business_no = format!(\"cloudrouter:{}:precharge\""),
+        "precharge lookup must not use the business_no local name for a business type"
+    );
+    assert_sql_contains(POSTGRES_USAGE_SETTLEMENT_STORE, "AND organization_id = $3");
+    assert_sql_contains(POSTGRES_USAGE_SETTLEMENT_STORE, "AND business_no = $4");
+}
+
+#[test]
+fn usage_settlement_recovery_lookup_is_organization_scoped() {
+    for expected in [
+        "fn has_existing_request_settlement",
+        "AND organization_id = $3",
+        "AND business_no IN ($4, $5, $6, $7, $8)",
+    ] {
+        assert!(
+            POSTGRES_USAGE_SETTLEMENT_STORE.contains(expected),
+            "settlement recovery lookup must preserve tenant and organization isolation: {expected}"
         );
     }
 }
@@ -149,6 +182,14 @@ fn usage_settlement_marks_success_and_failure_on_source_fact() {
         "INSUFFICIENT_TOKEN_BANK",
         "failure_code = $3",
         "failure_message = $4",
+    ] {
+        assert_sql_contains(POSTGRES_USAGE_SETTLEMENT_STORE, expected);
+    }
+    for expected in [
+        "AND tenant_id = $5",
+        "AND organization_id = $6",
+        "AND tenant_id = $7",
+        "AND organization_id = $8",
     ] {
         assert_sql_contains(POSTGRES_USAGE_SETTLEMENT_STORE, expected);
     }

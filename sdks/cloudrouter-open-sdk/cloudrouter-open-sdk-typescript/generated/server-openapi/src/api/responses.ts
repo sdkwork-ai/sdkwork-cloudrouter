@@ -29,7 +29,7 @@ export class ResponsesInputItemsApi {
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
       { name: 'include[]', value: params?.include, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OpenAiResponseInputItemList>(appendQueryString(aiApiPath(`/responses/${serializePathParameter(responseId, { name: 'response_id', style: 'simple', explode: false })}/input_items`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiResponseInputItemList>(appendQueryString(aiApiPath(`/responses/${serializePathParameter(responseId, { name: 'response_id', style: 'simple', explode: false })}/input_items`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 
@@ -43,7 +43,7 @@ export class ResponsesInputTokensApi {
 
 /** Count response input tokens */
   async create(body: OpenAiResponseInputTokenCountRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiResponseInputTokenCount> {
-    return this.client.request<OpenAiResponseInputTokenCount>(aiApiPath(`/responses/input_tokens`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiResponseInputTokenCount>(aiApiPath(`/responses/input_tokens`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -65,17 +65,17 @@ export class ResponsesApi {
 
 /** Create response */
   async create(body: OpenAiResponsesRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiResponse> {
-    return this.client.request<OpenAiResponse>(aiApiPath(`/responses`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiResponse>(aiApiPath(`/responses`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Compact response */
   async compact(body: OpenAiResponseCompactRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiResponse> {
-    return this.client.request<OpenAiResponse>(aiApiPath(`/responses/compact`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiResponse>(aiApiPath(`/responses/compact`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete response */
   async delete(responseId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
-    return this.client.request<DeleteResult>(aiApiPath(`/responses/${serializePathParameter(responseId, { name: 'response_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<DeleteResult>(aiApiPath(`/responses/${serializePathParameter(responseId, { name: 'response_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Retrieve response */
@@ -83,12 +83,12 @@ export class ResponsesApi {
     const query = buildQueryString([
       { name: 'include[]', value: params?.include, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OpenAiResponse>(appendQueryString(aiApiPath(`/responses/${serializePathParameter(responseId, { name: 'response_id', style: 'simple', explode: false })}`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiResponse>(appendQueryString(aiApiPath(`/responses/${serializePathParameter(responseId, { name: 'response_id', style: 'simple', explode: false })}`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Cancel response */
   async cancel(responseId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiResponse> {
-    return this.client.request<OpenAiResponse>(aiApiPath(`/responses/${serializePathParameter(responseId, { name: 'response_id', style: 'simple', explode: false })}/cancel`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
+    return this.client.request<OpenAiResponse>(aiApiPath(`/responses/${serializePathParameter(responseId, { name: 'response_id', style: 'simple', explode: false })}/cancel`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any });
   }
 }
 

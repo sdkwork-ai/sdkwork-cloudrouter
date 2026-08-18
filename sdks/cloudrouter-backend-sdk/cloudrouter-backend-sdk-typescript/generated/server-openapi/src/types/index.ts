@@ -116,6 +116,8 @@ export type { OfficialPricingMeterFacet } from './official-pricing-meter-facet';
 export type { OfficialPricingProductCatalogResponse } from './official-pricing-product-catalog-response';
 export type { OfficialPricingProductGroup } from './official-pricing-product-group';
 export type { OfficialPricingProductGroupFacet } from './official-pricing-product-group-facet';
+export type { OfficialPricingProductRegionFacet } from './official-pricing-product-region-facet';
+export type { OfficialPricingProductVendorFacet } from './official-pricing-product-vendor-facet';
 export type { OfficialPricingRate } from './official-pricing-rate';
 export type { OfficialPricingRateCondition } from './official-pricing-rate-condition';
 export type { OfficialPricingRateTier } from './official-pricing-rate-tier';

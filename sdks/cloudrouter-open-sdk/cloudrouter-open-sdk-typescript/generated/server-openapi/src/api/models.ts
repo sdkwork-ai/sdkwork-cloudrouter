@@ -14,12 +14,12 @@ export class ModelsApi {
 
 /** List models */
   async list(requestOptions?: ApiRequestOptions): Promise<OpenAiModelList> {
-    return this.client.request<OpenAiModelList>(aiApiPath(`/models`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiModelList>(aiApiPath(`/models`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Retrieve model */
   async retrieve(model: string, requestOptions?: ApiRequestOptions): Promise<OpenAiModel> {
-    return this.client.request<OpenAiModel>(aiApiPath(`/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiModel>(aiApiPath(`/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 
@@ -27,13 +27,7 @@ export function createModelsApi(client: HttpClient): ModelsApi {
   return new ModelsApi(client);
 }
 
-function appendQueryString(path: string, rawQueryString: string): string {
-  const query = rawQueryString.replace(/^\?+/, '');
-  if (!query) {
-    return path;
-  }
-  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
-}
+
 
 interface PathParameterSpec {
   name: string;

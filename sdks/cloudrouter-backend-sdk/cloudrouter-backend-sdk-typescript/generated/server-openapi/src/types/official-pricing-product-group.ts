@@ -28,6 +28,8 @@ export interface OfficialPricingProductGroup {
   regionCode: string;
   /** Resource code field on official pricing product group. */
   resourceCode: string;
+  /** Resource display name field on official pricing product group. */
+  resourceDisplayName: string;
   /** Resource type field on official pricing product group. */
   resourceType: string;
   /** Vendor code field on official pricing product group. */

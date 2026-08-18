@@ -30,7 +30,7 @@ export class StorageOssUsageApi {
       { name: 'scope_id', value: params?.scopeId, style: 'form', explode: true, allowReserved: false },
       { name: 'run_type', value: params?.runType, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AdminStorageUsageListResponse>(appendQueryString(backendApiPath(`/storage/usage`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<AdminStorageUsageListResponse>(appendQueryString(backendApiPath(`/storage/usage`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 
@@ -67,7 +67,7 @@ export class StorageOssStorageReconciliationRunsApi {
       { name: 'scope_id', value: params?.scopeId, style: 'form', explode: true, allowReserved: false },
       { name: 'run_type', value: params?.runType, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AdminStorageReconciliationRunListResponse>(appendQueryString(backendApiPath(`/storage/reconciliation_runs`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<AdminStorageReconciliationRunListResponse>(appendQueryString(backendApiPath(`/storage/reconciliation_runs`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Backend storage reconciliation run create */
@@ -78,7 +78,7 @@ export class StorageOssStorageReconciliationRunsApi {
       },
       {}
     );
-    return this.client.request<Record<string, never>>(backendApiPath(`/storage/reconciliation_runs`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<Record<string, never>>(backendApiPath(`/storage/reconciliation_runs`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, ...(body !== undefined ? { body, contentType: 'application/json' } : {}), ...(requestHeaders !== undefined ? { headers: requestHeaders } : {}), sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -115,7 +115,7 @@ export class StorageOssQuotasApi {
       { name: 'scope_id', value: params?.scopeId, style: 'form', explode: true, allowReserved: false },
       { name: 'run_type', value: params?.runType, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AdminStorageQuotaPolicyListResponse>(appendQueryString(backendApiPath(`/storage/quotas`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<AdminStorageQuotaPolicyListResponse>(appendQueryString(backendApiPath(`/storage/quotas`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Backend storage quota create */
@@ -126,18 +126,16 @@ export class StorageOssQuotasApi {
       },
       {}
     );
-    return this.client.request<Record<string, never>>(backendApiPath(`/storage/quotas`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<Record<string, never>>(backendApiPath(`/storage/quotas`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', ...(requestHeaders !== undefined ? { headers: requestHeaders } : {}), sdkworkUnwrapKind: 'data' });
   }
 }
 
 export class StorageOssApi {
-  private client: HttpClient;
   public readonly quotas: StorageOssQuotasApi;
   public readonly storageReconciliationRuns: StorageOssStorageReconciliationRunsApi;
   public readonly usage: StorageOssUsageApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.quotas = new StorageOssQuotasApi(client);
     this.storageReconciliationRuns = new StorageOssStorageReconciliationRunsApi(client);
     this.usage = new StorageOssUsageApi(client);
@@ -178,7 +176,7 @@ export class StorageGcJobsApi {
       { name: 'scope_id', value: params?.scopeId, style: 'form', explode: true, allowReserved: false },
       { name: 'run_type', value: params?.runType, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AdminStorageGarbageCollectionJobListResponse>(appendQueryString(backendApiPath(`/storage/gc_jobs`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<AdminStorageGarbageCollectionJobListResponse>(appendQueryString(backendApiPath(`/storage/gc_jobs`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Backend storage garbage collection job create */
@@ -189,7 +187,7 @@ export class StorageGcJobsApi {
       },
       {}
     );
-    return this.client.request<Record<string, never>>(backendApiPath(`/storage/gc_jobs`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<Record<string, never>>(backendApiPath(`/storage/gc_jobs`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, ...(body !== undefined ? { body, contentType: 'application/json' } : {}), ...(requestHeaders !== undefined ? { headers: requestHeaders } : {}), sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -222,23 +220,21 @@ export class StorageDefaultBucketsApi {
       { name: 'scope_id', value: params?.scopeId, style: 'form', explode: true, allowReserved: false },
       { name: 'run_type', value: params?.runType, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AdminStorageDefaultBucketListResponse>(appendQueryString(backendApiPath(`/storage/default_buckets`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<AdminStorageDefaultBucketListResponse>(appendQueryString(backendApiPath(`/storage/default_buckets`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Backend storage default bucket update */
   async update(logicalScope: string, body: AdminStorageDefaultBucketUpdateRequest, requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(backendApiPath(`/storage/default_buckets/${serializePathParameter(logicalScope, { name: 'logicalScope', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<Record<string, never>>(backendApiPath(`/storage/default_buckets/${serializePathParameter(logicalScope, { name: 'logicalScope', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 
 export class StorageApi {
-  private client: HttpClient;
   public readonly defaultBuckets: StorageDefaultBucketsApi;
   public readonly gcJobs: StorageGcJobsApi;
   public readonly oss: StorageOssApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.defaultBuckets = new StorageDefaultBucketsApi(client);
     this.gcJobs = new StorageGcJobsApi(client);
     this.oss = new StorageOssApi(client);

@@ -55,6 +55,7 @@ struct AppPricingQuery {
 struct AdminProductPricingQuery {
     category: Option<String>,
     q: Option<String>,
+    vendor_codes: Option<String>,
     region_code: Option<String>,
     page: Option<i64>,
     page_size: Option<i64>,
@@ -78,6 +79,7 @@ struct AdminProductPricingResponse {
     items: Vec<OfficialPricingProductGroup>,
     page_info: PageInfo,
     groups: Vec<OfficialPricingGroupFacet>,
+    vendors: Vec<OfficialPricingValueFacet>,
     regions: Vec<OfficialPricingValueFacet>,
 }
 
@@ -196,6 +198,7 @@ async fn list_pricing_products(
                 page_info: offset_page_info(page_no, page_size, snapshot.total_items),
                 items: snapshot.items,
                 groups: snapshot.groups,
+                vendors: snapshot.vendors,
                 regions: snapshot.regions,
             },
         ),
@@ -236,6 +239,7 @@ fn validate_product_query(
         OfficialPricingProductCatalogQuery {
             category: normalize_category(query.category)?,
             search_query: normalize_list_search_query(query.q, "q")?,
+            vendor_codes: normalize_facet_codes(query.vendor_codes, "vendor_codes")?,
             region_code: normalize_facet_code(query.region_code, "region_code")?,
             page_size: pagination.page_size,
             offset: pagination.offset,
@@ -243,6 +247,26 @@ fn validate_product_query(
         pagination.page_no,
         pagination.page_size,
     ))
+}
+
+fn normalize_facet_codes(value: Option<String>, field: &str) -> Result<Vec<String>, String> {
+    let Some(value) = value else {
+        return Ok(Vec::new());
+    };
+    let mut values = Vec::new();
+    for item in value.split(',') {
+        let item = item.trim();
+        if item.is_empty() {
+            continue;
+        }
+        values.push(normalize_facet_code(Some(item.to_owned()), field)?.unwrap_or_default());
+    }
+    values.sort();
+    values.dedup();
+    if values.len() > 200 {
+        return Err(format!("pricing {field} contains too many values"));
+    }
+    Ok(values)
 }
 
 fn normalize_category(value: Option<String>) -> Result<String, String> {
@@ -353,13 +377,25 @@ mod tests {
         let (query, page, page_size) = validate_product_query(AdminProductPricingQuery {
             category: Some("LLM".to_owned()),
             q: Some("claude".to_owned()),
+            vendor_codes: Some("OpenAI, anthropic,openai".to_owned()),
+            region_code: None,
             page: Some(3),
             page_size: Some(20),
         })
         .unwrap();
         assert_eq!("llm", query.category);
         assert_eq!(Some("claude".to_owned()), query.search_query);
+        assert_eq!(vec!["anthropic", "openai"], query.vendor_codes);
         assert_eq!(40, query.offset);
         assert_eq!((3, 20), (page, page_size));
+    }
+
+    #[test]
+    fn product_pricing_query_rejects_invalid_vendor_codes() {
+        assert!(validate_product_query(AdminProductPricingQuery {
+            vendor_codes: Some("open ai".to_owned()),
+            ..AdminProductPricingQuery::default()
+        })
+        .is_err());
     }
 }

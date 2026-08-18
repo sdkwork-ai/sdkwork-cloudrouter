@@ -27,7 +27,7 @@ export class ChatCompletionsMessagesApi {
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OpenAiChatCompletionMessageList>(appendQueryString(aiApiPath(`/chat/completions/${serializePathParameter(completionId, { name: 'completion_id', style: 'simple', explode: false })}/messages`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiChatCompletionMessageList>(appendQueryString(aiApiPath(`/chat/completions/${serializePathParameter(completionId, { name: 'completion_id', style: 'simple', explode: false })}/messages`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 
@@ -60,36 +60,34 @@ export class ChatCompletionsApi {
       { name: 'model', value: params?.model, style: 'form', explode: true, allowReserved: false },
       { name: 'metadata', value: params?.metadata, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OpenAiChatCompletionList>(appendQueryString(aiApiPath(`/chat/completions`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiChatCompletionList>(appendQueryString(aiApiPath(`/chat/completions`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Create chat completion */
   async create(body: OpenAiChatCompletionRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiChatCompletion> {
-    return this.client.request<OpenAiChatCompletion>(aiApiPath(`/chat/completions`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiChatCompletion>(aiApiPath(`/chat/completions`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete stored chat completion */
   async delete(completionId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
-    return this.client.request<DeleteResult>(aiApiPath(`/chat/completions/${serializePathParameter(completionId, { name: 'completion_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<DeleteResult>(aiApiPath(`/chat/completions/${serializePathParameter(completionId, { name: 'completion_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Retrieve stored chat completion */
   async retrieve(completionId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiChatCompletion> {
-    return this.client.request<OpenAiChatCompletion>(aiApiPath(`/chat/completions/${serializePathParameter(completionId, { name: 'completion_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiChatCompletion>(aiApiPath(`/chat/completions/${serializePathParameter(completionId, { name: 'completion_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Modify stored chat completion */
   async update(completionId: string, body: OpenAiChatCompletionUpdateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiChatCompletion> {
-    return this.client.request<OpenAiChatCompletion>(aiApiPath(`/chat/completions/${serializePathParameter(completionId, { name: 'completion_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiChatCompletion>(aiApiPath(`/chat/completions/${serializePathParameter(completionId, { name: 'completion_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
 export class ChatApi {
-  private client: HttpClient;
   public readonly completions: ChatCompletionsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.completions = new ChatCompletionsApi(client);
   }
 

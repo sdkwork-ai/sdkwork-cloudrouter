@@ -14,43 +14,37 @@ export class ImagesMidjourneyV1ImagesGenerationsApi {
 
 /** Midjourney image generation */
   async create(body: MidjourneyImageGenerationRequest, requestOptions?: ApiRequestOptions): Promise<MidjourneyImageGenerationTask> {
-    return this.client.request<MidjourneyImageGenerationTask>(aiApiPath(`/midjourney/v1/images/generations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<MidjourneyImageGenerationTask>(aiApiPath(`/midjourney/v1/images/generations`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Midjourney retrieve image generation */
   async retrieve(taskId: string, requestOptions?: ApiRequestOptions): Promise<MidjourneyImageGenerationTask> {
-    return this.client.request<MidjourneyImageGenerationTask>(aiApiPath(`/midjourney/v1/images/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<MidjourneyImageGenerationTask>(aiApiPath(`/midjourney/v1/images/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 
 export class ImagesMidjourneyV1ImagesApi {
-  private client: HttpClient;
   public readonly generations: ImagesMidjourneyV1ImagesGenerationsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.generations = new ImagesMidjourneyV1ImagesGenerationsApi(client);
   }
 
 }
 
 export class ImagesMidjourneyV1Api {
-  private client: HttpClient;
   public readonly images: ImagesMidjourneyV1ImagesApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.images = new ImagesMidjourneyV1ImagesApi(client);
   }
 
 }
 
 export class ImagesMidjourneyApi {
-  private client: HttpClient;
   public readonly v1: ImagesMidjourneyV1Api;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.v1 = new ImagesMidjourneyV1Api(client);
   }
 
@@ -60,13 +54,7 @@ export function createImagesMidjourneyApi(client: HttpClient): ImagesMidjourneyA
   return new ImagesMidjourneyApi(client);
 }
 
-function appendQueryString(path: string, rawQueryString: string): string {
-  const query = rawQueryString.replace(/^\?+/, '');
-  if (!query) {
-    return path;
-  }
-  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
-}
+
 
 interface PathParameterSpec {
   name: string;

@@ -39,6 +39,7 @@ mod chat_completion_stream_relay;
 mod dashboard_overview_read_store;
 mod embeddings_relay;
 mod gateway_accounting_retry_queue;
+mod gateway_billing_store;
 mod gateway_chain_policy_store;
 mod gateway_usage_recorder;
 mod invocation_dispatcher;
@@ -299,6 +300,10 @@ pub use gateway_accounting_retry_queue::{
     now_epoch_millis, GatewayAccountingRetryDelivery, GatewayAccountingRetryEnvelope,
     GatewayAccountingRetryPayload, GatewayAccountingRetryQueue, GatewayAccountingRetryQueueFuture,
     GATEWAY_ACCOUNTING_RETRY_SCHEMA_VERSION,
+};
+pub use gateway_billing_store::{
+    CustomerChargeMode, GatewayBillingAmount, GatewayBillingContext, GatewayBillingFuture,
+    GatewayBillingSettlementMode, GatewayBillingStore,
 };
 pub use gateway_chain_policy_store::{
     ChainPolicyRecord, GatewayChainPolicyStore, CHAIN_POLICY_SCOPE_API_KEY,

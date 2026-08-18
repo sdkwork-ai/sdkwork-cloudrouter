@@ -75,9 +75,15 @@ fn price_snapshot_uses_only_the_consolidated_pricing_tables() {
         "rate.schedule::text AS schedule_json",
         "GREATEST(rate.effective_from, book.effective_from)",
     ] {
-        assert!(sql.contains(projection), "price snapshot must project {projection}");
+        assert!(
+            sql.contains(projection),
+            "price snapshot must project {projection}"
+        );
     }
-    assert!(!sql.contains("CURRENT_TIMESTAMP"), "price snapshot eligibility must be evaluated against ResourceDefinition.occurred_at");
+    assert!(
+        !sql.contains("CURRENT_TIMESTAMP"),
+        "price snapshot eligibility must be evaluated against ResourceDefinition.occurred_at"
+    );
     for retired_reference in [
         "pricing_product_binding",
         "pricing_rate_binding",

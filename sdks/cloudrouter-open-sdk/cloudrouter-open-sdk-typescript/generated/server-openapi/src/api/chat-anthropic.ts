@@ -14,7 +14,7 @@ export class ChatAnthropicV1MessagesCountTokensApi {
 
 /** Anthropic count message tokens */
   async create(body: AnthropicCountMessageTokensRequest, requestOptions?: ApiRequestOptions): Promise<AnthropicCountMessageTokensResponse> {
-    return this.client.request<AnthropicCountMessageTokensResponse>(aiApiPath(`/anthropic/v1/messages/count_tokens`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<AnthropicCountMessageTokensResponse>(aiApiPath(`/anthropic/v1/messages/count_tokens`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -30,27 +30,23 @@ export class ChatAnthropicV1MessagesApi {
 
 /** Anthropic Claude message */
   async create(body: AnthropicMessageCreateRequest, requestOptions?: ApiRequestOptions): Promise<AnthropicMessage> {
-    return this.client.request<AnthropicMessage>(aiApiPath(`/anthropic/v1/messages`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<AnthropicMessage>(aiApiPath(`/anthropic/v1/messages`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
 export class ChatAnthropicV1Api {
-  private client: HttpClient;
   public readonly messages: ChatAnthropicV1MessagesApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.messages = new ChatAnthropicV1MessagesApi(client);
   }
 
 }
 
 export class ChatAnthropicApi {
-  private client: HttpClient;
   public readonly v1: ChatAnthropicV1Api;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.v1 = new ChatAnthropicV1Api(client);
   }
 
@@ -58,12 +54,4 @@ export class ChatAnthropicApi {
 
 export function createChatAnthropicApi(client: HttpClient): ChatAnthropicApi {
   return new ChatAnthropicApi(client);
-}
-
-function appendQueryString(path: string, rawQueryString: string): string {
-  const query = rawQueryString.replace(/^\?+/, '');
-  if (!query) {
-    return path;
-  }
-  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
 }

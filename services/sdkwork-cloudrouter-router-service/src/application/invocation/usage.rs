@@ -10,6 +10,10 @@ pub struct InvocationUsage {
     pub settlement_commands: Vec<GatewayUsageRecordCommand>,
     pub trace_recorded: bool,
     pub recording_failure_count: usize,
+    /// Usage facts that could not be persisted or durably queued. Billing
+    /// must not mark such a request settled because doing so would lose the
+    /// provider charge permanently.
+    pub usage_recording_failure_count: usize,
 }
 
 impl InvocationUsage {

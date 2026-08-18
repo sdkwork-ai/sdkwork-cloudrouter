@@ -27,22 +27,22 @@ export class ConversationItemsApi {
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OpenAiConversationItemList>(appendQueryString(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}/items`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiConversationItemList>(appendQueryString(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}/items`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Create conversation item */
   async create(conversationId: string, body: OpenAiConversationItemCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiConversationItem> {
-    return this.client.request<OpenAiConversationItem>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}/items`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiConversationItem>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}/items`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete conversation item */
   async delete(conversationId: string, itemId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
-    return this.client.request<DeleteResult>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}/items/${serializePathParameter(itemId, { name: 'item_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<DeleteResult>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}/items/${serializePathParameter(itemId, { name: 'item_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Retrieve conversation item */
   async retrieve(conversationId: string, itemId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiConversationItem> {
-    return this.client.request<OpenAiConversationItem>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}/items/${serializePathParameter(itemId, { name: 'item_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiConversationItem>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}/items/${serializePathParameter(itemId, { name: 'item_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 
@@ -71,27 +71,27 @@ export class ConversationApi {
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OpenAiConversationList>(appendQueryString(aiApiPath(`/conversations`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiConversationList>(appendQueryString(aiApiPath(`/conversations`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Create conversation */
   async create(body: OpenAiConversationCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiConversation> {
-    return this.client.request<OpenAiConversation>(aiApiPath(`/conversations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiConversation>(aiApiPath(`/conversations`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete conversation */
   async delete(conversationId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
-    return this.client.request<DeleteResult>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<DeleteResult>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Retrieve conversation */
   async retrieve(conversationId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiConversation> {
-    return this.client.request<OpenAiConversation>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiConversation>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Modify conversation */
   async update(conversationId: string, body: OpenAiConversationUpdateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiConversation> {
-    return this.client.request<OpenAiConversation>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiConversation>(aiApiPath(`/conversations/${serializePathParameter(conversationId, { name: 'conversation_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 

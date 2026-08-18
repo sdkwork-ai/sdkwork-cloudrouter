@@ -14,7 +14,7 @@ export class VideoRemixApi {
 
 /** Remix video */
   async create(videoId: string, body: OpenAiVideoRemixRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVideo> {
-    return this.client.request<OpenAiVideo>(aiApiPath(`/videos/${serializePathParameter(videoId, { name: 'video_id', style: 'simple', explode: false })}/remix`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiVideo>(aiApiPath(`/videos/${serializePathParameter(videoId, { name: 'video_id', style: 'simple', explode: false })}/remix`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -28,7 +28,7 @@ export class VideoExtensionsApi {
 
 /** Extend video */
   async create(body: OpenAiVideoExtendRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVideo> {
-    return this.client.request<OpenAiVideo>(aiApiPath(`/videos/extensions`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiVideo>(aiApiPath(`/videos/extensions`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -42,7 +42,7 @@ export class VideoEditsApi {
 
 /** Edit video */
   async create(body: OpenAiVideoEditRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVideo> {
-    return this.client.request<OpenAiVideo>(aiApiPath(`/videos/edits`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiVideo>(aiApiPath(`/videos/edits`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -56,12 +56,12 @@ export class VideoCharactersApi {
 
 /** Create video character */
   async create(body: OpenAiVideoCharacterCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVideoCharacter> {
-    return this.client.request<OpenAiVideoCharacter>(aiApiPath(`/videos/characters`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiVideoCharacter>(aiApiPath(`/videos/characters`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Retrieve video character */
   async retrieve(characterId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiVideoCharacter> {
-    return this.client.request<OpenAiVideoCharacter>(aiApiPath(`/videos/characters/${serializePathParameter(characterId, { name: 'character_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiVideoCharacter>(aiApiPath(`/videos/characters/${serializePathParameter(characterId, { name: 'character_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 
@@ -96,27 +96,27 @@ export class VideoApi {
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OpenAiVideoList>(appendQueryString(aiApiPath(`/videos`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiVideoList>(appendQueryString(aiApiPath(`/videos`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Create video */
   async create(body: OpenAiVideoCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiVideo> {
-    return this.client.request<OpenAiVideo>(aiApiPath(`/videos`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiVideo>(aiApiPath(`/videos`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete video */
   async delete(videoId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
-    return this.client.request<DeleteResult>(aiApiPath(`/videos/${serializePathParameter(videoId, { name: 'video_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<DeleteResult>(aiApiPath(`/videos/${serializePathParameter(videoId, { name: 'video_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Retrieve video */
   async retrieve(videoId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiVideo> {
-    return this.client.request<OpenAiVideo>(aiApiPath(`/videos/${serializePathParameter(videoId, { name: 'video_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiVideo>(aiApiPath(`/videos/${serializePathParameter(videoId, { name: 'video_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Retrieve video content */
   async content(videoId: string, requestOptions?: ApiRequestOptions): Promise<Blob> {
-    return this.client.request<Blob>(aiApiPath(`/videos/${serializePathParameter(videoId, { name: 'video_id', style: 'simple', explode: false })}/content`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<Blob>(aiApiPath(`/videos/${serializePathParameter(videoId, { name: 'video_id', style: 'simple', explode: false })}/content`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 

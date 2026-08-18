@@ -14,7 +14,10 @@ mod web_bootstrap;
 
 pub use http_route_manifest::{cloud_router_app_http_route_manifest, http_route_manifest};
 pub use manifest::{route_manifest, RouterApiRouteManifest};
-pub use manifest_composition::cloud_router_app_composed_route_manifest;
+pub use manifest_composition::{
+    cloud_router_app_composed_route_manifest,
+    cloud_router_app_composed_route_manifest_for_platform_gateway,
+};
 pub use routes::*;
 pub use web_bootstrap::{
     cloud_router_app_domain_context_injector, finalize_served_router,

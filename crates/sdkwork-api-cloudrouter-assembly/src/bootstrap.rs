@@ -173,9 +173,16 @@ fn assemble_api_router_with_in_process_upstreams(
     // The app router includes dependency-owned assemblies (commerce,
     // promotion, membership, and others). Bind the same composed manifest at
     // the application assembly boundary so the outer Web Framework sees the
-    // dependency routes and their declared auth profiles too.
-    let app_manifest =
-        sdkwork_routes_cloudrouter_app_api::cloud_router_app_composed_route_manifest();
+    // dependency routes and their declared auth profiles too. In platform
+    // cloud gateway mode the gateway wires the account/community/invoice
+    // app surfaces as separate contributions, so their manifests are excluded
+    // here (API_ASSEMBLY_SPEC §6.1) — the composed surface keeps only the
+    // capabilities the platform gateway does not mount itself.
+    let app_manifest = if context.includes_dependency_apis() {
+        sdkwork_routes_cloudrouter_app_api::cloud_router_app_composed_route_manifest()
+    } else {
+        sdkwork_routes_cloudrouter_app_api::cloud_router_app_composed_route_manifest_for_platform_gateway()
+    };
     let backend_manifest = sdkwork_routes_cloudrouter_backend_api::http_route_manifest();
     let open_manifest = crate::generated_open_http_route_manifest::http_route_manifest();
     validate_no_route_collisions(&[

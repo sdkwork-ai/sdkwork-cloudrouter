@@ -27,27 +27,27 @@ export class AssistantsApi {
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OpenAiAssistantList>(appendQueryString(aiApiPath(`/assistants`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiAssistantList>(appendQueryString(aiApiPath(`/assistants`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Create assistant */
   async create(body: OpenAiAssistantCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiAssistant> {
-    return this.client.request<OpenAiAssistant>(aiApiPath(`/assistants`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiAssistant>(aiApiPath(`/assistants`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete assistant */
   async delete(assistantId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
-    return this.client.request<DeleteResult>(aiApiPath(`/assistants/${serializePathParameter(assistantId, { name: 'assistant_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<DeleteResult>(aiApiPath(`/assistants/${serializePathParameter(assistantId, { name: 'assistant_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Retrieve assistant */
   async retrieve(assistantId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiAssistant> {
-    return this.client.request<OpenAiAssistant>(aiApiPath(`/assistants/${serializePathParameter(assistantId, { name: 'assistant_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiAssistant>(aiApiPath(`/assistants/${serializePathParameter(assistantId, { name: 'assistant_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Modify assistant */
   async update(assistantId: string, body: OpenAiAssistantUpdateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiAssistant> {
-    return this.client.request<OpenAiAssistant>(aiApiPath(`/assistants/${serializePathParameter(assistantId, { name: 'assistant_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiAssistant>(aiApiPath(`/assistants/${serializePathParameter(assistantId, { name: 'assistant_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 

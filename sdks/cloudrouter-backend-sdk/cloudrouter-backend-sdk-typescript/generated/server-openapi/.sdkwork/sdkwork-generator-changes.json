@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "@sdkwork/cloudrouter-backend-sdk"
   },
-  "changeFingerprint": "0161c06a6d10ca1b41f56cca4660e56d862325d4cad57c6844c51ba90336c8f3",
+  "changeFingerprint": "eb9c01dbf28b32f90ea7424ff842df832a26d35507a6621d588e650f027144bf",
   "changes": {
     "createdGeneratedFiles": [
       "bin/publish-core.mjs",
@@ -147,6 +147,8 @@
       "src/types/official-pricing-product-catalog-response.ts",
       "src/types/official-pricing-product-group-facet.ts",
       "src/types/official-pricing-product-group.ts",
+      "src/types/official-pricing-product-region-facet.ts",
+      "src/types/official-pricing-product-vendor-facet.ts",
       "src/types/official-pricing-rate-condition.ts",
       "src/types/official-pricing-rate-tier.ts",
       "src/types/official-pricing-rate.ts",
@@ -391,6 +393,8 @@
           "src/types/official-pricing-product-catalog-response.ts",
           "src/types/official-pricing-product-group-facet.ts",
           "src/types/official-pricing-product-group.ts",
+          "src/types/official-pricing-product-region-facet.ts",
+          "src/types/official-pricing-product-vendor-facet.ts",
           "src/types/official-pricing-rate-condition.ts",
           "src/types/official-pricing-rate-tier.ts",
           "src/types/official-pricing-rate.ts",

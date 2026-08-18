@@ -27,27 +27,27 @@ export class ContainerFilesApi {
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OpenAiContainerFileList>(appendQueryString(aiApiPath(`/containers/${serializePathParameter(containerId, { name: 'container_id', style: 'simple', explode: false })}/files`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiContainerFileList>(appendQueryString(aiApiPath(`/containers/${serializePathParameter(containerId, { name: 'container_id', style: 'simple', explode: false })}/files`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Create container file */
   async create(containerId: string, body: OpenAiContainerFileCreateMultipartRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiContainerFile> {
-    return this.client.request<OpenAiContainerFile>(aiApiPath(`/containers/${serializePathParameter(containerId, { name: 'container_id', style: 'simple', explode: false })}/files`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'multipart/form-data' });
+    return this.client.request<OpenAiContainerFile>(aiApiPath(`/containers/${serializePathParameter(containerId, { name: 'container_id', style: 'simple', explode: false })}/files`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'multipart/form-data' });
   }
 
 /** Delete container file */
   async delete(containerId: string, fileId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
-    return this.client.request<DeleteResult>(aiApiPath(`/containers/${serializePathParameter(containerId, { name: 'container_id', style: 'simple', explode: false })}/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<DeleteResult>(aiApiPath(`/containers/${serializePathParameter(containerId, { name: 'container_id', style: 'simple', explode: false })}/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Retrieve container file */
   async retrieve(containerId: string, fileId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiContainerFile> {
-    return this.client.request<OpenAiContainerFile>(aiApiPath(`/containers/${serializePathParameter(containerId, { name: 'container_id', style: 'simple', explode: false })}/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiContainerFile>(aiApiPath(`/containers/${serializePathParameter(containerId, { name: 'container_id', style: 'simple', explode: false })}/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Retrieve container file content */
   async content(containerId: string, fileId: string, requestOptions?: ApiRequestOptions): Promise<Blob> {
-    return this.client.request<Blob>(aiApiPath(`/containers/${serializePathParameter(containerId, { name: 'container_id', style: 'simple', explode: false })}/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}/content`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<Blob>(aiApiPath(`/containers/${serializePathParameter(containerId, { name: 'container_id', style: 'simple', explode: false })}/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}/content`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 
@@ -76,22 +76,22 @@ export class ContainerApi {
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OpenAiContainerList>(appendQueryString(aiApiPath(`/containers`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiContainerList>(appendQueryString(aiApiPath(`/containers`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Create container */
   async create(body: OpenAiContainerCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiContainer> {
-    return this.client.request<OpenAiContainer>(aiApiPath(`/containers`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiContainer>(aiApiPath(`/containers`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Delete container */
   async delete(containerId: string, requestOptions?: ApiRequestOptions): Promise<DeleteResult> {
-    return this.client.request<DeleteResult>(aiApiPath(`/containers/${serializePathParameter(containerId, { name: 'container_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<DeleteResult>(aiApiPath(`/containers/${serializePathParameter(containerId, { name: 'container_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Retrieve container */
   async retrieve(containerId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiContainer> {
-    return this.client.request<OpenAiContainer>(aiApiPath(`/containers/${serializePathParameter(containerId, { name: 'container_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiContainer>(aiApiPath(`/containers/${serializePathParameter(containerId, { name: 'container_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 

@@ -14,21 +14,19 @@ export class SystemSiteSettingsApi {
 
 /** List settings */
   async retrieve(requestOptions?: ApiRequestOptions): Promise<AdminSiteSettingsResponse> {
-    return this.client.request<AdminSiteSettingsResponse>(backendApiPath(`/system/site/settings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminSiteSettingsResponse>(backendApiPath(`/system/site/settings`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 
 /** Update settings */
   async update(body: AdminSiteSettingsUpdateRequest, requestOptions?: ApiRequestOptions): Promise<AdminSiteSettingsResponse> {
-    return this.client.request<AdminSiteSettingsResponse>(backendApiPath(`/system/site/settings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminSiteSettingsResponse>(backendApiPath(`/system/site/settings`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 
 export class SystemSiteApi {
-  private client: HttpClient;
   public readonly settings: SystemSiteSettingsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.settings = new SystemSiteSettingsApi(client);
   }
 
@@ -44,7 +42,7 @@ export class SystemServiceNodesStatusApi {
 
 /** Update node status */
   async update(nodeId: string, body: AdminServiceNodeStatusUpdateRequest, requestOptions?: ApiRequestOptions): Promise<AdminServiceNodeItem> {
-    return this.client.request<AdminServiceNodeItem>(backendApiPath(`/system/service_nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/status`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminServiceNodeItem>(backendApiPath(`/system/service_nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}/status`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PUT' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -73,22 +71,22 @@ export class SystemServiceNodesApi {
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AdminServiceNodePage>(appendQueryString(backendApiPath(`/system/service_nodes`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<AdminServiceNodePage>(appendQueryString(backendApiPath(`/system/service_nodes`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Create node */
   async create(body: AdminServiceNodeCreateRequest, requestOptions?: ApiRequestOptions): Promise<AdminServiceNodeItem> {
-    return this.client.request<AdminServiceNodeItem>(backendApiPath(`/system/service_nodes`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminServiceNodeItem>(backendApiPath(`/system/service_nodes`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 
 /** Delete node */
   async delete(nodeId: string, requestOptions?: ApiRequestOptions): Promise<void> {
-    return this.client.request<void>(backendApiPath(`/system/service_nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<void>(backendApiPath(`/system/service_nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Update node */
   async update(nodeId: string, body: AdminServiceNodeUpdateRequest, requestOptions?: ApiRequestOptions): Promise<AdminServiceNodeItem> {
-    return this.client.request<AdminServiceNodeItem>(backendApiPath(`/system/service_nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminServiceNodeItem>(backendApiPath(`/system/service_nodes/${serializePathParameter(nodeId, { name: 'nodeId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PUT' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -102,21 +100,19 @@ export class SystemRuntimeRegionSettingsApi {
 
 /** List settings */
   async retrieve(requestOptions?: ApiRequestOptions): Promise<AdminRuntimeRegionSettingsResponse> {
-    return this.client.request<AdminRuntimeRegionSettingsResponse>(backendApiPath(`/system/runtime_region/settings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminRuntimeRegionSettingsResponse>(backendApiPath(`/system/runtime_region/settings`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 
 /** Update settings */
   async update(body: AdminRuntimeRegionSettingsUpdateRequest, requestOptions?: ApiRequestOptions): Promise<AdminRuntimeRegionSettingsResponse> {
-    return this.client.request<AdminRuntimeRegionSettingsResponse>(backendApiPath(`/system/runtime_region/settings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminRuntimeRegionSettingsResponse>(backendApiPath(`/system/runtime_region/settings`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 
 export class SystemRuntimeRegionApi {
-  private client: HttpClient;
   public readonly settings: SystemRuntimeRegionSettingsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.settings = new SystemRuntimeRegionSettingsApi(client);
   }
 
@@ -147,7 +143,7 @@ export class SystemRecordsApi {
       { name: 'token', value: params?.token, style: 'form', explode: true, allowReserved: false },
       { name: 'model', value: params?.model, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AdminRecordPage>(appendQueryString(backendApiPath(`/system/records`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<AdminRecordPage>(appendQueryString(backendApiPath(`/system/records`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 
@@ -172,12 +168,12 @@ export class SystemRateLimitsModelsApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<ModelLimitRulePage>(appendQueryString(backendApiPath(`/system/rate_limits/models`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<ModelLimitRulePage>(appendQueryString(backendApiPath(`/system/rate_limits/models`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Create model limit */
   async create(body: AdminModelLimitCreateRequest, requestOptions?: ApiRequestOptions): Promise<ModelLimitRuleItem> {
-    return this.client.request<ModelLimitRuleItem>(backendApiPath(`/system/rate_limits/models`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<ModelLimitRuleItem>(backendApiPath(`/system/rate_limits/models`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -202,12 +198,12 @@ export class SystemRateLimitsIpApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<IpLimitRulePage>(appendQueryString(backendApiPath(`/system/rate_limits/ip`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<IpLimitRulePage>(appendQueryString(backendApiPath(`/system/rate_limits/ip`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Create IP limit */
   async create(body: AdminIpLimitCreateRequest, requestOptions?: ApiRequestOptions): Promise<IpLimitRuleItem> {
-    return this.client.request<IpLimitRuleItem>(backendApiPath(`/system/rate_limits/ip`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<IpLimitRuleItem>(backendApiPath(`/system/rate_limits/ip`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -232,23 +228,21 @@ export class SystemRateLimitsApiKeysApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<TokenLimitRulePage>(appendQueryString(backendApiPath(`/system/rate_limits/api_keys`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<TokenLimitRulePage>(appendQueryString(backendApiPath(`/system/rate_limits/api_keys`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Create token limit */
   async create(body: AdminTokenLimitCreateRequest, requestOptions?: ApiRequestOptions): Promise<TokenLimitRuleItem> {
-    return this.client.request<TokenLimitRuleItem>(backendApiPath(`/system/rate_limits/api_keys`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<TokenLimitRuleItem>(backendApiPath(`/system/rate_limits/api_keys`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 
 export class SystemRateLimitsApi {
-  private client: HttpClient;
   public readonly apiKeys: SystemRateLimitsApiKeysApi;
   public readonly ip: SystemRateLimitsIpApi;
   public readonly models: SystemRateLimitsModelsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.apiKeys = new SystemRateLimitsApiKeysApi(client);
     this.ip = new SystemRateLimitsIpApi(client);
     this.models = new SystemRateLimitsModelsApi(client);
@@ -277,7 +271,7 @@ export class SystemMonitorPerformanceApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<MonitorPerformancePage>(appendQueryString(backendApiPath(`/system/monitor/performance`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<MonitorPerformancePage>(appendQueryString(backendApiPath(`/system/monitor/performance`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 
@@ -302,7 +296,7 @@ export class SystemMonitorNodesApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<MonitorNodePage>(appendQueryString(backendApiPath(`/system/monitor/nodes`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<MonitorNodePage>(appendQueryString(backendApiPath(`/system/monitor/nodes`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 
@@ -327,18 +321,16 @@ export class SystemMonitorAlertsApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<MonitorAlertPage>(appendQueryString(backendApiPath(`/system/monitor/alerts`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<MonitorAlertPage>(appendQueryString(backendApiPath(`/system/monitor/alerts`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 
 export class SystemMonitorApi {
-  private client: HttpClient;
   public readonly alerts: SystemMonitorAlertsApi;
   public readonly nodes: SystemMonitorNodesApi;
   public readonly performance: SystemMonitorPerformanceApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.alerts = new SystemMonitorAlertsApi(client);
     this.nodes = new SystemMonitorNodesApi(client);
     this.performance = new SystemMonitorPerformanceApi(client);
@@ -356,16 +348,14 @@ export class SystemInstallationStatusApi {
 
 /** List installation status */
   async retrieve(requestOptions?: ApiRequestOptions): Promise<InstallationStatusResponse> {
-    return this.client.request<InstallationStatusResponse>(backendApiPath(`/system/installation/status`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<InstallationStatusResponse>(backendApiPath(`/system/installation/status`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
 export class SystemInstallationApi {
-  private client: HttpClient;
   public readonly status: SystemInstallationStatusApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.status = new SystemInstallationStatusApi(client);
   }
 
@@ -392,26 +382,24 @@ export class SystemFirewallsRulesApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<FirewallRulePage>(appendQueryString(backendApiPath(`/system/firewalls/rules`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<FirewallRulePage>(appendQueryString(backendApiPath(`/system/firewalls/rules`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Create firewall */
   async create(body: AdminFirewallRuleCreateRequest, requestOptions?: ApiRequestOptions): Promise<FirewallRuleItem> {
-    return this.client.request<FirewallRuleItem>(backendApiPath(`/system/firewalls/rules`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<FirewallRuleItem>(backendApiPath(`/system/firewalls/rules`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 
 /** Delete firewall */
   async delete(ruleId: string, requestOptions?: ApiRequestOptions): Promise<void> {
-    return this.client.request<void>(backendApiPath(`/system/firewalls/rules/${serializePathParameter(ruleId, { name: 'ruleId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<void>(backendApiPath(`/system/firewalls/rules/${serializePathParameter(ruleId, { name: 'ruleId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 }
 
 export class SystemFirewallsApi {
-  private client: HttpClient;
   public readonly rules: SystemFirewallsRulesApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.rules = new SystemFirewallsRulesApi(client);
   }
 
@@ -427,27 +415,23 @@ export class SystemDashboardAdminOverviewApi {
 
 /** List dashboard data */
   async retrieve(requestOptions?: ApiRequestOptions): Promise<AdminDashboardOverview> {
-    return this.client.request<AdminDashboardOverview>(backendApiPath(`/system/dashboard/admin/overview`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminDashboardOverview>(backendApiPath(`/system/dashboard/admin/overview`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
 export class SystemDashboardAdminApi {
-  private client: HttpClient;
   public readonly overview: SystemDashboardAdminOverviewApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.overview = new SystemDashboardAdminOverviewApi(client);
   }
 
 }
 
 export class SystemDashboardApi {
-  private client: HttpClient;
   public readonly admin: SystemDashboardAdminApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.admin = new SystemDashboardAdminApi(client);
   }
 
@@ -463,7 +447,7 @@ export class SystemChainsPolicyApiKeyApi {
 
 /** List API key chain policy */
   async retrieve(apiKeyId: string, requestOptions?: ApiRequestOptions): Promise<{ id: string; payload: Record<string, JsonValue>; policyName: string; scopeId: string; scopeType: number; updatedAt: string; }> {
-    return this.client.request<{ id: string; payload: Record<string, JsonValue>; policyName: string; scopeId: string; scopeType: number; updatedAt: string; }>(backendApiPath(`/system/chains/policy/keys/${serializePathParameter(apiKeyId, { name: 'apiKeyId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'item' });
+    return this.client.request<{ id: string; payload: Record<string, JsonValue>; policyName: string; scopeId: string; scopeType: number; updatedAt: string; }>(backendApiPath(`/system/chains/policy/keys/${serializePathParameter(apiKeyId, { name: 'apiKeyId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'item' });
   }
 }
 
@@ -479,21 +463,19 @@ export class SystemChainsPolicyApi {
 
 /** List chain policy */
   async retrieve(requestOptions?: ApiRequestOptions): Promise<{ id: string; payload: Record<string, JsonValue>; policyName: string; scopeId: string; scopeType: number; updatedAt: string; }> {
-    return this.client.request<{ id: string; payload: Record<string, JsonValue>; policyName: string; scopeId: string; scopeType: number; updatedAt: string; }>(backendApiPath(`/system/chains/policy`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'item' });
+    return this.client.request<{ id: string; payload: Record<string, JsonValue>; policyName: string; scopeId: string; scopeType: number; updatedAt: string; }>(backendApiPath(`/system/chains/policy`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'item' });
   }
 
 /** Update chain policy */
   async update(body: ChainPolicyInput, requestOptions?: ApiRequestOptions): Promise<{ id: string; payload: Record<string, JsonValue>; policyName: string; scopeId: string; scopeType: number; updatedAt: string; }> {
-    return this.client.request<{ id: string; payload: Record<string, JsonValue>; policyName: string; scopeId: string; scopeType: number; updatedAt: string; }>(backendApiPath(`/system/chains/policy`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
+    return this.client.request<{ id: string; payload: Record<string, JsonValue>; policyName: string; scopeId: string; scopeType: number; updatedAt: string; }>(backendApiPath(`/system/chains/policy`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 }
 
 export class SystemChainsApi {
-  private client: HttpClient;
   public readonly policy: SystemChainsPolicyApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.policy = new SystemChainsPolicyApi(client);
   }
 
@@ -509,7 +491,7 @@ export class SystemCacheOverviewApi {
 
 /** List overview */
   async retrieve(requestOptions?: ApiRequestOptions): Promise<CacheOverview> {
-    return this.client.request<CacheOverview>(backendApiPath(`/system/cache/overview`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<CacheOverview>(backendApiPath(`/system/cache/overview`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -532,12 +514,12 @@ export class SystemCacheNamespacesKeysApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<CacheNamespaceKeyPage>(appendQueryString(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/keys`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<CacheNamespaceKeyPage>(appendQueryString(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/keys`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Delete key */
   async delete(namespace_: string, key: string, requestOptions?: ApiRequestOptions): Promise<void> {
-    return this.client.request<void>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/keys/${serializePathParameter(key, { name: 'key', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<void>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/keys/${serializePathParameter(key, { name: 'key', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 }
 
@@ -553,12 +535,12 @@ export class SystemCacheNamespacesApi {
 
 /** Delete namespace */
   async delete(namespace_: string, requestOptions?: ApiRequestOptions): Promise<void> {
-    return this.client.request<void>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<void>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Refresh namespace */
   async refresh(namespace_: string, requestOptions?: ApiRequestOptions): Promise<CacheOperationOutcome> {
-    return this.client.request<CacheOperationOutcome>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/refresh`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<CacheOperationOutcome>(backendApiPath(`/system/cache/namespaces/${serializePathParameter(namespace_, { name: 'namespace', style: 'simple', explode: false })}/refresh`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -572,12 +554,12 @@ export class SystemCacheInstancesApi {
 
 /** Delete instance */
   async delete(instanceName: string, requestOptions?: ApiRequestOptions): Promise<void> {
-    return this.client.request<void>(backendApiPath(`/system/cache/instances/${serializePathParameter(instanceName, { name: 'instanceName', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<void>(backendApiPath(`/system/cache/instances/${serializePathParameter(instanceName, { name: 'instanceName', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Refresh instance */
   async refresh(instanceName: string, requestOptions?: ApiRequestOptions): Promise<CacheOperationOutcome> {
-    return this.client.request<CacheOperationOutcome>(backendApiPath(`/system/cache/instances/${serializePathParameter(instanceName, { name: 'instanceName', style: 'simple', explode: false })}/refresh`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<CacheOperationOutcome>(backendApiPath(`/system/cache/instances/${serializePathParameter(instanceName, { name: 'instanceName', style: 'simple', explode: false })}/refresh`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -597,7 +579,7 @@ export class SystemCacheApi {
 
 /** Refresh all */
   async refresh(requestOptions?: ApiRequestOptions): Promise<CacheOperationOutcome> {
-    return this.client.request<CacheOperationOutcome>(backendApiPath(`/system/cache/refresh`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<CacheOperationOutcome>(backendApiPath(`/system/cache/refresh`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -611,21 +593,19 @@ export class SystemAuthSettingsApi {
 
 /** List cloud router auth settings */
   async retrieve(requestOptions?: ApiRequestOptions): Promise<AdminAuthSettingsResponse> {
-    return this.client.request<AdminAuthSettingsResponse>(backendApiPath(`/system/auth/settings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminAuthSettingsResponse>(backendApiPath(`/system/auth/settings`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 
 /** Update cloud router auth settings */
   async update(body: AdminAuthSettingsUpdateRequest, requestOptions?: ApiRequestOptions): Promise<AdminAuthSettingsResponse> {
-    return this.client.request<AdminAuthSettingsResponse>(backendApiPath(`/system/auth/settings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminAuthSettingsResponse>(backendApiPath(`/system/auth/settings`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 
 export class SystemAuthApi {
-  private client: HttpClient;
   public readonly settings: SystemAuthSettingsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.settings = new SystemAuthSettingsApi(client);
   }
 
@@ -654,34 +634,29 @@ export class SystemAnalyticsAdminOverviewApi {
       { name: 'end_time', value: params?.endTime, style: 'form', explode: true, allowReserved: false },
       { name: 'ranking_size', value: params?.rankingSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AdminAnalyticsOverview>(appendQueryString(backendApiPath(`/system/analytics/admin/overview`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminAnalyticsOverview>(appendQueryString(backendApiPath(`/system/analytics/admin/overview`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
 export class SystemAnalyticsAdminApi {
-  private client: HttpClient;
   public readonly overview: SystemAnalyticsAdminOverviewApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.overview = new SystemAnalyticsAdminOverviewApi(client);
   }
 
 }
 
 export class SystemAnalyticsApi {
-  private client: HttpClient;
   public readonly admin: SystemAnalyticsAdminApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.admin = new SystemAnalyticsAdminApi(client);
   }
 
 }
 
 export class SystemApi {
-  private client: HttpClient;
   public readonly analytics: SystemAnalyticsApi;
   public readonly auth: SystemAuthApi;
   public readonly cache: SystemCacheApi;
@@ -697,7 +672,6 @@ export class SystemApi {
   public readonly site: SystemSiteApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.analytics = new SystemAnalyticsApi(client);
     this.auth = new SystemAuthApi(client);
     this.cache = new SystemCacheApi(client);

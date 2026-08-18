@@ -39,6 +39,15 @@ impl InvocationInterceptor for UsageRecordingInterceptor {
                 return Ok(());
             }
 
+            // The provider has already completed successfully by the time
+            // usage recording runs. Mark this before persistence attempts so
+            // a partial recorder failure cannot trigger the billing
+            // interceptor to refund a reservation while another usage line
+            // has already been durably written for asynchronous settlement.
+            if provider_response_succeeded(invocation) {
+                invocation.charging.provider_completed = true;
+            }
+
             let command_count = invocation.usage.settlement_commands.len();
             for command_index in 0..command_count {
                 let command = invocation.usage.settlement_commands[command_index].clone();
@@ -81,6 +90,12 @@ fn observe_recording_failure(
 ) {
     invocation.usage.recording_failure_count =
         invocation.usage.recording_failure_count.saturating_add(1);
+    if record_type == "usage" {
+        invocation.usage.usage_recording_failure_count = invocation
+            .usage
+            .usage_recording_failure_count
+            .saturating_add(1);
+    }
     usage_recording_failure_counter()
         .with_label_values(&[record_type])
         .inc();
@@ -95,6 +110,22 @@ fn observe_recording_failure(
         error = %error,
         "gateway accounting persistence failed after invocation processing"
     );
+}
+
+fn provider_response_succeeded(invocation: &Invocation) -> bool {
+    invocation
+        .telemetry
+        .normalized_response
+        .as_ref()
+        .map(|response| (200..300).contains(&response.status_code))
+        .or_else(|| {
+            invocation
+                .dispatch
+                .response
+                .as_ref()
+                .map(|response| (200..300).contains(&response.status_code))
+        })
+        .unwrap_or(false)
 }
 
 fn usage_recording_failure_counter() -> prometheus::IntCounterVec {

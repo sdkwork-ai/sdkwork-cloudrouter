@@ -7364,6 +7364,14 @@
               ],
               "type": "string"
             },
+            "chargeMode": {
+              "default": "prepaid_adjustment",
+              "enum": [
+                "prepaid_adjustment",
+                "postpaid"
+              ],
+              "type": "string"
+            },
             "currencyCode": {
               "maxLength": 10,
               "pattern": "^[A-Z]{3}$",
@@ -7380,7 +7388,7 @@
               "type": "string"
             },
             "minimumChargeAmount": {
-              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
               "type": "string"
             },
             "planCode": {
@@ -7397,6 +7405,14 @@
                 "half_even",
                 "up",
                 "down"
+              ],
+              "type": "string"
+            },
+            "settlementMode": {
+              "default": "synchronous",
+              "enum": [
+                "synchronous",
+                "asynchronous"
               ],
               "type": "string"
             },
@@ -7435,6 +7451,14 @@
               ],
               "type": "string"
             },
+            "chargeMode": {
+              "default": "prepaid_adjustment",
+              "enum": [
+                "prepaid_adjustment",
+                "postpaid"
+              ],
+              "type": "string"
+            },
             "createdAt": {
               "format": "date-time",
               "maxLength": 64,
@@ -7467,7 +7491,7 @@
               "x-sdkwork-rust-type": "i64"
             },
             "minimumChargeAmount": {
-              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
               "type": "string"
             },
             "planCode": {
@@ -7484,6 +7508,14 @@
                 "half_even",
                 "up",
                 "down"
+              ],
+              "type": "string"
+            },
+            "settlementMode": {
+              "default": "synchronous",
+              "enum": [
+                "synchronous",
+                "asynchronous"
               ],
               "type": "string"
             },
@@ -7846,7 +7878,7 @@
               "type": "string"
             },
             "markupAmount": {
-              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
               "type": "string"
             },
             "meterCode": {
@@ -7854,7 +7886,7 @@
               "type": "string"
             },
             "multiplier": {
-              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
               "type": "string"
             },
             "operationCode": {
@@ -7981,7 +8013,7 @@
               "type": "string"
             },
             "unitPriceOverride": {
-              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
               "type": "string"
             }
           },
@@ -8103,7 +8135,7 @@
               "x-sdkwork-rust-type": "i64"
             },
             "markupAmount": {
-              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
               "type": "string"
             },
             "meterCode": {
@@ -8111,7 +8143,7 @@
               "type": "string"
             },
             "multiplier": {
-              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
               "type": "string"
             },
             "operationCode": {
@@ -8242,7 +8274,7 @@
               "type": "string"
             },
             "unitPriceOverride": {
-              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
               "type": "string"
             },
             "updatedAt": {
@@ -8407,6 +8439,33 @@
           "required": false,
           "schema": {
             "maxLength": 256,
+            "type": "string"
+          }
+        },
+        {
+          "explode": false,
+          "in": "query",
+          "name": "vendor_codes",
+          "required": false,
+          "schema": {
+            "items": {
+              "maxLength": 160,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9._:/-]+$",
+              "type": "string"
+            },
+            "maxItems": 200,
+            "type": "array"
+          },
+          "style": "form"
+        },
+        {
+          "in": "query",
+          "name": "region_code",
+          "required": false,
+          "schema": {
+            "maxLength": 160,
+            "pattern": "^[A-Za-z0-9._:/-]+$",
             "type": "string"
           }
         },
@@ -9063,6 +9122,9 @@
                   "resourceCode": {
                     "type": "string"
                   },
+                  "resourceDisplayName": {
+                    "type": "string"
+                  },
                   "resourceType": {
                     "type": "string"
                   },
@@ -9081,6 +9143,7 @@
                   "regionCode",
                   "resourceType",
                   "resourceCode",
+                  "resourceDisplayName",
                   "currencyCode",
                   "priceBookCode",
                   "priceBookVersion",
@@ -9092,12 +9155,70 @@
             },
             "pageInfo": {
               "$ref": "#/components/schemas/PageInfo"
+            },
+            "regions": {
+              "items": {
+                "additionalProperties": false,
+                "name": "OfficialPricingProductRegionFacet",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "code",
+                  "count"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "vendors": {
+              "items": {
+                "additionalProperties": false,
+                "name": "OfficialPricingProductVendorFacet",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "format": "int64",
+                    "pattern": "^-?[0-9]+$",
+                    "type": "string",
+                    "x-sdkwork-int64-string": true,
+                    "x-sdkwork-rust-type": "i64"
+                  },
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "code",
+                  "count"
+                ],
+                "type": "object"
+              },
+              "type": "array"
             }
           },
           "required": [
             "items",
             "pageInfo",
-            "groups"
+            "groups",
+            "vendors",
+            "regions"
           ],
           "type": "object"
         }
@@ -10005,7 +10126,7 @@
               "x-sdkwork-rust-type": "i64"
             },
             "minimumChargeAmount": {
-              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
               "type": "string"
             },
             "planCode": {
@@ -10171,6 +10292,14 @@
                     ],
                     "type": "string"
                   },
+                  "chargeMode": {
+                    "default": "prepaid_adjustment",
+                    "enum": [
+                      "prepaid_adjustment",
+                      "postpaid"
+                    ],
+                    "type": "string"
+                  },
                   "createdAt": {
                     "format": "date-time",
                     "maxLength": 64,
@@ -10203,7 +10332,7 @@
                     "x-sdkwork-rust-type": "i64"
                   },
                   "minimumChargeAmount": {
-                    "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+                    "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
                     "type": "string"
                   },
                   "planCode": {
@@ -10220,6 +10349,14 @@
                       "half_even",
                       "up",
                       "down"
+                    ],
+                    "type": "string"
+                  },
+                  "settlementMode": {
+                    "default": "synchronous",
+                    "enum": [
+                      "synchronous",
+                      "asynchronous"
                     ],
                     "type": "string"
                   },
@@ -10676,7 +10813,7 @@
                     "x-sdkwork-rust-type": "i64"
                   },
                   "markupAmount": {
-                    "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+                    "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
                     "type": "string"
                   },
                   "meterCode": {
@@ -10684,7 +10821,7 @@
                     "type": "string"
                   },
                   "multiplier": {
-                    "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+                    "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
                     "type": "string"
                   },
                   "operationCode": {
@@ -10815,7 +10952,7 @@
                     "type": "string"
                   },
                   "unitPriceOverride": {
-                    "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+                    "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
                     "type": "string"
                   },
                   "updatedAt": {
@@ -10894,6 +11031,14 @@
               ],
               "type": "string"
             },
+            "chargeMode": {
+              "default": "prepaid_adjustment",
+              "enum": [
+                "prepaid_adjustment",
+                "postpaid"
+              ],
+              "type": "string"
+            },
             "currencyCode": {
               "maxLength": 10,
               "pattern": "^[A-Z]{3}$",
@@ -10910,7 +11055,7 @@
               "type": "string"
             },
             "minimumChargeAmount": {
-              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
               "type": "string"
             },
             "planCode": {
@@ -10927,6 +11072,14 @@
                 "half_even",
                 "up",
                 "down"
+              ],
+              "type": "string"
+            },
+            "settlementMode": {
+              "default": "synchronous",
+              "enum": [
+                "synchronous",
+                "asynchronous"
               ],
               "type": "string"
             },
@@ -10996,7 +11149,7 @@
               "x-sdkwork-rust-type": "i64"
             },
             "minimumChargeAmount": {
-              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
               "type": "string"
             },
             "planCode": {
@@ -11379,7 +11532,7 @@
               "type": "string"
             },
             "markupAmount": {
-              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
               "type": "string"
             },
             "meterCode": {
@@ -11387,7 +11540,7 @@
               "type": "string"
             },
             "multiplier": {
-              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
               "type": "string"
             },
             "operationCode": {
@@ -11514,7 +11667,7 @@
               "type": "string"
             },
             "unitPriceOverride": {
-              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
               "type": "string"
             }
           },
@@ -11635,7 +11788,7 @@
               "x-sdkwork-rust-type": "i64"
             },
             "markupAmount": {
-              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
               "type": "string"
             },
             "meterCode": {
@@ -11643,7 +11796,7 @@
               "type": "string"
             },
             "multiplier": {
-              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
               "type": "string"
             },
             "operationCode": {
@@ -11774,7 +11927,7 @@
               "type": "string"
             },
             "unitPriceOverride": {
-              "pattern": "^[0-9]+(\\.[0-9]{1,6})?$",
+              "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
               "type": "string"
             },
             "updatedAt": {

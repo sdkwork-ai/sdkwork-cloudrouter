@@ -955,5 +955,4 @@ mod tests {
             .values()
             .all(|book| book.price_side == "official_reference"));
     }
-
 }

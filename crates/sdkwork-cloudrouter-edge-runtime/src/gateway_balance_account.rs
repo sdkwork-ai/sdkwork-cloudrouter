@@ -5,6 +5,8 @@
 //! balance ledger; relay usage is settled against it, so the balance shown by
 //! the gateway endpoint reflects what the key's owner can still consume.
 
+use std::sync::Arc;
+
 use sdkwork_account_repository_sqlx::PostgresCommerceAccountStore;
 use sdkwork_account_service::WalletAccountListQuery;
 use sdkwork_cloudrouter_router_service::api::{GatewayBalanceStore, GatewayTokenBankBalance};
@@ -14,11 +16,11 @@ use sdkwork_contract_service::CommerceAccountAssetType;
 const TOKEN_BANK_UNIT: &str = "TOKEN_BANK";
 
 pub struct PostgresGatewayBalanceStore {
-    store: PostgresCommerceAccountStore,
+    store: Arc<PostgresCommerceAccountStore>,
 }
 
 impl PostgresGatewayBalanceStore {
-    pub fn new(store: PostgresCommerceAccountStore) -> Self {
+    pub fn new(store: Arc<PostgresCommerceAccountStore>) -> Self {
         Self { store }
     }
 }

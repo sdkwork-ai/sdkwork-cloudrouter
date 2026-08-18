@@ -14,7 +14,7 @@ export class VideosViduEntV2Text2videoApi {
 
 /** Vidu text to video */
   async create(body: ViduTextToVideoRequest, requestOptions?: ApiRequestOptions): Promise<ViduVideoGenerationTask> {
-    return this.client.request<ViduVideoGenerationTask>(aiApiPath(`/vidu/ent/v2/text2video`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<ViduVideoGenerationTask>(aiApiPath(`/vidu/ent/v2/text2video`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -28,16 +28,14 @@ export class VideosViduEntV2TasksCreationsApi {
 
 /** Vidu get task creations */
   async list(taskId: string, requestOptions?: ApiRequestOptions): Promise<ViduTaskCreationsResponse> {
-    return this.client.request<ViduTaskCreationsResponse>(aiApiPath(`/vidu/ent/v2/tasks/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}/creations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<ViduTaskCreationsResponse>(aiApiPath(`/vidu/ent/v2/tasks/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}/creations`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 
 export class VideosViduEntV2TasksApi {
-  private client: HttpClient;
   public readonly creations: VideosViduEntV2TasksCreationsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.creations = new VideosViduEntV2TasksCreationsApi(client);
   }
 
@@ -53,7 +51,7 @@ export class VideosViduEntV2StartEnd2videoApi {
 
 /** Vidu start-end to video */
   async create(body: ViduStartEndToVideoRequest, requestOptions?: ApiRequestOptions): Promise<ViduVideoGenerationTask> {
-    return this.client.request<ViduVideoGenerationTask>(aiApiPath(`/vidu/ent/v2/start-end2video`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<ViduVideoGenerationTask>(aiApiPath(`/vidu/ent/v2/start-end2video`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -67,7 +65,7 @@ export class VideosViduEntV2Reference2videoApi {
 
 /** Vidu reference to video */
   async create(body: ViduReferenceToVideoRequest, requestOptions?: ApiRequestOptions): Promise<ViduVideoGenerationTask> {
-    return this.client.request<ViduVideoGenerationTask>(aiApiPath(`/vidu/ent/v2/reference2video`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<ViduVideoGenerationTask>(aiApiPath(`/vidu/ent/v2/reference2video`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -81,12 +79,11 @@ export class VideosViduEntV2Img2videoApi {
 
 /** Vidu image to video */
   async create(body: ViduImageToVideoRequest, requestOptions?: ApiRequestOptions): Promise<ViduVideoGenerationTask> {
-    return this.client.request<ViduVideoGenerationTask>(aiApiPath(`/vidu/ent/v2/img2video`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<ViduVideoGenerationTask>(aiApiPath(`/vidu/ent/v2/img2video`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
 export class VideosViduEntV2Api {
-  private client: HttpClient;
   public readonly img2video: VideosViduEntV2Img2videoApi;
   public readonly reference2video: VideosViduEntV2Reference2videoApi;
   public readonly startEnd2video: VideosViduEntV2StartEnd2videoApi;
@@ -94,7 +91,6 @@ export class VideosViduEntV2Api {
   public readonly text2video: VideosViduEntV2Text2videoApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.img2video = new VideosViduEntV2Img2videoApi(client);
     this.reference2video = new VideosViduEntV2Reference2videoApi(client);
     this.startEnd2video = new VideosViduEntV2StartEnd2videoApi(client);
@@ -105,22 +101,18 @@ export class VideosViduEntV2Api {
 }
 
 export class VideosViduEntApi {
-  private client: HttpClient;
   public readonly v2: VideosViduEntV2Api;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.v2 = new VideosViduEntV2Api(client);
   }
 
 }
 
 export class VideosViduApi {
-  private client: HttpClient;
   public readonly ent: VideosViduEntApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.ent = new VideosViduEntApi(client);
   }
 
@@ -130,13 +122,7 @@ export function createVideosViduApi(client: HttpClient): VideosViduApi {
   return new VideosViduApi(client);
 }
 
-function appendQueryString(path: string, rawQueryString: string): string {
-  const query = rawQueryString.replace(/^\?+/, '');
-  if (!query) {
-    return path;
-  }
-  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
-}
+
 
 interface PathParameterSpec {
   name: string;

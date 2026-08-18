@@ -183,6 +183,8 @@ pub struct CreateAdminPricingPlanCommand {
     pub effective_from: String,
     pub effective_to: Option<String>,
     pub status: AdminPricingStatus,
+    pub charge_mode: String,
+    pub settlement_mode: String,
     pub request_id: String,
     pub requested_at: String,
 }
@@ -201,6 +203,8 @@ pub struct UpdateAdminPricingPlanCommand {
     pub effective_from: String,
     pub effective_to: Option<String>,
     pub status: AdminPricingStatus,
+    pub charge_mode: String,
+    pub settlement_mode: String,
     pub request_id: String,
     pub requested_at: String,
 }
@@ -326,6 +330,8 @@ pub struct AdminPricingPlanItem {
     pub effective_from: Option<String>,
     pub effective_to: Option<String>,
     pub status: String,
+    pub charge_mode: String,
+    pub settlement_mode: String,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
     #[serde(with = "sdkwork_utils_rust::serde_int64")]

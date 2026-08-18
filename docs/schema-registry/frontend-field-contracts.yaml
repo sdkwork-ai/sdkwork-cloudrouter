@@ -665,6 +665,7 @@ frontend_operations:
                 regionCode: { type: string }
                 resourceType: { type: string }
                 resourceCode: { type: string }
+                resourceDisplayName: { type: string }
                 catalogKey: { type: string, nullable: true }
                 currencyCode: { type: string, pattern: '^[A-Z]{3}$' }
                 priceBookCode: { type: string }
@@ -674,7 +675,7 @@ frontend_operations:
                   minItems: 1
                   items: *official-pricing-rate-schema
               required: [groupKey, groupCodes, productCode, productKind, productDisplayName,
-                vendorCode, providerCode, regionCode, resourceType, resourceCode, currencyCode,
+                vendorCode, providerCode, regionCode, resourceType, resourceCode, resourceDisplayName, currencyCode,
                 priceBookCode, priceBookVersion, rates]
           pageInfo:
             $ref: '#/components/schemas/PageInfo'
@@ -683,6 +684,22 @@ frontend_operations:
             items:
               additionalProperties: false
               name: OfficialPricingProductGroupFacet
+              type: object
+              properties:
+                id: { type: string }
+                code: { type: string }
+                count:
+                  type: string
+                  format: int64
+                  pattern: ^-?[0-9]+$
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
+              required: [id, code, count]
+          vendors:
+            type: array
+            items:
+              additionalProperties: false
+              name: OfficialPricingProductVendorFacet
               type: object
               properties:
                 id: { type: string }
@@ -710,12 +727,19 @@ frontend_operations:
                   x-sdkwork-int64-string: true
                   x-sdkwork-rust-type: i64
               required: [id, code, count]
-        required: [items, pageInfo, groups, regions]
+        required: [items, pageInfo, groups, vendors, regions]
     query_parameters:
       - name: category
         schema: { type: string, enum: [all, llm, image, video, audio, music, embedding, sound, api, other] }
       - name: q
         schema: { type: string, maxLength: 256 }
+      - name: vendor_codes
+        schema:
+          type: array
+          maxItems: 200
+          items: { type: string, minLength: 1, maxLength: 160, pattern: '^[A-Za-z0-9._:/-]+$' }
+        style: form
+        explode: false
       - name: region_code
         schema: { type: string, maxLength: 160, pattern: '^[A-Za-z0-9._:/-]+$' }
       - name: page
@@ -10810,6 +10834,8 @@ frontend_operations:
               additionalProperties: false
               name: AdminPricingPlan
               properties:
+                chargeMode: { default: prepaid_adjustment, enum: [prepaid_adjustment, postpaid], type: string }
+                settlementMode: { default: synchronous, enum: [synchronous, asynchronous], type: string }
                 basePriceSide: { enum: [official_reference, upstream_cost, customer_charge, internal_transfer], type: string }
                 createdAt: { format: date-time, maxLength: 64, type: string }
                 currencyCode: {maxLength: 10, pattern: '^[A-Z]{3}$', type: string}
@@ -10822,7 +10848,7 @@ frontend_operations:
                   type: string
                   x-sdkwork-int64-string: true
                   x-sdkwork-rust-type: i64
-                minimumChargeAmount: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+                minimumChargeAmount: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
                 planCode: { maxLength: 96, type: string }
                 planName: { maxLength: 256, type: string }
                 roundingMode: { enum: [half_up, half_even, up, down], type: string }
@@ -10869,6 +10895,8 @@ frontend_operations:
         additionalProperties: false
         name: AdminPricingPlan
         properties:
+          chargeMode: { default: prepaid_adjustment, enum: [prepaid_adjustment, postpaid], type: string }
+          settlementMode: { default: synchronous, enum: [synchronous, asynchronous], type: string }
           basePriceSide: { enum: [official_reference, upstream_cost, customer_charge, internal_transfer], type: string }
           createdAt: { format: date-time, maxLength: 64, type: string }
           currencyCode: {maxLength: 10, pattern: '^[A-Z]{3}$', type: string}
@@ -10881,7 +10909,7 @@ frontend_operations:
             type: string
             x-sdkwork-int64-string: true
             x-sdkwork-rust-type: i64
-          minimumChargeAmount: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+          minimumChargeAmount: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
           planCode: { maxLength: 96, type: string }
           planName: { maxLength: 256, type: string }
           roundingMode: { enum: [half_up, half_even, up, down], type: string }
@@ -10901,11 +10929,13 @@ frontend_operations:
         additionalProperties: false
         name: PricingPlanCreateRequest
         properties:
+          chargeMode: { default: prepaid_adjustment, enum: [prepaid_adjustment, postpaid], type: string }
+          settlementMode: { default: synchronous, enum: [synchronous, asynchronous], type: string }
           basePriceSide: { enum: [official_reference, upstream_cost, customer_charge, internal_transfer], type: string }
           currencyCode: {maxLength: 10, pattern: '^[A-Z]{3}$', type: string}
           effectiveFrom: { format: date-time, maxLength: 64, type: string }
           effectiveTo: { format: date-time, maxLength: 64, type: string }
-          minimumChargeAmount: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+          minimumChargeAmount: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
           planCode: { maxLength: 96, type: string }
           planName: { maxLength: 256, type: string }
           roundingMode: { enum: [half_up, half_even, up, down], type: string }
@@ -10945,7 +10975,7 @@ frontend_operations:
             type: string
             x-sdkwork-int64-string: true
             x-sdkwork-rust-type: i64
-          minimumChargeAmount: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+          minimumChargeAmount: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
           planCode: { maxLength: 96, type: string }
           planName: { maxLength: 256, type: string }
           roundingMode: { enum: [half_up, half_even, up, down], type: string }
@@ -10989,7 +11019,7 @@ frontend_operations:
             type: string
             x-sdkwork-int64-string: true
             x-sdkwork-rust-type: i64
-          minimumChargeAmount: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+          minimumChargeAmount: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
           planCode: { maxLength: 96, type: string }
           planName: { maxLength: 256, type: string }
           roundingMode: { enum: [half_up, half_even, up, down], type: string }
@@ -11009,11 +11039,13 @@ frontend_operations:
         additionalProperties: false
         name: PricingPlanUpdateRequest
         properties:
+          chargeMode: { default: prepaid_adjustment, enum: [prepaid_adjustment, postpaid], type: string }
+          settlementMode: { default: synchronous, enum: [synchronous, asynchronous], type: string }
           basePriceSide: { enum: [official_reference, upstream_cost, customer_charge, internal_transfer], type: string }
           currencyCode: {maxLength: 10, pattern: '^[A-Z]{3}$', type: string}
           effectiveFrom: { format: date-time, maxLength: 64, type: string }
           effectiveTo: { format: date-time, maxLength: 64, type: string }
-          minimumChargeAmount: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+          minimumChargeAmount: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
           planCode: { maxLength: 96, type: string }
           planName: { maxLength: 256, type: string }
           roundingMode: { enum: [half_up, half_even, up, down], type: string }
@@ -11305,9 +11337,9 @@ frontend_operations:
                   type: string
                   x-sdkwork-int64-string: true
                   x-sdkwork-rust-type: i64
-                markupAmount: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+                markupAmount: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
                 meterCode: { maxLength: 96, type: string }
-                multiplier: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+                multiplier: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
                 operationCode: { maxLength: 160, type: string }
                 planCode: { maxLength: 96, type: string }
                 pricingPlanId:
@@ -11322,7 +11354,7 @@ frontend_operations:
                 regionCode: { maxLength: 64, type: string }
                 ruleCode: { maxLength: 96, type: string }
                 status: { enum: [active, inactive], type: string }
-                unitPriceOverride: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+                unitPriceOverride: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
                 conditions: &admin-pricing-rule-conditions
                   type: array
                   maxItems: 32
@@ -11417,9 +11449,9 @@ frontend_operations:
             type: string
             x-sdkwork-int64-string: true
             x-sdkwork-rust-type: i64
-          markupAmount: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+          markupAmount: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
           meterCode: { maxLength: 96, type: string }
-          multiplier: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+          multiplier: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
           operationCode: { maxLength: 160, type: string }
           planCode: { maxLength: 96, type: string }
           pricingPlanId:
@@ -11434,7 +11466,7 @@ frontend_operations:
           regionCode: { maxLength: 64, type: string }
           ruleCode: { maxLength: 96, type: string }
           status: { enum: [active, inactive], type: string }
-          unitPriceOverride: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+          unitPriceOverride: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
           conditions: *admin-pricing-rule-conditions
           schedule: *admin-pricing-rule-schedule
           updatedAt: { format: date-time, maxLength: 64, type: string }
@@ -11450,9 +11482,9 @@ frontend_operations:
           effectiveFrom: { format: date-time, maxLength: 64, type: string }
           effectiveTo: { format: date-time, maxLength: 64, type: string }
           formulaMode: { enum: [multiplier_markup, unit_price_override], type: string }
-          markupAmount: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+          markupAmount: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
           meterCode: { maxLength: 96, type: string }
-          multiplier: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+          multiplier: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
           operationCode: { maxLength: 160, type: string }
           pricingPlanId:
             format: int64
@@ -11466,7 +11498,7 @@ frontend_operations:
           regionCode: { maxLength: 64, type: string }
           ruleCode: { maxLength: 96, type: string }
           status: { enum: [active, inactive], type: string }
-          unitPriceOverride: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+          unitPriceOverride: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
           conditions: *admin-pricing-rule-conditions
           schedule: *admin-pricing-rule-schedule
         required: [ruleCode, pricingPlanId, formulaMode, status]
@@ -11504,9 +11536,9 @@ frontend_operations:
             type: string
             x-sdkwork-int64-string: true
             x-sdkwork-rust-type: i64
-          markupAmount: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+          markupAmount: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
           meterCode: { maxLength: 96, type: string }
-          multiplier: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+          multiplier: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
           operationCode: { maxLength: 160, type: string }
           planCode: { maxLength: 96, type: string }
           pricingPlanId:
@@ -11521,7 +11553,7 @@ frontend_operations:
           regionCode: { maxLength: 64, type: string }
           ruleCode: { maxLength: 96, type: string }
           status: { enum: [active, inactive], type: string }
-          unitPriceOverride: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+          unitPriceOverride: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
           conditions: *admin-pricing-rule-conditions
           schedule: *admin-pricing-rule-schedule
           updatedAt: { format: date-time, maxLength: 64, type: string }
@@ -11537,9 +11569,9 @@ frontend_operations:
           effectiveFrom: { format: date-time, maxLength: 64, type: string }
           effectiveTo: { format: date-time, maxLength: 64, type: string }
           formulaMode: { enum: [multiplier_markup, unit_price_override], type: string }
-          markupAmount: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+          markupAmount: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
           meterCode: { maxLength: 96, type: string }
-          multiplier: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+          multiplier: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
           operationCode: { maxLength: 160, type: string }
           pricingPlanId:
             format: int64
@@ -11553,7 +11585,7 @@ frontend_operations:
           regionCode: { maxLength: 64, type: string }
           ruleCode: { maxLength: 96, type: string }
           status: { enum: [active, inactive], type: string }
-          unitPriceOverride: {pattern: '^[0-9]+(\.[0-9]{1,6})?$', type: string}
+          unitPriceOverride: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
           conditions: *admin-pricing-rule-conditions
           schedule: *admin-pricing-rule-schedule
         required: [formulaMode, pricingPlanId, status]
@@ -14389,6 +14421,8 @@ frontend_models:
       - fallbackPolicy
       - roundingMode
       - minimumChargeAmount
+      - chargeMode
+      - settlementMode
       - effectiveFrom
       - effectiveTo
       - status
@@ -14408,6 +14442,8 @@ frontend_models:
       - currencyCode
       - roundingMode
       - minimumChargeAmount
+      - chargeMode
+      - settlementMode
       - effectiveFrom
       - effectiveTo
       - status

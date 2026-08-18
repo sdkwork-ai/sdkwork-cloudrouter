@@ -36,6 +36,7 @@ const USAGE_SETTLEMENT_TERMINAL_FAILED: i64 = 4;
 const DECIMAL_SCALE: i128 = 1_000_000_000_000;
 const TOKENS_PER_MAJOR_UNIT: i128 = 10;
 const MIN_BILLABLE_TOKEN_SCALED: i128 = DECIMAL_SCALE;
+const MICRO_SETTLEMENT_MAX_AGE_SECONDS: i64 = 15 * 60;
 const MAX_SETTLEMENT_TRANSACTION_ATTEMPTS: usize = 3;
 const SETTLEMENT_RETRY_INITIAL_BACKOFF_MILLIS: u64 = 25;
 const SETTLEMENT_RETRY_MAX_BACKOFF_MILLIS: u64 = 250;
@@ -120,6 +121,7 @@ struct UsageFactForSettlement {
     amount: String,
     currency: String,
     pricing_snapshot_bytes: i64,
+    occurred_at_epoch: i64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -220,7 +222,8 @@ async fn load_settleable_usage_facts(
             billing_meter_code,
             CAST(COALESCE(NULLIF(CAST(customer_charge_amount AS TEXT), ''), '0') AS TEXT) AS amount,
             COALESCE(NULLIF(currency, ''), 'USD') AS currency,
-            CAST(octet_length(CAST(COALESCE(pricing_snapshot, '{}'::jsonb) AS TEXT)) AS TEXT) AS pricing_snapshot_bytes
+            CAST(octet_length(CAST(COALESCE(pricing_snapshot, '{}'::jsonb) AS TEXT)) AS TEXT) AS pricing_snapshot_bytes,
+            CAST(EXTRACT(EPOCH FROM COALESCE(occurred_at, CURRENT_TIMESTAMP)) AS BIGINT) AS occurred_at_epoch
         FROM ai_metering_usage
         WHERE ($1 <= 0 OR tenant_id = $1)
           AND ($2 <= 0 OR organization_id = $2)
@@ -257,6 +260,7 @@ async fn load_settleable_usage_facts(
             amount: string_cell(row, "amount"),
             currency: string_cell(row, "currency"),
             pricing_snapshot_bytes: integer_cell(row, "pricing_snapshot_bytes"),
+            occurred_at_epoch: integer_cell(row, "occurred_at_epoch"),
         })
         .collect())
 }
@@ -299,11 +303,6 @@ async fn collect_settlement_groups(
                 continue;
             }
         };
-        if scaled_amount == 0 {
-            settle_zero_usage_fact(tx, command, &usage_fact).await?;
-            outcome.settled_count += 1;
-            continue;
-        }
         let key = SettlementGroupKey {
             tenant_id: usage_fact.tenant_id,
             organization_id: usage_fact.organization_id,
@@ -338,14 +337,6 @@ async fn mark_invalid_usage_fact_failed(
         failure_message,
     )
     .await
-}
-
-async fn settle_zero_usage_fact(
-    tx: &mut Transaction<'_, Postgres>,
-    command: &UsageSettlementCommand,
-    usage_fact: &UsageFactForSettlement,
-) -> SettlementResult<()> {
-    mark_settlement_success(tx, command, usage_fact, usage_fact.id).await
 }
 
 async fn already_settled(
@@ -386,20 +377,234 @@ async fn settle_usage_group(
         return Ok(empty_outcome());
     }
 
-    let tokens = charge_tokens_from_scaled(group_total_scaled(group)?)?;
-    if tokens == 0 {
-        defer_usage_group(tx, group).await?;
-        return Ok(empty_outcome());
+    let mut candidates_by_request: BTreeMap<String, Vec<SettlementCandidate>> = BTreeMap::new();
+    for candidate in &group.candidates {
+        candidates_by_request
+            .entry(candidate.usage_fact.request_id.clone())
+            .or_default()
+            .push(candidate.clone());
     }
 
-    // Validate that per-candidate rounding sums to the batch total.
-    let _ = allocate_candidate_tokens(&group.candidates, tokens)?;
+    let mut outcome = empty_outcome();
+    // Never combine different invocation request ids into one Account ledger
+    // append. Account's idempotency and recovery contract has one request_no
+    // per ledger entry; a cross-request batch would let a crash after the
+    // debit commit re-charge every request except the one whose request_no
+    // was written on the entry. Keep aggregation bounded to one request.
+    let mut unreserved_by_request: BTreeMap<String, Vec<SettlementCandidate>> = BTreeMap::new();
+    for candidates in candidates_by_request.into_values() {
+        let request_id = candidates[0].usage_fact.request_id.clone();
+        let first_usage_fact = &candidates[0].usage_fact;
+        // A synchronous settlement can commit its account ledger entry and
+        // then lose the following usage-status update (for example, a
+        // database connection failure). The usage fact remains pending and
+        // is later picked up by this worker. Reusing the request-scoped
+        // settlement marker makes that recovery idempotent instead of
+        // charging the request a second time.
+        if has_existing_request_settlement(tx, first_usage_fact).await? {
+            for candidate in &candidates {
+                mark_settlement_success(
+                    tx,
+                    command,
+                    &candidate.usage_fact,
+                    candidate.usage_fact.id,
+                )
+                .await?;
+            }
+            outcome.settled_count += candidates.len() as i64;
+            continue;
+        }
+        let reserved_tokens = precharge_tokens(tx, first_usage_fact).await?;
+        if reserved_tokens == 0 {
+            // A zero-priced usage fact is a valid, terminal accounting fact.
+            // It must not be kept pending until the micro-settlement age
+            // threshold (which is only for positive sub-token amounts).
+            let mut positive_candidates = Vec::with_capacity(candidates.len());
+            for candidate in candidates {
+                if candidate.scaled_amount == 0 {
+                    mark_settlement_success(
+                        tx,
+                        command,
+                        &candidate.usage_fact,
+                        candidate.usage_fact.id,
+                    )
+                    .await?;
+                    outcome.settled_count += 1;
+                } else {
+                    positive_candidates.push(candidate);
+                }
+            }
+            if !positive_candidates.is_empty() {
+                unreserved_by_request
+                    .entry(request_id)
+                    .or_default()
+                    .extend(positive_candidates);
+            }
+            continue;
+        }
+        // A synchronous precharge already established a per-request token
+        // reservation. Its final amount must use the same upward rounding as
+        // the synchronous interceptor, even when the request is below the
+        // worker's cross-request micro-amount aggregation threshold.
+        let actual_tokens = charge_precharged_tokens(candidate_total_scaled(&candidates)?)?;
+        let transaction_id = if actual_tokens > reserved_tokens {
+            format!(
+                "cloudrouter:{}:async-adjust-debit",
+                first_usage_fact.request_id
+            )
+        } else {
+            format!(
+                "cloudrouter:{}:async-adjust-credit",
+                first_usage_fact.request_id
+            )
+        };
+        let request_outcome = settle_candidates(
+            tx,
+            command,
+            &candidates,
+            account_store,
+            reserved_tokens,
+            actual_tokens,
+            &transaction_id,
+        )
+        .await?;
+        add_outcome(&mut outcome, request_outcome);
+    }
 
-    let first_usage_fact = &group.candidates[0].usage_fact;
-    let transaction_id = settlement_batch_no(&group.candidates);
-    match debit_user_token_bank(account_store, first_usage_fact, tokens, &transaction_id).await {
+    for candidates in unreserved_by_request.into_values() {
+        let total_scaled = candidate_total_scaled(&candidates)?;
+        let mut actual_tokens = charge_tokens_from_scaled(total_scaled)?;
+        if actual_tokens == 0 && total_scaled > 0 && candidates.iter().any(micro_candidate_expired)
+        {
+            // Do not leave a positive billable amount pending forever just
+            // because it is below one Token Bank unit. The same ceil rule as
+            // synchronous settlement is applied once the bounded wait has
+            // elapsed; a true zero amount remains free.
+            actual_tokens = 1;
+        }
+        if actual_tokens == 0 {
+            defer_usage_candidates(tx, &candidates).await?;
+        } else {
+            // `candidates` contains one request id only, so this operation's
+            // request_no and idempotency key cover every fact in the group.
+            let transaction_id = settlement_batch_no(&candidates);
+            let postpaid_outcome = settle_candidates(
+                tx,
+                command,
+                &candidates,
+                account_store,
+                0,
+                actual_tokens,
+                &transaction_id,
+            )
+            .await?;
+            add_outcome(&mut outcome, postpaid_outcome);
+        }
+    }
+
+    Ok(outcome)
+}
+
+fn micro_candidate_expired(candidate: &SettlementCandidate) -> bool {
+    let now = chrono::Utc::now().timestamp();
+    candidate
+        .usage_fact
+        .occurred_at_epoch
+        .saturating_add(MICRO_SETTLEMENT_MAX_AGE_SECONDS)
+        <= now
+}
+
+async fn has_existing_request_settlement(
+    tx: &mut Transaction<'_, Postgres>,
+    usage_fact: &UsageFactForSettlement,
+) -> SettlementResult<bool> {
+    let request_id = &usage_fact.request_id;
+    let sync_adjust_debit = format!("cloudrouter:{request_id}:adjust-debit");
+    let sync_adjust_credit = format!("cloudrouter:{request_id}:adjust-credit");
+    let sync_postpaid = format!("cloudrouter:{request_id}:postpaid");
+    let async_adjust_debit = format!("cloudrouter:{request_id}:async-adjust-debit");
+    let async_adjust_credit = format!("cloudrouter:{request_id}:async-adjust-credit");
+    let exists = sqlx::query_scalar::<_, bool>(
+        r#"
+        SELECT EXISTS (
+            SELECT 1
+            FROM acct_ledger_entry
+            WHERE tenant_id = $1
+              AND request_no = $2
+              AND organization_id = $3
+              AND asset_code = 'token_bank'
+              AND business_no IN ($4, $5, $6, $7, $8)
+        )
+        "#,
+    )
+    .bind(usage_fact.tenant_id)
+    .bind(request_id)
+    .bind(usage_fact.organization_id)
+    .bind(sync_adjust_debit)
+    .bind(sync_adjust_credit)
+    .bind(sync_postpaid)
+    .bind(async_adjust_debit)
+    .bind(async_adjust_credit)
+    .fetch_one(&mut **tx)
+    .await
+    .map_err(|error| store_error("failed to load existing invocation settlement", error))?;
+    Ok(exists)
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn settle_candidates(
+    tx: &mut Transaction<'_, Postgres>,
+    command: &UsageSettlementCommand,
+    candidates: &[SettlementCandidate],
+    account_store: &dyn AccountLedgerAppendPort,
+    reserved_tokens: i64,
+    actual_tokens: i64,
+    transaction_id: &str,
+) -> SettlementResult<UsageSettlementOutcome> {
+    let first_usage_fact = &candidates[0].usage_fact;
+    let (direction, tokens, transaction_id) = if reserved_tokens > 0 {
+        if actual_tokens > reserved_tokens {
+            (
+                CommerceLedgerDirection::Debit,
+                actual_tokens - reserved_tokens,
+                transaction_id.to_owned(),
+            )
+        } else if reserved_tokens > actual_tokens {
+            (
+                CommerceLedgerDirection::Credit,
+                reserved_tokens - actual_tokens,
+                transaction_id.to_owned(),
+            )
+        } else {
+            (CommerceLedgerDirection::Debit, 0, String::new())
+        }
+    } else {
+        (
+            CommerceLedgerDirection::Debit,
+            actual_tokens,
+            transaction_id.to_owned(),
+        )
+    };
+
+    // Validate that per-candidate rounding sums to the batch total before
+    // touching the account ledger. This also keeps a zero-amount request
+    // eligible for releasing a precharge reservation.
+    let _ = allocate_candidate_tokens(candidates, actual_tokens)?;
+    let ledger_result = if tokens == 0 {
+        Ok(())
+    } else {
+        append_user_token_bank(
+            account_store,
+            first_usage_fact,
+            tokens,
+            direction.clone(),
+            &transaction_id,
+        )
+        .await
+    };
+    match ledger_result {
         Ok(_) => {
-            for candidate in &group.candidates {
+            for candidate in candidates {
                 mark_settlement_success(
                     tx,
                     command,
@@ -409,13 +614,17 @@ async fn settle_usage_group(
                 .await?;
             }
             Ok(UsageSettlementOutcome {
-                settled_count: group.candidates.len() as i64,
+                settled_count: candidates.len() as i64,
                 failed_count: 0,
-                debited_tokens: tokens,
+                debited_tokens: if direction == CommerceLedgerDirection::Debit {
+                    tokens
+                } else {
+                    0
+                },
             })
         }
         Err(error) if error.message() == INSUFFICIENT_BALANCE_MESSAGE => {
-            for candidate in &group.candidates {
+            for candidate in candidates {
                 mark_settlement_failed(
                     tx,
                     command,
@@ -428,7 +637,7 @@ async fn settle_usage_group(
             }
             Ok(UsageSettlementOutcome {
                 settled_count: 0,
-                failed_count: group.candidates.len() as i64,
+                failed_count: candidates.len() as i64,
                 debited_tokens: 0,
             })
         }
@@ -445,10 +654,11 @@ async fn settle_usage_group(
 /// the debit commit and the usage-fact status update replays idempotently on
 /// the next settlement run — the account ledger (`acct_*`) is the only writer
 /// of balances.
-async fn debit_user_token_bank(
+async fn append_user_token_bank(
     account_store: &dyn AccountLedgerAppendPort,
     usage_fact: &UsageFactForSettlement,
     tokens: i64,
+    direction: CommerceLedgerDirection,
     transaction_id: &str,
 ) -> Result<(), CommerceServiceError> {
     let append = AppendLedgerEntryCommand {
@@ -458,7 +668,7 @@ async fn debit_user_token_bank(
         account_id: String::new(),
         asset_type: CommerceAccountAssetType::TokenBank,
         currency_code: Some(TOKEN_BANK_CURRENCY_CODE.to_owned()),
-        direction: CommerceLedgerDirection::Debit,
+        direction,
         amount: CommerceMoney::new(&tokens.to_string()).map_err(|error| {
             CommerceServiceError::validation(format!(
                 "invalid usage settlement token amount: {error}"
@@ -466,7 +676,10 @@ async fn debit_user_token_bank(
         })?,
         business_type: USAGE_SETTLEMENT_BUSINESS_TYPE.to_owned(),
         transaction_no: transaction_id.to_owned(),
-        request_no: transaction_id.to_owned(),
+        // Keep the original invocation request number on every settlement
+        // entry. Recovery probes are request-scoped, while transaction_no /
+        // idempotency_key remain the operation-specific replay keys.
+        request_no: usage_fact.request_id.clone(),
         idempotency_key: transaction_id.to_owned(),
         owner_type: None,
         account_purpose: None,
@@ -478,6 +691,37 @@ async fn debit_user_token_bank(
         .append_ledger_entry(append, request_hash)
         .await
         .map(|_outcome| ())
+}
+
+async fn precharge_tokens(
+    tx: &mut Transaction<'_, Postgres>,
+    usage_fact: &UsageFactForSettlement,
+) -> SettlementResult<i64> {
+    // `PostgresGatewayBillingStore` stores the deterministic transaction
+    // number in acct_ledger_entry.business_no. `business_type` is the stable
+    // category (`gateway_invocation_billing`), so querying business_no with
+    // the category silently treated every precharged request as postpaid and
+    // charged the full amount a second time in asynchronous settlement.
+    let transaction_no = format!("cloudrouter:{}:precharge", usage_fact.request_id);
+    let amount = sqlx::query_scalar::<_, Option<i64>>(
+        r#"
+        SELECT COALESCE(SUM(CASE WHEN direction = 'DEBIT' THEN amount ELSE -amount END), 0)
+        FROM acct_ledger_entry
+        WHERE tenant_id = $1
+          AND request_no = $2
+          AND organization_id = $3
+          AND business_no = $4
+          AND asset_code = 'token_bank'
+        "#,
+    )
+    .bind(usage_fact.tenant_id)
+    .bind(&usage_fact.request_id)
+    .bind(usage_fact.organization_id)
+    .bind(transaction_no)
+    .fetch_one(&mut **tx)
+    .await
+    .map_err(|error| store_error("failed to load invocation precharge", error))?;
+    Ok(amount.unwrap_or(0).max(0))
 }
 
 /// Deterministic request hash for the settlement debit so the account-domain
@@ -519,12 +763,16 @@ async fn mark_settlement_success(
             settlement_id = $2,
             settled_at = $3::timestamp AT TIME ZONE 'UTC'
         WHERE id = $4
+          AND tenant_id = $5
+          AND organization_id = $6
         "#,
     )
     .bind(USAGE_SETTLEMENT_SUCCESS)
     .bind(settlement_id)
     .bind(&command.requested_at)
     .bind(usage_fact.id)
+    .bind(usage_fact.tenant_id)
+    .bind(usage_fact.organization_id)
     .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to mark usage fact settled", error))?;
@@ -604,6 +852,8 @@ async fn mark_settlement_failed(
             failure_code = $4,
             failure_message = $5
         WHERE id = $6
+          AND tenant_id = $7
+          AND organization_id = $8
         "#,
     )
     .bind(USAGE_SETTLEMENT_RETRYABLE_FAILED)
@@ -612,6 +862,8 @@ async fn mark_settlement_failed(
     .bind(failure_code)
     .bind(truncate_message(failure_message))
     .bind(usage_fact.id)
+    .bind(usage_fact.tenant_id)
+    .bind(usage_fact.organization_id)
     .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to mark usage fact settlement failed", error))?;
@@ -638,6 +890,8 @@ async fn mark_settlement_terminal_failed(
             failure_code = $3,
             failure_message = $4
         WHERE id = $5
+          AND tenant_id = $6
+          AND organization_id = $7
         "#,
     )
     .bind(USAGE_SETTLEMENT_TERMINAL_FAILED)
@@ -645,6 +899,8 @@ async fn mark_settlement_terminal_failed(
     .bind(failure_code)
     .bind(truncate_message(failure_message))
     .bind(usage_fact.id)
+    .bind(usage_fact.tenant_id)
+    .bind(usage_fact.organization_id)
     .execute(&mut **tx)
     .await
     .map_err(|error| {
@@ -661,10 +917,6 @@ async fn mark_settlement_terminal_failed(
         Some(&command.requested_at),
     )
     .await
-}
-
-fn settlement_no(usage_fact_id: i64) -> String {
-    format!("usage-settlement-{usage_fact_id}")
 }
 
 fn charge_tokens_from_scaled(scaled: i128) -> Result<i64, DomainError> {
@@ -684,15 +936,30 @@ fn charge_tokens_from_scaled(scaled: i128) -> Result<i64, DomainError> {
     i64::try_from(tokens).map_err(|_| DomainError::new("usage settlement tokens overflow"))
 }
 
-fn group_total_scaled(group: &SettlementGroup) -> Result<i128, DomainError> {
-    group
-        .candidates
-        .iter()
-        .try_fold(0_i128, |total, candidate| {
-            total
-                .checked_add(candidate.scaled_amount)
-                .ok_or_else(|| DomainError::new("usage settlement amount is too large"))
-        })
+fn charge_precharged_tokens(scaled: i128) -> Result<i64, DomainError> {
+    if scaled <= 0 {
+        return Ok(0);
+    }
+    let scaled_tokens = scaled
+        .checked_mul(TOKENS_PER_MAJOR_UNIT)
+        .ok_or_else(|| DomainError::new("usage settlement amount is too large"))?;
+    let tokens = scaled_tokens
+        .checked_add(DECIMAL_SCALE - 1)
+        .ok_or_else(|| DomainError::new("usage settlement amount is too large"))?
+        / DECIMAL_SCALE;
+    i64::try_from(tokens).map_err(|_| DomainError::new("usage settlement tokens overflow"))
+}
+
+fn candidate_total_scaled(candidates: &[SettlementCandidate]) -> Result<i128, DomainError> {
+    candidates.iter().try_fold(0_i128, |total, candidate| {
+        total
+            .checked_add(candidate.scaled_amount)
+            .ok_or_else(|| DomainError::new("usage settlement amount is too large"))
+    })
+}
+
+fn settlement_no(usage_fact_id: i64) -> String {
+    format!("usage-settlement-{usage_fact_id}")
 }
 
 fn allocate_candidate_tokens(
@@ -721,33 +988,43 @@ fn allocate_candidate_tokens(
     Ok(allocations)
 }
 
-async fn defer_usage_group(
-    tx: &mut Transaction<'_, Postgres>,
-    group: &SettlementGroup,
-) -> SettlementResult<()> {
-    for candidate in &group.candidates {
-        sqlx::query(
-            r#"
-            UPDATE ai_metering_usage
-            SET settlement_status = $1
-            WHERE id = $2
-            "#,
-        )
-        .bind(USAGE_SETTLEMENT_PENDING)
-        .bind(candidate.usage_fact.id)
-        .execute(&mut **tx)
-        .await
-        .map_err(|error| store_error("failed to defer micro usage settlement fact", error))?;
-    }
-    Ok(())
-}
-
 fn empty_outcome() -> UsageSettlementOutcome {
     UsageSettlementOutcome {
         settled_count: 0,
         failed_count: 0,
         debited_tokens: 0,
     }
+}
+
+fn add_outcome(total: &mut UsageSettlementOutcome, item: UsageSettlementOutcome) {
+    total.settled_count += item.settled_count;
+    total.failed_count += item.failed_count;
+    total.debited_tokens += item.debited_tokens;
+}
+
+async fn defer_usage_candidates(
+    tx: &mut Transaction<'_, Postgres>,
+    candidates: &[SettlementCandidate],
+) -> SettlementResult<()> {
+    for candidate in candidates {
+        sqlx::query(
+            r#"
+            UPDATE ai_metering_usage
+            SET settlement_status = $1
+            WHERE id = $2
+              AND tenant_id = $3
+              AND organization_id = $4
+            "#,
+        )
+        .bind(USAGE_SETTLEMENT_PENDING)
+        .bind(candidate.usage_fact.id)
+        .bind(candidate.usage_fact.tenant_id)
+        .bind(candidate.usage_fact.organization_id)
+        .execute(&mut **tx)
+        .await
+        .map_err(|error| store_error("failed to defer micro usage settlement fact", error))?;
+    }
+    Ok(())
 }
 
 fn parse_decimal_scaled(value: &str) -> Result<i128, DomainError> {
@@ -797,9 +1074,6 @@ fn settlement_batch_no(candidates: &[SettlementCandidate]) -> String {
     if candidates.len() == 1 {
         return settlement_no(candidates[0].usage_fact.id);
     }
-    // Deterministic cryptographic idempotency key: a stable hash over the
-    // sorted candidate ids, so the same batch always maps to the same
-    // transaction number across processes and restarts.
     let mut ids: Vec<String> = candidates
         .iter()
         .map(|candidate| candidate.usage_fact.id.to_string())

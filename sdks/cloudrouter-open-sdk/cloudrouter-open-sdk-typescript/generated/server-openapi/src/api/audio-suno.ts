@@ -14,43 +14,37 @@ export class AudioSunoV1MusicGenerationsApi {
 
 /** Suno music generation */
   async create(body: SunoMusicGenerationRequest, requestOptions?: ApiRequestOptions): Promise<SunoMusicGenerationResponse> {
-    return this.client.request<SunoMusicGenerationResponse>(aiApiPath(`/suno/v1/music/generations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<SunoMusicGenerationResponse>(aiApiPath(`/suno/v1/music/generations`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Suno retrieve music generation */
   async retrieve(taskId: string, requestOptions?: ApiRequestOptions): Promise<SunoMusicGenerationTaskResponse> {
-    return this.client.request<SunoMusicGenerationTaskResponse>(aiApiPath(`/suno/v1/music/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<SunoMusicGenerationTaskResponse>(aiApiPath(`/suno/v1/music/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 
 export class AudioSunoV1MusicApi {
-  private client: HttpClient;
   public readonly generations: AudioSunoV1MusicGenerationsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.generations = new AudioSunoV1MusicGenerationsApi(client);
   }
 
 }
 
 export class AudioSunoV1Api {
-  private client: HttpClient;
   public readonly music: AudioSunoV1MusicApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.music = new AudioSunoV1MusicApi(client);
   }
 
 }
 
 export class AudioSunoApi {
-  private client: HttpClient;
   public readonly v1: AudioSunoV1Api;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.v1 = new AudioSunoV1Api(client);
   }
 
@@ -60,13 +54,7 @@ export function createAudioSunoApi(client: HttpClient): AudioSunoApi {
   return new AudioSunoApi(client);
 }
 
-function appendQueryString(path: string, rawQueryString: string): string {
-  const query = rawQueryString.replace(/^\?+/, '');
-  if (!query) {
-    return path;
-  }
-  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
-}
+
 
 interface PathParameterSpec {
   name: string;

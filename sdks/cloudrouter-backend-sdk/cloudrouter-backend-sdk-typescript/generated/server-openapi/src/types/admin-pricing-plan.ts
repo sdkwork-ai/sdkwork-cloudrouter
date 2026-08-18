@@ -2,6 +2,8 @@
 export interface AdminPricingPlan {
   /** Base price side field on admin pricing plan. */
   basePriceSide: 'official_reference' | 'upstream_cost' | 'customer_charge' | 'internal_transfer';
+  /** Charge mode field on admin pricing plan. */
+  chargeMode?: 'prepaid_adjustment' | 'postpaid';
   /** Created at field on admin pricing plan. */
   createdAt?: string;
   /** Currency code field on admin pricing plan. */
@@ -22,6 +24,8 @@ export interface AdminPricingPlan {
   planName: string;
   /** Rounding mode field on admin pricing plan. */
   roundingMode: 'half_up' | 'half_even' | 'up' | 'down';
+  /** Settlement mode field on admin pricing plan. */
+  settlementMode?: 'synchronous' | 'asynchronous';
   /** Status field on admin pricing plan. */
   status: 'active' | 'inactive';
   /** Updated at field on admin pricing plan. */

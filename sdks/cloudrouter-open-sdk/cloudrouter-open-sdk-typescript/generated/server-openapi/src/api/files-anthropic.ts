@@ -25,47 +25,43 @@ export class FilesAnthropicV1FilesApi {
       { name: 'after_id', value: params?.afterId, style: 'form', explode: true, allowReserved: false },
       { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AnthropicFileListResponse>(appendQueryString(aiApiPath(`/anthropic/v1/files`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<AnthropicFileListResponse>(appendQueryString(aiApiPath(`/anthropic/v1/files`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Anthropic upload file */
   async create(body: AnthropicFileUploadMultipartRequest, requestOptions?: ApiRequestOptions): Promise<AnthropicFile> {
-    return this.client.request<AnthropicFile>(aiApiPath(`/anthropic/v1/files`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'multipart/form-data' });
+    return this.client.request<AnthropicFile>(aiApiPath(`/anthropic/v1/files`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'multipart/form-data' });
   }
 
 /** Anthropic delete file */
   async delete(fileId: string, requestOptions?: ApiRequestOptions): Promise<AnthropicDeleteResponse> {
-    return this.client.request<AnthropicDeleteResponse>(aiApiPath(`/anthropic/v1/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<AnthropicDeleteResponse>(aiApiPath(`/anthropic/v1/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Anthropic retrieve file */
   async retrieve(fileId: string, requestOptions?: ApiRequestOptions): Promise<AnthropicFile> {
-    return this.client.request<AnthropicFile>(aiApiPath(`/anthropic/v1/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<AnthropicFile>(aiApiPath(`/anthropic/v1/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Anthropic retrieve file content */
   async content(fileId: string, requestOptions?: ApiRequestOptions): Promise<Blob> {
-    return this.client.request<Blob>(aiApiPath(`/anthropic/v1/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}/content`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<Blob>(aiApiPath(`/anthropic/v1/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}/content`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 
 export class FilesAnthropicV1Api {
-  private client: HttpClient;
   public readonly files: FilesAnthropicV1FilesApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.files = new FilesAnthropicV1FilesApi(client);
   }
 
 }
 
 export class FilesAnthropicApi {
-  private client: HttpClient;
   public readonly v1: FilesAnthropicV1Api;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.v1 = new FilesAnthropicV1Api(client);
   }
 

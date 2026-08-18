@@ -29,22 +29,22 @@ export class PricingRulesApi {
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AdminPricingRuleListResponse>(appendQueryString(backendApiPath(`/pricing/rules`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<AdminPricingRuleListResponse>(appendQueryString(backendApiPath(`/pricing/rules`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Create pricing rule */
   async create(body: PricingRuleCreateRequest, requestOptions?: ApiRequestOptions): Promise<AdminPricingRule> {
-    return this.client.request<AdminPricingRule>(backendApiPath(`/pricing/rules`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminPricingRule>(backendApiPath(`/pricing/rules`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 
 /** Delete pricing rule */
   async delete(ruleId: string, requestOptions?: ApiRequestOptions): Promise<void> {
-    return this.client.request<void>(backendApiPath(`/pricing/rules/${serializePathParameter(ruleId, { name: 'ruleId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<void>(backendApiPath(`/pricing/rules/${serializePathParameter(ruleId, { name: 'ruleId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Update pricing rule */
   async update(ruleId: string, body: PricingRuleUpdateRequest, requestOptions?: ApiRequestOptions): Promise<AdminPricingRule> {
-    return this.client.request<AdminPricingRule>(backendApiPath(`/pricing/rules/${serializePathParameter(ruleId, { name: 'ruleId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminPricingRule>(backendApiPath(`/pricing/rules/${serializePathParameter(ruleId, { name: 'ruleId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -73,22 +73,22 @@ export class PricingRateCardsApi {
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AdminRateCardListResponse>(appendQueryString(backendApiPath(`/pricing/rate_cards`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<AdminRateCardListResponse>(appendQueryString(backendApiPath(`/pricing/rate_cards`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Create pricing rate card */
   async create(body: RateCardCreateRequest, requestOptions?: ApiRequestOptions): Promise<AdminRateCard> {
-    return this.client.request<AdminRateCard>(backendApiPath(`/pricing/rate_cards`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminRateCard>(backendApiPath(`/pricing/rate_cards`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 
 /** Delete pricing rate card */
   async delete(rateCardId: string, requestOptions?: ApiRequestOptions): Promise<void> {
-    return this.client.request<void>(backendApiPath(`/pricing/rate_cards/${serializePathParameter(rateCardId, { name: 'rateCardId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<void>(backendApiPath(`/pricing/rate_cards/${serializePathParameter(rateCardId, { name: 'rateCardId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Update pricing rate card */
   async update(rateCardId: string, body: RateCardUpdateRequest, requestOptions?: ApiRequestOptions): Promise<AdminRateCard> {
-    return this.client.request<AdminRateCard>(backendApiPath(`/pricing/rate_cards/${serializePathParameter(rateCardId, { name: 'rateCardId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminRateCard>(backendApiPath(`/pricing/rate_cards/${serializePathParameter(rateCardId, { name: 'rateCardId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -117,22 +117,22 @@ export class PricingPlansApi {
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AdminPricingPlanListResponse>(appendQueryString(backendApiPath(`/pricing/plans`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<AdminPricingPlanListResponse>(appendQueryString(backendApiPath(`/pricing/plans`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Create pricing plan */
   async create(body: PricingPlanCreateRequest, requestOptions?: ApiRequestOptions): Promise<AdminPricingPlan> {
-    return this.client.request<AdminPricingPlan>(backendApiPath(`/pricing/plans`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminPricingPlan>(backendApiPath(`/pricing/plans`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 
 /** List pricing plan */
   async retrieve(planId: string, requestOptions?: ApiRequestOptions): Promise<AdminPricingPlan> {
-    return this.client.request<AdminPricingPlan>(backendApiPath(`/pricing/plans/${serializePathParameter(planId, { name: 'planId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminPricingPlan>(backendApiPath(`/pricing/plans/${serializePathParameter(planId, { name: 'planId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 
 /** Update pricing plan */
   async update(planId: string, body: PricingPlanUpdateRequest, requestOptions?: ApiRequestOptions): Promise<AdminPricingPlan> {
-    return this.client.request<AdminPricingPlan>(backendApiPath(`/pricing/plans/${serializePathParameter(planId, { name: 'planId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminPricingPlan>(backendApiPath(`/pricing/plans/${serializePathParameter(planId, { name: 'planId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -167,13 +167,15 @@ export class PricingOfficialRatesApi {
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OfficialPricingCatalogResponse>(appendQueryString(backendApiPath(`/pricing/official_rates`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<OfficialPricingCatalogResponse>(appendQueryString(backendApiPath(`/pricing/official_rates`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 
 export interface PricingOfficialProductsListParams {
   category?: 'all' | 'llm' | 'image' | 'video' | 'audio' | 'music' | 'embedding' | 'sound' | 'api' | 'other';
   q?: string;
+  vendorCodes?: string[];
+  regionCode?: string;
   page?: number;
   pageSize?: number;
 }
@@ -191,15 +193,16 @@ export class PricingOfficialProductsApi {
     const query = buildQueryString([
       { name: 'category', value: params?.category, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+      { name: 'vendor_codes', value: params?.vendorCodes, style: 'form', explode: false, allowReserved: false },
+      { name: 'region_code', value: params?.regionCode, style: 'form', explode: true, allowReserved: false },
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OfficialPricingProductCatalogResponse>(appendQueryString(backendApiPath(`/pricing/official_products`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<OfficialPricingProductCatalogResponse>(appendQueryString(backendApiPath(`/pricing/official_products`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 
 export class PricingApi {
-  private client: HttpClient;
   public readonly officialProducts: PricingOfficialProductsApi;
   public readonly officialRates: PricingOfficialRatesApi;
   public readonly plans: PricingPlansApi;
@@ -207,7 +210,6 @@ export class PricingApi {
   public readonly rules: PricingRulesApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.officialProducts = new PricingOfficialProductsApi(client);
     this.officialRates = new PricingOfficialRatesApi(client);
     this.plans = new PricingPlansApi(client);

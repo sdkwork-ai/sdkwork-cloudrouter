@@ -14,7 +14,7 @@ export class EmbeddingsGoogleV1betaModelsModelEmbedContentApi {
 
 /** Google Gemini embed content */
   async create(model: string, body: GoogleEmbedContentRequest, requestOptions?: ApiRequestOptions): Promise<GoogleEmbedContentResponse> {
-    return this.client.request<GoogleEmbedContentResponse>(aiApiPath(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:embedContent`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<GoogleEmbedContentResponse>(aiApiPath(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:embedContent`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -28,17 +28,15 @@ export class EmbeddingsGoogleV1betaModelsModelBatchEmbedContentsApi {
 
 /** Google Gemini batch embed contents */
   async create(model: string, body: GoogleBatchEmbedContentsRequest, requestOptions?: ApiRequestOptions): Promise<GoogleBatchEmbedContentsResponse> {
-    return this.client.request<GoogleBatchEmbedContentsResponse>(aiApiPath(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:batchEmbedContents`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<GoogleBatchEmbedContentsResponse>(aiApiPath(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:batchEmbedContents`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
 export class EmbeddingsGoogleV1betaModelsApi {
-  private client: HttpClient;
   public readonly modelBatchEmbedContents: EmbeddingsGoogleV1betaModelsModelBatchEmbedContentsApi;
   public readonly modelEmbedContent: EmbeddingsGoogleV1betaModelsModelEmbedContentApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.modelBatchEmbedContents = new EmbeddingsGoogleV1betaModelsModelBatchEmbedContentsApi(client);
     this.modelEmbedContent = new EmbeddingsGoogleV1betaModelsModelEmbedContentApi(client);
   }
@@ -46,22 +44,18 @@ export class EmbeddingsGoogleV1betaModelsApi {
 }
 
 export class EmbeddingsGoogleV1betaApi {
-  private client: HttpClient;
   public readonly models: EmbeddingsGoogleV1betaModelsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.models = new EmbeddingsGoogleV1betaModelsApi(client);
   }
 
 }
 
 export class EmbeddingsGoogleApi {
-  private client: HttpClient;
   public readonly v1beta: EmbeddingsGoogleV1betaApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.v1beta = new EmbeddingsGoogleV1betaApi(client);
   }
 
@@ -71,13 +65,7 @@ export function createEmbeddingsGoogleApi(client: HttpClient): EmbeddingsGoogleA
   return new EmbeddingsGoogleApi(client);
 }
 
-function appendQueryString(path: string, rawQueryString: string): string {
-  const query = rawQueryString.replace(/^\?+/, '');
-  if (!query) {
-    return path;
-  }
-  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
-}
+
 
 interface PathParameterSpec {
   name: string;

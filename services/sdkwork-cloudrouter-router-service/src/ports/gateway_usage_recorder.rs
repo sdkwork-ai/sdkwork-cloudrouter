@@ -369,8 +369,14 @@ impl GatewayRatingRecordIdentity {
     fn validate(&self) -> DomainResult<()> {
         for (field, value) in [
             ("price_book_tenant_id", self.price_book_tenant_id),
-            ("price_book_organization_id", self.price_book_organization_id),
-            ("account_rate_card_tenant_id", self.account_rate_card_tenant_id),
+            (
+                "price_book_organization_id",
+                self.price_book_organization_id,
+            ),
+            (
+                "account_rate_card_tenant_id",
+                self.account_rate_card_tenant_id,
+            ),
             (
                 "account_rate_card_organization_id",
                 self.account_rate_card_organization_id,

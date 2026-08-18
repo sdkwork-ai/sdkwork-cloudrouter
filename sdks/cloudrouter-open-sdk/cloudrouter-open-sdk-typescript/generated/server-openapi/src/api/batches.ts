@@ -27,22 +27,22 @@ export class BatchesApi {
       { name: 'after', value: params?.after, style: 'form', explode: true, allowReserved: false },
       { name: 'before', value: params?.before, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<OpenAiBatchList>(appendQueryString(aiApiPath(`/batches`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiBatchList>(appendQueryString(aiApiPath(`/batches`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Create batch */
   async create(body: OpenAiBatchCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiBatch> {
-    return this.client.request<OpenAiBatch>(aiApiPath(`/batches`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiBatch>(aiApiPath(`/batches`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Retrieve batch */
   async retrieve(batchId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiBatch> {
-    return this.client.request<OpenAiBatch>(aiApiPath(`/batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<OpenAiBatch>(aiApiPath(`/batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Cancel batch */
   async cancel(batchId: string, requestOptions?: ApiRequestOptions): Promise<OpenAiBatch> {
-    return this.client.request<OpenAiBatch>(aiApiPath(`/batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}/cancel`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any });
+    return this.client.request<OpenAiBatch>(aiApiPath(`/batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}/cancel`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any });
   }
 }
 

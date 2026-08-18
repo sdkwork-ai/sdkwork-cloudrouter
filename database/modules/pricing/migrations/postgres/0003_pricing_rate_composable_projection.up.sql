@@ -39,35 +39,55 @@ ALTER TABLE pricing_rate
 -- composable immutability guard must not reject that one-time data repair.
 ALTER TABLE pricing_rate DISABLE TRIGGER trg_pricing_rate_active_book_guard;
 
-UPDATE pricing_rate AS rate
-SET product_code = COALESCE(NULLIF(BTRIM(product.product_code), ''), 'unknown'),
-    product_kind = COALESCE(NULLIF(BTRIM(product.product_kind), ''), 'unknown'),
-    product_display_name = COALESCE(NULLIF(BTRIM(product.display_name), ''), rate.rate_code),
-    operation_code = COALESCE(NULLIF(BTRIM(operation.operation_code), ''), 'unknown'),
-    operation_kind = COALESCE(NULLIF(BTRIM(operation.operation_kind), ''), 'unknown'),
-    operation_display_name = COALESCE(NULLIF(BTRIM(operation.display_name), ''), rate.rate_code),
-    meter_code = COALESCE(NULLIF(BTRIM(meter.meter_code), ''), 'unknown'),
-    meter_display_name = COALESCE(NULLIF(BTRIM(meter.display_name), ''), rate.rate_code),
-    quantity_kind = COALESCE(NULLIF(BTRIM(meter.quantity_kind), ''), 'quantity'),
-    unit_code = COALESCE(NULLIF(BTRIM(meter.unit_code), ''), 'unit'),
-    provider_code = COALESCE(NULLIF(BTRIM(rate.vendor_code), ''), 'unknown'),
-    resource_type = COALESCE(NULLIF(BTRIM(product.product_kind), ''), 'unknown'),
-    resource_code = COALESCE(NULLIF(BTRIM(product.product_code), ''), rate.rate_code),
-    conditions = COALESCE(rate.conditions, '[]'::jsonb),
-    tiers = COALESCE(rate.tiers, '[]'::jsonb),
-    rate_variant = COALESCE(NULLIF(BTRIM(rate.rate_variant), ''), 'standard')
-FROM pricing_product AS product,
-     pricing_operation AS operation,
-     pricing_meter AS meter
-WHERE product.tenant_id = rate.tenant_id
-  AND product.organization_id = rate.organization_id
-  AND product.id = rate.product_id
-  AND operation.tenant_id = rate.tenant_id
-  AND operation.organization_id = rate.organization_id
-  AND operation.id = rate.operation_id
-  AND meter.tenant_id = rate.tenant_id
-  AND meter.organization_id = rate.organization_id
-  AND meter.id = rate.meter_id;
+-- The legacy relational pricing tables (pricing_product / pricing_operation /
+-- pricing_meter) exist only in the pre-composable schema; the current baseline
+-- creates pricing_rate with the composable columns directly. Run the one-time
+-- backfill only on deployments upgraded from the legacy schema, so fresh
+-- installs migrate without a hard dependency on removed tables.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM pg_catalog.pg_class c
+        JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+        WHERE c.relkind = 'r'
+          AND c.relname IN ('pricing_product', 'pricing_operation', 'pricing_meter')
+          AND n.nspname = ANY (current_schemas(false))
+    ) THEN
+        EXECUTE $legacy_backfill$
+            UPDATE pricing_rate AS rate
+            SET product_code = COALESCE(NULLIF(BTRIM(product.product_code), ''), 'unknown'),
+                product_kind = COALESCE(NULLIF(BTRIM(product.product_kind), ''), 'unknown'),
+                product_display_name = COALESCE(NULLIF(BTRIM(product.display_name), ''), rate.rate_code),
+                operation_code = COALESCE(NULLIF(BTRIM(operation.operation_code), ''), 'unknown'),
+                operation_kind = COALESCE(NULLIF(BTRIM(operation.operation_kind), ''), 'unknown'),
+                operation_display_name = COALESCE(NULLIF(BTRIM(operation.display_name), ''), rate.rate_code),
+                meter_code = COALESCE(NULLIF(BTRIM(meter.meter_code), ''), 'unknown'),
+                meter_display_name = COALESCE(NULLIF(BTRIM(meter.display_name), ''), rate.rate_code),
+                quantity_kind = COALESCE(NULLIF(BTRIM(meter.quantity_kind), ''), 'quantity'),
+                unit_code = COALESCE(NULLIF(BTRIM(meter.unit_code), ''), 'unit'),
+                provider_code = COALESCE(NULLIF(BTRIM(rate.vendor_code), ''), 'unknown'),
+                resource_type = COALESCE(NULLIF(BTRIM(product.product_kind), ''), 'unknown'),
+                resource_code = COALESCE(NULLIF(BTRIM(product.product_code), ''), rate.rate_code),
+                conditions = COALESCE(rate.conditions, '[]'::jsonb),
+                tiers = COALESCE(rate.tiers, '[]'::jsonb),
+                rate_variant = COALESCE(NULLIF(BTRIM(rate.rate_variant), ''), 'standard')
+            FROM pricing_product AS product,
+                 pricing_operation AS operation,
+                 pricing_meter AS meter
+            WHERE product.tenant_id = rate.tenant_id
+              AND product.organization_id = rate.organization_id
+              AND product.id = rate.product_id
+              AND operation.tenant_id = rate.tenant_id
+              AND operation.organization_id = rate.organization_id
+              AND operation.id = rate.operation_id
+              AND meter.tenant_id = rate.tenant_id
+              AND meter.organization_id = rate.organization_id
+              AND meter.id = rate.meter_id
+        $legacy_backfill$;
+    END IF;
+END
+$$;
 
 UPDATE pricing_rate
 SET product_code = COALESCE(NULLIF(BTRIM(product_code), ''), 'unknown'),

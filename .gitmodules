@@ -4,3 +4,7 @@
 [submodule "external/cc-switch"]
 	path = external/cc-switch
 	url = https://github.com/farion1231/cc-switch.git
+[submodule "external/new-api"]
+	path = external/new-api
+	url = https://github.com/QuantumNous/new-api.git
+	branch = main

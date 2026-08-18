@@ -11,12 +11,12 @@ export class RechargesSettingsApi {
 
 /** Retrieve */
   async retrieve(requestOptions?: ApiRequestOptions): Promise<Record<string, never>> {
-    return this.client.request<Record<string, never>>(backendApiPath(`/recharges/settings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<Record<string, never>>(backendApiPath(`/recharges/settings`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 
 /** Update membership admin recharge settings */
   async update(body: RechargeSettingsUpdateRequest, requestOptions?: ApiRequestOptions): Promise<AdminRechargeSettings> {
-    return this.client.request<AdminRechargeSettings>(backendApiPath(`/recharges/settings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminRechargeSettings>(backendApiPath(`/recharges/settings`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PUT' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -41,32 +41,30 @@ export class RechargesPackagesApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<RechargePackagePage>(appendQueryString(backendApiPath(`/recharges/packages`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<RechargePackagePage>(appendQueryString(backendApiPath(`/recharges/packages`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Create */
   async create(body: RechargePackageMutationRequest, requestOptions?: ApiRequestOptions): Promise<AdminRechargeSettings> {
-    return this.client.request<AdminRechargeSettings>(backendApiPath(`/recharges/packages`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminRechargeSettings>(backendApiPath(`/recharges/packages`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 
 /** Delete */
   async delete(packageId: string, requestOptions?: ApiRequestOptions): Promise<void> {
-    return this.client.request<void>(backendApiPath(`/recharges/packages/${serializePathParameter(packageId, { name: 'packageId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<void>(backendApiPath(`/recharges/packages/${serializePathParameter(packageId, { name: 'packageId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Update membership admin recharge package */
   async update(packageId: string, body: RechargePackageMutationRequest, requestOptions?: ApiRequestOptions): Promise<AdminRechargePackage> {
-    return this.client.request<AdminRechargePackage>(backendApiPath(`/recharges/packages/${serializePathParameter(packageId, { name: 'packageId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<AdminRechargePackage>(backendApiPath(`/recharges/packages/${serializePathParameter(packageId, { name: 'packageId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 
 export class RechargesApi {
-  private client: HttpClient;
   public readonly packages: RechargesPackagesApi;
   public readonly settings: RechargesSettingsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.packages = new RechargesPackagesApi(client);
     this.settings = new RechargesSettingsApi(client);
   }

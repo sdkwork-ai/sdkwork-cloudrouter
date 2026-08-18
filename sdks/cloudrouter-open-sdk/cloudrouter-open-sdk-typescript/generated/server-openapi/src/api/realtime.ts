@@ -14,7 +14,7 @@ export class RealtimeTranslationsApi {
 
 /** Create realtime translation session */
   async create(body: OpenAiRealtimeTranslationSessionCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiRealtimeTranslationSession> {
-    return this.client.request<OpenAiRealtimeTranslationSession>(aiApiPath(`/realtime/translations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiRealtimeTranslationSession>(aiApiPath(`/realtime/translations`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -28,7 +28,7 @@ export class RealtimeTranscriptionSessionsApi {
 
 /** Create realtime transcription session */
   async create(body: OpenAiRealtimeTranscriptionSessionCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiRealtimeTranscriptionSession> {
-    return this.client.request<OpenAiRealtimeTranscriptionSession>(aiApiPath(`/realtime/transcription_sessions`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiRealtimeTranscriptionSession>(aiApiPath(`/realtime/transcription_sessions`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -42,7 +42,7 @@ export class RealtimeSessionsApi {
 
 /** Create realtime session */
   async create(body: OpenAiRealtimeSessionCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiRealtimeSession> {
-    return this.client.request<OpenAiRealtimeSession>(aiApiPath(`/realtime/sessions`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiRealtimeSession>(aiApiPath(`/realtime/sessions`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -56,7 +56,7 @@ export class RealtimeClientSecretsApi {
 
 /** Create realtime client secret */
   async create(body: OpenAiRealtimeClientSecretCreateRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiRealtimeClientSecret> {
-    return this.client.request<OpenAiRealtimeClientSecret>(aiApiPath(`/realtime/client_secrets`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiRealtimeClientSecret>(aiApiPath(`/realtime/client_secrets`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -70,7 +70,7 @@ export class RealtimeCallsRejectApi {
 
 /** Reject realtime call */
   async create(callId: string, body: OpenAiRealtimeCallActionRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiRealtimeCall> {
-    return this.client.request<OpenAiRealtimeCall>(aiApiPath(`/realtime/calls/${serializePathParameter(callId, { name: 'call_id', style: 'simple', explode: false })}/reject`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiRealtimeCall>(aiApiPath(`/realtime/calls/${serializePathParameter(callId, { name: 'call_id', style: 'simple', explode: false })}/reject`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -84,7 +84,7 @@ export class RealtimeCallsReferApi {
 
 /** Refer realtime call */
   async create(callId: string, body: OpenAiRealtimeCallReferRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiRealtimeCall> {
-    return this.client.request<OpenAiRealtimeCall>(aiApiPath(`/realtime/calls/${serializePathParameter(callId, { name: 'call_id', style: 'simple', explode: false })}/refer`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiRealtimeCall>(aiApiPath(`/realtime/calls/${serializePathParameter(callId, { name: 'call_id', style: 'simple', explode: false })}/refer`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -98,7 +98,7 @@ export class RealtimeCallsHangupApi {
 
 /** Hang up realtime call */
   async create(callId: string, body: OpenAiRealtimeCallActionRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiRealtimeCall> {
-    return this.client.request<OpenAiRealtimeCall>(aiApiPath(`/realtime/calls/${serializePathParameter(callId, { name: 'call_id', style: 'simple', explode: false })}/hangup`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiRealtimeCall>(aiApiPath(`/realtime/calls/${serializePathParameter(callId, { name: 'call_id', style: 'simple', explode: false })}/hangup`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -112,7 +112,7 @@ export class RealtimeCallsAcceptApi {
 
 /** Accept realtime call */
   async create(callId: string, body: OpenAiRealtimeCallActionRequest, requestOptions?: ApiRequestOptions): Promise<OpenAiRealtimeCall> {
-    return this.client.request<OpenAiRealtimeCall>(aiApiPath(`/realtime/calls/${serializePathParameter(callId, { name: 'call_id', style: 'simple', explode: false })}/accept`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<OpenAiRealtimeCall>(aiApiPath(`/realtime/calls/${serializePathParameter(callId, { name: 'call_id', style: 'simple', explode: false })}/accept`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -134,12 +134,11 @@ export class RealtimeCallsApi {
 
 /** Create realtime call */
   async create(body: OpenAiRealtimeCallCreateRequest, requestOptions?: ApiRequestOptions): Promise<SdpResponse> {
-    return this.client.request<SdpResponse>(aiApiPath(`/realtime/calls`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<SdpResponse>(aiApiPath(`/realtime/calls`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
 export class RealtimeApi {
-  private client: HttpClient;
   public readonly calls: RealtimeCallsApi;
   public readonly clientSecrets: RealtimeClientSecretsApi;
   public readonly sessions: RealtimeSessionsApi;
@@ -147,7 +146,6 @@ export class RealtimeApi {
   public readonly translations: RealtimeTranslationsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.calls = new RealtimeCallsApi(client);
     this.clientSecrets = new RealtimeClientSecretsApi(client);
     this.sessions = new RealtimeSessionsApi(client);
@@ -161,13 +159,7 @@ export function createRealtimeApi(client: HttpClient): RealtimeApi {
   return new RealtimeApi(client);
 }
 
-function appendQueryString(path: string, rawQueryString: string): string {
-  const query = rawQueryString.replace(/^\?+/, '');
-  if (!query) {
-    return path;
-  }
-  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
-}
+
 
 interface PathParameterSpec {
   name: string;

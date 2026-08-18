@@ -267,6 +267,13 @@ where
         .with_provider(account.supplier_code.clone(), Some(account.account_id))
         .with_region_code(account.region_code.clone())
         .with_api_code(invocation.resource.api_code.clone())
+        .with_product_operation(
+            catalog_key
+                .rsplit('/')
+                .next()
+                .unwrap_or(catalog_key.as_str()),
+            invocation.resource.api_code.as_str(),
+        )
         .with_dimensions(dimensions);
     if let Some(model) = invocation.resource.requested_model.as_deref() {
         resource = resource.with_model(model);

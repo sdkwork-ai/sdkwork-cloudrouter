@@ -2,6 +2,7 @@ mod account;
 mod account_resolution;
 mod billing;
 mod billing_policy;
+mod billing_transaction;
 mod body;
 mod circuit_breaker;
 mod classification;
@@ -42,6 +43,7 @@ pub use account::InvocationAccount;
 pub use account_resolution::AccountResolutionInterceptor;
 pub use billing::{BillingMode, BillingQuantitySource, InvocationBilling};
 pub use billing_policy::BillingPolicyInterceptor;
+pub use billing_transaction::{BillingSettlementInterceptor, BillingTransactionInterceptor};
 pub use body::InvocationBody;
 pub use circuit_breaker::{
     CircuitBreakerConfig, CircuitBreakerInterceptor, CircuitBreakerStateStore, CircuitCallPermit,

@@ -68,11 +68,7 @@ const MODEL_CATALOG_TABLES: &[&str] = &[
     "ai_vendor_modality",
 ];
 
-const PRICING_TABLES: &[&str] = &[
-    "pricing_import_run",
-    "pricing_price_book",
-    "pricing_rate",
-];
+const PRICING_TABLES: &[&str] = &["pricing_import_run", "pricing_price_book", "pricing_rate"];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DatabaseInstallOptions {

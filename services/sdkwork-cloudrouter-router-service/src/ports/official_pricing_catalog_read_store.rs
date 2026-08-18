@@ -26,6 +26,7 @@ pub struct OfficialPricingCatalogQuery {
 pub struct OfficialPricingProductCatalogQuery {
     pub category: String,
     pub search_query: Option<String>,
+    pub vendor_codes: Vec<String>,
     pub region_code: Option<String>,
     pub page_size: i64,
     pub offset: i64,
@@ -49,6 +50,7 @@ pub struct OfficialPricingCatalogSnapshot {
 pub struct OfficialPricingProductCatalogSnapshot {
     pub items: Vec<OfficialPricingProductGroup>,
     pub groups: Vec<OfficialPricingGroupFacet>,
+    pub vendors: Vec<OfficialPricingValueFacet>,
     pub regions: Vec<OfficialPricingValueFacet>,
     #[serde(skip_serializing)]
     pub total_items: i64,
@@ -67,6 +69,7 @@ pub struct OfficialPricingProductGroup {
     pub region_code: String,
     pub resource_type: String,
     pub resource_code: String,
+    pub resource_display_name: String,
     pub catalog_key: Option<String>,
     pub currency_code: String,
     pub price_book_code: String,
@@ -91,6 +94,7 @@ pub struct OfficialPricingRate {
     pub region_code: String,
     pub resource_type: String,
     pub resource_code: String,
+    pub resource_display_name: String,
     pub catalog_key: Option<String>,
     pub api_format: Option<String>,
     pub endpoint_code: Option<String>,

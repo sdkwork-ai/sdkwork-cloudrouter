@@ -66,7 +66,10 @@
       "."
     ],
     "providedPorts": [
-      { "name": "cloudrouter-api-assembly", "export": "." }
+      {
+        "name": "cloudrouter-api-assembly",
+        "export": "."
+      }
     ],
     "requiredPorts": [
       {
@@ -87,6 +90,16 @@
         "name": "modelsDatabaseLifecycle",
         "provider": "sdkwork-api-models-assembly",
         "export": "sdkwork_api_models_assembly::bootstrap_database_from_env"
+      },
+      {
+        "name": "modelsAppApiRouteManifest",
+        "provider": "sdkwork-api-models-assembly",
+        "export": "sdkwork_api_models_assembly::app_api_route_manifest"
+      },
+      {
+        "name": "partnerAppApiRouteManifest",
+        "provider": "sdkwork-api-partner-assembly",
+        "export": "sdkwork_api_partner_assembly::app_api_route_manifest"
       }
     ],
     "runtimeEntrypoints": [
@@ -106,24 +119,6 @@
     ],
     "dependencyApiExports": [],
     "dependencyApiSurfaces": [
-      {
-        "workspace": "sdkwork-iam",
-        "sdkFamily": "sdkwork-iam-app-sdk",
-        "apiAuthority": "sdkwork-iam-app-api",
-        "surface": "app-api",
-        "apiPrefix": "/app/v3/api",
-        "runtimeMode": "same-origin-mounted",
-        "profileCoverage": [
-          "standalone"
-        ],
-        "cargoDependency": "sdkwork-routes-iam-app-api",
-        "embeddedExecutableExport": "sdkwork_api_cloudrouter_assembly::assemble_api_router",
-        "coverageEvidence": [
-          "src/bootstrap/iam.rs#wire_iam_app_router",
-          "src/bootstrap.rs#assemble_api_router",
-          "../sdkwork-cloudrouter-edge-runtime/src/edge_server.rs#router_for_path"
-        ]
-      },
       {
         "workspace": "sdkwork-membership",
         "sdkFamily": "sdkwork-membership-backend-sdk",
@@ -154,6 +149,44 @@
         "embeddedExecutableExport": "sdkwork_api_rtc_assembly::assemble_backend_api_contribution_with_pool",
         "coverageEvidence": [
           "../sdkwork-cloudrouter-edge-runtime/src/runtime.rs#all_one_in_one_in_process_upstreams_from_env"
+        ]
+      },
+      {
+        "workspace": "sdkwork-models",
+        "sdkFamily": "sdkwork-models-app-sdk",
+        "apiAuthority": "sdkwork-models-app-api",
+        "surface": "app-api",
+        "apiPrefixes": [
+          "/app/v3/api/ai"
+        ],
+        "runtimeMode": "same-origin-mounted",
+        "profileCoverage": [
+          "standalone"
+        ],
+        "cargoDependency": "sdkwork-api-models-assembly",
+        "embeddedExecutableExport": "sdkwork_api_models_assembly::app_api_route_manifest",
+        "coverageEvidence": [
+          "src/bootstrap.rs#assemble_api_router_with_in_process_upstreams",
+          "../sdkwork-routes-cloudrouter-app-api/src/manifest_composition.rs#capability_manifests_for_platform_gateway"
+        ]
+      },
+      {
+        "workspace": "sdkwork-partner",
+        "sdkFamily": "sdkwork-partner-app-sdk",
+        "apiAuthority": "sdkwork-partner-app-api",
+        "surface": "app-api",
+        "apiPrefixes": [
+          "/app/v3/api/partner_join"
+        ],
+        "runtimeMode": "same-origin-mounted",
+        "profileCoverage": [
+          "standalone"
+        ],
+        "cargoDependency": "sdkwork-api-partner-assembly",
+        "embeddedExecutableExport": "sdkwork_api_partner_assembly::app_api_route_manifest",
+        "coverageEvidence": [
+          "src/bootstrap.rs#assemble_api_router_with_in_process_upstreams",
+          "../sdkwork-routes-cloudrouter-app-api/src/manifest_composition.rs#capability_manifests_for_platform_gateway"
         ]
       }
     ],

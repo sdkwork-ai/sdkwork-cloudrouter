@@ -18,7 +18,7 @@ export class RuntimeInvocationsEventsStreamApi {
     const query = buildQueryString([
       { name: 'after_event_no', value: params?.afterEventNo, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<Record<string, never>>(appendQueryString(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/events/stream`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<Record<string, never>>(appendQueryString(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/events/stream`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -43,12 +43,12 @@ export class RuntimeInvocationsEventsApi {
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<RuntimeEventListResponse>(appendQueryString(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/events`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<RuntimeEventListResponse>(appendQueryString(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/events`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Create runtime event */
   async create(invocationId: string, body: CreateRuntimeEventRequest, requestOptions?: ApiRequestOptions): Promise<RuntimeEventItem> {
-    return this.client.request<RuntimeEventItem>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/events`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
+    return this.client.request<RuntimeEventItem>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/events`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 }
 
@@ -62,7 +62,7 @@ export class RuntimeInvocationsCompletionsApi {
 
 /** Complete runtime invocation */
   async create(invocationId: string, body: CompleteRuntimeInvocationRequest, requestOptions?: ApiRequestOptions): Promise<RuntimeInvocationItem> {
-    return this.client.request<RuntimeInvocationItem>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/completions`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
+    return this.client.request<RuntimeInvocationItem>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/completions`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 }
 
@@ -85,12 +85,12 @@ export class RuntimeInvocationsArtifactsApi {
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<RuntimeArtifactListResponse>(appendQueryString(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/artifacts`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<RuntimeArtifactListResponse>(appendQueryString(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/artifacts`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Create runtime artifact */
   async create(invocationId: string, body: CreateRuntimeArtifactRequest, requestOptions?: ApiRequestOptions): Promise<RuntimeArtifactItem> {
-    return this.client.request<RuntimeArtifactItem>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/artifacts`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
+    return this.client.request<RuntimeArtifactItem>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}/artifacts`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 }
 
@@ -129,26 +129,24 @@ export class RuntimeInvocationsApi {
       { name: 'runtime', value: params?.runtime, style: 'form', explode: true, allowReserved: false },
       { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<RuntimeInvocationListResponse>(appendQueryString(appApiPath(`/runtime/invocations`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<RuntimeInvocationListResponse>(appendQueryString(appApiPath(`/runtime/invocations`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Create runtime invocation */
   async create(body: CreateRuntimeInvocationRequest, requestOptions?: ApiRequestOptions): Promise<RuntimeInvocationItem> {
-    return this.client.request<RuntimeInvocationItem>(appApiPath(`/runtime/invocations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
+    return this.client.request<RuntimeInvocationItem>(appApiPath(`/runtime/invocations`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 
 /** Retrieve runtime invocation */
   async retrieve(invocationId: string, requestOptions?: ApiRequestOptions): Promise<RuntimeInvocationItem> {
-    return this.client.request<RuntimeInvocationItem>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<RuntimeInvocationItem>(appApiPath(`/runtime/invocations/${serializePathParameter(invocationId, { name: 'invocationId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
 export class RuntimeApi {
-  private client: HttpClient;
   public readonly invocations: RuntimeInvocationsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.invocations = new RuntimeInvocationsApi(client);
   }
 

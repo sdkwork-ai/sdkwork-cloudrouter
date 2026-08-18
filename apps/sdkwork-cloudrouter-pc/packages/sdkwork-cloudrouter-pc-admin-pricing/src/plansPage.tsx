@@ -47,6 +47,8 @@ interface PlanFormState {
   currencyCode: string;
   roundingMode: AdminRoundingMode;
   minimumChargeAmount: string;
+  chargeMode: 'prepaid_adjustment' | 'postpaid';
+  settlementMode: 'synchronous' | 'asynchronous';
   effectiveFrom: string;
   effectiveTo: string;
   status: AdminPricingStatus;
@@ -59,6 +61,8 @@ const EMPTY_PLAN_FORM: PlanFormState = {
   currencyCode: 'CNY',
   roundingMode: 'half_up',
   minimumChargeAmount: '0',
+  chargeMode: 'prepaid_adjustment',
+  settlementMode: 'synchronous',
   effectiveFrom: '',
   effectiveTo: '',
   status: 'active',
@@ -126,6 +130,8 @@ export function PricePlansAdmin() {
       currencyCode: item.currencyCode,
       roundingMode: item.roundingMode,
       minimumChargeAmount: item.minimumChargeAmount,
+      chargeMode: item.chargeMode,
+      settlementMode: item.settlementMode,
       effectiveFrom: item.effectiveFrom ?? '',
       effectiveTo: item.effectiveTo ?? '',
       status: item.status,
@@ -252,6 +258,7 @@ export function PricePlansAdmin() {
               <th className="px-3 py-2 font-medium">{t('admin.pricing.plans.table.currencyCode')}</th>
               <th className="px-3 py-2 font-medium">{t('admin.pricing.plans.table.roundingMode')}</th>
               <th className="px-3 py-2 font-medium">{t('admin.pricing.plans.table.minimumChargeAmount')}</th>
+              <th className="px-3 py-2 font-medium">Charge mode</th>
               <th className="px-3 py-2 font-medium">{t('admin.pricing.common.table.status')}</th>
               <th className="px-3 py-2 font-medium">{t('admin.pricing.common.updatedAt')}</th>
               <th className="px-3 py-2 font-medium">{t('admin.pricing.common.table.actions')}</th>
@@ -277,6 +284,7 @@ export function PricePlansAdmin() {
                     {t(`admin.pricing.roundingMode.${item.roundingMode}`)}
                   </td>
                   <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.minimumChargeAmount}</td>
+                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.chargeMode}</td>
                   <td className="px-3 py-2.5">
                     <StatusBadge status={item.status} />
                   </td>
@@ -370,6 +378,25 @@ export function PricePlansAdmin() {
                 placeholder="0"
               />
             </Field>
+            <Field label="Charge mode">
+              <select className="w-full rounded border px-2 py-1.5" value={form.chargeMode} onChange={(event) => setField('chargeMode', event.target.value as 'prepaid_adjustment' | 'postpaid')}>
+                <option value="prepaid_adjustment">Prepaid adjustment</option>
+                <option value="postpaid">Postpaid</option>
+              </select>
+            </Field>
+            <Field label="Settlement mode">
+              <select
+                className={selectClass}
+                value={form.settlementMode}
+                onChange={(event) => setField(
+                  'settlementMode',
+                  event.target.value as 'synchronous' | 'asynchronous',
+                )}
+              >
+                <option value="synchronous">Synchronous</option>
+                <option value="asynchronous">Asynchronous</option>
+              </select>
+            </Field>
             <Field label={t('admin.pricing.common.form.effectiveFrom')} hint={t('admin.pricing.common.form.effectiveHint')}>
               <input
                 className={inputClass}
@@ -426,6 +453,8 @@ function buildPlanInput(
     currencyCode: form.currencyCode.trim() || 'CNY',
     roundingMode: form.roundingMode,
     minimumChargeAmount: form.minimumChargeAmount.trim() || '0',
+    chargeMode: form.chargeMode,
+    settlementMode: form.settlementMode,
     effectiveFrom: form.effectiveFrom.trim() || undefined,
     effectiveTo: form.effectiveTo.trim() || undefined,
     status: form.status,

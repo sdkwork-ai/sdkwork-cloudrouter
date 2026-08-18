@@ -21,7 +21,7 @@ export class NotificationPopupSeenApi {
     const query = buildQueryString([
       { name: 'app_id', value: params?.appId, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<MarkNotificationPopupSeenResponse>(appendQueryString(appApiPath(`/notification/notifications/${serializePathParameter(notificationId, { name: 'notificationId', style: 'simple', explode: false })}/popup_seen`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<MarkNotificationPopupSeenResponse>(appendQueryString(appApiPath(`/notification/notifications/${serializePathParameter(notificationId, { name: 'notificationId', style: 'simple', explode: false })}/popup_seen`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -42,7 +42,7 @@ export class NotificationAcknowledgeApi {
     const query = buildQueryString([
       { name: 'app_id', value: params?.appId, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AcknowledgeNotificationResponse>(appendQueryString(appApiPath(`/notification/notifications/${serializePathParameter(notificationId, { name: 'notificationId', style: 'simple', explode: false })}/acknowledge`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<AcknowledgeNotificationResponse>(appendQueryString(appApiPath(`/notification/notifications/${serializePathParameter(notificationId, { name: 'notificationId', style: 'simple', explode: false })}/acknowledge`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -73,7 +73,7 @@ export class NotificationApi {
       { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<NotificationListResponse>(appendQueryString(appApiPath(`/notification/notifications`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<NotificationListResponse>(appendQueryString(appApiPath(`/notification/notifications`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 }
 

@@ -2,6 +2,7 @@ use std::num::NonZeroUsize;
 use std::sync::Arc;
 
 use crate::gateway_balance_account::PostgresGatewayBalanceStore;
+use crate::gateway_billing_account::PostgresGatewayBillingStore;
 use crate::iam_auth_token_authenticator::IamAuthTokenAuthenticator;
 use crate::iam_auth_token_cache::resolve_auth_token_cache;
 use axum::Router;
@@ -189,6 +190,9 @@ struct InvocationRuntimeRoutesInput<'a, C> {
     provider_http_pool_config: ProviderRelayHttpPoolConfig,
     internal_gateway_verifier: Arc<InternalGatewayRequestVerifier>,
     call_chain: Option<CallChainInterceptor>,
+    billing_store: Option<
+        Arc<dyn sdkwork_cloudrouter_router_service::ports::GatewayBillingStore + Send + Sync>,
+    >,
 }
 
 fn router_with_invocation_runtime_routes<C>(
@@ -218,6 +222,7 @@ where
         provider_http_pool_config,
         internal_gateway_verifier,
         call_chain,
+        billing_store,
     } = input;
     let secret_resolver = provider_secret_resolver.map(|resolver| {
         let resolver: Arc<dyn ProviderSecretResolver + Send + Sync> = resolver;
@@ -258,6 +263,7 @@ where
                 query_string_api_key_policy,
                 internal_gateway_verifier: Some(internal_gateway_verifier),
                 call_chain,
+                billing_store,
                 ..crate::invocation_router::InvocationRouterOptions::default()
             },
         ),
@@ -347,6 +353,12 @@ struct DatabaseRuntimeRoutesInput<'a, C> {
     /// runtimes without the account-domain wallet store (e.g. relay-only
     /// test fixtures).
     gateway_balance_store: Option<Arc<dyn GatewayBalanceStore>>,
+    /// Required for every database-backed invocation runtime. Relay-only test
+    /// routers may omit billing explicitly at the lower-level router API, but
+    /// a production database composition must fail at compile time if the
+    /// account billing adapter is not wired.
+    billing_store:
+        Arc<dyn sdkwork_cloudrouter_router_service::ports::GatewayBillingStore + Send + Sync>,
     /// Resolves non-API-key bearer credentials (auth tokens) into an account
     /// route context for the open-api chat completions route.
     auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator>>,
@@ -374,6 +386,7 @@ where
         request_limits_config,
         call_chain,
         gateway_balance_store,
+        billing_store,
         auth_token_authenticator,
     } = input;
     let internal_gateway_verifier = build_internal_gateway_request_verifier(runtime_toml)?;
@@ -407,6 +420,7 @@ where
             provider_http_pool_config: provider_runtime_config.http_pool_config,
             internal_gateway_verifier: Arc::clone(&internal_gateway_verifier),
             call_chain: call_chain.clone(),
+            billing_store: Some(billing_store.clone()),
         })?
     } else {
         tracing::warn!(
@@ -462,6 +476,7 @@ where
             provider_http_pool_config: provider_runtime_config.http_pool_config,
             internal_gateway_verifier: Arc::clone(&internal_gateway_verifier),
             call_chain,
+            billing_store: Some(billing_store),
         })?
     };
     // The balance endpoint must stay reachable on every surface that serves
@@ -1433,6 +1448,7 @@ async fn router_with_database_bootstrap(
         let usage_settlement_wakeup =
             maybe_spawn_postgres_usage_settlement_worker(&pool, usage_settlement_worker_config)
                 .await?;
+        let settlement_worker_enabled = usage_settlement_wakeup.is_some();
         maybe_spawn_postgres_payment_reconciliation_worker(
             &pool,
             resolve_payment_reconciliation_worker_config(runtime_toml),
@@ -1488,6 +1504,14 @@ async fn router_with_database_bootstrap(
             Some(provider_runtime.tenant_inflight_config),
             provider_runtime.tenant_inflight_use_chain_stage,
         );
+        let account_store = Arc::new(PostgresCommerceAccountStore::new(pool.clone()));
+        let billing_store: Arc<
+            dyn sdkwork_cloudrouter_router_service::ports::GatewayBillingStore + Send + Sync,
+        > = Arc::new(PostgresGatewayBillingStore::new(
+            pool.clone(),
+            account_store,
+            settlement_worker_enabled,
+        ));
         router_with_database_runtime_routes(DatabaseRuntimeRoutesInput {
             base_router: router_with_database_status_and_passthrough_placeholder(
                 Some(&config),
@@ -1514,6 +1538,7 @@ async fn router_with_database_bootstrap(
             // Token Bank wallet (`acct_*` tables); other surfaces fall back
             // to the zero-balance store inside router_with_database_runtime_routes.
             gateway_balance_store: None,
+            billing_store,
             // The auth-token identity cache short-circuits the per-request IAM
             // database round-trip; it is absent on surfaces without Redis so
             // the authenticator keeps resolving per request (desktop fallback).
@@ -2224,8 +2249,17 @@ async fn build_gateway_router_from_all_in_one_context(
             .tenant_inflight_use_chain_stage,
     );
 
-    let gateway_balance_store = Arc::new(PostgresGatewayBalanceStore::new(
-        PostgresCommerceAccountStore::new(resolve_account_pool().await?),
+    let account_store = Arc::new(PostgresCommerceAccountStore::new(
+        resolve_account_pool().await?,
+    ));
+    let gateway_balance_store =
+        Arc::new(PostgresGatewayBalanceStore::new(Arc::clone(&account_store)));
+    let billing_store: Arc<
+        dyn sdkwork_cloudrouter_router_service::ports::GatewayBillingStore + Send + Sync,
+    > = Arc::new(PostgresGatewayBillingStore::new(
+        context.commerce_pool.clone(),
+        Arc::clone(&account_store),
+        context.usage_settlement_wakeup.is_some(),
     ));
 
     router_with_database_runtime_routes(DatabaseRuntimeRoutesInput {
@@ -2253,6 +2287,7 @@ async fn build_gateway_router_from_all_in_one_context(
         request_limits_config: context.request_limits_config,
         call_chain,
         gateway_balance_store: Some(gateway_balance_store),
+        billing_store,
         // Resolves non-API-key bearer credentials (SDKWork login auth tokens)
         // into the tenant default upstream account group so open-api chat
         // completions accept the agents turn executor's auth-token channel
@@ -2349,18 +2384,42 @@ async fn maybe_spawn_postgres_usage_settlement_worker(
     pool: &PgPool,
     config: UsageSettlementWorkerConfig,
 ) -> Result<Option<Arc<Notify>>, GatewayRouterError> {
+    let global_async_billing = matches!(
+        std::env::var("SDKWORK_CLOUDROUTER_BILLING_SETTLEMENT_MODE")
+            .ok()
+            .map(|value| value.trim().to_ascii_lowercase()),
+        Some(value) if value == "async" || value == "asynchronous"
+    );
+    let has_async_pricing_plan = sqlx::query_scalar::<_, bool>(
+        r#"
+        SELECT EXISTS (
+            SELECT 1
+            FROM cloudrouter_pricing_plan
+            WHERE deleted_at IS NULL
+              AND lower(COALESCE(metadata->>'settlementMode', 'synchronous'))
+                  IN ('async', 'asynchronous')
+        )
+        "#,
+    )
+    .fetch_one(pool)
+    .await
+    .map_err(|error| GatewayRouterError::Postgres(PostgresCatalogLoadError::Database(error)))?;
     let config = config.normalized();
     if !config.enabled {
-        return Ok(None);
+        if !global_async_billing && !has_async_pricing_plan {
+            return Ok(None);
+        }
+        return Err(GatewayRouterError::Config(
+            "asynchronous billing requires the usage settlement worker to be enabled".to_owned(),
+        ));
     }
     if !sdkwork_cloudrouter_router_service::infrastructure::sql::pool::postgres_usage_settlement_schema_ready(pool)
         .await
         .map_err(|error| GatewayRouterError::Postgres(PostgresCatalogLoadError::Database(error)))?
     {
-        tracing::warn!(
-            "usage settlement worker is enabled but Postgres settlement schema is incomplete"
-        );
-        return Ok(None);
+        return Err(GatewayRouterError::Config(
+            "asynchronous billing requires the Postgres usage settlement schema".to_owned(),
+        ));
     }
     let store: SettlementStore = Arc::new(PostgresUsageSettlementStore::new(
         pool.clone(),

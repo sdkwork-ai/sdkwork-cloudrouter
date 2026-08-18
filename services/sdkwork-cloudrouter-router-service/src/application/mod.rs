@@ -87,7 +87,8 @@ pub use gateway_pricing_decision::GatewayPricingDecision;
 pub use iam_runtime_context::IamRuntimeContext;
 pub use invocation::{
     AccountResolutionInterceptor, BillingMode, BillingPolicyInterceptor, BillingQuantitySource,
-    CircuitBreakerConfig, CircuitBreakerInterceptor, CircuitBreakerStateStore, CircuitCallPermit,
+    BillingSettlementInterceptor, BillingTransactionInterceptor, CircuitBreakerConfig,
+    CircuitBreakerInterceptor, CircuitBreakerStateStore, CircuitCallPermit,
     DeferredStreamInvocation, DeferredStreamResponse, DispatchExecutor, DispatchMode,
     IdempotencyConfig, IdempotencyInterceptor, IdempotencyKeyStatus, IdempotencyLockAcquisition,
     IdempotencyStore, IdempotencyStoreEntry, IdempotencyStoreError, Invocation, InvocationAccount,

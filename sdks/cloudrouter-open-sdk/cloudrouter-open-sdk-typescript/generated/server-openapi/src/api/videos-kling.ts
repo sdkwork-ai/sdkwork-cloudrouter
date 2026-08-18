@@ -14,43 +14,37 @@ export class VideosKlingV1VideosGenerationsApi {
 
 /** Kling video generation */
   async create(body: KlingVideoGenerationRequest, requestOptions?: ApiRequestOptions): Promise<KlingVideoGenerationTask> {
-    return this.client.request<KlingVideoGenerationTask>(aiApiPath(`/kling/v1/videos/generations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<KlingVideoGenerationTask>(aiApiPath(`/kling/v1/videos/generations`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Kling retrieve video generation */
   async retrieve(taskId: string, requestOptions?: ApiRequestOptions): Promise<KlingVideoGenerationTask> {
-    return this.client.request<KlingVideoGenerationTask>(aiApiPath(`/kling/v1/videos/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<KlingVideoGenerationTask>(aiApiPath(`/kling/v1/videos/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 
 export class VideosKlingV1VideosApi {
-  private client: HttpClient;
   public readonly generations: VideosKlingV1VideosGenerationsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.generations = new VideosKlingV1VideosGenerationsApi(client);
   }
 
 }
 
 export class VideosKlingV1Api {
-  private client: HttpClient;
   public readonly videos: VideosKlingV1VideosApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.videos = new VideosKlingV1VideosApi(client);
   }
 
 }
 
 export class VideosKlingApi {
-  private client: HttpClient;
   public readonly v1: VideosKlingV1Api;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.v1 = new VideosKlingV1Api(client);
   }
 
@@ -60,13 +54,7 @@ export function createVideosKlingApi(client: HttpClient): VideosKlingApi {
   return new VideosKlingApi(client);
 }
 
-function appendQueryString(path: string, rawQueryString: string): string {
-  const query = rawQueryString.replace(/^\?+/, '');
-  if (!query) {
-    return path;
-  }
-  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
-}
+
 
 interface PathParameterSpec {
   name: string;

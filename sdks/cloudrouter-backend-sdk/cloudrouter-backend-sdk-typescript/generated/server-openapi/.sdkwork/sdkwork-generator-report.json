@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "0161c06a6d10ca1b41f56cca4660e56d862325d4cad57c6844c51ba90336c8f3",
+  "changeFingerprint": "eb9c01dbf28b32f90ea7424ff842df832a26d35507a6621d588e650f027144bf",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -156,6 +156,8 @@
           "src/types/official-pricing-product-catalog-response.ts",
           "src/types/official-pricing-product-group-facet.ts",
           "src/types/official-pricing-product-group.ts",
+          "src/types/official-pricing-product-region-facet.ts",
+          "src/types/official-pricing-product-vendor-facet.ts",
           "src/types/official-pricing-rate-condition.ts",
           "src/types/official-pricing-rate-tier.ts",
           "src/types/official-pricing-rate.ts",
@@ -412,10 +414,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 325,
-    "models": 295,
+    "totalFiles": 327,
+    "models": 297,
     "apis": 7,
-    "types": 297
+    "types": 299
   },
   "warnings": [
     {
@@ -462,12 +464,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 227,
+    "writtenFiles": 229,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "0161c06a6d10ca1b41f56cca4660e56d862325d4cad57c6844c51ba90336c8f3",
+    "changeFingerprint": "eb9c01dbf28b32f90ea7424ff842df832a26d35507a6621d588e650f027144bf",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -605,6 +607,8 @@
         "src/types/official-pricing-product-catalog-response.ts",
         "src/types/official-pricing-product-group-facet.ts",
         "src/types/official-pricing-product-group.ts",
+        "src/types/official-pricing-product-region-facet.ts",
+        "src/types/official-pricing-product-vendor-facet.ts",
         "src/types/official-pricing-rate-condition.ts",
         "src/types/official-pricing-rate-tier.ts",
         "src/types/official-pricing-rate.ts",
@@ -849,6 +853,8 @@
             "src/types/official-pricing-product-catalog-response.ts",
             "src/types/official-pricing-product-group-facet.ts",
             "src/types/official-pricing-product-group.ts",
+            "src/types/official-pricing-product-region-facet.ts",
+            "src/types/official-pricing-product-vendor-facet.ts",
             "src/types/official-pricing-rate-condition.ts",
             "src/types/official-pricing-rate-tier.ts",
             "src/types/official-pricing-rate.ts",

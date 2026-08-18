@@ -14,43 +14,37 @@ export class ImagesNanoBananaV1ImagesGenerationsApi {
 
 /** Nano Banana image generation */
   async create(body: NanoBananaImageGenerationRequest, requestOptions?: ApiRequestOptions): Promise<NanoBananaImageGenerationTask> {
-    return this.client.request<NanoBananaImageGenerationTask>(aiApiPath(`/nano-banana/v1/images/generations`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<NanoBananaImageGenerationTask>(aiApiPath(`/nano-banana/v1/images/generations`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Nano Banana retrieve image generation */
   async retrieve(taskId: string, requestOptions?: ApiRequestOptions): Promise<NanoBananaImageGenerationTask> {
-    return this.client.request<NanoBananaImageGenerationTask>(aiApiPath(`/nano-banana/v1/images/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<NanoBananaImageGenerationTask>(aiApiPath(`/nano-banana/v1/images/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 
 export class ImagesNanoBananaV1ImagesApi {
-  private client: HttpClient;
   public readonly generations: ImagesNanoBananaV1ImagesGenerationsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.generations = new ImagesNanoBananaV1ImagesGenerationsApi(client);
   }
 
 }
 
 export class ImagesNanoBananaV1Api {
-  private client: HttpClient;
   public readonly images: ImagesNanoBananaV1ImagesApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.images = new ImagesNanoBananaV1ImagesApi(client);
   }
 
 }
 
 export class ImagesNanoBananaApi {
-  private client: HttpClient;
   public readonly v1: ImagesNanoBananaV1Api;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.v1 = new ImagesNanoBananaV1Api(client);
   }
 
@@ -60,13 +54,7 @@ export function createImagesNanoBananaApi(client: HttpClient): ImagesNanoBananaA
   return new ImagesNanoBananaApi(client);
 }
 
-function appendQueryString(path: string, rawQueryString: string): string {
-  const query = rawQueryString.replace(/^\?+/, '');
-  if (!query) {
-    return path;
-  }
-  return path.includes('?') ? `${path}&${query}` : `${path}?${query}`;
-}
+
 
 interface PathParameterSpec {
   name: string;

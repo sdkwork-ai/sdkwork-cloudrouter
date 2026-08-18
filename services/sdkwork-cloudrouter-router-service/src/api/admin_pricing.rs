@@ -8,7 +8,7 @@ use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, patch};
 use axum::{Json, Router};
-use chrono::{NaiveDate, NaiveTime};
+use chrono::{DateTime, NaiveDate, NaiveTime, SecondsFormat};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -33,7 +33,9 @@ const MAX_NAME_LEN: usize = 256;
 const MAX_TEXT_LEN: usize = 160;
 const MAX_DATETIME_LEN: usize = 64;
 const MAX_SEARCH_LEN: usize = 128;
-const MAX_DECIMAL_FRACTION_DIGITS: usize = 6;
+// DecimalValue carries twelve fractional digits. Pricing must preserve the
+// full fixed-scale token rates instead of truncating tiny unit prices at six.
+const MAX_DECIMAL_FRACTION_DIGITS: usize = 12;
 const DEFAULT_RULE_MULTIPLIER: &str = "1";
 const DEFAULT_RULE_MARKUP: &str = "0";
 
@@ -73,6 +75,8 @@ struct PricingPlanMutationRequest {
     effective_from: Option<String>,
     effective_to: Option<String>,
     status: Option<String>,
+    charge_mode: Option<String>,
+    settlement_mode: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -122,6 +126,8 @@ struct NormalizedPricingPlanMutation {
     effective_from: Option<String>,
     effective_to: Option<String>,
     status: AdminPricingStatus,
+    charge_mode: Option<String>,
+    settlement_mode: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -283,6 +289,12 @@ async fn create_pricing_plan(
             .unwrap_or_else(current_timestamp_string),
         effective_to: mutation.effective_to,
         status: mutation.status,
+        charge_mode: mutation
+            .charge_mode
+            .unwrap_or_else(|| "prepaid_adjustment".to_owned()),
+        settlement_mode: mutation
+            .settlement_mode
+            .unwrap_or_else(|| "synchronous".to_owned()),
         request_id: match generate_server_request_id() {
             Ok(request_id) => request_id,
             Err(error) => return command_build_error_response(request_id_error(error)),
@@ -338,6 +350,24 @@ async fn update_pricing_plan(
         Ok(mutation) => mutation,
         Err(error) => return command_build_error_response(error),
     };
+    let existing_modes = if mutation.charge_mode.is_none() || mutation.settlement_mode.is_none() {
+        match state
+            .store
+            .load_pricing_plan(LoadAdminPricingPlanQuery {
+                subject,
+                plan_id: plan_id.clone(),
+            })
+            .await
+        {
+            Ok(Some(item)) => Some((item.charge_mode, item.settlement_mode)),
+            Ok(None) => return not_found_response("pricing plan was not found"),
+            Err(error) => {
+                return pricing_system_response("pricing plan read model is unavailable", error)
+            }
+        }
+    } else {
+        None
+    };
     let command = UpdateAdminPricingPlanCommand {
         subject,
         plan_id,
@@ -359,6 +389,18 @@ async fn update_pricing_plan(
             .unwrap_or_else(current_timestamp_string),
         effective_to: mutation.effective_to,
         status: mutation.status,
+        charge_mode: mutation.charge_mode.unwrap_or_else(|| {
+            existing_modes
+                .as_ref()
+                .map(|modes| modes.0.clone())
+                .unwrap_or_else(|| "prepaid_adjustment".to_owned())
+        }),
+        settlement_mode: mutation.settlement_mode.unwrap_or_else(|| {
+            existing_modes
+                .as_ref()
+                .map(|modes| modes.1.clone())
+                .unwrap_or_else(|| "synchronous".to_owned())
+        }),
         request_id: match generate_server_request_id() {
             Ok(request_id) => request_id,
             Err(error) => return command_build_error_response(request_id_error(error)),
@@ -788,6 +830,10 @@ fn normalize_pricing_plan_mutation(
     } else {
         None
     };
+    let effective_from =
+        normalize_optional_datetime(request.effective_from.as_deref(), "effectiveFrom")?;
+    let effective_to = normalize_optional_datetime(request.effective_to.as_deref(), "effectiveTo")?;
+    validate_datetime_order(effective_from.as_deref(), effective_to.as_deref())?;
     Ok(NormalizedPricingPlanMutation {
         plan_code,
         plan_name: normalize_required_text(request.plan_name.as_deref(), "planName", MAX_NAME_LEN)?,
@@ -798,13 +844,70 @@ fn normalize_pricing_plan_mutation(
             request.minimum_charge_amount.as_ref(),
             "minimumChargeAmount",
         )?,
-        effective_from: normalize_optional_datetime(
-            request.effective_from.as_deref(),
-            "effectiveFrom",
-        )?,
-        effective_to: normalize_optional_datetime(request.effective_to.as_deref(), "effectiveTo")?,
+        effective_from,
+        effective_to,
         status: normalize_pricing_status(request.status.as_deref())?,
+        charge_mode: if create {
+            Some(normalize_charge_mode(request.charge_mode.as_deref())?)
+        } else {
+            normalize_optional_charge_mode(request.charge_mode.as_deref())?
+        },
+        settlement_mode: if create {
+            Some(normalize_settlement_mode(
+                request.settlement_mode.as_deref(),
+            )?)
+        } else {
+            normalize_optional_settlement_mode(request.settlement_mode.as_deref())?
+        },
     })
+}
+
+fn normalize_charge_mode(value: Option<&str>) -> Result<String, AdminPricingCommandBuildError> {
+    match value
+        .unwrap_or("prepaid_adjustment")
+        .trim()
+        .to_ascii_lowercase()
+        .as_str()
+    {
+        "prepaid_adjustment" | "postpaid" => Ok(value
+            .unwrap_or("prepaid_adjustment")
+            .trim()
+            .to_ascii_lowercase()),
+        _ => Err(AdminPricingCommandBuildError::BadRequest(
+            "chargeMode must be prepaid_adjustment or postpaid".to_owned(),
+        )),
+    }
+}
+
+fn normalize_optional_charge_mode(
+    value: Option<&str>,
+) -> Result<Option<String>, AdminPricingCommandBuildError> {
+    value
+        .map(|value| normalize_charge_mode(Some(value)))
+        .transpose()
+}
+
+fn normalize_settlement_mode(value: Option<&str>) -> Result<String, AdminPricingCommandBuildError> {
+    match value
+        .unwrap_or("synchronous")
+        .trim()
+        .to_ascii_lowercase()
+        .as_str()
+    {
+        "synchronous" | "sync" => Ok("synchronous".to_owned()),
+        "asynchronous" | "async" => Ok("asynchronous".to_owned()),
+        _ => Err(AdminPricingCommandBuildError::BadRequest(
+            "settlementMode must be synchronous or asynchronous".to_owned(),
+        )),
+    }
+}
+
+fn normalize_optional_settlement_mode(
+    value: Option<&str>,
+) -> Result<Option<String>, AdminPricingCommandBuildError> {
+    value
+        .map(|value| normalize_settlement_mode(Some(value)))
+        .transpose()
 }
 
 fn normalize_rate_card_mutation(
@@ -828,6 +931,10 @@ fn normalize_rate_card_mutation(
     }
     let priority = normalize_optional_non_negative_integer(request.priority.as_ref(), "priority")?
         .unwrap_or(100);
+    let effective_from =
+        normalize_optional_datetime(request.effective_from.as_deref(), "effectiveFrom")?;
+    let effective_to = normalize_optional_datetime(request.effective_to.as_deref(), "effectiveTo")?;
+    validate_datetime_order(effective_from.as_deref(), effective_to.as_deref())?;
     Ok(NormalizedRateCardMutation {
         subject_type: normalize_rate_card_subject_type(request.subject_type.as_deref())?,
         subject_id,
@@ -837,11 +944,8 @@ fn normalize_rate_card_mutation(
             "pricingPlanId",
         )?,
         priority,
-        effective_from: normalize_optional_datetime(
-            request.effective_from.as_deref(),
-            "effectiveFrom",
-        )?,
-        effective_to: normalize_optional_datetime(request.effective_to.as_deref(), "effectiveTo")?,
+        effective_from,
+        effective_to,
         status: normalize_pricing_status(request.status.as_deref())?,
     })
 }
@@ -896,6 +1000,10 @@ fn normalize_pricing_rule_mutation(
             )
         }
     };
+    let effective_from =
+        normalize_optional_datetime(request.effective_from.as_deref(), "effectiveFrom")?;
+    let effective_to = normalize_optional_datetime(request.effective_to.as_deref(), "effectiveTo")?;
+    validate_datetime_order(effective_from.as_deref(), effective_to.as_deref())?;
     Ok(NormalizedPricingRuleMutation {
         rule_code,
         pricing_plan_id: normalize_required_pricing_id(
@@ -932,11 +1040,8 @@ fn normalize_pricing_rule_mutation(
         schedule: normalize_pricing_schedule(request.schedule.as_ref())?,
         priority: normalize_optional_non_negative_integer(request.priority.as_ref(), "priority")?
             .unwrap_or(100),
-        effective_from: normalize_optional_datetime(
-            request.effective_from.as_deref(),
-            "effectiveFrom",
-        )?,
-        effective_to: normalize_optional_datetime(request.effective_to.as_deref(), "effectiveTo")?,
+        effective_from,
+        effective_to,
         status: normalize_pricing_status(request.status.as_deref())?,
     })
 }
@@ -1002,10 +1107,41 @@ fn normalize_optional_datetime(
     value: Option<&str>,
     field_name: &str,
 ) -> Result<Option<String>, AdminPricingCommandBuildError> {
-    match normalize_optional_text(value, field_name, MAX_DATETIME_LEN)? {
-        Some(value) => Ok(Some(value)),
-        None => Ok(None),
+    let value = normalize_optional_text(value, field_name, MAX_DATETIME_LEN)?;
+    let Some(value) = value else {
+        return Ok(None);
+    };
+    let parsed = DateTime::parse_from_rfc3339(&value).map_err(|_| {
+        AdminPricingCommandBuildError::BadRequest(format!(
+            "{field_name} must be an RFC3339 date-time with an explicit timezone"
+        ))
+    })?;
+    Ok(Some(parsed.to_rfc3339_opts(SecondsFormat::AutoSi, true)))
+}
+
+fn validate_datetime_order(
+    effective_from: Option<&str>,
+    effective_to: Option<&str>,
+) -> Result<(), AdminPricingCommandBuildError> {
+    let (Some(from), Some(to)) = (effective_from, effective_to) else {
+        return Ok(());
+    };
+    let from = DateTime::parse_from_rfc3339(from).map_err(|_| {
+        AdminPricingCommandBuildError::BadRequest(
+            "effectiveFrom must be an RFC3339 date-time with an explicit timezone".to_owned(),
+        )
+    })?;
+    let to = DateTime::parse_from_rfc3339(to).map_err(|_| {
+        AdminPricingCommandBuildError::BadRequest(
+            "effectiveTo must be an RFC3339 date-time with an explicit timezone".to_owned(),
+        )
+    })?;
+    if to <= from {
+        return Err(AdminPricingCommandBuildError::BadRequest(
+            "effectiveTo must be later than effectiveFrom".to_owned(),
+        ));
     }
+    Ok(())
 }
 
 fn normalize_pricing_search(value: Option<&str>) -> Result<Option<String>, String> {
@@ -1322,7 +1458,7 @@ fn normalize_optional_decimal_value(
     }
     if !is_decimal_text(&raw) {
         return Err(AdminPricingCommandBuildError::BadRequest(format!(
-            "{field_name} must be a non-negative decimal with at most 6 decimal places"
+            "{field_name} must be a non-negative decimal with at most 12 decimal places"
         )));
     }
     Ok(Some(canonicalize_decimal(&raw)))
@@ -1488,4 +1624,33 @@ fn civil_from_days(days: i64) -> (i64, i64, i64) {
     let month = month_prime + if month_prime < 10 { 3 } else { -9 };
     let year = year + if month <= 2 { 1 } else { 0 };
     (year, month, day)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{normalize_optional_datetime, validate_datetime_order};
+
+    #[test]
+    fn datetime_normalization_requires_explicit_timezone() {
+        let normalized =
+            normalize_optional_datetime(Some("2026-08-18T00:00:00+08:00"), "effectiveFrom")
+                .unwrap_or_else(|_| None)
+                .expect("valid RFC3339 timestamp");
+        assert_eq!(normalized, "2026-08-18T00:00:00+08:00");
+        assert!(normalize_optional_datetime(Some("2026-08-18 00:00:00"), "effectiveFrom").is_err());
+    }
+
+    #[test]
+    fn datetime_order_is_rejected_before_persistence() {
+        assert!(validate_datetime_order(
+            Some("2026-08-19T00:00:00Z"),
+            Some("2026-08-18T00:00:00Z"),
+        )
+        .is_err());
+        assert!(validate_datetime_order(
+            Some("2026-08-18T00:00:00Z"),
+            Some("2026-08-19T00:00:00Z"),
+        )
+        .is_ok());
+    }
 }

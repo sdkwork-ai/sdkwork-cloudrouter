@@ -1,4 +1,5 @@
 use axum::http::Method;
+use chrono::Utc;
 use sdkwork_cloudrouter_router_service::application::{
     AuthenticatedApiKeyContext, BillingMode, BillingQuantitySource, Invocation, InvocationAccount,
     InvocationBilling, InvocationBody, InvocationClassificationRequest, InvocationDispatch,
@@ -9,13 +10,12 @@ use sdkwork_cloudrouter_router_service::application::{
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
     ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, PricingRateCondition,
-    PricingRateMetadata, PricingRateVariant, ProviderAuthProfile, RoutingCapability, UpstreamAccountGroup,
-    UpstreamAccountRoute,
+    PricingRateMetadata, PricingRateVariant, ProviderAuthProfile, RoutingCapability,
+    UpstreamAccountGroup, UpstreamAccountRoute,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use sdkwork_cloudrouter_router_service::ports::GatewayUsageQuantity;
 use serde_json::json;
-use chrono::Utc;
 use std::sync::Arc;
 
 fn catalog_with_chat_prices() -> InMemoryPricingCatalog {

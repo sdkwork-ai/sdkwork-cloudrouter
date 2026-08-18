@@ -23,42 +23,38 @@ export class ResponsesGoogleV1betaCachedContentsApi {
       { name: 'pageSize', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'pageToken', value: params?.pageToken, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<GoogleCachedContentListResponse>(appendQueryString(aiApiPath(`/google/v1beta/cachedContents`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<GoogleCachedContentListResponse>(appendQueryString(aiApiPath(`/google/v1beta/cachedContents`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Google Gemini create cached content */
   async create(body: GoogleCachedContentCreateRequest, requestOptions?: ApiRequestOptions): Promise<GoogleCachedContent> {
-    return this.client.request<GoogleCachedContent>(aiApiPath(`/google/v1beta/cachedContents`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<GoogleCachedContent>(aiApiPath(`/google/v1beta/cachedContents`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Google Gemini cached content */
   async delete(cachedContentId: string, requestOptions?: ApiRequestOptions): Promise<GoogleEmptyResponse> {
-    return this.client.request<GoogleEmptyResponse>(aiApiPath(`/google/v1beta/cachedContents/${serializePathParameter(cachedContentId, { name: 'cached_content_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<GoogleEmptyResponse>(aiApiPath(`/google/v1beta/cachedContents/${serializePathParameter(cachedContentId, { name: 'cached_content_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Google Gemini retrieve cached content */
   async retrieve(cachedContentId: string, requestOptions?: ApiRequestOptions): Promise<GoogleCachedContent> {
-    return this.client.request<GoogleCachedContent>(aiApiPath(`/google/v1beta/cachedContents/${serializePathParameter(cachedContentId, { name: 'cached_content_id', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any });
+    return this.client.request<GoogleCachedContent>(aiApiPath(`/google/v1beta/cachedContents/${serializePathParameter(cachedContentId, { name: 'cached_content_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 
 export class ResponsesGoogleV1betaApi {
-  private client: HttpClient;
   public readonly cachedContents: ResponsesGoogleV1betaCachedContentsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.cachedContents = new ResponsesGoogleV1betaCachedContentsApi(client);
   }
 
 }
 
 export class ResponsesGoogleApi {
-  private client: HttpClient;
   public readonly v1beta: ResponsesGoogleV1betaApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.v1beta = new ResponsesGoogleV1betaApi(client);
   }
 

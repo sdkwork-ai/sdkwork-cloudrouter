@@ -65,6 +65,8 @@ export interface AdminPricingPlanItem {
   effectiveFrom?: string;
   effectiveTo?: string;
   status: AdminPricingStatus;
+  chargeMode: 'prepaid_adjustment' | 'postpaid';
+  settlementMode: 'synchronous' | 'asynchronous';
   createdAt?: string;
   updatedAt?: string;
   version?: string;
@@ -121,6 +123,8 @@ export interface AdminPricingPlanMutationInput {
   effectiveFrom?: string;
   effectiveTo?: string;
   status: AdminPricingStatus;
+  chargeMode: 'prepaid_adjustment' | 'postpaid';
+  settlementMode: 'synchronous' | 'asynchronous';
 }
 
 export interface AdminRateCardMutationInput {
@@ -283,6 +287,23 @@ export async function fetchPricingPlans(
   };
 }
 
+/** Loads every plan for selectors and rule-scope resolution. */
+export async function fetchAllPricingPlans(
+  params: AdminPricingListParams = {},
+): Promise<AdminPricingPlanItem[]> {
+  const pageSize = Math.min(params.pageSize ?? 200, 200);
+  const items: AdminPricingPlanItem[] = [];
+  for (let page = 1; page <= 1000; page += 1) {
+    const current = await fetchPricingPlans({ ...params, page, pageSize });
+    items.push(...current.items);
+    const totalPages = current.pageInfo.totalPages;
+    const hasMore = current.pageInfo.hasMore
+      ?? (totalPages !== undefined ? page < totalPages : current.items.length === pageSize);
+    if (!hasMore) return items;
+  }
+  throw new Error('Pricing plans exceeded the supported catalog size');
+}
+
 export async function fetchPricingPlan(planId: string): Promise<AdminPricingPlanItem> {
   const result = await backendPlansRetrieve(requiredPricingText(planId, 'planId'));
   return normalizePricingPlan(readRequiredApiItem(result, 'Pricing plan could not be loaded'));
@@ -360,6 +381,26 @@ export async function fetchPricingRules(
   };
 }
 
+/** Loads the complete rule set needed to render product-level fallback state.
+ * A fixed first page silently hides sales rules once a plan exceeds 200 rules,
+ * which can make an existing customer price appear to be the official price.
+ */
+export async function fetchAllPricingRules(
+  params: AdminPricingListParams = {},
+): Promise<AdminPricingRuleItem[]> {
+  const pageSize = Math.min(params.pageSize ?? 200, 200);
+  const items: AdminPricingRuleItem[] = [];
+  for (let page = 1; page <= 1000; page += 1) {
+    const current = await fetchPricingRules({ ...params, page, pageSize });
+    items.push(...current.items);
+    const totalPages = current.pageInfo.totalPages;
+    const hasMore = current.pageInfo.hasMore
+      ?? (totalPages !== undefined ? page < totalPages : current.items.length === pageSize);
+    if (!hasMore) return items;
+  }
+  throw new Error('Pricing rules exceeded the supported catalog size');
+}
+
 export async function createPricingRule(
   input: AdminPricingRuleMutationInput,
 ): Promise<AdminPricingRuleItem> {
@@ -391,6 +432,7 @@ export const pricingService = {
   },
   plans: {
     list: fetchPricingPlans,
+    listAll: fetchAllPricingPlans,
     retrieve: fetchPricingPlan,
     create: createPricingPlan,
     update: updatePricingPlan,
@@ -403,6 +445,7 @@ export const pricingService = {
   },
   rules: {
     list: fetchPricingRules,
+    listAll: fetchAllPricingRules,
     create: createPricingRule,
     update: updatePricingRule,
     delete: deletePricingRule,
@@ -423,6 +466,10 @@ function normalizePricingPlan(value: unknown): AdminPricingPlanItem {
     effectiveFrom: optionalTrimmed(item, 'effectiveFrom'),
     effectiveTo: optionalTrimmed(item, 'effectiveTo'),
     status: normalizeStatus(readString(item, 'status')),
+    chargeMode: readString(item, 'chargeMode') === 'postpaid' ? 'postpaid' : 'prepaid_adjustment',
+    settlementMode: readString(item, 'settlementMode') === 'asynchronous'
+      ? 'asynchronous'
+      : 'synchronous',
     createdAt: optionalTrimmed(item, 'createdAt'),
     updatedAt: optionalTrimmed(item, 'updatedAt'),
     version: optionalTrimmed(item, 'version'),
@@ -487,6 +534,8 @@ function buildPlanCreateRequest(input: AdminPricingPlanMutationInput) {
     effectiveFrom: optionalPricingText(input.effectiveFrom),
     effectiveTo: optionalPricingText(input.effectiveTo),
     status: input.status,
+    chargeMode: input.chargeMode,
+    settlementMode: input.settlementMode,
   };
 }
 
@@ -500,6 +549,8 @@ function buildPlanUpdateRequest(input: AdminPricingPlanMutationInput) {
     effectiveFrom: optionalPricingText(input.effectiveFrom),
     effectiveTo: optionalPricingText(input.effectiveTo),
     status: input.status,
+    chargeMode: input.chargeMode,
+    settlementMode: input.settlementMode,
   };
 }
 
@@ -591,8 +642,8 @@ function normalizeCurrencyCode(value: string): string {
 
 function normalizeDecimal(value: string, fieldName: string): string {
   const normalized = requiredPricingText(value, fieldName);
-  if (!/^[0-9]+(?:\.[0-9]{1,6})?$/.test(normalized)) {
-    throw new Error(`${fieldName} must be a non-negative decimal with at most 6 decimal places`);
+  if (!/^[0-9]+(?:\.[0-9]{1,12})?$/.test(normalized)) {
+    throw new Error(`${fieldName} must be a non-negative decimal with at most 12 decimal places`);
   }
   return normalized;
 }

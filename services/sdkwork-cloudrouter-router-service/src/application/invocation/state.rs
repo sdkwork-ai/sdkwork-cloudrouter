@@ -10,6 +10,7 @@ use super::{
     InvocationRouting, InvocationSubject, InvocationTelemetry, InvocationUsage, StickyRouting,
 };
 use crate::domain::AiRouteStrategy;
+use crate::ports::{CustomerChargeMode, GatewayBillingSettlementMode};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InvocationId(pub String);
@@ -186,6 +187,7 @@ pub struct Invocation {
     pub subject: InvocationSubject,
     pub resource: InvocationResource,
     pub billing: InvocationBilling,
+    pub charging: InvocationCharging,
     pub routing: InvocationRouting,
     pub account: Option<InvocationAccount>,
     pub dispatch: InvocationDispatch,
@@ -195,6 +197,30 @@ pub struct Invocation {
     /// the call-chain interceptor in `before` and consumed by `after` /
     /// `on_error` for exactly-once release.
     pub call_chain: Option<sdkwork_web_chain::ChainContext>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InvocationCharging {
+    pub charge_mode: CustomerChargeMode,
+    pub settlement_mode: GatewayBillingSettlementMode,
+    pub reserved_amount: Option<crate::ports::GatewayBillingAmount>,
+    /// Set once the provider has returned a terminal success and usage has
+    /// been rated. A later accounting failure must be reconciled, not treated
+    /// as a provider failure that is safe to refund blindly.
+    pub provider_completed: bool,
+    pub settled: bool,
+}
+
+impl Default for InvocationCharging {
+    fn default() -> Self {
+        Self {
+            charge_mode: CustomerChargeMode::default(),
+            settlement_mode: GatewayBillingSettlementMode::default(),
+            reserved_amount: None,
+            provider_completed: false,
+            settled: false,
+        }
+    }
 }
 
 fn split_path_query(value: &str) -> (String, Option<String>) {
@@ -233,6 +259,7 @@ impl Invocation {
             subject,
             resource,
             billing,
+            charging: InvocationCharging::default(),
             routing,
             account: None,
             dispatch: InvocationDispatch::pending(),

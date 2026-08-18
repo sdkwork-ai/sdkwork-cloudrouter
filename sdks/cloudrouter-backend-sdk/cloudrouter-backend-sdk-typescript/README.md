@@ -98,14 +98,15 @@ const result = await client.payments.providers.list(params);
 ### pricing
 
 ```typescript
-// List admin official pricing products
+// List pricing plans
 const params = {
-  category: 'all',
   q: 'q',
-  page: 3,
-  page_size: 4,
+  base_price_side: 'official_reference',
+  status: 'active',
+  page: 4,
+  page_size: 5,
 };
-const result = await client.pricing.officialProducts.list(params);
+const result = await client.pricing.plans.list(params);
 ```
 
 ### recharges
@@ -164,6 +165,8 @@ This SDK includes cross-platform publish scripts in `bin/`:
 - `bin/publish-core.mjs`
 - `bin/publish.sh`
 - `bin/publish.ps1`
+
+TypeScript check and publish commands use pnpm to materialize workspace dependency versions in a temporary tarball. They reject local-only dependency protocols before npm publication and do not rewrite the source `package.json`.
 
 ### Check
 

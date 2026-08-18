@@ -14,21 +14,19 @@ export class IamUsersSettingsApi {
 
 /** List settings */
   async retrieve(requestOptions?: ApiRequestOptions): Promise<SettingsDataResponse> {
-    return this.client.request<SettingsDataResponse>(appApiPath(`/iam/users/settings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+    return this.client.request<SettingsDataResponse>(appApiPath(`/iam/users/settings`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
   }
 
 /** Update settings */
   async update(body: UpdateSettingsRequest, requestOptions?: ApiRequestOptions): Promise<UpdateSettingsResponse> {
-    return this.client.request<UpdateSettingsResponse>(appApiPath(`/iam/users/settings`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PUT' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<UpdateSettingsResponse>(appApiPath(`/iam/users/settings`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PUT' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 
 export class IamUsersApi {
-  private client: HttpClient;
   public readonly settings: IamUsersSettingsApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.settings = new IamUsersSettingsApi(client);
   }
 
@@ -44,7 +42,7 @@ export class IamInvitesValidateApi {
 
 /** Validate invite code */
   async create(body: AppInviteValidateRequest, requestOptions?: ApiRequestOptions): Promise<AppInviteValidateResponse> {
-    return this.client.request<AppInviteValidateResponse>(appApiPath(`/iam/invites/validate`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', skipAuth: true, sdkworkUnwrapKind: 'data' });
+    return this.client.request<AppInviteValidateResponse>(appApiPath(`/iam/invites/validate`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', skipAuth: true, sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -58,7 +56,7 @@ export class IamInvitesClaimApi {
 
 /** Claim invite relation */
   async create(body: AppInviteClaimRequest, requestOptions?: ApiRequestOptions): Promise<AppInviteClaimResponse> {
-    return this.client.request<AppInviteClaimResponse>(appApiPath(`/iam/invites/claim`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<AppInviteClaimResponse>(appApiPath(`/iam/invites/claim`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 
@@ -81,18 +79,16 @@ export class IamInvitePolicyApi {
       { name: 'tenant_code', value: params?.tenantCode, style: 'form', explode: true, allowReserved: false },
       { name: 'organization_code', value: params?.organizationCode, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AppInvitePolicyResponse>(appendQueryString(appApiPath(`/iam/invite/policy`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, skipAuth: true, sdkworkUnwrapKind: 'data' });
+    return this.client.request<AppInvitePolicyResponse>(appendQueryString(appApiPath(`/iam/invite/policy`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, skipAuth: true, sdkworkUnwrapKind: 'data' });
   }
 }
 
 export class IamInviteApi {
-  private client: HttpClient;
   public readonly policy: IamInvitePolicyApi;
   public readonly claim: IamInvitesClaimApi;
   public readonly validate: IamInvitesValidateApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.policy = new IamInvitePolicyApi(client);
     this.claim = new IamInvitesClaimApi(client);
     this.validate = new IamInvitesValidateApi(client);
@@ -125,7 +121,7 @@ export class IamApiKeysApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AppApiKeyListResponse>(appendQueryString(appApiPath(`/iam/api_keys`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<AppApiKeyListResponse>(appendQueryString(appApiPath(`/iam/api_keys`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Create key */
@@ -136,28 +132,26 @@ export class IamApiKeysApi {
       },
       {}
     );
-    return this.client.request<CreateApiKeyResponse>(appApiPath(`/iam/api_keys`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'POST' as any, body, headers: requestHeaders, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<CreateApiKeyResponse>(appApiPath(`/iam/api_keys`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', ...(requestHeaders !== undefined ? { headers: requestHeaders } : {}), sdkworkUnwrapKind: 'data' });
   }
 
 /** Delete key */
   async delete(apiKeyId: string, requestOptions?: ApiRequestOptions): Promise<void> {
-    return this.client.request<void>(appApiPath(`/iam/api_keys/${serializePathParameter(apiKeyId, { name: 'apiKeyId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'DELETE' as any });
+    return this.client.request<void>(appApiPath(`/iam/api_keys/${serializePathParameter(apiKeyId, { name: 'apiKeyId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Update key */
   async update(apiKeyId: string, body: UpdateApiKeyRequest, requestOptions?: ApiRequestOptions): Promise<AppApiKeyItem> {
-    return this.client.request<AppApiKeyItem>(appApiPath(`/iam/api_keys/${serializePathParameter(apiKeyId, { name: 'apiKeyId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
+    return this.client.request<AppApiKeyItem>(appApiPath(`/iam/api_keys/${serializePathParameter(apiKeyId, { name: 'apiKeyId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'item' });
   }
 }
 
 export class IamApi {
-  private client: HttpClient;
   public readonly apiKeys: IamApiKeysApi;
   public readonly invite: IamInviteApi;
   public readonly users: IamUsersApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.apiKeys = new IamApiKeysApi(client);
     this.invite = new IamInviteApi(client);
     this.users = new IamUsersApi(client);

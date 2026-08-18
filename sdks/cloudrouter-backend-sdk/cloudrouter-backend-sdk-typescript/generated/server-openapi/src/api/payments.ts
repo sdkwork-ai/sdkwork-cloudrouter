@@ -27,21 +27,19 @@ export class PaymentsProvidersApi {
       { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },
       { name: 'provider_code', value: params?.providerCode, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<PaymentProviderInventoryListResponse>(appendQueryString(backendApiPath(`/payments/providers`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+    return this.client.request<PaymentProviderInventoryListResponse>(appendQueryString(backendApiPath(`/payments/providers`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
   }
 
 /** Backend payment providers update */
   async update(providerId: string, body: UpdatePaymentProviderRequest, requestOptions?: ApiRequestOptions): Promise<PaymentProviderMutationResponse> {
-    return this.client.request<PaymentProviderMutationResponse>(backendApiPath(`/payments/providers/${serializePathParameter(providerId, { name: 'providerId', style: 'simple', explode: false })}`), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+    return this.client.request<PaymentProviderMutationResponse>(backendApiPath(`/payments/providers/${serializePathParameter(providerId, { name: 'providerId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
   }
 }
 
 export class PaymentsApi {
-  private client: HttpClient;
   public readonly providers: PaymentsProvidersApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.providers = new PaymentsProvidersApi(client);
   }
 

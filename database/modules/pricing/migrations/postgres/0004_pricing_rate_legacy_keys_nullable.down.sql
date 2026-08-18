@@ -7,8 +7,21 @@
 -- rollback: down-migration
 -- transactional: true
 
-ALTER TABLE pricing_rate
-    ALTER COLUMN product_id SET NOT NULL,
-    ALTER COLUMN operation_id SET NOT NULL,
-    ALTER COLUMN meter_id SET NOT NULL;
+-- The retired relation-key columns exist only in the pre-composable schema;
+-- fresh installs never had them, so restore requirements only when present.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = ANY (current_schemas(false))
+          AND table_name = 'pricing_rate'
+          AND column_name IN ('product_id', 'operation_id', 'meter_id')
+    ) THEN
+        ALTER TABLE pricing_rate
+            ALTER COLUMN product_id SET NOT NULL,
+            ALTER COLUMN operation_id SET NOT NULL,
+            ALTER COLUMN meter_id SET NOT NULL;
+    END IF;
+END
+$$;
 

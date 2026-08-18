@@ -143,6 +143,8 @@ async fn list_pricing_plans(
             plan_code,
             plan_name,
             base_price_side,
+            COALESCE(metadata->>'chargeMode', 'prepaid_adjustment') AS charge_mode,
+            COALESCE(metadata->>'settlementMode', 'synchronous') AS settlement_mode,
             COALESCE(fallback_policy, 'fail_closed') AS fallback_policy,
             COALESCE(rounding_mode, 'half_up') AS rounding_mode,
             COALESCE(minimum_charge_amount, 0)::text AS minimum_charge_amount,
@@ -248,6 +250,8 @@ async fn load_pricing_plan(
             plan_code,
             plan_name,
             base_price_side,
+            COALESCE(metadata->>'chargeMode', 'prepaid_adjustment') AS charge_mode,
+            COALESCE(metadata->>'settlementMode', 'synchronous') AS settlement_mode,
             COALESCE(fallback_policy, 'fail_closed') AS fallback_policy,
             COALESCE(rounding_mode, 'half_up') AS rounding_mode,
             COALESCE(minimum_charge_amount, 0)::text AS minimum_charge_amount,
@@ -332,7 +336,10 @@ async fn insert_pricing_plan_row(
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .bind(command.status.db_value())
-    .bind(admin_metadata())
+    .bind(admin_metadata_with_billing_modes(
+        &command.charge_mode,
+        &command.settlement_mode,
+    ))
     .bind(&command.plan_code)
     .bind(&command.plan_name)
     .bind(command.base_price_side.label())
@@ -369,11 +376,15 @@ async fn update_pricing_plan(
             effective_from = $6::timestamptz,
             effective_to = $7::timestamptz,
             status = $8,
-            updated_at = $9,
+            metadata = jsonb_set(
+                jsonb_set(COALESCE(metadata, '{}'::jsonb), '{chargeMode}', to_jsonb($9::text), true),
+                '{settlementMode}', to_jsonb($10::text), true
+            ),
+            updated_at = $11,
             version = cloudrouter_pricing_plan.version + 1
-        WHERE id = $10
-          AND tenant_id = $11
-          AND organization_id = $12
+        WHERE id = $12
+          AND tenant_id = $13
+          AND organization_id = $14
           AND deleted_at IS NULL
         "#,
     )
@@ -385,6 +396,8 @@ async fn update_pricing_plan(
     .bind(&command.effective_from)
     .bind(command.effective_to.as_deref())
     .bind(command.status.db_value())
+    .bind(&command.charge_mode)
+    .bind(&command.settlement_mode)
     .bind(&command.requested_at)
     .bind(plan_id)
     .bind(command.subject.tenant_id)
@@ -434,6 +447,8 @@ async fn load_pricing_plan_in_transaction(
             plan_code,
             plan_name,
             base_price_side,
+            COALESCE(metadata->>'chargeMode', 'prepaid_adjustment') AS charge_mode,
+            COALESCE(metadata->>'settlementMode', 'synchronous') AS settlement_mode,
             COALESCE(fallback_policy, 'fail_closed') AS fallback_policy,
             COALESCE(rounding_mode, 'half_up') AS rounding_mode,
             COALESCE(minimum_charge_amount, 0)::text AS minimum_charge_amount,
@@ -1239,6 +1254,8 @@ fn pricing_plan_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<AdminPrici
             i32::try_from(integer_cell(row, "status")).unwrap_or(0),
         )
         .to_owned(),
+        charge_mode: string_cell(row, "charge_mode"),
+        settlement_mode: string_cell(row, "settlement_mode"),
         created_at: optional_string_cell(row, "created_at"),
         updated_at: optional_string_cell(row, "updated_at"),
         version: integer_cell(row, "version"),
@@ -1339,6 +1356,15 @@ async fn insert_audit_log_for_target_uuid(
 
 fn admin_metadata() -> String {
     format!(r#"{{"source":"{ADMIN_METADATA_SOURCE}"}}"#)
+}
+
+fn admin_metadata_with_billing_modes(charge_mode: &str, settlement_mode: &str) -> String {
+    serde_json::json!({
+        "source": ADMIN_METADATA_SOURCE,
+        "chargeMode": charge_mode,
+        "settlementMode": settlement_mode,
+    })
+    .to_string()
 }
 
 fn parse_pricing_id(value: &str, field_name: &str) -> DomainResult<i64> {

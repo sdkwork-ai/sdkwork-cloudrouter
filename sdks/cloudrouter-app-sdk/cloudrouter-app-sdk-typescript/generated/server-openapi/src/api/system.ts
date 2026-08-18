@@ -23,27 +23,23 @@ export class SystemSiteRuntimeApi {
       { name: 'tenant_code', value: params?.tenantCode, style: 'form', explode: true, allowReserved: false },
       { name: 'organization_code', value: params?.organizationCode, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<SiteRuntimeSettingsResponse>(appendQueryString(appApiPath(`/system/site/runtime`), query), { signal: requestOptions?.signal, timeout: requestOptions?.timeout, method: 'GET' as any, skipAuth: true, sdkworkUnwrapKind: 'data' });
+    return this.client.request<SiteRuntimeSettingsResponse>(appendQueryString(appApiPath(`/system/site/runtime`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, skipAuth: true, sdkworkUnwrapKind: 'data' });
   }
 }
 
 export class SystemSiteApi {
-  private client: HttpClient;
   public readonly runtime: SystemSiteRuntimeApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.runtime = new SystemSiteRuntimeApi(client);
   }
 
 }
 
 export class SystemApi {
-  private client: HttpClient;
   public readonly site: SystemSiteApi;
 
   constructor(client: HttpClient) {
-    this.client = client;
     this.site = new SystemSiteApi(client);
   }
 
