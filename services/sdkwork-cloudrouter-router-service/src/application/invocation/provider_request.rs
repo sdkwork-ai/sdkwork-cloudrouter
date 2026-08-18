@@ -51,14 +51,14 @@ impl ProviderRequestBuilder {
             &invocation.request.headers,
             account.provider_model.as_deref(),
         )?;
+        let path = rewrite_path_model(
+            &invocation.request.path,
+            account.provider_model.as_deref(),
+        );
         Ok(InvocationProviderRequest {
             method: invocation.request.method.clone(),
-            url: provider_url(
-                account.base_url.as_deref(),
-                &invocation.request.path,
-                query.as_deref(),
-            ),
-            path: invocation.request.path.clone(),
+            url: provider_url(account.base_url.as_deref(), &path, query.as_deref()),
+            path,
             query,
             headers,
             body,
@@ -224,6 +224,32 @@ fn rewrite_json_body_model(body: InvocationBody, provider_model: &str) -> Invoca
         },
         other => other,
     }
+}
+
+fn rewrite_path_model(path: &str, provider_model: Option<&str>) -> String {
+    let Some(provider_model) = provider_model
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    else {
+        return path.to_owned();
+    };
+    rewrite_models_action_path(path, provider_model).unwrap_or_else(|| path.to_owned())
+}
+
+/// Rewrites `/v1beta/models/{model}:{action}` and `/v1/models/{model}:{action}`
+/// so Gemini-style native calls use the account-mapped provider model.
+fn rewrite_models_action_path(path: &str, provider_model: &str) -> Option<String> {
+    let (prefix, rest) = [
+        "/v1beta/models/",
+        "/v1/models/",
+    ]
+    .into_iter()
+    .find_map(|prefix| path.strip_prefix(prefix).map(|rest| (prefix, rest)))?;
+    let (model, action) = rest.split_once(':')?;
+    if model.trim().is_empty() || action.trim().is_empty() || model == provider_model {
+        return None;
+    }
+    Some(format!("{prefix}{provider_model}:{action}"))
 }
 
 fn rewrite_query_model(query: Option<String>, provider_model: Option<&str>) -> Option<String> {
@@ -435,12 +461,47 @@ fn provider_url(base_url: Option<&str>, path: &str, query: Option<&str>) -> Opti
     if base_url.is_empty() {
         return None;
     }
-    let mut url = format!("{base_url}/{}", path.trim_start_matches('/'));
+    let path = join_provider_path(base_url, path);
+    let mut url = format!("{base_url}{path}");
     if let Some(query) = query.map(str::trim).filter(|value| !value.is_empty()) {
         url.push('?');
         url.push_str(query);
     }
     Some(url)
+}
+
+/// Joins an account base URL with the inbound API path without duplicating a
+/// trailing `/v1` prefix. Dedicated OpenAI relays already strip `/v1` when the
+/// base URL ends with `/v1`; the invocation pipeline must do the same so
+/// `https://api.example/v1` + `/v1/chat/completions` becomes
+/// `https://api.example/v1/chat/completions`.
+fn join_provider_path(base_url: &str, path: &str) -> String {
+    let path = if path.starts_with('/') {
+        path.to_owned()
+    } else {
+        format!("/{path}")
+    };
+    if base_url_ends_with_openai_v1(base_url) && (path == "/v1" || path.starts_with("/v1/")) {
+        path.strip_prefix("/v1").unwrap_or(path.as_str()).to_owned()
+    } else {
+        path
+    }
+}
+
+fn base_url_ends_with_openai_v1(base_url: &str) -> bool {
+    let path = url_path(base_url).trim_end_matches('/');
+    path == "/v1" || path.ends_with("/v1")
+}
+
+fn url_path(base_url: &str) -> &str {
+    let without_scheme = base_url
+        .split_once("://")
+        .map(|(_, rest)| rest)
+        .unwrap_or(base_url);
+    match without_scheme.find('/') {
+        Some(index) => &without_scheme[index..],
+        None => "",
+    }
 }
 
 fn adapter_shape_code(shape: AdapterInvocationShape) -> &'static str {

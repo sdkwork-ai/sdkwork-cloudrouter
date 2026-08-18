@@ -219,11 +219,11 @@ Connection pools are sized for high-concurrency workloads out of the box
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `CLOUDROUTER_DATABASE_MAX_CONNECTIONS` | 50 | PostgreSQL app pool ceiling |
-| `CLOUDROUTER_DATABASE_MIN_CONNECTIONS` | 5 | Warm connections kept ready |
-| `CLOUDROUTER_DATABASE_ACQUIRE_TIMEOUT` | 30s | Pool acquisition timeout |
-| `CLOUDROUTER_DATABASE_IDLE_TIMEOUT` | 600s | Idle connection eviction |
-| `CLOUDROUTER_DATABASE_MAX_LIFETIME` | 1800s | Connection recycling |
+| `SDKWORK_DATABASE_MAX_CONNECTIONS` | 50 | PostgreSQL app pool ceiling |
+| `SDKWORK_DATABASE_MIN_CONNECTIONS` | 5 | Warm connections kept ready |
+| `SDKWORK_DATABASE_ACQUIRE_TIMEOUT` | 30s | Pool acquisition timeout |
+| `SDKWORK_DATABASE_IDLE_TIMEOUT` | 600s | Idle connection eviction |
+| `SDKWORK_DATABASE_MAX_LIFETIME` | 1800s | Connection recycling |
 | `CLOUDROUTER_REDIS_MAX_CONNECTIONS` | 50 | Redis pool (lightweight connections) |
 | `PG_MAX_CONNECTIONS` | 200 | PostgreSQL server-side ceiling |
 

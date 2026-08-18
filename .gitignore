@@ -129,3 +129,6 @@ Thumbs.db
 Thumbs.db
 # Local development runtime logs
 cloudrouter-dev*.log
+
+tmp-debug-*
+tmp-openapi-*

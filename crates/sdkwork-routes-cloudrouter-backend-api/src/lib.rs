@@ -2,6 +2,7 @@
 
 mod http_route_manifest;
 pub mod manifest;
+mod manifest_composition;
 pub mod paths;
 pub mod routes;
 mod upstream;
@@ -9,6 +10,9 @@ mod web_bootstrap;
 
 pub use http_route_manifest::http_route_manifest;
 pub use manifest::{route_manifest, RouterApiRouteManifest};
+pub use manifest_composition::{
+    cloud_router_backend_composed_route_manifest, cloud_router_backend_prepared_route_manifest,
+};
 pub use routes::*;
 pub use web_bootstrap::{
     cloud_router_backend_domain_context_injector, finalize_served_router,

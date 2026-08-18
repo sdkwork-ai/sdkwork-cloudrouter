@@ -260,6 +260,15 @@ sdkwork_payment_database_host = { package = "sdkwork-payment-database-host", pat
 sdkwork_payment_providers = { package = "sdkwork-payment-providers", path = "../sdkwork-payment/crates/sdkwork-payment-providers" }
 sdkwork_routes_promotion_app_api = { package = "sdkwork-routes-promotion-app-api", path = "../sdkwork-promotion/crates/sdkwork-routes-promotion-app-api" }
 sdkwork_routes_promotion_backend_api = { package = "sdkwork-routes-promotion-backend-api", path = "../sdkwork-promotion/crates/sdkwork-routes-promotion-backend-api" }
+sdkwork_routes_membership_backend_api = { package = "sdkwork-routes-membership-backend-api", path = "../sdkwork-membership/crates/sdkwork-routes-membership-backend-api" }
+sdkwork_routes_payment_backend_api = { package = "sdkwork-routes-payment-backend-api", path = "../sdkwork-payment/crates/sdkwork-routes-payment-backend-api" }
+sdkwork_routes_order_backend_api = { package = "sdkwork-routes-order-backend-api", path = "../sdkwork-order/crates/sdkwork-routes-order-backend-api" }
+sdkwork_routes_inventory_backend_api = { package = "sdkwork-routes-inventory-backend-api", path = "../sdkwork-inventory/crates/sdkwork-routes-inventory-backend-api" }
+sdkwork_routes_messaging_backend_api = { package = "sdkwork-routes-messaging-backend-api", path = "../sdkwork-messaging/crates/sdkwork-routes-messaging-backend-api" }
+sdkwork_routes_partner_backend_api = { package = "sdkwork-routes-partner-backend-api", path = "../sdkwork-partner/crates/sdkwork-routes-partner-backend-api" }
+sdkwork_routes_community_backend_api = { package = "sdkwork-routes-community-backend-api", path = "../sdkwork-community/crates/sdkwork-routes-community-backend-api" }
+sdkwork_routes_rtc_backend_api = { package = "sdkwork-routes-rtc-backend-api", path = "../sdkwork-rtc/crates/sdkwork-routes-rtc-backend-api" }
+sdkwork_routes_storage_backend_api = { package = "sdkwork-routes-storage-backend-api", path = "../sdkwork-drive/crates/sdkwork-routes-storage-backend-api" }
 sdkwork_promotion_service_host = { package = "sdkwork-promotion-service-host", path = "../sdkwork-promotion/crates/sdkwork-promotion-service-host" }
 sdkwork_promotion_database_host = { package = "sdkwork-promotion-database-host", path = "../sdkwork-promotion/crates/sdkwork-promotion-database-host" }
 sdkwork_api_partner_assembly = { package = "sdkwork-api-partner-assembly", path = "../sdkwork-partner/crates/sdkwork-api-partner-assembly" }

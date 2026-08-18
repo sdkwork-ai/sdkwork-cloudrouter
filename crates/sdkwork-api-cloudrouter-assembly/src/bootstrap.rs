@@ -183,7 +183,11 @@ fn assemble_api_router_with_in_process_upstreams(
     } else {
         sdkwork_routes_cloudrouter_app_api::cloud_router_app_composed_route_manifest_for_platform_gateway()
     };
-    let backend_manifest = sdkwork_routes_cloudrouter_backend_api::http_route_manifest();
+    let backend_manifest = if context.includes_dependency_apis() {
+        sdkwork_routes_cloudrouter_backend_api::cloud_router_backend_composed_route_manifest()
+    } else {
+        sdkwork_routes_cloudrouter_backend_api::http_route_manifest()
+    };
     let open_manifest = crate::generated_open_http_route_manifest::http_route_manifest();
     validate_no_route_collisions(&[
         ("sdkwork-cloudrouter-app-api", &app_manifest),
@@ -196,10 +200,11 @@ fn assemble_api_router_with_in_process_upstreams(
         include_str!("../../../apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json"),
     )?;
     augment_openapi_with_missing_routes(&mut app_openapi, app_manifest.routes())?;
-    let backend_openapi = parse_openapi(
+    let mut backend_openapi = parse_openapi(
         "sdkwork-cloudrouter-backend-api",
         include_str!("../../../apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json"),
     )?;
+    augment_openapi_with_missing_routes(&mut backend_openapi, backend_manifest.routes())?;
     let open_openapi = parse_openapi(
         "sdkwork-cloudrouter-open-api",
         include_str!("../../../apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"),
@@ -288,11 +293,11 @@ fn parse_openapi(owner: &str, source: &str) -> Result<Value, ApiAssemblyError> {
     Ok(document)
 }
 
-/// The Cloud Router app router mounts dependency-owned app routes into its
-/// executable surface manifest. The authored Cloud Router OpenAPI authority
-/// intentionally contains only host-owned operations, so add framework-built
-/// operations for mounted routes that are absent from that authority before
-/// the assembly contribution validates route/OpenAPI parity.
+/// The Cloud Router app and backend routers mount dependency-owned routes into
+/// their executable surface manifests. The authored Cloud Router OpenAPI
+/// authorities intentionally contain only host-owned operations, so add
+/// framework-built operations for mounted routes that are absent from those
+/// authorities before the assembly contribution validates route/OpenAPI parity.
 fn augment_openapi_with_missing_routes(
     document: &mut Value,
     routes: &[HttpRoute],
@@ -300,7 +305,7 @@ fn augment_openapi_with_missing_routes(
     let paths = document
         .get_mut("paths")
         .and_then(Value::as_object_mut)
-        .context("Cloud Router app OpenAPI authority paths must be an object")?;
+        .context("Cloud Router OpenAPI authority paths must be an object")?;
     let missing_routes = routes
         .iter()
         .filter(|route| {
@@ -923,7 +928,7 @@ mod tests {
 
         let app_manifest =
             sdkwork_routes_cloudrouter_app_api::cloud_router_app_composed_route_manifest();
-        let backend_manifest = sdkwork_routes_cloudrouter_backend_api::http_route_manifest();
+        let backend_manifest = sdkwork_routes_cloudrouter_backend_api::cloud_router_backend_composed_route_manifest();
         let open_manifest = crate::generated_open_http_route_manifest::http_route_manifest();
         super::validate_no_route_collisions(&[
             ("sdkwork-cloudrouter-app-api", &app_manifest),
@@ -998,5 +1003,14 @@ mod tests {
                 "{path} must preserve the promotion assembly public auth profile"
             );
         }
+
+        let iam_runtime = manifest
+            .match_route("GET", "/app/v3/api/system/iam/runtime")
+            .expect("IAM runtime must be present in the standalone API assembly manifest");
+        assert_eq!(
+            sdkwork_web_contract::RouteAuth::CredentialEntryBootstrap,
+            iam_runtime.auth,
+            "IAM runtime must preserve credential-entry auth, not fall through to dual-token"
+        );
     }
 }

@@ -15,7 +15,7 @@ use sdkwork_web_axum::{with_web_request_context, WebFrameworkLayer};
 use sdkwork_web_core::{DomainContextInjector, WebRequestContext, WebRequestContextProfile};
 use sqlx::PgPool;
 
-use crate::manifest_composition::cloud_router_app_composed_route_manifest;
+use crate::manifest_composition::cloud_router_app_prepared_route_manifest;
 
 pub fn cloud_router_app_public_path_prefixes() -> Vec<String> {
     vec![
@@ -48,11 +48,8 @@ pub fn cloud_router_app_domain_context_injector() -> Arc<dyn DomainContextInject
 fn build_cloud_router_app_web_framework_layer(
     resolver: IamWebRequestContextResolver,
 ) -> WebFrameworkLayer<IamWebRequestContextResolver> {
-    let route_manifest = cloud_router_app_composed_route_manifest();
     let prefixes = cloud_router_app_public_path_prefixes();
-    if let Err(error) = route_manifest.validate_public_path_prefixes(&prefixes) {
-        tracing::warn!(%error, "cloud router app-api public path prefixes overlap protected routes");
-    }
+    let route_manifest = cloud_router_app_prepared_route_manifest(&prefixes, true);
     let environment = resolve_cloud_web_environment_from_process_env();
     let security_policy = cloud_service_security_policy(&environment);
 
