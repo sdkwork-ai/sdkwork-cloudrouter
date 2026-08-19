@@ -167,6 +167,7 @@ sdkwork-cloudrouter-admin-dashboard-repository-sqlx = { path = "crates/sdkwork-c
 sdkwork-cloudrouter-admin-analytics-repository-sqlx = { path = "crates/sdkwork-cloudrouter-admin-analytics-repository-sqlx" }
 sdkwork-cloudrouter-settlements-dashboard-repository-sqlx = { path = "crates/sdkwork-cloudrouter-settlements-dashboard-repository-sqlx" }
 sdkwork-cloudrouter-test-support = { path = "crates/sdkwork-cloudrouter-test-support" }
+sdkwork-test = { path = "../sdkwork-test/rust" }
 sdkwork-cloudrouter-router-service = { path = "services/sdkwork-cloudrouter-router-service" }
 sdkwork-cloudrouter-standalone-gateway = { path = "services/sdkwork-cloudrouter-standalone-gateway" }
 sdkwork-cloudrouter-admin-gateway = { path = "services/sdkwork-cloudrouter-admin-gateway" }

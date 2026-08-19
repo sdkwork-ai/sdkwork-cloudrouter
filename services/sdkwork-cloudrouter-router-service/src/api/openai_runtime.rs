@@ -642,6 +642,16 @@ pub(super) fn provider_relay_attempt_retry_policy(
 
 fn upstream_route_selection_error(error: UpstreamRouteSelectionError) -> OpenAiRouteError {
     let message = error.to_string();
+    let stage = crate::application::classify_route_selection_failure(&message);
+    tracing::warn!(
+        call_chain_stage = "openai_runtime",
+        operation_id = "createChatCompletion",
+        route = "/v1/chat/completions",
+        stage = stage.code(),
+        kind = ?error.kind(),
+        error = %message,
+        "openai runtime mapped route selection failure to http error"
+    );
     match error.kind() {
         UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable => Box::new(openai_error(
             StatusCode::SERVICE_UNAVAILABLE,

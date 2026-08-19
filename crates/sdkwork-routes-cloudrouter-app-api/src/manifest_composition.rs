@@ -51,6 +51,13 @@ const MOUNTED_APP_CAPABILITIES: &[MountedAppCapability] = &[
         included_in_cloud_assembly_manifest: false,
     },
     MountedAppCapability {
+        workspace: "sdkwork-order",
+        owner: "sdkwork-order",
+        manifest: sdkwork_api_order_assembly::app_api_route_manifest,
+        platform_gateway_mounts_separately: true,
+        included_in_cloud_assembly_manifest: false,
+    },
+    MountedAppCapability {
         workspace: "sdkwork-payment",
         owner: "sdkwork-payment",
         manifest: sdkwork_api_payment_assembly::federated_app_route_manifest,
@@ -141,14 +148,11 @@ fn mounts_for_cloud_assembly() -> Vec<RouteManifestMount> {
 
 fn compose_app_route_manifest(include_platform_gateway_mounted: bool) -> HttpRouteManifest {
     let mounts = mounts_for_standalone_host(include_platform_gateway_mounted);
-    let composed = HttpRouteManifest::try_merge_mounts(
-        "sdkwork-cloudrouter",
-        http_route_manifest(),
-        &mounts,
-    )
-    .unwrap_or_else(|error| {
-        panic!("cloud router app-api manifest composition failed: {error}");
-    });
+    let composed =
+        HttpRouteManifest::try_merge_mounts("sdkwork-cloudrouter", http_route_manifest(), &mounts)
+            .unwrap_or_else(|error| {
+                panic!("cloud router app-api manifest composition failed: {error}");
+            });
     composed
         .validate_includes_dependency_manifests(&mounts)
         .unwrap_or_else(|error| {
@@ -169,14 +173,11 @@ pub fn cloud_router_app_composed_route_manifest() -> HttpRouteManifest {
 /// capabilities the Cloud Router cloud assembly contribution dispatches itself.
 pub fn cloud_router_app_composed_route_manifest_for_platform_gateway() -> HttpRouteManifest {
     let mounts = mounts_for_cloud_assembly();
-    let composed = HttpRouteManifest::try_merge_mounts(
-        "sdkwork-cloudrouter",
-        http_route_manifest(),
-        &mounts,
-    )
-    .unwrap_or_else(|error| {
-        panic!("cloud router cloud assembly app-api manifest composition failed: {error}");
-    });
+    let composed =
+        HttpRouteManifest::try_merge_mounts("sdkwork-cloudrouter", http_route_manifest(), &mounts)
+            .unwrap_or_else(|error| {
+                panic!("cloud router cloud assembly app-api manifest composition failed: {error}");
+            });
     composed
         .validate_includes_dependency_manifests(&mounts)
         .unwrap_or_else(|error| {
@@ -235,6 +236,7 @@ mod tests {
         }
         for (workspace, merge_marker) in [
             ("sdkwork-invoice", "merge_federated_invoice_app_router"),
+            ("sdkwork-order", "merge_federated_commerce_app_routers"),
             ("sdkwork-account", "merge_federated_commerce_app_routers"),
             ("sdkwork-community", "merge_federated_community_app_router"),
             ("sdkwork-agents", "merge_federated_agents_app_router"),
@@ -271,11 +273,11 @@ mod tests {
             ("GET", "/app/v3/api/ai/model_rankings"),
             ("GET", "/app/v3/api/promotions/offers"),
             ("GET", "/app/v3/api/promotions/offers/demo-offer"),
+            ("GET", "/app/v3/api/recharges/packages"),
+            ("GET", "/app/v3/api/recharges/plans"),
+            ("GET", "/app/v3/api/recharges/settings"),
             ("POST", "/app/v3/api/oauth/device_authorizations"),
-            (
-                "GET",
-                "/app/v3/api/oauth/device_authorizations/demo-device",
-            ),
+            ("GET", "/app/v3/api/oauth/device_authorizations/demo-device"),
             (
                 "POST",
                 "/app/v3/api/oauth/device_authorizations/demo-device/session_exchanges",

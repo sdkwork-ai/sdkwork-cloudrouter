@@ -79,4 +79,5 @@ tracing.workspace = true
 futures-core.workspace = true
 serde_json.workspace = true
 sdkwork-cloudrouter-test-support.workspace = true
+sdkwork-test.workspace = true
 sdkwork-web-core.workspace = true

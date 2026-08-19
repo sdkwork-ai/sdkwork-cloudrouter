@@ -1671,3 +1671,317 @@ fn legacy_auto_binding_falls_back_to_group_default_strategy() {
     // Failover 默认：不重排，首个成员 3001 胜出（auto 未注入 price_first）
     assert_eq!(3001, select_account(&catalog, group_id));
 }
+
+// ============================================================================
+// Diagnostic tests: systematically verify each failure mode that can cause the
+// "账号池网关暂不可用" (503 upstream_route_not_available) error when accounts
+// exist in the default account group.
+// ============================================================================
+
+/// Baseline: a fully-configured default account group with one healthy, priced
+/// account succeeds without any routing policy.
+#[test]
+fn diagnostic_default_group_with_healthy_priced_account_succeeds() {
+    let group_id = 900;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    ));
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 5001, "openai-direct", 1, 100),
+    );
+
+    let result = UpstreamRouteSelector::new(&catalog).select_model_route(model_query(group_id));
+    assert!(result.is_ok(), "baseline must succeed: {:?}", result.err());
+    assert_eq!(5001, result.unwrap().route.account_id);
+}
+
+/// Failure mode 1: account exists but has NO account_group_binding matching
+/// the requested api_scope. The binding's api_scope filter must contain the
+/// api code (or be empty/wildcard).
+#[test]
+fn diagnostic_fails_when_binding_api_scope_does_not_match() {
+    let group_id = 901;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    ));
+    let mut route = account_route(group_id, 5001, "openai-direct", 1, 100);
+    route.account_group_bindings = vec![UpstreamAccountGroupBinding {
+        account_group_id: group_id,
+        priority: 1,
+        weight: 100,
+        api_scope: vec!["openai.embeddings".to_owned()],
+        capabilities: vec![],
+        resource_entitlements: None,
+        cost_multiplier_override: None,
+    }];
+    add_route_and_price(&mut catalog, route);
+
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
+        .unwrap_err();
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
+        error.kind(),
+        "api_scope mismatch should yield UpstreamRouteUnavailable: {}",
+        error
+    );
+    assert!(
+        error.to_string().contains("no accounts bound"),
+        "error should mention no accounts bound: {}",
+        error
+    );
+}
+
+/// Failure mode 2: account exists but binding capability doesn't match the
+/// requested capability (e.g. binding says "image" but request is "chat").
+#[test]
+fn diagnostic_fails_when_binding_capability_does_not_match() {
+    let group_id = 902;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    ));
+    let mut route = account_route(group_id, 5001, "openai-direct", 1, 100);
+    route.account_group_bindings = vec![UpstreamAccountGroupBinding {
+        account_group_id: group_id,
+        priority: 1,
+        weight: 100,
+        api_scope: vec![],
+        capabilities: vec!["image".to_owned()],
+        resource_entitlements: None,
+        cost_multiplier_override: None,
+    }];
+    add_route_and_price(&mut catalog, route);
+
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
+        .unwrap_err();
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
+        error.kind(),
+        "capability mismatch should yield UpstreamRouteUnavailable: {}",
+        error
+    );
+}
+
+/// Failure mode 3: account is unhealthy (account_health_status != 1).
+/// The account_route_is_callable check rejects unhealthy accounts.
+#[test]
+fn diagnostic_fails_when_account_is_unhealthy() {
+    let group_id = 903;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    ));
+    let mut route = account_route(group_id, 5001, "openai-direct", 1, 100);
+    route.account_health_status = 0;
+    add_route_and_price(&mut catalog, route);
+
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
+        .unwrap_err();
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
+        error.kind(),
+        "unhealthy account should yield UpstreamRouteUnavailable: {}",
+        error
+    );
+}
+
+/// Failure mode 4: account is missing base_url (not callable).
+#[test]
+fn diagnostic_fails_when_account_missing_base_url() {
+    let group_id = 904;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    ));
+    let mut route = account_route(group_id, 5001, "openai-direct", 1, 100);
+    route.base_url = None;
+    add_route_and_price(&mut catalog, route);
+
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
+        .unwrap_err();
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
+        error.kind(),
+        "missing base_url should yield UpstreamRouteUnavailable: {}",
+        error
+    );
+}
+
+/// Failure mode 5: account is missing secret_ref AND has no default_headers.
+#[test]
+fn diagnostic_fails_when_account_missing_credentials() {
+    let group_id = 905;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    ));
+    let mut route = account_route(group_id, 5001, "openai-direct", 1, 100);
+    route.secret_ref = None;
+    route.auth_profile = sdkwork_cloudrouter_router_service::domain::ProviderAuthProfile::default();
+    add_route_and_price(&mut catalog, route);
+
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
+        .unwrap_err();
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
+        error.kind(),
+        "missing credentials should yield UpstreamRouteUnavailable: {}",
+        error
+    );
+}
+
+/// Failure mode 6: account exists and is callable, but upstream cost price is
+/// missing. This produces PricingUnavailable, not UpstreamRouteUnavailable.
+#[test]
+fn diagnostic_fails_when_upstream_cost_price_missing() {
+    let group_id = 906;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    ));
+    // Add route WITHOUT price (don't use add_route_and_price)
+    catalog.add_upstream_account_route(account_route(group_id, 5001, "openai-direct", 1, 100));
+
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
+        .unwrap_err();
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::PricingUnavailable,
+        error.kind(),
+        "missing price should yield PricingUnavailable: {}",
+        error
+    );
+}
+
+/// Failure mode 7: credential_health_status is unhealthy while account itself
+/// is healthy. The compound is_account_healthy check requires ALL three.
+#[test]
+fn diagnostic_fails_when_credential_unhealthy() {
+    let group_id = 907;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    ));
+    let mut route = account_route(group_id, 5001, "openai-direct", 1, 100);
+    route.credential_health_status = 0;
+    add_route_and_price(&mut catalog, route);
+
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
+        .unwrap_err();
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
+        error.kind(),
+        "unhealthy credential should yield UpstreamRouteUnavailable: {}",
+        error
+    );
+}
+
+/// Failure mode 8: endpoint_health_status is unhealthy.
+#[test]
+fn diagnostic_fails_when_endpoint_unhealthy() {
+    let group_id = 908;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    ));
+    let mut route = account_route(group_id, 5001, "openai-direct", 1, 100);
+    route.endpoint_health_status = 0;
+    add_route_and_price(&mut catalog, route);
+
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
+        .unwrap_err();
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
+        error.kind(),
+        "unhealthy endpoint should yield UpstreamRouteUnavailable: {}",
+        error
+    );
+}
+
+/// Failure mode 9: empty routing catalog (no accounts loaded at all).
+/// This is the "snapshot not refreshed" scenario.
+#[test]
+fn diagnostic_fails_when_routing_catalog_empty() {
+    let group_id = 909;
+    let catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    ));
+    // No account routes added
+
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
+        .unwrap_err();
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
+        error.kind(),
+        "empty catalog should yield UpstreamRouteUnavailable: {}",
+        error
+    );
+    assert!(
+        error.to_string().contains("upstream route snapshot is empty")
+            || error.to_string().contains("no accounts bound")
+            || error.to_string().contains("not available"),
+        "error message should be diagnostic: {}",
+        error
+    );
+}
+
+/// Failure mode 10: account exists in the group but with a routing policy
+/// that has mismatched candidates (pointing to wrong group_id). This is the
+/// classic misconfiguration: rule candidates reference account_ids instead of
+/// account_group_ids.
+#[test]
+fn diagnostic_fails_when_policy_candidates_reference_wrong_group() {
+    let group_id = 910;
+    let mut catalog = catalog_for_group(account_group(
+        group_id,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    ));
+    add_route_and_price(
+        &mut catalog,
+        account_route(group_id, 5001, "openai-direct", 1, 100),
+    );
+    // Policy candidates reference account_id (5001) instead of group_id (910)
+    add_model_policy(
+        &mut catalog,
+        group_id,
+        vec![RouteCandidate::new(5001, 100)],
+    );
+
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(group_id))
+        .unwrap_err();
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
+        error.kind(),
+        "wrong candidate group_id should yield UpstreamRouteUnavailable: {}",
+        error
+    );
+    assert!(
+        error.to_string().contains("no callable priced candidate"),
+        "error should mention no callable candidate: {}",
+        error
+    );
+}

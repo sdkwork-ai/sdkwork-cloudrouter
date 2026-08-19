@@ -679,6 +679,17 @@ where
         Ok(route_plan) => route_plan,
         Err(response) => {
             let http_status = response.status().as_u16();
+            crate::application::log_openai_chat_route_selection_failed(
+                &invocation_context.request_id,
+                invocation_context.trace_id.as_deref(),
+                context.api_key_id,
+                context.tenant_id,
+                context.organization_id,
+                context.group_id,
+                &context.group_code,
+                &request.model,
+                http_status,
+            );
             record_request_trace(
                 state.usage_recorder.as_ref(),
                 build_request_trace_command(

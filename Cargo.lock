@@ -6350,6 +6350,7 @@ dependencies = [
  "sdkwork-agents-database-host",
  "sdkwork-agents-kernel-bridge",
  "sdkwork-agents-runtime-facade",
+ "sdkwork-api-assets-assembly",
  "sdkwork-api-drive-assembly",
  "sdkwork-database-sqlx",
  "sdkwork-iam-database-host",
@@ -6360,12 +6361,30 @@ dependencies = [
  "sdkwork-routes-agents-backend-api",
  "sdkwork-routes-agents-http-shared",
  "sdkwork-routes-agents-open-api",
+ "sdkwork-routes-assets-app-api",
  "sdkwork-routes-drive-app-api",
  "sdkwork-routes-iam-app-api",
  "sdkwork-web-bootstrap",
  "sdkwork-web-contract",
  "sdkwork-web-core",
  "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "sdkwork-api-assets-assembly"
+version = "0.1.0"
+dependencies = [
+ "axum 0.8.9",
+ "sdkwork-database-sqlx",
+ "sdkwork-drive-http",
+ "sdkwork-drive-workspace-service",
+ "sdkwork-routes-assets-app-api",
+ "sdkwork-routes-drive-app-api",
+ "sdkwork-web-bootstrap",
+ "sdkwork-web-core",
+ "serde_json",
+ "sqlx",
  "tokio",
 ]
 
@@ -6863,6 +6882,7 @@ dependencies = [
  "sdkwork-routes-edu-data-backend-api",
  "sdkwork-routes-med-data-backend-api",
  "sdkwork-sdk-generator-client",
+ "sdkwork-test",
  "sdkwork-web-bootstrap",
  "sdkwork-web-chain",
  "sdkwork-web-core",
@@ -7114,6 +7134,7 @@ dependencies = [
  "tokio",
  "tower 0.5.3",
  "tracing",
+ "tracing-subscriber",
  "url",
 ]
 
@@ -8645,6 +8666,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdkwork-routes-assets-app-api"
+version = "0.1.0"
+dependencies = [
+ "axum 0.8.9",
+ "chrono",
+ "sdkwork-drive-contract",
+ "sdkwork-drive-http",
+ "sdkwork-drive-workspace-service",
+ "sdkwork-routes-drive-app-api",
+ "sdkwork-utils-rust",
+ "sdkwork-web-core",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tower 0.5.3",
+]
+
+[[package]]
 name = "sdkwork-routes-audio-open-api"
 version = "0.3.0"
 dependencies = [
@@ -9706,6 +9745,24 @@ dependencies = [
  "serde_json",
  "thiserror 1.0.69",
  "uuid",
+]
+
+[[package]]
+name = "sdkwork-test"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "axum 0.8.9",
+ "sdkwork-cloudrouter-config",
+ "sdkwork-cloudrouter-edge-runtime",
+ "sdkwork-cloudrouter-router-service",
+ "sdkwork-iam-context-service",
+ "sdkwork-iam-web-adapter",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+ "tower 0.5.3",
 ]
 
 [[package]]

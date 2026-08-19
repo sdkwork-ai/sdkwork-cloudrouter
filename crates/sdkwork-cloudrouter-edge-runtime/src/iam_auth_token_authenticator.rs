@@ -10,6 +10,7 @@ use std::sync::Arc;
 
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
+use sha2::Digest;
 
 use sdkwork_cloudrouter_router_service::api::{
     OpenAiAuthTokenAuthenticator, OpenAiAuthTokenError, AUTH_TOKEN_SESSION_NAME_SNAPSHOT,
@@ -37,6 +38,30 @@ fn auth_token_error(code: &str, message: &str) -> OpenAiAuthTokenError {
         }
     });
     Box::new((StatusCode::UNAUTHORIZED, axum::Json(body)).into_response())
+}
+
+/// Stable numeric surrogate for a non-numeric verified-session user id (for
+/// example the bootstrap `system` principal). Numeric ids are preserved as-is;
+/// non-numeric ids are folded into a stable i64 so audit/usage attribution
+/// stays consistent across requests without failing the whole auth-token
+/// login. Mirrors the `organization_id`/`api_key_id = 0` precedents: the
+/// user value is attribution-only, never used for routing.
+fn synthesize_numeric_user_id(user_id: &str) -> i64 {
+    user_id
+        .parse::<i64>()
+        .ok()
+        .or_else(|| {
+            // Deterministic 63-bit fold (always non-negative) so the same
+            // session/principal maps to the same attribution id every time.
+            let digest = sha2::Sha256::digest(user_id.as_bytes());
+            let bytes = digest.as_slice();
+            let mut value: u64 = 0;
+            for byte in bytes.iter().take(8) {
+                value = (value << 8) | u64::from(*byte);
+            }
+            Some((value & (u64::MAX >> 1)) as i64)
+        })
+        .unwrap_or(0)
 }
 
 /// Resolves SDKWork auth tokens against the IAM database and maps them to the
@@ -138,9 +163,18 @@ where
                     .as_deref()
                     .and_then(|value| value.parse::<i64>().ok())
                     .unwrap_or(0);
-                let user_id = context.user_id.parse::<i64>().map_err(|_| {
-                    auth_token_error("invalid_auth_token", "auth token user is not numeric")
-                })?;
+                // The verified session's `user_id` may be a non-numeric synthetic
+                // principal (e.g. the bootstrap `system` user issued by
+                // `issue_standalone_bootstrap_access_credential` for portal
+                // login). The auth-token channel has already vetted the session
+                // (signature + tenant/server binding), so a non-numeric user id
+                // must not fail the whole login: fall back to a stable synthetic
+                // numeric id for audit/usage attribution, exactly like the
+                // `organization_id` and `api_key_id == 0` precedents.
+                let user_id = context
+                    .user_id
+                    .parse::<i64>()
+                    .unwrap_or_else(|_| synthesize_numeric_user_id(&context.user_id));
 
                 if let Some(cache) = &self.cache {
                     cache

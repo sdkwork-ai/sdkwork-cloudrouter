@@ -311,8 +311,27 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
                 routes.len(),
                 account_routes.len(),
             );
+            let message = unavailable_model_route_message(
+                &query,
+                model_routes_loaded,
+                account_routes_loaded,
+                &account_group_bindings,
+                routes.len(),
+                account_routes.len(),
+            );
+            crate::application::log_selector_route_selection_failed(
+                crate::application::classify_route_selection_failure(&message),
+                query.context.api_key_id,
+                query.context.tenant_id,
+                query.context.organization_id,
+                query.context.group_id,
+                &query.context.group_code,
+                &query.catalog_key,
+                &query.requested_model,
+                &message,
+            );
             return Err(UpstreamRouteSelectionError::upstream_route_unavailable(
-                unavailable_model_route_message(&query, model_routes_loaded, account_routes_loaded),
+                message,
             ));
         }
 
@@ -335,11 +354,62 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             .cloned()
             .collect::<Vec<_>>();
         if supporting_account_routes.is_empty() {
+            let mut all_unhealthy_or_not_callable = !account_routes.is_empty();
+            for route in &account_routes {
+                let callable = self.account_route_is_callable(route);
+                let allows_model = account_route_allows_model_request(
+                    route,
+                    &RouteCandidate::new(query.context.group_id, 1),
+                    &query,
+                );
+                if callable {
+                    all_unhealthy_or_not_callable = false;
+                }
+                crate::application::log_rejected_group_account(
+                    query.context.api_key_id,
+                    query.context.tenant_id,
+                    query.context.group_id,
+                    &query.context.group_code,
+                    &query.catalog_key,
+                    &query.requested_model,
+                    &query.api_code,
+                    &crate::application::RejectedGroupAccount {
+                        account_id: route.account_id,
+                        supplier_code: route.supplier_code.clone(),
+                        callable,
+                        healthy: route.is_account_healthy(),
+                        has_base_url: has_text(route.base_url.as_deref()),
+                        has_credential: has_text(route.secret_ref.as_deref())
+                            || !route.auth_profile.default_headers.is_empty(),
+                        allows_model,
+                        account_health_status: route.account_health_status,
+                        credential_health_status: route.credential_health_status,
+                        endpoint_health_status: route.endpoint_health_status,
+                    },
+                );
+            }
+            let message = format!(
+                "no upstream account in account group {} supports model {} for api {}",
+                query.context.group_code, query.catalog_key, query.api_code
+            );
+            let stage = if all_unhealthy_or_not_callable {
+                crate::application::RouteSelectionFailureStage::AccountNotCallable
+            } else {
+                crate::application::RouteSelectionFailureStage::ResourceNotEntitled
+            };
+            crate::application::log_selector_route_selection_failed(
+                stage,
+                query.context.api_key_id,
+                query.context.tenant_id,
+                query.context.organization_id,
+                query.context.group_id,
+                &query.context.group_code,
+                &query.catalog_key,
+                &query.requested_model,
+                &message,
+            );
             return Err(UpstreamRouteSelectionError::upstream_route_unavailable(
-                format!(
-                    "no upstream account in account group {} supports model {} for api {}",
-                    query.context.group_code, query.catalog_key, query.api_code
-                ),
+                message,
             ));
         }
 
@@ -1472,16 +1542,52 @@ fn unavailable_model_route_message(
     query: &SelectUpstreamModelRouteQuery,
     model_routes_loaded: usize,
     account_routes_loaded: usize,
+    account_group_bindings: &UpstreamAccountGroupBindings,
+    scoped_model_routes: usize,
+    scoped_account_routes: usize,
 ) -> String {
+    let model = &query.catalog_key;
+    let group = &query.context.group_code;
+    let group_id = query.context.group_id;
+
     if model_routes_loaded == 0 && account_routes_loaded == 0 {
         return format!(
-            "upstream route snapshot is empty for model: {}",
-            query.catalog_key
+            "upstream route snapshot is empty for model: {model} \
+             (no model routes and no account routes loaded in routing catalog; \
+             the routing cache may not have refreshed after admin configuration)"
         );
     }
+
+    if account_group_bindings.matched_account_count() == 0 {
+        return format!(
+            "upstream route is not available for model: {model} \
+             (account group '{group}' [id={group_id}] has no accounts bound \
+             for api='{}' capability={:?}; {model_routes_loaded} model routes \
+             and {account_routes_loaded} account routes are loaded in catalog, \
+             but none are bound to this group with matching scope/capability)",
+            query.api_code, query.capability
+        );
+    }
+
+    if scoped_model_routes == 0 && scoped_account_routes == 0 {
+        return format!(
+            "upstream route is not available for model: {model} \
+             (account group '{group}' [id={group_id}] has \
+             {} bound accounts, but none have model routes or \
+             account routes scoped to model '{model}')",
+            account_group_bindings.matched_account_count()
+        );
+    }
+
     format!(
-        "upstream route is not available for model: {}",
-        query.catalog_key
+        "upstream route is not available for model: {model} \
+         (group='{group}' [id={group_id}], \
+         model_routes_loaded={model_routes_loaded}, \
+         account_routes_loaded={account_routes_loaded}, \
+         group_bound_accounts={}, \
+         scoped_model_routes={scoped_model_routes}, \
+         scoped_account_routes={scoped_account_routes})",
+        account_group_bindings.matched_account_count()
     )
 }
 

@@ -64,5 +64,6 @@ sdkwork-web-store-redis.workspace = true
 [dev-dependencies]
 serde_json.workspace = true
 tower.workspace = true
+tracing-subscriber.workspace = true
 sdkwork-cloudrouter-test-support.workspace = true
 sdkwork_commerce_promotion_service.workspace = true

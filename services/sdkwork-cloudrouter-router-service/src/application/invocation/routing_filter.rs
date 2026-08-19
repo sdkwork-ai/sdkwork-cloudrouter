@@ -158,15 +158,31 @@ impl CandidateFilter for HealthFilter {
         ctx: &RoutingFilterContext<'_>,
         candidates: Vec<InvocationRouteCandidate>,
     ) -> FilterDecision {
-        let healthy = candidates
+        let mut unhealthy_ids: Vec<i64> = Vec::new();
+        let healthy: Vec<_> = candidates
             .into_iter()
             .filter(|candidate| {
-                ctx.account_health
+                let is_healthy = ctx
+                    .account_health
                     .get(&candidate.account_id)
                     .copied()
-                    .unwrap_or(true)
+                    .unwrap_or(true);
+                if !is_healthy {
+                    unhealthy_ids.push(candidate.account_id);
+                }
+                is_healthy
             })
             .collect();
+        if !unhealthy_ids.is_empty() {
+            tracing::warn!(
+                tenant_id = ctx.tenant_id,
+                model = ctx.requested_model,
+                removed_count = unhealthy_ids.len(),
+                remaining_count = healthy.len(),
+                ?unhealthy_ids,
+                "health filter removed unhealthy upstream accounts"
+            );
+        }
         FilterDecision::Continue(healthy)
     }
 }
@@ -182,13 +198,45 @@ impl CandidateFilter for EntitlementFilter {
 
     fn apply(
         &self,
-        _ctx: &RoutingFilterContext<'_>,
+        ctx: &RoutingFilterContext<'_>,
         candidates: Vec<InvocationRouteCandidate>,
     ) -> FilterDecision {
-        let callable = candidates
+        let mut not_callable: Vec<(i64, &'static str)> = Vec::new();
+        let callable: Vec<_> = candidates
             .into_iter()
-            .filter(|candidate| candidate_is_callable(candidate))
+            .filter(|candidate| {
+                if candidate_is_callable(candidate) {
+                    return true;
+                }
+                let reason = if candidate.supplier_code.trim().is_empty() {
+                    "missing supplier_code"
+                } else if candidate.account_id <= 0 {
+                    "invalid account_id"
+                } else if candidate
+                    .base_url
+                    .as_deref()
+                    .unwrap_or("")
+                    .trim()
+                    .is_empty()
+                {
+                    "missing base_url"
+                } else {
+                    "missing secret_ref and no default_headers"
+                };
+                not_callable.push((candidate.account_id, reason));
+                false
+            })
             .collect();
+        if !not_callable.is_empty() {
+            tracing::warn!(
+                tenant_id = ctx.tenant_id,
+                model = ctx.requested_model,
+                removed_count = not_callable.len(),
+                remaining_count = callable.len(),
+                not_callable = ?not_callable,
+                "entitlement filter removed non-callable upstream accounts"
+            );
+        }
         FilterDecision::Continue(callable)
     }
 }
@@ -270,10 +318,30 @@ impl RoutingFilterChain {
         ctx: &RoutingFilterContext<'_>,
         candidates: Vec<InvocationRouteCandidate>,
     ) -> Result<SelectedRoute, FilterRejection> {
+        let initial_count = candidates.len();
         let mut current = candidates;
+        let mut eliminating_filter: Option<&str> = None;
+        let mut count_before_elimination = 0usize;
         for filter in &self.filters {
+            let before = current.len();
             match filter.apply(ctx, current) {
-                FilterDecision::Continue(next) => current = next,
+                FilterDecision::Continue(next) => {
+                    let after = next.len();
+                    if after < before {
+                        tracing::debug!(
+                            tenant_id = ctx.tenant_id,
+                            filter = filter.name(),
+                            candidates_before = before,
+                            candidates_after = after,
+                            "route filter reduced candidate set"
+                        );
+                    }
+                    if after == 0 && before > 0 && eliminating_filter.is_none() {
+                        eliminating_filter = Some(filter.name());
+                        count_before_elimination = before;
+                    }
+                    current = next;
+                }
                 FilterDecision::Reject(rejection) => {
                     tracing::debug!(
                         tenant_id = ctx.tenant_id,
@@ -286,9 +354,27 @@ impl RoutingFilterChain {
             }
         }
         let mut iter = current.into_iter();
-        let account = iter.next().ok_or_else(|| FilterRejection {
-            kind: FilterRejectionKind::RouteUnavailable,
-            message: "no callable upstream account remains after routing filters".to_owned(),
+        let account = iter.next().ok_or_else(|| {
+            let message = if let Some(filter) = eliminating_filter {
+                format!(
+                    "no callable upstream account remains after routing filters \
+                     (filter '{filter}' eliminated all {count_before_elimination} \
+                     remaining candidates out of {initial_count} initial; \
+                     model={model})",
+                    model = ctx.requested_model.unwrap_or("<none>")
+                )
+            } else {
+                format!(
+                    "no callable upstream account remains after routing filters \
+                     (started with {initial_count} candidates, all were eliminated; \
+                     model={model})",
+                    model = ctx.requested_model.unwrap_or("<none>")
+                )
+            };
+            FilterRejection {
+                kind: FilterRejectionKind::RouteUnavailable,
+                message,
+            }
         })?;
         Ok(SelectedRoute {
             account,

@@ -27,6 +27,7 @@ mod payment_reconciliation_runtime;
 mod payment_reconciliation_worker;
 mod payment_refund_runtime;
 mod paypal_payment_adapter;
+mod route_selection_diagnostics;
 mod runtime_stream_bus;
 mod stripe_payment_adapter;
 mod upstream_account_route_planner;
@@ -185,6 +186,11 @@ pub use payment_refund_runtime::{
 pub use paypal_payment_adapter::{
     PayPalHyperPaymentHttpClient, PayPalPaymentHttpClient, PayPalPaymentProviderAdapter,
     PayPalPaymentProviderConfig,
+};
+pub use route_selection_diagnostics::{
+    classify_route_selection_failure, diagnose_call_chain_from_logs, log_openai_chat_route_selection_failed,
+    log_rejected_group_account, log_selector_route_selection_failed, RejectedGroupAccount,
+    RouteSelectionFailureStage,
 };
 pub use runtime_stream_bus::{InMemoryRuntimeStreamBus, RuntimeStreamBus, RuntimeStreamBusFuture};
 pub use sdkwork_models_catalog_service::{
