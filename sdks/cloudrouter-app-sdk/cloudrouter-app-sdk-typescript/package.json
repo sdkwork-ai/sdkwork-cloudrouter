@@ -1,6 +1,6 @@
 {
   "name": "@sdkwork/cloudrouter-app-sdk",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "sdkworkRole": "composed-facade",
   "description": "SDKWork Cloud Router app API SDK",
   "author": "SDKWork Team",
