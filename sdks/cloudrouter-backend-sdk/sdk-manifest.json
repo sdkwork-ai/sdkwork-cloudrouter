@@ -12,7 +12,7 @@
   },
   "workspace": "cloudrouter-backend-sdk",
   "title": "SDKWork Cloud Router backend API SDK",
-  "apiVersion": "0.1.1",
+  "apiVersion": "0.1.2",
   "authoritySpec": "openapi/cloudrouter-backend-sdk.openapi.json",
   "generationInputSpec": "openapi/cloudrouter-backend-sdk.openapi.json",
   "derivedSpecs": {},
@@ -160,7 +160,7 @@
       "packagePath": "cloudrouter-backend-sdk-typescript",
       "manifestPath": "cloudrouter-backend-sdk-typescript/package.json",
       "name": "@sdkwork/cloudrouter-backend-sdk",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "description": "SDKWork Cloud Router backend API SDK",
       "entrypoints": {
         "main": "./dist/index.cjs",
@@ -177,7 +177,7 @@
           "packagePath": "cloudrouter-backend-sdk-typescript/generated/server-openapi",
           "manifestPath": "cloudrouter-backend-sdk-typescript/generated/server-openapi/package.json",
           "name": "cloudrouter-backend-sdk-generated-typescript",
-          "version": "0.1.1",
+          "version": "0.1.2",
           "description": "SDKWork Cloud Router backend API SDK generator-owned transport output",
           "entrypoints": {
             "main": "./dist/index.cjs",
@@ -190,7 +190,7 @@
           "packagePath": "cloudrouter-backend-sdk-typescript",
           "manifestPath": "cloudrouter-backend-sdk-typescript/package.json",
           "name": "@sdkwork/cloudrouter-backend-sdk",
-          "version": "0.1.1",
+          "version": "0.1.2",
           "description": "SDKWork Cloud Router backend API SDK",
           "entrypoints": {
             "main": "./dist/index.cjs",
@@ -208,7 +208,7 @@
       "generatedPath": "cloudrouter-backend-sdk-flutter/generated/server-openapi",
       "manifestPath": "cloudrouter-backend-sdk-flutter/generated/server-openapi/pubspec.yaml",
       "name": "cloudrouter_backend_sdk",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "description": "SDKWork Cloud Router backend API SDK flutter generated transport SDK",
       "packages": [
         {
@@ -216,7 +216,7 @@
           "packagePath": "cloudrouter-backend-sdk-flutter/generated/server-openapi",
           "manifestPath": "cloudrouter-backend-sdk-flutter/generated/server-openapi/pubspec.yaml",
           "name": "cloudrouter_backend_sdk",
-          "version": "0.1.1",
+          "version": "0.1.2",
           "description": "SDKWork Cloud Router backend API SDK flutter generated transport SDK"
         },
         {
@@ -237,7 +237,7 @@
       "generatedPath": "cloudrouter-backend-sdk-rust/generated/server-openapi",
       "manifestPath": "cloudrouter-backend-sdk-rust/generated/server-openapi/Cargo.toml",
       "name": "cloudrouter-backend-sdk",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "description": "SDKWork Cloud Router backend API SDK rust generated transport SDK",
       "packages": [
         {
@@ -245,7 +245,7 @@
           "packagePath": "cloudrouter-backend-sdk-rust/generated/server-openapi",
           "manifestPath": "cloudrouter-backend-sdk-rust/generated/server-openapi/Cargo.toml",
           "name": "cloudrouter-backend-sdk",
-          "version": "0.1.1",
+          "version": "0.1.2",
           "description": "SDKWork Cloud Router backend API SDK rust generated transport SDK"
         },
         {
@@ -266,7 +266,7 @@
       "generatedPath": "cloudrouter-backend-sdk-java/generated/server-openapi",
       "manifestPath": "cloudrouter-backend-sdk-java/generated/server-openapi/pom.xml",
       "name": "com.sdkwork.cloudrouter:cloudrouter-backend-sdk",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "description": "SDKWork Cloud Router backend API SDK java generated transport SDK",
       "packages": [
         {
@@ -274,7 +274,7 @@
           "packagePath": "cloudrouter-backend-sdk-java/generated/server-openapi",
           "manifestPath": "cloudrouter-backend-sdk-java/generated/server-openapi/pom.xml",
           "name": "com.sdkwork.cloudrouter:cloudrouter-backend-sdk",
-          "version": "0.1.1",
+          "version": "0.1.2",
           "description": "SDKWork Cloud Router backend API SDK java generated transport SDK"
         },
         {
@@ -295,7 +295,7 @@
       "generatedPath": "cloudrouter-backend-sdk-csharp/generated/server-openapi",
       "manifestPath": "cloudrouter-backend-sdk-csharp/generated/server-openapi/Sdkwork.CloudRouter.Backend.Sdk.csproj",
       "name": "Sdkwork.CloudRouter.Backend.Sdk",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "description": "SDKWork Cloud Router backend API SDK csharp generated transport SDK",
       "packages": [
         {
@@ -303,7 +303,7 @@
           "packagePath": "cloudrouter-backend-sdk-csharp/generated/server-openapi",
           "manifestPath": "cloudrouter-backend-sdk-csharp/generated/server-openapi/Sdkwork.CloudRouter.Backend.Sdk.csproj",
           "name": "Sdkwork.CloudRouter.Backend.Sdk",
-          "version": "0.1.1",
+          "version": "0.1.2",
           "description": "SDKWork Cloud Router backend API SDK csharp generated transport SDK"
         },
         {
@@ -324,7 +324,7 @@
       "generatedPath": "cloudrouter-backend-sdk-swift/generated/server-openapi",
       "manifestPath": "cloudrouter-backend-sdk-swift/generated/server-openapi/Package.swift",
       "name": "CloudRouterBackendSdk",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "description": "SDKWork Cloud Router backend API SDK swift generated transport SDK",
       "packages": [
         {
@@ -332,7 +332,7 @@
           "packagePath": "cloudrouter-backend-sdk-swift/generated/server-openapi",
           "manifestPath": "cloudrouter-backend-sdk-swift/generated/server-openapi/Package.swift",
           "name": "CloudRouterBackendSdk",
-          "version": "0.1.1",
+          "version": "0.1.2",
           "description": "SDKWork Cloud Router backend API SDK swift generated transport SDK"
         },
         {
@@ -353,7 +353,7 @@
       "generatedPath": "cloudrouter-backend-sdk-kotlin/generated/server-openapi",
       "manifestPath": "cloudrouter-backend-sdk-kotlin/generated/server-openapi/build.gradle.kts",
       "name": "com.sdkwork.cloudrouter:cloudrouter-backend-sdk",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "description": "SDKWork Cloud Router backend API SDK kotlin generated transport SDK",
       "packages": [
         {
@@ -361,7 +361,7 @@
           "packagePath": "cloudrouter-backend-sdk-kotlin/generated/server-openapi",
           "manifestPath": "cloudrouter-backend-sdk-kotlin/generated/server-openapi/build.gradle.kts",
           "name": "com.sdkwork.cloudrouter:cloudrouter-backend-sdk",
-          "version": "0.1.1",
+          "version": "0.1.2",
           "description": "SDKWork Cloud Router backend API SDK kotlin generated transport SDK"
         },
         {
@@ -382,7 +382,7 @@
       "generatedPath": "cloudrouter-backend-sdk-go/generated/server-openapi",
       "manifestPath": "cloudrouter-backend-sdk-go/generated/server-openapi/go.mod",
       "name": "github.com/sdkwork/cloudrouter-backend-sdk",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "description": "SDKWork Cloud Router backend API SDK go generated transport SDK",
       "packages": [
         {
@@ -390,7 +390,7 @@
           "packagePath": "cloudrouter-backend-sdk-go/generated/server-openapi",
           "manifestPath": "cloudrouter-backend-sdk-go/generated/server-openapi/go.mod",
           "name": "github.com/sdkwork/cloudrouter-backend-sdk",
-          "version": "0.1.1",
+          "version": "0.1.2",
           "description": "SDKWork Cloud Router backend API SDK go generated transport SDK"
         },
         {
@@ -411,7 +411,7 @@
       "generatedPath": "cloudrouter-backend-sdk-python/generated/server-openapi",
       "manifestPath": "cloudrouter-backend-sdk-python/generated/server-openapi/pyproject.toml",
       "name": "sdkwork-cloudrouter-backend-sdk",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "description": "SDKWork Cloud Router backend API SDK python generated transport SDK",
       "packages": [
         {
@@ -419,7 +419,7 @@
           "packagePath": "cloudrouter-backend-sdk-python/generated/server-openapi",
           "manifestPath": "cloudrouter-backend-sdk-python/generated/server-openapi/pyproject.toml",
           "name": "sdkwork-cloudrouter-backend-sdk",
-          "version": "0.1.1",
+          "version": "0.1.2",
           "description": "SDKWork Cloud Router backend API SDK python generated transport SDK"
         },
         {

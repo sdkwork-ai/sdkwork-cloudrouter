@@ -12,7 +12,7 @@
   },
   "workspace": "cloudrouter-open-sdk",
   "title": "SDKWork Cloud Router OpenAI-compatible gateway SDK",
-  "apiVersion": "0.1.1",
+  "apiVersion": "0.1.2",
   "authoritySpec": "openapi/cloudrouter-open-sdk.openapi.json",
   "generationInputSpec": "openapi/cloudrouter-open-sdk.sdkgen.json",
   "derivedSpecs": {
@@ -38,7 +38,7 @@
       "packagePath": "cloudrouter-open-sdk-typescript",
       "manifestPath": "cloudrouter-open-sdk-typescript/package.json",
       "name": "@sdkwork/cloudrouter-open-sdk",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "description": "SDKWork Cloud Router OpenAI-compatible gateway SDK",
       "entrypoints": {
         "main": "./dist/index.cjs",
@@ -55,7 +55,7 @@
           "packagePath": "cloudrouter-open-sdk-typescript/generated/server-openapi",
           "manifestPath": "cloudrouter-open-sdk-typescript/generated/server-openapi/package.json",
           "name": "cloudrouter-open-sdk-generated-typescript",
-          "version": "0.1.1",
+          "version": "0.1.2",
           "description": "SDKWork Cloud Router OpenAI-compatible gateway SDK generator-owned transport output",
           "entrypoints": {
             "main": "./dist/index.cjs",
@@ -68,7 +68,7 @@
           "packagePath": "cloudrouter-open-sdk-typescript",
           "manifestPath": "cloudrouter-open-sdk-typescript/package.json",
           "name": "@sdkwork/cloudrouter-open-sdk",
-          "version": "0.1.1",
+          "version": "0.1.2",
           "description": "SDKWork Cloud Router OpenAI-compatible gateway SDK",
           "entrypoints": {
             "main": "./dist/index.cjs",
@@ -86,7 +86,7 @@
       "generatedPath": "cloudrouter-open-sdk-flutter/generated/server-openapi",
       "manifestPath": "cloudrouter-open-sdk-flutter/generated/server-openapi/pubspec.yaml",
       "name": "cloudrouter_open_sdk",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "description": "SDKWork Cloud Router OpenAI-compatible gateway SDK flutter generated transport SDK",
       "packages": [
         {
@@ -94,7 +94,7 @@
           "packagePath": "cloudrouter-open-sdk-flutter/generated/server-openapi",
           "manifestPath": "cloudrouter-open-sdk-flutter/generated/server-openapi/pubspec.yaml",
           "name": "cloudrouter_open_sdk",
-          "version": "0.1.1",
+          "version": "0.1.2",
           "description": "SDKWork Cloud Router OpenAI-compatible gateway SDK flutter generated transport SDK"
         },
         {
@@ -115,7 +115,7 @@
       "generatedPath": "cloudrouter-open-sdk-rust/generated/server-openapi",
       "manifestPath": "cloudrouter-open-sdk-rust/generated/server-openapi/Cargo.toml",
       "name": "cloudrouter-open-sdk",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "description": "SDKWork Cloud Router OpenAI-compatible gateway SDK rust generated transport SDK",
       "packages": [
         {
@@ -123,7 +123,7 @@
           "packagePath": "cloudrouter-open-sdk-rust/generated/server-openapi",
           "manifestPath": "cloudrouter-open-sdk-rust/generated/server-openapi/Cargo.toml",
           "name": "cloudrouter-open-sdk",
-          "version": "0.1.1",
+          "version": "0.1.2",
           "description": "SDKWork Cloud Router OpenAI-compatible gateway SDK rust generated transport SDK"
         },
         {
@@ -144,7 +144,7 @@
       "generatedPath": "cloudrouter-open-sdk-java/generated/server-openapi",
       "manifestPath": "cloudrouter-open-sdk-java/generated/server-openapi/pom.xml",
       "name": "com.sdkwork.cloudrouter:cloudrouter-open-sdk",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "description": "SDKWork Cloud Router OpenAI-compatible gateway SDK java generated transport SDK",
       "packages": [
         {
@@ -152,7 +152,7 @@
           "packagePath": "cloudrouter-open-sdk-java/generated/server-openapi",
           "manifestPath": "cloudrouter-open-sdk-java/generated/server-openapi/pom.xml",
           "name": "com.sdkwork.cloudrouter:cloudrouter-open-sdk",
-          "version": "0.1.1",
+          "version": "0.1.2",
           "description": "SDKWork Cloud Router OpenAI-compatible gateway SDK java generated transport SDK"
         },
         {
@@ -173,7 +173,7 @@
       "generatedPath": "cloudrouter-open-sdk-csharp/generated/server-openapi",
       "manifestPath": "cloudrouter-open-sdk-csharp/generated/server-openapi/Sdkwork.CloudRouter.Open.Sdk.csproj",
       "name": "Sdkwork.CloudRouter.Open.Sdk",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "description": "SDKWork Cloud Router OpenAI-compatible gateway SDK csharp generated transport SDK",
       "packages": [
         {
@@ -181,7 +181,7 @@
           "packagePath": "cloudrouter-open-sdk-csharp/generated/server-openapi",
           "manifestPath": "cloudrouter-open-sdk-csharp/generated/server-openapi/Sdkwork.CloudRouter.Open.Sdk.csproj",
           "name": "Sdkwork.CloudRouter.Open.Sdk",
-          "version": "0.1.1",
+          "version": "0.1.2",
           "description": "SDKWork Cloud Router OpenAI-compatible gateway SDK csharp generated transport SDK"
         },
         {
@@ -202,7 +202,7 @@
       "generatedPath": "cloudrouter-open-sdk-swift/generated/server-openapi",
       "manifestPath": "cloudrouter-open-sdk-swift/generated/server-openapi/Package.swift",
       "name": "CloudRouterOpenSdk",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "description": "SDKWork Cloud Router OpenAI-compatible gateway SDK swift generated transport SDK",
       "packages": [
         {
@@ -210,7 +210,7 @@
           "packagePath": "cloudrouter-open-sdk-swift/generated/server-openapi",
           "manifestPath": "cloudrouter-open-sdk-swift/generated/server-openapi/Package.swift",
           "name": "CloudRouterOpenSdk",
-          "version": "0.1.1",
+          "version": "0.1.2",
           "description": "SDKWork Cloud Router OpenAI-compatible gateway SDK swift generated transport SDK"
         },
         {
@@ -231,7 +231,7 @@
       "generatedPath": "cloudrouter-open-sdk-kotlin/generated/server-openapi",
       "manifestPath": "cloudrouter-open-sdk-kotlin/generated/server-openapi/build.gradle.kts",
       "name": "com.sdkwork.cloudrouter:cloudrouter-open-sdk",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "description": "SDKWork Cloud Router OpenAI-compatible gateway SDK kotlin generated transport SDK",
       "packages": [
         {
@@ -239,7 +239,7 @@
           "packagePath": "cloudrouter-open-sdk-kotlin/generated/server-openapi",
           "manifestPath": "cloudrouter-open-sdk-kotlin/generated/server-openapi/build.gradle.kts",
           "name": "com.sdkwork.cloudrouter:cloudrouter-open-sdk",
-          "version": "0.1.1",
+          "version": "0.1.2",
           "description": "SDKWork Cloud Router OpenAI-compatible gateway SDK kotlin generated transport SDK"
         },
         {
@@ -260,7 +260,7 @@
       "generatedPath": "cloudrouter-open-sdk-go/generated/server-openapi",
       "manifestPath": "cloudrouter-open-sdk-go/generated/server-openapi/go.mod",
       "name": "github.com/sdkwork/cloudrouter-open-sdk",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "description": "SDKWork Cloud Router OpenAI-compatible gateway SDK go generated transport SDK",
       "packages": [
         {
@@ -268,7 +268,7 @@
           "packagePath": "cloudrouter-open-sdk-go/generated/server-openapi",
           "manifestPath": "cloudrouter-open-sdk-go/generated/server-openapi/go.mod",
           "name": "github.com/sdkwork/cloudrouter-open-sdk",
-          "version": "0.1.1",
+          "version": "0.1.2",
           "description": "SDKWork Cloud Router OpenAI-compatible gateway SDK go generated transport SDK"
         },
         {
@@ -289,7 +289,7 @@
       "generatedPath": "cloudrouter-open-sdk-python/generated/server-openapi",
       "manifestPath": "cloudrouter-open-sdk-python/generated/server-openapi/pyproject.toml",
       "name": "sdkwork-cloudrouter-open-sdk",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "description": "SDKWork Cloud Router OpenAI-compatible gateway SDK python generated transport SDK",
       "packages": [
         {
@@ -297,7 +297,7 @@
           "packagePath": "cloudrouter-open-sdk-python/generated/server-openapi",
           "manifestPath": "cloudrouter-open-sdk-python/generated/server-openapi/pyproject.toml",
           "name": "sdkwork-cloudrouter-open-sdk",
-          "version": "0.1.1",
+          "version": "0.1.2",
           "description": "SDKWork Cloud Router OpenAI-compatible gateway SDK python generated transport SDK"
         },
         {

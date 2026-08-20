@@ -5,8 +5,8 @@ use std::sync::Arc;
 
 use crate::api::openai_error::openai_error;
 use crate::application::{
-    protocol_code_from_api_code, resolve_upstream_base_url, ApiKeyAuthenticator,
-    ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
+    describe_base_url_missing, protocol_code_from_api_code, resolve_upstream_base_url,
+    ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
     SelectUpstreamModelRouteQuery, SelectedUpstreamModelRoute, UpstreamRouteSelectionError,
     UpstreamRouteSelectionErrorKind, UpstreamRouteSelector,
 };
@@ -420,21 +420,42 @@ fn resolve_model_route(
     );
     // 账号级 Base URL 覆盖优先（账号配置 > 供应商配置 > 端点解析结果），
     // 与 route_planning 的解析链保持一致（见 application::upstream_base_url）。
+    // 账号接入区分官方/中转站：账号未配置则采用供应商配置；供应商也未配置则报具体 base_url 错误。
     let account_config = account_metadata
         .as_ref()
         .map(|route| route.account_id)
         .and_then(|account_id| catalog.account_base_url_config(account_id));
+    let supplier_default_base_url = catalog.supplier_default_base_url(&model_route.supplier_code);
+    let protocol = protocol_code_from_api_code(model_route.api_code.as_deref());
     let provider_base_url = resolve_upstream_base_url(
         RoutingCapability::Chat,
-        protocol_code_from_api_code(model_route.api_code.as_deref()),
+        protocol,
         account_config.as_ref(),
-        catalog.supplier_default_base_url(&model_route.supplier_code),
-        model_route.base_url,
+        supplier_default_base_url.clone(),
+        model_route.base_url.clone(),
     );
-    if !has_text(provider_base_url.as_deref()) || !has_text(model_route.secret_ref.as_deref()) {
+    if !has_text(provider_base_url.as_deref()) {
+        let message = describe_base_url_missing(
+            model_route.account_id,
+            &model_route.supplier_code,
+            Some(vendor_code),
+            catalog_key,
+            account_config.as_ref(),
+            supplier_default_base_url.as_deref(),
+            model_route.base_url.as_deref(),
+            protocol,
+        );
+        return Err(Box::new(openai_error(
+            StatusCode::BAD_REQUEST,
+            "provider_base_url_unconfigured",
+            "invalid_request_error",
+            message,
+        )));
+    }
+    if !has_text(model_route.secret_ref.as_deref()) {
         return Err(upstream_route_selection_error(
             UpstreamRouteSelectionError::upstream_route_unavailable(format!(
-                "upstream route is not available for configured upstream account route: selected upstream account {} is missing callable base URL or credential for model {}",
+                "upstream route is not available for configured upstream account route: selected upstream account {} is missing a credential for model {}",
                 model_route.account_id, model_route.catalog_key
             )),
         ));

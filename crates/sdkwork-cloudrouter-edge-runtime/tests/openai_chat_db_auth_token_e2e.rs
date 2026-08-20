@@ -9,6 +9,7 @@
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_test::{AuthTokenClient, LoginHarness, PgTestContext, RouterHarness};
+use sqlx::Row;
 use tower::ServiceExt;
 
 #[tokio::test]
@@ -88,4 +89,62 @@ async fn login_then_auth_token_chat_completion_against_real_postgres() {
     eprintln!(
         "RESULT auth-token chat OK via harness; 503 indicates catalog wiring gap. Trace: {seq}"
     );
+}
+
+/// Consistency guard regression: uses the reusable `RoutabilityProbe` to diagnose
+/// why an account in a group is not routable on the real DB. This is the guard that
+/// makes "数据维护写入与路由策略同步" observable and testable: after admin wires the
+/// account resource grant + endpoint + credential, this test must start reporting
+/// `is_routable() == true`.
+#[tokio::test]
+async fn routability_probe_diagnoses_unroutable_account_on_real_postgres() {
+    use sdkwork_test::RoutabilityProbe;
+
+    let Some(pg) = PgTestContext::from_env(true).await else {
+        eprintln!("skipping: set SDKWORK_DATABASE_URL to run the real-DB e2e test");
+        return;
+    };
+
+    // Pull the default-group id + its first member account from the real DB.
+    let row = sqlx::query(
+        "SELECT g.id AS gid, COALESCE(m.account_id, 0) AS aid \
+         FROM sdkwork_ai_dev.ai_upstream_account_group g \
+         LEFT JOIN sdkwork_ai_dev.ai_upstream_account_group_member m \
+           ON m.tenant_id=g.tenant_id AND m.account_group_id=g.id AND m.deleted_at IS NULL \
+         WHERE g.tenant_id=100001 AND g.group_code='default-group' \
+         LIMIT 1",
+    )
+    .fetch_optional(pg.pool())
+    .await
+    .expect("default-group query failed");
+    let (gid, aid) = match row {
+        Some(r) => (r.get::<i64, _>("gid"), r.get::<i64, _>("aid")),
+        None => {
+            eprintln!("skipping: default-group not present for tenant 100001");
+            return;
+        }
+    };
+    eprintln!("default-group id={gid} member account id={aid}");
+
+    let report = RoutabilityProbe::probe(pg.pool(), 100001, gid, aid).await;
+    eprintln!("routability report: {:#?}", report);
+    eprintln!("missing: {:?}", report.missing());
+
+    // Guard: if base_url + credential + account_resource are absent (as in the
+    // current dev DB), the account must be reported NOT routable (empty snapshot).
+    // After admin completes the wiring, `is_routable()` must flip true and this
+    // assertion should be updated to require routable.
+    if report.has_base_url && report.has_credential && report.has_account_resource_grant {
+        assert!(
+            report.is_routable(),
+            "wired account should be routable; missing: {:?}",
+            report.missing()
+        );
+    } else {
+        // Documented current state: missing wiring => not routable (matches the 503).
+        assert!(
+            !report.is_routable(),
+            "account without base_url/credential/account_resource must be reported unroutable"
+        );
+    }
 }

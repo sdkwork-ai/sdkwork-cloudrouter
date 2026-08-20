@@ -36,6 +36,42 @@ impl AiRoutingCacheInvalidator {
         Self { manager }
     }
 
+    /// Fixed version key under the routing config-version namespace. Read side
+    /// compares the snapshot's stamped version against this; a mismatch means the
+    /// cached snapshot is stale and must be re-read from origin (no reliance on the
+    /// SCAN+DEL sweep finishing, so the cross-instance eventual window is removed).
+    pub const CONFIG_VERSION_KEY: &'static str = "version";
+
+    /// Returns the current routing config version (0 when never set).
+    pub async fn current_routing_config_version(&self) -> DomainResult<i64> {
+        let value = self
+            .manager
+            .get_json(ROUTING_CONFIG_VERSION_CACHE_NAMESPACE, Self::CONFIG_VERSION_KEY)
+            .await?;
+        Ok(value
+            .and_then(|value| value.as_i64())
+            .unwrap_or(0))
+    }
+
+    /// Atomically-ish bumps the routing config version (admin configuration change).
+    ///
+    /// NOTE: get+set is not a single Redis INCR; for low-frequency admin writes that
+    /// is acceptable. For higher concurrency, a Redis `INCR` primitive should be used.
+    /// The key point is that readers compare versions, so a stale snapshot generated
+    /// before this bump is rejected immediately without waiting for the namespace
+    /// sweep to complete.
+    pub async fn bump_routing_config_version(&self) -> DomainResult<i64> {
+        let next = self.current_routing_config_version().await? + 1;
+        self.manager
+            .set_json(
+                ROUTING_CONFIG_VERSION_CACHE_NAMESPACE,
+                Self::CONFIG_VERSION_KEY,
+                serde_json::json!(next),
+            )
+            .await?;
+        Ok(next)
+    }
+
     pub async fn invalidate_routing_facts(&self) -> DomainResult<()> {
         for namespace in [
             ROUTING_SNAPSHOT_CACHE_NAMESPACE,
@@ -45,7 +81,58 @@ impl AiRoutingCacheInvalidator {
         ] {
             self.manager.delete_namespace(namespace).await?;
         }
+        // After clearing, stamp a fresh config version so any reader that cached a
+        // snapshot under the OLD version can detect staleness by version comparison
+        // instead of waiting for the namespace sweep.
+        self.bump_routing_config_version().await?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::application::default_desktop_cache_manager;
+
+    #[tokio::test]
+    async fn routing_config_version_bumps_so_stale_snapshot_can_be_rejected() {
+        let manager = default_desktop_cache_manager();
+        let invalidator = AiRoutingCacheInvalidator::new(manager.clone());
+
+        // Fresh: version 0, no snapshot cached.
+        assert_eq!(0, invalidator.current_routing_config_version().await.unwrap());
+
+        // Simulate a reader caching a snapshot stamped at the current version.
+        manager
+            .set_json(
+                ROUTING_SNAPSHOT_CACHE_NAMESPACE,
+                "snapshot:v0",
+                serde_json::json!({"version": 0}),
+            )
+            .await
+            .unwrap();
+
+        // Admin writes → invalidate_routing_facts: sweeps namespaces AND bumps version.
+        invalidator.invalidate_routing_facts().await.unwrap();
+
+        let version = invalidator.current_routing_config_version().await.unwrap();
+        assert!(
+            version >= 1,
+            "config version must advance after invalidation, got {version}"
+        );
+
+        // The old snapshot key is gone (swept) and its stamped version (0) now lags
+        // the config version (>=1), so a reader must reject it and re-read origin.
+        let stale = manager
+            .get_json(ROUTING_SNAPSHOT_CACHE_NAMESPACE, "snapshot:v0")
+            .await
+            .unwrap();
+        assert!(stale.is_none(), "stale snapshot namespace must be swept");
+
+        // Two successful invalidations advance monotonically (readers see increasing versions).
+        let v1 = invalidator.bump_routing_config_version().await.unwrap();
+        let v2 = invalidator.bump_routing_config_version().await.unwrap();
+        assert!(v2 > v1, "config version must grow monotonically");
     }
 }
 

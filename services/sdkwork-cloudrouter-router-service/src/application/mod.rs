@@ -208,7 +208,9 @@ pub use stripe_payment_adapter::{
     StripeHyperPaymentHttpClient, StripePaymentHttpClient, StripePaymentProviderAdapter,
     StripePaymentProviderConfig,
 };
-pub(crate) use upstream_base_url::{protocol_code_from_api_code, resolve_upstream_base_url};
+pub(crate) use upstream_base_url::{
+    describe_base_url_missing, protocol_code_from_api_code, resolve_upstream_base_url,
+};
 pub use upstream_cache_invalidation::AiRoutingCacheInvalidatingAdminUpstreamStore;
 pub use upstream_credential_rotation::{
     resolve_upstream_credential_rotation_config,
