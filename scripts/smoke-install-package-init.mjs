@@ -139,7 +139,7 @@ function createInstallInitSmokePlan({
     throw new Error('--installer-bin is required unless --dry-run is used');
   }
 
-  const runtimeConfigPath = path.join(absoluteTmpRoot, 'cloudrouter.toml');
+  const runtimeConfigPath = path.join(absoluteTmpRoot, 'config.toml');
   const databaseEngine = packageItem.databasePolicy.defaultEngine;
   const deploymentMode = packageItem.runtimeProfile === 'desktop' ? 'desktop' : 'server';
   const databasePath = databaseEngine === 'sqlite'

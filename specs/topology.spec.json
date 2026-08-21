@@ -406,10 +406,10 @@
       "VITE_SDKWORK_CLOUDROUTER_ROUTER_HOSTING"
     ],
     "profileIds": [
-      "standalone.development",
       "standalone.split-services.development",
       "cloud.unified-process.development",
-      "cloud.development"
+      "self-hosted.unified-process.development",
+      "cloud-hosted.split-services.production"
     ],
     "cliFlags": [
       "--topology",

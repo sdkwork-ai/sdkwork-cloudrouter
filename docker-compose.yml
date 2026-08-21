@@ -144,9 +144,9 @@ services:
     volumes:
       # Durable data lives on a mounted volume (RUNTIME_DIRECTORY_SPEC §4.5).
       - router-data:/var/lib/sdkwork/router
-      # Runtime configuration: edit docker/config/cloudrouter.toml and
+      # Runtime configuration: edit docker/config/config.toml and
       # `docker compose up -d` to apply. Sensitive values come from env.
-      - ./docker/config/cloudrouter.toml:/etc/sdkwork/router/cloudrouter.toml:ro
+      - ./docker/config/config.toml:/etc/sdkwork/router/config.toml:ro
     depends_on:
       postgres:
         condition: service_healthy

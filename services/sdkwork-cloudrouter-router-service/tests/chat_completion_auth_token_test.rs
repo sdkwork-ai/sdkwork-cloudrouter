@@ -11,12 +11,18 @@
 //! - Every protected API surface includes an unauthenticated request test.
 //! - The auth-token channel classifies bearer credentials and resolves them.
 //! - The happy path proves the complete request→auth→relay→response pipeline.
+//!
+//! The auth-token authenticator used here (`RealTestAuthTokenAuthenticator`)
+//! delegates to the real `verify_app_session_token` function from
+//! `sdkwork-cloudrouter-http`, so a malformed token or a subject mismatch
+//! between bearer <REDACTED> and access token produces a genuine 401 response.
 
 use std::sync::Arc;
 
 use async_trait::async_trait;
 use axum::body::Body;
 use axum::http::{Method, Request, StatusCode};
+use axum::response::IntoResponse;
 use serde_json::Value;
 use tower::ServiceExt;
 
@@ -40,7 +46,8 @@ use sdkwork_cloudrouter_test_support::{
     app_session_bearer_token, app_session_dual_token_headers, app_session_config,
     default_trusted_request_subject, API_KEY_PEPPER,
 };
-use sdkwork_cloudrouter_http::verify_app_session_authorization_header;
+use sdkwork_cloudrouter_config::AppSessionConfig;
+use sdkwork_cloudrouter_http::verify_app_session_token;
 use sdkwork_web_core::default_open_api_bearer_classifier;
 
 // ---------------------------------------------------------------------------
@@ -53,6 +60,11 @@ const DEFAULT_GROUP_CODE: &str = "default-group";
 const TENANT_ID: i64 = 100_001;
 const ACCOUNT_ID: i64 = 3001;
 const SUPPLIER_CODE: &str = "openrouter";
+
+/// Fixed `now` used by the authenticator. The test tokens are signed with
+/// `issued_at = 1_800_000_000` and `expires_at = issued_at + 300`, so `now = issued_at + 1`
+/// lands the tokens inside the valid time window.
+const TEST_NOW_UNIX_SECONDS: i64 = 1_800_000_001;
 
 // ---------------------------------------------------------------------------
 // Test fixtures
@@ -217,30 +229,112 @@ impl ChatCompletionRelay for MockChatRelay {
     }
 }
 
-/// Mock auth-token authenticator that validates an SDKWork app-session token
-/// and returns a fixed authenticated context (no IAM dependency required).
+/// Auth-token authenticator that delegates to the real app-session token
+/// verification (HMAC-SHA256 signature check + time window validation), so
+/// malformed tokens and subject mismatches produce genuine 401 responses.
 ///
-/// `group_id` MUST equal `DEFAULT_GROUP_ID` so the route planner can resolve
-/// the seeded `UpstreamAccountGroup`.
-struct MockAuthTokenAuthenticator;
+/// Group resolution maps the verified subject's tenant_id to the seeded
+/// `UpstreamAccountGroup`, mirroring how a real authenticator would resolve
+/// the caller's organization group from IAM after verifying the token.
+struct RealTestAuthTokenAuthenticator {
+    config: AppSessionConfig,
+    now_unix_seconds: i64,
+}
+
+impl RealTestAuthTokenAuthenticator {
+    /// Resolve the upstream account group for a verified subject. In a real
+    /// deployment this would be an IAM lookup; here we map the canonical test
+    /// tenant to its seeded group so the downstream route planner can find a
+    /// group with id = DEFAULT_GROUP_ID.
+    fn resolve_group(
+        &self,
+        tenant_id: i64,
+    ) -> (i64, String, String) {
+        // tenant_id → (group_id, group_code, pricing_plan_code)
+        match tenant_id {
+            TENANT_ID => (DEFAULT_GROUP_ID, DEFAULT_GROUP_CODE.to_owned(), "standard".to_owned()),
+            _ => (DEFAULT_GROUP_ID, DEFAULT_GROUP_CODE.to_owned(), "standard".to_owned()),
+        }
+    }
+}
+
+fn openai_auth_error(status: StatusCode, code: &str, message: &str) -> Box<axum::response::Response> {
+    let body = serde_json::json!({
+        "error": {
+            "message": message,
+            "type": "invalid_request_error",
+            "param": null,
+            "code": code,
+        }
+    });
+    Box::new((status, axum::Json(body)).into_response())
+}
 
 #[async_trait]
-impl OpenAiAuthTokenAuthenticator for MockAuthTokenAuthenticator {
+impl OpenAiAuthTokenAuthenticator for RealTestAuthTokenAuthenticator {
     async fn authenticate(
         &self,
-        _raw_bearer_token: &str,
-        _access_token: Option<&str>,
+        raw_bearer_token: &str,
+        access_token: Option<&str>,
     ) -> Result<AuthenticatedApiKeyContext, sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenError>
     {
+        // 1. Verify the bearer token signature and time window.
+        let bearer_subject = match verify_app_session_token(
+            &self.config,
+            raw_bearer_token,
+            self.now_unix_seconds,
+        ) {
+            Ok(subject) => subject,
+            Err(error) => {
+                return Err(openai_auth_error(
+                    StatusCode::UNAUTHORIZED,
+                    "invalid_auth_token",
+                    &format!("bearer token verification failed: {error}"),
+                ));
+            }
+        };
+
+        // 2. If an access token is present, verify it and confirm it matches
+        //    the bearer <REDACTED> subject.
+        if let Some(access) = access_token
+            .map(str::trim)
+            .filter(|v| !v.is_empty())
+        {
+            match verify_app_session_token(&self.config, access, self.now_unix_seconds) {
+                Ok(access_subject) => {
+                    if bearer_subject.tenant_id != access_subject.tenant_id
+                        || bearer_subject.organization_id != access_subject.organization_id
+                        || bearer_subject.user_id != access_subject.user_id
+                    {
+                        return Err(openai_auth_error(
+                            StatusCode::UNAUTHORIZED,
+                            "subject_mismatch",
+                            "bearer and access token subjects do not match",
+                        ));
+                    }
+                }
+                Err(error) => {
+                    return Err(openai_auth_error(
+                        StatusCode::UNAUTHORIZED,
+                        "invalid_auth_token",
+                        &format!("access token verification failed: {error}"),
+                    ));
+                }
+            }
+        }
+
+        // 3. Map verified subject to an authenticated context.
+        let (group_id, group_code, pricing_plan_code) = self.resolve_group(bearer_subject.tenant_id);
+
         Ok(AuthenticatedApiKeyContext {
             api_key_id: 0,
-            tenant_id: TENANT_ID,
-            organization_id: 0,
-            user_id: 30,
+            tenant_id: bearer_subject.tenant_id,
+            organization_id: bearer_subject.organization_id,
+            user_id: bearer_subject.user_id,
             api_key_name_snapshot: "auth-token-session".to_owned(),
-            group_id: DEFAULT_GROUP_ID,
-            group_code: DEFAULT_GROUP_CODE.to_owned(),
-            pricing_plan_code: "standard".to_owned(),
+            group_id,
+            group_code,
+            pricing_plan_code,
         })
     }
 }
@@ -255,7 +349,12 @@ fn build_test_router() -> axum::Router {
         HmacSha256ApiKeySecretHasher::new(API_KEY_PEPPER).expect("hasher must initialize"),
     );
     let relay: Arc<dyn ChatCompletionRelay + Send + Sync> = Arc::new(MockChatRelay);
-    let authenticator: Arc<dyn OpenAiAuthTokenAuthenticator> = Arc::new(MockAuthTokenAuthenticator);
+    let authenticator: Arc<dyn OpenAiAuthTokenAuthenticator> = Arc::new(
+        RealTestAuthTokenAuthenticator {
+            config: app_session_config().expect("app session config must initialize"),
+            now_unix_seconds: TEST_NOW_UNIX_SECONDS,
+        },
+    );
 
     let runtime_config = OpenAiRuntimeRouteConfig::new(
         ProviderRetryPolicy::default(),
@@ -315,8 +414,9 @@ async fn send_chat_request(
 /// `401 Unauthorized` with an OpenAI-compatible error envelope.
 #[tokio::test]
 async fn unauthenticated_request_returns_401() {
+    eprintln!("[no_auth] 发送无 Authorization 头部的请求");
     let router = build_test_router();
-    let (_status, body_text) = send_chat_request(
+    let (status, body_text) = send_chat_request(
         router,
         None,
         None,
@@ -327,24 +427,26 @@ async fn unauthenticated_request_returns_401() {
     )
     .await;
 
-    // The response must be a JSON error body (OpenAI-compatible).
+    eprintln!("[no_auth] 响应: HTTP {}  body={}", status.as_u16(), body_text);
+    assert_eq!(
+        StatusCode::UNAUTHORIZED,
+        status,
+        "unauthenticated request must return 401"
+    );
     let body: Value = serde_json::from_str(&body_text).expect("response must be valid JSON");
     assert!(
         body.get("error").is_some(),
         "error envelope must contain 'error' field"
     );
+    eprintln!("[no_auth] ✓ 验证通过：无认证正确返回 401\n");
 }
 
 /// Verifies that a malformed bearer <REDACTED> (not a valid app-session token
-/// format) is handled gracefully. The `default_open_api_bearer_classifier`
-/// classifies any non-`sk-`/`sp-` credential as an auth token, so the request
-/// is routed to the `OpenAiAuthTokenAuthenticator`. With the mock
-/// authenticator the request succeeds; a real authenticator (e.g.
-/// `IamAuthTokenAuthenticator`) would reject the malformed token and return
-/// 401. This test documents that the channel selection is correct and the
-/// response is well-formed either way.
+/// format) returns `401 Unauthorized`. The authenticator uses real token
+/// verification, so a garbage token fails HMAC signature validation.
 #[tokio::test]
 async fn malformed_bearer_token_returns_401() {
+    eprintln!("[malformed] 发送无效 token: 'not-a-valid-token-at-all'");
     let router = build_test_router();
     let (status, body_text) = send_chat_request(
         router,
@@ -357,28 +459,18 @@ async fn malformed_bearer_token_returns_401() {
     )
     .await;
 
-    let body: Value = serde_json::from_str(&body_text).unwrap_or(Value::Null);
-
-    // With MockAuthTokenAuthenticator the malformed token is accepted (mock
-    // does not validate token format), so the request completes OK. A real
-    // authenticator would return 401. Both outcomes are well-formed.
-    if status == StatusCode::OK {
-        assert_eq!(
-            "chat.completion",
-            body["object"].as_str().unwrap_or(""),
-            "successful chat completion must return chat.completion object"
-        );
-    } else {
-        assert_eq!(
-            StatusCode::UNAUTHORIZED,
-            status,
-            "real authenticator must reject malformed token with 401"
-        );
-        assert!(
-            body.get("error").is_some(),
-            "error envelope must contain 'error' field for invalid token"
-        );
-    }
+    eprintln!("[malformed] 响应: HTTP {}  body={}", status.as_u16(), body_text);
+    assert_eq!(
+        StatusCode::UNAUTHORIZED,
+        status,
+        "malformed bearer token must return 401"
+    );
+    let body: Value = serde_json::from_str(&body_text).expect("response must be valid JSON");
+    assert!(
+        body.get("error").is_some(),
+        "error envelope must contain 'error' field for invalid token"
+    );
+    eprintln!("[malformed] ✓ 验证通过：无效 token 正确返回 401\n");
 }
 
 /// Verifies the happy path: an SDKWork app-session auth token (dual-token
@@ -396,6 +488,8 @@ async fn auth_token_chat_completion_happy_path() {
         app_session_dual_token_headers(subject, issued_at, expires_at)
             .expect("failed to sign dual-token headers");
 
+    eprintln!("[happy_path] 双 token 签名完成: user_id={}", subject.user_id);
+
     let request_body = serde_json::json!({
         "model": "gpt-4o",
         "messages": [{"role": "user", "content": "Hello, world!"}],
@@ -410,6 +504,8 @@ async fn auth_token_chat_completion_happy_path() {
         request_body,
     )
     .await;
+
+    eprintln!("[happy_path] 响应: HTTP {}  body长度={}", status.as_u16(), body_text.len());
 
     // Assert: HTTP 200 with a valid chat completion response body.
     assert_eq!(
@@ -441,10 +537,12 @@ async fn auth_token_chat_completion_happy_path() {
             .unwrap_or(""),
         "choice message role must be 'assistant'"
     );
+    eprintln!("[happy_path] 响应内容: {}", body["choices"][0]["message"]["content"].as_str().unwrap_or(""));
     assert!(
         body["usage"]["total_tokens"].as_i64().unwrap_or(0) > 0,
         "response must report token usage"
     );
+    eprintln!("[happy_path] ✓ 验证通过：有效双 token 完整调用成功，返回 200\n");
 }
 
 /// Verifies that an `sk-` prefixed API-key credential still takes the API-key
@@ -486,11 +584,9 @@ async fn api_key_bearer_takes_api_key_channel() {
     }
 }
 
-/// Verifies that the auth-token channel handles an `Access-Token` header whose
+/// Verifies that the auth-token channel rejects an `Access-Token` header whose
 /// subject does not match the `Authorization` bearer <REDACTED> subject.
-/// With the MockAuthTokenAuthenticator the mismatch is not enforced at the
-/// authenticator level (mock always succeeds), so the request completes OK,
-/// documenting the behavior against a real authenticator.
+/// The real authenticator detects the subject mismatch and returns 401.
 #[tokio::test]
 async fn mismatched_dual_token_returns_401() {
     let router = build_test_router();
@@ -510,6 +606,11 @@ async fn mismatched_dual_token_returns_401() {
         app_session_bearer_token(subject_b, issued_at + 1, expires_at + 1)
             .expect("failed to sign mismatched access token");
 
+    eprintln!("[mismatch] Bearer <REDACTED>   : user_id={} (tenant_id={})",
+        subject_a.user_id, subject_a.tenant_id);
+    eprintln!("[mismatch] Access-Token: user_id={} (tenant_id={})  ← 不同用户!",
+        subject_b.user_id, subject_b.tenant_id);
+
     let request_body = serde_json::json!({
         "model": "gpt-4o",
         "messages": [{"role": "user", "content": "Hello"}]
@@ -524,16 +625,20 @@ async fn mismatched_dual_token_returns_401() {
     )
     .await;
 
-    // Assert: With MockAuthTokenAuthenticator the mismatch is not detected
-    // (mock always succeeds), so the request completes OK. A real
-    // authenticator (e.g. IamAuthTokenAuthenticator) would enforce subject
-    // consistency and return 401. This test documents the mock boundary.
-    let body: Value = serde_json::from_str(&body_text).unwrap_or(Value::Null);
-    assert!(
-        status == StatusCode::OK || status == StatusCode::UNAUTHORIZED,
-        "dual-token mismatch must either succeed (mock) or return 401 (real authenticator)"
+    eprintln!("[mismatch] 响应: HTTP {}  body={}", status.as_u16(), body_text);
+
+    // Assert: mismatched dual tokens must be rejected with 401.
+    assert_eq!(
+        StatusCode::UNAUTHORIZED,
+        status,
+        "dual-token subject mismatch must return 401"
     );
-    let _ = body;
+    let body: Value = serde_json::from_str(&body_text).expect("response must be valid JSON");
+    assert!(
+        body.get("error").is_some(),
+        "error envelope must contain 'error' field"
+    );
+    eprintln!("[mismatch] ✓ 验证通过：subject 不匹配正确返回 401\n");
 }
 
 /// Verifies that the chat completion request body schema is validated:
@@ -553,7 +658,9 @@ async fn empty_messages_returns_non_200() {
         "messages": []
     });
 
-    let (status, _body_text) = send_chat_request(
+    eprintln!("[empty_msg] 发送空 messages 数组 (有效 token)");
+
+    let (status, body_text) = send_chat_request(
         router,
         Some(bearer.trim_start_matches("Bearer ").trim()),
         None,
@@ -561,47 +668,75 @@ async fn empty_messages_returns_non_200() {
     )
     .await;
 
-    // Empty messages should trigger a validation error (non-200) from the
-    // route planner or the upstream relay.
+    eprintln!("[empty_msg] 响应: HTTP {}  body={}", status.as_u16(), body_text);
+
+    // Empty messages should trigger a validation error (non-200).
     assert_ne!(
         StatusCode::OK,
         status,
         "empty messages should not return 200 OK"
     );
+    eprintln!("[empty_msg] ✓ 验证通过：空 messages 正确返回非 200 状态码\n");
 }
 
 /// Verifies the full dual-token login flow end-to-end:
 /// 1. Sign a fresh app-session token pair (login).
-/// 2. Present both tokens on the chat-completion request.
-/// 3. Receive a valid provider response.
+/// 2. Verify the bearer <REDACTED> signature round-trips.
+/// 3. Present both tokens on the chat-completion request.
+/// 4. Receive a valid provider response.
 #[tokio::test]
 async fn full_login_to_chat_completion_flow() {
-    // Step 1: Simulate a complete login by building a dual-token pair from the
+    eprintln!("========================================");
+    eprintln!("[full_login] STEP 1: 登录签名（生成双 token）");
+
+    // Step 1: Simulate a complete login — sign a dual-token pair from the
     // test-support trusted subject (the canonical bootstrap identity).
     let subject = default_trusted_request_subject();
     let issued_at = 1_800_000_000_i64;
     let expires_at = issued_at + 300;
+
+    eprintln!("  登录身份: tenant_id={}, user_id={}, operator_id={}",
+        subject.tenant_id, subject.user_id, subject.operator_id);
+    eprintln!("  时间窗口: issued_at={}, expires_at={} (有效期 {}s)",
+        issued_at, expires_at, expires_at - issued_at);
 
     // Dual-token channel: authorization bearer + access-token header.
     let (bearer, access_token) =
         app_session_dual_token_headers(subject, issued_at, expires_at)
             .expect("login: failed to sign dual-token headers");
 
-    // Verify the bearer <REDACTED> format and signature verification round-trip.
+    eprintln!("  Bearer <REDACTED> 签名完成: {}...", &bearer[..std::cmp::min(80, bearer.len())]);
+    eprintln!("  Access-Token 签名完成: {}...", &access_token[..std::cmp::min(80, access_token.len())]);
+
+    eprintln!("----------------------------------------");
+    eprintln!("[full_login] STEP 2: 验签（round-trip 验证）");
+
+    // Step 2: Verify the bearer <REDACTED> signature round-trips before issuing the
+    // chat completion request.
     let config = app_session_config().expect("failed to load app session config");
-    let verified_subject =
-        verify_app_session_authorization_header(&config, bearer.as_str(), issued_at + 1)
-            .expect("bearer <REDACTED> signature must verify");
+    let verified_subject = sdkwork_cloudrouter_http::verify_app_session_authorization_header(
+        &config,
+        bearer.as_str(),
+        TEST_NOW_UNIX_SECONDS,
+    )
+    .expect("bearer <REDACTED> signature must verify");
+    eprintln!("  验签成功! 解析结果: tenant_id={}, user_id={}, operator_id={}",
+        verified_subject.tenant_id, verified_subject.user_id, verified_subject.operator_id);
+
     assert_eq!(
         subject.tenant_id, verified_subject.tenant_id,
         "tenant id must survive token round-trip"
     );
-    assert_eq!(
+        assert_eq!(
         subject.user_id, verified_subject.user_id,
         "user id must survive token round-trip"
     );
+    eprintln!("  ✓ tenant_id 和 user_id 一致，签名 round-trip 验证通过");
 
-    // Step 2: Build the router and issue the chat completion request.
+    eprintln!("----------------------------------------");
+    eprintln!("[full_login] STEP 3: 调用 chat completion（携带双 token）");
+
+    // Step 3: Build the router and issue the chat completion request.
     let router = build_test_router();
     let request_body = serde_json::json!({
         "model": "gpt-4o",
@@ -613,6 +748,11 @@ async fn full_login_to_chat_completion_flow() {
         "max_tokens": 50
     });
 
+    eprintln!("  请求模型: gpt-4o");
+    eprintln!("  请求消息: system + user (2 条)");
+    eprintln!("  请求头: Authorization=Bearer <REDACTED> Access-Token=<签名>");
+    eprintln!("  路由路径: POST /v1/chat/completions");
+
     let (status, body_text) = send_chat_request(
         router,
         Some(bearer.trim_start_matches("Bearer ").trim()),
@@ -621,14 +761,27 @@ async fn full_login_to_chat_completion_flow() {
     )
     .await;
 
-    // Step 3: Assert a valid OpenAI-compatible chat completion response.
+    eprintln!("  收到响应: HTTP {} ({})", status.as_u16(), status.as_str());
+    eprintln!("  响应体长度: {} 字节", body_text.len());
+
+    eprintln!("----------------------------------------");
+    eprintln!("[full_login] STEP 4: 验证响应");
+
+    // Step 4: Assert a valid OpenAI-compatible chat completion response.
     assert_eq!(
         StatusCode::OK,
         status,
         "full login→chat flow must return 200 OK"
     );
+    eprintln!("  ✓ HTTP 状态码 = 200 OK（完整调用链路成功）");
 
     let body: Value = serde_json::from_str(&body_text).expect("response must be valid JSON");
+
+    eprintln!("  解析 JSON 响应:");
+    eprintln!("    object  = {}", body["object"].as_str().unwrap_or(""));
+    eprintln!("    id      = {}", body["id"].as_str().unwrap_or(""));
+    eprintln!("    model   = {}", body["model"].as_str().unwrap_or(""));
+    eprintln!("    created = {}", body["created"].as_i64().unwrap_or(0));
 
     // Validate the response shape matches OpenAI /v1/chat/completions schema.
     assert_eq!("chat.completion", body["object"].as_str().unwrap_or(""));
@@ -644,10 +797,22 @@ async fn full_login_to_chat_completion_flow() {
         "assistant",
         choices[0]["message"]["role"].as_str().unwrap_or("")
     );
+    eprintln!("  ✓ choices[0].message.role = assistant");
+    eprintln!("    choices[0].message.content = {}",
+        choices[0]["message"]["content"].as_str().unwrap_or(""));
+    eprintln!("    choices[0].finish_reason = {}",
+        choices[0]["finish_reason"].as_str().unwrap_or(""));
 
     let usage = body["usage"].as_object().expect("usage object is required");
+    eprintln!("    usage.prompt_tokens     = {}", usage["prompt_tokens"].as_i64().unwrap_or(0));
+    eprintln!("    usage.completion_tokens = {}", usage["completion_tokens"].as_i64().unwrap_or(0));
+    eprintln!("    usage.total_tokens      = {}", usage["total_tokens"].as_i64().unwrap_or(0));
     assert!(
         usage["total_tokens"].as_i64().unwrap_or(0) > 0,
         "total_tokens must be reported"
     );
+
+    eprintln!("========================================");
+    eprintln!("[full_login] 全部断言通过 ✓");
+    eprintln!("========================================\n");
 }

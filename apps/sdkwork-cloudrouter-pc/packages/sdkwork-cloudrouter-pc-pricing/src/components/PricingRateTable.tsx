@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { humanizeCode, regionDisplayName, vendorDisplayName } from '../i18n/dataNames';
@@ -74,6 +74,7 @@ function ModelRow({
   const billabilities = uniqueValues(group.rates, (entry) => entry.billability);
   const hasTiers = group.rates.some((entry) => entry.tiers.length > 0);
   const hasFormula = group.rates.some((entry) => isPricingFormula(entry.formula));
+  const regionGroups = useMemo(() => groupByRegion(group.rates), [group.rates]);
   return (
     <tr className="align-top hover:bg-slate-50/70 dark:hover:bg-white/[0.025]">
       <td className="px-2 py-4 text-center">
@@ -109,19 +110,28 @@ function ModelRow({
         </div>
       </td>
       <td className="px-4 py-4">
-        <div className="space-y-1.5">
-          {group.rates.map((entry) => (
-            <div key={entry.rateCode} className="flex flex-wrap items-baseline gap-x-2 text-xs">
-              <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">{regionDisplayName(entry.regionCode, language)}</span>
-              <span className="text-slate-600 dark:text-slate-300">{entry.meterDisplayName || humanizeCode(entry.meterCode)}</span>
-              <span className="tabular-nums font-semibold text-slate-950 dark:text-white">{formatDecimal(entry.unitPrice)}</span>
-              <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">{entry.currencyCode}</span>
-              <span className="text-[10px] text-slate-400">
-                / {formatDecimal(entry.unitSize)} {unitLabel(entry.unitCode, t)}
-              </span>
-            </div>
-          ))}
-        </div>
+        {regionGroups.length === 1 ? (
+          <div className="space-y-1.5">
+            {regionGroups[0][1].map((entry) => (
+              <MeterPriceRow key={entry.rateCode} entry={entry} t={t} />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {regionGroups.map(([regionCode, entries]) => (
+              <div key={regionCode}>
+                <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  {regionDisplayName(regionCode, language)}
+                </div>
+                <div className="space-y-1 pl-2.5">
+                  {entries.map((entry) => (
+                    <MeterPriceRow key={entry.rateCode} entry={entry} t={t} />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </td>
       <td className="px-4 py-4">
         <ModelCapabilities rate={rate} t={t} />
@@ -170,6 +180,7 @@ function ModelCard({
 }) {
   const rate = group.rates[0];
   const regions = uniqueValues(group.rates, (entry) => entry.regionCode);
+  const regionGroups = useMemo(() => groupByRegion(group.rates), [group.rates]);
   return (
     <article className="rounded-md border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-[#0d0d0d]">
       <div className="flex items-start justify-between gap-3">
@@ -195,13 +206,23 @@ function ModelCard({
           <BillabilityBadge billability={rate.billability} t={t} />
         </div>
       </div>
-      <div className="mt-4 space-y-1.5">
-        {group.rates.map((entry) => (
-          <div key={entry.rateCode} className="flex flex-wrap items-baseline gap-x-2 text-xs">
-            <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">{regionDisplayName(entry.regionCode, language)}</span>
-            <span className="text-slate-600 dark:text-slate-300">{entry.meterDisplayName || humanizeCode(entry.meterCode)}</span>
-            <span className="tabular-nums font-semibold text-slate-950 dark:text-white">{formatDecimal(entry.unitPrice)}</span>
-            <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">{entry.currencyCode}</span>
+      <div className="mt-4 space-y-3">
+        {regionGroups.map(([regionCode, entries]) => (
+          <div key={regionCode}>
+            {regionGroups.length > 1 ? (
+              <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                {regionDisplayName(regionCode, language)}
+              </div>
+            ) : null}
+            <div className="space-y-1.5">
+              {entries.map((entry) => (
+                <div key={entry.rateCode} className="flex flex-wrap items-baseline gap-x-2 text-xs">
+                  <span className="text-slate-600 dark:text-slate-300">{entry.meterDisplayName || humanizeCode(entry.meterCode)}</span>
+                  <span className="tabular-nums font-semibold text-slate-950 dark:text-white">{formatDecimal(entry.unitPrice)}</span>
+                  <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">{entry.currencyCode}</span>
+                </div>
+              ))}
+            </div>
           </div>
         ))}
       </div>
@@ -222,6 +243,38 @@ function ModelCard({
 
 function uniqueValues<T>(rates: readonly OfficialPricingRate[], pick: (rate: OfficialPricingRate) => T): T[] {
   return [...new Set(rates.map(pick))];
+}
+
+/**
+ * Groups a model's rates by region while preserving first-seen region order.
+ * Sharing one region block per model makes meter prices visually aligned
+ * instead of repeating a region tag on every individual rate line.
+ */
+function groupByRegion(rates: readonly OfficialPricingRate[]): Array<[string, OfficialPricingRate[]]> {
+  const order: string[] = []; const buckets = new Map<string, OfficialPricingRate[]>();
+  for (const rate of rates) {
+    const list = buckets.get(rate.regionCode);
+    if (list) {
+      list.push(rate);
+    } else {
+      order.push(rate.regionCode);
+      buckets.set(rate.regionCode, [rate]);
+    }
+  }
+  return order.map((code) => [code, buckets.get(code)!]);
+}
+
+function MeterPriceRow({ entry, t }: { entry: OfficialPricingRate; t: TFunction }): ReactNode {
+  return (
+    <div className="flex flex-wrap items-baseline gap-x-2 text-xs">
+      <span className="text-slate-600 dark:text-slate-300">{entry.meterDisplayName || humanizeCode(entry.meterCode)}</span>
+      <span className="tabular-nums font-semibold text-slate-950 dark:text-white">{formatDecimal(entry.unitPrice)}</span>
+      <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">{entry.currencyCode}</span>
+      <span className="text-[10px] text-slate-400">
+        / {formatDecimal(entry.unitSize)} {unitLabel(entry.unitCode, t)}
+      </span>
+    </div>
+  );
 }
 
 export function PricingPagination({

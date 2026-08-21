@@ -779,7 +779,7 @@ function requestLimitsPolicyFor() {
 function installConfigurationCommands(packageItem) {
   if (packageItem.platform === 'linux' && packageItem.deploymentMode === 'service') {
     return {
-      editConfig: `sudo editor ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml`,
+      editConfig: `sudo editor ${LINUX_SERVICE_CONFIG_ROOT}/config.toml`,
       editDatabasePassword: `sudo editor ${LINUX_SERVICE_DATABASE_SECRET_FILE}`,
       start: 'sudo systemctl start cloudrouter',
       status: 'sudo systemctl status cloudrouter --no-pager',
@@ -804,8 +804,8 @@ function installConfigurationCommands(packageItem) {
     const passwordFile = packageItem.databasePolicy.passwordFile.path;
     const redisPasswordFile = packageItem.redisPolicy.passwordFile.path;
     const configMount = packageItem.platform === 'windows'
-      ? `%CD%\\cloudrouter.toml:${configFile.replaceAll('/', '\\')}:ro`
-      : `$PWD/cloudrouter.toml:${configFile}:ro`;
+      ? `%CD%\\config.toml:${configFile.replaceAll('/', '\\')}:ro`
+      : `$PWD/config.toml:${configFile}:ro`;
     const passwordMount = packageItem.platform === 'windows'
       ? `%CD%\\secrets\\postgres-password:${passwordFile.replaceAll('/', '\\')}:ro`
       : `$PWD/secrets/postgres-password:${passwordFile}:ro`;
@@ -868,7 +868,7 @@ function installConfigurationNextSteps(packageItem) {
   if (policy.defaultEngine === 'postgresql') {
     const steps = [
       `Edit ${policy.configFile.path} and set [database].host, [database].database, [database].username, and [database].ssl_mode.`,
-      `Set [database].password_file to ${policy.passwordFile.path}, or use [database].password only when cloudrouter.toml is protected as a secret-bearing file.`,
+      `Set [database].password_file to ${policy.passwordFile.path}, or use [database].password only when config.toml is protected as a secret-bearing file.`,
       'Replace generated placeholder values before first start; startup rejects db.example.com and change-me.',
     ];
     if (redisStep) {
@@ -880,7 +880,7 @@ function installConfigurationNextSteps(packageItem) {
         'Check startup with sudo systemctl status cloudrouter --no-pager and sudo journalctl -u cloudrouter -f.',
       );
     } else if (packageItem.deploymentMode === 'container') {
-      steps.push('Mount cloudrouter.toml and the PostgreSQL secret into the container before starting it.');
+      steps.push('Mount config.toml and the PostgreSQL secret into the container before starting it.');
     } else {
       steps.push(`Run ${packageItem.initCommands.join(' && ')} before sending traffic.`);
     }

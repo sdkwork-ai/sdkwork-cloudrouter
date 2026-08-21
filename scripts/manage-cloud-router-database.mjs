@@ -366,10 +366,10 @@ Runtime TOML example:
   max_connections = 16
 
 Examples:
-  pnpm db:status -- --config-file ./etc/cloudrouter.toml
-  pnpm db:init -- --config-file ./etc/cloudrouter.toml
-  pnpm db:upgrade -- --config-file ./etc/cloudrouter.toml
-  pnpm db:refresh-catalog -- --config-file ./etc/cloudrouter.toml -- --vendor openai --force
+  pnpm db:status -- --config-file ./etc/config.toml
+  pnpm db:init -- --config-file ./etc/config.toml
+  pnpm db:upgrade -- --config-file ./etc/config.toml
+  pnpm db:refresh-catalog -- --config-file ./etc/config.toml -- --vendor openai --force
 `);
 }
 

@@ -53,7 +53,7 @@ spec:
               # us/eu -> en-US) unless overridden explicitly.
               value: zh-CN
             - name: SDKWORK_CLOUDROUTER_CONFIG_FILE
-              value: /etc/sdkwork/cloudrouter.toml
+              value: /etc/sdkwork/config.toml
             - name: SDKWORK_DATABASE_URL
               valueFrom:
                 secretKeyRef:

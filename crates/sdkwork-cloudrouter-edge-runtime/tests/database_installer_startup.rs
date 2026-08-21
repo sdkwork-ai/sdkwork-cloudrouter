@@ -87,7 +87,7 @@ fn unique_runtime_config_path() -> std::path::PathBuf {
     path.push(format!(
         "sdkwork-cloudrouter-edge-runtime-runtime-{millis}-{counter}"
     ));
-    path.push("sdkwork-cloudrouter.toml");
+    path.push("config.toml");
     path
 }
 

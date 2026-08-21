@@ -78,7 +78,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.uid
             - name: SDKWORK_CLOUDROUTER_CONFIG_FILE
-              value: /etc/sdkwork/cloudrouter.toml
+              value: /etc/sdkwork/config.toml
             - name: SDKWORK_CLOUDROUTER_APP_API_BIND
               value: 0.0.0.0:18082
             - name: SDKWORK_CLOUDROUTER_REDIS_URL

@@ -21,7 +21,7 @@ archive、service、container 服务端部署默认启用并要求 Redis，因�
 特点：
 
 - 默认 SQLite。
-- `cloudrouter.toml` 中包含 Redis 配置，但默认保持关闭。
+- `config.toml` 中包含 Redis 配置，但默认保持关闭。
 - 自动使用 OS 用户目录下的配置和数据目录。
 - 不要求外部 PostgreSQL。
 - Linux、Windows、macOS 均发布为平台原生安装包。
@@ -95,7 +95,7 @@ Linux 安装 `.deb` 后通常只需要检查服务状态：
 
 ```bash
 sudo apt install ./cloudrouter-linux-x64-server-0.3.0.deb
-sudo editor /etc/sdkwork/router/cloudrouter.toml
+sudo editor /etc/sdkwork/router/config.toml
 sudo systemctl start cloudrouter
 sudo systemctl status cloudrouter --no-pager
 ```
@@ -113,7 +113,7 @@ sudo systemctl status cloudrouter --no-pager
 ```bash
 docker build -f container/Containerfile -t cloudrouter:0.3.0 .
 docker run --rm -p 3900:3900 \
-  -v "$PWD/config/cloudrouter.toml.example:/etc/sdkwork/router/cloudrouter.toml:ro" \
+  -v "$PWD/config/config.toml.example:/etc/sdkwork/router/config.toml:ro" \
   -v "$PWD/secrets/postgres-password:/run/secrets/sdkwork/router/postgres-password:ro" \
   -v "$PWD/secrets/redis-password:/run/secrets/sdkwork/router/redis-password:ro" \
   cloudrouter:0.3.0
@@ -123,7 +123,7 @@ Kubernetes 部署时建议：
 
 - 使用 Secret 保存数据库 URL。
 - Redis 启用认证时为 Redis 密码配置 Secret。
-- 使用 ConfigMap 或挂载文件提供 `cloudrouter.toml`。
+- 使用 ConfigMap 或挂载文件提供 `config.toml`。
 - 配置 readinessProbe 指向 `/readyz`，livenessProbe 指向 `/healthz`；edge 组件 readiness 的 `timeoutSeconds` 应不低于 5，以避免 DB/Redis 短暂网络分区导致 Pod 误判为 not-ready，且 readiness 只能依赖内部依赖（PostgreSQL、Redis），不得依赖上游 AI provider 的连通性。
 - 应用 `deployments/kubernetes/cloud-router-network-policy.yaml` 实现零信任分段（默认 deny-all + 各组件显式 ingress 规则）。访问上游 AI provider 的 HTTPS 出口流量被指向专用的 `egress-gateway` namespace，需在该 namespace 部署 L7 策略引擎（Istio、Cilium 或同等方案）以强制执行 provider FQDN 白名单。完整的资源 sizing 与优雅停机指引（requests/limits、`terminationGracePeriodSeconds`、HPA、PDB）参见 `deployments/kubernetes/README.md`。
 - 不把 `.env.release` bake 到镜像。

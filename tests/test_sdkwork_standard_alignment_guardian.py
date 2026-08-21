@@ -144,7 +144,7 @@ class SdkworkStandardAlignmentGuardianTest(unittest.TestCase):
             guardian = SdkworkStandardAlignmentGuardian(root)
 
             for relative in (
-                "configs\\topology",
+                "etc\\topology",
                 "configs/./topology",
                 "configs//topology",
                 "etc/topology/",

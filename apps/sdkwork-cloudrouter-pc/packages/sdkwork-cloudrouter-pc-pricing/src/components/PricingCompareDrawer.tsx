@@ -1,9 +1,9 @@
-import { Check, RotateCw, Scale, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Check, Scale, X } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { regionDisplayName, vendorDisplayName } from '../i18n/dataNames';
-import { fetchCompareModels, type CompareModel, type CompareModelReferencePrice } from '../services/compareService';
+import { buildCompareModels, type CompareModel, type CompareModelReferencePrice } from '../services/compareService';
 import { compareKeyOf, rateCategory } from '../types/compare';
 import type { OfficialPricingRate } from '../types/pricing';
 import { formatCompactTokens, formatDecimal } from './PricingRateTable';
@@ -11,7 +11,6 @@ import { formatCompactTokens, formatDecimal } from './PricingRateTable';
 interface PricingCompareDrawerProps {
   open: boolean;
   selections: readonly OfficialPricingRate[];
-  defaultRegion: string;
   onRemove: (key: string) => void;
   onClear: () => void;
   onClose: () => void;
@@ -20,64 +19,52 @@ interface PricingCompareDrawerProps {
 export function PricingCompareDrawer({
   open,
   selections,
-  defaultRegion,
   onRemove,
   onClear,
   onClose,
 }: PricingCompareDrawerProps) {
   const { t, i18n } = useTranslation();
-  const [models, setModels] = useState<CompareModel[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const [reloadVersion, setReloadVersion] = useState(0);
-  const [region, setRegion] = useState(defaultRegion || 'global');
   const [currency, setCurrency] = useState('');
   const language = i18n.language;
+  const category = selections.length > 0 ? rateCategory(selections[0]) : 'other';
 
-  useEffect(() => {
-    if (!open) return;
-    setRegion(defaultRegion || 'global');
-  }, [open, defaultRegion]);
+  const models = useMemo(() => buildCompareModels(selections), [selections]);
 
-  useEffect(() => {
-    if (!open) return;
-    const controller = new AbortController();
-    setLoading(true);
-    setFailed(false);
-    fetchCompareModels(selections, controller.signal)
-      .then((nextModels) => {
-        if (!controller.signal.aborted) setModels(nextModels);
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setFailed(true);
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
-    return () => controller.abort();
-  }, [open, reloadVersion, selections]);
-
-  const regionOptions = useMemo(() => {
-    const codes = new Set<string>([region]);
-    for (const model of models) {
-      for (const price of model.prices) codes.add(price.regionCode);
-    }
-    return [...codes].sort();
-  }, [models, region]);
-
+  // 币种选项取自所有模型、所有区域的价格，统一一个币种下拉做跨区筛选。
   const currencyOptions = useMemo(() => {
     const codes = new Set<string>();
     for (const model of models) {
-      for (const price of model.prices) {
-        if (price.regionCode === region) codes.add(price.currency);
-      }
+      for (const price of model.prices) codes.add(price.currency);
     }
     return [...codes].sort();
-  }, [models, region]);
+  }, [models]);
+
+  // 按首次出现顺序收集所有区域码，每个区域单独渲染一张比价表。
+  const regionOrder = useMemo(() => {
+    const order: string[] = [];
+    const seen = new Set<string>();
+    for (const model of models) {
+      for (const price of model.prices) {
+        if (!seen.has(price.regionCode)) {
+          seen.add(price.regionCode);
+          order.push(price.regionCode);
+        }
+      }
+    }
+    return order;
+  }, [models]);
 
   const selectedKeys = useMemo(() => new Set(selections.map(compareKeyOf)), [selections]);
-  const category = selections.length > 0 ? rateCategory(selections[0]) : 'other';
-  const regionLabel = region ? regionDisplayName(region, language) : '';
+  // 同一 model 可能对应多条 rate，按 key 去重用于头部 tag 渲染。
+  const dedupedSelections = useMemo(() => {
+    const seen = new Set<string>();
+    return selections.filter((rate) => {
+      const key = compareKeyOf(rate);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [selections]);
 
   return (
     <div className={open ? 'fixed inset-0 z-50' : 'pointer-events-none fixed inset-0 z-50'} aria-hidden={!open}>
@@ -102,7 +89,6 @@ export function PricingCompareDrawer({
               <h2 className="text-lg font-semibold text-slate-950 dark:text-white">{t('pricing.compare.title')}</h2>
               <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
                 {t('pricing.compare.subtitle', { category: t(`pricing.category.${category}`), count: selections.length })}
-                {regionLabel ? <span className="ml-2 inline-flex items-center rounded border border-slate-200 px-1.5 py-0.5 text-[11px] font-medium text-slate-500 dark:border-white/10 dark:text-slate-400">{regionLabel}</span> : null}
               </p>
             </div>
           </div>
@@ -127,27 +113,10 @@ export function PricingCompareDrawer({
           </div>
         </header>
 
-        {loading ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 text-sm text-slate-500 dark:text-slate-400">
-            <RotateCw className="h-6 w-6 animate-spin text-lobster-500" aria-hidden="true" />
-            {t('pricing.compare.loading')}
-          </div>
-        ) : failed ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 text-sm text-slate-500 dark:text-slate-400">
-            <span>{t('pricing.compare.error')}</span>
-            <button
-              type="button"
-              onClick={() => setReloadVersion((version) => version + 1)}
-              className="inline-flex h-9 items-center rounded-md bg-slate-900 px-4 text-sm font-medium text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950"
-            >
-              {t('pricing.compare.retry')}
-            </button>
-          </div>
-        ) : (
-          <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="flex-1 overflow-y-auto px-6 py-5">
             <div className="mb-5 flex items-center justify-between gap-3">
               <div className="flex min-w-0 flex-wrap gap-2">
-                {selections.map((rate) => {
+                {dedupedSelections.map((rate) => {
                   const key = compareKeyOf(rate);
                   const selected = selectedKeys.has(key);
                   if (!selected) return null;
@@ -169,51 +138,53 @@ export function PricingCompareDrawer({
                   );
                 })}
               </div>
-              {regionOptions.length > 1 || currencyOptions.length > 1 ? (
+              {currencyOptions.length > 1 ? (
                 <div className="flex shrink-0 items-center gap-3">
-                  {regionOptions.length > 1 ? (
-                    <label className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                      {t('pricing.compare.region')}
-                      <select
-                        value={region}
-                        onChange={(event) => setRegion(event.target.value)}
-                        className="h-9 rounded-md border border-slate-300 bg-white px-2.5 text-sm text-slate-900 outline-none focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/20 dark:border-white/10 dark:bg-[#151515] dark:text-white"
-                      >
-                        {regionOptions.map((code) => (
-                          <option key={code} value={code}>
-                            {regionDisplayName(code, language)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  ) : null}
-                  {currencyOptions.length > 1 ? (
-                    <label className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-                      {t('pricing.compare.currency')}
-                      <select
-                        value={currency}
-                        onChange={(event) => setCurrency(event.target.value)}
-                        className="h-9 rounded-md border border-slate-300 bg-white px-2.5 text-sm text-slate-900 outline-none focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/20 dark:border-white/10 dark:bg-[#151515] dark:text-white"
-                      >
-                        <option value="">{t('pricing.compare.allCurrencies')}</option>
-                        {currencyOptions.map((code) => (
-                          <option key={code} value={code}>
-                            {code} {currencySymbol(code)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  ) : null}
+                  <label className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+                    {t('pricing.compare.currency')}
+                    <select
+                      value={currency}
+                      onChange={(event) => setCurrency(event.target.value)}
+                      className="h-9 rounded-md border border-slate-300 bg-white px-2.5 text-sm text-slate-900 outline-none focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/20 dark:border-white/10 dark:bg-[#151515] dark:text-white"
+                    >
+                      <option value="">{t('pricing.compare.allCurrencies')}</option>
+                      {currencyOptions.map((code) => (
+                        <option key={code} value={code}>
+                          {code} {currencySymbol(code)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                 </div>
               ) : null}
             </div>
 
             <CompareCapabilitiesTable models={models} t={t} />
-            <ComparePricesTable models={models} region={region} currency={currency} t={t} />
+
+            <h3 className="mb-2 mt-7 flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+              <span className="h-4 w-1 rounded-full bg-emerald-500" aria-hidden="true" />
+              {t('pricing.compare.section.prices')}
+            </h3>
+            {regionOrder.length === 0 ? (
+              <p className="rounded-md border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400 dark:border-white/10">
+                {t('pricing.compare.empty')}
+              </p>
+            ) : (
+              <div className="space-y-6">
+                {regionOrder.map((region) => (
+                  <ComparePricesTable
+                    key={region}
+                    models={models}
+                    region={region}
+                    currency={currency}
+                    t={t}
+                  />
+                ))}
+              </div>
+            )}
 
             <p className="mt-6 text-center text-[11px] text-slate-400 dark:text-slate-500">{t('pricing.compare.notice')}</p>
           </div>
-        )}
       </aside>
     </div>
   );
@@ -271,7 +242,7 @@ function CompareCapabilitiesTable({ models, t }: { models: readonly CompareModel
       </h3>
       <CompareTable
         columns={models}
-        columnLabel={(model) => model.displayName}
+        columnLabel={(model) => model.modelId || model.displayName}
         rows={rows.map((row) => ({ key: row.key, label: row.label, render: row.render }))}
         emptyLabel={t('pricing.compare.empty')}
       />
@@ -290,6 +261,8 @@ function ComparePricesTable({
   currency: string;
   t: TFunction;
 }) {
+  const { i18n } = useTranslation();
+  const regionLabel = regionDisplayName(region, i18n.language);
   const meters = useMemo(() => {
     const order: string[] = [];
     const seen = new Set<string>();
@@ -313,13 +286,12 @@ function ComparePricesTable({
   };
 
   return (
-    <section aria-label={t('pricing.compare.section.prices')} className="mt-7">
-      <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
-        <span className="h-4 w-1 rounded-full bg-emerald-500" aria-hidden="true" />
-        {t('pricing.compare.section.prices')}
-      </h3>
+    <section aria-label={regionLabel} className="rounded-md border border-slate-200 dark:border-white/10">
+      <div className="border-b border-slate-200 bg-slate-50 px-3 py-2 dark:border-white/10 dark:bg-white/[0.02]">
+        <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">{regionLabel}</span>
+      </div>
       {meters.length === 0 ? (
-        <p className="rounded-md border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-400 dark:border-white/10">
+        <p className="px-4 py-6 text-center text-sm text-slate-400">
           {t('pricing.compare.empty')}
         </p>
       ) : (

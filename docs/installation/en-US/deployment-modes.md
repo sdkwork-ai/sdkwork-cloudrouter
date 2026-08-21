@@ -26,7 +26,7 @@ state. Desktop packages keep Redis optional and disabled by default.
 Characteristics:
 
 - SQLite by default.
-- Redis config exists in `cloudrouter.toml` but stays disabled.
+- Redis config exists in `config.toml` but stays disabled.
 - Uses OS user config and data directories automatically.
 - Does not require external PostgreSQL.
 - Released as a native installer for Linux, Windows, and macOS.
@@ -100,7 +100,7 @@ Typical Linux systemd check after installing the `.deb`:
 
 ```bash
 sudo apt install ./cloudrouter-linux-x64-server-0.3.0.deb
-sudo editor /etc/sdkwork/router/cloudrouter.toml
+sudo editor /etc/sdkwork/router/config.toml
 sudo systemctl start cloudrouter
 sudo systemctl status cloudrouter --no-pager
 ```
@@ -118,7 +118,7 @@ Example:
 ```bash
 docker build -f container/Containerfile -t cloudrouter:0.3.0 .
 docker run --rm -p 3900:3900 \
-  -v "$PWD/config/cloudrouter.toml.example:/etc/sdkwork/router/cloudrouter.toml:ro" \
+  -v "$PWD/config/config.toml.example:/etc/sdkwork/router/config.toml:ro" \
   -v "$PWD/secrets/postgres-password:/run/secrets/sdkwork/router/postgres-password:ro" \
   -v "$PWD/secrets/redis-password:/run/secrets/sdkwork/router/redis-password:ro" \
   cloudrouter:0.3.0
@@ -128,7 +128,7 @@ For Kubernetes:
 
 - Store the database password in a Secret.
 - Store the Redis password in a Secret when Redis authentication is used.
-- Provide `cloudrouter.toml` through a ConfigMap or mounted file.
+- Provide `config.toml` through a ConfigMap or mounted file.
 - Point readinessProbe at `/readyz` and livenessProbe at `/healthz`; on edge, keep readiness `timeoutSeconds >= 5` so brief DB/Redis network partitions do not churn pods, and keep readiness focused on internal dependencies only (never upstream provider reachability).
 - Apply `deployments/kubernetes/cloud-router-network-policy.yaml` for zero-trust segmentation (default deny-all + explicit per-component ingress). HTTPS egress to upstream AI providers is routed through a dedicated `egress-gateway` namespace; deploy an L7-aware policy engine (Istio, Cilium, or equivalent) there to enforce the provider FQDN allowlist. See `deployments/kubernetes/README.md` for the full sizing and shutdown guidance (resource requests/limits, `terminationGracePeriodSeconds`, HPA, PDB).
 - Do not bake `.env.release` into the image.

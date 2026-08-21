@@ -6,12 +6,12 @@ Specs: `../../sdkwork-specs/DOCUMENTATION_SPEC.md` section 2, `../../sdkwork-spe
 
 ## 1. Deployment Modes
 
-Cloud Router supports two deployment profiles:
+Cloud Router supports two deployment profiles (`<deploymentProfile>.<environment>`):
 
-| Profile | Topology | Use case |
-| --- | --- | --- |
-| `standalone` | `unified-process` | Single-binary deployment (all services in one process) |
-| `cloud` | `split-services` | Containerized deployment (gateway, admin API, app API as separate services) |
+| Profile | Use case |
+| --- | --- |
+| `standalone` | Single-application unit (edge serves portal + APIs on one host) |
+| `cloud` | Cloud deployment against platform API gateway / split services |
 
 ### Build and Package
 

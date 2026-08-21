@@ -86,7 +86,7 @@ Ubuntu/Debian service package:
 
 ```bash
 sudo apt install ./cloudrouter-linux-x64-server-0.3.0.deb
-sudo editor /etc/sdkwork/router/cloudrouter.toml
+sudo editor /etc/sdkwork/router/config.toml
 sudo editor /etc/sdkwork/database/database.secret
 sudo systemctl start cloudrouter
 curl http://127.0.0.1:3900/healthz
@@ -108,7 +108,7 @@ complete domain and the file name stem. Generated configs proxy to
 `http://127.0.0.1:3900`. Use `etc/nginx/NGINX_SAMPLE.conf` as the canonical
 template and `etc/nginx/sdkwork/` for full-domain examples.
 
-The Debian service package creates `/etc/sdkwork/router/cloudrouter.toml`,
+The Debian service package creates `/etc/sdkwork/router/config.toml`,
 `/etc/sdkwork/router/cloudrouter.env`, `/etc/sdkwork/database/database.secret`,
 `/etc/sdkwork/router/redis.secret`, and the writable data/log directories. The
 package enables `cloudrouter.service` on systemd hosts but does not start it
@@ -120,7 +120,7 @@ architecture, and open-file limits. The post-install output prints the runtime
 TOML, service environment, PostgreSQL password file, Redis password file,
 systemd service name, and first-start commands. The package manifest also
 includes a `nativeInstall` layout for deployment automation and support
-diagnostics. Redis is standardized in `cloudrouter.toml`, enabled by default for
+diagnostics. Redis is standardized in `config.toml`, enabled by default for
 server deployments, and must be configured before first startup. Desktop
 packages keep Redis optional and disabled by default.
 

@@ -471,11 +471,11 @@ function createLinuxNativeInstallLayout(packageItem) {
       ? `${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example`
       : `${USER_PRIVATE_ROUTER_ROOT}/config/.env.release.example`,
     runtimeConfig: isService
-      ? `${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml`
+      ? `${LINUX_SERVICE_CONFIG_ROOT}/config.toml`
       : packageItem.databasePolicy.configFile.path,
     runtimeConfigTemplate: isService
-      ? `${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml.example`
-      : `${LINUX_NATIVE_SHARED_ROOT}/config/cloudrouter.toml.example`,
+      ? `${LINUX_SERVICE_CONFIG_ROOT}/config.toml.example`
+      : `${LINUX_NATIVE_SHARED_ROOT}/config/config.toml.example`,
     dataDirectory: packageItem.databasePolicy.dataDirectory.path,
   };
 
@@ -506,8 +506,8 @@ function createLinuxNativeInstallLayout(packageItem) {
         { path: `${LINUX_NATIVE_BIN_DIR}/${packageItem.binaryName}`, owner: 'root', group: 'root', mode: '0755' },
         { path: `${LINUX_NATIVE_BIN_DIR}/${packageItem.installerBinaryName}`, owner: 'root', group: 'root', mode: '0755' },
         { path: LINUX_SERVICE_CONFIG_ROOT, owner: 'root', group: 'sdkwork', mode: '0750' },
-        { path: `${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml`, owner: 'root', group: 'sdkwork', mode: '0640' },
-        { path: `${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml.example`, owner: 'root', group: 'sdkwork', mode: '0640' },
+        { path: `${LINUX_SERVICE_CONFIG_ROOT}/config.toml`, owner: 'root', group: 'sdkwork', mode: '0640' },
+        { path: `${LINUX_SERVICE_CONFIG_ROOT}/config.toml.example`, owner: 'root', group: 'sdkwork', mode: '0640' },
         { path: `${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example`, owner: 'root', group: 'sdkwork', mode: '0640' },
         { path: `${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.env`, owner: 'root', group: 'sdkwork', mode: '0640' },
         { path: LINUX_SERVICE_DATABASE_SECRET_ROOT, owner: 'root', group: 'sdkwork', mode: '0750' },
@@ -526,7 +526,7 @@ function createLinuxNativeInstallLayout(packageItem) {
     commands: isService
       ? {
         configure: [
-          `sudo editor ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml`,
+          `sudo editor ${LINUX_SERVICE_CONFIG_ROOT}/config.toml`,
           `sudo editor ${LINUX_SERVICE_DATABASE_SECRET_FILE}`,
         ],
         start: 'sudo systemctl start cloudrouter',
@@ -543,7 +543,7 @@ function createLinuxNativeInstallLayout(packageItem) {
 function createMacosNativeInstallLayout(packageItem) {
   const isService = packageItem.deploymentMode === 'service';
   const configRoot = MACOS_SERVICE_ROOT;
-  const sharedTemplatePath = `${MACOS_NATIVE_SHARED_ROOT}/config/cloudrouter.toml.example`;
+  const sharedTemplatePath = `${MACOS_NATIVE_SHARED_ROOT}/config/config.toml.example`;
   const serviceInstallRoot = configRoot;
   const installRoot = isService ? serviceInstallRoot : POSIX_INSTALL_ROOT;
   const files = {
@@ -556,7 +556,7 @@ function createMacosNativeInstallLayout(packageItem) {
       ? `${configRoot}/.env.release.example`
       : `${USER_PRIVATE_ROUTER_ROOT}/config/.env.release.example`,
     runtimeConfig: packageItem.databasePolicy.configFile.path,
-    runtimeConfigTemplate: isService ? `${configRoot}/cloudrouter.toml.example` : sharedTemplatePath,
+    runtimeConfigTemplate: isService ? `${configRoot}/config.toml.example` : sharedTemplatePath,
     dataDirectory: packageItem.databasePolicy.dataDirectory.path,
   };
   if (packageItem.databasePolicy.passwordFile?.path) {
@@ -590,8 +590,8 @@ function createMacosNativeInstallLayout(packageItem) {
         { path: `${configRoot}/service`, owner: 'root', group: 'wheel', mode: '0755' },
         { path: `${configRoot}/service/macos`, owner: 'root', group: 'wheel', mode: '0755' },
         { path: `${configRoot}/.env.release.example`, owner: 'root', group: 'wheel', mode: '0640' },
-        { path: `${configRoot}/cloudrouter.toml.example`, owner: 'root', group: 'wheel', mode: '0640' },
-        { path: `${configRoot}/cloudrouter.toml`, owner: 'root', group: 'wheel', mode: '0640' },
+        { path: `${configRoot}/config.toml.example`, owner: 'root', group: 'wheel', mode: '0640' },
+        { path: `${configRoot}/config.toml`, owner: 'root', group: 'wheel', mode: '0640' },
         { path: LINUX_SERVICE_LOG_ROOT, owner: 'root', group: 'wheel', mode: '0750' },
         { path: '/Library/LaunchDaemons/com.sdkwork.cloudrouter.plist', owner: 'root', group: 'wheel', mode: '0644' },
       ]
@@ -627,7 +627,7 @@ function createWindowsNativeInstallLayout(packageItem) {
     installManifest: `${installRoot}/install-manifest.json`,
     releaseEnvTemplate: `${WINDOWS_SYSTEM_ROOT}/.env.release.example`,
     runtimeConfig: packageItem.databasePolicy.configFile.path,
-    runtimeConfigTemplate: `${WINDOWS_SYSTEM_ROOT}/cloudrouter.toml.example`,
+    runtimeConfigTemplate: `${WINDOWS_SYSTEM_ROOT}/config.toml.example`,
     dataDirectory: packageItem.databasePolicy.dataDirectory.path,
   };
   if (packageItem.databasePolicy.passwordFile?.path) {
@@ -657,7 +657,7 @@ function createWindowsNativeInstallLayout(packageItem) {
       { path: installRoot, owner: 'SYSTEM', group: 'Administrators', mode: 'inherited-programfiles-acl' },
       { path: WINDOWS_SYSTEM_ROOT, owner: 'SYSTEM', group: 'Administrators', mode: 'inherited-programdata-acl' },
       { path: `${WINDOWS_SYSTEM_ROOT}/.env.release.example`, owner: 'SYSTEM', group: 'Administrators', mode: 'inherited-programdata-acl' },
-      { path: `${WINDOWS_SYSTEM_ROOT}/cloudrouter.toml.example`, owner: 'SYSTEM', group: 'Administrators', mode: 'inherited-programdata-acl' },
+      { path: `${WINDOWS_SYSTEM_ROOT}/config.toml.example`, owner: 'SYSTEM', group: 'Administrators', mode: 'inherited-programdata-acl' },
       ...(isService
         ? [
           { path: packageItem.databasePolicy.configFile.path, owner: 'SYSTEM', group: 'Administrators', mode: 'inherited-programdata-acl' },
@@ -772,27 +772,27 @@ function createDebianPostinst(plan) {
     `  chown root:sdkwork ${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example || true`,
     `  chmod 0640 ${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example || true`,
     'fi',
-    `if [ -f ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml.example ]; then`,
-    `  chown root:sdkwork ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml.example || true`,
-    `  chmod 0640 ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml.example || true`,
+    `if [ -f ${LINUX_SERVICE_CONFIG_ROOT}/config.toml.example ]; then`,
+    `  chown root:sdkwork ${LINUX_SERVICE_CONFIG_ROOT}/config.toml.example || true`,
+    `  chmod 0640 ${LINUX_SERVICE_CONFIG_ROOT}/config.toml.example || true`,
     'fi',
     `chown -R sdkwork:sdkwork ${LINUX_SERVICE_DATA_ROOT} ${LINUX_SERVICE_LOG_ROOT}`,
     `chmod 0750 ${LINUX_SERVICE_DATA_ROOT} ${LINUX_SERVICE_LOG_ROOT}`,
-    `if [ ! -f ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml ] && [ -f ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml.example ]; then`,
-    `  cp ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml.example ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml`,
+    `if [ ! -f ${LINUX_SERVICE_CONFIG_ROOT}/config.toml ] && [ -f ${LINUX_SERVICE_CONFIG_ROOT}/config.toml.example ]; then`,
+    `  cp ${LINUX_SERVICE_CONFIG_ROOT}/config.toml.example ${LINUX_SERVICE_CONFIG_ROOT}/config.toml`,
     'fi',
-    `if [ -f ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml ]; then`,
-    `  chown root:sdkwork ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml || true`,
-    `  chmod 0640 ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml || true`,
+    `if [ -f ${LINUX_SERVICE_CONFIG_ROOT}/config.toml ]; then`,
+    `  chown root:sdkwork ${LINUX_SERVICE_CONFIG_ROOT}/config.toml || true`,
+    `  chmod 0640 ${LINUX_SERVICE_CONFIG_ROOT}/config.toml || true`,
     'fi',
     `if [ ! -f ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.env ]; then`,
     `  cat > ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.env <<'EOF'`,
     '# CloudRouter service environment.',
     '# Created by the Debian package for service process overrides.',
     `# Keep secrets in ${LINUX_SERVICE_CONFIG_ROOT}/*.secret or protected TOML, not in PORTAL_PUBLIC_* values.`,
-    `# Runtime defaults live in ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml; use this file only for explicit process overrides.`,
+    `# Runtime defaults live in ${LINUX_SERVICE_CONFIG_ROOT}/config.toml; use this file only for explicit process overrides.`,
     'SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE=server',
-    `SDKWORK_CLOUDROUTER_CONFIG_FILE=${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml`,
+    `SDKWORK_CLOUDROUTER_CONFIG_FILE=${LINUX_SERVICE_CONFIG_ROOT}/config.toml`,
     'EOF',
     'fi',
     `if [ -f ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.env ]; then`,
@@ -866,7 +866,7 @@ function debianInstallSummaryLines(plan) {
     'CloudRouter installation summary',
     '-------------------------------',
     `Package: ${plan.package.id}`,
-    `Runtime TOML: ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml`,
+    `Runtime TOML: ${LINUX_SERVICE_CONFIG_ROOT}/config.toml`,
     `Service environment: ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.env`,
     `PostgreSQL password file: ${LINUX_SERVICE_DATABASE_SECRET_FILE}`,
     `Redis password file: ${LINUX_SERVICE_CONFIG_ROOT}/redis.secret`,
@@ -874,7 +874,7 @@ function debianInstallSummaryLines(plan) {
     'Redis is enabled and required by default for server deployments; configure [redis] before first startup.',
     '',
     'Before first start:',
-    `  sudo editor ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml`,
+    `  sudo editor ${LINUX_SERVICE_CONFIG_ROOT}/config.toml`,
     `  sudo editor ${LINUX_SERVICE_DATABASE_SECRET_FILE}`,
     '  sudo systemctl start cloudrouter',
     '  sudo systemctl status cloudrouter --no-pager',
@@ -1011,8 +1011,8 @@ function debianInstallPathForArchivePath(plan, archivePath) {
   }
   if (normalized === RUNTIME_CONFIG_TEMPLATE_PATH) {
     return plan.package.deploymentMode === 'service'
-      ? `${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml.example`
-      : `${LINUX_NATIVE_SHARED_ROOT}/config/cloudrouter.toml.example`;
+      ? `${LINUX_SERVICE_CONFIG_ROOT}/config.toml.example`
+      : `${LINUX_NATIVE_SHARED_ROOT}/config/config.toml.example`;
   }
   if (normalized === 'service/linux/cloudrouter.service') {
     return plan.package.deploymentMode === 'service'
@@ -1081,8 +1081,8 @@ function macosInstallPathForArchivePath(plan, archivePath) {
   }
   if (normalized === RUNTIME_CONFIG_TEMPLATE_PATH) {
     return plan.package.deploymentMode === 'service'
-      ? `${MACOS_SERVICE_ROOT}/cloudrouter.toml.example`
-      : `${MACOS_NATIVE_SHARED_ROOT}/config/cloudrouter.toml.example`;
+      ? `${MACOS_SERVICE_ROOT}/config.toml.example`
+      : `${MACOS_NATIVE_SHARED_ROOT}/config/config.toml.example`;
   }
   if (normalized === 'service/macos/com.sdkwork.cloudrouter.plist') {
     return plan.package.deploymentMode === 'service'
@@ -1119,16 +1119,16 @@ function createMacosPostinstall(plan) {
       `  chown root:wheel "${MACOS_SERVICE_ROOT}/.env.release.example" || true`,
       `  chmod 0640 "${MACOS_SERVICE_ROOT}/.env.release.example" || true`,
       'fi',
-      `if [ -f "${MACOS_SERVICE_ROOT}/cloudrouter.toml.example" ]; then`,
-      `  chown root:wheel "${MACOS_SERVICE_ROOT}/cloudrouter.toml.example" || true`,
-      `  chmod 0640 "${MACOS_SERVICE_ROOT}/cloudrouter.toml.example" || true`,
+      `if [ -f "${MACOS_SERVICE_ROOT}/config.toml.example" ]; then`,
+      `  chown root:wheel "${MACOS_SERVICE_ROOT}/config.toml.example" || true`,
+      `  chmod 0640 "${MACOS_SERVICE_ROOT}/config.toml.example" || true`,
       'fi',
-      `if [ ! -f "${MACOS_SERVICE_ROOT}/cloudrouter.toml" ] && [ -f "${MACOS_SERVICE_ROOT}/cloudrouter.toml.example" ]; then`,
-      `  cp "${MACOS_SERVICE_ROOT}/cloudrouter.toml.example" "${MACOS_SERVICE_ROOT}/cloudrouter.toml"`,
+      `if [ ! -f "${MACOS_SERVICE_ROOT}/config.toml" ] && [ -f "${MACOS_SERVICE_ROOT}/config.toml.example" ]; then`,
+      `  cp "${MACOS_SERVICE_ROOT}/config.toml.example" "${MACOS_SERVICE_ROOT}/config.toml"`,
       'fi',
-      `if [ -f "${MACOS_SERVICE_ROOT}/cloudrouter.toml" ]; then`,
-      `  chown root:wheel "${MACOS_SERVICE_ROOT}/cloudrouter.toml" || true`,
-      `  chmod 0640 "${MACOS_SERVICE_ROOT}/cloudrouter.toml" || true`,
+      `if [ -f "${MACOS_SERVICE_ROOT}/config.toml" ]; then`,
+      `  chown root:wheel "${MACOS_SERVICE_ROOT}/config.toml" || true`,
+      `  chmod 0640 "${MACOS_SERVICE_ROOT}/config.toml" || true`,
       'fi',
       'if [ -f /Library/LaunchDaemons/com.sdkwork.cloudrouter.plist ]; then',
       '  chown root:wheel /Library/LaunchDaemons/com.sdkwork.cloudrouter.plist || true',
@@ -1184,7 +1184,7 @@ function windowsPayloadPathForArchivePath(plan, archivePath) {
     return 'ProgramData/sdkwork/router/.env.release.example';
   }
   if (normalized === RUNTIME_CONFIG_TEMPLATE_PATH) {
-    return 'ProgramData/sdkwork/router/cloudrouter.toml.example';
+    return 'ProgramData/sdkwork/router/config.toml.example';
   }
   if (normalized === PACKAGE_MANIFEST_FILE) {
     return 'install-manifest.json';

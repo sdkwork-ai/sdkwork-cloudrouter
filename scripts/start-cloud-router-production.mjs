@@ -78,7 +78,7 @@ Options:
 Runtime config initialization:
   Missing runtime TOML files are created automatically before startup.
   Server deployments use external PostgreSQL by default.
-  Configure PostgreSQL in cloudrouter.toml with host, database, username,
+  Configure PostgreSQL in config.toml with host, database, username,
   and password_file or protected password.
   Desktop deployments default to SQLite and can start from the generated config.
 
@@ -92,12 +92,12 @@ Production PostgreSQL configuration:
   Or edit [database] in the generated runtime TOML.
 
 Default runtime config paths:
-  Linux server: /etc/sdkwork/router/cloudrouter.toml
-  Linux desktop: ~/.sdkwork/router/config/cloudrouter.toml
-  Windows server: %ProgramData%/sdkwork/router/cloudrouter.toml
-  Windows desktop: %USERPROFILE%/.sdkwork/router/config/cloudrouter.toml
-  macOS server: /Library/Application Support/sdkwork/router/cloudrouter.toml
-  macOS desktop: ~/.sdkwork/router/config/cloudrouter.toml
+  Linux server: /etc/sdkwork/router/config.toml
+  Linux desktop: ~/.sdkwork/router/config/config.toml
+  Windows server: %ProgramData%/sdkwork/router/config.toml
+  Windows desktop: %USERPROFILE%/.sdkwork/router/config/config.toml
+  macOS server: /Library/Application Support/sdkwork/router/config.toml
+  macOS desktop: ~/.sdkwork/router/config/config.toml
 `;
 }
 
@@ -308,7 +308,7 @@ function runtimeConfigLocationForPlatform(
       const programData = getEnv('ProgramData') || getEnv('PROGRAMDATA') || 'C:/ProgramData';
       const root = joinRuntimePath(programData, 'sdkwork/router');
       return {
-        configFile: joinRuntimePath(root, 'cloudrouter.toml'),
+        configFile: joinRuntimePath(root, 'config.toml'),
         dataDirectory: joinRuntimePath(root, 'Data'),
         sqlitePath: joinRuntimePath(root, 'Data/cloudrouter.sqlite'),
       };
@@ -319,7 +319,7 @@ function runtimeConfigLocationForPlatform(
     const root = joinRuntimePath(userProfile, '.sdkwork/router');
     const dataDirectory = joinRuntimePath(root, 'data');
     return {
-      configFile: joinRuntimePath(root, 'config/cloudrouter.toml'),
+      configFile: joinRuntimePath(root, 'config/config.toml'),
       dataDirectory,
       sqlitePath: joinRuntimePath(dataDirectory, 'cloudrouter.sqlite'),
     };
@@ -328,7 +328,7 @@ function runtimeConfigLocationForPlatform(
     if (normalizedDeploymentMode === 'server') {
       const root = '/Library/Application Support/sdkwork/router';
       return {
-        configFile: joinRuntimePath(root, 'cloudrouter.toml'),
+        configFile: joinRuntimePath(root, 'config.toml'),
         dataDirectory: joinRuntimePath(root, 'Data'),
         sqlitePath: joinRuntimePath(root, 'Data/cloudrouter.sqlite'),
       };
@@ -337,7 +337,7 @@ function runtimeConfigLocationForPlatform(
     const root = joinRuntimePath(home, '.sdkwork/router');
     const dataDirectory = joinRuntimePath(root, 'data');
     return {
-      configFile: joinRuntimePath(root, 'config/cloudrouter.toml'),
+      configFile: joinRuntimePath(root, 'config/config.toml'),
       dataDirectory,
       sqlitePath: joinRuntimePath(dataDirectory, 'cloudrouter.sqlite'),
     };
@@ -345,7 +345,7 @@ function runtimeConfigLocationForPlatform(
 
   if (normalizedDeploymentMode === 'server') {
     return {
-      configFile: `${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml`,
+      configFile: `${LINUX_SERVICE_CONFIG_ROOT}/config.toml`,
       dataDirectory: LINUX_SERVICE_DATA_ROOT,
       sqlitePath: `${LINUX_SERVICE_DATA_ROOT}/cloudrouter.sqlite`,
     };
@@ -354,7 +354,7 @@ function runtimeConfigLocationForPlatform(
   const root = joinRuntimePath(home, '.sdkwork/router');
   const dataDirectory = joinRuntimePath(root, 'data');
   return {
-    configFile: joinRuntimePath(root, 'config/cloudrouter.toml'),
+    configFile: joinRuntimePath(root, 'config/config.toml'),
     dataDirectory,
     sqlitePath: joinRuntimePath(dataDirectory, 'cloudrouter.sqlite'),
   };
@@ -494,12 +494,12 @@ function runtimeConfigPasswordFileForMode(deploymentMode, configFile, dataDirect
     return null;
   }
   const normalizedConfigFile = toPortablePath(configFile);
-  if (normalizedConfigFile === `${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml`) {
+  if (normalizedConfigFile === `${LINUX_SERVICE_CONFIG_ROOT}/config.toml`) {
     return LINUX_SERVICE_DATABASE_SECRET_FILE;
   }
   const normalizedDataDirectory = toPortablePath(dataDirectory);
-  if (normalizedConfigFile.endsWith('/cloudrouter.toml')) {
-    return `${normalizedConfigFile.slice(0, -'/cloudrouter.toml'.length)}/database.secret`;
+  if (normalizedConfigFile.endsWith('/config.toml')) {
+    return `${normalizedConfigFile.slice(0, -'/config.toml'.length)}/database.secret`;
   }
   return joinRuntimePath(normalizedDataDirectory, 'database.secret');
 }

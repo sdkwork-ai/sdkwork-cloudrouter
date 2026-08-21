@@ -207,7 +207,7 @@ function validateDebianArtifact(packageItem, artifactBytes) {
     requireText(postinst, `chmod 0755 ${LINUX_SERVICE_RUNTIME_ROOT} ${LINUX_SERVICE_RUNTIME_ROOT}/bin /usr/bin/cloudrouter /usr/bin/cloudrouterctl`, 'postinst runtime binary modes', issues);
     requireText(postinst, `chmod 0750 ${LINUX_SERVICE_CONFIG_ROOT}`, 'postinst config directory mode', issues);
     requireText(postinst, `chmod 0640 ${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example`, 'postinst release env template mode', issues);
-    requireText(postinst, `chmod 0640 ${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml.example`, 'postinst config template mode', issues);
+    requireText(postinst, `chmod 0640 ${LINUX_SERVICE_CONFIG_ROOT}/config.toml.example`, 'postinst config template mode', issues);
     requireText(postinst, `chmod 0750 ${LINUX_SERVICE_DATA_ROOT} ${LINUX_SERVICE_LOG_ROOT}`, 'postinst state/log directory modes', issues);
   } else {
     requireText(postinst, `chmod 0755 ${LINUX_SERVICE_RUNTIME_ROOT} ${LINUX_SERVICE_RUNTIME_ROOT}/bin /usr/bin/cloudrouter /usr/bin/cloudrouterctl`, 'desktop postinst binary modes', issues);
@@ -241,10 +241,10 @@ function validateDebianArtifact(packageItem, artifactBytes) {
   if (packageItem.deploymentMode === 'service') {
     requireTarEntry(dataEntries, `.${LINUX_SERVICE_CONFIG_ROOT}`, 'directory', 0o750, issues);
     requireTarEntry(dataEntries, `.${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example`, 'file', 0o640, issues);
-    requireTarEntry(dataEntries, `.${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml.example`, 'file', 0o640, issues);
+    requireTarEntry(dataEntries, `.${LINUX_SERVICE_CONFIG_ROOT}/config.toml.example`, 'file', 0o640, issues);
     requireTarEntry(dataEntries, './lib/systemd/system/cloudrouter.service', 'file', 0o644, issues);
     requireParentBeforeChild(dataEntryNames, `.${LINUX_SERVICE_CONFIG_ROOT}`, `.${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example`, issues);
-    requireParentBeforeChild(dataEntryNames, `.${LINUX_SERVICE_CONFIG_ROOT}`, `.${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml.example`, issues);
+    requireParentBeforeChild(dataEntryNames, `.${LINUX_SERVICE_CONFIG_ROOT}`, `.${LINUX_SERVICE_CONFIG_ROOT}/config.toml.example`, issues);
     const systemdUnit = dataEntries.get('./lib/systemd/system/cloudrouter.service')?.data.toString('utf8') ?? '';
     requireText(systemdUnit, `WorkingDirectory=${LINUX_SERVICE_RUNTIME_ROOT}`, 'systemd working directory', issues);
     requireText(systemdUnit, 'ExecStartPre=/usr/bin/cloudrouterctl ensure', 'systemd ensure command', issues);
@@ -257,12 +257,12 @@ function validateDebianArtifact(packageItem, artifactBytes) {
     requireText(systemdUnit, `ReadOnlyPaths=${LINUX_SERVICE_RUNTIME_ROOT} ${LINUX_SERVICE_CONFIG_ROOT}`, 'systemd readonly paths', issues);
   } else {
     requireTarEntry(dataEntries, `${linuxSharedArchiveRoot}/config`, 'directory', 0o755, issues);
-    requireTarEntry(dataEntries, `${linuxSharedArchiveRoot}/config/cloudrouter.toml.example`, 'file', 0o644, issues);
-    requireParentBeforeChild(dataEntryNames, `${linuxSharedArchiveRoot}/config`, `${linuxSharedArchiveRoot}/config/cloudrouter.toml.example`, issues);
+    requireTarEntry(dataEntries, `${linuxSharedArchiveRoot}/config/config.toml.example`, 'file', 0o644, issues);
+    requireParentBeforeChild(dataEntryNames, `${linuxSharedArchiveRoot}/config`, `${linuxSharedArchiveRoot}/config/config.toml.example`, issues);
     if ([...dataEntries.keys()].some((entry) => entry.endsWith('/.env.release.example'))) {
       issues.push('Linux desktop native package must not install .env.release.example into system payload');
     }
-    if (dataEntries.has(`.${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml.example`)) {
+    if (dataEntries.has(`.${LINUX_SERVICE_CONFIG_ROOT}/config.toml.example`)) {
       issues.push(`Linux desktop native package must keep runtime config template under ${LINUX_SHARED_ROOT}/config`);
     }
   }
@@ -297,14 +297,14 @@ function validateNativeManifest(packageItem, manifest) {
   if (packageItem.deploymentMode === 'service') {
     requireManifestPath(nativeInstall, 'installRoot', LINUX_SERVICE_RUNTIME_ROOT, issues);
     requireManifestPath(nativeInstall, 'files.releaseEnvTemplate', `${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example`, issues);
-    requireManifestPath(nativeInstall, 'files.runtimeConfigTemplate', `${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml.example`, issues);
+    requireManifestPath(nativeInstall, 'files.runtimeConfigTemplate', `${LINUX_SERVICE_CONFIG_ROOT}/config.toml.example`, issues);
     requirePermission(nativeInstall, LINUX_SERVICE_CONFIG_ROOT, 'root', 'sdkwork', '0750', issues);
     requirePermission(nativeInstall, `${LINUX_SERVICE_CONFIG_ROOT}/.env.release.example`, 'root', 'sdkwork', '0640', issues);
     requirePermission(nativeInstall, LINUX_SERVICE_DATA_ROOT, 'sdkwork', 'sdkwork', '0750', issues);
     requirePermission(nativeInstall, LINUX_SERVICE_LOG_ROOT, 'sdkwork', 'sdkwork', '0750', issues);
   } else {
     requireManifestPath(nativeInstall, 'files.releaseEnvTemplate', `${USER_PRIVATE_ROUTER_ROOT}/config/.env.release.example`, issues);
-    requireManifestPath(nativeInstall, 'files.runtimeConfigTemplate', `${LINUX_SHARED_ROOT}/config/cloudrouter.toml.example`, issues);
+    requireManifestPath(nativeInstall, 'files.runtimeConfigTemplate', `${LINUX_SHARED_ROOT}/config/config.toml.example`, issues);
     requirePermission(nativeInstall, LINUX_SERVICE_RUNTIME_ROOT, 'root', 'root', '0755', issues);
     requirePermission(nativeInstall, '/usr/bin/cloudrouter', 'root', 'root', '0755', issues);
   }
@@ -345,20 +345,20 @@ function validateWindowsNativeManifest(packageItem, manifest) {
   requirePermission(nativeInstall, WINDOWS_INSTALL_ROOT, 'SYSTEM', 'Administrators', 'inherited-programfiles-acl', issues);
   requirePermission(nativeInstall, WINDOWS_SYSTEM_ROOT, 'SYSTEM', 'Administrators', 'inherited-programdata-acl', issues);
   requirePermission(nativeInstall, `${WINDOWS_SYSTEM_ROOT}/.env.release.example`, 'SYSTEM', 'Administrators', 'inherited-programdata-acl', issues);
-  requirePermission(nativeInstall, `${WINDOWS_SYSTEM_ROOT}/cloudrouter.toml.example`, 'SYSTEM', 'Administrators', 'inherited-programdata-acl', issues);
+  requirePermission(nativeInstall, `${WINDOWS_SYSTEM_ROOT}/config.toml.example`, 'SYSTEM', 'Administrators', 'inherited-programdata-acl', issues);
   if (packageItem.deploymentMode === 'service') {
     requireManifestPath(nativeInstall, 'files.releaseEnvTemplate', `${WINDOWS_SYSTEM_ROOT}/.env.release.example`, issues);
-    requireManifestPath(nativeInstall, 'files.runtimeConfigTemplate', `${WINDOWS_SYSTEM_ROOT}/cloudrouter.toml.example`, issues);
-    requireManifestPath(nativeInstall, 'files.runtimeConfig', `${WINDOWS_SYSTEM_ROOT}/cloudrouter.toml`, issues);
-    requirePermission(nativeInstall, `${WINDOWS_SYSTEM_ROOT}/cloudrouter.toml`, 'SYSTEM', 'Administrators', 'inherited-programdata-acl', issues);
+    requireManifestPath(nativeInstall, 'files.runtimeConfigTemplate', `${WINDOWS_SYSTEM_ROOT}/config.toml.example`, issues);
+    requireManifestPath(nativeInstall, 'files.runtimeConfig', `${WINDOWS_SYSTEM_ROOT}/config.toml`, issues);
+    requirePermission(nativeInstall, `${WINDOWS_SYSTEM_ROOT}/config.toml`, 'SYSTEM', 'Administrators', 'inherited-programdata-acl', issues);
     requirePermission(nativeInstall, `${WINDOWS_SYSTEM_ROOT}/database.secret`, 'SYSTEM', 'Administrators', 'inherited-programdata-acl', issues);
     requirePermission(nativeInstall, `${WINDOWS_SYSTEM_ROOT}/redis.secret`, 'SYSTEM', 'Administrators', 'inherited-programdata-acl', issues);
     requirePermission(nativeInstall, `${WINDOWS_SYSTEM_ROOT}/Data`, 'SYSTEM', 'Administrators', 'inherited-programdata-acl', issues);
   } else {
     requireManifestPath(nativeInstall, 'files.releaseEnvTemplate', `${WINDOWS_SYSTEM_ROOT}/.env.release.example`, issues);
-    requireManifestPath(nativeInstall, 'files.runtimeConfigTemplate', `${WINDOWS_SYSTEM_ROOT}/cloudrouter.toml.example`, issues);
-    requireManifestPath(nativeInstall, 'files.runtimeConfig', `${WINDOWS_USER_ROOT}/config/cloudrouter.toml`, issues);
-    requirePermission(nativeInstall, `${WINDOWS_USER_ROOT}/config/cloudrouter.toml`, 'current-user', 'current-user', 'user-profile-acl', issues);
+    requireManifestPath(nativeInstall, 'files.runtimeConfigTemplate', `${WINDOWS_SYSTEM_ROOT}/config.toml.example`, issues);
+    requireManifestPath(nativeInstall, 'files.runtimeConfig', `${WINDOWS_USER_ROOT}/config/config.toml`, issues);
+    requirePermission(nativeInstall, `${WINDOWS_USER_ROOT}/config/config.toml`, 'current-user', 'current-user', 'user-profile-acl', issues);
     requirePermission(nativeInstall, `${WINDOWS_USER_ROOT}/data`, 'current-user', 'current-user', 'user-profile-acl', issues);
   }
   return issues;
@@ -376,13 +376,13 @@ function validateMacosNativeManifest(packageItem, manifest) {
     requireManifestPath(nativeInstall, 'files.binary', `${MACOS_SERVICE_ROOT}/bin/cloudrouter`, issues);
     requireManifestPath(nativeInstall, 'files.installer', `${MACOS_SERVICE_ROOT}/bin/cloudrouterctl`, issues);
     requireManifestPath(nativeInstall, 'files.releaseEnvTemplate', `${MACOS_SERVICE_ROOT}/.env.release.example`, issues);
-    requireManifestPath(nativeInstall, 'files.runtimeConfigTemplate', `${MACOS_SERVICE_ROOT}/cloudrouter.toml.example`, issues);
+    requireManifestPath(nativeInstall, 'files.runtimeConfigTemplate', `${MACOS_SERVICE_ROOT}/config.toml.example`, issues);
     requireManifestPath(nativeInstall, 'files.serviceRunner', `${MACOS_SERVICE_ROOT}/service/macos/cloudrouter-service-runner`, issues);
     requirePermission(nativeInstall, MACOS_SERVICE_ROOT, 'root', 'wheel', '0750', issues);
     requirePermission(nativeInstall, `${MACOS_SERVICE_ROOT}/bin`, 'root', 'wheel', '0755', issues);
     requirePermission(nativeInstall, `${MACOS_SERVICE_ROOT}/.env.release.example`, 'root', 'wheel', '0640', issues);
-    requirePermission(nativeInstall, `${MACOS_SERVICE_ROOT}/cloudrouter.toml.example`, 'root', 'wheel', '0640', issues);
-    requirePermission(nativeInstall, `${MACOS_SERVICE_ROOT}/cloudrouter.toml`, 'root', 'wheel', '0640', issues);
+    requirePermission(nativeInstall, `${MACOS_SERVICE_ROOT}/config.toml.example`, 'root', 'wheel', '0640', issues);
+    requirePermission(nativeInstall, `${MACOS_SERVICE_ROOT}/config.toml`, 'root', 'wheel', '0640', issues);
     requirePermission(nativeInstall, LINUX_SERVICE_LOG_ROOT, 'root', 'wheel', '0750', issues);
     requirePermission(nativeInstall, '/Library/LaunchDaemons/com.sdkwork.cloudrouter.plist', 'root', 'wheel', '0644', issues);
   } else {
@@ -390,7 +390,7 @@ function validateMacosNativeManifest(packageItem, manifest) {
     requireManifestPath(nativeInstall, 'files.binary', `${POSIX_INSTALL_ROOT}/bin/cloudrouter`, issues);
     requireManifestPath(nativeInstall, 'files.installer', `${POSIX_INSTALL_ROOT}/bin/cloudrouterctl`, issues);
     requireManifestPath(nativeInstall, 'files.releaseEnvTemplate', `${USER_PRIVATE_ROUTER_ROOT}/config/.env.release.example`, issues);
-    requireManifestPath(nativeInstall, 'files.runtimeConfigTemplate', `${MACOS_SHARED_ROOT}/config/cloudrouter.toml.example`, issues);
+    requireManifestPath(nativeInstall, 'files.runtimeConfigTemplate', `${MACOS_SHARED_ROOT}/config/config.toml.example`, issues);
     requirePermission(nativeInstall, POSIX_INSTALL_ROOT, 'root', 'wheel', '0755', issues);
     requirePermission(nativeInstall, `${POSIX_INSTALL_ROOT}/bin`, 'root', 'wheel', '0755', issues);
     requirePermission(nativeInstall, `${MACOS_SHARED_ROOT}/config`, 'root', 'wheel', '0755', issues);
@@ -403,7 +403,7 @@ function validateTarGzArtifact(packageItem, artifactBytes) {
   const entries = readTarEntries(gunzipSync(artifactBytes));
   const binaryName = packageItem.platform === 'windows' ? 'cloudrouter.exe' : 'cloudrouter';
   const installerName = packageItem.platform === 'windows' ? 'cloudrouterctl.exe' : 'cloudrouterctl';
-  for (const requiredEntry of [`bin/${binaryName}`, `bin/${installerName}`, 'portal/dist/index.html', 'config/cloudrouter.toml.example', 'INSTALL.md', 'install-manifest.json']) {
+  for (const requiredEntry of [`bin/${binaryName}`, `bin/${installerName}`, 'portal/dist/index.html', 'config/config.toml.example', 'INSTALL.md', 'install-manifest.json']) {
     if (!entries.has(requiredEntry)) {
       issues.push(`${packageItem.id} archive missing ${requiredEntry}`);
     }
@@ -419,7 +419,7 @@ function validateZipArtifact(packageItem, artifactBytes) {
   const entries = readZipEntries(artifactBytes);
   const binaryName = packageItem.platform === 'windows' ? 'cloudrouter.exe' : 'cloudrouter';
   const installerName = packageItem.platform === 'windows' ? 'cloudrouterctl.exe' : 'cloudrouterctl';
-  for (const requiredEntry of [`bin/${binaryName}`, `bin/${installerName}`, 'portal/dist/index.html', 'config/cloudrouter.toml.example', 'INSTALL.md', 'install-manifest.json']) {
+  for (const requiredEntry of [`bin/${binaryName}`, `bin/${installerName}`, 'portal/dist/index.html', 'config/config.toml.example', 'INSTALL.md', 'install-manifest.json']) {
     if (!entries.has(requiredEntry)) {
       issues.push(`${packageItem.id} zip missing ${requiredEntry}`);
     }

@@ -59,7 +59,9 @@ export function PricingPage() {
       showMismatchHint(selectionCategory);
       return;
     }
-    setSelectedRates((current) => [...current, rate]);
+    // 选同一 model 的全部 rate（多张计量行），比价弹窗才能完整列出各计量项价格。
+    const allRatesForModel = (catalog?.items ?? []).filter((item) => compareKeyOf(item) === key);
+    setSelectedRates((current) => [...current, ...allRatesForModel]);
   };
 
   const clearSelection = () => {
@@ -239,7 +241,6 @@ export function PricingPage() {
       <PricingCompareDrawer
         open={compareOpen}
         selections={selectedRates}
-        defaultRegion={regionCode}
         onRemove={(key) => setSelectedRates((current) => current.filter((selected) => compareKeyOf(selected) !== key))}
         onClear={clearSelection}
         onClose={() => setCompareOpen(false)}

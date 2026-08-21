@@ -15,7 +15,7 @@ FROM debian:bookworm-slim
 ARG GATEWAY_BINARY=cloudrouter
 ARG INSTALLER_BINARY=cloudrouterctl
 ARG INSTALL_ROOT=/opt/sdkwork/router
-ARG CONFIG_FILE=/etc/sdkwork/router/cloudrouter.toml
+ARG CONFIG_FILE=/etc/sdkwork/router/config.toml
 ARG VERSION=0.0.0
 
 # Runtime directory layout (RUNTIME_DIRECTORY_SPEC §4.5 Container Scope):

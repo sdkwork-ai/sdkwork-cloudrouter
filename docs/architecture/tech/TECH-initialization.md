@@ -52,7 +52,7 @@ Linux service packages should follow this order:
 
 ```bash
 sudo apt install ./cloudrouter-linux-x64-server-0.3.0.deb
-sudo editor /etc/sdkwork/router/cloudrouter.toml
+sudo editor /etc/sdkwork/router/config.toml
 sudo systemctl start cloudrouter
 sudo systemctl status cloudrouter --no-pager
 ```
@@ -63,28 +63,28 @@ server/service/container defaults:
 
 | Platform | Config file |
 | --- | --- |
-| Windows | `%ProgramData%/sdkwork/router/cloudrouter.toml` |
-| Linux | `/etc/sdkwork/router/cloudrouter.toml` |
-| macOS | `/Library/Application Support/sdkwork/router/cloudrouter.toml` |
+| Windows | `%ProgramData%/sdkwork/router/config.toml` |
+| Linux | `/etc/sdkwork/router/config.toml` |
+| macOS | `/Library/Application Support/sdkwork/router/config.toml` |
 
 desktop defaults:
 
 | Platform | Config file |
 | --- | --- |
-| Windows | `%USERPROFILE%/.sdkwork/router/config/cloudrouter.toml` |
-| Linux | `~/.sdkwork/router/config/cloudrouter.toml` |
-| macOS | `~/.sdkwork/router/config/cloudrouter.toml` |
+| Windows | `%USERPROFILE%/.sdkwork/router/config/config.toml` |
+| Linux | `~/.sdkwork/router/config/config.toml` |
+| macOS | `~/.sdkwork/router/config/config.toml` |
 
 Override with `SDKWORK_CLOUDROUTER_CONFIG_FILE`:
 
 ```bash
-export SDKWORK_CLOUDROUTER_CONFIG_FILE="/etc/sdkwork/router/cloudrouter.toml"
+export SDKWORK_CLOUDROUTER_CONFIG_FILE="/etc/sdkwork/router/config.toml"
 ```
 
 PowerShell:
 
 ```powershell
-$env:SDKWORK_CLOUDROUTER_CONFIG_FILE = Join-Path $env:ProgramData "sdkwork/router/cloudrouter.toml"
+$env:SDKWORK_CLOUDROUTER_CONFIG_FILE = Join-Path $env:ProgramData "sdkwork/router/config.toml"
 ```
 
 Native package install locations:
@@ -274,7 +274,7 @@ when a database routing channel does not define its own retry policy.
 For production server/service/container deployments, use the structured TOML fields above. `password_file` is the preferred secret path. Direct `password` is supported only when the TOML file is protected as a secret-bearing file:
 
 - `password_file` can be absolute.
-- `password_file` can be relative to the directory containing `cloudrouter.toml`.
+- `password_file` can be relative to the directory containing `config.toml`.
 - `password_file` can use `${VAR}`, `$VAR`, `%VAR%`, or `~` expansion for platform-managed secret paths.
 
 ```toml
@@ -473,7 +473,7 @@ Example installer output:
 }
 ```
 
-When you need to quickly recover administrator access, reset the `admin` password through the root `pnpm` commands. Development mode targets the default `target/dev/cloudrouter.sqlite` database, while release mode uses the database configuration from the runtime `cloudrouter.toml`. The wrapper does not forward the password to the installer/cargo child process as a command-line argument. To also avoid exposing the password in shell history or the Node process arguments, provide it through `SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD`.
+When you need to quickly recover administrator access, reset the `admin` password through the root `pnpm` commands. Development mode targets the default `target/dev/cloudrouter.sqlite` database, while release mode uses the database configuration from the runtime `config.toml`. The wrapper does not forward the password to the installer/cargo child process as a command-line argument. To also avoid exposing the password in shell history or the Node process arguments, provide it through `SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD`.
 
 ```bash
 pnpm admin:reset:dev -- --password "Admin-Dev-Password-2026!"

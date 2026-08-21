@@ -36,14 +36,14 @@ desktop local data profile stores SQLite under `~/.sdkwork/router/data/cloudrout
 
 | Target | Runtime TOML | Process overrides | Secret/config root | Data directory | Log directory |
 | --- | --- | --- | --- | --- | --- |
-| Ubuntu/Linux service | `/etc/sdkwork/router/cloudrouter.toml` | `/etc/sdkwork/router/cloudrouter.env` | `/etc/sdkwork/router` | `/var/lib/sdkwork/router` | `/var/log/sdkwork/router` |
+| Ubuntu/Linux service | `/etc/sdkwork/router/config.toml` | `/etc/sdkwork/router/cloudrouter.env` | `/etc/sdkwork/router` | `/var/lib/sdkwork/router` | `/var/log/sdkwork/router` |
 | Linux private runtime assets | N/A | N/A | `/usr/lib/sdkwork/router` for private binaries and portal assets | `/var/lib/sdkwork/router` | `/var/log/sdkwork/router` |
 | Linux archive/container root | config is mounted or generated from package template | host/platform managed | `/opt/sdkwork/router` package root | mounted or `/var/lib/sdkwork/router` | mounted or `/var/log/sdkwork/router` |
-| Linux desktop | `~/.sdkwork/router/config/cloudrouter.toml` | user process env only | user profile | `~/.sdkwork/router/data` | user/runtime log location |
-| Windows service | `%ProgramData%/sdkwork/router/cloudrouter.toml` | service process env | `%ProgramData%/sdkwork/router` | `%ProgramData%/sdkwork/router/Data` | service log sink |
-| Windows desktop | `%USERPROFILE%/.sdkwork/router/config/cloudrouter.toml` | user process env | user profile | `%USERPROFILE%/.sdkwork/router/data` | user log sink |
-| macOS service | `/Library/Application Support/sdkwork/router/cloudrouter.toml` | launchd environment | `/Library/Application Support/sdkwork/router` | `/Library/Application Support/sdkwork/router` | `/var/log/sdkwork/router` |
-| macOS desktop | `~/.sdkwork/router/config/cloudrouter.toml` | user process env | user profile | `~/.sdkwork/router/data` | user log sink |
+| Linux desktop | `~/.sdkwork/router/config/config.toml` | user process env only | user profile | `~/.sdkwork/router/data` | user/runtime log location |
+| Windows service | `%ProgramData%/sdkwork/router/config.toml` | service process env | `%ProgramData%/sdkwork/router` | `%ProgramData%/sdkwork/router/Data` | service log sink |
+| Windows desktop | `%USERPROFILE%/.sdkwork/router/config/config.toml` | user process env | user profile | `%USERPROFILE%/.sdkwork/router/data` | user log sink |
+| macOS service | `/Library/Application Support/sdkwork/router/config.toml` | launchd environment | `/Library/Application Support/sdkwork/router` | `/Library/Application Support/sdkwork/router` | `/var/log/sdkwork/router` |
+| macOS desktop | `~/.sdkwork/router/config/config.toml` | user process env | user profile | `~/.sdkwork/router/data` | user log sink |
 
 Guides:
 

@@ -225,7 +225,7 @@ class WorkspaceDeliveryStandardTest(unittest.TestCase):
             "scripts/build-cloud-router-install-package.mjs",
             "scripts/smoke-install-package-init.mjs",
             "install-packages-manifest.json",
-            "config/cloudrouter.toml.example",
+            "config/config.toml.example",
             "SDKWORK_CLOUDROUTER_CONFIG_FILE",
             "SDKWORK_DATABASE_URL",
             "SDKWORK_DATABASE_MAX_CONNECTIONS",

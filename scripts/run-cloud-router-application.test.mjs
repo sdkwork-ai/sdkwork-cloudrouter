@@ -1329,7 +1329,7 @@ test('installation documentation covers release, source, initialization, usage, 
   assert.ok(postgresqlIndex.includes('Workspace desktop development commands are gateway-backed client commands; they'));
   assert.ok(postgresqlIndex.includes('do not start a product backend service. Packaged desktop runtime and'));
   assert.ok(postgresqlIndex.includes('desktop local data profile stores SQLite under `~/.sdkwork/router/data/cloudrouter.sqlite`'));
-  assert.ok(postgresqlProduction.includes('/etc/sdkwork/router/cloudrouter.toml'));
+  assert.ok(postgresqlProduction.includes('/etc/sdkwork/router/config.toml'));
   assert.ok(postgresqlProduction.includes('/etc/sdkwork/database/database.secret'));
   assert.ok(postgresqlProduction.includes('password_file = "/etc/sdkwork/database/database.secret"'));
   assert.ok(postgresqlProduction.includes('SDKWORK_DATABASE_URL'));
@@ -2985,7 +2985,7 @@ test('admin reset wrapper maps release mode through production runtime config an
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'reset-admin-account.mjs')).href
   );
   const fixtureRoot = path.join(workspaceRoot, 'target', 'admin-reset-config-tests', `release-${Date.now()}`);
-  const configFile = path.join(fixtureRoot, 'cloudrouter.toml');
+  const configFile = path.join(fixtureRoot, 'config.toml');
   rmSync(fixtureRoot, { recursive: true, force: true });
   mkdirSync(fixtureRoot, { recursive: true });
 
@@ -3054,7 +3054,7 @@ test('database management wrapper maps pnpm init and upgrade commands to the ins
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'manage-cloud-router-database.mjs')).href
   );
   const fixtureRoot = path.join(workspaceRoot, 'target', 'database-management-tests', `config-${Date.now()}`);
-  const configFile = path.join(fixtureRoot, 'cloudrouter.toml');
+  const configFile = path.join(fixtureRoot, 'config.toml');
 
   const initSettings = module.parseDatabaseManagementArgs([
     'init',
@@ -3159,7 +3159,7 @@ test('database management wrapper forwards catalog refresh options and supports 
     'refresh-catalog',
     '--',
     '--config-file',
-    'etc/cloudrouter.toml',
+    'etc/config.toml',
     '--deployment-mode',
     'desktop',
     '--dry-run',
@@ -3189,7 +3189,7 @@ test('database management wrapper forwards catalog refresh options and supports 
     'openai',
     '--force',
   ]);
-  assert.equal(step.env.SDKWORK_CLOUDROUTER_CONFIG_FILE, path.resolve(workspaceRoot, 'etc/cloudrouter.toml'));
+  assert.equal(step.env.SDKWORK_CLOUDROUTER_CONFIG_FILE, path.resolve(workspaceRoot, 'etc/config.toml'));
   assert.equal(step.env.SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE, 'desktop');
   assert.equal(
     step.env.SDKWORK_IAM_APP_ROOT,
@@ -3632,7 +3632,7 @@ test('production starter supports help, dry-run, and full edge access matrix', a
       '--deployment-mode',
       'server',
       '--config-file',
-      '/etc/sdkwork/router/cloudrouter.toml',
+      '/etc/sdkwork/router/config.toml',
       '--database-url',
       'postgresql://sdkwork_ai_prod:secret@db.internal:5432/sdkwork_ai_prod',
       '--database-max-connections',
@@ -3656,7 +3656,7 @@ test('production starter supports help, dry-run, and full edge access matrix', a
       initConfigOnly: false,
       forwardingMode: true,
       deploymentMode: 'server',
-      configFile: '/etc/sdkwork/router/cloudrouter.toml',
+      configFile: '/etc/sdkwork/router/config.toml',
       databaseUrl: 'postgresql://sdkwork_ai_prod:secret@db.internal:5432/sdkwork_ai_prod',
       databaseMaxConnections: '24',
       serverBind: '0.0.0.0:12900',
@@ -3836,7 +3836,7 @@ test('production starter resolves OS-standard runtime config locations', async (
   });
   assert.equal(
     slashPath(linuxDesktop.configFile),
-    '/home/ada/.sdkwork/router/config/cloudrouter.toml',
+    '/home/ada/.sdkwork/router/config/config.toml',
   );
   assert.equal(
     slashPath(linuxDesktop.dataDirectory),
@@ -3848,7 +3848,7 @@ test('production starter resolves OS-standard runtime config locations', async (
   });
   assert.equal(
     slashPath(windowsServer.configFile),
-    'C:/ProgramData/sdkwork/router/cloudrouter.toml',
+    'C:/ProgramData/sdkwork/router/config.toml',
   );
   assert.equal(
     slashPath(windowsServer.dataDirectory),
@@ -3860,7 +3860,7 @@ test('production starter resolves OS-standard runtime config locations', async (
   });
   assert.equal(
     slashPath(macosDesktop.configFile),
-    '/Users/ada/.sdkwork/router/config/cloudrouter.toml',
+    '/Users/ada/.sdkwork/router/config/config.toml',
   );
   assert.equal(
     slashPath(macosDesktop.dataDirectory),
@@ -3895,7 +3895,7 @@ test('production starter auto-initializes desktop SQLite runtime config', async 
   assert.equal(result.blockingIssue, null);
   assert.equal(
     slashPath(result.configFile),
-    slashPath(path.join(env.HOME, '.sdkwork', 'router', 'config', 'cloudrouter.toml')),
+    slashPath(path.join(env.HOME, '.sdkwork', 'router', 'config', 'config.toml')),
   );
   assert.equal(result.env.SDKWORK_CLOUDROUTER_CONFIG_FILE, result.configFile);
   assert.equal(result.env.SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE, 'desktop');
@@ -3916,7 +3916,7 @@ test('production starter initializes server PostgreSQL runtime config template',
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'start-cloud-router-production.mjs')).href
   );
   const fixtureRoot = path.join(workspaceRoot, 'target', 'start-production-config-tests', `server-${Date.now()}`);
-  const configFile = path.join(fixtureRoot, 'etc', 'cloudrouter.toml');
+  const configFile = path.join(fixtureRoot, 'etc', 'config.toml');
   rmSync(fixtureRoot, { recursive: true, force: true });
   mkdirSync(fixtureRoot, { recursive: true });
 
@@ -3971,7 +3971,7 @@ test('production starter blocks placeholder PostgreSQL password files', async ()
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'start-cloud-router-production.mjs')).href
   );
   const fixtureRoot = path.join(workspaceRoot, 'target', 'start-production-config-tests', `server-password-file-${Date.now()}`);
-  const configFile = path.join(fixtureRoot, 'etc', 'cloudrouter.toml');
+  const configFile = path.join(fixtureRoot, 'etc', 'config.toml');
   const passwordFile = path.join(fixtureRoot, 'etc', 'database.secret');
   rmSync(fixtureRoot, { recursive: true, force: true });
   mkdirSync(path.dirname(configFile), { recursive: true });
@@ -4019,7 +4019,7 @@ test('production starter expands password_file environment variables', async () 
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'start-cloud-router-production.mjs')).href
   );
   const fixtureRoot = path.join(workspaceRoot, 'target', 'start-production-config-tests', `server-password-env-${Date.now()}`);
-  const configFile = path.join(fixtureRoot, 'etc', 'cloudrouter.toml');
+  const configFile = path.join(fixtureRoot, 'etc', 'config.toml');
   const secretRoot = path.join(fixtureRoot, 'secrets');
   const passwordFile = path.join(secretRoot, 'database.secret');
   rmSync(fixtureRoot, { recursive: true, force: true });
@@ -4079,16 +4079,16 @@ test('production starter help documents automatic runtime config initialization'
   assert.ok(stdout.includes('Runtime config initialization:'));
   assert.ok(stdout.includes('Missing runtime TOML files are created automatically before startup.'));
   assert.ok(stdout.includes('Server deployments use external PostgreSQL by default.'));
-  assert.ok(stdout.includes('Configure PostgreSQL in cloudrouter.toml with host, database, username,'));
+  assert.ok(stdout.includes('Configure PostgreSQL in config.toml with host, database, username,'));
   assert.ok(stdout.includes('Desktop deployments default to SQLite and can start from the generated config.'));
   assert.ok(stdout.includes('pnpm start -- --init-config-only --deployment-mode server'));
   assert.ok(stdout.includes(`SDKWORK_DATABASE_URL="${productionPostgresDsnExample}"`));
-  assert.ok(stdout.includes('Linux server: /etc/sdkwork/router/cloudrouter.toml'));
-  assert.ok(stdout.includes('Linux desktop: ~/.sdkwork/router/config/cloudrouter.toml'));
-  assert.ok(stdout.includes('Windows server: %ProgramData%/sdkwork/router/cloudrouter.toml'));
-  assert.ok(stdout.includes('Windows desktop: %USERPROFILE%/.sdkwork/router/config/cloudrouter.toml'));
-  assert.ok(stdout.includes('macOS server: /Library/Application Support/sdkwork/router/cloudrouter.toml'));
-  assert.ok(stdout.includes('macOS desktop: ~/.sdkwork/router/config/cloudrouter.toml'));
+  assert.ok(stdout.includes('Linux server: /etc/sdkwork/router/config.toml'));
+  assert.ok(stdout.includes('Linux desktop: ~/.sdkwork/router/config/config.toml'));
+  assert.ok(stdout.includes('Windows server: %ProgramData%/sdkwork/router/config.toml'));
+  assert.ok(stdout.includes('Windows desktop: %USERPROFILE%/.sdkwork/router/config/config.toml'));
+  assert.ok(stdout.includes('macOS server: /Library/Application Support/sdkwork/router/config.toml'));
+  assert.ok(stdout.includes('macOS desktop: ~/.sdkwork/router/config/config.toml'));
 });
 
 test('production build creates portal assets and Rust edge release artifact', async () => {
@@ -4268,7 +4268,7 @@ test('install package planner covers platforms, architectures, modes, fast init,
   assert.equal(windowsService.databasePolicy.defaultEngine, 'postgresql');
   assert.equal(windowsService.databasePolicy.configurableFromFile, true);
   assert.equal(windowsService.databasePolicy.requiresExternalDatabase, true);
-  assert.equal(windowsService.databasePolicy.configFile.path, '%ProgramData%/sdkwork/router/cloudrouter.toml');
+  assert.equal(windowsService.databasePolicy.configFile.path, '%ProgramData%/sdkwork/router/config.toml');
   assert.equal(windowsService.databasePolicy.envOverrides.includes('SDKWORK_DATABASE_URL'), true);
   assert.equal(windowsService.databasePolicy.defaultHost, 'db.example.com');
   assert.equal(windowsService.databasePolicy.defaultDatabase, defaultProdPostgresDatabase);
@@ -4301,7 +4301,7 @@ test('install package planner covers platforms, architectures, modes, fast init,
   assert.equal(windowsService.redisPolicy.connectTimeoutMs, 2000);
   assert.equal(windowsService.redisPolicy.commandTimeoutMs, 1000);
   assert.ok(windowsService.artifacts.some((artifact) =>
-    artifact.kind === 'runtime-config-template' && artifact.path === 'config/cloudrouter.toml.example'
+    artifact.kind === 'runtime-config-template' && artifact.path === 'config/config.toml.example'
   ));
   assert.ok(windowsService.artifacts.some((artifact) =>
     artifact.kind === 'install-guide' && artifact.path === 'INSTALL.md'
@@ -4354,7 +4354,7 @@ test('install package planner covers platforms, architectures, modes, fast init,
   assert.equal(linuxArchive.runtimeProfile, 'server');
   assert.equal(linuxArchive.databasePolicy.defaultEngine, 'postgresql');
   assert.equal(linuxArchive.databasePolicy.requiresExternalDatabase, true);
-  assert.equal(linuxArchive.databasePolicy.configFile.path, '/etc/sdkwork/router/cloudrouter.toml');
+  assert.equal(linuxArchive.databasePolicy.configFile.path, '/etc/sdkwork/router/config.toml');
   assert.equal(linuxArchive.databasePolicy.dataDirectory.path, '/var/lib/sdkwork/router');
   assert.equal(linuxArchive.databasePolicy.defaultHost, 'db.example.com');
   assert.equal(linuxArchive.databasePolicy.defaultPort, 5432);
@@ -4371,7 +4371,7 @@ test('install package planner covers platforms, architectures, modes, fast init,
   assert.equal(macosDesktop.packageKind, 'desktop-app-installer');
   assert.equal(macosDesktop.databasePolicy.defaultEngine, 'sqlite');
   assert.equal(macosDesktop.databasePolicy.requiresExternalDatabase, false);
-  assert.equal(macosDesktop.databasePolicy.configFile.path, '~/.sdkwork/router/config/cloudrouter.toml');
+  assert.equal(macosDesktop.databasePolicy.configFile.path, '~/.sdkwork/router/config/config.toml');
   assert.equal(macosDesktop.databasePolicy.dataDirectory.path, '~/.sdkwork/router/data');
   assert.equal(macosDesktop.databasePolicy.defaultSqlitePath, '~/.sdkwork/router/data/cloudrouter.sqlite');
   assert.equal(macosDesktop.databasePolicy.defaultUrl, 'sqlite://~/.sdkwork/router/data/cloudrouter.sqlite');
@@ -4386,7 +4386,7 @@ test('install package planner covers platforms, architectures, modes, fast init,
     item.platform === 'linux' && item.architecture === 'x64' && item.deploymentMode === 'desktop'
   );
   assert.ok(linuxDesktop);
-  assert.equal(linuxDesktop.databasePolicy.configFile.path, '~/.sdkwork/router/config/cloudrouter.toml');
+  assert.equal(linuxDesktop.databasePolicy.configFile.path, '~/.sdkwork/router/config/config.toml');
   assert.equal(linuxDesktop.databasePolicy.defaultSqlitePath, '~/.sdkwork/router/data/cloudrouter.sqlite');
 
   assert.deepEqual(module.validateInstallPackagePlan(plan), []);
@@ -4464,7 +4464,7 @@ test('install package archive builder creates manifest-backed archives without l
     assert.ok(buildPlan.entries.some((entry) => entry.archivePath === 'bin/cloudrouter.exe'));
     assert.ok(buildPlan.entries.some((entry) => entry.archivePath === 'portal/dist/index.html'));
     assert.ok(buildPlan.entries.some((entry) => entry.archivePath === '.env.release.example'));
-    assert.ok(buildPlan.entries.some((entry) => entry.archivePath === 'config/cloudrouter.toml.example'));
+    assert.ok(buildPlan.entries.some((entry) => entry.archivePath === 'config/config.toml.example'));
     assert.ok(buildPlan.entries.some((entry) => entry.archivePath === 'INSTALL.md'));
     assert.ok(buildPlan.entries.some((entry) => entry.archivePath === 'install-manifest.json'));
     assert.ok(!buildPlan.entries.some((entry) => entry.archivePath === '.env.release'));
@@ -4481,7 +4481,7 @@ test('install package archive builder creates manifest-backed archives without l
       result.manifest.installConfiguration.schemaVersion,
       '2026-05-16.install-configuration.v1',
     );
-    assert.equal(result.manifest.installConfiguration.files.runtimeConfig, '%ProgramData%/sdkwork/router/cloudrouter.toml');
+    assert.equal(result.manifest.installConfiguration.files.runtimeConfig, '%ProgramData%/sdkwork/router/config.toml');
     assert.equal(result.manifest.installConfiguration.files.passwordFile, '%ProgramData%/sdkwork/router/database.secret');
     assert.equal(result.manifest.installConfiguration.files.redisPasswordFile, '%ProgramData%/sdkwork/router/redis.secret');
     assert.equal(result.manifest.installConfiguration.database.engine, 'postgresql');
@@ -4518,7 +4518,7 @@ test('install package archive builder creates manifest-backed archives without l
     assert.equal(result.manifest.installConfiguration.portal.assetCacheControl, 'public, max-age=31536000, immutable');
     assert.equal(result.manifest.installConfiguration.portal.toolApiMaxBodyBytes, 1048576);
     assert.ok(result.manifest.installConfiguration.nextSteps.some((step) =>
-      step.includes('cloudrouter.toml')
+      step.includes('config.toml')
     ));
     assert.ok(result.manifest.installConfiguration.nextSteps.some((step) =>
       step.includes('password_file')
@@ -4527,7 +4527,7 @@ test('install package archive builder creates manifest-backed archives without l
       step.includes('[redis].enabled')
     ));
     assert.equal(result.manifest.generatedArtifacts.some((artifact) =>
-      artifact.path === 'config/cloudrouter.toml.example'
+      artifact.path === 'config/config.toml.example'
     ), true);
     assert.equal(result.manifest.generatedArtifacts.some((artifact) =>
       artifact.path === 'INSTALL.md'
@@ -4589,7 +4589,7 @@ test('install package manifests distinguish schema version dates from generation
     healthChecks: ['/healthz', '/readyz'],
     initCommands: ['./bin/cloudrouterctl ensure'],
     databasePolicy: {
-      configFile: { path: '/etc/sdkwork/router/cloudrouter.toml' },
+      configFile: { path: '/etc/sdkwork/router/config.toml' },
       dataDirectory: { path: '/var/lib/sdkwork/router' },
     },
     security: { noSecretsInPackage: true },
@@ -4651,11 +4651,11 @@ test('install package builder emits service and container deployment packages fr
     const serviceResult = await module.buildInstallPackageArchive(servicePlan);
     const serviceTar = readTarEntries(gunzipSync(readFileSync(serviceResult.archivePath)));
     assert.ok(serviceTar.has('service/linux/cloudrouter.service'));
-    assert.ok(serviceTar.has('config/cloudrouter.toml.example'));
+    assert.ok(serviceTar.has('config/config.toml.example'));
     assert.ok(serviceTar.has('INSTALL.md'));
     const serviceConfigTemplate = readTarEntryText(
       gunzipSync(readFileSync(serviceResult.archivePath)),
-      'config/cloudrouter.toml.example',
+      'config/config.toml.example',
     );
     assert.ok(serviceConfigTemplate.includes('engine = "postgresql"'));
     assert.ok(serviceConfigTemplate.includes('host = "db.example.com"'));
@@ -4761,7 +4761,7 @@ test('install package builder emits service and container deployment packages fr
     assert.ok(serviceConfigTemplate.includes('[bootstrap_admin]'));
     assert.ok(serviceConfigTemplate.includes('username = "admin"'));
     assert.ok(serviceConfigTemplate.includes('email = "admin@sdkwork.com"'));
-    assert.ok(serviceConfigTemplate.includes('/etc/sdkwork/router/cloudrouter.toml'));
+    assert.ok(serviceConfigTemplate.includes('/etc/sdkwork/router/config.toml'));
     const serviceInstallGuide = readTarEntryText(
       gunzipSync(readFileSync(serviceResult.archivePath)),
       'INSTALL.md',
@@ -4778,7 +4778,7 @@ test('install package builder emits service and container deployment packages fr
     assert.ok(serviceInstallGuide.includes('password_file'));
     assert.ok(serviceInstallGuide.includes('Linux service packages run initialization automatically from systemd'));
     assert.ok(serviceInstallGuide.includes('/usr/bin/cloudrouterctl ensure'));
-    assert.ok(serviceInstallGuide.includes('/etc/sdkwork/router/cloudrouter.toml'));
+    assert.ok(serviceInstallGuide.includes('/etc/sdkwork/router/config.toml'));
     assert.ok(serviceInstallGuide.includes('Configuration Files'));
     assert.ok(serviceInstallGuide.includes('PostgreSQL password file: /etc/sdkwork/database/database.secret'));
     assert.ok(serviceInstallGuide.includes('First Start'));
@@ -4860,7 +4860,7 @@ test('install package builder emits service and container deployment packages fr
     assert.equal(metadata.redis.enabledByDefault, true);
     assert.equal(metadata.redis.required, true);
     assert.equal(metadata.redis.runtimeRequired, true);
-    assert.equal(metadata.configFile, '/etc/sdkwork/router/cloudrouter.toml');
+    assert.equal(metadata.configFile, '/etc/sdkwork/router/config.toml');
     const containerInstallGuide = readTarEntryText(containerTarBytes, 'INSTALL.md');
     assert.ok(containerInstallGuide.includes('Configuration Files'));
     assert.ok(containerInstallGuide.includes('/run/secrets/sdkwork/router/postgres-password'));
@@ -4920,12 +4920,12 @@ test('install package builder emits service and container deployment packages fr
     assert.deepEqual(module.validateInstallPackageBuildPlan(desktopPlan), []);
     const desktopResult = await module.buildInstallPackageArchive(desktopPlan);
     const desktopTarBytes = gunzipSync(readFileSync(desktopResult.archivePath));
-    const desktopConfigTemplate = readTarEntryText(desktopTarBytes, 'config/cloudrouter.toml.example');
+    const desktopConfigTemplate = readTarEntryText(desktopTarBytes, 'config/config.toml.example');
     const desktopMetadata = JSON.parse(readTarEntryText(desktopTarBytes, 'desktop/metadata.json'));
     assert.ok(desktopConfigTemplate.includes('engine = "sqlite"'));
     assert.ok(desktopConfigTemplate.includes('[redis]'));
     assert.ok(desktopConfigTemplate.includes('enabled = false'));
-    assert.ok(desktopConfigTemplate.includes('~/.sdkwork/router/config/cloudrouter.toml'));
+    assert.ok(desktopConfigTemplate.includes('~/.sdkwork/router/config/config.toml'));
     assert.ok(desktopConfigTemplate.includes('~/.sdkwork/router/data/cloudrouter.sqlite'));
     assert.ok(desktopConfigTemplate.includes('[request_limits]'));
     assert.ok(desktopConfigTemplate.includes('admin_app_json_body_max_bytes = 131072'));
@@ -4937,7 +4937,7 @@ test('install package builder emits service and container deployment packages fr
     const desktopInstallGuide = readTarEntryText(desktopTarBytes, 'INSTALL.md');
     assert.ok(desktopInstallGuide.includes('Desktop deployments default to SQLite.'));
     assert.ok(desktopInstallGuide.includes('Redis is optional and disabled by default'));
-    assert.ok(desktopInstallGuide.includes('~/.sdkwork/router/config/cloudrouter.toml'));
+    assert.ok(desktopInstallGuide.includes('~/.sdkwork/router/config/config.toml'));
     assert.ok(desktopInstallGuide.includes('~/.sdkwork/router/data/cloudrouter.sqlite'));
     assert.ok(desktopInstallGuide.includes('Configuration Files'));
     assert.ok(desktopInstallGuide.includes('Database: SQLite'));
@@ -5126,8 +5126,8 @@ test('native installer builder emits apt-installable Debian packages for Linux s
     assert.equal(result.manifest.nativeInstall.files.privateBinary, '/usr/lib/sdkwork/router/bin/cloudrouter');
     assert.equal(result.manifest.nativeInstall.files.privateInstaller, '/usr/lib/sdkwork/router/bin/cloudrouterctl');
     assert.equal(result.manifest.nativeInstall.files.portal, '/usr/lib/sdkwork/router/portal/dist');
-    assert.equal(result.manifest.nativeInstall.files.runtimeConfig, '/etc/sdkwork/router/cloudrouter.toml');
-    assert.equal(result.manifest.nativeInstall.files.runtimeConfigTemplate, '/etc/sdkwork/router/cloudrouter.toml.example');
+    assert.equal(result.manifest.nativeInstall.files.runtimeConfig, '/etc/sdkwork/router/config.toml');
+    assert.equal(result.manifest.nativeInstall.files.runtimeConfigTemplate, '/etc/sdkwork/router/config.toml.example');
     assert.equal(result.manifest.nativeInstall.files.serviceEnvironment, '/etc/sdkwork/router/cloudrouter.env');
     assert.equal(result.manifest.nativeInstall.files.passwordFile, '/etc/sdkwork/database/database.secret');
     assert.equal(result.manifest.nativeInstall.files.redisPasswordFile, '/etc/sdkwork/router/redis.secret');
@@ -5162,7 +5162,7 @@ test('native installer builder emits apt-installable Debian packages for Linux s
       && item.mode === '0750'
     ));
     assert.ok(result.manifest.nativeInstall.permissions.some((item) =>
-      item.path === '/etc/sdkwork/router/cloudrouter.toml.example'
+      item.path === '/etc/sdkwork/router/config.toml.example'
       && item.owner === 'root'
       && item.group === 'sdkwork'
       && item.mode === '0640'
@@ -5185,7 +5185,7 @@ test('native installer builder emits apt-installable Debian packages for Linux s
       && item.group === 'sdkwork'
       && item.mode === '0640'
     ));
-    assert.equal(result.manifest.nativeInstall.commands.configure[0], 'sudo editor /etc/sdkwork/router/cloudrouter.toml');
+    assert.equal(result.manifest.nativeInstall.commands.configure[0], 'sudo editor /etc/sdkwork/router/config.toml');
     assert.equal(result.manifest.nativeInstall.commands.start, 'sudo systemctl start cloudrouter');
 
     const arEntries = readArEntries(readFileSync(result.installerPath));
@@ -5206,18 +5206,18 @@ test('native installer builder emits apt-installable Debian packages for Linux s
     assert.ok(postinstText.includes('chmod 0755 /usr/lib/sdkwork/router /usr/lib/sdkwork/router/bin /usr/bin/cloudrouter /usr/bin/cloudrouterctl'));
     assert.ok(postinstText.includes('chown root:sdkwork /etc/sdkwork/router'));
     assert.ok(postinstText.includes('chmod 0750 /etc/sdkwork/router'));
-    assert.ok(postinstText.includes('chown root:sdkwork /etc/sdkwork/router/cloudrouter.toml.example'));
-    assert.ok(postinstText.includes('chmod 0640 /etc/sdkwork/router/cloudrouter.toml.example'));
+    assert.ok(postinstText.includes('chown root:sdkwork /etc/sdkwork/router/config.toml.example'));
+    assert.ok(postinstText.includes('chmod 0640 /etc/sdkwork/router/config.toml.example'));
     assert.ok(postinstText.includes('chown root:sdkwork /etc/sdkwork/router/.env.release.example'));
     assert.ok(postinstText.includes('chmod 0640 /etc/sdkwork/router/.env.release.example'));
     assert.ok(postinstText.includes('SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE=server'));
     assert.ok(postinstText.includes('CloudRouter installation summary'));
-    assert.ok(postinstText.includes('Runtime TOML: /etc/sdkwork/router/cloudrouter.toml'));
+    assert.ok(postinstText.includes('Runtime TOML: /etc/sdkwork/router/config.toml'));
     assert.ok(postinstText.includes('Service environment: /etc/sdkwork/router/cloudrouter.env'));
     assert.ok(postinstText.includes('PostgreSQL password file: /etc/sdkwork/database/database.secret'));
     assert.ok(postinstText.includes('Redis password file: /etc/sdkwork/router/redis.secret'));
     assert.ok(postinstText.includes('Redis is enabled and required by default for server deployments; configure [redis] before first startup.'));
-    assert.ok(postinstText.includes('sudo editor /etc/sdkwork/router/cloudrouter.toml'));
+    assert.ok(postinstText.includes('sudo editor /etc/sdkwork/router/config.toml'));
     assert.ok(postinstText.includes('sudo editor /etc/sdkwork/database/database.secret'));
     assert.ok(postinstText.includes('sudo systemctl start cloudrouter'));
     assert.ok(postinstText.includes('systemctl daemon-reload'));
@@ -5235,16 +5235,16 @@ test('native installer builder emits apt-installable Debian packages for Linux s
     assertTarParentBeforeChild(dataEntryNames, './etc/sdkwork/router', './etc/sdkwork/router/.env.release.example');
     assertTarParentBeforeChild(dataEntryNames, './usr/bin', './usr/bin/cloudrouter');
     assertTarParentBeforeChild(dataEntryNames, './usr/lib/sdkwork/router', './usr/lib/sdkwork/router/bin/cloudrouter');
-    assertTarParentBeforeChild(dataEntryNames, './etc/sdkwork/router', './etc/sdkwork/router/cloudrouter.toml.example');
+    assertTarParentBeforeChild(dataEntryNames, './etc/sdkwork/router', './etc/sdkwork/router/config.toml.example');
     assert.equal(dataEntries.get('./usr/bin/cloudrouter')?.mode, 0o755);
     assert.equal(dataEntries.get('./usr/bin/cloudrouterctl')?.mode, 0o755);
     assert.equal(dataEntries.get('./usr/lib/sdkwork/router/bin/cloudrouter')?.mode, 0o755);
     assert.equal(dataEntries.get('./usr/lib/sdkwork/router/bin/cloudrouterctl')?.mode, 0o755);
     assert.ok(dataEntries.has('./usr/lib/sdkwork/router/portal/dist/index.html'));
     assert.equal(dataEntries.get('./etc/sdkwork/router/.env.release.example')?.mode, 0o640);
-    assert.equal(dataEntries.get('./etc/sdkwork/router/cloudrouter.toml.example')?.mode, 0o640);
+    assert.equal(dataEntries.get('./etc/sdkwork/router/config.toml.example')?.mode, 0o640);
     assert.ok(!dataEntries.has('./usr/lib/sdkwork/router/.env.release.example'));
-    assert.ok(dataEntries.has('./etc/sdkwork/router/cloudrouter.toml.example'));
+    assert.ok(dataEntries.has('./etc/sdkwork/router/config.toml.example'));
     assert.ok(dataEntries.has('./lib/systemd/system/cloudrouter.service'));
     assert.ok(dataEntries.has('./usr/share/sdkwork/router/install-manifest.json'));
     const systemdText = readTarEntryText(dataTar, './lib/systemd/system/cloudrouter.service');
@@ -5330,12 +5330,12 @@ test('native installer builder keeps Linux desktop packages user-scoped and self
     assert.equal(result.manifest.installConfiguration.redis.required, false);
     assert.equal(result.manifest.nativeInstall.schemaVersion, '2026-05-16.native-install-layout.v1');
     assert.equal(result.manifest.nativeInstall.format, 'deb');
-    assert.equal(result.manifest.nativeInstall.files.runtimeConfigTemplate, '/usr/share/sdkwork/router/config/cloudrouter.toml.example');
+    assert.equal(result.manifest.nativeInstall.files.runtimeConfigTemplate, '/usr/share/sdkwork/router/config/config.toml.example');
     assert.equal(result.manifest.nativeInstall.files.releaseEnvTemplate, '~/.sdkwork/router/config/.env.release.example');
     assert.equal(result.manifest.nativeInstall.files.binary, '/usr/bin/cloudrouter');
     assert.equal(result.manifest.nativeInstall.files.privateBinary, '/usr/lib/sdkwork/router/bin/cloudrouter');
     assert.equal(result.manifest.nativeInstall.files.portal, '/usr/lib/sdkwork/router/portal/dist');
-    assert.equal(result.manifest.nativeInstall.files.runtimeConfig, '~/.sdkwork/router/config/cloudrouter.toml');
+    assert.equal(result.manifest.nativeInstall.files.runtimeConfig, '~/.sdkwork/router/config/config.toml');
     assert.equal(result.manifest.nativeInstall.files.installManifest, '/usr/share/sdkwork/router/install-manifest.json');
     assert.equal(result.manifest.nativeInstall.service, null);
     assert.ok(result.manifest.nativeInstall.permissions.some((item) =>
@@ -5358,14 +5358,14 @@ test('native installer builder keeps Linux desktop packages user-scoped and self
     ));
     assert.equal(
       result.manifest.installConfiguration.files.runtimeConfig,
-      '~/.sdkwork/router/config/cloudrouter.toml',
+      '~/.sdkwork/router/config/config.toml',
     );
 
     const arEntries = readArEntries(readFileSync(result.installerPath));
     const controlTar = gunzipSync(arEntries.get('control.tar.gz'));
     const postinstText = readTarEntryText(controlTar, './postinst');
     assert.ok(postinstText.includes('CloudRouter installation summary'));
-    assert.ok(postinstText.includes('Desktop config file: ~/.sdkwork/router/config/cloudrouter.toml'));
+    assert.ok(postinstText.includes('Desktop config file: ~/.sdkwork/router/config/config.toml'));
     assert.ok(postinstText.includes('Database: SQLite'));
     assert.ok(postinstText.includes('chmod 0755 /usr/lib/sdkwork/router /usr/lib/sdkwork/router/bin /usr/bin/cloudrouter /usr/bin/cloudrouterctl'));
     assert.ok(!postinstText.includes('/etc/sdkwork/database/database.secret'));
@@ -5378,11 +5378,11 @@ test('native installer builder keeps Linux desktop packages user-scoped and self
     assert.equal(dataEntries.get('./usr/lib/sdkwork/router')?.type, 'directory');
     assert.equal(dataEntries.get('./usr/share/sdkwork/router/config')?.type, 'directory');
     assert.ok(!dataEntryNames.some((entry) => entry.startsWith('./opt/sdkwork/router')));
-    assertTarParentBeforeChild(dataEntryNames, './usr/share/sdkwork/router/config', './usr/share/sdkwork/router/config/cloudrouter.toml.example');
+    assertTarParentBeforeChild(dataEntryNames, './usr/share/sdkwork/router/config', './usr/share/sdkwork/router/config/config.toml.example');
     assert.ok(![...dataEntries.keys()].some((entry) => entry.endsWith('/.env.release.example')));
     assert.ok(!dataEntries.has('./usr/lib/sdkwork/router/.env.release.example'));
-    assert.ok(dataEntries.has('./usr/share/sdkwork/router/config/cloudrouter.toml.example'));
-    assert.ok(!dataEntries.has('./etc/sdkwork/router/cloudrouter.toml.example'));
+    assert.ok(dataEntries.has('./usr/share/sdkwork/router/config/config.toml.example'));
+    assert.ok(!dataEntries.has('./etc/sdkwork/router/config.toml.example'));
   } finally {
     rmSync(fixtureRoot, { recursive: true, force: true });
   }
@@ -5415,7 +5415,7 @@ test('native installer builder CLI validates cross-platform service and desktop 
   assert.ok(payload.plans.some((plan) => plan.installerName === 'cloudrouter-macos-x64-server-0.3.0.pkg'));
   const linuxService = payload.plans.find((plan) => plan.package.id === 'linux-x64-service');
   assert.equal(linuxService.nativeInstallLayout.schemaVersion, '2026-05-16.native-install-layout.v1');
-  assert.equal(linuxService.nativeInstallLayout.files.runtimeConfig, '/etc/sdkwork/router/cloudrouter.toml');
+  assert.equal(linuxService.nativeInstallLayout.files.runtimeConfig, '/etc/sdkwork/router/config.toml');
   assert.equal(linuxService.nativeInstallLayout.files.releaseEnvTemplate, '/etc/sdkwork/router/.env.release.example');
   assert.equal(linuxService.nativeInstallLayout.files.binary, '/usr/bin/cloudrouter');
   assert.equal(linuxService.nativeInstallLayout.files.privateBinary, '/usr/lib/sdkwork/router/bin/cloudrouter');
@@ -5425,7 +5425,7 @@ test('native installer builder CLI validates cross-platform service and desktop 
   assert.equal(windowsService.nativeInstallLayout.format, 'msi');
   assert.equal(windowsService.nativeInstallLayout.installRoot, '%ProgramFiles%/sdkwork/router');
   assert.equal(windowsService.nativeInstallLayout.files.binary, '%ProgramFiles%/sdkwork/router/bin/cloudrouter.exe');
-  assert.equal(windowsService.nativeInstallLayout.files.runtimeConfigTemplate, '%ProgramData%/sdkwork/router/cloudrouter.toml.example');
+  assert.equal(windowsService.nativeInstallLayout.files.runtimeConfigTemplate, '%ProgramData%/sdkwork/router/config.toml.example');
   assert.equal(windowsService.nativeInstallLayout.files.releaseEnvTemplate, '%ProgramData%/sdkwork/router/.env.release.example');
   assert.equal(windowsService.nativeInstallLayout.commands.installService, '%ProgramFiles%/sdkwork/router/bin/cloudrouterctl.exe ensure');
   assertNativePermission(windowsService.nativeInstallLayout.permissions, {
@@ -5445,12 +5445,12 @@ test('native installer builder CLI validates cross-platform service and desktop 
     'ProgramData/sdkwork/router/.env.release.example',
   );
   assert.equal(
-    module.windowsPayloadPathForArchivePath(windowsService, 'config/cloudrouter.toml.example'),
-    'ProgramData/sdkwork/router/cloudrouter.toml.example',
+    module.windowsPayloadPathForArchivePath(windowsService, 'config/config.toml.example'),
+    'ProgramData/sdkwork/router/config.toml.example',
   );
   const serviceWix = module.createWixSource(windowsService, 'C:/payload', [
     { relativePath: '.env.release.example', data: Buffer.from('env') },
-    { relativePath: 'config/cloudrouter.toml.example', data: Buffer.from('toml') },
+    { relativePath: 'config/config.toml.example', data: Buffer.from('toml') },
     { relativePath: 'bin/cloudrouter.exe', data: Buffer.from('exe') },
   ]);
   assert.ok(serviceWix.includes('<StandardDirectory Id="ProgramFiles64Folder">'));
@@ -5459,7 +5459,7 @@ test('native installer builder CLI validates cross-platform service and desktop 
   assert.equal((serviceWix.match(/Name="sdkwork"/g) ?? []).length, 2);
   assert.ok(serviceWix.includes('Name="router"'));
   const windowsDesktop = payload.plans.find((plan) => plan.package.id === 'windows-x64-desktop');
-  assert.equal(windowsDesktop.nativeInstallLayout.files.runtimeConfigTemplate, '%ProgramData%/sdkwork/router/cloudrouter.toml.example');
+  assert.equal(windowsDesktop.nativeInstallLayout.files.runtimeConfigTemplate, '%ProgramData%/sdkwork/router/config.toml.example');
   assert.equal(windowsDesktop.nativeInstallLayout.files.releaseEnvTemplate, '%ProgramData%/sdkwork/router/.env.release.example');
   assertNativePermission(windowsDesktop.nativeInstallLayout.permissions, {
     path: '%ProgramData%/sdkwork/router',
@@ -5472,12 +5472,12 @@ test('native installer builder CLI validates cross-platform service and desktop 
     'ProgramData/sdkwork/router/.env.release.example',
   );
   assert.equal(
-    module.windowsPayloadPathForArchivePath(windowsDesktop, 'config/cloudrouter.toml.example'),
-    'ProgramData/sdkwork/router/cloudrouter.toml.example',
+    module.windowsPayloadPathForArchivePath(windowsDesktop, 'config/config.toml.example'),
+    'ProgramData/sdkwork/router/config.toml.example',
   );
   const desktopWix = module.createWixSource(windowsDesktop, 'C:/payload', [
     { relativePath: '.env.release.example', data: Buffer.from('env') },
-    { relativePath: 'config/cloudrouter.toml.example', data: Buffer.from('toml') },
+    { relativePath: 'config/config.toml.example', data: Buffer.from('toml') },
     { relativePath: 'bin/cloudrouter.exe', data: Buffer.from('exe') },
   ]);
   assert.ok(desktopWix.includes('<StandardDirectory Id="ProgramFiles64Folder">'));
@@ -5489,7 +5489,7 @@ test('native installer builder CLI validates cross-platform service and desktop 
   assert.equal(macosDesktop.nativeInstallLayout.service, null);
   assert.equal(
     macosDesktop.nativeInstallLayout.files.runtimeConfigTemplate,
-    '/usr/local/share/sdkwork/router/config/cloudrouter.toml.example',
+    '/usr/local/share/sdkwork/router/config/config.toml.example',
   );
   assert.equal(
     macosDesktop.nativeInstallLayout.files.releaseEnvTemplate,
@@ -5497,7 +5497,7 @@ test('native installer builder CLI validates cross-platform service and desktop 
   );
   assert.equal(
     macosDesktop.nativeInstallLayout.files.runtimeConfig,
-    '~/.sdkwork/router/config/cloudrouter.toml',
+    '~/.sdkwork/router/config/config.toml',
   );
   assertNativePermission(macosDesktop.nativeInstallLayout.permissions, {
     path: '/opt/sdkwork/router',
@@ -5530,7 +5530,7 @@ test('native installer builder CLI validates cross-platform service and desktop 
     mode: '0640',
   });
   assertNativePermission(macosService.nativeInstallLayout.permissions, {
-    path: '/Library/Application Support/sdkwork/router/cloudrouter.toml.example',
+    path: '/Library/Application Support/sdkwork/router/config.toml.example',
     owner: 'root',
     group: 'wheel',
     mode: '0640',
@@ -5545,7 +5545,7 @@ test('native installer builder CLI validates cross-platform service and desktop 
   assert.ok(macosServicePostinstall.includes('chown root:wheel "/Library/Application Support/sdkwork/router"'));
   assert.ok(macosServicePostinstall.includes('chmod 0750 "/Library/Application Support/sdkwork/router"'));
   assert.ok(macosServicePostinstall.includes('chmod 0640 "/Library/Application Support/sdkwork/router/.env.release.example"'));
-  assert.ok(macosServicePostinstall.includes('chmod 0640 "/Library/Application Support/sdkwork/router/cloudrouter.toml.example"'));
+  assert.ok(macosServicePostinstall.includes('chmod 0640 "/Library/Application Support/sdkwork/router/config.toml.example"'));
   assert.ok(macosServicePostinstall.includes('chown root:wheel /var/log/sdkwork/router'));
   assert.ok(macosServicePostinstall.includes('chmod 0750 /var/log/sdkwork/router'));
   assert.deepEqual(
@@ -5698,7 +5698,7 @@ test('install init smoke validates fast initialization without starting dev serv
     assert.equal(smokePlan.databasePath, null);
     assert.ok(smokePlan.databasePasswordPath.endsWith('database.secret'));
     assert.equal(smokePlan.releaseEnvPath, path.join(fixtureRoot, '.env.release'));
-    assert.equal(smokePlan.runtimeConfigPath, path.join(fixtureRoot, 'cloudrouter.toml'));
+    assert.equal(smokePlan.runtimeConfigPath, path.join(fixtureRoot, 'config.toml'));
     assert.deepEqual(smokePlan.healthChecks, ['/healthz', '/readyz']);
     assert.ok(smokePlan.steps.some((step) =>
       step.id === 'release-env-write' && step.command.includes('write-release-env.mjs')
@@ -7594,9 +7594,9 @@ test('global and application environment contracts document Cloud Router runtime
     assert.ok(content.includes('SDKWORK_CLOUDROUTER_REDIS_POOL_IDLE_TIMEOUT_SECONDS'));
     assert.ok(content.includes('PORTAL_PUBLIC_BACKEND_API_BASE_URL'));
     assert.ok(content.includes('PORTAL_PUBLIC_APP_API_BASE_URL'));
-    assert.ok(content.includes('/etc/sdkwork/router/cloudrouter.toml'));
-    assert.ok(content.includes('%ProgramData%/sdkwork/router/cloudrouter.toml'));
-    assert.ok(content.includes('~/.sdkwork/router/config/cloudrouter.toml'));
+    assert.ok(content.includes('/etc/sdkwork/router/config.toml'));
+    assert.ok(content.includes('%ProgramData%/sdkwork/router/config.toml'));
+    assert.ok(content.includes('~/.sdkwork/router/config/config.toml'));
   }
   assert.ok(environmentSpec.includes('SDKWORK_<APP>_DATABASE_ENGINE'));
   assert.ok(environmentSpec.includes('SDKWORK_<APP>_DATABASE_SSL_MODE'));

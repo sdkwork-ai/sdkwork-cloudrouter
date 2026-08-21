@@ -24,7 +24,7 @@ PostgreSQL runtime template:
 
 ```bash
 sudo apt install ./cloudrouter-linux-x64-server-0.3.0.deb
-sudo editor /etc/sdkwork/router/cloudrouter.toml
+sudo editor /etc/sdkwork/router/config.toml
 sudo systemctl start cloudrouter
 ```
 
@@ -53,7 +53,7 @@ service can write `/var/lib/sdkwork/router` and `/var/log/sdkwork/router`; it re
 `install-manifest.json` with `installConfiguration`, and native installers add a
 `nativeInstall` layout for deployment automation.
 
-Redis is part of the standard `cloudrouter.toml` contract. Server, service, and
+Redis is part of the standard `config.toml` contract. Server, service, and
 container packages keep `[redis].enabled = true` by default and require
 `[redis].host`, `[redis].port`, and `[redis].database` before first startup; use
 `[redis].url` only as an advanced managed-endpoint override. Prefer

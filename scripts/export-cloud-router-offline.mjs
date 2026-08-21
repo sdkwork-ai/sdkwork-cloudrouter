@@ -13,7 +13,7 @@
  *   cloudrouter-<version>.tar          # docker save image (load with: docker load -i)
  *   docker-compose.yml                 # prebuilt compose stack
  *   docker/.env.example                # deployment configuration template
- *   docker/config/cloudrouter.toml     # runtime config template
+ *   docker/config/config.toml     # runtime config template
  *   docs/installation/docker-deployment.md  # deployment guide
  */
 import { execFileSync } from 'node:child_process';
@@ -68,7 +68,7 @@ function main() {
   const copies = [
     ['docker-compose.yml', 'docker-compose.yml'],
     ['docker/.env.example', 'docker/.env.example'],
-    ['docker/config/cloudrouter.toml', 'docker/config/cloudrouter.toml'],
+    ['docker/config/config.toml', 'docker/config/config.toml'],
     ['docker/postgres/init/001-create-schema.sql', 'docker/postgres/init/001-create-schema.sql'],
     ['docs/installation/docker-deployment.md', 'docs/installation/docker-deployment.md'],
   ];
@@ -97,7 +97,7 @@ This bundle deploys Cloud Router without internet access.
 2. Load the image:
    docker load -i cloudrouter-${options.version}.tar
 3. Configure (optional): copy docker/.env.example to .env and edit;
-   edit docker/config/cloudrouter.toml for runtime settings.
+   edit docker/config/config.toml for runtime settings.
 4. Start:
    docker compose up -d
 5. Verify:

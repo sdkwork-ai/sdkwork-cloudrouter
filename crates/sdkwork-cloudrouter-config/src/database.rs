@@ -483,7 +483,7 @@ impl DatabaseEngine {
 
 fn server_default_postgres_password_file(location: &RuntimeConfigLocation) -> String {
     let config_file = portable_path(&location.config_file);
-    if config_file == "/etc/sdkwork/router/cloudrouter.toml" {
+    if config_file == "/etc/sdkwork/router/config.toml" {
         return DatabaseConfig::SERVER_DEFAULT_POSTGRES_PASSWORD_FILE.to_owned();
     }
     if let Some(parent) = location
@@ -938,29 +938,29 @@ impl RuntimeConfigLocation {
     pub fn for_platform(platform: &str, profile: RuntimeConfigProfile) -> Self {
         match (normalize_platform(platform).as_str(), profile) {
             ("windows", RuntimeConfigProfile::Server) => Self {
-                config_file: PathBuf::from("%ProgramData%/sdkwork/router/cloudrouter.toml"),
+                config_file: PathBuf::from("%ProgramData%/sdkwork/router/config.toml"),
                 data_directory: PathBuf::from("%ProgramData%/sdkwork/router/Data"),
             },
             ("windows", RuntimeConfigProfile::Desktop) => Self {
-                config_file: PathBuf::from("%USERPROFILE%/.sdkwork/router/config/cloudrouter.toml"),
+                config_file: PathBuf::from("%USERPROFILE%/.sdkwork/router/config/config.toml"),
                 data_directory: PathBuf::from("%USERPROFILE%/.sdkwork/router/data"),
             },
             ("macos", RuntimeConfigProfile::Server) => Self {
                 config_file: PathBuf::from(
-                    "/Library/Application Support/sdkwork/router/cloudrouter.toml",
+                    "/Library/Application Support/sdkwork/router/config.toml",
                 ),
                 data_directory: PathBuf::from("/Library/Application Support/sdkwork/router/Data"),
             },
             ("macos", RuntimeConfigProfile::Desktop) => Self {
-                config_file: PathBuf::from("~/.sdkwork/router/config/cloudrouter.toml"),
+                config_file: PathBuf::from("~/.sdkwork/router/config/config.toml"),
                 data_directory: PathBuf::from("~/.sdkwork/router/data"),
             },
             (_, RuntimeConfigProfile::Server) => Self {
-                config_file: PathBuf::from("/etc/sdkwork/router/cloudrouter.toml"),
+                config_file: PathBuf::from("/etc/sdkwork/router/config.toml"),
                 data_directory: PathBuf::from("/var/lib/sdkwork/router"),
             },
             (_, RuntimeConfigProfile::Desktop) => Self {
-                config_file: PathBuf::from("~/.sdkwork/router/config/cloudrouter.toml"),
+                config_file: PathBuf::from("~/.sdkwork/router/config/config.toml"),
                 data_directory: PathBuf::from("~/.sdkwork/router/data"),
             },
         }
@@ -978,7 +978,7 @@ impl RuntimeConfigLocation {
                     .unwrap_or_else(|| "C:/ProgramData".to_owned());
                 let root = join_runtime_path(&program_data, "sdkwork/router");
                 Self {
-                    config_file: PathBuf::from(join_runtime_path(&root, "cloudrouter.toml")),
+                    config_file: PathBuf::from(join_runtime_path(&root, "config.toml")),
                     data_directory: PathBuf::from(join_runtime_path(&root, "Data")),
                 }
             }
@@ -991,7 +991,7 @@ impl RuntimeConfigLocation {
                     .unwrap_or_else(|| "C:/Users/Default".to_owned());
                 let root = join_runtime_path(&home, ".sdkwork/router");
                 Self {
-                    config_file: PathBuf::from(join_runtime_path(&root, "config/cloudrouter.toml")),
+                    config_file: PathBuf::from(join_runtime_path(&root, "config/config.toml")),
                     data_directory: PathBuf::from(join_runtime_path(&root, "data")),
                 }
             }
@@ -1000,7 +1000,7 @@ impl RuntimeConfigLocation {
                 let home = get_env("HOME").unwrap_or_else(|| "~".to_owned());
                 let root = join_runtime_path(&home, ".sdkwork/router");
                 Self {
-                    config_file: PathBuf::from(join_runtime_path(&root, "config/cloudrouter.toml")),
+                    config_file: PathBuf::from(join_runtime_path(&root, "config/config.toml")),
                     data_directory: PathBuf::from(join_runtime_path(&root, "data")),
                 }
             }
@@ -1009,7 +1009,7 @@ impl RuntimeConfigLocation {
                 let home = get_env("HOME").unwrap_or_else(|| "~".to_owned());
                 let root = join_runtime_path(&home, ".sdkwork/router");
                 Self {
-                    config_file: PathBuf::from(join_runtime_path(&root, "config/cloudrouter.toml")),
+                    config_file: PathBuf::from(join_runtime_path(&root, "config/config.toml")),
                     data_directory: PathBuf::from(join_runtime_path(&root, "data")),
                 }
             }

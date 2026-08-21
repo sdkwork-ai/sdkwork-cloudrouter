@@ -38,7 +38,7 @@ Linux service 包推荐顺序：
 
 ```bash
 sudo apt install ./cloudrouter-linux-x64-server-0.3.0.deb
-sudo editor /etc/sdkwork/router/cloudrouter.toml
+sudo editor /etc/sdkwork/router/config.toml
 sudo systemctl start cloudrouter
 sudo systemctl status cloudrouter --no-pager
 ```
@@ -47,25 +47,25 @@ sudo systemctl status cloudrouter --no-pager
 server/service/container 默认路径�?
 | 平台 | 配置文件 |
 | --- | --- |
-| Windows | `%ProgramData%/sdkwork/router/cloudrouter.toml` |
-| Linux | `/etc/sdkwork/router/cloudrouter.toml` |
-| macOS | `/Library/Application Support/sdkwork/router/cloudrouter.toml` |
+| Windows | `%ProgramData%/sdkwork/router/config.toml` |
+| Linux | `/etc/sdkwork/router/config.toml` |
+| macOS | `/Library/Application Support/sdkwork/router/config.toml` |
 
 desktop 默认路径�?
 | 平台 | 配置文件 |
 | --- | --- |
-| Windows | `%USERPROFILE%/.sdkwork/router/config/cloudrouter.toml` |
-| Linux | `~/.sdkwork/router/config/cloudrouter.toml` |
-| macOS | `~/.sdkwork/router/config/cloudrouter.toml` |
+| Windows | `%USERPROFILE%/.sdkwork/router/config/config.toml` |
+| Linux | `~/.sdkwork/router/config/config.toml` |
+| macOS | `~/.sdkwork/router/config/config.toml` |
 
 可用 `SDKWORK_CLOUDROUTER_CONFIG_FILE` 覆盖�?
 ```bash
-export SDKWORK_CLOUDROUTER_CONFIG_FILE="/etc/sdkwork/router/cloudrouter.toml"
+export SDKWORK_CLOUDROUTER_CONFIG_FILE="/etc/sdkwork/router/config.toml"
 ```
 
 PowerShell�?
 ```powershell
-$env:SDKWORK_CLOUDROUTER_CONFIG_FILE = Join-Path $env:ProgramData "sdkwork/router/cloudrouter.toml"
+$env:SDKWORK_CLOUDROUTER_CONFIG_FILE = Join-Path $env:ProgramData "sdkwork/router/config.toml"
 ```
 
 原生安装包默认位置：
@@ -209,7 +209,7 @@ server/service/container 部署默认启用并要�?Redis。首次启动前必�
 `[request_limits]` 控制运行�?JSON �?webhook 请求体限制，属于高风险写入入口的防护配置。`admin_app_json_body_max_bytes` �?`admin_skill_json_body_max_bytes` 保护后台管理 API，`forum_json_body_max_bytes` 保护公开应用论坛写入，`payment_callback_body_max_bytes` 保护支付供应商回调。反向代理、负载均衡和容器 ingress 的请求体限制应与这些值保持一致，使超大请求在进入昂贵业务处理前被拒绝�?
 `[edge]` 配置打包后的 Rust edge server 和上游服务目标。`[portal.static]` �?HTML/runtime env �?no-store 缓存策略与长期缓存的 hash 静态资源分离。`[portal.security]` 控制浏览器侧安全策略；只有公网主机名已经通过 HTTPS 访问时才启用 HSTS，启�?preload 时保�?`hsts_max_age_seconds >= 31536000` �?`hsts_include_subdomains = true`。`csp_frame_src` 只填写允�?portal 嵌入的明确信�?HTTP/HTTPS origin。`[portal.tools]` 控制可选本地工�?API 的请求体大小和限流。`[observability]` 负责生产日志默认策略：`log_filter` �?tracing 过滤器，`log_format` 可�?`compact`、`json`、`pretty` �?`full`，systemd �?container 日志建议保持 `log_ansi = false`，target/thread 字段控制输出的日志元信息；`RUST_LOG` 只建议用于临时进程级诊断覆盖�?`[edge].cors_allowed_origins` 是额外可信浏览器 origin 的显�?allowlist，例如外�?CDN 托管�?portal。打包后的同�?edge 部署保持空数组；通配�?origin 和带 path �?origin 会被拒绝�?`[provider_relay.runtime]` 配置 OpenAI-compatible 上游请求的全局响应超时，以�?admin/app 渠道健康检查超时。`[provider_relay.retry]` 是数据库路由渠道未单独定�?retry policy 时使用的默认重试策略�?
 生产 server/service/container 部署使用结构�?TOML。推荐使�?`password_file`，只有当 TOML 文件本身作为密钥文件保护时才直接使用 `password`�?
-- `password_file` 可以是绝对路径�?- `password_file` 可以是相�?`cloudrouter.toml` 所在目录的路径�?- `password_file` 可以使用 `${VAR}`、`$VAR`、`%VAR%` �?`~` 展开，用于平�?Secret 路径�?
+- `password_file` 可以是绝对路径�?- `password_file` 可以是相�?`config.toml` 所在目录的路径�?- `password_file` 可以使用 `${VAR}`、`$VAR`、`%VAR%` �?`~` 展开，用于平�?Secret 路径�?
 ```toml
 [database]
 engine = "postgresql"
@@ -387,7 +387,7 @@ installer 输出示例�?
 }
 ```
 
-需要快速恢复管理员登录时，可以通过根目�?`pnpm` 命令重置 `admin` 密码。开发模式默认使�?`target/dev/cloudrouter.sqlite`，release 模式使用运行�?`cloudrouter.toml` 中的数据库配置。脚本不会把密码继续传给 installer/cargo 子进程命令行；如果需要避免密码出现在 shell history �?Node 进程参数中，请使�?`SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD` 环境变量�?
+需要快速恢复管理员登录时，可以通过根目�?`pnpm` 命令重置 `admin` 密码。开发模式默认使�?`target/dev/cloudrouter.sqlite`，release 模式使用运行�?`config.toml` 中的数据库配置。脚本不会把密码继续传给 installer/cargo 子进程命令行；如果需要避免密码出现在 shell history �?Node 进程参数中，请使�?`SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD` 环境变量�?
 ```bash
 pnpm admin:reset:dev -- --password "Admin-Dev-Password-2026!"
 pnpm admin:reset:release -- --password "Admin-Release-Password-2026!"

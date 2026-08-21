@@ -1892,7 +1892,7 @@ mod tests {
         path.push(format!(
             "sdkwork-cloudrouter-admin-gateway-runtime-{millis}"
         ));
-        path.push("sdkwork-cloudrouter.toml");
+        path.push("config.toml");
         path
     }
 

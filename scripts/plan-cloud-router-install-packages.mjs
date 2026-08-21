@@ -34,7 +34,7 @@ const WINDOWS_USER_ROOT = '%USERPROFILE%/.sdkwork/router';
 const MACOS_SERVICE_ROOT = '/Library/Application Support/sdkwork/router';
 const USER_PRIVATE_ROUTER_ROOT = '~/.sdkwork/router';
 const CONTAINER_SECRET_ROOT = '/run/secrets/sdkwork/router';
-const RUNTIME_CONFIG_TEMPLATE_PATH = 'config/cloudrouter.toml.example';
+const RUNTIME_CONFIG_TEMPLATE_PATH = 'config/config.toml.example';
 const POSTGRES_DSN_EXAMPLE = 'postgresql://sdkwork_ai_prod:<password>@db.example.com:5432/sdkwork_ai_prod';
 const FAST_INITIALIZATION_CONTRACT = Object.freeze([
   'host-env-prepare',
@@ -420,7 +420,7 @@ function postgresPasswordFileFor(platform, deploymentMode, locations) {
   if (platform === 'macos') {
     return `${MACOS_SERVICE_ROOT}/database.secret`;
   }
-  if (locations.configFile === `${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml`) {
+  if (locations.configFile === `${LINUX_SERVICE_CONFIG_ROOT}/config.toml`) {
     return LINUX_SERVICE_DATABASE_SECRET_FILE;
   }
   return `${locations.dataDirectory}/database.secret`;
@@ -440,7 +440,7 @@ function redisPasswordFileFor(platform, deploymentMode, locations) {
   if (platform === 'macos') {
     return `${locations.dataDirectory}/redis.secret`;
   }
-  if (locations.configFile === `${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml`) {
+  if (locations.configFile === `${LINUX_SERVICE_CONFIG_ROOT}/config.toml`) {
     return `${LINUX_SERVICE_CONFIG_ROOT}/redis.secret`;
   }
   return `${locations.dataDirectory}/redis.secret`;
@@ -450,20 +450,20 @@ function runtimeConfigLocationsFor(platform, runtimeProfile) {
   if (runtimeProfile === 'desktop') {
     if (platform === 'windows') {
       return {
-        configFile: `${WINDOWS_USER_ROOT}/config/cloudrouter.toml`,
+        configFile: `${WINDOWS_USER_ROOT}/config/config.toml`,
         dataDirectory: `${WINDOWS_USER_ROOT}/data`,
         sqlitePath: `${WINDOWS_USER_ROOT}/data/cloudrouter.sqlite`,
       };
     }
     if (platform === 'macos') {
       return {
-        configFile: `${USER_PRIVATE_ROUTER_ROOT}/config/cloudrouter.toml`,
+        configFile: `${USER_PRIVATE_ROUTER_ROOT}/config/config.toml`,
         dataDirectory: `${USER_PRIVATE_ROUTER_ROOT}/data`,
         sqlitePath: `${USER_PRIVATE_ROUTER_ROOT}/data/cloudrouter.sqlite`,
       };
     }
     return {
-      configFile: `${USER_PRIVATE_ROUTER_ROOT}/config/cloudrouter.toml`,
+      configFile: `${USER_PRIVATE_ROUTER_ROOT}/config/config.toml`,
       dataDirectory: `${USER_PRIVATE_ROUTER_ROOT}/data`,
       sqlitePath: `${USER_PRIVATE_ROUTER_ROOT}/data/cloudrouter.sqlite`,
     };
@@ -471,20 +471,20 @@ function runtimeConfigLocationsFor(platform, runtimeProfile) {
 
   if (platform === 'windows') {
     return {
-      configFile: `${WINDOWS_SYSTEM_ROOT}/cloudrouter.toml`,
+      configFile: `${WINDOWS_SYSTEM_ROOT}/config.toml`,
       dataDirectory: `${WINDOWS_SYSTEM_ROOT}/Data`,
       sqlitePath: `${WINDOWS_SYSTEM_ROOT}/Data/cloudrouter.sqlite`,
     };
   }
   if (platform === 'macos') {
     return {
-      configFile: `${MACOS_SERVICE_ROOT}/cloudrouter.toml`,
+      configFile: `${MACOS_SERVICE_ROOT}/config.toml`,
       dataDirectory: `${MACOS_SERVICE_ROOT}/Data`,
       sqlitePath: `${MACOS_SERVICE_ROOT}/Data/cloudrouter.sqlite`,
     };
   }
   return {
-    configFile: `${LINUX_SERVICE_CONFIG_ROOT}/cloudrouter.toml`,
+    configFile: `${LINUX_SERVICE_CONFIG_ROOT}/config.toml`,
     dataDirectory: LINUX_SERVICE_DATA_ROOT,
     sqlitePath: `${LINUX_SERVICE_DATA_ROOT}/cloudrouter.sqlite`,
   };

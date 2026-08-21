@@ -79,7 +79,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.uid
             - name: SDKWORK_CLOUDROUTER_CONFIG_FILE
-              value: /etc/sdkwork/cloudrouter.toml
+              value: /etc/sdkwork/config.toml
             - name: SDKWORK_CLOUDROUTER_EDGE_SERVER
               value: "true"
             - name: SDKWORK_CLOUDROUTER_GATEWAY_BIND

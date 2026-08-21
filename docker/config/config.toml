@@ -1,5 +1,5 @@
 # SdkWork CloudRouter runtime configuration for docker compose (standalone container).
-# Mounted read-only at /etc/sdkwork/router/cloudrouter.toml by docker-compose.yml.
+# Mounted read-only at /etc/sdkwork/router/config.toml by docker-compose.yml.
 #
 # How to modify configuration at deployment time:
 #   1. Edit this file for non-sensitive runtime settings (observability,

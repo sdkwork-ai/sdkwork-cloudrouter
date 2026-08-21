@@ -9,7 +9,7 @@ This example targets a distributed **cloud** production deployment (`SDKWORK_CLO
 - Cilium installed with `CiliumNetworkPolicy` and DNS proxy support enabled
 - `sdkwork-cloudrouter-redis-auth` provisioned by an external secret controller;
   never apply the placeholder Redis credentials to a production namespace
-- `sdkwork-cloudrouter-config` mounted with `cloudrouter.toml`, the runtime
+- `sdkwork-cloudrouter-config` mounted with `config.toml`, the runtime
   database identity, and the separately privileged
   `database-migrator-url`, API key pepper, session signing material,
   trusted-subject secret, and Redis URL
@@ -117,7 +117,7 @@ Use the versioned Kubernetes Job before starting the release workload. For a
 manual operator-controlled upgrade with the same dedicated migrator identity:
 
 ```bash
-cloudrouterctl upgrade --config-file /etc/sdkwork/cloudrouter.toml
+cloudrouterctl upgrade --config-file /etc/sdkwork/config.toml
 ```
 
 Do not rely on concurrent `ensure_installed` from multiple replicas during first rollout.

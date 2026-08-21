@@ -415,7 +415,7 @@ max_connections = 12
 fn runtime_config_locations_follow_platform_conventions() {
     let linux_server = RuntimeConfigLocation::for_platform("linux", RuntimeConfigProfile::Server);
     assert_eq!(
-        PathBuf::from("/etc/sdkwork/router/cloudrouter.toml"),
+        PathBuf::from("/etc/sdkwork/router/config.toml"),
         linux_server.config_file
     );
     assert_eq!(
@@ -425,7 +425,7 @@ fn runtime_config_locations_follow_platform_conventions() {
 
     let linux_desktop = RuntimeConfigLocation::for_platform("linux", RuntimeConfigProfile::Desktop);
     assert_eq!(
-        PathBuf::from("~/.sdkwork/router/config/cloudrouter.toml"),
+        PathBuf::from("~/.sdkwork/router/config/config.toml"),
         linux_desktop.config_file
     );
     assert_eq!(
@@ -436,14 +436,14 @@ fn runtime_config_locations_follow_platform_conventions() {
     let windows_server =
         RuntimeConfigLocation::for_platform("windows", RuntimeConfigProfile::Server);
     assert_eq!(
-        PathBuf::from("%ProgramData%/sdkwork/router/cloudrouter.toml"),
+        PathBuf::from("%ProgramData%/sdkwork/router/config.toml"),
         windows_server.config_file
     );
 
     let windows_desktop =
         RuntimeConfigLocation::for_platform("windows", RuntimeConfigProfile::Desktop);
     assert_eq!(
-        PathBuf::from("%USERPROFILE%/.sdkwork/router/config/cloudrouter.toml"),
+        PathBuf::from("%USERPROFILE%/.sdkwork/router/config/config.toml"),
         windows_desktop.config_file
     );
     assert_eq!(
@@ -453,7 +453,7 @@ fn runtime_config_locations_follow_platform_conventions() {
 
     let macos_desktop = RuntimeConfigLocation::for_platform("macos", RuntimeConfigProfile::Desktop);
     assert_eq!(
-        PathBuf::from("~/.sdkwork/router/config/cloudrouter.toml"),
+        PathBuf::from("~/.sdkwork/router/config/config.toml"),
         macos_desktop.config_file
     );
 }
@@ -478,7 +478,7 @@ fn runtime_config_locations_expose_desktop_sqlite_database_paths() {
 fn initializes_default_desktop_runtime_config_at_explicit_location() {
     let root = temp_root("desktop-runtime-init");
     let location = RuntimeConfigLocation {
-        config_file: root.join("config").join("cloudrouter.toml"),
+        config_file: root.join("config").join("config.toml"),
         data_directory: root.join("data"),
     };
 
@@ -509,7 +509,7 @@ fn from_env_or_initialize_creates_server_postgres_template_and_requires_real_dat
     let _env_lock = ENV_LOCK.lock().unwrap();
     let _database_env = clear_database_env();
     let root = temp_root("server-runtime-init");
-    let config_path = root.join("config").join("cloudrouter.toml");
+    let config_path = root.join("config").join("config.toml");
     let program_data = root.join("program-data");
     let _guard = EnvGuard::set(&[
         (
@@ -558,7 +558,7 @@ fn explicit_runtime_config_file_uses_neighbor_data_directory_for_server_template
     let _env_lock = ENV_LOCK.lock().unwrap();
     let _database_env = clear_database_env();
     let root = temp_root("explicit-config-neighbor-data");
-    let config_path = root.join("custom").join("cloudrouter.toml");
+    let config_path = root.join("custom").join("config.toml");
     let program_data = root.join("program-data");
     let _guard = EnvGuard::set(&[
         (
@@ -610,7 +610,7 @@ fn startup_help_text_covers_standard_config_paths_and_database_guidance() {
         &linux_server,
     )
     .join("\n");
-    assert!(server_help.contains("/etc/sdkwork/router/cloudrouter.toml"));
+    assert!(server_help.contains("/etc/sdkwork/router/config.toml"));
     assert!(server_help.contains("SDKWORK_DATABASE_URL"));
     assert!(server_help.contains("SDKWORK_CLOUDROUTER_CONFIG_FILE"));
     assert!(server_help.contains("PostgreSQL"));
@@ -622,7 +622,7 @@ fn startup_help_text_covers_standard_config_paths_and_database_guidance() {
         &linux_desktop,
     )
     .join("\n");
-    assert!(desktop_help.contains("~/.sdkwork/router/config/cloudrouter.toml"));
+    assert!(desktop_help.contains("~/.sdkwork/router/config/config.toml"));
     assert!(desktop_help.contains("~/.sdkwork/router/data/cloudrouter.sqlite"));
     assert!(desktop_help.contains("SDKWORK_CLOUDROUTER_CONFIG_FILE"));
     assert!(desktop_help.contains("SQLite"));
@@ -706,7 +706,7 @@ fn runtime_config_locations_resolve_to_real_os_paths_for_process_lookup() {
         },
     );
     assert_eq!(
-        "C:/ProgramData/sdkwork/router/cloudrouter.toml",
+        "C:/ProgramData/sdkwork/router/config.toml",
         slash_path(&windows_server.config_file)
     );
 
@@ -719,7 +719,7 @@ fn runtime_config_locations_resolve_to_real_os_paths_for_process_lookup() {
         },
     );
     assert_eq!(
-        "C:/Users/Ada/.sdkwork/router/config/cloudrouter.toml",
+        "C:/Users/Ada/.sdkwork/router/config/config.toml",
         slash_path(&windows_desktop.config_file)
     );
     assert_eq!(
@@ -736,7 +736,7 @@ fn runtime_config_locations_resolve_to_real_os_paths_for_process_lookup() {
         },
     );
     assert_eq!(
-        "/home/ada/.sdkwork/router/config/cloudrouter.toml",
+        "/home/ada/.sdkwork/router/config/config.toml",
         slash_path(&linux_desktop.config_file)
     );
     assert_eq!(
@@ -753,7 +753,7 @@ fn runtime_config_locations_resolve_to_real_os_paths_for_process_lookup() {
         },
     );
     assert_eq!(
-        "/home/ada/.sdkwork/router/config/cloudrouter.toml",
+        "/home/ada/.sdkwork/router/config/config.toml",
         slash_path(&linux_desktop_fallback.config_file)
     );
     assert_eq!(
@@ -770,7 +770,7 @@ fn runtime_config_locations_resolve_to_real_os_paths_for_process_lookup() {
         },
     );
     assert_eq!(
-        "/Users/ada/.sdkwork/router/config/cloudrouter.toml",
+        "/Users/ada/.sdkwork/router/config/config.toml",
         slash_path(&macos_desktop.config_file)
     );
 }
@@ -857,7 +857,7 @@ environment = "production"
 fn write_temp_config(label: &str, content: &str) -> PathBuf {
     let root = temp_root(label);
     fs::create_dir_all(&root).unwrap();
-    let path = root.join("cloudrouter.toml");
+    let path = root.join("config.toml");
     fs::write(&path, content.trim()).unwrap();
     path
 }

@@ -86,7 +86,7 @@ Quick Ubuntu/Debian service install from a release asset:
 
 ```bash
 sudo apt install ./cloudrouter-linux-x64-server-0.3.0.deb
-sudo editor /etc/sdkwork/router/cloudrouter.toml
+sudo editor /etc/sdkwork/router/config.toml
 sudo editor /etc/sdkwork/database/database.secret
 sudo systemctl start cloudrouter
 curl http://127.0.0.1:3900/healthz
@@ -114,14 +114,14 @@ template and [`etc/nginx/sdkwork`](./etc/nginx/sdkwork/) for full-domain
 examples. See the release install guide for certificate path conventions under
 `/opt/certs/letsencrypt/live/<cert-name>`.
 
-The `.deb` package creates `/etc/sdkwork/router/cloudrouter.toml`,
+The `.deb` package creates `/etc/sdkwork/router/config.toml`,
 `/etc/sdkwork/router/cloudrouter.env`, `/etc/sdkwork/database/database.secret`,
 `/var/lib/sdkwork/router`, and the
 `sdkwork` system user. The Linux systemd service runs `cloudrouterctl
 ensure` and `refresh-catalog --force` automatically before the gateway starts,
 and service packages enable `cloudrouter.service` during installation on systemd
 hosts. The service is not started until the operator configures PostgreSQL in
-`/etc/sdkwork/router/cloudrouter.toml` or uses a protected
+`/etc/sdkwork/router/config.toml` or uses a protected
 `SDKWORK_DATABASE_URL` override in `/etc/sdkwork/router/cloudrouter.env`.
 The package post-install step prints the runtime TOML, service environment,
 PostgreSQL password file, systemd service name, and the exact first-start
@@ -828,7 +828,7 @@ declares:
 - `portal/dist` production assets
 - `portal/dist/sdk-archives` generated SDK ZIP artifacts
 - `.env.release.example` as a reference template only
-- `config/cloudrouter.toml.example` as the runtime configuration
+- `config/config.toml.example` as the runtime configuration
   template
 - an `install-manifest.json`
 - service manifests for service mode and container entrypoint metadata for
@@ -990,7 +990,7 @@ gateway_invocation_body_max_bytes = 1048576
 # models_catalog_root = "/usr/lib/sdkwork/router/catalog"
 ```
 
-`password_file` may be an absolute path, a path relative to `cloudrouter.toml`,
+`password_file` may be an absolute path, a path relative to `config.toml`,
 or a path that uses standard environment variable expansion such as
 `${SECRET_ROOT}/database.secret`, `$SECRET_ROOT/database.secret`, or
 `%ProgramData%/sdkwork/router/database.secret`. Generated service templates
@@ -1054,7 +1054,7 @@ the first provider fault without trying later candidates. `[provider_relay.retry
 is the default retry policy when a database routing channel does not define its
 own retry policy.
 
-Protected TOML files may place the password directly in `cloudrouter.toml`
+Protected TOML files may place the password directly in `config.toml`
 instead of using a separate password file:
 
 ```toml
@@ -1071,12 +1071,12 @@ max_connections = 16
 
 The standard config file locations are:
 
-- Linux server: `/etc/sdkwork/router/cloudrouter.toml`
-- Linux desktop: `~/.sdkwork/router/config/cloudrouter.toml`
-- Windows server: `%ProgramData%/sdkwork/router/cloudrouter.toml`
-- Windows desktop: `%USERPROFILE%/.sdkwork/router/config/cloudrouter.toml`
-- macOS server: `/Library/Application Support/sdkwork/router/cloudrouter.toml`
-- macOS desktop: `~/.sdkwork/router/config/cloudrouter.toml`
+- Linux server: `/etc/sdkwork/router/config.toml`
+- Linux desktop: `~/.sdkwork/router/config/config.toml`
+- Windows server: `%ProgramData%/sdkwork/router/config.toml`
+- Windows desktop: `%USERPROFILE%/.sdkwork/router/config/config.toml`
+- macOS server: `/Library/Application Support/sdkwork/router/config.toml`
+- macOS desktop: `~/.sdkwork/router/config/config.toml`
 
 At runtime, `SDKWORK_CLOUDROUTER_CONFIG_FILE` can point to any explicit TOML config
 file. `SDKWORK_DATABASE_URL` and
@@ -1124,7 +1124,7 @@ packages use real ZIP bytes for `.zip`; Linux and macOS packages use real
 gzip-compressed tar bytes for `.tar.gz` and preserve executable mode on
 extensionless binaries under `bin/`. The tar writer supports standard ustar
 prefix paths for nested production asset names. All packages generate
-`config/cloudrouter.toml.example`. Container
+`config/config.toml.example`. Container
 packages generate a `container/Containerfile`, platform-specific
 entrypoint (`container/entrypoint` on Linux/macOS,
 `container/entrypoint.ps1` on Windows), and `container/metadata.json` without
@@ -1171,7 +1171,7 @@ control-group protections, native syscall architecture filtering, and
 `/usr/lib/sdkwork/router` and `/etc/sdkwork/router` stay read-only to the service
 process after installation.
 Operators configure PostgreSQL through
-`/etc/sdkwork/router/cloudrouter.toml`, `/etc/sdkwork/database/database.secret`, or a
+`/etc/sdkwork/router/config.toml`, `/etc/sdkwork/database/database.secret`, or a
 protected override in `/etc/sdkwork/router/cloudrouter.env`, then start the service.
 Windows `.msi` packages keep binaries under `%ProgramFiles%/sdkwork/router` and
 shared templates under `%ProgramData%/sdkwork/router`; native manifests
@@ -1187,7 +1187,7 @@ runtime config and local SQLite data under `~/.sdkwork/router`.
 `scripts/smoke-install-package-init.mjs` validates the fast initialization
 contract separately from service startup. The default root command is a dry-run
 smoke that creates a temporary install root, writes a safe
-`.env.release`, writes a temporary `cloudrouter.toml`, verifies
+`.env.release`, writes a temporary `config.toml`, verifies
 that server package dry-runs use PostgreSQL while desktop package dry-runs use
 a file-backed SQLite URL, verifies `cloudrouterctl ensure` plus
 `cloudrouterctl refresh-catalog --force` are the only installer

@@ -68,7 +68,7 @@ application roots must not expose `gateway:*:cloud` commands
 | `application.public-ingress` | http://127.0.0.1:3905 |
 | `application.open-http` | http://127.0.0.1:18080 (distributed mode) |
 | `application.backend-http` | http://127.0.0.1:18081 (distributed mode) |
-| `platform.api-gateway` | http://127.0.0.1:3902 (optional; embedded in unified-process) |
+| `platform.api-gateway` | http://127.0.0.1:3902 (optional; may share the standalone edge process) |
 
 ## Cloud dev (remote client only)
 

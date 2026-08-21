@@ -31,7 +31,7 @@ workspace that was started with explicit ports.
 Options:
   --dry-run                         List matched listeners without stopping them.
   --deployment-profile <profile>    Forwarded to the workspace topology resolver.
-  --service-layout <layout>         Forwarded to the workspace topology resolver.
+  --service-layout <layout>         Retired; rejected by the workspace topology resolver.
   --server-bind <host:port>         Match a custom edge server listener.
   --portal-bind <host:port>         Match a custom portal listener.
   --gateway-bind <host:port>        Match a custom gateway listener.

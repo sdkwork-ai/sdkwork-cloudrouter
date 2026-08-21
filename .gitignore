@@ -75,7 +75,7 @@ data/skills/cloudhub/raw/details/*.json
 # SDKWork profile env files (see specs/application-env-standard.md)
 # Host profiles such as .env.development and .env.release are ignored via .env.*
 *.production.env
-configs/topology/*.production.env
+etc/topology/*.production.env
 config/*.local.toml
 
 # Local verification scratch output (never commit)
