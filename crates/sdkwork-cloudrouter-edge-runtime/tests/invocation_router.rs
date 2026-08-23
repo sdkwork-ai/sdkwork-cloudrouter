@@ -12,15 +12,14 @@ use bytes::Bytes;
 use futures_util::StreamExt;
 use sdkwork_cloudrouter_config::ProviderAdapterConfig;
 use sdkwork_cloudrouter_router_service::application::{
-    ApiKeySecretHasher, BillingQuantitySource, Invocation, InvocationAccount, InvocationBilling,
-    InvocationBody, InvocationDispatchResponse, InvocationProviderRequest, InvocationRequest,
-    InvocationResource, InvocationSubject,
+    AccountBillingMode, ApiKeySecretHasher, BillingQuantitySource, Invocation, InvocationAccount,
+    InvocationBilling, InvocationBody, InvocationDispatchResponse, InvocationProviderRequest,
+    InvocationRequest, InvocationResource, InvocationSubject,
 };
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, DomainError, DomainResult, GatewayAccessPolicy,
     GatewayApiKey, ModelPrice, ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money,
-    PriceSide, PricingPlan, ProviderRetryPolicy, QuotaPolicy, RouteCandidate, RoutingCapability,
-    RoutingPolicy, RoutingPolicyScope, RoutingRule, UpstreamAccountGroup, UpstreamAccountRoute,
+    PriceSide, PricingPlan, ProviderRetryPolicy, QuotaPolicy, RoutingCapability, UpstreamAccountGroup, UpstreamAccountRoute,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
@@ -465,81 +464,6 @@ fn catalog_with_hashed_api_key_and_base_url(
         "0.010000",
         "0.004000",
     );
-    catalog.add_routing_policy(
-        RoutingPolicy::new(
-            9001,
-            10,
-            20,
-            "standard-group-gpt-4o-mini-policy",
-            RoutingPolicyScope::UpstreamAccountGroup,
-            Some(10),
-            Some(9101),
-        )
-        .with_capability(RoutingCapability::Chat),
-    );
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9102,
-            10,
-            20,
-            9101,
-            "standard-group-gpt-4o-mini",
-            1,
-            r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
-            "openai/gpt-4o-mini",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
-    );
-    catalog.add_routing_policy(
-        RoutingPolicy::new(
-            9002,
-            10,
-            20,
-            "standard-group-network-policy",
-            RoutingPolicyScope::UpstreamAccountGroup,
-            Some(10),
-            Some(9201),
-        )
-        .with_capability(RoutingCapability::Network),
-    );
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9202,
-            10,
-            20,
-            9201,
-            "standard-group-openai-files",
-            1,
-            r#"{"routeKey":"openai/management/files"}"#,
-            "openai/management/files",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
-    );
-    catalog.add_routing_policy(
-        RoutingPolicy::new(
-            9003,
-            10,
-            20,
-            "standard-group-video-policy",
-            RoutingPolicyScope::UpstreamAccountGroup,
-            Some(10),
-            Some(9301),
-        )
-        .with_capability(RoutingCapability::Video),
-    );
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9203,
-            10,
-            20,
-            9301,
-            "standard-group-kling-text2video",
-            2,
-            r#"{"routeKey":"kling.text_to_video"}"#,
-            "kling.text_to_video",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
-    );
     catalog
 }
 
@@ -594,19 +518,6 @@ fn catalog_with_failover_routes_and_hashed_api_key(
         )
         .for_upstream_account("fallback", 3002),
     );
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9100,
-            10,
-            20,
-            9101,
-            "standard-group-gpt-4o-mini-failover",
-            0,
-            r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
-            "openai/gpt-4o-mini",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
-    );
     catalog
 }
 
@@ -650,31 +561,6 @@ fn catalog_with_encoded_image_model_and_hashed_api_key(key_hash: &str) -> InMemo
         BillingMeter::ImageResult,
         "0.020000",
         "0.012000",
-    );
-    catalog.add_routing_policy(
-        RoutingPolicy::new(
-            9003,
-            10,
-            20,
-            "standard-group-image-policy",
-            RoutingPolicyScope::UpstreamAccountGroup,
-            Some(10),
-            Some(9301),
-        )
-        .with_capability(RoutingCapability::Image),
-    );
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9302,
-            10,
-            20,
-            9301,
-            "standard-group-openrouter-image",
-            1,
-            r#"{"catalogKey":"openrouter/gpt-4o-mini+latest"}"#,
-            "openrouter/gpt-4o-mini+latest",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
     );
     catalog
 }
@@ -1020,7 +906,9 @@ async fn invocation_router_uses_supplier_default_base_url_for_non_llm_resources(
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
     let dispatcher = Arc::new(CapturingDispatcher::default());
     let mut catalog = catalog_with_encoded_image_model_and_hashed_api_key(&key_hash);
-    // 供应商默认 Base URL：非 LLM 资源（图片/视频等）调用使用；Chat 请求仍走协议端点地址
+    // 供应商默认 Base URL：当账号未配置专属 base_url（无账号协议/默认，也无供应商
+    // 协议）时，对非 LLM 资源（图片/视频等）和 chat 请求一律生效；
+    // 协议端点仅在供应商默认也未配置时作为最后兜底。
     catalog.set_supplier_default_base_url("openrouter", "http://default.openrouter.internal");
     let router = sdkwork_cloudrouter_edge_runtime::invocation_router_with_full_pipeline(
         Arc::new(catalog),
@@ -1057,7 +945,8 @@ async fn invocation_router_uses_supplier_default_base_url_for_non_llm_resources(
         provider_request.url.as_deref()
     );
 
-    // Chat 请求：LLM 资源匹配协议端点 → 仍走协议端点 Base URL
+    // Chat 请求：该账号未配置任何账号级 base_url（无账号协议/默认、无供应商协议），
+    // 供应商默认 Base URL 对 chat 同样生效（官方/中转站接入语义）。
     let response = router
         .oneshot(
             Request::builder()
@@ -1080,7 +969,7 @@ async fn invocation_router_uses_supplier_default_base_url_for_non_llm_resources(
         .as_ref()
         .expect("provider request");
     assert_eq!(
-        Some("http://provider-proxy.internal/openrouter/v1/chat/completions"),
+        Some("http://default.openrouter.internal/v1/chat/completions"),
         provider_request.url.as_deref()
     );
 }
@@ -2322,6 +2211,7 @@ async fn invocation_http_dispatcher_forwards_provider_header_auth_after_sanitizi
         timeout_ms: Some(30_000),
         retry_policy: None,
         provider_model: None,
+        billing_mode: AccountBillingMode::Prepay,
         account_group_id: None,
         account_group_code: None,
         pricing_plan_code: None,
@@ -2386,6 +2276,7 @@ async fn invocation_http_dispatcher_enforces_account_timeout() {
         timeout_ms: Some(10),
         retry_policy: None,
         provider_model: None,
+        billing_mode: AccountBillingMode::Prepay,
         account_group_id: None,
         account_group_code: None,
         pricing_plan_code: None,

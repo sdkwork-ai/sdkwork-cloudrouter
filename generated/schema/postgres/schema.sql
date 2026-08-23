@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.5.0.
--- Registry SHA-256: 844ff985022a052a4a2e7dfc22f1d755b798a282a688acc99f8de38c1360015a.
+-- Registry SHA-256: ac6aefd0afc4f466bb615c7e06cc25cbe71e2fd33c9f0c0def31d44c007181dc.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -516,6 +516,37 @@ CREATE INDEX IF NOT EXISTS idx_ai_metering_usage_meter_occurred ON ai_metering_u
 CREATE INDEX IF NOT EXISTS idx_ai_metering_usage_settlement_status ON ai_metering_usage (tenant_id, organization_id, settlement_status, occurred_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_metering_usage_retention ON ai_metering_usage (retention_until, id);
 
+CREATE TABLE IF NOT EXISTS ai_model_access_policy (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    scope_type VARCHAR(32) NOT NULL,
+    scope_id BIGINT NOT NULL,
+    scope_code VARCHAR(64),
+    effect VARCHAR(16) NOT NULL,
+    vendor_code VARCHAR(64),
+    model_pattern VARCHAR(256),
+    modalities JSONB NOT NULL DEFAULT '[]'::jsonb,
+    priority INTEGER NOT NULL DEFAULT 100,
+    description VARCHAR(512),
+    CONSTRAINT ck_ai_model_access_policy_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_ai_model_access_policy_scope CHECK (scope_type IN ('supplier', 'account_group')),
+    CONSTRAINT ck_ai_model_access_policy_effect CHECK (effect IN ('allow', 'deny') AND priority >= 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_model_access_policy_uuid ON ai_model_access_policy (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_model_access_policy_scope_rule ON ai_model_access_policy (tenant_id, organization_id, scope_type, scope_id, effect, vendor_code, model_pattern);
+CREATE INDEX IF NOT EXISTS idx_ai_model_access_policy_scope_status ON ai_model_access_policy (tenant_id, organization_id, scope_type, scope_id, status, priority, id);
+
 CREATE TABLE IF NOT EXISTS ai_model_mapping_rule (
     id BIGINT NOT NULL PRIMARY KEY,
     uuid VARCHAR(64) NOT NULL,
@@ -650,6 +681,44 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_quota_policy_tenant_subject ON ai_quota_
 CREATE INDEX IF NOT EXISTS idx_ai_quota_policy_subject_ref ON ai_quota_policy (tenant_id, organization_id, subject_type, subject_ref_hash, status);
 CREATE INDEX IF NOT EXISTS idx_ai_quota_policy_model_account_group ON ai_quota_policy (tenant_id, organization_id, model, account_group_id, status);
 
+CREATE TABLE IF NOT EXISTS ai_resource_binding (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    binding_scope VARCHAR(32) NOT NULL,
+    supplier_id BIGINT,
+    supplier_code VARCHAR(64),
+    account_group_id BIGINT,
+    account_group_code VARCHAR(64),
+    account_id BIGINT,
+    account_code VARCHAR(64),
+    resource_id BIGINT,
+    resource_code VARCHAR(192),
+    resource_group_code VARCHAR(128),
+    grant_type VARCHAR(16) NOT NULL DEFAULT 'allow',
+    priority INTEGER NOT NULL DEFAULT 100,
+    effective_from TIMESTAMPTZ,
+    effective_to TIMESTAMPTZ,
+    CONSTRAINT ck_ai_resource_binding_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_ai_resource_binding_scope CHECK (binding_scope IN ('supplier', 'account_group', 'account')),
+    CONSTRAINT ck_ai_resource_binding_grant CHECK (grant_type IN ('allow', 'deny') AND priority >= 0),
+    CONSTRAINT ck_ai_resource_binding_target CHECK ((NULLIF(resource_code, '') IS NOT NULL) <> (NULLIF(resource_group_code, '') IS NOT NULL))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_resource_binding_uuid ON ai_resource_binding (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_resource_binding_scope_resource ON ai_resource_binding (tenant_id, organization_id, binding_scope, supplier_id, account_group_id, account_id, resource_id, resource_code, resource_group_code);
+CREATE INDEX IF NOT EXISTS idx_ai_resource_binding_scope_status ON ai_resource_binding (tenant_id, organization_id, binding_scope, status, priority, id);
+CREATE INDEX IF NOT EXISTS idx_ai_resource_binding_resource_status ON ai_resource_binding (tenant_id, organization_id, resource_code, status, id);
+
 CREATE TABLE IF NOT EXISTS ai_routing_decision_log (
     id BIGINT NOT NULL PRIMARY KEY,
     uuid VARCHAR(64) NOT NULL,
@@ -779,6 +848,39 @@ CREATE TABLE IF NOT EXISTS ai_routing_rule (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_rule_profile_code ON ai_routing_rule (profile_id, rule_code) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_ai_routing_rule_tenant_profile_priority ON ai_routing_rule (tenant_id, organization_id, profile_id, priority, status);
+
+CREATE TABLE IF NOT EXISTS ai_routing_strategy (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    strategy_code VARCHAR(64) NOT NULL,
+    strategy_name VARCHAR(128) NOT NULL,
+    strategy_name_i18n JSONB,
+    description VARCHAR(512),
+    strategy_type VARCHAR(32) NOT NULL,
+    params JSONB NOT NULL DEFAULT '{}'::jsonb,
+    priority INTEGER NOT NULL DEFAULT 100,
+    enabled BOOLEAN NOT NULL DEFAULT true,
+    is_default BOOLEAN NOT NULL DEFAULT false,
+    tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+    CONSTRAINT ck_ai_routing_strategy_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_ai_routing_strategy_type CHECK (strategy_type IN ('price_first', 'sticky', 'quality_first', 'latency_first', 'weighted', 'round_robin') AND priority >= 0),
+    CONSTRAINT ck_ai_routing_strategy_params CHECK (jsonb_typeof(params) = 'object')
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_strategy_uuid ON ai_routing_strategy (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_routing_strategy_tenant_code ON ai_routing_strategy (tenant_id, organization_id, strategy_code);
+CREATE INDEX IF NOT EXISTS idx_ai_routing_strategy_tenant_status ON ai_routing_strategy (tenant_id, organization_id, status, strategy_type, priority, id);
+CREATE INDEX IF NOT EXISTS idx_ai_routing_strategy_tenant_default ON ai_routing_strategy (tenant_id, organization_id, is_default, enabled, id);
 
 CREATE TABLE IF NOT EXISTS ai_runtime_artifact (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -917,6 +1019,7 @@ CREATE TABLE IF NOT EXISTS ai_upstream_supplier (
     environment INTEGER NOT NULL DEFAULT 1,
     metadata_schema_version VARCHAR(32),
     sort_order INTEGER NOT NULL DEFAULT 100,
+    supported_resources JSONB NOT NULL DEFAULT '[]'::jsonb,
     CONSTRAINT ck_ai_upstream_supplier_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
     CONSTRAINT ck_ai_upstream_supplier_type CHECK (supplier_type IN ('official', 'relay'))
 );
@@ -1025,6 +1128,7 @@ CREATE TABLE IF NOT EXISTS ai_upstream_account (
     upstream_balance_amount NUMERIC(38, 12),
     upstream_balance_currency VARCHAR(10),
     contract_cost_multiplier NUMERIC(38, 12) NOT NULL DEFAULT 1,
+    billing_mode VARCHAR(32) NOT NULL DEFAULT 'prepay',
     last_balance_checked_at TIMESTAMPTZ,
     last_rotated_at TIMESTAMPTZ,
     next_rotate_at TIMESTAMPTZ,
@@ -1039,7 +1143,8 @@ CREATE TABLE IF NOT EXISTS ai_upstream_account (
     CONSTRAINT fk_ai_upstream_account_preferred_endpoint FOREIGN KEY (tenant_id, organization_id, supplier_id, preferred_endpoint_id) REFERENCES ai_upstream_supplier_endpoint (tenant_id, organization_id, supplier_id, id) ON DELETE RESTRICT,
     CONSTRAINT fk_ai_upstream_account_auth_method FOREIGN KEY (tenant_id, organization_id, supplier_id, auth_method_code) REFERENCES ai_upstream_supplier_auth_method (tenant_id, organization_id, supplier_id, auth_method_code) ON DELETE RESTRICT,
     CONSTRAINT ck_ai_upstream_account_financial_values CHECK (contract_cost_multiplier > 0 AND (quota_limit IS NULL OR quota_limit >= 0) AND (quota_used IS NULL OR quota_used >= 0) AND (upstream_balance_amount IS NULL OR upstream_balance_amount >= 0)),
-    CONSTRAINT ck_ai_upstream_account_timeout CHECK (timeout_ms IS NULL OR timeout_ms > 0)
+    CONSTRAINT ck_ai_upstream_account_timeout CHECK (timeout_ms IS NULL OR timeout_ms > 0),
+    CONSTRAINT ck_ai_upstream_account_billing_mode CHECK (billing_mode IN ('prepay', 'postpay'))
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_uuid ON ai_upstream_account (uuid);
@@ -1104,6 +1209,7 @@ CREATE TABLE IF NOT EXISTS ai_upstream_account_group (
     description VARCHAR(512),
     group_type VARCHAR(32) NOT NULL DEFAULT 'mixed',
     routing_strategy VARCHAR(32) NOT NULL DEFAULT 'weighted',
+    routing_strategy_code VARCHAR(64) NOT NULL DEFAULT 'price_first',
     fallback_mode VARCHAR(32) NOT NULL DEFAULT 'sequential',
     priority INTEGER NOT NULL DEFAULT 100,
     routing_policy_id BIGINT,
@@ -1203,38 +1309,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_metric_snapshot_u
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_metric_snapshot ON ai_upstream_account_group_metric_snapshot (tenant_id, organization_id, account_group_id, snapshot_at);
 CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_metric_tenant_status ON ai_upstream_account_group_metric_snapshot (tenant_id, organization_id, status, snapshot_at, id);
 
-CREATE TABLE IF NOT EXISTS ai_upstream_account_group_resource (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    account_group_id BIGINT NOT NULL,
-    resource_id BIGINT,
-    resource_code VARCHAR(192) NOT NULL DEFAULT '',
-    resource_group_id BIGINT,
-    resource_group_code VARCHAR(128) NOT NULL DEFAULT '',
-    grant_type VARCHAR(32) NOT NULL DEFAULT 'allow',
-    priority INTEGER NOT NULL DEFAULT 100,
-    effective_from TIMESTAMPTZ,
-    effective_to TIMESTAMPTZ,
-    CONSTRAINT ck_ai_upstream_account_group_resource_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT fk_ai_upstream_account_group_resource_group FOREIGN KEY (tenant_id, organization_id, account_group_id) REFERENCES ai_upstream_account_group (tenant_id, organization_id, id) ON DELETE RESTRICT,
-    CONSTRAINT ck_ai_upstream_account_group_resource_target CHECK ((NULLIF(resource_code, '') IS NOT NULL) <> (NULLIF(resource_group_code, '') IS NOT NULL) AND grant_type IN ('allow', 'deny') AND priority >= 0 AND (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_resource_uuid ON ai_upstream_account_group_resource (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_group_resource ON ai_upstream_account_group_resource (tenant_id, organization_id, account_group_id, resource_code, resource_group_code);
-CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_resource_status ON ai_upstream_account_group_resource (tenant_id, organization_id, status, account_group_id, grant_type, priority, id);
-CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_group_resource_lookup ON ai_upstream_account_group_resource (tenant_id, organization_id, account_group_id, status, grant_type, priority, id);
-
 CREATE TABLE IF NOT EXISTS ai_upstream_account_health_state (
     id BIGINT NOT NULL PRIMARY KEY,
     tenant_id BIGINT NOT NULL DEFAULT 0,
@@ -1257,38 +1331,6 @@ CREATE TABLE IF NOT EXISTS ai_upstream_account_health_state (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_health_state_scope ON ai_upstream_account_health_state (tenant_id, organization_id, account_id);
 CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_health_state_health ON ai_upstream_account_health_state (tenant_id, organization_id, health_status, updated_at, account_id);
-
-CREATE TABLE IF NOT EXISTS ai_upstream_account_resource (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    account_id BIGINT NOT NULL,
-    resource_id BIGINT,
-    resource_code VARCHAR(192) NOT NULL DEFAULT '',
-    resource_group_id BIGINT,
-    resource_group_code VARCHAR(128) NOT NULL DEFAULT '',
-    grant_type VARCHAR(32) NOT NULL DEFAULT 'allow',
-    priority INTEGER NOT NULL DEFAULT 100,
-    effective_from TIMESTAMPTZ,
-    effective_to TIMESTAMPTZ,
-    CONSTRAINT ck_ai_upstream_account_resource_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT fk_ai_upstream_account_resource_account FOREIGN KEY (tenant_id, organization_id, account_id) REFERENCES ai_upstream_account (tenant_id, organization_id, id) ON DELETE RESTRICT,
-    CONSTRAINT ck_ai_upstream_account_resource_target CHECK ((NULLIF(resource_code, '') IS NOT NULL) <> (NULLIF(resource_group_code, '') IS NOT NULL) AND grant_type IN ('allow', 'deny') AND priority >= 0 AND (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_resource_uuid ON ai_upstream_account_resource (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_account_resource ON ai_upstream_account_resource (tenant_id, organization_id, account_id, resource_code, resource_group_code);
-CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_resource_status ON ai_upstream_account_resource (tenant_id, organization_id, status, account_id, grant_type, priority, id);
-CREATE INDEX IF NOT EXISTS idx_ai_upstream_account_resource_lookup ON ai_upstream_account_resource (tenant_id, organization_id, account_id, status, grant_type, priority, id);
 
 CREATE TABLE IF NOT EXISTS ai_upstream_object_route (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -1352,38 +1394,6 @@ CREATE TABLE IF NOT EXISTS ai_upstream_supplier_endpoint_health_state (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_endpoint_health_state_scope ON ai_upstream_supplier_endpoint_health_state (tenant_id, organization_id, endpoint_id);
 CREATE INDEX IF NOT EXISTS idx_ai_upstream_supplier_endpoint_health_state_health ON ai_upstream_supplier_endpoint_health_state (tenant_id, organization_id, health_status, updated_at, endpoint_id);
-
-CREATE TABLE IF NOT EXISTS ai_upstream_supplier_resource (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    supplier_id BIGINT NOT NULL,
-    supplier_code VARCHAR(64) NOT NULL,
-    resource_id BIGINT,
-    resource_code VARCHAR(192) NOT NULL DEFAULT '',
-    resource_group_id BIGINT,
-    resource_group_code VARCHAR(128) NOT NULL DEFAULT '',
-    grant_type VARCHAR(32) NOT NULL DEFAULT 'allow',
-    priority INTEGER NOT NULL DEFAULT 100,
-    effective_from TIMESTAMPTZ,
-    effective_to TIMESTAMPTZ,
-    CONSTRAINT ck_ai_upstream_supplier_resource_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT fk_ai_upstream_supplier_resource_supplier FOREIGN KEY (tenant_id, organization_id, supplier_id, supplier_code) REFERENCES ai_upstream_supplier (tenant_id, organization_id, id, supplier_code) ON DELETE RESTRICT,
-    CONSTRAINT ck_ai_upstream_supplier_resource_target CHECK ((NULLIF(resource_code, '') IS NOT NULL) <> (NULLIF(resource_group_code, '') IS NOT NULL) AND grant_type IN ('allow', 'deny') AND priority >= 0 AND (effective_to IS NULL OR effective_from IS NULL OR effective_to > effective_from))
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_resource_uuid ON ai_upstream_supplier_resource (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_upstream_supplier_resource ON ai_upstream_supplier_resource (tenant_id, organization_id, supplier_id, resource_code, resource_group_code);
-CREATE INDEX IF NOT EXISTS idx_ai_upstream_supplier_resource_lookup ON ai_upstream_supplier_resource (tenant_id, organization_id, status, supplier_id, grant_type, priority, id);
 
 CREATE TABLE IF NOT EXISTS cloudrouter_pricing_plan (
     id BIGINT NOT NULL PRIMARY KEY,

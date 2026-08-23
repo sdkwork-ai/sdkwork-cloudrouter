@@ -240,6 +240,7 @@ fn deferred_stream_response_to_http(
     let DeferredStreamResponse {
         status_code,
         content_type,
+        headers,
         body,
     } = match deferred.take_response() {
         Ok(response) => response,
@@ -262,6 +263,7 @@ fn deferred_stream_response_to_http(
             .headers_mut()
             .insert(header::CONTENT_TYPE, content_type);
     }
+    response.headers_mut().extend(headers);
     response
 }
 
@@ -527,6 +529,7 @@ fn normalized_response_to_http(
         body,
         body_bytes,
         content_type,
+        headers,
         stream_body,
         memory_guard,
     } = normalized;
@@ -543,12 +546,22 @@ fn normalized_response_to_http(
         {
             response.headers_mut().insert(header::CONTENT_TYPE, ct);
         }
+        response.headers_mut().extend(headers);
         return response;
     }
 
     let body = body_bytes
         .or_else(|| body.map(|body| serde_json::to_vec(&body).unwrap_or_else(|_| b"{}".to_vec())));
     let body = body.unwrap_or_default();
+    // Provider error responses are passed through, but the body must be
+    // scrubbed so a provider that echoes the outbound credential (e.g.
+    // `sk-...` or `Bearer ...` in a rejection reason) cannot leak it to the
+    // gateway client across tenants.
+    let body = if !status.is_success() {
+        redact_sensitive_tokens(&String::from_utf8_lossy(&body)).into_bytes()
+    } else {
+        body
+    };
     let body = match memory_guard {
         Some(memory_guard) => memory_guard.wrap_body(body),
         None => Body::from(body),
@@ -564,6 +577,7 @@ fn normalized_response_to_http(
             .headers_mut()
             .insert(header::CONTENT_TYPE, content_type);
     }
+    response.headers_mut().extend(headers);
     response
 }
 
@@ -654,8 +668,12 @@ pub(crate) fn response_from_invocation_error(error: &InvocationError) -> Respons
         InvocationErrorKind::Authorization | InvocationErrorKind::ModelForbidden => {
             StatusCode::FORBIDDEN
         }
-        InvocationErrorKind::Routing
-        | InvocationErrorKind::Pricing
+        // No routable upstream account/model: the gateway cannot serve the
+        // request right now → 503, consistent with the router-service explicit
+        // routers (`upstream_route_unavailable`) and the auth-token channel.
+        InvocationErrorKind::Routing => StatusCode::SERVICE_UNAVAILABLE,
+        // Genuine upstream/transport failures after a route was selected → 502.
+        InvocationErrorKind::Pricing
         | InvocationErrorKind::Dispatch
         | InvocationErrorKind::ProviderPassthroughFailed
         | InvocationErrorKind::Usage
@@ -667,7 +685,9 @@ pub(crate) fn response_from_invocation_error(error: &InvocationError) -> Respons
     let body = json!({
         "error": {
             "message": redact_sensitive_tokens(&error.message),
-            "type": error.kind.code(),
+            // Official OpenAI error type for SDK/client compatibility; the
+            // detailed internal reason stays in `code`.
+            "type": error.kind.openai_error_type(),
             "param": null,
             "code": error.kind.code()
         }

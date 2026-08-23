@@ -61,6 +61,11 @@ pub struct InvocationDispatchResponse {
     pub body: Option<Value>,
     pub body_bytes: Option<Vec<u8>>,
     pub content_type: Option<String>,
+    /// Safe upstream response headers preserved for the client (e.g.
+    /// `retry-after` for 429 backoff, `x-request-id`, `openai-*`/`x-ratelimit-*`
+    /// rate-limit signals). OpenAI SDK clients rely on these headers for
+    /// retry/backoff and request tracing, so they must be passed through.
+    pub headers: HeaderMap,
     /// Streaming response body for SSE/streaming requests.
     /// Wrapped in Mutex for Sync safety. Clone creates a new empty Mutex.
     pub stream_body: Mutex<Option<Body>>,
@@ -75,6 +80,7 @@ impl Clone for InvocationDispatchResponse {
             body: self.body.clone(),
             body_bytes: self.body_bytes.clone(),
             content_type: self.content_type.clone(),
+            headers: self.headers.clone(),
             stream_body: Mutex::new(None),
             memory_guard: self.memory_guard.clone(),
         }
@@ -97,6 +103,7 @@ impl InvocationDispatchResponse {
             body: Some(body),
             body_bytes: None,
             content_type: Some("application/json".to_owned()),
+            headers: HeaderMap::new(),
             stream_body: Mutex::new(None),
             memory_guard: None,
         }
@@ -108,6 +115,7 @@ impl InvocationDispatchResponse {
             body: None,
             body_bytes: Some(body.into()),
             content_type,
+            headers: HeaderMap::new(),
             stream_body: Mutex::new(None),
             memory_guard: None,
         }
@@ -119,6 +127,7 @@ impl InvocationDispatchResponse {
             body: None,
             body_bytes: None,
             content_type: None,
+            headers: HeaderMap::new(),
             stream_body: Mutex::new(None),
             memory_guard: None,
         }
@@ -131,6 +140,7 @@ impl InvocationDispatchResponse {
             body: None,
             body_bytes: None,
             content_type,
+            headers: HeaderMap::new(),
             stream_body: Mutex::new(Some(body)),
             memory_guard: None,
         }

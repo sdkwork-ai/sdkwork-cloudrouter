@@ -157,8 +157,6 @@ fn invocation_context() -> OpenAiInvocationContext {
 fn upstream_route(account_id: i64, provider_base_url: &str) -> OpenAiUpstreamRoute {
     OpenAiUpstreamRoute {
         catalog_key: "openai/gpt-test".to_owned(),
-        policy_id: None,
-        rule_id: None,
         group_id: 8_201,
         group_code: "default".to_owned(),
         pricing_plan_code: "commercial".to_owned(),

@@ -374,18 +374,20 @@ test("offerRecordToFormValues maps subscription benefit", () => {
   assert.equal(values.status, "active");
 });
 
-test("createIdempotencyKey falls back outside secure contexts", () => {
+test("createIdempotencyKey returns a uuid via @sdkwork/utils", () => {
   const originalDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'crypto');
   try {
     Object.defineProperty(globalThis, 'crypto', {
       configurable: true,
-      value: { randomUUID: undefined },
+      value: {
+        randomUUID: () => 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee',
+        getRandomValues: (array: Uint8Array) => array,
+      },
     });
     const key = createIdempotencyKey();
-    assert.ok(key.length >= 10);
-    assert.match(key, /^mk-/);
+    assert.equal(key, 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee');
     const second = createIdempotencyKey();
-    assert.notEqual(key, second);
+    assert.equal(second, 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee');
   } finally {
     if (originalDescriptor) {
       Object.defineProperty(globalThis, 'crypto', originalDescriptor);

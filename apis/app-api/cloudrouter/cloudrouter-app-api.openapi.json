@@ -6485,7 +6485,7 @@
     },
     "/app/v3/api/ai/routing/account_groups": {
       "get": {
-        "description": "List routing account groups. Reads ai_upstream_account_group, ai_upstream_account_group_member, ai_upstream_account_group_resource, ai_upstream_account, ai_upstream_supplier. Writes none. File targets none.",
+        "description": "List routing account groups. Reads ai_upstream_account_group, ai_upstream_account_group_member, ai_resource_binding, ai_upstream_account, ai_upstream_supplier. Writes none. File targets none.",
         "operationId": "routing.accountGroups.list",
         "parameters": [
           {
@@ -6591,7 +6591,7 @@
         "x-read-sources": [
           "ai_upstream_account_group",
           "ai_upstream_account_group_member",
-          "ai_upstream_account_group_resource",
+          "ai_resource_binding",
           "ai_upstream_account",
           "ai_upstream_supplier"
         ],

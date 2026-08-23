@@ -49,7 +49,7 @@
         "ai_routing_rule",
         "ai_upstream_account",
         "ai_upstream_account_credential",
-        "ai_upstream_account_group_resource",
+        "ai_resource_binding",
         "ai_upstream_supplier",
         "ai_usage",
         "iam_gateway_api_key",
@@ -162,7 +162,6 @@
       "ownerReviewRequired": true
     },
     {
-
       "capability": "admin-transaction-center",
       "targetCrate": "crates/sdkwork-cloudrouter-admin-transaction-center-repository-sqlx",
       "storePaths": [

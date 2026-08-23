@@ -2,7 +2,7 @@ pub mod common;
 use std::sync::{Arc, Mutex};
 
 use axum::body::Body;
-use axum::http::{Request, StatusCode};
+use axum::http::StatusCode;
 use sdkwork_cloudrouter_router_service::api::app_dashboard_overview_router_with_read_store;
 use sdkwork_cloudrouter_router_service::ports::{
     DashboardOverviewQuery, DashboardOverviewReadFuture, DashboardOverviewReadStore,

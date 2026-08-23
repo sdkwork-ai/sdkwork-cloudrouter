@@ -15,8 +15,7 @@ use sdkwork_cloudrouter_router_service::application::{
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelMappingBindingType, ModelMappingRule,
     ModelPrice, ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide,
-    PricingPlan, ProviderAuthProfile, ProviderRetryPolicy, RouteCandidate, RoutingCapability,
-    RoutingPolicy, RoutingPolicyScope, RoutingRule, UpstreamAccountGroup, UpstreamAccountRoute,
+    PricingPlan, ProviderAuthProfile, ProviderRetryPolicy, RoutingCapability, UpstreamAccountGroup, UpstreamAccountRoute,
     UpstreamAccountRoutingStrategy,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
@@ -58,16 +57,7 @@ fn usage_record_for_meter<'a>(
 }
 
 fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
-    let mut catalog = catalog_with_hashed_api_key_without_routing(key_hash);
-    add_group_routing_policy(
-        &mut catalog,
-        10,
-        9001,
-        9101,
-        9102,
-        "standard-group-gpt-4o-mini",
-        "openai/gpt-4o-mini",
-    );
+    let catalog = catalog_with_hashed_api_key_without_routing(key_hash);
     catalog
 }
 
@@ -239,42 +229,6 @@ fn catalog_with_hashed_api_key_without_upstream_route_snapshot(
     catalog
 }
 
-fn add_group_routing_policy(
-    catalog: &mut InMemoryPricingCatalog,
-    group_id: i64,
-    policy_id: i64,
-    profile_id: i64,
-    rule_id: i64,
-    rule_code: &str,
-    catalog_key: &str,
-) {
-    catalog.add_routing_policy(
-        RoutingPolicy::new(
-            policy_id,
-            10,
-            20,
-            &format!("{rule_code}-policy"),
-            RoutingPolicyScope::UpstreamAccountGroup,
-            Some(group_id),
-            Some(profile_id),
-        )
-        .with_capability(RoutingCapability::Chat),
-    );
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            rule_id,
-            10,
-            20,
-            profile_id,
-            rule_code,
-            1,
-            &format!(r#"{{"catalogKey":"{catalog_key}"}}"#),
-            catalog_key,
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(group_id, 100)]),
-    );
-}
-
 fn add_openrouter_fallback_prices(catalog: &mut InMemoryPricingCatalog) {
     for (meter, unit_price) in [
         (BillingMeter::LlmInputToken, "0.120000"),
@@ -387,15 +341,6 @@ fn catalog_with_group_channel_routes(
             Money::usd("0.460000").unwrap(),
         )
         .for_upstream_account("openrouter-premium", 3002),
-    );
-    add_group_routing_policy(
-        &mut catalog,
-        20,
-        9201,
-        9301,
-        9302,
-        "premium-group-gpt-4o-mini",
-        "openai/gpt-4o-mini",
     );
     catalog
 }
@@ -606,31 +551,6 @@ fn catalog_with_regional_minimax_pricing_and_routes(key_hash: String) -> InMemor
         )
         .with_region_code("global")
         .for_upstream_account("minimax_global_direct", 4002),
-    );
-    catalog.add_routing_policy(
-        RoutingPolicy::new(
-            9401,
-            10,
-            20,
-            "standard-group-minimax-policy",
-            RoutingPolicyScope::UpstreamAccountGroup,
-            Some(10),
-            Some(9501),
-        )
-        .with_capability(RoutingCapability::Chat),
-    );
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9502,
-            10,
-            20,
-            9501,
-            "standard-group-minimax-m27-base",
-            1,
-            r#"{"catalogKey":"minimax/MiniMax-M2.7"}"#,
-            "minimax/MiniMax-M2.7",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
     );
     catalog
 }
@@ -845,51 +765,7 @@ async fn openai_chat_completions_routes_each_upstream_account_group_to_its_confi
         Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
     let standard_key_hash = hasher.hash_secret("sk-standard-secret").unwrap();
     let premium_key_hash = hasher.hash_secret("sk-premium-secret").unwrap();
-    let mut catalog = catalog_with_group_channel_routes(standard_key_hash, premium_key_hash);
-    catalog.add_routing_policy(RoutingPolicy::new(
-        9001,
-        10,
-        20,
-        "standard-group-policy",
-        RoutingPolicyScope::UpstreamAccountGroup,
-        Some(10),
-        Some(9101),
-    ));
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9102,
-            10,
-            20,
-            9101,
-            "standard-group-gpt-4o-mini",
-            1,
-            r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
-            "openai/gpt-4o-mini",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
-    );
-    catalog.add_routing_policy(RoutingPolicy::new(
-        9002,
-        10,
-        20,
-        "premium-group-policy",
-        RoutingPolicyScope::UpstreamAccountGroup,
-        Some(20),
-        Some(9201),
-    ));
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9202,
-            10,
-            20,
-            9201,
-            "premium-group-gpt-4o-mini",
-            1,
-            r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
-            "openai/gpt-4o-mini",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(20, 100)]),
-    );
+    let catalog = catalog_with_group_channel_routes(standard_key_hash, premium_key_hash);
 
     let captured = Arc::new(Mutex::new(Vec::new()));
     let relay = Arc::new(RecordingRelay::new(Arc::clone(&captured)));
@@ -964,16 +840,6 @@ async fn openai_chat_completions_uses_group_channel_route_endpoint_for_selected_
             .with_retry_policy(ProviderRetryPolicy::new(4, vec![408, 429, 503], 50).unwrap())
             .with_account_group_binding(10, 0, 100),
     );
-    add_group_routing_policy(
-        &mut catalog,
-        10,
-        9001,
-        9101,
-        9102,
-        "standard-group-gpt-4o-mini",
-        "openai/gpt-4o-mini",
-    );
-
     let captured = Arc::new(Mutex::new(Vec::new()));
     let relay = Arc::new(RecordingRelay::new(Arc::clone(&captured)));
     let router = sdkwork_cloudrouter_router_service::api::openai_chat_completions_router_with_relay(
@@ -1208,15 +1074,6 @@ async fn openai_chat_completions_routes_catalog_model_through_channel_route_with
                 vec!["llm"],
             ),
     );
-    add_group_routing_policy(
-        &mut catalog,
-        10,
-        9001,
-        9101,
-        9102,
-        "standard-group-gpt-55",
-        "openai/gpt-5.5",
-    );
 
     let captured = Arc::new(Mutex::new(Vec::new()));
     let relay = Arc::new(RecordingRelay::new(Arc::clone(&captured)));
@@ -1318,15 +1175,6 @@ async fn openai_chat_completions_accepts_slash_native_model_and_sends_native_mod
                 vec!["llm"],
             ),
     );
-    add_group_routing_policy(
-        &mut catalog,
-        10,
-        9201,
-        9202,
-        9203,
-        "standard-group-openrouter-claude",
-        "openrouter/anthropic/claude-3-opus",
-    );
 
     let captured = Arc::new(Mutex::new(Vec::new()));
     let relay = Arc::new(RecordingRelay::new(Arc::clone(&captured)));
@@ -1405,15 +1253,6 @@ async fn openai_chat_completions_routes_alibaba_regional_model_through_region_sc
                 Vec::<String>::new(),
                 vec!["llm"],
             ),
-    );
-    add_group_routing_policy(
-        &mut catalog,
-        10,
-        9301,
-        9401,
-        9402,
-        "standard-group-alibaba-cn",
-        "alibaba/qwen3.6-max-preview",
     );
 
     let captured = Arc::new(Mutex::new(Vec::new()));
@@ -1620,29 +1459,6 @@ async fn openai_chat_completions_routes_model_candidates_through_bound_group_cha
         )
         .for_upstream_account("openrouter-bound", 3002),
     );
-    add_group_routing_policy(
-        &mut catalog,
-        10,
-        9001,
-        9101,
-        9102,
-        "standard-group-gpt-4o-mini",
-        "openai/gpt-4o-mini",
-    );
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9103,
-            10,
-            20,
-            9101,
-            "standard-group-weighted-upstream-account-group",
-            0,
-            r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
-            "openai/gpt-4o-mini",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
-    );
-
     let captured = Arc::new(Mutex::new(Vec::new()));
     let relay = Arc::new(RecordingRelay::new(Arc::clone(&captured)));
     let router = sdkwork_cloudrouter_router_service::api::openai_chat_completions_router_with_relay(
@@ -1734,35 +1550,16 @@ async fn openai_chat_completions_sanitizes_empty_route_snapshot_errors() {
     assert!(!message.contains("account_group_code"), "{message}");
 }
 
+/// Legacy routing policy/rule data (retired `ai_routing_policy/profile/rule`)
+/// is inert: group-bound routing selects the bound priced account regardless
+/// of any leftover policy candidates.
 #[tokio::test]
-async fn openai_chat_completions_rejects_misconfigured_group_channel_route_without_cross_pool_fallback(
-) {
+async fn openai_chat_completions_ignores_retired_policy_rule_candidates() {
     let hasher =
         Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
     let key_hash = hasher.hash_secret("sk-standard-secret").unwrap();
-    let mut catalog = catalog_with_hashed_api_key_without_routing(key_hash);
-    catalog.add_routing_policy(RoutingPolicy::new(
-        9001,
-        10,
-        20,
-        "standard-group-policy",
-        RoutingPolicyScope::UpstreamAccountGroup,
-        Some(10),
-        Some(9101),
-    ));
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9102,
-            10,
-            20,
-            9101,
-            "standard-group-broken-pool",
-            1,
-            r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
-            "openai/gpt-4o-mini",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(9999, 100)]),
-    );
+    let catalog = catalog_with_hashed_api_key_without_routing(key_hash);
+    // Retired routing policy/rule rows no longer affect the group-bound decision.
 
     let captured = Arc::new(Mutex::new(Vec::new()));
     let relay = Arc::new(RecordingRelay::new(Arc::clone(&captured)));
@@ -1787,21 +1584,12 @@ async fn openai_chat_completions_rejects_misconfigured_group_channel_route_witho
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::SERVICE_UNAVAILABLE, response.status());
-    assert!(captured.lock().unwrap().is_empty());
-    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
-        .await
-        .unwrap();
-    let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
-
-    assert_eq!(
-        "upstream_route_not_available",
-        payload["error"]["code"].as_str().unwrap()
-    );
-    assert!(payload["error"]["message"]
-        .as_str()
-        .unwrap()
-        .contains("has no callable priced candidate upstream account"));
+    assert_eq!(StatusCode::OK, response.status());
+    let captured = captured.lock().unwrap();
+    assert_eq!(1, captured.len());
+    assert_eq!(10, captured[0].group_id);
+    assert_eq!(3001, captured[0].provider_account_id);
+    assert_eq!("openrouter", captured[0].supplier_code);
 }
 
 #[tokio::test]
@@ -1856,15 +1644,6 @@ async fn openai_chat_completions_reports_pricing_unavailable_for_callable_route_
         DecimalValue::parse("1.100000").unwrap(),
     ));
     catalog.add_api_key(GatewayApiKey::new(101, 10, "sk-live", &key_hash).with_owner(10, 20, 30));
-    add_group_routing_policy(
-        &mut catalog,
-        10,
-        9001,
-        9101,
-        9102,
-        "standard-group-gpt-4o-mini",
-        "openai/gpt-4o-mini",
-    );
 
     let captured = Arc::new(Mutex::new(Vec::new()));
     let relay = Arc::new(RecordingRelay::new(Arc::clone(&captured)));
@@ -1942,53 +1721,6 @@ async fn openai_chat_completions_rejects_group_policy_missing_chat_capability_wi
         )
         .for_upstream_account("global-openrouter", 3003),
     );
-    catalog.add_routing_policy(RoutingPolicy::new(
-        8001,
-        0,
-        0,
-        "global-chat-policy",
-        RoutingPolicyScope::Global,
-        None,
-        Some(8101),
-    ));
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            8102,
-            0,
-            0,
-            8101,
-            "global-chat-rule",
-            1,
-            r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
-            "openai/gpt-4o-mini",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(3003, 100)]),
-    );
-    catalog.add_routing_policy(
-        RoutingPolicy::new(
-            9001,
-            10,
-            20,
-            "standard-group-embedding-policy",
-            RoutingPolicyScope::UpstreamAccountGroup,
-            Some(10),
-            Some(9101),
-        )
-        .with_capability(RoutingCapability::Embedding),
-    );
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9102,
-            10,
-            20,
-            9101,
-            "standard-group-embedding-rule",
-            1,
-            r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
-            "openai/gpt-4o-mini",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
-    );
 
     let captured = Arc::new(Mutex::new(Vec::new()));
     let relay = Arc::new(RecordingRelay::new(Arc::clone(&captured)));
@@ -2013,21 +1745,14 @@ async fn openai_chat_completions_rejects_group_policy_missing_chat_capability_wi
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::SERVICE_UNAVAILABLE, response.status());
-    assert!(captured.lock().unwrap().is_empty());
-    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
-        .await
-        .unwrap();
-    let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
-
-    assert_eq!(
-        "upstream_route_not_available",
-        payload["error"]["code"].as_str().unwrap()
-    );
-    assert!(payload["error"]["message"]
-        .as_str()
-        .unwrap()
-        .contains("has no routing policy for capability"));
+    // Retired policy capability gating no longer blocks: the group-bound
+    // priced account (3001) is selected directly.
+    assert_eq!(StatusCode::OK, response.status());
+    let captured = captured.lock().unwrap();
+    assert_eq!(1, captured.len());
+    assert_eq!(10, captured[0].group_id);
+    assert_eq!(3001, captured[0].provider_account_id);
+    assert_eq!("openrouter", captured[0].supplier_code);
 }
 
 #[tokio::test]
@@ -2035,29 +1760,7 @@ async fn openai_chat_completions_rejects_configured_group_policy_without_matchin
     let hasher =
         Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
     let key_hash = hasher.hash_secret("sk-standard-secret").unwrap();
-    let mut catalog = catalog_with_hashed_api_key_without_routing(key_hash);
-    catalog.add_routing_policy(RoutingPolicy::new(
-        9001,
-        10,
-        20,
-        "standard-group-policy",
-        RoutingPolicyScope::UpstreamAccountGroup,
-        Some(10),
-        Some(9101),
-    ));
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9102,
-            10,
-            20,
-            9101,
-            "standard-group-other-model",
-            1,
-            r#"{"catalogKey":"openai/other-model"}"#,
-            "openai/other-model",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(3001, 100)]),
-    );
+    let catalog = catalog_with_hashed_api_key_without_routing(key_hash);
 
     let captured = Arc::new(Mutex::new(Vec::new()));
     let relay = Arc::new(RecordingRelay::new(Arc::clone(&captured)));
@@ -2082,21 +1785,14 @@ async fn openai_chat_completions_rejects_configured_group_policy_without_matchin
         .await
         .unwrap();
 
-    assert_eq!(StatusCode::SERVICE_UNAVAILABLE, response.status());
-    assert!(captured.lock().unwrap().is_empty());
-    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
-        .await
-        .unwrap();
-    let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
-
-    assert_eq!(
-        "upstream_route_not_available",
-        payload["error"]["code"].as_str().unwrap()
-    );
-    assert!(payload["error"]["message"]
-        .as_str()
-        .unwrap()
-        .contains("has no routing rule"));
+    // Retired policy rule matching (a rule for a different model) no longer
+    // gates routing: the group-bound priced account (3001) is selected.
+    assert_eq!(StatusCode::OK, response.status());
+    let captured = captured.lock().unwrap();
+    assert_eq!(1, captured.len());
+    assert_eq!(10, captured[0].group_id);
+    assert_eq!(3001, captured[0].provider_account_id);
+    assert_eq!("openrouter", captured[0].supplier_code);
 }
 
 #[derive(Debug)]
@@ -2781,31 +2477,6 @@ async fn openai_chat_completions_fails_over_to_next_account_after_primary_relay_
             .with_account_group_binding(10, 200, 100),
     );
     add_openrouter_fallback_prices(&mut catalog);
-    catalog.add_routing_policy(
-        RoutingPolicy::new(
-            9001,
-            10,
-            20,
-            "standard-group-failover-policy",
-            RoutingPolicyScope::UpstreamAccountGroup,
-            Some(10),
-            Some(9101),
-        )
-        .with_capability(RoutingCapability::Chat),
-    );
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9102,
-            10,
-            20,
-            9101,
-            "standard-group-gpt-4o-mini-failover",
-            1,
-            r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
-            "openai/gpt-4o-mini",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
-    );
 
     let route_plan = UpstreamRouteSelector::new(&catalog)
         .select_model_route_plan(SelectUpstreamModelRouteQuery {
@@ -2918,31 +2589,6 @@ async fn openai_chat_completions_fails_over_after_retryable_provider_status() {
             .with_account_group_binding(10, 200, 100),
     );
     add_openrouter_fallback_prices(&mut catalog);
-    catalog.add_routing_policy(
-        RoutingPolicy::new(
-            9001,
-            10,
-            20,
-            "standard-group-failover-policy",
-            RoutingPolicyScope::UpstreamAccountGroup,
-            Some(10),
-            Some(9101),
-        )
-        .with_capability(RoutingCapability::Chat),
-    );
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9102,
-            10,
-            20,
-            9101,
-            "standard-group-gpt-4o-mini-failover",
-            1,
-            r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
-            "openai/gpt-4o-mini",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
-    );
 
     let captured = Arc::new(Mutex::new(Vec::new()));
     let usage_records = Arc::new(Mutex::new(Vec::new()));
@@ -3018,31 +2664,6 @@ async fn openai_chat_completions_uses_runtime_default_retry_policy_for_status_fa
             .with_account_group_binding(10, 200, 100),
     );
     add_openrouter_fallback_prices(&mut catalog);
-    catalog.add_routing_policy(
-        RoutingPolicy::new(
-            9001,
-            10,
-            20,
-            "standard-group-failover-policy",
-            RoutingPolicyScope::UpstreamAccountGroup,
-            Some(10),
-            Some(9101),
-        )
-        .with_capability(RoutingCapability::Chat),
-    );
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9102,
-            10,
-            20,
-            9101,
-            "standard-group-gpt-4o-mini-failover",
-            1,
-            r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
-            "openai/gpt-4o-mini",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
-    );
 
     let captured = Arc::new(Mutex::new(Vec::new()));
     let usage_records = Arc::new(Mutex::new(Vec::new()));
@@ -3112,31 +2733,6 @@ async fn openai_chat_completions_fail_closed_strategy_stops_after_retryable_prov
             .with_account_group_binding(10, 200, 100),
     );
     add_openrouter_fallback_prices(&mut catalog);
-    catalog.add_routing_policy(
-        RoutingPolicy::new(
-            9001,
-            10,
-            20,
-            "standard-group-failover-policy",
-            RoutingPolicyScope::UpstreamAccountGroup,
-            Some(10),
-            Some(9101),
-        )
-        .with_capability(RoutingCapability::Chat),
-    );
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9102,
-            10,
-            20,
-            9101,
-            "standard-group-gpt-4o-mini-failover",
-            1,
-            r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
-            "openai/gpt-4o-mini",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
-    );
 
     let captured = Arc::new(Mutex::new(Vec::new()));
     let usage_records = Arc::new(Mutex::new(Vec::new()));
@@ -3203,31 +2799,6 @@ async fn openai_chat_completions_stream_fails_over_to_next_account_before_respon
             .with_account_group_binding(10, 200, 100),
     );
     add_openrouter_fallback_prices(&mut catalog);
-    catalog.add_routing_policy(
-        RoutingPolicy::new(
-            9001,
-            10,
-            20,
-            "standard-group-stream-failover-policy",
-            RoutingPolicyScope::UpstreamAccountGroup,
-            Some(10),
-            Some(9101),
-        )
-        .with_capability(RoutingCapability::Chat),
-    );
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9102,
-            10,
-            20,
-            9101,
-            "standard-group-gpt-4o-mini-stream-failover",
-            1,
-            r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
-            "openai/gpt-4o-mini",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
-    );
 
     let captured = Arc::new(Mutex::new(Vec::new()));
     let usage_records = Arc::new(Mutex::new(Vec::new()));

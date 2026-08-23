@@ -188,7 +188,7 @@ class ConsoleRoutingBackendRuntimeStandardTest(unittest.TestCase):
         for table in [
             "ai_upstream_account_group",
             "ai_upstream_account_group_member",
-            "ai_upstream_account_group_resource",
+            "ai_resource_binding",
             "ai_upstream_account",
             "ai_upstream_supplier",
             "iam_gateway_api_key",

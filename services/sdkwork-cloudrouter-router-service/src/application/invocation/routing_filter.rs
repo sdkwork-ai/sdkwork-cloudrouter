@@ -139,6 +139,31 @@ impl CandidateFilter for ModelAccessFilter {
                     });
                 }
             }
+            // 账号级黑白名单（supplier 与 account 各自配置，任一命中即拒绝；
+            // 粒度：account > supplier > group）
+            if let Some(access) = ctx.catalog.account_model_access(candidate.account_id) {
+                if let Some(rule) = model_access_forbidden_reason_lists(
+                    vendor_code,
+                    requested_model,
+                    &access.blacklist,
+                    &access.whitelist,
+                ) {
+                    let message = match rule {
+                        "blacklist" => format!(
+                            "model {requested_model} is forbidden by upstream account {} (model blacklist)",
+                            candidate.account_id
+                        ),
+                        _ => format!(
+                            "model {requested_model} is not allowed by upstream account {} (model whitelist)",
+                            candidate.account_id
+                        ),
+                    };
+                    return FilterDecision::Reject(FilterRejection {
+                        kind: FilterRejectionKind::ModelForbidden,
+                        message,
+                    });
+                }
+            }
         }
         FilterDecision::Continue(candidates)
     }
@@ -427,7 +452,7 @@ pub fn routing_filter_context<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::invocation::InvocationRouteCandidateKind;
+    use crate::application::invocation::{AccountBillingMode, InvocationRouteCandidateKind};
     use crate::domain::ProviderAuthProfile;
     use crate::infrastructure::InMemoryPricingCatalog;
 
@@ -447,8 +472,6 @@ mod tests {
             account_group_id: group_id,
             account_group_code: group_id.map(|id| format!("group-{id}")),
             pricing_plan_code: None,
-            policy_id: None,
-            rule_id: None,
             api_code: "chat.completions".to_owned(),
             catalog_key: Some("openai/gpt-4".to_owned()),
             requested_model: Some("gpt-4".to_owned()),
@@ -461,6 +484,7 @@ mod tests {
             auth_profile: ProviderAuthProfile::default(),
             timeout_ms: Some(30_000),
             retry_policy: None,
+            billing_mode: AccountBillingMode::Prepay,
         }
     }
 
@@ -743,6 +767,80 @@ mod tests {
         assert_eq!(FilterRejectionKind::RouteUnavailable, rejection.kind);
         // 短路语义：拒绝后的过滤器不再执行
         assert_eq!(vec!["first"], *log.lock().unwrap());
+    }
+
+    #[test]
+    fn account_blacklist_rejects_candidate_of_that_account() {
+        use crate::ports::{AccountModelAccess, VendorModelListEntry};
+        let mut catalog = test_catalog();
+        catalog.set_account_model_access(AccountModelAccess {
+            account_id: 1,
+            blacklist: vec![VendorModelListEntry {
+                vendor_code: "openai".to_owned(),
+                models: vec!["gpt-4".to_owned()],
+            }],
+            whitelist: Vec::new(),
+        });
+        let chain = RoutingFilterChain::new();
+        let mut context = ctx(&catalog);
+        context.requested_model_vendor_code = Some("openai".to_owned());
+        let rejection = chain
+            .select_account(
+                &context,
+                vec![candidate(1, None, InvocationRouteCandidateKind::Model)],
+            )
+            .expect_err("account-blacklisted model rejected");
+        assert_eq!(rejection.kind, FilterRejectionKind::ModelForbidden);
+        assert!(rejection.message.contains("upstream account 1"));
+    }
+
+    #[test]
+    fn account_blacklist_does_not_affect_other_accounts() {
+        use crate::ports::{AccountModelAccess, VendorModelListEntry};
+        let mut catalog = test_catalog();
+        catalog.set_account_model_access(AccountModelAccess {
+            account_id: 1,
+            blacklist: vec![VendorModelListEntry {
+                vendor_code: "openai".to_owned(),
+                models: vec!["gpt-4".to_owned()],
+            }],
+            whitelist: Vec::new(),
+        });
+        let chain = RoutingFilterChain::new();
+        let mut context = ctx(&catalog);
+        context.requested_model_vendor_code = Some("openai".to_owned());
+        let result = chain
+            .select_account(
+                &context,
+                vec![candidate(2, None, InvocationRouteCandidateKind::Model)],
+            )
+            .expect("unrestricted account candidate selected");
+        assert_eq!(result.account.account_id, 2);
+    }
+
+    #[test]
+    fn account_whitelist_rejects_unlisted_model() {
+        use crate::ports::{AccountModelAccess, VendorModelListEntry};
+        let mut catalog = test_catalog();
+        catalog.set_account_model_access(AccountModelAccess {
+            account_id: 1,
+            blacklist: Vec::new(),
+            whitelist: vec![VendorModelListEntry {
+                vendor_code: "openai".to_owned(),
+                models: vec!["gpt-4o".to_owned()],
+            }],
+        });
+        let chain = RoutingFilterChain::new();
+        let mut context = ctx(&catalog);
+        context.requested_model_vendor_code = Some("openai".to_owned());
+        let rejection = chain
+            .select_account(
+                &context,
+                vec![candidate(1, None, InvocationRouteCandidateKind::Model)],
+            )
+            .expect_err("model not in account whitelist rejected");
+        assert_eq!(rejection.kind, FilterRejectionKind::ModelForbidden);
+        assert!(rejection.message.contains("model whitelist"));
     }
 
     #[test]

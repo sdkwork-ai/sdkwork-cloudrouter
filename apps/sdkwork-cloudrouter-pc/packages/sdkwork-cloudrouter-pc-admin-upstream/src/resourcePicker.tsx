@@ -35,6 +35,30 @@ type ResourceTypeFilter = 'all' | 'api_endpoint' | 'modality' | 'vendor';
 
 const resourceTypes: ResourceTypeFilter[] = ['all', 'api_endpoint', 'modality', 'vendor'];
 
+/** 读取资源的路由类型（模型类 / API 资源类），对应后端 `ai_resource.route_kind`。 */
+export type RouteKindValue = 'model' | 'api';
+
+export function readRouteKind(resource: UpstreamResourceCatalogItem): RouteKindValue | null {
+  const value = (resource as { routeKind?: string }).routeKind;
+  return value === 'model' || value === 'api' ? value : null;
+}
+
+/** 路由类型徽标：模型类（model）走模型→vendor 解析，API 类（api）走资源直配。 */
+export function RouteKindBadge({ kind }: { kind: RouteKindValue | null }) {
+  if (kind === null) return null;
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center rounded-full px-1.5 py-px text-[10px] font-semibold ring-1 ring-inset ${
+        kind === 'model'
+          ? 'bg-violet-50 text-violet-700 ring-violet-200 dark:bg-violet-500/10 dark:text-violet-300 dark:ring-violet-500/30'
+          : 'bg-sky-50 text-sky-700 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:ring-sky-500/30'
+      }`}
+    >
+      {kind === 'model' ? '模型类' : 'API类'}
+    </span>
+  );
+}
+
 export function ResourcePicker({
   resources = [],
   resourceGroups = [],
@@ -222,7 +246,10 @@ export function ResourcePicker({
                         <label key={resource.resourceCode} className={`flex cursor-pointer items-center gap-2.5 rounded-md border px-2.5 py-2 transition ${selected ? 'border-lobster-300 bg-lobster-50/70 dark:border-lobster-500/40 dark:bg-lobster-500/10' : 'border-slate-200 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/[0.03]'}`}>
                           <input type="checkbox" checked={selected} onChange={() => toggleResource(resource.resourceCode)} className="h-4 w-4 shrink-0 accent-lobster-600" />
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate font-mono text-xs text-slate-800 dark:text-slate-100">{resource.resourceCode}</span>
+                            <span className="flex items-center gap-1.5">
+                              <span className="min-w-0 truncate font-mono text-xs text-slate-800 dark:text-slate-100">{resource.resourceCode}</span>
+                              <RouteKindBadge kind={readRouteKind(resource)} />
+                            </span>
                             <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{resource.displayName}</span>
                           </span>
                           {selected ? <CheckSquare className="h-4 w-4 shrink-0 text-lobster-600 dark:text-lobster-300" /> : <Square className="h-4 w-4 shrink-0 text-slate-300 dark:text-slate-600" />}

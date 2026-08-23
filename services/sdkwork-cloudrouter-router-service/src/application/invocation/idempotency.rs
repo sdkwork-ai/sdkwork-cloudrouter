@@ -1114,6 +1114,7 @@ impl CachedResponsePayload {
             body: self.body.clone(),
             body_bytes: self.body_bytes.clone(),
             content_type: self.content_type.clone(),
+            headers: axum::http::HeaderMap::new(),
             stream_body: Mutex::new(None),
             memory_guard: None,
         }

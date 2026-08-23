@@ -300,7 +300,7 @@ frontend_operations:
       - ai_upstream_account
       - ai_upstream_account_group
       - ai_upstream_account_group_member
-      - ai_upstream_account_group_resource
+      - ai_resource_binding
     response_schema:
       name: NoData
       schema:
@@ -1004,7 +1004,7 @@ frontend_operations:
       - ai_upstream_account
       - ai_upstream_account_group
       - ai_upstream_account_group_member
-      - ai_upstream_account_group_resource
+      - ai_resource_binding
     response_schema:
       name: AppModelCatalogPage
       schema:
@@ -1180,7 +1180,7 @@ frontend_operations:
       - ai_upstream_account
       - ai_upstream_account_group
       - ai_upstream_account_group_member
-      - ai_upstream_account_group_resource
+      - ai_resource_binding
     response_schema:
       name: AppModelCatalogPage
       schema:
@@ -1392,7 +1392,7 @@ frontend_operations:
     read_sources:
       - ai_upstream_account_group
       - ai_upstream_account_group_member
-      - ai_upstream_account_group_resource
+      - ai_resource_binding
       - ai_upstream_account
       - ai_upstream_supplier
     response_schema:
@@ -1470,7 +1470,7 @@ frontend_operations:
     read_sources:
       - ai_upstream_account_group
       - ai_upstream_account_group_member
-      - ai_upstream_account_group_resource
+      - ai_resource_binding
       - ai_upstream_account
       - ai_upstream_supplier
     response_schema:
@@ -1495,7 +1495,7 @@ frontend_operations:
     read_sources:
       - ai_upstream_account_group
       - ai_upstream_account_group_member
-      - ai_upstream_account_group_resource
+      - ai_resource_binding
       - ai_upstream_account
       - ai_upstream_supplier
     response_schema:
@@ -5846,7 +5846,7 @@ frontend_operations:
     sdk_domain: ai
     read_sources:
       - ai_upstream_account_group
-      - ai_upstream_account_group_resource
+      - ai_resource_binding
       - ai_resource
       - ai_resource_group
     response_schema:
@@ -5886,7 +5886,7 @@ frontend_operations:
     sdk_domain: ai
     read_sources:
       - ai_upstream_account_group
-      - ai_upstream_account_group_resource
+      - ai_resource_binding
       - ai_resource
       - ai_resource_group
     response_schema:
@@ -5932,7 +5932,7 @@ frontend_operations:
         type: object
     write_tables:
       - ai_upstream_account_group
-      - ai_upstream_account_group_resource
+      - ai_resource_binding
       - ai_resource
       - ai_resource_group
       - ops_audit_log
@@ -5950,7 +5950,7 @@ frontend_operations:
       - ai_upstream_account_group
       - ai_upstream_account_group_member
       - ai_upstream_account
-      - ai_upstream_account_group_resource
+      - ai_resource_binding
       - ai_resource
       - ai_resource_group
       - iam_gateway_api_key
@@ -6432,7 +6432,7 @@ frontend_operations:
     query_parameters_declared: true
     read_sources:
       - ai_upstream_account
-      - ai_upstream_account_resource
+      - ai_resource_binding
       - ai_resource
       - ai_resource_group
     request_body_required: null
@@ -6487,7 +6487,7 @@ frontend_operations:
     query_parameters_declared: false
     read_sources:
       - ai_upstream_account
-      - ai_upstream_account_resource
+      - ai_resource_binding
       - ai_resource
       - ai_resource_group
     request_body_required: null
@@ -6543,7 +6543,7 @@ frontend_operations:
     tag: ai
     write_tables:
       - ai_upstream_account
-      - ai_upstream_account_resource
+      - ai_resource_binding
       - ai_resource
       - ai_resource_group
       - ops_audit_log
@@ -7209,7 +7209,7 @@ frontend_operations:
     sdk_domain: ai
     read_sources:
       - ai_upstream_supplier
-      - ai_upstream_supplier_resource
+      - ai_resource_binding
       - ai_resource
       - ai_resource_group
     response_schema:
@@ -7249,7 +7249,7 @@ frontend_operations:
     sdk_domain: ai
     read_sources:
       - ai_upstream_supplier
-      - ai_upstream_supplier_resource
+      - ai_resource_binding
       - ai_resource
       - ai_resource_group
     response_schema:
@@ -7295,7 +7295,7 @@ frontend_operations:
         type: object
     write_tables:
       - ai_upstream_supplier
-      - ai_upstream_supplier_resource
+      - ai_resource_binding
       - ai_resource
       - ai_resource_group
       - ops_audit_log
@@ -11953,13 +11953,11 @@ routes:
       - ai_upstream_account_credential
       - ai_upstream_account_group
       - ai_upstream_account_group_member
-      - ai_upstream_account_group_resource
-      - ai_upstream_account_resource
+      - ai_resource_binding
       - ai_upstream_object_route
       - ai_upstream_supplier
       - ai_upstream_supplier_auth_method
       - ai_upstream_supplier_endpoint
-      - ai_upstream_supplier_resource
       - iam_gateway_api_key
       - ops_audit_log
       - ops_config_snapshot
@@ -12045,7 +12043,7 @@ routes:
       - ai_upstream_account_group
       - ai_upstream_account_group_member
       - ai_upstream_account_group_metric_snapshot
-      - ai_upstream_account_group_resource
+      - ai_resource_binding
       - ai_upstream_supplier
       - ai_usage
       - iam_gateway_access_policy
@@ -12133,7 +12131,7 @@ routes:
       - ai_upstream_account
       - ai_upstream_account_group
       - ai_upstream_account_group_member
-      - ai_upstream_account_group_resource
+      - ai_resource_binding
       - ai_upstream_supplier
   - route: /models/:id
     dependency_owned: true

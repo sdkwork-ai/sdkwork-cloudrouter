@@ -16,6 +16,15 @@ use crate::ports::{
 
 const MAX_CREDENTIAL_SECRET_BYTES: usize = 32 * 1024;
 const MAX_ACCOUNT_PROTOCOLS: usize = 8;
+
+/// 归一化计费模式；空值/未知回退默认 prepay（预扣）。
+fn normalize_billing_mode(value: &str) -> &str {
+    match value.trim().to_ascii_lowercase().as_str() {
+        "postpay" | "postpaid" => "postpay",
+        _ => "prepay",
+    }
+}
+
 const ACCOUNT_COLUMNS: &str = r#"
     account.id, account.uuid, account.supplier_id, account.supplier_code,
     account.preferred_endpoint_id,
@@ -24,6 +33,7 @@ const ACCOUNT_COLUMNS: &str = r#"
     account.account_code, account.account_name,
     account.account_type, account.auth_method_code, account.external_account_id,
     account.environment, account.region_code,
+    account.billing_mode,
     account.quota_limit::text AS quota_limit,
     account.quota_used::text AS quota_used,
     account.upstream_balance_amount::text AS upstream_balance_amount,
@@ -109,10 +119,23 @@ pub(super) async fn list(
         .fetch_all(pool)
         .await
         .map_err(|error| store_error("failed to list upstream accounts", error))?;
-    let items = rows
+    let mut items = rows
         .into_iter()
         .map(map_account_row)
         .collect::<DomainResult<Vec<_>>>()?;
+    for account in &mut items {
+        if let Some((blacklist, whitelist)) = super::model_access::load_scope_model_access(
+            pool,
+            &query.subject,
+            "account",
+            account.id,
+        )
+        .await?
+        {
+            account.model_blacklist = blacklist;
+            account.model_whitelist = whitelist;
+        }
+    }
     Ok(AdminUpstreamPage {
         items,
         page: query.page,
@@ -138,7 +161,7 @@ pub(super) async fn get(
           AND account.id = $3 AND account.deleted_at IS NULL
         "#
     );
-    sqlx::query(sqlx::AssertSqlSafe(sql))
+    let mut item = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(account_id)
@@ -146,7 +169,21 @@ pub(super) async fn get(
         .await
         .map_err(|error| store_error("failed to retrieve upstream account", error))?
         .map(map_account_row)
-        .transpose()
+        .transpose()?;
+    if let Some(account) = &mut item {
+        if let Some((blacklist, whitelist)) = super::model_access::load_scope_model_access(
+            pool,
+            &subject,
+            "account",
+            account.id,
+        )
+        .await?
+        {
+            account.model_blacklist = blacklist;
+            account.model_whitelist = whitelist;
+        }
+    }
+    Ok(item)
 }
 
 pub(super) async fn save(
@@ -163,6 +200,18 @@ pub(super) async fn save(
         Some(account_id) => update(&mut tx, account_id, &command).await?,
         None => insert(&mut tx, &command).await?,
     };
+    // 账号级模型黑白名单（scope_type='account'）整体替换，与供应商/账号组语义一致。
+    super::model_access::replace_scope_model_access(
+        &mut tx,
+        &command.subject,
+        &command.requested_at,
+        "account",
+        account_id,
+        Some(command.account_code.trim()),
+        &command.model_blacklist,
+        &command.model_whitelist,
+    )
+    .await?;
     if command.account_id.is_none() {
         if let Some(secret) = command
             .api_key
@@ -262,13 +311,14 @@ pub(super) async fn delete(
     .map_err(|error| store_error("failed to deactivate upstream account credentials", error))?;
     sqlx::query(
         r#"
-        UPDATE ai_upstream_account_resource
+        UPDATE ai_resource_binding
         SET deleted_at = $1::timestamptz,
             deleted_by = $2,
             status = 0,
             version = version + 1,
             updated_at = $1::timestamptz
         WHERE tenant_id = $3 AND organization_id = $4
+          AND binding_scope = 'account'
           AND account_id = $5 AND deleted_at IS NULL
         "#,
     )
@@ -645,7 +695,7 @@ async fn insert(
             account_code, account_name, account_type, auth_method_code,
             external_account_id, environment, region_code,
             quota_limit, upstream_balance_currency, contract_cost_multiplier,
-            rpm_limit, timeout_ms
+            rpm_limit, timeout_ms, billing_mode
         ) VALUES (
             $1, $2, $3, $4, $5, $6,
             $7::timestamptz, $7::timestamptz, 0, '{}'::jsonb,
@@ -654,7 +704,7 @@ async fn insert(
             $13, $14, $15, $16,
             $17, $18, $19,
             $20::numeric, $21, $22::numeric,
-            $23, $24
+            $23, $24, $25
         )
         "#,
     )
@@ -682,6 +732,7 @@ async fn insert(
     .bind(command.contract_cost_multiplier.trim())
     .bind(command.rpm_limit)
     .bind(command.timeout_ms)
+    .bind(normalize_billing_mode(&command.billing_mode))
     .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to create upstream account", error))?;
@@ -817,10 +868,11 @@ async fn update(
             rpm_limit = $15,
             timeout_ms = $16,
             status = $17,
+            billing_mode = $18,
             version = version + 1,
-            updated_at = $18::timestamptz
-        WHERE tenant_id = $19 AND organization_id = $20
-          AND id = $21 AND version = $22 AND deleted_at IS NULL
+            updated_at = $19::timestamptz
+        WHERE tenant_id = $20 AND organization_id = $21
+          AND id = $22 AND version = $23 AND deleted_at IS NULL
         "#,
     )
     .bind(command.supplier_id)
@@ -840,6 +892,7 @@ async fn update(
     .bind(command.rpm_limit)
     .bind(command.timeout_ms)
     .bind(command.status)
+    .bind(normalize_billing_mode(&command.billing_mode))
     .bind(&command.requested_at)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
@@ -1066,7 +1119,7 @@ async fn get_in_transaction(
           AND account.id = $3 AND account.deleted_at IS NULL
         "#
     );
-    sqlx::query(sqlx::AssertSqlSafe(sql))
+    let mut item = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(account_id)
@@ -1074,7 +1127,17 @@ async fn get_in_transaction(
         .await
         .map_err(|error| store_error("failed to reload upstream account", error))?
         .map(map_account_row)
-        .transpose()
+        .transpose()?;
+    if let Some(account) = &mut item {
+        if let Some((blacklist, whitelist)) =
+            super::model_access::load_scope_model_access_in_tx(tx, subject, "account", account.id)
+                .await?
+        {
+            account.model_blacklist = blacklist;
+            account.model_whitelist = whitelist;
+        }
+    }
+    Ok(item)
 }
 
 async fn get_credential_in_transaction(
@@ -1230,6 +1293,13 @@ fn map_account_row(row: PgRow) -> DomainResult<AdminUpstreamAccountItem> {
             "failed to map upstream account RPM limit",
         )?,
         timeout_ms: column(&row, "timeout_ms", "failed to map upstream account timeout")?,
+        billing_mode: column(&row, "billing_mode", "failed to map upstream account billing mode")
+            .unwrap_or_else(|_| "prepay".to_owned()),
+        // Model access rules live in the unified ai_model_access_policy table
+        // (scope_type='account'); they are aggregated into these lists by the
+        // model access loader after the row is mapped (see list/get/save).
+        model_blacklist: Vec::new(),
+        model_whitelist: Vec::new(),
         health_status: column(
             &row,
             "health_status",

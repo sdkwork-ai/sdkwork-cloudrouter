@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@sdkwork/appbase-pc-react": "workspace:*",
-    "@sdkwork/cloudroutes-pc-commons": "workspace:*"
+    "@sdkwork/cloudroutes-pc-commons": "workspace:*",
+    "@sdkwork/utils": "workspace:*"
   }
 }

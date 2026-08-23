@@ -20,7 +20,8 @@ use crate::api::openai_invocation::{
     OpenAiInvocationRelayOutcome,
 };
 use crate::api::openai_relay_execution::{
-    guarded_openai_json_response, OpenAiRelayExecution, OpenAiRouteRelayExecution,
+    guarded_openai_json_response, restore_relayed_model, OpenAiRelayExecution,
+    OpenAiRouteRelayExecution,
 };
 use crate::api::openai_runtime::{
     authenticate_api_key, provider_relay_attempt_retry_policy, resolve_openai_upstream_route_plan,
@@ -732,7 +733,11 @@ where
         .await;
         notify_route_fault(plugins, invocation_context, route, &fault).await;
         notify_after_relay_observers(plugins, invocation_context, route, &outcome).await;
-        let response = guarded_openai_json_response(status, response.body, response.memory_guard);
+        let response = guarded_openai_json_response(
+            status,
+            restore_relayed_model(response.body, requested_model),
+            response.memory_guard,
+        );
         return if retryable {
             Err(RouteRelayFailure::Retryable(response))
         } else {
@@ -767,7 +772,7 @@ where
     notify_after_relay_observers(plugins, invocation_context, route, &outcome).await;
     Ok(guarded_openai_json_response(
         status,
-        response.body,
+        restore_relayed_model(response.body, requested_model),
         response.memory_guard,
     ))
 }

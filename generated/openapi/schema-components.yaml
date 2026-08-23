@@ -5206,7 +5206,7 @@ components:
           additionalProperties: true
     AiUpstreamAccountGroupResourceRecord:
       type: object
-      x-table: ai_upstream_account_group_resource
+      x-table: ai_resource_binding
       x-domain: ai
       x-generated-by-this-project: true
       properties:
@@ -5509,7 +5509,7 @@ components:
           format: int32
     AiUpstreamAccountResourceRecord:
       type: object
-      x-table: ai_upstream_account_resource
+      x-table: ai_resource_binding
       x-domain: ai
       x-generated-by-this-project: true
       properties:
@@ -6075,7 +6075,7 @@ components:
           $ref: '#/components/schemas/MediaResource'
     AiUpstreamSupplierResourceRecord:
       type: object
-      x-table: ai_upstream_supplier_resource
+      x-table: ai_resource_binding
       x-domain: ai
       x-generated-by-this-project: true
       properties:

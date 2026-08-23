@@ -5,7 +5,7 @@ use std::time::Duration;
 use axum::body::Body as AxumBody;
 use axum::http::header::{self, HeaderName, HeaderValue};
 use axum::http::request::Builder as RequestBuilder;
-use axum::http::Uri;
+use axum::http::{HeaderMap, Uri};
 use bytes::Bytes;
 use http_body_util::{BodyExt, Full, LengthLimitError, Limited};
 use hyper::Request as HyperRequest;
@@ -216,6 +216,7 @@ impl InvocationDispatcher for InvocationHttpDispatcher {
                 .map(str::trim)
                 .filter(|value| !value.is_empty())
                 .map(str::to_owned);
+            let preserved_headers = preserve_safe_upstream_headers(response.headers());
 
             let is_sse_stream = content_type.as_deref().is_some_and(|ct| {
                 let ct_lower = ct.to_lowercase();
@@ -226,12 +227,13 @@ impl InvocationDispatcher for InvocationHttpDispatcher {
             if is_sse_stream {
                 // For SSE streaming responses, don't buffer — pass the body through
                 let (_, body) = response.into_parts();
-                let stream_body = AxumBody::new(body);
-                return Ok(InvocationDispatchResponse::streaming(
+                let mut stream_response = InvocationDispatchResponse::streaming(
                     status_code,
                     content_type,
-                    stream_body,
-                ));
+                    AxumBody::new(body),
+                );
+                stream_response.headers = preserved_headers;
+                return Ok(stream_response);
             }
 
             if declared_content_length_exceeds_limit(
@@ -259,7 +261,9 @@ impl InvocationDispatcher for InvocationHttpDispatcher {
             .await?;
 
             if body.is_empty() {
-                return Ok(InvocationDispatchResponse::empty(status_code));
+                let mut response = InvocationDispatchResponse::empty(status_code);
+                response.headers = preserved_headers;
+                return Ok(response);
             }
             if response_body_should_parse_json(content_type.as_deref(), &body) {
                 let body = serde_json::from_slice::<serde_json::Value>(&body).map_err(|error| {
@@ -272,13 +276,15 @@ impl InvocationDispatcher for InvocationHttpDispatcher {
                 })?;
                 let mut response = InvocationDispatchResponse::json(status_code, body);
                 response.content_type = content_type;
+                response.headers = preserved_headers;
                 return Ok(response.with_memory_guard(memory_guard));
             }
 
-            Ok(
+            let mut response =
                 InvocationDispatchResponse::bytes(status_code, body.to_vec(), content_type)
-                    .with_memory_guard(memory_guard),
-            )
+                    .with_memory_guard(memory_guard);
+            response.headers = preserved_headers;
+            Ok(response)
         })
     }
 }
@@ -544,6 +550,43 @@ fn is_hop_by_hop_header(name: &HeaderName) -> bool {
     )
 }
 
+/// Preserves a safe subset of upstream response headers for the gateway
+/// client. OpenAI SDKs depend on `retry-after` for 429 backoff and on
+/// `x-request-id` / rate-limit headers for tracing and throttling feedback, so
+/// passing them through keeps the relay's behavior consistent with the
+/// upstream provider. `content-type`, hop-by-hop headers, and anything
+/// unrelated are intentionally excluded (`content-type` is carried separately).
+fn preserve_safe_upstream_headers(headers: &HeaderMap) -> HeaderMap {
+    let mut preserved = HeaderMap::new();
+    for (name, value) in headers.iter() {
+        let name_lower = name.as_str().to_ascii_lowercase();
+        if is_hop_by_hop_header(name) {
+            continue;
+        }
+        if matches!(
+            name_lower.as_str(),
+            "retry-after"
+                | "x-request-id"
+                | "request-id"
+                | "openai-organization"
+                | "openai-version"
+                | "openai-processing-ms"
+                | "x-ratelimit-limit-requests"
+                | "x-ratelimit-limit-tokens"
+                | "x-ratelimit-remaining-requests"
+                | "x-ratelimit-remaining-tokens"
+                | "x-ratelimit-reset-requests"
+                | "x-ratelimit-reset-tokens"
+                | "x-ratelimit-request-ids"
+                | "x-goog-request-id"
+                | "x-goog-ratelimit-last-update-time"
+        ) {
+            preserved.append(name.clone(), value.clone());
+        }
+    }
+    preserved
+}
+
 fn dispatch_error(
     code: impl Into<String>,
     message: impl Into<String>,
@@ -570,10 +613,54 @@ mod tests {
             timeout_ms: Some(DEFAULT_DISPATCH_TIMEOUT_MS),
             retry_policy: None,
             provider_model: None,
+            billing_mode: sdkwork_cloudrouter_router_service::application::AccountBillingMode::Prepay,
             account_group_id: None,
             account_group_code: None,
             pricing_plan_code: None,
         }
+    }
+
+    #[test]
+    fn safe_upstream_headers_are_preserved_and_unsafe_ones_dropped() {
+        let mut upstream = HeaderMap::new();
+        upstream.insert(header::RETRY_AFTER, HeaderValue::from_static("30"));
+        upstream.insert("x-request-id", HeaderValue::from_static("req_123"));
+        upstream.insert("x-ratelimit-limit-tokens", HeaderValue::from_static("100000"));
+        upstream.insert("openai-organization", HeaderValue::from_static("org-x"));
+        upstream.insert(header::CONTENT_TYPE, HeaderValue::from_static("application/json"));
+        upstream.insert(header::CONNECTION, HeaderValue::from_static("keep-alive"));
+        upstream.insert("set-cookie", HeaderValue::from_static("session=abc"));
+        upstream.insert("x-secret", HeaderValue::from_static("leak"));
+
+        let preserved = preserve_safe_upstream_headers(&upstream);
+
+        // SDK-facing headers survive for 429 backoff and tracing.
+        assert_eq!(
+            Some("30"),
+            preserved.get(header::RETRY_AFTER).and_then(|v| v.to_str().ok())
+        );
+        assert_eq!(
+            Some("req_123"),
+            preserved.get("x-request-id").and_then(|v| v.to_str().ok())
+        );
+        assert_eq!(
+            Some("100000"),
+            preserved
+                .get("x-ratelimit-limit-tokens")
+                .and_then(|v| v.to_str().ok())
+        );
+        assert_eq!(
+            Some("org-x"),
+            preserved
+                .get("openai-organization")
+                .and_then(|v| v.to_str().ok())
+        );
+        // Content-type travels separately; hop-by-hop and sensitive headers
+        // must never leak.
+        assert!(preserved.get(header::CONTENT_TYPE).is_none());
+        assert!(preserved.get(header::CONNECTION).is_none());
+        assert!(preserved.get("set-cookie").is_none());
+        assert!(preserved.get("x-secret").is_none());
     }
 
     #[test]

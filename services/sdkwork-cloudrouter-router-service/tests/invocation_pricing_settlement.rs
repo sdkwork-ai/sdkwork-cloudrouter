@@ -1,11 +1,12 @@
 use axum::http::Method;
 use chrono::Utc;
 use sdkwork_cloudrouter_router_service::application::{
-    AuthenticatedApiKeyContext, BillingMode, BillingQuantitySource, Invocation, InvocationAccount,
-    InvocationBilling, InvocationBody, InvocationClassificationRequest, InvocationDispatch,
-    InvocationInterceptor, InvocationRequest, InvocationResource, InvocationResourceClassifier,
-    InvocationSubject, OpenAiResourceClassifier, PricingFinalizationInterceptor,
-    PricingPreflightInterceptor, PricingSettlementInterceptor, ResourceType,
+    AccountBillingMode, AuthenticatedApiKeyContext, BillingMode, BillingQuantitySource, Invocation,
+    InvocationAccount, InvocationBilling, InvocationBody, InvocationClassificationRequest,
+    InvocationDispatch, InvocationInterceptor, InvocationRequest, InvocationResource,
+    InvocationResourceClassifier, InvocationSubject, OpenAiResourceClassifier,
+    PricingFinalizationInterceptor, PricingPreflightInterceptor, PricingSettlementInterceptor,
+    ResourceType,
 };
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
@@ -335,6 +336,7 @@ fn chat_invocation() -> Invocation {
         timeout_ms: None,
         retry_policy: None,
         provider_model: Some("gpt-4o-mini-upstream".to_owned()),
+        billing_mode: AccountBillingMode::Prepay,
         account_group_id: None,
         account_group_code: None,
         pricing_plan_code: None,
@@ -359,6 +361,7 @@ fn fallback_account() -> InvocationAccount {
         timeout_ms: None,
         retry_policy: None,
         provider_model: Some("gpt-4o-mini-fallback".to_owned()),
+        billing_mode: AccountBillingMode::Prepay,
         account_group_id: None,
         account_group_code: None,
         pricing_plan_code: None,

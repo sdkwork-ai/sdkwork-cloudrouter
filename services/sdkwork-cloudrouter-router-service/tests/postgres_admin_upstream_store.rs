@@ -165,6 +165,9 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
             rpm_limit: Some(10_000),
             timeout_ms: Some(30_000),
             status: 1,
+            billing_mode: "prepay".to_owned(),
+            model_blacklist: Vec::new(),
+            model_whitelist: Vec::new(),
             api_key: None,
             requested_at: REQUESTED_AT.to_owned(),
         })
@@ -377,7 +380,7 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
     );
 
     sqlx::query(
-        "UPDATE ai_upstream_account_group_resource SET grant_type = 'deny' WHERE account_group_id = $1",
+        "UPDATE ai_resource_binding SET grant_type = 'deny' WHERE binding_scope = 'account_group' AND account_group_id = $1",
     )
     .bind(group.id)
     .execute(&context.pool)
@@ -472,12 +475,12 @@ async fn postgres_upstream_account_list_decodes_protocols_as_jsonb() {
         INSERT INTO ai_upstream_supplier (
             id, uuid, tenant_id, organization_id, data_scope, status,
             supplier_code, supplier_name, display_name, supplier_type,
-            adapter_code, protocol_code, protocols, model_blacklist, model_whitelist,
+            adapter_code, protocol_code, protocols,
             environment, sort_order
         ) VALUES (
             91001, 'upstream-list-supplier', 100001, 200001, 1, 1,
             'openai', 'OpenAI', 'OpenAI', 'official',
-            'openai', 'openai', '[]'::jsonb, '[]'::jsonb, '[]'::jsonb,
+            'openai', 'openai', '[]'::jsonb,
             1, 10
         );
 
@@ -617,6 +620,9 @@ async fn postgres_upstream_store_creates_initial_credential_atomically_with_acco
             rpm_limit: None,
             timeout_ms: None,
             status: 1,
+            billing_mode: "prepay".to_owned(),
+            model_blacklist: Vec::new(),
+            model_whitelist: Vec::new(),
             api_key: Some(api_key.clone()),
             requested_at: REQUESTED_AT.to_owned(),
         })
@@ -658,6 +664,9 @@ async fn postgres_upstream_store_creates_initial_credential_atomically_with_acco
             rpm_limit: None,
             timeout_ms: None,
             status: 1,
+            billing_mode: "prepay".to_owned(),
+            model_blacklist: Vec::new(),
+            model_whitelist: Vec::new(),
             api_key: None,
             requested_at: REQUESTED_AT.to_owned(),
         })
@@ -836,6 +845,9 @@ async fn postgres_upstream_store_account_resources_scope_runtime_routes() {
             rpm_limit: None,
             timeout_ms: None,
             status: 1,
+            billing_mode: "prepay".to_owned(),
+            model_blacklist: Vec::new(),
+            model_whitelist: Vec::new(),
             api_key: Some("sk-scope-initial".to_owned()),
             requested_at: REQUESTED_AT.to_owned(),
         })
@@ -1010,8 +1022,9 @@ async fn postgres_upstream_store_account_resources_scope_runtime_routes() {
     let remaining = sqlx::query_scalar::<_, i64>(
         r#"
         SELECT COUNT(*)
-        FROM ai_upstream_account_resource
+        FROM ai_resource_binding
         WHERE tenant_id = $1 AND organization_id = $2
+          AND binding_scope = 'account'
           AND account_id = $3 AND deleted_at IS NULL
         "#,
     )
@@ -1265,6 +1278,9 @@ async fn postgres_upstream_store_stale_preferred_endpoint_does_not_block_edits()
             rpm_limit: None,
             timeout_ms: None,
             status: 1,
+            billing_mode: "prepay".to_owned(),
+            model_blacklist: Vec::new(),
+            model_whitelist: Vec::new(),
             api_key: None,
             requested_at: REQUESTED_AT.to_owned(),
         })
@@ -1300,6 +1316,9 @@ async fn postgres_upstream_store_stale_preferred_endpoint_does_not_block_edits()
             rpm_limit: account.rpm_limit,
             timeout_ms: account.timeout_ms,
             status: account.status,
+            billing_mode: account.billing_mode.clone(),
+            model_blacklist: Vec::new(),
+            model_whitelist: Vec::new(),
             api_key: None,
             requested_at: REQUESTED_AT.to_owned(),
         })
@@ -1331,6 +1350,9 @@ async fn postgres_upstream_store_stale_preferred_endpoint_does_not_block_edits()
             rpm_limit: account.rpm_limit,
             timeout_ms: account.timeout_ms,
             status: account.status,
+            billing_mode: account.billing_mode.clone(),
+            model_blacklist: Vec::new(),
+            model_whitelist: Vec::new(),
             api_key: None,
             requested_at: REQUESTED_AT.to_owned(),
         })
@@ -1367,6 +1389,9 @@ async fn postgres_upstream_store_stale_preferred_endpoint_does_not_block_edits()
             rpm_limit: account.rpm_limit,
             timeout_ms: account.timeout_ms,
             status: account.status,
+            billing_mode: account.billing_mode.clone(),
+            model_blacklist: Vec::new(),
+            model_whitelist: Vec::new(),
             api_key: None,
             requested_at: REQUESTED_AT.to_owned(),
         })
@@ -1513,18 +1538,9 @@ impl PostgresTestContext {
         .execute(&pool)
         .await
         .expect("apply upstream account group default flag migration");
-        sqlx::raw_sql(include_str!(
-            "../../../database/migrations/postgres/0025_upstream_account_group_model_lists.up.sql"
-        ))
-        .execute(&pool)
-        .await
-        .expect("apply upstream account group model lists migration");
-        sqlx::raw_sql(include_str!(
-            "../../../database/migrations/postgres/0026_add_upstream_supplier_model_lists.up.sql"
-        ))
-        .execute(&pool)
-        .await
-        .expect("apply upstream supplier model lists migration");
+        // NOTE: 0025/0026 (columnar model_blacklist/model_whitelist) are intentionally
+        // NOT applied here. Migration 0033 DROPs those columns in the production schema;
+        // the test schema must reflect the current authority (ai_model_access_policy).
         sqlx::raw_sql(include_str!(
             "../../../database/migrations/postgres/0027_add_upstream_supplier_endpoint_vendors.up.sql"
         ))

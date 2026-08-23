@@ -83,6 +83,14 @@
       "system_of_record": true
     },
     {
+      "table_name": "ai_model_access_policy",
+      "owner": "ai-routing-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
       "table_name": "ai_model_mapping_rule",
       "owner": "ai-routing-service",
       "compliance_level": "L2",
@@ -115,6 +123,14 @@
       "system_of_record": true
     },
     {
+      "table_name": "ai_resource_binding",
+      "owner": "ai-routing-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
       "table_name": "ai_routing_decision_log",
       "owner": "ai-routing-service",
       "compliance_level": "L2",
@@ -122,24 +138,9 @@
       "profile": "event_log",
       "system_of_record": true
     },
+
     {
-      "table_name": "ai_routing_policy",
-      "owner": "ai-routing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "tenant_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ai_routing_profile",
-      "owner": "ai-routing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "tenant_entity",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ai_routing_rule",
+      "table_name": "ai_routing_strategy",
       "owner": "ai-routing-service",
       "compliance_level": "L2",
       "lifecycle_status": "active",
@@ -219,27 +220,11 @@
       "system_of_record": false
     },
     {
-      "table_name": "ai_upstream_account_group_resource",
-      "owner": "ai-routing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "relation_entity",
-      "system_of_record": true
-    },
-    {
       "table_name": "ai_upstream_account_health_state",
       "owner": "ai-routing-service",
       "compliance_level": "L2",
       "lifecycle_status": "active",
       "profile": "operational_state",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ai_upstream_account_resource",
-      "owner": "ai-routing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "relation_entity",
       "system_of_record": true
     },
     {
@@ -280,14 +265,6 @@
       "compliance_level": "L2",
       "lifecycle_status": "active",
       "profile": "operational_state",
-      "system_of_record": true
-    },
-    {
-      "table_name": "ai_upstream_supplier_resource",
-      "owner": "ai-routing-service",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "relation_entity",
       "system_of_record": true
     },
     {

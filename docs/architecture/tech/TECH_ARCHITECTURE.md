@@ -252,13 +252,13 @@ The canonical aggregate tables are:
 | `ai_upstream_supplier` | Supplier identity, type, adapter, protocol, and lifecycle |
 | `ai_upstream_supplier_endpoint` | Supplier Base URLs, priority, weight, region, and timeout |
 | `ai_upstream_supplier_auth_method` | Supported non-secret authentication method configuration |
-| `ai_upstream_supplier_resource` | Supplier resource/resource-group allowlist |
+| `ai_resource_binding` | Unified resource binding for supplier / account-group / account scopes |
+| `ai_model_access_policy` | Unified model access rules (scope supplier/account_group + effect allow/deny) |
+| `ai_routing_strategy` | Routing strategy configuration (strategy_code / params / priority / is_default) |
 | `ai_upstream_account` | One billable account at one supplier |
 | `ai_upstream_account_credential` | Versioned encrypted credential authority |
 | `ai_upstream_account_group` | Routing, fallback, cost, sale, and capacity policy |
 | `ai_upstream_account_group_member` | Account membership, priority, weight, and cost override |
-| `ai_upstream_account_group_resource` | Group resource/resource-group allowlist |
-| `ai_upstream_account_resource` | Per-account resource/resource-group allowlist |
 
 Operational state is separated from configuration:
 

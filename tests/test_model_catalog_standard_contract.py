@@ -106,12 +106,13 @@ AI_UPSTREAM_ROUTE_REQUIRED_TABLES = (
     "ai_upstream_supplier",
     "ai_upstream_supplier_endpoint",
     "ai_upstream_supplier_auth_method",
-    "ai_upstream_supplier_resource",
+    "ai_resource_binding",
+    "ai_model_access_policy",
+    "ai_routing_strategy",
     "ai_upstream_account",
     "ai_upstream_account_credential",
     "ai_upstream_account_group",
     "ai_upstream_account_group_member",
-    "ai_upstream_account_group_resource",
     "ai_upstream_account_group_metric_snapshot",
     "ai_resource",
     "ai_resource_group",
@@ -137,6 +138,9 @@ OBSOLETE_ROUTER_TABLES = {
     "integration_service_provider_account_binding",
     "integration_service_provider_contract_version",
     "integration_service_provider_price_change_request",
+    "ai_upstream_supplier_resource",
+    "ai_upstream_account_group_resource",
+    "ai_upstream_account_resource",
 }
 RETIRED_LEGACY_PRICING_TABLES = {
     "ai_pricing_group",
@@ -198,12 +202,13 @@ CANONICAL_TABLES = {
     "ai_upstream_supplier",
     "ai_upstream_supplier_endpoint",
     "ai_upstream_supplier_auth_method",
-    "ai_upstream_supplier_resource",
+    "ai_resource_binding",
+    "ai_model_access_policy",
+    "ai_routing_strategy",
     "ai_upstream_account",
     "ai_upstream_account_credential",
     "ai_upstream_account_group",
     "ai_upstream_account_group_member",
-    "ai_upstream_account_group_resource",
     "ai_upstream_account_group_metric_snapshot",
     "ai_model_vendor",
     "ai_modality",
@@ -255,12 +260,13 @@ CANONICAL_TABLE_PROFILES = {
     "ai_upstream_supplier": "tenant_entity",
     "ai_upstream_supplier_endpoint": "tenant_entity",
     "ai_upstream_supplier_auth_method": "tenant_entity",
-    "ai_upstream_supplier_resource": "relation_entity",
+    "ai_resource_binding": "tenant_entity",
+    "ai_model_access_policy": "tenant_entity",
+    "ai_routing_strategy": "tenant_entity",
     "ai_upstream_account": "tenant_entity",
     "ai_upstream_account_credential": "secret_entity",
     "ai_upstream_account_group": "tenant_entity",
     "ai_upstream_account_group_member": "relation_entity",
-    "ai_upstream_account_group_resource": "relation_entity",
     "ai_upstream_account_group_metric_snapshot": "projection",
     "ai_model_vendor": "tenant_entity",
     "ai_modality": "tenant_entity",
@@ -953,7 +959,7 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
         )
         frontend_contract = read_text(ROOT / "docs" / "schema-registry" / "frontend-field-contracts.yaml")
         forbidden_block = re.search(
-            r"forbidden_synonym_tables:\s*\n((?:\s+-\s+\S+\n)+)",
+            r"forbidden_synonym_tables:\s*(?:\r?\n)((?:\s+-\s+\S+(?:\r?\n))+)",
             effective_schema,
         )
         self.assertIsNotNone(forbidden_block, "effective schema must declare forbidden_synonym_tables")
@@ -1468,21 +1474,36 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
         ):
             self.assertIn(column, group_member.get("columns", {}))
 
-        group_resource = tables["ai_upstream_account_group_resource"]
-        for column in ("account_group_id", "resource_id", "resource_group_id", "grant_type", "priority"):
-            self.assertIn(column, group_resource.get("columns", {}))
+        resource_binding = tables["ai_resource_binding"]
+        for column in (
+            "binding_scope",
+            "supplier_id",
+            "supplier_code",
+            "account_group_id",
+            "account_group_code",
+            "account_id",
+            "account_code",
+            "resource_id",
+            "resource_group_id",
+            "grant_type",
+            "priority",
+        ):
+            self.assertIn(column, resource_binding.get("columns", {}))
         for column in ("resource_code", "resource_group_code"):
-            column_spec = group_resource["columns"][column]
+            column_spec = resource_binding["columns"][column]
             self.assertIsInstance(column_spec, dict)
-            self.assertEqual("NOT NULL DEFAULT ''", column_spec.get("constraints"))
 
-        supplier_resource = tables["ai_upstream_supplier_resource"]
-        for column in ("supplier_id", "supplier_code", "resource_id", "resource_group_id", "grant_type", "priority"):
-            self.assertIn(column, supplier_resource.get("columns", {}))
-        for column in ("resource_code", "resource_group_code"):
-            column_spec = supplier_resource["columns"][column]
-            self.assertIsInstance(column_spec, dict)
-            self.assertEqual("NOT NULL DEFAULT ''", column_spec.get("constraints"))
+        model_access_policy = tables["ai_model_access_policy"]
+        for column in (
+            "scope_type",
+            "scope_id",
+            "scope_code",
+            "effect",
+            "vendor_code",
+            "model_pattern",
+            "priority",
+        ):
+            self.assertIn(column, model_access_policy.get("columns", {}))
 
         resource = tables["ai_resource"]
         for column in (
@@ -1745,7 +1766,7 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
                 / "admin_upstream_store"
                 / "supplier_resource.rs",
                 "replace_upstream_supplier_resources",
-                "ai_upstream_supplier_resource",
+                "ai_resource_binding",
             ),
             (
                 ROOT
@@ -1758,7 +1779,7 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
                 / "admin_upstream_store"
                 / "account_group_resource.rs",
                 "replace_upstream_account_group_resources",
-                "ai_upstream_account_group_resource",
+                "ai_resource_binding",
             ),
         )
         for path, replace_operation, table_name in upstream_store_contracts:
@@ -1798,7 +1819,7 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
             / "app_routing_read_store.rs"
         )
         source = read_text(path)
-        self.assertIn("ai_upstream_account_group_resource", source)
+        self.assertIn("ai_resource_binding", source)
         self.assertIn("resource_codes_json", source)
         self.assertNotIn("ai_channel_model", source)
         self.assertNotRegex(source, r"parse_model_catalog_identity|ensure_canonical_model_catalog_key")

@@ -62,9 +62,6 @@ struct AdminRouteExplainResponse {
     selected_candidates: Vec<AdminRouteExplainCandidateResponse>,
     blocked_reasons: Vec<AdminRouteExplainIssueResponse>,
     warnings: Vec<AdminRouteExplainIssueResponse>,
-    policy_id: Option<String>,
-    rule_id: Option<String>,
-    policy_snapshot_version: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -82,8 +79,6 @@ struct AdminRouteExplainCandidateResponse {
     account_group_id: String,
     account_group_code: String,
     pricing_plan_code: String,
-    policy_id: Option<String>,
-    rule_id: Option<String>,
     api_code: String,
     catalog_key: Option<String>,
     requested_model: Option<String>,
@@ -148,14 +143,10 @@ where
                 billing_meter: normalized.billing_meter.clone(),
             })
             .map(|plan| {
-                let policy_id = plan.policy_id;
-                let rule_id = plan.rule_id;
-                let candidates = plan
-                    .routes
+                plan.routes
                     .into_iter()
                     .map(to_model_candidate_response)
-                    .collect::<Vec<_>>();
-                (candidates, policy_id, rule_id)
+                    .collect::<Vec<_>>()
             })
     } else {
         selector
@@ -166,28 +157,22 @@ where
                 capability: normalized.capability,
             })
             .map(|selection| {
-                let policy_id = selection.policy_id;
-                let rule_id = selection.rule_id;
-                (
-                    vec![to_upstream_account_candidate_response(
-                        selection,
-                        &normalized.api_code,
-                    )],
-                    policy_id,
-                    rule_id,
-                )
+                vec![to_upstream_account_candidate_response(
+                    selection,
+                    &normalized.api_code,
+                )]
             })
     };
 
-    let (selected_candidates, policy_id, rule_id, blocked_reasons) = match result {
-        Ok((candidates, policy_id, rule_id)) => (candidates, policy_id, rule_id, Vec::new()),
+    let (selected_candidates, blocked_reasons) = match result {
+        Ok(candidates) => (candidates, Vec::new()),
         Err(error) => {
             let issue = route_explain_issue(
                 route_explain_error_code(error.kind()),
                 "blocking",
                 error.to_string(),
             );
-            (Vec::new(), None, None, vec![issue])
+            (Vec::new(), vec![issue])
         }
     };
 
@@ -210,9 +195,6 @@ where
             selected_candidates,
             blocked_reasons,
             warnings: Vec::new(),
-            policy_id: policy_id.map(|value| value.to_string()),
-            rule_id: rule_id.map(|value| value.to_string()),
-            policy_snapshot_version: "runtime-catalog-current".to_owned(),
         },
     }))
     .into_response()
@@ -330,8 +312,6 @@ fn to_model_candidate_response(
         account_group_id: selection.group_id.to_string(),
         account_group_code: selection.group_code,
         pricing_plan_code: selection.pricing_plan_code,
-        policy_id: selection.policy_id.map(|value| value.to_string()),
-        rule_id: selection.rule_id.map(|value| value.to_string()),
         api_code: route.api_code.unwrap_or_default(),
         catalog_key: Some(route.catalog_key),
         requested_model: Some(route.model),
@@ -353,8 +333,6 @@ fn to_upstream_account_candidate_response(
         account_group_id: selection.group_id.to_string(),
         account_group_code: selection.group_code,
         pricing_plan_code: selection.pricing_plan_code,
-        policy_id: selection.policy_id.map(|value| value.to_string()),
-        rule_id: selection.rule_id.map(|value| value.to_string()),
         api_code: api_code.to_owned(),
         catalog_key: None,
         requested_model: None,

@@ -107,6 +107,8 @@ pub fn log_openai_chat_route_selection_failed(
     account_group_code: &str,
     requested_model: &str,
     status: u16,
+    stage: &str,
+    reason: &str,
 ) {
     tracing::warn!(
         call_chain_stage = "openai_chat",
@@ -121,6 +123,8 @@ pub fn log_openai_chat_route_selection_failed(
         account_group_code = %account_group_code,
         requested_model = %requested_model,
         status,
+        stage = if stage.is_empty() { "unknown" } else { stage },
+        reason = if reason.is_empty() { "(no selector reason on response)" } else { reason },
         "openai chat completion route selection failed"
     );
 }

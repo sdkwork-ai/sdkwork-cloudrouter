@@ -117,9 +117,10 @@ SELECT
     COALESCE(
         (
             SELECT jsonb_agg(r.resource_code ORDER BY r.priority, r.id)::text
-              FROM ai_upstream_account_group_resource r
+              FROM ai_resource_binding r
              WHERE r.tenant_id = g.tenant_id
                AND r.organization_id = g.organization_id
+               AND r.binding_scope = 'account_group'
                AND r.account_group_id = g.id
                AND r.status = 1
                AND r.deleted_at IS NULL
@@ -133,9 +134,10 @@ SELECT
     COALESCE(
         (
             SELECT jsonb_agg(r.resource_group_code ORDER BY r.priority, r.id)::text
-              FROM ai_upstream_account_group_resource r
+              FROM ai_resource_binding r
              WHERE r.tenant_id = g.tenant_id
                AND r.organization_id = g.organization_id
+               AND r.binding_scope = 'account_group'
                AND r.account_group_id = g.id
                AND r.status = 1
                AND r.deleted_at IS NULL

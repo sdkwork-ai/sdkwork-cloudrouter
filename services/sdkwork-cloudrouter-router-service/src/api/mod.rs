@@ -33,7 +33,6 @@ mod app_invite;
 mod app_notification;
 mod app_pricing;
 mod app_routing;
-mod app_routing_strategy;
 mod app_runtime;
 mod app_settings;
 mod app_settlements;
@@ -102,8 +101,6 @@ pub use app_pricing::{
 };
 pub use app_routing::app_routing_router;
 pub use app_routing::app_routing_router_with_read_store;
-pub use app_routing_strategy::app_routing_strategy_router;
-pub use app_routing_strategy::app_routing_strategy_router_with_store;
 pub use app_runtime::app_runtime_router;
 pub use app_runtime::app_runtime_router_with_store;
 pub use app_runtime::app_runtime_router_with_store_and_chat_stream_relay;

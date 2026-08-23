@@ -20,7 +20,6 @@ use sdkwork_cloudrouter_router_service::application::AuthenticatedApiKeyContext;
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, DomainResult, ModelPrice, ModelUpstreamRoute,
     ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, ProviderRetryPolicy,
-    RouteCandidate, RoutingCapability, RoutingPolicy, RoutingPolicyScope, RoutingRule,
     UpstreamAccountGroup, UpstreamAccountRoute,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
@@ -201,31 +200,6 @@ fn catalog_with_default_group_and_account_for_group_id(
         );
     }
     // 选路策略：绑定默认分组 + chat 能力。
-    catalog.add_routing_policy(
-        RoutingPolicy::new(
-            9001,
-            TENANT_ID,
-            20,
-            "default-group-gpt-4o-mini-policy",
-            RoutingPolicyScope::UpstreamAccountGroup,
-            Some(DEFAULT_GROUP_ID),
-            Some(9101),
-        )
-        .with_capability(RoutingCapability::Chat),
-    );
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9102,
-            TENANT_ID,
-            20,
-            9101,
-            "default-group-gpt-4o-mini",
-            1,
-            r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
-            "openai/gpt-4o-mini",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(DEFAULT_GROUP_ID, 100)]),
-    );
     catalog
 }
 

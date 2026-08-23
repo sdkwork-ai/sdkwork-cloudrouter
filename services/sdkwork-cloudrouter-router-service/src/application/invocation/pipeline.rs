@@ -36,6 +36,9 @@ pub struct DeferredStreamInvocation {
 pub struct DeferredStreamResponse {
     pub status_code: u16,
     pub content_type: Option<String>,
+    /// Safe upstream headers preserved for the client (e.g. `retry-after`,
+    /// `x-request-id`).
+    pub headers: axum::http::HeaderMap,
     pub body: Body,
 }
 
@@ -262,6 +265,7 @@ impl DeferredStreamInvocation {
         Ok(DeferredStreamResponse {
             status_code: normalized.status_code,
             content_type: normalized.content_type.clone(),
+            headers: normalized.headers.clone(),
             body,
         })
     }

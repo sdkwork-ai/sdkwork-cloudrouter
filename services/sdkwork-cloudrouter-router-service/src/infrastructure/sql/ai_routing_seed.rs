@@ -35,7 +35,7 @@ const SYSTEM_DATA_SCOPE: i32 = 1;
 const DEFAULT_ADMIN_DATA_SCOPE: i32 = 1;
 const MAX_SEED_UUID_LENGTH: usize = 64;
 const DEFAULT_OPENAI_BASE_URL: &str = "https://api.openai.com/v1";
-const DEFAULT_ADMIN_ROUTING_TOPOLOGY_SEED_SOURCE: &str = "default-admin-routing-topology-seed.v4|openai-default|default-group|official.openai.full|openai|official|openai_compatible|https://api.openai.com/v1|vendor-modality-groups|i18n-zh-en";
+const DEFAULT_ADMIN_ROUTING_TOPOLOGY_SEED_SOURCE: &str = "default-admin-routing-topology-seed.v5|openai-default|default-group|official.openai.full|openai|official|openai_compatible|https://api.openai.com/v1|vendor-modality-groups|i18n-zh-en|price_first|prepay";
 
 #[derive(Debug)]
 pub(crate) enum AiRoutingSeedLoadError {
@@ -354,6 +354,7 @@ pub(crate) async fn import_postgres_ai_routing_seed(pool: &PgPool) -> Result<(),
     disable_removed_postgres_resource_groups(&mut tx, &catalog).await?;
     import_postgres_resource_group_items(&mut tx, &catalog).await?;
     import_postgres_default_admin_upstream_topology(&mut tx, &catalog).await?;
+    import_postgres_default_admin_routing_strategies(&mut tx).await?;
     let rate_card_effective_at = sqlx::query_scalar::<_, String>("SELECT CURRENT_TIMESTAMP::text")
         .fetch_one(&mut *tx)
         .await?;
@@ -386,8 +387,38 @@ pub(crate) async fn postgres_ai_routing_seed_complete(pool: &PgPool) -> Result<b
         && expected_group_codes(&catalog).is_subset(&group_codes)
         && expected_endpoint_codes(&catalog).is_subset(&endpoint_codes)
         && postgres_default_admin_upstream_topology_complete(pool).await?
+        && postgres_default_admin_routing_strategies_complete(pool).await?
         && postgres_resource_group_item_count(pool, &catalog).await?
             >= expected_resource_group_item_count(&catalog))
+}
+
+/// The bundled default routing strategies must be present so the account-group
+/// `routing_strategy_code` (price_first) resolves to a real strategy.
+async fn postgres_default_admin_routing_strategies_complete(pool: &PgPool) -> Result<bool, sqlx::Error> {
+    for strategy in default_admin_routing_strategies() {
+        let exists = sqlx::query_scalar::<_, bool>(
+            r#"
+            SELECT EXISTS (
+                SELECT 1
+                FROM ai_routing_strategy strategy
+                WHERE strategy.tenant_id = $1
+                  AND strategy.organization_id = $2
+                  AND strategy.strategy_code = $3
+                  AND strategy.status = 1
+                  AND strategy.deleted_at IS NULL
+            )
+            "#,
+        )
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(strategy.code)
+        .fetch_one(pool)
+        .await?;
+        if !exists {
+            return Ok(false);
+        }
+    }
+    Ok(true)
 }
 
 async fn postgres_default_admin_upstream_topology_complete(
@@ -414,9 +445,10 @@ async fn postgres_default_admin_upstream_topology_complete(
                  AND auth_method.auth_method_code = $5
                  AND auth_method.status = 1
                  AND auth_method.deleted_at IS NULL
-                JOIN ai_upstream_supplier_resource supplier_resource
+                JOIN ai_resource_binding supplier_resource
                   ON supplier_resource.tenant_id = supplier.tenant_id
                  AND supplier_resource.organization_id = supplier.organization_id
+                 AND supplier_resource.binding_scope = 'supplier'
                  AND supplier_resource.supplier_id = supplier.id
                  AND supplier_resource.resource_group_code = $7
                  AND supplier_resource.grant_type = 'allow'
@@ -476,9 +508,10 @@ async fn postgres_default_admin_upstream_topology_complete(
                      AND account.id = member.account_id
                      AND account.account_code = $4
                      AND account.deleted_at IS NULL
-                    JOIN ai_upstream_account_group_resource group_resource
+                    JOIN ai_resource_binding group_resource
                       ON group_resource.tenant_id = account_group.tenant_id
                      AND group_resource.organization_id = account_group.organization_id
+                     AND group_resource.binding_scope = 'account_group'
                      AND group_resource.account_group_id = account_group.id
                      AND group_resource.resource_group_code = $5
                      AND group_resource.grant_type = 'allow'
@@ -507,9 +540,10 @@ async fn postgres_default_admin_upstream_topology_complete(
                 SELECT EXISTS (
                     SELECT 1
                     FROM ai_upstream_account_group account_group
-                    JOIN ai_upstream_account_group_resource group_resource
+                    JOIN ai_resource_binding group_resource
                       ON group_resource.tenant_id = account_group.tenant_id
                      AND group_resource.organization_id = account_group.organization_id
+                     AND group_resource.binding_scope = 'account_group'
                      AND group_resource.account_group_id = account_group.id
                      AND group_resource.resource_group_code = $4
                      AND group_resource.grant_type = 'allow'
@@ -1032,13 +1066,13 @@ async fn import_postgres_default_admin_upstream_topology(
                 supplier_id, supplier_code, preferred_endpoint_id,
                 account_code, account_name, account_type, auth_method_code,
                 credential_rotation_strategy, environment,
-                contract_cost_multiplier
+                billing_mode, contract_cost_multiplier
             ) VALUES (
                 $1, $2, $3, $4, $5, $6, $7::jsonb,
                 $8, $9, $10,
                 $11, $12, $13, $14,
                 'default', 1,
-                1.000000000000
+                'prepay', 1.000000000000
             )
             ON CONFLICT (tenant_id, organization_id, account_code) DO UPDATE SET
                 -- An existing account may have been re-configured by an admin
@@ -1111,24 +1145,18 @@ async fn import_postgres_default_admin_upstream_topology(
 
         sqlx::query(
             r#"
-            INSERT INTO ai_upstream_supplier_resource (
+            INSERT INTO ai_resource_binding (
                 id, uuid, tenant_id, organization_id, data_scope, status, metadata,
-                supplier_id, supplier_code, resource_group_id, resource_group_code,
+                binding_scope, supplier_id, supplier_code,
+                resource_id, resource_code, resource_group_code,
                 grant_type, priority
             )
             SELECT
                 $1, $2, $3, $4, $5, 1, $6::jsonb,
-                $7, $8, resource_group.id, $9,
+                'supplier', $7, $8,
+                NULL, NULL, $9,
                 'allow', $10
-            FROM ai_resource_group resource_group
-            WHERE resource_group.tenant_id = 0
-              AND resource_group.organization_id = 0
-              AND resource_group.group_code = $9
-              AND resource_group.deleted_at IS NULL
-            ON CONFLICT (
-                tenant_id, organization_id, supplier_id, resource_code, resource_group_code
-            ) DO UPDATE SET
-                resource_group_id = EXCLUDED.resource_group_id,
+            ON CONFLICT (id) DO UPDATE SET
                 grant_type = EXCLUDED.grant_type,
                 priority = EXCLUDED.priority,
                 status = EXCLUDED.status,
@@ -1231,14 +1259,14 @@ async fn import_postgres_default_admin_upstream_topology(
             INSERT INTO ai_upstream_account_group (
                 id, uuid, tenant_id, organization_id, data_scope, status, metadata,
                 group_code, group_name, group_name_i18n, description, group_type,
-                routing_strategy, fallback_mode, priority, environment,
+                routing_strategy, routing_strategy_code, fallback_mode, priority, environment,
                 pricing_plan_code, cost_multiplier, sale_multiplier,
                 billing_type, allowed_origin, vendor_code, modalities, tags,
                 is_default
             ) VALUES (
                 $1, $2, $3, $4, $5, 1, $6::jsonb,
                 $7, $8, $9::jsonb, $10, $11,
-                'weighted', 'sequential', $12, 1,
+                'weighted', 'price_first', 'sequential', $12, 1,
                 'standard', 1.000000000000, 1.000000000000,
                 1, '[]'::jsonb, $13, $14::jsonb, $15::jsonb,
                 $16
@@ -1249,6 +1277,7 @@ async fn import_postgres_default_admin_upstream_topology(
                 description = EXCLUDED.description,
                 group_type = EXCLUDED.group_type,
                 routing_strategy = EXCLUDED.routing_strategy,
+                routing_strategy_code = EXCLUDED.routing_strategy_code,
                 fallback_mode = EXCLUDED.fallback_mode,
                 priority = EXCLUDED.priority,
                 environment = EXCLUDED.environment,
@@ -1366,24 +1395,19 @@ async fn import_postgres_default_admin_upstream_topology(
 
         sqlx::query(
             r#"
-            INSERT INTO ai_upstream_account_group_resource (
+            INSERT INTO ai_resource_binding (
                 id, uuid, tenant_id, organization_id, data_scope, status, metadata,
-                account_group_id, resource_group_id, resource_group_code,
+                binding_scope, account_group_id, account_group_code,
+                resource_id, resource_code, resource_group_code,
                 grant_type, priority
             )
-            SELECT
+            VALUES (
                 $1, $2, $3, $4, $5, 1, $6::jsonb,
-                $7, resource_group.id, $8,
+                'account_group', $7, NULL,
+                NULL, NULL, $8,
                 'allow', $9
-            FROM ai_resource_group resource_group
-            WHERE resource_group.tenant_id = 0
-              AND resource_group.organization_id = 0
-              AND resource_group.group_code = $8
-              AND resource_group.deleted_at IS NULL
-            ON CONFLICT (
-                tenant_id, organization_id, account_group_id, resource_code, resource_group_code
-            ) DO UPDATE SET
-                resource_group_id = EXCLUDED.resource_group_id,
+            )
+            ON CONFLICT (id) DO UPDATE SET
                 grant_type = EXCLUDED.grant_type,
                 priority = EXCLUDED.priority,
                 status = EXCLUDED.status,
@@ -1422,6 +1446,125 @@ async fn import_postgres_default_admin_upstream_topology(
     }
 
     Ok(())
+}
+
+/// Seeds the default routing strategies that the account-group
+/// `routing_strategy_code` references. The price-first strategy is the
+/// default so a fresh install routes to the cheapest callable account without
+/// any admin configuration. Every strategy in `ai_routing_strategy` is
+/// idempotently upserted by `strategy_code`.
+async fn import_postgres_default_admin_routing_strategies(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+) -> Result<(), sqlx::Error> {
+    let catalog = AiRoutingSeedCatalog::load().map_err(json_decode_error)?;
+    for strategy in default_admin_routing_strategies() {
+        let strategy_id = default_admin_routing_strategy_id(&strategy.code);
+        let strategy_uuid = default_admin_routing_strategy_uuid(&strategy.code);
+        let metadata = seed_metadata(
+            &catalog,
+            "default_admin_routing_strategy",
+            &strategy.code,
+            Value::Null,
+        );
+        sqlx::query(
+            r#"
+            INSERT INTO ai_routing_strategy (
+                id, uuid, tenant_id, organization_id, data_scope, status, metadata,
+                strategy_code, strategy_name, strategy_name_i18n, description,
+                strategy_type, params, priority, enabled, is_default, tags
+            ) VALUES (
+                $1, $2, $3, $4, $5, 1, $6::jsonb,
+                $7, $8, $9::jsonb, $10,
+                $11, $12::jsonb, $13, $14, $15, $16::jsonb
+            )
+            ON CONFLICT (tenant_id, organization_id, strategy_code) DO UPDATE SET
+                strategy_name = EXCLUDED.strategy_name,
+                strategy_name_i18n = EXCLUDED.strategy_name_i18n,
+                description = EXCLUDED.description,
+                strategy_type = EXCLUDED.strategy_type,
+                params = EXCLUDED.params,
+                priority = EXCLUDED.priority,
+                enabled = EXCLUDED.enabled,
+                is_default = EXCLUDED.is_default,
+                tags = EXCLUDED.tags,
+                metadata = EXCLUDED.metadata,
+                status = EXCLUDED.status,
+                deleted_at = NULL,
+                deleted_by = NULL
+            "#,
+        )
+        .bind(strategy_id)
+        .bind(strategy_uuid)
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(DEFAULT_ADMIN_DATA_SCOPE)
+        .bind(&metadata)
+        .bind(strategy.code)
+        .bind(strategy.name)
+        .bind(strategy.name_i18n)
+        .bind(strategy.description)
+        .bind(strategy.strategy_type)
+        .bind(strategy.params)
+        .bind(strategy.priority)
+        .bind(strategy.enabled)
+        .bind(strategy.is_default)
+        .bind(strategy.tags)
+        .execute(&mut **tx)
+        .await?;
+    }
+    Ok(())
+}
+
+/// Built-in default routing strategies (see `route_strategy.rs` for the
+/// strategy-pattern implementations these codes reference).
+struct DefaultAdminRoutingStrategySeed {
+    code: &'static str,
+    name: &'static str,
+    name_i18n: &'static str,
+    description: &'static str,
+    strategy_type: &'static str,
+    params: &'static str,
+    priority: i32,
+    enabled: bool,
+    is_default: bool,
+    tags: &'static str,
+}
+
+fn default_admin_routing_strategies() -> Vec<DefaultAdminRoutingStrategySeed> {
+    vec![DefaultAdminRoutingStrategySeed {
+        code: "price_first",
+        name: "Price First",
+        name_i18n: r#"{"en-US":"Price First","zh-CN":"价格优先"}"#,
+        description: "Prefer the cheapest callable upstream account for the request.",
+        strategy_type: "price_first",
+        params: r#"{}"#,
+        priority: 100,
+        enabled: true,
+        is_default: true,
+        tags: r#"["system"]"#,
+    }]
+}
+
+fn default_admin_routing_strategy_id(code: &str) -> i64 {
+    stable_seed_id(
+        "sdk-ai-routing-strategy-id",
+        &[
+            &DEFAULT_IAM_TENANT_ID.to_string(),
+            &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+            code,
+        ],
+    )
+}
+
+fn default_admin_routing_strategy_uuid(code: &str) -> String {
+    stable_seed_uuid(
+        "sdk-ai-routing-strategy",
+        &[
+            &DEFAULT_IAM_TENANT_ID.to_string(),
+            &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+            code,
+        ],
+    )
 }
 
 fn default_admin_upstream_supplier_id(account: &DefaultAdminUpstreamAccountSeed) -> i64 {
@@ -2488,5 +2631,50 @@ mod tests {
                 group.resource_group_code
             );
         }
+    }
+
+    #[test]
+    fn default_routing_strategies_seed_a_single_price_first_default() {
+        let strategies = default_admin_routing_strategies();
+        assert_eq!(1, strategies.len());
+        let price_first = &strategies[0];
+        assert_eq!("price_first", price_first.code);
+        assert_eq!("price_first", price_first.strategy_type);
+        assert!(price_first.is_default);
+        assert!(price_first.enabled);
+        assert_eq!(100, price_first.priority);
+        assert_eq!(r#"{}"#, price_first.params);
+    }
+
+    #[test]
+    fn default_routing_strategy_ids_are_stable_and_unique() {
+        let strategies = default_admin_routing_strategies();
+        let ids: BTreeSet<i64> = strategies
+            .iter()
+            .map(|strategy| default_admin_routing_strategy_id(strategy.code))
+            .collect();
+        let uuids: BTreeSet<String> = strategies
+            .iter()
+            .map(|strategy| default_admin_routing_strategy_uuid(strategy.code))
+            .collect();
+        assert_eq!(strategies.len(), ids.len());
+        assert_eq!(strategies.len(), uuids.len());
+        // Deterministic ids never change across runs.
+        assert_eq!(
+            default_admin_routing_strategy_id("price_first"),
+            default_admin_routing_strategy_id("price_first")
+        );
+    }
+
+    #[test]
+    fn default_account_group_routes_price_first_by_default() {
+        // The seeded default group must carry the strategy code that resolves
+        // to the seeded price_first strategy, keeping install-time routing
+        // behavior aligned with the strategy registry default.
+        let strategy_codes: BTreeSet<&str> = default_admin_routing_strategies()
+            .iter()
+            .map(|strategy| strategy.code)
+            .collect();
+        assert!(strategy_codes.contains("price_first"));
     }
 }

@@ -5,6 +5,7 @@ import {
   type CloudRouterMediaResource,
   type DriveUploaderBlobLike,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
+import { uuid } from '@sdkwork/utils/id';
 
 const QR_CODE_APP_RESOURCE_TYPE = 'site-settings';
 const QR_CODE_APP_RESOURCE_ID = 'site-settings-qr-codes';
@@ -26,15 +27,8 @@ export async function uploadQrCodeImage(file: File): Promise<CloudRouterMediaRes
   });
   const media = uploadResultToDriveMediaResource(result);
   const shareLink = await client.drive.shareLinks.create(result.uploadItem.nodeId, {
-    id: createClientUuid(),
+    id: uuid(),
     role: 'reader',
   });
   return attachDriveShareToken(media, shareLink.token);
-}
-
-function createClientUuid(): string {
-  if (typeof globalThis.crypto?.randomUUID === 'function') {
-    return globalThis.crypto.randomUUID();
-  }
-  return `qr-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }

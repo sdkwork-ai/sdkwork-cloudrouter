@@ -7,8 +7,7 @@ use sdkwork_cloudrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, DomainResult, GatewayApiKey, ModelPrice,
     ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
-    ProviderRetryPolicy, RouteCandidate, RoutingCapability, RoutingPolicy, RoutingPolicyScope,
-    RoutingRule, UpstreamAccountGroup, UpstreamAccountRoute,
+    ProviderRetryPolicy, UpstreamAccountGroup, UpstreamAccountRoute,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
@@ -105,31 +104,6 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
             Money::usd("0.440000").unwrap(),
         )
         .for_upstream_account("openrouter", 3001),
-    );
-    catalog.add_routing_policy(
-        RoutingPolicy::new(
-            9001,
-            10,
-            20,
-            "standard-group-responses-policy",
-            RoutingPolicyScope::UpstreamAccountGroup,
-            Some(10),
-            Some(9101),
-        )
-        .with_capability(RoutingCapability::Chat),
-    );
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9102,
-            10,
-            20,
-            9101,
-            "standard-group-gpt-4-1-mini",
-            1,
-            r#"{"catalogKey":"openai/gpt-4.1-mini"}"#,
-            "openai/gpt-4.1-mini",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
     );
     catalog
 }

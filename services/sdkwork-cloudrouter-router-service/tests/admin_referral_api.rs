@@ -16,8 +16,6 @@ use serde_json::Value;
 use tower::ServiceExt;
 
 const TEST_TENANT_ID: i64 = 100001;
-const TEST_ORGANIZATION_ID: i64 = 0;
-const TEST_OPERATOR_ID: i64 = 30;
 
 #[derive(Default)]
 struct TestAdminReferralStore {

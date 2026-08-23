@@ -16,11 +16,15 @@ impl RequestLimitsConfig {
     pub const DEFAULT_ADMIN_APP_JSON_BODY_MAX_BYTES: usize = 128 * 1024;
     pub const DEFAULT_ADMIN_SKILL_JSON_BODY_MAX_BYTES: usize = 64 * 1024;
     /// Default maximum request body size for gateway invocation endpoints
-    /// (`/v1/*`). 1 MiB is generous for OpenAI-compatible JSON payloads
-    /// (chat completions, embeddings, etc.) while preventing a single
-    /// oversized request from consuming excessive server memory under
-    /// concurrent load.
-    pub const DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES: usize = 1024 * 1024;
+    /// (`/v1/*`). Must cover OpenAI's official multipart upload limits so the
+    /// relay accepts real media payloads: `images/edits` supports files up to
+    /// 50 MiB and `audio/transcriptions`/`translations` up to 25 MiB, while
+    /// JSON payloads (chat completions, embeddings) are far smaller. 25 MiB
+    /// covers every official audio upload and most image edits; operators may
+    /// raise it via
+    /// `SDKWORK_CLOUDROUTER_GATEWAY_INVOCATION_BODY_MAX_BYTES` / runtime.toml
+    /// when serving very large image edits.
+    pub const DEFAULT_GATEWAY_INVOCATION_BODY_MAX_BYTES: usize = 25 * 1024 * 1024;
 
     pub fn from_env() -> Result<Self, String> {
         Self::from_env_or_runtime_toml(None)

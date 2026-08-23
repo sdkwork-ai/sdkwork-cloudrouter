@@ -1,4 +1,4 @@
-use axum::http::StatusCode;
+use axum::http::{HeaderName, HeaderValue, StatusCode};
 use axum::response::Response;
 use sdkwork_cloudrouter_http::ApiKeyIdentity;
 use std::sync::Arc;
@@ -21,8 +21,6 @@ pub(crate) type OpenAiRouteError = Box<Response>;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResolvedOpenAiUpstreamRoute {
     pub catalog_key: String,
-    pub policy_id: Option<i64>,
-    pub rule_id: Option<i64>,
     pub group_id: i64,
     pub group_code: String,
     pub pricing_plan_code: String,
@@ -463,8 +461,6 @@ fn resolve_model_route(
 
     Ok(ResolvedOpenAiUpstreamRoute {
         catalog_key: model_route.catalog_key,
-        policy_id: selection.policy_id,
-        rule_id: selection.rule_id,
         group_id: selection.group_id,
         group_code: selection.group_code,
         pricing_plan_code: selection.pricing_plan_code,
@@ -673,8 +669,8 @@ fn upstream_route_selection_error(error: UpstreamRouteSelectionError) -> OpenAiR
         error = %message,
         "openai runtime mapped route selection failure to http error"
     );
-    match error.kind() {
-        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable => Box::new(openai_error(
+    let mut response = match error.kind() {
+        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable => openai_error(
             StatusCode::SERVICE_UNAVAILABLE,
             if message.contains("upstream route snapshot is empty") {
                 "upstream_route_snapshot_empty"
@@ -682,19 +678,58 @@ fn upstream_route_selection_error(error: UpstreamRouteSelectionError) -> OpenAiR
                 "upstream_route_not_available"
             },
             "server_error",
-            message,
-        )),
-        UpstreamRouteSelectionErrorKind::PricingUnavailable => Box::new(openai_error(
+            message.as_str(),
+        ),
+        UpstreamRouteSelectionErrorKind::PricingUnavailable => openai_error(
             StatusCode::BAD_REQUEST,
             "pricing_unavailable",
             "invalid_request_error",
-            message,
-        )),
-        UpstreamRouteSelectionErrorKind::ModelForbidden => Box::new(openai_error(
+            message.as_str(),
+        ),
+        UpstreamRouteSelectionErrorKind::ModelForbidden => openai_error(
             StatusCode::FORBIDDEN,
             "model_forbidden",
             "invalid_request_error",
-            message,
-        )),
+            message.as_str(),
+        ),
+    };
+    attach_route_selection_debug_headers(&mut response, stage.code(), &message);
+    Box::new(response)
+}
+
+/// Attaches `x-sdkwork-route-stage` and `x-sdkwork-route-reason` to the
+/// generated error response so a gateway that remaps the OpenAI body to a
+/// generic `50301` ProblemDetail (which drops the selector reason) can still
+/// surface the exact cause to operators debugging "账号池网关暂不可用".
+///
+/// The reason header value is scrubbed to visible ASCII and length-capped so
+/// a provider-echoed value cannot leak credentials or exceed header limits.
+fn attach_route_selection_debug_headers(
+    response: &mut Response,
+    stage: &str,
+    message: &str,
+) {
+    const HEADER_NAME: &str = "x-sdkwork-route-reason";
+    let header_name = HeaderName::from_static(HEADER_NAME);
+    if let Ok(value) = HeaderValue::from_str(stage) {
+        response
+            .headers_mut()
+            .insert("x-sdkwork-route-stage", value);
     }
+    if let Ok(value) = HeaderValue::from_str(&sanitize_reason_header(message)) {
+        response.headers_mut().insert(header_name, value);
+    }
+}
+
+fn sanitize_reason_header(message: &str) -> String {
+    const MAX_HEADER_BYTES: usize = 2000;
+    let sanitized: String = message
+        .chars()
+        .map(|c| if c.is_ascii_control() { ' ' } else { c })
+        .collect::<String>()
+        .trim()
+        .chars()
+        .take(MAX_HEADER_BYTES)
+        .collect();
+    sanitized
 }

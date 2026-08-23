@@ -2,7 +2,7 @@ use super::classification::normalize_key;
 use super::{
     BillingMode, BillingQuantitySource, InvocationBilling, InvocationClassification,
     InvocationClassificationRequest, InvocationError, InvocationErrorKind, InvocationResource,
-    InvocationResourceClassifier, InvocationRouting, InvocationSurface, ResourceType,
+    InvocationResourceClassifier, InvocationRouting, InvocationSurface, ResourceType, RouteKind,
     StickyRouting,
 };
 use crate::application::find_builtin_ai_route;
@@ -44,8 +44,10 @@ impl InvocationResourceClassifier for ProviderNativeResourceClassifier {
             parent_resource_id: None,
             capability: request.capability.unwrap_or(spec.capability),
             model_requirement: spec.model_requirement,
+            route_kind: Some(RouteKind::Api),
             requested_model: spec.requested_model.clone(),
             requested_model_catalog_key: spec.requested_model_catalog_key.clone(),
+            resolved_vendor_codes: Vec::new(),
             provider_native_model: spec.provider_native_model.clone(),
         };
         let billing = external_usage_line_billing(spec.meter.clone());

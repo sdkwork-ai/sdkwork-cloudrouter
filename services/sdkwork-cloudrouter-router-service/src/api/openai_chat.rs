@@ -27,7 +27,8 @@ use crate::api::openai_invocation::{
     OpenAiInvocationRelayOutcome,
 };
 use crate::api::openai_relay_execution::{
-    guarded_openai_json_response, OpenAiRelayExecution, OpenAiRouteRelayExecution,
+    guarded_openai_json_response, restore_relayed_model, restore_relayed_streaming_model,
+    OpenAiRelayExecution, OpenAiRouteRelayExecution,
 };
 use crate::api::openai_runtime::{
     authenticate_api_key, provider_relay_attempt_retry_policy, resolve_openai_upstream_route_plan,
@@ -679,6 +680,18 @@ where
         Ok(route_plan) => route_plan,
         Err(response) => {
             let http_status = response.status().as_u16();
+            let route_reason = response
+                .headers()
+                .get("x-sdkwork-route-reason")
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_owned();
+            let route_stage = response
+                .headers()
+                .get("x-sdkwork-route-stage")
+                .and_then(|value| value.to_str().ok())
+                .unwrap_or("")
+                .to_owned();
             crate::application::log_openai_chat_route_selection_failed(
                 &invocation_context.request_id,
                 invocation_context.trace_id.as_deref(),
@@ -689,6 +702,8 @@ where
                 &context.group_code,
                 &request.model,
                 http_status,
+                &route_stage,
+                &route_reason,
             );
             record_request_trace(
                 state.usage_recorder.as_ref(),
@@ -1146,7 +1161,7 @@ where
             })?
             .with_latency_ms(relay_outcome.latency_ms);
             Body::new(StreamingUsageRecordingBody::new(
-                response.body,
+                restore_relayed_streaming_model(response.body, requested_model),
                 usage_recorder,
                 command_builder,
                 plugins.to_vec(),
@@ -1392,7 +1407,11 @@ where
         .await;
         notify_route_fault(plugins, invocation_context, route, &fault).await;
         notify_after_relay_observers(plugins, invocation_context, route, &relay_outcome).await;
-        let response = guarded_openai_json_response(status, response.body, response.memory_guard);
+        let response = guarded_openai_json_response(
+            status,
+            restore_relayed_model(response.body, requested_model),
+            response.memory_guard,
+        );
         return if retryable {
             Err(RouteRelayFailure::Retryable(response))
         } else {
@@ -1427,7 +1446,7 @@ where
     notify_after_relay_observers(plugins, invocation_context, route, &relay_outcome).await;
     Ok(guarded_openai_json_response(
         status,
-        response.body,
+        restore_relayed_model(response.body, requested_model),
         response.memory_guard,
     ))
 }

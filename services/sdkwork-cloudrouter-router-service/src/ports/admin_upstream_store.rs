@@ -220,6 +220,11 @@ pub struct AdminUpstreamAccountItem {
     pub contract_cost_multiplier: String,
     pub rpm_limit: Option<i64>,
     pub timeout_ms: Option<i32>,
+    /// 计费模式（prepay/postpay）。
+    pub billing_mode: String,
+    /// 账号级模型黑白名单（`ai_model_access_policy` scope_type='account' 聚合）。
+    pub model_blacklist: Vec<AdminUpstreamModelListEntry>,
+    pub model_whitelist: Vec<AdminUpstreamModelListEntry>,
     pub health_status: i32,
     pub status: i32,
     pub version: i64,
@@ -251,6 +256,11 @@ pub struct SaveAdminUpstreamAccountCommand {
     pub rpm_limit: Option<i64>,
     pub timeout_ms: Option<i32>,
     pub status: i32,
+    /// 计费模式（prepay/postpay，默认 prepay）。
+    pub billing_mode: String,
+    /// 账号级模型黑白名单（`ai_model_access_policy` scope_type='account'）。
+    pub model_blacklist: Vec<AdminUpstreamModelListEntry>,
+    pub model_whitelist: Vec<AdminUpstreamModelListEntry>,
     /// 创建时随账号一并保存的初始密钥（如 API Key）；更新时恒为 None。
     pub api_key: Option<String>,
     pub requested_at: String,

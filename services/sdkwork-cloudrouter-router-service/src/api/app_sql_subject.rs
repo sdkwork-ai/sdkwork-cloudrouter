@@ -19,8 +19,7 @@ use sdkwork_cloudrouter_http::TenantIsolationViolation;
 use crate::api::response::{problem_from_wire_code, ApiResponseError};
 use crate::api::subject::unauthorized_subject_response;
 use crate::ports::{
-    AppChatSubject, AppNotificationSubject, AppRoutingStrategySubject, AppRoutingSubject,
-    SettingsSubject,
+    AppChatSubject, AppNotificationSubject, AppRoutingSubject, SettingsSubject,
 };
 
 /// Default operator type for authenticated app-api users (matches legacy `TrustedRequestSubject` bridge).
@@ -166,7 +165,6 @@ impl_app_user_sql_subject_from!(AppNotificationSubject);
 impl_app_user_sql_subject_from!(SettingsSubject);
 impl_app_user_sql_subject_from!(AppChatSubject);
 impl_app_user_sql_subject_from!(AppRoutingSubject);
-impl_app_user_sql_subject_from!(AppRoutingStrategySubject);
 impl_app_user_sql_subject_from!(crate::ports::AppRuntimeSubject);
 
 /// Resolved SQL scope for app-api read handlers (mapping failures reject with `Response`).

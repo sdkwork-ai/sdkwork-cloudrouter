@@ -263,9 +263,6 @@ modules:
     - ai_upstream_account_group
     - ai_upstream_account_group_member
     - ai_upstream_account_group_metric_snapshot
-    - ai_upstream_account_group_resource
-    - ai_upstream_account_resource
-    - ai_upstream_supplier_resource
     - ai_config_version
     - ai_config_change_event
     - ai_model_mapping_rule
@@ -281,6 +278,9 @@ modules:
     - ai_upstream_supplier_endpoint
     - ai_upstream_supplier_endpoint_health_state
     - ai_upstream_supplier_auth_method
+    - ai_routing_strategy
+    - ai_model_access_policy
+    - ai_resource_binding
     ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
   ai-metering:
     owner: cloud-router-platform

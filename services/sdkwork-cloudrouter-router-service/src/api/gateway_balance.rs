@@ -250,7 +250,7 @@ mod tests {
     use crate::domain::{
         AiModel, BillingMeter, GatewayAccessPolicy, GatewayApiKey, GatewayRiskRule,
         ModelMappingRule, ModelPrice, ModelUpstreamRoute, ModelVendorDefinition, PriceSide,
-        PricingPlan, QuotaPolicy, ResolveModelMappingContext, RoutingPolicy, RoutingRule,
+        PricingPlan, QuotaPolicy, ResolveModelMappingContext,
         UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot, UpstreamAccountRoute,
     };
 
@@ -269,12 +269,6 @@ mod tests {
             Vec::new()
         }
         fn list_upstream_account_routes(&self) -> Vec<UpstreamAccountRoute> {
-            Vec::new()
-        }
-        fn list_routing_policies(&self) -> Vec<RoutingPolicy> {
-            Vec::new()
-        }
-        fn list_routing_rules(&self, _profile_id: i64) -> Vec<RoutingRule> {
             Vec::new()
         }
         fn list_model_mappings(&self) -> Vec<ModelMappingRule> {

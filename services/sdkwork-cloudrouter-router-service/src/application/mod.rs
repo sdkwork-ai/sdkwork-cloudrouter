@@ -28,6 +28,7 @@ mod payment_reconciliation_worker;
 mod payment_refund_runtime;
 mod paypal_payment_adapter;
 mod route_selection_diagnostics;
+mod route_strategy;
 mod runtime_stream_bus;
 mod stripe_payment_adapter;
 mod upstream_account_route_planner;
@@ -87,7 +88,8 @@ pub use gateway_invocation_rate_limit::{GatewayInvocationRateLimiter, GatewayRat
 pub use gateway_pricing_decision::GatewayPricingDecision;
 pub use iam_runtime_context::IamRuntimeContext;
 pub use invocation::{
-    AccountResolutionInterceptor, BillingMode, BillingPolicyInterceptor, BillingQuantitySource,
+    AccountBillingMode, AccountResolutionInterceptor, BillingMode, BillingPolicyInterceptor,
+    BillingQuantitySource,
     BillingSettlementInterceptor, BillingTransactionInterceptor, CircuitBreakerConfig,
     CircuitBreakerInterceptor, CircuitBreakerStateStore, CircuitCallPermit,
     DeferredStreamInvocation, DeferredStreamResponse, DispatchExecutor, DispatchMode,
@@ -106,8 +108,9 @@ pub use invocation::{
     PayloadExtractionInterceptor, PricingFinalizationInterceptor, PricingPreflightInterceptor,
     PricingSettlementInterceptor, ProviderAdapterDispatchInterceptor,
     ProviderNativeResourceClassifier, RequestTransformInterceptor, ResolvedProviderSecret,
-    ResourceType, ResponseNormalizationInterceptor, RoutePlanningInterceptor,
-    RoutingDecisionLogInterceptor, SecretResolutionInterceptor, StickyCommitInterceptor,
+    ResourceType, ResponseNormalizationInterceptor, RouteKind, RoutePlanningInterceptor,
+    RoutingDecisionLogInterceptor, RoutingPipeline, SecretResolutionInterceptor,
+    StickyCommitInterceptor,
     StickyMode, StickyResolutionInterceptor, StickyRouteConstraint, StickyRouting, StickyScope,
     StreamTerminalOutcome, StreamingUsageAccumulator, StreamingUsageFormat, TenantInflightConfig,
     TenantInflightInterceptor, TraceTelemetryInterceptor, UsageExtractionInterceptor,
@@ -191,6 +194,11 @@ pub use route_selection_diagnostics::{
     classify_route_selection_failure, diagnose_call_chain_from_logs, log_openai_chat_route_selection_failed,
     log_rejected_group_account, log_selector_route_selection_failed, RejectedGroupAccount,
     RouteSelectionFailureStage,
+};
+pub use route_strategy::{
+    resolve_account_routing_strategy, RoutingStrategy, RoutingStrategyRegistry,
+    RouteSelectionContext, StrategySelection, STRATEGY_LATENCY_FIRST, STRATEGY_PRICE_FIRST,
+    STRATEGY_QUALITY_FIRST, STRATEGY_ROUND_ROBIN, STRATEGY_STICKY, STRATEGY_WEIGHTED,
 };
 pub use runtime_stream_bus::{InMemoryRuntimeStreamBus, RuntimeStreamBus, RuntimeStreamBusFuture};
 pub use sdkwork_models_catalog_service::{

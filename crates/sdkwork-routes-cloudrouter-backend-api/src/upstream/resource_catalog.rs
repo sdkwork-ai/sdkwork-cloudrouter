@@ -27,6 +27,7 @@ struct ResourceCatalogResponse {
 struct ResourceCatalogItem {
     resource_code: String,
     resource_type: String,
+    route_kind: Option<String>,
     display_name: String,
     vendor_code: Option<String>,
     modality_code: Option<String>,
@@ -133,6 +134,7 @@ impl From<sdkwork_models_contract_service::AdminAiResourceItem> for ResourceCata
         Self {
             resource_code: item.resource_code,
             resource_type: item.resource_type,
+            route_kind: item.route_kind,
             display_name: item.display_name,
             vendor_code: item.vendor_code,
             modality_code: item.modality_code,

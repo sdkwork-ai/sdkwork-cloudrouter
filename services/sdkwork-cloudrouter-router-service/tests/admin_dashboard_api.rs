@@ -2,7 +2,7 @@ pub mod common;
 use std::sync::Arc;
 
 use axum::body::Body;
-use axum::http::{Request, StatusCode};
+use axum::http::StatusCode;
 use sdkwork_cloudrouter_router_service::ports::{
     AdminDashboardQuery, AdminDashboardReadFuture, AdminDashboardReadStore, AdminDashboardSnapshot,
     AdminDashboardSubject,

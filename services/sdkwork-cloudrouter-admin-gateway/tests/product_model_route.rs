@@ -5,7 +5,7 @@ use axum::http::{Request, StatusCode};
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
     ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, RouteCandidate,
-    RoutingPolicy, RoutingPolicyScope, RoutingRule, UpstreamAccountGroup, UpstreamAccountRoute,
+    UpstreamAccountGroup, UpstreamAccountRoute,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use sdkwork_web_core::{
@@ -73,28 +73,6 @@ fn catalog() -> InMemoryPricingCatalog {
     ));
     catalog
         .add_api_key(GatewayApiKey::new(100, 10, "sk-test", "hash:sk-test").with_owner(10, 20, 30));
-    catalog.add_routing_policy(RoutingPolicy::new(
-        200,
-        10,
-        20,
-        "standard-chat-policy",
-        RoutingPolicyScope::UpstreamAccountGroup,
-        Some(10),
-        Some(201),
-    ));
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            202,
-            10,
-            20,
-            201,
-            "standard-chat-rule",
-            1,
-            r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
-            "openai/gpt-4o-mini",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
-    );
     catalog.add_price(ModelPrice::new_for_catalog_key(
         "openai/gpt-4o-mini",
         "gpt-4o-mini",
@@ -109,6 +87,46 @@ fn catalog() -> InMemoryPricingCatalog {
             PriceSide::UpstreamCost,
             BillingMeter::LlmInputToken,
             Money::usd("0.110000").unwrap(),
+        )
+        .for_upstream_account("openrouter", 3001),
+    );
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "openai/gpt-4o-mini",
+            "gpt-4o-mini",
+            PriceSide::OfficialReference,
+            BillingMeter::LlmOutputToken,
+            Money::usd("0.600000").unwrap(),
+        )
+        .for_upstream_account("openrouter", 3001),
+    );
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "openai/gpt-4o-mini",
+            "gpt-4o-mini",
+            PriceSide::UpstreamCost,
+            BillingMeter::LlmOutputToken,
+            Money::usd("0.440000").unwrap(),
+        )
+        .for_upstream_account("openrouter", 3001),
+    );
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "openai/gpt-4o-mini",
+            "gpt-4o-mini",
+            PriceSide::OfficialReference,
+            BillingMeter::LlmCacheReadToken,
+            Money::usd("0.075000").unwrap(),
+        )
+        .for_upstream_account("openrouter", 3001),
+    );
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "openai/gpt-4o-mini",
+            "gpt-4o-mini",
+            PriceSide::UpstreamCost,
+            BillingMeter::LlmCacheReadToken,
+            Money::usd("0.055000").unwrap(),
         )
         .for_upstream_account("openrouter", 3001),
     );
@@ -215,8 +233,8 @@ async fn runtime_route_explain_uses_selector_and_masks_provider_secrets() {
     assert_eq!("runtime_selector", payload["data"]["item"]["source"]);
     assert_eq!(true, payload["data"]["item"]["ready"]);
     assert_eq!(1, payload["data"]["item"]["candidateCount"]);
-    assert_eq!("200", payload["data"]["item"]["policyId"]);
-    assert_eq!("202", payload["data"]["item"]["ruleId"]);
+    assert_eq!(serde_json::Value::Null, payload["data"]["item"]["policyId"]);
+    assert_eq!(serde_json::Value::Null, payload["data"]["item"]["ruleId"]);
     assert_eq!(
         "api.openai.chat_completions",
         payload["data"]["item"]["resourceCode"]
@@ -273,7 +291,7 @@ async fn runtime_route_explain_reports_selector_pricing_blocking_reason() {
                 ))
                 .header("content-type", "application/json")
                 .body(Body::from(
-                    r#"{"apiKeyId":"100","accountGroupId":"10","resourceCode":"api.openai.chat_completions","catalogKey":"openai/gpt-4o-mini","model":"gpt-4o-mini","apiCode":"openai.chat_completions","capability":"chat","billingMeter":"llm_output_token"}"#,
+                    r#"{"apiKeyId":"100","accountGroupId":"10","resourceCode":"api.openai.chat_completions","catalogKey":"openai/gpt-4o-mini","model":"gpt-4o-mini","apiCode":"openai.chat_completions","capability":"chat","billingMeter":"image_output_token"}"#,
                 ))
                 .unwrap(),
         )

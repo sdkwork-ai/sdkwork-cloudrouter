@@ -1923,6 +1923,43 @@ where
         RuntimeGatewayApi::OpenAiImageEdits => {
             build_runtime_image_edit_gateway_request(&provider_model, &execution.request_json)?
         }
+        RuntimeGatewayApi::OpenAiVideoGenerations => AppRuntimeGatewayRequest::new(
+            Method::POST,
+            "/v1/videos/generations",
+            build_runtime_video_generation_request_body(&provider_model, &execution.request_json)?,
+        ),
+        RuntimeGatewayApi::GeminiVideoGeneration => AppRuntimeGatewayRequest::new(
+            Method::POST,
+            format!(
+                "/provider/google/v1beta/models/{}:generateVideos",
+                percent_encode_path_segment(&provider_model)
+            ),
+            build_runtime_gemini_video_generation_request_body(&execution.request_json)?,
+        ),
+        RuntimeGatewayApi::KlingVideoGeneration => AppRuntimeGatewayRequest::new(
+            Method::POST,
+            "/provider/kling/v1/videos/text2video",
+            build_runtime_provider_video_generation_request_body(
+                &provider_model,
+                &execution.request_json,
+            )?,
+        ),
+        RuntimeGatewayApi::ViduVideoGeneration => AppRuntimeGatewayRequest::new(
+            Method::POST,
+            "/provider/vidu/ent/v2/start-end2video",
+            build_runtime_provider_video_generation_request_body(
+                &provider_model,
+                &execution.request_json,
+            )?,
+        ),
+        RuntimeGatewayApi::VolcengineVideoGeneration => AppRuntimeGatewayRequest::new(
+            Method::POST,
+            "/provider/volcengine/v1/videos/generations",
+            build_runtime_provider_video_generation_request_body(
+                &provider_model,
+                &execution.request_json,
+            )?,
+        ),
         RuntimeGatewayApi::OpenAiAudioSpeech => AppRuntimeGatewayRequest::new(
             Method::POST,
             "/v1/audio/speech",
@@ -2004,12 +2041,17 @@ enum RuntimeGatewayApi {
     OpenAiResponses,
     OpenAiImageGenerations,
     OpenAiImageEdits,
+    OpenAiVideoGenerations,
     OpenAiAudioSpeech,
     SunoMusicGenerations,
     ElevenLabsSoundGeneration,
     ElevenLabsTextToSpeech,
     AnthropicMessages,
     GeminiGenerateContent,
+    GeminiVideoGeneration,
+    KlingVideoGeneration,
+    ViduVideoGeneration,
+    VolcengineVideoGeneration,
 }
 
 fn runtime_gateway_api(
@@ -2038,13 +2080,24 @@ fn runtime_gateway_api(
         .to_ascii_lowercase();
     let signal = format!("{runtime} {endpoint} {provider} {api_format} {vendor}");
     let wants_image = runtime_request_targets_image(request_json) || endpoint.contains("image");
+    let wants_video = runtime_request_targets_video(request_json) || endpoint.contains("video");
     let wants_audio_asset =
         runtime_request_targets_audio_asset(request_json) || endpoint.contains("audio");
     let is_openai_compatible_chat_stream = runtime == "openai_compatible"
         && matches!(endpoint.as_str(), "chat.stream" | "agent.stream" | "");
     let target_type = runtime_request_target_type(request_json)
         .and_then(|value| normalize_generation_asset_modality(&value));
-    if wants_image && (signal.contains("gemini") || signal.contains("google")) {
+    if wants_video && (signal.contains("gemini") || signal.contains("google")) {
+        RuntimeGatewayApi::GeminiVideoGeneration
+    } else if wants_video && signal.contains("kling") {
+        RuntimeGatewayApi::KlingVideoGeneration
+    } else if wants_video && signal.contains("vidu") {
+        RuntimeGatewayApi::ViduVideoGeneration
+    } else if wants_video && (signal.contains("volcengine") || signal.contains("seedance")) {
+        RuntimeGatewayApi::VolcengineVideoGeneration
+    } else if wants_video {
+        RuntimeGatewayApi::OpenAiVideoGenerations
+    } else if wants_image && (signal.contains("gemini") || signal.contains("google")) {
         RuntimeGatewayApi::GeminiGenerateContent
     } else if wants_image && runtime_request_has_reference_images(request_json) {
         RuntimeGatewayApi::OpenAiImageEdits
@@ -2162,6 +2215,117 @@ fn build_runtime_image_generation_request_body(
         body.insert("response_format".to_owned(), response_format);
     }
     Ok(Value::Object(body))
+}
+
+fn build_runtime_video_generation_request_body(
+    model: &str,
+    request_json: &Value,
+) -> Result<Value, DomainError> {
+    let object = request_json
+        .as_object()
+        .ok_or_else(|| DomainError::new("runtime requestJson must be an object"))?;
+    let prompt = runtime_video_prompt(object)?;
+    let mut body = Map::new();
+    body.insert("model".to_owned(), Value::String(model.to_owned()));
+    body.insert("prompt".to_owned(), Value::String(prompt));
+
+    let generation_config = object
+        .get("generationConfig")
+        .or_else(|| object.get("generation_config"));
+    if let Some(duration) = video_generation_duration(generation_config) {
+        body.insert("duration".to_owned(), Value::Number(duration.into()));
+    }
+    if let Some(aspect_ratio) = video_generation_aspect_ratio(generation_config) {
+        body.insert("aspect_ratio".to_owned(), Value::String(aspect_ratio));
+    }
+    Ok(Value::Object(body))
+}
+
+fn build_runtime_gemini_video_generation_request_body(
+    request_json: &Value,
+) -> Result<Value, DomainError> {
+    let object = request_json
+        .as_object()
+        .ok_or_else(|| DomainError::new("runtime requestJson must be an object"))?;
+    let prompt = runtime_video_prompt(object)?;
+    let mut body = Map::new();
+    body.insert(
+        "instances".to_owned(),
+        Value::Array(vec![serde_json::json!({
+            "prompt": prompt
+        })]),
+    );
+    let generation_config = object
+        .get("generationConfig")
+        .or_else(|| object.get("generation_config"));
+    let mut config = Map::new();
+    if let Some(duration) = video_generation_duration(generation_config) {
+        config.insert(
+            "durationSeconds".to_owned(),
+            Value::Number(duration.into()),
+        );
+    }
+    if let Some(aspect_ratio) = video_generation_aspect_ratio(generation_config) {
+        config.insert("aspectRatio".to_owned(), Value::String(aspect_ratio));
+    }
+    body.insert("parameters".to_owned(), Value::Object(config));
+    Ok(Value::Object(body))
+}
+
+fn build_runtime_provider_video_generation_request_body(
+    model: &str,
+    request_json: &Value,
+) -> Result<Value, DomainError> {
+    let object = request_json
+        .as_object()
+        .ok_or_else(|| DomainError::new("runtime requestJson must be an object"))?;
+    let prompt = runtime_video_prompt(object)?;
+    let mut body = Map::new();
+    body.insert("model".to_owned(), Value::String(model.to_owned()));
+    body.insert("prompt".to_owned(), Value::String(prompt));
+    let generation_config = object
+        .get("generationConfig")
+        .or_else(|| object.get("generation_config"));
+    if let Some(duration) = video_generation_duration(generation_config) {
+        body.insert("duration".to_owned(), Value::Number(duration.into()));
+    }
+    Ok(Value::Object(body))
+}
+
+fn runtime_video_prompt(object: &Map<String, Value>) -> Result<String, DomainError> {
+    let prompt = object
+        .get("prompt")
+        .or_else(|| object.get("input"))
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| DomainError::new("runtime video generation requires a prompt"))?;
+    Ok(prompt.to_owned())
+}
+
+fn video_generation_duration(generation_config: Option<&Value>) -> Option<i64> {
+    generation_config
+        .and_then(|config| {
+            config
+                .get("duration")
+                .or_else(|| config.get("durationSeconds"))
+                .or_else(|| config.get("duration_seconds"))
+        })
+        .and_then(Value::as_i64)
+        .filter(|duration| *duration > 0)
+}
+
+fn video_generation_aspect_ratio(generation_config: Option<&Value>) -> Option<String> {
+    generation_config
+        .and_then(|config| {
+            config
+                .get("aspectRatio")
+                .or_else(|| config.get("aspect_ratio"))
+        })
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_owned)
 }
 
 fn build_runtime_openai_audio_speech_request_body(
@@ -3052,12 +3216,17 @@ fn runtime_gateway_model_id(
         RuntimeGatewayApi::OpenAiResponses
         | RuntimeGatewayApi::OpenAiImageGenerations
         | RuntimeGatewayApi::OpenAiImageEdits
+        | RuntimeGatewayApi::OpenAiVideoGenerations
         | RuntimeGatewayApi::OpenAiAudioSpeech => requested_model_key.trim().to_owned(),
         RuntimeGatewayApi::SunoMusicGenerations
         | RuntimeGatewayApi::ElevenLabsSoundGeneration
         | RuntimeGatewayApi::ElevenLabsTextToSpeech
         | RuntimeGatewayApi::AnthropicMessages
-        | RuntimeGatewayApi::GeminiGenerateContent => {
+        | RuntimeGatewayApi::GeminiGenerateContent
+        | RuntimeGatewayApi::GeminiVideoGeneration
+        | RuntimeGatewayApi::KlingVideoGeneration
+        | RuntimeGatewayApi::ViduVideoGeneration
+        | RuntimeGatewayApi::VolcengineVideoGeneration => {
             provider_native_model_id(requested_model_key, catalog_model)
         }
     }
@@ -3119,6 +3288,13 @@ fn runtime_request_targets_image(request_json: &Value) -> bool {
     runtime_request_target_type(request_json)
         .as_deref()
         .is_some_and(|target_type| target_type.eq_ignore_ascii_case("image"))
+}
+
+fn runtime_request_targets_video(request_json: &Value) -> bool {
+    runtime_request_target_type(request_json)
+        .as_deref()
+        .and_then(normalize_generation_asset_modality)
+        .is_some_and(|target_type| matches!(target_type.as_str(), "video"))
 }
 
 fn runtime_request_targets_audio_asset(request_json: &Value) -> bool {

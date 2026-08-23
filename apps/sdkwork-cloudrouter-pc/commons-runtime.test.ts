@@ -92,21 +92,16 @@ function withCrypto<T>(cryptoValue: Crypto | undefined, fn: () => T): T {
   }
 }
 
-test("createClientOperationToken uses cryptographic random bytes without crypto.randomUUID", () => {
+test("createClientOperationToken uses @sdkwork/utils uuid", () => {
   const token = withCrypto(
     {
       randomUUID: () => "11111111-2222-4333-8444-555555555555",
-      getRandomValues: (array: Uint8Array) => {
-        for (let index = 0; index < array.length; index += 1) {
-          array[index] = index + 1;
-        }
-        return array;
-      },
+      getRandomValues: (array: Uint8Array) => array,
     } as unknown as Crypto,
     () => createClientOperationToken(" api-key "),
   );
 
-  assert.equal(token, "api-key-01020304-0506-4708-890a-0b0c0d0e0f10");
+  assert.equal(token, "api-key-11111111-2222-4333-8444-555555555555");
 });
 
 test("formatUserAgentDeviceLabel returns compact device and client information", () => {
@@ -122,7 +117,7 @@ test("formatUserAgentDeviceLabel returns compact device and client information",
   assert.equal(formatUserAgentDeviceLabel(""), "Unknown");
 });
 
-test("createClientOperationToken falls back only to cryptographic random bytes", () => {
+test("createClientOperationToken falls back when crypto.randomUUID is unavailable", () => {
   const token = withCrypto(
     {
       getRandomValues: (array: Uint8Array) => {
@@ -141,7 +136,7 @@ test("createClientOperationToken falls back only to cryptographic random bytes",
 test("createClientOperationToken fails closed when secure randomness is unavailable", () => {
   assert.throws(
     () => withCrypto(undefined, () => createClientOperationToken("request")),
-    /Secure random source is unavailable/,
+    /Web Crypto API is not available/,
   );
 });
 
@@ -152,35 +147,11 @@ test("formatRechargeCurrencyAmount prefers currency symbols for standard recharg
   assert.equal(formatRechargeCurrencyAmount("0", "CNY"), "¥0.00");
 });
 
-test("createClientOperationToken rejects an all-zero random byte result", () => {
-  assert.throws(
-    () =>
-      withCrypto(
-        {
-          getRandomValues: (array: Uint8Array) => array,
-        } as unknown as Crypto,
-        () => createClientOperationToken("request"),
-      ),
-    /Secure random source returned an invalid token seed/,
-  );
-});
-
 test("createIdempotencyParams creates only idempotency keys for generated SDK write calls", () => {
   const params = withCrypto(
     {
-      getRandomValues: (array: Uint8Array) => {
-        const bytes = [
-          0x11, 0x11, 0x11, 0x11,
-          0x22, 0x22,
-          0x43, 0x33,
-          0x84, 0x44,
-          0x55, 0x55, 0x55, 0x55, 0x55, 0x55,
-        ];
-        for (let index = 0; index < array.length; index += 1) {
-          array[index] = bytes[index];
-        }
-        return array;
-      },
+      randomUUID: () => "11111111-2222-4333-8444-555555555555",
+      getRandomValues: (array: Uint8Array) => array,
     } as unknown as Crypto,
     () => createIdempotencyParams(" commerce-wallet-topup "),
   );

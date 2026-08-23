@@ -1471,7 +1471,7 @@
     },
     "/app/v3/api/ai/models": {
       "get": {
-        "description": "List models. Reads ai_model_vendor, ai_model, ai_model_capability, ai_model_pricing, ai_upstream_supplier, ai_upstream_account, ai_upstream_account_group, ai_upstream_account_group_member, ai_upstream_account_group_resource. Writes none. File targets none.",
+        "description": "List models. Reads ai_model_vendor, ai_model, ai_model_capability, ai_model_pricing, ai_upstream_supplier, ai_upstream_account, ai_upstream_account_group, ai_upstream_account_group_member, ai_resource_binding. Writes none. File targets none.",
         "operationId": "models.list",
         "parameters": [
           {
@@ -1683,7 +1683,7 @@
           "ai_upstream_account",
           "ai_upstream_account_group",
           "ai_upstream_account_group_member",
-          "ai_upstream_account_group_resource"
+          "ai_resource_binding"
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "intelligence",

@@ -44,12 +44,13 @@ and code term because grouping accounts is its lifecycle and invariant.
 | `ai_upstream_supplier` | Supplier identity, type, adapter, protocol, and lifecycle |
 | `ai_upstream_supplier_endpoint` | Supplier Base URLs, priority, weight, region, and timeout |
 | `ai_upstream_supplier_auth_method` | Supported authentication policy and non-secret schema |
-| `ai_upstream_supplier_resource` | Supplier resource/resource-group allowlist |
+| `ai_resource_binding` | Unified resource binding for supplier / account-group / account scopes |
+| `ai_model_access_policy` | Unified model access rules (scope supplier/account_group + effect allow/deny) |
+| `ai_routing_strategy` | Routing strategy configuration (strategy_code / params / priority / is_default) |
 | `ai_upstream_account` | Supplier account, preferred endpoint, finance, policy, and lifecycle |
 | `ai_upstream_account_credential` | Versioned encrypted credential authority |
 | `ai_upstream_account_group` | Routing, fallback, capacity, sale, and cost policy |
 | `ai_upstream_account_group_member` | Account membership, priority, routing weight, and cost override |
-| `ai_upstream_account_group_resource` | Account-group resource/resource-group allowlist |
 
 ### Operational Authorities
 

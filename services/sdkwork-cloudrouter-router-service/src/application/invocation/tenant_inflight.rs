@@ -499,10 +499,15 @@ impl InvocationInterceptor for TenantInflightInterceptor {
             let lease = TenantInflightLease::new(tenant_id, generate_lease_owner_token()?);
             if !counter.try_acquire(&lease).await {
                 tracing::warn!(tenant_id, "tenant in-flight concurrency limit exceeded");
+                // In-flight leases are released dynamically (TTL is only the
+                // safety bound), so a 1-second retry hint is a reasonable
+                // backoff for OpenAI SDK clients; the `Retry-After` header is
+                // emitted by the HTTP surface.
                 return Err(InvocationError::new(
                     InvocationErrorKind::RateLimit,
                     "tenant in-flight concurrency limit exceeded",
-                ));
+                )
+                .with_retry_after(1));
             }
             invocation.request.tenant_inflight_owner_token = Some(lease.owner_token.clone());
             self.start_renewal(lease, invocation.request.cancellation_signal());

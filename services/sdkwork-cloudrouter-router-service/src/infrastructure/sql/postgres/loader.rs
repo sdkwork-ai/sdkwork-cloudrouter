@@ -113,16 +113,6 @@ impl PostgresPricingCatalogLoader {
                 self.circuit_breaker_recovery_window_seconds,
             )
             .await?,
-            routing_policies: row_mapping::load_routing_policies(
-                &mut *tx,
-                PricingCatalogSql::load_routing_policies(),
-            )
-            .await?,
-            routing_rules: row_mapping::load_routing_rules(
-                &mut *tx,
-                PricingCatalogSql::load_routing_rules(),
-            )
-            .await?,
             model_mappings: row_mapping::load_model_mappings(
                 &mut *tx,
                 PricingCatalogSql::load_model_mappings(),
@@ -151,6 +141,11 @@ impl PostgresPricingCatalogLoader {
             upstream_supplier_model_access: row_mapping::load_upstream_supplier_model_access(
                 &mut *tx,
                 PricingCatalogSql::load_upstream_supplier_model_access(),
+            )
+            .await?,
+            upstream_account_model_access: row_mapping::load_upstream_account_model_access(
+                &mut *tx,
+                PricingCatalogSql::load_upstream_account_model_access(),
             )
             .await?,
             api_keys,
@@ -567,6 +562,7 @@ mod tests {
             account_consecutive_error_count: None,
             account_code: Some("primary".to_owned()),
             region_code: "global".to_owned(),
+            billing_mode: "prepay".to_owned(),
             supplier_id: 13,
             endpoint_id: Some(14),
             endpoint_code: Some("global".to_owned()),

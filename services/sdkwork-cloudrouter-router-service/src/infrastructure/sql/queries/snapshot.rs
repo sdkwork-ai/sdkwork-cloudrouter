@@ -6,14 +6,13 @@ impl PricingCatalogSql {
             Self::load_vendors(),
             Self::load_models(),
             Self::load_upstream_account_routes(),
-            Self::load_routing_policies(),
-            Self::load_routing_rules(),
             Self::load_model_mappings(),
             Self::load_pricing_plans(),
             Self::load_pricing_rules(),
             Self::load_account_rate_cards(),
             Self::load_upstream_account_groups(),
             Self::load_upstream_supplier_model_access(),
+            Self::load_upstream_account_model_access(),
             Self::load_api_keys(),
             Self::load_access_policies(),
             Self::load_quota_policies(),
@@ -113,58 +112,36 @@ ORDER BY rank_score DESC, display_name ASC, id ASC
 WITH RECURSIVE
 active_routing_resource_binding AS (
     SELECT
-        'group' AS binding_kind,
-        gr.id AS binding_id,
-        gr.tenant_id AS scope_tenant_id,
-        gr.organization_id AS scope_organization_id,
-        gr.account_group_id AS subject_id,
-        gr.grant_type,
-        gr.resource_id,
-        gr.resource_code,
-        gr.resource_group_id,
-        gr.resource_group_code
-    FROM ai_upstream_account_group_resource gr
-    WHERE gr.deleted_at IS NULL
-      AND gr.status = 1
-      AND (gr.tenant_id > 0 OR gr.organization_id = 0)
-      AND (gr.effective_from IS NULL OR gr.effective_from <= CURRENT_TIMESTAMP)
-      AND (gr.effective_to IS NULL OR gr.effective_to > CURRENT_TIMESTAMP)
-    UNION ALL
-    SELECT
-        'supplier' AS binding_kind,
-        sr.id AS binding_id,
-        sr.tenant_id AS scope_tenant_id,
-        sr.organization_id AS scope_organization_id,
-        sr.supplier_id AS subject_id,
-        sr.grant_type,
-        sr.resource_id,
-        sr.resource_code,
-        sr.resource_group_id,
-        sr.resource_group_code
-    FROM ai_upstream_supplier_resource sr
-    WHERE sr.deleted_at IS NULL
-      AND sr.status = 1
-      AND (sr.tenant_id > 0 OR sr.organization_id = 0)
-      AND (sr.effective_from IS NULL OR sr.effective_from <= CURRENT_TIMESTAMP)
-      AND (sr.effective_to IS NULL OR sr.effective_to > CURRENT_TIMESTAMP)
-    UNION ALL
-    SELECT
-        'account' AS binding_kind,
-        ar.id AS binding_id,
-        ar.tenant_id AS scope_tenant_id,
-        ar.organization_id AS scope_organization_id,
-        ar.account_id AS subject_id,
-        ar.grant_type,
-        ar.resource_id,
-        ar.resource_code,
-        ar.resource_group_id,
-        ar.resource_group_code
-    FROM ai_upstream_account_resource ar
-    WHERE ar.deleted_at IS NULL
-      AND ar.status = 1
-      AND (ar.tenant_id > 0 OR ar.organization_id = 0)
-      AND (ar.effective_from IS NULL OR ar.effective_from <= CURRENT_TIMESTAMP)
-      AND (ar.effective_to IS NULL OR ar.effective_to > CURRENT_TIMESTAMP)
+        CASE binding.binding_scope
+            WHEN 'supplier' THEN 'supplier'
+            WHEN 'account_group' THEN 'group'
+            WHEN 'account' THEN 'account'
+            ELSE 'group'
+        END AS binding_kind,
+        binding.id AS binding_id,
+        binding.tenant_id AS scope_tenant_id,
+        binding.organization_id AS scope_organization_id,
+        CASE binding.binding_scope
+            WHEN 'supplier' THEN binding.supplier_id
+            WHEN 'account' THEN binding.account_id
+            ELSE binding.account_group_id
+        END AS subject_id,
+        binding.grant_type,
+        binding.resource_id,
+        binding.resource_code,
+        -- The unified binding row carries only resource_group_code; the numeric
+        -- resource_group_id path is a compatibility branch kept for the child-group
+        -- expansion below, so its placeholder must be typed BIGINT to compare with
+        -- ai_resource_group_item.resource_group_id (bigint). An untyped NULL would
+        -- resolve to text and fail with "operator does not exist: bigint = text".
+        NULL::BIGINT AS resource_group_id,
+        binding.resource_group_code
+    FROM ai_resource_binding binding
+    WHERE binding.deleted_at IS NULL
+      AND binding.status = 1
+      AND (binding.tenant_id > 0 OR binding.organization_id = 0)
+      AND (binding.effective_from IS NULL OR binding.effective_from <= CURRENT_TIMESTAMP)
+      AND (binding.effective_to IS NULL OR binding.effective_to > CURRENT_TIMESTAMP)
 ),
 routing_scope_owner AS (
     SELECT DISTINCT scope_tenant_id AS tenant_id, scope_organization_id AS organization_id
@@ -350,6 +327,7 @@ resource_candidate AS (
         reference.grant_type,
         resource.resource_code,
         resource.resource_type,
+        resource.route_kind,
         resource.vendor_code,
         resource.modality_code,
         resource.api_code,
@@ -390,6 +368,7 @@ group_resource_scope AS (
         subject_id AS account_group_id,
         resource_code,
         resource_type,
+        route_kind,
         vendor_code,
         modality_code,
         api_code,
@@ -419,6 +398,7 @@ supplier_resource_scope AS (
         subject_id AS supplier_id,
         resource_code,
         resource_type,
+        route_kind,
         vendor_code,
         modality_code,
         api_code,
@@ -449,6 +429,7 @@ matched_resource_scope AS (
         sr.supplier_id,
         COALESCE(NULLIF(gr.resource_code, ''), NULLIF(sr.resource_code, '')) AS resource_code,
         COALESCE(NULLIF(gr.resource_type, ''), NULLIF(sr.resource_type, '')) AS resource_type,
+        COALESCE(NULLIF(gr.route_kind, ''), NULLIF(sr.route_kind, '')) AS route_kind,
         COALESCE(NULLIF(gr.vendor_code, ''), NULLIF(sr.vendor_code, '')) AS vendor_code,
         COALESCE(NULLIF(gr.modality_code, ''), NULLIF(sr.modality_code, '')) AS modality_code,
         COALESCE(NULLIF(gr.api_code, ''), NULLIF(sr.api_code, '')) AS api_code,
@@ -490,6 +471,7 @@ account_resource_scope AS (
         subject_id AS account_id,
         resource_code,
         resource_type,
+        route_kind,
         vendor_code,
         modality_code,
         api_code,
@@ -530,6 +512,7 @@ effective_matched_resource_scope AS (
         member.account_id,
         COALESCE(NULLIF(mrs.resource_code, ''), NULLIF(ars.resource_code, '')) AS resource_code,
         COALESCE(NULLIF(mrs.resource_type, ''), NULLIF(ars.resource_type, '')) AS resource_type,
+        COALESCE(NULLIF(mrs.route_kind, ''), NULLIF(ars.route_kind, '')) AS route_kind,
         COALESCE(NULLIF(mrs.vendor_code, ''), NULLIF(ars.vendor_code, '')) AS vendor_code,
         COALESCE(NULLIF(mrs.modality_code, ''), NULLIF(ars.modality_code, '')) AS modality_code,
         COALESCE(NULLIF(mrs.api_code, ''), NULLIF(ars.api_code, '')) AS api_code,
@@ -584,6 +567,7 @@ effective_matched_resource_scope AS (
         member.account_id,
         mrs.resource_code,
         mrs.resource_type,
+        mrs.route_kind,
         mrs.vendor_code,
         mrs.modality_code,
         mrs.api_code,
@@ -620,6 +604,7 @@ SELECT
     account_health.consecutive_error_count AS account_consecutive_error_count,
     NULLIF(c.account_code, '') AS account_code,
     COALESCE(NULLIF(c.region_code, ''), 'global') AS region_code,
+    COALESCE(NULLIF(c.billing_mode, ''), 'prepay') AS billing_mode,
     c.supplier_id,
     e.id AS endpoint_id,
     NULLIF(e.endpoint_code, '') AS endpoint_code,
@@ -766,6 +751,7 @@ SELECT
                             jsonb_build_object(
                                 'resourceCode', resource.resource_code,
                                 'resourceType', resource.resource_type,
+                                'routeKind', resource.route_kind,
                                 'vendorCode', resource.vendor_code,
                                 'modalityCode', resource.modality_code,
                                 'apiCode', resource.api_code,
@@ -876,54 +862,6 @@ ORDER BY CASE WHEN e.id = c.preferred_endpoint_id THEN 0 ELSE 1 END ASC,
          c.id ASC,
          e.id ASC,
          cc.id ASC
-"#
-    }
-
-    pub fn load_routing_policies() -> &'static str {
-        r#"
-SELECT
-    p.id,
-    COALESCE(p.tenant_id, 0) AS tenant_id,
-    COALESCE(p.organization_id, 0) AS organization_id,
-    p.policy_code,
-    p.policy_scope,
-    p.subject_id,
-    p.capability,
-    p.default_profile_id,
-    p.fallback_mode
-FROM ai_routing_policy p
-JOIN ai_routing_profile pr ON pr.id = p.default_profile_id
-WHERE p.deleted_at IS NULL
-  AND pr.deleted_at IS NULL
-  AND p.status = 1
-  AND pr.status = 1
-ORDER BY p.policy_scope DESC, p.updated_at DESC, p.id DESC
-"#
-    }
-
-    pub fn load_routing_rules() -> &'static str {
-        r#"
-SELECT
-    r.id,
-    COALESCE(r.tenant_id, 0) AS tenant_id,
-    COALESCE(r.organization_id, 0) AS organization_id,
-    r.profile_id,
-    r.rule_code,
-    r.priority,
-    COALESCE(r.match_expression::text, '{}') AS match_expression_json,
-    r.target_model,
-    COALESCE(r.candidate_account_groups::text, '[]') AS candidate_account_groups_json,
-    COALESCE(r.fallback_chain::text, '[]') AS fallback_chain_json,
-    COALESCE(r.constraints::text, '{}') AS constraints_json
-FROM ai_routing_rule r
-JOIN ai_routing_profile pr ON pr.id = r.profile_id
-WHERE r.deleted_at IS NULL
-  AND pr.deleted_at IS NULL
-  AND r.status = 1
-  AND pr.status = 1
-  AND (r.effective_from IS NULL OR r.effective_from <= CURRENT_TIMESTAMP)
-  AND (r.effective_to IS NULL OR r.effective_to > CURRENT_TIMESTAMP)
-ORDER BY r.profile_id ASC, r.priority ASC, r.id ASC
 "#
     }
 
@@ -1042,8 +980,48 @@ SELECT
     account_group.priority,
     account_group.cost_multiplier::text AS cost_multiplier,
     account_group.sale_multiplier::text AS sale_multiplier,
-    account_group.model_blacklist::text AS model_blacklist,
-    account_group.model_whitelist::text AS model_whitelist
+    COALESCE((
+        SELECT jsonb_agg(jsonb_build_object('vendorCode', policy.vendor_code, 'models', model_access_models.model_patterns) ORDER BY policy.priority ASC, policy.id ASC)
+        FROM ai_model_access_policy policy
+        LEFT JOIN LATERAL (
+            SELECT jsonb_agg(model.model_pattern) AS model_patterns
+            FROM ai_model_access_policy model
+            WHERE model.tenant_id = policy.tenant_id
+              AND model.organization_id = policy.organization_id
+              AND model.scope_type = policy.scope_type
+              AND model.scope_id = policy.scope_id
+              AND model.effect = policy.effect
+              AND model.vendor_code = policy.vendor_code
+              AND model.status = 1 AND model.deleted_at IS NULL
+        ) model_access_models ON TRUE
+        WHERE policy.tenant_id = account_group.tenant_id
+          AND policy.organization_id = account_group.organization_id
+          AND policy.scope_type = 'account_group'
+          AND policy.scope_id = account_group.id
+          AND policy.effect = 'deny'
+          AND policy.status = 1 AND policy.deleted_at IS NULL
+    ), '[]'::jsonb)::text AS model_blacklist,
+    COALESCE((
+        SELECT jsonb_agg(jsonb_build_object('vendorCode', policy.vendor_code, 'models', model_access_models.model_patterns) ORDER BY policy.priority ASC, policy.id ASC)
+        FROM ai_model_access_policy policy
+        LEFT JOIN LATERAL (
+            SELECT jsonb_agg(model.model_pattern) AS model_patterns
+            FROM ai_model_access_policy model
+            WHERE model.tenant_id = policy.tenant_id
+              AND model.organization_id = policy.organization_id
+              AND model.scope_type = policy.scope_type
+              AND model.scope_id = policy.scope_id
+              AND model.effect = policy.effect
+              AND model.vendor_code = policy.vendor_code
+              AND model.status = 1 AND model.deleted_at IS NULL
+        ) model_access_models ON TRUE
+        WHERE policy.tenant_id = account_group.tenant_id
+          AND policy.organization_id = account_group.organization_id
+          AND policy.scope_type = 'account_group'
+          AND policy.scope_id = account_group.id
+          AND policy.effect = 'allow'
+          AND policy.status = 1 AND policy.deleted_at IS NULL
+    ), '[]'::jsonb)::text AS model_whitelist
 FROM ai_upstream_account_group account_group
 JOIN LATERAL (
     SELECT
@@ -1149,13 +1127,108 @@ ORDER BY card.priority ASC, card.effective_from DESC, card.id DESC
     pub fn load_upstream_supplier_model_access() -> &'static str {
         r#"
 SELECT
-    supplier_code,
-    model_blacklist::text AS model_blacklist,
-    model_whitelist::text AS model_whitelist
-FROM ai_upstream_supplier
-WHERE deleted_at IS NULL
-  AND status = 1
-ORDER BY updated_at DESC, id DESC
+    supplier.id AS supplier_id,
+    supplier.supplier_code,
+    COALESCE((
+        SELECT jsonb_agg(jsonb_build_object('vendorCode', policy.vendor_code, 'models', model_access_models.model_patterns) ORDER BY policy.priority ASC, policy.id ASC)
+        FROM ai_model_access_policy policy
+        LEFT JOIN LATERAL (
+            SELECT jsonb_agg(model.model_pattern) AS model_patterns
+            FROM ai_model_access_policy model
+            WHERE model.tenant_id = policy.tenant_id
+              AND model.organization_id = policy.organization_id
+              AND model.scope_type = policy.scope_type
+              AND model.scope_id = policy.scope_id
+              AND model.effect = policy.effect
+              AND model.vendor_code = policy.vendor_code
+              AND model.status = 1 AND model.deleted_at IS NULL
+        ) model_access_models ON TRUE
+        WHERE policy.tenant_id = supplier.tenant_id
+          AND policy.organization_id = supplier.organization_id
+          AND policy.scope_type = 'supplier'
+          AND policy.scope_id = supplier.id
+          AND policy.effect = 'deny'
+          AND policy.status = 1 AND policy.deleted_at IS NULL
+    ), '[]'::jsonb)::text AS model_blacklist,
+    COALESCE((
+        SELECT jsonb_agg(jsonb_build_object('vendorCode', policy.vendor_code, 'models', model_access_models.model_patterns) ORDER BY policy.priority ASC, policy.id ASC)
+        FROM ai_model_access_policy policy
+        LEFT JOIN LATERAL (
+            SELECT jsonb_agg(model.model_pattern) AS model_patterns
+            FROM ai_model_access_policy model
+            WHERE model.tenant_id = policy.tenant_id
+              AND model.organization_id = policy.organization_id
+              AND model.scope_type = policy.scope_type
+              AND model.scope_id = policy.scope_id
+              AND model.effect = policy.effect
+              AND model.vendor_code = policy.vendor_code
+              AND model.status = 1 AND model.deleted_at IS NULL
+        ) model_access_models ON TRUE
+        WHERE policy.tenant_id = supplier.tenant_id
+          AND policy.organization_id = supplier.organization_id
+          AND policy.scope_type = 'supplier'
+          AND policy.scope_id = supplier.id
+          AND policy.effect = 'allow'
+          AND policy.status = 1 AND policy.deleted_at IS NULL
+    ), '[]'::jsonb)::text AS model_whitelist
+FROM ai_upstream_supplier supplier
+WHERE supplier.deleted_at IS NULL
+  AND supplier.status = 1
+ORDER BY supplier.updated_at DESC, supplier.id DESC
+"#
+    }
+
+    pub fn load_upstream_account_model_access() -> &'static str {
+        r#"
+SELECT
+    account.id AS account_id,
+    account.account_code,
+    COALESCE((
+        SELECT jsonb_agg(jsonb_build_object('vendorCode', policy.vendor_code, 'models', model_access_models.model_patterns) ORDER BY policy.priority ASC, policy.id ASC)
+        FROM ai_model_access_policy policy
+        LEFT JOIN LATERAL (
+            SELECT jsonb_agg(model.model_pattern) AS model_patterns
+            FROM ai_model_access_policy model
+            WHERE model.tenant_id = policy.tenant_id
+              AND model.organization_id = policy.organization_id
+              AND model.scope_type = policy.scope_type
+              AND model.scope_id = policy.scope_id
+              AND model.effect = policy.effect
+              AND model.vendor_code = policy.vendor_code
+              AND model.status = 1 AND model.deleted_at IS NULL
+        ) model_access_models ON TRUE
+        WHERE policy.tenant_id = account.tenant_id
+          AND policy.organization_id = account.organization_id
+          AND policy.scope_type = 'account'
+          AND policy.scope_id = account.id
+          AND policy.effect = 'deny'
+          AND policy.status = 1 AND policy.deleted_at IS NULL
+    ), '[]'::jsonb)::text AS model_blacklist,
+    COALESCE((
+        SELECT jsonb_agg(jsonb_build_object('vendorCode', policy.vendor_code, 'models', model_access_models.model_patterns) ORDER BY policy.priority ASC, policy.id ASC)
+        FROM ai_model_access_policy policy
+        LEFT JOIN LATERAL (
+            SELECT jsonb_agg(model.model_pattern) AS model_patterns
+            FROM ai_model_access_policy model
+            WHERE model.tenant_id = policy.tenant_id
+              AND model.organization_id = policy.organization_id
+              AND model.scope_type = policy.scope_type
+              AND model.scope_id = policy.scope_id
+              AND model.effect = policy.effect
+              AND model.vendor_code = policy.vendor_code
+              AND model.status = 1 AND model.deleted_at IS NULL
+        ) model_access_models ON TRUE
+        WHERE policy.tenant_id = account.tenant_id
+          AND policy.organization_id = account.organization_id
+          AND policy.scope_type = 'account'
+          AND policy.scope_id = account.id
+          AND policy.effect = 'allow'
+          AND policy.status = 1 AND policy.deleted_at IS NULL
+    ), '[]'::jsonb)::text AS model_whitelist
+FROM ai_upstream_account account
+WHERE account.deleted_at IS NULL
+  AND account.status = 1
+ORDER BY account.updated_at DESC, account.id DESC
 "#
     }
 

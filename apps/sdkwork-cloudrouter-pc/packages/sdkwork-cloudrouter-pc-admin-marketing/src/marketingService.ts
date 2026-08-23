@@ -20,6 +20,7 @@ import {
   type SdkworkPromotionOfferRequest,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { formatMoneyMinorUnits } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
+import { uuid } from '@sdkwork/utils/id';
 
 type BackendPromotionsService = ReturnType<typeof getSdkworkPromotionBackendSdkClient>['promotions'];
 type CloudBackendReferralStatsService = ReturnType<typeof getCloudRouterBackendSdkClient>['billing']['referralStats'];
@@ -592,15 +593,9 @@ export function toIsoString(datetimeLocal: string): string {
   return date.toISOString();
 }
 
-/** 生成幂等键：优先 crypto.randomUUID（安全上下文），非安全上下文回退加密随机串。 */
+/** Generate an idempotency key via `@sdkwork/utils/id`. */
 export function createIdempotencyKey(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  const bytes = new Uint8Array(12);
-  crypto.getRandomValues(bytes);
-  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
-  return `mk-${Date.now().toString(36)}-${hex}`;
+  return uuid();
 }
 
 export function maskPromotionCode(value: string): string {

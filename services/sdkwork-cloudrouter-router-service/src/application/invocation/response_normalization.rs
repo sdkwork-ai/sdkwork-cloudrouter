@@ -1,6 +1,8 @@
 use std::sync::Mutex;
 
 use axum::body::Body;
+use bytes::Bytes;
+use futures_util::StreamExt;
 use serde_json::{json, Value};
 
 use super::{
@@ -42,6 +44,7 @@ impl InvocationInterceptor for ResponseNormalizationInterceptor {
                     body: None,
                     body_bytes: None,
                     content_type: None,
+                    headers: axum::http::HeaderMap::new(),
                     stream_body: Mutex::new(None),
                     memory_guard: None,
                 });
@@ -61,13 +64,18 @@ impl InvocationInterceptor for ResponseNormalizationInterceptor {
                 status_code,
                 body: Some(json!({
                     "error": {
+                        // Official OpenAI error `type` vocabulary so SDK
+                        // clients can match authentication_error /
+                        // rate_limit_error / server_error / ...; the detailed
+                        // internal reason stays in `code`.
                         "code": error.kind.code(),
                         "message": masked_message(&error.message),
-                        "type": error.kind.code()
+                        "type": error.kind.openai_error_type()
                     }
                 })),
                 body_bytes: None,
                 content_type: Some("application/json".to_owned()),
+                headers: axum::http::HeaderMap::new(),
                 stream_body: Mutex::new(None),
                 memory_guard: None,
             });
@@ -90,14 +98,21 @@ fn normalize_dispatch_response(
             return restore_openai_compatible_model(invocation, normalized);
         }
     }
-    // For streaming responses, pass the stream body through and skip body serialization
-    if stream_body.is_some() {
+    // For streaming responses, pass the stream body through and skip body serialization.
+    // OpenAI-compatible SSE frames carry a `model` field that must be restored to
+    // the client-requested model (the outbound request rewrote it to the
+    // provider-native id), matching the non-streaming restore path.
+    if let Some(stream) = stream_body {
         return InvocationNormalizedResponse {
             status_code: response.status_code,
             body: None,
             body_bytes: None,
             content_type: response.content_type.clone(),
-            stream_body: Mutex::new(stream_body),
+            headers: response.headers.clone(),
+            stream_body: Mutex::new(Some(restore_streaming_model(
+                invocation,
+                stream,
+            ))),
             memory_guard: response.memory_guard.clone(),
         };
     }
@@ -113,6 +128,7 @@ fn normalize_dispatch_response(
                     .as_ref()
                     .map(|_| "application/json".to_owned())
             }),
+            headers: response.headers.clone(),
             stream_body: Mutex::new(None),
             memory_guard: response.memory_guard.clone(),
         },
@@ -147,6 +163,7 @@ fn normalize_adapter_response(
         body: provider_body,
         body_bytes: None,
         content_type,
+        headers: response.headers.clone(),
         stream_body: Mutex::new(None),
         memory_guard: response.memory_guard.clone(),
     })
@@ -204,6 +221,112 @@ fn restore_json_model_field(body: &mut Value, requested_model: &str) -> bool {
     }
 }
 
+/// Restores the client-requested `model` in each OpenAI-compatible SSE frame.
+/// The outbound request rewrites `model` to the provider-native id; streaming
+/// frames echo that id back, so we rewrite the `model` field inside each
+/// `data: {json}` payload line (and `data: [DONE]` is left untouched). All
+/// other bytes (event names, comments, blank separators, non-`data:` fields)
+/// are forwarded verbatim so the SSE framing is never corrupted.
+fn restore_streaming_model(invocation: &Invocation, stream: Body) -> Body {
+    if invocation.resource.surface != InvocationSurface::OpenAiCompatible {
+        return stream;
+    }
+    let Some(requested_model) = invocation
+        .resource
+        .requested_model
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    else {
+        return stream;
+    };
+    let requested_model = requested_model.to_owned();
+    let state = SseModelRestoreState::new(stream, requested_model);
+    let restored = futures_util::stream::unfold(state, next_sse_model_restore_frame);
+    Body::from_stream(restored)
+}
+
+/// Line-buffered SSE transformer: rewrites `model` inside `data: {json}` lines
+/// and forwards everything else byte-for-byte.
+async fn next_sse_model_restore_frame(
+    mut state: SseModelRestoreState,
+) -> Option<(
+    Result<Bytes, axum::Error>,
+    SseModelRestoreState,
+)> {
+    // Pull one upstream frame and flush every complete line it contains. The
+    // per-frame output is concatenated so downstream receives the same framing
+    // cadence as upstream.
+    let frame = state.upstream.next().await?;
+    let mut output: Vec<u8> = Vec::new();
+    match frame {
+        Ok(bytes) => {
+            for byte in bytes.iter().copied() {
+                if byte == b'\n' {
+                    let mut line = std::mem::take(&mut state.pending_line);
+                    if line.last() == Some(&b'\r') {
+                        line.pop();
+                    }
+                    output.extend_from_slice(&rewrite_sse_model_line(&line, &state.requested_model));
+                    output.push(b'\n');
+                    continue;
+                }
+                state.pending_line.push(byte);
+            }
+            Some((Ok(Bytes::from(output)), state))
+        }
+        Err(error) => Some((Err(error), state)),
+    }
+}
+
+/// Rewrites a single SSE line's `model` field if it is a `data: {json}` line
+/// with a model field; otherwise returns the line unchanged.
+fn rewrite_sse_model_line(line: &[u8], requested_model: &str) -> Vec<u8> {
+    let trimmed = line
+        .iter()
+        .position(|byte| !byte.is_ascii_whitespace())
+        .map(|start| &line[start..])
+        .unwrap_or(&[]);
+    let Some(data) = trimmed.strip_prefix(b"data:") else {
+        return line.to_vec();
+    };
+    let data = data
+        .iter()
+        .position(|byte| !byte.is_ascii_whitespace())
+        .map(|start| &data[start..])
+        .unwrap_or(&[]);
+    if data == b"[DONE]" {
+        return line.to_vec();
+    }
+    let Ok(mut value) = serde_json::from_slice::<Value>(data) else {
+        return line.to_vec();
+    };
+    if !restore_json_model_field(&mut value, requested_model) {
+        return line.to_vec();
+    }
+    let mut rewritten = Vec::with_capacity(line.len());
+    rewritten.extend_from_slice(&line[..trimmed.as_ptr() as usize - line.as_ptr() as usize]);
+    rewritten.extend_from_slice(b"data: ");
+    rewritten.extend_from_slice(serde_json::to_vec(&value).unwrap_or_default().as_slice());
+    rewritten
+}
+
+struct SseModelRestoreState {
+    upstream: axum::body::BodyDataStream,
+    pending_line: Vec<u8>,
+    requested_model: String,
+}
+
+impl SseModelRestoreState {
+    fn new(stream: Body, requested_model: String) -> Self {
+        Self {
+            upstream: stream.into_data_stream(),
+            pending_line: Vec::new(),
+            requested_model,
+        }
+    }
+}
+
 fn status_code_for_error(error: &InvocationError) -> u16 {
     match error.kind {
         super::InvocationErrorKind::InvalidRequest
@@ -230,4 +353,55 @@ fn status_code_for_error(error: &InvocationError) -> u16 {
 /// HTTP error path.
 fn masked_message(message: &str) -> String {
     crate::redaction::redact_sensitive_tokens(message)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::rewrite_sse_model_line;
+
+    #[test]
+    fn sse_model_line_is_rewritten_to_requested_model() {
+        let line = r#"data: {"id":"x","object":"chat.completion.chunk","model":"provider-native-9","choices":[]}"#;
+        let rewritten = rewrite_sse_model_line(line.as_bytes(), "gpt-4o-mini");
+        let text = String::from_utf8(rewritten).unwrap();
+        assert!(text.starts_with("data: "), "{text}");
+        assert!(text.contains(r#""model":"gpt-4o-mini""#), "{text}");
+        assert!(!text.contains("provider-native-9"), "{text}");
+        assert!(text.contains(r#""id":"x""#), "{text}");
+    }
+
+    #[test]
+    fn sse_model_line_matching_requested_model_is_unchanged() {
+        let line = r#"data: {"id":"x","model":"gpt-4o-mini","choices":[]}"#;
+        let rewritten = rewrite_sse_model_line(line.as_bytes(), "gpt-4o-mini");
+        assert_eq!(line.as_bytes(), rewritten.as_slice());
+    }
+
+    #[test]
+    fn sse_done_sentinel_is_forwarded_unchanged() {
+        let line = b"data: [DONE]";
+        let rewritten = rewrite_sse_model_line(line, "gpt-4o-mini");
+        assert_eq!(line, rewritten.as_slice());
+    }
+
+    #[test]
+    fn non_json_or_non_data_lines_are_forwarded_verbatim() {
+        for line in [
+            "event: response.output_text.delta".as_bytes(),
+            ": keepalive comment".as_bytes(),
+            "id: 1".as_bytes(),
+            "data: not-json".as_bytes(),
+            "".as_bytes(),
+        ] {
+            let rewritten = rewrite_sse_model_line(line, "gpt-4o-mini");
+            assert_eq!(line, rewritten.as_slice());
+        }
+    }
+
+    #[test]
+    fn sse_line_without_model_field_is_unchanged() {
+        let line = r#"data: {"id":"x","type":"response.output_text.delta","delta":"hi"}"#;
+        let rewritten = rewrite_sse_model_line(line.as_bytes(), "gpt-4o-mini");
+        assert_eq!(line.as_bytes(), rewritten.as_slice());
+    }
 }

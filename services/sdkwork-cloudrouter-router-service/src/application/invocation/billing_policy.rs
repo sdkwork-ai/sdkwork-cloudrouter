@@ -111,6 +111,7 @@ fn openai_compatible_policy_by_resource_type(invocation: &Invocation) -> Invocat
             prepaid_required: false,
         },
         ResourceType::File
+        | ResourceType::Moderation
         | ResourceType::Upload
         | ResourceType::Assistant
         | ResourceType::VectorStore

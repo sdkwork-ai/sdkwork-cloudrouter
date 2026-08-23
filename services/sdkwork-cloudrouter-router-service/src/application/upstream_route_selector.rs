@@ -10,9 +10,8 @@ use std::fmt::{Display, Formatter};
 use crate::domain::{
     has_text, parse_model_catalog_identity, provider_native_model_id, BillingMeter, DomainError,
     DomainResult, GatewayApiKeyAccountGroupBinding, ModelUpstreamRoute, ResourceDefinition,
-    RouteCandidate, RoutingCapability, RoutingPolicy, RoutingPolicyScope, RoutingRule,
-    UpstreamAccountGroup, UpstreamAccountGroupBinding, UpstreamAccountRoute,
-    UpstreamAccountRoutingStrategy,
+    RouteCandidate, RoutingCapability, UpstreamAccountGroup, UpstreamAccountGroupBinding,
+    UpstreamAccountRoute, UpstreamAccountRoutingStrategy,
 };
 use crate::ports::{AccountGroupModelAccess, UpstreamAccountRouteCatalog};
 
@@ -25,15 +24,6 @@ struct UpstreamAccountGroupBindings {
 impl UpstreamAccountGroupBindings {
     fn contains_account(&self, account_id: i64) -> bool {
         self.by_account.contains_key(&account_id)
-    }
-
-    fn contains_group(&self, account_group_id: i64) -> bool {
-        self.selected_account_group_id == Some(account_group_id)
-            && self
-                .by_account
-                .values()
-                .flatten()
-                .any(|binding| binding.account_group_id == account_group_id)
     }
 
     fn best_binding_for_group(
@@ -72,15 +62,11 @@ pub struct SelectedUpstreamModelRoute {
     pub group_id: i64,
     pub group_code: String,
     pub pricing_plan_code: String,
-    pub policy_id: Option<i64>,
-    pub rule_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SelectedUpstreamModelRoutePlan {
     pub routes: Vec<SelectedUpstreamModelRoute>,
-    pub policy_id: Option<i64>,
-    pub rule_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -99,8 +85,6 @@ pub struct SelectedUpstreamAccountRoute {
     pub group_id: i64,
     pub group_code: String,
     pub pricing_plan_code: String,
-    pub policy_id: Option<i64>,
-    pub rule_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -153,26 +137,6 @@ impl Display for UpstreamRouteSelectionError {
 }
 
 impl std::error::Error for UpstreamRouteSelectionError {}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct SelectedPolicyScope {
-    scope: RoutingPolicyScope,
-    policies: Vec<RoutingPolicy>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum PolicyScopeRouteSelection {
-    Planned(SelectedUpstreamModelRoutePlan),
-    SoftUnavailable(UpstreamRouteSelectionError),
-    HardError(UpstreamRouteSelectionError),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum PolicyScopeUpstreamAccountRouteSelection {
-    Selected(Box<SelectedUpstreamAccountRoute>),
-    SoftUnavailable(UpstreamRouteSelectionError),
-    HardError(UpstreamRouteSelectionError),
-}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum CandidateUpstreamModelRouteEvaluation {
@@ -388,14 +352,25 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
                     },
                 );
             }
-            let message = format!(
-                "no upstream account in account group {} supports model {} for api {}",
-                query.context.group_code, query.catalog_key, query.api_code
-            );
             let stage = if all_unhealthy_or_not_callable {
                 crate::application::RouteSelectionFailureStage::AccountNotCallable
             } else {
                 crate::application::RouteSelectionFailureStage::ResourceNotEntitled
+            };
+            let message = if all_unhealthy_or_not_callable {
+                format!(
+                    "no upstream account in account group {} supports model {} for api {} \
+                     (all {} group-bound account(s) are unhealthy or missing callable base url or credential)",
+                    query.context.group_code,
+                    query.catalog_key,
+                    query.api_code,
+                    account_routes.len()
+                )
+            } else {
+                format!(
+                    "no upstream account in account group {} supports model {} for api {}",
+                    query.context.group_code, query.catalog_key, query.api_code
+                )
             };
             crate::application::log_selector_route_selection_failed(
                 stage,
@@ -413,26 +388,6 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             ));
         }
 
-        let policy_scopes = self.select_policy_scopes(&query.context);
-        let mut last_unavailable = None;
-        for policy_scope in policy_scopes {
-            match self.select_model_route_plan_from_policy_scope(
-                &query,
-                &routes,
-                &account_routes,
-                policy_scope,
-                &account_group_bindings,
-            ) {
-                PolicyScopeRouteSelection::Planned(selection) => return Ok(selection),
-                PolicyScopeRouteSelection::SoftUnavailable(error) => {
-                    last_unavailable = Some(error);
-                }
-                PolicyScopeRouteSelection::HardError(error) => return Err(error),
-            }
-        }
-        if let Some(error) = last_unavailable {
-            return Err(error);
-        }
         if let Some(selection) = self.select_group_bound_account_route_plan(
             &query,
             &routes,
@@ -442,12 +397,22 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             return Ok(selection);
         }
 
-        Err(UpstreamRouteSelectionError::upstream_route_unavailable(
-            format!(
-                "upstream route is not available for configured upstream account route: routing policy scope is required for model {}",
-                query.catalog_key
-            ),
-        ))
+        let message = format!(
+            "upstream route is not available for configured upstream account route: no group-bound callable priced candidate upstream account is available for model {}",
+            query.catalog_key
+        );
+        crate::application::log_selector_route_selection_failed(
+            crate::application::classify_route_selection_failure(&message),
+            query.context.api_key_id,
+            query.context.tenant_id,
+            query.context.organization_id,
+            query.context.group_id,
+            &query.context.group_code,
+            &query.catalog_key,
+            &query.requested_model,
+            &message,
+        );
+        Err(UpstreamRouteSelectionError::upstream_route_unavailable(message))
     }
 
     pub fn select_account_route(
@@ -517,47 +482,85 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             .cloned()
             .collect::<Vec<_>>();
         if supporting_account_routes.is_empty() {
-            return Err(UpstreamRouteSelectionError::upstream_route_unavailable(
+            let mut all_unhealthy_or_not_callable = !routes.is_empty();
+            for route in &routes {
+                let callable = self.account_route_is_callable(route);
+                if callable {
+                    all_unhealthy_or_not_callable = false;
+                }
+                crate::application::log_rejected_group_account(
+                    query.context.api_key_id,
+                    query.context.tenant_id,
+                    query.context.group_id,
+                    &query.context.group_code,
+                    &query.route_key,
+                    &query.route_key,
+                    &query.api_code,
+                    &crate::application::RejectedGroupAccount {
+                        account_id: route.account_id,
+                        supplier_code: route.supplier_code.clone(),
+                        callable,
+                        healthy: route.is_account_healthy(),
+                        has_base_url: has_text(route.base_url.as_deref()),
+                        has_credential: has_text(route.secret_ref.as_deref())
+                            || !route.auth_profile.default_headers.is_empty(),
+                        allows_model: account_route_allows_api_resource(route, &query),
+                        account_health_status: route.account_health_status,
+                        credential_health_status: route.credential_health_status,
+                        endpoint_health_status: route.endpoint_health_status,
+                    },
+                );
+            }
+            let message = if all_unhealthy_or_not_callable {
+                format!(
+                    "no upstream account in account group {} supports api resource {} \
+                     (all {} group-bound account(s) are unhealthy or missing callable base url or credential)",
+                    query.context.group_code,
+                    query.api_code,
+                    routes.len()
+                )
+            } else {
                 format!(
                     "no upstream account in account group {} supports api resource {}",
                     query.context.group_code, query.api_code
-                ),
-            ));
+                )
+            };
+            crate::application::log_selector_route_selection_failed(
+                crate::application::classify_route_selection_failure(&message),
+                query.context.api_key_id,
+                query.context.tenant_id,
+                query.context.organization_id,
+                query.context.group_id,
+                &query.context.group_code,
+                &query.route_key,
+                &query.route_key,
+                &message,
+            );
+            return Err(UpstreamRouteSelectionError::upstream_route_unavailable(message));
         }
 
-        let policy_scopes = self.select_policy_scopes(&query.context);
-        let mut last_unavailable = None;
-        for policy_scope in policy_scopes {
-            match self.select_account_route_from_policy_scope(
-                &query,
-                &routes,
-                policy_scope,
-                &account_group_bindings,
-            ) {
-                PolicyScopeUpstreamAccountRouteSelection::Selected(selection) => {
-                    return Ok(*selection)
-                }
-                PolicyScopeUpstreamAccountRouteSelection::SoftUnavailable(error) => {
-                    last_unavailable = Some(error);
-                }
-                PolicyScopeUpstreamAccountRouteSelection::HardError(error) => return Err(error),
-            }
-        }
-        if let Some(error) = last_unavailable {
-            return Err(error);
-        }
         if let Some(selection) =
             self.select_group_bound_account_route(&routes, &account_group_bindings, &query)?
         {
             return Ok(selection);
         }
 
-        Err(UpstreamRouteSelectionError::upstream_route_unavailable(
-            format!(
-                "upstream route is not available for configured upstream account route: routing policy scope is required for route {}",
-                query.route_key
-            ),
-        ))
+        let message = format!(
+            "upstream route is not available for configured upstream account route: no group-bound callable priced candidate upstream account is available for route {}",
+            query.route_key
+        );
+        crate::application::log_selector_route_selection_failed(
+            crate::application::classify_route_selection_failure(&message),
+            query.context.api_key_id,
+            query.context.tenant_id,
+            query.context.organization_id,
+            query.context.group_id,
+            &query.context.group_code,
+            &query.route_key,
+            &query.route_key,
+            &message,
+        );
+        Err(UpstreamRouteSelectionError::upstream_route_unavailable(message))
     }
 
     fn route_contexts(
@@ -634,308 +637,9 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             .effective_account_group_bindings()
             .iter()
             .find(|binding| binding.account_group_id == account_group_id)
-            .and_then(|binding| match binding.routing_strategy.trim() {
-                "weighted" => Some(UpstreamAccountRoutingStrategy::Weighted),
-                "price_first" => Some(UpstreamAccountRoutingStrategy::LeastCost),
-                "quality_first" => Some(UpstreamAccountRoutingStrategy::QualityFirst),
-                _ => None,
+            .and_then(|binding| {
+                crate::application::resolve_account_routing_strategy(&binding.routing_strategy)
             })
-    }
-
-    fn select_policy_scopes(
-        &self,
-        context: &AuthenticatedApiKeyContext,
-    ) -> Vec<SelectedPolicyScope> {
-        let mut policies = self
-            .catalog
-            .list_routing_policies()
-            .into_iter()
-            .filter(|policy| self.policy_is_in_scope(policy, context))
-            .collect::<Vec<_>>();
-        policies.sort_by_key(|policy| (policy_rank(policy.policy_scope), policy.id));
-        let mut scopes = Vec::new();
-        for policy in policies {
-            if let Some(existing) = scopes
-                .iter_mut()
-                .find(|scope: &&mut SelectedPolicyScope| scope.scope == policy.policy_scope)
-            {
-                existing.policies.push(policy);
-            } else {
-                scopes.push(SelectedPolicyScope {
-                    scope: policy.policy_scope,
-                    policies: vec![policy],
-                });
-            }
-        }
-        scopes
-    }
-
-    fn select_model_route_plan_from_policy_scope(
-        &self,
-        query: &SelectUpstreamModelRouteQuery,
-        routes: &[ModelUpstreamRoute],
-        account_routes: &[UpstreamAccountRoute],
-        policy_scope: SelectedPolicyScope,
-        account_group_bindings: &UpstreamAccountGroupBindings,
-    ) -> PolicyScopeRouteSelection {
-        let policy = match self
-            .select_policy_for_capability(&policy_scope.policies, query.capability)
-        {
-            Some(policy) => policy,
-            None => {
-                let error = UpstreamRouteSelectionError::upstream_route_unavailable(format!(
-                    "upstream route is not available for configured upstream account route: {} policy scope has no routing policy for capability {:?}",
-                    scope_label(policy_scope.scope),
-                    query.capability
-                ));
-                return PolicyScopeRouteSelection::HardError(error);
-            }
-        };
-        let Some(profile_id) = policy.default_profile_id else {
-            return PolicyScopeRouteSelection::SoftUnavailable(
-                UpstreamRouteSelectionError::upstream_route_unavailable(format!(
-                    "upstream route is not available for configured upstream account route: routing policy {} has no default profile",
-                    policy.policy_code
-                )),
-            );
-        };
-        let mut rules = self.catalog.list_routing_rules(profile_id);
-        rules.sort_by_key(|rule| (rule.priority, rule.id));
-        if let Some(rule) = rules
-            .into_iter()
-            .filter(|rule| self.rule_is_in_scope(rule, &query.context))
-            .find(|rule| rule.matches_catalog_key(&query.catalog_key, &query.requested_model))
-        {
-            let candidate_chain = scoped_candidate_chain(&rule, &policy, account_group_bindings);
-            let used_rule_fallback_chain =
-                candidate_chain_uses_rule_fallback(&rule, &candidate_chain);
-            match self.evaluate_candidate_route_plan(query, routes, account_routes, candidate_chain)
-            {
-                CandidateUpstreamModelRouteEvaluation::Planned(routes) => {
-                    return PolicyScopeRouteSelection::Planned(SelectedUpstreamModelRoutePlan {
-                        routes: routes
-                            .into_iter()
-                            .map(|route| {
-                                selected_upstream_model_route(
-                                    route,
-                                    &query.context,
-                                    Some(policy.id),
-                                    Some(rule.id),
-                                )
-                            })
-                            .collect(),
-                        policy_id: Some(policy.id),
-                        rule_id: Some(rule.id),
-                    });
-                }
-                CandidateUpstreamModelRouteEvaluation::PricingUnavailable(error) => {
-                    return PolicyScopeRouteSelection::HardError(
-                        UpstreamRouteSelectionError::pricing_unavailable(format!(
-                            "pricing is not available for configured upstream account route: policy {} rule {} candidate price is unavailable for model {}: {}",
-                            policy.policy_code, rule.rule_code, query.catalog_key, error
-                        )),
-                    );
-                }
-                CandidateUpstreamModelRouteEvaluation::RoutingInvalid(error) => {
-                    return PolicyScopeRouteSelection::HardError(
-                        UpstreamRouteSelectionError::upstream_route_unavailable(format!(
-                            "upstream account routing configuration is invalid for policy {} rule {}: {}",
-                            policy.policy_code, rule.rule_code, error
-                        )),
-                    );
-                }
-                CandidateUpstreamModelRouteEvaluation::NoCallableCandidate => {}
-            }
-            if !policy
-                .fallback_mode_or_default()
-                .allows_rule_fallback_chain()
-                && !rule.fallback_chain.is_empty()
-            {
-                return PolicyScopeRouteSelection::SoftUnavailable(
-                    UpstreamRouteSelectionError::upstream_route_unavailable(format!(
-                        "upstream route is not available for configured upstream account route: policy {} fallback mode none disables rule {} fallback chain for model {}",
-                        policy.policy_code, rule.rule_code, query.catalog_key
-                    )),
-                );
-            }
-            return PolicyScopeRouteSelection::SoftUnavailable(
-                UpstreamRouteSelectionError::upstream_route_unavailable(format!(
-                    "upstream route is not available for configured upstream account route: policy {} rule {} has no callable priced candidate upstream account{} for model {}",
-                    policy.policy_code,
-                    rule.rule_code,
-                    if used_rule_fallback_chain {
-                        " or fallback upstream account"
-                    } else {
-                        ""
-                    },
-                    query.catalog_key
-                )),
-            );
-        }
-        PolicyScopeRouteSelection::SoftUnavailable(
-            UpstreamRouteSelectionError::upstream_route_unavailable(format!(
-                "upstream route is not available for configured upstream account route: policy {} has no routing rule for model {}",
-                policy.policy_code, query.catalog_key
-            )),
-        )
-    }
-
-    fn select_account_route_from_policy_scope(
-        &self,
-        query: &SelectUpstreamAccountRouteQuery,
-        routes: &[UpstreamAccountRoute],
-        policy_scope: SelectedPolicyScope,
-        account_group_bindings: &UpstreamAccountGroupBindings,
-    ) -> PolicyScopeUpstreamAccountRouteSelection {
-        let policy = match self
-            .select_policy_for_capability(&policy_scope.policies, query.capability)
-        {
-            Some(policy) => policy,
-            None => {
-                let error = UpstreamRouteSelectionError::upstream_route_unavailable(format!(
-                    "upstream route is not available for configured upstream account route: {} policy scope has no routing policy for capability {:?}",
-                    scope_label(policy_scope.scope),
-                    query.capability
-                ));
-                return PolicyScopeUpstreamAccountRouteSelection::HardError(error);
-            }
-        };
-        let Some(profile_id) = policy.default_profile_id else {
-            return PolicyScopeUpstreamAccountRouteSelection::SoftUnavailable(
-                UpstreamRouteSelectionError::upstream_route_unavailable(format!(
-                    "upstream route is not available for configured upstream account route: routing policy {} has no default profile",
-                    policy.policy_code
-                )),
-            );
-        };
-        let mut rules = self.catalog.list_routing_rules(profile_id);
-        rules.sort_by_key(|rule| (rule.priority, rule.id));
-        if let Some(rule) = rules
-            .into_iter()
-            .filter(|rule| self.rule_is_in_scope(rule, &query.context))
-            .find(|rule| rule.matches_route_key(&query.route_key))
-        {
-            let candidate_chain = scoped_candidate_chain(&rule, &policy, account_group_bindings);
-            let used_rule_fallback_chain =
-                candidate_chain_uses_rule_fallback(&rule, &candidate_chain);
-            match self.evaluate_candidate_account_routes(routes, candidate_chain, query) {
-                CandidateUpstreamAccountRouteEvaluation::Selected(primary, failover) => {
-                    return PolicyScopeUpstreamAccountRouteSelection::Selected(Box::new(
-                        selected_upstream_account_route(
-                            *primary,
-                            failover,
-                            &query.context,
-                            Some(policy.id),
-                            Some(rule.id),
-                        ),
-                    ));
-                }
-                CandidateUpstreamAccountRouteEvaluation::PricingUnavailable(error) => {
-                    return PolicyScopeUpstreamAccountRouteSelection::HardError(
-                        UpstreamRouteSelectionError::pricing_unavailable(format!(
-                            "pricing is not available for configured upstream account route: policy {} rule {} candidate price is unavailable for route {}: {}",
-                            policy.policy_code, rule.rule_code, query.route_key, error
-                        )),
-                    );
-                }
-                CandidateUpstreamAccountRouteEvaluation::RoutingInvalid(error) => {
-                    return PolicyScopeUpstreamAccountRouteSelection::HardError(
-                        UpstreamRouteSelectionError::upstream_route_unavailable(format!(
-                            "upstream account routing configuration is invalid for policy {} rule {}: {}",
-                            policy.policy_code, rule.rule_code, error
-                        )),
-                    );
-                }
-                CandidateUpstreamAccountRouteEvaluation::NoCallableCandidate => {}
-            }
-            if !policy
-                .fallback_mode_or_default()
-                .allows_rule_fallback_chain()
-                && !rule.fallback_chain.is_empty()
-            {
-                return PolicyScopeUpstreamAccountRouteSelection::SoftUnavailable(
-                    UpstreamRouteSelectionError::upstream_route_unavailable(format!(
-                        "upstream route is not available for configured upstream account route: policy {} fallback mode none disables rule {} fallback chain for route {}",
-                        policy.policy_code, rule.rule_code, query.route_key
-                    )),
-                );
-            }
-            return PolicyScopeUpstreamAccountRouteSelection::SoftUnavailable(
-                UpstreamRouteSelectionError::upstream_route_unavailable(format!(
-                    "upstream route is not available for configured upstream account route: policy {} rule {} has no callable upstream account route candidate{} for route {}",
-                    policy.policy_code,
-                    rule.rule_code,
-                    if used_rule_fallback_chain {
-                        " or fallback upstream account"
-                    } else {
-                        ""
-                    },
-                    query.route_key
-                )),
-            );
-        }
-        PolicyScopeUpstreamAccountRouteSelection::SoftUnavailable(
-            UpstreamRouteSelectionError::upstream_route_unavailable(format!(
-                "upstream route is not available for configured upstream account route: policy {} has no routing rule for route {}",
-                policy.policy_code, query.route_key
-            )),
-        )
-    }
-
-    fn select_policy_for_capability(
-        &self,
-        policies: &[RoutingPolicy],
-        capability: RoutingCapability,
-    ) -> Option<RoutingPolicy> {
-        policies
-            .iter()
-            .filter(|policy| self.policy_matches_capability(policy, capability))
-            .cloned()
-            .min_by_key(|policy| (capability_match_rank(policy, capability), policy.id))
-    }
-
-    fn policy_matches_capability(
-        &self,
-        policy: &RoutingPolicy,
-        capability: RoutingCapability,
-    ) -> bool {
-        policy
-            .capability
-            .map(|policy_capability| policy_capability == capability)
-            .unwrap_or(true)
-    }
-
-    fn policy_is_in_scope(
-        &self,
-        policy: &RoutingPolicy,
-        context: &AuthenticatedApiKeyContext,
-    ) -> bool {
-        match policy.policy_scope {
-            RoutingPolicyScope::UpstreamAccountGroup => {
-                same_tenant_org(policy, context) && policy.subject_id == Some(context.group_id)
-            }
-            RoutingPolicyScope::ApiKey => {
-                same_tenant_org(policy, context) && policy.subject_id == Some(context.api_key_id)
-            }
-            RoutingPolicyScope::Organization => {
-                same_tenant(policy, context)
-                    && policy.organization_id == context.organization_id
-                    && policy.subject_id.unwrap_or(context.organization_id)
-                        == context.organization_id
-            }
-            RoutingPolicyScope::Tenant => {
-                policy.tenant_id == context.tenant_id
-                    && policy.subject_id.unwrap_or(context.tenant_id) == context.tenant_id
-            }
-            RoutingPolicyScope::Global => {
-                policy.tenant_id == 0 && policy.organization_id == 0 && policy.subject_id.is_none()
-            }
-        }
-    }
-
-    fn rule_is_in_scope(&self, rule: &RoutingRule, context: &AuthenticatedApiKeyContext) -> bool {
-        (rule.tenant_id == 0 || rule.tenant_id == context.tenant_id)
-            && (rule.organization_id == 0 || rule.organization_id == context.organization_id)
     }
 
     fn evaluate_candidate_route_plan(
@@ -998,10 +702,8 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             CandidateUpstreamModelRouteEvaluation::Planned(routes) => Ok(Some(SelectedUpstreamModelRoutePlan {
                 routes: routes
                     .into_iter()
-                    .map(|route| selected_upstream_model_route(route, &query.context, None, None))
+                    .map(|route| selected_upstream_model_route(route, &query.context))
                     .collect(),
-                policy_id: None,
-                rule_id: None,
             })),
             CandidateUpstreamModelRouteEvaluation::PricingUnavailable(error) => {
                 Err(UpstreamRouteSelectionError::pricing_unavailable(format!(
@@ -1027,21 +729,56 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         candidate: &RouteCandidate,
     ) -> DomainResult<Vec<ModelUpstreamRoute>> {
         let group = self.require_account_group(candidate.account_group_id)?;
-        let account_routes = account_routes
+        // Candidate-group accounts are collected before filtering so a
+        // failed routing decision can log *why* each bound account was
+        // rejected (missing base_url/credential, unhealthy, model not
+        // allowed by the group binding). Without this the strategy-route
+        // path degrades to a bare "no callable priced candidate" message.
+        let candidate_group_accounts = account_routes
+            .iter()
+            .filter(|route| account_route_matches_candidate_group(route, candidate))
+            .cloned()
+            .collect::<Vec<_>>();
+        let account_routes = candidate_group_accounts
             .iter()
             .filter(|route| {
-                account_route_matches_candidate_group(route, candidate)
-                    && account_route_allows_model_request(route, candidate, query)
+                account_route_allows_model_request(route, candidate, query)
                     && candidate_region_matches(
                         &route.region_code,
                         candidate.region_code.as_deref(),
                     )
             })
             .filter(|route| self.account_route_is_callable(route))
-            .collect::<Vec<_>>()
-            .into_iter()
             .cloned()
             .collect::<Vec<_>>();
+        if account_routes.is_empty() && !candidate_group_accounts.is_empty() {
+            for route in &candidate_group_accounts {
+                crate::application::log_rejected_group_account(
+                    query.context.api_key_id,
+                    query.context.tenant_id,
+                    query.context.group_id,
+                    &query.context.group_code,
+                    &query.catalog_key,
+                    &query.requested_model,
+                    &query.api_code,
+                    &crate::application::RejectedGroupAccount {
+                        account_id: route.account_id,
+                        supplier_code: route.supplier_code.clone(),
+                        callable: self.account_route_is_callable(route),
+                        healthy: route.is_account_healthy(),
+                        has_base_url: has_text(route.base_url.as_deref()),
+                        has_credential: has_text(route.secret_ref.as_deref())
+                            || !route.auth_profile.default_headers.is_empty(),
+                        allows_model: account_route_allows_model_request(
+                            route, candidate, query,
+                        ),
+                        account_health_status: route.account_health_status,
+                        credential_health_status: route.credential_health_status,
+                        endpoint_health_status: route.endpoint_health_status,
+                    },
+                );
+            }
+        }
         let account_routes = plan_upstream_account_routes(
             &group,
             self.binding_strategy_for_group(query.context.api_key_id, candidate.account_group_id),
@@ -1094,21 +831,49 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         query: &SelectUpstreamAccountRouteQuery,
     ) -> CandidateUpstreamAccountRouteEvaluation {
         for candidate in candidates {
-            let candidate_routes = routes
+            let candidate_group_accounts = routes
+                .iter()
+                .filter(|route| account_route_matches_candidate_group(route, &candidate))
+                .cloned()
+                .collect::<Vec<_>>();
+            let candidate_routes = candidate_group_accounts
                 .iter()
                 .filter(|route| {
-                    account_route_matches_candidate_group(route, &candidate)
-                        && account_route_allows_api_resource(route, query)
+                    account_route_allows_api_resource(route, query)
                         && candidate_region_matches(
                             &route.region_code,
                             candidate.region_code.as_deref(),
                         )
                 })
-                .cloned()
-                .collect::<Vec<_>>()
-                .into_iter()
                 .filter(|route| self.account_route_is_callable(route))
+                .cloned()
                 .collect::<Vec<_>>();
+            if candidate_routes.is_empty() && !candidate_group_accounts.is_empty() {
+                for route in &candidate_group_accounts {
+                    crate::application::log_rejected_group_account(
+                        query.context.api_key_id,
+                        query.context.tenant_id,
+                        query.context.group_id,
+                        &query.context.group_code,
+                        &query.route_key,
+                        &query.route_key,
+                        &query.api_code,
+                        &crate::application::RejectedGroupAccount {
+                            account_id: route.account_id,
+                            supplier_code: route.supplier_code.clone(),
+                            callable: self.account_route_is_callable(route),
+                            healthy: route.is_account_healthy(),
+                            has_base_url: has_text(route.base_url.as_deref()),
+                            has_credential: has_text(route.secret_ref.as_deref())
+                                || !route.auth_profile.default_headers.is_empty(),
+                            allows_model: account_route_allows_api_resource(route, query),
+                            account_health_status: route.account_health_status,
+                            credential_health_status: route.credential_health_status,
+                            endpoint_health_status: route.endpoint_health_status,
+                        },
+                    );
+                }
+            }
             let group = match self.require_account_group(candidate.account_group_id) {
                 Ok(group) => group,
                 Err(error) => {
@@ -1191,8 +956,6 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
                     *primary,
                     failover,
                     &query.context,
-                    None,
-                    None,
                 )))
             }
             CandidateUpstreamAccountRouteEvaluation::PricingUnavailable(error) => {
@@ -1348,16 +1111,12 @@ impl SelectedUpstreamModelRoutePlan {
 fn selected_upstream_model_route(
     route: ModelUpstreamRoute,
     context: &AuthenticatedApiKeyContext,
-    policy_id: Option<i64>,
-    rule_id: Option<i64>,
 ) -> SelectedUpstreamModelRoute {
     SelectedUpstreamModelRoute {
         route,
         group_id: context.group_id,
         group_code: context.group_code.clone(),
         pricing_plan_code: context.pricing_plan_code.clone(),
-        policy_id,
-        rule_id,
     }
 }
 
@@ -1365,8 +1124,6 @@ fn selected_upstream_account_route(
     route: UpstreamAccountRoute,
     failover_routes: Vec<UpstreamAccountRoute>,
     context: &AuthenticatedApiKeyContext,
-    policy_id: Option<i64>,
-    rule_id: Option<i64>,
 ) -> SelectedUpstreamAccountRoute {
     SelectedUpstreamAccountRoute {
         route,
@@ -1374,50 +1131,7 @@ fn selected_upstream_account_route(
         group_id: context.group_id,
         group_code: context.group_code.clone(),
         pricing_plan_code: context.pricing_plan_code.clone(),
-        policy_id,
-        rule_id,
     }
-}
-
-fn scoped_candidate_chain(
-    rule: &RoutingRule,
-    policy: &RoutingPolicy,
-    account_group_bindings: &UpstreamAccountGroupBindings,
-) -> Vec<RouteCandidate> {
-    let mut candidates = group_bound_candidates(
-        rule.candidate_account_groups.clone(),
-        account_group_bindings,
-    );
-    if policy
-        .fallback_mode_or_default()
-        .allows_rule_fallback_chain()
-    {
-        candidates.extend(group_bound_candidates(
-            rule.fallback_chain.clone(),
-            account_group_bindings,
-        ));
-    }
-    candidates
-}
-
-fn group_bound_candidates(
-    mut candidates: Vec<RouteCandidate>,
-    account_group_bindings: &UpstreamAccountGroupBindings,
-) -> Vec<RouteCandidate> {
-    candidates
-        .retain(|candidate| account_group_bindings.contains_group(candidate.account_group_id));
-    candidates.sort_by_key(|candidate| {
-        let binding = account_group_bindings
-            .best_binding_for_group(candidate.account_group_id)
-            .expect("group-bound candidate must have a binding");
-        (
-            binding.priority,
-            Reverse(binding.weight),
-            Reverse(candidate.weight),
-            candidate.account_group_id,
-        )
-    });
-    candidates
 }
 
 fn group_bound_account_route_candidates(
@@ -1444,60 +1158,6 @@ fn group_bound_account_route_candidates(
         account_group_id,
         i64::from(binding.weight),
     )]
-}
-
-fn candidate_chain_uses_rule_fallback(rule: &RoutingRule, candidates: &[RouteCandidate]) -> bool {
-    candidates.iter().any(|candidate| {
-        !rule
-            .candidate_account_groups
-            .iter()
-            .any(|primary| same_candidate_route(primary, candidate))
-    })
-}
-
-fn same_candidate_route(left: &RouteCandidate, right: &RouteCandidate) -> bool {
-    left.account_group_id == right.account_group_id
-        && match (left.region_code.as_deref(), right.region_code.as_deref()) {
-            (Some(left), Some(right)) => same_region(left, right),
-            (None, None) => true,
-            _ => false,
-        }
-}
-
-fn policy_rank(scope: RoutingPolicyScope) -> i32 {
-    match scope {
-        RoutingPolicyScope::UpstreamAccountGroup => 0,
-        RoutingPolicyScope::ApiKey => 1,
-        RoutingPolicyScope::Organization => 2,
-        RoutingPolicyScope::Tenant => 3,
-        RoutingPolicyScope::Global => 4,
-    }
-}
-
-fn capability_match_rank(policy: &RoutingPolicy, capability: RoutingCapability) -> i32 {
-    match policy.capability {
-        Some(policy_capability) if policy_capability == capability => 0,
-        None => 1,
-        Some(_) => 2,
-    }
-}
-
-fn scope_label(scope: RoutingPolicyScope) -> &'static str {
-    match scope {
-        RoutingPolicyScope::UpstreamAccountGroup => "account group",
-        RoutingPolicyScope::ApiKey => "api key",
-        RoutingPolicyScope::Organization => "organization",
-        RoutingPolicyScope::Tenant => "tenant",
-        RoutingPolicyScope::Global => "global",
-    }
-}
-
-fn same_tenant_org(policy: &RoutingPolicy, context: &AuthenticatedApiKeyContext) -> bool {
-    same_tenant(policy, context) && policy.organization_id == context.organization_id
-}
-
-fn same_tenant(policy: &RoutingPolicy, context: &AuthenticatedApiKeyContext) -> bool {
-    policy.tenant_id == context.tenant_id
 }
 
 fn normalized_text_or(value: &str, fallback: &str) -> String {

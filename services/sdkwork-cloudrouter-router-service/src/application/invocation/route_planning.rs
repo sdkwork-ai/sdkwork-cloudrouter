@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
 use super::{
-    BillingMode, DispatchMode, Invocation, InvocationError, InvocationErrorKind, InvocationFuture,
-    InvocationInterceptor, InvocationRouteCandidate, InvocationRouteCandidateKind,
-    InvocationRoutePlan, InvocationSurface, ResourceType, StickyRouteConstraint,
+    AccountBillingMode, BillingMode, DispatchMode, Invocation, InvocationError,
+    InvocationErrorKind, InvocationFuture, InvocationInterceptor, InvocationRouteCandidate,
+    InvocationRouteCandidateKind, InvocationRoutePlan, ResourceType, RoutingPipeline,
+    StickyRouteConstraint,
 };
 use crate::application::upstream_base_url::{
     protocol_code_from_api_code, resolve_upstream_base_url,
@@ -78,13 +79,34 @@ where
             }
 
             let context = authenticated_context(invocation)?;
-            if should_plan_model_route(invocation) {
-                plan_model_route(self.catalog.as_ref(), invocation, context)
-            } else {
-                plan_upstream_account_route(self.catalog.as_ref(), invocation, context)
-            }
+            // 统一路由管道：模型类/API 资源类共享编排，RouteKind 由资源推导。
+            RoutingPipeline::new(Arc::clone(&self.catalog)).plan_route(invocation, context)
         })
     }
+}
+
+/// 统一管道入口：模型类规划（供 `RoutingPipeline` 调用）。
+pub(crate) fn plan_model_route_pipeline<C>(
+    catalog: &C,
+    invocation: &mut Invocation,
+    context: AuthenticatedApiKeyContext,
+) -> Result<(), InvocationError>
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    plan_model_route(catalog, invocation, context)
+}
+
+/// 统一管道入口：API 资源类规划（供 `RoutingPipeline` 调用）。
+pub(crate) fn plan_account_route_pipeline<C>(
+    catalog: &C,
+    invocation: &mut Invocation,
+    context: AuthenticatedApiKeyContext,
+) -> Result<(), InvocationError>
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    plan_upstream_account_route(catalog, invocation, context)
 }
 
 fn plan_model_route<C>(
@@ -103,8 +125,19 @@ where
         .filter(|value| !value.is_empty())
         .ok_or_else(|| route_error("model route planning requires requested model"))?
         .to_owned();
+    // 模型类路由流程第 2 步：根据请求模型解析 catalog key 与支持该模型的
+    // vendor 列表（对应 sdkwork-models 目录的模型→vendor 解析）。
     let catalog_key = resolve_catalog_key(catalog, invocation, &requested_model)?;
     invocation.resource.requested_model_catalog_key = Some(catalog_key.clone());
+    invocation.resource.resolved_vendor_codes = catalog.model_vendor_codes_by_name(&requested_model);
+    tracing::trace!(
+        tenant_id = invocation.subject.tenant_id,
+        organization_id = invocation.subject.organization_id,
+        requested_model = %requested_model,
+        catalog_key = %catalog_key,
+        vendor_codes = ?invocation.resource.resolved_vendor_codes,
+        "model-type route: resolved supporting vendors"
+    );
 
     let billing_meter = invocation
         .billing
@@ -129,8 +162,6 @@ where
             }
         })?;
 
-    invocation.routing.policy_id = plan.policy_id;
-    invocation.routing.rule_id = plan.rule_id;
     invocation.routing.route_plan = Some(InvocationRoutePlan::new(
         plan.routes
             .into_iter()
@@ -165,8 +196,6 @@ where
         })
         .map_err(|error| route_error(error.to_string()))?;
 
-    invocation.routing.policy_id = selection.policy_id;
-    invocation.routing.rule_id = selection.rule_id;
     // 最终账号 + 故障转移序列（planner 已按策略排序并按 fallback mode 截断），
     // 供过滤链与 dispatch 的 failover 使用。
     let failover_routes = selection.failover_routes.clone();
@@ -207,8 +236,6 @@ where
             .as_ref()
             .map(|group| group.pricing_plan_code.clone())
             .or_else(|| invocation.subject.pricing_plan_code.clone()),
-        policy_id: invocation.routing.policy_id,
-        rule_id: invocation.routing.rule_id,
         api_code: sticky_route
             .api_code
             .unwrap_or_else(|| invocation.resource.api_code.clone()),
@@ -252,6 +279,7 @@ where
         retry_policy: account_route
             .as_ref()
             .and_then(|route| route.retry_policy.clone()),
+        billing_mode: billing_mode_for(catalog, sticky_route.account_id),
     }
 }
 
@@ -308,6 +336,7 @@ where
                 normalized_resolved_provider_model(&catalog_key, &model, &provider_model)
             }),
     );
+    candidate.billing_mode = billing_mode_for(catalog, candidate.account_id);
     candidate
 }
 
@@ -383,8 +412,6 @@ fn model_candidate(
         account_group_id: Some(selection.group_id),
         account_group_code: Some(selection.group_code),
         pricing_plan_code: Some(selection.pricing_plan_code),
-        policy_id: selection.policy_id,
-        rule_id: selection.rule_id,
         api_code: route.api_code.clone().unwrap_or_default(),
         catalog_key: Some(route.catalog_key.clone()),
         requested_model: Some(route.model.clone()),
@@ -403,6 +430,7 @@ fn model_candidate(
         auth_profile: route.auth_profile.clone(),
         timeout_ms: route.timeout_ms,
         retry_policy: route.retry_policy.clone(),
+        billing_mode: AccountBillingMode::default(),
     }
 }
 
@@ -422,8 +450,6 @@ where
         account_group_id: Some(selection.group_id),
         account_group_code: Some(selection.group_code),
         pricing_plan_code: Some(selection.pricing_plan_code),
-        policy_id: selection.policy_id,
-        rule_id: selection.rule_id,
         api_code: invocation.resource.api_code.clone(),
         catalog_key: invocation.resource.requested_model_catalog_key.clone(),
         requested_model: invocation.resource.requested_model.clone(),
@@ -442,6 +468,7 @@ where
         auth_profile: route.auth_profile.clone(),
         timeout_ms: route.timeout_ms,
         retry_policy: route.retry_policy.clone(),
+        billing_mode: billing_mode_for(catalog, route.account_id),
     }
 }
 
@@ -462,8 +489,6 @@ where
         account_group_id: invocation.subject.account_group_id,
         account_group_code: invocation.subject.account_group_code.clone(),
         pricing_plan_code: invocation.subject.pricing_plan_code.clone(),
-        policy_id: None,
-        rule_id: None,
         api_code: invocation.resource.api_code.clone(),
         catalog_key: invocation.resource.requested_model_catalog_key.clone(),
         requested_model: invocation.resource.requested_model.clone(),
@@ -482,7 +507,19 @@ where
         auth_profile: route.auth_profile.clone(),
         timeout_ms: route.timeout_ms,
         retry_policy: route.retry_policy.clone(),
+        billing_mode: billing_mode_for(catalog, route.account_id),
     }
+}
+
+/// 从 catalog 读取账号计费模式；未配置/未知时回退默认（prepay 预扣）。
+fn billing_mode_for<C>(catalog: &C, account_id: i64) -> AccountBillingMode
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    catalog
+        .account_billing_mode(account_id)
+        .map(|code| AccountBillingMode::from_code(&code))
+        .unwrap_or_default()
 }
 
 fn authenticated_context(
@@ -518,22 +555,6 @@ fn authenticated_context(
             .clone()
             .unwrap_or_default(),
     })
-}
-
-fn should_plan_model_route(invocation: &Invocation) -> bool {
-    if invocation.resource.surface == InvocationSurface::ProviderNative {
-        return false;
-    }
-    invocation
-        .resource
-        .model_requirement
-        .routes_model_when_present()
-        && invocation
-            .resource
-            .requested_model
-            .as_deref()
-            .map(str::trim)
-            .is_some_and(|value| !value.is_empty())
 }
 
 fn resolve_catalog_key<C>(

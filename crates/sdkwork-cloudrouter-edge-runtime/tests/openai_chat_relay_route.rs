@@ -7,8 +7,7 @@ use sdkwork_cloudrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, DomainResult, GatewayApiKey, ModelPrice,
     ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
-    ProviderRetryPolicy, RouteCandidate, RoutingCapability, RoutingPolicy, RoutingPolicyScope,
-    RoutingRule, UpstreamAccountGroup, UpstreamAccountRoute,
+    ProviderRetryPolicy, UpstreamAccountGroup, UpstreamAccountRoute,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
@@ -117,39 +116,14 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
 }
 
 fn add_group_routing_policy(
-    catalog: &mut InMemoryPricingCatalog,
-    group_id: i64,
-    policy_id: i64,
-    profile_id: i64,
-    rule_id: i64,
-    rule_code: &str,
-    catalog_key: &str,
+    _catalog: &mut InMemoryPricingCatalog,
+    _group_id: i64,
+    _policy_id: i64,
+    _profile_id: i64,
+    _rule_id: i64,
+    _rule_code: &str,
+    _catalog_key: &str,
 ) {
-    catalog.add_routing_policy(
-        RoutingPolicy::new(
-            policy_id,
-            10,
-            20,
-            &format!("{rule_code}-policy"),
-            RoutingPolicyScope::UpstreamAccountGroup,
-            Some(group_id),
-            Some(profile_id),
-        )
-        .with_capability(RoutingCapability::Chat),
-    );
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            rule_id,
-            10,
-            20,
-            profile_id,
-            rule_code,
-            1,
-            &format!(r#"{{"catalogKey":"{catalog_key}"}}"#),
-            catalog_key,
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(group_id, 100)]),
-    );
 }
 
 #[derive(Debug)]

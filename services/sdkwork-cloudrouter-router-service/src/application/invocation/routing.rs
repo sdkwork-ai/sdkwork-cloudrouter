@@ -1,3 +1,4 @@
+use super::AccountBillingMode;
 use crate::domain::{
     AiRouteFailureStrategy, AiRouteStrategy, ProviderAuthProfile, ProviderRetryPolicy,
 };
@@ -54,13 +55,13 @@ pub struct InvocationRouteCandidate {
     pub account_group_id: Option<i64>,
     pub account_group_code: Option<String>,
     pub pricing_plan_code: Option<String>,
-    pub policy_id: Option<i64>,
-    pub rule_id: Option<i64>,
     pub api_code: String,
     pub catalog_key: Option<String>,
     pub requested_model: Option<String>,
     pub provider_model: Option<String>,
     pub region_code: String,
+    /// 账号级计费模式（prepay/postpay），路由解析时从账号配置读取。
+    pub billing_mode: AccountBillingMode,
     pub credential_id: Option<i64>,
     pub credential_rotation: Option<String>,
     pub base_url: Option<String>,
@@ -148,8 +149,6 @@ pub struct InvocationRouting {
     pub attempted_routes: Vec<InvocationRouteAttempt>,
     pub(crate) circuit_half_open_probe_channels: Vec<i64>,
     pub(crate) circuit_breaker_finalized: bool,
-    pub policy_id: Option<i64>,
-    pub rule_id: Option<i64>,
 }
 
 impl InvocationRouting {
@@ -163,8 +162,6 @@ impl InvocationRouting {
             attempted_routes: Vec::new(),
             circuit_half_open_probe_channels: Vec::new(),
             circuit_breaker_finalized: false,
-            policy_id: None,
-            rule_id: None,
         }
     }
 }

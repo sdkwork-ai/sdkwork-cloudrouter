@@ -311,8 +311,10 @@ fn status_code_for_error(error: &InvocationError) -> u16 {
         InvocationErrorKind::Authentication => 401,
         InvocationErrorKind::Authorization | InvocationErrorKind::ModelForbidden => 403,
         InvocationErrorKind::Idempotency => 409,
-        InvocationErrorKind::Routing
-        | InvocationErrorKind::Pricing
+        // No routable upstream account/model → 503 (route unavailable), same
+        // as the HTTP surface in `response_from_invocation_error`.
+        InvocationErrorKind::Routing => 503,
+        InvocationErrorKind::Pricing
         | InvocationErrorKind::Dispatch
         | InvocationErrorKind::ProviderPassthroughFailed
         | InvocationErrorKind::Usage

@@ -6,8 +6,8 @@ use sdkwork_cloudrouter_router_service::application::{
 };
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, GatewayApiKeyAccountGroupBinding,
-    ModelPrice, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, RouteCandidate,
-    RoutingCapability, RoutingPolicy, RoutingPolicyScope, RoutingRule, UpstreamAccountFallbackMode,
+    ModelPrice, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
+    RoutingCapability, UpstreamAccountFallbackMode,
     UpstreamAccountGroup, UpstreamAccountGroupBinding, UpstreamAccountRoute,
     UpstreamAccountRoutingStrategy, UpstreamResourceEntitlement,
 };
@@ -195,36 +195,6 @@ fn add_route_and_price(catalog: &mut InMemoryPricingCatalog, route: UpstreamAcco
     );
 }
 
-fn add_model_policy(
-    catalog: &mut InMemoryPricingCatalog,
-    group_id: i64,
-    candidates: Vec<RouteCandidate>,
-) {
-    let profile_id = 10_000 + group_id;
-    catalog.add_routing_policy(RoutingPolicy::new(
-        20_000 + group_id,
-        TENANT_ID,
-        ORGANIZATION_ID,
-        &format!("group-{group_id}-policy"),
-        RoutingPolicyScope::UpstreamAccountGroup,
-        Some(group_id),
-        Some(profile_id),
-    ));
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            30_000 + group_id,
-            TENANT_ID,
-            ORGANIZATION_ID,
-            profile_id,
-            &format!("group-{group_id}-model-rule"),
-            1,
-            r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
-            MODEL_CATALOG_KEY,
-        )
-        .with_candidate_account_groups(candidates),
-    );
-}
-
 fn account_route_query(group_id: i64) -> SelectUpstreamAccountRouteQuery {
     SelectUpstreamAccountRouteQuery {
         context: context(group_id),
@@ -261,12 +231,11 @@ fn group_bound_account_routes_work_without_an_explicit_policy() {
 
     assert_eq!(3001, selected.route.account_id);
     assert_eq!(group_id, selected.group_id);
-    assert_eq!(None, selected.policy_id);
     assert_eq!("gpt-4o-mini", selected.route.provider_model);
 }
 
 #[test]
-fn routing_rule_candidates_are_account_group_ids_not_account_ids() {
+fn group_bound_route_works_without_an_explicit_policy() {
     let group_id = 11;
     let mut catalog = catalog_for_group(account_group(
         group_id,
@@ -277,21 +246,16 @@ fn routing_rule_candidates_are_account_group_ids_not_account_ids() {
         &mut catalog,
         account_route(group_id, 3001, "openai-direct", 1, 100),
     );
-    add_model_policy(&mut catalog, group_id, vec![RouteCandidate::new(3001, 100)]);
 
-    let error = UpstreamRouteSelector::new(&catalog)
+    let selected = UpstreamRouteSelector::new(&catalog)
         .select_model_route(model_query(group_id))
-        .unwrap_err();
+        .unwrap();
 
-    assert_eq!(
-        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
-        error.kind()
-    );
-    assert!(error.to_string().contains("no callable priced candidate"));
+    assert_eq!(3001, selected.route.account_id);
 }
 
 #[test]
-fn matching_group_policy_selects_an_account_inside_the_group() {
+fn matching_group_selects_an_account_inside_the_group() {
     let group_id = 12;
     let mut catalog = catalog_for_group(account_group(
         group_id,
@@ -306,19 +270,12 @@ fn matching_group_policy_selects_an_account_inside_the_group() {
         &mut catalog,
         account_route(group_id, 3002, "openrouter", 1, 100),
     );
-    add_model_policy(
-        &mut catalog,
-        group_id,
-        vec![RouteCandidate::new(group_id, 100)],
-    );
 
     let selected = UpstreamRouteSelector::new(&catalog)
         .select_model_route(model_query(group_id))
         .unwrap();
 
     assert_eq!(3002, selected.route.account_id);
-    assert_eq!(Some(20_000 + group_id), selected.policy_id);
-    assert_eq!(Some(30_000 + group_id), selected.rule_id);
 }
 
 #[test]
@@ -872,11 +829,6 @@ fn region_scoped_group_candidate_selects_the_matching_deployment() {
             .with_region_code("cn"),
         );
     }
-    add_model_policy(
-        &mut catalog,
-        group_id,
-        vec![RouteCandidate::new(group_id, 100).with_region_code("cn")],
-    );
 
     let selected = UpstreamRouteSelector::new(&catalog)
         .select_model_route(model_query(group_id))
@@ -1947,12 +1899,12 @@ fn diagnostic_fails_when_routing_catalog_empty() {
     );
 }
 
-/// Failure mode 10: account exists in the group but with a routing policy
-/// that has mismatched candidates (pointing to wrong group_id). This is the
-/// classic misconfiguration: rule candidates reference account_ids instead of
-/// account_group_ids.
+/// Failure mode 10: group-bound routing selects the account directly from the
+/// group binding (the retired policy-rule candidate mechanism is no longer
+/// consulted). An account bound to the group is callable and priced, so it is
+/// selected regardless of any legacy policy candidates.
 #[test]
-fn diagnostic_fails_when_policy_candidates_reference_wrong_group() {
+fn group_bound_route_selects_bound_account_without_legacy_policy_candidates() {
     let group_id = 910;
     let mut catalog = catalog_for_group(account_group(
         group_id,
@@ -1963,25 +1915,9 @@ fn diagnostic_fails_when_policy_candidates_reference_wrong_group() {
         &mut catalog,
         account_route(group_id, 5001, "openai-direct", 1, 100),
     );
-    // Policy candidates reference account_id (5001) instead of group_id (910)
-    add_model_policy(
-        &mut catalog,
-        group_id,
-        vec![RouteCandidate::new(5001, 100)],
-    );
 
-    let error = UpstreamRouteSelector::new(&catalog)
+    let selected = UpstreamRouteSelector::new(&catalog)
         .select_model_route(model_query(group_id))
-        .unwrap_err();
-    assert_eq!(
-        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
-        error.kind(),
-        "wrong candidate group_id should yield UpstreamRouteUnavailable: {}",
-        error
-    );
-    assert!(
-        error.to_string().contains("no callable priced candidate"),
-        "error should mention no callable candidate: {}",
-        error
-    );
+        .unwrap();
+    assert_eq!(5001, selected.route.account_id);
 }

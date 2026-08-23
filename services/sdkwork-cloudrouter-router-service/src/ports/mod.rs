@@ -31,7 +31,6 @@ mod app_generation_history_read_store;
 mod app_invite_store;
 mod app_notification_store;
 mod app_routing_read_store;
-mod app_routing_strategy_store;
 mod app_runtime_gateway_client;
 mod app_runtime_store;
 mod chat_completion_relay;
@@ -264,11 +263,6 @@ pub use app_routing_read_store::{
     AppRoutingRequestTraceItem, AppRoutingRequestTraceListPage, AppRoutingSubject,
     AppRoutingTraceQuery, AppRoutingUsageData, AppRoutingUsageSnapshot,
 };
-pub use app_routing_strategy_store::{
-    AppRoutingMappingRule, AppRoutingStrategyFuture, AppRoutingStrategySnapshot,
-    AppRoutingStrategyStore, AppRoutingStrategySubject, AppRoutingStrategyType,
-    UpdateAppRoutingStrategyCommand, UpdateAppRoutingStrategyOutcome,
-};
 pub use app_runtime_gateway_client::{
     AppRuntimeGatewayClient, AppRuntimeGatewayRequest, AppRuntimeGatewayResponse,
 };
@@ -380,7 +374,7 @@ pub use sticky_route_store::{
     StickyRouteStoreFuture,
 };
 pub use upstream_account_route_catalog::{
-    AccountBaseUrlConfig, AccountGroupModelAccess, SupplierModelAccess,
+    AccountBaseUrlConfig, AccountGroupModelAccess, AccountModelAccess, SupplierModelAccess,
     UpstreamAccountRouteCatalog, VendorModelListEntry,
 };
 pub use upstream_credential_rotation_store::{

@@ -132,3 +132,7 @@ cloudrouter-dev*.log
 
 tmp-debug-*
 tmp-openapi-*
+
+# Local investigation scratch notes and temp scripts
+CHECK_*.md
+*.tmp.cjs

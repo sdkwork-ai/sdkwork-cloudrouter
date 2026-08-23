@@ -74,8 +74,10 @@ impl OpenAiRouteSpec {
             parent_resource_id: parent_object_id.clone(),
             capability: self.capability,
             model_requirement: self.model_requirement,
+            route_kind: None,
             requested_model: None,
             requested_model_catalog_key: None,
+            resolved_vendor_codes: Vec::new(),
             provider_native_model: None,
         };
         let billing = match self.billing_mode {
@@ -254,6 +256,14 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
             "openai.audio.voice_consents",
             ResourceType::Audio,
             RoutingCapability::Audio,
+        ));
+    }
+    if method == Method::POST && path == "/v1/moderations" {
+        return Ok(api(
+            "openai.moderations",
+            "openai.moderations",
+            ResourceType::Moderation,
+            RoutingCapability::Network,
         ));
     }
     if method == Method::GET && path == "/v1/models" {
@@ -518,6 +528,15 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
             "openai.videos",
             ResourceType::Video,
             RoutingCapability::Video,
+        ));
+    }
+    if method == Method::POST && path == "/v1/videos/generations" {
+        return Ok(model_optional(
+            "openai/model/videos/generations",
+            "openai.videos.generations",
+            ResourceType::Video,
+            RoutingCapability::Video,
+            BillingMeter::VideoResult,
         ));
     }
     if path.starts_with("/v1/videos/") {

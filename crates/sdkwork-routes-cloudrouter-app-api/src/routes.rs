@@ -30,7 +30,7 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::pool::connect_stand
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
     PostgresAdminAuthSettingsStore, PostgresAdminTransactionCenterStore, PostgresAppChatStore,
     PostgresAppGatewayTracesReadStore, PostgresAppInviteStore, PostgresAppNotificationStore,
-    PostgresAppRoutingReadStore, PostgresAppRoutingStrategyStore, PostgresAppRuntimeStore,
+    PostgresAppRoutingReadStore, PostgresAppRuntimeStore,
     PostgresCatalogLoadError, PostgresDashboardOverviewReadStore,
     PostgresGatewayApiKeyCommandStore, PostgresOfficialPricingCatalogReadStore,
     PostgresPaymentIntentRuntimeStore, PostgresPricingCatalogLoader, PostgresSettingsStore,
@@ -44,7 +44,7 @@ use sdkwork_cloudrouter_router_service::ports::ChatCompletionStreamRelay;
 use sdkwork_cloudrouter_router_service::ports::UpstreamAccountRouteCatalog;
 use sdkwork_cloudrouter_router_service::ports::{
     AdminAuthSettingsStore, AppChatStore, AppGatewayTracesReadStore, AppInviteStore,
-    AppNotificationStore, AppRoutingReadStore, AppRoutingStrategyStore, AppRuntimeStore,
+    AppNotificationStore, AppRoutingReadStore, AppRuntimeStore,
     DashboardOverviewReadStore, GatewayApiKeyCommandStore, GatewayApiKeyManagementReadStore,
     ModelRankingRefreshOutcome, ModelRankingRefreshRunStatus, ModelRankingRefreshStore,
     ModelRankingsCacheInvalidation, ModelRankingsReadModelStore, OfficialPricingCatalogReadStore,
@@ -122,7 +122,6 @@ type AppRuntimeGatewayRuntimeClient =
     Arc<dyn sdkwork_cloudrouter_router_service::ports::AppRuntimeGatewayClient + Send + Sync>;
 type AppRuntimeStreamBus = Arc<dyn RuntimeStreamBus + Send + Sync>;
 type AppRoutingStore = Arc<dyn AppRoutingReadStore + Send + Sync>;
-type AppRoutingStrategyRuntimeStore = Arc<dyn AppRoutingStrategyStore + Send + Sync>;
 type AppSiteSettingsRuntimeStore = Arc<dyn SiteSettingsStore + Send + Sync>;
 type DashboardReadStore = Arc<dyn DashboardOverviewReadStore + Send + Sync>;
 type OfficialPricingReadStore = Arc<dyn OfficialPricingCatalogReadStore + Send + Sync>;
@@ -170,7 +169,6 @@ pub fn router() -> Router {
         .merge(sdkwork_cloudrouter_router_service::api::app_chat_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_runtime_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_routing_router())
-        .merge(sdkwork_cloudrouter_router_service::api::app_routing_strategy_router())
 }
 
 fn router_with_database_status(
@@ -288,7 +286,6 @@ where
         .merge(sdkwork_cloudrouter_router_service::api::app_chat_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_runtime_router())
         .merge(sdkwork_cloudrouter_router_service::api::app_routing_router())
-        .merge(sdkwork_cloudrouter_router_service::api::app_routing_strategy_router())
         .merge(app_model_catalog_router(Arc::clone(&catalog)))
 }
 
@@ -371,7 +368,6 @@ struct AppRouterRuntime<'a> {
     app_runtime_gateway_client: Option<AppRuntimeGatewayRuntimeClient>,
     app_runtime_stream_bus: Option<AppRuntimeStreamBus>,
     app_routing_read_store: Option<AppRoutingStore>,
-    app_routing_strategy_store: Option<AppRoutingStrategyRuntimeStore>,
     model_catalog_router: Option<Router>,
     config: Option<&'a DatabaseConfig>,
     request_limits_config: RequestLimitsConfig,
@@ -404,7 +400,6 @@ fn router_with_runtime_stores_and_database_status(runtime: AppRouterRuntime<'_>)
         app_runtime_gateway_client,
         app_runtime_stream_bus,
         app_routing_read_store,
-        app_routing_strategy_store,
         model_catalog_router,
         config,
         request_limits_config: _request_limits_config,
@@ -560,19 +555,6 @@ fn router_with_runtime_stores_and_database_status(runtime: AppRouterRuntime<'_>)
         ),
         None => router.merge(sdkwork_cloudrouter_router_service::api::app_routing_router()),
     };
-    router = match app_routing_strategy_store {
-        Some(store) => sdkwork_cloudrouter_http::merge_web_framework_scoped_app_router(
-            router,
-            sdkwork_cloudrouter_router_service::api::app_routing_strategy_router_with_store(
-                store,
-                Arc::new(OsApiKeySecretGenerator),
-            ),
-            subject_boundary_config.clone(),
-        ),
-        None => {
-            router.merge(sdkwork_cloudrouter_router_service::api::app_routing_strategy_router())
-        }
-    };
     if let Some(api_key_runtime) = api_key_runtime {
         router = sdkwork_cloudrouter_http::merge_web_framework_scoped_app_router(
             router,
@@ -648,7 +630,6 @@ pub async fn router_with_postgres_product_catalog(
     let app_chat_store = Arc::new(PostgresAppChatStore::new(pool.clone()));
     let app_runtime_store = Arc::new(PostgresAppRuntimeStore::new(pool.clone()));
     let app_routing_read_store = Arc::new(PostgresAppRoutingReadStore::new(pool.clone()));
-    let app_routing_strategy_store = Arc::new(PostgresAppRoutingStrategyStore::new(pool.clone()));
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
     let app_site_settings_store = Arc::new(PostgresSiteSettingsStore::new(pool.clone()));
     let app_invite_store = Arc::new(PostgresAppInviteStore::new(pool.clone()));
@@ -684,7 +665,6 @@ pub async fn router_with_postgres_product_catalog(
             app_runtime_gateway_client: None,
             app_runtime_stream_bus: None,
             app_routing_read_store: Some(app_routing_read_store),
-            app_routing_strategy_store: Some(app_routing_strategy_store),
             model_catalog_router: Some(model_catalog_router),
             config: Some(&database_config),
             request_limits_config: RequestLimitsConfig::default(),
@@ -783,7 +763,6 @@ pub async fn router_with_postgres_shared_runtime(
     let app_chat_store = Arc::new(PostgresAppChatStore::new(pool.clone()));
     let app_runtime_store = Arc::new(PostgresAppRuntimeStore::new(pool.clone()));
     let app_routing_read_store = Arc::new(PostgresAppRoutingReadStore::new(commerce_pool.clone()));
-    let app_routing_strategy_store = Arc::new(PostgresAppRoutingStrategyStore::new(pool.clone()));
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
     let api_key_runtime = Some(app_api_key_runtime_deps_for_postgres(
         pool.clone(),
@@ -816,7 +795,6 @@ pub async fn router_with_postgres_shared_runtime(
             app_runtime_gateway_client: Some(app_runtime_gateway_client),
             app_runtime_stream_bus: Some(app_runtime_stream_bus),
             app_routing_read_store: Some(app_routing_read_store),
-            app_routing_strategy_store: Some(app_routing_strategy_store),
             model_catalog_router: Some(model_catalog_router),
             config: Some(&config),
             request_limits_config,
@@ -1025,7 +1003,6 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
     let app_chat_store = Arc::new(PostgresAppChatStore::new(pool.clone()));
     let app_runtime_store = Arc::new(PostgresAppRuntimeStore::new(pool.clone()));
     let app_routing_read_store = Arc::new(PostgresAppRoutingReadStore::new(pool.clone()));
-    let app_routing_strategy_store = Arc::new(PostgresAppRoutingStrategyStore::new(pool.clone()));
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
     let api_key_runtime = Some(app_api_key_runtime_deps_for_postgres(
         pool.clone(),
@@ -1066,7 +1043,6 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
             app_runtime_gateway_client: Some(Arc::clone(&app_runtime_gateway_client)),
             app_runtime_stream_bus: Some(Arc::clone(&app_runtime_stream_bus)),
             app_routing_read_store: Some(app_routing_read_store),
-            app_routing_strategy_store: Some(app_routing_strategy_store),
             model_catalog_router: Some(model_catalog_router),
             config: Some(&config),
             request_limits_config,
@@ -1379,8 +1355,6 @@ fn log_app_runtime_catalog_snapshot_summary(
             callable_upstream_account_routes = summary.callable_upstream_account_routes,
             provider_upstream_account_group_bindings =
                 summary.provider_upstream_account_group_bindings,
-            routing_policies = summary.routing_policies,
-            routing_rules = summary.routing_rules,
             pricing_plans = summary.pricing_plans,
             upstream_account_groups = summary.upstream_account_groups,
             api_keys = summary.api_keys,
@@ -1401,8 +1375,6 @@ fn log_app_runtime_catalog_snapshot_summary(
             callable_upstream_account_routes = summary.callable_upstream_account_routes,
             provider_upstream_account_group_bindings =
                 summary.provider_upstream_account_group_bindings,
-            routing_policies = summary.routing_policies,
-            routing_rules = summary.routing_rules,
             pricing_plans = summary.pricing_plans,
             upstream_account_groups = summary.upstream_account_groups,
             api_keys = summary.api_keys,

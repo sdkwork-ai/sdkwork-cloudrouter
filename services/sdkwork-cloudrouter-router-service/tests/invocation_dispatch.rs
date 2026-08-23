@@ -1,9 +1,9 @@
 use axum::http::{HeaderName, HeaderValue, Method};
 use sdkwork_cloudrouter_provider_adapter_contract::AdapterInvocationShape;
 use sdkwork_cloudrouter_router_service::application::{
-    AuthenticatedApiKeyContext, DispatchExecutor, DispatchMode, Invocation, InvocationAccount,
-    InvocationAdapterTarget, InvocationBilling, InvocationBody, InvocationDispatch,
-    InvocationDispatchResponse, InvocationErrorKind, InvocationInterceptor,
+    AccountBillingMode, AuthenticatedApiKeyContext, DispatchExecutor, DispatchMode, Invocation,
+    InvocationAccount, InvocationAdapterTarget, InvocationBilling, InvocationBody,
+    InvocationDispatch, InvocationDispatchResponse, InvocationErrorKind, InvocationInterceptor,
     InvocationProviderRequest, InvocationRequest, InvocationResource, InvocationRouteCandidate,
     InvocationRouteCandidateKind, InvocationRoutePlan, InvocationRouting, InvocationShape,
     InvocationSubject, ResolvedProviderSecret,
@@ -63,8 +63,6 @@ fn candidate(supplier_code: &str, account_id: i64) -> InvocationRouteCandidate {
         account_group_id: Some(10),
         account_group_code: Some("standard-group".to_owned()),
         pricing_plan_code: Some("standard".to_owned()),
-        policy_id: Some(1),
-        rule_id: Some(2),
         api_code: "openai.chat_completions".to_owned(),
         catalog_key: Some("openai/gpt-4o-mini".to_owned()),
         requested_model: Some("gpt-4o-mini".to_owned()),
@@ -77,6 +75,7 @@ fn candidate(supplier_code: &str, account_id: i64) -> InvocationRouteCandidate {
         auth_profile: ProviderAuthProfile::default(),
         timeout_ms: None,
         retry_policy: None,
+        billing_mode: AccountBillingMode::Prepay,
     }
 }
 

@@ -51,20 +51,20 @@ Generated from `docs/schema-registry/sdkwork-cloudrouter.tables.yaml`. Do not ed
 | `ai_routing_policy` | Tenant entity for ai routing policy. | `tenant_entity` | `ai-routing-service` | yes |
 | `ai_routing_profile` | Tenant entity for ai routing profile. | `tenant_entity` | `ai-routing-service` | yes |
 | `ai_routing_rule` | Tenant entity for ai routing rule. | `tenant_entity` | `ai-routing-service` | yes |
+| `ai_routing_strategy` | Routing strategy configuration (strategy_code / params / priority / is_default). | `tenant_entity` | `ai-routing-service` | yes |
+| `ai_model_access_policy` | Unified model access rules (scope supplier/account_group + effect allow/deny + vendor_code + model_pattern). | `tenant_entity` | `ai-routing-service` | yes |
+| `ai_resource_binding` | Unified upstream resource binding (binding_scope supplier/account_group/account + grant_type). | `tenant_entity` | `ai-routing-service` | yes |
 | `ai_upstream_account` | Tenant-scoped upstream account linked to one supplier and authentication method. | `tenant_entity` | `ai-routing-service` | yes |
 | `ai_upstream_account_credential` | Encrypted, versioned credential material for an upstream account. | `secret_entity` | `ai-routing-service` | yes |
 | `ai_upstream_account_group` | Routing and settlement group for one or more upstream accounts. | `tenant_entity` | `ai-routing-service` | yes |
 | `ai_upstream_account_group_member` | Weighted membership of upstream accounts in an account group. | `relation_entity` | `ai-routing-service` | yes |
 | `ai_upstream_account_group_metric_snapshot` | Rebuildable capacity and usage projection for an account group. | `projection` | `ai-routing-service` | yes |
-| `ai_upstream_account_group_resource` | Resource grants and denials applied to an account group. | `relation_entity` | `ai-routing-service` | yes |
 | `ai_upstream_account_health_state` | Current health, usage, and failure state for an upstream account. | `operational_state` | `ai-routing-service` | yes |
-| `ai_upstream_account_resource` | Relation entity for ai upstream account resource. | `relation_entity` | `ai-routing-service` | yes |
 | `ai_upstream_object_route` | Runtime object-storage route resolved through an upstream account. | `runtime_binding` | `ai-routing-service` | yes |
 | `ai_upstream_supplier` | Upstream supplier identity and supplier classification. | `tenant_entity` | `ai-routing-service` | yes |
 | `ai_upstream_supplier_auth_method` | Authentication methods supported by a supplier, with runtime injection policy. | `tenant_entity` | `ai-routing-service` | yes |
 | `ai_upstream_supplier_endpoint` | Supplier Base URL endpoint, region, priority, and routing weight. | `tenant_entity` | `ai-routing-service` | yes |
 | `ai_upstream_supplier_endpoint_health_state` | Current health and latency state for a supplier endpoint. | `operational_state` | `ai-routing-service` | yes |
-| `ai_upstream_supplier_resource` | Resource and resource-group capabilities exposed by a supplier. | `relation_entity` | `ai-routing-service` | yes |
 | `ai_vendor_api_endpoint` | Referenced relation entity for ai vendor api endpoint; owned by a dependency registry. | `relation_entity` | `sdkwork-models-platform` | no |
 | `ai_vendor_modality` | Referenced relation entity for ai vendor modality; owned by a dependency registry. | `relation_entity` | `sdkwork-models-platform` | no |
 

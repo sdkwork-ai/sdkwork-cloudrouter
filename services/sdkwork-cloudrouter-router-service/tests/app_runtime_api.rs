@@ -2948,6 +2948,346 @@ async fn app_runtime_gateway_executor_routes_suno_music_generation_to_provider_m
 }
 
 #[tokio::test]
+async fn app_runtime_gateway_executor_routes_openai_video_generation_to_gateway_videos_and_emits_assets(
+) {
+    let store = Arc::new(TestAppRuntimeStore::with_invocation(
+        AppRuntimeInvocationRecord {
+            item: AppRuntimeInvocationItem {
+                status: "streaming".to_owned(),
+                runtime: "openai_compatible".to_owned(),
+                endpoint: Some("agent.stream".to_owned()),
+                model: Some("openai/video-1".to_owned()),
+                provider: Some("openai".to_owned()),
+                ..sample_invocation()
+            },
+            request_json: json!({
+                "prompt": "ocean wave at sunset",
+                "selectedModel": "openai/video-1",
+                "targetType": "video",
+                "generationConfig": {
+                    "durationSeconds": 8,
+                    "aspectRatio": "16:9"
+                }
+            }),
+            metadata: json!({"surface": "playground"}),
+        },
+    ));
+    store.list_events_items.lock().unwrap().clear();
+    let gateway_requests = Arc::new(Mutex::new(Vec::new()));
+    let router =
+        sdkwork_cloudrouter_router_service::api::app_runtime_router_with_store_and_gateway_client(
+            store.clone(),
+            Arc::new(SequentialUuidGenerator::new(vec!["runtime-event-uuid-1"])),
+            Arc::new(TestRuntimeCatalog::with_model_format(
+                "openai/video-1",
+                Some("openai_compatible"),
+            )),
+            Arc::new(RecordingGatewayRuntimeClient::new(Arc::clone(
+                &gateway_requests,
+            ))),
+        );
+
+    let response = runtime_stream_request(router).await;
+
+    assert_eq!(StatusCode::OK, response.status());
+    let body = response_text(response).await;
+    assert!(body.contains(r#""eventType":"generation.asset""#), "{body}");
+    assert!(
+        body.contains("https://cdn.example.test/generated/veo.mp4"),
+        "{body}"
+    );
+    assert!(body.ends_with("data: [DONE]\n\n"), "{body}");
+
+    let gateway_requests = gateway_requests.lock().unwrap();
+    assert_eq!(1, gateway_requests.len());
+    assert_eq!(Method::POST, gateway_requests[0].method);
+    assert_eq!("/v1/videos/generations", gateway_requests[0].path);
+    assert_eq!("openai/video-1", gateway_requests[0].body["model"]);
+    assert_eq!("ocean wave at sunset", gateway_requests[0].body["prompt"]);
+    assert_eq!(8, gateway_requests[0].body["duration"]);
+    assert_eq!("16:9", gateway_requests[0].body["aspect_ratio"]);
+    assert!(gateway_requests[0].body.get("generationConfig").is_none());
+    assert!(gateway_requests[0].body.get("targetType").is_none());
+
+    let event_commands = store.create_event_commands.lock().unwrap();
+    let asset_event = single_event_command_of_type(&event_commands, "generation.asset");
+    assert_eq!("video", asset_event.payload_json["assets"][0]["modality"]);
+    assert_eq!("video", asset_event.payload_json["assets"][0]["asset"]["kind"]);
+    assert_eq!(
+        "https://cdn.example.test/generated/veo.mp4",
+        asset_event.payload_json["assets"][0]["asset"]["url"]
+    );
+    assert_runtime_completed_event_recorded(&event_commands);
+}
+
+#[tokio::test]
+async fn app_runtime_gateway_executor_routes_gemini_video_generation_to_provider_generate_videos() {
+    let store = Arc::new(TestAppRuntimeStore::with_invocation(
+        AppRuntimeInvocationRecord {
+            item: AppRuntimeInvocationItem {
+                status: "streaming".to_owned(),
+                runtime: "openai_compatible".to_owned(),
+                endpoint: Some("agent.stream".to_owned()),
+                model: Some("google/veo-3.0-generate-001".to_owned()),
+                provider: Some("google".to_owned()),
+                ..sample_invocation()
+            },
+            request_json: json!({
+                "prompt": "tide rolling in",
+                "selectedModel": "google/veo-3.0-generate-001",
+                "targetType": "video",
+                "generationConfig": {
+                    "durationSeconds": 8,
+                    "aspectRatio": "16:9"
+                }
+            }),
+            metadata: json!({"surface": "playground"}),
+        },
+    ));
+    store.list_events_items.lock().unwrap().clear();
+    let gateway_requests = Arc::new(Mutex::new(Vec::new()));
+    let router =
+        sdkwork_cloudrouter_router_service::api::app_runtime_router_with_store_and_gateway_client(
+            store.clone(),
+            Arc::new(SequentialUuidGenerator::new(vec!["runtime-event-uuid-1"])),
+            Arc::new(TestRuntimeCatalog::with_model_format(
+                "google/veo-3.0-generate-001",
+                Some("vendor_native"),
+            )),
+            Arc::new(RecordingGatewayRuntimeClient::new(Arc::clone(
+                &gateway_requests,
+            ))),
+        );
+
+    let response = runtime_stream_request(router).await;
+
+    assert_eq!(StatusCode::OK, response.status());
+    let body = response_text(response).await;
+    assert!(body.contains(r#""eventType":"generation.asset""#), "{body}");
+    assert!(
+        body.contains("https://cdn.example.test/generated/veo.mp4"),
+        "{body}"
+    );
+
+    let gateway_requests = gateway_requests.lock().unwrap();
+    assert_eq!(1, gateway_requests.len());
+    assert_eq!(Method::POST, gateway_requests[0].method);
+    assert_eq!(
+        "/provider/google/v1beta/models/veo-3.0-generate-001:generateVideos",
+        gateway_requests[0].path
+    );
+    assert_eq!(
+        "tide rolling in",
+        gateway_requests[0].body["instances"][0]["prompt"]
+    );
+    assert_eq!(8, gateway_requests[0].body["parameters"]["durationSeconds"]);
+    assert_eq!(
+        "16:9",
+        gateway_requests[0].body["parameters"]["aspectRatio"]
+    );
+
+    let event_commands = store.create_event_commands.lock().unwrap();
+    let asset_event = single_event_command_of_type(&event_commands, "generation.asset");
+    assert_eq!("video", asset_event.payload_json["assets"][0]["modality"]);
+    assert_runtime_completed_event_recorded(&event_commands);
+}
+
+#[tokio::test]
+async fn app_runtime_gateway_executor_routes_kling_video_generation_to_provider_text2video() {
+    let store = Arc::new(TestAppRuntimeStore::with_invocation(
+        AppRuntimeInvocationRecord {
+            item: AppRuntimeInvocationItem {
+                status: "streaming".to_owned(),
+                runtime: "openai_compatible".to_owned(),
+                endpoint: Some("agent.stream".to_owned()),
+                model: Some("kling/kling-v2".to_owned()),
+                provider: Some("kling".to_owned()),
+                ..sample_invocation()
+            },
+            request_json: json!({
+                "prompt": "city skyline at night",
+                "selectedModel": "kling/kling-v2",
+                "targetType": "video",
+                "generationConfig": {
+                    "durationSeconds": 8
+                }
+            }),
+            metadata: json!({"surface": "playground"}),
+        },
+    ));
+    store.list_events_items.lock().unwrap().clear();
+    let gateway_requests = Arc::new(Mutex::new(Vec::new()));
+    let router =
+        sdkwork_cloudrouter_router_service::api::app_runtime_router_with_store_and_gateway_client(
+            store.clone(),
+            Arc::new(SequentialUuidGenerator::new(vec!["runtime-event-uuid-1"])),
+            Arc::new(TestRuntimeCatalog::with_model_format(
+                "kling/kling-v2",
+                Some("vendor_native"),
+            )),
+            Arc::new(RecordingGatewayRuntimeClient::new(Arc::clone(
+                &gateway_requests,
+            ))),
+        );
+
+    let response = runtime_stream_request(router).await;
+
+    assert_eq!(StatusCode::OK, response.status());
+    let body = response_text(response).await;
+    assert!(body.contains(r#""eventType":"generation.asset""#), "{body}");
+    assert!(
+        body.contains("https://cdn.example.test/generated/veo.mp4"),
+        "{body}"
+    );
+
+    let gateway_requests = gateway_requests.lock().unwrap();
+    assert_eq!(1, gateway_requests.len());
+    assert_eq!(Method::POST, gateway_requests[0].method);
+    assert_eq!(
+        "/provider/kling/v1/videos/text2video",
+        gateway_requests[0].path
+    );
+    assert_eq!("kling-v2", gateway_requests[0].body["model"]);
+    assert_eq!("city skyline at night", gateway_requests[0].body["prompt"]);
+    assert_eq!(8, gateway_requests[0].body["duration"]);
+
+    let event_commands = store.create_event_commands.lock().unwrap();
+    let asset_event = single_event_command_of_type(&event_commands, "generation.asset");
+    assert_eq!("video", asset_event.payload_json["assets"][0]["modality"]);
+    assert_runtime_completed_event_recorded(&event_commands);
+}
+
+#[tokio::test]
+async fn app_runtime_gateway_executor_routes_vidu_video_generation_to_provider_start_end2video() {
+    let store = Arc::new(TestAppRuntimeStore::with_invocation(
+        AppRuntimeInvocationRecord {
+            item: AppRuntimeInvocationItem {
+                status: "streaming".to_owned(),
+                runtime: "openai_compatible".to_owned(),
+                endpoint: Some("agent.stream".to_owned()),
+                model: Some("vidu/vidu-v2".to_owned()),
+                provider: Some("vidu".to_owned()),
+                ..sample_invocation()
+            },
+            request_json: json!({
+                "prompt": "sunset over the sea",
+                "selectedModel": "vidu/vidu-v2",
+                "targetType": "video",
+                "generationConfig": {
+                    "durationSeconds": 8
+                }
+            }),
+            metadata: json!({"surface": "playground"}),
+        },
+    ));
+    store.list_events_items.lock().unwrap().clear();
+    let gateway_requests = Arc::new(Mutex::new(Vec::new()));
+    let router =
+        sdkwork_cloudrouter_router_service::api::app_runtime_router_with_store_and_gateway_client(
+            store.clone(),
+            Arc::new(SequentialUuidGenerator::new(vec!["runtime-event-uuid-1"])),
+            Arc::new(TestRuntimeCatalog::with_model_format(
+                "vidu/vidu-v2",
+                Some("vendor_native"),
+            )),
+            Arc::new(RecordingGatewayRuntimeClient::new(Arc::clone(
+                &gateway_requests,
+            ))),
+        );
+
+    let response = runtime_stream_request(router).await;
+
+    assert_eq!(StatusCode::OK, response.status());
+    let body = response_text(response).await;
+    assert!(body.contains(r#""eventType":"generation.asset""#), "{body}");
+    assert!(
+        body.contains("https://cdn.example.test/generated/veo.mp4"),
+        "{body}"
+    );
+
+    let gateway_requests = gateway_requests.lock().unwrap();
+    assert_eq!(1, gateway_requests.len());
+    assert_eq!(Method::POST, gateway_requests[0].method);
+    assert_eq!(
+        "/provider/vidu/ent/v2/start-end2video",
+        gateway_requests[0].path
+    );
+    assert_eq!("vidu-v2", gateway_requests[0].body["model"]);
+    assert_eq!("sunset over the sea", gateway_requests[0].body["prompt"]);
+    assert_eq!(8, gateway_requests[0].body["duration"]);
+
+    let event_commands = store.create_event_commands.lock().unwrap();
+    let asset_event = single_event_command_of_type(&event_commands, "generation.asset");
+    assert_eq!("video", asset_event.payload_json["assets"][0]["modality"]);
+    assert_runtime_completed_event_recorded(&event_commands);
+}
+
+#[tokio::test]
+async fn app_runtime_gateway_executor_routes_seedance_video_generation_to_provider_volcengine() {
+    let store = Arc::new(TestAppRuntimeStore::with_invocation(
+        AppRuntimeInvocationRecord {
+            item: AppRuntimeInvocationItem {
+                status: "streaming".to_owned(),
+                runtime: "openai_compatible".to_owned(),
+                endpoint: Some("agent.stream".to_owned()),
+                model: Some("volcengine/seedance-1.0".to_owned()),
+                provider: Some("volcengine".to_owned()),
+                ..sample_invocation()
+            },
+            request_json: json!({
+                "prompt": "aurora borealis",
+                "selectedModel": "volcengine/seedance-1.0",
+                "targetType": "video",
+                "generationConfig": {
+                    "durationSeconds": 8
+                }
+            }),
+            metadata: json!({"surface": "playground"}),
+        },
+    ));
+    store.list_events_items.lock().unwrap().clear();
+    let gateway_requests = Arc::new(Mutex::new(Vec::new()));
+    let router =
+        sdkwork_cloudrouter_router_service::api::app_runtime_router_with_store_and_gateway_client(
+            store.clone(),
+            Arc::new(SequentialUuidGenerator::new(vec!["runtime-event-uuid-1"])),
+            Arc::new(TestRuntimeCatalog::with_model_format(
+                "volcengine/seedance-1.0",
+                Some("vendor_native"),
+            )),
+            Arc::new(RecordingGatewayRuntimeClient::new(Arc::clone(
+                &gateway_requests,
+            ))),
+        );
+
+    let response = runtime_stream_request(router).await;
+
+    assert_eq!(StatusCode::OK, response.status());
+    let body = response_text(response).await;
+    assert!(body.contains(r#""eventType":"generation.asset""#), "{body}");
+    assert!(
+        body.contains("https://cdn.example.test/generated/veo.mp4"),
+        "{body}"
+    );
+
+    let gateway_requests = gateway_requests.lock().unwrap();
+    assert_eq!(1, gateway_requests.len());
+    assert_eq!(Method::POST, gateway_requests[0].method);
+    assert_eq!(
+        "/provider/volcengine/v1/videos/generations",
+        gateway_requests[0].path
+    );
+    assert_eq!("seedance-1.0", gateway_requests[0].body["model"]);
+    assert_eq!("aurora borealis", gateway_requests[0].body["prompt"]);
+    assert_eq!(8, gateway_requests[0].body["duration"]);
+
+    let event_commands = store.create_event_commands.lock().unwrap();
+    let asset_event = single_event_command_of_type(&event_commands, "generation.asset");
+    assert_eq!("video", asset_event.payload_json["assets"][0]["modality"]);
+    assert_runtime_completed_event_recorded(&event_commands);
+}
+
+#[tokio::test]
 async fn app_runtime_gateway_executor_routes_openai_audio_generation_to_audio_speech_and_emits_assets(
 ) {
     let store = Arc::new(TestAppRuntimeStore::with_invocation(
@@ -3948,47 +4288,6 @@ impl sdkwork_cloudrouter_router_service::ports::PricingCatalog for TestRuntimeCa
         ]
     }
 
-    fn list_routing_policies(
-        &self,
-    ) -> Vec<sdkwork_cloudrouter_router_service::domain::RoutingPolicy> {
-        vec![
-            sdkwork_cloudrouter_router_service::domain::RoutingPolicy::new(
-                9001,
-                TEST_TENANT_ID,
-                TEST_ORGANIZATION_ID,
-                "standard-chat",
-                sdkwork_cloudrouter_router_service::domain::RoutingPolicyScope::UpstreamAccountGroup,
-                Some(10),
-                Some(9101),
-            )
-            .with_capability(sdkwork_cloudrouter_router_service::domain::RoutingCapability::Chat),
-        ]
-    }
-
-    fn list_routing_rules(
-        &self,
-        profile_id: i64,
-    ) -> Vec<sdkwork_cloudrouter_router_service::domain::RoutingRule> {
-        if profile_id != 9101 {
-            return Vec::new();
-        }
-        vec![
-            sdkwork_cloudrouter_router_service::domain::RoutingRule::new(
-                9102,
-                TEST_TENANT_ID,
-                TEST_ORGANIZATION_ID,
-                9101,
-                "openai-chat",
-                1,
-                &format!(r#"{{"catalogKey":"{}"}}"#, self.catalog_key),
-                &self.catalog_key,
-            )
-            .with_candidate_account_groups(vec![
-                sdkwork_cloudrouter_router_service::domain::RouteCandidate::new(10, 100),
-            ]),
-        ]
-    }
-
     fn list_model_mappings(
         &self,
     ) -> Vec<sdkwork_cloudrouter_router_service::domain::ModelMappingRule> {
@@ -4548,6 +4847,15 @@ impl AppRuntimeGatewayClient for RecordingGatewayRuntimeClient {
                 Body::from("audio-bytes")
             } else if request.path == "/v1/responses" {
                 Body::from("{\"id\":\"resp_1\",\"output_text\":\"hello\"}")
+            } else if request.path == "/v1/videos/generations"
+                || request.path.starts_with("/provider/kling/v1/videos/")
+                || request.path == "/provider/vidu/ent/v2/start-end2video"
+                || request.path == "/provider/volcengine/v1/videos/generations"
+                || request.path.contains(":generateVideos")
+            {
+                Body::from(
+                    "{\"id\":\"video_task_1\",\"data\":[{\"url\":\"https://cdn.example.test/generated/veo.mp4\",\"mimeType\":\"video/mp4\",\"durationSeconds\":8}],\"usage\":{\"total_tokens\":11}}",
+                )
             } else if response_kind == GatewayResponseKind::GeminiImage {
                 Body::from(
                     "data: {\"candidates\":[{\"content\":{\"parts\":[{\"inlineData\":{\"mimeType\":\"image/png\",\"data\":\"aW1hZ2UtYnl0ZXM=\"}}]}}]}\n\n\
@@ -4582,6 +4890,11 @@ impl AppRuntimeGatewayClient for RecordingGatewayRuntimeClient {
             } else if request.path == "/v1/responses"
                 || request.path == "/v1/images/generations"
                 || request.path == "/v1/images/edits"
+                || request.path == "/v1/videos/generations"
+                || request.path.starts_with("/provider/kling/v1/videos/")
+                || request.path == "/provider/vidu/ent/v2/start-end2video"
+                || request.path == "/provider/volcengine/v1/videos/generations"
+                || request.path.contains(":generateVideos")
                 || request.path == "/provider/suno/v1/music/generations"
                 || request
                     .path

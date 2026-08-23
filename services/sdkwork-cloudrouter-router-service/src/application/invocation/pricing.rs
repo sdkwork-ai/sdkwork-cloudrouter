@@ -267,13 +267,10 @@ where
         .with_provider(account.supplier_code.clone(), Some(account.account_id))
         .with_region_code(account.region_code.clone())
         .with_api_code(invocation.resource.api_code.clone())
-        .with_product_operation(
-            catalog_key
-                .rsplit('/')
-                .next()
-                .unwrap_or(catalog_key.as_str()),
-            invocation.resource.api_code.as_str(),
-        )
+        // product/operation code 不在此处推断填充：条件定价（rate_metadata）
+        // 的 product_code/operation_code 以定价目录为准，若用模型名/api_code
+        // 强塞会导致 resource_mismatch 将合法条件价格误判为不匹配。
+        // 与 openai_usage.rs 的 resource 构造保持一致（字段保持 None）。
         .with_dimensions(dimensions);
     if let Some(model) = invocation.resource.requested_model.as_deref() {
         resource = resource.with_model(model);

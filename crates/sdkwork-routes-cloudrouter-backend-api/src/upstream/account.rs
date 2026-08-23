@@ -23,10 +23,24 @@ use super::shared::{
     MAX_CODE_LENGTH, MAX_PROTOCOLS,
 };
 use super::supplier::ResourceResponse;
+use super::{model_list, ModelListEntryInput, ModelListEntryResponse};
 
 const MAX_NAME_LENGTH: usize = 200;
 const MAX_SECRET_LENGTH: usize = 65_536;
 const ACCOUNT_CREATE_IDEMPOTENCY_SCOPE: i64 = 1_000_002;
+
+/// 归一化计费模式；空值/未知回退默认 prepay（预扣）。
+fn normalize_billing_mode(value: Option<&str>) -> String {
+    match value
+        .map(str::trim)
+        .unwrap_or_default()
+        .to_ascii_lowercase()
+        .as_str()
+    {
+        "postpay" | "postpaid" => "postpay".to_owned(),
+        _ => "prepay".to_owned(),
+    }
+}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -50,6 +64,10 @@ struct AccountCreateRequest {
     rpm_limit: Option<i64>,
     timeout_ms: Option<i32>,
     status: Option<i32>,
+    billing_mode: Option<String>,
+    /// 账号级模型黑白名单（scope_type='account'；deny 行 → 黑名单，allow 行 → 白名单）。
+    model_blacklist: Option<Vec<ModelListEntryInput>>,
+    model_whitelist: Option<Vec<ModelListEntryInput>>,
     api_key: Option<String>,
 }
 
@@ -78,6 +96,10 @@ struct AccountUpdateRequest {
     rpm_limit: Option<i64>,
     timeout_ms: Option<i32>,
     status: Option<i32>,
+    billing_mode: Option<String>,
+    /// 账号级模型黑白名单；缺省 = 保持当前；空数组 = 清除全部规则。
+    model_blacklist: Option<Vec<ModelListEntryInput>>,
+    model_whitelist: Option<Vec<ModelListEntryInput>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -137,6 +159,9 @@ struct AccountResponse {
     contract_cost_multiplier: String,
     rpm_limit: Option<String>,
     timeout_ms: Option<i32>,
+    billing_mode: String,
+    model_blacklist: Vec<ModelListEntryResponse>,
+    model_whitelist: Vec<ModelListEntryResponse>,
     health_status: i32,
     status: i32,
     version: String,
@@ -663,6 +688,9 @@ fn create_command(
         rpm_limit: non_negative_i64(request.rpm_limit, "rpmLimit")?,
         timeout_ms: positive_i32(request.timeout_ms, "timeoutMs")?,
         status: status(request.status.unwrap_or(1))?,
+        billing_mode: normalize_billing_mode(request.billing_mode.as_deref()),
+        model_blacklist: model_list("account", request.model_blacklist)?,
+        model_whitelist: model_list("account", request.model_whitelist)?,
         api_key: optional_text(request.api_key, "apiKey", MAX_SECRET_LENGTH)?,
         requested_at: requested_at(),
     })
@@ -799,6 +827,20 @@ fn update_command(
             None => existing.timeout_ms,
         },
         status: status(request.status.unwrap_or(existing.status))?,
+        billing_mode: normalize_billing_mode(Some(
+            request
+                .billing_mode
+                .as_deref()
+                .unwrap_or(existing.billing_mode.as_str()),
+        )),
+        model_blacklist: match request.model_blacklist {
+            Some(values) => model_list("account", Some(values))?,
+            None => existing.model_blacklist,
+        },
+        model_whitelist: match request.model_whitelist {
+            Some(values) => model_list("account", Some(values))?,
+            None => existing.model_whitelist,
+        },
         api_key: None,
         requested_at: requested_at(),
     })
@@ -929,6 +971,23 @@ impl From<AdminUpstreamAccountItem> for AccountResponse {
             contract_cost_multiplier: item.contract_cost_multiplier,
             rpm_limit: item.rpm_limit.map(|value| value.to_string()),
             timeout_ms: item.timeout_ms,
+            billing_mode: item.billing_mode,
+            model_blacklist: item
+                .model_blacklist
+                .into_iter()
+                .map(|entry| ModelListEntryResponse {
+                    vendor_code: entry.vendor_code,
+                    models: entry.models,
+                })
+                .collect(),
+            model_whitelist: item
+                .model_whitelist
+                .into_iter()
+                .map(|entry| ModelListEntryResponse {
+                    vendor_code: entry.vendor_code,
+                    models: entry.models,
+                })
+                .collect(),
             health_status: item.health_status,
             status: item.status,
             version: item.version.to_string(),
@@ -1108,6 +1167,9 @@ mod tests {
             contract_cost_multiplier: "1.000000000000".to_owned(),
             rpm_limit: None,
             timeout_ms: None,
+            billing_mode: "prepay".to_owned(),
+            model_blacklist: Vec::new(),
+            model_whitelist: Vec::new(),
             health_status: 1,
             status: 1,
             version: 3,
@@ -1135,6 +1197,11 @@ mod tests {
                 rpm_limit: None,
                 timeout_ms: None,
                 status: None,
+
+
+                billing_mode: None,
+                model_blacklist: None,
+                model_whitelist: None,
             },
         )
         .expect("keep preferred endpoint");
@@ -1166,6 +1233,11 @@ mod tests {
                 rpm_limit: None,
                 timeout_ms: None,
                 status: None,
+
+
+                billing_mode: None,
+                model_blacklist: None,
+                model_whitelist: None,
             },
         )
         .expect("clear preferred endpoint");
@@ -1194,6 +1266,11 @@ mod tests {
                 rpm_limit: None,
                 timeout_ms: None,
                 status: None,
+
+
+                billing_mode: None,
+                model_blacklist: None,
+                model_whitelist: None,
             },
         )
         .expect("rebind preferred endpoint");
@@ -1295,6 +1372,11 @@ mod tests {
                 rpm_limit: None,
                 timeout_ms: None,
                 status: None,
+
+
+                billing_mode: None,
+                model_blacklist: None,
+                model_whitelist: None,
                 api_key: None,
             },
         )
@@ -1328,6 +1410,9 @@ mod tests {
                 rpm_limit: None,
                 timeout_ms: None,
                 status: None,
+                billing_mode: None,
+                model_blacklist: None,
+                model_whitelist: None,
                 api_key: None,
             },
         )

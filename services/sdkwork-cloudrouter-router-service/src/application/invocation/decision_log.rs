@@ -88,9 +88,7 @@ where
 }
 
 fn has_decision_facts(invocation: &Invocation) -> bool {
-    invocation.routing.policy_id.is_some()
-        || invocation.routing.rule_id.is_some()
-        || invocation.routing.route_plan.is_some()
+    invocation.routing.route_plan.is_some()
 }
 
 fn observe_recording_failure(invocation: &Invocation, error: &crate::domain::DomainError) {
@@ -173,9 +171,6 @@ where
         account_group_code: account
             .and_then(|account| account.account_group_code.clone())
             .or_else(|| invocation.subject.account_group_code.clone()),
-        policy_id: invocation.routing.policy_id,
-        profile_id: None,
-        rule_id: invocation.routing.rule_id,
         requested_model,
         resolved_model,
         capability: Some(invocation.resource.capability.code()),
@@ -271,8 +266,6 @@ fn redacted_candidate_json(candidate: &InvocationRouteCandidate) -> Value {
         "accountId": candidate.account_id,
         "accountGroupId": candidate.account_group_id,
         "accountGroupCode": candidate.account_group_code,
-        "policyId": candidate.policy_id,
-        "ruleId": candidate.rule_id,
         "apiCode": candidate.api_code,
         "catalogKey": candidate.catalog_key,
         "requestedModel": candidate.requested_model,

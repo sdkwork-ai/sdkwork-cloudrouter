@@ -1,7 +1,8 @@
 use axum::http::{header, HeaderName, HeaderValue, Method};
 use sdkwork_cloudrouter_provider_adapter_contract::AdapterInvocationShape;
 use sdkwork_cloudrouter_router_service::application::{
-    AuthenticatedApiKeyContext, Invocation, InvocationAccount, InvocationAdapterTarget,
+    AccountBillingMode, AuthenticatedApiKeyContext, Invocation, InvocationAccount,
+    InvocationAdapterTarget,
     InvocationBilling, InvocationBody, InvocationInterceptor, InvocationRequest,
     InvocationResource, InvocationShape, InvocationSubject, RequestTransformInterceptor,
     SecretResolutionInterceptor,
@@ -74,6 +75,7 @@ fn invocation_with_auth(auth_profile: ProviderAuthProfile) -> Invocation {
         timeout_ms: Some(30_000),
         retry_policy: None,
         provider_model: Some("gpt-4o-mini-provider".to_owned()),
+        billing_mode: AccountBillingMode::Prepay,
         account_group_id: None,
         account_group_code: None,
         pricing_plan_code: None,

@@ -17202,7 +17202,7 @@
         "ai_upstream_account_group",
         "ai_upstream_account_group_member",
         "ai_upstream_account",
-        "ai_upstream_account_group_resource",
+        "ai_resource_binding",
         "ai_resource",
         "ai_resource_group",
         "iam_gateway_api_key",
@@ -18136,7 +18136,7 @@
       "query_parameters_declared": true,
       "read_sources": [
         "ai_upstream_account_group",
-        "ai_upstream_account_group_resource",
+        "ai_resource_binding",
         "ai_resource",
         "ai_resource_group"
       ],
@@ -18533,7 +18533,7 @@
       "query_parameters_declared": true,
       "read_sources": [
         "ai_upstream_account",
-        "ai_upstream_account_resource",
+        "ai_resource_binding",
         "ai_resource",
         "ai_resource_group"
       ],
@@ -19141,7 +19141,7 @@
       "query_parameters_declared": true,
       "read_sources": [
         "ai_upstream_supplier",
-        "ai_upstream_supplier_resource",
+        "ai_resource_binding",
         "ai_resource",
         "ai_resource_group"
       ],
@@ -20045,7 +20045,7 @@
       "query_parameters_declared": false,
       "read_sources": [
         "ai_upstream_account_group",
-        "ai_upstream_account_group_resource",
+        "ai_resource_binding",
         "ai_resource",
         "ai_resource_group"
       ],
@@ -20149,7 +20149,7 @@
       "tag": "ai",
       "write_tables": [
         "ai_upstream_account_group",
-        "ai_upstream_account_group_resource",
+        "ai_resource_binding",
         "ai_resource",
         "ai_resource_group",
         "ops_audit_log",
@@ -20176,7 +20176,7 @@
       "query_parameters_declared": false,
       "read_sources": [
         "ai_upstream_account",
-        "ai_upstream_account_resource",
+        "ai_resource_binding",
         "ai_resource",
         "ai_resource_group"
       ],
@@ -20280,7 +20280,7 @@
       "tag": "ai",
       "write_tables": [
         "ai_upstream_account",
-        "ai_upstream_account_resource",
+        "ai_resource_binding",
         "ai_resource",
         "ai_resource_group",
         "ops_audit_log",
@@ -20789,7 +20789,7 @@
       "query_parameters_declared": false,
       "read_sources": [
         "ai_upstream_supplier",
-        "ai_upstream_supplier_resource",
+        "ai_resource_binding",
         "ai_resource",
         "ai_resource_group"
       ],
@@ -20893,7 +20893,7 @@
       "tag": "ai",
       "write_tables": [
         "ai_upstream_supplier",
-        "ai_upstream_supplier_resource",
+        "ai_resource_binding",
         "ai_resource",
         "ai_resource_group",
         "ops_audit_log",
@@ -21528,7 +21528,7 @@
       "read_sources": [
         "ai_upstream_account_group",
         "ai_upstream_account_group_member",
-        "ai_upstream_account_group_resource",
+        "ai_resource_binding",
         "ai_upstream_account",
         "ai_upstream_supplier"
       ],
@@ -23521,7 +23521,7 @@
       "read_sources": [
         "ai_upstream_account_group",
         "ai_upstream_account_group_member",
-        "ai_upstream_account_group_resource",
+        "ai_resource_binding",
         "ai_upstream_account",
         "ai_upstream_supplier"
       ],
@@ -23702,7 +23702,7 @@
         "ai_upstream_account",
         "ai_upstream_account_group",
         "ai_upstream_account_group_member",
-        "ai_upstream_account_group_resource"
+        "ai_resource_binding"
       ],
       "request_body_required": null,
       "request_id_header": false,
@@ -24282,7 +24282,7 @@
         "ai_upstream_account",
         "ai_upstream_account_group",
         "ai_upstream_account_group_member",
-        "ai_upstream_account_group_resource"
+        "ai_resource_binding"
       ],
       "request_body_required": null,
       "request_id_header": false,
@@ -26093,7 +26093,7 @@
         "ai_upstream_account",
         "ai_upstream_account_group",
         "ai_upstream_account_group_member",
-        "ai_upstream_account_group_resource"
+        "ai_resource_binding"
       ],
       "request_body_required": null,
       "request_id_header": false,
@@ -29991,7 +29991,7 @@
       "read_sources": [
         "ai_upstream_account_group",
         "ai_upstream_account_group_member",
-        "ai_upstream_account_group_resource",
+        "ai_resource_binding",
         "ai_upstream_account",
         "ai_upstream_supplier"
       ],

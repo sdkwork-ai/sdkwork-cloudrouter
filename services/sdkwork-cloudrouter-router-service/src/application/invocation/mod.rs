@@ -25,6 +25,7 @@ mod request_transform;
 mod resource;
 mod response_normalization;
 mod route_planning;
+mod routing_pipeline;
 mod routing;
 mod routing_filter;
 mod secrets;
@@ -39,7 +40,7 @@ mod usage;
 mod usage_extraction;
 mod usage_recording;
 
-pub use account::InvocationAccount;
+pub use account::{AccountBillingMode, InvocationAccount};
 pub use account_resolution::AccountResolutionInterceptor;
 pub use billing::{BillingMode, BillingQuantitySource, InvocationBilling};
 pub use billing_policy::BillingPolicyInterceptor;
@@ -78,6 +79,7 @@ pub use request_transform::RequestTransformInterceptor;
 pub use resource::{InvocationResource, InvocationSurface, ResourceType};
 pub use response_normalization::ResponseNormalizationInterceptor;
 pub use route_planning::RoutePlanningInterceptor;
+pub use routing_pipeline::{RouteKind, RoutingPipeline};
 pub use routing::{
     InvocationRouteAttempt, InvocationRouteCandidate, InvocationRouteCandidateKind,
     InvocationRoutePlan, InvocationRouting, StickyMode, StickyRouteConstraint, StickyRouting,

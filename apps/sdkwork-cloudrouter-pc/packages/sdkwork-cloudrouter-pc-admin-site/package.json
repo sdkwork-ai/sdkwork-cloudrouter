@@ -12,7 +12,8 @@
     "@sdkwork/cloudrouter-pc-admin-core": "workspace:*",
     "@sdkwork/cloudroutes-pc-commons": "workspace:*",
     "@sdkwork/drive-app-sdk": "workspace:*",
-    "@sdkwork/ui-pc-react": "workspace:*"
+    "@sdkwork/ui-pc-react": "workspace:*",
+    "@sdkwork/utils": "workspace:*"
   },
   "peerDependencies": {
     "lucide-react": ">=0.500.0 <1.0.0",

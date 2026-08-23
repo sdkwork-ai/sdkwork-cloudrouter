@@ -254,9 +254,6 @@ modules:
     - ai_upstream_account_group
     - ai_upstream_account_group_member
     - ai_upstream_account_group_metric_snapshot
-    - ai_upstream_account_group_resource
-    - ai_upstream_account_resource
-    - ai_upstream_supplier_resource
     - ai_config_version
     - ai_config_change_event
     - ai_model_mapping_rule
@@ -272,6 +269,9 @@ modules:
     - ai_upstream_supplier_endpoint
     - ai_upstream_supplier_endpoint_health_state
     - ai_upstream_supplier_auth_method
+    - ai_routing_strategy
+    - ai_model_access_policy
+    - ai_resource_binding
     ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
   ai-metering:
     owner: cloud-router-platform
@@ -2039,6 +2039,73 @@ tables:
   generated_by_this_project: false
   imported: true
   imported_from_module: sdkwork-models
+- table: ai_model_access_policy
+  domain: ai
+  profile: tenant_entity
+  soft_delete_policy: full_lifecycle_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  frontend_routes:
+  - /admin/upstream
+  - /models
+  columns:
+    scope_type:
+      type: string(32)
+      constraints: NOT NULL
+    scope_id:
+      type: int64
+      constraints: NOT NULL
+    scope_code:
+      type: string(64)
+    effect:
+      type: string(16)
+      constraints: NOT NULL
+    vendor_code:
+      type: string(64)
+    model_pattern:
+      type: string(256)
+    modalities:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    description: string(512)
+  unique_constraints:
+  - name: uk_ai_model_access_policy_uuid
+    columns:
+    - uuid
+  - name: uk_ai_model_access_policy_scope_rule
+    columns:
+    - tenant_id
+    - organization_id
+    - scope_type
+    - scope_id
+    - effect
+    - vendor_code
+    - model_pattern
+  check_constraints:
+  - name: ck_ai_model_access_policy_scope
+    expression: scope_type IN ('supplier', 'account_group')
+  - name: ck_ai_model_access_policy_effect
+    expression: effect IN ('allow', 'deny') AND priority >= 0
+  indexes:
+  - name: idx_ai_model_access_policy_scope_status
+    columns:
+    - tenant_id
+    - organization_id
+    - scope_type
+    - scope_id
+    - status
+    - priority
+    - id
+  imported: false
 - table: ai_model_api_endpoint
   domain: ai
   profile: relation_entity
@@ -3268,6 +3335,85 @@ tables:
   generated_by_this_project: false
   imported: true
   imported_from_module: sdkwork-models
+- table: ai_resource_binding
+  domain: ai
+  profile: tenant_entity
+  soft_delete_policy: full_lifecycle_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  frontend_routes:
+  - /admin/upstream
+  - /admin/resources
+  - /models
+  columns:
+    binding_scope:
+      type: string(32)
+      constraints: NOT NULL
+    supplier_id: int64
+    supplier_code: string(64)
+    account_group_id: int64
+    account_group_code: string(64)
+    account_id: int64
+    account_code: string(64)
+    resource_id: int64
+    resource_code:
+      type: string(192)
+    resource_group_code:
+      type: string(128)
+    grant_type:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'allow'
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    effective_from: instant
+    effective_to: instant
+  unique_constraints:
+  - name: uk_ai_resource_binding_uuid
+    columns:
+    - uuid
+  - name: uk_ai_resource_binding_scope_resource
+    columns:
+    - tenant_id
+    - organization_id
+    - binding_scope
+    - supplier_id
+    - account_group_id
+    - account_id
+    - resource_id
+    - resource_code
+    - resource_group_code
+  check_constraints:
+  - name: ck_ai_resource_binding_scope
+    expression: binding_scope IN ('supplier', 'account_group', 'account')
+  - name: ck_ai_resource_binding_grant
+    expression: grant_type IN ('allow', 'deny') AND priority >= 0
+  - name: ck_ai_resource_binding_target
+    expression: (NULLIF(resource_code, '') IS NOT NULL) <> (NULLIF(resource_group_code,
+      '') IS NOT NULL)
+  indexes:
+  - name: idx_ai_resource_binding_scope_status
+    columns:
+    - tenant_id
+    - organization_id
+    - binding_scope
+    - status
+    - priority
+    - id
+  - name: idx_ai_resource_binding_resource_status
+    columns:
+    - tenant_id
+    - organization_id
+    - resource_code
+    - status
+    - id
+  imported: false
 - table: ai_resource_group
   domain: ai
   profile: dictionary_entity
@@ -3634,6 +3780,79 @@ tables:
     - profile_id
     - priority
     - status
+  imported: false
+- table: ai_routing_strategy
+  domain: ai
+  profile: tenant_entity
+  soft_delete_policy: full_lifecycle_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: ai-routing-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - app
+  - backend
+  - worker
+  frontend_routes:
+  - /admin/routing-strategies
+  columns:
+    strategy_code:
+      type: string(64)
+      constraints: NOT NULL
+    strategy_name:
+      type: string(128)
+      constraints: NOT NULL
+    strategy_name_i18n: json
+    description: string(512)
+    strategy_type:
+      type: string(32)
+      constraints: NOT NULL
+    params:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 100
+    enabled:
+      type: bool
+      constraints: NOT NULL DEFAULT true
+    is_default:
+      type: bool
+      constraints: NOT NULL DEFAULT false
+    tags:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
+  unique_constraints:
+  - name: uk_ai_routing_strategy_uuid
+    columns:
+    - uuid
+  - name: uk_ai_routing_strategy_tenant_code
+    columns:
+    - tenant_id
+    - organization_id
+    - strategy_code
+  check_constraints:
+  - name: ck_ai_routing_strategy_type
+    expression: strategy_type IN ('price_first', 'sticky', 'quality_first', 'latency_first',
+      'weighted', 'round_robin') AND priority >= 0
+  - name: ck_ai_routing_strategy_params
+    expression: jsonb_typeof(params) = 'object'
+  indexes:
+  - name: idx_ai_routing_strategy_tenant_status
+    columns:
+    - tenant_id
+    - organization_id
+    - status
+    - strategy_type
+    - priority
+    - id
+  - name: idx_ai_routing_strategy_tenant_default
+    columns:
+    - tenant_id
+    - organization_id
+    - is_default
+    - enabled
+    - id
   imported: false
 - table: ai_runtime_artifact
   domain: ai
@@ -4086,6 +4305,9 @@ tables:
     contract_cost_multiplier:
       type: decimal
       constraints: NOT NULL DEFAULT 1
+    billing_mode:
+      type: string(32)
+      constraints: NOT NULL DEFAULT 'prepay'
     last_balance_checked_at: instant
     last_rotated_at: instant
     next_rotate_at: instant
@@ -4151,6 +4373,8 @@ tables:
       IS NULL OR upstream_balance_amount >= 0)
   - name: ck_ai_upstream_account_timeout
     expression: timeout_ms IS NULL OR timeout_ms > 0
+  - name: ck_ai_upstream_account_billing_mode
+    expression: billing_mode IN ('prepay', 'postpay')
   indexes:
   - name: uk_ai_upstream_account_scope_id
     unique: true
@@ -4298,6 +4522,9 @@ tables:
     routing_strategy:
       type: string(32)
       constraints: NOT NULL DEFAULT 'weighted'
+    routing_strategy_code:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'price_first'
     fallback_mode:
       type: string(32)
       constraints: NOT NULL DEFAULT 'sequential'
@@ -4566,90 +4793,6 @@ tables:
       - account_group_id
       - snapshot_at
   imported: false
-- table: ai_upstream_account_group_resource
-  domain: ai
-  profile: relation_entity
-  soft_delete_policy: full_lifecycle_unique
-  compliance_level: L2
-  system_of_record: true
-  write_owner: ai-routing-service
-  common_columns: relation_entity
-  api_surfaces:
-  - app
-  - backend
-  - worker
-  frontend_routes:
-  - /admin/upstream
-  - /console/api-keys
-  - /models
-  columns:
-    account_group_id:
-      type: int64
-      constraints: NOT NULL
-    resource_id: int64
-    resource_code:
-      type: string(192)
-      constraints: NOT NULL DEFAULT ''
-    resource_group_id: int64
-    resource_group_code:
-      type: string(128)
-      constraints: NOT NULL DEFAULT ''
-    grant_type:
-      type: string(32)
-      constraints: NOT NULL DEFAULT 'allow'
-    priority:
-      type: int32
-      constraints: NOT NULL DEFAULT 100
-    effective_from: instant
-    effective_to: instant
-  unique_constraints:
-  - name: uk_ai_upstream_account_group_resource_uuid
-    columns:
-    - uuid
-  - name: uk_ai_upstream_account_group_resource
-    columns:
-    - tenant_id
-    - organization_id
-    - account_group_id
-    - resource_code
-    - resource_group_code
-  foreign_keys:
-  - name: fk_ai_upstream_account_group_resource_group
-    columns:
-    - tenant_id
-    - organization_id
-    - account_group_id
-    references_table: ai_upstream_account_group
-    references_columns:
-    - tenant_id
-    - organization_id
-    - id
-    on_delete: RESTRICT
-  check_constraints:
-  - name: ck_ai_upstream_account_group_resource_target
-    expression: (NULLIF(resource_code, '') IS NOT NULL) <> (NULLIF(resource_group_code,
-      '') IS NOT NULL) AND grant_type IN ('allow', 'deny') AND priority >= 0 AND (effective_to
-      IS NULL OR effective_from IS NULL OR effective_to > effective_from)
-  indexes:
-  - name: idx_ai_upstream_account_group_resource_status
-    columns:
-    - tenant_id
-    - organization_id
-    - status
-    - account_group_id
-    - grant_type
-    - priority
-    - id
-  - name: idx_ai_upstream_account_group_resource_lookup
-    columns:
-    - tenant_id
-    - organization_id
-    - account_group_id
-    - status
-    - grant_type
-    - priority
-    - id
-  imported: false
 - table: ai_upstream_account_health_state
   domain: ai
   profile: operational_state
@@ -4714,88 +4857,6 @@ tables:
     cleanup:
       strategy: foreign_key_cascade
       parent_table: ai_upstream_account
-  imported: false
-- table: ai_upstream_account_resource
-  domain: ai
-  profile: relation_entity
-  soft_delete_policy: full_lifecycle_unique
-  compliance_level: L2
-  system_of_record: true
-  write_owner: ai-routing-service
-  common_columns: relation_entity
-  api_surfaces:
-  - app
-  - backend
-  - worker
-  frontend_routes:
-  - /admin/upstream
-  columns:
-    account_id:
-      type: int64
-      constraints: NOT NULL
-    resource_id: int64
-    resource_code:
-      type: string(192)
-      constraints: NOT NULL DEFAULT ''
-    resource_group_id: int64
-    resource_group_code:
-      type: string(128)
-      constraints: NOT NULL DEFAULT ''
-    grant_type:
-      type: string(32)
-      constraints: NOT NULL DEFAULT 'allow'
-    priority:
-      type: int32
-      constraints: NOT NULL DEFAULT 100
-    effective_from: instant
-    effective_to: instant
-  unique_constraints:
-  - name: uk_ai_upstream_account_resource_uuid
-    columns:
-    - uuid
-  - name: uk_ai_upstream_account_resource
-    columns:
-    - tenant_id
-    - organization_id
-    - account_id
-    - resource_code
-    - resource_group_code
-  foreign_keys:
-  - name: fk_ai_upstream_account_resource_account
-    columns:
-    - tenant_id
-    - organization_id
-    - account_id
-    references_table: ai_upstream_account
-    references_columns:
-    - tenant_id
-    - organization_id
-    - id
-    on_delete: RESTRICT
-  check_constraints:
-  - name: ck_ai_upstream_account_resource_target
-    expression: (NULLIF(resource_code, '') IS NOT NULL) <> (NULLIF(resource_group_code,
-      '') IS NOT NULL) AND grant_type IN ('allow', 'deny') AND priority >= 0 AND (effective_to
-      IS NULL OR effective_from IS NULL OR effective_to > effective_from)
-  indexes:
-  - name: idx_ai_upstream_account_resource_status
-    columns:
-    - tenant_id
-    - organization_id
-    - status
-    - account_id
-    - grant_type
-    - priority
-    - id
-  - name: idx_ai_upstream_account_resource_lookup
-    columns:
-    - tenant_id
-    - organization_id
-    - account_id
-    - status
-    - grant_type
-    - priority
-    - id
   imported: false
 - table: ai_upstream_object_route
   domain: ai
@@ -4934,6 +4995,9 @@ tables:
     sort_order:
       type: int32
       constraints: NOT NULL DEFAULT 100
+    supported_resources:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
   unique_constraints:
   - name: uk_ai_upstream_supplier_uuid
     columns:
@@ -5218,84 +5282,6 @@ tables:
     cleanup:
       strategy: foreign_key_cascade
       parent_table: ai_upstream_supplier_endpoint
-  imported: false
-- table: ai_upstream_supplier_resource
-  domain: ai
-  profile: relation_entity
-  soft_delete_policy: full_lifecycle_unique
-  compliance_level: L2
-  system_of_record: true
-  write_owner: ai-routing-service
-  common_columns: relation_entity
-  api_surfaces:
-  - app
-  - backend
-  - worker
-  frontend_routes:
-  - /admin/upstream
-  columns:
-    supplier_id:
-      type: int64
-      constraints: NOT NULL
-    supplier_code:
-      type: string(64)
-      constraints: NOT NULL
-    resource_id: int64
-    resource_code:
-      type: string(192)
-      constraints: NOT NULL DEFAULT ''
-    resource_group_id: int64
-    resource_group_code:
-      type: string(128)
-      constraints: NOT NULL DEFAULT ''
-    grant_type:
-      type: string(32)
-      constraints: NOT NULL DEFAULT 'allow'
-    priority:
-      type: int32
-      constraints: NOT NULL DEFAULT 100
-    effective_from: instant
-    effective_to: instant
-  unique_constraints:
-  - name: uk_ai_upstream_supplier_resource_uuid
-    columns:
-    - uuid
-  - name: uk_ai_upstream_supplier_resource
-    columns:
-    - tenant_id
-    - organization_id
-    - supplier_id
-    - resource_code
-    - resource_group_code
-  foreign_keys:
-  - name: fk_ai_upstream_supplier_resource_supplier
-    columns:
-    - tenant_id
-    - organization_id
-    - supplier_id
-    - supplier_code
-    references_table: ai_upstream_supplier
-    references_columns:
-    - tenant_id
-    - organization_id
-    - id
-    - supplier_code
-    on_delete: RESTRICT
-  check_constraints:
-  - name: ck_ai_upstream_supplier_resource_target
-    expression: (NULLIF(resource_code, '') IS NOT NULL) <> (NULLIF(resource_group_code,
-      '') IS NOT NULL) AND grant_type IN ('allow', 'deny') AND priority >= 0 AND (effective_to
-      IS NULL OR effective_from IS NULL OR effective_to > effective_from)
-  indexes:
-  - name: idx_ai_upstream_supplier_resource_lookup
-    columns:
-    - tenant_id
-    - organization_id
-    - status
-    - supplier_id
-    - grant_type
-    - priority
-    - id
   imported: false
 - table: ai_vendor_api_endpoint
   domain: ai

@@ -26,6 +26,9 @@ pub struct InvocationNormalizedResponse {
     pub body: Option<serde_json::Value>,
     pub body_bytes: Option<Vec<u8>>,
     pub content_type: Option<String>,
+    /// Safe upstream response headers preserved for the client (e.g.
+    /// `retry-after`, `x-request-id`, `x-ratelimit-*`).
+    pub headers: axum::http::HeaderMap,
     /// Streaming response body. Wrapped in Mutex for Sync safety.
     pub stream_body: Mutex<Option<Body>>,
     /// Opaque process-memory reservation retained through HTTP body delivery.
@@ -39,6 +42,7 @@ impl Clone for InvocationNormalizedResponse {
             body: self.body.clone(),
             body_bytes: self.body_bytes.clone(),
             content_type: self.content_type.clone(),
+            headers: self.headers.clone(),
             stream_body: Mutex::new(None),
             memory_guard: self.memory_guard.clone(),
         }

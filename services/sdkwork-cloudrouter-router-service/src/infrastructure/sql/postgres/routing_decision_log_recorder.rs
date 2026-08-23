@@ -11,20 +11,17 @@ use crate::ports::{
 const UPSERT_ROUTING_DECISION: &str = r#"
 INSERT INTO ai_routing_decision_log
     (id, uuid, tenant_id, organization_id, user_id, request_id, trace_id, payload_hash, status,
-     metadata, api_key_id, policy_id, profile_id, rule_id, requested_model, resolved_model,
+     metadata, api_key_id, requested_model, resolved_model,
      capability, selected_supplier_id, selected_account_id, selected_credential_id,
      decision_mode, decision_reason, candidate_snapshot, fallback_chain, decision_latency_ms)
 VALUES
     ($1, $2, $3, $4, $5, $6, $7, $8, 1,
-     $9::jsonb, $10, $11, $12, $13, $14, $15,
-     $16, $17, $18, $19,
-     $20, $21::jsonb, $22::jsonb, $23::jsonb, $24)
+     $9::jsonb, $10, $11, $12,
+     $13, $14, $15, $16,
+     $17, $18::jsonb, $19::jsonb, $20::jsonb, $21)
 ON CONFLICT (tenant_id, organization_id, request_id) DO UPDATE SET
     trace_id = excluded.trace_id,
     api_key_id = excluded.api_key_id,
-    policy_id = excluded.policy_id,
-    profile_id = excluded.profile_id,
-    rule_id = excluded.rule_id,
     requested_model = excluded.requested_model,
     resolved_model = excluded.resolved_model,
     capability = excluded.capability,
@@ -91,9 +88,6 @@ async fn upsert_routing_decision(
         .bind(payload_hash)
         .bind(&command.metadata)
         .bind(command.api_key_id)
-        .bind(command.policy_id)
-        .bind(command.profile_id)
-        .bind(command.rule_id)
         .bind(command.requested_model.as_deref())
         .bind(command.resolved_model.as_deref())
         .bind(command.capability)

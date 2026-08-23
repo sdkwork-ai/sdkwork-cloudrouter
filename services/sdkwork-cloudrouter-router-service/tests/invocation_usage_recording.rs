@@ -2,7 +2,8 @@ use std::sync::{Arc, Mutex};
 
 use axum::http::Method;
 use sdkwork_cloudrouter_router_service::application::{
-    AuthenticatedApiKeyContext, BillingMode, BillingQuantitySource, Invocation, InvocationAccount,
+    AccountBillingMode, AuthenticatedApiKeyContext, BillingMode, BillingQuantitySource, Invocation,
+    InvocationAccount,
     InvocationBilling, InvocationBody, InvocationDispatch, InvocationError, InvocationErrorKind,
     InvocationFuture, InvocationInterceptor, InvocationPipeline, InvocationRequest,
     InvocationResource, InvocationSubject, InvocationSurface, InvocationUsageLine, ResourceType,
@@ -174,6 +175,7 @@ fn account() -> InvocationAccount {
         timeout_ms: None,
         retry_policy: None,
         provider_model: Some("gpt-4o-mini-upstream".to_owned()),
+        billing_mode: AccountBillingMode::Prepay,
         account_group_id: None,
         account_group_code: None,
         pricing_plan_code: None,
@@ -231,8 +233,10 @@ fn provider_native_invocation() -> Invocation {
         parent_resource_id: None,
         capability: RoutingCapability::Video,
         model_requirement: AiRouteModelRequirement::Optional,
+        route_kind: None,
         requested_model: None,
         requested_model_catalog_key: Some("kling.text_to_video".to_owned()),
+        resolved_vendor_codes: Vec::new(),
         provider_native_model: None,
     };
     let mut invocation = Invocation::new(
@@ -616,7 +620,9 @@ async fn usage_recording_derives_trace_status_from_error_when_no_normalized_resp
     let traces = recorder.trace_commands();
     assert_eq!(1, traces.len());
     let trace = traces.first().unwrap();
-    assert_eq!(Some(502), trace.http_status);
+    // Routing (no routable upstream account/model) maps to HTTP 503, matching
+    // the HTTP surface and the router-service explicit routers.
+    assert_eq!(Some(503), trace.http_status);
     assert!(invocation.usage.trace_recorded);
 }
 

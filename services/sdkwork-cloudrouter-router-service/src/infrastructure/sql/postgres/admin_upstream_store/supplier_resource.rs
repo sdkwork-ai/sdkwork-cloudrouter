@@ -17,8 +17,9 @@ pub(super) async fn list(
     let sql = format!(
         r#"
         SELECT id, resource_code, resource_group_code, grant_type, priority, status
-        FROM ai_upstream_supplier_resource
+        FROM ai_resource_binding
         WHERE tenant_id = $1 AND organization_id = $2
+          AND binding_scope = 'supplier'
           AND supplier_id = $3 AND deleted_at IS NULL
         ORDER BY priority ASC, resource_group_code ASC, resource_code ASC, id ASC
         LIMIT {limit}
@@ -68,26 +69,27 @@ pub(super) async fn replace(
         let binding_id = next_cloud_runtime_id("upstream supplier resource")?;
         sqlx::query(
             r#"
-            INSERT INTO ai_upstream_supplier_resource (
+            INSERT INTO ai_resource_binding (
                 id, uuid, tenant_id, organization_id, data_scope, status,
                 created_at, updated_at, version, metadata,
-                supplier_id, supplier_code, resource_code, resource_group_code,
-                grant_type, priority
+                binding_scope, supplier_id, supplier_code,
+                resource_code, resource_group_code, grant_type, priority
             ) VALUES (
                 $1, $2, $3, $4, $5, $6,
                 $7::timestamptz, $7::timestamptz, 0, '{}'::jsonb,
-                $8, $9, $10, $11,
-                $12, $13
+                'supplier', $8, $9,
+                $10, $11, $12, $13
             )
             ON CONFLICT (
-                tenant_id, organization_id, supplier_id, resource_code, resource_group_code
+                tenant_id, organization_id, binding_scope,
+                supplier_id, account_group_id, account_id, resource_id, resource_code, resource_group_code
             ) DO UPDATE SET
                 grant_type = EXCLUDED.grant_type,
                 priority = EXCLUDED.priority,
                 status = EXCLUDED.status,
                 deleted_at = NULL,
                 deleted_by = NULL,
-                version = ai_upstream_supplier_resource.version + 1,
+                version = ai_resource_binding.version + 1,
                 updated_at = EXCLUDED.updated_at
             "#,
         )
@@ -153,13 +155,14 @@ async fn retire_omitted(
 ) -> DomainResult<()> {
     sqlx::query(
         r#"
-        UPDATE ai_upstream_supplier_resource binding
+        UPDATE ai_resource_binding binding
         SET deleted_at = $1::timestamptz,
             deleted_by = $2,
             status = 0,
             version = version + 1,
             updated_at = $1::timestamptz
         WHERE tenant_id = $3 AND organization_id = $4
+          AND binding_scope = 'supplier'
           AND supplier_id = $5 AND deleted_at IS NULL
           AND NOT EXISTS (
               SELECT 1
@@ -190,8 +193,9 @@ async fn list_in_transaction(
     let sql = format!(
         r#"
         SELECT id, resource_code, resource_group_code, grant_type, priority, status
-        FROM ai_upstream_supplier_resource
+        FROM ai_resource_binding
         WHERE tenant_id = $1 AND organization_id = $2
+          AND binding_scope = 'supplier'
           AND supplier_id = $3 AND deleted_at IS NULL
         ORDER BY priority ASC, resource_group_code ASC, resource_code ASC, id ASC
         LIMIT {MAX_NESTED_ITEMS}

@@ -3,6 +3,7 @@ mod account_group;
 mod account_group_member;
 mod account_group_resource;
 mod account_resource;
+mod model_access;
 mod shared;
 mod supplier;
 mod supplier_auth;

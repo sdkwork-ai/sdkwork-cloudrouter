@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use super::{
-    BillingMode, Invocation, InvocationError, InvocationErrorKind, InvocationFuture,
-    InvocationInterceptor,
+    AccountBillingMode, BillingMode, Invocation, InvocationError, InvocationErrorKind,
+    InvocationFuture, InvocationInterceptor,
 };
 use crate::domain::{BillingMeter, DecimalValue};
 use crate::ports::{
@@ -57,6 +57,14 @@ impl InvocationInterceptor for BillingTransactionInterceptor {
                 .customer_charge_mode(context.clone())
                 .await
                 .map_err(billing_error)?;
+            // 账号级计费模式优先：prepay 账号强制预扣，postpay 账号强制后扣。
+            // 未配置/未知时回退客户结算模式（默认行为保持不变）。
+            if let Some(account) = invocation.account.as_ref() {
+                invocation.charging.charge_mode = match account.billing_mode {
+                    AccountBillingMode::Prepay => CustomerChargeMode::PrepaidAdjustment,
+                    AccountBillingMode::Postpay => CustomerChargeMode::Postpaid,
+                };
+            }
             if invocation.charging.charge_mode != CustomerChargeMode::PrepaidAdjustment {
                 return Ok(());
             }

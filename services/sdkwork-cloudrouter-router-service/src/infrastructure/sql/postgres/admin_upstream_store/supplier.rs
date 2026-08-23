@@ -2,8 +2,8 @@ use sqlx::postgres::PgRow;
 use sqlx::{PgPool, Postgres, Transaction};
 
 use super::shared::{
-    column, conflict, model_list_json, not_found, parse_model_list, parse_protocols,
-    record_routing_change, search_pattern, store_error, DEFAULT_DATA_SCOPE,
+    column, conflict, not_found, parse_protocols, record_routing_change, search_pattern,
+    store_error, DEFAULT_DATA_SCOPE,
 };
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
@@ -25,8 +25,6 @@ const SUPPLIER_COLUMNS: &str = r#"
     supplier.adapter_code,
     supplier.protocol_code,
     supplier.protocols,
-    supplier.model_blacklist::text AS model_blacklist,
-    supplier.model_whitelist::text AS model_whitelist,
     supplier.website_url,
     supplier.docs_url,
     supplier.region_code,
@@ -107,10 +105,23 @@ pub(super) async fn list(
         .fetch_all(pool)
         .await
         .map_err(|error| store_error("failed to list upstream suppliers", error))?;
-    let items = rows
+    let mut items = rows
         .into_iter()
         .map(map_row)
         .collect::<DomainResult<Vec<_>>>()?;
+    for supplier in &mut items {
+        if let Some((blacklist, whitelist)) = super::model_access::load_scope_model_access(
+            pool,
+            &query.subject,
+            "supplier",
+            supplier.id,
+        )
+        .await?
+        {
+            supplier.model_blacklist = blacklist;
+            supplier.model_whitelist = whitelist;
+        }
+    }
     Ok(AdminUpstreamPage {
         items,
         page: query.page,
@@ -134,7 +145,7 @@ pub(super) async fn get(
           AND supplier.deleted_at IS NULL
         "#
     );
-    sqlx::query(sqlx::AssertSqlSafe(sql))
+    let mut item = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(supplier_id)
@@ -142,7 +153,17 @@ pub(super) async fn get(
         .await
         .map_err(|error| store_error("failed to retrieve upstream supplier", error))?
         .map(map_row)
-        .transpose()
+        .transpose()?;
+    if let Some(supplier) = item.as_mut() {
+        if let Some((blacklist, whitelist)) =
+            super::model_access::load_scope_model_access(pool, &subject, "supplier", supplier_id)
+                .await?
+        {
+            supplier.model_blacklist = blacklist;
+            supplier.model_whitelist = whitelist;
+        }
+    }
+    Ok(item)
 }
 
 pub(super) async fn save(
@@ -157,6 +178,17 @@ pub(super) async fn save(
         Some(supplier_id) => update(&mut tx, supplier_id, &command).await?,
         None => insert(&mut tx, &command).await?,
     };
+    super::model_access::replace_scope_model_access(
+        &mut tx,
+        &command.subject,
+        &command.requested_at,
+        "supplier",
+        supplier_id,
+        Some(command.supplier_code.trim()),
+        &command.model_blacklist,
+        &command.model_whitelist,
+    )
+    .await?;
     let action = if command.supplier_id.is_some() {
         "update_upstream_supplier"
     } else {
@@ -216,7 +248,7 @@ pub(super) async fn delete(
     for table in [
         "ai_upstream_supplier_endpoint",
         "ai_upstream_supplier_auth_method",
-        "ai_upstream_supplier_resource",
+        "ai_resource_binding",
     ] {
         let sql = format!(
             r#"
@@ -366,7 +398,6 @@ async fn insert(
             created_at, updated_at, version, metadata,
             supplier_code, supplier_name, display_name, description,
             supplier_type, default_vendor_code, default_base_url, adapter_code, protocol_code, protocols,
-            model_blacklist, model_whitelist,
             website_url, docs_url,
             region_code, environment, sort_order
         ) VALUES (
@@ -374,9 +405,8 @@ async fn insert(
             $7::timestamptz, $7::timestamptz, 0, '{}'::jsonb,
             $8, $9, $10, $11,
             $12, $13, $14, $15, $16, $17,
-            $18::jsonb, $19::jsonb,
-            $20, $21,
-            $22, $23, $24
+            $18, $19,
+            $20, $21, $22
         )
         "#,
     )
@@ -397,8 +427,6 @@ async fn insert(
     .bind(command.adapter_code.trim())
     .bind(command.protocol_code.trim())
     .bind(serde_json::to_value(&command.protocols).map_err(store_error_json)?)
-    .bind(model_list_json(&command.model_blacklist))
-    .bind(model_list_json(&command.model_whitelist))
     .bind(command.website_url.as_deref().map(str::trim))
     .bind(command.docs_url.as_deref().map(str::trim))
     .bind(command.region_code.as_deref().map(str::trim))
@@ -474,9 +502,7 @@ async fn update(
             version = version + 1,
             updated_at = $14::timestamptz,
             protocols = $19::jsonb,
-            model_blacklist = $20::jsonb,
-            model_whitelist = $21::jsonb,
-            default_base_url = $22
+            default_base_url = $20
         WHERE tenant_id = $15 AND organization_id = $16
           AND id = $17 AND version = $18 AND deleted_at IS NULL
         "#,
@@ -500,8 +526,6 @@ async fn update(
     .bind(supplier_id)
     .bind(expected_version)
     .bind(serde_json::to_value(&command.protocols).map_err(store_error_json)?)
-    .bind(model_list_json(&command.model_blacklist))
-    .bind(model_list_json(&command.model_whitelist))
     .bind(command.default_base_url.as_deref().map(str::trim))
     .execute(&mut **tx)
     .await
@@ -522,7 +546,7 @@ async fn get_in_transaction(
           AND supplier.id = $3 AND supplier.deleted_at IS NULL
         "#
     );
-    sqlx::query(sqlx::AssertSqlSafe(sql))
+    let mut item = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(supplier_id)
@@ -530,7 +554,17 @@ async fn get_in_transaction(
         .await
         .map_err(|error| store_error("failed to reload upstream supplier", error))?
         .map(map_row)
-        .transpose()
+        .transpose()?;
+    if let Some(supplier) = item.as_mut() {
+        if let Some((blacklist, whitelist)) =
+            super::model_access::load_scope_model_access_in_tx(tx, subject, "supplier", supplier_id)
+                .await?
+        {
+            supplier.model_blacklist = blacklist;
+            supplier.model_whitelist = whitelist;
+        }
+    }
+    Ok(item)
 }
 
 fn map_row(row: PgRow) -> DomainResult<AdminUpstreamSupplierItem> {
@@ -587,22 +621,11 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamSupplierItem> {
             "protocols",
             "failed to map upstream supplier protocols",
         )?)?,
-        model_blacklist: parse_model_list(
-            "upstream supplier",
-            column(
-                &row,
-                "model_blacklist",
-                "failed to map upstream supplier model blacklist",
-            )?,
-        )?,
-        model_whitelist: parse_model_list(
-            "upstream supplier",
-            column(
-                &row,
-                "model_whitelist",
-                "failed to map upstream supplier model whitelist",
-            )?,
-        )?,
+        // Model access rules live in the unified ai_model_access_policy table;
+        // they are aggregated into these lists by load_model_access_into after
+        // the row is mapped (see get/get_in_transaction/list).
+        model_blacklist: Vec::new(),
+        model_whitelist: Vec::new(),
         website_url: column(
             &row,
             "website_url",

@@ -1,3 +1,4 @@
+use super::RouteKind;
 use crate::domain::{AiRouteModelRequirement, RoutingCapability};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -21,6 +22,7 @@ pub enum ResourceType {
     Audio,
     Video,
     File,
+    Moderation,
     Upload,
     Thread,
     Assistant,
@@ -53,8 +55,15 @@ pub struct InvocationResource {
     pub parent_resource_id: Option<String>,
     pub capability: RoutingCapability,
     pub model_requirement: AiRouteModelRequirement,
+    /// 资源配置的路由类型：`model`（模型类）或 `api`（API 资源类）。
+    /// 由资源管理（`ai_resource.route_kind`）显式标记；未配置时为空，
+    /// 运行时按"是否携带模型 + 表面"推导（见 [`RouteKind::of`]）。
+    pub route_kind: Option<RouteKind>,
     pub requested_model: Option<String>,
     pub requested_model_catalog_key: Option<String>,
+    /// 模型类路由解析出的支持该模型的 vendor 代码列表（对应流程第 2 步）。
+    /// 由 `sdkwork-models` 目录解析，供 supplier 收敛与决策日志使用。
+    pub resolved_vendor_codes: Vec<String>,
     pub provider_native_model: Option<String>,
 }
 
@@ -79,8 +88,10 @@ impl InvocationResource {
             parent_resource_id: None,
             capability,
             model_requirement,
+            route_kind: Some(RouteKind::Model),
             requested_model: None,
             requested_model_catalog_key: None,
+            resolved_vendor_codes: Vec::new(),
             provider_native_model: None,
         }
     }
@@ -104,8 +115,10 @@ impl InvocationResource {
             parent_resource_id: None,
             capability,
             model_requirement: AiRouteModelRequirement::Ignored,
+            route_kind: Some(RouteKind::Api),
             requested_model: None,
             requested_model_catalog_key: None,
+            resolved_vendor_codes: Vec::new(),
             provider_native_model: None,
         }
     }
@@ -123,6 +136,13 @@ impl InvocationResource {
 
     pub fn with_requested_model(mut self, model: impl Into<String>) -> Self {
         self.requested_model = Some(model.into());
+        self
+    }
+
+    /// 显式标记路由类型（对应 `ai_resource.route_kind`）。
+    /// 资源管理已标记 `model`/`api` 时使用，覆盖运行时推导。
+    pub fn with_route_kind(mut self, route_kind: RouteKind) -> Self {
+        self.route_kind = Some(route_kind);
         self
     }
 

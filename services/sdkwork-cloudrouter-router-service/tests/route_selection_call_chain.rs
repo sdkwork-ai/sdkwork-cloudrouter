@@ -17,7 +17,6 @@ use sdkwork_cloudrouter_router_service::application::{
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
     ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, ProviderRetryPolicy,
-    RouteCandidate, RoutingCapability, RoutingPolicy, RoutingPolicyScope, RoutingRule,
     UpstreamAccountGroup, UpstreamAccountGroupBinding, UpstreamAccountRoute,
     UpstreamAccountRoutingStrategy,
 };
@@ -181,31 +180,6 @@ fn catalog_with_callable_account(key_hash: String) -> InMemoryPricingCatalog {
             .for_upstream_account("openrouter", 3001),
         );
     }
-    catalog.add_routing_policy(
-        RoutingPolicy::new(
-            9001,
-            10,
-            20,
-            "standard-group-policy",
-            RoutingPolicyScope::UpstreamAccountGroup,
-            Some(10),
-            Some(9101),
-        )
-        .with_capability(RoutingCapability::Chat),
-    );
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9102,
-            10,
-            20,
-            9101,
-            "standard-group-gpt-4o-mini",
-            1,
-            r#"{"catalogKey":"openai/gpt-4o-mini"}"#,
-            "openai/gpt-4o-mini",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
-    );
     catalog
 }
 
@@ -426,5 +400,58 @@ async fn call_chain_does_not_emit_route_selection_failure_when_account_is_callab
     assert!(
         diagnose_call_chain_from_logs(&logs).is_none(),
         "success path must not emit a failure stage: {logs}"
+    );
+}
+
+#[tokio::test]
+async fn call_chain_503_response_carries_exact_route_reason_headers() {
+    let hasher = hasher();
+    let key_hash = hasher.hash_secret(API_SECRET).unwrap();
+    let mut catalog = catalog_with_callable_account(key_hash);
+    let mut route = catalog.shared_upstream_account_routes()[0].clone();
+    route.account_health_status = 0;
+    catalog.add_upstream_account_route(route);
+
+    let captured = Arc::new(Mutex::new(Vec::new()));
+    let relay = Arc::new(RecordingRelay::new(Arc::clone(&captured)));
+    let router = openai_chat_completions_router_with_relay(Arc::new(catalog), hasher, relay);
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/chat/completions")
+                .header("authorization", format!("Bearer {API_SECRET}"))
+                .header("content-type", "application/json")
+                .header("x-trace-id", TRACE_ID)
+                .body(Body::from(
+                    r#"{"model":"gpt-4o-mini","messages":[{"role":"user","content":"ping"}]}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::SERVICE_UNAVAILABLE, response.status());
+
+    let stage = response
+        .headers()
+        .get("x-sdkwork-route-stage")
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or("")
+        .to_owned();
+    let reason = response
+        .headers()
+        .get("x-sdkwork-route-reason")
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or("")
+        .to_owned();
+
+    assert_eq!("account_not_callable", stage);
+    assert!(
+        !reason.is_empty(),
+        "503 must carry the exact route selection reason for debugging"
+    );
+    assert!(
+        reason.contains("supports") || reason.contains("callable") || reason.contains("account"),
+        "reason should describe the rejection: {reason}"
     );
 }

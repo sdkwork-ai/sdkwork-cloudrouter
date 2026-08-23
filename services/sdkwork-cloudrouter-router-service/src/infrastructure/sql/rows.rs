@@ -4,10 +4,8 @@ use crate::domain::{
     GatewayAccessPolicy, GatewayApiKey, GatewayApiKeyAccountGroupBinding, GatewayRiskRule,
     ModelMappingBindingType, ModelMappingRule, ModelPrice, ModelUpstreamRoute, ModelVendor,
     ModelVendorDefinition, Money, PriceSide, PricingPlan, PricingRateMetadata, PricingRule,
-    ProviderRetryPolicy, QuotaPolicy, RouteCandidate, RoutingCapability, RoutingFallbackMode,
-    RoutingPolicy, RoutingPolicyScope, RoutingRule, UpstreamAccountGroup,
-    UpstreamAccountGroupBinding, UpstreamAccountGroupMetricSnapshot, UpstreamAccountRoute,
-    UpstreamResourceEntitlement,
+    ProviderRetryPolicy, QuotaPolicy, UpstreamAccountGroup, UpstreamAccountGroupBinding,
+    UpstreamAccountGroupMetricSnapshot, UpstreamAccountRoute, UpstreamResourceEntitlement,
 };
 
 pub struct ModelVendorRow {
@@ -154,6 +152,8 @@ pub struct UpstreamAccountRouteRow {
     pub account_consecutive_error_count: Option<i64>,
     pub account_code: Option<String>,
     pub region_code: String,
+    /// 账号级计费模式：prepay（预扣）| postpay（后扣）。
+    pub billing_mode: String,
     pub supplier_id: i64,
     pub endpoint_id: Option<i64>,
     pub endpoint_code: Option<String>,
@@ -399,83 +399,6 @@ fn parse_retry_policy(
         .transpose()
 }
 
-pub struct RoutingPolicyRow {
-    pub id: i64,
-    pub tenant_id: i64,
-    pub organization_id: i64,
-    pub policy_code: String,
-    pub policy_scope: i32,
-    pub subject_id: Option<i64>,
-    pub capability: Option<i32>,
-    pub default_profile_id: Option<i64>,
-    pub fallback_mode: Option<i32>,
-}
-
-impl RoutingPolicyRow {
-    pub fn try_into_domain(self) -> DomainResult<RoutingPolicy> {
-        Ok(RoutingPolicy {
-            id: self.id,
-            tenant_id: self.tenant_id,
-            organization_id: self.organization_id,
-            policy_code: self.policy_code,
-            policy_scope: RoutingPolicyScope::from_code(self.policy_scope)?,
-            subject_id: self.subject_id,
-            capability: self
-                .capability
-                .map(RoutingCapability::from_code)
-                .transpose()?,
-            default_profile_id: self.default_profile_id,
-            fallback_mode: self
-                .fallback_mode
-                .map(RoutingFallbackMode::from_code)
-                .transpose()?,
-        })
-    }
-}
-
-pub struct RoutingRuleRow {
-    pub id: i64,
-    pub tenant_id: i64,
-    pub organization_id: i64,
-    pub profile_id: i64,
-    pub rule_code: String,
-    pub priority: i32,
-    pub match_expression_json: String,
-    pub target_model: Option<String>,
-    pub candidate_account_groups_json: String,
-    pub fallback_chain_json: String,
-    pub constraints_json: String,
-}
-
-impl RoutingRuleRow {
-    pub fn try_into_domain(self) -> DomainResult<RoutingRule> {
-        Ok(RoutingRule {
-            id: self.id,
-            tenant_id: self.tenant_id,
-            organization_id: self.organization_id,
-            profile_id: self.profile_id,
-            rule_code: self.rule_code,
-            priority: self.priority,
-            match_expression: parse_json_value(
-                &self.match_expression_json,
-                "ai_routing_rule.match_expression",
-            )?,
-            target_model: self
-                .target_model
-                .filter(|target_model| !target_model.trim().is_empty()),
-            candidate_account_groups: parse_route_candidates(
-                &self.candidate_account_groups_json,
-                "ai_routing_rule.candidate_account_groups",
-            )?,
-            fallback_chain: parse_route_candidates(
-                &self.fallback_chain_json,
-                "ai_routing_rule.fallback_chain",
-            )?,
-            constraints: parse_json_value(&self.constraints_json, "ai_routing_rule.constraints")?,
-        })
-    }
-}
-
 #[derive(Clone)]
 pub struct GatewayApiKeyRow {
     pub id: i64,
@@ -654,10 +577,20 @@ pub struct UpstreamAccountGroupRow {
     pub model_whitelist_json: String,
 }
 
-/// 供应商级模型黑白名单（ai_upstream_supplier.model_blacklist/model_whitelist），
-/// JSON 列在快照构建时解析为 SupplierModelAccess。
+/// 供应商级模型黑白名单（从 ai_model_access_policy 聚合），JSON 列在快照构建时
+/// 解析为 SupplierModelAccess。
 pub struct UpstreamSupplierModelAccessRow {
+    pub supplier_id: i64,
     pub supplier_code: String,
+    pub model_blacklist_json: String,
+    pub model_whitelist_json: String,
+}
+
+/// 账号级模型黑白名单（从 ai_model_access_policy scope_type='account' 聚合），
+/// JSON 列在快照构建时解析为 AccountModelAccess。
+pub struct UpstreamAccountModelAccessRow {
+    pub account_id: i64,
+    pub account_code: String,
     pub model_blacklist_json: String,
     pub model_whitelist_json: String,
 }
@@ -905,21 +838,6 @@ fn parse_json_value(value: &str, field_name: &str) -> DomainResult<serde_json::V
     })
 }
 
-fn parse_route_candidates(value: &str, field_name: &str) -> DomainResult<Vec<RouteCandidate>> {
-    let value = parse_json_value(value, field_name)?;
-    let serde_json::Value::Array(items) = value else {
-        return Err(DomainError::new(format!(
-            "{field_name} must be a json array"
-        )));
-    };
-
-    items
-        .into_iter()
-        .enumerate()
-        .map(|(index, value)| parse_route_candidate(value, field_name, index))
-        .collect()
-}
-
 fn parse_provider_upstream_account_group_bindings(
     value: &str,
 ) -> DomainResult<Vec<UpstreamAccountGroupBinding>> {
@@ -1062,6 +980,7 @@ fn parse_resource_entitlements(
                 required_text("resourceCode", "resource_code")?,
                 required_text("resourceType", "resource_type")?,
             );
+            entitlement.route_kind = optional_text("routeKind", "route_kind");
             entitlement.vendor_code = optional_text("vendorCode", "vendor_code");
             entitlement.modality_code = optional_text("modalityCode", "modality_code");
             entitlement.api_code = optional_text("apiCode", "api_code");
@@ -1109,57 +1028,6 @@ fn parse_binding_string_array(
         }
     }
     Ok(normalized)
-}
-
-fn parse_route_candidate(
-    value: serde_json::Value,
-    field_name: &str,
-    index: usize,
-) -> DomainResult<RouteCandidate> {
-    let serde_json::Value::Object(object) = value else {
-        return Err(DomainError::new(format!(
-            "{field_name}[{index}] must be a json object"
-        )));
-    };
-
-    let account_group_id = object
-        .get("account_group_id")
-        .or_else(|| object.get("accountGroupId"))
-        .and_then(serde_json::Value::as_i64)
-        .ok_or_else(|| {
-            DomainError::new(format!(
-                "{field_name}[{index}] must contain integer account_group_id"
-            ))
-        })?;
-    if account_group_id <= 0 {
-        return Err(DomainError::new(format!(
-            "{field_name}[{index}].account_group_id must be positive"
-        )));
-    }
-
-    let weight = object
-        .get("weight")
-        .and_then(serde_json::Value::as_i64)
-        .unwrap_or(0);
-    if weight < 0 {
-        return Err(DomainError::new(format!(
-            "{field_name}[{index}].weight must be non-negative"
-        )));
-    }
-
-    let region_code = object
-        .get("region_code")
-        .or_else(|| object.get("regionCode"))
-        .and_then(serde_json::Value::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(str::to_owned);
-
-    Ok(RouteCandidate {
-        account_group_id,
-        weight,
-        region_code,
-    })
 }
 
 fn parse_price_side(value: &str) -> DomainResult<PriceSide> {

@@ -11,8 +11,8 @@ use crate::domain::{
 use crate::infrastructure::sql::rows::{
     AccountRateCardRow, AiModelRow, GatewayAccessPolicyRow, GatewayApiKeyRow, GatewayRiskRuleRow,
     ModelMappingRuleRow, ModelPriceRow, ModelVendorRow, PricingPlanRow, PricingRuleRow,
-    QuotaPolicyRow, RoutingPolicyRow, RoutingRuleRow, UpstreamAccountGroupMetricSnapshotRow,
-    UpstreamAccountGroupRow, UpstreamAccountRouteRow, UpstreamSupplierModelAccessRow,
+    QuotaPolicyRow, UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow,
+    UpstreamAccountRouteRow, UpstreamAccountModelAccessRow, UpstreamSupplierModelAccessRow,
 };
 
 pub async fn load_vendors(
@@ -87,6 +87,10 @@ pub async fn load_upstream_account_routes(
             account_consecutive_error_count: row.try_get("account_consecutive_error_count")?,
             account_code: row.try_get("account_code")?,
             region_code: row.try_get("region_code")?,
+            billing_mode: row
+                .try_get::<Option<String>, _>("billing_mode")?
+                .filter(|value| !value.trim().is_empty())
+                .unwrap_or_else(|| "prepay".to_owned()),
             supplier_id: row.try_get("supplier_id")?,
             endpoint_id: row.try_get("endpoint_id")?,
             endpoint_code: row.try_get("endpoint_code")?,
@@ -125,50 +129,6 @@ pub async fn load_upstream_account_routes(
                 && row.endpoint_health_status == 1
         })
         .collect())
-}
-
-pub async fn load_routing_policies(
-    executor: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
-    sql: &'static str,
-) -> Result<Vec<RoutingPolicyRow>, sqlx::Error> {
-    map_query(sql, |row| {
-        Ok(RoutingPolicyRow {
-            id: row.try_get("id")?,
-            tenant_id: row.try_get("tenant_id")?,
-            organization_id: row.try_get("organization_id")?,
-            policy_code: row.try_get("policy_code")?,
-            policy_scope: row.try_get("policy_scope")?,
-            subject_id: row.try_get("subject_id")?,
-            capability: row.try_get("capability")?,
-            default_profile_id: row.try_get("default_profile_id")?,
-            fallback_mode: row.try_get("fallback_mode")?,
-        })
-    })
-    .fetch(executor)
-    .await
-}
-
-pub async fn load_routing_rules(
-    executor: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
-    sql: &'static str,
-) -> Result<Vec<RoutingRuleRow>, sqlx::Error> {
-    map_query(sql, |row| {
-        Ok(RoutingRuleRow {
-            id: row.try_get("id")?,
-            tenant_id: row.try_get("tenant_id")?,
-            organization_id: row.try_get("organization_id")?,
-            profile_id: row.try_get("profile_id")?,
-            rule_code: row.try_get("rule_code")?,
-            priority: row.try_get("priority")?,
-            match_expression_json: row.try_get("match_expression_json")?,
-            target_model: row.try_get("target_model")?,
-            candidate_account_groups_json: row.try_get("candidate_account_groups_json")?,
-            fallback_chain_json: row.try_get("fallback_chain_json")?,
-            constraints_json: row.try_get("constraints_json")?,
-        })
-    })
-    .fetch(executor)
-    .await
 }
 
 pub async fn load_model_mappings(
@@ -345,7 +305,24 @@ pub async fn load_upstream_supplier_model_access(
 ) -> Result<Vec<UpstreamSupplierModelAccessRow>, sqlx::Error> {
     map_query(sql, |row| {
         Ok(UpstreamSupplierModelAccessRow {
+            supplier_id: row.try_get("supplier_id")?,
             supplier_code: row.try_get("supplier_code")?,
+            model_blacklist_json: row.try_get("model_blacklist")?,
+            model_whitelist_json: row.try_get("model_whitelist")?,
+        })
+    })
+    .fetch(executor)
+    .await
+}
+
+pub async fn load_upstream_account_model_access(
+    executor: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
+    sql: &'static str,
+) -> Result<Vec<UpstreamAccountModelAccessRow>, sqlx::Error> {
+    map_query(sql, |row| {
+        Ok(UpstreamAccountModelAccessRow {
+            account_id: row.try_get("account_id")?,
+            account_code: row.try_get("account_code")?,
             model_blacklist_json: row.try_get("model_blacklist")?,
             model_whitelist_json: row.try_get("model_whitelist")?,
         })

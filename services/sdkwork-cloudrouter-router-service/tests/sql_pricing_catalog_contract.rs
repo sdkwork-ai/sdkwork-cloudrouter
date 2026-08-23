@@ -1,33 +1,35 @@
 use std::sync::{Arc, Barrier};
 
 use sdkwork_cloudrouter_router_service::domain::{
-    DecimalValue, RouteCandidate, UpstreamAccountFallbackMode, UpstreamAccountRoutingStrategy,
+    DecimalValue, UpstreamAccountFallbackMode, UpstreamAccountRoutingStrategy,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::sql::catalog::{
     PricingCatalogRows, RefreshableSqlPricingCatalog, SqlPricingCatalogSnapshot,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::sql::rows::{
-    ModelMappingRuleRow, RoutingRuleRow, UpstreamAccountGroupRow, UpstreamAccountRouteRow,
+    ModelMappingRuleRow, UpstreamAccountGroupRow, UpstreamAccountRouteRow,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::sql::PricingCatalogSql;
 use sdkwork_cloudrouter_router_service::ports::UpstreamAccountRouteCatalog;
 
-const CANONICAL_UPSTREAM_TABLES: [&str; 12] = [
+const CANONICAL_UPSTREAM_TABLES: [&str; 10] = [
     "ai_upstream_supplier",
     "ai_upstream_supplier_endpoint",
     "ai_upstream_supplier_auth_method",
-    "ai_upstream_supplier_resource",
+    "ai_resource_binding",
     "ai_upstream_account",
     "ai_upstream_account_health_state",
     "ai_upstream_account_credential",
     "ai_upstream_account_group",
     "ai_upstream_account_group_member",
-    "ai_upstream_account_group_resource",
-    "ai_upstream_account_resource",
     "ai_upstream_supplier_endpoint_health_state",
 ];
 
-const RETIRED_UPSTREAM_TABLES: [&str; 10] = [
+/// Tables that must appear across the whole snapshot query set but are not
+/// referenced by the single `load_upstream_account_routes` query.
+const SNAPSHOT_SET_EXTRA_TABLES: [&str; 1] = ["ai_model_access_policy"];
+
+const RETIRED_UPSTREAM_TABLES: [&str; 16] = [
     "ai_provider",
     "ai_site",
     "ai_site_service",
@@ -38,18 +40,30 @@ const RETIRED_UPSTREAM_TABLES: [&str; 10] = [
     "integration_provider_account",
     "integration_service_provider",
     "provider_secrets",
+    "ai_upstream_supplier_resource",
+    "ai_upstream_account_group_resource",
+    "ai_upstream_account_resource",
+    "ai_routing_policy",
+    "ai_routing_profile",
+    "ai_routing_rule",
 ];
 
 #[test]
 fn snapshot_query_set_is_complete_and_uses_only_postgresql_upstream_authorities() {
     let queries = PricingCatalogSql::snapshot_load_queries();
-    assert_eq!(17, queries.len());
+    assert_eq!(16, queries.len());
 
     let sql = queries.join("\n");
     for table in CANONICAL_UPSTREAM_TABLES {
         assert!(
             sql.contains(table),
             "PostgreSQL catalog snapshot must use canonical table {table}"
+        );
+    }
+    for table in SNAPSHOT_SET_EXTRA_TABLES {
+        assert!(
+            sql.contains(table),
+            "PostgreSQL catalog snapshot set must use {table}"
         );
     }
     for table in RETIRED_UPSTREAM_TABLES {
@@ -270,46 +284,6 @@ fn account_group_query_projects_routing_and_settlement_controls() {
 }
 
 #[test]
-fn routing_rule_rows_require_account_group_candidates() {
-    let row = RoutingRuleRow {
-        id: 9102,
-        tenant_id: 10,
-        organization_id: 20,
-        profile_id: 9101,
-        rule_code: "standard-group-route".to_owned(),
-        priority: 10,
-        match_expression_json: r#"{"catalogKey":"openai/gpt-4o-mini"}"#.to_owned(),
-        target_model: Some("openai/gpt-4o-mini".to_owned()),
-        candidate_account_groups_json:
-            r#"[{"account_group_id":10,"weight":100,"region_code":"global"}]"#.to_owned(),
-        fallback_chain_json: r#"[{"accountGroupId":20,"weight":50}]"#.to_owned(),
-        constraints_json: "{}".to_owned(),
-    };
-
-    let rule = row.try_into_domain().unwrap();
-    assert_eq!(
-        vec![RouteCandidate::new(10, 100).with_region_code("global")],
-        rule.candidate_account_groups
-    );
-    assert_eq!(vec![RouteCandidate::new(20, 50)], rule.fallback_chain);
-
-    let legacy = RoutingRuleRow {
-        id: 9103,
-        tenant_id: 10,
-        organization_id: 20,
-        profile_id: 9101,
-        rule_code: "legacy-account-route".to_owned(),
-        priority: 20,
-        match_expression_json: "{}".to_owned(),
-        target_model: None,
-        candidate_account_groups_json: r#"[{"account_id":3001,"weight":100}]"#.to_owned(),
-        fallback_chain_json: "[]".to_owned(),
-        constraints_json: "{}".to_owned(),
-    };
-    assert!(legacy.try_into_domain().is_err());
-}
-
-#[test]
 fn account_group_rows_use_decimal_cost_and_sale_multipliers() {
     let group = UpstreamAccountGroupRow {
         id: 10,
@@ -519,6 +493,7 @@ fn upstream_account_route_row(account_id: i64) -> UpstreamAccountRouteRow {
         account_consecutive_error_count: Some(0),
         account_code: Some(format!("openai-{account_id}")),
         region_code: "global".to_owned(),
+        billing_mode: "prepay".to_owned(),
         supplier_id: 5001,
         endpoint_id: Some(6001),
         endpoint_code: Some("global-primary".to_owned()),

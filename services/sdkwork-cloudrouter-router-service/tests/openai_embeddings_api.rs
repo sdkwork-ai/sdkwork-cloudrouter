@@ -11,8 +11,7 @@ use sdkwork_cloudrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, DomainResult, GatewayApiKey, ModelPrice,
     ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
-    ProviderAuthProfile, ProviderRetryPolicy, RouteCandidate, RoutingCapability, RoutingPolicy,
-    RoutingPolicyScope, RoutingRule, UpstreamAccountGroup, UpstreamAccountRoute,
+    ProviderAuthProfile, ProviderRetryPolicy, UpstreamAccountGroup, UpstreamAccountRoute,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
@@ -95,31 +94,6 @@ fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
         )
         .for_upstream_account("openrouter", 3001),
     );
-    catalog.add_routing_policy(
-        RoutingPolicy::new(
-            9001,
-            10,
-            20,
-            "standard-group-embedding-policy",
-            RoutingPolicyScope::UpstreamAccountGroup,
-            Some(10),
-            Some(9101),
-        )
-        .with_capability(RoutingCapability::Embedding),
-    );
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9102,
-            10,
-            20,
-            9101,
-            "standard-group-text-embedding-3-small",
-            1,
-            r#"{"catalogKey":"openai/text-embedding-3-small"}"#,
-            "openai/text-embedding-3-small",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
-    );
     catalog
 }
 
@@ -165,19 +139,6 @@ fn catalog_with_embeddings_fallback_route(key_hash: String) -> InMemoryPricingCa
             Money::usd("0.012000").unwrap(),
         )
         .for_upstream_account("openrouter-fallback", 3002),
-    );
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9100,
-            10,
-            20,
-            9101,
-            "standard-group-text-embedding-3-small-failover",
-            0,
-            r#"{"catalogKey":"openai/text-embedding-3-small"}"#,
-            "openai/text-embedding-3-small",
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(10, 100)]),
     );
     catalog
 }
@@ -686,7 +647,9 @@ async fn openai_embeddings_failover_uses_single_attempt_per_candidate_channel() 
         .await
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
-    assert_eq!("text-embedding-3-small-fallback", payload["model"]);
+    // 网关把 provider 实际使用的 fallback 模型名恢复为客户端请求名
+    //（OpenAI 兼容语义：响应 model 字段与请求一致）。
+    assert_eq!("text-embedding-3-small", payload["model"]);
 
     let captured = captured.lock().unwrap();
     assert_eq!(2, captured.len());

@@ -5,7 +5,15 @@ use std::sync::{Arc, OnceLock};
 use crate::ports::ProviderResponseMemoryGuard;
 
 pub const DEFAULT_PROVIDER_RESPONSE_MEMORY_BUDGET_BYTES: usize = 512 * 1024 * 1024;
-pub const MAX_PROVIDER_RESPONSE_MEMORY_BUDGET_BYTES: usize = 512 * 1024 * 1024;
+/// Hard cap for the configurable process-wide provider response memory budget.
+///
+/// The default non-streaming response cap is 64 MiB and the reservation
+/// multiplier is 4, so a single in-flight response reserves 256 MiB. A 512 MiB
+/// default budget therefore admits only 2 concurrent non-streaming responses;
+/// deployments with more memory must be able to raise the budget. 3 GiB keeps
+/// headroom below tokio's `Semaphore::MAX_PERMITS` (u32::MAX ≈ 4 GiB - 1)
+/// while allowing ~12 concurrent buffered responses per process.
+pub const MAX_PROVIDER_RESPONSE_MEMORY_BUDGET_BYTES: usize = 3 * 1024 * 1024 * 1024;
 pub const PROVIDER_RESPONSE_MEMORY_RESERVATION_MULTIPLIER: usize = 4;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

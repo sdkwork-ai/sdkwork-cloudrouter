@@ -43,8 +43,7 @@ use sdkwork_cloudrouter_router_service::application::AuthenticatedApiKeyContext;
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, DomainError, DomainResult, GatewayApiKey, ModelPrice,
     ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
-    ProviderAuthProfile, ProviderRetryPolicy, RouteCandidate, RoutingCapability, RoutingPolicy,
-    RoutingPolicyScope, RoutingRule, UpstreamAccountFallbackMode, UpstreamAccountGroup,
+    ProviderAuthProfile, ProviderRetryPolicy, UpstreamAccountFallbackMode, UpstreamAccountGroup,
     UpstreamAccountRoute, UpstreamAccountRoutingStrategy,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
@@ -349,12 +348,6 @@ impl PricingCatalog for SharedPricingCatalog {
             .into_iter()
             .filter(|route| !self.is_deleted(route.account_id))
             .collect()
-    }
-    fn list_routing_policies(&self) -> Vec<RoutingPolicy> {
-        self.read().list_routing_policies()
-    }
-    fn list_routing_rules(&self, profile_id: i64) -> Vec<RoutingRule> {
-        self.read().list_routing_rules(profile_id)
     }
     fn list_model_mappings(&self) -> Vec<sdkwork_cloudrouter_router_service::domain::ModelMappingRule> {
         self.read().list_model_mappings()
@@ -679,31 +672,6 @@ fn seed_catalog(provider_a: &str, provider_b: &str) -> InMemoryPricingCatalog {
     catalog.add_upstream_account_group(default_group);
 
     // Routing policy + rule scoped to the default group.
-    catalog.add_routing_policy(
-        RoutingPolicy::new(
-            9001,
-            TENANT_ID,
-            20,
-            "default-group-gpt-4o-policy",
-            RoutingPolicyScope::UpstreamAccountGroup,
-            Some(DEFAULT_GROUP_ID),
-            Some(9101),
-        )
-        .with_capability(RoutingCapability::Chat),
-    );
-    catalog.add_routing_rule(
-        RoutingRule::new(
-            9102,
-            TENANT_ID,
-            20,
-            9101,
-            "default-group-gpt-4o",
-            1,
-            r#"{"catalogKey":"openai/gpt-4o"}"#,
-            CATALOG_KEY,
-        )
-        .with_candidate_account_groups(vec![RouteCandidate::new(DEFAULT_GROUP_ID, 100)]),
-    );
 
     // A dummy api key so `find_api_key(0)` is absent (auth-token channel).
     catalog.add_api_key(GatewayApiKey::new(101, DEFAULT_GROUP_ID, "sk-live", "dummy").with_owner(TENANT_ID, 20, 30));

@@ -111,14 +111,15 @@ strategies) bypass the selector and use the sticky route directly.
 
 ## 5. Resource entitlement & model mapping
 
-- Supplier capability is expressed by `ai_upstream_supplier_resource` +
-  `ai_upstream_account_group_resource`, expanded through `ai_resource_group`
-  (recursive, depth < 8). The snapshot computes the **group ∩ supplier
-  intersection** per member binding and materializes `apiScope`,
-  `capabilities`, and `resourceEntitlements` (empty intersection ⇒ `__deny__`).
-- Per-account bindings (`ai_upstream_account_resource`, managed via
-  `GET/PUT /backend/v3/api/ai/upstream_accounts/{accountId}/resources`) add an
-  optional third scope layer: when an account has explicit bindings the
+- Supplier capability is expressed by `ai_resource_binding`
+  (`binding_scope='supplier'`) and `ai_resource_binding` (`binding_scope='account_group'`),
+  expanded through `ai_resource_group` (recursive, depth < 8). The snapshot
+  computes the **group ∩ supplier intersection** per member binding and
+  materializes `apiScope`, `capabilities`, and `resourceEntitlements`
+  (empty intersection ⇒ `__deny__`).
+- Per-account bindings (`ai_resource_binding` with `binding_scope='account'`,
+  managed via `GET/PUT /backend/v3/api/ai/upstream_accounts/{accountId}/resources`)
+  add an optional third scope layer: when an account has explicit bindings the
   effective scope is `group ∩ supplier ∩ account`; accounts without bindings
   keep the group ∩ supplier result unchanged (backward compatible). A
   deny-only account binding yields `__deny__`.

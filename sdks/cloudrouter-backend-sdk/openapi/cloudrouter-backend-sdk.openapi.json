@@ -11757,13 +11757,7 @@
             "maxLength": 128,
             "type": "string"
           },
-          "ruleId": {
-            "description": "Rule id field on upstream account group route explanation.",
-            "maxLength": 32,
-            "nullable": true,
-            "type": "string"
-          },
-          "selectedCandidates": {
+                    "selectedCandidates": {
             "description": "Selected candidates field on upstream account group route explanation.",
             "items": {
               "$ref": "#/components/schemas/UpstreamRouteExplainCandidate"
@@ -11800,10 +11794,7 @@
           "candidateCount",
           "selectedCandidates",
           "blockedReasons",
-          "warnings",
-          "policyId",
-          "ruleId",
-          "policySnapshotVersion"
+          "warnings"
         ],
         "type": "object"
       },
@@ -12844,13 +12835,7 @@
             "maxLength": 32,
             "type": "string"
           },
-          "policyId": {
-            "description": "Policy id field on upstream route explain candidate.",
-            "maxLength": 32,
-            "nullable": true,
-            "type": "string"
-          },
-          "pricingPlanCode": {
+                    "pricingPlanCode": {
             "description": "Pricing plan code field on upstream route explain candidate.",
             "maxLength": 128,
             "type": "string"
@@ -12872,13 +12857,7 @@
             "nullable": true,
             "type": "string"
           },
-          "ruleId": {
-            "description": "Rule id field on upstream route explain candidate.",
-            "maxLength": 32,
-            "nullable": true,
-            "type": "string"
-          },
-          "supplierCode": {
+                    "supplierCode": {
             "description": "Supplier code field on upstream route explain candidate.",
             "maxLength": 128,
             "type": "string"
@@ -12897,8 +12876,6 @@
           "accountGroupId",
           "accountGroupCode",
           "pricingPlanCode",
-          "policyId",
-          "ruleId",
           "apiCode",
           "catalogKey",
           "requestedModel",
@@ -14839,7 +14816,7 @@
     },
     "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/resources": {
       "get": {
-        "description": "List upstream account group resources. Reads ai_upstream_account_group, ai_upstream_account_group_resource, ai_resource, ai_resource_group. Writes none. File targets none.",
+        "description": "List upstream account group resources. Reads ai_upstream_account_group, ai_resource_binding, ai_resource, ai_resource_group. Writes none. File targets none.",
         "operationId": "upstreamAccountGroups.resources.list",
         "parameters": [
           {
@@ -14918,7 +14895,7 @@
         "x-file-targets": [],
         "x-read-sources": [
           "ai_upstream_account_group",
-          "ai_upstream_account_group_resource",
+          "ai_resource_binding",
           "ai_resource",
           "ai_resource_group"
         ],
@@ -14935,7 +14912,7 @@
         "x-write-tables": []
       },
       "put": {
-        "description": "Update upstream account group resources. Reads ai_upstream_account_group, ai_upstream_account_group_resource, ai_resource, ai_resource_group. Writes ai_upstream_account_group, ai_upstream_account_group_resource, ai_resource, ai_resource_group, ops_audit_log, ops_config_snapshot. File targets none.",
+        "description": "Update upstream account group resources. Reads ai_upstream_account_group, ai_resource_binding, ai_resource, ai_resource_group. Writes ai_upstream_account_group, ai_resource_binding, ai_resource, ai_resource_group, ops_audit_log, ops_config_snapshot. File targets none.",
         "operationId": "upstreamAccountGroups.resources.update",
         "parameters": [
           {
@@ -15035,7 +15012,7 @@
         "x-file-targets": [],
         "x-read-sources": [
           "ai_upstream_account_group",
-          "ai_upstream_account_group_resource",
+          "ai_resource_binding",
           "ai_resource",
           "ai_resource_group"
         ],
@@ -15051,7 +15028,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_account_group",
-          "ai_upstream_account_group_resource",
+          "ai_resource_binding",
           "ai_resource",
           "ai_resource_group",
           "ops_audit_log",
@@ -15061,7 +15038,7 @@
     },
     "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/route_explain": {
       "post": {
-        "description": "Explain upstream account group route. Reads ai_upstream_account_group, ai_upstream_account_group_member, ai_upstream_account, ai_upstream_account_group_resource, ai_resource, ai_resource_group, iam_gateway_api_key, ai_upstream_object_route, ai_routing_policy, ai_routing_rule. Writes none. File targets none.",
+        "description": "Explain upstream account group route. Reads ai_upstream_account_group, ai_upstream_account_group_member, ai_upstream_account, ai_resource_binding, ai_resource, ai_resource_group, iam_gateway_api_key, ai_upstream_object_route. Writes none. File targets none.",
         "operationId": "upstreamAccountGroups.explain",
         "parameters": [
           {
@@ -15153,13 +15130,11 @@
           "ai_upstream_account_group",
           "ai_upstream_account_group_member",
           "ai_upstream_account",
-          "ai_upstream_account_group_resource",
+          "ai_resource_binding",
           "ai_resource",
           "ai_resource_group",
           "iam_gateway_api_key",
-          "ai_upstream_object_route",
-          "ai_routing_policy",
-          "ai_routing_rule"
+          "ai_upstream_object_route"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",
@@ -16080,7 +16055,7 @@
     },
     "/backend/v3/api/ai/upstream_accounts/{accountId}/resources": {
       "get": {
-        "description": "List upstream account resources. Reads ai_upstream_account, ai_upstream_account_resource, ai_resource, ai_resource_group. Writes none. File targets none.",
+        "description": "List upstream account resources. Reads ai_upstream_account, ai_resource_binding, ai_resource, ai_resource_group. Writes none. File targets none.",
         "operationId": "upstreamAccounts.resources.list",
         "parameters": [
           {
@@ -16159,7 +16134,7 @@
         "x-file-targets": [],
         "x-read-sources": [
           "ai_upstream_account",
-          "ai_upstream_account_resource",
+          "ai_resource_binding",
           "ai_resource",
           "ai_resource_group"
         ],
@@ -16176,7 +16151,7 @@
         "x-write-tables": []
       },
       "put": {
-        "description": "Update upstream account resources. Reads ai_upstream_account, ai_upstream_account_resource, ai_resource, ai_resource_group. Writes ai_upstream_account, ai_upstream_account_resource, ai_resource, ai_resource_group, ops_audit_log, ops_config_snapshot. File targets none.",
+        "description": "Update upstream account resources. Reads ai_upstream_account, ai_resource_binding, ai_resource, ai_resource_group. Writes ai_upstream_account, ai_resource_binding, ai_resource, ai_resource_group, ops_audit_log, ops_config_snapshot. File targets none.",
         "operationId": "upstreamAccounts.resources.update",
         "parameters": [
           {
@@ -16276,7 +16251,7 @@
         "x-file-targets": [],
         "x-read-sources": [
           "ai_upstream_account",
-          "ai_upstream_account_resource",
+          "ai_resource_binding",
           "ai_resource",
           "ai_resource_group"
         ],
@@ -16292,7 +16267,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_account",
-          "ai_upstream_account_resource",
+          "ai_resource_binding",
           "ai_resource",
           "ai_resource_group",
           "ops_audit_log",
@@ -17475,7 +17450,7 @@
     },
     "/backend/v3/api/ai/upstream_suppliers/{supplierId}/resources": {
       "get": {
-        "description": "List upstream supplier resources. Reads ai_upstream_supplier, ai_upstream_supplier_resource, ai_resource, ai_resource_group. Writes none. File targets none.",
+        "description": "List upstream supplier resources. Reads ai_upstream_supplier, ai_resource_binding, ai_resource, ai_resource_group. Writes none. File targets none.",
         "operationId": "upstreamSuppliers.resources.list",
         "parameters": [
           {
@@ -17554,7 +17529,7 @@
         "x-file-targets": [],
         "x-read-sources": [
           "ai_upstream_supplier",
-          "ai_upstream_supplier_resource",
+          "ai_resource_binding",
           "ai_resource",
           "ai_resource_group"
         ],
@@ -17571,7 +17546,7 @@
         "x-write-tables": []
       },
       "put": {
-        "description": "Update upstream supplier resources. Reads ai_upstream_supplier, ai_upstream_supplier_resource, ai_resource, ai_resource_group. Writes ai_upstream_supplier, ai_upstream_supplier_resource, ai_resource, ai_resource_group, ops_audit_log, ops_config_snapshot. File targets none.",
+        "description": "Update upstream supplier resources. Reads ai_upstream_supplier, ai_resource_binding, ai_resource, ai_resource_group. Writes ai_upstream_supplier, ai_resource_binding, ai_resource, ai_resource_group, ops_audit_log, ops_config_snapshot. File targets none.",
         "operationId": "upstreamSuppliers.resources.update",
         "parameters": [
           {
@@ -17671,7 +17646,7 @@
         "x-file-targets": [],
         "x-read-sources": [
           "ai_upstream_supplier",
-          "ai_upstream_supplier_resource",
+          "ai_resource_binding",
           "ai_resource",
           "ai_resource_group"
         ],
@@ -17687,7 +17662,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
         "x-write-tables": [
           "ai_upstream_supplier",
-          "ai_upstream_supplier_resource",
+          "ai_resource_binding",
           "ai_resource",
           "ai_resource_group",
           "ops_audit_log",

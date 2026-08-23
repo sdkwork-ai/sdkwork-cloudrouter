@@ -11,7 +11,9 @@ fn request_limits_config_uses_production_defaults_when_absent() {
 
     assert_eq!(128 * 1024, config.admin_app_json_body_max_bytes());
     assert_eq!(64 * 1024, config.admin_skill_json_body_max_bytes());
-    assert_eq!(1024 * 1024, config.gateway_invocation_body_max_bytes());
+    // 25 MiB default covers official OpenAI multipart uploads (audio 25 MiB,
+    // images/edits up to 50 MiB; operators may raise via env/toml).
+    assert_eq!(25 * 1024 * 1024, config.gateway_invocation_body_max_bytes());
 }
 
 #[test]

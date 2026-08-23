@@ -7,20 +7,20 @@ use crate::domain::{
     has_text, AccountRateCard, AiModel, BillingMeter, DecimalValue, DomainError, DomainResult,
     GatewayAccessPolicy, GatewayApiKey, GatewayRiskRule, ModelMappingRule, ModelPrice,
     ModelUpstreamRoute, ModelVendorDefinition, Money, PriceSide, PricingPlan, PricingRule,
-    QuotaPolicy, ResolveModelMappingContext, RoutingPolicy, RoutingRule, UpstreamAccountGroup,
+    QuotaPolicy, ResolveModelMappingContext, UpstreamAccountGroup,
     UpstreamAccountGroupMetricSnapshot, UpstreamAccountRoute,
 };
 use crate::infrastructure::in_memory_pricing_catalog::resolve_model_mapping_from_rules;
 use crate::infrastructure::sql::rows::{
     AccountRateCardRow, AiModelRow, GatewayAccessPolicyRow, GatewayApiKeyRow, GatewayRiskRuleRow,
     ModelMappingRuleRow, ModelPriceRow, ModelUpstreamRouteRow, ModelVendorRow, PricingPlanRow,
-    PricingRuleRow, QuotaPolicyRow, RoutingPolicyRow, RoutingRuleRow,
+    PricingRuleRow, QuotaPolicyRow,
     UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow, UpstreamAccountRouteRow,
-    UpstreamSupplierModelAccessRow,
+    UpstreamAccountModelAccessRow, UpstreamSupplierModelAccessRow,
 };
 use crate::ports::{
-    AccountBaseUrlConfig, AccountGroupModelAccess, AdminLlmProtocolConfig, PricingCatalog,
-    SupplierModelAccess, UpstreamAccountRouteCatalog, VendorModelListEntry,
+    AccountBaseUrlConfig, AccountGroupModelAccess, AccountModelAccess, AdminLlmProtocolConfig,
+    PricingCatalog, SupplierModelAccess, UpstreamAccountRouteCatalog, VendorModelListEntry,
 };
 
 #[derive(Default)]
@@ -29,14 +29,13 @@ pub struct PricingCatalogRows {
     pub models: Vec<AiModelRow>,
     pub model_upstream_routes: Vec<ModelUpstreamRouteRow>,
     pub upstream_account_routes: Vec<UpstreamAccountRouteRow>,
-    pub routing_policies: Vec<RoutingPolicyRow>,
-    pub routing_rules: Vec<RoutingRuleRow>,
     pub model_mappings: Vec<ModelMappingRuleRow>,
     pub pricing_plans: Vec<PricingPlanRow>,
     pub pricing_rules: Vec<PricingRuleRow>,
     pub account_rate_cards: Vec<AccountRateCardRow>,
     pub upstream_account_groups: Vec<UpstreamAccountGroupRow>,
     pub upstream_supplier_model_access: Vec<UpstreamSupplierModelAccessRow>,
+    pub upstream_account_model_access: Vec<UpstreamAccountModelAccessRow>,
     pub api_keys: Vec<GatewayApiKeyRow>,
     pub access_policies: Vec<GatewayAccessPolicyRow>,
     pub quota_policies: Vec<QuotaPolicyRow>,
@@ -54,8 +53,6 @@ pub struct SqlPricingCatalogSnapshotSummary {
     pub upstream_account_routes: usize,
     pub callable_upstream_account_routes: usize,
     pub provider_upstream_account_group_bindings: usize,
-    pub routing_policies: usize,
-    pub routing_rules: usize,
     pub model_mappings: usize,
     pub pricing_plans: usize,
     pub pricing_rules: usize,
@@ -116,8 +113,6 @@ pub struct SqlPricingCatalogSnapshot {
     models: Vec<AiModel>,
     model_upstream_routes: Vec<ModelUpstreamRoute>,
     upstream_account_routes: Arc<[UpstreamAccountRoute]>,
-    routing_policies: Vec<RoutingPolicy>,
-    routing_rules: Vec<RoutingRule>,
     model_mappings: Vec<ModelMappingRule>,
     pricing_plans: Vec<ScopedPricingPlan>,
     pricing_rules: Vec<PricingRule>,
@@ -132,8 +127,10 @@ pub struct SqlPricingCatalogSnapshot {
     managed_provider_secrets: BTreeMap<String, String>,
     account_group_model_access_by_id: HashMap<i64, AccountGroupModelAccess>,
     supplier_model_access_by_code: HashMap<String, SupplierModelAccess>,
+    account_model_access_by_id: HashMap<i64, AccountModelAccess>,
     supplier_default_base_url_by_code: HashMap<String, String>,
     account_base_url_config_by_id: HashMap<i64, AccountBaseUrlConfig>,
+    account_billing_modes: HashMap<i64, String>,
     // --- Indexes for O(1) hot-path lookups ---
     models_by_key: HashMap<String, AiModel>,
     models_by_name: HashMap<String, Vec<String>>,
@@ -185,6 +182,33 @@ impl SqlPricingCatalogSnapshot {
                 ))
             })
             .collect::<DomainResult<HashMap<_, _>>>()?;
+        // 账号级模型黑白名单（scope_type='account' 聚合）
+        let account_model_access_by_id = rows
+            .upstream_account_model_access
+            .into_iter()
+            .map(|row| {
+                Ok((
+                    row.account_id,
+                    AccountModelAccess {
+                        account_id: row.account_id,
+                        blacklist: parse_vendor_model_list(&row.model_blacklist_json)?,
+                        whitelist: parse_vendor_model_list(&row.model_whitelist_json)?,
+                    },
+                ))
+            })
+            .collect::<DomainResult<HashMap<_, _>>>()?;
+        // 账号计费模式映射（prepay/postpay）；同一账号多行取同一值
+        let account_billing_modes = rows
+            .upstream_account_routes
+            .iter()
+            .filter_map(|row| {
+                row.billing_mode
+                    .trim()
+                    .is_empty()
+                    .then(|| ())
+                    .map(|_| (row.account_id, row.billing_mode.clone()))
+            })
+            .collect::<HashMap<_, _>>();
         // 供应商默认 Base URL 映射（非 LLM 资源请求走默认端点）；同一供应商多行取同一值
         let supplier_default_base_url_by_code = rows
             .upstream_account_routes
@@ -238,8 +262,6 @@ impl SqlPricingCatalogSnapshot {
                 UpstreamAccountRouteRow::try_into_domain,
             )?
             .into(),
-            routing_policies: map_rows(rows.routing_policies, RoutingPolicyRow::try_into_domain)?,
-            routing_rules: map_rows(rows.routing_rules, RoutingRuleRow::try_into_domain)?,
             model_mappings: map_rows(rows.model_mappings, ModelMappingRuleRow::try_into_domain)?,
             pricing_plans,
             pricing_rules: rows
@@ -274,8 +296,10 @@ impl SqlPricingCatalogSnapshot {
             managed_provider_secrets,
             account_group_model_access_by_id,
             supplier_model_access_by_code,
+            account_model_access_by_id,
             supplier_default_base_url_by_code,
             account_base_url_config_by_id,
+            account_billing_modes,
             models_by_key: HashMap::new(),
             models_by_name: HashMap::new(),
             api_keys_by_hash: HashMap::new(),
@@ -385,8 +409,6 @@ impl SqlPricingCatalogSnapshot {
                 .iter()
                 .map(|route| route.account_group_bindings.len())
                 .sum(),
-            routing_policies: self.routing_policies.len(),
-            routing_rules: self.routing_rules.len(),
             model_mappings: self.model_mappings.len(),
             pricing_plans: self.pricing_plans.len(),
             pricing_rules: self.pricing_rules.len(),
@@ -546,14 +568,6 @@ impl PricingCatalog for RefreshableSqlPricingCatalog {
 
     fn list_upstream_account_routes(&self) -> Vec<UpstreamAccountRoute> {
         self.current_snapshot().list_upstream_account_routes()
-    }
-
-    fn list_routing_policies(&self) -> Vec<RoutingPolicy> {
-        self.current_snapshot().list_routing_policies()
-    }
-
-    fn list_routing_rules(&self, profile_id: i64) -> Vec<RoutingRule> {
-        self.current_snapshot().list_routing_rules(profile_id)
     }
 
     fn list_model_mappings(&self) -> Vec<ModelMappingRule> {
@@ -788,18 +802,6 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
 
     fn list_upstream_account_routes(&self) -> Vec<UpstreamAccountRoute> {
         self.upstream_account_routes.to_vec()
-    }
-
-    fn list_routing_policies(&self) -> Vec<RoutingPolicy> {
-        self.routing_policies.clone()
-    }
-
-    fn list_routing_rules(&self, profile_id: i64) -> Vec<RoutingRule> {
-        self.routing_rules
-            .iter()
-            .filter(|rule| rule.profile_id == profile_id)
-            .cloned()
-            .collect()
     }
 
     fn list_model_mappings(&self) -> Vec<ModelMappingRule> {
@@ -1047,6 +1049,10 @@ impl UpstreamAccountRouteCatalog for SqlPricingCatalogSnapshot {
             .cloned()
     }
 
+    fn account_model_access(&self, account_id: i64) -> Option<AccountModelAccess> {
+        self.account_model_access_by_id.get(&account_id).cloned()
+    }
+
     fn supplier_default_base_url(&self, supplier_code: &str) -> Option<String> {
         self.supplier_default_base_url_by_code
             .get(supplier_code)
@@ -1057,11 +1063,42 @@ impl UpstreamAccountRouteCatalog for SqlPricingCatalogSnapshot {
         self.account_base_url_config_by_id.get(&account_id).cloned()
     }
 
+    fn account_billing_mode(&self, account_id: i64) -> Option<String> {
+        self.account_billing_modes.get(&account_id).cloned()
+    }
+
     fn model_catalog_keys_by_name(&self, model_name: &str) -> Vec<String> {
         self.models_by_name
             .get(model_name)
             .cloned()
             .unwrap_or_default()
+    }
+
+    fn model_vendor_codes_by_name(&self, model_name: &str) -> Vec<String> {
+        let mut vendors = Vec::new();
+        if let Some(keys) = self.models_by_name.get(model_name) {
+            for key in keys {
+                if let Some(model) = self.models_by_key.get(key) {
+                    if !vendors.contains(&model.vendor_code) {
+                        vendors.push(model.vendor_code.clone());
+                    }
+                }
+            }
+        }
+        // 兜底：按 catalog key 前缀 "vendor/" 或完整模型名再扫描一次，
+        // 覆盖 catalog key 恰好等于模型名的情形。
+        if vendors.is_empty() {
+            for model in self.models_by_key.values() {
+                if model.catalog_key == model_name
+                    || model.catalog_key.starts_with(&format!("{model_name}/"))
+                {
+                    if !vendors.contains(&model.vendor_code) {
+                        vendors.push(model.vendor_code.clone());
+                    }
+                }
+            }
+        }
+        vendors
     }
 }
 

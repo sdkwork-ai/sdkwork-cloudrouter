@@ -2,8 +2,8 @@ use sqlx::postgres::PgRow;
 use sqlx::{PgPool, Postgres, Transaction};
 
 use super::shared::{
-    column, conflict, model_list_json, not_found, parse_model_list, record_routing_change,
-    search_pattern, store_error, DEFAULT_DATA_SCOPE,
+    column, conflict, not_found, record_routing_change, search_pattern, store_error,
+    DEFAULT_DATA_SCOPE,
 };
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::account_rate_card::{
@@ -22,8 +22,6 @@ const GROUP_COLUMNS: &str = r#"
     cost_multiplier::text AS cost_multiplier,
     sale_multiplier::text AS sale_multiplier,
     environment, vendor_code, modalities::text AS modalities, tags::text AS tags,
-    model_blacklist::text AS model_blacklist,
-    model_whitelist::text AS model_whitelist,
     status, is_default, version,
     TO_CHAR(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS updated_at
 "#;
@@ -76,10 +74,23 @@ pub(super) async fn list(
         .fetch_all(pool)
         .await
         .map_err(|error| store_error("failed to list upstream account groups", error))?;
-    let items = rows
+    let mut items = rows
         .into_iter()
         .map(map_row)
         .collect::<DomainResult<Vec<_>>>()?;
+    for group in &mut items {
+        if let Some((blacklist, whitelist)) = super::model_access::load_scope_model_access(
+            pool,
+            &query.subject,
+            "account_group",
+            group.id,
+        )
+        .await?
+        {
+            group.model_blacklist = blacklist;
+            group.model_whitelist = whitelist;
+        }
+    }
     Ok(AdminUpstreamPage {
         items,
         page: query.page,
@@ -101,7 +112,7 @@ pub(super) async fn get(
           AND id = $3 AND deleted_at IS NULL
         "#
     );
-    sqlx::query(sqlx::AssertSqlSafe(sql))
+    let mut item = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(account_group_id)
@@ -109,7 +120,17 @@ pub(super) async fn get(
         .await
         .map_err(|error| store_error("failed to retrieve upstream account group", error))?
         .map(map_row)
-        .transpose()
+        .transpose()?;
+    if let Some(group) = item.as_mut() {
+        if let Some((blacklist, whitelist)) =
+            super::model_access::load_scope_model_access(pool, &subject, "account_group", account_group_id)
+                .await?
+        {
+            group.model_blacklist = blacklist;
+            group.model_whitelist = whitelist;
+        }
+    }
+    Ok(item)
 }
 
 pub(super) async fn save(
@@ -138,6 +159,17 @@ pub(super) async fn save(
         Some(account_group_id) => update(&mut tx, account_group_id, &command).await?,
         None => insert(&mut tx, &command).await?,
     };
+    super::model_access::replace_scope_model_access(
+        &mut tx,
+        &command.subject,
+        &command.requested_at,
+        "account_group",
+        account_group_id,
+        Some(command.group_code.trim()),
+        &command.model_blacklist,
+        &command.model_whitelist,
+    )
+    .await?;
     ensure_account_group_rate_card(
         &mut tx,
         command.subject.tenant_id,
@@ -231,7 +263,7 @@ pub(super) async fn delete(
     }
     for table in [
         "ai_upstream_account_group_member",
-        "ai_upstream_account_group_resource",
+        "ai_resource_binding",
     ] {
         let sql = format!(
             r#"
@@ -384,16 +416,14 @@ async fn insert(
             group_code, group_name, description, group_type,
             routing_strategy, fallback_mode, priority,
             cost_multiplier, sale_multiplier, environment,
-            vendor_code, modalities, tags, is_default,
-            model_blacklist, model_whitelist
+            vendor_code, modalities, tags, is_default
         ) VALUES (
             $1, $2, $3, $4, $5, $6,
             $7::timestamptz, $7::timestamptz, 0, '{}'::jsonb,
             $8, $9, $10, $11,
             $12, $13, $14,
             $15::numeric, $16::numeric, $17,
-            $18, $19::jsonb, $20::jsonb, $21,
-            $22::jsonb, $23::jsonb
+            $18, $19::jsonb, $20::jsonb, $21
         )
         "#,
     )
@@ -418,8 +448,6 @@ async fn insert(
     .bind(modalities_json(&command.modalities))
     .bind(tags_json(&command.tags))
     .bind(command.is_default)
-    .bind(model_list_json(&command.model_blacklist))
-    .bind(model_list_json(&command.model_whitelist))
     .execute(&mut **tx)
     .await
     .map_err(|error| store_error("failed to create upstream account group", error))?;
@@ -487,12 +515,10 @@ async fn update(
             tags = $12::jsonb,
             status = $13,
             is_default = $14,
-            model_blacklist = $15::jsonb,
-            model_whitelist = $16::jsonb,
             version = version + 1,
-            updated_at = $17::timestamptz
-        WHERE tenant_id = $18 AND organization_id = $19
-          AND id = $20 AND version = $21 AND deleted_at IS NULL
+            updated_at = $15::timestamptz
+        WHERE tenant_id = $16 AND organization_id = $17
+          AND id = $18 AND version = $19 AND deleted_at IS NULL
         "#,
     )
     .bind(command.group_name.trim())
@@ -509,8 +535,6 @@ async fn update(
     .bind(tags_json(&command.tags))
     .bind(command.status)
     .bind(command.is_default)
-    .bind(model_list_json(&command.model_blacklist))
-    .bind(model_list_json(&command.model_whitelist))
     .bind(&command.requested_at)
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
@@ -572,7 +596,7 @@ async fn get_in_transaction(
           AND id = $3 AND deleted_at IS NULL
         "#
     );
-    sqlx::query(sqlx::AssertSqlSafe(sql))
+    let mut item = sqlx::query(sqlx::AssertSqlSafe(sql))
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
         .bind(account_group_id)
@@ -580,7 +604,21 @@ async fn get_in_transaction(
         .await
         .map_err(|error| store_error("failed to reload upstream account group", error))?
         .map(map_row)
-        .transpose()
+        .transpose()?;
+    if let Some(group) = item.as_mut() {
+        if let Some((blacklist, whitelist)) = super::model_access::load_scope_model_access_in_tx(
+            tx,
+            subject,
+            "account_group",
+            account_group_id,
+        )
+        .await?
+        {
+            group.model_blacklist = blacklist;
+            group.model_whitelist = whitelist;
+        }
+    }
+    Ok(item)
 }
 
 fn validate_command(command: &SaveAdminUpstreamAccountGroupCommand) -> DomainResult<()> {
@@ -702,22 +740,11 @@ fn map_row(row: PgRow) -> DomainResult<AdminUpstreamAccountGroupItem> {
             "tags",
             "failed to map upstream account group tags",
         )?)?,
-        model_blacklist: parse_model_list(
-            "upstream account group",
-            column(
-                &row,
-                "model_blacklist",
-                "failed to map upstream account group model blacklist",
-            )?,
-        )?,
-        model_whitelist: parse_model_list(
-            "upstream account group",
-            column(
-                &row,
-                "model_whitelist",
-                "failed to map upstream account group model whitelist",
-            )?,
-        )?,
+        // Model access rules live in the unified ai_model_access_policy table;
+        // they are aggregated into these lists by load_model_access_into after
+        // the row is mapped (see get/get_in_transaction/list).
+        model_blacklist: Vec::new(),
+        model_whitelist: Vec::new(),
         status: column(
             &row,
             "status",

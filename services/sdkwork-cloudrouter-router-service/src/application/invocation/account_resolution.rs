@@ -80,6 +80,8 @@ where
                 timeout_ms: candidate.timeout_ms,
                 retry_policy: candidate.retry_policy.clone(),
                 provider_model: candidate.provider_model.clone(),
+                // 计费模式由路由规划时从账号配置解析并携带到候选。
+                billing_mode: candidate.billing_mode,
                 account_group_id: candidate.account_group_id,
                 account_group_code: candidate.account_group_code.clone(),
                 pricing_plan_code: candidate.pricing_plan_code.clone(),

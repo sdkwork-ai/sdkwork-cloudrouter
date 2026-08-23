@@ -7,10 +7,11 @@ use sdkwork_cloudrouter_router_service::api::{
     OpenAiInvocationPluginError, OpenAiUpstreamRoute, RoutingDecisionLogPlugin,
 };
 use sdkwork_cloudrouter_router_service::application::{
-    AuthenticatedApiKeyContext, Invocation, InvocationAccount, InvocationBilling, InvocationError,
-    InvocationErrorKind, InvocationInterceptor, InvocationRequest, InvocationResource,
-    InvocationRouteAttempt, InvocationRouteCandidate, InvocationRouteCandidateKind,
-    InvocationRoutePlan, InvocationRouting, InvocationSubject, RoutingDecisionLogInterceptor,
+    AccountBillingMode, AuthenticatedApiKeyContext, Invocation, InvocationAccount,
+    InvocationBilling, InvocationError, InvocationErrorKind, InvocationInterceptor,
+    InvocationRequest, InvocationResource, InvocationRouteAttempt, InvocationRouteCandidate,
+    InvocationRouteCandidateKind, InvocationRoutePlan, InvocationRouting, InvocationSubject,
+    RoutingDecisionLogInterceptor,
 };
 use sdkwork_cloudrouter_router_service::domain::{
     AiRouteModelRequirement, AiRouteStrategy, BillingMeter, ProviderAuthProfile, RoutingCapability,
@@ -78,8 +79,6 @@ fn invocation_with_route_plan() -> Invocation {
         InvocationBilling::composite(BillingMeter::LlmInputToken),
     );
     invocation.routing = InvocationRouting::new(AiRouteStrategy::StatelessFailover, None);
-    invocation.routing.policy_id = Some(1);
-    invocation.routing.rule_id = Some(2);
     invocation.routing.route_plan = Some(InvocationRoutePlan::new(vec![candidate(
         "openrouter",
         3001,
@@ -95,8 +94,6 @@ fn candidate(supplier_code: &str, account_id: i64) -> InvocationRouteCandidate {
         account_group_id: Some(10),
         account_group_code: Some("standard-group".to_owned()),
         pricing_plan_code: Some("standard".to_owned()),
-        policy_id: Some(1),
-        rule_id: Some(2),
         api_code: "openai.chat_completions".to_owned(),
         catalog_key: Some("openai/gpt-4o-mini".to_owned()),
         requested_model: Some("gpt-4o-mini".to_owned()),
@@ -109,14 +106,13 @@ fn candidate(supplier_code: &str, account_id: i64) -> InvocationRouteCandidate {
         auth_profile: ProviderAuthProfile::default(),
         timeout_ms: None,
         retry_policy: None,
+        billing_mode: AccountBillingMode::Prepay,
     }
 }
 
 fn resolved_route() -> OpenAiUpstreamRoute {
     OpenAiUpstreamRoute {
         catalog_key: "openai/gpt-4o-mini".to_owned(),
-        policy_id: Some(1),
-        rule_id: Some(2),
         group_id: 10,
         group_code: "standard-group".to_owned(),
         pricing_plan_code: "standard".to_owned(),
@@ -152,6 +148,7 @@ async fn interceptor_records_selected_route_decision_facts() {
         timeout_ms: None,
         retry_policy: None,
         provider_model: Some("openrouter-gpt-4o-mini".to_owned()),
+        billing_mode: AccountBillingMode::Prepay,
     });
     invocation
         .routing
@@ -187,8 +184,6 @@ async fn interceptor_records_selected_route_decision_facts() {
         Some("standard-group"),
         command.account_group_code.as_deref()
     );
-    assert_eq!(Some(1), command.policy_id);
-    assert_eq!(Some(2), command.rule_id);
     assert_eq!(Some("gpt-4o-mini"), command.requested_model.as_deref());
     assert_eq!(
         Some("openrouter-gpt-4o-mini"),
@@ -283,8 +278,6 @@ async fn plugin_records_selected_route_at_after_route_selection() {
         Some("standard-group"),
         command.account_group_code.as_deref()
     );
-    assert_eq!(Some(1), command.policy_id);
-    assert_eq!(Some(2), command.rule_id);
     assert_eq!(Some("gpt-4o-mini"), command.requested_model.as_deref());
     assert_eq!(
         Some("openrouter-gpt-4o-mini"),

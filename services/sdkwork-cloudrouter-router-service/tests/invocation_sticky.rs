@@ -1,6 +1,7 @@
 use axum::http::Method;
 use sdkwork_cloudrouter_router_service::application::{
-    AuthenticatedApiKeyContext, DispatchMode, Invocation, InvocationAccount, InvocationBody,
+    AccountBillingMode, AuthenticatedApiKeyContext, DispatchMode, Invocation, InvocationAccount,
+    InvocationBody,
     InvocationClassificationRequest, InvocationDispatch, InvocationErrorKind,
     InvocationInterceptor, InvocationRequest, InvocationResourceClassifier,
     OpenAiResourceClassifier, StickyCommitInterceptor, StickyResolutionInterceptor,
@@ -128,6 +129,7 @@ fn routed_account() -> InvocationAccount {
         timeout_ms: Some(30_000),
         retry_policy: None,
         provider_model: Some("gpt-4o-mini".to_owned()),
+        billing_mode: AccountBillingMode::Prepay,
         account_group_id: None,
         account_group_code: None,
         pricing_plan_code: None,

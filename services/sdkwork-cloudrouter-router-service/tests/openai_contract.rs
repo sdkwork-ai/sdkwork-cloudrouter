@@ -2,12 +2,13 @@ use sdkwork_cloudrouter_router_service::api::openai_contract::{
     OpenAiAnnotationType, OpenAiChatCompletionRequest, OpenAiChatCompletionResponse,
     OpenAiChatContentPartType, OpenAiChatMessageContent, OpenAiChatMessageRole,
     OpenAiEmbeddingEncodingFormat, OpenAiEmbeddingList, OpenAiEmbeddingVector,
-    OpenAiEmbeddingsRequest, OpenAiIncompleteReason, OpenAiJsonSchemaAdditionalProperties,
-    OpenAiReasoningEffort, OpenAiReasoningSummary, OpenAiResponseFormatType, OpenAiResponseInput,
-    OpenAiResponseInputContent, OpenAiResponseInputContentPartType,
-    OpenAiResponseOutputContentType, OpenAiResponseOutputItemType, OpenAiResponseStatus,
-    OpenAiResponsesRequest, OpenAiResponsesResponse, OpenAiServiceTier, OpenAiToolChoice,
-    OpenAiToolChoiceMode, OpenAiToolType, OpenAiTruncationStrategy,
+    OpenAiEmbeddingsRequest, OpenAiErrorBody, OpenAiErrorEnvelope, OpenAiIncompleteReason,
+    OpenAiJsonSchemaAdditionalProperties, OpenAiReasoningEffort, OpenAiReasoningSummary,
+    OpenAiResponseFormatType, OpenAiResponseInput, OpenAiResponseInputContent,
+    OpenAiResponseInputContentPartType, OpenAiResponseOutputContentType,
+    OpenAiResponseOutputItemType, OpenAiResponseStatus, OpenAiResponsesRequest,
+    OpenAiResponsesResponse, OpenAiServiceTier, OpenAiToolChoice, OpenAiToolChoiceMode,
+    OpenAiToolType, OpenAiTruncationStrategy,
 };
 
 #[test]
@@ -433,4 +434,52 @@ fn embeddings_contract_defines_input_dimensions_encoding_and_embedding_list() {
         response.data[0].embedding
     );
     assert_eq!(2, response.usage.total_tokens);
+}
+
+#[test]
+fn error_envelope_contract_matches_official_openai_error_shape() {
+    // The official OpenAI error envelope serializes exactly:
+    //   {"error": {"message", "type", "param", "code"}}
+    // SDK clients match on `error.type` (authentication_error,
+    // rate_limit_error, invalid_request_error, server_error, ...).
+    let envelope: OpenAiErrorEnvelope = serde_json::from_value(serde_json::json!({
+        "error": {
+            "message": "Incorrect API key provided",
+            "type": "authentication_error",
+            "param": null,
+            "code": "invalid_api_key"
+        }
+    }))
+    .unwrap();
+
+    assert_eq!(
+        "Incorrect API key provided",
+        envelope.error.message
+    );
+    assert_eq!("authentication_error", envelope.error.error_type);
+    assert_eq!(None, envelope.error.param);
+    assert_eq!("invalid_api_key", envelope.error.code);
+
+    let serialized = serde_json::to_value(&envelope).unwrap();
+    assert_eq!(
+        "authentication_error",
+        serialized["error"]["type"],
+        "error type must serialize under the official `type` field name"
+    );
+    assert_eq!(
+        "invalid_api_key",
+        serialized["error"]["code"]
+    );
+    assert!(serialized["error"]["param"].is_null());
+    assert!(serialized["error"].get("message").is_some());
+    assert_eq!(
+        OpenAiErrorBody {
+            message: "Incorrect API key provided".to_owned(),
+            error_type: "authentication_error".to_owned(),
+            param: None,
+            code: "invalid_api_key".to_owned(),
+            extra: Default::default(),
+        },
+        envelope.error
+    );
 }

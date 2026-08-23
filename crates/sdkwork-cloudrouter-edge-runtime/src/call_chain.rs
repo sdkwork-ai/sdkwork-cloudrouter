@@ -198,7 +198,7 @@ impl PolicyResolver for StaticChainPolicyResolver {
 mod tests {
     use super::*;
     use sdkwork_cloudrouter_router_service::application::{
-        InvocationAuthType, InvocationBilling, InvocationBody, InvocationRequest,
+        InvocationAuthType, InvocationBilling, InvocationRequest,
         InvocationResource, InvocationSubject,
     };
     use sdkwork_web_chain::{ChainPolicy, ConcurrencyPolicy, IpAccessMode, IpAccessPolicy};

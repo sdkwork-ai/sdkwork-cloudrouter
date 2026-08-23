@@ -2,14 +2,14 @@ use crate::domain::{
     AiModel, BillingMeter, GatewayAccessPolicy, GatewayApiKey, GatewayRiskRule,
     ModelMappingBindingType, ModelMappingRule, ModelPrice, ModelUpstreamRoute,
     ModelVendorDefinition, PriceSide, PricingPlan, QuotaPolicy, ResolveModelMappingContext,
-    RoutingPolicy, RoutingRule, UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot,
-    UpstreamAccountRoute,
+    UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot, UpstreamAccountRoute,
 };
 use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::ports::{
-    AccountGroupModelAccess, PricingCatalog, SupplierModelAccess, UpstreamAccountRouteCatalog,
+    AccountGroupModelAccess, AccountModelAccess, PricingCatalog, SupplierModelAccess,
+    UpstreamAccountRouteCatalog,
 };
 
 #[derive(Debug, Default, Clone)]
@@ -18,8 +18,6 @@ pub struct InMemoryPricingCatalog {
     models: Vec<AiModel>,
     model_upstream_routes: Vec<ModelUpstreamRoute>,
     upstream_account_routes: Vec<UpstreamAccountRoute>,
-    routing_policies: Vec<RoutingPolicy>,
-    routing_rules: Vec<RoutingRule>,
     model_mappings: Vec<ModelMappingRule>,
     plans: Vec<PricingPlan>,
     upstream_account_groups: Vec<UpstreamAccountGroup>,
@@ -31,6 +29,7 @@ pub struct InMemoryPricingCatalog {
     prices: Vec<ModelPrice>,
     account_group_model_access: HashMap<i64, AccountGroupModelAccess>,
     supplier_model_access: HashMap<String, SupplierModelAccess>,
+    account_model_access: HashMap<i64, AccountModelAccess>,
     supplier_default_base_urls: HashMap<String, String>,
 }
 
@@ -51,14 +50,6 @@ impl InMemoryPricingCatalog {
         self.upstream_account_routes
             .retain(|existing| !same_upstream_account_route_identity(existing, &route));
         self.upstream_account_routes.push(route);
-    }
-
-    pub fn add_routing_policy(&mut self, policy: RoutingPolicy) {
-        self.routing_policies.push(policy);
-    }
-
-    pub fn add_routing_rule(&mut self, rule: RoutingRule) {
-        self.routing_rules.push(rule);
     }
 
     pub fn add_model_mapping(&mut self, rule: ModelMappingRule) {
@@ -129,6 +120,10 @@ impl InMemoryPricingCatalog {
         self.account_group_model_access
             .insert(access.group_id, access);
     }
+
+    pub fn set_account_model_access(&mut self, access: AccountModelAccess) {
+        self.account_model_access.insert(access.account_id, access);
+    }
 }
 
 fn same_upstream_account_route_identity(
@@ -177,18 +172,6 @@ impl PricingCatalog for InMemoryPricingCatalog {
 
     fn list_upstream_account_routes(&self) -> Vec<UpstreamAccountRoute> {
         self.upstream_account_routes.clone()
-    }
-
-    fn list_routing_policies(&self) -> Vec<RoutingPolicy> {
-        self.routing_policies.clone()
-    }
-
-    fn list_routing_rules(&self, profile_id: i64) -> Vec<RoutingRule> {
-        self.routing_rules
-            .iter()
-            .filter(|rule| rule.profile_id == profile_id)
-            .cloned()
-            .collect()
     }
 
     fn list_model_mappings(&self) -> Vec<ModelMappingRule> {
@@ -356,6 +339,10 @@ impl UpstreamAccountRouteCatalog for InMemoryPricingCatalog {
 
     fn supplier_model_access(&self, supplier_code: &str) -> Option<SupplierModelAccess> {
         self.supplier_model_access.get(supplier_code).cloned()
+    }
+
+    fn account_model_access(&self, account_id: i64) -> Option<AccountModelAccess> {
+        self.account_model_access.get(&account_id).cloned()
     }
 
     fn supplier_default_base_url(&self, supplier_code: &str) -> Option<String> {
