@@ -658,68 +658,10 @@ async fn seed_routing_topology(
         .await
         .expect("replace account B resources");
 
-    // Routing policy + profile + rule scoped to the default group.
-    sqlx::query(
-        r#"
-        INSERT INTO ai_routing_policy (
-            id, uuid, tenant_id, organization_id, data_scope, status, policy_code, name,
-            policy_scope, subject_id, capability, default_profile_id, fallback_mode, currency
-        ) VALUES ($1, $2, $3, $4, 1, 1, $5, $6, 5, $7, 1, $8, 1, 'USD')
-        "#,
-    )
-    .bind(90_111_i64)
-    .bind("e2e-responses-routing-policy")
-    .bind(TENANT_ID)
-    .bind(ORG_ID)
-    .bind("e2e-responses-routing-policy")
-    .bind("E2E responses routing policy")
-    .bind(group.id)
-    .bind(90_121_i64)
-    .execute(pool)
-    .await
-    .expect("insert routing policy");
-
-    sqlx::query(
-        r#"
-        INSERT INTO ai_routing_profile (
-            id, uuid, tenant_id, organization_id, data_scope, status, policy_id,
-            profile_version, profile_name, release_status, traffic_percent
-        ) VALUES ($1, $2, $3, $4, 1, 1, $5, 1, $6, 1, 1.000000)
-        "#,
-    )
-    .bind(90_121_i64)
-    .bind("e2e-responses-routing-profile")
-    .bind(TENANT_ID)
-    .bind(ORG_ID)
-    .bind(90_111_i64)
-    .bind("E2E responses profile")
-    .execute(pool)
-    .await
-    .expect("insert routing profile");
-
-    sqlx::query(
-        r#"
-        INSERT INTO ai_routing_rule (
-            id, uuid, tenant_id, organization_id, data_scope, status, profile_id, rule_code,
-            priority, match_expression, target_model, candidate_account_groups,
-            fallback_chain, constraints
-        ) VALUES ($1, $2, $3, $4, 1, 1, $5, $6, 1, $7, $8, $9, '[]', '{}')
-        "#,
-    )
-    .bind(90_131_i64)
-    .bind("e2e-responses-routing-rule")
-    .bind(TENANT_ID)
-    .bind(ORG_ID)
-    .bind(90_121_i64)
-    .bind("e2e-responses-routing-rule")
-    .bind(json!({"catalogKey": CATALOG_KEY}))
-    .bind(CATALOG_KEY)
-    .bind(
-        json!([{"account_group_id": group.id, "weight": 100, "region_code": "global"}]),
-    )
-    .execute(pool)
-    .await
-    .expect("insert routing rule");
+    // Routing behavior is driven by the account group itself (routing_strategy
+    // set at group creation) plus the group-member pool and resource
+    // entitlements above. The retired ai_routing_policy/profile/rule tables are
+    // no longer part of the schema (V2 design P6) and must not be seeded here.
 
     seed_pricing(pool, account_a.id, account_b.id).await;
 

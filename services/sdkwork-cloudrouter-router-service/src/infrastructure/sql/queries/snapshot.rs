@@ -765,6 +765,7 @@ SELECT
                             SELECT DISTINCT
                                 mrs.resource_code,
                                 mrs.resource_type,
+                                mrs.route_kind,
                                 mrs.vendor_code,
                                 mrs.modality_code,
                                 mrs.api_code,

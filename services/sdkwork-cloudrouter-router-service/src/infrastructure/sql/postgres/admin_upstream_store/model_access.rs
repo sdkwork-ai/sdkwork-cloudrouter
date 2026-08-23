@@ -56,7 +56,7 @@ pub(super) async fn replace_scope_model_access(
     sqlx::query(
         r#"
         UPDATE ai_model_access_policy
-        SET deleted_at = $4, deleted_by = $5, updated_at = $4
+        SET deleted_at = $4::timestamptz, deleted_by = $5, updated_at = $4::timestamptz
         WHERE tenant_id = $1 AND organization_id = $2
           AND scope_type = $3 AND scope_id = $6
           AND deleted_at IS NULL

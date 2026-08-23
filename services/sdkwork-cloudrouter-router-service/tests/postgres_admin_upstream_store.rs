@@ -370,14 +370,13 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
             .expect("account group bindings"),
     )
     .expect("parse account group bindings");
-    assert_eq!(
-        Some("model:gpt-4.1"),
-        bindings[0]["resourceEntitlements"][0]["resourceCode"].as_str()
+    // 账号自身无资源绑定：resourceEntitlements 为 null，分组×供应商作用域经
+    // apiScope/capabilities 继承（V2 查询契约：resourceEntitlements 仅承载账号自身绑定）。
+    assert!(
+        bindings[0]["resourceEntitlements"].is_null(),
+        "account without own binding inherits group scope via apiScope; resourceEntitlements stays null"
     );
-    assert_eq!(
-        Some("openai/gpt-4.1"),
-        bindings[0]["resourceEntitlements"][0]["catalogKey"].as_str()
-    );
+    assert_ne!(serde_json::json!(["__deny__"]), bindings[0]["apiScope"]);
 
     sqlx::query(
         "UPDATE ai_resource_binding SET grant_type = 'deny' WHERE binding_scope = 'account_group' AND account_group_id = $1",
@@ -397,13 +396,16 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
             .expect("denied account group bindings"),
     )
     .expect("parse denied account group bindings");
-    assert_eq!(
-        serde_json::json!(["__deny__"]),
-        denied_bindings[0]["apiScope"]
-    );
+    // 账号无自身绑定 + 分组被拒绝 → 无任何可用作用域，apiScope 为空数组
+    // （`__deny__` 哨兵仅对"有自身绑定但无有效作用域"的账号触发）。
     assert_eq!(
         serde_json::json!([]),
-        denied_bindings[0]["resourceEntitlements"]
+        denied_bindings[0]["apiScope"]
+    );
+    // 账号无自身绑定 → resourceEntitlements 保持 null（V2 契约）。
+    assert!(
+        denied_bindings[0]["resourceEntitlements"].is_null(),
+        "account without own binding keeps resourceEntitlements null"
     );
 
     let isolated = store
@@ -908,11 +910,12 @@ async fn postgres_upstream_store_account_resources_scope_runtime_routes() {
         .await
         .expect("replace account group resources");
 
-    // 场景 1：账号无资源绑定 → 保持分组×供应商范围（向后兼容）
+    // 场景 1：账号无资源绑定 → 保持分组×供应商范围（向后兼容），经 apiScope 继承；
+    // resourceEntitlements 保持 null（V2 契约：仅承载账号自身绑定）。
     let bindings = load_account_route_bindings(&context.pool).await;
-    assert_eq!(
-        Some("model:gpt-4.1"),
-        bindings[0]["resourceEntitlements"][0]["resourceCode"].as_str()
+    assert!(
+        bindings[0]["resourceEntitlements"].is_null(),
+        "account without own binding inherits group scope via apiScope; resourceEntitlements stays null"
     );
     assert_ne!(serde_json::json!(["__deny__"]), bindings[0]["apiScope"]);
 
@@ -1233,7 +1236,7 @@ async fn postgres_upstream_store_stale_preferred_endpoint_does_not_block_edits()
                     routing_weight: 100,
                     timeout_ms: Some(30_000),
                     status: 1,
-                    vendor_codes: Vec::new(),
+                    vendor_codes: vec!["openai".to_owned()],
                 },
                 AdminUpstreamSupplierEndpointInput {
                     endpoint_code: "backup".to_owned(),
@@ -1246,7 +1249,7 @@ async fn postgres_upstream_store_stale_preferred_endpoint_does_not_block_edits()
                     routing_weight: 50,
                     timeout_ms: Some(30_000),
                     status: 1,
-                    vendor_codes: Vec::new(),
+                    vendor_codes: vec!["openai".to_owned()],
                 },
             ],
             REQUESTED_AT.to_owned(),
@@ -1560,6 +1563,7 @@ impl PostgresTestContext {
         .await
         .expect("apply upstream account base URL migration");
         create_resource_catalog(&pool).await;
+        seed_pricing_plan(&pool).await;
         Some(Self {
             pool,
             database_url,
@@ -1594,6 +1598,7 @@ async fn create_resource_catalog(pool: &PgPool) {
             organization_id BIGINT NOT NULL,
             resource_code VARCHAR(128) NOT NULL,
             resource_type VARCHAR(64) NOT NULL,
+            route_kind VARCHAR(16) NOT NULL DEFAULT 'api',
             vendor_code VARCHAR(64),
             modality_code VARCHAR(64),
             api_code VARCHAR(128),
@@ -1638,6 +1643,27 @@ async fn create_resource_catalog(pool: &PgPool) {
     .execute(pool)
     .await
     .expect("create resource catalog fixture");
+}
+
+/// Seeds the default `standard` pricing plan so account group creation can bind
+/// its rate card (`ensure_account_group_rate_card` requires an active plan).
+async fn seed_pricing_plan(pool: &PgPool) {
+    sqlx::raw_sql(
+        r#"
+        INSERT INTO cloudrouter_pricing_plan (
+            id, uuid, tenant_id, organization_id, data_scope, status, metadata,
+            plan_code, plan_name, base_price_side, currency_code, fallback_policy,
+            rounding_mode, minimum_charge_amount, effective_from
+        ) VALUES (
+            99_041, 'test-standard-plan', 0, 0, 0, 1, '{}'::jsonb,
+            'standard', 'Standard plan', 'official_reference', 'USD', 'fail_closed',
+            'half_up', 0, '1970-01-01T00:00:00Z'
+        )
+        "#,
+    )
+    .execute(pool)
+    .await
+    .expect("seed standard pricing plan");
 }
 
 fn quote_identifier(value: &str) -> String {
