@@ -166,7 +166,12 @@
     "deploy:validate:standalone": "pnpm exec sdkwork-app deploy:validate --profile standalone.production",
     "deploy:validate:cloud": "pnpm exec sdkwork-app deploy:validate --profile cloud.production",
     "_sdkwork:release:package": "node scripts/build-cloud-router-install-package.mjs",
-    "build:offline": "node scripts/export-cloud-router-offline.mjs"
+    "build:offline": "node scripts/export-cloud-router-offline.mjs",
+    "build:pc:dev": "node ../sdkwork-specs/tools/build-browser-client.mjs --root . --architecture pc --environment dev",
+    "build:pc:test": "node ../sdkwork-specs/tools/build-browser-client.mjs --root . --architecture pc --environment test",
+    "build:pc:staging": "node ../sdkwork-specs/tools/build-browser-client.mjs --root . --architecture pc --environment staging",
+    "build:pc:prod": "node ../sdkwork-specs/tools/build-browser-client.mjs --root . --architecture pc --environment prod",
+    "check:browser-build-scripts": "node ../sdkwork-specs/tools/check-browser-build-scripts.mjs --root ."
   },
   "pnpm": {
     "overrides": {

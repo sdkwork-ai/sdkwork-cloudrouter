@@ -4,6 +4,7 @@ const BILLABLE_USAGE_SELECT: &str = r#"
 SELECT
     c.tenant_id,
     c.organization_id,
+    COALESCE(c.user_id, m.user_id, trace_snapshot.user_id) AS user_id,
     COALESCE(NULLIF(c.request_id, ''), c.invocation_id) AS request_id,
     trace_snapshot.owner_name_snapshot,
     trace_snapshot.api_key_name_snapshot,
@@ -48,6 +49,7 @@ JOIN cloudrouter_usage_measurement m
  AND m.id = d.measurement_id
 LEFT JOIN LATERAL (
     SELECT
+        trace.user_id,
         trace.owner_name_snapshot,
         trace.api_key_name_snapshot,
         trace.account_group_snapshot,
@@ -74,6 +76,7 @@ UNION ALL
 SELECT
     legacy.tenant_id,
     legacy.organization_id,
+    legacy.user_id,
     COALESCE(NULLIF(legacy.request_id, ''), CAST(legacy.id AS TEXT)),
     legacy.owner_name_snapshot,
     legacy.api_key_name_snapshot,
@@ -110,4 +113,27 @@ pub(super) fn with_billable_usage(body: &str) -> AssertSqlSafe<String> {
     AssertSqlSafe(format!(
         "WITH billable_usage AS ({BILLABLE_USAGE_SELECT})\n{body}"
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::BILLABLE_USAGE_SELECT;
+
+    #[test]
+    fn billable_usage_projects_user_id_for_subject_scoped_reads() {
+        assert!(
+            BILLABLE_USAGE_SELECT.contains(
+                "COALESCE(c.user_id, m.user_id, trace_snapshot.user_id) AS user_id"
+            ),
+            "charge-line billable_usage rows must expose user_id for per-user usage reads"
+        );
+        assert!(
+            BILLABLE_USAGE_SELECT.contains("legacy.user_id"),
+            "legacy billable_usage rows must expose user_id for per-user usage reads"
+        );
+        assert!(
+            BILLABLE_USAGE_SELECT.contains("trace.user_id,"),
+            "trace snapshot must carry user_id as a fallback subject identity"
+        );
+    }
 }

@@ -1,3 +1,11 @@
+import { resolveBrowserDistOutDir } from '../../../sdkwork-specs/tools/browser-dist-layout.mjs';
+function resolveViteEnvironment(mode, processEnv = process.env) {
+  const profileMatch = /^(standalone|cloud)\.(development|test|staging|production)$/u.exec(mode ?? '');
+  return profileMatch?.[2]
+    ?? (['development', 'test', 'staging', 'production'].includes(processEnv.SDKWORK_ENVIRONMENT ?? '')
+      ? processEnv.SDKWORK_ENVIRONMENT
+      : 'production');
+}
 import tailwindcss from '@tailwindcss/vite';
 import { readBootstrapAccessTokenEnvFile } from '../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-credential-entry/src/node-bootstrap.mjs';
 import { createSdkworkCredentialEntryBootstrapVitePlugin } from '../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-credential-entry/src/vite.ts';
@@ -694,6 +702,7 @@ export default defineConfig(({mode}) => {
       hmr: resolvePortalDevHmr({ ...process.env, ...env }),
     },
     build: {
+      outDir: resolveBrowserDistOutDir(resolveViteEnvironment(mode, process.env)),
       target: 'esnext',
       minify: 'esbuild',
       cssMinify: true,

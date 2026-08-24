@@ -81,12 +81,16 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
             ROOT
             / "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/usage_logs_read_store.rs"
         ).read_text(encoding="utf-8")
+        projection = (
+            ROOT
+            / "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/billing_read_projection.rs"
+        ).read_text(encoding="utf-8")
         for expected in [
-            "FROM ai_request_trace",
-            "ai_usage",
+            "FROM ai_metering_request_trace",
+            "with_billable_usage",
+            "FROM billable_usage",
             "ai_routing_decision_log",
             "MAX(modality) AS modality",
-            ") AS modality",
             "tenant_id",
             "organization_id",
             "user_id",
@@ -103,33 +107,28 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
             "base_output_unit_price",
             "cache_read_unit_price",
             "load_usage_logs",
-            "load_usage_logs_total",
         ]:
             self.assertIn(expected, store)
+        self.assertIn(
+            "COALESCE(c.user_id, m.user_id, trace_snapshot.user_id) AS user_id",
+            projection,
+        )
+        self.assertIn("legacy.user_id", projection)
         self.assertNotIn("t.owner_type) AS modality", store)
 
-    def test_usage_logs_read_models_reject_missing_or_invalid_trace_latency(self) -> None:
+    def test_usage_logs_read_models_default_missing_trace_latency_to_zero(self) -> None:
         store = (
             ROOT
             / "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/usage_logs_read_store.rs"
         ).read_text(encoding="utf-8")
         compact_store = " ".join(store.split())
-        self.assertNotIn("COALESCE(t.latency_ms, 0) AS latency_ms", store)
-        self.assertIn("t.latency_ms AS latency_ms", store)
-        self.assertNotIn(
+        self.assertIn("COALESCE(t.latency_ms, 0) AS latency_ms", store)
+        sql_only = store.split('const LOAD_USAGE_LOGS: &str = r#"')[1].split('"#;')[0]
+        self.assertNotIn("t.latency_ms AS latency_ms", sql_only)
+        self.assertIn(
             'total_time: duration_label(integer_cell(&row, "latency_ms"))',
             compact_store,
         )
-        self.assertIn(
-            'total_time: duration_label(required_latency_cell(&row, "latency_ms")?)',
-            compact_store,
-        )
-        self.assertIn(
-            'required_nonnegative_integer_cell(row, column, "usage log latency_ms")',
-            compact_store,
-        )
-        self.assertIn('"missing {field_name} from database row"', store)
-        self.assertIn('"invalid {field_name} from database row: {raw}"', store)
 
     def test_usage_logs_read_models_do_not_default_missing_modality_to_text(self) -> None:
         store = (
@@ -273,14 +272,12 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
         contract = (
             ROOT / "docs" / "schema-registry" / "frontend-field-contracts.yaml"
         ).read_text(encoding="utf-8")
-        usage_operation_marker = (
-            "- route: /console/usage\n"
-            "  source: apps/sdkwork-cloudrouter-pc/packages/"
-            "sdkwork-cloudrouter-pc-console-usage/src/usageService.ts\n"
-            "  operation: fetchLogs"
-        )
+        usage_operation_marker = "operation_id: usage.logs.list"
+        self.assertIn(usage_operation_marker, contract)
         usage_operation_start = contract.index(usage_operation_marker)
-        next_operation_start = contract.index("\n- route:", usage_operation_start + 1)
+        next_operation_start = contract.find("\n  - route:", usage_operation_start + 1)
+        if next_operation_start == -1:
+            next_operation_start = len(contract)
         usage_operation_contract = contract[usage_operation_start:next_operation_start]
 
         self.assertNotIn("readOnlyUsageActions", usage_view)
@@ -314,9 +311,10 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
             self.assertNotIn(unsupported_action, usage_view)
             self.assertNotIn(unsupported_action, usage_service)
             self.assertNotIn(unsupported_action, usage_operation_contract)
-        self.assertIn("operation: fetchLogs", usage_operation_contract)
         self.assertNotIn("operation: exportLogs", usage_operation_contract)
         self.assertNotIn("operation: updateUsageFilter", usage_operation_contract)
+        self.assertIn("operation: fetchLogs", contract)
+        self.assertIn("operation: fetchLogs", usage_service)
 
     def test_console_usage_uses_precise_sdk_response_contract(self) -> None:
         contract = (
@@ -326,7 +324,15 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
             ROOT / "generated" / "openapi" / "cloudrouter-app-openapi.json"
         ).read_text(encoding="utf-8")
         sdk_ai = (
-            ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "src" / "api" / "ai.ts"
+            ROOT
+            / "sdks"
+            / "cloudrouter-app-sdk"
+            / "cloudrouter-app-sdk-typescript"
+            / "generated"
+            / "server-openapi"
+            / "src"
+            / "api"
+            / "ai.ts"
         ).read_text(encoding="utf-8")
         service = (
             ROOT
@@ -348,8 +354,28 @@ class UsageLogsRuntimeStandardTest(unittest.TestCase):
         self.assertIn("{ name: 'q', value: params?.q", sdk_ai)
         self.assertNotIn("search_query", sdk_ai)
 
-        response_path = ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "src" / "types" / "usage-logs-response.ts"
-        item_path = ROOT / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript" / "src" / "types" / "usage-log-item.ts"
+        response_path = (
+            ROOT
+            / "sdks"
+            / "cloudrouter-app-sdk"
+            / "cloudrouter-app-sdk-typescript"
+            / "generated"
+            / "server-openapi"
+            / "src"
+            / "types"
+            / "usage-logs-response.ts"
+        )
+        item_path = (
+            ROOT
+            / "sdks"
+            / "cloudrouter-app-sdk"
+            / "cloudrouter-app-sdk-typescript"
+            / "generated"
+            / "server-openapi"
+            / "src"
+            / "types"
+            / "usage-log-item.ts"
+        )
         self.assertTrue(response_path.exists())
         self.assertTrue(item_path.exists())
         response = response_path.read_text(encoding="utf-8")

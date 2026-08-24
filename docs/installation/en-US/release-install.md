@@ -535,8 +535,8 @@ curl https://api.sdkwork.com/readyz
 Generated configs proxy to the release edge server at `http://127.0.0.1:3900` and use standardized certificate paths:
 
 ```text
-/opt/certs/letsencrypt/live/sdkwork.com/fullchain.pem
-/opt/certs/letsencrypt/live/sdkwork.com/privkey.pem
+/etc/sdkwork/certs/letsencrypt/sdkwork.com/fullchain.pem
+/etc/sdkwork/certs/letsencrypt/sdkwork.com/privkey.pem
 ```
 
 Use `--cert-name`, `--cert-root`, `--output`, or `--output-root` when your certificate or nginx installation uses a different layout. The repository keeps the canonical nginx template in `etc/nginx/NGINX_SAMPLE.conf` and full-domain examples in `etc/nginx/sdkwork/api.sdkwork.com.conf` and `etc/nginx/sdkwork/www.sdkwork.com.conf`; `etc/nginx/API_SAMPLE.conf` remains only as the older API-compatible sample.

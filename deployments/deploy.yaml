@@ -59,6 +59,62 @@ profiles:
         aliases:
           - router-open-test.dtupay.cn
           - router-test.dtupay.cn
+      - domain: router-admin-test.skubc.com
+        tls: skubc.com
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open-test.skubc.com
+          - router-test.skubc.com
+      - domain: router-admin-test.skubc.cn
+        tls: skubc.cn
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open-test.skubc.cn
+          - router-test.skubc.cn
+      - domain: router-admin-test.zowalk.com
+        tls: zowalk.com
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open-test.zowalk.com
+          - router-test.zowalk.com
+      - domain: router-admin-test.zowalk.cn
+        tls: zowalk.cn
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open-test.zowalk.cn
+          - router-test.zowalk.cn
+      - domain: router-admin-test.offer86.com
+        tls: offer86.com
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open-test.offer86.com
+          - router-test.offer86.com
+      - domain: router-admin-test.offer86.cn
+        tls: offer86.cn
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open-test.offer86.cn
+          - router-test.offer86.cn
+      - domain: router-admin-test.86offer.com
+        tls: 86offer.com
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open-test.86offer.com
+          - router-test.86offer.com
+      - domain: router-admin-test.86offer.cn
+        tls: 86offer.cn
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open-test.86offer.cn
+          - router-test.86offer.cn
     packages: []
     overrides:
       topology:
@@ -123,6 +179,62 @@ profiles:
         aliases:
           - router-open-staging.dtupay.cn
           - router-staging.dtupay.cn
+      - domain: router-admin-staging.skubc.com
+        tls: skubc.com
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open-staging.skubc.com
+          - router-staging.skubc.com
+      - domain: router-admin-staging.skubc.cn
+        tls: skubc.cn
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open-staging.skubc.cn
+          - router-staging.skubc.cn
+      - domain: router-admin-staging.zowalk.com
+        tls: zowalk.com
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open-staging.zowalk.com
+          - router-staging.zowalk.com
+      - domain: router-admin-staging.zowalk.cn
+        tls: zowalk.cn
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open-staging.zowalk.cn
+          - router-staging.zowalk.cn
+      - domain: router-admin-staging.offer86.com
+        tls: offer86.com
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open-staging.offer86.com
+          - router-staging.offer86.com
+      - domain: router-admin-staging.offer86.cn
+        tls: offer86.cn
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open-staging.offer86.cn
+          - router-staging.offer86.cn
+      - domain: router-admin-staging.86offer.com
+        tls: 86offer.com
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open-staging.86offer.com
+          - router-staging.86offer.com
+      - domain: router-admin-staging.86offer.cn
+        tls: 86offer.cn
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open-staging.86offer.cn
+          - router-staging.86offer.cn
     packages: []
     overrides:
       topology:
@@ -189,6 +301,62 @@ profiles:
         aliases:
           - router-open.dtupay.cn
           - router.dtupay.cn
+      - domain: router-admin.skubc.com
+        tls: skubc.com
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open.skubc.com
+          - router.skubc.com
+      - domain: router-admin.skubc.cn
+        tls: skubc.cn
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open.skubc.cn
+          - router.skubc.cn
+      - domain: router-admin.zowalk.com
+        tls: zowalk.com
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open.zowalk.com
+          - router.zowalk.com
+      - domain: router-admin.zowalk.cn
+        tls: zowalk.cn
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open.zowalk.cn
+          - router.zowalk.cn
+      - domain: router-admin.offer86.com
+        tls: offer86.com
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open.offer86.com
+          - router.offer86.com
+      - domain: router-admin.offer86.cn
+        tls: offer86.cn
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open.offer86.cn
+          - router.offer86.cn
+      - domain: router-admin.86offer.com
+        tls: 86offer.com
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open.86offer.com
+          - router.86offer.com
+      - domain: router-admin.86offer.cn
+        tls: 86offer.cn
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open.86offer.cn
+          - router.86offer.cn
     packages: []
     overrides:
       topology:
@@ -261,6 +429,70 @@ profiles:
         aliases:
           - router-open.dtupay.cn
           - router.dtupay.cn
+      - domain: router-admin.skubc.com
+        tls: skubc.com
+        mode: web+api
+        web: adaptive
+        apiPathStyle: full-prefix
+        aliases:
+          - router-open.skubc.com
+          - router.skubc.com
+      - domain: router-admin.skubc.cn
+        tls: skubc.cn
+        mode: web+api
+        web: adaptive
+        apiPathStyle: full-prefix
+        aliases:
+          - router-open.skubc.cn
+          - router.skubc.cn
+      - domain: router-admin.zowalk.com
+        tls: zowalk.com
+        mode: web+api
+        web: adaptive
+        apiPathStyle: full-prefix
+        aliases:
+          - router-open.zowalk.com
+          - router.zowalk.com
+      - domain: router-admin.zowalk.cn
+        tls: zowalk.cn
+        mode: web+api
+        web: adaptive
+        apiPathStyle: full-prefix
+        aliases:
+          - router-open.zowalk.cn
+          - router.zowalk.cn
+      - domain: router-admin.offer86.com
+        tls: offer86.com
+        mode: web+api
+        web: adaptive
+        apiPathStyle: full-prefix
+        aliases:
+          - router-open.offer86.com
+          - router.offer86.com
+      - domain: router-admin.offer86.cn
+        tls: offer86.cn
+        mode: web+api
+        web: adaptive
+        apiPathStyle: full-prefix
+        aliases:
+          - router-open.offer86.cn
+          - router.offer86.cn
+      - domain: router-admin.86offer.com
+        tls: 86offer.com
+        mode: web+api
+        web: adaptive
+        apiPathStyle: full-prefix
+        aliases:
+          - router-open.86offer.com
+          - router.86offer.com
+      - domain: router-admin.86offer.cn
+        tls: 86offer.cn
+        mode: web+api
+        web: adaptive
+        apiPathStyle: full-prefix
+        aliases:
+          - router-open.86offer.cn
+          - router.86offer.cn
     packages:
       - desktop-windows
       - desktop-macos

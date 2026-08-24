@@ -112,7 +112,7 @@ certificates must cover every bound host. Use
 [`etc/nginx/NGINX_SAMPLE.conf`](./etc/nginx/NGINX_SAMPLE.conf) as the canonical
 template and [`etc/nginx/sdkwork`](./etc/nginx/sdkwork/) for full-domain
 examples. See the release install guide for certificate path conventions under
-`/opt/certs/letsencrypt/live/<cert-name>`.
+`/etc/sdkwork/certs/letsencrypt/<cert-name>`.
 
 The `.deb` package creates `/etc/sdkwork/router/config.toml`,
 `/etc/sdkwork/router/cloudrouter.env`, `/etc/sdkwork/database/database.secret`,

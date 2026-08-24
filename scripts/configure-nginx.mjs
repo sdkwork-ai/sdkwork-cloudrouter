@@ -14,7 +14,7 @@ const DEFAULT_SITE_FAMILY = 'sdkwork';
 const DEFAULT_SITE_TYPE = 'api';
 const DEFAULT_UPSTREAM = 'http://127.0.0.1:3900';
 const DEFAULT_SERVER_ROOT = '/etc/nginx/sites-enabled';
-const DEFAULT_CERT_ROOT = '/opt/certs/letsencrypt/live';
+const DEFAULT_CERT_ROOT = '/etc/sdkwork/certs/letsencrypt';
 const DEFAULT_CLIENT_MAX_BODY_SIZE = '1100m';
 
 function printHelp() {

@@ -428,6 +428,14 @@
         "router.sdkwork.cn",
         "router.birdcoder.cn",
         "router.dtupay.cn",
+        "router.skubc.com",
+        "router.skubc.cn",
+        "router.zowalk.com",
+        "router.zowalk.cn",
+        "router.offer86.com",
+        "router.offer86.cn",
+        "router.86offer.com",
+        "router.86offer.cn",
         "cloudrouter.sdkwork.com"
       ],
       "note": "multi-base-domain binding per APP_RUNTIME_TOPOLOGY_NAMING.md section 9; cloudrouter.sdkwork.com is a transition alias",
@@ -440,6 +448,14 @@
             "router-dev.sdkwork.cn",
             "router-dev.birdcoder.cn",
             "router-dev.dtupay.cn",
+            "router-dev.skubc.com",
+            "router-dev.skubc.cn",
+            "router-dev.zowalk.com",
+            "router-dev.zowalk.cn",
+            "router-dev.offer86.com",
+            "router-dev.offer86.cn",
+            "router-dev.86offer.com",
+            "router-dev.86offer.cn",
             "cloudrouter-dev.sdkwork.com"
           ]
         },
@@ -451,6 +467,14 @@
             "router-test.sdkwork.cn",
             "router-test.birdcoder.cn",
             "router-test.dtupay.cn",
+            "router-test.skubc.com",
+            "router-test.skubc.cn",
+            "router-test.zowalk.com",
+            "router-test.zowalk.cn",
+            "router-test.offer86.com",
+            "router-test.offer86.cn",
+            "router-test.86offer.com",
+            "router-test.86offer.cn",
             "cloudrouter-test.sdkwork.com"
           ]
         },
@@ -462,6 +486,14 @@
             "router-staging.sdkwork.cn",
             "router-staging.birdcoder.cn",
             "router-staging.dtupay.cn",
+            "router-staging.skubc.com",
+            "router-staging.skubc.cn",
+            "router-staging.zowalk.com",
+            "router-staging.zowalk.cn",
+            "router-staging.offer86.com",
+            "router-staging.offer86.cn",
+            "router-staging.86offer.com",
+            "router-staging.86offer.cn",
             "cloudrouter-staging.sdkwork.com"
           ]
         }
@@ -477,7 +509,15 @@
             "api-dev.dtupay.com",
             "api-dev.sdkwork.cn",
             "api-dev.birdcoder.cn",
-            "api-dev.dtupay.cn"
+            "api-dev.dtupay.cn",
+            "api-dev.skubc.com",
+            "api-dev.skubc.cn",
+            "api-dev.zowalk.com",
+            "api-dev.zowalk.cn",
+            "api-dev.offer86.com",
+            "api-dev.offer86.cn",
+            "api-dev.86offer.com",
+            "api-dev.86offer.cn"
           ]
         },
         "test": {
@@ -487,7 +527,15 @@
             "api-test.dtupay.com",
             "api-test.sdkwork.cn",
             "api-test.birdcoder.cn",
-            "api-test.dtupay.cn"
+            "api-test.dtupay.cn",
+            "api-test.skubc.com",
+            "api-test.skubc.cn",
+            "api-test.zowalk.com",
+            "api-test.zowalk.cn",
+            "api-test.offer86.com",
+            "api-test.offer86.cn",
+            "api-test.86offer.com",
+            "api-test.86offer.cn"
           ]
         },
         "staging": {
@@ -497,7 +545,15 @@
             "api-staging.dtupay.com",
             "api-staging.sdkwork.cn",
             "api-staging.birdcoder.cn",
-            "api-staging.dtupay.cn"
+            "api-staging.dtupay.cn",
+            "api-staging.skubc.com",
+            "api-staging.skubc.cn",
+            "api-staging.zowalk.com",
+            "api-staging.zowalk.cn",
+            "api-staging.offer86.com",
+            "api-staging.offer86.cn",
+            "api-staging.86offer.com",
+            "api-staging.86offer.cn"
           ]
         }
       },
@@ -507,7 +563,15 @@
         "api.dtupay.com",
         "api.sdkwork.cn",
         "api.birdcoder.cn",
-        "api.dtupay.cn"
+        "api.dtupay.cn",
+        "api.skubc.com",
+        "api.skubc.cn",
+        "api.zowalk.com",
+        "api.zowalk.cn",
+        "api.offer86.com",
+        "api.offer86.cn",
+        "api.86offer.com",
+        "api.86offer.cn"
       ]
     },
     "application.backend-http": {
@@ -520,7 +584,15 @@
             "router-admin-dev.dtupay.com",
             "router-admin-dev.sdkwork.cn",
             "router-admin-dev.birdcoder.cn",
-            "router-admin-dev.dtupay.cn"
+            "router-admin-dev.dtupay.cn",
+            "router-admin-dev.skubc.com",
+            "router-admin-dev.skubc.cn",
+            "router-admin-dev.zowalk.com",
+            "router-admin-dev.zowalk.cn",
+            "router-admin-dev.offer86.com",
+            "router-admin-dev.offer86.cn",
+            "router-admin-dev.86offer.com",
+            "router-admin-dev.86offer.cn"
           ]
         },
         "test": {
@@ -530,7 +602,15 @@
             "router-admin-test.dtupay.com",
             "router-admin-test.sdkwork.cn",
             "router-admin-test.birdcoder.cn",
-            "router-admin-test.dtupay.cn"
+            "router-admin-test.dtupay.cn",
+            "router-admin-test.skubc.com",
+            "router-admin-test.skubc.cn",
+            "router-admin-test.zowalk.com",
+            "router-admin-test.zowalk.cn",
+            "router-admin-test.offer86.com",
+            "router-admin-test.offer86.cn",
+            "router-admin-test.86offer.com",
+            "router-admin-test.86offer.cn"
           ]
         },
         "staging": {
@@ -540,7 +620,15 @@
             "router-admin-staging.dtupay.com",
             "router-admin-staging.sdkwork.cn",
             "router-admin-staging.birdcoder.cn",
-            "router-admin-staging.dtupay.cn"
+            "router-admin-staging.dtupay.cn",
+            "router-admin-staging.skubc.com",
+            "router-admin-staging.skubc.cn",
+            "router-admin-staging.zowalk.com",
+            "router-admin-staging.zowalk.cn",
+            "router-admin-staging.offer86.com",
+            "router-admin-staging.offer86.cn",
+            "router-admin-staging.86offer.com",
+            "router-admin-staging.86offer.cn"
           ]
         }
       },
@@ -550,7 +638,15 @@
         "router-admin.dtupay.com",
         "router-admin.sdkwork.cn",
         "router-admin.birdcoder.cn",
-        "router-admin.dtupay.cn"
+        "router-admin.dtupay.cn",
+        "router-admin.skubc.com",
+        "router-admin.skubc.cn",
+        "router-admin.zowalk.com",
+        "router-admin.zowalk.cn",
+        "router-admin.offer86.com",
+        "router-admin.offer86.cn",
+        "router-admin.86offer.com",
+        "router-admin.86offer.cn"
       ]
     },
     "application.open-http": {
@@ -563,7 +659,15 @@
             "router-open-dev.dtupay.com",
             "router-open-dev.sdkwork.cn",
             "router-open-dev.birdcoder.cn",
-            "router-open-dev.dtupay.cn"
+            "router-open-dev.dtupay.cn",
+            "router-open-dev.skubc.com",
+            "router-open-dev.skubc.cn",
+            "router-open-dev.zowalk.com",
+            "router-open-dev.zowalk.cn",
+            "router-open-dev.offer86.com",
+            "router-open-dev.offer86.cn",
+            "router-open-dev.86offer.com",
+            "router-open-dev.86offer.cn"
           ]
         },
         "test": {
@@ -573,7 +677,15 @@
             "router-open-test.dtupay.com",
             "router-open-test.sdkwork.cn",
             "router-open-test.birdcoder.cn",
-            "router-open-test.dtupay.cn"
+            "router-open-test.dtupay.cn",
+            "router-open-test.skubc.com",
+            "router-open-test.skubc.cn",
+            "router-open-test.zowalk.com",
+            "router-open-test.zowalk.cn",
+            "router-open-test.offer86.com",
+            "router-open-test.offer86.cn",
+            "router-open-test.86offer.com",
+            "router-open-test.86offer.cn"
           ]
         },
         "staging": {
@@ -583,7 +695,15 @@
             "router-open-staging.dtupay.com",
             "router-open-staging.sdkwork.cn",
             "router-open-staging.birdcoder.cn",
-            "router-open-staging.dtupay.cn"
+            "router-open-staging.dtupay.cn",
+            "router-open-staging.skubc.com",
+            "router-open-staging.skubc.cn",
+            "router-open-staging.zowalk.com",
+            "router-open-staging.zowalk.cn",
+            "router-open-staging.offer86.com",
+            "router-open-staging.offer86.cn",
+            "router-open-staging.86offer.com",
+            "router-open-staging.86offer.cn"
           ]
         }
       },
@@ -593,7 +713,15 @@
         "router-open.dtupay.com",
         "router-open.sdkwork.cn",
         "router-open.birdcoder.cn",
-        "router-open.dtupay.cn"
+        "router-open.dtupay.cn",
+        "router-open.skubc.com",
+        "router-open.skubc.cn",
+        "router-open.zowalk.com",
+        "router-open.zowalk.cn",
+        "router-open.offer86.com",
+        "router-open.offer86.cn",
+        "router-open.86offer.com",
+        "router-open.86offer.cn"
       ]
     }
   }

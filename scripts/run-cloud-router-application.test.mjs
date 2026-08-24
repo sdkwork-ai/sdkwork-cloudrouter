@@ -1070,8 +1070,8 @@ test('nginx deployment spec documents the sdkwork site-family path convention', 
   assert.ok(nginxSpec.includes('/etc/nginx/sites-enabled/sdkwork/<domain>.conf'));
   assert.ok(nginxSpec.includes('/etc/nginx/sites-enabled/sdkwork/api.sdkwork.com.conf'));
   assert.ok(nginxSpec.includes('/etc/nginx/sites-enabled/sdkwork/www.sdkwork.com.conf'));
-  assert.ok(nginxSpec.includes('/opt/certs/letsencrypt/live/<cert-name>/fullchain.pem'));
-  assert.ok(nginxSpec.includes('/opt/certs/letsencrypt/live/<cert-name>/privkey.pem'));
+  assert.ok(nginxSpec.includes('/etc/sdkwork/certs/letsencrypt/<cert-name>/fullchain.pem'));
+  assert.ok(nginxSpec.includes('/etc/sdkwork/certs/letsencrypt/<cert-name>/privkey.pem'));
   assert.ok(nginxSpec.includes('etc/nginx/NGINX_SAMPLE.conf'));
   assert.ok(nginxSpec.includes('pnpm nginx:deploy -- --domain api.sdkwork.com'));
   assert.ok(nginxSpec.includes('http://127.0.0.1:3900'));
@@ -1095,7 +1095,7 @@ test('nginx configurator renders full-domain config files with standardized cert
   assert.equal(settings.siteFamily, 'sdkwork');
   assert.equal(settings.siteType, 'api');
   assert.equal(settings.upstream, 'http://127.0.0.1:3900');
-  assert.equal(settings.certRoot, '/opt/certs/letsencrypt/live');
+  assert.equal(settings.certRoot, '/etc/sdkwork/certs/letsencrypt');
   assert.equal(settings.certName, null);
   assert.equal(settings.dryRun, true);
 
@@ -1109,15 +1109,15 @@ test('nginx configurator renders full-domain config files with standardized cert
   assert.equal(linuxPlan.outputPath, '/etc/nginx/sites-enabled/sdkwork/api.sdkwork.com.conf');
   assert.equal(linuxPlan.fileName, 'api.sdkwork.com.conf');
   assert.equal(linuxPlan.upstream, 'http://127.0.0.1:3900');
-  assert.equal(linuxPlan.certificates.fullchain, '/opt/certs/letsencrypt/live/sdkwork.com/fullchain.pem');
-  assert.equal(linuxPlan.certificates.privkey, '/opt/certs/letsencrypt/live/sdkwork.com/privkey.pem');
+  assert.equal(linuxPlan.certificates.fullchain, '/etc/sdkwork/certs/letsencrypt/sdkwork.com/fullchain.pem');
+  assert.equal(linuxPlan.certificates.privkey, '/etc/sdkwork/certs/letsencrypt/sdkwork.com/privkey.pem');
 
   const rendered = module.renderNginxConfig(linuxPlan);
   assert.ok(rendered.includes('server_name api.sdkwork.com;'));
   assert.ok(rendered.includes('proxy_pass http://127.0.0.1:3900;'));
   assert.ok(rendered.includes('http://127.0.0.1:3900/backend/v3/api/net/dns/record/verify'));
-  assert.ok(rendered.includes('ssl_certificate /opt/certs/letsencrypt/live/sdkwork.com/fullchain.pem;'));
-  assert.ok(rendered.includes('ssl_certificate_key /opt/certs/letsencrypt/live/sdkwork.com/privkey.pem;'));
+  assert.ok(rendered.includes('ssl_certificate /etc/sdkwork/certs/letsencrypt/sdkwork.com/fullchain.pem;'));
+  assert.ok(rendered.includes('ssl_certificate_key /etc/sdkwork/certs/letsencrypt/sdkwork.com/privkey.pem;'));
   assert.ok(rendered.includes('ssl_protocols TLSv1.2 TLSv1.3;'));
   assert.equal(rendered.includes('127.0.0.1:8080'), false);
 
@@ -1194,13 +1194,13 @@ test('nginx examples use the production edge upstream and full-domain filenames'
   assert.ok(nginxSample.includes('Deploy path: /etc/nginx/sites-enabled/sdkwork/api.sdkwork.com.conf'));
   assert.ok(nginxSample.includes('server_name api.sdkwork.com;'));
   assert.ok(nginxSample.includes('proxy_pass http://127.0.0.1:3900;'));
-  assert.ok(nginxSample.includes('/opt/certs/letsencrypt/live/sdkwork.com/fullchain.pem'));
+  assert.ok(nginxSample.includes('/etc/sdkwork/certs/letsencrypt/sdkwork.com/fullchain.pem'));
   assert.equal(nginxSample.includes('127.0.0.1:8080'), false);
 
   const apiSample = readFileSync(path.join(workspaceRoot, 'etc', 'nginx', 'API_SAMPLE.conf'), 'utf8');
   assert.ok(apiSample.includes('server_name api.sdkwork.com;'));
   assert.ok(apiSample.includes('proxy_pass http://127.0.0.1:3900;'));
-  assert.ok(apiSample.includes('/opt/certs/letsencrypt/live/sdkwork.com/fullchain.pem'));
+  assert.ok(apiSample.includes('/etc/sdkwork/certs/letsencrypt/sdkwork.com/fullchain.pem'));
   assert.equal(apiSample.includes('127.0.0.1:8080'), false);
 
   for (const domain of ['api.sdkwork.com', 'www.sdkwork.com']) {
@@ -1209,7 +1209,7 @@ test('nginx examples use the production edge upstream and full-domain filenames'
     const config = readFileSync(examplePath, 'utf8');
     assert.ok(config.includes(`server_name ${domain};`));
     assert.ok(config.includes('proxy_pass http://127.0.0.1:3900;'));
-    assert.ok(config.includes('/opt/certs/letsencrypt/live/sdkwork.com/fullchain.pem'));
+    assert.ok(config.includes('/etc/sdkwork/certs/letsencrypt/sdkwork.com/fullchain.pem'));
     assert.equal(config.includes('127.0.0.1:8080'), false);
   }
 });

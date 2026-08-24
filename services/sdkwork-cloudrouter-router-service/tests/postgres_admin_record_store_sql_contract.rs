@@ -19,6 +19,25 @@ fn sql_const<'a>(source: &'a str, name: &str) -> &'a str {
 }
 
 #[test]
+fn postgres_billing_read_projection_exposes_user_id_for_subject_scoped_reads() {
+    let projection_sql = compact_sql(POSTGRES_BILLING_READ_PROJECTION);
+    assert!(
+        projection_sql.contains(
+            "COALESCE(c.user_id, m.user_id, trace_snapshot.user_id) AS user_id"
+        ),
+        "billable_usage CTE must expose user_id from charge line, measurement, and trace fallback"
+    );
+    assert!(
+        projection_sql.contains("legacy.user_id"),
+        "billable_usage legacy branch must expose user_id"
+    );
+    assert!(
+        projection_sql.contains("trace.user_id,"),
+        "billable_usage trace snapshot must carry user_id"
+    );
+}
+
+#[test]
 fn postgres_admin_record_store_aggregates_billable_usage_cte_column_names() {
     let record_sql = compact_sql(sql_const(
         POSTGRES_ADMIN_RECORD_STORE,

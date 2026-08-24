@@ -522,8 +522,8 @@ curl https://api.sdkwork.com/readyz
 生成配置默认代理到 release edge server `http://127.0.0.1:3900`，证书路径标准化为：
 
 ```text
-/opt/certs/letsencrypt/live/sdkwork.com/fullchain.pem
-/opt/certs/letsencrypt/live/sdkwork.com/privkey.pem
+/etc/sdkwork/certs/letsencrypt/sdkwork.com/fullchain.pem
+/etc/sdkwork/certs/letsencrypt/sdkwork.com/privkey.pem
 ```
 
 如果证书或 nginx 安装布局不同，使用 `--cert-name`、`--cert-root`、`--output` 或 `--output-root` 覆盖。仓库内的通用 nginx 模板是 `etc/nginx/NGINX_SAMPLE.conf`，完整域名示例是 `etc/nginx/sdkwork/api.sdkwork.com.conf` 和 `etc/nginx/sdkwork/www.sdkwork.com.conf`；`etc/nginx/API_SAMPLE.conf` 只作为旧的 API 兼容样例保留。

@@ -108,6 +108,8 @@ class UsageRuntimeStandardTest(unittest.TestCase):
             / "sdks"
             / "cloudrouter-app-sdk"
             / "cloudrouter-app-sdk-typescript"
+            / "generated"
+            / "server-openapi"
             / "src"
             / "types"
             / "usage-log-item.ts"

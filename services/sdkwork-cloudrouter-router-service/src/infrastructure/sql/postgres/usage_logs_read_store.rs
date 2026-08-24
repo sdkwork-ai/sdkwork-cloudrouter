@@ -431,6 +431,22 @@ mod tests {
     }
 
     #[test]
+    fn usage_logs_query_filters_billable_usage_by_user_id() {
+        let usage_by_request_start = LOAD_USAGE_LOGS
+            .find("usage_by_request AS (")
+            .expect("usage logs SQL must define usage_by_request CTE");
+        let usage_by_request = &LOAD_USAGE_LOGS[usage_by_request_start..];
+        assert!(
+            usage_by_request.contains("FROM billable_usage"),
+            "usage logs Postgres SQL must aggregate billing rows from billable_usage"
+        );
+        assert!(
+            usage_by_request.contains("user_id = $3"),
+            "usage logs must scope billable_usage aggregation to the authenticated user"
+        );
+    }
+
+    #[test]
     fn usage_logs_queries_scope_trace_and_usage_rows_to_app_subject() {
         let sql = LOAD_USAGE_LOGS;
         for predicate in [
