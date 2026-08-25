@@ -299,7 +299,7 @@
     "@types/react-dom": "catalog:",
     "autoprefixer": "catalog:",
     "debug": "^4.4.3",
-    "escape-string-regexp": "^4.0.0",
+    "escape-string-regexp": "^5.0.0",
     "esbuild": "catalog:",
     "extend": "^3.0.2",
     "jsdom": "catalog:",
