@@ -303,7 +303,7 @@
     "esbuild": "catalog:",
     "extend": "^3.0.2",
     "jsdom": "catalog:",
-    "lowlight": "^1.20.0",
+    "lowlight": "^3.3.0",
     "pnpm": "catalog:",
     "size-limit": "^11.2.0",
     "tsx": "catalog:",
