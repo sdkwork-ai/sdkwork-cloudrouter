@@ -188,7 +188,7 @@
     "dotenv": "^17.2.3",
     "es-toolkit": "^1.45.1",
     "framer-motion": "catalog:",
-    "html-parse-stringify": "^3.0.1",
+    "html-parse-stringify": "^4.0.1",
     "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",
     "i18next": "catalog:",
