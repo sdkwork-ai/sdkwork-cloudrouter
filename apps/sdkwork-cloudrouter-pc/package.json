@@ -197,7 +197,7 @@
     "lucide-react": "catalog:",
     "monaco-editor": "^0.55.1",
     "motion": "catalog:",
-    "motion-dom": "^12.38.0",
+    "motion-dom": "^13.1.1",
     "motion-utils": "^12.36.0",
     "qrcode": "catalog:",
     "react": "catalog:",
