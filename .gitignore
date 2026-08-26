@@ -136,3 +136,6 @@ tmp-openapi-*
 # Local investigation scratch notes and temp scripts
 CHECK_*.md
 *.tmp.cjs
+
+# Runtime-generated env config (modified by local dev server)
+**/public/runtime-env.json
