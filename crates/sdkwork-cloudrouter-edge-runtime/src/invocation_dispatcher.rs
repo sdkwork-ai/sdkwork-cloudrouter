@@ -139,12 +139,10 @@ impl InvocationHttpDispatcher {
         response_memory_budget
             .validate_response_limit(response_max_bytes.get() as u64)
             .map_err(|error| error.to_string())?;
+        let outbound_target_policy = outbound_target_policy_from_process_env();
         Ok(Self {
-            client: build_invocation_http_client(
-                OutboundTargetPolicy::Production,
-                http_pool_config,
-            ),
-            outbound_target_policy: OutboundTargetPolicy::Production,
+            client: build_invocation_http_client(outbound_target_policy, http_pool_config),
+            outbound_target_policy,
             response_max_bytes,
             response_timeout,
             response_memory_budget,
@@ -396,6 +394,22 @@ fn provider_response_memory_error(
 
 fn timeout_duration(timeout_ms: u64) -> Option<Duration> {
     (timeout_ms > 0).then(|| Duration::from_millis(timeout_ms))
+}
+
+/// Selects the outbound target policy from the process environment so
+/// development workstations (which commonly resolve upstream hostnames to
+/// proxy fake-IP ranges such as 198.18.0.0/15) are not rejected by the
+/// production SSRF guard. Production and test environments keep the strict
+/// public-IP-only policy.
+fn outbound_target_policy_from_process_env() -> OutboundTargetPolicy {
+    let environment =
+        sdkwork_cloudrouter_http::resolve_cloud_web_environment_from_process_env();
+    match environment {
+        sdkwork_web_core::WebEnvironment::Dev | sdkwork_web_core::WebEnvironment::Test => {
+            OutboundTargetPolicy::Development
+        }
+        sdkwork_web_core::WebEnvironment::Prod => OutboundTargetPolicy::Production,
+    }
 }
 
 fn build_invocation_http_client(
