@@ -2265,7 +2265,15 @@ async fn build_gateway_router_from_all_in_one_context(
     router_with_database_runtime_routes(DatabaseRuntimeRoutesInput {
         base_router: router_with_database_status_and_passthrough_placeholder(
             Some(&context.database_config),
-            true,
+            // The static passthrough placeholder must not shadow the
+            // invocation pipeline: its explicit /v1/chat/completions route
+            // would intercept every chat request with a 501
+            // "openai_passthrough_not_configured" before the invocation
+            // catch-all can handle it. Only install it when neither the
+            // provider secret resolver nor a static relay config exists
+            // (mirrors the database-runtime wiring).
+            context.provider_secret_resolver.is_none()
+                && context.provider_relay_config.is_none(),
             readiness_check,
             Some(context.deployment_mode),
         ),

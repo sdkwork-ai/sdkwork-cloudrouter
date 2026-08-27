@@ -16,6 +16,99 @@ pub struct AccountBaseUrlConfig {
     pub supplier_protocol_base_urls: Vec<AdminLlmProtocolConfig>,
 }
 
+/// Cumulative per-gate account counts describing why
+/// `load_upstream_account_routes` returned no rows.
+///
+/// Each count follows the same dependency chain as the snapshot load SQL and
+/// is cumulative: an account must pass every preceding gate to be counted in
+/// a later one. The first count that drops below its predecessor marks the
+/// gate blocking the whole pool (most often: zero active credentials).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct UpstreamRouteGateDiagnosis {
+    pub enabled_suppliers: i64,
+    pub enabled_accounts: i64,
+    pub auth_method_matched_accounts: i64,
+    pub active_credential_accounts: i64,
+    pub group_member_accounts: i64,
+    pub base_url_resolvable_accounts: i64,
+}
+
+impl UpstreamRouteGateDiagnosis {
+    /// `(label, count)` pairs in gate order, matching the load-SQL join chain.
+    pub fn gates(&self) -> [(&'static str, i64); 6] {
+        [
+            ("enabled_suppliers", self.enabled_suppliers),
+            ("enabled_accounts", self.enabled_accounts),
+            ("auth_method_matches", self.auth_method_matched_accounts),
+            ("active_credentials", self.active_credential_accounts),
+            ("group_members", self.group_member_accounts),
+            ("base_url_resolvable", self.base_url_resolvable_accounts),
+        ]
+    }
+
+    /// First gate whose count reaches zero after a non-zero predecessor, plus
+    /// the operator-facing remediation hint for it. `None` means no single
+    /// gate explains the empty pool (either everything is zero — nothing was
+    /// configured at all — or every gate passes, which points at a data
+    /// inconsistency worth escalating).
+    pub fn blocking_gate(&self) -> Option<(&'static str, &'static str)> {
+        let mut previous_count: Option<i64> = None;
+        for (label, count) in self.gates() {
+            let blocked_by_this_gate = count == 0 && previous_count.is_some_and(|c| c > 0);
+            if blocked_by_this_gate {
+                return Some((label, Self::hint_for(label)));
+            }
+            if count == 0 {
+                return None;
+            }
+            previous_count = Some(count);
+        }
+        None
+    }
+
+    /// Compact operator-facing summary appended to the empty-snapshot error.
+    pub fn summary(&self) -> String {
+        let chain = self
+            .gates()
+            .iter()
+            .map(|(label, count)| format!("{label}={count}"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        match self.blocking_gate() {
+            Some((label, hint)) => {
+                format!("routing account-pool gates [{chain}] block at '{label}'; {hint}")
+            }
+            // No single blocking gate: report the raw chain without a cache
+            // hint so operators investigate data/SQL consistency instead.
+            None => format!("routing account-pool gates [{chain}]"),
+        }
+    }
+
+    fn hint_for(label: &str) -> &'static str {
+        match label {
+            "enabled_suppliers" => "enable an upstream supplier (status=1) that can serve requests",
+            "enabled_accounts" => "create or enable an upstream account under an enabled supplier",
+            "auth_method_matches" => {
+                "enable a matching auth method on the supplier \
+                 (account.auth_method_code must equal an enabled supplier auth method)"
+            }
+            "active_credentials" => {
+                "create an active credential for the upstream account \
+                 (non-expiring or valid expiresAt, non-blank secret)"
+            }
+            "group_members" => {
+                "add the account to an account group as an enabled member \
+                 within its effective period"
+            }
+            "base_url_resolvable" => {
+                "configure a base_url via an enabled endpoint, the supplier \
+                 default/protocols, or the account default/protocols"
+            }
+            _ => "inspect the routing catalog configuration",
+        }
+    }
+}
+
 /// One vendor + model list entry of an account group's model access rule:
 /// `vendor_code` is the model vendor, `models` are the model names (an empty
 /// list means every model of the vendor).
@@ -63,6 +156,15 @@ pub struct AccountModelAccess {
 
 pub trait UpstreamAccountRouteCatalog: PricingCatalog {
     fn shared_upstream_account_routes(&self) -> Arc<[UpstreamAccountRoute]>;
+
+    /// Returns the per-gate account-pool diagnosis captured while loading the
+    /// snapshot when zero upstream account routes were loaded, so selection
+    /// errors can state exactly which configuration gate blocks the pool.
+    /// `None` when the pool is non-empty (no diagnosis needed) or the
+    /// implementation does not capture one.
+    fn upstream_route_gate_diagnosis(&self) -> Option<UpstreamRouteGateDiagnosis> {
+        None
+    }
 
     /// Returns the model blacklist/whitelist configured for the account group,
     /// or `None` when the group has no model access restriction configured.
@@ -162,7 +264,8 @@ pub trait UpstreamAccountRouteCatalog: PricingCatalog {
                 for entitlement in entitlements.iter() {
                     let entitlement_code = entitlement.resource_code.trim();
                     let matches_code = entitlement_code == normalized_route_key
-                        || (normalized_route_key.is_empty() && entitlement_code == normalized_api_code)
+                        || (normalized_route_key.is_empty()
+                            && entitlement_code == normalized_api_code)
                         || (entitlement.api_code.as_deref().map(str::trim)
                             == Some(&normalized_api_code))
                         || (normalized_api_code.is_empty()
@@ -190,4 +293,76 @@ fn normalize_resource_key(value: &str) -> String {
         .replace(['/', ':', '-'], ".")
         .trim_matches('.')
         .to_owned()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::UpstreamRouteGateDiagnosis;
+
+    #[test]
+    fn diagnosis_blocks_at_the_first_zero_after_a_nonzero_prefix() {
+        // Everything configured except credentials (the historically most
+        // common deployment gap) must name the credential gate.
+        let diagnosis = UpstreamRouteGateDiagnosis {
+            enabled_suppliers: 1,
+            enabled_accounts: 2,
+            auth_method_matched_accounts: 2,
+            active_credential_accounts: 0,
+            group_member_accounts: 0,
+            base_url_resolvable_accounts: 0,
+        };
+        let (label, hint) = diagnosis.blocking_gate().unwrap();
+        assert_eq!("active_credentials", label);
+        assert!(hint.contains("credential"));
+        assert!(diagnosis.summary().contains("active_credentials=0"));
+    }
+
+    #[test]
+    fn diagnosis_without_any_configuration_has_no_single_blocker() {
+        let diagnosis = UpstreamRouteGateDiagnosis {
+            enabled_suppliers: 0,
+            enabled_accounts: 0,
+            auth_method_matched_accounts: 0,
+            active_credential_accounts: 0,
+            group_member_accounts: 0,
+            base_url_resolvable_accounts: 0,
+        };
+        assert!(diagnosis.blocking_gate().is_none());
+        // Still prints the raw chain for operators.
+        assert!(diagnosis.summary().contains("enabled_suppliers=0"));
+        // ...and must NOT blame the routing cache.
+        assert!(!diagnosis.summary().contains("cache"));
+    }
+
+    #[test]
+    fn diagnosis_reports_group_membership_as_blocking_gate() {
+        let diagnosis = UpstreamRouteGateDiagnosis {
+            enabled_suppliers: 1,
+            enabled_accounts: 1,
+            auth_method_matched_accounts: 1,
+            active_credential_accounts: 1,
+            group_member_accounts: 0,
+            base_url_resolvable_accounts: 0,
+        };
+        assert_eq!(
+            Some("group_members"),
+            diagnosis.blocking_gate().map(|(l, _)| l)
+        );
+        assert!(diagnosis
+            .blocking_gate()
+            .is_some_and(|(_, hint)| hint.contains("account group")));
+    }
+
+    #[test]
+    fn fully_satisfied_gates_report_no_blocker() {
+        let diagnosis = UpstreamRouteGateDiagnosis {
+            enabled_suppliers: 1,
+            enabled_accounts: 3,
+            auth_method_matched_accounts: 2,
+            active_credential_accounts: 2,
+            group_member_accounts: 2,
+            base_url_resolvable_accounts: 2,
+        };
+        assert!(diagnosis.blocking_gate().is_none());
+    }
 }

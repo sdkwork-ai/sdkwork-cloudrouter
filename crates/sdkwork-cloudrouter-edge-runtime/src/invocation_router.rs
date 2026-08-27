@@ -382,15 +382,26 @@ where
             async move { crate::invocation_http::handle_internal_invocation(state, request).await }
         }),
     );
-    let public_router = Router::new().fallback(move |request: Request<Body>| {
-        let state = state.clone();
-        async move {
-            if let Some(response) = reject_retired_openai_method(&request) {
-                return response;
+    // Public surface uses a catch-all route (not `Router::fallback`): Axum
+    // `merge`/`fallback` composition means a later `mount_infra_routes`
+    // contract-fallback would otherwise REPLACE this handler, leaving every
+    // invocation surface (e.g. POST /v1/chat/completions) as a
+    // "manifest-only" 501. A catch-all route survives merging and keeps the
+    // framework contract fallback as the true last resort for non-gateway
+    // paths. `handle_invocation` performs its own auth + classification and
+    // returns a 404 for paths it does not recognize.
+    let public_router = Router::new().route(
+        "/{*path}",
+        any(move |request: Request<Body>| {
+            let state = state.clone();
+            async move {
+                if let Some(response) = reject_retired_openai_method(&request) {
+                    return response;
+                }
+                handle_invocation(state, request).await
             }
-            handle_invocation(state, request).await
-        }
-    });
+        }),
+    );
     internal_router.merge(public_router)
 }
 

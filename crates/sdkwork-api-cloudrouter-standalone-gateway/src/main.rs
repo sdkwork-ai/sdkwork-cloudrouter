@@ -11,6 +11,7 @@ use sdkwork_iam_web_adapter::{
 use sdkwork_web_bootstrap::{
     infra_public_path_prefixes, ComposedApiAssembly, CompositeReadinessCheck,
 };
+use sdkwork_cloudrouter_security::INTERNAL_GATEWAY_ROUTE_PREFIX;
 use sdkwork_web_core::{WebEnvironment, WebRequestContextProfile};
 
 const APPLICATION_ID: &str = "sdkwork-cloudrouter";
@@ -112,15 +113,22 @@ async fn gateway_main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
         .into_iter()
         .filter(|prefix| !open_api_prefixes.iter().any(|open| open == prefix))
         .collect::<Vec<_>>();
+    // The internal gateway channel (`/internal/v3/gateway/*`) is signed and
+    // verified by the invocation pipeline itself (HMAC + replay protection);
+    // the web framework must treat it as a public path so its surface
+    // classifier does not demand IAM credentials that the channel never
+    // carries.
+    let mut public_path_prefixes = infra_public_path_prefixes();
+    public_path_prefixes.push(INTERNAL_GATEWAY_ROUTE_PREFIX.to_owned());
     let mut framework = build_web_framework_builder_with_open_api_prefixes(
         resolver,
         assembly.route_manifest.clone(),
-        infra_public_path_prefixes(),
+        public_path_prefixes.clone(),
         open_api_prefixes.clone(),
     )
     .profile(WebRequestContextProfile {
         open_api_prefixes,
-        public_path_prefixes: infra_public_path_prefixes(),
+        public_path_prefixes,
         gateway_api_prefixes,
         environment: environment.clone(),
         ..WebRequestContextProfile::default()

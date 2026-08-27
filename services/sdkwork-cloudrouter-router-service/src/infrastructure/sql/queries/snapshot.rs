@@ -22,6 +22,72 @@ impl PricingCatalogSql {
         ]
     }
 
+    /// Per-gate cumulative account counts mirroring the
+    /// `load_upstream_account_routes` join chain, executed only when that load
+    /// produced zero rows so the selection error can name the exact blocking
+    /// configuration gate instead of blaming the routing cache.
+    ///
+    /// Counts are cumulative in gate order: every later count only includes
+    /// accounts that passed all earlier gates.
+    pub fn diagnose_upstream_route_gates() -> &'static str {
+        r#"
+SELECT
+    (SELECT count(*)
+     FROM ai_upstream_supplier s
+     WHERE s.deleted_at IS NULL AND s.status = 1) AS enabled_suppliers,
+    (SELECT count(*)
+     FROM ai_upstream_account c
+     JOIN ai_upstream_supplier s
+       ON s.id = c.supplier_id
+      AND s.supplier_code = c.supplier_code
+      AND s.tenant_id = c.tenant_id
+      AND s.organization_id = c.organization_id
+      AND s.deleted_at IS NULL AND s.status = 1
+     WHERE c.deleted_at IS NULL AND c.status = 1) AS enabled_accounts,
+    (SELECT count(*)
+     FROM ai_upstream_account c
+     JOIN ai_upstream_supplier_auth_method am
+       ON am.supplier_id = c.supplier_id
+      AND am.auth_method_code = c.auth_method_code
+      AND am.tenant_id = c.tenant_id
+      AND am.organization_id = c.organization_id
+      AND am.deleted_at IS NULL AND am.status = 1
+     WHERE c.deleted_at IS NULL AND c.status = 1) AS auth_method_matched_accounts,
+    (SELECT count(DISTINCT cc.account_id)
+     FROM ai_upstream_account_credential cc
+     WHERE cc.deleted_at IS NULL AND cc.status = 1
+       AND cc.is_active
+       AND (cc.expires_at IS NULL OR cc.expires_at > CURRENT_TIMESTAMP)
+       AND NULLIF(cc.secret_ciphertext, '') IS NOT NULL) AS active_credential_accounts,
+    (SELECT count(DISTINCT member.account_id)
+     FROM ai_upstream_account_group_member member
+     WHERE member.status = 1 AND member.deleted_at IS NULL
+       AND COALESCE(member.enabled, true)
+       AND (member.effective_from IS NULL OR member.effective_from <= CURRENT_TIMESTAMP)
+       AND (member.effective_to IS NULL OR member.effective_to > CURRENT_TIMESTAMP)) AS group_member_accounts,
+    (SELECT count(DISTINCT c.id)
+     FROM ai_upstream_account c
+     JOIN ai_upstream_supplier s
+       ON s.id = c.supplier_id
+      AND s.tenant_id = c.tenant_id
+      AND s.organization_id = c.organization_id
+      AND s.deleted_at IS NULL AND s.status = 1
+     LEFT JOIN ai_upstream_supplier_endpoint e
+       ON e.supplier_id = c.supplier_id
+      AND e.tenant_id = c.tenant_id
+      AND e.organization_id = c.organization_id
+      AND e.deleted_at IS NULL AND e.status = 1
+     WHERE c.deleted_at IS NULL AND c.status = 1
+       AND (
+             NULLIF(e.base_url, '') IS NOT NULL
+          OR NULLIF(s.default_base_url, '') IS NOT NULL
+          OR s.protocols <> '[]'::jsonb
+          OR NULLIF(c.default_base_url, '') IS NOT NULL
+          OR c.protocols <> '[]'::jsonb
+       )) AS base_url_resolvable_accounts
+"#
+    }
+
     pub fn load_vendors() -> &'static str {
         r#"
 SELECT

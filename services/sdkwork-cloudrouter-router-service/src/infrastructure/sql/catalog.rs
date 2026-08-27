@@ -14,13 +14,13 @@ use crate::infrastructure::in_memory_pricing_catalog::resolve_model_mapping_from
 use crate::infrastructure::sql::rows::{
     AccountRateCardRow, AiModelRow, GatewayAccessPolicyRow, GatewayApiKeyRow, GatewayRiskRuleRow,
     ModelMappingRuleRow, ModelPriceRow, ModelUpstreamRouteRow, ModelVendorRow, PricingPlanRow,
-    PricingRuleRow, QuotaPolicyRow,
-    UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow, UpstreamAccountRouteRow,
-    UpstreamAccountModelAccessRow, UpstreamSupplierModelAccessRow,
+    PricingRuleRow, QuotaPolicyRow, UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow,
+    UpstreamAccountModelAccessRow, UpstreamAccountRouteRow, UpstreamSupplierModelAccessRow,
 };
 use crate::ports::{
     AccountBaseUrlConfig, AccountGroupModelAccess, AccountModelAccess, AdminLlmProtocolConfig,
-    PricingCatalog, SupplierModelAccess, UpstreamAccountRouteCatalog, VendorModelListEntry,
+    PricingCatalog, SupplierModelAccess, UpstreamAccountRouteCatalog, UpstreamRouteGateDiagnosis,
+    VendorModelListEntry,
 };
 
 #[derive(Default)]
@@ -42,6 +42,9 @@ pub struct PricingCatalogRows {
     pub gateway_risk_rules: Vec<GatewayRiskRuleRow>,
     pub upstream_account_group_metric_snapshots: Vec<UpstreamAccountGroupMetricSnapshotRow>,
     pub prices: Vec<ModelPriceRow>,
+    /// Captured only when `upstream_account_routes` loads empty; explains
+    /// which configuration gate blocked the whole account pool.
+    pub upstream_route_gate_diagnosis: Option<UpstreamRouteGateDiagnosis>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -125,6 +128,7 @@ pub struct SqlPricingCatalogSnapshot {
     upstream_account_group_metric_snapshots: Vec<UpstreamAccountGroupMetricSnapshot>,
     prices: Vec<ScopedModelPrice>,
     managed_provider_secrets: BTreeMap<String, String>,
+    upstream_route_gate_diagnosis: Option<UpstreamRouteGateDiagnosis>,
     account_group_model_access_by_id: HashMap<i64, AccountGroupModelAccess>,
     supplier_model_access_by_code: HashMap<String, SupplierModelAccess>,
     account_model_access_by_id: HashMap<i64, AccountModelAccess>,
@@ -149,9 +153,16 @@ impl SqlPricingCatalogSnapshot {
     }
 
     pub fn from_rows_and_managed_provider_secrets(
-        rows: PricingCatalogRows,
+        mut rows: PricingCatalogRows,
         managed_provider_secrets: BTreeMap<String, String>,
     ) -> DomainResult<Self> {
+        // Diagnosis only applies to an empty pool; take it out before the row
+        // vectors are consumed below.
+        let upstream_route_gate_diagnosis = if rows.upstream_account_routes.is_empty() {
+            rows.upstream_route_gate_diagnosis.take()
+        } else {
+            None
+        };
         let pricing_plans = scoped_pricing_plans_with_standard_fallback(rows.pricing_plans)?;
         let prices = map_scoped_model_prices(rows.prices)?;
         let account_group_model_access_by_id = rows
@@ -294,6 +305,7 @@ impl SqlPricingCatalogSnapshot {
             )?,
             prices,
             managed_provider_secrets,
+            upstream_route_gate_diagnosis,
             account_group_model_access_by_id,
             supplier_model_access_by_code,
             account_model_access_by_id,
@@ -527,6 +539,10 @@ impl RefreshableSqlPricingCatalog {
 impl UpstreamAccountRouteCatalog for RefreshableSqlPricingCatalog {
     fn shared_upstream_account_routes(&self) -> Arc<[UpstreamAccountRoute]> {
         Arc::clone(&self.current_snapshot().upstream_account_routes)
+    }
+
+    fn upstream_route_gate_diagnosis(&self) -> Option<UpstreamRouteGateDiagnosis> {
+        self.current_snapshot().upstream_route_gate_diagnosis()
     }
 
     fn account_group_model_access(&self, group_id: i64) -> Option<AccountGroupModelAccess> {
@@ -1035,6 +1051,10 @@ impl PricingCatalog for SqlPricingCatalogSnapshot {
 impl UpstreamAccountRouteCatalog for SqlPricingCatalogSnapshot {
     fn shared_upstream_account_routes(&self) -> Arc<[UpstreamAccountRoute]> {
         Arc::clone(&self.upstream_account_routes)
+    }
+
+    fn upstream_route_gate_diagnosis(&self) -> Option<UpstreamRouteGateDiagnosis> {
+        self.upstream_route_gate_diagnosis
     }
 
     fn account_group_model_access(&self, group_id: i64) -> Option<AccountGroupModelAccess> {

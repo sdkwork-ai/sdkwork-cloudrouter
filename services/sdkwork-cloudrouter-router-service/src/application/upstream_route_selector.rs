@@ -13,7 +13,9 @@ use crate::domain::{
     RouteCandidate, RoutingCapability, UpstreamAccountGroup, UpstreamAccountGroupBinding,
     UpstreamAccountRoute, UpstreamAccountRoutingStrategy,
 };
-use crate::ports::{AccountGroupModelAccess, UpstreamAccountRouteCatalog};
+use crate::ports::{
+    AccountGroupModelAccess, UpstreamAccountRouteCatalog, UpstreamRouteGateDiagnosis,
+};
 
 #[derive(Debug, Clone, Default)]
 struct UpstreamAccountGroupBindings {
@@ -275,6 +277,15 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
                 routes.len(),
                 account_routes.len(),
             );
+            let diagnosis = self.catalog.upstream_route_gate_diagnosis();
+            if let Some(diagnosis) = &diagnosis {
+                tracing::warn!(
+                    requested_model = %query.requested_model,
+                    catalog_key = %query.catalog_key,
+                    diagnosis = %diagnosis.summary(),
+                    "empty upstream route snapshot diagnosed against catalog inputs"
+                );
+            }
             let message = unavailable_model_route_message(
                 &query,
                 model_routes_loaded,
@@ -282,6 +293,7 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
                 &account_group_bindings,
                 routes.len(),
                 account_routes.len(),
+                diagnosis.as_ref(),
             );
             crate::application::log_selector_route_selection_failed(
                 crate::application::classify_route_selection_failure(&message),
@@ -412,7 +424,9 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             &query.requested_model,
             &message,
         );
-        Err(UpstreamRouteSelectionError::upstream_route_unavailable(message))
+        Err(UpstreamRouteSelectionError::upstream_route_unavailable(
+            message,
+        ))
     }
 
     pub fn select_account_route(
@@ -536,7 +550,9 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
                 &query.route_key,
                 &message,
             );
-            return Err(UpstreamRouteSelectionError::upstream_route_unavailable(message));
+            return Err(UpstreamRouteSelectionError::upstream_route_unavailable(
+                message,
+            ));
         }
 
         if let Some(selection) =
@@ -560,7 +576,9 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             &query.route_key,
             &message,
         );
-        Err(UpstreamRouteSelectionError::upstream_route_unavailable(message))
+        Err(UpstreamRouteSelectionError::upstream_route_unavailable(
+            message,
+        ))
     }
 
     fn route_contexts(
@@ -769,9 +787,7 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
                         has_base_url: has_text(route.base_url.as_deref()),
                         has_credential: has_text(route.secret_ref.as_deref())
                             || !route.auth_profile.default_headers.is_empty(),
-                        allows_model: account_route_allows_model_request(
-                            route, candidate, query,
-                        ),
+                        allows_model: account_route_allows_model_request(route, candidate, query),
                         account_health_status: route.account_health_status,
                         credential_health_status: route.credential_health_status,
                         endpoint_health_status: route.endpoint_health_status,
@@ -1205,12 +1221,24 @@ fn unavailable_model_route_message(
     account_group_bindings: &UpstreamAccountGroupBindings,
     scoped_model_routes: usize,
     scoped_account_routes: usize,
+    gate_diagnosis: Option<&UpstreamRouteGateDiagnosis>,
 ) -> String {
     let model = &query.catalog_key;
     let group = &query.context.group_code;
     let group_id = query.context.group_id;
 
     if model_routes_loaded == 0 && account_routes_loaded == 0 {
+        // With a captured pool diagnosis the blocking configuration gate is
+        // known exactly: report it instead of the generic (and frequently
+        // wrong) cache-refresh hint. The "snapshot is empty" prefix stays
+        // stable so failure-stage classification is unaffected.
+        if let Some(diagnosis) = gate_diagnosis {
+            return format!(
+                "upstream route snapshot is empty for model: {model} \
+                 ({})",
+                diagnosis.summary()
+            );
+        }
         return format!(
             "upstream route snapshot is empty for model: {model} \
              (no model routes and no account routes loaded in routing catalog; \

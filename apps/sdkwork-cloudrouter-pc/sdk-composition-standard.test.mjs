@@ -280,7 +280,7 @@ test('cloudrouter backend SDK is owner-only and does not regenerate business cap
     'CloudRouter backend SDK must not expose a cross-domain aggregation subpath',
   );
 
-  const backendSystemApi = source('../../sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/generated/server-openapi/src/api/system.ts');
+  const backendSystemApi = source('../../sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/src/index.ts/api/system.ts');
   assert.doesNotMatch(
     backendSystemApi,
     /SystemPromotions(?:Offers|CouponStocks|UserCoupons|DiscountApplications|DiscountAllocations|CouponLedgerEntries)/,

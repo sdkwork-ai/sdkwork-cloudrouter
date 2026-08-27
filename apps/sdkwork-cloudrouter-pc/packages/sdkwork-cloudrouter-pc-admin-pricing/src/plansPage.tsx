@@ -10,6 +10,7 @@ import {
   type AdminPricingStatus,
   type AdminRoundingMode,
 } from './pricingService';
+import { normalizePricingDecimal } from './priceSettingModel';
 import {
   AdminListToolbar,
   AdminPageShell,
@@ -129,7 +130,7 @@ export function PricePlansAdmin() {
       basePriceSide: item.basePriceSide,
       currencyCode: item.currencyCode,
       roundingMode: item.roundingMode,
-      minimumChargeAmount: item.minimumChargeAmount,
+      minimumChargeAmount: normalizePricingDecimal(item.minimumChargeAmount) || item.minimumChargeAmount,
       chargeMode: item.chargeMode,
       settlementMode: item.settlementMode,
       effectiveFrom: item.effectiveFrom ?? '',
@@ -196,7 +197,7 @@ export function PricePlansAdmin() {
                 setPage(1);
               }}
             >
-              <option value="all">{t('admin.pricing.plans.form.basePriceSide')}: All</option>
+              <option value="all">{t('admin.pricing.plans.form.basePriceSide')}: {t('admin.pricing.common.filter.all')}</option>
               {BASE_PRICE_SIDES.map((side) => (
                 <option key={side} value={side}>
                   {t(`admin.pricing.basePriceSide.${side}`)}
@@ -211,7 +212,7 @@ export function PricePlansAdmin() {
                 setPage(1);
               }}
             >
-              <option value="all">{t('admin.pricing.common.table.status')}: All</option>
+              <option value="all">{t('admin.pricing.common.table.status')}: {t('admin.pricing.common.filter.all')}</option>
               {STATUSES.map((status) => (
                 <option key={status} value={status}>
                   {t(`admin.pricing.common.status.${status}`)}
@@ -234,11 +235,11 @@ export function PricePlansAdmin() {
             pageSize={pageSize}
             itemCount={items.length}
             hasNextPage={Boolean(pageInfo?.totalItems && totalItems > page * pageSize)}
-            pageLabel={t('admin.pricing.common.pagination.page', 'Page {page}')}
-            pageSizeLabel={t('admin.pricing.common.pagination.rows', 'Rows')}
-            previousLabel={t('admin.pricing.common.pagination.previous', 'Previous page')}
-            nextLabel={t('admin.pricing.common.pagination.next', 'Next page')}
-            showingLabel={t('admin.pricing.common.pagination.showing', 'Showing')}
+            pageLabel={t('admin.pricing.common.pagination.page', { page })}
+            pageSizeLabel={t('admin.pricing.common.pagination.rows')}
+            previousLabel={t('admin.pricing.common.pagination.previous')}
+            nextLabel={t('admin.pricing.common.pagination.next')}
+            showingLabel={t('admin.pricing.common.pagination.showing')}
             onPreviousPage={() => setPage((current) => Math.max(1, current - 1))}
             onNextPage={() => setPage((current) => current + 1)}
             onPageSizeChange={(nextPageSize) => {
@@ -258,7 +259,7 @@ export function PricePlansAdmin() {
               <th className="px-3 py-2 font-medium">{t('admin.pricing.plans.table.currencyCode')}</th>
               <th className="px-3 py-2 font-medium">{t('admin.pricing.plans.table.roundingMode')}</th>
               <th className="px-3 py-2 font-medium">{t('admin.pricing.plans.table.minimumChargeAmount')}</th>
-              <th className="px-3 py-2 font-medium">Charge mode</th>
+              <th className="px-3 py-2 font-medium">{t('admin.pricing.plans.table.chargeMode')}</th>
               <th className="px-3 py-2 font-medium">{t('admin.pricing.common.table.status')}</th>
               <th className="px-3 py-2 font-medium">{t('admin.pricing.common.updatedAt')}</th>
               <th className="px-3 py-2 font-medium">{t('admin.pricing.common.table.actions')}</th>
@@ -283,8 +284,8 @@ export function PricePlansAdmin() {
                   <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">
                     {t(`admin.pricing.roundingMode.${item.roundingMode}`)}
                   </td>
-                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.minimumChargeAmount}</td>
-                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.chargeMode}</td>
+                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{normalizePricingDecimal(item.minimumChargeAmount) || item.minimumChargeAmount}</td>
+                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{t(`admin.pricing.chargeMode.${item.chargeMode}`)}</td>
                   <td className="px-3 py-2.5">
                     <StatusBadge status={item.status} />
                   </td>
@@ -378,13 +379,13 @@ export function PricePlansAdmin() {
                 placeholder="0"
               />
             </Field>
-            <Field label="Charge mode">
+            <Field label={t('admin.pricing.plans.form.chargeMode')}>
               <select className="w-full rounded border px-2 py-1.5" value={form.chargeMode} onChange={(event) => setField('chargeMode', event.target.value as 'prepaid_adjustment' | 'postpaid')}>
-                <option value="prepaid_adjustment">Prepaid adjustment</option>
-                <option value="postpaid">Postpaid</option>
+                <option value="prepaid_adjustment">{t('admin.pricing.chargeMode.prepaid_adjustment')}</option>
+                <option value="postpaid">{t('admin.pricing.chargeMode.postpaid')}</option>
               </select>
             </Field>
-            <Field label="Settlement mode">
+            <Field label={t('admin.pricing.plans.form.settlementMode')}>
               <select
                 className={selectClass}
                 value={form.settlementMode}
@@ -393,8 +394,8 @@ export function PricePlansAdmin() {
                   event.target.value as 'synchronous' | 'asynchronous',
                 )}
               >
-                <option value="synchronous">Synchronous</option>
-                <option value="asynchronous">Asynchronous</option>
+                <option value="synchronous">{t('admin.pricing.settlementMode.synchronous')}</option>
+                <option value="asynchronous">{t('admin.pricing.settlementMode.asynchronous')}</option>
               </select>
             </Field>
             <Field label={t('admin.pricing.common.form.effectiveFrom')} hint={t('admin.pricing.common.form.effectiveHint')}>

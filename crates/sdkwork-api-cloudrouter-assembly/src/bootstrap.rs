@@ -16,6 +16,7 @@ use sdkwork_account_repository_sqlx::PostgresCommerceAccountStore;
 use sdkwork_cloudrouter_http::{
     open_api_capability_for_request, remove_internal_trusted_subject_headers, OpenApiCapability,
 };
+use sdkwork_cloudrouter_security::INTERNAL_GATEWAY_ROUTE_PREFIX;
 use sdkwork_web_bootstrap::{
     ApiAssemblyContribution, CompositeReadinessCheck, ReadinessCheck, ReadinessFuture,
 };
@@ -493,7 +494,16 @@ async fn dispatch_application_request(
     let method = request.method().clone();
     let path = request.uri().path().to_owned();
     let is_registration = method == Method::POST && path == REGISTRATION_APP_PATH;
-    let router = if is_backend_path(&path) {
+    let router = if path == INTERNAL_GATEWAY_ROUTE_PREFIX
+        || path.starts_with(&format!("{INTERNAL_GATEWAY_ROUTE_PREFIX}/"))
+    {
+        // The agents turn executor and other in-process callers reach the
+        // invocation pipeline through the signed internal gateway channel
+        // (`/internal/v3/gateway/*`); the pipeline verifies the HMAC signature
+        // and replay nonce itself, so surface routing must forward it
+        // directly to the gateway router.
+        Some(routers.upstreams.gateway_router())
+    } else if is_backend_path(&path) {
         (routers.context.includes_dependency_apis()
             || routers
                 .backend_manifest

@@ -7,9 +7,9 @@ use sdkwork_cloudrouter_router_service::application::{
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, GatewayApiKeyAccountGroupBinding,
     ModelPrice, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
-    RoutingCapability, UpstreamAccountFallbackMode,
-    UpstreamAccountGroup, UpstreamAccountGroupBinding, UpstreamAccountRoute,
-    UpstreamAccountRoutingStrategy, UpstreamResourceEntitlement,
+    RoutingCapability, UpstreamAccountFallbackMode, UpstreamAccountGroup,
+    UpstreamAccountGroupBinding, UpstreamAccountRoute, UpstreamAccountRoutingStrategy,
+    UpstreamResourceEntitlement,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use sdkwork_cloudrouter_router_service::ports::{AccountGroupModelAccess, VendorModelListEntry};
@@ -1891,7 +1891,9 @@ fn diagnostic_fails_when_routing_catalog_empty() {
         error
     );
     assert!(
-        error.to_string().contains("upstream route snapshot is empty")
+        error
+            .to_string()
+            .contains("upstream route snapshot is empty")
             || error.to_string().contains("no accounts bound")
             || error.to_string().contains("not available"),
         "error message should be diagnostic: {}",
@@ -1920,4 +1922,80 @@ fn group_bound_route_selects_bound_account_without_legacy_policy_candidates() {
         .select_model_route(model_query(group_id))
         .unwrap();
     assert_eq!(5001, selected.route.account_id);
+}
+
+#[test]
+fn empty_pool_error_names_the_blocking_gate_when_diagnosis_is_present() {
+    let group = account_group(
+        900,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    );
+    let mut catalog = catalog_for_group(group);
+    // Empty pool, but the loader captured gate counts: accounts exist and are
+    // grouped, yet nothing has an active credential.
+    catalog.set_upstream_route_gate_diagnosis(Some(
+        sdkwork_cloudrouter_router_service::ports::UpstreamRouteGateDiagnosis {
+            enabled_suppliers: 2,
+            enabled_accounts: 3,
+            auth_method_matched_accounts: 3,
+            active_credential_accounts: 0,
+            group_member_accounts: 0,
+            base_url_resolvable_accounts: 0,
+        },
+    ));
+
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(900))
+        .err()
+        .expect("empty pool must fail selection");
+    let message = error.to_string();
+
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
+        error.kind(),
+        "empty pool should yield UpstreamRouteUnavailable: {message}"
+    );
+    assert!(
+        message.contains("upstream route snapshot is empty"),
+        "stage classification prefix must stay stable: {message}"
+    );
+    assert!(
+        message.contains("active_credentials=0"),
+        "diagnosis must report the blocking credential gate: {message}"
+    );
+    assert!(
+        message.contains("create an active credential"),
+        "diagnosis must carry the remediation hint: {message}"
+    );
+    assert!(
+        !message.contains("routing cache may not have refreshed"),
+        "a diagnosed empty pool must not blame the routing cache: {message}"
+    );
+}
+
+#[test]
+fn empty_pool_without_diagnosis_keeps_the_legacy_cache_hint() {
+    let group = account_group(
+        901,
+        UpstreamAccountRoutingStrategy::Failover,
+        UpstreamAccountFallbackMode::Sequential,
+    );
+    let catalog = catalog_for_group(group);
+
+    let error = UpstreamRouteSelector::new(&catalog)
+        .select_model_route(model_query(901))
+        .err()
+        .expect("empty pool must fail selection");
+    let message = error.to_string();
+
+    assert_eq!(
+        UpstreamRouteSelectionErrorKind::UpstreamRouteUnavailable,
+        error.kind()
+    );
+    assert!(message.contains("upstream route snapshot is empty"));
+    assert!(
+        message.contains("no model routes and no account routes loaded in routing catalog"),
+        "legacy message wording must stay intact without a diagnosis: {message}"
+    );
 }

@@ -21,7 +21,7 @@ use crate::infrastructure::sql::rows::GatewayApiKeyRow;
 use crate::infrastructure::sql::PricingCatalogSql;
 use crate::ports::{
     ApiKeyManagementReadFuture, GatewayApiKeyListPage, GatewayApiKeyManagementReadStore,
-    GatewayApiKeyManagementSnapshot, ListGatewayApiKeysQuery,
+    GatewayApiKeyManagementSnapshot, ListGatewayApiKeysQuery, UpstreamRouteGateDiagnosis,
 };
 
 const API_KEY_SECRET_MODE_CIPHERTEXT: &str = "ciphertext";
@@ -100,6 +100,28 @@ impl PostgresPricingCatalogLoader {
             row_mapping::load_models(&mut *tx, PricingCatalogSql::load_models()).await?,
             row_mapping::load_prices(&mut *tx, PricingCatalogSql::load_prices()).await?,
         );
+        let upstream_account_routes = row_mapping::load_upstream_account_routes(
+            &mut *tx,
+            PricingCatalogSql::load_upstream_account_routes(),
+            self.circuit_breaker_recovery_window_seconds,
+        )
+        .await?;
+        // Diagnosis is best-effort: a failed diagnostic query (e.g. an older
+        // schema) must never block the snapshot refresh itself.
+        let upstream_route_gate_diagnosis = if upstream_account_routes.is_empty() {
+            match diagnose_upstream_route_gates(&mut *tx).await {
+                Ok(diagnosis) => Some(diagnosis),
+                Err(error) => {
+                    tracing::warn!(
+                        %error,
+                        "upstream route gate diagnosis failed; snapshot continues without it"
+                    );
+                    None
+                }
+            }
+        } else {
+            None
+        };
         let rows = PricingCatalogRows {
             vendors: database_rows.vendors,
             models: database_rows.models,
@@ -107,12 +129,8 @@ impl PostgresPricingCatalogLoader {
             // upstream account routes. Keeping a second SQL authority here would allow the two
             // snapshots to disagree and would reintroduce the retired channel tables.
             model_upstream_routes: Vec::new(),
-            upstream_account_routes: row_mapping::load_upstream_account_routes(
-                &mut *tx,
-                PricingCatalogSql::load_upstream_account_routes(),
-                self.circuit_breaker_recovery_window_seconds,
-            )
-            .await?,
+            upstream_account_routes,
+            upstream_route_gate_diagnosis,
             model_mappings: row_mapping::load_model_mappings(
                 &mut *tx,
                 PricingCatalogSql::load_model_mappings(),
@@ -198,9 +216,13 @@ impl PostgresPricingCatalogLoader {
     /// (bumped transactionally by upstream account/group/resource admin
     /// writes) with the max `updated_at` of every other low-frequency catalog
     /// source: gateway api keys and their group bindings, the model catalog
-    /// (models/vendors/mappings/prices), and the routing resource directory.
-    /// Any admin change to those sources therefore triggers a catalog refresh
-    /// within one probe interval instead of waiting for the fallback tick.
+    /// (models/vendors/mappings/prices), the routing resource directory, and
+    /// every table feeding `load_upstream_account_routes` (suppliers, auth
+    /// methods, endpoints, accounts, credentials, group members, resource
+    /// bindings). Any change to those sources therefore triggers a catalog
+    /// refresh within one probe interval instead of waiting for the fallback
+    /// tick — including out-of-band writes that bypass the admin API and its
+    /// config-version bump (manual SQL fixes, other instances, restores).
     ///
     /// High-frequency tables (health state, metric snapshots, sticky object
     /// routes, metering) are deliberately excluded so routine request traffic
@@ -279,6 +301,34 @@ impl PostgresPricingCatalogLoader {
                 SELECT 'resource-group-item:' || COALESCE(MAX(updated_at)::text, '')
                 FROM ai_resource_group_item
                 WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'upstream-supplier:' || COALESCE(MAX(updated_at)::text, '')
+                FROM ai_upstream_supplier
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'upstream-auth-method:' || COALESCE(MAX(updated_at)::text, '')
+                FROM ai_upstream_supplier_auth_method
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'upstream-endpoint:' || COALESCE(MAX(updated_at)::text, '')
+                FROM ai_upstream_supplier_endpoint
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'upstream-account:' || COALESCE(MAX(updated_at)::text, '')
+                FROM ai_upstream_account
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'upstream-credential:' || COALESCE(MAX(updated_at)::text, '')
+                FROM ai_upstream_account_credential
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'group-member:' || COALESCE(MAX(updated_at)::text, '')
+                FROM ai_upstream_account_group_member
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'resource-binding:' || COALESCE(MAX(updated_at)::text, '')
+                FROM ai_resource_binding
+                WHERE deleted_at IS NULL
             ) fingerprint_parts
             "#,
         )
@@ -304,6 +354,30 @@ impl PostgresPricingCatalogLoader {
 
 fn default_circuit_breaker_recovery_window_seconds() -> i64 {
     i64::try_from(DEFAULT_PROVIDER_CIRCUIT_BREAKER_RECOVERY_WINDOW_SECONDS).unwrap_or(i64::MAX)
+}
+
+/// Runs the per-gate account-pool diagnosis inside the catalog load
+/// transaction. The caller treats failures as best-effort (degrading to no
+/// diagnosis) so the snapshot refresh itself is never blocked by it.
+async fn diagnose_upstream_route_gates<'e, E>(
+    executor: E,
+) -> Result<UpstreamRouteGateDiagnosis, PostgresCatalogLoadError>
+where
+    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
+{
+    let row = sqlx::query(PricingCatalogSql::diagnose_upstream_route_gates())
+        .fetch_one(executor)
+        .await
+        .map_err(PostgresCatalogLoadError::from)?;
+    use sqlx::Row;
+    Ok(UpstreamRouteGateDiagnosis {
+        enabled_suppliers: row.get("enabled_suppliers"),
+        enabled_accounts: row.get("enabled_accounts"),
+        auth_method_matched_accounts: row.get("auth_method_matched_accounts"),
+        active_credential_accounts: row.get("active_credential_accounts"),
+        group_member_accounts: row.get("group_member_accounts"),
+        base_url_resolvable_accounts: row.get("base_url_resolvable_accounts"),
+    })
 }
 
 fn managed_provider_secrets_from_rows(

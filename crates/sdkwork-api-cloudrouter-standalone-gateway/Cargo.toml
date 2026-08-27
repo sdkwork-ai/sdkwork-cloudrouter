@@ -8,6 +8,7 @@ axum.workspace = true
 sdkwork-api-cloudrouter-assembly.workspace = true
 sdkwork-cloudrouter-config.workspace = true
 sdkwork-cloudrouter-http.workspace = true
+sdkwork-cloudrouter-security.workspace = true
 sdkwork-cloudrouter-license.workspace = true
 sdkwork-iam-web-adapter.workspace = true
 sdkwork-web-bootstrap = { workspace = true, features = ["redis"] }

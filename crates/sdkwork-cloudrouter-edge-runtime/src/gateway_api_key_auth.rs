@@ -106,7 +106,10 @@ where
     let principal = verifier
         .verify(&signed_request, method.as_str(), path_and_query, body)
         .await
-        .map_err(|_| internal_gateway_auth_error())?;
+        .map_err(|error| {
+            tracing::warn!(%error, "internal gateway signature verification failed");
+            internal_gateway_auth_error()
+        })?;
     authenticated_context_from_internal_principal(catalog, principal)
         .ok_or_else(internal_gateway_auth_error)
 }

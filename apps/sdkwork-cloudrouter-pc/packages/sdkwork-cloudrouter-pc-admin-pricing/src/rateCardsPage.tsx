@@ -198,7 +198,7 @@ export function RateCardsAdmin() {
                 setPage(1);
               }}
             >
-              <option value="all">{t('admin.pricing.rateCards.table.subjectType')}: All</option>
+              <option value="all">{t('admin.pricing.rateCards.table.subjectType')}: {t('admin.pricing.common.filter.all')}</option>
               {SUBJECT_TYPES.map((subjectType) => (
                 <option key={subjectType} value={subjectType}>
                   {t(`admin.pricing.subjectType.${subjectType}`)}
@@ -213,7 +213,7 @@ export function RateCardsAdmin() {
                 setPage(1);
               }}
             >
-              <option value="all">{t('admin.pricing.common.table.status')}: All</option>
+              <option value="all">{t('admin.pricing.common.table.status')}: {t('admin.pricing.common.filter.all')}</option>
               {STATUSES.map((status) => (
                 <option key={status} value={status}>
                   {t(`admin.pricing.common.status.${status}`)}
@@ -236,11 +236,11 @@ export function RateCardsAdmin() {
             pageSize={pageSize}
             itemCount={items.length}
             hasNextPage={Boolean(pageInfo?.totalItems && totalItems > page * pageSize)}
-            pageLabel={t('admin.pricing.common.pagination.page', 'Page {page}')}
-            pageSizeLabel={t('admin.pricing.common.pagination.rows', 'Rows')}
-            previousLabel={t('admin.pricing.common.pagination.previous', 'Previous page')}
-            nextLabel={t('admin.pricing.common.pagination.next', 'Next page')}
-            showingLabel={t('admin.pricing.common.pagination.showing', 'Showing')}
+            pageLabel={t('admin.pricing.common.pagination.page', { page })}
+            pageSizeLabel={t('admin.pricing.common.pagination.rows')}
+            previousLabel={t('admin.pricing.common.pagination.previous')}
+            nextLabel={t('admin.pricing.common.pagination.next')}
+            showingLabel={t('admin.pricing.common.pagination.showing')}
             onPreviousPage={() => setPage((current) => Math.max(1, current - 1))}
             onNextPage={() => setPage((current) => current + 1)}
             onPageSizeChange={(nextPageSize) => {
@@ -438,7 +438,7 @@ function buildRateCardInput(
   }
   const priority = Number.parseInt(form.priority.trim(), 10);
   if (!Number.isInteger(priority) || priority < 0) {
-    return fail('priority must be a non-negative integer');
+    return fail(t('admin.pricing.common.validation.priorityInvalid'));
   }
   return {
     subjectType: form.subjectType,

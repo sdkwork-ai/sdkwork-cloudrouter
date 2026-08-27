@@ -208,6 +208,8 @@ packages:
   - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-admin-core"
   - "../sdkwork-rtc/sdks/sdkwork-rtc-backend-sdk/sdkwork-rtc-backend-sdk-typescript"
 
+  - "../sdkwork-assets/sdks/sdkwork-assets-app-sdk/sdkwork-assets-app-sdk-typescript"
+  - "../sdkwork-messaging/apps/sdkwork-messaging-pc/packages/sdkwork-messaging-pc-core"
 catalog:
   react: ^19.2.8
   react-dom: ^19.2.8
@@ -320,3 +322,5 @@ catalog:
   esbuild: ^0.28.2
   pnpm: ^10.33.0
   turbo: ^2.10.10
+
+

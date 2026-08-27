@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Edit3, Plus, Trash2 } from 'lucide-react';
 import { BottomPagination } from '@sdkwork/cloudroutes-pc-commons';
 import { useTranslation } from 'react-i18next';
@@ -17,9 +18,16 @@ import {
 } from './pricingService';
 import {
   buildPriceSettingProductRows,
+  formatPriceSettingVariantTabLabel,
+  formatPricingMeterLabel,
   formatPricingMoney,
+  formatPricingOperationLabel,
+  formatPricingUnitLabel,
+  formatPricingQuantity,
+  formatOfficialRateScheduleLines,
+  groupPriceSettingRatesByVariant,
   normalizePricingDecimal,
-  officialRateQualifier,
+  officialRateVariantLabel,
   officialRateUnit,
   pricingRuleLifecycle,
   type PriceSettingProductRow,
@@ -47,7 +55,6 @@ export const PRICE_SETTING_RESOURCE_TYPES = ['all', 'llm', 'image', 'video', 'au
 type PriceSettingResourceType = (typeof PRICE_SETTING_RESOURCE_TYPES)[number];
 const STATUSES: AdminPricingStatus[] = ['active', 'inactive'];
 const DAY_OPTIONS = [1, 2, 3, 4, 5, 6, 7] as const;
-const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 type PriceSettingMode = 'standard' | 'time_window';
 
 const DEFAULT_WINDOW: AdminPricingScheduleWindow = {
@@ -196,7 +203,7 @@ export function PriceSettingsAdmin() {
     return PRICE_SETTING_RESOURCE_TYPES.filter((type) => type === 'all' || supported.has(type));
   }, [officialCatalog?.groups, resourceType]);
   const vendorOptions = useMemo(() => {
-    const options = new Map((officialCatalog?.vendors ?? []).map((vendor) => [vendor.code, { code: vendor.code, count: vendor.count }]));
+    const options = new Map((officialCatalog?.vendors ?? []).map((vendor) => [vendor.code, { code: vendor.code, count: formatPricingQuantity(vendor.count, vendor.count) }]));
     for (const code of vendorCodes) if (!options.has(code)) options.set(code, { code, count: '0' });
     return [...options.values()];
   }, [officialCatalog?.vendors, vendorCodes]);
@@ -217,7 +224,7 @@ export function PriceSettingsAdmin() {
     setForm({
       catalogKey: row.product.catalogKey ?? '', vendorCode: row.product.vendorCode, productCode: row.product.productCode, resourceCode: row.product.resourceCode, resourceDisplayName: row.product.resourceDisplayName, providerCode: row.product.providerCode, regionCode: row.product.regionCode,
       resourceType: resourceTypeOfProduct(row.product), pricingPlanId: pricingPlanId || firstRule?.pricingPlanId || plans[0]?.id || '',
-      meterPrices: row.prices.map(({ official, rule }) => ({ key: official.rateCode, rateCode: official.rateCode, ruleId: rule?.id, ruleCode: rule?.ruleCode, meterCode: official.meterCode, operationCode: official.operationCode, unitCode: official.unitCode, unitSize: official.unitSize, official, customerPrice: normalizePricingDecimal(rule?.unitPriceOverride), existingFormulaMode: rule?.formulaMode, existingMultiplier: rule?.multiplier, existingMarkupAmount: rule?.markupAmount, conditions: rule?.conditions ?? [] })),
+      meterPrices: row.prices.map(({ official, rule }) => ({ key: official.rateCode, rateCode: official.rateCode, ruleId: rule?.id, ruleCode: rule?.ruleCode, meterCode: official.meterCode, operationCode: official.operationCode, unitCode: official.unitCode, unitSize: formatPricingQuantity(official.unitSize, official.unitSize), official, customerPrice: normalizePricingDecimal(rule?.unitPriceOverride), existingFormulaMode: rule?.formulaMode, existingMultiplier: normalizePricingDecimal(rule?.multiplier) || rule?.multiplier, existingMarkupAmount: normalizePricingDecimal(rule?.markupAmount) || rule?.markupAmount, conditions: rule?.conditions ?? [] })),
       removedRuleIds: [],
       priceMode: firstSchedule ? 'time_window' : 'standard', timeZone: firstSchedule?.timeZone ?? 'Asia/Shanghai',
       weeklyWindows: firstSchedule?.weeklyWindows.map((window) => ({ ...window, daysOfWeek: [...window.daysOfWeek] })) ?? [{ ...DEFAULT_WINDOW }],
@@ -229,7 +236,7 @@ export function PriceSettingsAdmin() {
   const openCustomSetting = (rule: AdminPricingRuleItem) => {
     setForm({
       catalogKey: rule.catalogKey ?? '', vendorCode: vendorFromCatalogKey(rule.catalogKey) || rule.providerCode || '', productCode: rule.productCode ?? rule.catalogKey ?? '', resourceCode: resourceFromCatalogKey(rule.catalogKey) || rule.productCode || '', resourceDisplayName: resourceFromCatalogKey(rule.catalogKey) || rule.productCode || '', providerCode: rule.providerCode ?? '', regionCode: rule.regionCode ?? '', resourceType: resourceTypeOf(rule), pricingPlanId: rule.pricingPlanId,
-      meterPrices: [{ key: `rule:${rule.id}`, ruleId: rule.id, ruleCode: rule.ruleCode, meterCode: rule.meterCode ?? '', operationCode: rule.operationCode ?? '', unitCode: 'unit', unitSize: '1', customerPrice: normalizePricingDecimal(rule.unitPriceOverride), existingFormulaMode: rule.formulaMode, existingMultiplier: rule.multiplier, existingMarkupAmount: rule.markupAmount, conditions: rule.conditions }],
+      meterPrices: [{ key: `rule:${rule.id}`, ruleId: rule.id, ruleCode: rule.ruleCode, meterCode: rule.meterCode ?? '', operationCode: rule.operationCode ?? '', unitCode: 'unit', unitSize: '1', customerPrice: normalizePricingDecimal(rule.unitPriceOverride), existingFormulaMode: rule.formulaMode, existingMultiplier: normalizePricingDecimal(rule.multiplier) || rule.multiplier, existingMarkupAmount: normalizePricingDecimal(rule.markupAmount) || rule.markupAmount, conditions: rule.conditions }],
       removedRuleIds: [],
       priceMode: rule.schedule ? 'time_window' : 'standard', timeZone: rule.schedule?.timeZone ?? 'Asia/Shanghai', weeklyWindows: rule.schedule?.weeklyWindows.map((window) => ({ ...window, daysOfWeek: [...window.daysOfWeek] })) ?? [{ ...DEFAULT_WINDOW }], includeDates: rule.schedule?.includeDates.join(', ') ?? '', excludeDates: rule.schedule?.excludeDates.join(', ') ?? '', priority: String(rule.priority), effectiveFrom: rule.effectiveFrom ?? '', effectiveTo: rule.effectiveTo ?? '', status: rule.status,
       metadataConflict: false, acknowledgeMetadataConflict: false,
@@ -295,16 +302,16 @@ export function PriceSettingsAdmin() {
 
   return <AdminPageShell>
     <div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 dark:border-white/10"><div><h1 className="text-lg font-semibold text-slate-900 dark:text-white">{t('admin.pricing.settings.title')}</h1><p className="mt-1 max-w-3xl text-sm text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.subtitle')}</p></div><button type="button" className={primaryButtonClass} onClick={openCreate}><Plus className="h-4 w-4" aria-hidden="true" />{t('admin.pricing.settings.actions.new')}</button></div>
-    <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-slate-200 px-5 pt-3 dark:border-white/10" role="tablist" aria-label={t('admin.pricing.settings.tabs.label')}>{resourceTabs.map((type) => <button key={type} type="button" role="tab" aria-selected={resourceType === type} onClick={() => { setResourceType(type); setPage(1); }} className={`whitespace-nowrap border-b-2 px-3 pb-2.5 text-sm font-medium transition ${resourceType === type ? 'border-lobster-500 text-lobster-600 dark:text-lobster-400' : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}>{t(`admin.pricing.settings.resource.${type}`)} <span className="ml-1 text-xs tabular-nums text-slate-400">{counts.get(type) ?? 0}</span></button>)}</div>
+    <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-slate-200 px-5 pt-3 dark:border-white/10" role="tablist" aria-label={t('admin.pricing.settings.tabs.label')}>{resourceTabs.map((type) => <button key={type} type="button" role="tab" aria-selected={resourceType === type} onClick={() => { setResourceType(type); setPage(1); }} className={`whitespace-nowrap border-b-2 px-3 pb-2.5 text-sm font-medium transition ${resourceType === type ? 'border-lobster-500 text-lobster-600 dark:text-lobster-400' : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}>{resourceTypeLabel(type, t)} <span className="ml-1 text-xs tabular-nums text-slate-400">{counts.get(type) ?? 0}</span></button>)}</div>
     <div className="grid shrink-0 grid-cols-1 border-b border-slate-200 bg-slate-50/70 sm:grid-cols-3 dark:border-white/10 dark:bg-white/[0.03]"><SummaryMetric label={t('admin.pricing.settings.summary.products')} value={String(summary.products)} /><SummaryMetric label={t('admin.pricing.settings.summary.meters')} value={String(summary.meters)} /><SummaryMetric label={t('admin.pricing.settings.summary.configured')} value={`${summary.configured}/${summary.meters || 0}`} /></div>
-    <AdminListToolbar filters={<div className="flex min-w-0 flex-wrap items-center gap-2"><SearchBox value={search} onChange={setSearch} onSubmit={(value) => { setAppliedSearch(value); setPage(1); }} placeholder={t('admin.pricing.settings.search.placeholder')} /><VendorMultiSelect vendors={vendorOptions} value={vendorCodes} onChange={(next) => { setVendorCodes(next); setPage(1); }} placeholder={t('admin.pricing.settings.filters.allVendors')} /><select className={toolbarSelectClass} value={pricingPlanId} aria-label={t('admin.pricing.settings.filters.pricingPlan')} onChange={(event) => { setPricingPlanId(event.target.value); setPage(1); }}>{plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.planName || plan.planCode}</option>)}</select><select className={toolbarSelectClass} value={resourceType} aria-label={t('admin.pricing.settings.filters.resourceType')} onChange={(event) => { setResourceType(event.target.value as PriceSettingResourceType); setPage(1); }}>{resourceTabs.map((type) => <option key={type} value={type}>{t(`admin.pricing.settings.resource.${type}`)}</option>)}</select><select className={toolbarSelectClass} value={regionCode} aria-label={t('admin.pricing.settings.filters.region')} onChange={(event) => { setRegionCode(event.target.value); setPage(1); }}><option value="">{t('admin.pricing.settings.filters.allRegions')}</option>{(officialCatalog?.regions ?? []).map((region) => <option key={region.code} value={region.code}>{region.code} ({region.count})</option>)}</select></div>} />
-    <AdminTableArea footer={<BottomPagination page={page} pageSize={pageSize} itemCount={productRows.rows.length + customRules.length} hasNextPage={hasNextPage} pageLabel={t('admin.pricing.common.pagination.page', 'Page {page}')} pageSizeLabel={t('admin.pricing.common.pagination.rows', 'Rows')} previousLabel={t('admin.pricing.common.pagination.previous', 'Previous page')} nextLabel={t('admin.pricing.common.pagination.next', 'Next page')} showingLabel={t('admin.pricing.common.pagination.showing', 'Showing')} onPreviousPage={() => setPage((current) => Math.max(1, current - 1))} onNextPage={() => setPage((current) => current + 1)} onPageSizeChange={(value) => { setPageSize(value); setPage(1); }} pageSizeOptions={[20, 50, 100]} />}>
+    <AdminListToolbar filters={<div className="flex min-w-0 flex-wrap items-center gap-2"><SearchBox value={search} onChange={setSearch} onSubmit={(value) => { setAppliedSearch(value); setPage(1); }} placeholder={t('admin.pricing.settings.search.placeholder')} /><VendorMultiSelect vendors={vendorOptions} value={vendorCodes} onChange={(next) => { setVendorCodes(next); setPage(1); }} placeholder={t('admin.pricing.settings.filters.allVendors')} /><select className={toolbarSelectClass} value={pricingPlanId} aria-label={t('admin.pricing.settings.filters.pricingPlan')} onChange={(event) => { setPricingPlanId(event.target.value); setPage(1); }}>{plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.planName || plan.planCode}</option>)}</select><select className={toolbarSelectClass} value={resourceType} aria-label={t('admin.pricing.settings.filters.resourceType')} onChange={(event) => { setResourceType(event.target.value as PriceSettingResourceType); setPage(1); }}>{resourceTabs.map((type) => <option key={type} value={type}>{resourceTypeLabel(type, t)}</option>)}</select><select className={toolbarSelectClass} value={regionCode} aria-label={t('admin.pricing.settings.filters.region')} onChange={(event) => { setRegionCode(event.target.value); setPage(1); }}><option value="">{t('admin.pricing.settings.filters.allRegions')}</option>{(officialCatalog?.regions ?? []).map((region) => <option key={region.code} value={region.code}>{region.code} ({formatPricingQuantity(region.count)})</option>)}</select></div>} />
+    <AdminTableArea footer={<BottomPagination page={page} pageSize={pageSize} itemCount={productRows.rows.length + customRules.length} hasNextPage={hasNextPage} pageLabel={t('admin.pricing.common.pagination.page', { page })} pageSizeLabel={t('admin.pricing.common.pagination.rows')} previousLabel={t('admin.pricing.common.pagination.previous')} nextLabel={t('admin.pricing.common.pagination.next')} showingLabel={t('admin.pricing.common.pagination.showing')} onPreviousPage={() => setPage((current) => Math.max(1, current - 1))} onNextPage={() => setPage((current) => current + 1)} onPageSizeChange={(value) => { setPageSize(value); setPage(1); }} pageSizeOptions={[20, 50, 100]} />}>
       <table className="w-full min-w-[1360px] table-fixed text-left text-sm"><thead className="sticky top-0 z-10 border-b border-slate-200 bg-white text-xs uppercase tracking-wide text-slate-400 dark:border-white/10 dark:bg-slate-900"><tr><th className="w-[16%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.resourceName')}</th><th className="w-[10%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.resourceType')}</th><th className="w-[19%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.pricingObject')}</th><th className="w-[25%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.officialPrice')}</th><th className="w-[22%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.customerPrice')}</th><th className="w-[8%] px-4 py-3 text-right font-medium">{t('admin.pricing.settings.table.actions')}</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-white/5">{loading || (productRows.rows.length === 0 && customRules.length === 0) ? <TableState loading={loading} empty={t('admin.pricing.settings.empty')} colSpan={6} /> : <>{productRows.rows.map((row) => <ProductPriceTableRow key={row.key} row={row} activeResourceType={resourceType} plans={plans} locale={displayLocale} t={t} onEdit={openProductSetting} />)}{customRules.map((rule) => <CustomPriceTableRow key={`rule:${rule.id}`} rule={rule} plans={plans} locale={displayLocale} t={t} onEdit={openCustomSetting} />)}</>}</tbody></table>
     </AdminTableArea>
     <InlineError message={error} />
     {panelOpen ? <SidePanel wide title={t(creating ? 'admin.pricing.settings.form.createTitle' : 'admin.pricing.settings.form.editTitle')} description={t('admin.pricing.settings.form.batchDescription')} onClose={closePanel} footer={<><button type="button" className={secondaryButtonClass} onClick={closePanel} disabled={busy}>{t('admin.pricing.common.form.cancel')}</button><button type="submit" form="price-setting-form" className={primaryButtonClass} disabled={busy}>{t('admin.pricing.settings.form.saveItems', { count: form.meterPrices.length })}</button></>}>
       <form id="price-setting-form" className="flex flex-col gap-5" onSubmit={handleSubmit}><InlineError message={formError} />
-        <section className="rounded-lg border border-slate-200 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-white/[0.04]"><div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t('admin.pricing.settings.form.objectTitle')}</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.form.objectHint')}</p></div><span className="rounded-full bg-lobster-50 px-2.5 py-1 text-xs font-medium text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-300">{t(`admin.pricing.settings.resource.${form.resourceType}`)}</span></div>{form.resourceCode ? <div className="mb-4 border-b border-slate-200 pb-4 dark:border-white/10"><div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{t('admin.pricing.settings.form.resourceIdentity')}</div><div className="mt-1 text-base font-semibold text-slate-900 dark:text-white">{form.resourceDisplayName || form.resourceCode}</div><div className="mt-1 break-all font-mono text-xs text-slate-500 dark:text-slate-400">{form.resourceCode}{form.catalogKey && form.catalogKey !== form.resourceCode ? ` · ${form.catalogKey}` : ''}</div></div> : null}<div className="grid gap-4 md:grid-cols-2"><Field label={t('admin.pricing.settings.form.vendor')} hint={t('admin.pricing.settings.form.vendorHint')}><input className={inputClass} value={form.vendorCode} onChange={(event) => setField('vendorCode', event.target.value)} placeholder="openai / anthropic" readOnly={Boolean(form.catalogKey)} required /></Field><Field label={t('admin.pricing.settings.form.product')} hint={t('admin.pricing.settings.form.productHint')}><input className={inputClass} value={form.productCode} onChange={(event) => setField('productCode', event.target.value)} placeholder="gpt-4o / image-generation" required /></Field><Field label={t('admin.pricing.settings.form.resourceType')}><select className={selectClass} value={form.resourceType} onChange={(event) => setField('resourceType', event.target.value as PriceSettingFormState['resourceType'])}>{PRICE_SETTING_RESOURCE_TYPES.filter((type) => type !== 'all').map((type) => <option key={type} value={type}>{t(`admin.pricing.settings.resource.${type}`)}</option>)}</select></Field><Field label={t('admin.pricing.settings.form.provider')} hint={t('admin.pricing.settings.form.providerHint')}><input className={inputClass} value={form.providerCode} onChange={(event) => setField('providerCode', event.target.value)} placeholder="openrouter / aliyun" /></Field><Field label={t('admin.pricing.settings.form.region')} hint={t('admin.pricing.settings.form.regionHint')}><input className={inputClass} value={form.regionCode} onChange={(event) => setField('regionCode', event.target.value)} placeholder="global / cn" /></Field></div></section>
+        <section className="rounded-lg border border-slate-200 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-white/[0.04]"><div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t('admin.pricing.settings.form.objectTitle')}</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.form.objectHint')}</p></div><span className="rounded-full bg-lobster-50 px-2.5 py-1 text-xs font-medium text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-300">{resourceTypeLabel(form.resourceType, t)}</span></div>{form.resourceCode ? <div className="mb-4 border-b border-slate-200 pb-4 dark:border-white/10"><div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{t('admin.pricing.settings.form.resourceIdentity')}</div><div className="mt-1 text-base font-semibold text-slate-900 dark:text-white">{form.resourceDisplayName || form.resourceCode}</div><div className="mt-1 break-all font-mono text-xs text-slate-500 dark:text-slate-400">{form.resourceCode}{form.catalogKey && form.catalogKey !== form.resourceCode ? ` · ${form.catalogKey}` : ''}</div></div> : null}<div className="grid gap-4 md:grid-cols-2"><Field label={t('admin.pricing.settings.form.vendor')} hint={t('admin.pricing.settings.form.vendorHint')}><input className={inputClass} value={form.vendorCode} onChange={(event) => setField('vendorCode', event.target.value)} placeholder="openai / anthropic" readOnly={Boolean(form.catalogKey)} required /></Field><Field label={t('admin.pricing.settings.form.product')} hint={t('admin.pricing.settings.form.productHint')}><input className={inputClass} value={form.productCode} onChange={(event) => setField('productCode', event.target.value)} placeholder="gpt-4o / image-generation" required /></Field><Field label={t('admin.pricing.settings.form.resourceType')}><select className={selectClass} value={form.resourceType} onChange={(event) => setField('resourceType', event.target.value as PriceSettingFormState['resourceType'])}>{PRICE_SETTING_RESOURCE_TYPES.filter((type) => type !== 'all').map((type) => <option key={type} value={type}>{resourceTypeLabel(type, t)}</option>)}</select></Field><Field label={t('admin.pricing.settings.form.provider')} hint={t('admin.pricing.settings.form.providerHint')}><input className={inputClass} value={form.providerCode} onChange={(event) => setField('providerCode', event.target.value)} placeholder="openrouter / aliyun" /></Field><Field label={t('admin.pricing.settings.form.region')} hint={t('admin.pricing.settings.form.regionHint')}><input className={inputClass} value={form.regionCode} onChange={(event) => setField('regionCode', event.target.value)} placeholder="global / cn" /></Field></div></section>
         <section><div className="mb-3 flex items-end justify-between gap-3"><div><h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t('admin.pricing.settings.form.priceGroupTitle')}</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.form.priceGroupHint')}</p></div><button type="button" className={secondaryButtonClass} onClick={addMeter}><Plus className="h-3.5 w-3.5" aria-hidden="true" />{t('admin.pricing.settings.form.addMeter')}</button></div><div className="overflow-hidden rounded-lg border border-slate-200 dark:border-white/10"><div className="hidden grid-cols-[minmax(150px,1fr)_minmax(150px,1fr)_180px_36px] gap-3 border-b border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400 md:grid dark:border-white/10 dark:bg-white/[0.04]"><span>{t('admin.pricing.settings.form.meter')}</span><span>{t('admin.pricing.settings.table.officialPrice')}</span><span>{t('admin.pricing.settings.form.customerPrice')}</span><span /></div><div className="divide-y divide-slate-200 dark:divide-white/10">{form.meterPrices.map((meter, index) => <MeterFormRow key={meter.key} meter={meter} index={index} locale={displayLocale} t={t} updateMeter={updateMeter} removeMeter={removeMeter} />)}</div></div></section>
         <section className="grid gap-4 rounded-lg border border-slate-200 p-4 md:grid-cols-2 dark:border-white/10"><Field label={t('admin.pricing.settings.form.pricingPlan')} hint={t('admin.pricing.settings.form.pricingPlanHint')}><select className={selectClass} value={form.pricingPlanId} onChange={(event) => setField('pricingPlanId', event.target.value)} disabled={!creating} required><option value="">{t('admin.pricing.settings.form.pricingPlanPlaceholder')}</option>{plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.planName} ({plan.planCode})</option>)}</select></Field><Field label={t('admin.pricing.common.form.priority')}><input className={inputClass} value={form.priority} onChange={(event) => setField('priority', event.target.value)} inputMode="numeric" /></Field><Field label={t('admin.pricing.common.form.status')}><select className={selectClass} value={form.status} onChange={(event) => setField('status', event.target.value as AdminPricingStatus)}>{STATUSES.map((value) => <option key={value} value={value}>{t(`admin.pricing.common.status.${value}`)}</option>)}</select></Field><Field label={t('admin.pricing.settings.form.catalogKey')} hint={t('admin.pricing.settings.form.optional')}><input className={inputClass} value={form.catalogKey} onChange={(event) => setField('catalogKey', event.target.value)} placeholder="vendor/model" /></Field></section>
         <details className="rounded-lg border border-slate-200 dark:border-white/10"><summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white"><span>{t('admin.pricing.settings.form.advancedTitle')}</span><ChevronDown className="h-4 w-4 text-slate-400" aria-hidden="true" /></summary><div className="flex flex-col gap-4 border-t border-slate-200 px-4 py-4 dark:border-white/10"><Field label={t('admin.pricing.settings.form.priceMode')} hint={t('admin.pricing.settings.form.priceModeHint')}><div className="grid grid-cols-2 gap-2" role="group" aria-label={t('admin.pricing.settings.form.priceMode')}>{(['standard', 'time_window'] as const).map((mode) => <button key={mode} type="button" className={`rounded-md border px-3 py-2 text-sm font-medium transition ${form.priceMode === mode ? 'border-lobster-500 bg-lobster-50 text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-300' : 'border-slate-200 text-slate-600 hover:border-lobster-300 dark:border-white/10 dark:text-slate-300'}`} onClick={() => { setField('priceMode', mode); if (mode === 'time_window' && form.weeklyWindows.length === 0) setField('weeklyWindows', [{ ...DEFAULT_WINDOW }]); }}>{t(`admin.pricing.settings.mode.${mode === 'time_window' ? 'timeWindow' : 'standard'}`)}</button>)}</div></Field>{form.priceMode === 'time_window' ? <TimeWindowFields form={form} t={t} updateWindow={updateWindow} toggleWindowDay={toggleWindowDay} addWindow={addWindow} setField={setField} /> : null}<div className="grid gap-4 md:grid-cols-2"><Field label={t('admin.pricing.common.form.effectiveFrom')}><input className={inputClass} value={form.effectiveFrom} onChange={(event) => setField('effectiveFrom', event.target.value)} placeholder="2026-08-20T00:00:00Z" /></Field><Field label={t('admin.pricing.common.form.effectiveTo')}><input className={inputClass} value={form.effectiveTo} onChange={(event) => setField('effectiveTo', event.target.value)} placeholder="2026-08-20T00:00:00Z" /></Field></div></div></details>
@@ -372,37 +379,290 @@ function SummaryMetric({ label, value }: { label: string; value: string }) { ret
 function VendorMultiSelect({ vendors, value, onChange, placeholder }: { vendors: { code: string; count: string }[]; value: string[]; onChange: (next: string[]) => void; placeholder: string }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const [panelStyle, setPanelStyle] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  const updatePosition = useCallback(() => {
+    const trigger = rootRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    const width = Math.max(rect.width, 288);
+    const left = Math.min(rect.left, Math.max(8, window.innerWidth - width - 8));
+    setPanelStyle({ top: rect.bottom + 4, left, width });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setPanelStyle(null);
+      return;
+    }
+    updatePosition();
+    const recompute = () => updatePosition();
+    window.addEventListener('resize', recompute);
+    window.addEventListener('scroll', recompute, true);
+    return () => {
+      window.removeEventListener('resize', recompute);
+      window.removeEventListener('scroll', recompute, true);
+    };
+  }, [open, updatePosition]);
+
   useEffect(() => {
     if (!open) return;
-    const closeOnOutside = (event: MouseEvent) => { if (rootRef.current && !rootRef.current.contains(event.target as Node)) setOpen(false); };
+    const closeOnOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (rootRef.current?.contains(target) || panelRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
     document.addEventListener('mousedown', closeOnOutside);
-    return () => document.removeEventListener('mousedown', closeOnOutside);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('mousedown', closeOnOutside);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
   }, [open]);
+
   const toggle = (code: string) => onChange(value.includes(code) ? value.filter((item) => item !== code) : [...value, code]);
   const visible = value.slice(0, 2);
-  return <div ref={rootRef} className="relative w-52 shrink-0"><button type="button" className={`flex h-9 w-full items-center gap-1.5 rounded-md border px-2.5 text-left text-sm transition ${open ? 'border-lobster-500 ring-2 ring-lobster-500/15' : 'border-slate-300 hover:border-slate-400 dark:border-white/10 dark:hover:border-white/20'} ${value.length > 0 ? 'bg-white text-slate-900 dark:bg-white/5 dark:text-white' : 'text-slate-400 dark:text-slate-500'}`} onClick={() => setOpen((current) => !current)} aria-expanded={open}><span className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">{value.length === 0 ? <span className="truncate">{placeholder}</span> : <>{visible.map((code) => <span key={code} className="max-w-[92px] truncate rounded-full bg-lobster-50 px-1.5 py-0.5 text-xs font-medium text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-200">{code}</span>)}{value.length > visible.length ? <span className="shrink-0 text-xs font-medium text-slate-500 dark:text-slate-400">+{value.length - visible.length}</span> : null}</>}</span><ChevronDown className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} /></button>{open ? <div className="absolute left-0 top-full z-30 mt-1 max-h-64 w-72 overflow-y-auto rounded-md border border-slate-200 bg-white p-1 shadow-lg dark:border-white/10 dark:bg-[#171717]">{vendors.length === 0 ? <div className="px-2 py-3 text-xs text-slate-400">{placeholder}</div> : vendors.map((vendor) => <label key={vendor.code} className={`flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors ${value.includes(vendor.code) ? 'bg-lobster-50 text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-200' : 'text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5'}`}><input type="checkbox" className="h-4 w-4 shrink-0 accent-lobster-600" checked={value.includes(vendor.code)} onChange={() => toggle(vendor.code)} /><span className="min-w-0 flex-1 truncate">{vendor.code}</span><span className="font-mono text-[10px] text-slate-400 dark:text-slate-500">{vendor.count}</span></label>)}</div> : null}</div>;
+
+  return (
+    <div ref={rootRef} className="relative w-52 shrink-0">
+      <button
+        type="button"
+        className={`flex h-9 w-full items-center gap-1.5 rounded-md border px-2.5 text-left text-sm transition ${open ? 'border-lobster-500 ring-2 ring-lobster-500/15' : 'border-slate-300 hover:border-slate-400 dark:border-white/10 dark:hover:border-white/20'} ${value.length > 0 ? 'bg-white text-slate-900 dark:bg-white/5 dark:text-white' : 'text-slate-400 dark:text-slate-500'}`}
+        onClick={() => setOpen((current) => !current)}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+      >
+        <span className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
+          {value.length === 0 ? (
+            <span className="truncate">{placeholder}</span>
+          ) : (
+            <>
+              {visible.map((code) => (
+                <span key={code} className="max-w-[92px] truncate rounded-full bg-lobster-50 px-1.5 py-0.5 text-xs font-medium text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-200">
+                  {code}
+                </span>
+              ))}
+              {value.length > visible.length ? (
+                <span className="shrink-0 text-xs font-medium text-slate-500 dark:text-slate-400">+{value.length - visible.length}</span>
+              ) : null}
+            </>
+          )}
+        </span>
+        <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && panelStyle
+        ? createPortal(
+            <div
+              ref={panelRef}
+              role="listbox"
+              aria-multiselectable
+              className="fixed z-[200] max-h-64 overflow-y-auto rounded-md border border-slate-200 bg-white p-1 shadow-lg dark:border-white/10 dark:bg-[#171717]"
+              style={{ top: panelStyle.top, left: panelStyle.left, width: panelStyle.width }}
+            >
+              {vendors.length === 0 ? (
+                <div className="px-2 py-3 text-xs text-slate-400">{placeholder}</div>
+              ) : (
+                vendors.map((vendor) => (
+                  <label
+                    key={vendor.code}
+                    className={`flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors ${value.includes(vendor.code) ? 'bg-lobster-50 text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-200' : 'text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5'}`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 shrink-0 accent-lobster-600"
+                      checked={value.includes(vendor.code)}
+                      onChange={() => toggle(vendor.code)}
+                    />
+                    <span className="min-w-0 flex-1 truncate">{vendor.code}</span>
+                    <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500">{formatPricingQuantity(vendor.count)}</span>
+                  </label>
+                ))
+              )}
+            </div>,
+            document.body,
+          )
+        : null}
+    </div>
+  );
 }
 
 function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdit }: { row: PriceSettingProductRow; activeResourceType: PriceSettingResourceType; plans: AdminPricingPlanItem[]; locale: string; t: TranslationFunction; onEdit: (row: PriceSettingProductRow) => void }) {
   const resourceType = activeResourceType === 'all' ? resourceTypeOfProduct(row.product) : activeResourceType;
-  return <tr className="align-top hover:bg-slate-50 dark:hover:bg-white/5"><td className="px-4 py-4 text-slate-900 dark:text-white"><div className="break-words font-semibold">{row.product.resourceDisplayName || row.product.resourceCode || row.product.productDisplayName}</div><div className="mt-1 break-all font-mono text-xs text-slate-500 dark:text-slate-400">{row.product.resourceCode}</div>{row.product.catalogKey && row.product.catalogKey !== row.product.resourceCode ? <div className="mt-1 break-all text-[11px] text-slate-400">{row.product.catalogKey}</div> : null}</td><td className="px-4 py-4"><span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">{t(`admin.pricing.settings.resource.${resourceType}`)}</span><div className="mt-2 break-all text-[11px] text-slate-400">{row.product.resourceType || resourceType}</div></td><td className="px-4 py-4 text-[11px] text-slate-500 dark:text-slate-400"><div>{t('admin.pricing.settings.scope.vendor')}: {row.product.vendorCode || '—'}</div><div className="mt-1">{t('admin.pricing.settings.scope.provider')}: {row.product.providerCode || '—'}</div><div className="mt-1">{t('admin.pricing.settings.scope.region')}: {row.product.regionCode || '—'}</div><div className="mt-1">{t('admin.pricing.settings.scope.product')}: {row.product.productCode || '—'}</div><div className="mt-1">{t('admin.pricing.settings.table.rateCount', { count: row.prices.length })}</div></td><td className="px-4 py-4"><div className="flex flex-col gap-2">{row.prices.map(({ official }) => <OfficialRateLine key={official.rateCode} official={official} locale={locale} t={t} />)}</div></td><td className="px-4 py-4"><div className="flex flex-col gap-2">{row.prices.map(({ official, rule }) => <CustomerRateLine key={official.rateCode} official={official} rule={rule} plans={plans} locale={locale} t={t} />)}</div></td><td className="px-4 py-4 text-right"><button type="button" className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold text-lobster-600 transition hover:bg-lobster-50 dark:text-lobster-300 dark:hover:bg-lobster-500/10" onClick={() => onEdit(row)}><Edit3 className="h-3.5 w-3.5" aria-hidden="true" />{t('admin.pricing.settings.actions.editGroup')}</button></td></tr>;
+  const translate = pricingConditionTranslate(t);
+  const variantGroups = useMemo(() => groupPriceSettingRatesByVariant(row.prices), [row.prices]);
+  const [activeVariant, setActiveVariant] = useState(variantGroups[0]?.key ?? 'standard');
+  useEffect(() => {
+    if (!variantGroups.some((group) => group.key === activeVariant)) {
+      setActiveVariant(variantGroups[0]?.key ?? 'standard');
+    }
+  }, [activeVariant, variantGroups]);
+  const activePrices = variantGroups.find((group) => group.key === activeVariant)?.prices ?? row.prices;
+  const showVariantTabs = variantGroups.length > 1;
+  return (
+    <tr className="align-top hover:bg-slate-50 dark:hover:bg-white/5">
+      <td className="px-4 py-4 text-slate-900 dark:text-white">
+        <div className="break-words font-semibold">{row.product.resourceDisplayName || row.product.resourceCode || row.product.productDisplayName}</div>
+        <div className="mt-1 break-all font-mono text-xs text-slate-500 dark:text-slate-400">{row.product.resourceCode}</div>
+        {row.product.catalogKey && row.product.catalogKey !== row.product.resourceCode ? <div className="mt-1 break-all text-[11px] text-slate-400">{row.product.catalogKey}</div> : null}
+      </td>
+      <td className="px-4 py-4">
+        <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">{resourceTypeLabel(resourceType, t)}</span>
+      </td>
+      <td className="px-4 py-4 text-[11px] text-slate-500 dark:text-slate-400">
+        <div>{t('admin.pricing.settings.scope.vendor')}: {row.product.vendorCode || '—'}</div>
+        <div className="mt-1">{t('admin.pricing.settings.scope.provider')}: {row.product.providerCode || '—'}</div>
+        <div className="mt-1">{t('admin.pricing.settings.scope.region')}: {row.product.regionCode || '—'}</div>
+        <div className="mt-1">{t('admin.pricing.settings.scope.product')}: {row.product.productCode || '—'}</div>
+        <div className="mt-2">{t('admin.pricing.settings.table.rateCount', { count: activePrices.length })}</div>
+      </td>
+      <td className="px-4 py-4">
+        {showVariantTabs ? (
+          <PriceVariantTabs
+            groups={variantGroups}
+            activeKey={activeVariant}
+            onChange={setActiveVariant}
+            translate={translate}
+            t={t}
+            className="mb-2"
+          />
+        ) : null}
+        <div className="flex flex-col gap-2">
+          {activePrices.map(({ official }) => (
+            <OfficialRateLine key={official.rateCode} official={official} locale={locale} t={t} showVariantBadge={!showVariantTabs} />
+          ))}
+        </div>
+      </td>
+      <td className="px-4 py-4">
+        {showVariantTabs ? (
+          <PriceVariantTabs
+            groups={variantGroups}
+            activeKey={activeVariant}
+            onChange={setActiveVariant}
+            translate={translate}
+            t={t}
+            className="mb-2"
+          />
+        ) : null}
+        <div className="flex flex-col gap-2">
+          {activePrices.map(({ official, rule }) => (
+            <CustomerRateLine key={official.rateCode} official={official} rule={rule} plans={plans} locale={locale} t={t} showVariantBadge={!showVariantTabs} />
+          ))}
+        </div>
+      </td>
+      <td className="px-4 py-4 text-right">
+        <button type="button" className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold text-lobster-600 transition hover:bg-lobster-50 dark:text-lobster-300 dark:hover:bg-lobster-500/10" onClick={() => onEdit(row)}>
+          <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
+          {t('admin.pricing.settings.actions.editGroup')}
+        </button>
+      </td>
+    </tr>
+  );
 }
 
-function OfficialRateLine({ official, locale, t }: { official: AdminOfficialPricingRateItem; locale: string; t: TranslationFunction }) {
-  const qualifier = officialRateQualifier(official);
-  return <div className="rounded-md border border-slate-200/80 bg-slate-50/60 px-3 py-2 dark:border-white/10 dark:bg-white/[0.03]"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="font-medium text-slate-800 dark:text-slate-100">{meterLabel(official, t)}</div><div className="mt-0.5 break-all text-[11px] text-slate-400">{official.operationDisplayName || official.operationCode} · {official.meterCode}</div></div><div className="shrink-0 text-right tabular-nums"><div className="font-semibold text-slate-900 dark:text-white">{formatPricingMoney(official.unitPrice, official.currencyCode, locale)}</div><div className="mt-0.5 text-[11px] text-slate-400">/ {officialRateUnit(official)}</div></div></div>{qualifier ? <div className="mt-1 break-words text-[11px] text-slate-400">{qualifier}</div> : null}{official.tiers.map((tier) => <div key={tier.tierCode} className="mt-1 text-[11px] tabular-nums text-slate-500 dark:text-slate-400">{tier.tierCode}: {formatPricingMoney(tier.unitPrice, tier.currencyCode, locale)} / {tier.unitSize} {official.unitCode} · {t('admin.pricing.settings.table.flatAmount')} {formatPricingMoney(tier.flatAmount, tier.currencyCode, locale)}</div>)}</div>;
+function PriceVariantTabs({
+  groups,
+  activeKey,
+  onChange,
+  translate,
+  t,
+  className = '',
+}: {
+  groups: ReturnType<typeof groupPriceSettingRatesByVariant>;
+  activeKey: string;
+  onChange: (key: string) => void;
+  translate: (key: string, fallback?: string) => string;
+  t: TranslationFunction;
+  className?: string;
+}) {
+  return (
+    <div className={`flex flex-wrap gap-1 ${className}`.trim()} role="tablist" aria-label={t('admin.pricing.settings.tabs.variants')}>
+      {groups.map((group) => {
+        const selected = group.key === activeKey;
+        const label = formatPriceSettingVariantTabLabel(group.key, translate);
+        const scheduleLines = formatOfficialRateScheduleLines(group.prices[0]?.official.schedule, translate);
+        return (
+          <button
+            key={group.key}
+            type="button"
+            role="tab"
+            aria-selected={selected}
+            title={scheduleLines.length > 0 ? `${t('admin.pricing.schedule.title')}\n${scheduleLines.join('\n')}` : undefined}
+            onClick={() => onChange(group.key)}
+            className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${selected ? 'bg-lobster-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/15'}`}
+          >
+            {label}
+            <span className={`ml-1 tabular-nums ${selected ? 'text-white/80' : 'text-slate-400'}`}>{group.prices.length}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
-type CustomerRateDescriptor = Pick<AdminOfficialPricingRateItem, 'meterCode' | 'meterDisplayName' | 'currencyCode'>
-  & Partial<Pick<AdminOfficialPricingRateItem, 'unitPrice' | 'unitCode' | 'unitSize'>>;
+function OfficialRateLine({ official, locale, t, showVariantBadge = true }: { official: AdminOfficialPricingRateItem; locale: string; t: TranslationFunction; showVariantBadge?: boolean }) {
+  const translate = pricingConditionTranslate(t);
+  const variantLabel = showVariantBadge ? officialRateVariantLabel(official, translate) : undefined;
+  const scheduleLines = formatOfficialRateScheduleLines(official.schedule, translate);
+  return (
+    <div className="group/rate relative rounded-md border border-slate-200/80 bg-slate-50/60 px-3 py-2 dark:border-white/10 dark:bg-white/[0.03]">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="font-medium text-slate-800 dark:text-slate-100">{formatPricingMeterLabel(official, translate)}</span>
+            {variantLabel ? (
+              <span
+                className={`inline-flex cursor-help rounded-full px-1.5 py-0.5 text-[10px] font-medium ${scheduleLines.length > 0 ? 'bg-amber-50 text-amber-700 underline decoration-dotted underline-offset-2 dark:bg-amber-500/10 dark:text-amber-300' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300'}`}
+              >
+                {variantLabel}
+              </span>
+            ) : null}
+          </div>
+          <div className="mt-0.5 break-all text-[11px] text-slate-400">
+            {formatPricingOperationLabel(official, translate)}
+          </div>
+        </div>
+        <div className="shrink-0 text-right tabular-nums">
+          <div className="font-semibold text-slate-900 dark:text-white">{formatPricingMoney(official.unitPrice, official.currencyCode, locale)}</div>
+          <div className="mt-0.5 text-[11px] text-slate-400">/ {officialRateUnit(official, translate)}</div>
+        </div>
+      </div>
+      {official.tiers.map((tier) => (
+        <div key={tier.tierCode} className="mt-1 text-[11px] tabular-nums text-slate-500 dark:text-slate-400">
+          {formatPricingConditionScalarLabel(tier.tierCode, translate)}: {formatPricingMoney(tier.unitPrice, tier.currencyCode, locale)} / {formatPricingQuantity(tier.unitSize)} {formatPricingUnitLabel(official.unitCode, translate)} · {t('admin.pricing.settings.table.flatAmount')} {formatPricingMoney(tier.flatAmount, tier.currencyCode, locale)}
+        </div>
+      ))}
+      {scheduleLines.length > 0 ? (
+        <div
+          role="tooltip"
+          className="pointer-events-none absolute left-0 top-full z-40 mt-1 hidden w-max max-w-xs rounded-md border border-slate-200 bg-white px-3 py-2 text-left text-[11px] leading-5 text-slate-600 shadow-lg group-hover/rate:block dark:border-white/10 dark:bg-[#1a1a1a] dark:text-slate-300"
+        >
+          <div className="mb-1 font-semibold text-slate-800 dark:text-slate-100">{t('admin.pricing.schedule.title')}</div>
+          {scheduleLines.map((line) => (
+            <div key={line}>{line}</div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
-function CustomerRateLine({ official, rule, plans, locale, t }: { official: CustomerRateDescriptor; rule?: AdminPricingRuleItem; plans: AdminPricingPlanItem[]; locale: string; t: TranslationFunction }) {
-  const plan = rule ? plans.find((item) => item.id === rule.pricingPlanId) : undefined;
+type CustomerRateDescriptor = Pick<AdminOfficialPricingRateItem, 'meterCode' | 'meterDisplayName' | 'currencyCode' | 'conditions' | 'rateVariant'>
+  & Partial<Pick<AdminOfficialPricingRateItem, 'unitPrice' | 'unitCode' | 'unitSize' | 'schedule'>>;
+
+function CustomerRateLine({ official, rule, plans, locale, t, showVariantBadge = true }: { official: CustomerRateDescriptor; rule?: AdminPricingRuleItem; plans: AdminPricingPlanItem[]; locale: string; t: TranslationFunction; showVariantBadge?: boolean }) {
+  const plan = rulesFindPlan(plans, rule);
   const lifecycle = pricingRuleLifecycle(rule);
   const salesPriceConfigured = lifecycle === 'active';
   const hasOfficialPrice = Boolean(official.unitPrice);
   const currency = plan?.currencyCode ?? official.currencyCode;
   const currencyMismatch = Boolean(salesPriceConfigured && rule && plan && official.currencyCode && plan.currencyCode !== official.currencyCode);
+  const translate = pricingConditionTranslate(t);
+  const variantLabel = showVariantBadge ? officialRateVariantLabel(official, translate) : undefined;
+  const scheduleLines = formatOfficialRateScheduleLines(official.schedule ?? rule?.schedule, translate);
   const fallbackLabel = !hasOfficialPrice
     ? t('admin.pricing.settings.table.noOfficialFallback')
     : lifecycle === 'missing'
@@ -415,30 +675,102 @@ function CustomerRateLine({ official, rule, plans, locale, t }: { official: Cust
     : salesPriceConfigured && rule
       ? t('admin.pricing.settings.table.formulaPrice')
       : hasOfficialPrice ? formatPricingMoney(official.unitPrice, official.currencyCode, locale) : '—';
-  return <div className={`rounded-md border px-3 py-2 dark:border-white/10 ${currencyMismatch ? 'border-red-200 bg-red-50/60 dark:border-red-500/30 dark:bg-red-500/10' : salesPriceConfigured ? 'border-lobster-200 bg-lobster-50/40 dark:bg-lobster-500/5' : 'border-slate-200/80 bg-slate-50/50 dark:bg-white/[0.02]'}`}><div className="flex items-center justify-between gap-3"><span className="font-medium text-slate-700 dark:text-slate-200">{meterLabel(official, t)}</span>{currencyMismatch ? <span className="text-[11px] font-medium text-red-600 dark:text-red-300">{t('admin.pricing.settings.table.currencyMismatch')}</span> : salesPriceConfigured && rule ? <StatusBadge status={rule.status} /> : <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">{fallbackLabel}</span>}</div><div className="mt-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1"><span className={`tabular-nums ${currencyMismatch ? 'font-semibold text-red-700 dark:text-red-200' : salesPriceConfigured ? 'font-semibold text-slate-900 dark:text-white' : 'font-medium text-slate-600 dark:text-slate-300'}`}>{salesValue}</span>{currencyMismatch ? <span className="text-[11px] text-red-500 dark:text-red-300">{official.currencyCode} → {plan?.currencyCode}</span> : salesPriceConfigured && rule ? <span className="text-[11px] text-slate-400">{rule.schedule ? t('admin.pricing.settings.mode.timeWindow') : t('admin.pricing.settings.mode.standard')} · {rule.planCode ?? plan?.planCode ?? rule.pricingPlanId}</span> : hasOfficialPrice ? <span className="text-[11px] text-slate-400">{t('admin.pricing.settings.table.officialFallbackValue', { value: formatPricingMoney(official.unitPrice, official.currencyCode, locale) })}</span> : <span className="text-[11px] text-amber-600 dark:text-amber-300">{t('admin.pricing.settings.table.noOfficialFallback')}</span>}</div></div>;
+  return (
+    <div className={`group/rate relative rounded-md border px-3 py-2 dark:border-white/10 ${currencyMismatch ? 'border-red-200 bg-red-50/60 dark:border-red-500/30 dark:bg-red-500/10' : salesPriceConfigured ? 'border-lobster-200 bg-lobster-50/40 dark:bg-lobster-500/5' : 'border-slate-200/80 bg-slate-50/50 dark:bg-white/[0.02]'}`}>
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex min-w-0 flex-wrap items-center gap-1.5 font-medium text-slate-700 dark:text-slate-200">
+          <span>{formatPricingMeterLabel(official, translate)}</span>
+          {variantLabel ? (
+            <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-medium ${scheduleLines.length > 0 ? 'cursor-help bg-amber-50 text-amber-700 underline decoration-dotted underline-offset-2 dark:bg-amber-500/10 dark:text-amber-300' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300'}`}>
+              {variantLabel}
+            </span>
+          ) : null}
+        </span>
+        {currencyMismatch ? <span className="text-[11px] font-medium text-red-600 dark:text-red-300">{t('admin.pricing.settings.table.currencyMismatch')}</span> : salesPriceConfigured && rule ? <StatusBadge status={rule.status} /> : <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">{fallbackLabel}</span>}
+      </div>
+      <div className="mt-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <span className={`tabular-nums ${currencyMismatch ? 'font-semibold text-red-700 dark:text-red-200' : salesPriceConfigured ? 'font-semibold text-slate-900 dark:text-white' : 'font-medium text-slate-600 dark:text-slate-300'}`}>{salesValue}</span>
+        {currencyMismatch ? <span className="text-[11px] text-red-500 dark:text-red-300">{official.currencyCode} → {plan?.currencyCode}</span> : salesPriceConfigured && rule ? <span className="text-[11px] text-slate-400">{rule.schedule ? t('admin.pricing.settings.mode.timeWindow') : t('admin.pricing.settings.mode.standard')} · {rule.planCode ?? plan?.planCode ?? rule.pricingPlanId}</span> : hasOfficialPrice ? <span className="text-[11px] text-slate-400">{t('admin.pricing.settings.table.officialFallbackValue', { value: formatPricingMoney(official.unitPrice, official.currencyCode, locale) })}</span> : <span className="text-[11px] text-amber-600 dark:text-amber-300">{t('admin.pricing.settings.table.noOfficialFallback')}</span>}
+      </div>
+      {scheduleLines.length > 0 ? (
+        <div
+          role="tooltip"
+          className="pointer-events-none absolute left-0 top-full z-40 mt-1 hidden w-max max-w-xs rounded-md border border-slate-200 bg-white px-3 py-2 text-left text-[11px] leading-5 text-slate-600 shadow-lg group-hover/rate:block dark:border-white/10 dark:bg-[#1a1a1a] dark:text-slate-300"
+        >
+          <div className="mb-1 font-semibold text-slate-800 dark:text-slate-100">{t('admin.pricing.schedule.title')}</div>
+          {scheduleLines.map((line) => (
+            <div key={line}>{line}</div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function rulesFindPlan(plans: AdminPricingPlanItem[], rule?: AdminPricingRuleItem) {
+  return rule ? plans.find((item) => item.id === rule.pricingPlanId) : undefined;
+}
+
+function pricingConditionTranslate(t: TranslationFunction): (key: string, fallback?: string) => string {
+  return (key, fallback) => {
+    const translated = String(t(key, fallback === undefined ? undefined : { defaultValue: fallback }));
+    if (translated && translated !== key) return translated;
+    return fallback ?? key;
+  };
+}
+
+const RESOURCE_TYPE_FALLBACKS: Record<PriceSettingResourceType, string> = {
+  all: 'All',
+  llm: 'Text models',
+  image: 'Image models',
+  video: 'Video models',
+  audio: 'Audio models',
+  music: 'Music models',
+  embedding: 'Embeddings',
+  sound: 'Sound effect models',
+  api: 'API calls',
+  other: 'Other resources',
+};
+
+function resourceTypeLabel(type: string, t: TranslationFunction): string {
+  const key = `admin.pricing.settings.resource.${type}`;
+  const fallback = RESOURCE_TYPE_FALLBACKS[type as PriceSettingResourceType];
+  if (fallback) {
+    const translated = String(t(key, { defaultValue: fallback }));
+    return translated === key ? fallback : translated;
+  }
+  return String(t('admin.pricing.settings.resource.unknown', { defaultValue: `Other (${type})`, code: type }))
+    .replace(/\{\{\s*code\s*\}\}/g, type);
+}
+
+function formatPricingConditionScalarLabel(value: string, translate: (key: string, fallback?: string) => string): string {
+  const key = `admin.pricing.condition.value.${value.trim().toLowerCase().replace(/-/g, '_')}`;
+  const translated = translate(key, '');
+  return translated && translated !== key ? translated : value;
 }
 
 function CustomPriceTableRow({ rule, plans, locale, t, onEdit }: { rule: AdminPricingRuleItem; plans: AdminPricingPlanItem[]; locale: string; t: TranslationFunction; onEdit: (rule: AdminPricingRuleItem) => void }) {
   const plan = plans.find((item) => item.id === rule.pricingPlanId);
-  const official: CustomerRateDescriptor = { meterCode: rule.meterCode || rule.operationCode || 'default', meterDisplayName: rule.meterCode || rule.operationCode || t('admin.pricing.settings.table.defaultMeter'), currencyCode: plan?.currencyCode ?? 'CNY' };
+  const official: CustomerRateDescriptor = { meterCode: rule.meterCode || rule.operationCode || 'default', meterDisplayName: rule.meterCode || rule.operationCode || t('admin.pricing.settings.table.defaultMeter'), currencyCode: plan?.currencyCode ?? 'CNY', conditions: rule.conditions ?? [], schedule: rule.schedule, rateVariant: rule.schedule ? 'time_window' : undefined };
   const resourceType = resourceTypeOf(rule);
   const resourceCode = resourceFromCatalogKey(rule.catalogKey) || rule.productCode || rule.ruleCode;
-  return <tr className="align-top hover:bg-slate-50 dark:hover:bg-white/5"><td className="px-4 py-4 text-slate-900 dark:text-white"><div className="break-words font-semibold">{resourceCode}</div><div className="mt-1 break-all font-mono text-xs text-slate-500 dark:text-slate-400">{rule.catalogKey || rule.productCode || rule.ruleCode}</div><div className="mt-2 text-xs text-slate-400">{t('admin.pricing.settings.table.customPrice')}</div></td><td className="px-4 py-4"><span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">{t(`admin.pricing.settings.resource.${resourceType}`)}</span><div className="mt-2 break-all text-[11px] text-slate-400">{resourceType}</div></td><td className="px-4 py-4 text-[11px] text-slate-500 dark:text-slate-400"><div>{t('admin.pricing.settings.scope.provider')}: {rule.providerCode || '—'}</div><div className="mt-1">{t('admin.pricing.settings.scope.region')}: {rule.regionCode || '—'}</div><div className="mt-1">{t('admin.pricing.settings.scope.product')}: {rule.productCode || '—'}</div></td><td className="px-4 py-4 text-sm text-slate-400">{t('admin.pricing.settings.table.noOfficial')}</td><td className="px-4 py-4"><CustomerRateLine official={official} rule={rule} plans={plans} locale={locale} t={t} /></td><td className="px-4 py-4 text-right"><button type="button" className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold text-lobster-600 transition hover:bg-lobster-50 dark:text-lobster-300 dark:hover:bg-lobster-500/10" onClick={() => onEdit(rule)}><Edit3 className="h-3.5 w-3.5" aria-hidden="true" />{t('admin.pricing.settings.common.edit')}</button></td></tr>;
+  return <tr className="align-top hover:bg-slate-50 dark:hover:bg-white/5"><td className="px-4 py-4 text-slate-900 dark:text-white"><div className="break-words font-semibold">{resourceCode}</div><div className="mt-1 break-all font-mono text-xs text-slate-500 dark:text-slate-400">{rule.catalogKey || rule.productCode || rule.ruleCode}</div><div className="mt-2 text-xs text-slate-400">{t('admin.pricing.settings.table.customPrice')}</div></td><td className="px-4 py-4"><span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">{resourceTypeLabel(resourceType, t)}</span></td><td className="px-4 py-4 text-[11px] text-slate-500 dark:text-slate-400"><div>{t('admin.pricing.settings.scope.provider')}: {rule.providerCode || '—'}</div><div className="mt-1">{t('admin.pricing.settings.scope.region')}: {rule.regionCode || '—'}</div><div className="mt-1">{t('admin.pricing.settings.scope.product')}: {rule.productCode || '—'}</div></td><td className="px-4 py-4 text-sm text-slate-400">{t('admin.pricing.settings.table.noOfficial')}</td><td className="px-4 py-4"><CustomerRateLine official={official} rule={rule} plans={plans} locale={locale} t={t} /></td><td className="px-4 py-4 text-right"><button type="button" className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold text-lobster-600 transition hover:bg-lobster-50 dark:text-lobster-300 dark:hover:bg-lobster-500/10" onClick={() => onEdit(rule)}><Edit3 className="h-3.5 w-3.5" aria-hidden="true" />{t('admin.pricing.settings.common.edit')}</button></td></tr>;
 }
 
 function MeterFormRow({ meter, index, locale, t, updateMeter, removeMeter }: { meter: PriceSettingMeterForm; index: number; locale: string; t: TranslationFunction; updateMeter: (index: number, patch: Partial<PriceSettingMeterForm>) => void; removeMeter: (index: number) => void }) {
   const formula = meter.existingFormulaMode === 'multiplier_markup';
-  return <div className="grid gap-3 px-3 py-3 md:grid-cols-[minmax(150px,1fr)_minmax(150px,1fr)_180px_36px] md:items-start"><div className="grid gap-2"><input className={inputClass} value={meter.meterCode} onChange={(event) => updateMeter(index, { meterCode: event.target.value })} placeholder={t('admin.pricing.settings.form.meterPlaceholder')} required={!meter.operationCode} /><input className={inputClass} value={meter.operationCode} onChange={(event) => updateMeter(index, { operationCode: event.target.value })} placeholder={t('admin.pricing.settings.form.operationPlaceholder')} required={!meter.meterCode} /><div className="text-[11px] text-slate-400">{meter.unitSize} {meter.unitCode}{meter.ruleId ? ` · ${t('admin.pricing.settings.form.existing')}` : ''}</div></div><div className="min-h-9 rounded-md bg-slate-50 px-3 py-2 dark:bg-white/[0.04]">{meter.official ? <><div className="font-semibold tabular-nums text-slate-900 dark:text-white">{formatPricingMoney(meter.official.unitPrice, meter.official.currencyCode, locale)}</div><div className="mt-0.5 text-[11px] text-slate-400">/ {officialRateUnit(meter.official)}</div></> : <span className="text-xs text-slate-400">{t('admin.pricing.settings.table.noOfficial')}</span>}</div><div><label className="mb-1 block text-[11px] font-medium text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.form.customerPrice')}</label><input className={inputClass} value={meter.customerPrice} onChange={(event) => updateMeter(index, { customerPrice: event.target.value, existingFormulaMode: event.target.value.trim() ? undefined : meter.existingFormulaMode })} placeholder={formula ? t('admin.pricing.settings.form.formulaPreserved') : t('admin.pricing.settings.form.followOfficialPlaceholder')} inputMode="decimal" /><div className="mt-1 text-[11px] text-slate-400">{formula ? t('admin.pricing.settings.form.formulaPreservedHint', { multiplier: normalizePricingDecimal(meter.existingMultiplier) || '1', markup: normalizePricingDecimal(meter.existingMarkupAmount) || '0' }) : t('admin.pricing.settings.form.followOfficialHint')}</div></div><button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-white/10 dark:hover:text-white" title={t('admin.pricing.settings.form.removeMeter')} aria-label={t('admin.pricing.settings.form.removeMeter')} onClick={() => removeMeter(index)}><Trash2 className="h-4 w-4" aria-hidden="true" /></button></div>;
+  const translate = pricingConditionTranslate(t);
+  const variantLabel = meter.official ? officialRateVariantLabel(meter.official, translate) : undefined;
+  const scheduleLines = meter.official ? formatOfficialRateScheduleLines(meter.official.schedule, translate) : [];
+  return <div className="grid gap-3 px-3 py-3 md:grid-cols-[minmax(150px,1fr)_minmax(150px,1fr)_180px_36px] md:items-start"><div className="grid gap-2"><input className={inputClass} value={meter.meterCode} onChange={(event) => updateMeter(index, { meterCode: event.target.value })} placeholder={t('admin.pricing.settings.form.meterPlaceholder')} required={!meter.operationCode} /><input className={inputClass} value={meter.operationCode} onChange={(event) => updateMeter(index, { operationCode: event.target.value })} placeholder={t('admin.pricing.settings.form.operationPlaceholder')} required={!meter.meterCode} /><div className="text-[11px] text-slate-400">{formatPricingQuantity(meter.unitSize)} {formatPricingUnitLabel(meter.unitCode, translate)}{variantLabel ? ` · ${variantLabel}` : ''}{meter.ruleId ? ` · ${t('admin.pricing.settings.form.existing')}` : ''}</div></div><div className="group/rate relative min-h-9 rounded-md bg-slate-50 px-3 py-2 dark:bg-white/[0.04]">{meter.official ? <><div className="font-semibold tabular-nums text-slate-900 dark:text-white">{formatPricingMoney(meter.official.unitPrice, meter.official.currencyCode, locale)}</div><div className="mt-0.5 text-[11px] text-slate-400">/ {officialRateUnit(meter.official, translate)}{variantLabel ? ` · ${variantLabel}` : ''}</div>{scheduleLines.length > 0 ? <div role="tooltip" className="pointer-events-none absolute left-0 top-full z-40 mt-1 hidden w-max max-w-xs rounded-md border border-slate-200 bg-white px-3 py-2 text-left text-[11px] leading-5 text-slate-600 shadow-lg group-hover/rate:block dark:border-white/10 dark:bg-[#1a1a1a] dark:text-slate-300"><div className="mb-1 font-semibold text-slate-800 dark:text-slate-100">{t('admin.pricing.schedule.title')}</div>{scheduleLines.map((line) => <div key={line}>{line}</div>)}</div> : null}</> : <span className="text-xs text-slate-400">{t('admin.pricing.settings.table.noOfficial')}</span>}</div><div><label className="mb-1 block text-[11px] font-medium text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.form.customerPrice')}</label><input className={inputClass} value={meter.customerPrice} onChange={(event) => updateMeter(index, { customerPrice: event.target.value, existingFormulaMode: event.target.value.trim() ? undefined : meter.existingFormulaMode })} placeholder={formula ? t('admin.pricing.settings.form.formulaPreserved') : t('admin.pricing.settings.form.followOfficialPlaceholder')} inputMode="decimal" /><div className="mt-1 text-[11px] text-slate-400">{formula ? t('admin.pricing.settings.form.formulaPreservedHint', { multiplier: normalizePricingDecimal(meter.existingMultiplier) || '1', markup: normalizePricingDecimal(meter.existingMarkupAmount) || '0' }) : t('admin.pricing.settings.form.followOfficialHint')}</div></div><button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-white/10 dark:hover:text-white" title={t('admin.pricing.settings.form.removeMeter')} aria-label={t('admin.pricing.settings.form.removeMeter')} onClick={() => removeMeter(index)}><Trash2 className="h-4 w-4" aria-hidden="true" /></button></div>;
 }
 
 function TimeWindowFields({ form, t, updateWindow, toggleWindowDay, addWindow, setField }: { form: PriceSettingFormState; t: TranslationFunction; updateWindow: (index: number, patch: Partial<AdminPricingScheduleWindow>) => void; toggleWindowDay: (index: number, day: number) => void; addWindow: () => void; setField: <K extends keyof PriceSettingFormState>(key: K, value: PriceSettingFormState[K]) => void }) {
-  return <div className="flex flex-col gap-4 rounded-md bg-slate-50 p-3 dark:bg-white/[0.04]"><Field label={t('admin.pricing.settings.form.timeZone')} hint={t('admin.pricing.settings.form.timeZoneHint')}><input className={inputClass} list="pricing-time-zones" value={form.timeZone} onChange={(event) => setField('timeZone', event.target.value)} placeholder="Asia/Shanghai" required /><datalist id="pricing-time-zones"><option value="UTC" /><option value="Asia/Shanghai" /><option value="Asia/Tokyo" /><option value="America/Los_Angeles" /><option value="America/New_York" /><option value="Europe/London" /></datalist></Field><div className="flex items-center justify-between"><span className="text-sm font-medium text-slate-700 dark:text-slate-200">{t('admin.pricing.settings.form.windows')}</span><button type="button" className={secondaryButtonClass} onClick={addWindow}><Plus className="h-3.5 w-3.5" aria-hidden="true" />{t('admin.pricing.settings.form.addWindow')}</button></div>{form.weeklyWindows.map((window, index) => <div key={index} className="flex flex-col gap-3 rounded-md border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900"><div className="grid gap-3 md:grid-cols-[1fr_1fr_36px]"><Field label={t('admin.pricing.settings.form.windowCode')}><input className={inputClass} value={window.windowCode} onChange={(event) => updateWindow(index, { windowCode: event.target.value })} required /></Field><div className="grid grid-cols-2 gap-2"><Field label={t('admin.pricing.settings.form.startTime')}><input type="time" className={inputClass} value={window.startTime} onChange={(event) => updateWindow(index, { startTime: event.target.value })} required /></Field><Field label={t('admin.pricing.settings.form.endTime')}><input type="time" className={inputClass} value={window.endTime} onChange={(event) => updateWindow(index, { endTime: event.target.value })} required /></Field></div><button type="button" className="mt-5 inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10" title={t('admin.pricing.settings.form.removeWindow')} aria-label={t('admin.pricing.settings.form.removeWindow')} disabled={form.weeklyWindows.length <= 1} onClick={() => setField('weeklyWindows', form.weeklyWindows.filter((_, windowIndex) => windowIndex !== index))}><Trash2 className="h-4 w-4" aria-hidden="true" /></button></div><div><span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.form.days')}</span><div className="flex flex-wrap gap-2">{DAY_OPTIONS.map((day, dayIndex) => <label key={day} className="inline-flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300"><input type="checkbox" checked={window.daysOfWeek.includes(day)} onChange={() => toggleWindowDay(index, day)} />{t(`admin.pricing.settings.days.${day}`, DAY_LABELS[dayIndex])}</label>)}</div></div><label className="inline-flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300"><input type="checkbox" checked={window.endDayOffset === 1} onChange={(event) => updateWindow(index, { endDayOffset: event.target.checked ? 1 : 0 })} />{t('admin.pricing.settings.form.crossMidnight')}</label></div>)}</div>;
+  return <div className="flex flex-col gap-4 rounded-md bg-slate-50 p-3 dark:bg-white/[0.04]"><Field label={t('admin.pricing.settings.form.timeZone')} hint={t('admin.pricing.settings.form.timeZoneHint')}><input className={inputClass} list="pricing-time-zones" value={form.timeZone} onChange={(event) => setField('timeZone', event.target.value)} placeholder="Asia/Shanghai" required /><datalist id="pricing-time-zones"><option value="UTC" /><option value="Asia/Shanghai" /><option value="Asia/Tokyo" /><option value="America/Los_Angeles" /><option value="America/New_York" /><option value="Europe/London" /></datalist></Field><div className="flex items-center justify-between"><span className="text-sm font-medium text-slate-700 dark:text-slate-200">{t('admin.pricing.settings.form.windows')}</span><button type="button" className={secondaryButtonClass} onClick={addWindow}><Plus className="h-3.5 w-3.5" aria-hidden="true" />{t('admin.pricing.settings.form.addWindow')}</button></div>{form.weeklyWindows.map((window, index) => <div key={index} className="flex flex-col gap-3 rounded-md border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900"><div className="grid gap-3 md:grid-cols-[1fr_1fr_36px]"><Field label={t('admin.pricing.settings.form.windowCode')}><input className={inputClass} value={window.windowCode} onChange={(event) => updateWindow(index, { windowCode: event.target.value })} required /></Field><div className="grid grid-cols-2 gap-2"><Field label={t('admin.pricing.settings.form.startTime')}><input type="time" className={inputClass} value={window.startTime} onChange={(event) => updateWindow(index, { startTime: event.target.value })} required /></Field><Field label={t('admin.pricing.settings.form.endTime')}><input type="time" className={inputClass} value={window.endTime} onChange={(event) => updateWindow(index, { endTime: event.target.value })} required /></Field></div><button type="button" className="mt-5 inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10" title={t('admin.pricing.settings.form.removeWindow')} aria-label={t('admin.pricing.settings.form.removeWindow')} disabled={form.weeklyWindows.length <= 1} onClick={() => setField('weeklyWindows', form.weeklyWindows.filter((_, windowIndex) => windowIndex !== index))}><Trash2 className="h-4 w-4" aria-hidden="true" /></button></div><div><span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.form.days')}</span><div className="flex flex-wrap gap-2">{DAY_OPTIONS.map((day, dayIndex) => <label key={day} className="inline-flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300"><input type="checkbox" checked={window.daysOfWeek.includes(day)} onChange={() => toggleWindowDay(index, day)} />{t(`admin.pricing.settings.days.${day}`, { defaultValue: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][dayIndex] })}</label>)}</div></div><label className="inline-flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300"><input type="checkbox" checked={window.endDayOffset === 1} onChange={(event) => updateWindow(index, { endDayOffset: event.target.checked ? 1 : 0 })} />{t('admin.pricing.settings.form.crossMidnight')}</label></div>)}</div>;
 }
 
 function isPriceSettingResourceType(value: string): value is PriceSettingResourceType { return PRICE_SETTING_RESOURCE_TYPES.includes(value as PriceSettingResourceType); }
 function resourceTypeOfProduct(item: AdminOfficialPricingProductItem): Exclude<PriceSettingResourceType, 'all'> { return item.groupCodes.find((code: string): code is Exclude<PriceSettingResourceType, 'all'> => code !== 'all' && isPriceSettingResourceType(code)) ?? 'other'; }
-function meterLabel(item: Pick<AdminOfficialPricingRateItem, 'meterCode' | 'meterDisplayName'>, t: TranslationFunction): string { const knownKey = MODEL_METER_LABEL_KEYS[item.meterCode.toLowerCase()]; return knownKey ? t(knownKey) : item.meterDisplayName || item.meterCode; }
-const MODEL_METER_LABEL_KEYS: Record<string, string> = { llm_input_token: 'admin.pricing.settings.meter.input', llm_output_token: 'admin.pricing.settings.meter.output', llm_reasoning_token: 'admin.pricing.settings.meter.reasoning', llm_cache_read_token: 'admin.pricing.settings.meter.cacheRead', llm_cache_write_token: 'admin.pricing.settings.meter.cacheWrite', llm_cache_storage_token_hour: 'admin.pricing.settings.meter.cacheStorage' };
 function resourceTypeOf(item: Pick<AdminPricingRuleItem, 'productCode' | 'operationCode' | 'meterCode' | 'catalogKey'>): Exclude<PriceSettingResourceType, 'all'> { const value = [item.productCode, item.operationCode, item.meterCode, item.catalogKey].filter(Boolean).join(' ').toLowerCase(); if (value.includes('embedding')) return 'embedding'; if (value.includes('image') || value.includes('vision')) return 'image'; if (value.includes('video')) return 'video'; if (value.includes('music')) return 'music'; if (value.includes('sound') || value.includes('sfx')) return 'sound'; if (value.includes('audio') || value.includes('speech') || value.includes('transcri')) return 'audio'; if (value.includes('api') || value.includes('request') || value.includes('result')) return 'api'; if (value.includes('chat') || value.includes('completion') || value.includes('llm') || value.includes('gpt') || value.includes('claude') || value.includes('gemini') || value.includes('deepseek') || value.includes('qwen') || value.includes('mistral') || value.includes('llama') || value.includes('glm') || value.includes('kimi') || value.includes('ernie') || value.includes('doubao') || value.includes('minimax') || value.includes('grok') || value.includes('command')) return 'llm'; return 'other'; }
 function isProductScopedRule(rule: AdminPricingRuleItem): boolean { return Boolean(rule.productCode || rule.catalogKey || rule.operationCode || rule.meterCode || rule.providerCode || rule.regionCode); }
 function vendorFromCatalogKey(catalogKey: string | undefined): string { return catalogKey?.split('/')[0]?.trim() ?? ''; }

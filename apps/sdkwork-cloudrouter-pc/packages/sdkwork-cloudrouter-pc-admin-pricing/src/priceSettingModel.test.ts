@@ -1,8 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildPriceSettingProductRows,
+  formatOfficialRateScheduleLines,
+  formatPriceSettingVariantTabLabel,
+  formatPricingCondition,
+  formatPricingMeterLabel,
   formatPricingMoney,
+  formatPricingOperationLabel,
+  formatPricingQuantity,
+  groupPriceSettingRatesByVariant,
   normalizePricingDecimal,
+  officialRateVariantLabel,
+  officialRateUnit,
   pricingRuleMatchesOfficialRate,
   pricingRuleLifecycle,
   pricingScheduleMatchesAt,
@@ -48,6 +57,8 @@ describe('price setting model', () => {
 
   it('formats tiny decimal-string prices without converting them to numbers', () => {
     expect(formatPricingMoney('0.0000005', 'USD', 'en-US')).toBe('USD 0.0000005');
+    expect(formatPricingMoney('0.180000000000', 'USD', 'zh-CN')).toBe('USD 0.18');
+    expect(formatPricingMoney('1.000000000000', 'CNY', 'zh-CN')).toBe('CNY 1');
   });
 
   it('normalizes editable prices through money utils without losing tiny precision', () => {
@@ -55,6 +66,143 @@ describe('price setting model', () => {
     expect(normalizePricingDecimal('1000.000000')).toBe('1000');
     expect(normalizePricingDecimal('0.000000500000')).toBe('0.0000005');
     expect(normalizePricingDecimal('0.000000000000')).toBe('0');
+    expect(normalizePricingDecimal('10')).toBe('10');
+  });
+
+  it('strips padded NUMERIC unit sizes in official rate unit labels', () => {
+    expect(officialRateUnit({ unitSize: '1.000000000000', unitCode: 'token' })).toBe('token');
+    expect(officialRateUnit({ unitSize: '1000000.000000', unitCode: 'token' })).toBe('1000000 token');
+    expect(formatPricingQuantity('12.000000')).toBe('12');
+    expect(formatPricingQuantity('1M')).toBe('1M');
+  });
+
+  it('localizes peak and off-peak tier conditions instead of dumping raw codes', () => {
+    const translate = (key: string, fallback?: string) => {
+      const catalog: Record<string, string> = {
+        'admin.pricing.condition.dimension.tier_code': '档位',
+        'admin.pricing.condition.value.peak': '峰时价',
+        'admin.pricing.condition.value.off_peak': '谷时价',
+        'admin.pricing.condition.variant.time_window': '时段价',
+        'admin.pricing.schedule.timezone': '时区：{{timeZone}}',
+        'admin.pricing.schedule.daySeparator': '、',
+        'admin.pricing.settings.days.1': '周一',
+        'admin.pricing.settings.days.2': '周二',
+        'admin.pricing.settings.days.3': '周三',
+        'admin.pricing.settings.days.4': '周四',
+        'admin.pricing.settings.days.5': '周五',
+        'admin.pricing.settings.tabs.variant.peak': '峰时',
+        'admin.pricing.settings.tabs.variant.off_peak': '谷时',
+        'admin.pricing.settings.tabs.variant.standard': '标准',
+        'admin.pricing.settings.tabs.variant.time_window': '时段',
+        'admin.pricing.settings.tabs.variant.unknown': '其他（{{code}}）',
+      };
+      return catalog[key] ?? fallback ?? key;
+    };
+    expect(formatPricingCondition({ dimensionCode: 'tier_code', operatorCode: 'eq', value: 'peak' }, translate)).toBe('档位: 峰时价');
+    expect(formatPricingCondition({ dimensionCode: 'tierCode', operatorCode: 'eq', value: 'off-peak' }, translate)).toBe('档位: 谷时价');
+    expect(officialRateVariantLabel({
+      conditions: [{ dimensionCode: 'tier_code', operatorCode: 'eq', value: 'off_peak' }],
+    }, translate)).toBe('谷时价');
+    expect(formatOfficialRateScheduleLines({
+      timeZone: 'Asia/Shanghai',
+      weeklyWindows: [{ windowCode: 'peak', daysOfWeek: [1, 2, 3, 4, 5], startTime: '09:00:00', endTime: '18:00:00', endDayOffset: 0 }],
+      includeDates: [],
+      excludeDates: [],
+    }, translate)).toEqual([
+      '时区：Asia/Shanghai',
+      '峰时价 · 周一、周二、周三、周四、周五 09:00–18:00',
+    ]);
+  });
+
+  it('localizes meter and operation labels instead of English catalog display names', () => {
+    const translate = (key: string, fallback?: string) => {
+      const catalog: Record<string, string> = {
+        'admin.pricing.settings.meter.code.llm_input_token': '输入',
+        'admin.pricing.settings.meter.code.image_result': '图片结果',
+        'admin.pricing.settings.operation.code.inference_generate': '推理生成',
+        'admin.pricing.settings.operation.kind.image': '图片',
+        'admin.pricing.settings.operation.verb.generate': '生成',
+        'admin.pricing.settings.operation.joiner': '',
+        'admin.pricing.settings.unit.token': 'Token',
+      };
+      return catalog[key] ?? fallback ?? key;
+    };
+    expect(formatPricingMeterLabel({
+      meterCode: 'llm_input_token',
+      meterDisplayName: 'LLM input tokens',
+    }, translate)).toBe('输入');
+    expect(formatPricingMeterLabel({
+      meterCode: 'image_result',
+      meterDisplayName: 'Image results',
+    }, translate)).toBe('图片结果');
+    expect(formatPricingOperationLabel({
+      operationCode: 'inference.generate',
+      operationDisplayName: 'inference generate',
+    }, translate)).toBe('推理生成');
+    expect(formatPricingOperationLabel({
+      operationCode: 'image.generate',
+      operationDisplayName: 'image generate',
+    }, translate)).toBe('图片生成');
+    expect(officialRateUnit({ unitSize: '1000000', unitCode: 'token' }, translate)).toBe('1000000 Token');
+  });
+
+  it('localizes every variant tab label and groups peak/valley aliases together', () => {
+    const translate = (key: string, fallback?: string) => {
+      const catalog: Record<string, string> = {
+        'admin.pricing.settings.tabs.variant.peak': '峰时',
+        'admin.pricing.settings.tabs.variant.off_peak': '谷时',
+        'admin.pricing.settings.tabs.variant.priority': '优先',
+        'admin.pricing.settings.tabs.variant.premium': '高级',
+        'admin.pricing.settings.tabs.variant.standard': '标准',
+        'admin.pricing.settings.tabs.variant.time_window': '时段',
+        'admin.pricing.settings.tabs.variant.unknown': '其他（{{code}}）',
+      };
+      return catalog[key] ?? fallback ?? key;
+    };
+    expect(formatPriceSettingVariantTabLabel('peak', translate)).toBe('峰时');
+    expect(formatPriceSettingVariantTabLabel('off-peak', translate)).toBe('谷时');
+    expect(formatPriceSettingVariantTabLabel('valley', translate)).toBe('谷时');
+    expect(formatPriceSettingVariantTabLabel('standard', translate)).toBe('标准');
+    expect(formatPriceSettingVariantTabLabel('time_window', translate)).toBe('时段');
+    expect(formatPriceSettingVariantTabLabel('custom-tier', translate)).toBe('其他（custom-tier）');
+
+    const peak = {
+      ...officialRate('llm_input_token', 'input-peak'),
+      conditions: [{ dimensionCode: 'tier_code', operatorCode: 'eq' as const, value: 'peak' }],
+    };
+    const valley = {
+      ...officialRate('llm_input_token', 'input-valley'),
+      conditions: [{ dimensionCode: 'tier_code', operatorCode: 'eq' as const, value: 'valley' }],
+    };
+    const groups = groupPriceSettingRatesByVariant([
+      { official: valley, rule: undefined },
+      { official: peak, rule: undefined },
+    ]);
+    expect(groups.map((group) => group.key)).toEqual(['peak', 'off_peak']);
+    expect(groups.map((group) => formatPriceSettingVariantTabLabel(group.key, translate))).toEqual(['峰时', '谷时']);
+  });
+
+  it('keeps peak and off-peak variants of the same meter as distinct ordered prices', () => {
+    const peak = {
+      ...officialRate('llm_input_token', 'input-peak'),
+      unitPrice: '0.003',
+      conditions: [{ dimensionCode: 'tier_code', operatorCode: 'eq' as const, value: 'peak' }],
+    };
+    const offPeak = {
+      ...officialRate('llm_input_token', 'input-off-peak'),
+      unitPrice: '0.001',
+      conditions: [{ dimensionCode: 'tier_code', operatorCode: 'eq' as const, value: 'off_peak' }],
+    };
+    const product = {
+      groupKey: 'openai:gpt',
+      rates: [offPeak, peak, outputRate],
+    } as AdminOfficialPricingProductItem;
+    const result = buildPriceSettingProductRows([product], []);
+    expect(result.rows[0]?.prices.map(({ official }) => official.rateCode)).toEqual([
+      'input-peak',
+      'input-off-peak',
+      'output',
+    ]);
   });
 
   it('shows the same fallback states as runtime pricing', () => {

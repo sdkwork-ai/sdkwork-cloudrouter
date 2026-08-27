@@ -12,6 +12,7 @@ import {
   type AdminPricingSchedule,
   type AdminPricingStatus,
 } from './pricingService';
+import { normalizePricingDecimal } from './priceSettingModel';
 import {
   AdminListToolbar,
   AdminPageShell,
@@ -149,9 +150,9 @@ export function PricingRulesAdmin() {
       regionCode: item.regionCode ?? '',
       catalogKey: item.catalogKey ?? '',
       formulaMode: item.formulaMode,
-      multiplier: item.multiplier,
-      markupAmount: item.markupAmount,
-      unitPriceOverride: item.unitPriceOverride ?? '',
+      multiplier: normalizePricingDecimal(item.multiplier) || item.multiplier,
+      markupAmount: normalizePricingDecimal(item.markupAmount) || item.markupAmount,
+      unitPriceOverride: normalizePricingDecimal(item.unitPriceOverride) || item.unitPriceOverride || '',
       conditionsJson: JSON.stringify(item.conditions ?? [], null, 2),
       scheduleJson: item.schedule ? JSON.stringify(item.schedule, null, 2) : '',
       priority: String(item.priority),
@@ -236,7 +237,7 @@ export function PricingRulesAdmin() {
                 setPage(1);
               }}
             >
-              <option value="">{t('admin.pricing.rules.form.pricingPlanId')}: All</option>
+              <option value="">{t('admin.pricing.rules.form.pricingPlanId')}: {t('admin.pricing.common.filter.all')}</option>
               {plans.map((plan) => (
                 <option key={plan.id} value={plan.id}>
                   {plan.planName} ({plan.planCode})
@@ -251,7 +252,7 @@ export function PricingRulesAdmin() {
                 setPage(1);
               }}
             >
-              <option value="all">{t('admin.pricing.common.table.status')}: All</option>
+              <option value="all">{t('admin.pricing.common.table.status')}: {t('admin.pricing.common.filter.all')}</option>
               {STATUSES.map((status) => (
                 <option key={status} value={status}>
                   {t(`admin.pricing.common.status.${status}`)}
@@ -274,11 +275,11 @@ export function PricingRulesAdmin() {
             pageSize={pageSize}
             itemCount={items.length}
             hasNextPage={Boolean(pageInfo?.totalItems && totalItems > page * pageSize)}
-            pageLabel={t('admin.pricing.common.pagination.page', 'Page {page}')}
-            pageSizeLabel={t('admin.pricing.common.pagination.rows', 'Rows')}
-            previousLabel={t('admin.pricing.common.pagination.previous', 'Previous page')}
-            nextLabel={t('admin.pricing.common.pagination.next', 'Next page')}
-            showingLabel={t('admin.pricing.common.pagination.showing', 'Showing')}
+            pageLabel={t('admin.pricing.common.pagination.page', { page })}
+            pageSizeLabel={t('admin.pricing.common.pagination.rows')}
+            previousLabel={t('admin.pricing.common.pagination.previous')}
+            nextLabel={t('admin.pricing.common.pagination.next')}
+            showingLabel={t('admin.pricing.common.pagination.showing')}
             onPreviousPage={() => setPage((current) => Math.max(1, current - 1))}
             onNextPage={() => setPage((current) => current + 1)}
             onPageSizeChange={(nextPageSize) => {
@@ -316,9 +317,9 @@ export function PricingRulesAdmin() {
                   <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">
                     {t(`admin.pricing.formulaMode.${item.formulaMode}`)}
                   </td>
-                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.multiplier}</td>
-                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.markupAmount}</td>
-                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.unitPriceOverride ?? '—'}</td>
+                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{normalizePricingDecimal(item.multiplier) || item.multiplier}</td>
+                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{normalizePricingDecimal(item.markupAmount) || item.markupAmount}</td>
+                  <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.unitPriceOverride ? normalizePricingDecimal(item.unitPriceOverride) || item.unitPriceOverride : '—'}</td>
                   <td className="px-3 py-2.5 text-slate-600 dark:text-slate-300">{item.priority}</td>
                   <td className="px-3 py-2.5">
                     <StatusBadge status={item.status} />
@@ -428,7 +429,7 @@ export function PricingRulesAdmin() {
                 />
               </Field>
             )}
-            <Field label={t('admin.pricing.rules.form.conditions', 'Conditions JSON')} hint={t('admin.pricing.rules.form.conditionsHint', 'Use dimensionCode, operatorCode, and a scalar or scalar array value.')}>
+            <Field label={t('admin.pricing.rules.form.conditions')} hint={t('admin.pricing.rules.form.conditionsHint')}>
               <textarea
                 className={`${inputClass} min-h-24 font-mono text-xs`}
                 value={form.conditionsJson}
@@ -436,7 +437,7 @@ export function PricingRulesAdmin() {
                 spellCheck={false}
               />
             </Field>
-            <Field label={t('admin.pricing.rules.form.schedule', 'Schedule JSON')} hint={t('admin.pricing.rules.form.scheduleHint', 'Leave empty for standard pricing; provide IANA timeZone and weeklyWindows for time-window pricing.')}>
+            <Field label={t('admin.pricing.rules.form.schedule')} hint={t('admin.pricing.rules.form.scheduleHint')}>
               <textarea
                 className={`${inputClass} min-h-32 font-mono text-xs`}
                 value={form.scheduleJson}
@@ -561,7 +562,7 @@ function buildRuleInput(
   }
   const priority = Number.parseInt(form.priority.trim(), 10);
   if (!Number.isInteger(priority) || priority < 0) {
-    return fail('priority must be a non-negative integer');
+    return fail(t('admin.pricing.common.validation.priorityInvalid'));
   }
   return {
     ruleCode: ruleCode || undefined,
@@ -579,8 +580,8 @@ function buildRuleInput(
       form.formulaMode === 'unit_price_override'
         ? form.unitPriceOverride.trim() || undefined
         : undefined,
-    conditions: parseJsonField<AdminPricingCondition[]>(form.conditionsJson, 'conditions', []),
-    schedule: parseOptionalJsonField<AdminPricingSchedule>(form.scheduleJson, 'schedule'),
+    conditions: parseJsonField<AdminPricingCondition[]>(form.conditionsJson, t('admin.pricing.rules.form.conditions'), [], t),
+    schedule: parseOptionalJsonField<AdminPricingSchedule>(form.scheduleJson, t('admin.pricing.rules.form.schedule'), t),
     priority,
     effectiveFrom: form.effectiveFrom.trim() || undefined,
     effectiveTo: form.effectiveTo.trim() || undefined,
@@ -592,17 +593,26 @@ function fail(message: string): null {
   throw new Error(message);
 }
 
-function parseJsonField<T>(value: string, fieldName: string, fallback: T): T {
+function parseJsonField<T>(
+  value: string,
+  fieldLabel: string,
+  fallback: T,
+  t: TranslationFunction,
+): T {
   if (!value.trim()) {
     return fallback;
   }
   try {
     return JSON.parse(value);
   } catch {
-    throw new Error(`${fieldName} must be valid JSON`);
+    throw new Error(t('admin.pricing.common.validation.invalidJson', { field: fieldLabel }));
   }
 }
 
-function parseOptionalJsonField<T>(value: string, fieldName: string): T | undefined {
-  return value.trim() ? parseJsonField<T>(value, fieldName, undefined as T) : undefined;
+function parseOptionalJsonField<T>(
+  value: string,
+  fieldLabel: string,
+  t: TranslationFunction,
+): T | undefined {
+  return value.trim() ? parseJsonField<T>(value, fieldLabel, undefined as T, t) : undefined;
 }

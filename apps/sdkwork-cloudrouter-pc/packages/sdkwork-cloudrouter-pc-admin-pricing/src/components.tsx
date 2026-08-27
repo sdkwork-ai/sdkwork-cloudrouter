@@ -96,7 +96,7 @@ export function AdminListToolbar({
 }) {
   return (
     <div
-      className="flex shrink-0 items-center gap-3 overflow-x-auto px-5 py-3"
+      className="relative z-20 flex shrink-0 items-center gap-3 overflow-x-auto px-5 py-3"
       data-admin-pricing-toolbar
     >
       <div className="flex flex-nowrap items-center gap-2">{filters}</div>
@@ -157,10 +157,11 @@ export function InlineError({ message }: { message: string | null }) {
 }
 
 export function TableState({ loading, empty, colSpan }: { loading: boolean; empty: string; colSpan: number }) {
+  const { t } = useTranslation();
   return (
     <tr>
       <td colSpan={colSpan} className="px-4 py-8 text-center text-sm text-slate-400 dark:text-slate-500">
-        {loading ? 'Loading…' : empty}
+        {loading ? t('admin.pricing.common.loading') : empty}
       </td>
     </tr>
   );
@@ -286,9 +287,12 @@ export function Section({ title, action, children }: { title: string; action?: R
 export function errorMessageI18n(
   error: unknown,
   fallback: string,
-  _t: ReturnType<typeof useTranslation>['t'],
+  t: ReturnType<typeof useTranslation>['t'],
 ): string {
   if (error instanceof Error && error.message.trim()) {
+    if (error.message === 'priority must be a non-negative integer') {
+      return t('admin.pricing.common.validation.priorityInvalid');
+    }
     return error.message;
   }
   return fallback;

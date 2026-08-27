@@ -5,7 +5,7 @@
   "type": "module",
   "main": "./src/index.tsx",
   "scripts": {
-    "test": "pnpm -C ../.. exec vitest run packages/sdkwork-cloudrouter-pc-admin-pricing/src/priceSettingModel.test.ts --config vite.config.ts --configLoader native --pool vmThreads",
+    "test": "pnpm -C ../.. exec vitest run packages/sdkwork-cloudrouter-pc-admin-pricing/src/priceSettingModel.test.ts packages/sdkwork-cloudrouter-pc-admin-pricing/src/i18nCompleteness.test.ts --config vite.config.ts --configLoader native --pool vmThreads",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 use crate::ports::{
     AccountGroupModelAccess, AccountModelAccess, PricingCatalog, SupplierModelAccess,
-    UpstreamAccountRouteCatalog,
+    UpstreamAccountRouteCatalog, UpstreamRouteGateDiagnosis,
 };
 
 #[derive(Debug, Default, Clone)]
@@ -31,6 +31,7 @@ pub struct InMemoryPricingCatalog {
     supplier_model_access: HashMap<String, SupplierModelAccess>,
     account_model_access: HashMap<i64, AccountModelAccess>,
     supplier_default_base_urls: HashMap<String, String>,
+    upstream_route_gate_diagnosis: Option<UpstreamRouteGateDiagnosis>,
 }
 
 impl InMemoryPricingCatalog {
@@ -123,6 +124,15 @@ impl InMemoryPricingCatalog {
 
     pub fn set_account_model_access(&mut self, access: AccountModelAccess) {
         self.account_model_access.insert(access.account_id, access);
+    }
+
+    /// Stores the account-pool gate diagnosis reported by selection errors
+    /// when the catalog holds zero upstream account routes.
+    pub fn set_upstream_route_gate_diagnosis(
+        &mut self,
+        diagnosis: Option<UpstreamRouteGateDiagnosis>,
+    ) {
+        self.upstream_route_gate_diagnosis = diagnosis;
     }
 }
 
@@ -331,6 +341,10 @@ impl PricingCatalog for InMemoryPricingCatalog {
 impl UpstreamAccountRouteCatalog for InMemoryPricingCatalog {
     fn shared_upstream_account_routes(&self) -> Arc<[UpstreamAccountRoute]> {
         self.upstream_account_routes.clone().into()
+    }
+
+    fn upstream_route_gate_diagnosis(&self) -> Option<UpstreamRouteGateDiagnosis> {
+        self.upstream_route_gate_diagnosis
     }
 
     fn account_group_model_access(&self, group_id: i64) -> Option<AccountGroupModelAccess> {
