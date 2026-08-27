@@ -300,13 +300,37 @@ test('root package exposes pnpm application entrypoints', () => {
   );
   assert.equal(
     rootPackage.scripts['admin:reset:dev'],
-    'node scripts/reset-admin-account.mjs --mode dev --dev-env-file .env.postgres',
+    'node scripts/reset-admin-account.mjs --mode dev --environment development --dev-env-file .env.postgres',
   );
   assert.equal(rootPackage.scripts['admin:reset:dev:sqlite'], undefined);
   assert.equal(rootPackage.scripts['admin:reset:dev:postgres'], undefined);
   assert.equal(
+    rootPackage.scripts['admin:reset:test'],
+    'node scripts/reset-admin-account.mjs --mode release --environment test',
+  );
+  assert.equal(
+    rootPackage.scripts['admin:reset:staging'],
+    'node scripts/reset-admin-account.mjs --mode release --environment staging',
+  );
+  assert.equal(
     rootPackage.scripts['admin:reset:release'],
-    'node scripts/reset-admin-account.mjs --mode release',
+    'node scripts/reset-admin-account.mjs --mode release --environment production',
+  );
+  assert.equal(
+    rootPackage.scripts['admin:token:dev'],
+    'node scripts/reset-bootstrap-access-token.mjs --mode dev --environment development --dev-env-file .env.postgres',
+  );
+  assert.equal(
+    rootPackage.scripts['admin:token:test'],
+    'node scripts/reset-bootstrap-access-token.mjs --mode release --environment test',
+  );
+  assert.equal(
+    rootPackage.scripts['admin:token:staging'],
+    'node scripts/reset-bootstrap-access-token.mjs --mode release --environment staging',
+  );
+  assert.equal(
+    rootPackage.scripts['admin:token:release'],
+    'node scripts/reset-bootstrap-access-token.mjs --mode release --environment production',
   );
   assert.equal(
     rootPackage.scripts.db,
@@ -2956,7 +2980,9 @@ test('admin reset wrapper maps postgres dev mode through the configured env file
   assert.equal(step.env.SDKWORK_DATABASE_MAX_CONNECTIONS, '10');
   assert.equal(step.env.SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD, 'Admin-Postgres-Reset-Password-2026!');
   assert.equal(step.env.SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT, 'development');
-  assert.equal(step.args.includes('Admin-Postgres-Reset-Password-2026!'), false);
+  assert.equal(step.env.SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_USERNAME, 'admin-dev');
+  assert.equal(step.env.SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_EMAIL, 'admin-dev@sdkwork.com');
+  assert.equal(step.args.includes('admin-dev'), true);
   rmSync(fixtureRoot, { recursive: true, force: true });
 });
 
@@ -3004,6 +3030,8 @@ test('admin reset wrapper maps release mode through production runtime config an
   const settings = module.parseResetAdminArgs([
     '--mode',
     'release',
+    '--environment',
+    'production',
     '--config-file',
     configFile,
     '--database-url',
@@ -3046,6 +3074,76 @@ test('admin reset wrapper maps release mode through production runtime config an
     'postgresql://sdkwork_ai_prod:secret@db.internal:5432/sdkwork_ai_prod?sslmode=require',
   );
   assert.equal(existsSync(configFile), false);
+  rmSync(fixtureRoot, { recursive: true, force: true });
+});
+
+test('bootstrap token wrapper maps dev mode through postgres env and installer issue-bootstrap-token', async () => {
+  const module = await import(
+    pathToFileURL(path.join(workspaceRoot, 'scripts', 'reset-bootstrap-access-token.mjs')).href
+  );
+  const fixtureRoot = path.join(workspaceRoot, 'target', 'admin-token-config-tests', `postgres-dev-${Date.now()}`);
+  const envFile = path.join(fixtureRoot, '.env.postgres');
+  rmSync(fixtureRoot, { recursive: true, force: true });
+  mkdirSync(fixtureRoot, { recursive: true });
+  writeFileSync(
+    envFile,
+    [
+      'SDKWORK_DATABASE_ENGINE=postgresql',
+      'SDKWORK_DATABASE_HOST=127.0.0.1',
+      'SDKWORK_DATABASE_PORT=5432',
+      'SDKWORK_DATABASE_NAME=sdkwork_ai_dev',
+      'SDKWORK_DATABASE_USERNAME=sdkwork_ai_dev',
+      'SDKWORK_DATABASE_PASSWORD=sdkworkdev123',
+      'SDKWORK_DATABASE_SSL_MODE=disable',
+      '',
+    ].join('\n'),
+  );
+
+  const settings = module.parseResetBootstrapAccessTokenArgs([
+    '--mode',
+    'dev',
+    '--environment',
+    'development',
+    '--dev-env-file',
+    envFile,
+  ]);
+  const plan = module.createResetBootstrapAccessTokenPlan({
+    settings,
+    workspaceRoot,
+    platform: 'linux',
+    env: {},
+  });
+
+  assert.equal(plan.mode, 'dev');
+  assert.equal(plan.environment, 'development');
+  const [step] = plan.steps;
+  assert.equal(step.args.includes('issue-bootstrap-token'), true);
+  assert.equal(step.args.includes('--app-id'), true);
+  assert.equal(step.args.includes('sdkwork-cloudrouter'), true);
+  assert.equal(step.env.SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT, 'development');
+  assert.equal(step.env.SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_USERNAME, 'admin-dev');
+  assert.equal(step.env.SDKWORK_ACCESS_TOKEN, undefined);
+  rmSync(fixtureRoot, { recursive: true, force: true });
+});
+
+test('bootstrap token wrapper writes signed token into bootstrap env files', async () => {
+  const module = await import(
+    pathToFileURL(path.join(workspaceRoot, 'scripts', 'reset-bootstrap-access-token.mjs')).href
+  );
+  const fixtureRoot = path.join(workspaceRoot, 'target', 'admin-token-config-tests', `write-${Date.now()}`);
+  rmSync(fixtureRoot, { recursive: true, force: true });
+  mkdirSync(path.join(fixtureRoot, 'apps', 'sdkwork-cloudrouter-pc'), { recursive: true });
+
+  const written = module.writeBootstrapAccessTokenEnvFiles({
+    workspaceRoot: fixtureRoot,
+    environment: 'test',
+    accessToken: 'signed-bootstrap-token',
+  });
+
+  assert.equal(written.length, 3);
+  assert.equal(existsSync(path.join(fixtureRoot, '.env.test.bootstrap.local')), true);
+  assert.equal(existsSync(path.join(fixtureRoot, 'apps', 'sdkwork-cloudrouter-pc', '.env.test.bootstrap.local')), true);
+  assert.equal(existsSync(path.join(fixtureRoot, '.sdkwork.local.env')), true);
   rmSync(fixtureRoot, { recursive: true, force: true });
 });
 

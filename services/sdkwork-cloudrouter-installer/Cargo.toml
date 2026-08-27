@@ -22,6 +22,7 @@ sdkwork-database-lifecycle.workspace = true
 sdkwork-database-spi.workspace = true
 sdkwork-database-sqlx.workspace = true
 sdkwork-iam-bootstrap.workspace = true
+sdkwork-iam-web-adapter.workspace = true
 sdkwork_membership_database_host.workspace = true
 sdkwork_merchandise_database_host.workspace = true
 sdkwork_shop_database_host.workspace = true

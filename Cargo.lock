@@ -5242,6 +5242,7 @@ dependencies = [
  "sdkwork-database-spi",
  "sdkwork-database-sqlx",
  "sdkwork-iam-bootstrap",
+ "sdkwork-iam-web-adapter",
  "sdkwork-inventory-database-host",
  "sdkwork-membership-database-host",
  "sdkwork-merchandise-database-host",

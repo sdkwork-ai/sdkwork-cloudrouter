@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 
 import { spawn } from 'node:child_process';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+
 import {
   mergeRuntimeConfigEnv,
   parseStartProductionArgs,
@@ -17,12 +19,23 @@ import {
 import {
   normalizeCloudRouterLifecycleEnvironment,
   resolveCloudRouterBootstrapAdminEnvOverrides,
+  resolveCloudRouterBootstrapEnvPaths,
   resolveCloudRouterEnvironmentAdminAccount,
 } from './lib/cloud-router-environment-admin.mjs';
+import {
+  envFileChanged,
+  formatEnvFileContent,
+  loadEnvFile,
+} from './lib/merge-env-file.mjs';
+
+function readApplicationManifest(manifestPath) {
+  return JSON.parse(readFileSync(manifestPath, 'utf8'));
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const workspaceRoot = path.resolve(__dirname, '..');
+const SDKWORK_ACCESS_TOKEN_ENV_KEY = 'SDKWORK_ACCESS_TOKEN';
 
 function cargoCommand(platform = process.platform) {
   return platform === 'win32' ? 'cargo.exe' : 'cargo';
@@ -36,20 +49,21 @@ function requireValue(argv, index, flag) {
   return value;
 }
 
-export function parseResetAdminArgs(argv = []) {
+export function parseResetBootstrapAccessTokenArgs(argv = []) {
   const settings = {
     help: false,
     dryRun: false,
     mode: 'dev',
     environment: 'development',
-    username: null,
-    displayName: null,
-    email: null,
-    password: null,
+    writeEnv: true,
+    tenantId: null,
+    appId: null,
+    ttlSeconds: null,
     configFile: null,
     devEnvFile: null,
     databaseUrl: null,
     databaseMaxConnections: null,
+    outputEnvFile: null,
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -72,20 +86,16 @@ export function parseResetAdminArgs(argv = []) {
         settings.environment = normalizeCloudRouterLifecycleEnvironment(requireValue(argv, index, arg));
         index += 1;
         break;
-      case '--username':
-        settings.username = requireValue(argv, index, arg).trim();
+      case '--tenant-id':
+        settings.tenantId = requireValue(argv, index, arg).trim();
         index += 1;
         break;
-      case '--display-name':
-        settings.displayName = requireValue(argv, index, arg).trim();
+      case '--app-id':
+        settings.appId = requireValue(argv, index, arg).trim();
         index += 1;
         break;
-      case '--email':
-        settings.email = requireValue(argv, index, arg).trim();
-        index += 1;
-        break;
-      case '--password':
-        settings.password = requireValue(argv, index, arg);
+      case '--ttl-seconds':
+        settings.ttlSeconds = requireValue(argv, index, arg).trim();
         index += 1;
         break;
       case '--config-file':
@@ -104,28 +114,19 @@ export function parseResetAdminArgs(argv = []) {
         settings.databaseMaxConnections = requireValue(argv, index, arg);
         index += 1;
         break;
+      case '--output-env-file':
+        settings.outputEnvFile = requireValue(argv, index, arg);
+        index += 1;
+        break;
+      case '--no-write-env':
+        settings.writeEnv = false;
+        break;
       default:
-        throw new Error(`Unsupported admin reset option: ${arg}`);
+        throw new Error(`Unsupported bootstrap token option: ${arg}`);
     }
   }
 
-  const identity = resolveAdminIdentity(settings);
-  settings.username = identity.username;
-  settings.displayName = identity.displayName;
-  settings.email = identity.email;
-  validateText(settings.username, '--username');
-  validateText(settings.displayName, '--display-name');
-  validateText(settings.email, '--email');
   return settings;
-}
-
-function resolveAdminIdentity(settings) {
-  const account = resolveCloudRouterEnvironmentAdminAccount(settings.environment);
-  return {
-    username: settings.username ?? account.username,
-    displayName: settings.displayName ?? account.displayName,
-    email: settings.email ?? account.email,
-  };
 }
 
 function normalizeMode(value) {
@@ -136,44 +137,29 @@ function normalizeMode(value) {
   return mode;
 }
 
-function validateText(value, flag) {
-  if (!String(value ?? '').trim()) {
-    throw new Error(`${flag} must not be blank`);
-  }
-}
-
-function resetPassword(settings, env) {
-  const password = String(
-    settings.password ?? env.SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD ?? '',
-  );
-  if (!password.trim()) {
-    throw new Error(
-      'admin reset password is required. Pass --password or set SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD.',
-    );
-  }
-  return password;
-}
-
-function installerArgs(settings, identity) {
-  return [
+function installerArgs(settings, manifest) {
+  const args = [
     'run',
     '-p',
     'sdkwork-cloudrouter-installer',
     '--',
-    'reset-admin',
-    '--username',
-    identity.username,
-    '--display-name',
-    identity.displayName,
-    '--email',
-    identity.email,
+    'issue-bootstrap-token',
   ];
+  const tenantId = settings.tenantId ?? manifest?.backend?.tenantId;
+  const appId = settings.appId ?? manifest?.backend?.appId;
+  if (tenantId) {
+    args.push('--tenant-id', tenantId);
+  }
+  if (appId) {
+    args.push('--app-id', appId);
+  }
+  if (settings.ttlSeconds) {
+    args.push('--ttl-seconds', settings.ttlSeconds);
+  }
+  return args;
 }
 
-function devResetEnv(settings, env, root) {
-  // Match `pnpm dev` behavior: when no explicit dev-env-file is provided, auto-detect
-  // `.env.postgres` (or `.env.postgres.example`) from the workspace root. This keeps
-  // reset-admin pointed at the same database the dev server bootstrapped IAM into.
+function devTokenEnv(settings, env, root) {
   const devEnvFile = settings.devEnvFile ?? resolveDefaultDevEnvFilePath(root);
   const devEnv = {
     ...env,
@@ -190,7 +176,7 @@ function devResetEnv(settings, env, root) {
     defaultDatabase: 'postgresql',
   });
   if (resolvedDatabase.kind !== 'postgresql') {
-    throw new Error('admin reset requires PostgreSQL because server data is authoritative');
+    throw new Error('bootstrap token issuance requires PostgreSQL because server data is authoritative');
   }
   const databaseUrl = resolvedDatabase.databaseUrl;
   const databaseMaxConnections = settings.databaseMaxConnections
@@ -201,7 +187,6 @@ function devResetEnv(settings, env, root) {
     ...resolvedDatabase.env,
     SDKWORK_DATABASE_URL: databaseUrl,
     SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE: env.SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE ?? 'server',
-    SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE: env.SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE ?? 'commercial',
     ...(databaseMaxConnections ? { SDKWORK_DATABASE_MAX_CONNECTIONS: databaseMaxConnections } : {}),
   };
 }
@@ -220,15 +205,14 @@ function releaseRuntimeConfigSettings(settings) {
   return parseStartProductionArgs(args);
 }
 
-export function createResetAdminPlan({
-  settings = parseResetAdminArgs([]),
+export function createResetBootstrapAccessTokenPlan({
+  settings = parseResetBootstrapAccessTokenArgs([]),
   workspaceRoot: root = workspaceRoot,
   platform = process.platform,
   env = process.env,
   writeRuntimeConfig = true,
 } = {}) {
-  const password = resetPassword(settings, env);
-  const identity = resolveAdminIdentity(settings);
+  const manifest = readApplicationManifest(path.join(root, 'sdkwork.app.config.json'));
   const environmentOverrides = resolveCloudRouterBootstrapAdminEnvOverrides(settings.environment);
   let stepEnv;
   let runtimeConfig = null;
@@ -250,26 +234,26 @@ export function createResetAdminPlan({
     };
   } else {
     stepEnv = {
-      ...devResetEnv(settings, env, root),
+      ...devTokenEnv(settings, env, root),
       ...environmentOverrides,
+      SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE: env.SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE ?? 'commercial',
     };
   }
 
-  stepEnv = {
-    ...stepEnv,
-    SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD: password,
-  };
+  delete stepEnv[SDKWORK_ACCESS_TOKEN_ENV_KEY];
 
   return {
     mode: settings.mode,
     environment: settings.environment,
-    identity,
     runtimeConfig,
+    manifest,
+    writeEnv: settings.writeEnv,
+    outputEnvFile: settings.outputEnvFile,
     steps: [
       {
-        name: 'reset-admin',
+        name: 'issue-bootstrap-token',
         command: cargoCommand(platform),
-        args: installerArgs(settings, identity),
+        args: installerArgs(settings, manifest),
         cwd: root,
         env: stepEnv,
         shell: false,
@@ -279,36 +263,87 @@ export function createResetAdminPlan({
   };
 }
 
+function bootstrapEnvHeader(environment) {
+  return [
+    '# SDKWork private bootstrap credentials (gitignored).',
+    `# Generated by scripts/reset-bootstrap-access-token.mjs for ${environment}.`,
+    '# Signed IAM access token with production permission scope from sdkwork.app.config.json.',
+  ];
+}
+
+export function writeBootstrapAccessTokenEnvFiles({
+  workspaceRoot: root = workspaceRoot,
+  environment,
+  accessToken,
+  outputEnvFile = null,
+  dryRun = false,
+} = {}) {
+  const lifecycle = normalizeCloudRouterLifecycleEnvironment(environment);
+  const tokenRecord = { [SDKWORK_ACCESS_TOKEN_ENV_KEY]: accessToken };
+  const paths = resolveCloudRouterBootstrapEnvPaths({
+    workspaceRoot: root,
+    environment: lifecycle,
+  });
+  const targetPaths = outputEnvFile
+    ? [path.isAbsolute(outputEnvFile) ? outputEnvFile : path.join(root, outputEnvFile)]
+    : [
+      paths.repositoryBootstrapEnvPath,
+      paths.portalBootstrapEnvPath,
+      paths.sdkworkLocalEnvPath,
+    ];
+  const written = [];
+
+  for (const filePath of targetPaths) {
+    const existing = loadEnvFile(filePath);
+    const merged = {
+      ...existing,
+      ...tokenRecord,
+    };
+    const changed = envFileChanged(existing, merged);
+    if (!dryRun && changed) {
+      mkdirSync(path.dirname(filePath), { recursive: true });
+      writeFileSync(
+        filePath,
+        formatEnvFileContent(merged, {
+          headerLines: bootstrapEnvHeader(lifecycle),
+          keyOrder: [SDKWORK_ACCESS_TOKEN_ENV_KEY],
+        }),
+        'utf8',
+      );
+    }
+    written.push({ filePath, changed });
+  }
+
+  return written;
+}
+
 function printHelp() {
-  console.log(`Usage: node scripts/reset-admin-account.mjs --mode <dev|release> --password <password> [options]
+  console.log(`Usage: node scripts/reset-bootstrap-access-token.mjs --mode <dev|release> --environment <lifecycle> [options]
 
-Reset the Cloud Router admin account password through the installer database layer.
+Issue a signed bootstrap SDKWORK_ACCESS_TOKEN through the installer database layer.
 
-Each lifecycle environment uses an independent bootstrap admin identity:
-  development -> admin-dev@sdkwork.com
-  test        -> admin-test@sdkwork.com
-  staging     -> admin-staging@sdkwork.com
-  production  -> admin@sdkwork.com
+Development mode expects a manually configured PostgreSQL profile (.env.postgres).
+Release mode expects an initialized online deployment database and runtime config.
 
 Options:
   --mode <dev|release>          dev uses .env.postgres; release uses PostgreSQL runtime config
   --environment <lifecycle>     development, test, staging, or production (default development)
-  --username <username>         Admin username override
-  --display-name <name>         Admin display name override
-  --email <email>               Admin email identity override
-  --password <password>         New admin password; may also be set with SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD
+  --tenant-id <tenantId>        IAM tenant override (default from sdkwork.app.config.json)
+  --app-id <appId>              IAM app override (default from sdkwork.app.config.json)
+  --ttl-seconds <seconds>       Optional token TTL override
   --config-file <path>          Release runtime TOML path
   --dev-env-file <path>         Dev PostgreSQL dotenv file such as .env.postgres
   --database-url <url>          PostgreSQL database override
   --database-max-connections <n>
+  --output-env-file <path>      Write token to a single env file instead of default bootstrap paths
+  --no-write-env                Print token JSON only; do not write bootstrap env files
   --dry-run                     Print the command without executing it
   -h, --help                    Show this help
 
 Examples:
-  pnpm admin:reset:dev -- --password "Admin-Dev-Password-2026!"
-  pnpm admin:reset:staging -- --password "Admin-Staging-Password-2026!"
-  pnpm admin:reset:release -- --password "Admin-Release-Password-2026!"
-  SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD="Admin-Release-Password-2026!" pnpm admin:reset:release
+  pnpm admin:token:dev
+  pnpm admin:token:staging -- --config-file /etc/sdkwork/cloudrouter/config.toml
+  pnpm admin:token:release -- --output-env-file .env.production.bootstrap.local
 `);
 }
 
@@ -316,16 +351,20 @@ function formatCommand(step) {
   return `${step.command} ${step.args.join(' ')}`;
 }
 
-async function runStep(step) {
-  await new Promise((resolve, reject) => {
+async function runStepCaptureJson(step) {
+  return await new Promise((resolve, reject) => {
+    let stdout = '';
     const child = spawn(step.command, step.args, {
       cwd: step.cwd,
       env: step.env,
-      stdio: 'inherit',
+      stdio: ['ignore', 'pipe', 'inherit'],
       shell: step.shell ?? false,
       windowsHide: step.windowsHide ?? process.platform === 'win32',
     });
 
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk.toString('utf8');
+    });
     child.on('error', reject);
     child.on('exit', (code, signal) => {
       if (signal) {
@@ -336,33 +375,62 @@ async function runStep(step) {
         reject(new Error(`${step.name} exited with code ${code}`));
         return;
       }
-      resolve();
+      try {
+        resolve(JSON.parse(stdout.trim()));
+      } catch (error) {
+        reject(new Error(`${step.name} returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`));
+      }
     });
   });
 }
 
 async function main(argv = process.argv.slice(2)) {
-  const settings = parseResetAdminArgs(argv);
+  const settings = parseResetBootstrapAccessTokenArgs(argv);
   if (settings.help) {
     printHelp();
     return;
   }
-  const plan = createResetAdminPlan({
+
+  const account = resolveCloudRouterEnvironmentAdminAccount(settings.environment);
+  const plan = createResetBootstrapAccessTokenPlan({
     settings,
     writeRuntimeConfig: !settings.dryRun,
   });
+
   for (const step of plan.steps) {
-    console.error(`[reset-admin] ${formatCommand(step)}`);
+    console.error(`[reset-bootstrap-token] ${formatCommand(step)}`);
+    console.error(
+      `[reset-bootstrap-token] lifecycle=${plan.environment} admin=${account.username} (${account.email})`,
+    );
     if (settings.dryRun) {
       continue;
     }
-    await runStep(step);
+    const issued = await runStepCaptureJson(step);
+    if (settings.writeEnv) {
+      const written = writeBootstrapAccessTokenEnvFiles({
+        environment: plan.environment,
+        accessToken: issued.accessToken,
+        outputEnvFile: settings.outputEnvFile,
+      });
+      for (const entry of written) {
+        console.error(`[reset-bootstrap-token] wrote ${entry.filePath}${entry.changed ? '' : ' (unchanged)'}`);
+      }
+    }
+    console.log(JSON.stringify({
+      status: issued.status,
+      environment: plan.environment,
+      tenantId: issued.tenantId,
+      appId: issued.appId,
+      sessionId: issued.sessionId,
+      expiresAt: issued.expiresAt,
+      accessToken: issued.accessToken,
+    }));
   }
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
   main().catch((error) => {
-    console.error(`[reset-admin] ${error instanceof Error ? error.message : String(error)}`);
+    console.error(`[reset-bootstrap-token] ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   });
 }

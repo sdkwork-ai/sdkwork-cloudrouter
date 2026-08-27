@@ -12,6 +12,7 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::installer::{
 use sdkwork_iam_bootstrap::{
     DEFAULT_BOOTSTRAP_ADMIN_USERNAME, DEFAULT_BOOTSTRAP_ADMIN_USER_ID, DEFAULT_IAM_TENANT_ID,
 };
+use sdkwork_iam_web_adapter::issue_standalone_bootstrap_access_credential;
 use sdkwork_models_catalog_repository_sqlx::PostgresModelCatalogAdminStore;
 use sdkwork_models_database_host::connect_models_database;
 use serde::Serialize;
@@ -117,6 +118,9 @@ async fn run_postgres(config: DatabaseConfig, command: InstallerCommand) -> anyh
     })?;
     if let InstallerCommand::ResetAdmin(options) = &command {
         return run_reset_admin_postgres(&pool, options).await;
+    }
+    if let InstallerCommand::IssueBootstrapToken(options) = &command {
+        return run_issue_bootstrap_token_postgres(&pool, options).await;
     }
     run_command(
         DatabaseInstaller::for_postgres(pool.clone())
@@ -267,6 +271,12 @@ async fn run_command(
             )
             .into());
         }
+        InstallerCommand::IssueBootstrapToken(_) => {
+            return Err(InstallerCliError::InvalidState(
+                "issue-bootstrap-token is handled before DatabaseInstaller dispatch".to_owned(),
+            )
+            .into());
+        }
     }
     Ok(())
 }
@@ -281,6 +291,14 @@ enum InstallerCommand {
     Backup(backup::BackupOptions),
     Restore(backup::RestoreOptions),
     ResetAdmin(ResetAdminOptions),
+    IssueBootstrapToken(IssueBootstrapTokenOptions),
+}
+
+#[derive(Debug, Default)]
+struct IssueBootstrapTokenOptions {
+    tenant_id: Option<String>,
+    app_id: Option<String>,
+    ttl_seconds: Option<u64>,
 }
 
 #[derive(Debug, Default)]
@@ -317,9 +335,12 @@ where
         "backup" => InstallerCommand::Backup(parse_backup_options(args)?),
         "restore" => InstallerCommand::Restore(parse_restore_options(args)?),
         "reset-admin" => InstallerCommand::ResetAdmin(parse_reset_admin_options(args)?),
+        "issue-bootstrap-token" => {
+            InstallerCommand::IssueBootstrapToken(parse_issue_bootstrap_token_options(args)?)
+        }
         other => {
             return Err(InstallerCliError::InvalidArgument(format!(
-                "unsupported installer command: {other}. Use status, install, upgrade, ensure, refresh-catalog, backup, restore, or reset-admin"
+                "unsupported installer command: {other}. Use status, install, upgrade, ensure, refresh-catalog, backup, restore, reset-admin, or issue-bootstrap-token"
             ))
             .into());
         }
@@ -486,6 +507,96 @@ where
     Ok(options)
 }
 
+fn parse_issue_bootstrap_token_options<I>(args: I) -> anyhow::Result<IssueBootstrapTokenOptions>
+where
+    I: IntoIterator<Item = String>,
+{
+    let mut options = IssueBootstrapTokenOptions::default();
+    let mut args = args.into_iter().peekable();
+    while let Some(arg) = args.next() {
+        match arg.as_str() {
+            "--tenant-id" => {
+                options.tenant_id = Some(normalize_bootstrap_token_id(
+                    next_arg(&mut args, "--tenant-id")?,
+                    "tenant-id",
+                )?);
+            }
+            "--app-id" => {
+                options.app_id = Some(normalize_bootstrap_token_id(
+                    next_arg(&mut args, "--app-id")?,
+                    "app-id",
+                )?);
+            }
+            "--ttl-seconds" => {
+                let value = next_arg(&mut args, "--ttl-seconds")?;
+                options.ttl_seconds = Some(parse_bootstrap_token_ttl_seconds(value)?);
+            }
+            other => {
+                return Err(InstallerCliError::InvalidArgument(format!(
+                    "unsupported issue-bootstrap-token option: {other}"
+                ))
+                .into());
+            }
+        }
+    }
+    Ok(options)
+}
+
+fn normalize_bootstrap_token_id(value: String, name: &str) -> anyhow::Result<String> {
+    let trimmed = value.trim().to_owned();
+    if trimmed.is_empty() {
+        return Err(InstallerCliError::InvalidArgument(format!(
+            "--{name} must not be blank"
+        ))
+        .into());
+    }
+    Ok(trimmed)
+}
+
+fn parse_bootstrap_token_ttl_seconds(value: String) -> anyhow::Result<u64> {
+    let ttl = value.trim().parse::<u64>().map_err(|_| {
+        InstallerCliError::InvalidArgument("--ttl-seconds must be a positive integer".to_owned())
+    })?;
+    if ttl == 0 {
+        return Err(InstallerCliError::InvalidArgument(
+            "--ttl-seconds must be greater than zero".to_owned(),
+        )
+        .into());
+    }
+    Ok(ttl)
+}
+
+async fn run_issue_bootstrap_token_postgres(
+    pool: &PgPool,
+    options: &IssueBootstrapTokenOptions,
+) -> anyhow::Result<()> {
+    let tenant_id = options
+        .tenant_id
+        .as_deref()
+        .unwrap_or(DEFAULT_IAM_TENANT_ID);
+    let app_id = options
+        .app_id
+        .as_deref()
+        .unwrap_or("sdkwork-cloudrouter");
+    let issued = issue_standalone_bootstrap_access_credential(
+        pool,
+        tenant_id,
+        app_id,
+        options.ttl_seconds,
+    )
+    .await
+    .map_err(|error| InstallerCliError::InvalidState(error))?;
+
+    print_json(&IssueBootstrapTokenOutput {
+        status: "issued",
+        access_token: issued.access_credential,
+        tenant_id: issued.tenant_id,
+        app_id: issued.app_id,
+        session_id: issued.session_id,
+        expires_at: issued.expires_at,
+    })
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ResetAdminOutput {
@@ -493,6 +604,17 @@ struct ResetAdminOutput {
     user_id: String,
     tenant_id: &'static str,
     username: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct IssueBootstrapTokenOutput {
+    status: &'static str,
+    access_token: String,
+    tenant_id: String,
+    app_id: String,
+    session_id: String,
+    expires_at: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -652,7 +774,7 @@ impl InstallerCommand {
         match self {
             Self::Install | Self::Upgrade | Self::Ensure => true,
             Self::RefreshCatalog(options) => options.mode != "dry_run",
-            Self::Status | Self::Backup(_) | Self::Restore(_) | Self::ResetAdmin(_) => false,
+            Self::Status | Self::Backup(_) | Self::Restore(_) | Self::ResetAdmin(_) | Self::IssueBootstrapToken(_) => false,
         }
     }
 }
