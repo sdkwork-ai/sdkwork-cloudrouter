@@ -189,6 +189,8 @@ struct InvocationRuntimeRoutesInput<'a, C> {
     provider_response_timeout: Duration,
     provider_http_pool_config: ProviderRelayHttpPoolConfig,
     internal_gateway_verifier: Arc<InternalGatewayRequestVerifier>,
+    auth_token_authenticator:
+        Option<Arc<dyn OpenAiAuthTokenAuthenticator + Send + Sync>>,
     call_chain: Option<CallChainInterceptor>,
     billing_store: Option<
         Arc<dyn sdkwork_cloudrouter_router_service::ports::GatewayBillingStore + Send + Sync>,
@@ -221,6 +223,7 @@ where
         provider_response_timeout,
         provider_http_pool_config,
         internal_gateway_verifier,
+        auth_token_authenticator,
         call_chain,
         billing_store,
     } = input;
@@ -262,6 +265,7 @@ where
                 stream_response_timeout,
                 query_string_api_key_policy,
                 internal_gateway_verifier: Some(internal_gateway_verifier),
+                auth_token_authenticator,
                 call_chain,
                 billing_store,
                 ..crate::invocation_router::InvocationRouterOptions::default()
@@ -361,7 +365,7 @@ struct DatabaseRuntimeRoutesInput<'a, C> {
         Arc<dyn sdkwork_cloudrouter_router_service::ports::GatewayBillingStore + Send + Sync>,
     /// Resolves non-API-key bearer credentials (auth tokens) into an account
     /// route context for the open-api chat completions route.
-    auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator>>,
+    auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator + Send + Sync>>,
 }
 
 fn router_with_database_runtime_routes<C>(
@@ -419,6 +423,7 @@ where
             provider_response_timeout: provider_runtime_config.response_timeout,
             provider_http_pool_config: provider_runtime_config.http_pool_config,
             internal_gateway_verifier: Arc::clone(&internal_gateway_verifier),
+            auth_token_authenticator: auth_token_authenticator.clone(),
             call_chain: call_chain.clone(),
             billing_store: Some(billing_store.clone()),
         })?
@@ -453,13 +458,14 @@ where
             default_retry_policy: provider_runtime_config.default_retry_policy.clone(),
             region_settings_store: None,
             include_openai_models_router: false,
-            auth_token_authenticator,
+            auth_token_authenticator: auth_token_authenticator.clone(),
         });
         router_with_invocation_runtime_routes(InvocationRuntimeRoutesInput {
             base_router: router,
             catalog: Arc::clone(&catalog),
             api_key_hasher: Arc::clone(&api_key_hasher),
             provider_secret_resolver: None,
+            auth_token_authenticator: auth_token_authenticator.clone(),
             sticky_store: invocation_sticky_store,
             usage_recorder: usage_recorder.clone(),
             decision_log_recorder,
@@ -781,7 +787,7 @@ struct OpenAiRuntimeRoutesInput<C> {
     include_openai_models_router: bool,
     /// Resolves non-API-key bearer credentials (auth tokens) into an account
     /// route context for the chat completions route.
-    auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator>>,
+    auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator + Send + Sync>>,
 }
 
 pub fn router_with_product_catalog_and_api_key_hasher<C>(

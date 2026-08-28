@@ -188,8 +188,18 @@ impl InvocationDispatcher for InvocationHttpDispatcher {
                 )
             })?;
             let uri = validated_provider_uri(provider_url, self.outbound_target_policy)?;
+            let provider_url_redacted = redact_provider_url(uri.to_string().as_str());
 
             let request = build_upstream_request(provider_request, uri)?;
+            let provider_started_at = std::time::Instant::now();
+            tracing::debug!(
+                stage = "dispatch",
+                provider_url = %provider_url_redacted,
+                method = %provider_request.method,
+                request_id = %invocation.request.request_id,
+                trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
+                "provider HTTP request dispatched"
+            );
             let response = execute_with_optional_timeout(
                 account,
                 self.response_timeout,
@@ -207,6 +217,15 @@ impl InvocationDispatcher for InvocationHttpDispatcher {
             })?;
 
             let status_code = response.status().as_u16();
+            tracing::debug!(
+                stage = "dispatch",
+                provider_url = %provider_url_redacted,
+                status_code,
+                latency_ms = provider_started_at.elapsed().as_millis() as i64,
+                request_id = %invocation.request.request_id,
+                trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
+                "provider HTTP response received"
+            );
             let content_type = response
                 .headers()
                 .get(header::CONTENT_TYPE)
@@ -436,6 +455,17 @@ fn build_invocation_http_client(
         .pool_idle_timeout(Some(pool_config.pool_idle_timeout))
         .pool_max_idle_per_host(pool_config.pool_max_idle_per_host)
         .build(connector)
+}
+
+/// Masks the query string (and any userinfo) of a provider URL before it is
+/// logged, so credentials embedded in URLs never reach the log stream.
+fn redact_provider_url(value: &str) -> String {
+    let mut parts = value.splitn(2, '?');
+    let base = parts.next().unwrap_or(value);
+    match parts.next() {
+        Some(_query) => format!("{base}?<redacted>"),
+        None => base.to_owned(),
+    }
 }
 
 fn validated_provider_uri(

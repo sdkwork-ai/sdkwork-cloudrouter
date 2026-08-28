@@ -9,6 +9,9 @@ coverage/
 !.env.standalone.*
 !.env.cloud.*
 
+# Vite dependency prebundle cache (custom cacheDir avoids stale .vite locks on Windows)
+node_modules/.vite-portal/
+
 # Host profile env files (.env.development, …) are ignored via .env*
 config/*.local.toml
 

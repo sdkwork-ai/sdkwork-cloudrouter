@@ -302,6 +302,8 @@ sdkwork_api_rtc_assembly = { package = "sdkwork-api-rtc-assembly", path = "../sd
 # contribution (API_ASSEMBLY_SPEC §3/§6.1), never through a direct route-crate
 # import.
 sdkwork_api_drive_assembly = { package = "sdkwork-api-drive-assembly", path = "../sdkwork-drive/crates/sdkwork-api-drive-assembly" }
+sdkwork_api_assets_assembly = { package = "sdkwork-api-assets-assembly", path = "../sdkwork-assets/crates/sdkwork-api-assets-assembly" }
+sdkwork_api_feeds_assembly = { package = "sdkwork-api-feeds-assembly", path = "../sdkwork-feeds/crates/sdkwork-api-feeds-assembly" }
 sdkwork-web-bootstrap = { path = "../sdkwork-web-framework/crates/sdkwork-web-bootstrap" }
 
 # SDKWork web framework dependencies

@@ -162,20 +162,21 @@ where
             }
         })?;
 
-    invocation.routing.route_plan = Some(InvocationRoutePlan::new(
-        plan.routes
-            .into_iter()
-            .map(|selection| {
-                mapped_model_candidate(
-                    catalog,
-                    &requested_model,
-                    invocation.resource.capability,
-                    selection,
-                    &mapping_context,
-                )
-            })
-            .collect::<Vec<_>>(),
-    ));
+    let candidates = plan
+        .routes
+        .into_iter()
+        .map(|selection| {
+            mapped_model_candidate(
+                catalog,
+                &requested_model,
+                invocation.resource.capability,
+                selection,
+                &mapping_context,
+            )
+        })
+        .collect::<Vec<_>>();
+    log_planned_candidates(invocation, &candidates, "model route");
+    invocation.routing.route_plan = Some(InvocationRoutePlan::new(candidates));
     Ok(())
 }
 
@@ -205,8 +206,44 @@ where
             .into_iter()
             .map(|route| account_route_candidate(route, invocation, catalog)),
     );
+    log_planned_candidates(invocation, &candidates, "account route");
     invocation.routing.route_plan = Some(InvocationRoutePlan::new(candidates));
     Ok(())
+}
+
+/// Debug-level summary of the planned route candidates (supplier/account/
+/// region/endpoint). Credential references are logged as opaque refs; the
+/// secret material itself never leaves the catalog.
+fn log_planned_candidates(
+    invocation: &Invocation,
+    candidates: &[InvocationRouteCandidate],
+    plan_kind: &str,
+) {
+    let summary = candidates
+        .iter()
+        .map(|candidate| {
+            format!(
+                "{}@{}:{}:{}",
+                candidate.supplier_code,
+                candidate.account_id,
+                candidate.region_code,
+                candidate.base_url.as_deref().unwrap_or("no-base-url")
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(" -> ");
+    tracing::debug!(
+        stage = "route_planning",
+        plan_kind,
+        candidate_count = candidates.len(),
+        route_key = %invocation.resource.route_key,
+        api_code = %invocation.resource.api_code,
+        requested_model = %invocation.resource.requested_model.as_deref().unwrap_or(""),
+        request_id = %invocation.request.request_id,
+        trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
+        candidates = %summary,
+        "route planning succeeded"
+    );
 }
 
 fn sticky_candidate<C>(

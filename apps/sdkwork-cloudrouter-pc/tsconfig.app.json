@@ -9,6 +9,7 @@
     "node_modules",
     "node_modules.*",
     ".vite",
+    ".vite-portal",
     "tmp",
     "target",
     "e2e",

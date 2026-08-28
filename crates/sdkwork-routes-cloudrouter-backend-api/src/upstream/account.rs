@@ -175,6 +175,9 @@ struct CredentialResponse {
     auth_method_code: String,
     credential_name: String,
     masked_label: Option<String>,
+    /// Plaintext credential secret for the authenticated admin editor.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    secret: Option<String>,
     credential_version: String,
     priority: i32,
     is_active: bool,
@@ -1003,6 +1006,7 @@ impl From<AdminUpstreamAccountCredentialItem> for CredentialResponse {
             auth_method_code: item.auth_method_code,
             credential_name: item.credential_name,
             masked_label: item.masked_label,
+            secret: item.secret,
             credential_version: item.credential_version.to_string(),
             priority: item.priority,
             is_active: item.is_active,

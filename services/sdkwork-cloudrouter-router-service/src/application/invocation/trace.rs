@@ -42,7 +42,19 @@ fn update_trace_from_invocation(invocation: &mut Invocation, error: Option<&Invo
     }
     if let Some(error) = error {
         invocation.telemetry.error_type = Some(error.kind.code().to_owned());
-        invocation.telemetry.error_message_masked = Some(mask_error_message(&error.message));
+        // Derived pipeline errors (e.g. settlement after an upstream 4xx)
+        // must not overwrite the provider's real rejection reason: the
+        // dispatch stage already recorded `provider_http_<status>` and the
+        // redacted upstream message, which is what operators and callers need
+        // to diagnose upstream credential/config problems.
+        let has_upstream_rejection = invocation
+            .telemetry
+            .provider_error_code
+            .as_deref()
+            .is_some_and(|code| code.starts_with("provider_http_"));
+        if !has_upstream_rejection {
+            invocation.telemetry.error_message_masked = Some(mask_error_message(&error.message));
+        }
     } else if let Some(response) = invocation.dispatch.response.as_ref() {
         let status_code = effective_status_code(invocation, response);
         if status_code >= 400 {
@@ -86,11 +98,22 @@ fn effective_error_body(body: &Value) -> Option<&Value> {
 fn apply_attempt(invocation: &mut Invocation, attempt: &InvocationRouteAttempt) {
     invocation.telemetry.latency_ms = attempt.latency_ms;
     if !attempt.success {
-        invocation.telemetry.provider_error_code = attempt.error_code.clone();
-        invocation.telemetry.error_message_masked = attempt
-            .error_message
-            .as_ref()
-            .map(|message| mask_error_message(message));
+        // A dispatch-stage `provider_http_*` record (with the redacted
+        // upstream rejection message) is more precise than the attempt's
+        // generic status message; keep it when already present so later
+        // derived failures cannot downgrade the cause.
+        let has_upstream_rejection = invocation
+            .telemetry
+            .provider_error_code
+            .as_deref()
+            .is_some_and(|code| code.starts_with("provider_http_"));
+        if !has_upstream_rejection {
+            invocation.telemetry.provider_error_code = attempt.error_code.clone();
+            invocation.telemetry.error_message_masked = attempt
+                .error_message
+                .as_ref()
+                .map(|message| mask_error_message(message));
+        }
     }
 }
 

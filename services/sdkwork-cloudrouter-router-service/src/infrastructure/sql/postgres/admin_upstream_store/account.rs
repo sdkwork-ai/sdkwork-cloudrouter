@@ -1,5 +1,5 @@
 use sqlx::postgres::PgRow;
-use sqlx::{PgPool, Postgres, Transaction};
+use sqlx::{PgPool, Postgres, Row, Transaction};
 
 use super::shared::{
     column, conflict, masked_secret, not_found, parse_protocols, record_routing_change,
@@ -47,7 +47,7 @@ const ACCOUNT_COLUMNS: &str = r#"
 
 const CREDENTIAL_COLUMNS: &str = r#"
     id, auth_method_code, credential_name, masked_label, credential_version,
-    priority, is_active,
+    priority, is_active, secret_ciphertext, secret_key_id,
     CASE WHEN expires_at IS NULL THEN NULL ELSE
         TO_CHAR(expires_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
     END AS expires_at,
@@ -374,6 +374,7 @@ pub(super) async fn list_credentials(
     pool: &PgPool,
     query: AdminUpstreamListQuery,
     account_id: i64,
+    secret_codec: &(dyn UpstreamCredentialSecretCodec + Send + Sync),
 ) -> DomainResult<AdminUpstreamPage<AdminUpstreamAccountCredentialItem>> {
     ensure_account_exists(pool, &query.subject, account_id).await?;
     let pattern = search_pattern(query.q.as_deref());
@@ -426,7 +427,15 @@ pub(super) async fn list_credentials(
         .map_err(|error| store_error("failed to list upstream account credentials", error))?;
     let items = rows
         .into_iter()
-        .map(map_credential_row)
+        .map(|row| {
+            map_credential_row_with_secret(
+                row,
+                secret_codec,
+                query.subject.tenant_id,
+                query.subject.organization_id,
+                account_id,
+            )
+        })
         .collect::<DomainResult<Vec<_>>>()?;
     Ok(AdminUpstreamPage {
         items,
@@ -1315,9 +1324,48 @@ fn map_account_row(row: PgRow) -> DomainResult<AdminUpstreamAccountItem> {
     })
 }
 
+fn map_credential_row_with_secret(
+    row: PgRow,
+    secret_codec: &(dyn UpstreamCredentialSecretCodec + Send + Sync),
+    tenant_id: i64,
+    organization_id: i64,
+    account_id: i64,
+) -> DomainResult<AdminUpstreamAccountCredentialItem> {
+    let ciphertext = (&row)
+        .try_get::<Option<String>, _>("secret_ciphertext")
+        .map_err(|error| store_error("failed to read credential ciphertext", error))?
+        .filter(|value| !value.trim().is_empty());
+    let key_id = (&row)
+        .try_get::<Option<String>, _>("secret_key_id")
+        .map_err(|error| store_error("failed to read credential key id", error))?
+        .filter(|value| !value.trim().is_empty());
+    let mut item = map_credential_row(row)?;
+    if let (Some(ciphertext), Some(key_id)) = (ciphertext, key_id) {
+        let context = UpstreamCredentialSecretContext::new(
+            tenant_id,
+            organization_id,
+            account_id,
+            item.id,
+        );
+        match secret_codec.decode_secret(context, &key_id, &ciphertext) {
+            Ok(plaintext) => item.secret = Some(plaintext),
+            Err(error) => {
+                tracing::warn!(
+                    credential_id = item.id,
+                    %error,
+                    "failed to decrypt upstream credential for admin display"
+                );
+                item.secret = None;
+            }
+        }
+    }
+    Ok(item)
+}
+
 fn map_credential_row(row: PgRow) -> DomainResult<AdminUpstreamAccountCredentialItem> {
     Ok(AdminUpstreamAccountCredentialItem {
         id: column(&row, "id", "failed to map upstream credential id")?,
+        secret: None,
         auth_method_code: column(
             &row,
             "auth_method_code",

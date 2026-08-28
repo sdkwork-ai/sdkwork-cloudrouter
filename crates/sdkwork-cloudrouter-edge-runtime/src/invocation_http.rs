@@ -18,7 +18,7 @@ use sdkwork_cloudrouter_security::{INTERNAL_GATEWAY_AUTH_HEADERS, INTERNAL_GATEW
 use serde_json::{json, Value};
 
 use crate::gateway_api_key_auth::{
-    authenticate_gateway_api_key, authenticate_internal_gateway_request,
+    authenticate_gateway_request_or_auth_token, authenticate_internal_gateway_request,
     sanitize_authenticated_gateway_uri,
 };
 use crate::invocation_router::InvocationRouterState;
@@ -33,16 +33,42 @@ where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let (mut parts, body) = request.into_parts();
+    tracing::debug!(
+        method = %parts.method,
+        path = %parts.uri.path(),
+        "invocation.http.request public channel entered"
+    );
     // 安全：先鉴权后分类——未认证请求不触发任何分类/解析逻辑，缩小信息暴露面
-    let auth_context = match authenticate_gateway_api_key(
+    let auth_context = match authenticate_gateway_request_or_auth_token(
         state.catalog.as_ref(),
         state.api_key_hasher.as_ref(),
+        state.auth_token_authenticator.as_deref(),
         &parts.headers,
         &parts.uri,
         state.query_string_api_key_policy,
-    ) {
-        Ok(context) => context,
-        Err(error) => return error.into_response(),
+    )
+    .await
+    {
+        Ok(context) => {
+            tracing::debug!(
+                api_key_id = context.api_key_id,
+                tenant_id = context.tenant_id,
+                organization_id = context.organization_id,
+                account_group_id = context.group_id,
+                account_group_code = %context.group_code,
+                "invocation.http authentication succeeded"
+            );
+            context
+        }
+        Err(error) => {
+            tracing::warn!(
+                method = %parts.method,
+                path = %parts.uri.path(),
+                %error,
+                "invocation.http authentication failed"
+            );
+            return error.into_response();
+        }
     };
     parts.uri = match sanitize_authenticated_gateway_uri(&parts.uri) {
         Ok(uri) => uri,
@@ -74,12 +100,22 @@ where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
     let Some(verifier) = state.internal_gateway_verifier.as_ref() else {
+        tracing::warn!(
+            method = %request.method(),
+            path = %request.uri().path(),
+            "internal gateway authentication is unavailable (verifier not configured)"
+        );
         return response_from_invocation_error(&InvocationError::new(
             InvocationErrorKind::Authentication,
             "internal gateway authentication is unavailable",
         ));
     };
     let (mut parts, body) = request.into_parts();
+    tracing::debug!(
+        method = %parts.method,
+        path = %parts.uri.path(),
+        "invocation.http internal channel entered"
+    );
     if contains_public_api_key_credential(&parts.headers) {
         return response_from_invocation_error(&InvocationError::new(
             InvocationErrorKind::Authentication,
@@ -112,8 +148,26 @@ where
     )
     .await
     {
-        Ok(context) => context,
-        Err(error) => return error.into_response(),
+        Ok(context) => {
+            tracing::debug!(
+                api_key_id = context.api_key_id,
+                tenant_id = context.tenant_id,
+                organization_id = context.organization_id,
+                account_group_id = context.group_id,
+                account_group_code = %context.group_code,
+                "invocation.http internal authentication succeeded"
+            );
+            context
+        }
+        Err(error) => {
+            tracing::warn!(
+                method = %parts.method,
+                path = %parts.uri.path(),
+                %error,
+                "invocation.http internal authentication failed"
+            );
+            return error.into_response();
+        }
     };
     parts.uri = match internal_gateway_target_uri(&parts.uri)
         .and_then(|uri| sanitize_authenticated_gateway_uri(&uri).map_err(|_| ()))
@@ -191,27 +245,191 @@ where
     invocation.routing = routing;
     apply_gateway_dispatch_defaults(&mut invocation, state.catalog.as_ref(), account_group_id);
 
-    match state.pipeline.execute_for_response(invocation).await {
-        Ok(InvocationPipelineExecution::Completed(invocation)) => invocation
-            .telemetry
-            .normalized_response
-            .map(normalized_response_to_http)
-            .unwrap_or_else(empty_response),
+    tracing::debug!(
+        route_key = %invocation.resource.route_key,
+        api_code = %invocation.resource.api_code,
+        requested_model = %invocation.resource.requested_model.as_deref().unwrap_or(""),
+        request_id = %invocation.request.request_id,
+        trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
+        "invocation.pipeline entered"
+    );
+    let started_at = std::time::Instant::now();
+    let response = match state.pipeline.execute_for_response(invocation).await {
+        Ok(InvocationPipelineExecution::Completed(invocation)) => {
+            let status = invocation
+                .telemetry
+                .normalized_response
+                .as_ref()
+                .map(|normalized| normalized.status_code)
+                .unwrap_or(0);
+            tracing::debug!(
+                status,
+                latency_ms = started_at.elapsed().as_millis() as i64,
+                trace_id = %invocation.telemetry.trace_id.as_deref().unwrap_or(""),
+                "invocation.pipeline completed"
+            );
+            let mut response = invocation
+                .telemetry
+                .normalized_response
+                .map(normalized_response_to_http)
+                .unwrap_or_else(empty_response);
+            attach_route_failure_headers(
+                &mut response,
+                status,
+                invocation.telemetry.provider_error_code.as_deref(),
+                invocation.telemetry.error_message_masked.as_deref(),
+            );
+            attach_trace_response_headers(
+                &mut response,
+                &invocation.request.request_id,
+                invocation.telemetry.trace_id.as_deref(),
+            );
+            response
+        }
         Ok(InvocationPipelineExecution::DeferredStream(deferred)) => {
-            deferred_stream_response_to_http(deferred, state.stream_response_timeout)
+            let (deferred_request_id, deferred_trace_id) = deferred.trace_context();
+            let mut response =
+                deferred_stream_response_to_http(deferred, state.stream_response_timeout);
+            attach_trace_response_headers(
+                &mut response,
+                &deferred_request_id,
+                deferred_trace_id.as_deref(),
+            );
+            response
         }
         Err(failure) => {
             if failure.invocation.telemetry.normalized_response.is_none() {
-                return response_from_invocation_error(&failure.error);
+                tracing::debug!(
+                    %failure.error,
+                    request_id = %failure.invocation.request.request_id,
+                    trace_id = %failure
+                        .invocation
+                        .telemetry
+                        .trace_id
+                        .as_deref()
+                        .unwrap_or(""),
+                    "invocation.pipeline failed"
+                );
+                let mut response = response_from_invocation_error(&failure.error);
+                attach_route_failure_headers(
+                    &mut response,
+                    failure
+                        .invocation
+                        .telemetry
+                        .normalized_response
+                        .as_ref()
+                        .map(|normalized| normalized.status_code)
+                        .unwrap_or(0),
+                    failure.invocation.telemetry.provider_error_code.as_deref(),
+                    failure.invocation.telemetry.error_message_masked.as_deref(),
+                );
+                attach_trace_response_headers(
+                    &mut response,
+                    &failure.invocation.request.request_id,
+                    failure.invocation.telemetry.trace_id.as_deref(),
+                );
+                return response;
             }
-            failure
+            let failure_status = failure
+                .invocation
+                .telemetry
+                .normalized_response
+                .as_ref()
+                .map(|normalized| normalized.status_code)
+                .unwrap_or(0);
+            let failure_stage = failure.invocation.telemetry.provider_error_code.clone();
+            let failure_reason = failure.invocation.telemetry.error_message_masked.clone();
+            let mut response = failure
                 .invocation
                 .telemetry
                 .normalized_response
                 .map(normalized_response_to_http)
-                .unwrap_or_else(empty_response)
+                .unwrap_or_else(empty_response);
+            attach_route_failure_headers(
+                &mut response,
+                failure_status,
+                failure_stage.as_deref(),
+                failure_reason.as_deref(),
+            );
+            attach_trace_response_headers(
+                &mut response,
+                &failure.invocation.request.request_id,
+                failure.invocation.telemetry.trace_id.as_deref(),
+            );
+            response
+        }
+    };
+    response
+}
+
+/// Attaches machine-readable failure reason headers on non-success responses
+/// so callers (agents runtime, SDK users) can surface the exact cause instead
+/// of a generic "gateway unavailable" message:
+/// - `x-sdkwork-route-stage`: stable machine code (e.g. `provider_http_401`,
+///   `pricing_failed`, `dispatch_failed`);
+/// - `x-sdkwork-route-reason`: masked human-readable reason (credential
+///   material redacted, length-capped).
+/// The web framework preserves these into the problem `detail`/`failedStage`
+/// when present, so the information survives normalization.
+fn attach_route_failure_headers(
+    response: &mut Response,
+    status_code: u16,
+    provider_error_code: Option<&str>,
+    error_message_masked: Option<&str>,
+) {
+    if (200..300).contains(&status_code) {
+        return;
+    }
+    let stage = provider_error_code
+        .filter(|value| !value.is_empty())
+        .unwrap_or("dispatch_failed");
+    let reason: String = error_message_masked
+        .filter(|value| !value.is_empty())
+        .unwrap_or("upstream invocation failed")
+        .chars()
+        .take(512)
+        .collect();
+    if let Ok(value) = HeaderValue::from_str(stage) {
+        response.headers_mut().insert("x-sdkwork-route-stage", value);
+    }
+    if let Ok(value) = HeaderValue::from_str(&reason) {
+        response.headers_mut().insert("x-sdkwork-route-reason", value);
+    }
+}
+
+/// Attaches `x-sdkwork-trace-id` and a W3C `traceparent` to gateway responses
+/// so callers (including the agents runtime and external SDK users) can
+/// correlate their logs with the gateway's invocation logs on both sides of
+/// the wire. The trace id is taken from the parsed inbound trace context and
+/// falls back to the request id when absent.
+fn attach_trace_response_headers(
+    response: &mut Response,
+    request_id: &str,
+    trace_id: Option<&str>,
+) {
+    let trace_id = trace_id
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or(request_id);
+    let trace_id = trace_id_from_wire_value(trace_id).unwrap_or_else(|| trace_id.to_owned());
+    if !trace_id.is_empty() {
+        if let Ok(value) = HeaderValue::from_str(trace_id.as_str()) {
+            response.headers_mut().insert("x-sdkwork-trace-id", value);
         }
     }
+    if let Ok(value) = HeaderValue::from_str(&format!("00-{trace_id}-0000000000000000-01")) {
+        response
+            .headers_mut()
+            .insert("traceparent", value);
+    }
+}
+
+/// Extracts the 32-hex W3C trace id from a `traceparent` value
+/// (`00-<trace-id>-<span-id>-<flags>`); any other value is returned unchanged.
+fn trace_id_from_wire_value(value: &str) -> Option<String> {
+    let parts = value.split('-').collect::<Vec<_>>();
+    (parts.len() == 4 && parts[0] == "00" && parts[1].len() == 32)
+        .then(|| parts[1].to_owned())
 }
 
 fn contains_public_api_key_credential(headers: &HeaderMap) -> bool {

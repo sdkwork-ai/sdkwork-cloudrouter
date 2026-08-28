@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 mod agents_runtime;
+mod assets_runtime;
 mod commerce_runtime;
 mod community_runtime;
 mod drive_runtime;

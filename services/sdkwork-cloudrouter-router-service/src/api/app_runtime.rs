@@ -622,10 +622,16 @@ async fn get_invocation(
 async fn create_invocation(
     State(state): State<AppRuntimeState>,
     RequiredAppSqlScopedSubject(subject): RequiredAppSqlScopedSubject,
-    _headers: HeaderMap,
-    Json(request): Json<AppRuntimeCreateInvocationRequest>,
+    headers: HeaderMap,
+    Json(mut request): Json<AppRuntimeCreateInvocationRequest>,
 ) -> Response {
     let subject = map_required_app_sql_subject(subject, crate::ports::AppRuntimeSubject::from);
+    // Trace continuity: when the caller did not submit a traceId in the body,
+    // inherit the inbound request's trace context so the whole agents →
+    // gateway invocation chain shares one trace id across logs.
+    if request.trace_id.is_none() {
+        request.trace_id = inbound_trace_id_from_headers(&headers);
+    }
     let command = match build_create_invocation_command(&state, subject, request) {
         Ok(command) => command,
         Err(AppRuntimeBuildError::BadRequest(message)) => return bad_request(message),
@@ -5429,6 +5435,30 @@ fn runtime_invocation_failed_message(item: &AppRuntimeInvocationItem) -> String 
         .filter(|value| !value.is_empty())
         .unwrap_or("runtime invocation failed")
         .to_owned()
+}
+
+/// Resolves the inbound trace id from `x-trace-id` or a W3C `traceparent`
+/// header so app-runtime invocations inherit the caller's trace context when
+/// the body does not carry an explicit `traceId`.
+fn inbound_trace_id_from_headers(headers: &HeaderMap) -> Option<String> {
+    headers
+        .get("x-trace-id")
+        .and_then(|value| value.to_str().ok())
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_owned)
+        .or_else(|| {
+            headers
+                .get("traceparent")
+                .and_then(|value| value.to_str().ok())
+                .and_then(|value| {
+                    value
+                        .split('-')
+                        .nth(1)
+                        .filter(|part| part.len() == 32)
+                        .map(str::to_owned)
+                })
+        })
 }
 
 fn build_create_invocation_command(

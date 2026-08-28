@@ -272,6 +272,10 @@ pub struct AdminUpstreamAccountCredentialItem {
     pub auth_method_code: String,
     pub credential_name: String,
     pub masked_label: Option<String>,
+    /// Plaintext credential secret, decrypted for the authenticated admin
+    /// surface so the account editor can render the full API key. Never
+    /// serialized to open-api or non-admin consumers.
+    pub secret: Option<String>,
     pub credential_version: i64,
     pub priority: i32,
     pub is_active: bool,

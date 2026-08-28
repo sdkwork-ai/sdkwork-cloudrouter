@@ -21,11 +21,58 @@ const GATEWAY_KEY_PREFIXES: [&str; 2] = ["sk-", "sp-"];
 /// with the `[REDACTED]` sentinel so that no raw credential material leaks
 /// through error responses, audit records, or traces.
 pub fn redact_sensitive_tokens(message: &str) -> String {
-    let mut result = message.to_owned();
+    let mut result = redact_labeled_secrets(message);
     for prefix in GATEWAY_KEY_PREFIXES {
         result = redact_prefixed_tokens(&result, prefix);
     }
     redact_bearer_tokens(&result)
+}
+
+/// Replace `api key: <value>` style labeled secrets (also `apikey`,
+/// `api-key`, `key`, `credential`, `secret`) with the `[REDACTED]` sentinel
+/// while keeping the label for readability. Upstream providers commonly echo
+/// the rejected credential in their error message
+/// (`Your api key: <value> is invalid`); without this pass a non-`sk-`
+/// prefixed key (or the plaintext key itself) would reach clients and logs.
+fn redact_labeled_secrets(input: &str) -> String {
+    const LABELS: [&str; 6] = [
+        "api key: ",
+        "apikey: ",
+        "api-key: ",
+        "key: ",
+        "credential: ",
+        "secret: ",
+    ];
+    let lower = input.to_ascii_lowercase();
+    let mut result = String::with_capacity(input.len());
+    let mut last_end = 0;
+    let mut search = 0;
+    loop {
+        let mut matched: Option<(usize, usize)> = None;
+        for label in LABELS {
+            if let Some(pos) = lower[search..].find(label) {
+                let abs = search + pos;
+                if matched.is_none_or(|(current, _)| abs < current) {
+                    matched = Some((abs, label.len()));
+                }
+            }
+        }
+        let Some((label_start, label_len)) = matched else {
+            result.push_str(&input[last_end..]);
+            break;
+        };
+        result.push_str(&input[last_end..label_start]);
+        let value_start = label_start + label_len;
+        let value_end = input[value_start..]
+            .find(|c: char| c.is_whitespace() || c == ',' || c == '.' || c == ';' || c == '"')
+            .map(|rel| value_start + rel)
+            .unwrap_or(input.len());
+        result.push_str(&input[label_start..value_start]);
+        result.push_str(REDACTED);
+        last_end = value_end;
+        search = value_end;
+    }
+    result
 }
 
 /// Replace `<prefix><token>` patterns (case-insensitive, 8+ alphanumeric

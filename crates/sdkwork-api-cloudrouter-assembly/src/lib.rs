@@ -3,6 +3,7 @@
 // SDKWORK-ASSEMBLY-LIB-CUSTOM
 
 mod bootstrap;
+mod feeds_open_runtime;
 mod generated;
 mod generated_open_http_route_manifest;
 

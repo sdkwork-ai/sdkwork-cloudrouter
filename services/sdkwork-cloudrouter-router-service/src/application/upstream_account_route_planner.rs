@@ -327,11 +327,16 @@ fn order_credentials(
     account_group_id: i64,
     routes: &mut [UpstreamAccountRoute],
 ) -> DomainResult<()> {
+    // Newest credential first: snowflake ids increase with creation time, so
+    // `id DESC` prefers the most recently rotated credential (e.g. after an
+    // admin replaces a placeholder key) over older ones at equal priority.
+    // Without this, the default `priority` rotation would pin the oldest
+    // credential forever and upstream 401s would persist after rotation.
     routes.sort_by_key(|route| {
         (
             route.credential_priority,
             Reverse(route.credential_weight),
-            route.credential_id.unwrap_or(i64::MAX),
+            Reverse(route.credential_id.unwrap_or(i64::MIN)),
         )
     });
     if routes.len() <= 1 {

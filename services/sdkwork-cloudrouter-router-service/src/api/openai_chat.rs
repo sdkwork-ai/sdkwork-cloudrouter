@@ -72,7 +72,7 @@ struct OpenAiChatState<C> {
     region_settings_store: Option<Arc<dyn RuntimeRegionSettingsStore + Send + Sync>>,
     /// Resolves non-API-key bearer credentials (auth tokens) into an account
     /// route context; `None` fails closed for the auth-token channel.
-    auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator>>,
+    auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator + Send + Sync>>,
     /// Classifies a single bearer credential into the API key or auth token
     /// channel (default: `sk-`/`sp-` prefixes).
     bearer_classifier: DynOpenApiBearerCredentialClassifier,
@@ -100,7 +100,7 @@ impl<C> Clone for OpenAiChatState<C> {
 impl<C> OpenAiChatState<C> {
     fn with_auth_extensions(
         mut self,
-        auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator>>,
+        auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator + Send + Sync>>,
         bearer_classifier: DynOpenApiBearerCredentialClassifier,
     ) -> Self {
         self.auth_token_authenticator = auth_token_authenticator;
@@ -518,7 +518,7 @@ pub fn openai_chat_completions_router_with_auth_extensions<C>(
     usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
     plugins: Vec<OpenAiInvocationPluginRef>,
     runtime_config: OpenAiRuntimeRouteConfig,
-    auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator>>,
+    auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator + Send + Sync>>,
     bearer_classifier: DynOpenApiBearerCredentialClassifier,
 ) -> Router
 where

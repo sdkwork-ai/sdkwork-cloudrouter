@@ -49,6 +49,27 @@ impl InvocationInterceptor for UsageRecordingInterceptor {
             }
 
             let command_count = invocation.usage.settlement_commands.len();
+            let usage_lines = invocation
+                .usage
+                .lines
+                .iter()
+                .map(|line| {
+                    format!(
+                        "{}={}",
+                        line.meter.code(),
+                        line.quantity.billable_quantity
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join(", ");
+            tracing::debug!(
+                stage = "usage_recording",
+                command_count,
+                usage_lines = %usage_lines,
+                request_id = %invocation.request.request_id,
+                trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
+                "usage recording started"
+            );
             for command_index in 0..command_count {
                 let command = invocation.usage.settlement_commands[command_index].clone();
                 match self.recorder.record_gateway_usage(command).await {

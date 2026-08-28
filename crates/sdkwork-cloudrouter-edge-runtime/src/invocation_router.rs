@@ -28,6 +28,7 @@ use sdkwork_cloudrouter_router_service::ports::{
     ProviderSecretResolver, RoutingDecisionLogRecorder, StickyRouteStore,
     UpstreamAccountRouteCatalog,
 };
+use sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenAuthenticator;
 use sdkwork_cloudrouter_security::{InternalGatewayRequestVerifier, INTERNAL_GATEWAY_ROUTE_PREFIX};
 
 use crate::call_chain::CallChainInterceptor;
@@ -48,6 +49,8 @@ where
     pub(crate) stream_response_timeout: Duration,
     pub(crate) query_string_api_key_policy: QueryStringApiKeyPolicy,
     pub(crate) internal_gateway_verifier: Option<Arc<InternalGatewayRequestVerifier>>,
+    pub(crate) auth_token_authenticator:
+        Option<Arc<dyn OpenAiAuthTokenAuthenticator + Send + Sync>>,
 }
 
 impl<C> Clone for InvocationRouterState<C>
@@ -65,6 +68,7 @@ where
             stream_response_timeout: self.stream_response_timeout,
             query_string_api_key_policy: self.query_string_api_key_policy,
             internal_gateway_verifier: self.internal_gateway_verifier.clone(),
+            auth_token_authenticator: self.auth_token_authenticator.clone(),
         }
     }
 }
@@ -117,6 +121,12 @@ pub struct InvocationRouterOptions<'a> {
     /// tenant in-flight bound. `None` keeps the chain off entirely.
     pub call_chain: Option<CallChainInterceptor>,
     pub billing_store: Option<Arc<dyn GatewayBillingStore + Send + Sync>>,
+    /// Resolves non-API-key bearer credentials (SDKWork login auth tokens)
+    /// into an account route context for chat completions. Mirrors the
+    /// legacy openai router channel so the invocation pipeline accepts the
+    /// agents turn executor's auth-token credential.
+    pub auth_token_authenticator:
+        Option<Arc<dyn OpenAiAuthTokenAuthenticator + Send + Sync>>,
 }
 
 impl Default for InvocationRouterOptions<'_> {
@@ -135,6 +145,7 @@ impl Default for InvocationRouterOptions<'_> {
             stream_response_timeout: DEFAULT_STREAM_TOTAL_TIMEOUT,
             query_string_api_key_policy: QueryStringApiKeyPolicy::default(),
             internal_gateway_verifier: None,
+            auth_token_authenticator: None,
             call_chain: None,
             billing_store: None,
         }
@@ -166,6 +177,7 @@ where
         internal_gateway_verifier,
         call_chain,
         billing_store,
+        auth_token_authenticator,
     } = options;
     let adapter_resolver = provider_adapter_config
         .and_then(InvocationProviderAdapterResolver::from_config)
@@ -194,6 +206,7 @@ where
         stream_response_timeout,
         query_string_api_key_policy,
         internal_gateway_verifier,
+        auth_token_authenticator,
     })
 }
 

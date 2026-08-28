@@ -7,6 +7,7 @@ import type { UserConfig } from "vite";
 
 import portalViteConfig from "./vite.config.ts";
 import {
+  buildCloudrouterMarkdownCjsDefaultExportShimSource,
   buildPortalRuntimeEnvScript,
   findStaticChunkCycle,
   resolvePortalRuntimeEnv,
@@ -879,23 +880,93 @@ test("React Router cookie interop dependencies are served through dependency opt
   }
 });
 
+test("markdown CJS interop shim imports resolved package entry instead of bare specifier", () => {
+  const source = buildCloudrouterMarkdownCjsDefaultExportShimSource("extend", import.meta.dirname);
+
+  assert.doesNotMatch(source, /from "extend";/);
+  assert.match(source, /extend[\\/].*index\.js/);
+});
+
+test("markdown CJS interop shim only redirects packages with a physical shim file", async () => {
+  const config = await resolvePortalViteConfig();
+  const plugin = config.plugins?.find((entry) => hasPluginName(entry, "cloudrouter-markdown-cjs-interop-shim"));
+  assert.ok(plugin, "cloudrouter-markdown-cjs-interop-shim plugin must be registered");
+
+  const resolvedStyleToJs = await callResolveId(
+    plugin.resolveId,
+    "style-to-js",
+    path.join(import.meta.dirname, "packages/sdkwork-cloudrouter-pc-playground/src/pages/Playground.tsx"),
+  );
+  assert.equal(
+    resolvedStyleToJs,
+    path.join(import.meta.dirname, "scripts/shims/style-to-js.ts"),
+  );
+
+  const resolvedExtend = await callResolveId(
+    plugin.resolveId,
+    "extend",
+    path.join(import.meta.dirname, "packages/sdkwork-cloudrouter-pc-playground/src/pages/Playground.tsx"),
+  );
+  assert.equal(resolvedExtend, null);
+
+  const fromShimModule = await callResolveId(
+    plugin.resolveId,
+    "style-to-js",
+    path.join(import.meta.dirname, "scripts/shims/style-to-js.ts"),
+  );
+  assert.equal(fromShimModule, null);
+});
+
 test("playground markdown interop dependencies are served through dependency optimization", async () => {
   const config = await resolvePortalViteConfig();
   const include = config.optimizeDeps?.include ?? [];
   const needsInterop = config.optimizeDeps?.needsInterop ?? [];
+  const plugins: unknown[] = Array.isArray(config.plugins) ? config.plugins.flat() : [];
+  const resolver = plugins.find((plugin) => hasPluginName(plugin, "cloudrouter-portal-workspace-dependency-resolver"));
+  const agentsRoot = resolvePortalWorkspaceDependencyRoot(import.meta.dirname, "sdkwork-agents");
+  const externalWorkspaceImporter = path.resolve(
+    agentsRoot,
+    "apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-commons/src/components/MarkdownRendererImpl.tsx",
+  );
 
+  assert.ok(resolver && typeof resolver === "object");
+  assert.ok("resolveId" in resolver);
   for (const dependency of [
     "hast-util-to-jsx-runtime",
     "hast-util-sanitize",
     "style-to-js",
+    "style-to-object",
+    "react-markdown",
+    "remark-gfm",
+    "rehype-sanitize",
   ]) {
     assert.ok(include.includes(dependency), `${dependency} must be pre-bundled by Vite`);
   }
-  assert.ok(needsInterop.includes("style-to-js"), "style-to-js must use Vite CommonJS default-export interop");
 
   const source = readFileSync(new URL("./vite.config.ts", import.meta.url), "utf8");
   assert.match(source, /resolvePortalMarkdownOptimizeEntries/);
   assert.match(source, /sdkwork-generations-pc-playground\/src\/react\.ts/);
+  assert.match(source, /sdkwork-agents-pc-commons\/src\/components\/MarkdownRendererImpl\.tsx/);
+  assert.match(source, /scripts\/shims\/style-to-js\.ts/);
+  assert.match(source, /cloudrouter-markdown-cjs-interop-shim/);
+  for (const dependency of [
+    "style-to-js",
+    "style-to-object",
+    "debug",
+    "escape-string-regexp",
+    "extend",
+    "lowlight",
+  ]) {
+    assert.ok(
+      needsInterop.includes(dependency),
+      `${dependency} must use Vite CommonJS default-export interop`,
+    );
+    assert.equal(
+      await callResolveId(resolver.resolveId, dependency, externalWorkspaceImporter),
+      null,
+      `${dependency} must remain a bare import so Vite can rewrite it to .vite/deps`,
+    );
+  }
 });
 
 test("production TypeScript transform does not allocate source maps when build sourcemaps are disabled", () => {
@@ -1057,6 +1128,28 @@ test("portal public runtime helper defaults appbase backend to verified same-ori
 
   assert.equal(runtimeEnv.PORTAL_PUBLIC_BACKEND_API_BASE_URL, "/backend/v3/api");
   assert.equal(runtimeEnv.PORTAL_PUBLIC_APPBASE_BACKEND_API_BASE_URL, "/backend/v3/api");
+});
+
+test("portal runtime env passes through agents workbench SDK base URLs", () => {
+  const runtimeEnv = resolvePortalRuntimeEnv({
+    VITE_SDKWORK_ASSETS_APP_API_BASE_URL: "http://127.0.0.1:8095/app/v3/api",
+    VITE_SDKWORK_AGENTS_PC_APP_API_BASE_URL: "http://127.0.0.1:8095/app/v3/api",
+    VITE_SDKWORK_AGENTS_PC_FEEDS_OPEN_API_BASE_URL: "http://127.0.0.1:18095",
+  });
+
+  assert.equal(runtimeEnv.VITE_SDKWORK_ASSETS_APP_API_BASE_URL, "http://127.0.0.1:8095/app/v3/api");
+  assert.equal(runtimeEnv.VITE_SDKWORK_AGENTS_PC_APP_API_BASE_URL, "http://127.0.0.1:8095/app/v3/api");
+  assert.equal(runtimeEnv.VITE_SDKWORK_AGENTS_PC_FEEDS_OPEN_API_BASE_URL, "http://127.0.0.1:18095");
+});
+
+test("playground agents workbench wires assets and feeds SDK providers", () => {
+  const source = readFileSync(
+    new URL("./packages/sdkwork-cloudrouter-pc-playground/src/pages/Playground.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /getAssetsAppSdkClient:\s*getSdkworkAssetsAppSdkClient/);
+  assert.match(source, /configureFeedsOpenSdkClientProvider\(getSdkworkFeedsOpenSdkClient\)/);
 });
 
 test("portal runtime env keeps appbase backend SDK base URL independent from cloud-router backend", () => {

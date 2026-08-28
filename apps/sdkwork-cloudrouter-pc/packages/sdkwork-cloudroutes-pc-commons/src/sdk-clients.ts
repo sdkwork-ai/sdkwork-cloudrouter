@@ -43,6 +43,11 @@ import {
   type SdkworkConfig as SdkworkDriveOpenConfig,
 } from '@sdkwork/drive-sdk';
 import {
+  createClient as createSdkworkFeedsOpenClient,
+  type SdkworkFeedsOpenClient,
+  type SdkworkCustomConfig as SdkworkFeedsOpenConfig,
+} from '@sdkwork/feeds-sdk';
+import {
   SdkworkAppClient as SdkworkGenerationsAppClient,
   type SdkworkAppConfig as SdkworkGenerationsAppConfig,
 } from '@sdkwork/generations-app-sdk';
@@ -64,6 +69,10 @@ import {
   SdkworkAppClient as SdkworkAgentAppClient,
   type SdkworkAppConfig as SdkworkAgentAppConfig,
 } from '@sdkwork/agents-app-sdk';
+import {
+  SdkworkAppClient as SdkworkAssetsAppClient,
+  type SdkworkAppConfig as SdkworkAssetsAppConfig,
+} from '@sdkwork/assets-app-sdk';
 import {
   SdkworkBackendClient as SdkworkAgentBackendClient,
   type SdkworkBackendConfig as SdkworkAgentBackendConfig,
@@ -153,6 +162,7 @@ export const BACKEND_API_PREFIX = '/backend/v3/api';
 export { SDKWORK_ACCESS_TOKEN_ENV_KEY };
 export const OPEN_API_PREFIX = '/v1';
 export const DRIVE_OPEN_API_PREFIX = '/open/v3/api';
+export const FEEDS_OPEN_API_PREFIX = '/feeds/v3/api';
 export const MEMORY_OPEN_API_PREFIX = '/mem/v3/api';
 export const AGENT_OPEN_API_PREFIX = '/agent/v3/api';
 export const CLOUD_API_PREFIX = '/cloud/v3';
@@ -484,6 +494,13 @@ export interface SdkworkAgentAppSdkClientOptions {
   timeout?: number;
 }
 
+export interface SdkworkAssetsAppSdkClientOptions {
+  appBaseUrl?: string;
+  platform?: string;
+  tokenManager?: AuthTokenManager;
+  timeout?: number;
+}
+
 export interface SdkworkAgentBackendSdkClientOptions {
   backendBaseUrl?: string;
   platform?: string;
@@ -534,6 +551,7 @@ export type SdkworkMemoryAppSdkClient = SdkworkMemoryAppClient;
 export type SdkworkCommunityAppSdkClient = SdkworkCommunityAppClient;
 export type SdkworkPromptsAppSdkClient = PromptsAppClient;
 export type SdkworkAgentAppSdkClient = SdkworkAgentAppClient;
+export type SdkworkAssetsAppSdkClient = SdkworkAssetsAppClient;
 export type SdkworkAgentBackendSdkClient = SdkworkAgentBackendClient;
 export type SdkworkPromptsBackendSdkClient = SdkworkPromptsBackendClient;
 export type SdkworkDriveAppSdkClient = SdkworkDriveAppClient;
@@ -575,6 +593,12 @@ export type SdkworkPartnerBackendSdkClientOptions = CloudRouterBackendSdkClientO
 export type SdkworkPartnerAppSdkClientOptions = CloudRouterAppSdkClientOptions;
 export type CloudRouterAiSdkClient = SdkworkAiClient;
 export type CloudRouterDriveOpenSdkClient = SdkworkDriveOpenClient;
+export type CloudRouterFeedsOpenSdkClient = SdkworkFeedsOpenClient;
+export type CloudRouterFeedsOpenSdkClientOptions = {
+  baseUrl?: string;
+  platform?: string;
+  timeout?: number;
+};
 
 type CloudRouterSdkRuntimeHost = typeof globalThis & {
   __SDKWORK_CLOUDROUTER_ROUTER_APP_SDK_CLIENT__?: CloudRouterAppSdkClient | null;
@@ -586,6 +610,7 @@ type CloudRouterSdkRuntimeHost = typeof globalThis & {
   __SDKWORK_MEMORY_APP_SDK_CLIENT__?: SdkworkMemoryAppSdkClient | null;
   __SDKWORK_COMMUNITY_APP_SDK_CLIENT__?: SdkworkCommunityAppSdkClient | null;
   __SDKWORK_AGENT_APP_SDK_CLIENT__?: SdkworkAgentAppSdkClient | null;
+  __SDKWORK_ASSETS_APP_SDK_CLIENT__?: SdkworkAssetsAppSdkClient | null;
   __SDKWORK_AGENT_BACKEND_SDK_CLIENT__?: SdkworkAgentBackendSdkClient | null;
   __SDKWORK_DRIVE_APP_SDK_CLIENT__?: SdkworkDriveAppSdkClient | null;
   __SDKWORK_ACCOUNT_APP_SDK_CLIENT__?: SdkworkAccountAppSdkClient | null;
@@ -626,6 +651,7 @@ let memoryAppClient: SdkworkMemoryAppClient | null = null;
 let communityAppClient: SdkworkCommunityAppClient | null = null;
 let promptsAppClient: PromptsAppClient | null = null;
 let agentAppClient: SdkworkAgentAppClient | null = null;
+let assetsAppClient: SdkworkAssetsAppClient | null = null;
 let agentBackendClient: SdkworkAgentBackendClient | null = null;
 let promptsBackendClient: SdkworkPromptsBackendClient | null = null;
 let driveAppClient: SdkworkDriveAppClient | null = null;
@@ -646,6 +672,7 @@ let promotionAppClient: PromotionAppClient | null = null;
 let aiClient: SdkworkAiClient | null = null;
 let aiClientSessionKey: string | undefined;
 let driveOpenClient: SdkworkDriveOpenClient | null = null;
+let feedsOpenClient: SdkworkFeedsOpenClient | null = null;
 let cloudRouterGlobalTokenManager: AuthTokenManager | null = null;
 let cloudRouterSessionAuthRedirectTarget: string | null = null;
 
@@ -704,6 +731,12 @@ export function createSdkworkAgentAppSdkClient(
   options: SdkworkAgentAppSdkClientOptions = {},
 ): SdkworkAgentAppClient {
   return attachCloudRouterSdkSessionAuthBoundary(new SdkworkAgentAppClient(buildAgentAppConfig(options)));
+}
+
+export function createSdkworkAssetsAppSdkClient(
+  options: SdkworkAssetsAppSdkClientOptions = {},
+): SdkworkAssetsAppClient {
+  return attachCloudRouterSdkSessionAuthBoundary(new SdkworkAssetsAppClient(buildAssetsAppConfig(options)));
 }
 
 export function createSdkworkAgentBackendSdkClient(
@@ -828,6 +861,24 @@ export function createSdkworkDriveOpenSdkClient(
   options: CloudRouterDriveOpenSdkClientOptions = {},
 ): SdkworkDriveOpenClient {
   return createSdkworkDriveOpenClient(buildDriveOpenConfig(options));
+}
+
+export function createSdkworkFeedsOpenSdkClient(
+  options: CloudRouterFeedsOpenSdkClientOptions = {},
+): SdkworkFeedsOpenClient {
+  return createSdkworkFeedsOpenClient(buildFeedsOpenConfig(options));
+}
+
+export function getSdkworkFeedsOpenSdkClient(
+  options: CloudRouterFeedsOpenSdkClientOptions = {},
+): SdkworkFeedsOpenClient {
+  if (options.baseUrl || options.platform || options.timeout !== undefined) {
+    return createSdkworkFeedsOpenSdkClient(options);
+  }
+  if (!feedsOpenClient) {
+    feedsOpenClient = createSdkworkFeedsOpenSdkClient();
+  }
+  return feedsOpenClient;
 }
 
 
@@ -1027,6 +1078,22 @@ export function getSdkworkAgentAppSdkClient(
     agentAppClient = createSdkworkAgentAppSdkClient();
   }
   return agentAppClient;
+}
+
+export function getSdkworkAssetsAppSdkClient(
+  options: SdkworkAssetsAppSdkClientOptions = {},
+): SdkworkAssetsAppSdkClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkAssetsAppSdkClient(options);
+  }
+  const injected = readInjectedAssetsAppSdkClient();
+  if (injected) {
+    return attachCloudRouterSdkSessionAuthBoundary(injected);
+  }
+  if (!assetsAppClient) {
+    assetsAppClient = createSdkworkAssetsAppSdkClient();
+  }
+  return assetsAppClient;
 }
 
 export function getSdkworkAgentBackendSdkClient(
@@ -1402,6 +1469,7 @@ function resetCloudRouterSdkClientCaches(): void {
   memoryAppClient = null;
   communityAppClient = null;
   agentAppClient = null;
+  assetsAppClient = null;
   agentBackendClient = null;
   promptsBackendClient = null;
   driveAppClient = null;
@@ -1420,6 +1488,7 @@ function resetCloudRouterSdkClientCaches(): void {
   aiClient = null;
   aiClientSessionKey = undefined;
   driveOpenClient = null;
+  feedsOpenClient = null;
 }
 
 export function getCloudRouterGlobalTokenManager(): AuthTokenManager {
@@ -1776,6 +1845,22 @@ function buildAgentAppConfig(options: SdkworkAgentAppSdkClientOptions): SdkworkA
   };
 }
 
+function buildAssetsAppConfig(options: SdkworkAssetsAppSdkClientOptions): SdkworkAssetsAppConfig {
+  return {
+    baseUrl: normalizeGeneratedSdkBaseUrl(
+      options.appBaseUrl
+        ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_ASSETS_APP_API_BASE_URL')
+        ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_AGENTS_PC_APP_API_BASE_URL')
+        ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_APP_API_BASE_URL')
+        ?? APP_API_PREFIX,
+      APP_API_PREFIX,
+    ),
+    platform: options.platform ?? 'web',
+    tokenManager: resolveCloudRouterSdkTokenManager(options.tokenManager),
+    timeout: options.timeout,
+  };
+}
+
 function buildAgentBackendConfig(options: SdkworkAgentBackendSdkClientOptions): SdkworkAgentBackendConfig {
   return {
     baseUrl: normalizeGeneratedSdkBaseUrl(
@@ -1933,6 +2018,21 @@ function buildDriveOpenConfig(options: CloudRouterDriveOpenSdkClientOptions): Sd
   };
 }
 
+function buildFeedsOpenConfig(options: CloudRouterFeedsOpenSdkClientOptions): SdkworkFeedsOpenConfig {
+  const configuredBaseUrl =
+    options.baseUrl
+    ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_AGENTS_PC_FEEDS_OPEN_API_BASE_URL')
+    ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_FEEDS_OPEN_API_BASE_URL');
+  if (!configuredBaseUrl) {
+    throw new Error('feeds open SDK base URL is not configured');
+  }
+  return {
+    baseUrl: normalizeGeneratedSdkBaseUrl(configuredBaseUrl, FEEDS_OPEN_API_PREFIX),
+    platform: options.platform ?? 'pc',
+    timeout: options.timeout,
+  };
+}
+
 function hasRuntimeOverrides(
   options:
     | CloudRouterAppSdkClientOptions
@@ -1944,6 +2044,7 @@ function hasRuntimeOverrides(
     | SdkworkCommunityAppSdkClientOptions
     | SdkworkPromptsAppSdkClientOptions
     | SdkworkAgentAppSdkClientOptions
+    | SdkworkAssetsAppSdkClientOptions
     | SdkworkAgentBackendSdkClientOptions
     | SdkworkMembershipBackendSdkClientOptions
     | SdkworkPaymentBackendSdkClientOptions
@@ -2050,6 +2151,10 @@ function readInjectedCommunityAppSdkClient(): SdkworkCommunityAppSdkClient | und
 
 function readInjectedAgentAppSdkClient(): SdkworkAgentAppSdkClient | undefined {
   return (globalThis as CloudRouterSdkRuntimeHost).__SDKWORK_AGENT_APP_SDK_CLIENT__ ?? undefined;
+}
+
+function readInjectedAssetsAppSdkClient(): SdkworkAssetsAppSdkClient | undefined {
+  return (globalThis as CloudRouterSdkRuntimeHost).__SDKWORK_ASSETS_APP_SDK_CLIENT__ ?? undefined;
 }
 
 function readInjectedAgentBackendSdkClient(): SdkworkAgentBackendSdkClient | undefined {

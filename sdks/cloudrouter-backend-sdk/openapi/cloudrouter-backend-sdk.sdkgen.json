@@ -11732,6 +11732,17 @@
             "nullable": true,
             "type": "string"
           },
+          "policyId": {
+            "description": "Policy id field on upstream account group route explanation.",
+            "maxLength": 32,
+            "nullable": true,
+            "type": "string"
+          },
+          "policySnapshotVersion": {
+            "description": "Policy snapshot version field on upstream account group route explanation.",
+            "maxLength": 128,
+            "type": "string"
+          },
           "pricingPlanCode": {
             "description": "Pricing plan code field on upstream account group route explanation.",
             "maxLength": 128,
@@ -11746,7 +11757,13 @@
             "maxLength": 128,
             "type": "string"
           },
-                    "selectedCandidates": {
+          "ruleId": {
+            "description": "Rule id field on upstream account group route explanation.",
+            "maxLength": 32,
+            "nullable": true,
+            "type": "string"
+          },
+          "selectedCandidates": {
             "description": "Selected candidates field on upstream account group route explanation.",
             "items": {
               "$ref": "#/components/schemas/UpstreamRouteExplainCandidate"
@@ -11783,7 +11800,10 @@
           "candidateCount",
           "selectedCandidates",
           "blockedReasons",
-          "warnings"
+          "warnings",
+          "policyId",
+          "ruleId",
+          "policySnapshotVersion"
         ],
         "type": "object"
       },
@@ -12824,7 +12844,13 @@
             "maxLength": 32,
             "type": "string"
           },
-                    "pricingPlanCode": {
+          "policyId": {
+            "description": "Policy id field on upstream route explain candidate.",
+            "maxLength": 32,
+            "nullable": true,
+            "type": "string"
+          },
+          "pricingPlanCode": {
             "description": "Pricing plan code field on upstream route explain candidate.",
             "maxLength": 128,
             "type": "string"
@@ -12846,7 +12872,13 @@
             "nullable": true,
             "type": "string"
           },
-                    "supplierCode": {
+          "ruleId": {
+            "description": "Rule id field on upstream route explain candidate.",
+            "maxLength": 32,
+            "nullable": true,
+            "type": "string"
+          },
+          "supplierCode": {
             "description": "Supplier code field on upstream route explain candidate.",
             "maxLength": 128,
             "type": "string"
@@ -12865,6 +12897,8 @@
           "accountGroupId",
           "accountGroupCode",
           "pricingPlanCode",
+          "policyId",
+          "ruleId",
           "apiCode",
           "catalogKey",
           "requestedModel",
@@ -15027,7 +15061,7 @@
     },
     "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/route_explain": {
       "post": {
-        "description": "Explain upstream account group route. Reads ai_upstream_account_group, ai_upstream_account_group_member, ai_upstream_account, ai_resource_binding, ai_resource, ai_resource_group, iam_gateway_api_key, ai_upstream_object_route. Writes none. File targets none.",
+        "description": "Explain upstream account group route. Reads ai_upstream_account_group, ai_upstream_account_group_member, ai_upstream_account, ai_resource_binding, ai_resource, ai_resource_group, iam_gateway_api_key, ai_upstream_object_route, ai_routing_policy, ai_routing_rule. Writes none. File targets none.",
         "operationId": "upstreamAccountGroups.explain",
         "parameters": [
           {
@@ -15123,7 +15157,9 @@
           "ai_resource",
           "ai_resource_group",
           "iam_gateway_api_key",
-          "ai_upstream_object_route"
+          "ai_upstream_object_route",
+          "ai_routing_policy",
+          "ai_routing_rule"
         ],
         "x-route-scope": "admin",
         "x-sdk-domain": "intelligence",

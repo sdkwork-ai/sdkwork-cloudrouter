@@ -240,6 +240,14 @@ export function createCloudRouterProductLaunchPlan({
   const baseLaunchEnv = mode === 'client' || mode === 'desktop'
     ? { ...env }
     : resolveLaunchEnv({ env, workspaceRoot, devEnvFile, extraArgs });
+  // Development workspaces default to full debug logging so the complete
+  // invocation call chain (auth -> route -> pricing -> billing -> dispatch ->
+  // usage -> settlement) is visible without extra configuration. Production
+  // packaging controls the filter via the generated runtime TOML
+  // ([observability] log_filter=info), which is intentionally left untouched.
+  if (!env.RUST_LOG && !env.OBSERVABILITY_LOG_FILTER) {
+    baseLaunchEnv.RUST_LOG = 'debug';
+  }
   const launchEnv = resolveProductLaunchEnv({
     mode,
     workspaceRoot,

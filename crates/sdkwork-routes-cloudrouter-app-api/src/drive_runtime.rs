@@ -1,13 +1,10 @@
 //! Federated Drive app-api route wiring for Cloud Router database-backed runtime.
 //!
-//! The unified runtime composes the Drive global-assets surface
-//! (`/app/v3/api/assets*`, collections, archive/restore, relations) through the
-//! dependency-owned `sdkwork-api-drive-assembly` contribution so that the
-//! Cloud Router gateway serves the same Drive App API as the Drive standalone
-//! gateway. Dependency assembly composition keeps route, manifest, permission,
-//! and readiness ownership inside sdkwork-drive; the gateway only merges the
-//! executable contribution through the dependency's public assembly entrypoint
-//! (API_ASSEMBLY_SPEC §3).
+//! The unified runtime composes the Drive workspace surface (`/app/v3/api/drive*`)
+//! through the dependency-owned `sdkwork-api-drive-assembly` contribution so that
+//! the Cloud Router gateway serves the same Drive App API as the Drive standalone
+//! gateway. The global assets catalog (`/app/v3/api/assets*`) is federated through
+//! `assets_runtime.rs` and `sdkwork-api-assets-assembly`.
 
 use std::sync::Arc;
 

@@ -70,13 +70,15 @@ async fn login_then_auth_token_chat_completion_against_real_postgres() {
         return;
     }
 
-    // Documented root-cause: when the dev DB lacks model-route/account wiring for
-    // the requested model bound to the default-group, the gateway returns the 503
-    // `upstream_route_snapshot_empty` below. A passing harness must at least prove
-    // login + auth + route mounting; the residual 503 pinpoints the catalog gap.
-    assert_eq!(
-        StatusCode::SERVICE_UNAVAILABLE,
-        status,
+    // The auth-token chain is proven when the request passes login + framework
+    // auth + invocation auth-token channel + policy + pricing + balance and
+    // reaches the provider. With the dev catalog wired (account/credential/
+    // pricing), the remaining 502 is the upstream rejecting the placeholder
+    // credential (`api key: aaa is invalid`) — exactly the expected residual
+    // when the admin has not yet replaced the dev upstream API key. A 503
+    // would indicate a catalog wiring gap instead.
+    assert!(
+        status == StatusCode::BAD_GATEWAY || status == StatusCode::OK,
         "unexpected auth-token chat outcome on real DB: {status}: {text}"
     );
     let seq = text
@@ -87,7 +89,7 @@ async fn login_then_auth_token_chat_completion_against_real_postgres() {
         .collect::<Vec<_>>()
         .join("; ");
     eprintln!(
-        "RESULT auth-token chat OK via harness; 503 indicates catalog wiring gap. Trace: {seq}"
+        "RESULT auth-token chat OK via harness (502 = upstream placeholder credential;          replace the dev upstream API key for a 200). Trace: {seq}"
     );
 }
 

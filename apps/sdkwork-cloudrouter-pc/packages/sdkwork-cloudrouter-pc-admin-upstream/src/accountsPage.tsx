@@ -676,8 +676,10 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
         if (account) {
           setSelection(toSelection(items.map(({ resourceCode, resourceGroupCode, grantType, priority, status }) => ({ resourceCode, resourceGroupCode, grantType, priority, status }))));
           const activeCredential = credentials.find((credential) => credential.isActive) ?? credentials[0] ?? null;
+          // 编辑模式回填完整明文 API Key（管理面解密返回），便于确认/修改；
+          // 无明文（旧版本/解密失败）时退回掩码。
           setApiKeyMasked(activeCredential?.maskedLabel ?? '');
-          setApiKeyInput(activeCredential?.maskedLabel ?? '');
+          setApiKeyInput(activeCredential?.secret ?? activeCredential?.maskedLabel ?? '');
         }
       })
       .catch((cause) => {
@@ -690,8 +692,8 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
   }, [account]);
 
   const selectedAuthMethod = authMethods.find((method) => method.authMethodCode === authMethodCode) ?? null;
-  // 认证方式为 APIKEY 时显示 API Key 输入：创建模式必填，编辑模式仅展示掩码提示，
-  // 输入新值表示轮换密钥，留空表示保持当前密钥（写后只读，无法查看明文）。
+  // 认证方式为 APIKEY 时显示 API Key 输入：创建模式必填，编辑模式回填当前
+  // 明文密钥（管理面解密），可直接查看与修改；留空表示保持当前密钥。
   const showApiKeyInput = selectedAuthMethod?.authType === 'api_key';
   const selectedSupplier = suppliers.find((item) => item.id === supplierId) ?? null;
   const protocolRows = (selectedSupplier?.protocols ?? []).map((protocol) => ({

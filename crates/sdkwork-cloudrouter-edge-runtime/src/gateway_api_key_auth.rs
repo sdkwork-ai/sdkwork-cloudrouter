@@ -4,9 +4,11 @@ use axum::Json;
 use sdkwork_cloudrouter_http::{
     sanitize_sensitive_query_in_uri, ApiKeyIdentity, QueryStringApiKeyPolicy,
 };
+use sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenAuthenticator;
 use sdkwork_cloudrouter_router_service::application::{
     ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
 };
+use sdkwork_web_core::default_open_api_bearer_classifier;
 use sdkwork_cloudrouter_router_service::ports::PricingCatalog;
 use sdkwork_cloudrouter_security::{
     InternalGatewayPrincipal, InternalGatewayRequestVerifier, SignedInternalGatewayRequest,
@@ -23,6 +25,16 @@ pub(crate) struct GatewayAuthError {
     code: &'static str,
     error_type: &'static str,
     message: String,
+}
+
+impl std::fmt::Display for GatewayAuthError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            formatter,
+            "{} (code={}, type={})",
+            self.message, self.code, self.error_type
+        )
+    }
 }
 
 impl IntoResponse for GatewayAuthError {
@@ -84,6 +96,85 @@ where
                 "api key credential is invalid",
             )
         })
+}
+
+/// Authenticates a public invocation request through the flexible bearer
+/// channel, mirroring the legacy openai chat router:
+/// `sk-`/`sp-` prefixed credentials authenticate as gateway API keys; any
+/// other bearer value is resolved as an SDKWork login auth token (the agents
+/// turn executor's credential). Falls back to `GatewayAuthError` so the
+/// response stays consistent with the rest of the invocation surface.
+pub(crate) async fn authenticate_gateway_request_or_auth_token<C>(
+    catalog: &C,
+    api_key_hasher: &(dyn ApiKeySecretHasher + Send + Sync),
+    auth_token_authenticator: Option<&(dyn OpenAiAuthTokenAuthenticator + Send + Sync)>,
+    headers: &HeaderMap,
+    uri: &Uri,
+    query_string_api_key_policy: QueryStringApiKeyPolicy,
+) -> Result<AuthenticatedApiKeyContext, GatewayAuthError>
+where
+    C: PricingCatalog,
+{
+    let identity = ApiKeyIdentity::from_headers_and_uri_with_query_key_policy(
+        headers,
+        uri,
+        query_string_api_key_policy,
+    )
+    .map_err(|error| {
+        gateway_auth_error(
+            StatusCode::BAD_REQUEST,
+            "invalid_request",
+            "invalid_request_error",
+            error.to_string(),
+        )
+    })?;
+    let Some(credential_secret) = identity.credential_secret() else {
+        return Err(gateway_auth_error(
+            StatusCode::UNAUTHORIZED,
+            "invalid_api_key",
+            "invalid_request_error",
+            "missing api key credential",
+        ));
+    };
+    match default_open_api_bearer_classifier().classify(credential_secret) {
+        sdkwork_web_core::OpenApiCredentialKind::ApiKey => {
+            let authenticator = ApiKeyAuthenticator::new(catalog, api_key_hasher);
+            authenticator
+                .authenticate(AuthenticateApiKeyQuery { credential_secret })
+                .map_err(|_| {
+                    gateway_auth_error(
+                        StatusCode::UNAUTHORIZED,
+                        "invalid_api_key",
+                        "invalid_request_error",
+                        "api key credential is invalid",
+                    )
+                })
+        }
+        sdkwork_web_core::OpenApiCredentialKind::AuthToken => {
+            let Some(authenticator) = auth_token_authenticator else {
+                return Err(gateway_auth_error(
+                    StatusCode::UNAUTHORIZED,
+                    "invalid_auth_token",
+                    "invalid_request_error",
+                    "auth token authentication is not configured",
+                ));
+            };
+            let access_token = headers
+                .get("Access-Token")
+                .and_then(|value| value.to_str().ok())
+                .map(str::trim)
+                .filter(|value| !value.is_empty());
+            authenticator
+                .authenticate(credential_secret, access_token)
+                .await
+                .map_err(|_response| gateway_auth_error(
+                    StatusCode::UNAUTHORIZED,
+                    "invalid_auth_token",
+                    "invalid_request_error",
+                    "auth token authentication failed",
+                ))
+        }
+    }
 }
 
 pub(crate) async fn authenticate_internal_gateway_request<C>(

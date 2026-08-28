@@ -4501,6 +4501,7 @@ name = "sdkwork-agents-tool-cloudrouter"
 version = "0.1.0"
 dependencies = [
  "cloudrouter-open-sdk",
+ "reqwest 0.12.28",
  "sdkwork-agent-kernel",
  "sdkwork-agent-provider-rig",
  "sdkwork-agents-tool-contract",
@@ -7020,6 +7021,7 @@ dependencies = [
  "sdkwork-agents-database-host",
  "sdkwork-api-account-assembly",
  "sdkwork-api-agents-assembly",
+ "sdkwork-api-assets-assembly",
  "sdkwork-api-community-assembly",
  "sdkwork-api-drive-assembly",
  "sdkwork-api-iam-assembly",

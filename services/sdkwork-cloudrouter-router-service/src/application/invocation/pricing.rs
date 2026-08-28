@@ -77,6 +77,33 @@ where
                     None,
                     None,
                 )?;
+                tracing::debug!(
+                    stage = "pricing_preflight",
+                    meter = %meter.code(),
+                    status = ?resolution.status,
+                    billability = ?resolution.billability,
+                    customer_charge_amount = %resolution
+                        .resolved_price
+                        .as_ref()
+                        .map(|price| {
+                            format!(
+                                "{} {:?}",
+                                price.customer_charge_before_sale_multiplier.currency,
+                                price.customer_charge_before_sale_multiplier.unit_price
+                            )
+                        })
+                        .unwrap_or_default(),
+                    upstream_cost_amount = %resolution
+                        .resolved_price
+                        .as_ref()
+                        .and_then(|price| price.procurement_cost.as_ref())
+                        .map(|money| format!("{} {:?}", money.currency, money.unit_price))
+                        .unwrap_or_default(),
+                    failure = ?resolution.failure.as_ref().map(|failure| failure.code),
+                    request_id = %invocation.request.request_id,
+                    trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
+                    "pricing preflight resolution"
+                );
                 if matches!(
                     resolution.status,
                     PriceResolutionStatus::Quoted | PriceResolutionStatus::Rated

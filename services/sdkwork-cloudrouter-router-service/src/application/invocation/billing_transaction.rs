@@ -66,6 +66,14 @@ impl InvocationInterceptor for BillingTransactionInterceptor {
                 };
             }
             if invocation.charging.charge_mode != CustomerChargeMode::PrepaidAdjustment {
+                tracing::debug!(
+                    stage = "billing_precharge",
+                    charge_mode = ?invocation.charging.charge_mode,
+                    settlement_mode = ?invocation.charging.settlement_mode,
+                    request_id = %invocation.request.request_id,
+                    trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
+                    "billing precharge skipped (postpaid or free)"
+                );
                 return Ok(());
             }
             let Some(amount) = estimated_amount(invocation) else {
@@ -76,11 +84,45 @@ impl InvocationInterceptor for BillingTransactionInterceptor {
             if amount.amount == "0" {
                 return Ok(());
             }
-            self.store
-                .precharge(context, amount.clone())
-                .await
-                .map_err(billing_error)?;
+            tracing::debug!(
+                stage = "billing_precharge",
+                charge_mode = ?invocation.charging.charge_mode,
+                amount = %amount.amount,
+                currency = %amount.currency,
+                request_id = %invocation.request.request_id,
+                trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
+                "billing precharge reserving"
+            );
+            // Concurrent invocations on the same wallet race the optimistic
+            // version check; the precharge is idempotent (request-scoped
+            // transaction id), so a bounded retry re-reads the fresh balance
+            // and applies cleanly instead of failing the whole invocation.
+            let mut precharge_attempt = 0_u32;
+            loop {
+                match self.store.precharge(context.clone(), amount.clone()).await {
+                    Ok(()) => break,
+                    Err(error) if precharge_attempt < 2 => {
+                        precharge_attempt += 1;
+                        tracing::debug!(
+                            stage = "billing_precharge",
+                            attempt = precharge_attempt,
+                            %error,
+                            request_id = %invocation.request.request_id,
+                            trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
+                            "billing precharge conflict; retrying"
+                        );
+                        continue;
+                    }
+                    Err(error) => return Err(billing_error(error)),
+                }
+            }
             invocation.charging.reserved_amount = Some(amount);
+            tracing::debug!(
+                stage = "billing_precharge",
+                request_id = %invocation.request.request_id,
+                trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
+                "billing precharge reserved"
+            );
             Ok(())
         })
     }
@@ -159,6 +201,12 @@ impl InvocationInterceptor for BillingSettlementInterceptor {
                 return Ok(());
             }
             let Some(actual) = actual_amount(invocation) else {
+                tracing::warn!(
+                    stage = "billing_settlement",
+                    request_id = %invocation.request.request_id,
+                    trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
+                    "settlement did not produce a billable amount"
+                );
                 return Err(billing_error(
                     "settlement did not produce a billable amount",
                 ));
@@ -180,6 +228,21 @@ impl InvocationInterceptor for BillingSettlementInterceptor {
             }
             invocation.charging.provider_completed = true;
             let context = billing_context(invocation);
+            tracing::debug!(
+                stage = "billing_settlement",
+                charge_mode = ?invocation.charging.charge_mode,
+                reserved = %invocation
+                    .charging
+                    .reserved_amount
+                    .as_ref()
+                    .map(|amount| amount.amount.as_str())
+                    .unwrap_or("0"),
+                actual = %actual.amount,
+                currency = %actual.currency,
+                request_id = %invocation.request.request_id,
+                trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
+                "billing settlement reconciling"
+            );
             match invocation.charging.charge_mode {
                 CustomerChargeMode::Postpaid => {
                     if invocation.charging.settlement_mode

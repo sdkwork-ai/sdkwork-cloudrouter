@@ -45,11 +45,22 @@ impl GatewayInvocationPolicyGuard {
         auth: &AuthenticatedApiKeyContext,
         client_ip: Option<&str>,
     ) -> Result<(), GatewayInvocationPolicyViolation> {
-        let api_key = catalog.find_api_key(auth.api_key_id).ok_or_else(|| {
-            GatewayInvocationPolicyViolation::Forbidden("api key is not available".to_owned())
-        })?;
+        // The auth-token channel (agents turn executor) carries
+        // `api_key_id == 0` by design: identity and authorization were already
+        // established by the IAM session, so no gateway API key exists to
+        // fetch. Key-scoped policies (access/quota/risk) only apply to
+        // requests that actually presented a gateway API key; a positive
+        // `api_key_id` that is missing from the catalog is still rejected
+        // (the key was deleted or disabled after authentication).
+        let api_key = if auth.api_key_id > 0 {
+            Some(catalog.find_api_key(auth.api_key_id).ok_or_else(|| {
+                GatewayInvocationPolicyViolation::Forbidden("api key is not available".to_owned())
+            })?)
+        } else {
+            None
+        };
 
-        if let Some(policy_id) = api_key.policy_id {
+        if let Some(policy_id) = api_key.as_ref().and_then(|key| key.policy_id) {
             if let Some(policy) = catalog.find_access_policy(policy_id) {
                 if !policy.ip_allowlist.is_empty()
                     && !client_ip_allowed_by_allowlist(client_ip, &policy.ip_allowlist)
@@ -66,7 +77,7 @@ impl GatewayInvocationPolicyGuard {
             requests_per_day: None,
             burst_limit: None,
         };
-        if let Some(policy_id) = api_key.quota_policy_id {
+        if let Some(policy_id) = api_key.as_ref().and_then(|key| key.quota_policy_id) {
             if let Some(policy) = catalog.find_quota_policy(policy_id) {
                 merge_rate_limit_spec(&mut rate_spec, &policy);
             }

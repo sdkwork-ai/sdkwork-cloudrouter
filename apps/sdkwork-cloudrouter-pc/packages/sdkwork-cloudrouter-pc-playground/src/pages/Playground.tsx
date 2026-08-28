@@ -2,10 +2,13 @@ import {
   AgentsWorkbench,
   configureAgentsWorkbenchRuntime,
 } from '@sdkwork/agents-pc/workbench';
+import { configureFeedsOpenSdkClientProvider } from '@sdkwork/agents-pc-core/sdk/feedsOpenSdkClient';
 import {
   getSdkworkAgentAppSdkClient,
+  getSdkworkAssetsAppSdkClient,
   getSdkworkCommunityAppSdkClient,
   getSdkworkDriveAppSdkClient,
+  getSdkworkFeedsOpenSdkClient,
   getSdkworkGenerationsAppSdkClient,
   getSdkworkMemoryAppSdkClient,
   getSdkworkPromptsAppSdkClient,
@@ -19,6 +22,7 @@ import {
 
 configureAgentsWorkbenchRuntime({
   getAgentsAppSdkClient: getSdkworkAgentAppSdkClient,
+  getAssetsAppSdkClient: getSdkworkAssetsAppSdkClient,
   getCommunityAppSdkClient: getSdkworkCommunityAppSdkClient,
   getDriveAppSdkClient: getSdkworkDriveAppSdkClient,
   getGenerationsAppSdkClient: getSdkworkGenerationsAppSdkClient,
@@ -31,6 +35,7 @@ configureAgentsWorkbenchRuntime({
     pointsRechargeService: getCloudRouterPointsRechargeService(),
   },
 });
+configureFeedsOpenSdkClientProvider(getSdkworkFeedsOpenSdkClient);
 
 export interface PlaygroundProps {
   overlayTopInset?: string;

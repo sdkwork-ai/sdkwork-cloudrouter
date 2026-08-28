@@ -4,6 +4,8 @@ use std::time::Duration;
 use axum::body::Body;
 use serde_json::Value;
 
+use tracing::Instrument;
+
 use super::{
     record_streaming_usage_body, BillingMode, BillingQuantitySource, Invocation,
     InvocationCancellationSignal, InvocationError, InvocationErrorKind, InvocationInterceptor,
@@ -73,6 +75,36 @@ pub struct InvocationPipelineFailure {
     pub error: InvocationError,
 }
 
+/// Builds the request-scoped tracing span that carries correlation fields
+/// through the whole invocation pipeline. Debug level keeps the span (and its
+/// inherited fields) invisible under the default release `info` filter while
+/// making dev-mode (`RUST_LOG=debug`) runs fully traceable per request.
+fn invocation_pipeline_span(invocation: &Invocation) -> tracing::span::Span {
+    tracing::debug_span!(
+        "invocation.pipeline",
+        request_id = %invocation.request.request_id,
+        trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
+        method = %invocation.request.method,
+        path = %invocation.request.path,
+        api_code = %invocation.resource.api_code,
+        catalog_key = %invocation
+            .resource
+            .requested_model_catalog_key
+            .as_deref()
+            .unwrap_or(""),
+        requested_model = %invocation
+            .resource
+            .requested_model
+            .as_deref()
+            .unwrap_or(""),
+        api_key_id = invocation.subject.api_key_id.unwrap_or(0),
+        tenant_id = invocation.subject.tenant_id,
+        organization_id = invocation.subject.organization_id,
+        account_group_id = invocation.subject.account_group_id.unwrap_or(0),
+        user_id = invocation.subject.user_id,
+    )
+}
+
 impl InvocationPipeline {
     pub fn new() -> Self {
         Self::default()
@@ -91,7 +123,12 @@ impl InvocationPipeline {
     }
 
     pub async fn execute(&self, invocation: &mut Invocation) -> Result<(), InvocationError> {
-        let mut started = Vec::new();
+        // The span is attached with `Instrument` instead of `entered()` so the
+        // span guard is never held across `.await` points (which would make
+        // the future non-`Send` and break axum handlers / `tokio::spawn`).
+        let span = invocation_pipeline_span(invocation);
+        async {
+            let mut started = Vec::new();
         for (index, interceptor) in self.interceptors.iter().enumerate() {
             if let Err(error) = ensure_invocation_active(invocation) {
                 self.notify_error(invocation, &started, &error).await;
@@ -132,6 +169,9 @@ impl InvocationPipeline {
         }
 
         Ok(())
+        }
+        .instrument(span)
+        .await
     }
 
     /// Executes all `before` hooks and either finalizes an ordinary response or
@@ -142,7 +182,9 @@ impl InvocationPipeline {
         &self,
         mut invocation: Invocation,
     ) -> Result<InvocationPipelineExecution, InvocationPipelineFailure> {
-        let mut started = Vec::new();
+        let span = invocation_pipeline_span(&invocation);
+        async {
+            let mut started = Vec::new();
         for (index, interceptor) in self.interceptors.iter().enumerate() {
             if let Err(error) = ensure_invocation_active(&invocation) {
                 self.notify_error(&mut invocation, &started, &error).await;
@@ -200,6 +242,9 @@ impl InvocationPipeline {
                 invocation,
             },
         ))
+        }
+        .instrument(span)
+        .await
     }
 
     async fn finish_after(
@@ -286,10 +331,23 @@ impl DeferredStreamInvocation {
         self.invocation.request.cancellation_signal()
     }
 
+    /// Correlation context for the deferred stream: `(request_id, trace_id)`.
+    /// Used by the HTTP transport to attach trace headers before the body is
+    /// streamed, so stream responses carry the same trace identity as
+    /// synchronous ones.
+    pub fn trace_context(&self) -> (String, Option<String>) {
+        (
+            self.invocation.request.request_id.clone(),
+            self.invocation.telemetry.trace_id.clone(),
+        )
+    }
+
     /// Finalizes the deferred invocation exactly once after the transport has
     /// observed EOF, cancellation, timeout, or an upstream read failure.
     pub async fn complete(mut self, outcome: StreamTerminalOutcome) -> Result<(), InvocationError> {
-        match outcome {
+        let span = invocation_pipeline_span(&self.invocation);
+        async move {
+            match outcome {
             StreamTerminalOutcome::Completed {
                 usage_body,
                 ttft_ms,
@@ -355,7 +413,10 @@ impl DeferredStreamInvocation {
                 self.invocation.telemetry.ttft_ms = ttft_ms;
                 self.fail_terminal(tenant_lease_loss_error()).await
             }
+            }
         }
+        .instrument(span)
+        .await
     }
 
     async fn fail_terminal(&mut self, error: InvocationError) -> Result<(), InvocationError> {

@@ -55,6 +55,33 @@ const LOCAL_PORTAL_SCOPED_PACKAGE_PREFIXES = [
   '@sdkwork/cloudrouter-pc-',
   '@sdkwork/cloudroutes-',
 ];
+const PORTAL_MARKDOWN_OPTIMIZE_DEPS = [
+  'hast-util-to-jsx-runtime',
+  'hast-util-sanitize',
+  'style-to-js',
+  'style-to-object',
+  'react-markdown',
+  'remark-gfm',
+  'rehype-sanitize',
+  // CJS deps of the markdown chain (`unified` -> `extend`, remark-gfm ->
+  // `escape-string-regexp`, react-syntax-highlighter -> `lowlight`, micromark
+  // dev build -> `debug`): Vite 8 serves non-pre-bundled CJS without a
+  // default export, breaking `import x from '...'` in dev.
+  'debug',
+  'escape-string-regexp',
+  'extend',
+  'lowlight',
+] as const;
+
+const PORTAL_MARKDOWN_NEEDS_INTEROP = [
+  'style-to-js',
+  'style-to-object',
+  'debug',
+  'escape-string-regexp',
+  'extend',
+  'lowlight',
+] as const;
+
 const PORTAL_OPTIMIZED_BARE_DEPENDENCIES = new Set([
   'react',
   'react/jsx-runtime',
@@ -73,29 +100,8 @@ const PORTAL_OPTIMIZED_BARE_DEPENDENCIES = new Set([
   'framer-motion',
   'i18next',
   'recharts',
+  ...PORTAL_MARKDOWN_OPTIMIZE_DEPS,
 ]);
-
-const PORTAL_MARKDOWN_OPTIMIZE_DEPS = [
-  'hast-util-to-jsx-runtime',
-  'hast-util-sanitize',
-  'style-to-js',
-  // CJS deps of the markdown chain (`unified` -> `extend`, remark-gfm ->
-  // `escape-string-regexp`, react-syntax-highlighter -> `lowlight`, micromark
-  // dev build -> `debug`): Vite 8 serves non-pre-bundled CJS without a
-  // default export, breaking `import x from '...'` in dev.
-  'debug',
-  'escape-string-regexp',
-  'extend',
-  'lowlight',
-] as const;
-
-const PORTAL_MARKDOWN_NEEDS_INTEROP = [
-  'style-to-js',
-  'debug',
-  'escape-string-regexp',
-  'extend',
-  'lowlight',
-] as const;
 
 const PORTAL_SOURCE_OPTIMIZE_EXCLUDE = [
   '@sdkwork/cloudrouter-app-sdk',
@@ -157,6 +163,13 @@ const PORTAL_RUNTIME_URL_ENV = [
 
 const PORTAL_RUNTIME_BOOLEAN_ENV = [
   ['PORTAL_PUBLIC_TOOL_API_ENABLED', 'VITE_TOOL_API_ENABLED'],
+] as const;
+
+const PORTAL_RUNTIME_VITE_PASSTHROUGH_ENV = [
+  'VITE_SDKWORK_ASSETS_APP_API_BASE_URL',
+  'VITE_SDKWORK_AGENTS_PC_APP_API_BASE_URL',
+  'VITE_SDKWORK_AGENTS_PC_FEEDS_OPEN_API_BASE_URL',
+  'VITE_SDKWORK_FEEDS_OPEN_API_BASE_URL',
 ] as const;
 
 function cloudrouterNodeEnvTransform() {
@@ -261,7 +274,9 @@ function cloudrouterImportMetaHotTransform() {
   };
 }
 
-function cloudrouterRuntimeEnvPlugin(): Plugin {
+function cloudrouterRuntimeEnvPlugin(
+  resolveEnv: () => NodeJS.ProcessEnv = () => process.env,
+): Plugin {
   return {
     name: 'cloudrouter-runtime-env',
     configureServer(server) {
@@ -274,7 +289,7 @@ function cloudrouterRuntimeEnvPlugin(): Plugin {
         response.statusCode = 200;
         response.setHeader('Content-Type', 'application/javascript; charset=utf-8');
         response.setHeader('Cache-Control', 'no-store');
-        response.end(buildPortalRuntimeEnvScript());
+        response.end(buildPortalRuntimeEnvScript(resolvePortalRuntimeEnv(resolveEnv())));
       });
     },
     transformIndexHtml: {
@@ -339,6 +354,42 @@ function cloudrouterGenerationAssetConfigStubInlining(configDir: string): Plugin
       const filePath = id.split('?', 1)[0];
       const replacement = readGenerationAssetConfigStubReplacement(configDir, filePath, filePath);
       return replacement ?? null;
+    },
+  };
+}
+
+function buildCloudrouterMarkdownCjsDefaultExportShimSource(
+  packageName: string,
+  configDir: string,
+): string {
+  const entryPath = resolvePortalDependency(packageName, configDir).replace(/\\/g, '/');
+  return [
+    `import * as moduleNamespace from ${JSON.stringify(entryPath)};`,
+    'const exported = moduleNamespace.default ?? moduleNamespace;',
+    'export default exported;',
+  ].join('\n');
+}
+
+function cloudrouterMarkdownCjsInteropShim(configDir: string): Plugin {
+  const shimRoot = path.resolve(configDir, 'scripts/shims');
+
+  return {
+    name: 'cloudrouter-markdown-cjs-interop-shim',
+    enforce: 'pre',
+    resolveId(source, importer) {
+      if (
+        importer
+        && importer.includes(`${path.sep}scripts${path.sep}shims${path.sep}`)
+      ) {
+        return null;
+      }
+
+      const shimPath = path.resolve(shimRoot, `${source}.ts`);
+      if (!fs.existsSync(shimPath)) {
+        return null;
+      }
+
+      return shimPath;
     },
   };
 }
@@ -549,6 +600,7 @@ function parsePackageSpecifier(specifier: string): { packageName: string; subpat
 function resolvePortalMarkdownOptimizeEntries(
   configDir: string,
   sdkworkGenerationsRoot: string,
+  sdkworkAgentsRoot: string,
 ): string[] {
   return [
     path.resolve(
@@ -557,8 +609,12 @@ function resolvePortalMarkdownOptimizeEntries(
     ),
     path.resolve(configDir, 'packages/sdkwork-cloudrouter-pc-playground/src/pages/Playground.tsx'),
     path.resolve(
-      configDir,
-      'packages/sdkwork-cloudrouter-pc-playground/src/components/chat/generationsMarkdown.ts',
+      sdkworkAgentsRoot,
+      'apps/sdkwork-agents-pc/src/workbench/index.ts',
+    ),
+    path.resolve(
+      sdkworkAgentsRoot,
+      'apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-commons/src/components/MarkdownRendererImpl.tsx',
     ),
   ];
 }
@@ -620,12 +676,14 @@ export default defineConfig(({mode}) => {
         )
       : undefined);
   return {
+    cacheDir: path.resolve(configDir, 'node_modules/.vite-portal'),
     plugins: [
       createSdkworkCredentialEntryBootstrapVitePlugin({
         accessToken: bootstrapAccessToken,
         environment: mode,
       }),
-      cloudrouterRuntimeEnvPlugin(),
+      cloudrouterMarkdownCjsInteropShim(configDir),
+      cloudrouterRuntimeEnvPlugin(() => ({ ...process.env, ...env })),
       react(),
       cloudrouterNodeEnvTransform(),
       cloudrouterImportMetaHotTransform(),
@@ -660,6 +718,7 @@ export default defineConfig(({mode}) => {
       ],
       alias: [
         { find: 'qrcode', replacement: resolvePortalDependency('qrcode/lib/browser.js', configDir) },
+        { find: /^style-to-js$/, replacement: path.resolve(configDir, 'scripts/shims/style-to-js.ts') },
         { find: 'use-sync-external-store/shim/with-selector', replacement: path.resolve(configDir, 'src/auth/useSyncExternalStoreWithSelectorCompat.ts') },
         { find: 'use-sync-external-store/shim', replacement: path.resolve(configDir, 'src/auth/useSyncExternalStoreShimCompat.ts') },
         { find: '@', replacement: path.resolve(configDir, '.') },
@@ -850,7 +909,7 @@ export default defineConfig(({mode}) => {
     },
     optimizeDeps: {
       exclude: PORTAL_SOURCE_OPTIMIZE_EXCLUDE,
-      entries: resolvePortalMarkdownOptimizeEntries(configDir, sdkworkGenerationsRoot),
+      entries: resolvePortalMarkdownOptimizeEntries(configDir, sdkworkGenerationsRoot, sdkworkAgentsRoot),
       include: [
         'react',
         'react/jsx-runtime',
@@ -1074,6 +1133,13 @@ function resolvePortalRuntimeEnv(env: NodeJS.ProcessEnv = process.env): Record<s
     }
   }
 
+  for (const key of PORTAL_RUNTIME_VITE_PASSTHROUGH_ENV) {
+    const value = readConfiguredPortalPublicEnv(env[key]);
+    if (value !== undefined) {
+      runtimeEnv[key] = value;
+    }
+  }
+
   return runtimeEnv;
 }
 
@@ -1191,8 +1257,10 @@ function resolveBooleanEnv(value: string | undefined, name: string): boolean | u
 }
 
 export {
+  buildCloudrouterMarkdownCjsDefaultExportShimSource,
   buildPortalRuntimeEnvScript,
   injectPortalRuntimeEnvScript,
-  resolvePortalWorkspaceDependencyRoot,
+  PORTAL_RUNTIME_VITE_PASSTHROUGH_ENV,
   resolvePortalRuntimeEnv,
+  resolvePortalWorkspaceDependencyRoot,
 };

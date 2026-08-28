@@ -101,6 +101,17 @@ impl InvocationInterceptor for DispatchExecutor {
                 let max_attempts = max_attempts(candidate, replay_is_safe);
                 let mut exhausted_retryable = false;
                 let mut dispatch_started = false;
+                tracing::debug!(
+                    stage = "dispatch",
+                    candidate_index = index,
+                    supplier_code = %candidate.supplier_code,
+                    account_id = candidate.account_id,
+                    region_code = %candidate.region_code,
+                    max_attempts,
+                    request_id = %invocation.request.request_id,
+                    trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
+                    "dispatch candidate attempt loop started"
+                );
                 for attempt_no in 1..=max_attempts {
                     ensure_dispatch_active(&cancellation_signal)?;
                     if let Err(error) = refresh_provider_request(
@@ -141,6 +152,17 @@ impl InvocationInterceptor for DispatchExecutor {
                     match dispatch_result {
                         Ok(response) if response_is_success(invocation, &response) => {
                             let status_code = effective_response_status_code(invocation, &response);
+                            tracing::debug!(
+                                stage = "dispatch",
+                                attempt_no,
+                                status_code,
+                                latency_ms = started.elapsed().as_millis() as i64,
+                                supplier_code = %candidate.supplier_code,
+                                account_id = candidate.account_id,
+                                request_id = %invocation.request.request_id,
+                                trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
+                                "dispatch attempt succeeded"
+                            );
                             invocation.routing.attempted_routes.push(success_attempt(
                                 candidate,
                                 index,
@@ -153,6 +175,27 @@ impl InvocationInterceptor for DispatchExecutor {
                         Ok(response) => {
                             let status_code = effective_response_status_code(invocation, &response);
                             let retryable = retryable_status(candidate, status_code);
+                            tracing::debug!(
+                                stage = "dispatch",
+                                attempt_no,
+                                status_code,
+                                retryable,
+                                latency_ms = started.elapsed().as_millis() as i64,
+                                supplier_code = %candidate.supplier_code,
+                                account_id = candidate.account_id,
+                                request_id = %invocation.request.request_id,
+                                trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
+                                "dispatch attempt returned non-success provider status"
+                            );
+                            // Surface the upstream rejection reason (redacted)
+                            // so the response can carry the exact cause
+                            // instead of a generic gateway error.
+                            if let Some(reason) = upstream_error_message(&response) {
+                                invocation.telemetry.provider_error_code =
+                                    Some(format!("provider_http_{status_code}"));
+                                invocation.telemetry.error_message_masked =
+                                    Some(crate::redaction::redact_sensitive_tokens(&reason));
+                            }
                             if matches!(status_code, 401 | 403) {
                                 invocation.dispatch.resolved_secret = None;
                             }
@@ -178,6 +221,20 @@ impl InvocationInterceptor for DispatchExecutor {
                         Err(error) => {
                             last_response = None;
                             let retryable = retryable_dispatch_error(candidate, &error);
+                            tracing::debug!(
+                                stage = "dispatch",
+                                attempt_no,
+                                status_code = error.status_code,
+                                error_code = %error.code,
+                                error_message = %error.message,
+                                retryable,
+                                latency_ms = started.elapsed().as_millis() as i64,
+                                supplier_code = %candidate.supplier_code,
+                                account_id = candidate.account_id,
+                                request_id = %invocation.request.request_id,
+                                trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
+                                "dispatch attempt failed"
+                            );
                             invocation.routing.attempted_routes.push(failed_attempt(
                                 candidate,
                                 index,
@@ -531,6 +588,29 @@ fn error_message(error: &InvocationDispatchError) -> String {
         Some(status_code) => format!("{}: {} ({status_code})", error.code, error.message),
         None => format!("{}: {}", error.code, error.message),
     }
+}
+
+/// Extracts a redacted upstream rejection message from a non-success
+/// dispatch response: prefers the structured OpenAI `error.message`, falls
+/// back to the raw body text (truncated).
+fn upstream_error_message(response: &InvocationDispatchResponse) -> Option<String> {
+    if let Some(body) = response.body.as_ref() {
+        if let Some(message) = body
+            .get("error")
+            .and_then(|error| error.get("message"))
+            .and_then(|value| value.as_str())
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+        {
+            return Some(message.chars().take(512).collect());
+        }
+    }
+    response
+        .body_bytes
+        .as_deref()
+        .map(|bytes| String::from_utf8_lossy(bytes).into_owned())
+        .map(|text| text.trim().chars().take(512).collect())
+        .filter(|text: &String| !text.is_empty())
 }
 
 fn provider_status_message(status_code: u16, retryable: bool) -> String {

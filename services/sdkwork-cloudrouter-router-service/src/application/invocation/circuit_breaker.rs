@@ -587,24 +587,27 @@ impl CircuitBreakerInterceptor {
         // success after an in-request retry, while still recording a failed primary channel
         // when a later fallback channel succeeds.
         for attempt in final_channel_attempts(attempts) {
-            if let Some(store) = self.distributed.as_ref() {
-                if attempt.success {
+            // Deterministic client rejections (4xx except 429) — invalid
+            // credentials, permissions, missing resources — are configuration
+            // problems, not transient upstream faults: tripping the circuit
+            // on them would lock out an otherwise healthy account until the
+            // cooling window expires. Keep the outcome neutral so the breaker
+            // only reacts to transport/5xx/429-style failures.
+            let client_rejection = attempt_is_client_rejection(attempt);
+            if attempt.success {
+                if let Some(store) = self.distributed.as_ref() {
                     store.record_success(attempt.account_id).await;
+                } else if self.distributed_required {
+                    observe_circuit_breaker_degraded("record_success", self.config.fail_open);
                 } else {
-                    store.record_failure(attempt.account_id).await;
+                    self.record_success(attempt.account_id);
                 }
-            } else if self.distributed_required {
-                observe_circuit_breaker_degraded(
-                    if attempt.success {
-                        "record_success"
-                    } else {
-                        "record_failure"
-                    },
-                    self.config.fail_open,
-                );
+            } else if client_rejection {
                 continue;
-            } else if attempt.success {
-                self.record_success(attempt.account_id);
+            } else if let Some(store) = self.distributed.as_ref() {
+                store.record_failure(attempt.account_id).await;
+            } else if self.distributed_required {
+                observe_circuit_breaker_degraded("record_failure", self.config.fail_open);
             } else {
                 self.record_failure(attempt.account_id);
             }
@@ -640,6 +643,16 @@ impl CircuitBreakerInterceptor {
             }
         }
     }
+}
+
+/// True for deterministic 4xx client rejections (except 429 rate limiting,
+/// which is a transient upstream-pressure signal and still trips the
+/// breaker). 401/403/404-style rejections are configuration errors: the
+/// credential or entitlement must be fixed, not the circuit tripped.
+fn attempt_is_client_rejection(attempt: &InvocationRouteAttempt) -> bool {
+    attempt
+        .status_code
+        .is_some_and(|code| (400..500).contains(&code) && code != 429)
 }
 
 fn final_channel_attempts(attempts: &[InvocationRouteAttempt]) -> Vec<&InvocationRouteAttempt> {
@@ -1319,6 +1332,58 @@ mod tests {
 
         cb.release_half_open_probe(1);
         assert_eq!(CircuitCallPermit::HalfOpenProbe, cb.acquire_call_permit(1));
+    }
+
+    #[tokio::test]
+    async fn client_rejection_attempts_do_not_trip_the_breaker() {
+        let cb = CircuitBreakerInterceptor::new(CircuitBreakerConfig {
+            failure_threshold: 1,
+            open_duration: Duration::from_millis(10_000),
+            half_open_max_probes: 1,
+            success_threshold: 1,
+            fail_open: true,
+        });
+
+        // Simulate final route attempts: an upstream 401 (invalid credential)
+        // must be neutral for the breaker — repeated 401s must not open it.
+        for _ in 0..5 {
+            cb.record_final_route_attempts(&[
+                InvocationRouteAttempt {
+                    supplier_code: "deepseek".to_owned(),
+                    account_id: 42,
+                    candidate_index: 0,
+                    status_code: Some(401),
+                    success: false,
+                    retryable: false,
+                    error_code: Some("provider_status".to_owned()),
+                    error_message: Some("Authentication Fails".to_owned()),
+                    latency_ms: Some(70),
+                },
+            ])
+            .await;
+        }
+
+        assert_eq!(CircuitState::Closed, cb.get_state(42));
+        assert!(cb.allow_call(42));
+
+        // 429 (rate limiting) remains a transient upstream signal and trips.
+        for _ in 0..3 {
+            cb.record_final_route_attempts(&[
+                InvocationRouteAttempt {
+                    supplier_code: "deepseek".to_owned(),
+                    account_id: 43,
+                    candidate_index: 0,
+                    status_code: Some(429),
+                    success: false,
+                    retryable: true,
+                    error_code: Some("provider_status".to_owned()),
+                    error_message: Some("rate limited".to_owned()),
+                    latency_ms: Some(30),
+                },
+            ])
+            .await;
+        }
+        assert_eq!(CircuitState::Open, cb.get_state(43));
     }
 
     #[test]
