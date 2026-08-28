@@ -41,3 +41,5 @@ sdkwork-routes-paas-open-api.workspace = true
 sdkwork-routes-payment-open-api.workspace = true
 sdkwork-routes-video-open-api.workspace = true
 sdkwork_api_feeds_assembly.workspace = true
+sdkwork-iam-web-adapter.workspace = true
+sdkwork-web-axum.workspace = true

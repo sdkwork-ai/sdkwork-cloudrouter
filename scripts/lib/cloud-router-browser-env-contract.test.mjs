@@ -2,75 +2,58 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS,
-  assertEnvTemplateFreeOfForbiddenBrowserProfileKeys,
-  findForbiddenEnvKeysInContent,
-  migrateLegacyBrowserDevelopmentEnvRecord,
-  sanitizeBrowserProductionEnvRecord,
+  alignStandaloneSameOriginBrowserSdkRuntimeEnv,
+  CLOUD_ROUTER_BROWSER_DEVELOPMENT_DEFAULT_VITE_ENV,
+  isLoopbackAbsoluteUrl,
 } from './cloud-router-browser-env-contract.mjs';
 
-test('findForbiddenEnvKeysInContent detects legacy PORTAL keys', () => {
-  const matches = findForbiddenEnvKeysInContent([
-    '# comment',
-    'VITE_API_BASE_URL=/v1',
-    'PORTAL_PUBLIC_API_BASE_URL=/v1',
-    'PORTAL_DEV_PROXY_GATEWAY_TARGET=http://127.0.0.1:3900',
-    'PORTAL_FORWARD_GATEWAY_BASE_URL=http://127.0.0.1:3900',
-  ].join('\n'));
-
-  assert.deepEqual(
-    matches.map((entry) => entry.key),
-    [
-      'PORTAL_PUBLIC_API_BASE_URL',
-      'PORTAL_DEV_PROXY_GATEWAY_TARGET',
-      'PORTAL_FORWARD_GATEWAY_BASE_URL',
-    ],
-  );
-});
-
-test('assertEnvTemplateFreeOfForbiddenBrowserProfileKeys rejects legacy keys', () => {
-  assert.throws(
-    () => assertEnvTemplateFreeOfForbiddenBrowserProfileKeys('PORTAL_PUBLIC_API_BASE_URL=/v1\n', {
-      profileLabel: 'sample template',
-    }),
-    /legacy PORTAL_\*/u,
-  );
-});
-
-test('sanitizeBrowserProductionEnvRecord strips all legacy PORTAL keys', () => {
-  const sanitized = sanitizeBrowserProductionEnvRecord({
-    SDKWORK_ACCESS_TOKEN: 'token',
-    SDKWORK_CLOUDROUTER_CONFIG_PROFILE: 'prod',
-    SDKWORK_CLOUDROUTER_ENVIRONMENT: 'production',
-    SDKWORK_CLOUDROUTER_DEPLOYMENT_PROFILE: 'standalone',
-    SDKWORK_CLOUDROUTER_RUNTIME_TARGET: 'browser',
-    PORTAL_PUBLIC_API_BASE_URL: '/v1',
-    PORTAL_DEV_PROXY_GATEWAY_TARGET: 'http://127.0.0.1:3900',
-    PORTAL_FORWARD_APP_API_BASE_URL: 'http://127.0.0.1:3900',
-    [CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.openApi]: 'http://127.0.0.1:3900',
-  });
-
-  assert.equal(Object.hasOwn(sanitized, 'SDKWORK_ACCESS_TOKEN'), false);
-  assert.equal(sanitized.PORTAL_PUBLIC_API_BASE_URL, undefined);
-  assert.equal(sanitized.PORTAL_DEV_PROXY_GATEWAY_TARGET, undefined);
-  assert.equal(sanitized.PORTAL_FORWARD_APP_API_BASE_URL, undefined);
-  assert.equal(sanitized[CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.openApi], 'http://127.0.0.1:3900');
-  assert.equal(sanitized.SDKWORK_CLOUDROUTER_CONFIG_PROFILE, undefined);
-  assert.equal(sanitized.SDKWORK_CLOUDROUTER_ENVIRONMENT, undefined);
-  assert.equal(sanitized.SDKWORK_CLOUDROUTER_DEPLOYMENT_PROFILE, undefined);
-  assert.equal(sanitized.SDKWORK_CLOUDROUTER_RUNTIME_TARGET, undefined);
-});
-
-test('migrateLegacyBrowserDevelopmentEnvRecord maps legacy proxy and public keys', () => {
-  const migrated = migrateLegacyBrowserDevelopmentEnvRecord({
-    PORTAL_DEV_PROXY_BACKEND_API_TARGET: 'http://127.0.0.1:18081',
-    PORTAL_PUBLIC_TOOL_API_ENABLED: 'true',
-  });
-
+test('browser development defaults keep drive backend on same-origin backend prefix', () => {
   assert.equal(
-    migrated[CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.backendApi],
-    'http://127.0.0.1:18081',
+    CLOUD_ROUTER_BROWSER_DEVELOPMENT_DEFAULT_VITE_ENV.VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL,
+    '/backend/v3/api',
   );
-  assert.equal(migrated.VITE_TOOL_API_ENABLED, 'true');
-  assert.equal(migrated.PORTAL_PUBLIC_TOOL_API_ENABLED, undefined);
+});
+
+test('alignStandaloneSameOriginBrowserSdkRuntimeEnv rewrites loopback dependency SDK URLs', () => {
+  const aligned = alignStandaloneSameOriginBrowserSdkRuntimeEnv({
+    VITE_CLOUDROUTER_APP_API_BASE_URL: '/app/v3/api',
+    VITE_CLOUDROUTER_BACKEND_API_BASE_URL: '/backend/v3/api',
+    VITE_SDKWORK_ACCOUNT_APP_API_BASE_URL: 'http://127.0.0.1:3902/app/v3/api',
+    VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL: 'http://127.0.0.1:3900',
+    VITE_SDKWORK_FEEDS_OPEN_API_BASE_URL: 'http://127.0.0.1:3902/feeds/v3/api',
+    VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL: 'http://127.0.0.1:3905',
+  });
+
+  assert.equal(aligned.VITE_SDKWORK_ACCOUNT_APP_API_BASE_URL, '/app/v3/api');
+  assert.equal(aligned.VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL, '/backend/v3/api');
+  assert.equal(aligned.VITE_SDKWORK_FEEDS_OPEN_API_BASE_URL, '/feeds/v3/api');
+  assert.equal(aligned.VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL, undefined);
+});
+
+test('alignStandaloneSameOriginBrowserSdkRuntimeEnv leaves release-style absolute URLs untouched', () => {
+  const aligned = alignStandaloneSameOriginBrowserSdkRuntimeEnv({
+    VITE_CLOUDROUTER_APP_API_BASE_URL: 'https://tenant.example.com/app/v3/api',
+    VITE_SDKWORK_ACCOUNT_APP_API_BASE_URL: 'https://tenant.example.com/app/v3/api',
+  });
+
+  assert.equal(aligned.VITE_SDKWORK_ACCOUNT_APP_API_BASE_URL, 'https://tenant.example.com/app/v3/api');
+});
+
+test('alignStandaloneSameOriginBrowserSdkRuntimeEnv rewrites loopback canonical portal SDK URLs', () => {
+  const aligned = alignStandaloneSameOriginBrowserSdkRuntimeEnv({
+    PORTAL_PUBLIC_SDK_BASE_URL: 'http://127.0.0.1:3902',
+    VITE_API_BASE_URL: 'http://127.0.0.1:3902/v1',
+    VITE_CLOUDROUTER_OPEN_API_BASE_URL: 'http://127.0.0.1:3902/v1',
+    VITE_CLOUDROUTER_APP_API_BASE_URL: '/app/v3/api',
+    VITE_CLOUDROUTER_BACKEND_API_BASE_URL: '/backend/v3/api',
+  });
+
+  assert.equal(aligned.VITE_API_BASE_URL, '/v1');
+  assert.equal(aligned.VITE_CLOUDROUTER_OPEN_API_BASE_URL, '/v1');
+});
+
+test('isLoopbackAbsoluteUrl detects local dev origins', () => {
+  assert.equal(isLoopbackAbsoluteUrl('http://127.0.0.1:3900'), true);
+  assert.equal(isLoopbackAbsoluteUrl('https://tenant.example.com/app/v3/api'), false);
+  assert.equal(isLoopbackAbsoluteUrl('/app/v3/api'), false);
 });

@@ -2,7 +2,6 @@ import {
   AgentsWorkbench,
   configureAgentsWorkbenchRuntime,
 } from '@sdkwork/agents-pc/workbench';
-import { configureFeedsOpenSdkClientProvider } from '@sdkwork/agents-pc-core/sdk/feedsOpenSdkClient';
 import {
   getSdkworkAgentAppSdkClient,
   getSdkworkAssetsAppSdkClient,
@@ -12,6 +11,7 @@ import {
   getSdkworkGenerationsAppSdkClient,
   getSdkworkMemoryAppSdkClient,
   getSdkworkPromptsAppSdkClient,
+  getSdkworkSkillsAppSdkClient,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { buildPortalAuthLoginRedirect } from '@sdkwork/cloudroutes-pc-commons';
 import {
@@ -25,9 +25,11 @@ configureAgentsWorkbenchRuntime({
   getAssetsAppSdkClient: getSdkworkAssetsAppSdkClient,
   getCommunityAppSdkClient: getSdkworkCommunityAppSdkClient,
   getDriveAppSdkClient: getSdkworkDriveAppSdkClient,
+  getFeedsOpenSdkClient: getSdkworkFeedsOpenSdkClient,
   getGenerationsAppSdkClient: getSdkworkGenerationsAppSdkClient,
   getMemoryAppSdkClient: getSdkworkMemoryAppSdkClient,
   getPromptsAppSdkClient: getSdkworkPromptsAppSdkClient,
+  getSkillsAppSdkClient: getSdkworkSkillsAppSdkClient,
   tokenPlan: {
     checkoutService: getCloudRouterMembershipCheckoutService(),
     couponRechargeService: getCloudRouterCouponRechargeService(),
@@ -35,7 +37,6 @@ configureAgentsWorkbenchRuntime({
     pointsRechargeService: getCloudRouterPointsRechargeService(),
   },
 });
-configureFeedsOpenSdkClientProvider(getSdkworkFeedsOpenSdkClient);
 
 export interface PlaygroundProps {
   overlayTopInset?: string;
@@ -52,7 +53,7 @@ export function Playground({
           no backend anywhere yet (sdkwork-generations owns the contract but ships no
           server crates). Hide the tab instead of surfacing 404s until the backend lands. */}
       <AgentsWorkbench
-        hiddenTabs={['creative']}
+        hiddenTabs={['creative', 'presentation']}
         overlayTopInset={overlayTopInset}
         showSidebarLogo={false}
       />

@@ -11,6 +11,7 @@ pub mod manifest;
 mod manifest_composition;
 pub mod paths;
 pub mod routes;
+mod skills_runtime;
 mod web_bootstrap;
 
 pub use http_route_manifest::{cloud_router_app_http_route_manifest, http_route_manifest};

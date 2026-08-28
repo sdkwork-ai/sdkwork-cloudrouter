@@ -196,6 +196,7 @@
     "@sdkwork/promotion-service": "workspace:*",
     "@sdkwork/prompts-app-sdk": "workspace:*",
     "@sdkwork/prompts-backend-sdk": "workspace:*",
+    "@sdkwork/skills-app-sdk": "workspace:*",
     "@sdkwork/sdk-common": "workspace:*",
     "@sdkwork/utils": "workspace:*",
     "@tanstack/react-query": "^5.90.12",

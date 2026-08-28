@@ -212,6 +212,16 @@ test("normalizeGeneratedSdkBaseUrl preserves raw origins and unrelated root-rela
 });
 
 test("agents app SDK factory preserves the canonical app-api surface URL", async () => {
+  const source = readFileSync(
+    new URL("./packages/sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(source, /resolveDependencyAppSurfaceBaseUrl\(options, 'VITE_SDKWORK_AGENT_APP_API_BASE_URL'\)/);
+  assert.doesNotMatch(
+    source,
+    /function buildAgentAppConfig[\s\S]*?normalizeGeneratedSdkBaseUrl\(/,
+  );
+
   const requestedUrls: string[] = [];
   const tokenManager = getCloudRouterGlobalTokenManager();
   tokenManager.setTokens({ accessToken: "agents-test-access-token" });

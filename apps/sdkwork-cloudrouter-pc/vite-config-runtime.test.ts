@@ -1130,26 +1130,117 @@ test("portal public runtime helper defaults appbase backend to verified same-ori
   assert.equal(runtimeEnv.PORTAL_PUBLIC_APPBASE_BACKEND_API_BASE_URL, "/backend/v3/api");
 });
 
-test("portal runtime env passes through agents workbench SDK base URLs", () => {
+test("portal runtime env passes through optional federated SDK overrides", () => {
   const runtimeEnv = resolvePortalRuntimeEnv({
-    VITE_SDKWORK_ASSETS_APP_API_BASE_URL: "http://127.0.0.1:8095/app/v3/api",
-    VITE_SDKWORK_AGENTS_PC_APP_API_BASE_URL: "http://127.0.0.1:8095/app/v3/api",
-    VITE_SDKWORK_AGENTS_PC_FEEDS_OPEN_API_BASE_URL: "http://127.0.0.1:18095",
+    VITE_SDKWORK_ASSETS_APP_API_BASE_URL: "https://tenant.example.test/app/v3/api",
+    VITE_SDKWORK_FEEDS_OPEN_API_BASE_URL: "https://tenant.example.test",
   });
 
-  assert.equal(runtimeEnv.VITE_SDKWORK_ASSETS_APP_API_BASE_URL, "http://127.0.0.1:8095/app/v3/api");
-  assert.equal(runtimeEnv.VITE_SDKWORK_AGENTS_PC_APP_API_BASE_URL, "http://127.0.0.1:8095/app/v3/api");
-  assert.equal(runtimeEnv.VITE_SDKWORK_AGENTS_PC_FEEDS_OPEN_API_BASE_URL, "http://127.0.0.1:18095");
+  assert.equal(runtimeEnv.VITE_SDKWORK_ASSETS_APP_API_BASE_URL, "https://tenant.example.test/app/v3/api");
+  assert.equal(runtimeEnv.VITE_SDKWORK_FEEDS_OPEN_API_BASE_URL, "https://tenant.example.test");
 });
 
-test("playground agents workbench wires assets and feeds SDK providers", () => {
+test("portal runtime env merges browser development VITE_* values into the runtime bag", () => {
+  const runtimeEnv = resolvePortalRuntimeEnv({
+    VITE_CLOUDROUTER_APP_API_BASE_URL: "/app/v3/api",
+    VITE_CLOUDROUTER_BACKEND_API_BASE_URL: "/backend/v3/api",
+    VITE_SDKWORK_AGENT_APP_API_BASE_URL: "/app/v3/api",
+    VITE_SDKWORK_ASSETS_APP_API_BASE_URL: "/app/v3/api",
+    VITE_SDKWORK_FEEDS_OPEN_API_BASE_URL: "/feeds/v3/api",
+  });
+  const script = buildPortalRuntimeEnvScript(runtimeEnv);
+
+  assert.equal(runtimeEnv.VITE_CLOUDROUTER_APP_API_BASE_URL, "/app/v3/api");
+  assert.equal(runtimeEnv.VITE_SDKWORK_AGENT_APP_API_BASE_URL, "/app/v3/api");
+  assert.match(script, /"VITE_CLOUDROUTER_APP_API_BASE_URL":"\/app\/v3\/api"/u);
+  assert.match(script, /"VITE_SDKWORK_AGENT_APP_API_BASE_URL":"\/app\/v3\/api"/u);
+});
+
+test("portal runtime env prefers browser development VITE_* over release PORTAL_PUBLIC derivations", () => {
+  const runtimeEnv = resolvePortalRuntimeEnv({
+    PORTAL_PUBLIC_SDK_BASE_URL: "http://127.0.0.1:3902",
+    VITE_CLOUDROUTER_APP_API_BASE_URL: "/app/v3/api",
+    VITE_CLOUDROUTER_BACKEND_API_BASE_URL: "/backend/v3/api",
+    VITE_CLOUDROUTER_OPEN_API_BASE_URL: "/v1",
+  });
+
+  assert.equal(runtimeEnv.VITE_CLOUDROUTER_APP_API_BASE_URL, "/app/v3/api");
+  assert.equal(runtimeEnv.VITE_CLOUDROUTER_BACKEND_API_BASE_URL, "/backend/v3/api");
+  assert.equal(runtimeEnv.VITE_CLOUDROUTER_OPEN_API_BASE_URL, "/v1");
+});
+
+test("portal runtime env aligns platform dependency app SDK bases to same-origin dev proxy", () => {
+  const runtimeEnv = resolvePortalRuntimeEnv({
+    PORTAL_PUBLIC_SDK_BASE_URL: "http://127.0.0.1:3902",
+    VITE_CLOUDROUTER_APP_API_BASE_URL: "/app/v3/api",
+    VITE_CLOUDROUTER_BACKEND_API_BASE_URL: "/backend/v3/api",
+    VITE_SDKWORK_ACCOUNT_APP_API_BASE_URL: "http://127.0.0.1:3902/app/v3/api",
+    VITE_SDKWORK_MEMBERSHIP_APP_API_BASE_URL: "http://127.0.0.1:3902/app/v3/api",
+    VITE_SDKWORK_MODELS_BACKEND_API_BASE_URL: "http://127.0.0.1:3902/backend/v3/api",
+  });
+
+  assert.equal(runtimeEnv.VITE_SDKWORK_ACCOUNT_APP_API_BASE_URL, "/app/v3/api");
+  assert.equal(runtimeEnv.VITE_SDKWORK_MEMBERSHIP_APP_API_BASE_URL, "/app/v3/api");
+  assert.equal(runtimeEnv.VITE_SDKWORK_MODELS_BACKEND_API_BASE_URL, "/backend/v3/api");
+});
+
+test("portal runtime env rewrites standalone topology leaks to same-origin SDK bases", () => {
+  const runtimeEnv = resolvePortalRuntimeEnv({
+    VITE_CLOUDROUTER_APP_API_BASE_URL: "/app/v3/api",
+    VITE_CLOUDROUTER_BACKEND_API_BASE_URL: "/backend/v3/api",
+    VITE_CLOUDROUTER_OPEN_API_BASE_URL: "/v1",
+    VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL: "http://127.0.0.1:3900",
+    VITE_SDKWORK_MEMBERSHIP_BACKEND_API_BASE_URL: "http://127.0.0.1:3905/backend/v3/api",
+    VITE_SDKWORK_FEEDS_OPEN_API_BASE_URL: "http://127.0.0.1:3902/feeds/v3/api",
+    VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL: "http://127.0.0.1:3905",
+    VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_BACKEND_HTTP_URL: "http://127.0.0.1:18081",
+    VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_OPEN_HTTP_URL: "http://127.0.0.1:18080",
+  });
+  const script = buildPortalRuntimeEnvScript(runtimeEnv);
+
+  assert.equal(runtimeEnv.VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL, "/backend/v3/api");
+  assert.equal(runtimeEnv.VITE_SDKWORK_MEMBERSHIP_BACKEND_API_BASE_URL, "/backend/v3/api");
+  assert.equal(runtimeEnv.VITE_SDKWORK_FEEDS_OPEN_API_BASE_URL, "/feeds/v3/api");
+  assert.equal(runtimeEnv.VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL, undefined);
+  assert.equal(runtimeEnv.VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_BACKEND_HTTP_URL, undefined);
+  assert.equal(runtimeEnv.VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_OPEN_HTTP_URL, undefined);
+  assert.doesNotMatch(script, /127\.0\.0\.1/u);
+});
+
+test("portal runtime env rewrites loopback PORTAL_PUBLIC derivations for open API", () => {
+  const runtimeEnv = resolvePortalRuntimeEnv({
+    PORTAL_PUBLIC_SDK_BASE_URL: "http://127.0.0.1:3902",
+    VITE_CLOUDROUTER_APP_API_BASE_URL: "/app/v3/api",
+    VITE_CLOUDROUTER_BACKEND_API_BASE_URL: "/backend/v3/api",
+    VITE_CLOUDROUTER_OPEN_API_BASE_URL: "/v1",
+  });
+
+  assert.equal(runtimeEnv.VITE_API_BASE_URL, "/v1");
+  assert.equal(runtimeEnv.VITE_CLOUDROUTER_OPEN_API_BASE_URL, "/v1");
+});
+
+test("playground agents workbench wires federated assets and feeds SDKs through portal commons", () => {
   const source = readFileSync(
     new URL("./packages/sdkwork-cloudrouter-pc-playground/src/pages/Playground.tsx", import.meta.url),
     "utf8",
   );
 
   assert.match(source, /getAssetsAppSdkClient:\s*getSdkworkAssetsAppSdkClient/);
-  assert.match(source, /configureFeedsOpenSdkClientProvider\(getSdkworkFeedsOpenSdkClient\)/);
+  assert.match(source, /getFeedsOpenSdkClient:\s*getSdkworkFeedsOpenSdkClient/);
+  assert.doesNotMatch(source, /configureFeedsOpenSdkClientProvider/);
+  assert.doesNotMatch(source, /8095|18095/);
+});
+
+test("feeds open SDK defaults to same-origin api-assembly gateway prefix", () => {
+  const source = readFileSync(
+    new URL("./packages/sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /FEEDS_OPEN_API_PREFIX/);
+  assert.match(source, /VITE_SDKWORK_FEEDS_OPEN_API_BASE_URL/);
+  assert.doesNotMatch(source, /VITE_SDKWORK_AGENTS_PC_FEEDS_OPEN_API_BASE_URL/);
+  assert.doesNotMatch(source, /18095/);
 });
 
 test("portal runtime env keeps appbase backend SDK base URL independent from cloud-router backend", () => {

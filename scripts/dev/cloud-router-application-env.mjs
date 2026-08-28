@@ -23,6 +23,7 @@ import {
   CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS,
   CLOUD_ROUTER_LIFECYCLE_ENV_KEYS,
   normalizeCloudRouterLifecycleEnvRecord,
+  alignStandaloneSameOriginBrowserSdkRuntimeEnv,
   pickBrowserDevelopmentPortalRuntimeEnv,
   resolveBrowserDevProxyOrigin,
   sanitizeBrowserDevelopmentEnvRecord,
@@ -221,7 +222,7 @@ export function buildCloudRouterBrowserDevelopmentGeneratedEnv({
     }
   }
 
-  return generated;
+  return alignStandaloneSameOriginBrowserSdkRuntimeEnv(generated);
 }
 
 export function buildCloudRouterBrowserProductionGeneratedEnv({

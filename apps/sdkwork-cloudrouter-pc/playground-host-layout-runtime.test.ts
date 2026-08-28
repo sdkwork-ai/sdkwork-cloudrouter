@@ -16,9 +16,8 @@ test('configures Agents overlays below the Playground host header', () => {
   assert.match(playgroundSource, /overlayTopInset=\{overlayTopInset\}/);
 });
 
-test('hides the creative (生成) tab until the generations backend exists', () => {
-  // The tab calls the generations app API (`/app/v3/api/generations*`), whose
-  // backend is not implemented in any workspace repo; the host hides it
-  // instead of surfacing 404s.
-  assert.match(playgroundSource, /hiddenTabs=\{\[['"]creative['"]\]\}/);
+test('hides unfinished or demo workbench tabs from the playground host', () => {
+  // creative: generations app API has no backend yet.
+  // presentation: local demo surface with no SDKWork API integration.
+  assert.match(playgroundSource, /hiddenTabs=\{\[['"]creative['"],\s*['"]presentation['"]\]\}/);
 });

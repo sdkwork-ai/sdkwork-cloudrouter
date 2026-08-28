@@ -61,18 +61,29 @@ export const CLOUD_ROUTER_BROWSER_DEV_PROXY_LEGACY_ALIASES = Object.freeze({
   [CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.appApi]: 'PORTAL_DEV_PROXY_APP_API_TARGET',
 });
 
+export const STANDALONE_SAME_ORIGIN_API_PREFIXES = Object.freeze({
+  openApi: '/v1',
+  appApi: '/app/v3/api',
+  backendApi: '/backend/v3/api',
+  feedsOpenApi: '/feeds/v3/api',
+});
+
+/** Browser runtime must not expose process-only topology HTTP bindings. */
+export const CLOUD_ROUTER_BROWSER_FORBIDDEN_RUNTIME_VITE_KEYS = Object.freeze([
+  'VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL',
+  'VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_BACKEND_HTTP_URL',
+  'VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_OPEN_HTTP_URL',
+  'VITE_SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL',
+]);
+
 export const CLOUD_ROUTER_BROWSER_DEVELOPMENT_DEFAULT_VITE_ENV = Object.freeze({
   VITE_SDKWORK_APP_ID: 'sdkwork-cloudrouter',
-  VITE_API_BASE_URL: '/v1',
-  VITE_CLOUDROUTER_OPEN_API_BASE_URL: '/v1',
-  VITE_CLOUDROUTER_APP_API_BASE_URL: '/app/v3/api',
-  VITE_CLOUDROUTER_BACKEND_API_BASE_URL: '/backend/v3/api',
-  VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL: 'http://127.0.0.1:3900',
-  // Agents workbench assets are mounted on the Agents standalone gateway in dev.
-  VITE_SDKWORK_ASSETS_APP_API_BASE_URL: 'http://127.0.0.1:8095/app/v3/api',
-  VITE_SDKWORK_AGENTS_PC_APP_API_BASE_URL: 'http://127.0.0.1:8095/app/v3/api',
-  // Inspiration feeds read the standard feeds open surface gateway.
-  VITE_SDKWORK_AGENTS_PC_FEEDS_OPEN_API_BASE_URL: 'http://127.0.0.1:18095',
+  VITE_API_BASE_URL: STANDALONE_SAME_ORIGIN_API_PREFIXES.openApi,
+  VITE_CLOUDROUTER_OPEN_API_BASE_URL: STANDALONE_SAME_ORIGIN_API_PREFIXES.openApi,
+  VITE_CLOUDROUTER_APP_API_BASE_URL: STANDALONE_SAME_ORIGIN_API_PREFIXES.appApi,
+  VITE_CLOUDROUTER_BACKEND_API_BASE_URL: STANDALONE_SAME_ORIGIN_API_PREFIXES.backendApi,
+  VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL: STANDALONE_SAME_ORIGIN_API_PREFIXES.backendApi,
+  VITE_SDKWORK_FEEDS_OPEN_API_BASE_URL: STANDALONE_SAME_ORIGIN_API_PREFIXES.feedsOpenApi,
   VITE_TOOL_API_ENABLED: 'false',
 });
 
@@ -91,9 +102,7 @@ export const CLOUD_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_ORDER = Object.freeze([
   'VITE_CLOUDROUTER_APP_API_BASE_URL',
   'VITE_CLOUDROUTER_BACKEND_API_BASE_URL',
   'VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL',
-  'VITE_SDKWORK_ASSETS_APP_API_BASE_URL',
-  'VITE_SDKWORK_AGENTS_PC_APP_API_BASE_URL',
-  'VITE_SDKWORK_AGENTS_PC_FEEDS_OPEN_API_BASE_URL',
+  'VITE_SDKWORK_FEEDS_OPEN_API_BASE_URL',
   'VITE_TOOL_API_ENABLED',
 ]);
 
@@ -150,7 +159,7 @@ export const CLOUD_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_COMMENTS = Object.freeze({
   VITE_CLOUDROUTER_APP_API_BASE_URL: '# @sdkwork/cloudrouter-app-sdk base URL.',
   VITE_CLOUDROUTER_BACKEND_API_BASE_URL: '# @sdkwork/cloudrouter-backend-sdk base URL.',
   VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL:
-    '# @sdkwork/drive-admin-storage-sdk / drive backend base URL (sdkwork-drive standalone gateway).',
+    '# @sdkwork/drive-admin-storage-sdk / drive backend base URL (same-origin /backend/v3/api in standalone dev).',
   VITE_TOOL_API_ENABLED: '# Browser gate for local tool/codegen routes.',
 });
 
@@ -317,4 +326,91 @@ export function sanitizeBrowserProductionEnvRecord(record = {}) {
     }
   }
   return sanitized;
+}
+
+function isLoopbackHostname(hostname) {
+  const normalized = String(hostname ?? '').replace(/^\[|\]$/g, '').toLowerCase();
+  return normalized === 'localhost' || normalized === '127.0.0.1' || normalized === '::1';
+}
+
+export function isLoopbackAbsoluteUrl(value) {
+  if (!value?.startsWith('http://') && !value?.startsWith('https://')) {
+    return false;
+  }
+
+  try {
+    return isLoopbackHostname(new URL(value).hostname);
+  } catch {
+    return false;
+  }
+}
+
+function resolveStandaloneOpenApiBaseUrl(runtimeEnv) {
+  return normalizeText(runtimeEnv.VITE_CLOUDROUTER_OPEN_API_BASE_URL)
+    ?? normalizeText(runtimeEnv.VITE_API_BASE_URL)
+    ?? STANDALONE_SAME_ORIGIN_API_PREFIXES.openApi;
+}
+
+function resolveStandaloneFeedsOpenApiBaseUrl(runtimeEnv, value) {
+  if (String(value ?? '').includes('/feeds/')) {
+    return STANDALONE_SAME_ORIGIN_API_PREFIXES.feedsOpenApi;
+  }
+  return resolveStandaloneOpenApiBaseUrl(runtimeEnv);
+}
+
+/**
+ * Standalone browser dev mounts every composed SDK surface on the portal edge.
+ * Rewrite loopback absolute dependency SDK URLs to same-origin prefixes and
+ * strip process-only topology HTTP bindings from the browser runtime bag.
+ */
+export function alignStandaloneSameOriginBrowserSdkRuntimeEnv(runtimeEnv = {}) {
+  const aligned = { ...runtimeEnv };
+
+  if (isLoopbackAbsoluteUrl(aligned.VITE_CLOUDROUTER_APP_API_BASE_URL)) {
+    aligned.VITE_CLOUDROUTER_APP_API_BASE_URL = STANDALONE_SAME_ORIGIN_API_PREFIXES.appApi;
+  }
+  if (isLoopbackAbsoluteUrl(aligned.VITE_CLOUDROUTER_BACKEND_API_BASE_URL)) {
+    aligned.VITE_CLOUDROUTER_BACKEND_API_BASE_URL = STANDALONE_SAME_ORIGIN_API_PREFIXES.backendApi;
+  }
+  if (isLoopbackAbsoluteUrl(aligned.VITE_CLOUDROUTER_OPEN_API_BASE_URL)) {
+    aligned.VITE_CLOUDROUTER_OPEN_API_BASE_URL = STANDALONE_SAME_ORIGIN_API_PREFIXES.openApi;
+  }
+  if (isLoopbackAbsoluteUrl(aligned.VITE_API_BASE_URL)) {
+    aligned.VITE_API_BASE_URL = normalizeText(aligned.VITE_CLOUDROUTER_OPEN_API_BASE_URL)
+      ?? STANDALONE_SAME_ORIGIN_API_PREFIXES.openApi;
+  }
+
+  const appApiBaseUrl = normalizeText(aligned.VITE_CLOUDROUTER_APP_API_BASE_URL);
+  const backendApiBaseUrl = normalizeText(aligned.VITE_CLOUDROUTER_BACKEND_API_BASE_URL)
+    ?? STANDALONE_SAME_ORIGIN_API_PREFIXES.backendApi;
+
+  if (!appApiBaseUrl?.startsWith('/')) {
+    return aligned;
+  }
+
+  for (const [key, rawValue] of Object.entries(aligned)) {
+    if (!key.startsWith('VITE_SDKWORK_') || !isLoopbackAbsoluteUrl(rawValue)) {
+      continue;
+    }
+
+    if (key.endsWith('_APP_API_BASE_URL')) {
+      aligned[key] = appApiBaseUrl;
+      continue;
+    }
+
+    if (key.endsWith('_BACKEND_API_BASE_URL')) {
+      aligned[key] = backendApiBaseUrl;
+      continue;
+    }
+
+    if (key.endsWith('_OPEN_API_BASE_URL')) {
+      aligned[key] = resolveStandaloneFeedsOpenApiBaseUrl(aligned, rawValue);
+    }
+  }
+
+  for (const key of CLOUD_ROUTER_BROWSER_FORBIDDEN_RUNTIME_VITE_KEYS) {
+    delete aligned[key];
+  }
+
+  return aligned;
 }

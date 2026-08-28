@@ -23,6 +23,7 @@ import {
 } from './scripts/lib/portal-workspace-package-resolver.mjs';
 import { createPortalOptimizeDepsEsbuildPlugin } from './scripts/lib/portal-optimize-deps-esbuild-resolver.mjs';
 import { readGenerationAssetConfigStubReplacement } from './scripts/lib/portal-generation-asset-config-stub.mjs';
+import { alignStandaloneSameOriginBrowserSdkRuntimeEnv } from '../../scripts/lib/cloud-router-browser-env-contract.mjs';
 
 const TYPESCRIPT_SOURCE_PATTERN = /\.(?:ts|tsx|mts|cts)$/;
 const SOURCE_MAP_PATTERN = /\n?\/\/# sourceMappingURL=.*$/;
@@ -167,8 +168,6 @@ const PORTAL_RUNTIME_BOOLEAN_ENV = [
 
 const PORTAL_RUNTIME_VITE_PASSTHROUGH_ENV = [
   'VITE_SDKWORK_ASSETS_APP_API_BASE_URL',
-  'VITE_SDKWORK_AGENTS_PC_APP_API_BASE_URL',
-  'VITE_SDKWORK_AGENTS_PC_FEEDS_OPEN_API_BASE_URL',
   'VITE_SDKWORK_FEEDS_OPEN_API_BASE_URL',
 ] as const;
 
@@ -1023,6 +1022,7 @@ function resolvePortalDevProxy(env: NodeJS.ProcessEnv = process.env): Record<str
     '/paas/v3/openapi.json': portalDevProxyOptions(gatewayTarget),
     '/cloud/v3/openapi.json': portalDevProxyOptions(gatewayTarget),
     '/v1': portalDevProxyOptions(gatewayTarget),
+    '/feeds/v3/api': portalDevProxyOptions(gatewayTarget),
     '/backend/v3/api': portalDevProxyOptions(backendApiTarget),
     '/app/v3/api': portalDevProxyOptions(appApiTarget),
   };
@@ -1140,7 +1140,27 @@ function resolvePortalRuntimeEnv(env: NodeJS.ProcessEnv = process.env): Record<s
     }
   }
 
-  return runtimeEnv;
+  mergeDirectBrowserViteEnv(runtimeEnv, env);
+  return alignStandaloneSameOriginBrowserSdkRuntimeEnv(runtimeEnv);
+}
+
+function mergeDirectBrowserViteEnv(
+  runtimeEnv: Record<string, string>,
+  env: NodeJS.ProcessEnv,
+): void {
+  for (const [key, rawValue] of Object.entries(env)) {
+    if (!key.startsWith('VITE_')) {
+      continue;
+    }
+    const value = readConfiguredPortalPublicEnv(rawValue);
+    // Browser development profiles publish authoritative VITE_* values in
+    // .env.development. They must override release-style PORTAL_PUBLIC_*
+    // derivations (for example http://127.0.0.1:3902/app/v3/api) so SDK
+    // clients stay same-origin and flow through the Vite dev proxy.
+    if (value !== undefined) {
+      runtimeEnv[key] = value;
+    }
+  }
 }
 
 function readConfiguredPortalPublicEnv(value: string | undefined): string | undefined {

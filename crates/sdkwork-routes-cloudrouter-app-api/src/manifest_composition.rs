@@ -127,6 +127,13 @@ const MOUNTED_APP_CAPABILITIES: &[MountedAppCapability] = &[
         platform_gateway_mounts_separately: false,
         included_in_cloud_assembly_manifest: false,
     },
+    MountedAppCapability {
+        workspace: "sdkwork-skills",
+        owner: "sdkwork-skills",
+        manifest: sdkwork_api_skills_assembly::app_api_route_manifest,
+        platform_gateway_mounts_separately: false,
+        included_in_cloud_assembly_manifest: false,
+    },
 ];
 
 fn mounts_for_standalone_host(include_platform_gateway_mounted: bool) -> Vec<RouteManifestMount> {
@@ -236,6 +243,7 @@ mod tests {
             "sdkwork-agents",
             "sdkwork-drive",
             "sdkwork-assets",
+            "sdkwork-skills",
         ] {
             assert!(
                 workspaces.contains(&required),
@@ -250,6 +258,7 @@ mod tests {
             ("sdkwork-agents", "merge_federated_agents_app_router"),
             ("sdkwork-drive", "merge_federated_drive_app_router"),
             ("sdkwork-assets", "merge_federated_assets_app_router"),
+            ("sdkwork-skills", "merge_federated_skills_app_router"),
         ] {
             assert!(
                 MOUNTED_APP_CAPABILITIES
@@ -362,7 +371,7 @@ mod tests {
     }
 
     #[test]
-    fn composed_manifest_includes_agents_drive_and_assets_routes() {
+    fn composed_manifest_includes_agents_drive_assets_and_skills_routes() {
         let manifest = cloud_router_app_composed_route_manifest();
         let agents = manifest
             .match_route("GET", "/app/v3/api/ai/agents")
@@ -376,6 +385,10 @@ mod tests {
             .match_route("GET", "/app/v3/api/assets")
             .expect("assets app-api route must be registered");
         assert_eq!(RouteAuth::DualToken, assets.auth);
+        let skills = manifest
+            .match_route("GET", "/app/v3/api/skill_categories")
+            .expect("skills app-api route must be registered");
+        assert_eq!(RouteAuth::DualToken, skills.auth);
     }
 
     #[test]

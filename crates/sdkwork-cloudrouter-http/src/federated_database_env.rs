@@ -22,6 +22,8 @@ pub fn ensure_workspace_database_env_from_config(database_config: &DatabaseConfi
 const FEDERATED_CAPABILITY_REPO_DIRS: &[(&str, &str)] = &[
     ("ACCOUNT", "sdkwork-account"),
     ("AGENTS", "sdkwork-agents"),
+    ("FEEDS", "sdkwork-feeds"),
+    ("SKILLS", "sdkwork-skills"),
     ("CATALOG", "sdkwork-catalog"),
     ("INVOICE", "sdkwork-invoice"),
     ("LOG", "sdkwork-log"),
@@ -36,6 +38,18 @@ pub fn materialize_federated_database_env_from_config(database_config: &Database
     materialize_workspace_database_env(database_config);
     materialize_federated_capability_app_roots();
     materialize_federated_commerce_lifecycle_env();
+    materialize_federated_feeds_runtime_env();
+}
+
+fn materialize_federated_feeds_runtime_env() {
+    let default_tenant_id = std::env::var("SDKWORK_RTC_HYDRATE_TENANT_ID")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "100001".to_owned());
+    materialize_capability_env_when_unset(
+        "SDKWORK_FEEDS_DEFAULT_TENANT_ID",
+        default_tenant_id.as_str(),
+    );
 }
 
 fn materialize_federated_commerce_lifecycle_env() {
@@ -201,6 +215,32 @@ mod tests {
                 Some(value) => std::env::set_var(key, value),
                 None => std::env::remove_var(key),
             }
+        }
+    }
+
+    #[test]
+    fn federated_feeds_runtime_env_materializes_default_tenant_id() {
+        let _lock = ENV_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap();
+        let key = "SDKWORK_FEEDS_DEFAULT_TENANT_ID";
+        let previous = std::env::var(key).ok();
+        std::env::remove_var(key);
+        std::env::set_var("SDKWORK_RTC_HYDRATE_TENANT_ID", "100001");
+
+        let config = DatabaseConfig {
+            engine: DatabaseEngine::Sqlite,
+            url: "sqlite://target/dev/cloudrouter.sqlite".to_owned(),
+            max_connections: 1,
+        };
+        super::materialize_federated_database_env_from_config(&config);
+
+        assert_eq!(
+            std::env::var(key).expect("feeds default tenant"),
+            "100001"
+        );
+
+        match previous {
+            Some(value) => std::env::set_var(key, value),
+            None => std::env::remove_var(key),
         }
     }
 

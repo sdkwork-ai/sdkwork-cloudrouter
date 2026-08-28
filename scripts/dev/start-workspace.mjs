@@ -26,6 +26,7 @@ import {
 import { ensureCloudRouterBrowserDevelopmentEnv } from './cloud-router-application-env.mjs';
 import {
   CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS,
+  alignStandaloneSameOriginBrowserSdkRuntimeEnv,
 } from '../lib/cloud-router-browser-env-contract.mjs';
 import {
   CLOUD_ROUTER_EDGE_ENV_KEYS,
@@ -201,8 +202,14 @@ function deriveFoundationPortalEnv(runtimeEnv, settings, {
   cloudRouterAppApiBaseUrl,
   cloudRouterBackendApiBaseUrl,
   compositionResolution,
+  productSurfaceMode = 'same-origin',
 }) {
-  const platformGatewayOrigin = remoteApiIngressOrigin(settings);
+  // Standalone browser dev mounts every composed app-api surface on the same
+  // portal edge prefix (/app/v3/api). Remote ingress (for example :3902) is
+  // only valid for client-only shared-gateway sessions.
+  const platformGatewayOrigin = productSurfaceMode === 'same-origin'
+    ? ''
+    : remoteApiIngressOrigin(settings);
   const derived = deriveFoundationEnvFromResolution(compositionResolution, {
     platformApiOrigin: platformGatewayOrigin,
     applicationAppApiBaseUrl: cloudRouterAppApiBaseUrl,
@@ -211,7 +218,7 @@ function deriveFoundationPortalEnv(runtimeEnv, settings, {
 
   const merged = { ...runtimeEnv };
   for (const [key, value] of Object.entries(derived)) {
-    if (merged[key] === undefined) {
+    if (merged[key] === undefined || productSurfaceMode === 'same-origin') {
       merged[key] = value;
     }
   }
@@ -229,9 +236,12 @@ function sharedFoundationBackendApiBaseUrl(settings) {
 function withBrowserDevelopmentViteRuntimeEnv(env, settings, {
   productSurfaceMode = 'same-origin',
 } = {}) {
-  return omitPortalPublicRuntimeEnv(
+  const merged = omitPortalPublicRuntimeEnv(
     withSharedFoundationPortalRuntimeEnv(env, settings, { productSurfaceMode }),
   );
+  return productSurfaceMode === 'same-origin'
+    ? alignStandaloneSameOriginBrowserSdkRuntimeEnv(merged)
+    : merged;
 }
 
 function withSharedFoundationPortalRuntimeEnv(env, settings, {
@@ -250,7 +260,6 @@ function withSharedFoundationPortalRuntimeEnv(env, settings, {
     : {
         ...env,
         ...bridgeLegacyWorkspaceEnv(env, { runtimeMode: settings.runtimeMode }),
-        PORTAL_PUBLIC_SDK_BASE_URL: sdkBaseUrl,
         PORTAL_PUBLIC_API_BASE_URL: String(env.PORTAL_PUBLIC_API_BASE_URL ?? GATEWAY_API_PREFIX).trim(),
         PORTAL_PUBLIC_OPEN_API_BASE_URL: String(
           env.PORTAL_PUBLIC_OPEN_API_BASE_URL ?? env.PORTAL_PUBLIC_API_BASE_URL ?? GATEWAY_API_PREFIX,
@@ -267,13 +276,19 @@ function withSharedFoundationPortalRuntimeEnv(env, settings, {
   const cloudRouterOpenApiBaseUrl = runtimeEnv.VITE_CLOUDROUTER_OPEN_API_BASE_URL
     ?? runtimeEnv.PORTAL_PUBLIC_OPEN_API_BASE_URL
     ?? runtimeEnv.PORTAL_PUBLIC_API_BASE_URL
-    ?? appendPath(sdkBaseUrl, GATEWAY_API_PREFIX);
+    ?? (productSurfaceMode === 'same-origin'
+      ? GATEWAY_API_PREFIX
+      : appendPath(sdkBaseUrl, GATEWAY_API_PREFIX));
   const cloudRouterAppApiBaseUrl = runtimeEnv.VITE_CLOUDROUTER_APP_API_BASE_URL
     ?? runtimeEnv.PORTAL_PUBLIC_APP_API_BASE_URL
-    ?? appendPath(sdkBaseUrl, APP_API_PREFIX);
+    ?? (productSurfaceMode === 'same-origin'
+      ? APP_API_PREFIX
+      : appendPath(sdkBaseUrl, APP_API_PREFIX));
   const cloudRouterBackendApiBaseUrl = runtimeEnv.VITE_CLOUDROUTER_BACKEND_API_BASE_URL
     ?? runtimeEnv.PORTAL_PUBLIC_BACKEND_API_BASE_URL
-    ?? appendPath(sdkBaseUrl, BACKEND_API_PREFIX);
+    ?? (productSurfaceMode === 'same-origin'
+      ? BACKEND_API_PREFIX
+      : appendPath(sdkBaseUrl, BACKEND_API_PREFIX));
 
   return deriveFoundationPortalEnv({
     ...runtimeEnv,
@@ -284,6 +299,7 @@ function withSharedFoundationPortalRuntimeEnv(env, settings, {
     cloudRouterAppApiBaseUrl,
     cloudRouterBackendApiBaseUrl,
     compositionResolution,
+    productSurfaceMode,
   });
 }
 

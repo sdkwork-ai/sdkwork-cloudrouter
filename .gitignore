@@ -139,3 +139,8 @@ CHECK_*.md
 
 # Runtime-generated env config (modified by local dev server)
 **/public/runtime-env.json
+# SDKWork baseline ignore patterns (auto-appended)
+**/*.bootstrap.local.json
+etc/**/*.local.*
+/etc/secrets/
+

@@ -23,6 +23,7 @@ const OPEN_API_PREFIXES: &[&str] = &[
     "/midjourney/v1",
     "/nano-banana/v1",
     "/suno/v1",
+    "/feeds/v3/api",
 ];
 
 fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {

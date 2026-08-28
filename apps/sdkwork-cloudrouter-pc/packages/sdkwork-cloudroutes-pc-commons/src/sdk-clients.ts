@@ -66,6 +66,11 @@ import {
   type SdkworkPromptsAppClient as PromptsAppClient,
 } from '@sdkwork/prompts-app-sdk';
 import {
+  createClient as createSkillsAppSdkClient,
+  type SdkworkAppConfig as SdkworkSkillsAppConfig,
+  type SdkworkSkillsAppClient as SkillsAppClient,
+} from '@sdkwork/skills-app-sdk';
+import {
   SdkworkAppClient as SdkworkAgentAppClient,
   type SdkworkAppConfig as SdkworkAgentAppConfig,
 } from '@sdkwork/agents-app-sdk';
@@ -335,6 +340,19 @@ export const CLOUDROUTER_DRIVE_OPEN_API_SDK_REFERENCE_METADATA: CloudRouterGener
   description: 'SDKWork Drive Open API SDK',
 };
 
+export const CLOUDROUTER_FEEDS_OPEN_API_SDK_REFERENCE_METADATA: CloudRouterGeneratedSdkMetadata = {
+  name: 'SdkworkFeedsOpenClient',
+  packageName: '@sdkwork/feeds-sdk',
+  version: '0.1.0',
+  sdkType: 'feeds',
+  apiPrefix: FEEDS_OPEN_API_PREFIX,
+  runtimeEnvName: 'VITE_SDKWORK_FEEDS_OPEN_API_BASE_URL',
+  sourceDir: '../sdkwork-feeds/sdks/sdkwork-feeds-sdk/sdkwork-feeds-sdk-typescript/src/index.ts',
+  archiveLanguage: 'typescript',
+  archiveName: 'sdkwork-feeds-sdk-typescript-0.1.0.zip',
+  description: 'SDKWork Feeds Open API SDK',
+};
+
 export const CLOUDROUTER_KNOWLEDGEBASE_OPEN_API_SDK_REFERENCE_METADATA: CloudRouterGeneratedSdkMetadata = {
   ...CLOUDROUTER_AI_SDK_REFERENCE_METADATA,
   description: 'SDKWork Knowledgebase Open API SDK',
@@ -416,6 +434,7 @@ export const SDK_SYSTEM_CONFIG = {
   'video-open-api': CLOUDROUTER_VIDEO_OPEN_API_SDK_REFERENCE_METADATA,
   'audio-open-api': CLOUDROUTER_AUDIO_OPEN_API_SDK_REFERENCE_METADATA,
   'drive-open-api': CLOUDROUTER_DRIVE_OPEN_API_SDK_REFERENCE_METADATA,
+  'feeds-open-api': CLOUDROUTER_FEEDS_OPEN_API_SDK_REFERENCE_METADATA,
   'knowledgebase-open-api': CLOUDROUTER_KNOWLEDGEBASE_OPEN_API_SDK_REFERENCE_METADATA,
   'memory-open-api': CLOUDROUTER_MEMORY_OPEN_API_SDK_REFERENCE_METADATA,
   'agent-open-api': CLOUDROUTER_AGENT_OPEN_API_SDK_REFERENCE_METADATA,
@@ -487,6 +506,13 @@ export interface SdkworkPromptsAppSdkClientOptions {
   timeout?: number;
 }
 
+export interface SdkworkSkillsAppSdkClientOptions {
+  appBaseUrl?: string;
+  platform?: string;
+  tokenManager?: AuthTokenManager;
+  timeout?: number;
+}
+
 export interface SdkworkAgentAppSdkClientOptions {
   appBaseUrl?: string;
   platform?: string;
@@ -550,6 +576,7 @@ export type SdkworkGenerationsAppSdkClient = SdkworkGenerationsAppClient;
 export type SdkworkMemoryAppSdkClient = SdkworkMemoryAppClient;
 export type SdkworkCommunityAppSdkClient = SdkworkCommunityAppClient;
 export type SdkworkPromptsAppSdkClient = PromptsAppClient;
+export type SdkworkSkillsAppSdkClient = SkillsAppClient;
 export type SdkworkAgentAppSdkClient = SdkworkAgentAppClient;
 export type SdkworkAssetsAppSdkClient = SdkworkAssetsAppClient;
 export type SdkworkAgentBackendSdkClient = SdkworkAgentBackendClient;
@@ -650,6 +677,7 @@ let generationsAppClient: SdkworkGenerationsAppClient | null = null;
 let memoryAppClient: SdkworkMemoryAppClient | null = null;
 let communityAppClient: SdkworkCommunityAppClient | null = null;
 let promptsAppClient: PromptsAppClient | null = null;
+let skillsAppClient: SkillsAppClient | null = null;
 let agentAppClient: SdkworkAgentAppClient | null = null;
 let assetsAppClient: SdkworkAssetsAppClient | null = null;
 let agentBackendClient: SdkworkAgentBackendClient | null = null;
@@ -725,6 +753,12 @@ export function createSdkworkPromptsAppSdkClient(
   options: SdkworkPromptsAppSdkClientOptions = {},
 ): PromptsAppClient {
   return attachCloudRouterSdkSessionAuthBoundary(createPromptsAppSdkClient(buildPromptsAppConfig(options)));
+}
+
+export function createSdkworkSkillsAppSdkClient(
+  options: SdkworkSkillsAppSdkClientOptions = {},
+): SkillsAppClient {
+  return attachCloudRouterSdkSessionAuthBoundary(createSkillsAppSdkClient(buildSkillsAppConfig(options)));
 }
 
 export function createSdkworkAgentAppSdkClient(
@@ -1062,6 +1096,18 @@ export function getSdkworkPromptsAppSdkClient(
     promptsAppClient = createSdkworkPromptsAppSdkClient();
   }
   return promptsAppClient;
+}
+
+export function getSdkworkSkillsAppSdkClient(
+  options: SdkworkSkillsAppSdkClientOptions = {},
+): SdkworkSkillsAppSdkClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkSkillsAppSdkClient(options);
+  }
+  if (!skillsAppClient) {
+    skillsAppClient = createSdkworkSkillsAppSdkClient();
+  }
+  return skillsAppClient;
 }
 
 export function getSdkworkAgentAppSdkClient(
@@ -1472,6 +1518,7 @@ function resetCloudRouterSdkClientCaches(): void {
   assetsAppClient = null;
   agentBackendClient = null;
   promptsBackendClient = null;
+  skillsAppClient = null;
   driveAppClient = null;
   membershipBackendClient = null;
   paymentBackendClient = null;
@@ -1788,57 +1835,28 @@ function buildGenerationsAppConfig(options: SdkworkGenerationsAppSdkClientOption
 }
 
 function buildMemoryAppConfig(options: SdkworkMemoryAppSdkClientOptions): SdkworkMemoryAppConfig {
-  return {
-    baseUrl: normalizeGeneratedSdkBaseUrl(
-      options.appBaseUrl
-      ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_MEMORY_APP_API_BASE_URL')
-      ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_APP_API_BASE_URL')
-      ?? APP_API_PREFIX,
-      APP_API_PREFIX,
-    ),
-    platform: options.platform ?? 'web',
-    tokenManager: resolveCloudRouterSdkTokenManager(options.tokenManager),
-    timeout: options.timeout,
-  };
+  return buildDependencyAppConfig(options, 'VITE_SDKWORK_MEMORY_APP_API_BASE_URL') as SdkworkMemoryAppConfig;
 }
 
 function buildCommunityAppConfig(options: SdkworkCommunityAppSdkClientOptions): SdkworkCommunityAppConfig {
-  return {
-    baseUrl: normalizeGeneratedSdkBaseUrl(
-      options.appBaseUrl
-      ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_COMMUNITY_APP_API_BASE_URL')
-      ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_APP_API_BASE_URL')
-      ?? APP_API_PREFIX,
-      APP_API_PREFIX,
-    ),
-    platform: options.platform ?? 'web',
-    tokenManager: resolveCloudRouterSdkTokenManager(options.tokenManager),
-    timeout: options.timeout,
-  };
+  return buildDependencyAppConfig(options, 'VITE_SDKWORK_COMMUNITY_APP_API_BASE_URL') as SdkworkCommunityAppConfig;
 }
 
 function buildPromptsAppConfig(options: SdkworkPromptsAppSdkClientOptions): SdkworkPromptsAppConfig {
-  return {
-    baseUrl: normalizeGeneratedSdkBaseUrl(
-      options.appBaseUrl
-      ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_PROMPTS_APP_API_BASE_URL')
-      ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_APP_API_BASE_URL')
-      ?? APP_API_PREFIX,
-      APP_API_PREFIX,
-    ),
-    platform: options.platform ?? 'web',
-    tokenManager: resolveCloudRouterSdkTokenManager(options.tokenManager),
-    timeout: options.timeout,
-  };
+  return buildDependencyAppConfig(options, 'VITE_SDKWORK_PROMPTS_APP_API_BASE_URL') as SdkworkPromptsAppConfig;
+}
+
+function buildSkillsAppConfig(options: SdkworkSkillsAppSdkClientOptions): SdkworkSkillsAppConfig {
+  return buildDependencyAppConfig(options, 'VITE_SDKWORK_SKILLS_APP_API_BASE_URL') as SdkworkSkillsAppConfig;
 }
 
 function buildAgentAppConfig(options: SdkworkAgentAppSdkClientOptions): SdkworkAgentAppConfig {
   return {
-    baseUrl:
-      options.appBaseUrl
-      ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_AGENT_APP_API_BASE_URL')
-      ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_APP_API_BASE_URL')
-      ?? APP_API_PREFIX,
+  // @sdkwork/agents-app-sdk performs its own transport-base normalization and
+  // rejects an empty config.baseUrl before stripping the app-api prefix.
+  // Preserve the canonical same-origin surface URL here instead of pre-stripping
+  // it to an empty transport root via normalizeGeneratedSdkBaseUrl.
+    baseUrl: resolveDependencyAppSurfaceBaseUrl(options, 'VITE_SDKWORK_AGENT_APP_API_BASE_URL'),
     platform: options.platform ?? 'web',
     tokenManager: resolveCloudRouterSdkTokenManager(options.tokenManager),
     timeout: options.timeout,
@@ -1846,19 +1864,7 @@ function buildAgentAppConfig(options: SdkworkAgentAppSdkClientOptions): SdkworkA
 }
 
 function buildAssetsAppConfig(options: SdkworkAssetsAppSdkClientOptions): SdkworkAssetsAppConfig {
-  return {
-    baseUrl: normalizeGeneratedSdkBaseUrl(
-      options.appBaseUrl
-        ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_ASSETS_APP_API_BASE_URL')
-        ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_AGENTS_PC_APP_API_BASE_URL')
-        ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_APP_API_BASE_URL')
-        ?? APP_API_PREFIX,
-      APP_API_PREFIX,
-    ),
-    platform: options.platform ?? 'web',
-    tokenManager: resolveCloudRouterSdkTokenManager(options.tokenManager),
-    timeout: options.timeout,
-  };
+  return buildDependencyAppConfig(options, 'VITE_SDKWORK_ASSETS_APP_API_BASE_URL') as SdkworkAssetsAppConfig;
 }
 
 function buildAgentBackendConfig(options: SdkworkAgentBackendSdkClientOptions): SdkworkAgentBackendConfig {
@@ -1893,18 +1899,7 @@ function buildPromptsBackendConfig(options: SdkworkPromptsBackendSdkClientOption
 }
 
 function buildDriveAppConfig(options: SdkworkDriveAppSdkClientOptions): SdkworkDriveAppConfig {
-  return {
-    baseUrl: normalizeGeneratedSdkBaseUrl(
-      options.appBaseUrl
-      ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_DRIVE_APP_API_BASE_URL')
-      ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_APP_API_BASE_URL')
-      ?? APP_API_PREFIX,
-      APP_API_PREFIX,
-    ),
-    platform: options.platform ?? 'web',
-    tokenManager: resolveCloudRouterSdkTokenManager(options.tokenManager),
-    timeout: options.timeout,
-  };
+  return buildDependencyAppConfig(options, 'VITE_SDKWORK_DRIVE_APP_API_BASE_URL') as SdkworkDriveAppConfig;
 }
 
 function buildDependencyBackendConfig(
@@ -1966,17 +1961,24 @@ function buildPromotionAppConfig(options: SdkworkPromotionAppSdkClientOptions): 
   return buildDependencyAppConfig(options, 'VITE_SDKWORK_PROMOTION_APP_API_BASE_URL');
 }
 
+function resolveDependencyAppSurfaceBaseUrl(
+  options: CloudRouterAppSdkClientOptions,
+  baseUrlEnvName: string,
+): string {
+  return options.appBaseUrl
+    ?? readCloudRouterRuntimeEnv(baseUrlEnvName)
+    ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_APP_API_BASE_URL')
+    ?? deriveDependencySurfaceBaseUrl('PORTAL_PUBLIC_SDK_BASE_URL', APP_API_PREFIX)
+    ?? APP_API_PREFIX;
+}
+
 function buildDependencyAppConfig(
   options: CloudRouterAppSdkClientOptions,
   baseUrlEnvName: string,
 ): SdkworkAppConfig {
   return {
     baseUrl: normalizeGeneratedSdkBaseUrl(
-      options.appBaseUrl
-        ?? readCloudRouterRuntimeEnv(baseUrlEnvName)
-        ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_APP_API_BASE_URL')
-        ?? deriveDependencySurfaceBaseUrl('PORTAL_PUBLIC_SDK_BASE_URL', APP_API_PREFIX)
-        ?? APP_API_PREFIX,
+      resolveDependencyAppSurfaceBaseUrl(options, baseUrlEnvName),
       APP_API_PREFIX,
     ),
     platform: options.platform ?? 'web',
@@ -2019,15 +2021,13 @@ function buildDriveOpenConfig(options: CloudRouterDriveOpenSdkClientOptions): Sd
 }
 
 function buildFeedsOpenConfig(options: CloudRouterFeedsOpenSdkClientOptions): SdkworkFeedsOpenConfig {
-  const configuredBaseUrl =
-    options.baseUrl
-    ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_AGENTS_PC_FEEDS_OPEN_API_BASE_URL')
-    ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_FEEDS_OPEN_API_BASE_URL');
-  if (!configuredBaseUrl) {
-    throw new Error('feeds open SDK base URL is not configured');
-  }
   return {
-    baseUrl: normalizeGeneratedSdkBaseUrl(configuredBaseUrl, FEEDS_OPEN_API_PREFIX),
+    baseUrl: normalizeGeneratedSdkBaseUrl(
+      options.baseUrl
+        ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_FEEDS_OPEN_API_BASE_URL')
+        ?? FEEDS_OPEN_API_PREFIX,
+      FEEDS_OPEN_API_PREFIX,
+    ),
     platform: options.platform ?? 'pc',
     timeout: options.timeout,
   };
@@ -2043,6 +2043,7 @@ function hasRuntimeOverrides(
     | SdkworkMemoryAppSdkClientOptions
     | SdkworkCommunityAppSdkClientOptions
     | SdkworkPromptsAppSdkClientOptions
+    | SdkworkSkillsAppSdkClientOptions
     | SdkworkAgentAppSdkClientOptions
     | SdkworkAssetsAppSdkClientOptions
     | SdkworkAgentBackendSdkClientOptions

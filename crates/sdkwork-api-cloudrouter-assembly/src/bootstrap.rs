@@ -63,6 +63,7 @@ struct ApplicationRouters {
     app_manifest: HttpRouteManifest,
     backend_manifest: HttpRouteManifest,
     open_manifest: HttpRouteManifest,
+    feeds_open: Option<crate::feeds_open_runtime::FederatedFeedsOpenSurface>,
     open: OpenApiRouters,
     /// Account-domain wallet store used to provision the standard owner
     /// accounts (cash/points/token bank) right after a successful IAM
@@ -132,17 +133,22 @@ pub async fn assemble_api_router(
     let upstreams =
         sdkwork_cloudrouter_edge_runtime::runtime::all_in_one_in_process_upstreams_from_env()
             .await?;
-    let (upstreams, account_provisioner) = if context.includes_dependency_apis() {
+    let (upstreams, account_provisioner, feeds_open) = if context.includes_dependency_apis() {
         let iam_router = iam::wire_iam_app_router().await?;
         let provisioner = resolve_account_provisioner().await?;
+        let feeds_open =
+            crate::feeds_open_runtime::wire_federated_feeds_open_router(true)
+                .await
+                .map_err(anyhow::Error::msg)?;
         (
             upstreams.with_dependency_api_router(iam_router),
             Some(provisioner),
+            feeds_open,
         )
     } else {
-        (upstreams, None)
+        (upstreams, None, None)
     };
-    assemble_api_router_with_in_process_upstreams(context, upstreams, account_provisioner)
+    assemble_api_router_with_in_process_upstreams(context, upstreams, account_provisioner, feeds_open)
 }
 
 /// Bootstraps the account-domain service host and returns its PostgreSQL
@@ -170,6 +176,7 @@ fn assemble_api_router_with_in_process_upstreams(
     context: ApiAssemblyContext,
     upstreams: sdkwork_cloudrouter_edge_runtime::EdgeInProcessUpstreams,
     account_provisioner: Option<Arc<PostgresCommerceAccountStore>>,
+    feeds_open: Option<crate::feeds_open_runtime::FederatedFeedsOpenSurface>,
 ) -> Result<ApiAssembly, ApiAssemblyError> {
     // The app router includes dependency-owned assemblies (commerce,
     // promotion, membership, and others). Bind the same composed manifest at
@@ -210,7 +217,7 @@ fn assemble_api_router_with_in_process_upstreams(
         "sdkwork-cloudrouter-open-api",
         include_str!("../../../apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"),
     )?;
-    let openapi = merge_openapi_documents(
+    let mut openapi = merge_openapi_documents(
         "SDKWork Cloud Router API",
         [
             ("sdkwork-cloudrouter-app-api", &app_openapi),
@@ -218,8 +225,11 @@ fn assemble_api_router_with_in_process_upstreams(
             ("sdkwork-cloudrouter-open-api", &open_openapi),
         ],
     )?;
+    if let Some(feeds_open) = feeds_open.as_ref() {
+        augment_openapi_with_missing_routes(&mut openapi, feeds_open.manifest.routes())?;
+    }
 
-    let readiness_check = Arc::new(CompositeReadinessCheck::new(vec![
+    let readiness_checks: Vec<Arc<dyn ReadinessCheck>> = vec![
         Arc::new(RouterReadinessCheck::new(
             "cloudrouter-open-api",
             upstreams.gateway_router(),
@@ -232,7 +242,15 @@ fn assemble_api_router_with_in_process_upstreams(
             "cloudrouter-backend-api",
             upstreams.backend_router(),
         )),
-    ]));
+    ];
+    let mut readiness_checks = readiness_checks;
+    if let Some(feeds_open) = feeds_open.as_ref() {
+        readiness_checks.push(Arc::new(RouterReadinessCheck::new(
+            "sdkwork-feeds-open-api",
+            feeds_open.router.clone(),
+        )));
+    }
+    let readiness_check = Arc::new(CompositeReadinessCheck::new(readiness_checks));
     let open_runtime = upstreams.gateway_router();
     let routers = ApplicationRouters {
         context,
@@ -240,6 +258,7 @@ fn assemble_api_router_with_in_process_upstreams(
         app_manifest: app_manifest.clone(),
         backend_manifest: backend_manifest.clone(),
         open_manifest: open_manifest.clone(),
+        feeds_open: feeds_open.clone(),
         open: OpenApiRouters {
             agent: sdkwork_routes_agent_open_api::gateway_mount(open_runtime.clone()),
             audio: sdkwork_routes_audio_open_api::gateway_mount(open_runtime.clone()),
@@ -269,6 +288,9 @@ fn assemble_api_router_with_in_process_upstreams(
     routes.extend_from_slice(app_manifest.routes());
     routes.extend_from_slice(backend_manifest.routes());
     routes.extend_from_slice(open_manifest.routes());
+    if let Some(feeds_open) = feeds_open.as_ref() {
+        routes.extend_from_slice(feeds_open.manifest.routes());
+    }
     let route_manifest = HttpRouteManifest::from_owned_routes(routes);
     let permission_catalog = permission_catalog(route_manifest.routes());
 
@@ -510,6 +532,11 @@ async fn dispatch_application_request(
                 .match_route(method.as_str(), path.as_str())
                 .is_some())
         .then(|| routers.upstreams.backend_router())
+    } else if is_feeds_path(&path) {
+        routers
+            .feeds_open
+            .as_ref()
+            .map(|surface| surface.router.clone())
     } else if is_app_path(&path) {
         (routers.context.includes_dependency_apis()
             || routers
@@ -659,6 +686,10 @@ fn is_app_path(path: &str) -> bool {
     path == "/app" || path.starts_with("/app/")
 }
 
+fn is_feeds_path(path: &str) -> bool {
+    path == "/feeds" || path.starts_with("/feeds/")
+}
+
 #[cfg(test)]
 mod tests {
     use axum::{
@@ -773,6 +804,13 @@ mod tests {
     }
 
     fn test_assembly(context: ApiAssemblyContext) -> Router {
+        test_assembly_with_feeds(context, None)
+    }
+
+    fn test_assembly_with_feeds(
+        context: ApiAssemblyContext,
+        feeds_open: Option<crate::feeds_open_runtime::FederatedFeedsOpenSurface>,
+    ) -> Router {
         let gateway_router = Router::new()
             .route("/openapi.json", route_get(|| async { "open" }))
             .route("/readyz", route_get(|| async { "ready" }));
@@ -827,9 +865,34 @@ mod tests {
             )
             .with_dependency_api_router(dependency_router),
             None,
+            feeds_open,
         )
         .expect("valid Cloudrouter assembly")
         .router
+    }
+
+    #[tokio::test]
+    async fn dispatcher_forwards_federated_feeds_parameterized_paths() {
+        let feeds_open = crate::feeds_open_runtime::FederatedFeedsOpenSurface {
+            router: Router::new().route(
+                "/feeds/v3/api/streams/{streamKey}/items",
+                route_get(|Path(stream_key): Path<String>| async move { stream_key }),
+            ),
+            manifest: sdkwork_api_feeds_assembly::open_api_route_manifest(),
+        };
+        let router = test_assembly_with_feeds(ApiAssemblyContext::default(), Some(feeds_open));
+        let response = router
+            .clone()
+            .oneshot(get(
+                "/feeds/v3/api/streams/agents-inspiration-activity/items",
+            ))
+            .await
+            .expect("router response");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("response body should be readable");
+        assert_eq!(&body[..], b"agents-inspiration-activity");
     }
 
     async fn assert_status(router: &Router, request: Request<Body>, expected: StatusCode) {
@@ -965,6 +1028,7 @@ mod tests {
             "/midjourney/v1",
             "/nano-banana/v1",
             "/suno/v1",
+            "/feeds/v3/api",
         ]
         .iter()
         .map(|prefix| (*prefix).to_owned())
@@ -1022,5 +1086,31 @@ mod tests {
             iam_runtime.auth,
             "IAM runtime must preserve credential-entry auth, not fall through to dual-token"
         );
+    }
+
+    #[test]
+    fn federated_feeds_open_routes_are_augmented_into_composed_openapi() {
+        let feeds_manifest = sdkwork_api_feeds_assembly::open_api_route_manifest();
+        let mut open_openapi = super::parse_openapi(
+            "sdkwork-cloudrouter-open-api",
+            include_str!("../../../apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"),
+        )
+        .expect("cloud router open OpenAPI authority must parse");
+
+        super::augment_openapi_with_missing_routes(&mut open_openapi, feeds_manifest.routes())
+            .expect("feeds open routes must augment into the composed OpenAPI inventory");
+
+        for (method, path) in [
+            ("get", "/feeds/v3/api/streams"),
+            ("get", "/feeds/v3/api/streams/{streamKey}"),
+            ("get", "/feeds/v3/api/streams/{streamKey}/items"),
+        ] {
+            let operation = open_openapi
+                .get("paths")
+                .and_then(|paths| paths.get(path))
+                .and_then(|path_item| path_item.get(method))
+                .unwrap_or_else(|| panic!("{method} {path} must exist in augmented OpenAPI"));
+            assert!(operation.is_object(), "{method} {path} must be an operation object");
+        }
     }
 }
