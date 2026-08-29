@@ -1777,9 +1777,10 @@ frontend_operations:
                 totalTime: { maxLength: 64, type: string }
                 ttft: { maxLength: 64, type: string }
                 type: { maxLength: 64, type: string }
+                unitSize: {pattern: '^[0-9]+(?:\.[0-9]{1,6})?$', type: string}
                 userAgent: { maxLength: 2048, type: string }
               required: [id, gatewayRequestId, time, tokenName, group, type, model, providerNativeModel, requestedModelCatalogKey, regionCode, status, httpStatus, errorCode, errorType, errorMessage, totalTime, ttft, isStream, inputTokens, cacheReadTokens,
-                outputTokens, cost, multiplier, baseInputPrice, baseOutputPrice, cacheReadPrice, path, reasoningEffort, ip, userAgent]
+                outputTokens, cost, multiplier, baseInputPrice, baseOutputPrice, cacheReadPrice, unitSize, path, reasoningEffort, ip, userAgent]
               type: object
             type: array
           pageInfo:
@@ -10000,10 +10001,11 @@ frontend_operations:
                 totalTime: { maxLength: 64, type: string }
                 ttft: { maxLength: 64, type: string }
                 type: { maxLength: 64, type: string }
+                unitSize: {pattern: '^[0-9]+(?:\.[0-9]{1,6})?$', type: string}
                 user: { maxLength: 320, type: string }
                 userAgent: { maxLength: 2048, type: string }
               required: [id, user, requestId, time, tokenName, group, type, model, providerNativeModel, requestedModelCatalogKey, regionCode, status, httpStatus, httpMethod, errorCode, errorType, errorMessage, totalTime, ttft, isStream, inputTokens,
-                cacheReadTokens, outputTokens, cost, multiplier, baseInputPrice, baseOutputPrice, cacheReadPrice, path, reasoningEffort, ip, userAgent]
+                cacheReadTokens, outputTokens, cost, multiplier, baseInputPrice, baseOutputPrice, cacheReadPrice, unitSize, path, reasoningEffort, ip, userAgent]
               type: object
             type: array
           pageInfo:

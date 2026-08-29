@@ -3,5 +3,5 @@
   "sdkType": "app",
   "name": "cloudrouter-app-sdk",
   "packageName": "@sdkwork/cloudrouter-app-sdk",
-  "version": "0.1.2"
+  "version": "0.1.4"
 }

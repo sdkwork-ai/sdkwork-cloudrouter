@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::CreateCompletionLogprobs;
+use crate::models::{CreateCompletionLogprobs};
 
 /// Single choice returned by the legacy OpenAI-compatible completions API.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

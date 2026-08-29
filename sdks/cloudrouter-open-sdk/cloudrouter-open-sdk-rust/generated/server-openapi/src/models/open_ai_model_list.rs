@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::OpenAiModel;
+use crate::models::{OpenAiModel};
 
 /// OpenAI-compatible open ai model list schema exposed by Cloud Router.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

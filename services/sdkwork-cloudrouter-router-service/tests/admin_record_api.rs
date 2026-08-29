@@ -65,6 +65,10 @@ async fn admin_record_route_lists_logs_and_normalizes_filters() {
     assert_eq!("0.150000", payload["data"]["items"][0]["baseInputPrice"]);
     assert_eq!("0.600000", payload["data"]["items"][0]["baseOutputPrice"]);
     assert_eq!("0.030000", payload["data"]["items"][0]["cacheReadPrice"]);
+    assert_eq!(
+        "1000000.000000",
+        payload["data"]["items"][0]["unitSize"]
+    );
     assert_eq!("/v1/chat/completions", payload["data"]["items"][0]["path"]);
     assert_eq!("medium", payload["data"]["items"][0]["reasoningEffort"]);
     assert_eq!("203.0.113.***", payload["data"]["items"][0]["ip"]);
@@ -191,6 +195,7 @@ impl AdminRecordStore for TestAdminRecordStore {
                     base_input_price: "0.150000".to_owned(),
                     base_output_price: "0.600000".to_owned(),
                     cache_read_price: "0.030000".to_owned(),
+                    unit_size: "1000000.000000".to_owned(),
                     path: "/v1/chat/completions".to_owned(),
                     reasoning_effort: "medium".to_owned(),
                     ip: "203.0.113.***".to_owned(),

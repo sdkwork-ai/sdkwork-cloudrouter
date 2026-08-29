@@ -91,6 +91,7 @@ client.set_header("X-Custom-Header", "value");
 - `client.videos_vidu()` - videos_vidu API
 - `client.images_vidu()` - images_vidu API
 - `client.videos_volcengine()` - videos_volcengine API
+- `client.audio_elevenlabs()` - audio_elevenlabs API
 
 ## Usage Examples
 
@@ -626,6 +627,26 @@ let body = VolcengineContentGenerationTaskCreateRequest {
     ..Default::default()
 };
 let result = client.videos_volcengine().create_api_v3_contents_generations_task(&body).await?;
+println!("{result:?}");
+```
+
+### audio_elevenlabs
+
+```rust
+use cloudrouter_open_sdk::*;
+use std::collections::HashMap;
+// Generate sound effect
+let body = ElevenLabsSoundGenerationRequest {
+    model_id: "1".to_string(),
+    text: "text".to_string(),
+    duration_seconds: Some(3.0_f64),
+    prompt_influence: Some(4.0_f64),
+    r#loop: Some(true),
+    ..Default::default()
+};
+let mut query = HashMap::new();
+query.insert("output_format".to_string(), serde_json::json!("output-format"));
+let result = client.audio_elevenlabs().create_v1_sound_generation(&body, Some(&query)).await?;
 println!("{result:?}");
 ```
 

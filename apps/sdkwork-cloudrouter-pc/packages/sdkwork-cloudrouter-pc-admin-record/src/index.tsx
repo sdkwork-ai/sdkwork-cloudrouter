@@ -13,6 +13,12 @@ import { useTranslation } from 'react-i18next';
 
 const RECORD_COST_DECIMAL_DIGITS = 6;
 
+function unitSizeLabel(value: string | undefined): string {
+  const parsed = Number(value);
+  const size = Number.isFinite(parsed) && parsed > 0 ? parsed : 1_000_000;
+  return size === 1_000_000 ? '1M' : size.toLocaleString();
+}
+
 export function RecordAdmin() {
   const { t, i18n } = useTranslation();
   const displayLocale = i18n.resolvedLanguage ?? i18n.language ?? 'en-US';
@@ -356,10 +362,10 @@ export function RecordAdmin() {
                           {t("admin.record.index.text.1rb6v97", "分组倍率")}<span className="text-slate-800 dark:text-slate-300 font-mono">{formatCostAmount(log.multiplier)}x</span>
                         </div>
                         <div className="flex items-center gap-1 whitespace-nowrap text-slate-500">
-                          {t("admin.record.index.text.1qtojr9", "输入")}<Zap className="w-3 h-3 text-rose-500/70" /> {formatCostAmount(log.baseInputPrice)} / 1M
+                          {t("admin.record.index.text.1qtojr9", "输入")}<Zap className="w-3 h-3 text-rose-500/70" /> {formatCostAmount(log.baseInputPrice)} / {unitSizeLabel(log.unitSize)}
                         </div>
                         <div className="flex items-center gap-1 whitespace-nowrap text-slate-500">
-                          {t("admin.record.index.text.1a1rmgf", "缓存读")}<Zap className="w-3 h-3 text-rose-500/70" /> {formatCostAmount(log.cacheReadPrice)} / 1M
+                          {t("admin.record.index.text.1a1rmgf", "缓存读")}<Zap className="w-3 h-3 text-rose-500/70" /> {formatCostAmount(log.cacheReadPrice)} / {unitSizeLabel(log.unitSize)}
                         </div>
                       </td>
                     </tr>
@@ -388,22 +394,23 @@ export function RecordAdmin() {
                               <div className="font-mono text-[11px] py-0.5 text-slate-500 dark:text-slate-400">{log.cacheReadTokens}</div>
 
                               <div className="flex flex-wrap items-center gap-x-2 gap-y-1 py-1 px-3 bg-white dark:bg-white/5 rounded border border-slate-200 dark:border-white/5 w-fit shadow-sm dark:shadow-none">
-                                <span>{t("admin.record.index.text.tcl9fi", "输入价格")}<Zap className="w-3 h-3 inline-block text-rose-500 -mt-0.5" /> {formatCostAmount(log.baseInputPrice)} / 1M tokens,</span>
-                                <span>{t("admin.record.index.text.1m2duf7", "输出价格")}<Zap className="w-3 h-3 inline-block text-rose-500 -mt-0.5" /> {formatCostAmount(log.baseOutputPrice)} / 1M tokens,</span>
-                                <span>{t("admin.record.index.text.1llhgaw", "缓存读取价格")}<Zap className="w-3 h-3 inline-block text-rose-500 -mt-0.5" /> {formatCostAmount(log.cacheReadPrice)} / 1M tokens,</span>
+                                <span>{t("admin.record.index.text.tcl9fi", "输入价格")}<Zap className="w-3 h-3 inline-block text-rose-500 -mt-0.5" /> {formatCostAmount(log.baseInputPrice)} / {unitSizeLabel(log.unitSize)} tokens,</span>
+                                <span>{t("admin.record.index.text.1m2duf7", "输出价格")}<Zap className="w-3 h-3 inline-block text-rose-500 -mt-0.5" /> {formatCostAmount(log.baseOutputPrice)} / {unitSizeLabel(log.unitSize)} tokens,</span>
+                                <span>{t("admin.record.index.text.1llhgaw", "缓存读取价格")}<Zap className="w-3 h-3 inline-block text-rose-500 -mt-0.5" /> {formatCostAmount(log.cacheReadPrice)} / {unitSizeLabel(log.unitSize)} tokens,</span>
                                 <span>{t("admin.record.index.text.1rb6v97", "分组倍率")}{formatCostAmount(log.multiplier)}x</span>
                               </div>
 
                               <div className="mt-1 flex flex-col gap-1.5 p-3 bg-white dark:bg-[#1a1a1a] rounded-lg border border-slate-200 dark:border-white/5 font-mono text-[11px] shadow-sm dark:shadow-none">
-                                <div className="text-slate-500 dark:text-slate-400">{t("admin.record.index.text.k5zbm4", "输入价格:")}<Zap className="w-3 h-3 inline-block text-rose-500/80 -mt-0.5" /> {formatCostAmount(log.baseInputPrice)} / 1M tokens</div>
-                                <div className="text-slate-500 dark:text-slate-400">{t("admin.record.index.text.1t3kubf", "输出价格:")}<Zap className="w-3 h-3 inline-block text-rose-500/80 -mt-0.5" /> {formatCostAmount(log.baseOutputPrice)} / 1M tokens</div>
-                                <div className="text-slate-500 dark:text-slate-400 mb-1">{t("admin.record.index.text.1fjtnna", "缓存读取价格:")}<Zap className="w-3 h-3 inline-block text-rose-500/80 -mt-0.5" /> {formatCostAmount(log.cacheReadPrice)} / 1M tokens</div>
+                                <div className="text-slate-500 dark:text-slate-400">{t("admin.record.index.text.k5zbm4", "输入价格:")}<Zap className="w-3 h-3 inline-block text-rose-500/80 -mt-0.5" /> {formatCostAmount(log.baseInputPrice)} / {unitSizeLabel(log.unitSize)} tokens</div>
+                                <div className="text-slate-500 dark:text-slate-400">{t("admin.record.index.text.1t3kubf", "输出价格:")}<Zap className="w-3 h-3 inline-block text-rose-500/80 -mt-0.5" /> {formatCostAmount(log.baseOutputPrice)} / {unitSizeLabel(log.unitSize)} tokens</div>
+                                <div className="text-slate-500 dark:text-slate-400 mb-1">{t("admin.record.index.text.1fjtnna", "缓存读取价格:")}<Zap className="w-3 h-3 inline-block text-rose-500/80 -mt-0.5" /> {formatCostAmount(log.cacheReadPrice)} / {unitSizeLabel(log.unitSize)} tokens</div>
                                 <div className="text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-white/5 p-2 rounded">
                                   {t(
                                     "admin.record.index.text.costFormula",
-                                    "(输入 {{inputBillable}} / 1M * {{inputPrice}} + 缓存 {{cacheTokens}} / 1M * {{cachePrice}} + 输出 {{outputTokens}} / 1M * {{outputPrice}}) * 倍率 {{multiplier}} = ",
+                                    "(输入 {{inputBillable}} / {{unitLabel}} * {{inputPrice}} + 缓存 {{cacheTokens}} / {{unitLabel}} * {{cachePrice}} + 输出 {{outputTokens}} / {{unitLabel}} * {{outputPrice}}) * 倍率 {{multiplier}} = ",
                                     {
                                       inputBillable: (BigInt(log.inputTokens) - BigInt(log.cacheReadTokens)).toString(),
+                                      unitLabel: unitSizeLabel(log.unitSize),
                                       inputPrice: formatCostAmount(log.baseInputPrice),
                                       cacheTokens: log.cacheReadTokens,
                                       cachePrice: formatCostAmount(log.cacheReadPrice),

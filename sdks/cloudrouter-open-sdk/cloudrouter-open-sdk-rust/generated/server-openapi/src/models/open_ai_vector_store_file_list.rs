@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::OpenAiVectorStoreFile;
+use crate::models::{OpenAiVectorStoreFile};
 
 /// OpenAI-compatible paginated list of vector store files.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

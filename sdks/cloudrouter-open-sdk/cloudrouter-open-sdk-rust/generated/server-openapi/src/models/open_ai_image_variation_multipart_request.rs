@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct OpenAiImageVariationMultipartRequest {
     /// Image field on the open ai image variation multipart request, using the open ai binary file part module.
-    pub image: String,
+    pub image: Vec<u8>,
 
     /// Image variation model id or Cloud Router catalog key.
     pub model: String,

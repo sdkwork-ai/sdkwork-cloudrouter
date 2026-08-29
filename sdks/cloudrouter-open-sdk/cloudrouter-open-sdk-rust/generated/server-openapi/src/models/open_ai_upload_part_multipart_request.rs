@@ -4,5 +4,5 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct OpenAiUploadPartMultipartRequest {
     /// Binary upload part data.
-    pub data: String,
+    pub data: Vec<u8>,
 }

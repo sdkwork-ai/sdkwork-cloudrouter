@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::OpenAiBatchRequestCounts;
+use crate::models::{OpenAiBatchRequestCounts};
 
 /// OpenAI-compatible batch object.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

@@ -27,6 +27,7 @@ import { formatUsageLogLocalTime } from './usageFormatting';
 const DEFAULT_PAGE_SIZE = 20;
 const SPEND_DECIMAL_DIGITS = 9;
 const DISPLAY_DECIMAL_DIGITS = 2;
+const MAX_DISPLAY_DECIMAL_DIGITS = 6;
 
 type UsageLogStatus = 'all' | 'success' | 'error';
 
@@ -95,6 +96,16 @@ function formatTokenCount(value: string): string {
   return toTokenCount(value).toLocaleString();
 }
 
+function unitSizeDenominator(value: string | undefined): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1_000_000;
+}
+
+function formatUnitSizeLabel(value: string | undefined): string {
+  const size = unitSizeDenominator(value);
+  return size === 1_000_000 ? '1M' : size.toLocaleString();
+}
+
 export function UsageView() {
   const { t, i18n } = useTranslation();
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
@@ -118,8 +129,8 @@ export function UsageView() {
       locale: displayLocale,
       mode: 'decimal',
       minFractionDigits: DISPLAY_DECIMAL_DIGITS,
-      maxFractionDigits: DISPLAY_DECIMAL_DIGITS,
-    }) ?? formatLocalizedDecimalAmount(value, displayLocale, DISPLAY_DECIMAL_DIGITS, DISPLAY_DECIMAL_DIGITS);
+      maxFractionDigits: MAX_DISPLAY_DECIMAL_DIGITS,
+    }) ?? formatLocalizedDecimalAmount(value, displayLocale, DISPLAY_DECIMAL_DIGITS, MAX_DISPLAY_DECIMAL_DIGITS);
 
   const pageStats = useMemo(() => {
     if (usageLogs.length === 0) {
@@ -554,15 +565,15 @@ export function UsageView() {
                                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 py-1 px-3 bg-white dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/5 w-fit shadow-sm dark:shadow-none">
                                     <span className="text-slate-600 dark:text-slate-300">
                                       {t('console.usage.metric.input', 'input')} <span className="font-mono text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.baseInputPrice)}</span>
-                                      <span className="text-slate-400"> / 1M {t('console.usage.unit.tokens', 'tokens')}</span>
+                                      <span className="text-slate-400"> / {formatUnitSizeLabel(log.unitSize)} {t('console.usage.unit.tokens', 'tokens')}</span>
                                     </span>
                                     <span className="text-slate-600 dark:text-slate-300">
                                       {t('console.usage.metric.output', 'output')} <span className="font-mono text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.baseOutputPrice)}</span>
-                                      <span className="text-slate-400"> / 1M {t('console.usage.unit.tokens', 'tokens')}</span>
+                                      <span className="text-slate-400"> / {formatUnitSizeLabel(log.unitSize)} {t('console.usage.unit.tokens', 'tokens')}</span>
                                     </span>
                                     <span className="text-slate-600 dark:text-slate-300">
                                       {t('console.usage.metric.cache', 'cache')} <span className="font-mono text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.cacheReadPrice)}</span>
-                                      <span className="text-slate-400"> / 1M {t('console.usage.unit.tokens', 'tokens')}</span>
+                                      <span className="text-slate-400"> / {formatUnitSizeLabel(log.unitSize)} {t('console.usage.unit.tokens', 'tokens')}</span>
                                     </span>
                                     <span className="text-slate-600 dark:text-slate-300">
                                       {t('console.usage.metric.multiplier', 'multiplier')} <span className="font-mono text-lobster-600 dark:text-lobster-400">{formatDisplayAmount(log.multiplier)}x</span>
@@ -575,18 +586,18 @@ export function UsageView() {
                                 <div className="self-start">
                                   <div className="flex flex-col gap-1.5 p-3 bg-white dark:bg-[#161616] rounded-lg border border-slate-200 dark:border-white/5 font-mono text-[11px] shadow-sm dark:shadow-none max-w-[640px]">
                                     <div className="text-slate-500 dark:text-slate-400">
-                                      {t('console.usage.detail.inputPrice', 'input price:')} <span className="text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.baseInputPrice)}</span> / 1M {t('console.usage.unit.tokens', 'tokens')}
+                                      {t('console.usage.detail.inputPrice', 'input price:')} <span className="text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.baseInputPrice)}</span> / {formatUnitSizeLabel(log.unitSize)} {t('console.usage.unit.tokens', 'tokens')}
                                     </div>
                                     <div className="text-slate-500 dark:text-slate-400">
-                                      {t('console.usage.detail.outputPrice', 'output price:')} <span className="text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.baseOutputPrice)}</span> / 1M {t('console.usage.unit.tokens', 'tokens')}
+                                      {t('console.usage.detail.outputPrice', 'output price:')} <span className="text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.baseOutputPrice)}</span> / {formatUnitSizeLabel(log.unitSize)} {t('console.usage.unit.tokens', 'tokens')}
                                     </div>
                                     <div className="text-slate-500 dark:text-slate-400 mb-1">
-                                      {t('console.usage.detail.cachePrice', 'cache price:')} <span className="text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.cacheReadPrice)}</span> / 1M {t('console.usage.unit.tokens', 'tokens')}
+                                      {t('console.usage.detail.cachePrice', 'cache price:')} <span className="text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.cacheReadPrice)}</span> / {formatUnitSizeLabel(log.unitSize)} {t('console.usage.unit.tokens', 'tokens')}
                                     </div>
                                     <div className="text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/5 p-2.5 rounded leading-relaxed break-all">
-                                      {`(${t('console.usage.metric.input', 'input')} ${(toTokenCount(log.inputTokens) - toTokenCount(log.cacheReadTokens)).toLocaleString()} / 1M × ${formatDisplayAmount(log.baseInputPrice)}`}
-                                      {` + ${t('console.usage.metric.cache', 'cache')} ${formatTokenCount(log.cacheReadTokens)} / 1M × ${formatDisplayAmount(log.cacheReadPrice)}`}
-                                      {` + ${t('console.usage.metric.output', 'output')} ${formatTokenCount(log.outputTokens)} / 1M × ${formatDisplayAmount(log.baseOutputPrice)})`}
+                                      {`(${t('console.usage.metric.input', 'input')} ${(toTokenCount(log.inputTokens) - toTokenCount(log.cacheReadTokens)).toLocaleString()} / ${formatUnitSizeLabel(log.unitSize)} × ${formatDisplayAmount(log.baseInputPrice)}`}
+                                      {` + ${t('console.usage.metric.cache', 'cache')} ${formatTokenCount(log.cacheReadTokens)} / ${formatUnitSizeLabel(log.unitSize)} × ${formatDisplayAmount(log.cacheReadPrice)}`}
+                                      {` + ${t('console.usage.metric.output', 'output')} ${formatTokenCount(log.outputTokens)} / ${formatUnitSizeLabel(log.unitSize)} × ${formatDisplayAmount(log.baseOutputPrice)})`}
                                       {` × ${formatDisplayAmount(log.multiplier)} = `}
                                       <span className="font-bold text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.cost)}</span>
                                     </div>

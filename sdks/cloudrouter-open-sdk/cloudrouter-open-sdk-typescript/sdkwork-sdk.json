@@ -3,5 +3,5 @@
   "sdkType": "ai",
   "name": "cloudrouter-open-sdk",
   "packageName": "@sdkwork/cloudrouter-open-sdk",
-  "version": "0.1.2"
+  "version": "0.1.4"
 }

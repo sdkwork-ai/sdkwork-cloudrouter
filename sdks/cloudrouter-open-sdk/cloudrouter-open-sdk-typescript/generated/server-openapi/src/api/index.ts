@@ -32,3 +32,4 @@ export * from './video';
 export * from './videos-vidu';
 export * from './images-vidu';
 export * from './videos-volcengine';
+export * from './audio-elevenlabs';

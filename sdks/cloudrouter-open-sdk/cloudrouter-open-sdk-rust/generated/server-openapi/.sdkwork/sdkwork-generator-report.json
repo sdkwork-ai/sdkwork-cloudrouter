@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "44a12cdf62f4020afe377a3f83f8d0f2f3622a55005bb72870f472c6230d2849",
+  "changeFingerprint": "ba21a7932a1fecd1220f1145dab0815030489903599eeb9027f832b33e3205b4",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -30,6 +30,7 @@
         "area": "api-surface",
         "paths": [
           "src/api/assistants.rs",
+          "src/api/audio_elevenlabs.rs",
           "src/api/audio_suno.rs",
           "src/api/audio.rs",
           "src/api/base.rs",
@@ -95,6 +96,10 @@
           "src/models/create_completion_choice.rs",
           "src/models/create_completion_logprobs.rs",
           "src/models/delete_result.rs",
+          "src/models/eleven_labs_sound_generation_request.rs",
+          "src/models/eleven_labs_sound_generation_response.rs",
+          "src/models/eleven_labs_text_to_speech_request.rs",
+          "src/models/eleven_labs_text_to_speech_response.rs",
           "src/models/google_batch_embed_contents_request.rs",
           "src/models/google_batch_embed_contents_response.rs",
           "src/models/google_blob.rs",
@@ -503,21 +508,21 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 319,
-    "models": 269,
-    "apis": 32,
-    "types": 272
+    "totalFiles": 324,
+    "models": 273,
+    "apis": 33,
+    "types": 276
   },
   "warnings": [],
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 319,
+    "writtenFiles": 324,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "44a12cdf62f4020afe377a3f83f8d0f2f3622a55005bb72870f472c6230d2849",
+    "changeFingerprint": "ba21a7932a1fecd1220f1145dab0815030489903599eeb9027f832b33e3205b4",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -529,6 +534,7 @@
         "README.md",
         "sdkwork-sdk.json",
         "src/api/assistants.rs",
+        "src/api/audio_elevenlabs.rs",
         "src/api/audio_suno.rs",
         "src/api/audio.rs",
         "src/api/base.rs",
@@ -592,6 +598,10 @@
         "src/models/create_completion_choice.rs",
         "src/models/create_completion_logprobs.rs",
         "src/models/delete_result.rs",
+        "src/models/eleven_labs_sound_generation_request.rs",
+        "src/models/eleven_labs_sound_generation_response.rs",
+        "src/models/eleven_labs_text_to_speech_request.rs",
+        "src/models/eleven_labs_text_to_speech_response.rs",
         "src/models/google_batch_embed_contents_request.rs",
         "src/models/google_batch_embed_contents_response.rs",
         "src/models/google_blob.rs",
@@ -865,6 +875,7 @@
           "area": "api-surface",
           "paths": [
             "src/api/assistants.rs",
+            "src/api/audio_elevenlabs.rs",
             "src/api/audio_suno.rs",
             "src/api/audio.rs",
             "src/api/base.rs",
@@ -930,6 +941,10 @@
             "src/models/create_completion_choice.rs",
             "src/models/create_completion_logprobs.rs",
             "src/models/delete_result.rs",
+            "src/models/eleven_labs_sound_generation_request.rs",
+            "src/models/eleven_labs_sound_generation_response.rs",
+            "src/models/eleven_labs_text_to_speech_request.rs",
+            "src/models/eleven_labs_text_to_speech_response.rs",
             "src/models/google_batch_embed_contents_request.rs",
             "src/models/google_batch_embed_contents_response.rs",
             "src/models/google_blob.rs",

@@ -9,7 +9,7 @@ pub struct OpenAiVoiceCreateMultipartRequest {
 
     /// Binary voice sample or voice package.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub file: Option<String>,
+    pub file: Option<Vec<u8>>,
 
     /// JSON-serialized voice metadata.
     #[serde(default, skip_serializing_if = "Option::is_none")]

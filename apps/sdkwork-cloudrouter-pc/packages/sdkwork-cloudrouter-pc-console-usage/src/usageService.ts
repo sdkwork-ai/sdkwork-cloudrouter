@@ -90,9 +90,6 @@ function normalizeUsageLog(value: unknown): UsageLog {
   const inputTokens = readRequiredUnsignedInt64String(item, 'inputTokens', 'Usage log input tokens are required');
   const cacheReadTokens = readRequiredUnsignedInt64String(item, 'cacheReadTokens', 'Usage log cache read tokens are required');
   const outputTokens = readRequiredUnsignedInt64String(item, 'outputTokens', 'Usage log output tokens are required');
-  if (BigInt(cacheReadTokens) > BigInt(inputTokens)) {
-    throw new Error('Usage log cache read tokens must not exceed input tokens');
-  }
   return {
     id: readRequiredString(item, 'id', 'Usage log id is required'),
     gatewayRequestId: readRequiredString(
@@ -149,6 +146,12 @@ function normalizeUsageLog(value: unknown): UsageLog {
       'cacheReadPrice',
       'Usage log cache read price is required',
       'Usage log cache read price must be a decimal string',
+    ),
+    unitSize: readRequiredDecimalString(
+      item,
+      'unitSize',
+      'Usage log unit size is required',
+      'Usage log unit size must be a decimal string',
     ),
     path: readRequiredString(item, 'path', 'Usage log path is required'),
     reasoningEffort: readRequiredString(item, 'reasoningEffort', 'Usage log reasoning effort is required'),

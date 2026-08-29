@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "@sdkwork/cloudrouter-open-sdk"
   },
-  "changeFingerprint": "c531373b261bbd165884b563c806642765d2ad4938dbba0733e7615ea9b3c7cf",
+  "changeFingerprint": "8f35c77e264e1264639ec67101890bee6c59f1699d1fd3afbd92c6ae6ddf3051",
   "changes": {
     "createdGeneratedFiles": [
       "bin/publish-core.mjs",
@@ -23,6 +23,7 @@
       "README.md",
       "sdkwork-sdk.json",
       "src/api/assistants.ts",
+      "src/api/audio-elevenlabs.ts",
       "src/api/audio-suno.ts",
       "src/api/audio.ts",
       "src/api/base.ts",
@@ -88,6 +89,10 @@
       "src/types/create-completion-choice.ts",
       "src/types/create-completion-logprobs.ts",
       "src/types/delete-result.ts",
+      "src/types/eleven-labs-sound-generation-request.ts",
+      "src/types/eleven-labs-sound-generation-response.ts",
+      "src/types/eleven-labs-text-to-speech-request.ts",
+      "src/types/eleven-labs-text-to-speech-response.ts",
       "src/types/google-batch-embed-contents-request.ts",
       "src/types/google-batch-embed-contents-response.ts",
       "src/types/google-blob.ts",
@@ -371,6 +376,7 @@
         "area": "api-surface",
         "paths": [
           "src/api/assistants.ts",
+          "src/api/audio-elevenlabs.ts",
           "src/api/audio-suno.ts",
           "src/api/audio.ts",
           "src/api/base.ts",
@@ -438,6 +444,10 @@
           "src/types/create-completion-choice.ts",
           "src/types/create-completion-logprobs.ts",
           "src/types/delete-result.ts",
+          "src/types/eleven-labs-sound-generation-request.ts",
+          "src/types/eleven-labs-sound-generation-response.ts",
+          "src/types/eleven-labs-text-to-speech-request.ts",
+          "src/types/eleven-labs-text-to-speech-response.ts",
           "src/types/google-batch-embed-contents-request.ts",
           "src/types/google-batch-embed-contents-response.ts",
           "src/types/google-blob.ts",

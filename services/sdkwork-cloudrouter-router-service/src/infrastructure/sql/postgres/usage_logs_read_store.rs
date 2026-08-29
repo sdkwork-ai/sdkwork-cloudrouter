@@ -49,7 +49,8 @@ usage_by_request AS (
         CAST(COALESCE(MAX(COALESCE(rate_multiplier, 1)), 1) AS TEXT) AS rate_multiplier,
         CAST(COALESCE(MAX(COALESCE(base_input_unit_price, 0)), 0) AS TEXT) AS base_input_unit_price,
         CAST(COALESCE(MAX(COALESCE(base_output_unit_price, 0)), 0) AS TEXT) AS base_output_unit_price,
-        CAST(COALESCE(MAX(COALESCE(cache_read_unit_price, 0)), 0) AS TEXT) AS cache_read_unit_price
+        CAST(COALESCE(MAX(COALESCE(cache_read_unit_price, 0)), 0) AS TEXT) AS cache_read_unit_price,
+        CAST(COALESCE(MAX(COALESCE(unit_size, 1000000)), 1000000) AS TEXT) AS unit_size
     FROM billable_usage
     WHERE tenant_id = $1
       AND organization_id = $2
@@ -113,6 +114,7 @@ SELECT
     COALESCE(u.base_input_unit_price, '0') AS base_input_unit_price,
     COALESCE(u.base_output_unit_price, '0') AS base_output_unit_price,
     COALESCE(u.cache_read_unit_price, '0') AS cache_read_unit_price,
+    COALESCE(u.unit_size, '1000000') AS unit_size,
     COALESCE(NULLIF(t.request_path, ''), NULLIF(t.endpoint, ''), '-') AS request_path,
     COALESCE(NULLIF(t.reasoning_effort, ''), '-') AS reasoning_effort,
     COALESCE(NULLIF(t.client_ip_masked, ''), '-') AS client_ip_masked,
@@ -276,6 +278,7 @@ fn row_to_usage_log(row: sqlx::postgres::PgRow) -> Result<UsageLogItem, DomainEr
             6,
             "usage log cache read price",
         )?,
+        unit_size: decimal_string_cell(&row, "unit_size", 6, "usage log unit size")?,
         path: string_cell(&row, "request_path"),
         reasoning_effort: string_cell(&row, "reasoning_effort"),
         ip: string_cell(&row, "client_ip_masked"),

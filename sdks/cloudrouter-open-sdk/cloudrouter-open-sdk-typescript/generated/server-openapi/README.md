@@ -102,6 +102,7 @@ const client = new SdkworkAiClient({
 - `client.videosVidu` - videos_vidu API
 - `client.imagesVidu` - images_vidu API
 - `client.videosVolcengine` - videos_volcengine API
+- `client.audioElevenlabs` - audio_elevenlabs API
 
 ## Usage Examples
 
@@ -629,6 +630,23 @@ const body = {
   model: 'model',
 };
 const result = await client.videosVolcengine.api.v3.contents.generations.tasks.create(body);
+```
+
+### audio_elevenlabs
+
+```typescript
+// Generate sound effect
+const body = {
+  model_id: 'model_id',
+  text: 'text',
+  duration_seconds: 1,
+  prompt_influence: 1,
+  loop: true,
+};
+const params = {
+  output_format: 'output_format',
+};
+const result = await client.audioElevenlabs.v1.soundGeneration.create(body, params);
 ```
 
 ## Error Handling

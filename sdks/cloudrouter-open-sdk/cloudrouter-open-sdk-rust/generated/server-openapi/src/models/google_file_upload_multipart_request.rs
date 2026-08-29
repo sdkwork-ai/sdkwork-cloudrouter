@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct GoogleFileUploadMultipartRequest {
     /// Binary file content uploaded to Gemini.
-    pub file: String,
+    pub file: Vec<u8>,
 
     /// JSON-encoded Gemini file metadata when required by the upstream upload protocol.
     #[serde(default, skip_serializing_if = "Option::is_none")]

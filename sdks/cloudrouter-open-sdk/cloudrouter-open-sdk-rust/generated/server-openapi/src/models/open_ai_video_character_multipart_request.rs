@@ -9,11 +9,11 @@ pub struct OpenAiVideoCharacterMultipartRequest {
 
     /// Binary character reference image.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub file: Option<String>,
+    pub file: Option<Vec<u8>>,
 
     /// Character reference image when required by the selected upstream.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub image: Option<String>,
+    pub image: Option<Vec<u8>>,
 
     /// JSON-serialized character metadata.
     #[serde(default, skip_serializing_if = "Option::is_none")]

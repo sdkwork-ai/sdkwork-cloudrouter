@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct OpenAiContainerFileCreateMultipartRequest {
     /// Binary file payload for the container.
-    pub file: String,
+    pub file: Vec<u8>,
 
     /// JSON-serialized container file metadata.
     #[serde(default, skip_serializing_if = "Option::is_none")]

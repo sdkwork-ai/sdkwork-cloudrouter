@@ -43,7 +43,7 @@ export const adminAnalyticsRecordMessages = {
     "admin.record.index.text.9gtzua": "Per page: 10",
     "admin.record.index.text.7st86h": "Per page: 20",
     "admin.record.index.text.79bzw6": "Per page: 50",
-    "admin.record.index.text.costFormula": "(input {{inputBillable}} / 1M * {{inputPrice}} + cache {{cacheTokens}} / 1M * {{cachePrice}} + output {{outputTokens}} / 1M * {{outputPrice}}) * multiplier {{multiplier}} = ",
+    "admin.record.index.text.costFormula": "(input {{inputBillable}} / {{unitLabel}} * {{inputPrice}} + cache {{cacheTokens}} / {{unitLabel}} * {{cachePrice}} + output {{outputTokens}} / {{unitLabel}} * {{outputPrice}}) * multiplier {{multiplier}} = ",
     "admin.record.table.status": "Status",
     "admin.record.table.type": "Type",
     "admin.record.table.requestUrl": "Request URL",

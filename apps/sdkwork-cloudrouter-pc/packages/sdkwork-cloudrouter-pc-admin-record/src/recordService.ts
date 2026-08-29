@@ -49,6 +49,7 @@ export interface LogRecord {
   baseInputPrice: string;
   baseOutputPrice: string;
   cacheReadPrice: string;
+  unitSize: string;
   path: string;
   reasoningEffort: string;
   ip: string;
@@ -133,9 +134,6 @@ function normalizeLogRecord(value: unknown): LogRecord {
     'Log cache read tokens are required',
   );
   const outputTokens = readRequiredNonNegativeInt64String(item, 'outputTokens', 'Log output tokens are required');
-  if (BigInt(cacheReadTokens) > BigInt(inputTokens)) {
-    throw new Error('Log cache read tokens must not exceed input tokens');
-  }
   return {
     id: readRequiredString(item, 'id', 'Log record id is required'),
     user: readRequiredString(item, 'user', 'Log user is required'),
@@ -185,6 +183,12 @@ function normalizeLogRecord(value: unknown): LogRecord {
       'cacheReadPrice',
       'Log cache read price is required',
       'Log cache read price must be a decimal string',
+    ),
+    unitSize: readRequiredDecimalString(
+      item,
+      'unitSize',
+      'Log unit size is required',
+      'Log unit size must be a decimal string',
     ),
     path: readRequiredString(item, 'path', 'Log path is required'),
     reasoningEffort: readRequiredString(item, 'reasoningEffort', 'Log reasoning effort is required'),

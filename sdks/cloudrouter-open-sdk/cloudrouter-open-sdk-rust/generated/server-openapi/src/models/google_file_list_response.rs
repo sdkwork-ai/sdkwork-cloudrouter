@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::GoogleFile;
+use crate::models::{GoogleFile};
 
 /// Google Gemini google file list response schema exposed by Cloud Router vendor routing.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

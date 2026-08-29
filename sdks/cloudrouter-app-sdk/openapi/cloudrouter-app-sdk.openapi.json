@@ -5887,6 +5887,11 @@
             "maxLength": 64,
             "type": "string"
           },
+          "unitSize": {
+            "description": "Unit size field on usage log item.",
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+            "type": "string"
+          },
           "userAgent": {
             "description": "User agent field on usage log item.",
             "maxLength": 2048,
@@ -5920,6 +5925,7 @@
           "baseInputPrice",
           "baseOutputPrice",
           "cacheReadPrice",
+          "unitSize",
           "path",
           "reasoningEffort",
           "ip",

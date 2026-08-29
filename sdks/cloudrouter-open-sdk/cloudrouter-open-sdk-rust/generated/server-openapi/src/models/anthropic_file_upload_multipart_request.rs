@@ -4,5 +4,5 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct AnthropicFileUploadMultipartRequest {
     /// File bytes uploaded to Anthropic.
-    pub file: String,
+    pub file: Vec<u8>,
 }

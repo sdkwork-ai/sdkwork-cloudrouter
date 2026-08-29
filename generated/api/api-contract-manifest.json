@@ -13424,6 +13424,10 @@
                     "maxLength": 64,
                     "type": "string"
                   },
+                  "unitSize": {
+                    "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+                    "type": "string"
+                  },
                   "user": {
                     "maxLength": 320,
                     "type": "string"
@@ -13462,6 +13466,7 @@
                   "baseInputPrice",
                   "baseOutputPrice",
                   "cacheReadPrice",
+                  "unitSize",
                   "path",
                   "reasoningEffort",
                   "ip",
@@ -23400,6 +23405,10 @@
                     "maxLength": 64,
                     "type": "string"
                   },
+                  "unitSize": {
+                    "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
+                    "type": "string"
+                  },
                   "userAgent": {
                     "maxLength": 2048,
                     "type": "string"
@@ -23432,6 +23441,7 @@
                   "baseInputPrice",
                   "baseOutputPrice",
                   "cacheReadPrice",
+                  "unitSize",
                   "path",
                   "reasoningEffort",
                   "ip",

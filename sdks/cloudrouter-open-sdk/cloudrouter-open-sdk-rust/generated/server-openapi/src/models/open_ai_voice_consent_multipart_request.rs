@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct OpenAiVoiceConsentMultipartRequest {
     /// Voice consent file.
-    pub file: String,
+    pub file: Vec<u8>,
 
     /// Provider-specific metadata for the voice consent.
     #[serde(default, skip_serializing_if = "Option::is_none")]

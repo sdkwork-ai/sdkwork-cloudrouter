@@ -3,7 +3,5 @@
   "sdkType": "app",
   "name": "cloudrouter-app-sdk",
   "packageName": "cloudrouter-app-sdk-generated-typescript",
-  "version": "0.1.0",
-  "transportPackageName": "cloudrouter-app-sdk-generated-typescript",
-  "consumerPackageName": "@sdkwork/cloudrouter-app-sdk"
+  "version": "0.1.0"
 }

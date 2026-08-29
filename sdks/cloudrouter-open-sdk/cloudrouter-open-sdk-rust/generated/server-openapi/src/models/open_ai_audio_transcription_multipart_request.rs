@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct OpenAiAudioTranscriptionMultipartRequest {
     /// File field on the open ai audio transcription multipart request, using the open ai binary file part module.
-    pub file: String,
+    pub file: Vec<u8>,
 
     /// Optional source language hint.
     #[serde(default, skip_serializing_if = "Option::is_none")]

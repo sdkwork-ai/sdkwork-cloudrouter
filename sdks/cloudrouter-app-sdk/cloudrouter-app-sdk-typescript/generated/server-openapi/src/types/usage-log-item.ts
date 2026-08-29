@@ -58,6 +58,8 @@ export interface UsageLogItem {
   ttft: string;
   /** Type field on usage log item. */
   type: string;
+  /** Unit size field on usage log item. */
+  unitSize: string;
   /** User agent field on usage log item. */
   userAgent: string;
 }

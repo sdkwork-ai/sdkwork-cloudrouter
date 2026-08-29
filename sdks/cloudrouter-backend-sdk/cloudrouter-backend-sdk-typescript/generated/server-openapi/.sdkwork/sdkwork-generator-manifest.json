@@ -240,7 +240,7 @@
     },
     {
       "path": "src/types/admin-record-log-item.ts",
-      "sha256": "d7de2bbdd5ec49e172e9cc8741768d2a7fc2ef87ed608d6c794d068a7edd779f"
+      "sha256": "8999376248942bb4731b6a7702bdcc64f347eea516e53bc5f1831f418945b117"
     },
     {
       "path": "src/types/admin-record-page.ts",

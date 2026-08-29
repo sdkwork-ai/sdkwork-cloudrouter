@@ -1,6 +1,6 @@
 pub mod base;
-pub mod files_anthropic;
 pub mod paths;
+pub mod files_anthropic;
 pub use files_anthropic::FilesAnthropicApi;
 pub mod chat_anthropic;
 pub use chat_anthropic::ChatAnthropicApi;
@@ -64,3 +64,5 @@ pub mod images_vidu;
 pub use images_vidu::ImagesViduApi;
 pub mod videos_volcengine;
 pub use videos_volcengine::VideosVolcengineApi;
+pub mod audio_elevenlabs;
+pub use audio_elevenlabs::AudioElevenlabsApi;

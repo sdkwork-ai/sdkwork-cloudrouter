@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::{
-    GoogleCachedContentUsageMetadata, GoogleContent, GoogleTool, GoogleToolConfig,
-};
+use crate::models::{GoogleCachedContentUsageMetadata, GoogleContent, GoogleTool, GoogleToolConfig};
 
 /// Google Gemini google cached content schema exposed by Cloud Router vendor routing.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

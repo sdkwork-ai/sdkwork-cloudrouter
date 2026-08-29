@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::OpenAiVoiceConsent;
+use crate::models::{OpenAiVoiceConsent};
 
 /// OpenAI-compatible paginated list of voice consents.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

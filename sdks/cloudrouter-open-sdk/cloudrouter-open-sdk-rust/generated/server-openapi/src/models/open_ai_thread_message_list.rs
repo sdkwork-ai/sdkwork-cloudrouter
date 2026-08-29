@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::OpenAiThreadMessage;
+use crate::models::{OpenAiThreadMessage};
 
 /// OpenAI-compatible paginated list of thread messages.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

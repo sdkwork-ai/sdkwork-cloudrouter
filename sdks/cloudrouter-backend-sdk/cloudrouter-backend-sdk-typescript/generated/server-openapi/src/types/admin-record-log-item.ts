@@ -58,6 +58,8 @@ export interface AdminRecordLogItem {
   ttft: string;
   /** Type field on admin record log item. */
   type: string;
+  /** Unit size field on admin record log item. */
+  unitSize: string;
   /** User field on admin record log item. */
   user: string;
   /** User agent field on admin record log item. */

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::OpenAiNamedToolChoiceFunction;
+use crate::models::{OpenAiNamedToolChoiceFunction};
 
 /// OpenAI-compatible open ai named tool choice schema exposed by Cloud Router.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

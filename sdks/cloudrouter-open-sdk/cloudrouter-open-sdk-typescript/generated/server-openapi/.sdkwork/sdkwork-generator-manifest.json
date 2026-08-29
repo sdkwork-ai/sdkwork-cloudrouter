@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "b4a8321b58f5ef04e958719e4c861f45a20fd920a2863855467d9cdf7f735c18"
+      "sha256": "549a83ba11a72615c84434efa73f6f17975d727897ed495b41a99bc9899f1d4a"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -53,6 +53,10 @@
     {
       "path": "src/api/assistants.ts",
       "sha256": "68958f212c881c17e4e41269c0a61d8877bfdf0890686519a1139d90a1b0589d"
+    },
+    {
+      "path": "src/api/audio-elevenlabs.ts",
+      "sha256": "2fba037d62d3d8b378ab87ea7c6d9bd0ad3a9c345121b5cb0b2d88b0220805d9"
     },
     {
       "path": "src/api/audio-suno.ts",
@@ -136,7 +140,7 @@
     },
     {
       "path": "src/api/index.ts",
-      "sha256": "89a83c34fb116291b6054b16a339ed3c971c8f1dcb579c9cda652a01bc7cbffa"
+      "sha256": "1dad9652fe67690bfc6447b24f4beeb16f0da20946829eefad8b440cd0d5814a"
     },
     {
       "path": "src/api/models.ts",
@@ -208,7 +212,7 @@
     },
     {
       "path": "src/sdk.ts",
-      "sha256": "3152f9860f838f3fff8d79849d8d806c559e2678b4730de1250c60703ff741cc"
+      "sha256": "e7e8cc33f32076f1fee958dacb13b4ba4aa9c9c8c4318fe5974e881e512ea9c4"
     },
     {
       "path": "src/types/anthropic-content-block-param.ts",
@@ -313,6 +317,22 @@
     {
       "path": "src/types/delete-result.ts",
       "sha256": "8523efd48f5e84d258d89a82a0e6ce4bf4eea17ce30bd06ce7f93040d96656a7"
+    },
+    {
+      "path": "src/types/eleven-labs-sound-generation-request.ts",
+      "sha256": "b8a2e1a2239a2fc11e88671bbc357864ea905272573446d29bb64d8452800890"
+    },
+    {
+      "path": "src/types/eleven-labs-sound-generation-response.ts",
+      "sha256": "83f39c2a2f38deeb39abfdb682d01034ed1762cd01ae5b1135c75606d00d4aa5"
+    },
+    {
+      "path": "src/types/eleven-labs-text-to-speech-request.ts",
+      "sha256": "fd632e4eb6c81906b4303e3841f7c31b90676558e3230250d5b4e4d59c7cf4fa"
+    },
+    {
+      "path": "src/types/eleven-labs-text-to-speech-response.ts",
+      "sha256": "46d0901e79d0f633529574d20aadb9a248b40663306a2b9a5efb751b04f98b24"
     },
     {
       "path": "src/types/google-batch-embed-contents-request.ts",
@@ -488,7 +508,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "fd1440b1314f69a2a5c38f9b3545fd2150d031ebcd49ddbd3c83ecfb499a5bb0"
+      "sha256": "7455738df62bc7103e21c2259385fa69adb20b2d8282168faa095a6d4057b644"
     },
     {
       "path": "src/types/kling-video-generation-request.ts",

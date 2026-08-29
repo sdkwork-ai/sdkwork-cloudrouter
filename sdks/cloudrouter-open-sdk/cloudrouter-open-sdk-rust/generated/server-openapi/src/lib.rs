@@ -3,6 +3,6 @@ mod client;
 pub mod http;
 pub mod models;
 
-pub use client::SdkworkAiClient;
+pub use client::{SdkworkAiClient};
 pub use http::{QueryParams, RequestHeaders, SdkworkConfig, SdkworkError, SdkworkHttpClient};
 pub use models::*;

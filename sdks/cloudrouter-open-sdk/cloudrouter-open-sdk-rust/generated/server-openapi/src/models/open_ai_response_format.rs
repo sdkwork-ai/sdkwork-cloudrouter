@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::OpenAiJsonSchemaFormat;
+use crate::models::{OpenAiJsonSchemaFormat};
 
 /// OpenAI-compatible open ai response format schema exposed by Cloud Router.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

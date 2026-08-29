@@ -37,6 +37,7 @@ SELECT
     CASE WHEN m.meter_code = 'llm_input_token' THEN COALESCE(d.unit_price, 0) ELSE 0 END AS base_input_unit_price,
     CASE WHEN m.meter_code = 'llm_output_token' THEN COALESCE(d.unit_price, 0) ELSE 0 END AS base_output_unit_price,
     CASE WHEN m.meter_code = 'llm_cache_read_token' THEN COALESCE(d.unit_price, 0) ELSE 0 END AS cache_read_unit_price,
+    COALESCE(d.unit_size, 1000000) AS unit_size,
     c.charged_at AS occurred_at
 FROM cloudrouter_charge_line c
 JOIN cloudrouter_rating_decision d
@@ -95,6 +96,11 @@ SELECT
     COALESCE(legacy.base_input_unit_price, 0),
     COALESCE(legacy.base_output_unit_price, 0),
     COALESCE(legacy.cache_read_unit_price, 0),
+    COALESCE(
+        NULLIF(legacy.pricing_snapshot #>> '{pricing,unitSize}', '')::numeric,
+        NULLIF(legacy.pricing_snapshot #>> '{unitPrice,unitSize}', '')::numeric,
+        1000000
+    ),
     legacy.occurred_at
 FROM ai_metering_usage legacy
 WHERE legacy.status = 1

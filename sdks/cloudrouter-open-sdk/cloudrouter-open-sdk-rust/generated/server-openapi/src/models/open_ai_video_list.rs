@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::OpenAiVideo;
+use crate::models::{OpenAiVideo};
 
 /// OpenAI-compatible paginated list of videos.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

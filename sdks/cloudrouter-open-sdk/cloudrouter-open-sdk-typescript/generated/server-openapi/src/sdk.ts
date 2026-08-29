@@ -34,6 +34,7 @@ import { VideoApi, createVideoApi } from './api/video';
 import { VideosViduApi, createVideosViduApi } from './api/videos-vidu';
 import { ImagesViduApi, createImagesViduApi } from './api/images-vidu';
 import { VideosVolcengineApi, createVideosVolcengineApi } from './api/videos-volcengine';
+import { AudioElevenlabsApi, createAudioElevenlabsApi } from './api/audio-elevenlabs';
 
 export class SdkworkAiClient {
   private httpClient: HttpClient;
@@ -70,6 +71,7 @@ export class SdkworkAiClient {
   public readonly videosVidu: VideosViduApi;
   public readonly imagesVidu: ImagesViduApi;
   public readonly videosVolcengine: VideosVolcengineApi;
+  public readonly audioElevenlabs: AudioElevenlabsApi;
 
   constructor(config: SdkworkAiConfig) {
     this.httpClient = createHttpClient(config);
@@ -136,6 +138,8 @@ export class SdkworkAiClient {
     this.imagesVidu = createImagesViduApi(this.httpClient);
 
     this.videosVolcengine = createVideosVolcengineApi(this.httpClient);
+
+    this.audioElevenlabs = createAudioElevenlabsApi(this.httpClient);
   }
 
   setApiKey(apiKey: string): this {

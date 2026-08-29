@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::AnthropicMessageBatchRequest;
+use crate::models::{AnthropicMessageBatchRequest};
 
 /// Anthropic Claude anthropic message batch create request schema exposed by Cloud Router vendor routing.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]

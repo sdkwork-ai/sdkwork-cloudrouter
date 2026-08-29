@@ -69,6 +69,7 @@ pub struct AdminRecordLogItem {
     pub base_input_price: String,
     pub base_output_price: String,
     pub cache_read_price: String,
+    pub unit_size: String,
     pub path: String,
     pub reasoning_effort: String,
     pub ip: String,

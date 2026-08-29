@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct OpenAiAudioTranslationMultipartRequest {
     /// File field on the open ai audio translation multipart request, using the open ai binary file part module.
-    pub file: String,
+    pub file: Vec<u8>,
 
     /// Translation model id or Cloud Router catalog key.
     pub model: String,

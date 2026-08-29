@@ -12,7 +12,7 @@
   },
   "workspace": "cloudrouter-app-sdk",
   "title": "SDKWork Cloud Router app API SDK",
-  "apiVersion": "0.1.2",
+  "apiVersion": "0.1.4",
   "authoritySpec": "openapi/cloudrouter-app-sdk.openapi.json",
   "generationInputSpec": "openapi/cloudrouter-app-sdk.openapi.json",
   "derivedSpecs": {},
@@ -157,7 +157,7 @@
       "packagePath": "cloudrouter-app-sdk-typescript",
       "manifestPath": "cloudrouter-app-sdk-typescript/package.json",
       "name": "@sdkwork/cloudrouter-app-sdk",
-      "version": "0.1.2",
+      "version": "0.1.4",
       "description": "SDKWork Cloud Router app API SDK",
       "entrypoints": {
         "main": "./dist/index.cjs",
@@ -174,7 +174,7 @@
           "packagePath": "cloudrouter-app-sdk-typescript/generated/server-openapi",
           "manifestPath": "cloudrouter-app-sdk-typescript/generated/server-openapi/package.json",
           "name": "cloudrouter-app-sdk-generated-typescript",
-          "version": "0.1.2",
+          "version": "0.1.4",
           "description": "SDKWork Cloud Router app API SDK generator-owned transport output",
           "entrypoints": {
             "main": "./dist/index.cjs",
@@ -187,7 +187,7 @@
           "packagePath": "cloudrouter-app-sdk-typescript",
           "manifestPath": "cloudrouter-app-sdk-typescript/package.json",
           "name": "@sdkwork/cloudrouter-app-sdk",
-          "version": "0.1.2",
+          "version": "0.1.4",
           "description": "SDKWork Cloud Router app API SDK",
           "entrypoints": {
             "main": "./dist/index.cjs",
@@ -205,7 +205,7 @@
       "generatedPath": "cloudrouter-app-sdk-flutter/generated/server-openapi",
       "manifestPath": "cloudrouter-app-sdk-flutter/generated/server-openapi/pubspec.yaml",
       "name": "cloudrouter_app_sdk",
-      "version": "0.1.2",
+      "version": "0.1.4",
       "description": "SDKWork Cloud Router app API SDK flutter generated transport SDK",
       "packages": [
         {
@@ -213,7 +213,7 @@
           "packagePath": "cloudrouter-app-sdk-flutter/generated/server-openapi",
           "manifestPath": "cloudrouter-app-sdk-flutter/generated/server-openapi/pubspec.yaml",
           "name": "cloudrouter_app_sdk",
-          "version": "0.1.2",
+          "version": "0.1.4",
           "description": "SDKWork Cloud Router app API SDK flutter generated transport SDK"
         },
         {
@@ -234,7 +234,7 @@
       "generatedPath": "cloudrouter-app-sdk-rust/generated/server-openapi",
       "manifestPath": "cloudrouter-app-sdk-rust/generated/server-openapi/Cargo.toml",
       "name": "cloudrouter-app-sdk",
-      "version": "0.1.2",
+      "version": "0.1.4",
       "description": "SDKWork Cloud Router app API SDK rust generated transport SDK",
       "packages": [
         {
@@ -242,7 +242,7 @@
           "packagePath": "cloudrouter-app-sdk-rust/generated/server-openapi",
           "manifestPath": "cloudrouter-app-sdk-rust/generated/server-openapi/Cargo.toml",
           "name": "cloudrouter-app-sdk",
-          "version": "0.1.2",
+          "version": "0.1.4",
           "description": "SDKWork Cloud Router app API SDK rust generated transport SDK"
         },
         {
@@ -263,7 +263,7 @@
       "generatedPath": "cloudrouter-app-sdk-java/generated/server-openapi",
       "manifestPath": "cloudrouter-app-sdk-java/generated/server-openapi/pom.xml",
       "name": "com.sdkwork.cloudrouter:cloudrouter-app-sdk",
-      "version": "0.1.2",
+      "version": "0.1.4",
       "description": "SDKWork Cloud Router app API SDK java generated transport SDK",
       "packages": [
         {
@@ -271,7 +271,7 @@
           "packagePath": "cloudrouter-app-sdk-java/generated/server-openapi",
           "manifestPath": "cloudrouter-app-sdk-java/generated/server-openapi/pom.xml",
           "name": "com.sdkwork.cloudrouter:cloudrouter-app-sdk",
-          "version": "0.1.2",
+          "version": "0.1.4",
           "description": "SDKWork Cloud Router app API SDK java generated transport SDK"
         },
         {
@@ -292,7 +292,7 @@
       "generatedPath": "cloudrouter-app-sdk-csharp/generated/server-openapi",
       "manifestPath": "cloudrouter-app-sdk-csharp/generated/server-openapi/Sdkwork.CloudRouter.App.Sdk.csproj",
       "name": "Sdkwork.CloudRouter.App.Sdk",
-      "version": "0.1.2",
+      "version": "0.1.4",
       "description": "SDKWork Cloud Router app API SDK csharp generated transport SDK",
       "packages": [
         {
@@ -300,7 +300,7 @@
           "packagePath": "cloudrouter-app-sdk-csharp/generated/server-openapi",
           "manifestPath": "cloudrouter-app-sdk-csharp/generated/server-openapi/Sdkwork.CloudRouter.App.Sdk.csproj",
           "name": "Sdkwork.CloudRouter.App.Sdk",
-          "version": "0.1.2",
+          "version": "0.1.4",
           "description": "SDKWork Cloud Router app API SDK csharp generated transport SDK"
         },
         {
@@ -321,7 +321,7 @@
       "generatedPath": "cloudrouter-app-sdk-swift/generated/server-openapi",
       "manifestPath": "cloudrouter-app-sdk-swift/generated/server-openapi/Package.swift",
       "name": "CloudRouterAppSdk",
-      "version": "0.1.2",
+      "version": "0.1.4",
       "description": "SDKWork Cloud Router app API SDK swift generated transport SDK",
       "packages": [
         {
@@ -329,7 +329,7 @@
           "packagePath": "cloudrouter-app-sdk-swift/generated/server-openapi",
           "manifestPath": "cloudrouter-app-sdk-swift/generated/server-openapi/Package.swift",
           "name": "CloudRouterAppSdk",
-          "version": "0.1.2",
+          "version": "0.1.4",
           "description": "SDKWork Cloud Router app API SDK swift generated transport SDK"
         },
         {
@@ -350,7 +350,7 @@
       "generatedPath": "cloudrouter-app-sdk-kotlin/generated/server-openapi",
       "manifestPath": "cloudrouter-app-sdk-kotlin/generated/server-openapi/build.gradle.kts",
       "name": "com.sdkwork.cloudrouter:cloudrouter-app-sdk",
-      "version": "0.1.2",
+      "version": "0.1.4",
       "description": "SDKWork Cloud Router app API SDK kotlin generated transport SDK",
       "packages": [
         {
@@ -358,7 +358,7 @@
           "packagePath": "cloudrouter-app-sdk-kotlin/generated/server-openapi",
           "manifestPath": "cloudrouter-app-sdk-kotlin/generated/server-openapi/build.gradle.kts",
           "name": "com.sdkwork.cloudrouter:cloudrouter-app-sdk",
-          "version": "0.1.2",
+          "version": "0.1.4",
           "description": "SDKWork Cloud Router app API SDK kotlin generated transport SDK"
         },
         {
@@ -379,7 +379,7 @@
       "generatedPath": "cloudrouter-app-sdk-go/generated/server-openapi",
       "manifestPath": "cloudrouter-app-sdk-go/generated/server-openapi/go.mod",
       "name": "github.com/sdkwork/cloudrouter-app-sdk",
-      "version": "0.1.2",
+      "version": "0.1.4",
       "description": "SDKWork Cloud Router app API SDK go generated transport SDK",
       "packages": [
         {
@@ -387,7 +387,7 @@
           "packagePath": "cloudrouter-app-sdk-go/generated/server-openapi",
           "manifestPath": "cloudrouter-app-sdk-go/generated/server-openapi/go.mod",
           "name": "github.com/sdkwork/cloudrouter-app-sdk",
-          "version": "0.1.2",
+          "version": "0.1.4",
           "description": "SDKWork Cloud Router app API SDK go generated transport SDK"
         },
         {
@@ -408,7 +408,7 @@
       "generatedPath": "cloudrouter-app-sdk-python/generated/server-openapi",
       "manifestPath": "cloudrouter-app-sdk-python/generated/server-openapi/pyproject.toml",
       "name": "sdkwork-cloudrouter-app-sdk",
-      "version": "0.1.2",
+      "version": "0.1.4",
       "description": "SDKWork Cloud Router app API SDK python generated transport SDK",
       "packages": [
         {
@@ -416,7 +416,7 @@
           "packagePath": "cloudrouter-app-sdk-python/generated/server-openapi",
           "manifestPath": "cloudrouter-app-sdk-python/generated/server-openapi/pyproject.toml",
           "name": "sdkwork-cloudrouter-app-sdk",
-          "version": "0.1.2",
+          "version": "0.1.4",
           "description": "SDKWork Cloud Router app API SDK python generated transport SDK"
         },
         {

@@ -292,7 +292,14 @@ WHERE book.tenant_id = $1
   AND book.vendor_code = $11
   AND book.region_code = $14
   AND rate.vendor_code = $11
-  AND rate.provider_code = $12
+  -- Official-reference and customer-charge books store the vendor code in
+  -- rate.provider_code (see official_pricing_sync and load_prices); only
+  -- upstream-cost books key provider_code to the routing supplier. Match the
+  -- PriceService resolution semantics instead of forcing supplier equality.
+  AND (rate.provider_code IS NULL
+       OR rate.provider_code = ''
+       OR rate.provider_code = $11
+       OR rate.provider_code = $12)
   AND (rate.account_id IS NULL OR rate.account_id = $13)
   AND rate.region_code = $14
   AND rate.billability = $15
@@ -772,8 +779,11 @@ async fn upsert_billing_ledger(
     let cost_unit_price = rated
         .then(|| reference.and_then(|rate| rate.rated_procurement_unit_price.as_deref()))
         .flatten();
+    // Persist the customer base unit price BEFORE the sale multiplier so the
+    // read projection (base_*_unit_price) keeps the legacy ai_metering_usage
+    // semantics: amount = unit_price x rate_multiplier x rated_quantity / unit_size.
     let unit_price = rated
-        .then(|| reference.map(|rate| rate.rated_unit_price.as_str()))
+        .then(|| reference.map(|rate| rate.plan_unit_price.as_str()))
         .flatten();
     let reference_amount = rated.then_some(command.official_reference_amount.as_str());
     let cost_amount = rated.then_some(command.upstream_cost_amount.as_str());

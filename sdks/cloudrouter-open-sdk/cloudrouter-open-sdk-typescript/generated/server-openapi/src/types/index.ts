@@ -277,3 +277,7 @@ export type { VolcengineContentGenerationTask } from './volcengine-content-gener
 export type { VolcengineContentGenerationTaskCreateRequest } from './volcengine-content-generation-task-create-request';
 export type { VolcengineContentGenerationTaskCreateResponse } from './volcengine-content-generation-task-create-response';
 export type { VolcengineContentPart } from './volcengine-content-part';
+export type { ElevenLabsSoundGenerationRequest } from './eleven-labs-sound-generation-request';
+export type { ElevenLabsSoundGenerationResponse } from './eleven-labs-sound-generation-response';
+export type { ElevenLabsTextToSpeechRequest } from './eleven-labs-text-to-speech-request';
+export type { ElevenLabsTextToSpeechResponse } from './eleven-labs-text-to-speech-response';

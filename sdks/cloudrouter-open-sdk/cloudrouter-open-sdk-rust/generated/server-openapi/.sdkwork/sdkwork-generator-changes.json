@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "cloudrouter-open-sdk"
   },
-  "changeFingerprint": "44a12cdf62f4020afe377a3f83f8d0f2f3622a55005bb72870f472c6230d2849",
+  "changeFingerprint": "ba21a7932a1fecd1220f1145dab0815030489903599eeb9027f832b33e3205b4",
   "changes": {
     "createdGeneratedFiles": [
       "bin/publish-core.mjs",
@@ -21,6 +21,7 @@
       "README.md",
       "sdkwork-sdk.json",
       "src/api/assistants.rs",
+      "src/api/audio_elevenlabs.rs",
       "src/api/audio_suno.rs",
       "src/api/audio.rs",
       "src/api/base.rs",
@@ -84,6 +85,10 @@
       "src/models/create_completion_choice.rs",
       "src/models/create_completion_logprobs.rs",
       "src/models/delete_result.rs",
+      "src/models/eleven_labs_sound_generation_request.rs",
+      "src/models/eleven_labs_sound_generation_response.rs",
+      "src/models/eleven_labs_text_to_speech_request.rs",
+      "src/models/eleven_labs_text_to_speech_response.rs",
       "src/models/google_batch_embed_contents_request.rs",
       "src/models/google_batch_embed_contents_response.rs",
       "src/models/google_blob.rs",
@@ -357,6 +362,7 @@
         "area": "api-surface",
         "paths": [
           "src/api/assistants.rs",
+          "src/api/audio_elevenlabs.rs",
           "src/api/audio_suno.rs",
           "src/api/audio.rs",
           "src/api/base.rs",
@@ -422,6 +428,10 @@
           "src/models/create_completion_choice.rs",
           "src/models/create_completion_logprobs.rs",
           "src/models/delete_result.rs",
+          "src/models/eleven_labs_sound_generation_request.rs",
+          "src/models/eleven_labs_sound_generation_response.rs",
+          "src/models/eleven_labs_text_to_speech_request.rs",
+          "src/models/eleven_labs_text_to_speech_response.rs",
           "src/models/google_batch_embed_contents_request.rs",
           "src/models/google_batch_embed_contents_response.rs",
           "src/models/google_blob.rs",

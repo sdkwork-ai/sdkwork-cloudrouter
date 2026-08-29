@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::GoogleContent;
+use crate::models::{GoogleContent};
 
 /// Google Gemini google embed content request schema exposed by Cloud Router vendor routing.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
