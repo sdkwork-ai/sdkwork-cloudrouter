@@ -5,7 +5,6 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import {
-  productionEdgeBinaryPath,
   productionGatewayBinaryPath,
 } from './cloud-router-production-artifacts.mjs';
 import { ensureCloudRouterBrowserProductionEnv } from './dev/cloud-router-application-env.mjs';
@@ -25,7 +24,7 @@ function cargoCommand(platform = process.platform) {
 function printHelp() {
   console.log(`Usage: node scripts/build-cloud-router-production.mjs [options]
 
-Build production portal assets and the Rust standalone and cloud edge binaries.
+Build production portal assets and the Rust standalone gateway binary.
 
 Options:
   --dry-run       Print the build plan without executing commands.
@@ -125,20 +124,6 @@ function createProductionBuildPlan(
       env,
       cwd: root,
     },
-    {
-      label: 'Rust cloud edge release binary',
-      command: cargoCommand(platform),
-      args: [
-        'build',
-        '-p',
-        'sdkwork-cloudrouter-edge-runtime',
-        '--bin',
-        'sdkwork-cloudrouter-edge-runtime',
-        '--release',
-      ],
-      env,
-      cwd: root,
-    },
   ];
 }
 
@@ -153,11 +138,6 @@ function renderProductionBuildPlan(
     ...plan.map((step) => `[build-production]   ${step.label}: ${step.command} ${step.args.join(' ')}`),
     `[build-production]   SDK archive root: ${path.join(root, 'apps', 'sdkwork-cloudrouter-pc', 'dist', 'sdk-archives')}`,
     `[build-production]   Rust standalone gateway binary: ${productionGatewayBinaryPath({
-      env,
-      platform,
-      workspaceRoot: root,
-    })}`,
-    `[build-production]   Rust cloud edge binary: ${productionEdgeBinaryPath({
       env,
       platform,
       workspaceRoot: root,
