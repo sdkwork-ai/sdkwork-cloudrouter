@@ -24,6 +24,11 @@ import { formatMoney } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
 import { usePortalIamSession } from '../auth/usePortalIamSession.ts';
 import { CloudRouterTokenBankBalancePanel } from './CloudRouterTokenBankBalancePanel.tsx';
 import { CloudRouterTokenBankIntlProvider } from './CloudRouterTokenBankIntlProvider.tsx';
+import {
+  matchesTokenBankRecordCategory,
+  resolveTokenBankBusinessTypeName,
+  resolveTokenBankTransactionTitle,
+} from './CloudRouterTokenBankTransactionList.tsx';
 import { CloudRouterWithdrawDialog } from './CloudRouterWithdrawDialog.tsx';
 import { resolveConsoleWalletLocale } from './consoleCommerceLocale.ts';
 
@@ -262,21 +267,10 @@ function TabButton({ active, icon, label, onClick }: TabButtonProps) {
 }
 
 const RECENT_RECORD_LIMIT = 8;
-type RecordsTab = 'all' | 'redeem' | 'recharge';
+type RecordsTab = 'all' | 'redeem' | 'recharge' | 'usage';
 
 interface RecentRecordsProps {
   transactions: SdkworkWalletTransaction[];
-}
-
-function matchesRecordTab(transaction: SdkworkWalletTransaction, tab: RecordsTab): boolean {
-  if (tab === 'all') {
-    return true;
-  }
-  const haystack = `${transaction.transactionType ?? ''} ${transaction.transactionTypeName ?? ''} ${transaction.title ?? ''}`.toLowerCase();
-  if (tab === 'recharge') {
-    return /recharge|top.?up|充值/.test(haystack);
-  }
-  return /redeem|exchange|兑换/.test(haystack);
 }
 
 function RecentRecords({ transactions }: RecentRecordsProps) {
@@ -288,7 +282,7 @@ function RecentRecords({ transactions }: RecentRecordsProps) {
   const filtered = useMemo(() => {
     return transactions
       .filter((tx) => tx.tokenBankDelta !== 0)
-      .filter((tx) => matchesRecordTab(tx, recordsTab))
+      .filter((tx) => matchesTokenBankRecordCategory(tx, recordsTab))
       .slice(0, RECENT_RECORD_LIMIT);
   }, [transactions, recordsTab]);
 
@@ -296,6 +290,7 @@ function RecentRecords({ transactions }: RecentRecordsProps) {
     { key: 'all', label: t('console.recharge.records.tabs.all') },
     { key: 'redeem', label: t('console.recharge.records.tabs.redeem') },
     { key: 'recharge', label: t('console.recharge.records.tabs.recharge') },
+    { key: 'usage', label: t('console.recharge.records.tabs.usage') },
   ];
 
   return (
@@ -330,18 +325,17 @@ function RecentRecords({ transactions }: RecentRecordsProps) {
         <ul className="divide-y divide-[var(--sdk-color-border-subtle)]">
           {filtered.map((tx) => {
             const isPositive = tx.tokenBankDelta > 0;
-            const typeLabel = tx.transactionTypeName || tx.transactionType;
 
             return (
               <li className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-[var(--sdk-color-surface-panel-muted)] sm:px-5" key={tx.id}>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="truncate text-sm font-medium text-[var(--sdk-color-text-primary)]">
-                      {tx.title}
+                      {resolveTokenBankTransactionTitle(tx, t)}
                     </span>
-                    {typeLabel ? (
+                    {resolveTokenBankBusinessTypeName(tx, t) ? (
                       <span className="shrink-0 rounded-full bg-[var(--sdk-color-surface-panel-muted)] px-1.5 py-0.5 text-[0.65rem] font-medium text-[var(--sdk-color-text-muted)]">
-                        {typeLabel}
+                        {resolveTokenBankBusinessTypeName(tx, t)}
                       </span>
                     ) : null}
                   </div>

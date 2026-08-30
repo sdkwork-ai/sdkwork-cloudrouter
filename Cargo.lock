@@ -4206,7 +4206,6 @@ name = "sdkwork-agent-provider-claude-code"
 version = "0.2.0"
 dependencies = [
  "sdkwork-agent-kernel",
- "sdkwork-agent-plugin-core",
  "sdkwork-agent-provider-core",
  "sdkwork-agent-provider-spi",
  "sdkwork-agent-provider-transport-core",
@@ -4230,7 +4229,6 @@ name = "sdkwork-agent-provider-gemini-cli"
 version = "0.2.0"
 dependencies = [
  "sdkwork-agent-kernel",
- "sdkwork-agent-plugin-core",
  "sdkwork-agent-provider-core",
  "sdkwork-agent-provider-spi",
  "sdkwork-agent-provider-transport-core",
@@ -4244,7 +4242,6 @@ name = "sdkwork-agent-provider-hermes"
 version = "0.2.0"
 dependencies = [
  "sdkwork-agent-kernel",
- "sdkwork-agent-plugin-core",
  "sdkwork-agent-provider-core",
  "sdkwork-agent-provider-spi",
  "sdkwork-agent-provider-transport-core",
@@ -4259,7 +4256,6 @@ name = "sdkwork-agent-provider-mimo-code"
 version = "0.2.0"
 dependencies = [
  "sdkwork-agent-kernel",
- "sdkwork-agent-plugin-core",
  "sdkwork-agent-provider-core",
  "sdkwork-agent-provider-spi",
  "sdkwork-agent-provider-transport-core",
@@ -4274,7 +4270,6 @@ version = "0.2.0"
 dependencies = [
  "json5",
  "sdkwork-agent-kernel",
- "sdkwork-agent-plugin-core",
  "sdkwork-agent-provider-core",
  "sdkwork-agent-provider-spi",
  "sdkwork-agent-provider-transport-core",
@@ -4288,7 +4283,6 @@ name = "sdkwork-agent-provider-opencode"
 version = "0.2.0"
 dependencies = [
  "sdkwork-agent-kernel",
- "sdkwork-agent-plugin-core",
  "sdkwork-agent-provider-core",
  "sdkwork-agent-provider-spi",
  "sdkwork-agent-provider-transport-core",
@@ -5030,7 +5024,6 @@ dependencies = [
  "sdkwork-database-spi",
  "sdkwork-database-sqlx",
  "serde_json",
- "tokio",
 ]
 
 [[package]]
@@ -5782,7 +5775,6 @@ dependencies = [
  "serde_json",
  "sqlx",
  "thiserror 2.0.20",
- "tokio",
 ]
 
 [[package]]
@@ -5823,7 +5815,6 @@ dependencies = [
  "serde_json",
  "sqlx",
  "thiserror 2.0.20",
- "tokio",
  "tracing",
 ]
 
@@ -6058,7 +6049,6 @@ dependencies = [
  "sdkwork-database-spi",
  "sdkwork-database-sqlx",
  "serde_json",
- "tokio",
 ]
 
 [[package]]
@@ -6525,7 +6515,6 @@ dependencies = [
  "sdkwork-database-spi",
  "sdkwork-database-sqlx",
  "serde_json",
- "tokio",
 ]
 
 [[package]]
@@ -6761,7 +6750,6 @@ dependencies = [
  "async-trait",
  "dotenvy",
  "reqwest 0.12.28",
- "sdkwork-account-repository-sqlx",
  "sdkwork-account-service",
  "sdkwork-contract-service",
  "sdkwork-database-config",
@@ -6805,7 +6793,6 @@ dependencies = [
  "sdkwork-contract-service",
  "sdkwork-database-config",
  "sdkwork-database-sqlx",
- "sdkwork-order-repository-sqlx",
  "sdkwork-order-service",
  "sdkwork-payment-providers",
  "sdkwork-payment-repository-sqlx",
@@ -7330,7 +7317,6 @@ dependencies = [
  "axum 0.8.9",
  "sdkwork-community-service",
  "sdkwork-community-service-host",
- "sdkwork-community-storage-sqlx-rust",
  "sdkwork-iam-context-service",
  "sdkwork-routes-community-common",
  "sdkwork-web-core",
@@ -7344,7 +7330,6 @@ dependencies = [
  "axum 0.8.9",
  "sdkwork-community-service",
  "sdkwork-community-service-host",
- "sdkwork-community-storage-sqlx-rust",
  "sdkwork-iam-context-service",
  "sdkwork-routes-community-common",
  "sdkwork-web-core",
@@ -7373,7 +7358,6 @@ dependencies = [
  "axum 0.8.9",
  "sdkwork-community-service",
  "sdkwork-community-service-host",
- "sdkwork-community-storage-sqlx-rust",
  "sdkwork-routes-community-common",
  "sdkwork-web-core",
  "serde",
@@ -7646,7 +7630,6 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.9",
- "sqlx",
  "time",
  "tokio",
  "tracing",
@@ -7658,17 +7641,13 @@ name = "sdkwork-routes-iam-backend-api"
 version = "0.1.0"
 dependencies = [
  "axum 0.8.9",
- "chrono",
  "sdkwork-database-sqlx",
- "sdkwork-iam-bootstrap",
  "sdkwork-iam-database-host",
  "sdkwork-iam-module-registry",
- "sdkwork-iam-web-adapter",
  "sdkwork-utils-rust",
  "sdkwork-web-contract",
  "sdkwork-web-core",
  "serde_json",
- "sqlx",
  "tracing",
  "urlencoding",
  "uuid",
@@ -7892,7 +7871,6 @@ dependencies = [
  "sdkwork-iam-context-service",
  "sdkwork-iam-web-adapter",
  "sdkwork-order-integration-payment",
- "sdkwork-order-repository-sqlx",
  "sdkwork-order-service",
  "sdkwork-order-service-host",
  "sdkwork-payment-providers",
@@ -7918,7 +7896,6 @@ dependencies = [
  "sdkwork-database-sqlx",
  "sdkwork-iam-context-service",
  "sdkwork-iam-web-adapter",
- "sdkwork-order-repository-sqlx",
  "sdkwork-order-service",
  "sdkwork-order-service-host",
  "sdkwork-payment-providers",
@@ -8024,7 +8001,6 @@ dependencies = [
  "serde_json",
  "sha2 0.10.9",
  "sqlx",
- "tokio",
 ]
 
 [[package]]
@@ -8505,7 +8481,6 @@ dependencies = [
  "sdkwork-web-core",
  "serde",
  "serde_json",
- "tokio",
  "tracing",
 ]
 

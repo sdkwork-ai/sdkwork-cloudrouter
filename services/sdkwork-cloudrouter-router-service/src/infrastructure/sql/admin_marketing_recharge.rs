@@ -1,7 +1,17 @@
 use std::collections::BTreeMap;
 
+use sdkwork_utils_rust::decimal_math::{
+    decimal_multiply, decimal_to_scaled, DecimalMathError, DecimalRounding,
+};
+
 use crate::domain::{DomainError, DomainResult};
 use crate::ports::{AdminRechargePackageItem, AdminRechargeSettingsItem};
+
+/// Convert a shared exact-arithmetic error into a domain error so callers see
+/// the underlying cause (malformed decimal, overflow, divide-by-zero).
+fn decimal_error(error: DecimalMathError) -> DomainError {
+    DomainError::new(error.to_string())
+}
 
 pub(crate) const DEFAULT_BASE_CURRENCY_CODE: &str = "CNY";
 pub(crate) const DEFAULT_BASE_POINTS_PER_CNY: &str = "10";
@@ -26,43 +36,28 @@ pub struct RechargeSettingsModel {
 /// the base currency (CNY, default rate 1 and base 10) this reduces to
 /// `ceil(amount × 1e7)` micro; for USD (rate 7) it yields
 /// `ceil(amount × 7e7)` micro, so a funded Token Bank balance and a charged
-/// fiat amount stay consistent.
+/// fiat amount stay consistent. The whole product is evaluated with the shared
+/// exact `decimal_math` helpers so no floating-point error ever leaks in.
 pub fn token_points_for_charge(
     amount: &str,
     currency_code: &str,
     settings: &RechargeSettingsModel,
 ) -> DomainResult<i64> {
-    // Usage amounts are priced at 1e-12 major-unit precision.
-    let amount_scaled = decimal_to_scaled_i128(amount, 12)?;
-    if amount_scaled <= 0 {
+    // `points_per_currency_unit_string` is "points awarded per one major unit
+    // of the pricing currency" (≈ currency→CNY × base points per CNY), already
+    // computed through exact integer multiplication.
+    let factor = points_per_currency_unit_string(currency_code, settings)?;
+    // Ceil at the micro scale: the shared exact product at scale 6 already
+    // yields `ceil(amount × factor × 1e6) / 1e6` points, and reading it back as
+    // integer micro-points gives the ceilinged micro value in one pass.
+    let product = decimal_multiply(amount, &factor, 6, DecimalRounding::Ceil)
+        .map_err(decimal_error)?;
+    let micro = decimal_to_scaled(&product, 6, DecimalRounding::Floor)
+        .map_err(decimal_error)?;
+    if micro <= 0 {
         return Ok(0);
     }
-    let point_factor_scaled = points_per_major_unit_scaled(currency_code, settings)?;
-    // amount(1e12) × (rate×base)(1e12) = amount×rate×base × 1e24
-    let numerator = amount_scaled
-        .checked_mul(point_factor_scaled)
-        .ok_or_else(|| DomainError::new("usage charge points overflow"))?;
-    // One point = 1e6 micro; the product carries 1e24 scale, so dividing by
-    // 1e18 leaves amount×rate×base×1e6 micro with a ceil at the micro scale.
-    let denominator = 1_000_000_000_000_i128 * 1_000_000_i128;
-    let tokens = ceil_divide_positive(numerator, denominator);
-    i64::try_from(tokens).map_err(|_| DomainError::new("usage charge points overflow"))
-}
-
-/// Point multiplier for one major unit of a pricing currency
-/// (≈ `currency→CNY × base points per CNY`), as a scale-12 integer.
-fn points_per_major_unit_scaled(
-    currency_code: &str,
-    settings: &RechargeSettingsModel,
-) -> DomainResult<i128> {
-    let base_points_scaled = decimal_to_scaled_i128(&settings.base_points_per_cny, 6)?;
-    let currency_rate_scaled = decimal_to_scaled_i128(
-        &currency_to_cny_rate(currency_code, settings),
-        6,
-    )?;
-    currency_rate_scaled
-        .checked_mul(base_points_scaled)
-        .ok_or_else(|| DomainError::new("usage charge points overflow"))
+    i64::try_from(micro).map_err(|_| DomainError::new("usage charge points overflow"))
 }
 
 /// Points awarded per major unit of a pricing currency, as a decimal string
@@ -73,12 +68,9 @@ pub fn points_per_currency_unit_string(
     currency_code: &str,
     settings: &RechargeSettingsModel,
 ) -> DomainResult<String> {
-    // scale-12 value → decimal string with trailing zeros trimmed.
-    let scaled = points_per_major_unit_scaled(currency_code, settings)?;
-    let scale: i128 = 1_000_000_000_000;
-    let whole = scaled / scale;
-    let fraction = scaled % scale;
-    Ok(format_decimal_major(whole, fraction))
+    let rate = currency_to_cny_rate(currency_code, settings);
+    decimal_multiply(&rate, &settings.base_points_per_cny, 12, DecimalRounding::Ceil)
+        .map_err(decimal_error)
 }
 
 /// Resolves the currency→CNY rate with the recharge fallback chain:
@@ -102,26 +94,6 @@ fn currency_to_cny_rate(currency_code: &str, settings: &RechargeSettingsModel) -
                 .cloned()
         })
         .unwrap_or_else(|| "1".to_owned())
-}
-
-fn format_decimal_major(whole: i128, fraction: i128) -> String {
-    if fraction == 0 {
-        return whole.to_string();
-    }
-    let frac_str = format!("{fraction:012}");
-    let frac_trimmed = frac_str.trim_end_matches('0');
-    if frac_trimmed.is_empty() {
-        whole.to_string()
-    } else {
-        format!("{whole}.{frac_trimmed}")
-    }
-}
-
-fn ceil_divide_positive(numerator: i128, denominator: i128) -> i128 {
-    if denominator <= 0 {
-        return 0;
-    }
-    (numerator + denominator - 1) / denominator
 }
 
 /// Builds the canonical recharge settings model from the structured rule
@@ -186,38 +158,27 @@ pub(crate) fn compute_grant_amount(
     bonus_points: i64,
     settings: &RechargeSettingsModel,
 ) -> DomainResult<i64> {
-    let amount_scaled = decimal_to_scaled_i128(amount, 2)?;
+    // Validate and require a positive amount (cents precision as before).
+    let amount_scaled = decimal_to_scaled(amount, 2, DecimalRounding::Floor).map_err(decimal_error)?;
     if amount_scaled <= 0 {
         return Err(DomainError::new(
             "recharge amount must be greater than zero",
         ));
     }
-    let base_points_scaled = decimal_to_scaled_i128(&settings.base_points_per_cny, 6)?;
-    let currency_code = currency_code.trim().to_ascii_uppercase();
-    let currency_rate = settings
-        .currency_to_cny_rates
-        .get(&currency_code)
-        .cloned()
-        .or_else(|| {
-            settings
-                .currency_to_cny_rates
-                .get(DEFAULT_BASE_CURRENCY_CODE)
-                .cloned()
-        })
-        .unwrap_or_else(|| "1".to_owned());
-    let currency_rate_scaled = decimal_to_scaled_i128(&currency_rate, 6)?;
-    let numerator = amount_scaled
-        .checked_mul(currency_rate_scaled)
-        .and_then(|value| value.checked_mul(base_points_scaled))
-        .ok_or_else(|| DomainError::new("recharge credited points overflow"))?;
-    // One point = 1e6 micro; the base product carries 1e14 scale, so dividing
-    // by 1e8 leaves amount×rate×base×1e6 micro-points to the nearest micro.
-    let denominator = 100_i128 * 1_000_000_i128;
-    let rounded = round_divide_i128(numerator, denominator);
+    let currency_rate = currency_to_cny_rate(currency_code, settings);
+    let base_points = &settings.base_points_per_cny;
+    // grant points = amount × currency→CNY × base points per CNY, rounded to the
+    // nearest micro (all factors are at most 6 decimals each, so the scale-24
+    // intermediates stay exact and a single final rounding applies).
+    let product_currency =
+        decimal_multiply(amount, &currency_rate, 24, DecimalRounding::HalfUp).map_err(decimal_error)?;
+    let product_points =
+        decimal_multiply(&product_currency, base_points, 24, DecimalRounding::HalfUp).map_err(decimal_error)?;
+    let micro = decimal_to_scaled(&product_points, 6, DecimalRounding::HalfUp).map_err(decimal_error)?;
     let bonus_micro = (bonus_points as i128)
         .checked_mul(1_000_000_i128)
         .ok_or_else(|| DomainError::new("recharge credited points overflow"))?;
-    let credited_points = rounded
+    let credited_points = micro
         .checked_add(bonus_micro)
         .ok_or_else(|| DomainError::new("recharge credited points overflow"))?;
     i64::try_from(credited_points)
@@ -333,49 +294,6 @@ fn normalize_currency_rates(
     Ok(normalized)
 }
 
-fn round_divide_i128(numerator: i128, denominator: i128) -> i128 {
-    if denominator == 0 {
-        return 0;
-    }
-    if numerator >= 0 {
-        (numerator + denominator / 2) / denominator
-    } else {
-        (numerator - denominator / 2) / denominator
-    }
-}
-
-fn decimal_to_scaled_i128(value: &str, scale: usize) -> DomainResult<i128> {
-    let normalized = value.trim();
-    if normalized.is_empty() {
-        return Err(DomainError::new("decimal value must not be empty"));
-    }
-    let mut parts = normalized.split('.');
-    let whole = parts
-        .next()
-        .unwrap_or_default()
-        .parse::<i128>()
-        .map_err(|_| DomainError::new(format!("invalid decimal value: {value}")))?;
-    let fraction = parts.next().unwrap_or_default();
-    if parts.next().is_some() || fraction.len() > scale {
-        return Err(DomainError::new(format!("invalid decimal value: {value}")));
-    }
-    let mut padded = fraction.to_owned();
-    while padded.len() < scale {
-        padded.push('0');
-    }
-    let fraction_scaled = if padded.is_empty() {
-        0
-    } else {
-        padded
-            .parse::<i128>()
-            .map_err(|_| DomainError::new(format!("invalid decimal value: {value}")))?
-    };
-    whole
-        .checked_mul(10_i128.pow(scale as u32))
-        .and_then(|scaled| scaled.checked_add(fraction_scaled))
-        .ok_or_else(|| DomainError::new(format!("invalid decimal value: {value}")))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -400,6 +318,56 @@ mod tests {
         assert_eq!(
             1_550_000_000,
             compute_grant_amount("20.00", "USD", 50, &settings).unwrap()
+        );
+    }
+
+    #[test]
+    fn token_points_for_charge_ceils_exact_micro_with_shared_math() {
+        let settings = RechargeSettingsModel {
+            base_currency_code: "CNY".to_owned(),
+            base_points_per_cny: "10".to_owned(),
+            currency_to_cny_rates: BTreeMap::from([
+                ("CNY".to_owned(), "1".to_owned()),
+                ("USD".to_owned(), "7".to_owned()),
+            ]),
+        };
+        // base currency: ceil(0.000704 × 10 × 1e6) = ceil(7040) = 7040 micro.
+        assert_eq!(
+            7040,
+            token_points_for_charge("0.000704", "CNY", &settings).unwrap()
+        );
+        // USD (rate 7): ceil(0.000704 × 70 × 1e6) = ceil(49_280) = 49_280 micro.
+        assert_eq!(
+            49_280,
+            token_points_for_charge("0.000704", "USD", &settings).unwrap()
+        );
+        // A fractional micro boundary is ceiled (merchant never shortchanged):
+        // 1.00000001 CNY → ceil(10.0000001 × 1e6) = 10_000_001 micro.
+        assert_eq!(
+            10_000_001,
+            token_points_for_charge("1.00000001", "CNY", &settings).unwrap()
+        );
+        // Non-positive charges award nothing.
+        assert_eq!(0, token_points_for_charge("0", "CNY", &settings).unwrap());
+    }
+
+    #[test]
+    fn points_per_currency_unit_string_matches_config() {
+        let settings = RechargeSettingsModel {
+            base_currency_code: "CNY".to_owned(),
+            base_points_per_cny: "10".to_owned(),
+            currency_to_cny_rates: BTreeMap::from([
+                ("CNY".to_owned(), "1".to_owned()),
+                ("USD".to_owned(), "7".to_owned()),
+            ]),
+        };
+        assert_eq!(
+            "10",
+            points_per_currency_unit_string("CNY", &settings).unwrap()
+        );
+        assert_eq!(
+            "70",
+            points_per_currency_unit_string("USD", &settings).unwrap()
         );
     }
 }

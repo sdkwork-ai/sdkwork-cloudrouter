@@ -7,6 +7,7 @@ use sdkwork_contract_service::{
     CommerceAccountAssetType, CommerceLedgerDirection, CommerceMoney, CommerceRequestHash,
     CommerceServiceError,
 };
+use sdkwork_utils_rust::decimal_math::{decimal_to_scaled, scaled_to_decimal, DecimalRounding};
 use sdkwork_utils_rust::sha256_hash;
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
@@ -35,7 +36,6 @@ const USAGE_SETTLEMENT_RETRYABLE_FAILED: i64 = 3;
 /// Terminal failure (invalid amount/snapshot): the fact is never retried so
 /// permanently unpayable or malformed facts cannot churn the settlement batch.
 const USAGE_SETTLEMENT_TERMINAL_FAILED: i64 = 4;
-const DECIMAL_SCALE: i128 = 1_000_000_000_000;
 const MICRO_SETTLEMENT_MAX_AGE_SECONDS: i64 = 15 * 60;
 const MAX_SETTLEMENT_TRANSACTION_ATTEMPTS: usize = 3;
 const SETTLEMENT_RETRY_INITIAL_BACKOFF_MILLIS: u64 = 25;
@@ -555,6 +555,12 @@ async fn has_existing_request_settlement(
     usage_fact: &UsageFactForSettlement,
 ) -> SettlementResult<bool> {
     let request_id = &usage_fact.request_id;
+    // The synchronous gateway path now settles each hold with a single ledger
+    // debit (`business_no = cloudrouter:<request_id>:consumption`), so recovery
+    // must recognize that marker. The legacy sync postpaid and async-worker
+    // reconciliation suffixes are kept for backwards compatibility with
+    // historical and asynchronous records.
+    let sync_consumption = format!("cloudrouter:{request_id}:consumption");
     let sync_adjust_debit = format!("cloudrouter:{request_id}:adjust-debit");
     let sync_adjust_credit = format!("cloudrouter:{request_id}:adjust-credit");
     let sync_postpaid = format!("cloudrouter:{request_id}:postpaid");
@@ -569,13 +575,14 @@ async fn has_existing_request_settlement(
               AND request_no = $2
               AND organization_id = $3
               AND asset_code = 'token_bank'
-              AND business_no IN ($4, $5, $6, $7, $8)
+              AND business_no IN ($4, $5, $6, $7, $8, $9)
         )
         "#,
     )
     .bind(usage_fact.tenant_id)
     .bind(request_id)
     .bind(usage_fact.organization_id)
+    .bind(sync_consumption)
     .bind(sync_adjust_debit)
     .bind(sync_adjust_credit)
     .bind(sync_postpaid)
@@ -974,26 +981,10 @@ fn charge_precharged_tokens(
 
 /// Reconstructs a scale-12 billing amount string (e.g. `0.000000000001`) from
 /// its integer scaled representation so the shared charge→points conversion
-/// (`token_points_for_charge`) can parse it back losslessly.
+/// (`token_points_for_charge`) can parse it back losslessly. Delegates to the
+/// shared `scaled_to_decimal` formatter (settlement inputs are non-negative).
 fn scaled_to_amount_string(scaled: i128) -> String {
-    if scaled == 0 {
-        return "0".to_owned();
-    }
-    let negative = scaled < 0;
-    let abs = scaled.unsigned_abs();
-    let whole = abs / DECIMAL_SCALE as u128;
-    let fraction = abs % DECIMAL_SCALE as u128;
-    let mut out = if fraction == 0 {
-        format!("{whole}")
-    } else {
-        format!("{whole}.{:012}", fraction)
-            .trim_end_matches('0')
-            .to_owned()
-    };
-    if negative && whole != 0 {
-        out.insert(0, '-');
-    }
-    out
+    scaled_to_decimal(scaled, 12).unwrap_or_else(|_| "0".to_owned())
 }
 
 fn candidate_total_scaled(candidates: &[SettlementCandidate]) -> Result<i128, DomainError> {
@@ -1085,37 +1076,18 @@ fn parse_decimal_scaled(value: &str) -> Result<i128, DomainError> {
             "usage settlement amount must not be negative",
         ));
     }
-    let parts: Vec<&str> = value.split('.').collect();
-    if parts.len() > 2 || parts[0].is_empty() || !parts[0].chars().all(|ch| ch.is_ascii_digit()) {
-        return Err(DomainError::new(format!(
-            "invalid usage settlement amount: {value}"
-        )));
-    }
-    let whole = parts[0]
-        .parse::<i128>()
-        .map_err(|_| DomainError::new(format!("invalid usage settlement amount: {value}")))?;
-    let mut scaled = whole
-        .checked_mul(DECIMAL_SCALE)
-        .ok_or_else(|| DomainError::new("usage settlement amount is too large"))?;
-    if parts.len() == 2 {
-        let fraction = parts[1];
-        if fraction.len() > 12 || !fraction.chars().all(|ch| ch.is_ascii_digit()) {
+    // Settlement amounts are authoritative ≤12-decimal values, so a longer
+    // fraction must be rejected rather than silently rounded by the shared
+    // parser (which rounds excess fractional digits by design).
+    if let Some((_, fraction)) = value.split_once('.') {
+        if fraction.len() > 12 {
             return Err(DomainError::new(format!(
                 "invalid usage settlement amount: {value}"
             )));
         }
-        let mut padded = fraction.to_owned();
-        while padded.len() < 12 {
-            padded.push('0');
-        }
-        let fraction_scaled = padded
-            .parse::<i128>()
-            .map_err(|_| DomainError::new(format!("invalid usage settlement amount: {value}")))?;
-        scaled = scaled
-            .checked_add(fraction_scaled)
-            .ok_or_else(|| DomainError::new("usage settlement amount is too large"))?;
     }
-    Ok(scaled)
+    decimal_to_scaled(value, 12, DecimalRounding::Floor)
+        .map_err(|error| DomainError::new(error.to_string()))
 }
 
 fn settlement_batch_no(candidates: &[SettlementCandidate]) -> String {

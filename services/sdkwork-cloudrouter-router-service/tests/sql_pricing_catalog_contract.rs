@@ -51,7 +51,7 @@ const RETIRED_UPSTREAM_TABLES: [&str; 16] = [
 #[test]
 fn snapshot_query_set_is_complete_and_uses_only_postgresql_upstream_authorities() {
     let queries = PricingCatalogSql::snapshot_load_queries();
-    assert_eq!(16, queries.len());
+    assert_eq!(17, queries.len());
 
     let sql = queries.join("\n");
     for table in CANONICAL_UPSTREAM_TABLES {

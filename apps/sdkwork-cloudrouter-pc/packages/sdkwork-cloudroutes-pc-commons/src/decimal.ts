@@ -1,5 +1,12 @@
 import { formatMoney } from '@sdkwork/utils/money';
-import { decimalStringToMicro, microToDecimalString } from '@sdkwork/utils';
+import {
+  decimalStringToMicro,
+  microToDecimalString,
+  decimalDivide,
+  decimalMultiply,
+  decimalToScaledUnits as sharedToScaledUnits,
+  sumDecimalStrings as sharedSumDecimalStrings,
+} from '@sdkwork/utils';
 import { readString, type ApiRecord } from './api-result.ts';
 
 const DEFAULT_DECIMAL_DIGITS = 6;
@@ -41,8 +48,12 @@ export function readDecimalString(
 }
 
 export function sumDecimalStrings(values: string[], digits = DEFAULT_DECIMAL_DIGITS): string {
-  const totalUnits = values.reduce((sum, value) => sum + decimalUnits(value, digits), 0n);
-  return formatDecimalUnits(totalUnits, digits);
+  // Delegate the summation itself to the shared BigInt-accurate
+  // `@sdkwork/utils/decimal_math` implementation, then render it with the
+  // local fixed-width formatter so callers keep their existing output shape.
+  const shared = sharedSumDecimalStrings(values, digits);
+  const units = sharedToScaledUnits(shared, digits) ?? 0n;
+  return formatDecimalUnits(units, digits);
 }
 
 export function formatDecimalAmount(value: string, digits = DEFAULT_DECIMAL_DIGITS): string {
@@ -260,4 +271,68 @@ function parseMicroPoints(value: string): bigint {
   const trimmed = value.trim();
   if (!/^\d+$/u.test(trimmed)) return 0n;
   return BigInt(trimmed);
+}
+
+/**
+ * Convert a cash amount at the configured points-per-currency-unit rate into
+ * the integer Token Bank micro-point unit, mirroring the backend billing
+ * formula `micro = ceil(amount × rate × 1e6)` so a usage-record points formula
+ * renders an arithmetically correct result (`amount × rate = points`) instead
+ * of echoing a stored `debit_points` that legacy rows can hold inconsistently.
+ *
+ * Both `amount` and `rate` are handled as decimal strings parsed into integer
+ * units (scale 12); the product is computed in pure integer BigInt arithmetic
+ * and ceiled at the micro scale, so no floating point rounding leaks into the
+ * result regardless of how many fractional digits the cash or the exchange
+ * rate carry. Returns the micro-point string for `formatTokenBankPoints`, or
+ * `"0"` when the amount or the rate is non-positive or unparsable.
+ */
+export function pointsForConvertedCashAmount(amount: string, rate: string): string {
+  // Shared exact multiply at the micro scale with ceil, matching the backend
+  // billing formula `micro = ceil(amount × rate × 1e6)` so no floating-point
+  // rounding leaks into the result regardless of fractional digit count.
+  const micro = sharedToScaledUnits(
+    decimalMultiply(amount, rate, TOKEN_POINTS_SCALE, 'ceil'),
+    TOKEN_POINTS_SCALE,
+  );
+  if (micro === null || micro <= 0n) {
+    return '0';
+  }
+  return micro.toString();
+}
+
+/**
+ * Resolve the configured points-per-currency-unit exchange rate for a usage
+ * record as an exact decimal string. Prefers the backend-provided
+ * `pointsPerUnit` (a scale-12 points decimal the backend derives from the
+ * recharge exchange settings), so the formula renders a correct
+ * `amount × rate` even when a row has no cash amount or recorded debit. Falls
+ * back to this record's own `points / cost` ratio (in integer units) only for
+ * legacy data that predates the configured-rate field. Returns `"0"` when no
+ * valid rate can be established.
+ */
+export function pointsPerUnitRate(
+  pointsPerUnit: string | undefined,
+  pointsMicro: string | undefined,
+  cost: string | undefined,
+): string {
+  const configured = (pointsPerUnit || '').trim();
+  if (configured.length > 0 && /^[0-9]+(?:\.[0-9]{1,12})?$/.test(configured)) {
+    return configured;
+  }
+  // Legacy backstop: derive the rate from an authoritative ledger micro-point
+  // value and the record cost, both in integer units.
+  const micro = /^\d+$/.test((pointsMicro || '').trim()) ? BigInt(pointsMicro!.trim()) : 0n;
+  const costUnits = decimalUnits(cost || '0', 6);
+  if (micro <= 0n || costUnits <= 0n) {
+    return '0';
+  }
+  // rate = points / cost, scaled to 12 decimals (consistent with the configured
+  // rate's wire scale); ceiled so the derived rate never understates the charge.
+  // Convert micro-points back to a points decimal so the shared exact division
+  // (`@sdkwork/utils/decimal_math`) computes the ratio, then re-format fixed-width.
+  const pointsDecimal = microToDecimalString(micro);
+  const rateScaled =
+    sharedToScaledUnits(decimalDivide(pointsDecimal, cost!, 12, 'ceil'), 12) ?? 0n;
+  return formatDecimalUnits(rateScaled, 12);
 }

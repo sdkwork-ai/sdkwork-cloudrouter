@@ -167,7 +167,7 @@ function normalizeLogRecord(value: unknown): LogRecord {
     outputTokens,
     cost: readRequiredDecimalString(item, 'cost', 'Log cost is required', 'Log cost must be a decimal string'),
     currency: readOptionalString(item, 'currency'),
-    points: readRequiredNonNegativeInt64String(item, 'points', 'Log points are required'),
+    points: readUnsignedInt64String(item, 'points', 'Log points are required'),
     originalCurrencyAmount: readOptionalString(item, 'originalCurrencyAmount'),
     originalCurrencyCode: readOptionalString(item, 'originalCurrencyCode'),
     multiplier: readRequiredDecimalString(
@@ -210,6 +210,29 @@ function normalizeLogRecord(value: unknown): LogRecord {
 
 function readRequiredRecord(value: unknown, message: string): ApiRecord {
   if (!isRecord(value)) {
+    throw new Error(message);
+  }
+  return value;
+}
+
+/**
+ * Read the record's accumulated Token Bank points (integer micro-points) as an
+ * unsigned int64 string. Mirrors the console usage-page reader so both surfaces
+ * accept the same wire shape, but tolerates missing/blank values by defaulting
+ * to `"0"` instead of throwing: an admin usage record must always display its
+ * points (read from the persisted `debit_points`) even if a legacy row carries
+ * an unusual representation.
+ */
+function readUnsignedInt64String(record: ApiRecord, key: string, message: string): string {
+  const rawValue = record[key];
+  if (rawValue === undefined || rawValue === null || rawValue === '') {
+    return '0';
+  }
+  const value = String(rawValue).trim();
+  if (value === '') {
+    return '0';
+  }
+  if (!/^[0-9]+$/.test(value)) {
     throw new Error(message);
   }
   return value;

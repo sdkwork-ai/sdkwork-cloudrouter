@@ -79,29 +79,60 @@ pub trait GatewayBillingStore: Send + Sync {
         context: GatewayBillingContext,
     ) -> GatewayBillingFuture<'a, RechargeSettingsModel>;
 
+    /// Reserves funds for a prepaid invocation by creating an account hold.
+    /// A hold freezes the amount into `available - reserved` without writing a
+    /// ledger entry, so the wallet history never shows a provisional "debit"
+    /// that must later be reversed. Returns the hold id (uuid) so the caller
+    /// can settle (`settle_hold`) or release (`release_hold`) it exactly once.
+    /// The account repository guards the balance with an optimistic version
+    /// check, so concurrent precharges can never freeze more than is available.
+    fn precharge_hold<'a>(
+        &'a self,
+        context: GatewayBillingContext,
+        amount: GatewayBillingAmount,
+    ) -> GatewayBillingFuture<'a, String>;
+
+    /// Completes a held prepayment: releases the reservation and appends the
+    /// single actual-consumption debit. Only `actual` is written to the ledger
+    /// (one entry); the difference `reserved - actual` is returned to the
+    /// available balance by the release and never appears as a separate
+    /// "refund" transaction.
+    fn settle_hold<'a>(
+        &'a self,
+        context: GatewayBillingContext,
+        hold_id: String,
+        actual: GatewayBillingAmount,
+    ) -> GatewayBillingFuture<'a, ()>;
+
+    /// Releases an unconsumed hold (e.g. the provider failed before any usage),
+    /// returning the frozen amount to the available balance. Writes no ledger
+    /// entry, so a failed invocation produces no wallet transaction.
+    fn release_hold<'a>(
+        &'a self,
+        context: GatewayBillingContext,
+        hold_id: String,
+    ) -> GatewayBillingFuture<'a, ()>;
+
+    /// Legacy prepaid precharge for the asynchronous settlement mode. The
+    /// async usage worker reconciles these ledger reservations itself and is
+    /// kept byte-compatible with this contract.
     fn precharge<'a>(
         &'a self,
         context: GatewayBillingContext,
         amount: GatewayBillingAmount,
     ) -> GatewayBillingFuture<'a, ()>;
 
-    fn settle<'a>(
+    /// Legacy prepaid refund (asynchronous settlement mode only).
+    fn refund<'a>(
         &'a self,
         context: GatewayBillingContext,
         reserved: GatewayBillingAmount,
-        actual: GatewayBillingAmount,
     ) -> GatewayBillingFuture<'a, ()>;
 
     fn charge_postpaid<'a>(
         &'a self,
         context: GatewayBillingContext,
         actual: GatewayBillingAmount,
-    ) -> GatewayBillingFuture<'a, ()>;
-
-    fn refund<'a>(
-        &'a self,
-        context: GatewayBillingContext,
-        reserved: GatewayBillingAmount,
     ) -> GatewayBillingFuture<'a, ()>;
 
     /// Marks usage facts as settled after a synchronous ledger operation has

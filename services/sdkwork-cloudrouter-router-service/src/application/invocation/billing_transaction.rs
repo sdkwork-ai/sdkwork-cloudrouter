@@ -110,8 +110,30 @@ impl InvocationInterceptor for BillingTransactionInterceptor {
             // and applies cleanly instead of failing the whole invocation.
             let mut precharge_attempt = 0_u32;
             loop {
-                match self.store.precharge(context.clone(), amount.clone()).await {
-                    Ok(()) => break,
+                // Synchronous billing freezes the reservation into an account
+                // hold (no ledger entry) so the wallet history ends up with a
+                // single actual-consumption debit rather than a provisional
+                // "消费" followed by a "返还" correction. Asynchronous billing
+                // keeps the legacy direct precharge ledger; the usage
+                // settlement worker reconciles those reservations itself.
+                let outcome = if invocation.charging.settlement_mode
+                    == crate::ports::GatewayBillingSettlementMode::Synchronous
+                {
+                    self.store
+                        .precharge_hold(context.clone(), amount.clone())
+                        .await
+                        .map(|hold_id| Some(hold_id))
+                } else {
+                    self.store
+                        .precharge(context.clone(), amount.clone())
+                        .await
+                        .map(|()| None)
+                };
+                match outcome {
+                    Ok(hold_id) => {
+                        invocation.charging.hold_id = hold_id;
+                        break;
+                    }
                     Err(error) if precharge_attempt < 2 => {
                         precharge_attempt += 1;
                         tracing::debug!(
@@ -168,10 +190,26 @@ impl InvocationInterceptor for BillingTransactionInterceptor {
                 return Ok(());
             }
             if let Some(reserved) = invocation.charging.reserved_amount.clone() {
-                self.store
-                    .refund(billing_context(invocation), reserved)
-                    .await
-                    .map_err(billing_error)?;
+                let context = billing_context(invocation);
+                // Synchronous billing releases the frozen hold (no ledger entry),
+                // so a failed invocation leaves no wallet transaction and the
+                // reserved balance returns to available. Asynchronous billing
+                // refunds the legacy direct precharge ledger debit in place.
+                if invocation.charging.settlement_mode
+                    == crate::ports::GatewayBillingSettlementMode::Synchronous
+                {
+                    if let Some(hold_id) = invocation.charging.hold_id.clone() {
+                        self.store
+                            .release_hold(context, hold_id)
+                            .await
+                            .map_err(billing_error)?;
+                    }
+                } else {
+                    self.store
+                        .refund(context, reserved)
+                        .await
+                        .map_err(billing_error)?;
+                }
                 invocation.charging.settled = true;
             }
             Ok(())
@@ -271,17 +309,20 @@ impl InvocationInterceptor for BillingSettlementInterceptor {
                     }
                 }
                 CustomerChargeMode::PrepaidAdjustment => {
-                    let reserved = invocation.charging.reserved_amount.clone().unwrap_or(
-                        GatewayBillingAmount {
-                            amount: "0".to_owned(),
-                            currency: actual.currency.clone(),
-                        },
-                    );
                     if invocation.charging.settlement_mode
                         == crate::ports::GatewayBillingSettlementMode::Synchronous
                     {
+                        let hold_id = invocation
+                            .charging
+                            .hold_id
+                            .clone()
+                            .ok_or_else(|| {
+                                billing_error(
+                                    "prepaid synchronous settlement is missing its account hold",
+                                )
+                            })?;
                         self.store
-                            .settle(context, reserved, actual)
+                            .settle_hold(context, hold_id, actual)
                             .await
                             .map_err(billing_error)?;
                     }

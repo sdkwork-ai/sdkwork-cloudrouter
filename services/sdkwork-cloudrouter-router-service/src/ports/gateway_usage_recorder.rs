@@ -4,6 +4,7 @@ use std::pin::Pin;
 use serde::de::IgnoredAny;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use sdkwork_utils_rust::decimal_math::{decimal_multiply, decimal_to_scaled, DecimalRounding};
 
 use crate::domain::{BillingMeter, DecimalValue, DomainError, DomainResult};
 use crate::ports::{RechargeSettingsModel, token_points_for_charge};
@@ -777,21 +778,18 @@ pub fn token_points_for_charge_amount(customer_charge_amount: &str) -> Option<i6
 /// the micro scale so fractional charges never short the merchant. Legacy
 /// helper kept for callers that lack the configured exchange settings; the
 /// production chain prefers `token_points_for_charge` with the recharge
-/// settings.
+/// settings. Uses the shared exact arithmetic (default rate 10 points per
+/// major unit) so `micro = ceil(amount × 1e7)` loses nothing to floats.
 pub fn token_points_for_decimal(value: DecimalValue) -> Option<i64> {
-    const DECIMAL_SCALE: i128 = 1_000_000_000_000;
     if value <= DecimalValue::ZERO {
         return Some(0);
     }
+    // amount × 10 points × 1e6 micro/point = amount × 1e7 micro, ceiled at the
+    // micro scale by the shared multiplier (scale 6, ceil) and read back exact.
     let fixed = value.to_fixed_string(12);
-    let (whole, fraction) = fixed.split_once('.')?;
-    let whole = whole.parse::<i128>().ok()?;
-    let fraction = fraction.parse::<i128>().ok()?;
-    // amount × 10 points × 1e6 micro/point = amount × 1e7 micro.
-    let scaled = whole.checked_mul(10_000_000)?;
-    let fractional_micro =
-        fraction.checked_mul(10_000_000)?.checked_add(DECIMAL_SCALE - 1)? / DECIMAL_SCALE;
-    i64::try_from(scaled.checked_add(fractional_micro)?).ok()
+    let product = decimal_multiply(&fixed, "10", 6, DecimalRounding::Ceil).ok()?;
+    let micro = decimal_to_scaled(&product, 6, DecimalRounding::Floor).ok()?;
+    i64::try_from(micro).ok()
 }
 
 /// Distributes a request's total Token Bank debit across its chargeable usage
@@ -1272,5 +1270,44 @@ mod tests {
             validate_json_object("pricing_snapshot", &multibyte, MAX_PRICING_SNAPSHOT_BYTES,)
                 .is_err()
         );
+    }
+
+    #[test]
+    fn token_points_for_decimal_is_exact_via_shared_math() {
+        // amount × 10 points × 1e6 micro/point = ceil(amount × 1e7) micro.
+        assert_eq!(
+            token_points_for_decimal(DecimalValue::parse("1").unwrap()),
+            Some(10_000_000)
+        );
+        assert_eq!(
+            token_points_for_decimal(DecimalValue::parse("0.000704").unwrap()),
+            Some(7_040)
+        );
+        // A fractional micro boundary is ceiled (merchant never shortchanged).
+        assert_eq!(
+            token_points_for_decimal(DecimalValue::parse("1.00000001").unwrap()),
+            Some(10_000_001)
+        );
+        assert_eq!(
+            token_points_for_decimal(DecimalValue::parse("0").unwrap()),
+            Some(0)
+        );
+    }
+
+    #[test]
+    fn token_points_for_decimal_matches_recharge_path_at_default_rate() {
+        // The legacy default-rate path (amount × 10) and the configured recharge
+        // path (base 10 points / CNY at rate 1) must agree to the micro.
+        let settings = RechargeSettingsModel {
+            base_currency_code: "CNY".to_owned(),
+            base_points_per_cny: "10".to_owned(),
+            currency_to_cny_rates: std::collections::BTreeMap::from([
+                ("CNY".to_owned(), "1".to_owned()),
+            ]),
+        };
+        let amount = "123.456789";
+        let legacy = token_points_for_decimal(DecimalValue::parse(amount).unwrap()).unwrap();
+        let recharge = token_points_for_charge(amount, "CNY", &settings).unwrap();
+        assert_eq!(legacy, recharge);
     }
 }

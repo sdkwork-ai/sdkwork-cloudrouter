@@ -101,6 +101,7 @@ const PORTAL_OPTIMIZED_BARE_DEPENDENCIES = new Set([
   'framer-motion',
   'i18next',
   'recharts',
+  'react-remove-scroll-bar',
   ...PORTAL_MARKDOWN_OPTIMIZE_DEPS,
 ]);
 

@@ -121,7 +121,8 @@ fn usage_settlement_recovery_lookup_is_organization_scoped() {
     for expected in [
         "fn has_existing_request_settlement",
         "AND organization_id = $3",
-        "AND business_no IN ($4, $5, $6, $7, $8)",
+        "AND business_no IN ($4, $5, $6, $7, $8, $9)",
+        "cloudrouter:{request_id}:consumption",
     ] {
         assert!(
             POSTGRES_USAGE_SETTLEMENT_STORE.contains(expected),

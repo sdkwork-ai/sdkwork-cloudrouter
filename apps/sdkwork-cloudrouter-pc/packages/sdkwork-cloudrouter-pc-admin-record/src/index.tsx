@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle2, ChevronRight, ChevronDown, Zap, Search, Cpu, Info, User, Coins } from 'lucide-react';
-import { AdminTableShell, BusinessStateTableRow, formatTokenBankPoints, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
+import { AdminTableShell, BusinessStateTableRow, formatTokenBankPoints, pointsForConvertedCashAmount, pointsPerUnitRate, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import { formatMoney } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
 import {
   formatDecimalAmount,
@@ -23,23 +23,14 @@ function isTokenRecord(log: LogRecord): boolean {
   return Number(log.inputTokens) > 0 || Number(log.cacheReadTokens) > 0 || Number(log.outputTokens) > 0;
 }
 
-// Derive the points (Token) exchange rate used to render the per-unit points
-// prices. Preferred source is the configured Token Bank billing rate
-// (`pointsPerUnit`) the backend resolves from the recharge exchange settings,
-// so the formula stays correct even when a record has no cash amount or no
-// recorded debit. A single record's `points / cost` is only a backstop for
-// legacy data that predates the configured-rate field.
-function recordPointsRate(log: LogRecord): number {
-  const configured = Number.parseFloat(log.pointsPerUnit || '');
-  if (Number.isFinite(configured) && configured > 0) {
-    return configured;
-  }
-  const points = /^\d+$/.test(log.points || '') ? Number(BigInt(log.points || '0')) / 1_000_000 : 0;
-  const cost = Number.parseFloat(log.cost || '0');
-  if (!Number.isFinite(points) || !Number.isFinite(cost) || points <= 0 || cost <= 0) {
-    return 0;
-  }
-  return points / cost;
+// Resolve the points (Token) exchange rate used to render the per-unit points
+// prices as an exact decimal string. Preferred source is the configured Token
+// Bank billing rate (`pointsPerUnit`) the backend resolves from the recharge
+// exchange settings, so the formula stays correct even when a record has no
+// cash amount or no recorded debit. A single record's `points / cost` is only
+// a backstop for legacy data that predates the configured-rate field.
+function recordPointsRate(log: LogRecord): string {
+  return pointsPerUnitRate(log.pointsPerUnit, log.points, log.cost);
 }
 
 export function RecordAdmin() {
@@ -124,9 +115,12 @@ export function RecordAdmin() {
   const firstRow = logs.length > 0 ? (page - 1) * pageSize + 1 : 0;
   const lastRow = logs.length > 0 ? (page - 1) * pageSize + logs.length : 0;
   const pageCost = sumDecimalStrings(logs.map(log => log.cost), 6);
-  const pagePoints = logs.reduce((acc, log) => {
-    const raw = (log.points || '0').trim();
-    return acc + (/^\d+$/.test(raw) ? BigInt(raw) : 0n);
+  // Aggregate points follow the billing formula "汇总现金之后，再乘以积分汇率":
+  // each record's cost is converted to integer micro-points (amount × rate,
+  // ceiled at the micro scale) and summed in integer units so the header stays
+  // arithmetically consistent with the per-row formula and never rounds early.
+  const pagePoints = logs.reduce((accMicro, log) => {
+    return accMicro + BigInt(pointsForConvertedCashAmount(log.cost, recordPointsRate(log)));
   }, 0n);
   const streamCount = logs.filter((log) => log.isStream).length;
 
@@ -499,7 +493,7 @@ export function RecordAdmin() {
                                     },
                                   )}
                                   <Coins className="w-3 h-3 inline-block text-indigo-500 -mt-0.5" />
-                                  <span className="font-bold text-indigo-600 dark:text-indigo-500 ml-1">{formatPoints(log.points)}</span>
+                                  <span className="font-bold text-indigo-600 dark:text-indigo-500 ml-1">{formatPoints(pointsForConvertedCashAmount(log.cost, recordPointsRate(log)))}</span>
                                 </div>
                                 <div className="text-slate-400 dark:text-slate-500 mt-1 italic">{t("admin.record.index.text.1mdzhzs", "仅供参考，以实际扣费为准")}</div>
                               </div>

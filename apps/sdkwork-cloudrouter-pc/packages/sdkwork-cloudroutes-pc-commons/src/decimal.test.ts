@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { computeDiscountedAmount } from './decimal.ts';
+import {
+  computeDiscountedAmount,
+  pointsForConvertedCashAmount,
+  pointsPerUnitRate,
+} from './decimal.ts';
 
 test('computeDiscountedAmount applies the discount rate percentage', () => {
   assert.equal(computeDiscountedAmount('10.00', 90), '9.00000000');
@@ -40,4 +44,41 @@ test('computeDiscountedAmount handles zero and non-numeric amounts', () => {
 test('computeDiscountedAmount respects the requested digit scale', () => {
   assert.equal(computeDiscountedAmount('10.00', 90, 2), '9.00');
   assert.equal(computeDiscountedAmount('10.00', 90, 4), '9.0000');
+});
+
+test('pointsForConvertedCashAmount converts cost x rate into micro-points', () => {
+  // 0.000704 USD x 70 积分/USD = 0.049280 points = 49280 micro-points.
+  assert.equal(pointsForConvertedCashAmount('0.000704', '70'), '49280');
+  // Fractional rate: 20 USD x 75.5 = 1510 points = 1,510,000,000 micro.
+  assert.equal(pointsForConvertedCashAmount('20.00', '75.5'), '1510000000');
+});
+
+test('pointsForConvertedCashAmount ceils fractional micro-points', () => {
+  // 0.0000001 x 1e6 = 0.1 micro -> ceil = 1 micro.
+  assert.equal(pointsForConvertedCashAmount('0.0000001', '1'), '1');
+});
+
+test('pointsForConvertedCashAmount returns zero for empty or invalid input', () => {
+  assert.equal(pointsForConvertedCashAmount('0.00', '70'), '0');
+  assert.equal(pointsForConvertedCashAmount('', '70'), '0');
+  assert.equal(pointsForConvertedCashAmount('0.000704', '0'), '0');
+  assert.equal(pointsForConvertedCashAmount('0.000704', 'NaN'), '0');
+});
+
+test('pointsPerUnitRate prefers the configured rate as an exact decimal string', () => {
+  assert.equal(pointsPerUnitRate('6.960000000000', undefined, undefined), '6.960000000000');
+  assert.equal(pointsPerUnitRate('70', undefined, undefined), '70');
+});
+
+test('pointsPerUnitRate derives the rate from ledger points over cost for legacy rows', () => {
+  // 1.233600 points / 0.000704 USD = 1752.27... scaled to 12 decimals.
+  const rate = pointsPerUnitRate('', NaN as unknown as string, '0.000704');
+  assert.equal(rate, '0');
+  // 0.049280 points = 49280 micro on cost 0.000704 -> rate = 70 scaled by 1e12.
+  assert.equal(pointsPerUnitRate('', '49280', '0.000704'), '70.000000000000');
+});
+
+test('pointsPerUnitRate returns zero when no rate can be established', () => {
+  assert.equal(pointsPerUnitRate('', '', '0'), '0');
+  assert.equal(pointsPerUnitRate(undefined, undefined, undefined), '0');
 });

@@ -204,6 +204,12 @@ pub struct InvocationCharging {
     pub charge_mode: CustomerChargeMode,
     pub settlement_mode: GatewayBillingSettlementMode,
     pub reserved_amount: Option<crate::ports::GatewayBillingAmount>,
+    /// Account-hold id created by the synchronous prepaid precharge. A hold
+    /// freezes the reservation without writing a ledger entry; settlement
+    /// releases it and appends a single actual-consumption debit. This is what
+    /// guarantees the wallet history never pairs a provisional "消费" with a
+    /// later "返还" transaction.
+    pub hold_id: Option<String>,
     /// Active cash→Token-Bank exchange settings (Loaded from the recharge rule)
     /// used to convert a priced charge into the same integer Token Bank units
     /// the wallet debits. Stashed by `BillingTransactionInterceptor` so the
@@ -222,6 +228,7 @@ impl Default for InvocationCharging {
             charge_mode: CustomerChargeMode::default(),
             settlement_mode: GatewayBillingSettlementMode::default(),
             reserved_amount: None,
+            hold_id: None,
             points_settings: None,
             provider_completed: false,
             settled: false,

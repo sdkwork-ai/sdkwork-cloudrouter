@@ -14,7 +14,7 @@ import {
   Search,
   Zap,
 } from 'lucide-react';
-import { BusinessStatePanel, BusinessStateTableRow, formatTokenBankPoints } from '@sdkwork/cloudroutes-pc-commons';
+import { BusinessStatePanel, BusinessStateTableRow, formatTokenBankPoints, pointsForConvertedCashAmount, pointsPerUnitRate } from '@sdkwork/cloudroutes-pc-commons';
 import { formatMoney } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
 import {
   formatLocalizedDecimalAmount,
@@ -134,22 +134,14 @@ function formatPoints(value: string | undefined, locale: string): string {
 }
 
 // Points (Token) exchange rate used to render the per-unit points prices and
-// points budget. Preferred source is the configured Token Bank billing rate
-// (`pointsPerUnit`) the backend resolves from the recharge exchange settings,
-// so the formula stays correct even when an individual record has no cash
-// amount or no recorded debit. A single record's `points / cost` is only a
-// backstop for legacy data that predates the configured-rate field.
-function pointsExchangeRate(log: UsageLog): number {
-  const configured = Number.parseFloat(log.pointsPerUnit || '');
-  if (Number.isFinite(configured) && configured > 0) {
-    return configured;
-  }
-  const points = /^\d+$/.test(log.points || '') ? Number(BigInt(log.points || '0')) / 1_000_000 : 0;
-  const cost = Number.parseFloat(log.cost || '0');
-  if (!Number.isFinite(points) || !Number.isFinite(cost) || points <= 0 || cost <= 0) {
-    return 0;
-  }
-  return points / cost;
+// points budget, resolved as an exact decimal string. Preferred source is the
+// configured Token Bank billing rate (`pointsPerUnit`) the backend resolves
+// from the recharge exchange settings, so the formula stays correct even when
+// an individual record has no cash amount or no recorded debit. A single
+// record's `points / cost` is only a backstop for legacy data that predates
+// the configured-rate field.
+function pointsExchangeRate(log: UsageLog): string {
+  return pointsPerUnitRate(log.pointsPerUnit, log.points, log.cost);
 }
 
 function formatPointsRate(log: UsageLog, locale: string): string {
@@ -207,7 +199,10 @@ export function UsageView() {
       if (log.status === 'error') errorCount += 1;
       inputTokens += toTokenCount(log.inputTokens);
       outputTokens += toTokenCount(log.outputTokens);
-      pagePoints += toTokenCount(log.points);
+      // Aggregate by the billing formula "汇总现金之后，再乘以积分汇率": convert
+      // each record's cost to integer micro-points (amount × rate, ceiled at the
+      // micro scale) and sum in integer units so the header never rounds early.
+      pagePoints += BigInt(pointsForConvertedCashAmount(log.cost, pointsExchangeRate(log)));
     }
     return {
       pageCost: sumDecimalStrings(
@@ -704,7 +699,7 @@ export function UsageView() {
                                       {formatPointsRate(log, displayLocale)} {t('console.usage.unit.points', 'points')}/{(log.currency || 'USD').toUpperCase()}
                                       {' = '}
                                       <Coins className="w-3 h-3 inline-block text-indigo-500 -mt-0.5" />
-                                      <span className="font-bold text-indigo-600 dark:text-indigo-400">{formatPoints(log.points, displayLocale)}</span>
+                                      <span className="font-bold text-indigo-600 dark:text-indigo-400">{formatPoints(pointsForConvertedCashAmount(log.cost, pointsExchangeRate(log)), displayLocale)}</span>
                                     </div>
                                     <div className="text-slate-400 dark:text-slate-500 italic text-[10px]">{t('console.usage.detail.reference', 'Reference only; the ledger is the source of truth.')}</div>
                                   </div>

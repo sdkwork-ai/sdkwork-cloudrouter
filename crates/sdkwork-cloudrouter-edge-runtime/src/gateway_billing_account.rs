@@ -1,7 +1,11 @@
 use std::sync::Arc;
 
+use chrono::{Duration, Utc};
 use sdkwork_account_repository_sqlx::PostgresCommerceAccountStore;
-use sdkwork_account_service::{AppendLedgerEntryCommand, WalletAccountListQuery};
+use sdkwork_account_service::{
+    AppendLedgerEntryCommand, CreateAccountHoldCommand, ReleaseAccountHoldCommand,
+    WalletAccountListQuery,
+};
 use sdkwork_cloudrouter_router_service::domain::DomainError;
 use sdkwork_cloudrouter_router_service::ports::{
     parse_recharge_settings_model, CustomerChargeMode, GatewayBillingAmount,
@@ -16,6 +20,10 @@ use std::collections::BTreeMap;
 
 const BUSINESS_TYPE: &str = "gateway_invocation_billing";
 const TOKEN_BANK_CURRENCY_CODE: &str = "TOKEN_BANK";
+/// Request-scoped idempotency suffix for the account-hold release operation.
+/// Each billing operation carries a distinct suffix so ledger mutations are
+/// idempotent and recoverable by the async settlement worker.
+const RELEASE_SUFFIX: &str = "release";
 /// Active cash→points exchange rule marker (mirrors sdkwork-order). The
 /// recharge settings model is parsed from this rule's base points-per-CNY
 /// rate plus its child currency→CNY rates, and is reused for usage debit
@@ -142,6 +150,114 @@ impl PostgresGatewayBillingStore {
             .map_err(|error| DomainError::new(error.message().to_owned()))?;
         Ok(())
     }
+
+    /// Freezes a prepaid reservation into an account hold. No ledger entry is
+    /// written, so a successful invocation records exactly one actual-consumption
+    /// debit at settlement and a failed invocation produces no history at all.
+    async fn create_hold(
+        &self,
+        context: &GatewayBillingContext,
+        amount: &GatewayBillingAmount,
+    ) -> Result<String, DomainError> {
+        if amount
+            .amount
+            .parse::<i128>()
+            .map_or(true, |value| value <= 0)
+        {
+            return Err(DomainError::new(
+                "billing precharge hold must be a positive integer amount",
+            ));
+        }
+        let account = self.account(context).await?;
+        let money = CommerceMoney::new(&amount.amount)
+            .map_err(|error| DomainError::new(error.to_owned()))?;
+        let business_no = format!("cloudrouter:{}:precharge", context.request_id);
+        let idempotency_key = business_no.clone();
+        let expires_at = (Utc::now() + Duration::minutes(30)).to_rfc3339();
+        let command = CreateAccountHoldCommand::new(
+            &context.tenant_id.to_string(),
+            Some(&context.organization_id.to_string()),
+            &account.id,
+            &context.user_id.to_string(),
+            CommerceAccountAssetType::TokenBank,
+            money,
+            BUSINESS_TYPE,
+            &business_no,
+            "gateway",
+            &context.request_id,
+            &business_no,
+            &idempotency_key,
+            Some(expires_at.as_str()),
+        )
+        .map_err(|error| DomainError::new(error.message().to_owned()))?;
+        let request_hash_payload = format!(
+            "{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}",
+            command.tenant_id,
+            command.organization_id.as_deref().unwrap_or_default(),
+            account.id,
+            command.owner_user_id,
+            command.asset_type.as_str(),
+            command.amount.as_str(),
+            command.business_type,
+            command.business_no,
+            command.source_type,
+            command.source_id,
+            command.request_no,
+            command.idempotency_key,
+            command.expires_at.as_deref().unwrap_or_default(),
+        );
+        let hash = CommerceRequestHash::new(&sha256_hex(&request_hash_payload))
+            .map_err(|error| DomainError::new(error.message().to_owned()))?;
+        let outcome = self
+            .account_store
+            .create_account_hold(command, hash)
+            .await
+            .map_err(|error| DomainError::new(error.message().to_owned()))?;
+        Ok(outcome.hold.uuid)
+    }
+
+    /// Releases a frozen reservation back to the available balance. Writes no
+    /// ledger entry, so releasing a precharge on a failed invocation leaves the
+    /// wallet history without any transaction. Returns `Ok` if the hold was
+    /// already released or expired so release is safe to replay exactly once.
+    async fn release_hold_inner(
+        &self,
+        context: &GatewayBillingContext,
+        hold_id: &str,
+    ) -> Result<(), DomainError> {
+        let request_no = format!("cloudrouter:{}:{}", context.request_id, RELEASE_SUFFIX);
+        let idempotency_key = request_no.clone();
+        let command =
+            ReleaseAccountHoldCommand::new(
+                &context.tenant_id.to_string(),
+                hold_id,
+                &request_no,
+                &idempotency_key,
+            )
+            .map_err(|error| DomainError::new(error.message().to_owned()))?;
+        let request_hash_payload = format!(
+            "{}|{}|{}|{}",
+            command.tenant_id, command.hold_id, command.request_no, command.idempotency_key
+        );
+        let hash = CommerceRequestHash::new(&sha256_hex(&request_hash_payload))
+            .map_err(|error| DomainError::new(error.message().to_owned()))?;
+        match self
+            .account_store
+            .release_account_hold(command, hash)
+            .await
+        {
+            Ok(_) => Ok(()),
+            Err(error) => {
+                let message = error.message().to_owned();
+                if message.contains("not in held status") {
+                    // Already released (replay) or expired after a long-running
+                    // invocation; nothing left to unfreeze.
+                    return Ok(());
+                }
+                Err(DomainError::new(message))
+            }
+        }
+    }
 }
 
 impl GatewayBillingStore for PostgresGatewayBillingStore {
@@ -204,6 +320,44 @@ impl GatewayBillingStore for PostgresGatewayBillingStore {
         })
     }
 
+    fn precharge_hold<'a>(
+        &'a self,
+        context: GatewayBillingContext,
+        amount: GatewayBillingAmount,
+    ) -> GatewayBillingFuture<'a, String> {
+        Box::pin(async move { self.create_hold(&context, &amount).await })
+    }
+
+    fn settle_hold<'a>(
+        &'a self,
+        context: GatewayBillingContext,
+        hold_id: String,
+        actual: GatewayBillingAmount,
+    ) -> GatewayBillingFuture<'a, ()> {
+        Box::pin(async move {
+            // Unfreeze the full reservation back to available (no ledger entry),
+            // then append exactly ONE actual-consumption debit. Any over-
+            // reservation returns silently, so the wallet never shows a
+            // provisional "消费" paired with a later "返还" transaction.
+            self.release_hold_inner(&context, &hold_id).await?;
+            self.append(
+                &context,
+                &actual,
+                CommerceLedgerDirection::Debit,
+                "consumption",
+            )
+            .await
+        })
+    }
+
+    fn release_hold<'a>(
+        &'a self,
+        context: GatewayBillingContext,
+        hold_id: String,
+    ) -> GatewayBillingFuture<'a, ()> {
+        Box::pin(async move { self.release_hold_inner(&context, &hold_id).await })
+    }
+
     fn precharge<'a>(
         &'a self,
         context: GatewayBillingContext,
@@ -217,56 +371,6 @@ impl GatewayBillingStore for PostgresGatewayBillingStore {
                 "precharge",
             )
             .await
-        })
-    }
-
-    fn settle<'a>(
-        &'a self,
-        context: GatewayBillingContext,
-        reserved: GatewayBillingAmount,
-        actual: GatewayBillingAmount,
-    ) -> GatewayBillingFuture<'a, ()> {
-        Box::pin(async move {
-            if reserved.currency != actual.currency {
-                return Err(DomainError::new("billing settlement currency mismatch"));
-            }
-            let reserved_value = reserved
-                .amount
-                .parse::<i128>()
-                .map_err(|_| DomainError::new("invalid reserved billing amount"))?;
-            let actual_value = actual
-                .amount
-                .parse::<i128>()
-                .map_err(|_| DomainError::new("invalid actual billing amount"))?;
-            if reserved_value < 0 || actual_value < 0 {
-                return Err(DomainError::new(
-                    "billing settlement amounts must be non-negative",
-                ));
-            }
-            if actual_value > reserved_value {
-                self.append(
-                    &context,
-                    &GatewayBillingAmount {
-                        amount: (actual_value - reserved_value).to_string(),
-                        currency: actual.currency.clone(),
-                    },
-                    CommerceLedgerDirection::Debit,
-                    "adjust-debit",
-                )
-                .await?;
-            } else if reserved_value > actual_value {
-                self.append(
-                    &context,
-                    &GatewayBillingAmount {
-                        amount: (reserved_value - actual_value).to_string(),
-                        currency: reserved.currency.clone(),
-                    },
-                    CommerceLedgerDirection::Credit,
-                    "adjust-credit",
-                )
-                .await?;
-            }
-            Ok(())
         })
     }
 
