@@ -387,6 +387,9 @@ importers:
 
   ../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-agents:
     dependencies:
+      '@sdkwork/agents-pc-chat':
+        specifier: workspace:*
+        version: link:../sdkwork-agents-pc-chat
       '@sdkwork/agents-pc-commons':
         specifier: workspace:*
         version: link:../sdkwork-agents-pc-commons
@@ -4726,6 +4729,9 @@ importers:
       typescript:
         specifier: ~5.8.2
         version: 5.8.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@25.9.4)(esbuild@0.28.2)(jiti@2.7.0)(jsdom@29.1.1)(tsx@4.23.12)
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-partner-join:
     dependencies:
@@ -4996,8 +5002,8 @@ importers:
         specifier: workspace:*
         version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
       '@sdkwork/utils':
-        specifier: ^0.11.0
-        version: 0.11.0
+        specifier: workspace:*
+        version: link:../../../../sdkwork-utils/packages/sdkwork-utils-typescript
     devDependencies:
       '@types/node':
         specifier: 20.19.39

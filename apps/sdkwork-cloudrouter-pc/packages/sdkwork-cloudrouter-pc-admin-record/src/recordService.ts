@@ -54,6 +54,8 @@ export interface LogRecord {
   baseOutputPrice: string;
   cacheReadPrice: string;
   unitSize: string;
+  /** Configured Token Bank points per major unit of the record's currency. */
+  pointsPerUnit?: string;
   path: string;
   reasoningEffort: string;
   ip: string;
@@ -198,6 +200,7 @@ function normalizeLogRecord(value: unknown): LogRecord {
       'Log unit size is required',
       'Log unit size must be a decimal string',
     ),
+    pointsPerUnit: readOptionalString(item, 'pointsPerUnit'),
     path: readRequiredString(item, 'path', 'Log path is required'),
     reasoningEffort: readRequiredString(item, 'reasoningEffort', 'Log reasoning effort is required'),
     ip: readRequiredString(item, 'ip', 'Log ip is required'),

@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::domain::{BillingMeter, DecimalValue, DomainError, DomainResult};
+use crate::ports::{RechargeSettingsModel, token_points_for_charge};
 
 pub type GatewayUsageRecordFuture<'a> = Pin<Box<dyn Future<Output = DomainResult<()>> + Send + 'a>>;
 
@@ -316,6 +317,14 @@ pub struct GatewayUsageRecordCommand {
     pub customer_charge_amount: String,
     pub upstream_cost_amount: String,
     pub currency: String,
+    /// Settlement-derived token points actually debited from the account Token
+    /// Bank wallet for this usage fact. Populated by the pricing settlement
+    /// interceptor using the Token Bank rounding rule (ceil(amount × 10), with
+    /// cumulative allocation across the request's chargeable facts). A `None`
+    /// means the fact was recorded outside the settlement allocation path; the
+    /// recorder then falls back to the per-fact ceiled value for display.
+    #[serde(default)]
+    pub debit_points: Option<i64>,
     pub pricing_plan_code: String,
     pub billing_components: String,
     pub pricing_snapshot: String,
@@ -753,6 +762,95 @@ impl GatewayUsageQuantity {
             audio_seconds: None,
             video_seconds: None,
         }
+    }
+}
+
+/// Token Bank smallest-unit micro-points for a single currency amount, using
+/// the same rounding rule as the billing store and settlement worker: the
+/// ceiling of `amount × 10 × 1e6` micro (one whole point == 1e6 micro, and one
+/// point equals 0.1 pricing-currency units under the default rate).
+pub fn token_points_for_charge_amount(customer_charge_amount: &str) -> Option<i64> {
+    token_points_for_decimal(DecimalValue::parse(customer_charge_amount).ok()?)
+}
+
+/// Converts a currency amount to Token Bank **micro**-points with a ceiling at
+/// the micro scale so fractional charges never short the merchant. Legacy
+/// helper kept for callers that lack the configured exchange settings; the
+/// production chain prefers `token_points_for_charge` with the recharge
+/// settings.
+pub fn token_points_for_decimal(value: DecimalValue) -> Option<i64> {
+    const DECIMAL_SCALE: i128 = 1_000_000_000_000;
+    if value <= DecimalValue::ZERO {
+        return Some(0);
+    }
+    let fixed = value.to_fixed_string(12);
+    let (whole, fraction) = fixed.split_once('.')?;
+    let whole = whole.parse::<i128>().ok()?;
+    let fraction = fraction.parse::<i128>().ok()?;
+    // amount × 10 points × 1e6 micro/point = amount × 1e7 micro.
+    let scaled = whole.checked_mul(10_000_000)?;
+    let fractional_micro =
+        fraction.checked_mul(10_000_000)?.checked_add(DECIMAL_SCALE - 1)? / DECIMAL_SCALE;
+    i64::try_from(scaled.checked_add(fractional_micro)?).ok()
+}
+
+/// Distributes a request's total Token Bank debit across its chargeable usage
+/// facts using cumulative ceiling, so the individual `debit_points` values sum
+/// to the same total the billing store debits from the wallet. This mirrors
+/// the async settlement worker's per-candidate token allocation. The charge →
+/// Token Bank conversion uses the configured cash→Token-Bank exchange settings
+/// (currency→CNY × base points per CNY) so a funded wallet and a charged fiat
+/// amount stay consistent for every currency. Non-chargeable facts are recorded
+/// with zero points.
+pub fn allocate_request_debit_points(
+    commands: &mut [GatewayUsageRecordCommand],
+    settings: &RechargeSettingsModel,
+) {
+    let Some(currency) = commands
+        .iter()
+        .find(|command| {
+            command.decision_status == "rated" && command.billability == "chargeable"
+        })
+        .map(|command| command.currency.clone())
+    else {
+        return;
+    };
+    let mut cumulative = DecimalValue::ZERO;
+    let mut allocated = 0_i64;
+    for command in commands.iter_mut() {
+        if command.decision_status != "rated" || command.billability != "chargeable" {
+            command.debit_points = Some(0);
+            continue;
+        }
+        let amount = match DecimalValue::parse(&command.customer_charge_amount) {
+            Ok(amount) => amount,
+            Err(_) => {
+                command.debit_points = Some(0);
+                continue;
+            }
+        };
+        let Ok(sum) = cumulative.checked_add(amount) else {
+            command.debit_points = Some(0);
+            continue;
+        };
+        let cumulative_points = match token_points_for_charge(
+            &sum.to_fixed_string(12),
+            &currency,
+            settings,
+        ) {
+            Ok(points) => points,
+            Err(_) => {
+                command.debit_points = Some(0);
+                continue;
+            }
+        };
+        let Some(command_points) = cumulative_points.checked_sub(allocated) else {
+            command.debit_points = Some(0);
+            continue;
+        };
+        command.debit_points = Some(command_points);
+        cumulative = sum;
+        allocated = cumulative_points;
     }
 }
 

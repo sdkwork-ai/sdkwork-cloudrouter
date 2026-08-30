@@ -7,7 +7,10 @@ use super::{
 };
 use crate::application::{GatewayPricingDecision, PriceResolution, PriceResolutionStatus};
 use crate::domain::{provider_native_model_id, BillingMeter, DecimalValue, RoutingCapability};
-use crate::ports::{GatewayUsageQuantity, GatewayUsageRecordCommand};
+use crate::ports::{
+    allocate_request_debit_points, parse_recharge_settings_model, GatewayUsageQuantity,
+    GatewayUsageRecordCommand,
+};
 
 // 10_000.. is reserved for provider-adapter usage lines. Keep the first
 // occurrence of each legacy role at 1..5 for compatibility, and place
@@ -77,6 +80,18 @@ impl InvocationInterceptor for PricingSettlementInterceptor {
                     request_count_line_index,
                 );
                 commands.push(command);
+            }
+            // Distribute the request's Token Bank debit across chargeable
+            // facts using the same cumulative-ceiling rule the wallet uses, so
+            // a clean order of commands sums to the exact debited points. The
+            // conversion uses the configured cash→Token-Bank exchange settings
+            // stashed by `BillingTransactionInterceptor`, keeping the recorded
+            // `debit_points` consistent with the wallet for every currency.
+            let settings = invocation.charging.points_settings.clone().or_else(|| {
+                parse_recharge_settings_model(None, None, None).ok()
+            });
+            if let Some(settings) = settings {
+                allocate_request_debit_points(&mut commands, &settings);
             }
             invocation.usage.settlement_commands = commands;
             Ok(())
@@ -306,6 +321,7 @@ fn command_from_pricing_decision(
         customer_charge_amount: pricing.customer_charge_amount,
         upstream_cost_amount: pricing.upstream_cost_amount,
         currency: pricing.currency,
+        debit_points: None,
         pricing_plan_code: pricing.pricing_plan_code,
         billing_components: pricing.billing_components,
         pricing_snapshot,

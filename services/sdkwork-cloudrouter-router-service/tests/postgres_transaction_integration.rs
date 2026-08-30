@@ -583,6 +583,7 @@ fn usage_command(request_id: &str, http_status: u16) -> GatewayUsageRecordComman
         customer_charge_amount: "0.000002700000".to_owned(),
         upstream_cost_amount: "4.290000".to_owned(),
         currency: "USD".to_owned(),
+        debit_points: None,
         pricing_plan_code: "standard".to_owned(),
         billing_components: "[]".to_owned(),
         pricing_snapshot: r#"{"vendor":{"code":"openai"},"model":{"catalogKey":"openai/gpt-4o-mini"},"provider":{"code":"openrouter"},"pricingPlan":{"code":"standard"},"multipliers":{"rate":"1.000000","reference":"1.320000"},"meters":{"input":{"customerUnitPrice":"0.198000"},"output":{"customerUnitPrice":"0.792000"},"cacheRead":{"customerUnitPrice":"0.099000"}}}"#.to_owned(),

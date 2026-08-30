@@ -11,10 +11,12 @@ use sdkwork_utils_rust::sha256_hash;
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
 use crate::domain::DomainError;
+use crate::infrastructure::sql::postgres::admin_marketing_store::load_recharge_settings_model;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
-    UsageSettlementCommand, UsageSettlementFuture, UsageSettlementOutcome, UsageSettlementStore,
-    MAX_PRICING_SNAPSHOT_BYTES,
+    parse_recharge_settings_model, token_points_for_charge, AdminMarketingSubject,
+    RechargeSettingsModel, UsageSettlementCommand, UsageSettlementFuture, UsageSettlementOutcome,
+    UsageSettlementStore, MAX_PRICING_SNAPSHOT_BYTES,
 };
 
 /// Token Bank currency label (matches the account-platform convention used by
@@ -34,8 +36,6 @@ const USAGE_SETTLEMENT_RETRYABLE_FAILED: i64 = 3;
 /// permanently unpayable or malformed facts cannot churn the settlement batch.
 const USAGE_SETTLEMENT_TERMINAL_FAILED: i64 = 4;
 const DECIMAL_SCALE: i128 = 1_000_000_000_000;
-const TOKENS_PER_MAJOR_UNIT: i128 = 10;
-const MIN_BILLABLE_TOKEN_SCALED: i128 = DECIMAL_SCALE;
 const MICRO_SETTLEMENT_MAX_AGE_SECONDS: i64 = 15 * 60;
 const MAX_SETTLEMENT_TRANSACTION_ATTEMPTS: usize = 3;
 const SETTLEMENT_RETRY_INITIAL_BACKOFF_MILLIS: u64 = 25;
@@ -196,7 +196,16 @@ async fn settle_pending_usage_once(
     };
     let groups = collect_settlement_groups(&mut tx, &command, usage_facts, &mut outcome).await?;
     for group in groups {
-        let group_outcome = settle_usage_group(&mut tx, &command, &group, account_store).await?;
+        let first = &group.candidates[0].usage_fact;
+        let settings = load_group_settings(
+            pool,
+            first.tenant_id,
+            first.organization_id,
+            first.user_id,
+        )
+        .await?;
+        let group_outcome =
+            settle_usage_group(&mut tx, &command, &group, &settings, account_store).await?;
         outcome.settled_count += group_outcome.settled_count;
         outcome.failed_count += group_outcome.failed_count;
         outcome.debited_tokens += group_outcome.debited_tokens;
@@ -367,15 +376,39 @@ async fn already_settled(
     Ok(row.is_some())
 }
 
+async fn load_group_settings(
+    pool: &PgPool,
+    tenant_id: i64,
+    organization_id: i64,
+    user_id: i64,
+) -> SettlementResult<RechargeSettingsModel> {
+    // Tenant-scoped cash→points rule first; falls back to the platform catalog
+    // and finally to the model defaults (CNY base, 10 points/CNY, USD→CNY 7).
+    load_recharge_settings_model(
+        pool,
+        AdminMarketingSubject {
+            tenant_id,
+            organization_id,
+            operator_id: user_id,
+            operator_type: 1,
+        },
+    )
+    .await
+    .or_else(|_| parse_recharge_settings_model(None, None, None))
+    .map_err(Into::into)
+}
+
 async fn settle_usage_group(
     tx: &mut Transaction<'_, Postgres>,
     command: &UsageSettlementCommand,
     group: &SettlementGroup,
+    settings: &RechargeSettingsModel,
     account_store: &dyn AccountLedgerAppendPort,
 ) -> SettlementResult<UsageSettlementOutcome> {
     if group.candidates.is_empty() {
         return Ok(empty_outcome());
     }
+    let currency = &group.candidates[0].usage_fact.currency;
 
     let mut candidates_by_request: BTreeMap<String, Vec<SettlementCandidate>> = BTreeMap::new();
     for candidate in &group.candidates {
@@ -446,7 +479,8 @@ async fn settle_usage_group(
         // reservation. Its final amount must use the same upward rounding as
         // the synchronous interceptor, even when the request is below the
         // worker's cross-request micro-amount aggregation threshold.
-        let actual_tokens = charge_precharged_tokens(candidate_total_scaled(&candidates)?)?;
+        let actual_tokens =
+            charge_precharged_tokens(candidate_total_scaled(&candidates)?, currency, settings)?;
         let transaction_id = if actual_tokens > reserved_tokens {
             format!(
                 "cloudrouter:{}:async-adjust-debit",
@@ -463,6 +497,7 @@ async fn settle_usage_group(
             command,
             &candidates,
             account_store,
+            settings,
             reserved_tokens,
             actual_tokens,
             &transaction_id,
@@ -473,7 +508,7 @@ async fn settle_usage_group(
 
     for candidates in unreserved_by_request.into_values() {
         let total_scaled = candidate_total_scaled(&candidates)?;
-        let mut actual_tokens = charge_tokens_from_scaled(total_scaled)?;
+        let mut actual_tokens = charge_tokens_from_scaled(total_scaled, currency, settings)?;
         if actual_tokens == 0 && total_scaled > 0 && candidates.iter().any(micro_candidate_expired)
         {
             // Do not leave a positive billable amount pending forever just
@@ -493,6 +528,7 @@ async fn settle_usage_group(
                 command,
                 &candidates,
                 account_store,
+                settings,
                 0,
                 actual_tokens,
                 &transaction_id,
@@ -557,6 +593,7 @@ async fn settle_candidates(
     command: &UsageSettlementCommand,
     candidates: &[SettlementCandidate],
     account_store: &dyn AccountLedgerAppendPort,
+    settings: &RechargeSettingsModel,
     reserved_tokens: i64,
     actual_tokens: i64,
     transaction_id: &str,
@@ -589,7 +626,7 @@ async fn settle_candidates(
     // Validate that per-candidate rounding sums to the batch total before
     // touching the account ledger. This also keeps a zero-amount request
     // eligible for releasing a precharge reservation.
-    let _ = allocate_candidate_tokens(candidates, actual_tokens)?;
+    let _ = allocate_candidate_tokens(candidates, actual_tokens, settings)?;
     let ledger_result = if tokens == 0 {
         Ok(())
     } else {
@@ -919,35 +956,44 @@ async fn mark_settlement_terminal_failed(
     .await
 }
 
-fn charge_tokens_from_scaled(scaled: i128) -> Result<i64, DomainError> {
-    if scaled <= 0 {
-        return Ok(0);
-    }
-    let scaled_tokens = scaled
-        .checked_mul(TOKENS_PER_MAJOR_UNIT)
-        .ok_or_else(|| DomainError::new("usage settlement amount is too large"))?;
-    if scaled_tokens < MIN_BILLABLE_TOKEN_SCALED {
-        return Ok(0);
-    }
-    let tokens = scaled_tokens
-        .checked_add(DECIMAL_SCALE - 1)
-        .ok_or_else(|| DomainError::new("usage settlement amount is too large"))?
-        / DECIMAL_SCALE;
-    i64::try_from(tokens).map_err(|_| DomainError::new("usage settlement tokens overflow"))
+fn charge_tokens_from_scaled(
+    scaled: i128,
+    currency: &str,
+    settings: &RechargeSettingsModel,
+) -> Result<i64, DomainError> {
+    token_points_for_charge(&scaled_to_amount_string(scaled), currency, settings)
 }
 
-fn charge_precharged_tokens(scaled: i128) -> Result<i64, DomainError> {
-    if scaled <= 0 {
-        return Ok(0);
+fn charge_precharged_tokens(
+    scaled: i128,
+    currency: &str,
+    settings: &RechargeSettingsModel,
+) -> Result<i64, DomainError> {
+    token_points_for_charge(&scaled_to_amount_string(scaled), currency, settings)
+}
+
+/// Reconstructs a scale-12 billing amount string (e.g. `0.000000000001`) from
+/// its integer scaled representation so the shared charge→points conversion
+/// (`token_points_for_charge`) can parse it back losslessly.
+fn scaled_to_amount_string(scaled: i128) -> String {
+    if scaled == 0 {
+        return "0".to_owned();
     }
-    let scaled_tokens = scaled
-        .checked_mul(TOKENS_PER_MAJOR_UNIT)
-        .ok_or_else(|| DomainError::new("usage settlement amount is too large"))?;
-    let tokens = scaled_tokens
-        .checked_add(DECIMAL_SCALE - 1)
-        .ok_or_else(|| DomainError::new("usage settlement amount is too large"))?
-        / DECIMAL_SCALE;
-    i64::try_from(tokens).map_err(|_| DomainError::new("usage settlement tokens overflow"))
+    let negative = scaled < 0;
+    let abs = scaled.unsigned_abs();
+    let whole = abs / DECIMAL_SCALE as u128;
+    let fraction = abs % DECIMAL_SCALE as u128;
+    let mut out = if fraction == 0 {
+        format!("{whole}")
+    } else {
+        format!("{whole}.{:012}", fraction)
+            .trim_end_matches('0')
+            .to_owned()
+    };
+    if negative && whole != 0 {
+        out.insert(0, '-');
+    }
+    out
 }
 
 fn candidate_total_scaled(candidates: &[SettlementCandidate]) -> Result<i128, DomainError> {
@@ -965,7 +1011,9 @@ fn settlement_no(usage_fact_id: i64) -> String {
 fn allocate_candidate_tokens(
     candidates: &[SettlementCandidate],
     total_tokens: i64,
+    settings: &RechargeSettingsModel,
 ) -> Result<Vec<i64>, DomainError> {
+    let currency = &candidates[0].usage_fact.currency;
     let mut allocations = Vec::with_capacity(candidates.len());
     let mut cumulative_amount = 0_i128;
     let mut allocated_tokens = 0_i64;
@@ -973,7 +1021,7 @@ fn allocate_candidate_tokens(
         cumulative_amount = cumulative_amount
             .checked_add(candidate.scaled_amount)
             .ok_or_else(|| DomainError::new("usage settlement amount is too large"))?;
-        let cumulative_tokens = charge_tokens_from_scaled(cumulative_amount)?;
+        let cumulative_tokens = charge_tokens_from_scaled(cumulative_amount, currency, settings)?;
         let candidate_tokens = cumulative_tokens
             .checked_sub(allocated_tokens)
             .ok_or_else(|| DomainError::new("usage settlement token allocation underflow"))?;

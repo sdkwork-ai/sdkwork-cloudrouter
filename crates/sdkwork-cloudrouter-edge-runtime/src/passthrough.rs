@@ -1233,6 +1233,7 @@ where
         customer_charge_amount: pricing.customer_charge_amount,
         upstream_cost_amount: pricing.upstream_cost_amount,
         currency: pricing.currency,
+        debit_points: None,
         pricing_plan_code: pricing.pricing_plan_code,
         billing_components: pricing.billing_components,
         pricing_snapshot,

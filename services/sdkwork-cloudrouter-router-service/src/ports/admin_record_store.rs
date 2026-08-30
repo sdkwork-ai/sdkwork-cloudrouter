@@ -74,6 +74,9 @@ pub struct AdminRecordLogItem {
     pub base_output_price: String,
     pub cache_read_price: String,
     pub unit_size: String,
+    /// Configured Token Bank points per major unit of the record's currency,
+    /// resolved from the recharge exchange settings (cash→points × currency→CNY).
+    pub points_per_unit: String,
     pub path: String,
     pub reasoning_effort: String,
     pub ip: String,

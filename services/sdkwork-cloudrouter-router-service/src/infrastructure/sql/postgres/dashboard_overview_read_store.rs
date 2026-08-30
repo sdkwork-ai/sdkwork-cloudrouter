@@ -19,7 +19,7 @@ WITH billable_usage AS (
         c.invocation_id,
         c.amount,
         COALESCE((m.dimensions_json ->> 'totalTokens')::bigint, 0) AS total_tokens,
-        COALESCE((m.dimensions_json ->> 'modality')::integer, 0) AS modality,
+        COALESCE(NULLIF(COALESCE((m.dimensions_json ->> 'modality')::integer, 0), 0), 1) AS modality,
         c.charged_at AS occurred_at,
         c.tenant_id,
         c.organization_id,
@@ -43,7 +43,7 @@ WITH billable_usage AS (
         COALESCE(NULLIF(legacy.request_id, ''), CAST(legacy.id AS TEXT)),
         legacy.customer_charge_amount,
         COALESCE(legacy.total_tokens, 0),
-        COALESCE(legacy.modality, 0),
+        COALESCE(NULLIF(COALESCE(legacy.modality, 0), 0), 1),
         legacy.occurred_at,
         legacy.tenant_id,
         legacy.organization_id,
@@ -128,7 +128,7 @@ WHERE amount > 0
 const LOAD_USAGE_CHART: &str = r#"
 WITH billable_usage AS (
     SELECT c.invocation_id, c.amount,
-           COALESCE((m.dimensions_json ->> 'modality')::integer, 0) AS modality,
+           COALESCE(NULLIF(COALESCE((m.dimensions_json ->> 'modality')::integer, 0), 0), 1) AS modality,
            c.charged_at AS occurred_at, c.tenant_id, c.organization_id, c.user_id
     FROM cloudrouter_charge_line c
     JOIN cloudrouter_rating_decision d
@@ -141,7 +141,7 @@ WITH billable_usage AS (
       AND d.status = 1 AND d.decision_status = 'rated' AND d.billability = 'chargeable'
     UNION ALL
     SELECT COALESCE(NULLIF(legacy.request_id, ''), CAST(legacy.id AS TEXT)),
-           legacy.customer_charge_amount, COALESCE(legacy.modality, 0), legacy.occurred_at,
+           legacy.customer_charge_amount, COALESCE(NULLIF(COALESCE(legacy.modality, 0), 0), 1), legacy.occurred_at,
            legacy.tenant_id, legacy.organization_id, legacy.user_id
     FROM ai_metering_usage legacy
     WHERE legacy.status = 1 AND COALESCE(legacy.customer_charge_amount, 0) > 0
@@ -189,7 +189,7 @@ LIMIT 60
 const LOAD_MODALITY_DISTRIBUTION: &str = r#"
 WITH billable_usage AS (
     SELECT c.invocation_id, c.amount,
-           COALESCE((m.dimensions_json ->> 'modality')::integer, 0) AS modality,
+           COALESCE(NULLIF(COALESCE((m.dimensions_json ->> 'modality')::integer, 0), 0), 1) AS modality,
            c.charged_at AS occurred_at, c.tenant_id, c.organization_id, c.user_id
     FROM cloudrouter_charge_line c
     JOIN cloudrouter_rating_decision d
@@ -202,7 +202,7 @@ WITH billable_usage AS (
       AND d.status = 1 AND d.decision_status = 'rated' AND d.billability = 'chargeable'
     UNION ALL
     SELECT COALESCE(NULLIF(legacy.request_id, ''), CAST(legacy.id AS TEXT)),
-           legacy.customer_charge_amount, COALESCE(legacy.modality, 0), legacy.occurred_at,
+           legacy.customer_charge_amount, COALESCE(NULLIF(COALESCE(legacy.modality, 0), 0), 1), legacy.occurred_at,
            legacy.tenant_id, legacy.organization_id, legacy.user_id
     FROM ai_metering_usage legacy
     WHERE legacy.status = 1 AND COALESCE(legacy.customer_charge_amount, 0) > 0
@@ -229,42 +229,101 @@ GROUP BY modality
 ORDER BY request_count DESC
 "#;
 
+/// Top-N model usage ranking. Computed live from the subject's own billable
+/// usage over the queried window so the dashboard reflects the tenant's real
+/// model traffic (distinct invocation counts and billed cost), not the
+/// platform-scoped `ai_model_rank_snapshot` leaderboard which only carries
+/// real aggregation for the platform tenant and otherwise falls back to static
+/// catalog rows with zero counts.
 const LOAD_TOP_MODELS: &str = r#"
+WITH billable_usage AS (
+    SELECT
+        c.invocation_id,
+        c.amount,
+        c.tenant_id,
+        c.organization_id,
+        c.user_id,
+        COALESCE(
+            NULLIF(d.pricing_snapshot #>> '{resource,requestedModel}', ''),
+            COALESCE(m.catalog_key, '')
+        ) AS model,
+        COALESCE(m.catalog_key, '') AS catalog_key,
+        COALESCE(NULLIF(COALESCE((m.dimensions_json ->> 'modality')::integer, 0), 0), 1) AS modality,
+        c.charged_at AS occurred_at
+    FROM cloudrouter_charge_line c
+    JOIN cloudrouter_rating_decision d
+      ON d.tenant_id = c.tenant_id
+     AND d.organization_id = c.organization_id
+     AND d.id = c.rating_decision_id
+    JOIN cloudrouter_usage_measurement m
+      ON m.tenant_id = d.tenant_id
+     AND m.organization_id = d.organization_id
+     AND m.id = d.measurement_id
+    WHERE c.status = 1
+      AND c.charge_status IN ('rated', 'settled')
+      AND c.amount > 0
+      AND d.status = 1
+      AND d.decision_status = 'rated'
+      AND d.billability = 'chargeable'
+    UNION ALL
+    SELECT
+        COALESCE(NULLIF(legacy.request_id, ''), CAST(legacy.id AS TEXT)),
+        legacy.customer_charge_amount,
+        legacy.tenant_id,
+        legacy.organization_id,
+        legacy.user_id,
+        COALESCE(NULLIF(legacy.model, ''), legacy.catalog_key),
+        COALESCE(legacy.catalog_key, ''),
+        COALESCE(NULLIF(COALESCE(legacy.modality, 0), 0), 1),
+        legacy.occurred_at
+    FROM ai_metering_usage legacy
+    WHERE legacy.status = 1
+      AND COALESCE(legacy.customer_charge_amount, 0) > 0
+      AND NOT EXISTS (
+          SELECT 1 FROM cloudrouter_rating_decision current_decision
+          WHERE current_decision.tenant_id = legacy.tenant_id
+            AND current_decision.organization_id = legacy.organization_id
+            AND current_decision.invocation_id = legacy.request_id
+            AND current_decision.status = 1
+      )
+),
+usage_aggregate AS (
+    SELECT
+        COALESCE(NULLIF(m.model, ''), u.model, u.catalog_key) AS model,
+        COALESCE(NULLIF(m.vendor_name_snapshot, ''), m.vendor_code, '-') AS supplier,
+        CASE
+            WHEN u.modality BETWEEN 1 AND 5 THEN u.modality
+            ELSE COALESCE(m.capability, 1)
+        END AS modality,
+        COUNT(DISTINCT u.invocation_id) AS request_count,
+        SUM(u.amount) AS cost_amount
+    FROM billable_usage u
+    LEFT JOIN ai_model m
+      ON m.catalog_key = u.catalog_key
+     AND m.deleted_at IS NULL
+     AND m.status = 1
+    WHERE u.tenant_id = $1
+      AND u.organization_id = $2
+      AND u.user_id = $3
+      AND ($4::text IS NULL OR u.occurred_at >= $4::timestamptz)
+      AND ($5::text IS NULL OR u.occurred_at <= $5::timestamptz)
+    GROUP BY
+        COALESCE(NULLIF(m.model, ''), u.model, u.catalog_key),
+        COALESCE(NULLIF(m.vendor_name_snapshot, ''), m.vendor_code, '-'),
+        CASE
+            WHEN u.modality BETWEEN 1 AND 5 THEN u.modality
+            ELSE COALESCE(m.capability, 1)
+        END
+)
 SELECT
-    COALESCE(r.rank_no, 0) AS rank_no,
-    COALESCE(r.previous_rank_no, 0) AS previous_rank_no,
-    COALESCE(r.model, 'unknown') AS model,
-    COALESCE(NULLIF(r.vendor_name_snapshot, ''), COALESCE(r.vendor_code, '-')) AS supplier,
-    r.modality,
-    CAST(COALESCE(r.request_count, 0) AS TEXT) AS request_count,
-    CAST(COALESCE(r.cost_amount, 0) AS TEXT) AS cost_amount
-FROM ai_model_rank_snapshot r
-JOIN ai_model m
-  ON m.catalog_key = r.catalog_key
- AND m.deleted_at IS NULL
- AND m.status = 1
- AND COALESCE(m.release_stage, 1) IN (1, 2)
- AND COALESCE(m.shelf_state, 1) = 1
- AND COALESCE(m.routing_state, 1) = 1
- AND (
-     ($1 > 0 AND m.tenant_id = $1 AND m.organization_id = $2)
-     OR ($1 > 0 AND $2 > 0 AND m.tenant_id = $1 AND m.organization_id = 0)
-     OR (m.tenant_id = 0 AND m.organization_id = 0)
- )
-WHERE r.status = 1
-  AND (r.tenant_id = $1 OR r.tenant_id = 0 OR r.tenant_id IS NULL)
-  AND (r.organization_id = $2 OR r.organization_id = 0 OR r.organization_id = '0')
-  AND NULLIF(r.catalog_key, '') IS NOT NULL
-ORDER BY
-    CASE
-        WHEN r.organization_id = $2 THEN 0
-        WHEN r.tenant_id = $1 THEN 1
-        ELSE 2
-    END ASC,
-    r.snapshot_date DESC NULLS LAST,
-    r.snapshot_period DESC NULLS LAST,
-    r.rank_no ASC NULLS LAST,
-    r.id DESC
+    CAST(row_number() OVER (ORDER BY request_count DESC, cost_amount DESC, model ASC) AS TEXT) AS rank_no,
+    model,
+    supplier,
+    modality,
+    CAST(request_count AS TEXT) AS request_count,
+    CAST(cost_amount AS TEXT) AS cost_amount
+FROM usage_aggregate
+ORDER BY request_count DESC, cost_amount DESC, model ASC
 LIMIT 5
 "#;
 
@@ -363,7 +422,7 @@ impl DashboardOverviewReadStore for PostgresDashboardOverviewReadStore {
             let chart_data = load_chart_data(&self.pool, &query, subject).await?;
             let modality_distribution =
                 load_modality_distribution(&self.pool, &query, subject).await?;
-            let top_models = load_top_models(&self.pool, subject).await?;
+            let top_models = load_top_models(&self.pool, &query, subject).await?;
             let announcements = load_announcements(&self.pool, subject).await?;
             let performance_sparkline = load_performance_sparkline(&self.pool, subject).await?;
             let configuration_domains = load_configuration_nodes(&self.pool, subject).await?;
@@ -531,31 +590,32 @@ async fn load_modality_distribution(
 
 async fn load_top_models(
     pool: &PgPool,
+    query: &DashboardOverviewQuery,
     subject: DashboardOverviewSubject,
 ) -> Result<Vec<DashboardTopModel>, DomainError> {
     let rows = sqlx::query(LOAD_TOP_MODELS)
         .bind(subject.tenant_id)
         .bind(subject.organization_id)
+        .bind(subject.user_id)
+        .bind(query.start_time.as_deref())
+        .bind(query.end_time.as_deref())
         .fetch_all(pool)
         .await
         .map_err(sql_error)?;
 
     Ok(rows
         .into_iter()
-        .enumerate()
-        .map(|(index, row)| {
+        .map(|row| {
             let rank = integer_cell(&row, "rank_no").max(1);
-            let previous_rank = integer_cell(&row, "previous_rank_no");
-            let (trend, is_up) = rank_trend(rank, previous_rank);
             DashboardTopModel {
-                rank: if rank > 0 { rank } else { index as i64 + 1 },
+                rank,
                 name: string_cell(&row, "model"),
                 supplier: string_cell(&row, "supplier"),
                 modality: modality_label(optional_integer_cell(&row, "modality")),
                 requests: integer_cell(&row, "request_count"),
                 cost: decimal_cell(&row, "cost_amount"),
-                trend,
-                is_up,
+                trend: "0".to_owned(),
+                is_up: true,
             }
         })
         .collect())
@@ -680,17 +740,6 @@ fn chart_period_length(keyword: Option<&str>) -> i32 {
         "monthly" => 7,
         "yearly" => 4,
         _ => 10,
-    }
-}
-
-fn rank_trend(rank: i64, previous_rank: i64) -> (String, bool) {
-    if previous_rank <= 0 || previous_rank == rank {
-        return ("0".to_owned(), true);
-    }
-    if previous_rank > rank {
-        (format!("+{}", previous_rank - rank), true)
-    } else {
-        (format!("-{}", rank - previous_rank), false)
     }
 }
 

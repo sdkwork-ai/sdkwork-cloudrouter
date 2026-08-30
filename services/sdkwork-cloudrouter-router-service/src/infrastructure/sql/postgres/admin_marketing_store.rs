@@ -616,7 +616,7 @@ async fn load_recharge_settings(
     Ok(recharge_settings_to_item(settings))
 }
 
-async fn load_recharge_settings_model(
+pub(crate) async fn load_recharge_settings_model(
     pool: &PgPool,
     subject: AdminMarketingSubject,
 ) -> DomainResult<RechargeSettingsModel> {

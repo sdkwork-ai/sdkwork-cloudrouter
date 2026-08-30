@@ -300,6 +300,10 @@ pub use gateway_billing_store::{
     CustomerChargeMode, GatewayBillingAmount, GatewayBillingContext, GatewayBillingFuture,
     GatewayBillingSettlementMode, GatewayBillingStore,
 };
+pub use crate::infrastructure::sql::admin_marketing_recharge::{
+    parse_recharge_settings_model, points_per_currency_unit_string, token_points_for_charge,
+    RechargeSettingsModel,
+};
 pub use gateway_chain_policy_store::{
     ChainPolicyRecord, GatewayChainPolicyStore, CHAIN_POLICY_SCOPE_API_KEY,
     CHAIN_POLICY_SCOPE_GLOBAL,
@@ -312,6 +316,7 @@ pub use gateway_usage_recorder::{
     GatewayTraceAttribution, GatewayUsageQuantity, GatewayUsageRecordCommand,
     GatewayUsageRecordFuture, GatewayUsageRecorder,
 };
+pub use gateway_usage_recorder::{allocate_request_debit_points, token_points_for_charge_amount};
 pub use invocation_dispatcher::{
     InvocationDispatchError, InvocationDispatcher, InvocationDispatcherFuture,
 };

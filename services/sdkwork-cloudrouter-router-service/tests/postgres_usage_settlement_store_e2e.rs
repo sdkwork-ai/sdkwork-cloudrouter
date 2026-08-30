@@ -47,7 +47,7 @@ async fn settlement_debits_user_token_bank_wallet_and_marks_facts_settled() {
     let Some(ctx) = PostgresTestContext::new("usage_settlement_debit").await else {
         return;
     };
-    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-credit-1", 1000)
+    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-credit-1", 5000)
         .await
         .expect("credit token bank wallet");
     insert_usage_fact(&ctx.pool, 1, USER_ID, "settle-e2e-fact-1", "10.000000")
@@ -69,8 +69,8 @@ async fn settlement_debits_user_token_bank_wallet_and_marks_facts_settled() {
     assert_eq!(2, outcome.settled_count);
     assert_eq!(0, outcome.failed_count);
     assert_eq!(
-        600, outcome.debited_tokens,
-        "60.00 USD at 10 tokens per major unit"
+        4200, outcome.debited_tokens,
+        "60.00 USD at 70 tokens per major unit (USD→CNY 7 × 10 points/CNY)"
     );
 
     let (status, settled_at) = usage_fact_settlement(&ctx.pool, 1).await;
@@ -82,13 +82,13 @@ async fn settlement_debits_user_token_bank_wallet_and_marks_facts_settled() {
 
     let balance = token_bank_balance(&ctx.pool, USER_ID).await;
     assert_eq!(
-        400, balance,
+        800, balance,
         "wallet must be debited through the account ledger"
     );
 
     let debits = ledger_debit_total(&ctx.pool, USER_ID).await;
     assert_eq!(
-        600, debits,
+        4200, debits,
         "exactly one usage_settlement ledger entry must exist for the batch"
     );
 
@@ -138,7 +138,7 @@ async fn settlement_replays_idempotently_without_double_debit() {
     let Some(ctx) = PostgresTestContext::new("usage_settlement_replay").await else {
         return;
     };
-    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-credit-2", 1000)
+    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-credit-2", 2000)
         .await
         .expect("credit token bank wallet");
     insert_usage_fact(&ctx.pool, 1, USER_ID, "settle-e2e-fact-3", "20.000000")
@@ -155,8 +155,8 @@ async fn settlement_replays_idempotently_without_double_debit() {
         .expect("first settlement run");
     assert_eq!(1, first.settled_count);
     assert_eq!(
-        200, first.debited_tokens,
-        "20.00 USD at 10 tokens per major unit"
+        1400, first.debited_tokens,
+        "20.00 USD at 70 tokens per major unit (USD→CNY 7 × 10 points/CNY)"
     );
 
     // Second run must settle nothing and must not debit the wallet again.
@@ -168,10 +168,10 @@ async fn settlement_replays_idempotently_without_double_debit() {
     assert_eq!(0, second.debited_tokens);
 
     let balance = token_bank_balance(&ctx.pool, USER_ID).await;
-    assert_eq!(800, balance, "wallet must be debited exactly once");
+    assert_eq!(600, balance, "wallet must be debited exactly once");
     let debits = ledger_debit_total(&ctx.pool, USER_ID).await;
     assert_eq!(
-        200, debits,
+        1400, debits,
         "only one usage_settlement ledger entry may exist"
     );
 

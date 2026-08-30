@@ -10,7 +10,7 @@ use super::{
     InvocationRouting, InvocationSubject, InvocationTelemetry, InvocationUsage, StickyRouting,
 };
 use crate::domain::AiRouteStrategy;
-use crate::ports::{CustomerChargeMode, GatewayBillingSettlementMode};
+use crate::ports::{CustomerChargeMode, GatewayBillingSettlementMode, RechargeSettingsModel};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InvocationId(pub String);
@@ -204,6 +204,11 @@ pub struct InvocationCharging {
     pub charge_mode: CustomerChargeMode,
     pub settlement_mode: GatewayBillingSettlementMode,
     pub reserved_amount: Option<crate::ports::GatewayBillingAmount>,
+    /// Active cash→Token-Bank exchange settings (Loaded from the recharge rule)
+    /// used to convert a priced charge into the same integer Token Bank units
+    /// the wallet debits. Stashed by `BillingTransactionInterceptor` so the
+    /// pricing settlement layer can record a consistent `debit_points`.
+    pub points_settings: Option<RechargeSettingsModel>,
     /// Set once the provider has returned a terminal success and usage has
     /// been rated. A later accounting failure must be reconciled, not treated
     /// as a provider failure that is safe to refund blindly.
@@ -217,6 +222,7 @@ impl Default for InvocationCharging {
             charge_mode: CustomerChargeMode::default(),
             settlement_mode: GatewayBillingSettlementMode::default(),
             reserved_amount: None,
+            points_settings: None,
             provider_completed: false,
             settled: false,
         }

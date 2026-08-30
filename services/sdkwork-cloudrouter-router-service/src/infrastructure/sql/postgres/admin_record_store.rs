@@ -2,10 +2,12 @@ use sqlx::{PgPool, Row};
 
 use crate::domain::{DecimalValue, DomainError};
 use crate::infrastructure::sql::model_modality;
+use crate::infrastructure::sql::postgres::admin_marketing_store::load_recharge_settings_model;
 use crate::infrastructure::sql::postgres::billing_read_projection::with_billable_usage;
+use crate::ports::points_per_currency_unit_string;
 use crate::ports::{
-    AdminRecordListPage, AdminRecordLogItem, AdminRecordReadFuture, AdminRecordStore,
-    ListAdminRecordLogsQuery,
+    AdminMarketingSubject, AdminRecordListPage, AdminRecordLogItem, AdminRecordReadFuture,
+    AdminRecordStore, AdminRecordSubject, ListAdminRecordLogsQuery,
 };
 
 const LIST_ADMIN_RECORD_LOGS: &str = r#"
@@ -202,11 +204,13 @@ impl AdminRecordStore for PostgresAdminRecordStore {
                 .first()
                 .map(|row| integer_cell(row, "total"))
                 .unwrap_or(0);
+            let mut items: Vec<AdminRecordLogItem> = rows
+                .into_iter()
+                .map(row_to_log)
+                .collect::<Result<Vec<_>, DomainError>>()?;
+            enrich_with_points_per_unit(&self.pool, &query.subject, &mut items).await;
             Ok(AdminRecordListPage {
-                items: rows
-                    .into_iter()
-                    .map(row_to_log)
-                    .collect::<Result<Vec<_>, DomainError>>()?,
+                items,
                 total,
                 page_no: query.page_no,
                 page_size: query.page_size,
@@ -280,11 +284,42 @@ fn row_to_log(row: sqlx::postgres::PgRow) -> Result<AdminRecordLogItem, DomainEr
             "admin record cache read price",
         )?,
         unit_size: decimal_string_cell(&row, "unit_size", 6, "admin record unit size")?,
+        points_per_unit: String::new(),
         path: string_cell(&row, "request_path"),
         reasoning_effort: string_cell(&row, "reasoning_effort"),
         ip: string_cell(&row, "client_ip_masked"),
         user_agent: string_cell(&row, "user_agent"),
     })
+}
+
+/// Resolves the configured Token Bank points-per-currency-unit rate from the
+/// subject's recharge/billing exchange settings and annotates each admin
+/// record with it, so the frontend renders the points budget and formula at
+/// the configured rate regardless of an individual record's debit or cash
+/// amount.
+async fn enrich_with_points_per_unit(
+    pool: &PgPool,
+    subject: &AdminRecordSubject,
+    items: &mut [AdminRecordLogItem],
+) {
+    let Ok(settings) = load_recharge_settings_model(
+        pool,
+        AdminMarketingSubject {
+            tenant_id: subject.tenant_id,
+            organization_id: subject.organization_id,
+            operator_id: subject.operator_id,
+            operator_type: subject.operator_type,
+        },
+    )
+    .await
+    else {
+        return;
+    };
+    for item in items.iter_mut() {
+        if let Ok(points_per_unit) = points_per_currency_unit_string(&item.currency, &settings) {
+            item.points_per_unit = points_per_unit;
+        }
+    }
 }
 
 fn like_filter(value: Option<&str>) -> Option<String> {

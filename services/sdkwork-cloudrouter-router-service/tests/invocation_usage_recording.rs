@@ -328,6 +328,7 @@ fn usage_command() -> GatewayUsageRecordCommand {
         customer_charge_amount: "0.000000450000".to_owned(),
         upstream_cost_amount: "0.000000330000".to_owned(),
         currency: "USD".to_owned(),
+        debit_points: None,
         pricing_plan_code: "standard".to_owned(),
         billing_components: "[]".to_owned(),
         pricing_snapshot: "{}".to_owned(),

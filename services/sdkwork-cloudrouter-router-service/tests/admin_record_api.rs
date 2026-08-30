@@ -200,6 +200,7 @@ impl AdminRecordStore for TestAdminRecordStore {
                     base_output_price: "0.600000".to_owned(),
                     cache_read_price: "0.030000".to_owned(),
                     unit_size: "1000000.000000".to_owned(),
+                    points_per_unit: "70.000000".to_owned(),
                     path: "/v1/chat/completions".to_owned(),
                     reasoning_effort: "medium".to_owned(),
                     ip: "203.0.113.***".to_owned(),

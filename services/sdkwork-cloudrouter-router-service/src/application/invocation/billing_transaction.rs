@@ -7,6 +7,7 @@ use super::{
 use crate::domain::{BillingMeter, DecimalValue};
 use crate::ports::{
     CustomerChargeMode, GatewayBillingAmount, GatewayBillingContext, GatewayBillingStore,
+    RechargeSettingsModel, token_points_for_charge,
 };
 
 #[derive(Clone)]
@@ -57,6 +58,16 @@ impl InvocationInterceptor for BillingTransactionInterceptor {
                 .customer_charge_mode(context.clone())
                 .await
                 .map_err(billing_error)?;
+            // Resolve the configured cash→Token-Bank exchange settings once and
+            // stash them on the invocation so the pricing settlement layer can
+            // record a `debit_points` consistent with wallet debit (which uses
+            // the same `token_points_for_charge` conversion below).
+            let settings = self
+                .store
+                .load_cash_to_points_settings(context.clone())
+                .await
+                .map_err(billing_error)?;
+            invocation.charging.points_settings = Some(settings.clone());
             // 账号级计费模式优先：prepay 账号强制预扣，postpay 账号强制后扣。
             // 未配置/未知时回退客户结算模式（默认行为保持不变）。
             if let Some(account) = invocation.account.as_ref() {
@@ -76,7 +87,7 @@ impl InvocationInterceptor for BillingTransactionInterceptor {
                 );
                 return Ok(());
             }
-            let Some(amount) = estimated_amount(invocation) else {
+            let Some(amount) = estimated_amount(invocation, &settings) else {
                 return Err(billing_error(
                     "unable to establish a conservative precharge",
                 ));
@@ -200,7 +211,13 @@ impl InvocationInterceptor for BillingSettlementInterceptor {
             {
                 return Ok(());
             }
-            let Some(actual) = actual_amount(invocation) else {
+            let context = billing_context(invocation);
+            let settings = self
+                .store
+                .load_cash_to_points_settings(context.clone())
+                .await
+                .map_err(billing_error)?;
+            let Some(actual) = actual_amount(invocation, &settings) else {
                 tracing::warn!(
                     stage = "billing_settlement",
                     request_id = %invocation.request.request_id,
@@ -227,7 +244,6 @@ impl InvocationInterceptor for BillingSettlementInterceptor {
                 ));
             }
             invocation.charging.provider_completed = true;
-            let context = billing_context(invocation);
             tracing::debug!(
                 stage = "billing_settlement",
                 charge_mode = ?invocation.charging.charge_mode,
@@ -325,7 +341,10 @@ fn single_pricing_currency(invocation: &Invocation) -> bool {
     })
 }
 
-fn estimated_amount(invocation: &Invocation) -> Option<GatewayBillingAmount> {
+fn estimated_amount(
+    invocation: &Invocation,
+    settings: &RechargeSettingsModel,
+) -> Option<GatewayBillingAmount> {
     let first = invocation.usage.pricing_quotes.first()?;
     let currency = first.customer_charge_unit_price.currency.clone();
     let mut total = DecimalValue::ZERO;
@@ -353,24 +372,31 @@ fn estimated_amount(invocation: &Invocation) -> Option<GatewayBillingAmount> {
             .unwrap_or(DecimalValue::ZERO);
         total = total.checked_add(calculated.max(quoted_minimum)).ok()?;
     }
-    let amount = ceil_decimal_token_units(total)?;
+    let amount = token_points_for_charge(&total.to_fixed_string(12), &currency, settings).ok()?;
     Some(GatewayBillingAmount {
         amount: amount.to_string(),
         currency,
     })
 }
 
-fn actual_amount(invocation: &Invocation) -> Option<GatewayBillingAmount> {
-    aggregate_token_amounts(invocation.usage.settlement_commands.iter().map(|command| {
-        (
-            command.currency.as_str(),
-            command.customer_charge_amount.as_str(),
-        )
-    }))
+fn actual_amount(
+    invocation: &Invocation,
+    settings: &RechargeSettingsModel,
+) -> Option<GatewayBillingAmount> {
+    aggregate_token_amounts(
+        invocation.usage.settlement_commands.iter().map(|command| {
+            (
+                command.currency.as_str(),
+                command.customer_charge_amount.as_str(),
+            )
+        }),
+        settings,
+    )
 }
 
 fn aggregate_token_amounts<'a>(
     values: impl IntoIterator<Item = (&'a str, &'a str)>,
+    settings: &RechargeSettingsModel,
 ) -> Option<GatewayBillingAmount> {
     let mut values = values.into_iter();
     let (first_currency, first_amount) = values.next()?;
@@ -385,25 +411,11 @@ fn aggregate_token_amounts<'a>(
         }
         total = total.checked_add(DecimalValue::parse(amount).ok()?).ok()?;
     }
+    let amount = token_points_for_charge(&total.to_fixed_string(12), &currency, settings).ok()?;
     Some(GatewayBillingAmount {
-        amount: ceil_decimal_token_units(total)?.to_string(),
+        amount: amount.to_string(),
         currency,
     })
-}
-
-fn ceil_decimal_token_units(value: DecimalValue) -> Option<i128> {
-    const DECIMAL_SCALE: i128 = 1_000_000_000_000;
-    if value < DecimalValue::ZERO {
-        return None;
-    }
-    let fixed = value.to_fixed_string(12);
-    let (whole, fraction) = fixed.split_once('.')?;
-    let whole = whole.parse::<i128>().ok()?;
-    let fraction = fraction.parse::<i128>().ok()?;
-    let scaled = whole.checked_mul(10)?;
-    let fractional_tokens =
-        fraction.checked_mul(10)?.checked_add(DECIMAL_SCALE - 1)? / DECIMAL_SCALE;
-    scaled.checked_add(fractional_tokens)
 }
 
 fn conservative_input_units(invocation: &Invocation) -> i64 {
@@ -515,29 +527,52 @@ mod tests {
     use super::aggregate_token_amounts;
     use super::{is_token_meter, unit_size_or_default};
     use crate::domain::{BillingMeter, DecimalValue};
+    use crate::infrastructure::sql::admin_marketing_recharge::parse_recharge_settings_model;
+    use crate::ports::RechargeSettingsModel;
+    use std::collections::BTreeMap;
+
+    fn usd_settings() -> RechargeSettingsModel {
+        parse_recharge_settings_model(
+            Some("10"),
+            Some("CNY"),
+            Some(BTreeMap::from([
+                ("CNY".to_owned(), "1".to_owned()),
+                ("USD".to_owned(), "7".to_owned()),
+            ])),
+        )
+        .expect("valid settings")
+    }
 
     #[test]
     fn aggregates_decimal_lines_before_rounding_to_token_bank_units() {
-        let amount = aggregate_token_amounts([
-            ("USD", "0.000000000001"),
-            ("USD", "0.000000000001"),
-            ("USD", "0.099999999998"),
-        ])
+        let amount = aggregate_token_amounts(
+            [
+                ("USD", "0.000000000001"),
+                ("USD", "0.000000000001"),
+                ("USD", "0.099999999998"),
+            ],
+            &usd_settings(),
+        )
         .expect("same-currency amounts");
 
-        assert_eq!("1", amount.amount);
+        // 0.1 USD × (US→CNY 7 × 10 points/CNY) = 7 points = 7_000_000 micro.
+        assert_eq!("7000000", amount.amount);
         assert_eq!("USD", amount.currency);
     }
 
     #[test]
     fn rejects_mixed_currency_settlement() {
-        assert!(aggregate_token_amounts([("USD", "0.1"), ("CNY", "0.1")]).is_none());
+        assert!(
+            aggregate_token_amounts([("USD", "0.1"), ("CNY", "0.1")], &usd_settings()).is_none()
+        );
     }
 
     #[test]
     fn rounds_exact_tenths_without_an_extra_token() {
-        let amount = aggregate_token_amounts([("USD", "1.200000000000")]).expect("valid amount");
-        assert_eq!("12", amount.amount);
+        let amount = aggregate_token_amounts([("USD", "1.200000000000")], &usd_settings())
+            .expect("valid amount");
+        // 1.2 USD × 70 = 84 points = 84_000_000 micro exactly.
+        assert_eq!("84000000", amount.amount);
     }
 
     #[test]

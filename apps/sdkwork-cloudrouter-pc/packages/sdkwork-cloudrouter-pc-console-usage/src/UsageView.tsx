@@ -134,6 +134,35 @@ function formatPoints(value: string | undefined): string {
   return BigInt(raw).toLocaleString();
 }
 
+// Points (Token) exchange rate used to render the per-unit points prices and
+// points budget. Preferred source is the configured Token Bank billing rate
+// (`pointsPerUnit`) the backend resolves from the recharge exchange settings,
+// so the formula stays correct even when an individual record has no cash
+// amount or no recorded debit. A single record's `points / cost` is only a
+// backstop for legacy data that predates the configured-rate field.
+function pointsExchangeRate(log: UsageLog): number {
+  const configured = Number.parseFloat(log.pointsPerUnit || '');
+  if (Number.isFinite(configured) && configured > 0) {
+    return configured;
+  }
+  const points = /^\d+$/.test(log.points || '') ? Number(BigInt(log.points || '0')) : 0;
+  const cost = Number.parseFloat(log.cost || '0');
+  if (!Number.isFinite(points) || !Number.isFinite(cost) || points <= 0 || cost <= 0) {
+    return 0;
+  }
+  return points / cost;
+}
+
+function formatPointsRate(log: UsageLog, locale: string): string {
+  const value = pointsExchangeRate(log);
+  return formatLocalizedDecimalAmount(
+    String(value),
+    locale,
+    DISPLAY_DECIMAL_DIGITS,
+    MAX_DISPLAY_DECIMAL_DIGITS,
+  );
+}
+
 export function UsageView() {
   const { t, i18n } = useTranslation();
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
@@ -632,7 +661,7 @@ export function UsageView() {
                                 {/* Formula */}
                                 <div className="text-right font-medium text-slate-500 dark:text-slate-400 self-start pt-1">{t('console.usage.detail.formula', 'Formula')}</div>
                                 <div className="self-start">
-                                  <div className="flex flex-col gap-1.5 p-3 bg-white dark:bg-[#161616] rounded-lg border border-slate-200 dark:border-white/5 font-mono text-[11px] shadow-sm dark:shadow-none max-w-[640px]">
+                                  <div className="flex w-fit max-w-full flex-col gap-1.5 p-3 bg-white dark:bg-[#161616] rounded-lg border border-slate-200 dark:border-white/5 font-mono text-[11px] shadow-sm dark:shadow-none">
                                     <div className="text-slate-500 dark:text-slate-400">
                                       {t('console.usage.detail.inputPrice', 'input price:')} <span className="text-rose-600 dark:text-rose-400">{formatCashAmount(log.baseInputPrice, log.currency, displayLocale)}</span> / {formatUnitSizeLabel(log.unitSize)} {t('console.usage.unit.tokens', 'tokens')}
                                     </div>
@@ -642,7 +671,7 @@ export function UsageView() {
                                     <div className="text-slate-500 dark:text-slate-400 mb-1">
                                       {t('console.usage.detail.cachePrice', 'cache price:')} <span className="text-rose-600 dark:text-rose-400">{formatCashAmount(log.cacheReadPrice, log.currency, displayLocale)}</span> / {formatUnitSizeLabel(log.unitSize)} {t('console.usage.unit.tokens', 'tokens')}
                                     </div>
-                                    <div className="text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/5 p-2.5 rounded leading-relaxed break-all">
+                                    <div className="text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/5 p-2.5 rounded leading-relaxed">
                                       {isTokenUsage(log) ? (
                                         <>
                                           {`${t('console.usage.metric.input', 'input')} ${formatTokenCount(log.inputTokens)} / ${formatUnitSizeLabel(log.unitSize)} × ${formatCashAmount(log.baseInputPrice, log.currency, displayLocale)}`}
@@ -658,6 +687,25 @@ export function UsageView() {
                                         </>
                                       )}
                                       <span className="font-bold text-rose-600 dark:text-rose-400">{formatCashAmount(log.cost, log.currency, displayLocale)}</span>
+                                    </div>
+                                    <div className="text-slate-400 dark:text-slate-500 italic text-[10px]">{t('console.usage.detail.reference', 'Reference only; the ledger is the source of truth.')}</div>
+                                  </div>
+                                </div>
+
+                                {/* Points Formula */}
+                                <div className="text-right font-medium text-slate-500 dark:text-slate-400 self-start pt-1">{t('console.usage.detail.pointsFormula', 'Points formula')}</div>
+                                <div className="self-start">
+                                  <div className="flex w-fit max-w-full flex-col gap-1.5 p-3 bg-white dark:bg-[#161616] rounded-lg border border-slate-200 dark:border-white/5 font-mono text-[11px] shadow-sm dark:shadow-none">
+                                    <div className="text-slate-500 dark:text-slate-400">
+                                      {t('console.usage.detail.exchangeRate', 'exchange rate:')} <span className="text-indigo-600 dark:text-indigo-400">{formatPointsRate(log, displayLocale)} {t('console.usage.unit.points', 'points')}</span> / 1 {(log.currency || 'USD').toUpperCase()}
+                                    </div>
+                                    <div className="text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/5 p-2.5 rounded leading-relaxed">
+                                      {t('console.usage.detail.totalAmount', 'Total amount')} {formatCashAmount(log.cost, log.currency, displayLocale)}
+                                      {' × '}
+                                      {formatPointsRate(log, displayLocale)} {t('console.usage.unit.points', 'points')}/{(log.currency || 'USD').toUpperCase()}
+                                      {' = '}
+                                      <Coins className="w-3 h-3 inline-block text-indigo-500 -mt-0.5" />
+                                      <span className="font-bold text-indigo-600 dark:text-indigo-400">{formatPoints(log.points)}</span>
                                     </div>
                                     <div className="text-slate-400 dark:text-slate-500 italic text-[10px]">{t('console.usage.detail.reference', 'Reference only; the ledger is the source of truth.')}</div>
                                   </div>

@@ -4,16 +4,26 @@ use sdkwork_account_repository_sqlx::PostgresCommerceAccountStore;
 use sdkwork_account_service::{AppendLedgerEntryCommand, WalletAccountListQuery};
 use sdkwork_cloudrouter_router_service::domain::DomainError;
 use sdkwork_cloudrouter_router_service::ports::{
-    CustomerChargeMode, GatewayBillingAmount, GatewayBillingContext, GatewayBillingFuture,
-    GatewayBillingSettlementMode, GatewayBillingStore,
+    parse_recharge_settings_model, CustomerChargeMode, GatewayBillingAmount,
+    GatewayBillingContext, GatewayBillingFuture, GatewayBillingSettlementMode, GatewayBillingStore,
+    RechargeSettingsModel,
 };
 use sdkwork_contract_service::{
     CommerceAccountAssetType, CommerceLedgerDirection, CommerceMoney, CommerceRequestHash,
 };
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
+use std::collections::BTreeMap;
 
 const BUSINESS_TYPE: &str = "gateway_invocation_billing";
 const TOKEN_BANK_CURRENCY_CODE: &str = "TOKEN_BANK";
+/// Active cash→points exchange rule marker (mirrors sdkwork-order). The
+/// recharge settings model is parsed from this rule's base points-per-CNY
+/// rate plus its child currency→CNY rates, and is reused for usage debit
+/// conversion so a funded wallet and a charged fiat amount stay consistent.
+const CASH_TO_POINTS_RULE_NO: &str = "CASH_TO_POINTS";
+const PLATFORM_CATALOG_ORGANIZATION_ID: i64 = 0;
+const ENV_PLATFORM_CATALOG_TENANT_ID: &str = "SDKWORK_ORDER_PLATFORM_CATALOG_TENANT_ID";
+const DEFAULT_PLATFORM_CATALOG_TENANT_ID: i64 = 100_001;
 
 pub struct PostgresGatewayBillingStore {
     pool: PgPool,
@@ -184,6 +194,16 @@ impl GatewayBillingStore for PostgresGatewayBillingStore {
         })
     }
 
+    fn load_cash_to_points_settings<'a>(
+        &'a self,
+        context: GatewayBillingContext,
+    ) -> GatewayBillingFuture<'a, RechargeSettingsModel> {
+        Box::pin(async move {
+            load_cash_to_points_settings(&self.pool, context.tenant_id, context.organization_id)
+                .await
+        })
+    }
+
     fn precharge<'a>(
         &'a self,
         context: GatewayBillingContext,
@@ -309,6 +329,115 @@ impl GatewayBillingStore for PostgresGatewayBillingStore {
             Ok(())
         })
     }
+}
+
+/// Loads the active cash→points exchange settings for a tenant (platform
+/// catalog fallback), the single source of the Token Bank points-per-currency
+/// rates shared by recharge and usage billing.
+async fn load_cash_to_points_settings(
+    pool: &PgPool,
+    tenant_id: i64,
+    organization_id: i64,
+) -> Result<RechargeSettingsModel, DomainError> {
+    let row = match load_cash_to_points_settings_row(pool, tenant_id, organization_id).await? {
+        Some(row) => Some(row),
+        None => load_cash_to_points_settings_row(
+            pool,
+            platform_catalog_tenant_id(),
+            PLATFORM_CATALOG_ORGANIZATION_ID,
+        )
+        .await?,
+    };
+    let currency_rates = row
+        .as_ref()
+        .and_then(|item| {
+            item.try_get::<Option<serde_json::Value>, _>("currency_rates")
+                .ok()
+                .flatten()
+        })
+        .and_then(jsonb_string_map);
+    let rate = row
+        .as_ref()
+        .and_then(|item| item.try_get::<Option<String>, _>("rate").ok().flatten());
+    let base_currency_code = row
+        .as_ref()
+        .and_then(|item| {
+            item.try_get::<Option<String>, _>("base_currency_code")
+                .ok()
+                .flatten()
+        });
+    parse_recharge_settings_model(
+        rate.as_deref(),
+        base_currency_code.as_deref(),
+        currency_rates,
+    )
+}
+
+async fn load_cash_to_points_settings_row(
+    pool: &PgPool,
+    tenant_id: i64,
+    organization_id: i64,
+) -> Result<Option<sqlx::postgres::PgRow>, DomainError> {
+    let row = sqlx::query(
+        r#"
+        SELECT
+            rule.rate AS rate,
+            rule.base_currency_code AS base_currency_code,
+            COALESCE(
+                jsonb_object_agg(rate_row.currency_code, rate_row.rate)
+                    FILTER (WHERE rate_row.currency_code IS NOT NULL),
+                '{}'::jsonb
+            ) AS currency_rates
+        FROM commerce_exchange_rule rule
+        LEFT JOIN commerce_exchange_currency_rate rate_row
+            ON rate_row.rule_id = rule.id
+        WHERE rule.tenant_id = $1::text
+          AND rule.organization_id = $2::text
+          AND LOWER(rule.source_asset_type) = 'cash'
+          AND LOWER(rule.target_asset_type) = 'points'
+          AND rule.status = 'active'
+        GROUP BY rule.id
+        ORDER BY
+            CASE
+                WHEN rule.rule_no = $3 THEN 0
+                ELSE 1
+            END ASC,
+            rule.updated_at DESC,
+            rule.id DESC
+        LIMIT 1
+        "#,
+    )
+    .bind(tenant_id)
+    .bind(organization_id)
+    .bind(CASH_TO_POINTS_RULE_NO)
+    .fetch_optional(pool)
+    .await
+    .map_err(|error| DomainError::new(error.to_string()))?;
+    Ok(row)
+}
+
+fn platform_catalog_tenant_id() -> i64 {
+    std::env::var(ENV_PLATFORM_CATALOG_TENANT_ID)
+        .ok()
+        .and_then(|value| value.trim().parse::<i64>().ok())
+        .filter(|value| *value > 0)
+        .unwrap_or(DEFAULT_PLATFORM_CATALOG_TENANT_ID)
+}
+
+fn jsonb_string_map(value: serde_json::Value) -> Option<BTreeMap<String, String>> {
+    let object = value.as_object()?;
+    let mut map = BTreeMap::new();
+    for (key, value) in object {
+        map.insert(
+            key.clone(),
+            value
+                .as_str()
+                .map(str::to_owned)
+                .or_else(|| value.as_number().map(|number| number.to_string()))
+                .unwrap_or_default(),
+        );
+    }
+    Some(map)
 }
 
 fn sha256_hex(value: &str) -> String {

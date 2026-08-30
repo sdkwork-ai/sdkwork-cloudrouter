@@ -72,6 +72,13 @@ pub struct UsageLogItem {
     pub cost: String,
     pub currency: String,
     pub points: String,
+    /// Configured Token Bank points awarded for one major unit of the item's
+    /// pricing currency (currency→CNY × base points per CNY), resolved from the
+    /// recharge/or billing exchange settings. Lets the frontend render the
+    /// points budget and formula at the configured rate instead of deriving it
+    /// from a single record's `points / cost` (which zeroes out when a record
+    /// has no cash amount or no recorded debit).
+    pub points_per_unit: String,
     pub original_currency_amount: String,
     pub original_currency_code: String,
     pub multiplier: String,

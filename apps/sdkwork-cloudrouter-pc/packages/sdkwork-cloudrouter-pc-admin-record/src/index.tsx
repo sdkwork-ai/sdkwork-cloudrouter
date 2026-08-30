@@ -23,6 +23,25 @@ function isTokenRecord(log: LogRecord): boolean {
   return Number(log.inputTokens) > 0 || Number(log.cacheReadTokens) > 0 || Number(log.outputTokens) > 0;
 }
 
+// Derive the points (Token) exchange rate used to render the per-unit points
+// prices. Preferred source is the configured Token Bank billing rate
+// (`pointsPerUnit`) the backend resolves from the recharge exchange settings,
+// so the formula stays correct even when a record has no cash amount or no
+// recorded debit. A single record's `points / cost` is only a backstop for
+// legacy data that predates the configured-rate field.
+function recordPointsRate(log: LogRecord): number {
+  const configured = Number.parseFloat(log.pointsPerUnit || '');
+  if (Number.isFinite(configured) && configured > 0) {
+    return configured;
+  }
+  const points = /^\d+$/.test(log.points || '') ? Number(BigInt(log.points || '0')) : 0;
+  const cost = Number.parseFloat(log.cost || '0');
+  if (!Number.isFinite(points) || !Number.isFinite(cost) || points <= 0 || cost <= 0) {
+    return 0;
+  }
+  return points / cost;
+}
+
 export function RecordAdmin() {
   const { t, i18n } = useTranslation();
   const displayLocale = i18n.resolvedLanguage ?? i18n.language ?? 'en-US';
@@ -43,6 +62,8 @@ export function RecordAdmin() {
     const raw = (value || '0').trim();
     return /^\d+$/.test(raw) ? BigInt(raw).toLocaleString() : '0';
   };
+  const formatPointsRateLabel = (logItem: LogRecord) =>
+    formatDecimalAmount(String(recordPointsRate(logItem)), RECORD_COST_DECIMAL_DIGITS);
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const [logs, setLogs] = useState<LogRecord[]>([]);
   const [total, setTotal] = useState(0);
@@ -426,7 +447,7 @@ export function RecordAdmin() {
                                 <span>{t("admin.record.index.text.1rb6v97", "分组倍率")}{formatCostAmount(log.multiplier)}x</span>
                               </div>
 
-                              <div className="mt-1 flex flex-col gap-1.5 p-3 bg-white dark:bg-[#1a1a1a] rounded-lg border border-slate-200 dark:border-white/5 font-mono text-[11px] shadow-sm dark:shadow-none">
+                              <div className="mt-1 flex w-fit max-w-full flex-col gap-1.5 p-3 bg-white dark:bg-[#1a1a1a] rounded-lg border border-slate-200 dark:border-white/5 font-mono text-[11px] shadow-sm dark:shadow-none">
                                 <div className="text-slate-500 dark:text-slate-400">{t("admin.record.index.text.k5zbm4", "输入价格:")}<Zap className="w-3 h-3 inline-block text-rose-500/80 -mt-0.5" /> {formatCashAmount(log.baseInputPrice, log.currency)} / {unitSizeLabel(log.unitSize)} tokens</div>
                                 <div className="text-slate-500 dark:text-slate-400">{t("admin.record.index.text.1t3kubf", "输出价格:")}<Zap className="w-3 h-3 inline-block text-rose-500/80 -mt-0.5" /> {formatCashAmount(log.baseOutputPrice, log.currency)} / {unitSizeLabel(log.unitSize)} tokens</div>
                                 <div className="text-slate-500 dark:text-slate-400 mb-1">{t("admin.record.index.text.1fjtnna", "缓存读取价格:")}<Zap className="w-3 h-3 inline-block text-rose-500/80 -mt-0.5" /> {formatCashAmount(log.cacheReadPrice, log.currency)} / {unitSizeLabel(log.unitSize)} tokens</div>
@@ -436,7 +457,7 @@ export function RecordAdmin() {
                                       "admin.record.index.text.costFormula",
                                       "(输入 {{inputBillable}} / {{unitLabel}} * {{inputPrice}} + 缓存 {{cacheTokens}} / {{unitLabel}} * {{cachePrice}} + 输出 {{outputTokens}} / {{unitLabel}} * {{outputPrice}}) * 倍率 {{multiplier}} = ",
                                       {
-                                        inputBillable: (BigInt(log.inputTokens) - BigInt(log.cacheReadTokens)).toString(),
+                                        inputBillable: log.inputTokens,
                                         unitLabel: unitSizeLabel(log.unitSize),
                                         inputPrice: formatCashAmount(log.baseInputPrice, log.currency),
                                         cacheTokens: log.cacheReadTokens,
@@ -459,6 +480,26 @@ export function RecordAdmin() {
                                   )}
                                   <Zap className="w-3 h-3 inline-block text-rose-500 -mt-0.5" />
                                   <span className="font-bold text-rose-600 dark:text-rose-500 ml-1">{formatCashAmount(log.cost, log.currency)}</span>
+                                </div>
+                                <div className="text-slate-400 dark:text-slate-500 mt-1 italic">{t("admin.record.index.text.1mdzhzs", "仅供参考，以实际扣费为准")}</div>
+                              </div>
+
+                              <div className="mt-1.5 flex w-fit max-w-full flex-col gap-1.5 p-3 bg-white dark:bg-[#1a1a1a] rounded-lg border border-slate-200 dark:border-white/5 font-mono text-[11px] shadow-sm dark:shadow-none">
+                                <div className="text-slate-500 dark:text-slate-400">
+                                  {t("admin.record.index.text.pointsExchangeRate", "积分汇率:")} <Coins className="w-3 h-3 inline-block text-indigo-500/80 -mt-0.5" /> 1 {(log.currency || 'USD').toUpperCase()} ≈ <span className="text-indigo-600 dark:text-indigo-400">{formatPointsRateLabel(log)}</span> 积分
+                                </div>
+                                <div className="text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-white/5 p-2 rounded">
+                                  {t(
+                                    "admin.record.index.text.pointsFormula",
+                                    "汇总金额 {{amount}} {{currency}} * {{rate}} 积分/{{currency}} = ",
+                                    {
+                                      amount: formatCostAmount(log.cost),
+                                      currency: (log.currency || 'USD').toUpperCase(),
+                                      rate: formatPointsRateLabel(log),
+                                    },
+                                  )}
+                                  <Coins className="w-3 h-3 inline-block text-indigo-500 -mt-0.5" />
+                                  <span className="font-bold text-indigo-600 dark:text-indigo-500 ml-1">{formatPoints(log.points)}</span>
                                 </div>
                                 <div className="text-slate-400 dark:text-slate-500 mt-1 italic">{t("admin.record.index.text.1mdzhzs", "仅供参考，以实际扣费为准")}</div>
                               </div>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, Edit3, Globe2, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, Edit3, Globe2, Plus, Star, Trash2 } from 'lucide-react';
 import { BottomPagination } from '@sdkwork/cloudroutes-pc-commons';
 import { useTranslation } from 'react-i18next';
 import {
@@ -15,6 +15,7 @@ import {
   type AdminPricingSchedule,
   type AdminPricingScheduleWindow,
   type AdminPricingStatus,
+  type AdminDefaultRegionItem,
 } from './pricingService';
 import {
   buildPriceSettingProductRows,
@@ -138,6 +139,11 @@ export function PriceSettingsAdmin() {
   const [vendorCodes, setVendorCodes] = useState<string[]>([]);
   const [regionCode, setRegionCode] = useState('');
   const [defaultRegionsOpen, setDefaultRegionsOpen] = useState(false);
+  // catalogKey -> defaultRegionCode, loaded once so per-row buttons can show
+  // which region is the active default. Mutual exclusion is enforced both
+  // client-side (one default per catalogKey) and by the partial unique index
+  // uk_pricing_default_region_catalog_key on the pricing_default_region table.
+  const [defaultRegionByCatalogKey, setDefaultRegionByCatalogKey] = useState<Map<string, AdminDefaultRegionItem>>(new Map());
   const [search, setSearch] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -178,6 +184,55 @@ export function PriceSettingsAdmin() {
   }, [appliedSearch, page, pageSize, pricingPlanId, regionCode, resourceType, t, vendorCodes]);
 
   useEffect(() => { void load(); }, [load]);
+
+  const loadDefaultRegions = useCallback(async () => {
+    try {
+      const result = await pricingService.defaultRegions.list({ page: 1, pageSize: 200 });
+      const map = new Map<string, AdminDefaultRegionItem>();
+      for (const item of result.items) {
+        const key = item.catalogKey.trim();
+        if (key && item.status === 'active' && !map.has(key)) map.set(key, item);
+      }
+      setDefaultRegionByCatalogKey(map);
+    } catch {
+      // Non-fatal: the row buttons simply fail to show a default until the
+      // next successful load or a subsequent user action.
+    }
+  }, []);
+
+  useEffect(() => { void loadDefaultRegions(); }, [loadDefaultRegions]);
+
+  const handleSetDefaultRegion = useCallback(async (row: PriceSettingProductRow) => {
+    const catalogKey = row.product.catalogKey?.trim();
+    if (!catalogKey) return;
+    const targetRegion = row.product.regionCode.trim();
+    const previous = defaultRegionByCatalogKey.get(catalogKey);
+    if (previous?.defaultRegionCode === targetRegion) return;
+    const currencyCode = row.prices
+      .map(({ official }) => official.currencyCode?.trim())
+      .find((code) => code) ?? plans[0]?.currencyCode?.trim() ?? 'CNY';
+    try {
+      // Keep exactly one default per catalogKey: retire the previous default
+      // before creating the new one, mirroring the uk_pricing_default_region_
+      // catalog_key uniqueness rule.
+      if (previous?.id) {
+        try { await pricingService.defaultRegions.delete(previous.id); }
+        catch { /* the previous default may already be gone; proceed */ }
+      }
+      const created = await pricingService.defaultRegions.create({
+        catalogKey,
+        vendorCode: row.product.vendorCode,
+        productCode: row.product.productCode,
+        defaultRegionCode: targetRegion,
+        currencyCode,
+        description: '',
+      });
+      if (created?.catalogKey) { setDefaultRegionByCatalogKey((current) => new Map(current).set(created.catalogKey, created)); }
+      setError(null);
+    } catch (cause) {
+      setError(errorMessageI18n(cause, t('admin.pricing.settings.defaultRegion.setFailed'), t));
+    }
+  }, [defaultRegionByCatalogKey, plans, t]);
 
   const planRules = useMemo(
     () => pricingPlanId ? rules.filter((rule) => rule.pricingPlanId === pricingPlanId) : [],
@@ -308,7 +363,7 @@ export function PriceSettingsAdmin() {
     <div className="grid shrink-0 grid-cols-1 border-b border-slate-200 bg-slate-50/70 sm:grid-cols-3 dark:border-white/10 dark:bg-white/[0.03]"><SummaryMetric label={t('admin.pricing.settings.summary.products')} value={String(summary.products)} /><SummaryMetric label={t('admin.pricing.settings.summary.meters')} value={String(summary.meters)} /><SummaryMetric label={t('admin.pricing.settings.summary.configured')} value={`${summary.configured}/${summary.meters || 0}`} /></div>
     <AdminListToolbar filters={<div className="flex min-w-0 flex-wrap items-center gap-2"><SearchBox value={search} onChange={setSearch} onSubmit={(value) => { setAppliedSearch(value); setPage(1); }} placeholder={t('admin.pricing.settings.search.placeholder')} /><VendorMultiSelect vendors={vendorOptions} value={vendorCodes} onChange={(next) => { setVendorCodes(next); setPage(1); }} placeholder={t('admin.pricing.settings.filters.allVendors')} /><select className={toolbarSelectClass} value={pricingPlanId} aria-label={t('admin.pricing.settings.filters.pricingPlan')} onChange={(event) => { setPricingPlanId(event.target.value); setPage(1); }}>{plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.planName || plan.planCode}</option>)}</select><select className={toolbarSelectClass} value={resourceType} aria-label={t('admin.pricing.settings.filters.resourceType')} onChange={(event) => { setResourceType(event.target.value as PriceSettingResourceType); setPage(1); }}>{resourceTabs.map((type) => <option key={type} value={type}>{resourceTypeLabel(type, t)}</option>)}</select><select className={toolbarSelectClass} value={regionCode} aria-label={t('admin.pricing.settings.filters.region')} onChange={(event) => { setRegionCode(event.target.value); setPage(1); }}><option value="">{t('admin.pricing.settings.filters.allRegions')}</option>{(officialCatalog?.regions ?? []).map((region) => <option key={region.code} value={region.code}>{region.code} ({formatPricingQuantity(region.count)})</option>)}</select></div>} />
     <AdminTableArea footer={<BottomPagination page={page} pageSize={pageSize} itemCount={productRows.rows.length + customRules.length} hasNextPage={hasNextPage} pageLabel={t('admin.pricing.common.pagination.page', { page })} pageSizeLabel={t('admin.pricing.common.pagination.rows')} previousLabel={t('admin.pricing.common.pagination.previous')} nextLabel={t('admin.pricing.common.pagination.next')} showingLabel={t('admin.pricing.common.pagination.showing')} onPreviousPage={() => setPage((current) => Math.max(1, current - 1))} onNextPage={() => setPage((current) => current + 1)} onPageSizeChange={(value) => { setPageSize(value); setPage(1); }} pageSizeOptions={[20, 50, 100]} />}>
-      <table className="w-full min-w-[1360px] table-fixed text-left text-sm"><thead className="sticky top-0 z-10 border-b border-slate-200 bg-white text-xs uppercase tracking-wide text-slate-400 dark:border-white/10 dark:bg-slate-900"><tr><th className="w-[16%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.resourceName')}</th><th className="w-[10%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.resourceType')}</th><th className="w-[19%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.pricingObject')}</th><th className="w-[25%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.officialPrice')}</th><th className="w-[22%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.customerPrice')}</th><th className="w-[8%] px-4 py-3 text-right font-medium">{t('admin.pricing.settings.table.actions')}</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-white/5">{loading || (productRows.rows.length === 0 && customRules.length === 0) ? <TableState loading={loading} empty={t('admin.pricing.settings.empty')} colSpan={6} /> : <>{productRows.rows.map((row) => <ProductPriceTableRow key={row.key} row={row} activeResourceType={resourceType} plans={plans} locale={displayLocale} t={t} onEdit={openProductSetting} />)}{customRules.map((rule) => <CustomPriceTableRow key={`rule:${rule.id}`} rule={rule} plans={plans} locale={displayLocale} t={t} onEdit={openCustomSetting} />)}</>}</tbody></table>
+      <table className="w-full min-w-[1360px] table-fixed text-left text-sm"><thead className="sticky top-0 z-10 border-b border-slate-200 bg-white text-xs uppercase tracking-wide text-slate-400 dark:border-white/10 dark:bg-slate-900"><tr><th className="w-[16%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.resourceName')}</th><th className="w-[10%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.resourceType')}</th><th className="w-[19%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.pricingObject')}</th><th className="w-[25%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.officialPrice')}</th><th className="w-[22%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.customerPrice')}</th><th className="w-[8%] px-4 py-3 text-right font-medium">{t('admin.pricing.settings.table.actions')}</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-white/5">{loading || (productRows.rows.length === 0 && customRules.length === 0) ? <TableState loading={loading} empty={t('admin.pricing.settings.empty')} colSpan={6} /> : <>{productRows.rows.map((row) => <ProductPriceTableRow key={row.key} row={row} activeResourceType={resourceType} plans={plans} locale={displayLocale} t={t} onEdit={openProductSetting} defaultRegion={defaultRegionByCatalogKey.get(row.product.catalogKey?.trim() ?? '')} onSetDefault={handleSetDefaultRegion} />)}{customRules.map((rule) => <CustomPriceTableRow key={`rule:${rule.id}`} rule={rule} plans={plans} locale={displayLocale} t={t} onEdit={openCustomSetting} />)}</>}</tbody></table>
     </AdminTableArea>
     <InlineError message={error} />
     {panelOpen ? <SidePanel wide title={t(creating ? 'admin.pricing.settings.form.createTitle' : 'admin.pricing.settings.form.editTitle')} description={t('admin.pricing.settings.form.batchDescription')} onClose={closePanel} footer={<><button type="button" className={secondaryButtonClass} onClick={closePanel} disabled={busy}>{t('admin.pricing.common.form.cancel')}</button><button type="submit" form="price-setting-form" className={primaryButtonClass} disabled={busy}>{t('admin.pricing.settings.form.saveItems', { count: form.meterPrices.length })}</button></>}>
@@ -493,7 +548,7 @@ function VendorMultiSelect({ vendors, value, onChange, placeholder }: { vendors:
   );
 }
 
-function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdit }: { row: PriceSettingProductRow; activeResourceType: PriceSettingResourceType; plans: AdminPricingPlanItem[]; locale: string; t: TranslationFunction; onEdit: (row: PriceSettingProductRow) => void }) {
+function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdit, defaultRegion, onSetDefault }: { row: PriceSettingProductRow; activeResourceType: PriceSettingResourceType; plans: AdminPricingPlanItem[]; locale: string; t: TranslationFunction; onEdit: (row: PriceSettingProductRow) => void; defaultRegion?: AdminDefaultRegionItem; onSetDefault: (row: PriceSettingProductRow) => void }) {
   const resourceType = activeResourceType === 'all' ? resourceTypeOfProduct(row.product) : activeResourceType;
   const translate = pricingConditionTranslate(t);
   const variantGroups = useMemo(() => groupPriceSettingRatesByVariant(row.prices), [row.prices]);
@@ -505,6 +560,9 @@ function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdi
   }, [activeVariant, variantGroups]);
   const activePrices = variantGroups.find((group) => group.key === activeVariant)?.prices ?? row.prices;
   const showVariantTabs = variantGroups.length > 1;
+  const catalogKey = row.product.catalogKey?.trim();
+  const canSetDefault = Boolean(catalogKey);
+  const isDefaultRegion = Boolean(canSetDefault && defaultRegion && defaultRegion.defaultRegionCode === row.product.regionCode.trim());
   return (
     <tr className="align-top hover:bg-slate-50 dark:hover:bg-white/5">
       <td className="px-4 py-4 text-slate-900 dark:text-white">
@@ -557,10 +615,23 @@ function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdi
         </div>
       </td>
       <td className="px-4 py-4 text-right">
-        <button type="button" className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold text-lobster-600 transition hover:bg-lobster-50 dark:text-lobster-300 dark:hover:bg-lobster-500/10" onClick={() => onEdit(row)}>
-          <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
-          {t('admin.pricing.settings.actions.editGroup')}
-        </button>
+        <div className="inline-flex flex-col items-end gap-1.5">
+          {canSetDefault ? (isDefaultRegion ? (
+            <span className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold text-lobster-600 dark:text-lobster-300" title={t('admin.pricing.settings.defaultRegion.isDefault', { defaultValue: '当前为默认计费 Region' })}>
+              <Star className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
+              {t('admin.pricing.settings.defaultRegion.isDefaultLabel', { defaultValue: '默认 Region' })}
+            </span>
+          ) : (
+            <button type="button" className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white" onClick={() => onSetDefault(row)} title={t('admin.pricing.settings.defaultRegion.setHint', { defaultValue: '将该 Region 设为默认计费地域' })}>
+              <Star className="h-3.5 w-3.5" aria-hidden="true" />
+              {t('admin.pricing.settings.defaultRegion.set', { defaultValue: '设置默认' })}
+            </button>
+          )) : null}
+          <button type="button" className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold text-lobster-600 transition hover:bg-lobster-50 dark:text-lobster-300 dark:hover:bg-lobster-500/10" onClick={() => onEdit(row)}>
+            <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
+            {t('admin.pricing.settings.actions.editGroup')}
+          </button>
+        </div>
       </td>
     </tr>
   );

@@ -2,10 +2,12 @@ use sqlx::{PgPool, Row};
 
 use crate::domain::{DecimalValue, DomainError};
 use crate::infrastructure::sql::model_modality;
+use crate::infrastructure::sql::postgres::admin_marketing_store::load_recharge_settings_model;
 use crate::infrastructure::sql::postgres::billing_read_projection::with_billable_usage;
+use crate::ports::points_per_currency_unit_string;
 use crate::ports::{
-    UsageLogItem, UsageLogsPage, UsageLogsQuery, UsageLogsReadFuture, UsageLogsReadStore,
-    UsageLogsStatus, UsageLogsSubject,
+    AdminMarketingSubject, UsageLogItem, UsageLogsPage, UsageLogsQuery, UsageLogsReadFuture,
+    UsageLogsReadStore, UsageLogsStatus, UsageLogsSubject,
 };
 
 const USAGE_SPEND_DECIMAL_DIGITS: u32 = 9;
@@ -210,17 +212,55 @@ impl UsageLogsReadStore for PostgresUsageLogsReadStore {
                 .first()
                 .and_then(|row| optional_integer_cell(row, "total"))
                 .unwrap_or(0);
+            let logs = rows
+                .into_iter()
+                .map(row_to_usage_log)
+                .collect::<Result<Vec<_>, DomainError>>()?;
+            let logs = enrich_with_points_per_unit(
+                &self.pool,
+                subject,
+                logs,
+            )
+            .await;
             Ok(UsageLogsPage {
-                logs: rows
-                    .into_iter()
-                    .map(row_to_usage_log)
-                    .collect::<Result<Vec<_>, DomainError>>()?,
+                logs,
                 total,
                 page_no: query.page_no,
                 page_size: query.page_size,
             })
         })
     }
+}
+
+/// Resolves the configured Token Bank points-per-currency-unit rate from the
+/// subject's recharge/billing exchange settings and annotates each usage log
+/// item with it, so the frontend renders the points budget and formula at the
+/// configured rate regardless of whether an individual record has a recorded
+/// debit or a non-zero cash amount.
+async fn enrich_with_points_per_unit(
+    pool: &PgPool,
+    subject: UsageLogsSubject,
+    mut logs: Vec<UsageLogItem>,
+) -> Vec<UsageLogItem> {
+    let Ok(settings) = load_recharge_settings_model(
+        pool,
+        AdminMarketingSubject {
+            tenant_id: subject.tenant_id,
+            organization_id: subject.organization_id,
+            operator_id: subject.user_id,
+            operator_type: 1,
+        },
+    )
+    .await
+    else {
+        return logs;
+    };
+    for log in logs.iter_mut() {
+        if let Ok(points_per_unit) = points_per_currency_unit_string(&log.currency, &settings) {
+            log.points_per_unit = points_per_unit;
+        }
+    }
+    logs
 }
 
 fn row_to_usage_log(row: sqlx::postgres::PgRow) -> Result<UsageLogItem, DomainError> {
@@ -269,6 +309,7 @@ fn row_to_usage_log(row: sqlx::postgres::PgRow) -> Result<UsageLogItem, DomainEr
         )?,
         currency: string_cell(&row, "currency"),
         points: string_cell(&row, "debit_points"),
+        points_per_unit: String::new(),
         original_currency_amount: decimal_string_cell(
             &row,
             "original_currency_amount",

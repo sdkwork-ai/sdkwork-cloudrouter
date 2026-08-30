@@ -17,7 +17,10 @@ const DEFAULT_DECIMAL_DIGITS = 6;
 
 type UsageLogResultStatus = 'success' | 'error';
 
-export type UsageLog = SdkUsageLogItem;
+export type UsageLog = SdkUsageLogItem & {
+  /** Configured Token Bank points per major unit of the item's currency. */
+  pointsPerUnit?: string;
+};
 export type UsageLogListParams = AiUsageLogsListParams;
 
 export interface UsageLogPage {
@@ -125,6 +128,7 @@ function normalizeUsageLog(value: unknown): UsageLog {
     ),
     currency: readOptionalString(item, 'currency'),
     points: readRequiredUnsignedInt64String(item, 'points', 'Usage log points are required'),
+    pointsPerUnit: readOptionalString(item, 'pointsPerUnit'),
     originalCurrencyAmount: readOptionalString(item, 'originalCurrencyAmount'),
     originalCurrencyCode: readOptionalString(item, 'originalCurrencyCode'),
     multiplier: readRequiredDecimalString(

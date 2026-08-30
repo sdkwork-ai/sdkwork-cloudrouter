@@ -10,7 +10,7 @@ use crate::application::{
     ResolvedModelPrice,
 };
 use crate::domain::{
-    AiRouteModelRequirement, BillingMeter, DecimalValue, PricingDimensionContext,
+    AiRouteModelRequirement, BillingMeter, DecimalValue, PricingDimensionContext, PriceSide,
     ResourceDefinition,
 };
 use crate::ports::{PricingCatalog, PricingDefaultRegionProvider};
@@ -323,9 +323,10 @@ where
 /// Resolves the billing region for a resource. When the account carries no
 /// explicit region (blank or the generic `global` placeholder), falls back to
 /// the model's configured default billing region so multi-region models rate
-/// against the correct regional price. When no default is configured, keeps
-/// the account's original region so single-region and legacy catalogs behave
-/// exactly as before.
+/// against the correct regional price. When no default is configured, prefers
+/// the China mainland region (`cn`) when the model genuinely presents multiple
+/// billing regions that include `cn`; otherwise keeps the account's original
+/// region so single-region and legacy catalogs behave exactly as before.
 fn effective_billing_region<C>(
     catalog: &C,
     invocation: &Invocation,
@@ -339,13 +340,45 @@ where
     if !region.is_empty() && !region.eq_ignore_ascii_case("global") {
         return account.region_code.clone();
     }
-    catalog
-        .default_billing_region(
-            invocation.subject.tenant_id,
-            invocation.subject.organization_id,
-            catalog_key,
-        )
-        .unwrap_or_else(|| account.region_code.clone())
+    if let Some(default) = catalog.default_billing_region(
+        invocation.subject.tenant_id,
+        invocation.subject.organization_id,
+        catalog_key,
+    ) {
+        return default;
+    }
+    if billing_region_prefers_china(catalog, catalog_key) {
+        return "cn".to_owned();
+    }
+    account.region_code.clone()
+}
+
+/// Reports whether a model advertises prices in more than one distinct billing
+/// region and includes the China mainland (`cn`) region among them. When true,
+/// the engine defaults billing to the China region for accounts that pin no
+/// specific region, instead of landing on the generic `global` bucket.
+fn billing_region_prefers_china<C>(catalog: &C, catalog_key: &str) -> bool
+where
+    C: PricingCatalog,
+{
+    let mut regions: Vec<String> = Vec::new();
+    let mut has_cn = false;
+    for price in catalog.list_model_prices_for_side(catalog_key, PriceSide::OfficialReference) {
+        let region = price.region_code.trim();
+        if region.is_empty() || region.eq_ignore_ascii_case("global") {
+            continue;
+        }
+        if !regions
+            .iter()
+            .any(|existing| existing.eq_ignore_ascii_case(region))
+        {
+            regions.push(region.to_owned());
+        }
+        if region.eq_ignore_ascii_case("cn") {
+            has_cn = true;
+        }
+    }
+    regions.len() >= 2 && has_cn
 }
 
 fn priced_catalog_key(

@@ -88,13 +88,14 @@ INSERT INTO ai_metering_usage
      audio_seconds, video_seconds, base_input_unit_price,
      base_output_unit_price, cache_read_unit_price, rate_multiplier, reference_multiplier,
      official_reference_amount, upstream_cost_amount, customer_charge_amount,
-     currency, pricing_plan_code, pricing_snapshot, occurred_at, settlement_status, idempotency_key)
+     currency, pricing_plan_code, pricing_snapshot, occurred_at, settlement_status, idempotency_key,
+     debit_points)
 VALUES
     ($1, $2, $3, $4, $5, $6, $7, 1, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
      $18, $19, $20, $21, $22, $23::numeric, $24, $25, $26, $27, $28, $29, $30, $31, $32,
      $33::numeric, $34::numeric, $35::numeric, $36::numeric, $37::numeric, $38::numeric,
      $39::numeric, $40::numeric, $41::numeric, $42::numeric,
-     $43, $44, $45::jsonb, to_timestamp($46::double precision / 1000.0), $47, $48)
+     $43, $44, $45::jsonb, to_timestamp($46::double precision / 1000.0), $47, $48, $49)
 ON CONFLICT (tenant_id, organization_id, request_id, usage_type) DO UPDATE SET
     trace_id = excluded.trace_id,
     api_key_id = excluded.api_key_id,
@@ -136,7 +137,8 @@ ON CONFLICT (tenant_id, organization_id, request_id, usage_type) DO UPDATE SET
     pricing_snapshot = excluded.pricing_snapshot,
     idempotency_key = excluded.idempotency_key,
     occurred_at = excluded.occurred_at,
-    settlement_status = excluded.settlement_status
+    settlement_status = excluded.settlement_status,
+    debit_points = excluded.debit_points
 WHERE ai_metering_usage.settlement_status = 0
 "#;
 
@@ -238,11 +240,12 @@ INSERT INTO cloudrouter_charge_line
     (id, uuid, tenant_id, organization_id, user_id, request_id, trace_id,
      idempotency_key, status, metadata, invocation_id, rating_decision_id,
      account_id, charge_status, product_code, operation_code, meter_code,
-     quantity, reference_amount, cost_amount, amount, currency_code, charged_at)
+     quantity, reference_amount, cost_amount, amount, currency_code, charged_at,
+     debit_points)
 VALUES
     ($1, $2, $3, $4, $5, $6, $7, $8, 1, $9::jsonb, $10, $11, $12, $13,
      $14, $15, $16, $17::numeric, $18::numeric, $19::numeric, $20::numeric,
-     $21, to_timestamp($22::double precision / 1000.0))
+     $21, to_timestamp($22::double precision / 1000.0), $23)
 ON CONFLICT (tenant_id, organization_id, rating_decision_id)
 DO UPDATE SET charge_status = cloudrouter_charge_line.charge_status
 WHERE cloudrouter_charge_line.idempotency_key IS NOT DISTINCT FROM excluded.idempotency_key
@@ -708,6 +711,7 @@ async fn upsert_usage_fact(
         .bind(context.ended_at_epoch_millis)
         .bind(SETTLEMENT_PENDING)
         .bind(usage_idempotency_key(command))
+        .bind(command.debit_points)
         .execute(&mut *connection)
         .await
         .map_err(|error| store_error("failed to upsert gateway usage fact", error))?;
@@ -939,6 +943,7 @@ async fn upsert_billing_ledger(
         .bind(&command.customer_charge_amount)
         .bind(&command.currency)
         .bind(context.ended_at_epoch_millis)
+        .bind(command.debit_points)
         .execute(&mut *connection)
         .await
         .map_err(|error| store_error("failed to upsert cloudrouter charge line", error))?;

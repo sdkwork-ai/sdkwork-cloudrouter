@@ -2,6 +2,7 @@ use std::future::Future;
 use std::pin::Pin;
 
 use crate::domain::DomainResult;
+use crate::ports::RechargeSettingsModel;
 
 pub type GatewayBillingFuture<'a, T> = Pin<Box<dyn Future<Output = DomainResult<T>> + Send + 'a>>;
 
@@ -65,6 +66,18 @@ pub trait GatewayBillingStore: Send + Sync {
         &'a self,
         context: GatewayBillingContext,
     ) -> GatewayBillingFuture<'a, CustomerChargeMode>;
+
+    /// Loads the active cash-to-points exchange settings (Token Bank points
+    /// per pricing currency) used to convert a priced charge into the integer
+    /// Token Bank units the ledger debits. Tenant-scoped rule first, then the
+    /// platform catalog; the parser supplies base-currency defaults when
+    /// neither exists. Billing and usage settlement convert charges with
+    /// `token_points_for_charge` using these settings so a funded wallet and a
+    /// charged fiat amount stay consistent.
+    fn load_cash_to_points_settings<'a>(
+        &'a self,
+        context: GatewayBillingContext,
+    ) -> GatewayBillingFuture<'a, RechargeSettingsModel>;
 
     fn precharge<'a>(
         &'a self,
