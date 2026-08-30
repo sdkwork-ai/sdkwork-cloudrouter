@@ -23,7 +23,7 @@ SELECT
     CAST(COALESCE(SUM(COALESCE(request_count, 1)), 0) AS TEXT) AS total_requests,
     COUNT(DISTINCT CASE WHEN failed_request.request_id IS NULL THEN NULL ELSE usage.request_id END) AS failed_requests,
     CAST(COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS TEXT) AS total_tokens,
-    CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS total_points,
+    CAST(COALESCE(SUM(COALESCE(debit_points, 0)), 0) AS TEXT) AS total_points,
     CAST(COALESCE(SUM(COALESCE(upstream_cost_amount, 0)), 0) AS TEXT) AS upstream_cost
 FROM billable_usage usage
 LEFT JOIN (
@@ -76,6 +76,7 @@ SELECT
     COALESCE((m.dimensions_json ->> 'totalTokens')::bigint, 0) AS total_tokens,
     COALESCE((m.dimensions_json ->> 'requestCount')::bigint, 0) AS request_count,
     c.amount AS customer_charge_amount,
+    c.debit_points AS debit_points,
     c.cost_amount AS upstream_cost_amount,
     c.charged_at AS occurred_at
 FROM cloudrouter_charge_line c
@@ -121,6 +122,7 @@ SELECT
     COALESCE(legacy.total_tokens, 0),
     COALESCE(legacy.request_count, 0),
     legacy.customer_charge_amount,
+    legacy.debit_points,
     COALESCE(legacy.upstream_cost_amount, 0),
     legacy.occurred_at
 FROM ai_metering_usage legacy
@@ -531,7 +533,7 @@ async fn load_trend(
                 {period_expr} AS time_bucket,
                 CAST(COALESCE(SUM(COALESCE(request_count, 1)), 0) AS TEXT) AS requests,
                 CAST(COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS TEXT) AS tokens,
-                CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS points,
+                CAST(COALESCE(SUM(COALESCE(debit_points, 0)), 0) AS TEXT) AS points,
                 COUNT(DISTINCT COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown')) AS users
             FROM billable_usage
             WHERE tenant_id = $1
@@ -601,8 +603,8 @@ async fn load_user_rankings(
             CAST(COALESCE(SUM(COALESCE(request_count, 1)), 0) AS TEXT) AS request_count,
             COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS total_tokens_sort,
             CAST(COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS TEXT) AS total_tokens,
-            COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS points_sort,
-            CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS points
+            COALESCE(SUM(COALESCE(debit_points, 0)), 0) AS points_sort,
+            CAST(COALESCE(SUM(COALESCE(debit_points, 0)), 0) AS TEXT) AS points
         FROM billable_usage
         WHERE tenant_id = $1
           AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
@@ -655,8 +657,8 @@ async fn load_model_rankings(
             CAST(COALESCE(SUM(COALESCE(request_count, 1)), 0) AS TEXT) AS request_count,
             COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS total_tokens_sort,
             CAST(COALESCE(SUM(COALESCE(total_tokens, prompt_tokens + completion_tokens + cached_tokens, 0)), 0) AS TEXT) AS total_tokens,
-            COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS points_sort,
-            CAST(COALESCE(SUM(COALESCE(customer_charge_amount, 0)), 0) AS TEXT) AS points,
+            COALESCE(SUM(COALESCE(debit_points, 0)), 0) AS points_sort,
+            CAST(COALESCE(SUM(COALESCE(debit_points, 0)), 0) AS TEXT) AS points,
             CAST(COALESCE(SUM(COALESCE(upstream_cost_amount, 0)), 0) AS TEXT) AS upstream_cost,
             COUNT(DISTINCT COALESCE(CAST(NULLIF(owner_id, 0) AS TEXT), CAST(NULLIF(user_id, 0) AS TEXT), NULLIF(owner_name_snapshot, ''), 'unknown')) AS user_count,
             COUNT(DISTINCT CASE WHEN failed_request.request_id IS NULL THEN NULL ELSE usage.request_id END) AS failed_requests

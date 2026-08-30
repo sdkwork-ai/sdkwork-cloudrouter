@@ -2,7 +2,7 @@ import { Check, Scale, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { regionDisplayName, vendorDisplayName } from '../i18n/dataNames';
+import { regionDisplayName, vendorDisplayName } from '../catalog/dataNames';
 import { buildCompareModels, type CompareModel, type CompareModelReferencePrice } from '../services/compareService';
 import { compareKeyOf, rateCategory } from '../types/compare';
 import type { OfficialPricingRate } from '../types/pricing';

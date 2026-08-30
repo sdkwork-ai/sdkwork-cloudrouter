@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle2, ChevronRight, ChevronDown, Zap, Search, Cpu, Info, User, Coins } from 'lucide-react';
-import { AdminTableShell, BusinessStateTableRow, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
+import { AdminTableShell, BusinessStateTableRow, formatTokenBankPoints, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
 import { formatMoney } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
 import {
   formatDecimalAmount,
@@ -34,7 +34,7 @@ function recordPointsRate(log: LogRecord): number {
   if (Number.isFinite(configured) && configured > 0) {
     return configured;
   }
-  const points = /^\d+$/.test(log.points || '') ? Number(BigInt(log.points || '0')) : 0;
+  const points = /^\d+$/.test(log.points || '') ? Number(BigInt(log.points || '0')) / 1_000_000 : 0;
   const cost = Number.parseFloat(log.cost || '0');
   if (!Number.isFinite(points) || !Number.isFinite(cost) || points <= 0 || cost <= 0) {
     return 0;
@@ -58,10 +58,10 @@ export function RecordAdmin() {
     const formatted = formatCostAmount(value);
     return code ? `${formatted} ${code}` : formatted;
   };
-  const formatPoints = (value: string) => {
-    const raw = (value || '0').trim();
-    return /^\d+$/.test(raw) ? BigInt(raw).toLocaleString() : '0';
-  };
+  // Token Bank points ride the wire as integer micro-points (1 point = 1e6
+  // micro); format for display through the shared Token Bank helper so admin
+  // and console render identical fractional decimals.
+  const formatPoints = (value: string) => formatTokenBankPoints(value || '0', displayLocale);
   const formatPointsRateLabel = (logItem: LogRecord) =>
     formatDecimalAmount(String(recordPointsRate(logItem)), RECORD_COST_DECIMAL_DIGITS);
   const [expandedIds, setExpandedIds] = useState<string[]>([]);

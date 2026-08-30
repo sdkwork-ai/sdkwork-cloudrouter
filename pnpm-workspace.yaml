@@ -54,8 +54,6 @@ packages:
   - "../sdkwork-drive/sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript"
   - "../sdkwork-drive/sdks/sdkwork-drive-backend-sdk/sdkwork-drive-backend-sdk-typescript/src/index.ts"
   - "../sdkwork-messaging/sdks/sdkwork-messaging-app-sdk/sdkwork-messaging-app-sdk-typescript"
-  - "../sdkwork-messaging/sdks/sdkwork-messaging-backend-sdk/sdkwork-messaging-backend-sdk-typescript"
-  - "../sdkwork-messaging/apps/sdkwork-messaging-pc/packages/sdkwork-messaging-pc-admin-notify"
   - "../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground"
   - "../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-asset-config"
   - "../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-studio"
@@ -83,6 +81,7 @@ packages:
   - "../sdkwork-skills/sdks/sdkwork-skills-app-sdk/sdkwork-skills-app-sdk-typescript"
   - "../sdkwork-voice/sdks/sdkwork-voice-app-sdk/sdkwork-voice-app-sdk-typescript"
   - "../sdkwork-prompts/sdks/sdkwork-prompts-app-sdk/sdkwork-prompts-app-sdk-typescript"
+  - "../sdkwork-prompts/sdks/sdkwork-prompts-app-sdk/sdkwork-prompts-app-sdk-typescript/src/index.ts"
   - "../sdkwork-prompts/sdks/sdkwork-prompts-backend-sdk/sdkwork-prompts-backend-sdk-typescript"
   - "../sdkwork-models/sdks/sdkwork-models-sdk/sdkwork-models-sdk-typescript"
   - "../sdkwork-community/sdks/sdkwork-community-app-sdk/sdkwork-community-app-sdk-typescript"
@@ -208,15 +207,13 @@ packages:
   - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-admin-core"
   - "../sdkwork-rtc/sdks/sdkwork-rtc-backend-sdk/sdkwork-rtc-backend-sdk-typescript"
 
-  - "../sdkwork-assets/sdks/sdkwork-assets-app-sdk/sdkwork-assets-app-sdk-typescript"
-  - "../sdkwork-messaging/apps/sdkwork-messaging-pc/packages/sdkwork-messaging-pc-core"
 catalog:
   react: ^19.2.8
   react-dom: ^19.2.8
   "@types/react": ^19.2.14
   "@types/react-dom": ^19.2.3
-  typescript: ^6.0.3
-  vite: ^8.2.1
+  typescript: ^6.0.2
+  vite: ^8.0.3
   "@vitejs/plugin-react": ^6.0.5
   vite-plugin-dts: ^5.0.3
   vitest: ^4.1.10
@@ -225,8 +222,8 @@ catalog:
   tailwindcss: ^4.3.3
   "@tailwindcss/vite": ^4.3.3
   "@tailwindcss/typography": ^0.5.19
-  autoprefixer: ^10.5.4
-  postcss: ^8.5.26
+  autoprefixer: ^10.4.27
+  postcss: ^8.5.8
   clsx: ^2.1.1
   tailwind-merge: ^3.6.0
   tailwindcss-animate: ^1.0.7
@@ -297,17 +294,17 @@ catalog:
   "@tauri-apps/plugin-updater": ^2.10.0
   "@tauri-apps/plugin-window-state": ^2.4.1
   "@tanstack/react-query": ^5.96.2
-  zustand: ^5.0.15
-  immer: ^11.1.17
+  zustand: ^5.0.12
+  immer: ^11.1.4
   react-markdown: ^10.1.0
   markdown-it: ^14.1.1
-  marked: ^18.0.9
+  marked: ^18.0.5
   "@monaco-editor/react": ^4.7.0
   "@types/markdown-it": ^14.1.2
-  emoji-picker-react: ^4.19.1
+  emoji-picker-react: ^4.18.0
   framer-motion: ^12.23.24
   motion: ^12.38.0
-  sonner: ^2.0.8
+  sonner: ^2.0.7
   cmdk: ^1.1.1
   "@xterm/xterm": ^6.0.0
   "@xterm/addon-fit": ^0.11.0
@@ -319,8 +316,6 @@ catalog:
   "@xterm/addon-web-links": ^0.12.0
   "@xterm/addon-webgl": ^0.19.0
   "@sdkwork/sdk-common": workspace:*
-  esbuild: ^0.28.2
+  esbuild: ^0.28.0
   pnpm: ^10.33.0
-  turbo: ^2.10.10
-
-
+  turbo: ^2.9.4

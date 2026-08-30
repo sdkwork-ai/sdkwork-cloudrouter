@@ -1,4 +1,5 @@
 import { formatMoney } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
+import { formatTokenBankPoints, microPointsToDecimalString } from '@sdkwork/cloudroutes-pc-commons';
 import {
   getCloudRouterBackendSdkClient,
   isRecord,
@@ -250,7 +251,9 @@ export function normalizeAnalyticsTrafficData(value: unknown): TrafficData {
     points,
     chartTokens: analyticsChartNumber(tokens),
     chartRequests: analyticsChartNumber(requests),
-    chartPoints: analyticsChartNumber(points),
+    // Backend trend points are integer micro-points (1 point = 1e6 micro);
+    // convert to a points decimal before charting so the y-axis shows points.
+    chartPoints: analyticsChartNumber(microPointsToDecimalString(points)),
   };
 }
 
@@ -475,9 +478,9 @@ export function createDashboardSummaryCards(snapshot: {
     },
     {
       label: t('admin.dashboard.summary.pointsConsumed.label', 'Compute Credits consumed'),
-      value: formatDecimal(summary.totalPoints),
+      value: formatTokenBankPoints(summary.totalPoints, 'en-US'),
       detail: t('admin.dashboard.summary.pointsConsumed.detail', '{{average}} Compute Credits per request', {
-        average: formatDecimal(summary.averagePointsPerRequest),
+        average: formatTokenBankPoints(summary.averagePointsPerRequest, 'en-US'),
       }),
     },
     {

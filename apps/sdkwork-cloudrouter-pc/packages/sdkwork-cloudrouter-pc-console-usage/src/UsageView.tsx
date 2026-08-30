@@ -14,7 +14,7 @@ import {
   Search,
   Zap,
 } from 'lucide-react';
-import { BusinessStatePanel, BusinessStateTableRow } from '@sdkwork/cloudroutes-pc-commons';
+import { BusinessStatePanel, BusinessStateTableRow, formatTokenBankPoints } from '@sdkwork/cloudroutes-pc-commons';
 import { formatMoney } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
 import {
   formatLocalizedDecimalAmount,
@@ -126,12 +126,11 @@ function formatCashAmount(value: string, currency: string | undefined, locale: s
   return code ? `${formatted} ${code}` : formatted;
 }
 
-function formatPoints(value: string | undefined): string {
-  const raw = (value || '0').trim();
-  if (!/^\d+$/.test(raw)) {
-    return '0';
-  }
-  return BigInt(raw).toLocaleString();
+// Token Bank points are carried as integer micro-points on the wire
+// (1 point = 1,000,000 micro). Format for display by dividing by 1e6 through
+// the shared Token Bank helper so console and admin render identical decimals.
+function formatPoints(value: string | undefined, locale: string): string {
+  return formatTokenBankPoints(value || '0', locale);
 }
 
 // Points (Token) exchange rate used to render the per-unit points prices and
@@ -145,7 +144,7 @@ function pointsExchangeRate(log: UsageLog): number {
   if (Number.isFinite(configured) && configured > 0) {
     return configured;
   }
-  const points = /^\d+$/.test(log.points || '') ? Number(BigInt(log.points || '0')) : 0;
+  const points = /^\d+$/.test(log.points || '') ? Number(BigInt(log.points || '0')) / 1_000_000 : 0;
   const cost = Number.parseFloat(log.cost || '0');
   if (!Number.isFinite(points) || !Number.isFinite(cost) || points <= 0 || cost <= 0) {
     return 0;
@@ -338,7 +337,7 @@ export function UsageView() {
               {t('console.usage.stat.pagePoints', '本页积分')}
             </span>
             <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 font-mono">
-              {formatPoints(String(pageStats.pagePoints))}
+              {formatPoints(String(pageStats.pagePoints), displayLocale)}
             </span>
           </div>
           <div className="flex flex-col px-3.5 py-2 rounded-lg bg-white dark:bg-[#252525] border border-slate-200 dark:border-white/5 shadow-sm">
@@ -590,7 +589,7 @@ export function UsageView() {
                         <td className="px-4 py-3 align-middle text-right">
                           <div className="flex items-center justify-end gap-1 text-indigo-600 dark:text-indigo-400 font-mono font-medium">
                             <Coins className="w-3.5 h-3.5 text-indigo-500" />
-                            <span>{formatPoints(log.points)}</span>
+                            <span>{formatPoints(log.points, displayLocale)}</span>
                           </div>
                         </td>
                         {/* IP */}
@@ -674,7 +673,7 @@ export function UsageView() {
                                     <div className="text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/5 p-2.5 rounded leading-relaxed">
                                       {isTokenUsage(log) ? (
                                         <>
-                                          {`${t('console.usage.metric.input', 'input')} ${formatTokenCount(log.inputTokens)} / ${formatUnitSizeLabel(log.unitSize)} × ${formatCashAmount(log.baseInputPrice, log.currency, displayLocale)}`}
+                                          {`(${t('console.usage.metric.input', 'input')} ${formatTokenCount(log.inputTokens)} / ${formatUnitSizeLabel(log.unitSize)} × ${formatCashAmount(log.baseInputPrice, log.currency, displayLocale)}`}
                                           {` + ${t('console.usage.metric.cache', 'cache')} ${formatTokenCount(log.cacheReadTokens)} / ${formatUnitSizeLabel(log.unitSize)} × ${formatCashAmount(log.cacheReadPrice, log.currency, displayLocale)}`}
                                           {` + ${t('console.usage.metric.output', 'output')} ${formatTokenCount(log.outputTokens)} / ${formatUnitSizeLabel(log.unitSize)} × ${formatCashAmount(log.baseOutputPrice, log.currency, displayLocale)})`}
                                           {` × ${formatDisplayAmount(log.multiplier)} = `}
@@ -705,7 +704,7 @@ export function UsageView() {
                                       {formatPointsRate(log, displayLocale)} {t('console.usage.unit.points', 'points')}/{(log.currency || 'USD').toUpperCase()}
                                       {' = '}
                                       <Coins className="w-3 h-3 inline-block text-indigo-500 -mt-0.5" />
-                                      <span className="font-bold text-indigo-600 dark:text-indigo-400">{formatPoints(log.points)}</span>
+                                      <span className="font-bold text-indigo-600 dark:text-indigo-400">{formatPoints(log.points, displayLocale)}</span>
                                     </div>
                                     <div className="text-slate-400 dark:text-slate-500 italic text-[10px]">{t('console.usage.detail.reference', 'Reference only; the ledger is the source of truth.')}</div>
                                   </div>
@@ -718,7 +717,7 @@ export function UsageView() {
                                     {t('console.usage.metric.cash', '现金')} <span className="font-mono text-rose-600 dark:text-rose-400">{formatCashAmount(log.cost, log.currency, displayLocale)}</span>
                                   </span>
                                   <span className="text-slate-600 dark:text-slate-300">
-                                    {t('console.usage.metric.points', '积分')} <span className="font-mono text-indigo-600 dark:text-indigo-400">{formatPoints(log.points)}</span>
+                                    {t('console.usage.metric.points', '积分')} <span className="font-mono text-indigo-600 dark:text-indigo-400">{formatPoints(log.points, displayLocale)}</span>
                                   </span>
                                 </div>
 

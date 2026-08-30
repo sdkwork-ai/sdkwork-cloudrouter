@@ -134,8 +134,7 @@ fn usage_settlement_recovery_lookup_is_organization_scoped() {
 fn usage_settlement_rounds_tokens_after_batch_aggregation_without_float_casts() {
     for expected in [
         "fn charge_tokens_from_scaled",
-        "MIN_BILLABLE_TOKEN_SCALED",
-        "DECIMAL_SCALE - 1",
+        "token_points_for_charge(&scaled_to_amount_string(scaled), currency, settings)",
         "fn allocate_candidate_tokens",
         "fn settlement_batch_no",
     ] {

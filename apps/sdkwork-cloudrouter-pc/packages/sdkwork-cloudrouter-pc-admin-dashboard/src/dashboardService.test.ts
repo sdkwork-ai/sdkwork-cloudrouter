@@ -19,10 +19,10 @@ const ANALYTICS_SUMMARY = {
   successfulRequests: '1204',
   failedRequests: '30',
   totalTokens: '1500000.000000000000',
-  totalPoints: '1234.567000000000',
+  totalPoints: '1234567000',
   upstreamCost: '98.700000000000',
   averageTokensPerRequest: '1215.560000000000',
-  averagePointsPerRequest: '1.234000000000',
+  averagePointsPerRequest: '1234000',
   errorRate: '2.500000000000',
 } satisfies Parameters<typeof createDashboardSummaryCards>[0]['summary'];
 
@@ -56,7 +56,7 @@ describe('dashboard metric mapping', () => {
       '1.5M',
       '15',
       '2.5%',
-      '1,234.57',
+      '1,234.567',
       '98.7',
     ]);
     expect(cards[6]?.value).not.toContain('$');
@@ -68,12 +68,12 @@ describe('dashboard metric mapping', () => {
       time: '2026-07-20',
       tokens: '1500.000000000000',
       requests: '12.000000000000',
-      points: '34.500000000000',
+      points: '34500000',
     })).toEqual({
       time: '2026-07-20',
       tokens: '1500.000000000000',
       requests: '12.000000000000',
-      points: '34.500000000000',
+      points: '34500000',
       chartTokens: 1_500,
       chartRequests: 12,
       chartPoints: 34.5,

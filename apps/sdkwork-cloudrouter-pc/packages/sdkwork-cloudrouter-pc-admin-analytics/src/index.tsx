@@ -17,6 +17,7 @@ import {
 } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { BusinessStatePanel, BusinessStateTableRow } from '@sdkwork/cloudroutes-pc-commons/components/BusinessState';
+import { formatTokenBankPoints, microPointsToDecimalString } from '@sdkwork/cloudroutes-pc-commons';
 import { formatMoney } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
 import {
   decimalNumber,
@@ -451,7 +452,7 @@ function UserRankingTable({
                 <div className="font-medium text-slate-900 dark:text-white">{item.userName}</div>
                 <div className="mt-0.5 text-xs text-slate-500">{item.email ?? item.userId}</div>
               </td>
-              <td className="px-4 py-3 text-right font-mono text-slate-900 dark:text-white">{formatDecimal(item.points, locale)}</td>
+              <td className="px-4 py-3 text-right font-mono text-slate-900 dark:text-white">{formatTokenBankPoints(item.points, locale)}</td>
               <td className="px-4 py-3 text-right font-mono">{formatCompactNumber(item.totalTokens, locale)}</td>
               <td className="px-4 py-3 text-right font-mono">{formatInteger(item.requestCount, locale)}</td>
               <td className="px-4 py-3">
@@ -523,7 +524,7 @@ function ModelRankingTable({
                   {translateAnalyticsLabel(item.modality, t)}
                 </span>
               </td>
-              <td className="px-4 py-3 text-right font-mono text-slate-900 dark:text-white">{formatDecimal(item.points, locale)}</td>
+              <td className="px-4 py-3 text-right font-mono text-slate-900 dark:text-white">{formatTokenBankPoints(item.points, locale)}</td>
               <td className="px-4 py-3 text-right font-mono">{formatCompactNumber(item.totalTokens, locale)}</td>
               <td className="px-4 py-3 text-right font-mono">{formatInteger(item.requestCount, locale)}</td>
               <td className="px-4 py-3 text-right font-mono">{formatInteger(item.userCount, locale)}</td>
@@ -691,7 +692,11 @@ function AnalyticsTooltip({
               <span className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color ?? '#64748b' }} />
               {translateAnalyticsLabel(String(entry.name ?? ''), t)}
             </span>
-            <span className="font-mono font-semibold text-slate-900 dark:text-white">{formatDecimal(readTooltipExactValue(entry), locale)}</span>
+            <span className="font-mono font-semibold text-slate-900 dark:text-white">
+              {String(entry.name ?? '') === 'points'
+                ? formatTokenBankPoints(readTooltipExactValue(entry), locale)
+                : formatDecimal(readTooltipExactValue(entry), locale)}
+            </span>
           </div>
         ))}
       </div>
@@ -750,8 +755,8 @@ function buildMetricCards(
     {
       key: 'points',
       label: t('admin.analytics.metrics.points', 'Compute Credits'),
-      value: formatDecimal(summary.totalPoints, locale),
-      detail: t('admin.analytics.metrics.averagePoints', '{{value}} per request', { value: formatDecimal(summary.averagePointsPerRequest, locale) }),
+      value: formatTokenBankPoints(summary.totalPoints, locale),
+      detail: t('admin.analytics.metrics.averagePoints', '{{value}} per request', { value: formatTokenBankPoints(summary.averagePointsPerRequest, locale) }),
       tone: 'bg-lobster-50 text-lobster-600 dark:bg-lobster-500/10 dark:text-lobster-300',
       icon: Coins,
     },
@@ -802,7 +807,7 @@ function toAnalyticsChartPoint(point: AdminAnalyticsOverview['trend'][number]): 
     time: point.time,
     requests: analyticsChartNumber(point.requests),
     tokens: analyticsChartNumber(point.tokens),
-    points: analyticsChartNumber(point.points),
+    points: analyticsChartNumber(microPointsToDecimalString(point.points)),
     requestsExact: point.requests,
     tokensExact: point.tokens,
     pointsExact: point.points,

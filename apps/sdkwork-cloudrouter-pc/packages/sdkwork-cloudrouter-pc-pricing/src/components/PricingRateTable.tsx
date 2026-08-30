@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { humanizeCode, regionDisplayName, vendorDisplayName } from '../i18n/dataNames';
+import { humanizeCode, regionDisplayName, vendorDisplayName } from '../catalog/dataNames';
 import { compareKeyOf, groupRatesByModel, type ModelGroup } from '../types/compare';
 import type {
   OfficialPricingFormula,

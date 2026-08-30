@@ -24,7 +24,7 @@ export * from './documents-reference-runtime-adapter';
 export * from './share-url';
 export * from './portal-auth';
 export * from './recharge-math';
-export { computeDiscountedAmount } from './decimal';
+export * from './decimal';
 export * from './problem-message';
 export * from './sdk-locale';
 export * from './queryClient';

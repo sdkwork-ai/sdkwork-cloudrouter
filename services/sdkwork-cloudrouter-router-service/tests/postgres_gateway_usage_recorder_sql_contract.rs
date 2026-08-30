@@ -109,13 +109,13 @@ fn gateway_usage_upsert_placeholder_order_matches_all_postgres_bindings() {
         "async fn upsert_billing_ledger(",
     );
     assert_eq!(
-        (1..=48).collect::<std::collections::BTreeSet<_>>(),
+        (1..=49).collect::<std::collections::BTreeSet<_>>(),
         numbered_placeholders(postgres_sql, '$')
     );
-    assert_eq!(48, postgres_bindings.matches(".bind(").count());
+    assert_eq!(49, postgres_bindings.matches(".bind(").count());
     assert_sql_contains(
         postgres_sql,
-        "$43, $44, $45::jsonb, to_timestamp($46::double precision / 1000.0), $47, $48",
+        "$43, $44, $45::jsonb, to_timestamp($46::double precision / 1000.0), $47, $48, $49",
     );
 }
 
@@ -135,7 +135,7 @@ fn billing_ledger_placeholder_order_matches_all_postgres_bindings() {
         (
             "const UPSERT_CHARGE_LINE: &str = r#\"",
             "const LOAD_OFFICIAL_RATE_IDENTITY",
-            22,
+            23,
         ),
         (
             "const LOAD_OFFICIAL_RATE_IDENTITY: &str = r#\"",
@@ -160,7 +160,7 @@ fn billing_ledger_placeholder_order_matches_all_postgres_bindings() {
         "async fn upsert_billing_ledger(",
         "fn ledger_product_code(",
     );
-    assert_eq!(120, bindings.matches(".bind(").count());
+    assert_eq!(121, bindings.matches(".bind(").count());
 }
 
 #[test]

@@ -25,7 +25,7 @@
     "typecheck": "tsc --noEmit --project tsconfig.json"
   },
   "dependencies": {
-    "@sdkwork/sdk-common": "workspace:*"
+    "@sdkwork/sdk-common": "^1.0.8"
   },
   "devDependencies": {
     "@types/node": "20.19.39",

@@ -36,6 +36,7 @@ import {
   YAxis,
 } from 'recharts';
 import { useTranslation } from 'react-i18next';
+import { formatTokenBankPoints } from '@sdkwork/cloudroutes-pc-commons';
 import {
   formatLocalizedDecimalAmount,
   resolveProblemMessage,
@@ -200,7 +201,9 @@ export function DashboardAdmin() {
                   {getTrendMetricLabel(entry.name) ?? String(entry.name === 'chartValue' ? label ?? entry.payload?.name ?? '' : entry.name ?? '')}
                 </span>
                 <span className="font-semibold text-slate-900 dark:text-white ml-auto pl-4">
-                  {formatLocalizedDecimalAmount(readTooltipValue(entry), displayLocale, 12, 0)}
+                  {entry.name === 'chartPoints'
+                    ? formatTokenBankPoints(readTooltipValue(entry), displayLocale)
+                    : formatLocalizedDecimalAmount(readTooltipValue(entry), displayLocale, 12, 0)}
                 </span>
               </div>
             ))}

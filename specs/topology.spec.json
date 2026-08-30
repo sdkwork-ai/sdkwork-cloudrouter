@@ -122,6 +122,7 @@
             "script": "_sdkwork:client:browser",
             "required": true,
             "role": "client",
+            "applicationRoot": "apps/sdkwork-cloudrouter-pc",
             "bindEnv": "SDKWORK_CLOUDROUTER_ROUTER_INTERNAL_PORTAL_RENDERER_BIND",
             "runtimeTargets": [
               "browser"
@@ -223,6 +224,7 @@
             "script": "_sdkwork:client:browser",
             "required": true,
             "role": "client",
+            "applicationRoot": "apps/sdkwork-cloudrouter-pc",
             "bindEnv": "SDKWORK_CLOUDROUTER_ROUTER_INTERNAL_PORTAL_RENDERER_BIND",
             "runtimeTargets": [
               "browser"
@@ -347,7 +349,8 @@
       },
       "standalone.demo": {
         "processes": [],
-        "healthSurfaces": []
+        "healthSurfaces": [],
+        "browserDeliveries": []
       },
       "cloud.demo": {
         "processes": [],

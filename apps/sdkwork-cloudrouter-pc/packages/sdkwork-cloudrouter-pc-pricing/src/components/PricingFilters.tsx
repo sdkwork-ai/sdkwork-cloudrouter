@@ -1,6 +1,6 @@
 import { Search, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { regionDisplayName, vendorDisplayName } from '../i18n/dataNames';
+import { regionDisplayName, vendorDisplayName } from '../catalog/dataNames';
 import type {
   OfficialPricingMeterFacet,
   OfficialPricingRegionFacet,

@@ -1,7 +1,11 @@
 import { formatMoney } from '@sdkwork/utils/money';
+import { decimalStringToMicro, microToDecimalString } from '@sdkwork/utils';
 import { readString, type ApiRecord } from './api-result.ts';
 
 const DEFAULT_DECIMAL_DIGITS = 6;
+
+/** Token Bank carries points with up to 6 decimal places (1 point = 1e6 micro). */
+export const TOKEN_POINTS_SCALE = 6;
 
 /**
  * Discounted price for an admin package: `value * discountPercent / 100`,
@@ -206,4 +210,54 @@ function decimalSeparator(locale: string): string {
   return new Intl.NumberFormat(locale)
     .formatToParts(1.1)
     .find((part) => part.type === 'decimal')?.value ?? '.';
+}
+
+/**
+ * Convert a Token Bank micro-point integer (`bigint` or int64 decimal string)
+ * into a points decimal string with up to 6 fractional digits, trimming
+ * trailing zeros ("4200000" -> "4.2"). Delegates to the shared
+ * `@sdkwork/utils/token_bank` implementation so console and admin render the
+ * exact same fractional-point value regardless of source.
+ */
+export function microPointsToDecimalString(value: string | bigint): string {
+  const micro = typeof value === 'bigint' ? value : parseMicroPoints(value);
+  return microToDecimalString(micro);
+}
+
+/**
+ * Parse a Token Bank points decimal string into the integer micro-point unit
+ * used by the account ledger (1 point = 1e6 micro). Returns `"0"` for empty
+ * or invalid input. Mirrors the shared `@sdkwork/utils/token_bank` parser.
+ */
+export function pointsDecimalToMicroString(value: string): string {
+  const micro = decimalStringToMicro(value);
+  return (micro ?? 0n).toString();
+}
+
+/**
+ * Locale-formatted Token Bank point count for display. Converts micro-points
+ * into a points decimal string first, then formats with up to 6 fractional
+ * digits while trimming trailing zeros. Never rounds away recorded precision.
+ */
+export function formatTokenBankPoints(
+  value: string | bigint,
+  locale: string,
+  maximumFractionDigits = TOKEN_POINTS_SCALE,
+): string {
+  return formatLocalizedDecimalAmount(
+    microPointsToDecimalString(value),
+    locale,
+    maximumFractionDigits,
+    0,
+  );
+}
+
+function parseMicroPoints(value: string): bigint {
+  // `formatTokenBankPoints` / `microPointsToDecimalString` receive the raw
+  // integer micro-point ledger value (e.g. "1234567000"), NOT a points
+  // decimal. Feed it through `decimalStringToMicro` would re-scale by 1e6,
+  // overstating the shown points. Parse it as an integer micro unit directly.
+  const trimmed = value.trim();
+  if (!/^\d+$/u.test(trimmed)) return 0n;
+  return BigInt(trimmed);
 }

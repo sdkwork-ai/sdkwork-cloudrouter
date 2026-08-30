@@ -1,7 +1,7 @@
 {
   "name": "cloudrouter-open-sdk-generated-typescript",
   "version": "0.1.0",
-  "description": "SDKWork Cloud Router OpenAI-compatible gateway SDK",
+  "description": "Generator-owned TypeScript transport SDK for cloudrouter-open-sdk.",
   "author": "SDKWork Team",
   "license": "MIT",
   "type": "module",
@@ -24,7 +24,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@sdkwork/sdk-common": "workspace:*"
+    "@sdkwork/sdk-common": "^1.0.8"
   },
   "devDependencies": {
     "@types/node": "20.19.39",
