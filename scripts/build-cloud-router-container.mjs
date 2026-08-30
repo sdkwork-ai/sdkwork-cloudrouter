@@ -271,7 +271,7 @@ function createBuildPlan(settings, root = workspaceRoot) {
       },
       {
         label: 'portal dist',
-        path: path.join(root, 'apps', 'sdkwork-cloudrouter-pc', 'dist'),
+        path: path.join(root, 'apps', 'sdkwork-cloudrouter-pc', 'dist', 'standalone', 'prod'),
       },
       {
         label: 'release env template',
@@ -287,11 +287,17 @@ function createBuildPlan(settings, root = workspaceRoot) {
           path: path.join(root, '..', item.repo, 'database', 'database.manifest.json'),
         })),
     ],
+    // The canonical browser build layout is dist/<deploymentProfile>/<envAlias>
+    // (browser-dist-layout.mjs); packagers flatten dist/standalone/prod into
+    // the installed web root (RUNTIME_DIRECTORY_SPEC.md §4.1.1). SDK archives
+    // are produced by scripts/archive-cloud-router-sdks.mjs into the dist root
+    // and must land under portal/dist/sdk-archives in the image.
     portalDistPath: path.join(root, 'apps', 'sdkwork-cloudrouter-pc', 'dist'),
     stagedEntries: [
       { archivePath: names.gatewayArchive, sourcePath: path.join(root, names.gatewaySource) },
       { archivePath: names.installerArchive, sourcePath: path.join(root, names.installerSource) },
-      { archivePath: 'portal/dist', sourcePath: path.join(root, 'apps', 'sdkwork-cloudrouter-pc', 'dist') },
+      { archivePath: 'portal/dist', sourcePath: path.join(root, 'apps', 'sdkwork-cloudrouter-pc', 'dist', 'standalone', 'prod') },
+      { archivePath: 'portal/dist/sdk-archives', sourcePath: path.join(root, 'apps', 'sdkwork-cloudrouter-pc', 'dist', 'sdk-archives') },
       { archivePath: '.env.release.example', sourcePath: path.join(root, '.env.release.example') },
     ],
     // Installed alongside the unpacked container package into the docker build

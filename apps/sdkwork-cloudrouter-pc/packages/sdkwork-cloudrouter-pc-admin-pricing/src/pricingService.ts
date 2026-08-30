@@ -159,6 +159,33 @@ export interface AdminPricingRuleMutationInput {
   status: AdminPricingStatus;
 }
 
+export interface AdminDefaultRegionItem {
+  id: string;
+  catalogKey: string;
+  vendorCode: string;
+  productCode: string;
+  defaultRegionCode: string;
+  currencyCode: string;
+  description?: string;
+  effectiveFrom?: string;
+  effectiveTo?: string;
+  status: AdminPricingStatus;
+  createdAt?: string;
+  updatedAt?: string;
+  version: string;
+}
+
+export interface AdminDefaultRegionMutationInput {
+  catalogKey: string;
+  vendorCode: string;
+  productCode: string;
+  defaultRegionCode: string;
+  currencyCode: string;
+  description?: string;
+  effectiveFrom?: string;
+  effectiveTo?: string;
+}
+
 export interface AdminPricingListParams {
   page?: number;
   pageSize?: number;
@@ -257,6 +284,22 @@ async function backendOfficialProductsList(
   params?: Parameters<BackendPricingService['officialProducts']['list']>[0],
 ) {
   return getCloudRouterBackendSdkClient().pricing.officialProducts.list(params);
+}
+
+async function backendDefaultRegionsList(
+  params?: Parameters<BackendPricingService['defaultRegions']['list']>[0],
+) {
+  return getCloudRouterBackendSdkClient().pricing.defaultRegions.list(params);
+}
+
+async function backendDefaultRegionsCreate(
+  body: Parameters<BackendPricingService['defaultRegions']['create']>[0],
+) {
+  return getCloudRouterBackendSdkClient().pricing.defaultRegions.create(body);
+}
+
+async function backendDefaultRegionsDelete(defaultRegionId: string) {
+  return getCloudRouterBackendSdkClient().pricing.defaultRegions.delete(defaultRegionId);
 }
 
 export async function fetchAdminOfficialPricingRates(
@@ -423,6 +466,31 @@ export async function deletePricingRule(ruleId: string): Promise<void> {
   await backendRulesDelete(requiredPricingText(ruleId, 'ruleId'));
 }
 
+export async function fetchPricingDefaultRegions(
+  params: AdminPricingListParams = {},
+): Promise<AdminPricingPage<AdminDefaultRegionItem>> {
+  const result = await backendDefaultRegionsList({
+    page: requiredListPage(params.page),
+    pageSize: requiredListPageSize(params.pageSize),
+    q: params.q || undefined,
+  });
+  return {
+    items: readRequiredApiItems(result, 'Default billing regions could not be loaded').map(normalizeDefaultRegion),
+    pageInfo: result.pageInfo,
+  };
+}
+
+export async function createPricingDefaultRegion(
+  input: AdminDefaultRegionMutationInput,
+): Promise<AdminDefaultRegionItem> {
+  const result = await backendDefaultRegionsCreate(buildDefaultRegionCreateRequest(input));
+  return normalizeDefaultRegion(readRequiredApiItem(result, 'Default billing region could not be created'));
+}
+
+export async function deletePricingDefaultRegion(defaultRegionId: string): Promise<void> {
+  await backendDefaultRegionsDelete(requiredPricingText(defaultRegionId, 'defaultRegionId'));
+}
+
 export const pricingService = {
   officialProducts: {
     list: fetchAdminOfficialPricingProducts,
@@ -449,6 +517,11 @@ export const pricingService = {
     create: createPricingRule,
     update: updatePricingRule,
     delete: deletePricingRule,
+  },
+  defaultRegions: {
+    list: fetchPricingDefaultRegions,
+    create: createPricingDefaultRegion,
+    delete: deletePricingDefaultRegion,
   },
 };
 
@@ -592,6 +665,38 @@ function buildRuleCreateRequest(input: AdminPricingRuleMutationInput) {
     effectiveFrom: optionalPricingText(input.effectiveFrom),
     effectiveTo: optionalPricingText(input.effectiveTo),
     status: input.status,
+  };
+}
+
+function normalizeDefaultRegion(value: unknown): AdminDefaultRegionItem {
+  const item = isRecord(value) ? value as ApiRecord : {} as ApiRecord;
+  return {
+    id: requireRecordString(item, 'id', 'Default billing region id is required'),
+    catalogKey: requireRecordString(item, 'catalogKey', 'Default billing region catalog key is required'),
+    vendorCode: requireRecordString(item, 'vendorCode', 'Default billing region vendor code is required'),
+    productCode: requireRecordString(item, 'productCode', 'Default billing region product code is required'),
+    defaultRegionCode: requireRecordString(item, 'defaultRegionCode', 'Default billing region code is required'),
+    currencyCode: readString(item, 'currencyCode').trim() || 'CNY',
+    description: optionalTrimmed(item, 'description'),
+    effectiveFrom: optionalTrimmed(item, 'effectiveFrom'),
+    effectiveTo: optionalTrimmed(item, 'effectiveTo'),
+    status: normalizeStatus(readString(item, 'status')),
+    createdAt: optionalTrimmed(item, 'createdAt'),
+    updatedAt: optionalTrimmed(item, 'updatedAt'),
+    version: readString(item, 'version').trim() || '0',
+  };
+}
+
+function buildDefaultRegionCreateRequest(input: AdminDefaultRegionMutationInput) {
+  return {
+    catalogKey: requiredPricingText(input.catalogKey, 'catalogKey'),
+    vendorCode: requiredPricingText(input.vendorCode, 'vendorCode'),
+    productCode: requiredPricingText(input.productCode, 'productCode'),
+    defaultRegionCode: requiredPricingText(input.defaultRegionCode, 'defaultRegionCode'),
+    currencyCode: normalizeCurrencyCode(input.currencyCode),
+    description: optionalPricingText(input.description),
+    effectiveFrom: optionalPricingText(input.effectiveFrom),
+    effectiveTo: optionalPricingText(input.effectiveTo),
   };
 }
 

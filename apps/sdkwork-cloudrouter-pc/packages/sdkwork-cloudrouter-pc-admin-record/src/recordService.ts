@@ -45,6 +45,10 @@ export interface LogRecord {
   cacheReadTokens: string;
   outputTokens: string;
   cost: string;
+  currency: string;
+  points: string;
+  originalCurrencyAmount: string;
+  originalCurrencyCode: string;
   multiplier: string;
   baseInputPrice: string;
   baseOutputPrice: string;
@@ -160,6 +164,10 @@ function normalizeLogRecord(value: unknown): LogRecord {
     cacheReadTokens,
     outputTokens,
     cost: readRequiredDecimalString(item, 'cost', 'Log cost is required', 'Log cost must be a decimal string'),
+    currency: readOptionalString(item, 'currency'),
+    points: readRequiredNonNegativeInt64String(item, 'points', 'Log points are required'),
+    originalCurrencyAmount: readOptionalString(item, 'originalCurrencyAmount'),
+    originalCurrencyCode: readOptionalString(item, 'originalCurrencyCode'),
     multiplier: readRequiredDecimalString(
       item,
       'multiplier',

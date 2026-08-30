@@ -24,7 +24,7 @@ type: Opaque
 stringData:
   # Production: replace via ExternalSecret (see cloud-router-redis-external-secret.example.yaml).
   redis-password: "REPLACE_WITH_EXTERNAL_SECRET"
-  # redis-url is consumed by gateway/admin-api/app-api/edge via SDKWORK_CLOUDROUTER_REDIS_URL.
+  # redis-url is consumed by the standalone cloudrouter binary via SDKWORK_CLOUDROUTER_REDIS_URL.
   redis-url: "rediss://:REPLACE_WITH_EXTERNAL_SECRET@sdkwork-cloudrouter-redis:6379/0"
 ---
 apiVersion: v1

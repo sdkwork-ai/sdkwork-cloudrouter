@@ -11,7 +11,7 @@ spec:
   endpointSelector:
     matchLabels:
       app: sdkwork-cloudrouter
-      component: gateway
+      component: standalone
   egress:
     - toEndpoints:
         - matchLabels:

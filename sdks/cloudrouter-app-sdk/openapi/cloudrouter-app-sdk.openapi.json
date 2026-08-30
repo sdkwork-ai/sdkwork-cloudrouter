@@ -5757,6 +5757,11 @@
             "pattern": "^[0-9]+(?:\\.[0-9]{1,9})?$",
             "type": "string"
           },
+          "currency": {
+            "description": "Currency field on usage log item.",
+            "maxLength": 10,
+            "type": "string"
+          },
           "errorCode": {
             "description": "Error code field on usage log item.",
             "maxLength": 256,
@@ -5821,6 +5826,16 @@
             "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
             "type": "string"
           },
+          "originalCurrencyAmount": {
+            "description": "Original currency amount field on usage log item.",
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+            "type": "string"
+          },
+          "originalCurrencyCode": {
+            "description": "Original currency code field on usage log item.",
+            "maxLength": 10,
+            "type": "string"
+          },
           "outputTokens": {
             "description": "Output tokens field on usage log item.",
             "format": "int64",
@@ -5833,6 +5848,14 @@
             "description": "Path field on usage log item.",
             "maxLength": 2048,
             "type": "string"
+          },
+          "points": {
+            "description": "Points field on usage log item.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
           },
           "providerNativeModel": {
             "description": "Provider native model field on usage log item.",
@@ -5921,12 +5944,14 @@
           "cacheReadTokens",
           "outputTokens",
           "cost",
+          "currency",
           "multiplier",
           "baseInputPrice",
           "baseOutputPrice",
           "cacheReadPrice",
           "unitSize",
           "path",
+          "points",
           "reasoningEffort",
           "ip",
           "userAgent"

@@ -16,6 +16,8 @@ export type { AdminDashboardOverview } from './admin-dashboard-overview';
 export type { AdminDashboardPieChartItem } from './admin-dashboard-pie-chart-item';
 export type { AdminDashboardRecentUsageItem } from './admin-dashboard-recent-usage-item';
 export type { AdminDashboardTrafficItem } from './admin-dashboard-traffic-item';
+export type { AdminDefaultRegionItem } from './admin-default-region-item';
+export type { AdminDefaultRegionListResponse } from './admin-default-region-list-response';
 export type { AdminExchangeRule } from './admin-exchange-rule';
 export type { AdminExchangeRuleListResponse } from './admin-exchange-rule-list-response';
 export type { AdminFirewallRuleCreateRequest } from './admin-firewall-rule-create-request';
@@ -129,6 +131,7 @@ export type { PaymentProviderInventoryItem } from './payment-provider-inventory-
 export type { PaymentProviderInventoryListResponse } from './payment-provider-inventory-list-response';
 export type { PaymentProviderMutationResponse } from './payment-provider-mutation-response';
 
+export type { PricingDefaultRegionCreateRequest } from './pricing-default-region-create-request';
 export type { PricingPlanCreateRequest } from './pricing-plan-create-request';
 export type { PricingPlanUpdateRequest } from './pricing-plan-update-request';
 export type { PricingRuleCreateRequest } from './pricing-rule-create-request';

@@ -174,3 +174,31 @@ tables:
   - { name: uq_pricing_rate_scope_reference, columns: [tenant_id, organization_id, id], unique: true }
   - { name: uq_pricing_rate_scope_book_reference, columns: [tenant_id, organization_id, id, price_book_id], unique: true }
   - { name: idx_pricing_rate_resolve, columns: [tenant_id, organization_id, catalog_key, product_code, operation_code, meter_code, provider_code, region_code, billability, status, priority, effective_from, id] }
+
+- table: pricing_default_region
+  domain: commerce
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: pricing-service
+  common_columns: tenant_entity
+  columns:
+    vendor_code: { type: string(64), constraints: NOT NULL }
+    product_code: { type: string(160), constraints: NOT NULL }
+    catalog_key: { type: string(256), constraints: NOT NULL }
+    default_region_code: { type: string(64), constraints: NOT NULL }
+    currency_code: { type: string(3), constraints: NOT NULL }
+    description: string(1024)
+    effective_from: { type: instant, constraints: NOT NULL }
+    effective_to: instant
+  unique_constraints:
+  - { name: uk_pricing_default_region_uuid, columns: [uuid] }
+  - { name: uk_pricing_default_region_scope_id, columns: [tenant_id, organization_id, id] }
+  - { name: uk_pricing_default_region_catalog_key, columns: [tenant_id, organization_id, catalog_key], where: deleted_at IS NULL }
+  check_constraints:
+  - { name: ck_pricing_default_region_currency, expression: "currency_code ~ '^[A-Z]{3}$'" }
+  - { name: ck_pricing_default_region_region_not_blank, expression: "BTRIM(default_region_code) <> ''" }
+  - { name: ck_pricing_default_region_interval, expression: effective_to IS NULL OR effective_to > effective_from }
+  indexes:
+  - { name: uq_pricing_default_region_scope_reference, columns: [tenant_id, organization_id, id], unique: true }
+  - { name: idx_pricing_default_region_catalog_key, columns: [tenant_id, organization_id, vendor_code, catalog_key, default_region_code, id] }

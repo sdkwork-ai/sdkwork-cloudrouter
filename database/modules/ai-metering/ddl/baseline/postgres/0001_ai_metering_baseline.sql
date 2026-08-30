@@ -67,6 +67,9 @@ CREATE TABLE IF NOT EXISTS ai_metering_usage (
     upstream_cost_amount NUMERIC(38, 12),
     customer_charge_amount NUMERIC(38, 12),
     currency VARCHAR(10) NOT NULL,
+    debit_points BIGINT,
+    original_currency_amount NUMERIC(38, 12),
+    original_currency_code VARCHAR(10),
     pricing_id BIGINT,
     pricing_plan_id BIGINT,
     pricing_plan_code VARCHAR(64),
@@ -82,8 +85,8 @@ CREATE TABLE IF NOT EXISTS ai_metering_usage (
     failure_message VARCHAR(500),
     CONSTRAINT ck_ai_metering_usage_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
     CONSTRAINT ck_ai_metering_usage_non_negative_counts CHECK ((prompt_tokens IS NULL OR prompt_tokens >= 0) AND (completion_tokens IS NULL OR completion_tokens >= 0) AND (cached_tokens IS NULL OR cached_tokens >= 0) AND (total_tokens IS NULL OR total_tokens >= 0) AND (request_count IS NULL OR request_count >= 0) AND (result_count IS NULL OR result_count >= 0) AND (item_count IS NULL OR item_count >= 0) AND (character_count IS NULL OR character_count >= 0) AND (image_count IS NULL OR image_count >= 0)),
-    CONSTRAINT ck_ai_metering_usage_non_negative_amounts CHECK (billable_quantity >= 0 AND (audio_seconds IS NULL OR audio_seconds >= 0) AND (video_seconds IS NULL OR video_seconds >= 0) AND (storage_byte_hours IS NULL OR storage_byte_hours >= 0) AND (official_reference_amount IS NULL OR official_reference_amount >= 0) AND (upstream_cost_amount IS NULL OR upstream_cost_amount >= 0) AND (customer_charge_amount IS NULL OR customer_charge_amount >= 0)),
-    CONSTRAINT ck_ai_metering_usage_currency CHECK (length(trim(currency)) BETWEEN 3 AND 10)
+    CONSTRAINT ck_ai_metering_usage_non_negative_amounts CHECK (billable_quantity >= 0 AND (audio_seconds IS NULL OR audio_seconds >= 0) AND (video_seconds IS NULL OR video_seconds >= 0) AND (storage_byte_hours IS NULL OR storage_byte_hours >= 0) AND (official_reference_amount IS NULL OR official_reference_amount >= 0) AND (upstream_cost_amount IS NULL OR upstream_cost_amount >= 0) AND (customer_charge_amount IS NULL OR customer_charge_amount >= 0) AND (debit_points IS NULL OR debit_points >= 0) AND (original_currency_amount IS NULL OR original_currency_amount >= 0)),
+    CONSTRAINT ck_ai_metering_usage_currency CHECK ((length(trim(currency)) BETWEEN 3 AND 10) AND (original_currency_code IS NULL OR original_currency_code ~ '^[A-Z]{3}$'))
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_metering_usage_scope_id ON ai_metering_usage (tenant_id, organization_id, id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_metering_usage_idempotency ON ai_metering_usage (tenant_id, organization_id, idempotency_key);

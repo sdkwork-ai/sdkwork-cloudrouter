@@ -10,6 +10,8 @@ export interface AdminRecordLogItem {
   cacheReadTokens: string;
   /** Cost field on admin record log item. */
   cost: string;
+  /** Currency field on admin record log item. */
+  currency: string;
   /** Error code field on admin record log item. */
   errorCode: string;
   /** Error message field on admin record log item. */
@@ -34,10 +36,16 @@ export interface AdminRecordLogItem {
   model: string;
   /** Multiplier field on admin record log item. */
   multiplier: string;
+  /** Original currency amount field on admin record log item. */
+  originalCurrencyAmount?: string;
+  /** Original currency code field on admin record log item. */
+  originalCurrencyCode?: string;
   /** Output tokens field on admin record log item. */
   outputTokens: string;
   /** Path field on admin record log item. */
   path: string;
+  /** Points field on admin record log item. */
+  points: string;
   /** Provider native model field on admin record log item. */
   providerNativeModel: string;
   /** Reasoning effort field on admin record log item. */

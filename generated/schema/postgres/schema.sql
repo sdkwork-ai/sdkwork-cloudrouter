@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.5.0.
--- Registry SHA-256: ac6aefd0afc4f466bb615c7e06cc25cbe71e2fd33c9f0c0def31d44c007181dc.
+-- Registry SHA-256: 1a7169a14d4fdf8e24034dbe36dbdcce5e8d8e4165b8be555a6f0a46de253ce6.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -2497,3 +2497,36 @@ CREATE TABLE IF NOT EXISTS ops_referral_strategy (
 );
 
 CREATE INDEX IF NOT EXISTS idx_ops_referral_strategy_tenant_status ON ops_referral_strategy (tenant_id, organization_id, status, created_at, id);
+
+CREATE TABLE IF NOT EXISTS pricing_default_region (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    vendor_code VARCHAR(64) NOT NULL,
+    product_code VARCHAR(160) NOT NULL,
+    catalog_key VARCHAR(256) NOT NULL,
+    default_region_code VARCHAR(64) NOT NULL,
+    currency_code VARCHAR(3) NOT NULL,
+    description VARCHAR(1024),
+    effective_from TIMESTAMPTZ NOT NULL,
+    effective_to TIMESTAMPTZ,
+    CONSTRAINT ck_pricing_default_region_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_pricing_default_region_currency CHECK (currency_code ~ '^[A-Z]{3}$'),
+    CONSTRAINT ck_pricing_default_region_region_not_blank CHECK (BTRIM(default_region_code) <> ''),
+    CONSTRAINT ck_pricing_default_region_interval CHECK (effective_to IS NULL OR effective_to > effective_from)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_default_region_uuid ON pricing_default_region (uuid) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_default_region_scope_id ON pricing_default_region (tenant_id, organization_id, id) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_default_region_catalog_key ON pricing_default_region (tenant_id, organization_id, catalog_key) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_default_region_scope_reference ON pricing_default_region (tenant_id, organization_id, id);
+CREATE INDEX IF NOT EXISTS idx_pricing_default_region_catalog_key ON pricing_default_region (tenant_id, organization_id, vendor_code, catalog_key, default_region_code, id);

@@ -144,3 +144,8 @@ CHECK_*.md
 etc/**/*.local.*
 /etc/secrets/
 
+# Local tool/scratch directories (never commit)
+.workbuddy/
+scripts/_dbcheck/
+scripts/playground-alignment/
+

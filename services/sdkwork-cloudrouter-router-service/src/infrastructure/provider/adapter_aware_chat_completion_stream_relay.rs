@@ -224,6 +224,17 @@ fn message_to_delta(message: Value) -> Value {
     if let Some(content) = message_object.get("content") {
         delta.insert("content".to_owned(), content.clone());
     }
+    // Preserve reasoning/thinking deltas so streamed clients can render
+    // collapsible reasoning blocks instead of losing the signal on relay.
+    for reasoning_key in ["reasoning_content", "reasoning"] {
+        if let Some(reasoning) = message_object.get(reasoning_key) {
+            delta.insert(
+                "reasoning_content".to_owned(),
+                serde_json::Value::String(reasoning.as_str().unwrap_or_default().to_owned()),
+            );
+            break;
+        }
+    }
     if let Some(tool_calls) = message_object.get("tool_calls") {
         delta.insert("tool_calls".to_owned(), tool_calls.clone());
     }

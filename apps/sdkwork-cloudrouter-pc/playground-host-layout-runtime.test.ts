@@ -16,8 +16,9 @@ test('configures Agents overlays below the Playground host header', () => {
   assert.match(playgroundSource, /overlayTopInset=\{overlayTopInset\}/);
 });
 
-test('hides unfinished or demo workbench tabs from the playground host', () => {
-  // creative: generations app API has no backend yet.
-  // presentation: local demo surface with no SDKWork API integration.
-  assert.match(playgroundSource, /hiddenTabs=\{\[['"]creative['"],\s*['"]presentation['"]\]\}/);
+test('keeps the creative (生成) tab visible so inspiration submit opens the dedicated generation page', () => {
+  // creative must NOT be hidden: inspiration submit dispatches switch-tab -> creative, and
+  // hiding it makes the workbench fall back to the unified chat agent interface.
+  assert.doesNotMatch(playgroundSource, /hiddenTabs=\{\[['"]creative/);
+  assert.match(playgroundSource, /hiddenTabs=\{\[['"]presentation['"]\]\}/);
 });

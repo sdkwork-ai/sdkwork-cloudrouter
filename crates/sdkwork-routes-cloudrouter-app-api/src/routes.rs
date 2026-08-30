@@ -338,6 +338,16 @@ async fn finalize_product_router_with_federated_capabilities(
         )
         .await
         .map_err(ProductCatalogRouterError::Config)?;
+        let router = match database_pool {
+            Some(database_pool) => crate::generations_runtime::merge_federated_generations_app_router(
+                router,
+                database_pool,
+                subject_boundary_config.clone(),
+            )
+            .await
+            .map_err(ProductCatalogRouterError::Config)?,
+            None => router,
+        };
         match database_pool {
             Some(database_pool) => crate::community_runtime::merge_federated_community_app_router(
                 router,

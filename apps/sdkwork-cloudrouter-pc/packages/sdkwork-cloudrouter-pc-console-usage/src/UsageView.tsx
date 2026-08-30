@@ -7,6 +7,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  Coins,
   Cpu,
   Layers,
   RefreshCw,
@@ -92,6 +93,12 @@ function toTokenCount(value: string): bigint {
   return BigInt(value);
 }
 
+function isTokenUsage(log: UsageLog): boolean {
+  return toTokenCount(log.inputTokens) > 0n
+    || toTokenCount(log.cacheReadTokens) > 0n
+    || toTokenCount(log.outputTokens) > 0n;
+}
+
 function formatTokenCount(value: string): string {
   return toTokenCount(value).toLocaleString();
 }
@@ -104,6 +111,27 @@ function unitSizeDenominator(value: string | undefined): number {
 function formatUnitSizeLabel(value: string | undefined): string {
   const size = unitSizeDenominator(value);
   return size === 1_000_000 ? '1M' : size.toLocaleString();
+}
+
+function formatCashAmount(value: string, currency: string | undefined, locale: string): string {
+  const code = (currency || '').trim().toUpperCase();
+  const formatted =
+    formatMoney(value, {
+      currency: 'USD',
+      locale,
+      mode: 'decimal',
+      minFractionDigits: DISPLAY_DECIMAL_DIGITS,
+      maxFractionDigits: MAX_DISPLAY_DECIMAL_DIGITS,
+    }) ?? formatLocalizedDecimalAmount(value, locale, DISPLAY_DECIMAL_DIGITS, MAX_DISPLAY_DECIMAL_DIGITS);
+  return code ? `${formatted} ${code}` : formatted;
+}
+
+function formatPoints(value: string | undefined): string {
+  const raw = (value || '0').trim();
+  if (!/^\d+$/.test(raw)) {
+    return '0';
+  }
+  return BigInt(raw).toLocaleString();
 }
 
 export function UsageView() {
@@ -136,6 +164,7 @@ export function UsageView() {
     if (usageLogs.length === 0) {
       return {
         pageCost: sumDecimalStrings([], SPEND_DECIMAL_DIGITS),
+        pagePoints: 0n,
         errorCount: 0,
         errorRate: 0,
         inputTokens: 0n,
@@ -145,16 +174,19 @@ export function UsageView() {
     let errorCount = 0;
     let inputTokens = 0n;
     let outputTokens = 0n;
+    let pagePoints = 0n;
     for (const log of usageLogs) {
       if (log.status === 'error') errorCount += 1;
       inputTokens += toTokenCount(log.inputTokens);
       outputTokens += toTokenCount(log.outputTokens);
+      pagePoints += toTokenCount(log.points);
     }
     return {
       pageCost: sumDecimalStrings(
         usageLogs.map(log => log.cost),
         SPEND_DECIMAL_DIGITS,
       ),
+      pagePoints,
       errorCount,
       errorRate: errorCount / usageLogs.length,
       inputTokens,
@@ -255,7 +287,7 @@ export function UsageView() {
             {t('console.usage.subtitle', '查看 API 调用日志、计费明细与性能指标')}
           </p>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full md:w-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 w-full md:w-auto">
           <div className="flex flex-col px-3.5 py-2 rounded-lg bg-white dark:bg-[#252525] border border-slate-200 dark:border-white/5 shadow-sm">
             <span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-medium">
               {t('console.usage.stat.total', '总记录')}
@@ -266,10 +298,18 @@ export function UsageView() {
           </div>
           <div className="flex flex-col px-3.5 py-2 rounded-lg bg-white dark:bg-[#252525] border border-slate-200 dark:border-white/5 shadow-sm">
             <span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-medium">
-              {t('console.usage.stat.pageCost', '本页花费')}
+              {t('console.usage.stat.pageCash', '本页现金')}
             </span>
             <span className="text-sm font-semibold text-rose-600 dark:text-rose-400 font-mono">
               {formatDisplayAmount(String(pageStats.pageCost))}
+            </span>
+          </div>
+          <div className="flex flex-col px-3.5 py-2 rounded-lg bg-white dark:bg-[#252525] border border-slate-200 dark:border-white/5 shadow-sm">
+            <span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-medium">
+              {t('console.usage.stat.pagePoints', '本页积分')}
+            </span>
+            <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 font-mono">
+              {formatPoints(String(pageStats.pagePoints))}
             </span>
           </div>
           <div className="flex flex-col px-3.5 py-2 rounded-lg bg-white dark:bg-[#252525] border border-slate-200 dark:border-white/5 shadow-sm">
@@ -398,7 +438,8 @@ export function UsageView() {
                   <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-center">{t('console.usage.table.latency', 'Latency')}</th>
                   <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-right">{t('console.usage.table.input', 'Input')}</th>
                   <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-right">{t('console.usage.table.output', 'Output')}</th>
-                  <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-right">{t('console.usage.table.cost', 'Spend')}</th>
+                  <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-right">{t('console.usage.table.cash', '现金花费')}</th>
+                  <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-right">{t('console.usage.table.points', '积分花费')}</th>
                   <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-center">{t('console.usage.table.ip', 'IP')}</th>
                   <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-wider text-center">{t('console.usage.table.userAgent', 'User Agent')}</th>
                   <th className="px-4 py-3 font-semibold text-[11px] uppercase tracking-wider">{t('console.usage.table.details', '详情')}</th>
@@ -408,7 +449,7 @@ export function UsageView() {
                 {usageLogs.length === 0 ? (
                   <BusinessStateTableRow
                     kind="empty"
-                    colSpan={13}
+                    colSpan={14}
                     title={t('console.usage.emptyTitle', '未找到使用日志')}
                     description={t('console.usage.emptyDescription', 'The usage logs API returned an empty page for the current query.')}
                     onRetry={() => void loadUsageLogs()}
@@ -509,11 +550,18 @@ export function UsageView() {
                         <td className="px-4 py-3 align-middle text-right font-mono text-slate-800 dark:text-slate-200">
                           {formatTokenCount(log.outputTokens)}
                         </td>
-                        {/* Cost */}
+                        {/* Cash spend */}
                         <td className="px-4 py-3 align-middle text-right">
                           <div className="flex items-center justify-end gap-1 text-rose-600 dark:text-rose-400 font-mono font-medium">
                             <Zap className="w-3.5 h-3.5 text-amber-500" />
-                            <span>{formatDisplayAmount(log.cost)}</span>
+                            <span>{formatCashAmount(log.cost, log.currency, displayLocale)}</span>
+                          </div>
+                        </td>
+                        {/* Points spend */}
+                        <td className="px-4 py-3 align-middle text-right">
+                          <div className="flex items-center justify-end gap-1 text-indigo-600 dark:text-indigo-400 font-mono font-medium">
+                            <Coins className="w-3.5 h-3.5 text-indigo-500" />
+                            <span>{formatPoints(log.points)}</span>
                           </div>
                         </td>
                         {/* IP */}
@@ -548,7 +596,7 @@ export function UsageView() {
                       {/* 展开详情行 */}
                       {expanded && (
                         <tr className="bg-slate-50/80 dark:bg-[#1c1c1c]">
-                          <td colSpan={13} className="p-0 border-t border-b border-slate-200 dark:border-white/5">
+                          <td colSpan={14} className="p-0 border-t border-b border-slate-200 dark:border-white/5">
                             <div className="py-4 px-5">
                               <div className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-3 text-xs">
                                 {/* Request ID */}
@@ -564,15 +612,15 @@ export function UsageView() {
                                 <div className="self-start">
                                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 py-1 px-3 bg-white dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/5 w-fit shadow-sm dark:shadow-none">
                                     <span className="text-slate-600 dark:text-slate-300">
-                                      {t('console.usage.metric.input', 'input')} <span className="font-mono text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.baseInputPrice)}</span>
+                                      {t('console.usage.metric.input', 'input')} <span className="font-mono text-rose-600 dark:text-rose-400">{formatCashAmount(log.baseInputPrice, log.currency, displayLocale)}</span>
                                       <span className="text-slate-400"> / {formatUnitSizeLabel(log.unitSize)} {t('console.usage.unit.tokens', 'tokens')}</span>
                                     </span>
                                     <span className="text-slate-600 dark:text-slate-300">
-                                      {t('console.usage.metric.output', 'output')} <span className="font-mono text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.baseOutputPrice)}</span>
+                                      {t('console.usage.metric.output', 'output')} <span className="font-mono text-rose-600 dark:text-rose-400">{formatCashAmount(log.baseOutputPrice, log.currency, displayLocale)}</span>
                                       <span className="text-slate-400"> / {formatUnitSizeLabel(log.unitSize)} {t('console.usage.unit.tokens', 'tokens')}</span>
                                     </span>
                                     <span className="text-slate-600 dark:text-slate-300">
-                                      {t('console.usage.metric.cache', 'cache')} <span className="font-mono text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.cacheReadPrice)}</span>
+                                      {t('console.usage.metric.cache', 'cache')} <span className="font-mono text-rose-600 dark:text-rose-400">{formatCashAmount(log.cacheReadPrice, log.currency, displayLocale)}</span>
                                       <span className="text-slate-400"> / {formatUnitSizeLabel(log.unitSize)} {t('console.usage.unit.tokens', 'tokens')}</span>
                                     </span>
                                     <span className="text-slate-600 dark:text-slate-300">
@@ -586,23 +634,44 @@ export function UsageView() {
                                 <div className="self-start">
                                   <div className="flex flex-col gap-1.5 p-3 bg-white dark:bg-[#161616] rounded-lg border border-slate-200 dark:border-white/5 font-mono text-[11px] shadow-sm dark:shadow-none max-w-[640px]">
                                     <div className="text-slate-500 dark:text-slate-400">
-                                      {t('console.usage.detail.inputPrice', 'input price:')} <span className="text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.baseInputPrice)}</span> / {formatUnitSizeLabel(log.unitSize)} {t('console.usage.unit.tokens', 'tokens')}
+                                      {t('console.usage.detail.inputPrice', 'input price:')} <span className="text-rose-600 dark:text-rose-400">{formatCashAmount(log.baseInputPrice, log.currency, displayLocale)}</span> / {formatUnitSizeLabel(log.unitSize)} {t('console.usage.unit.tokens', 'tokens')}
                                     </div>
                                     <div className="text-slate-500 dark:text-slate-400">
-                                      {t('console.usage.detail.outputPrice', 'output price:')} <span className="text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.baseOutputPrice)}</span> / {formatUnitSizeLabel(log.unitSize)} {t('console.usage.unit.tokens', 'tokens')}
+                                      {t('console.usage.detail.outputPrice', 'output price:')} <span className="text-rose-600 dark:text-rose-400">{formatCashAmount(log.baseOutputPrice, log.currency, displayLocale)}</span> / {formatUnitSizeLabel(log.unitSize)} {t('console.usage.unit.tokens', 'tokens')}
                                     </div>
                                     <div className="text-slate-500 dark:text-slate-400 mb-1">
-                                      {t('console.usage.detail.cachePrice', 'cache price:')} <span className="text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.cacheReadPrice)}</span> / {formatUnitSizeLabel(log.unitSize)} {t('console.usage.unit.tokens', 'tokens')}
+                                      {t('console.usage.detail.cachePrice', 'cache price:')} <span className="text-rose-600 dark:text-rose-400">{formatCashAmount(log.cacheReadPrice, log.currency, displayLocale)}</span> / {formatUnitSizeLabel(log.unitSize)} {t('console.usage.unit.tokens', 'tokens')}
                                     </div>
                                     <div className="text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/5 p-2.5 rounded leading-relaxed break-all">
-                                      {`(${t('console.usage.metric.input', 'input')} ${(toTokenCount(log.inputTokens) - toTokenCount(log.cacheReadTokens)).toLocaleString()} / ${formatUnitSizeLabel(log.unitSize)} × ${formatDisplayAmount(log.baseInputPrice)}`}
-                                      {` + ${t('console.usage.metric.cache', 'cache')} ${formatTokenCount(log.cacheReadTokens)} / ${formatUnitSizeLabel(log.unitSize)} × ${formatDisplayAmount(log.cacheReadPrice)}`}
-                                      {` + ${t('console.usage.metric.output', 'output')} ${formatTokenCount(log.outputTokens)} / ${formatUnitSizeLabel(log.unitSize)} × ${formatDisplayAmount(log.baseOutputPrice)})`}
-                                      {` × ${formatDisplayAmount(log.multiplier)} = `}
-                                      <span className="font-bold text-rose-600 dark:text-rose-400">{formatDisplayAmount(log.cost)}</span>
+                                      {isTokenUsage(log) ? (
+                                        <>
+                                          {`${t('console.usage.metric.input', 'input')} ${formatTokenCount(log.inputTokens)} / ${formatUnitSizeLabel(log.unitSize)} × ${formatCashAmount(log.baseInputPrice, log.currency, displayLocale)}`}
+                                          {` + ${t('console.usage.metric.cache', 'cache')} ${formatTokenCount(log.cacheReadTokens)} / ${formatUnitSizeLabel(log.unitSize)} × ${formatCashAmount(log.cacheReadPrice, log.currency, displayLocale)}`}
+                                          {` + ${t('console.usage.metric.output', 'output')} ${formatTokenCount(log.outputTokens)} / ${formatUnitSizeLabel(log.unitSize)} × ${formatCashAmount(log.baseOutputPrice, log.currency, displayLocale)})`}
+                                          {` × ${formatDisplayAmount(log.multiplier)} = `}
+                                        </>
+                                      ) : (
+                                        <>
+                                          {t('console.usage.detail.usageLinePricing', '按实际用量计价：')}
+                                          {`${formatUnitSizeLabel(log.unitSize)} × ${formatCashAmount(log.baseInputPrice, log.currency, displayLocale)}`}
+                                          {` × ${formatDisplayAmount(log.multiplier)} = `}
+                                        </>
+                                      )}
+                                      <span className="font-bold text-rose-600 dark:text-rose-400">{formatCashAmount(log.cost, log.currency, displayLocale)}</span>
                                     </div>
                                     <div className="text-slate-400 dark:text-slate-500 italic text-[10px]">{t('console.usage.detail.reference', 'Reference only; the ledger is the source of truth.')}</div>
                                   </div>
+                                </div>
+
+                                {/* Billing */}
+                                <div className="text-right font-medium text-slate-500 dark:text-slate-400 self-center">{t('console.usage.detail.billing', '计费')}</div>
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 py-1 px-3 bg-white dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/5 w-fit shadow-sm dark:shadow-none">
+                                  <span className="text-slate-600 dark:text-slate-300">
+                                    {t('console.usage.metric.cash', '现金')} <span className="font-mono text-rose-600 dark:text-rose-400">{formatCashAmount(log.cost, log.currency, displayLocale)}</span>
+                                  </span>
+                                  <span className="text-slate-600 dark:text-slate-300">
+                                    {t('console.usage.metric.points', '积分')} <span className="font-mono text-indigo-600 dark:text-indigo-400">{formatPoints(log.points)}</span>
+                                  </span>
                                 </div>
 
                                 {/* Reasoning */}

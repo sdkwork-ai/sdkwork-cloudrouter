@@ -10,6 +10,8 @@ export interface UsageLogItem {
   cacheReadTokens: string;
   /** Cost field on usage log item. */
   cost: string;
+  /** Currency field on usage log item. */
+  currency: string;
   /** Error code field on usage log item. */
   errorCode: string;
   /** Error message field on usage log item. */
@@ -34,10 +36,16 @@ export interface UsageLogItem {
   model: string;
   /** Multiplier field on usage log item. */
   multiplier: string;
+  /** Original currency amount field on usage log item. */
+  originalCurrencyAmount?: string;
+  /** Original currency code field on usage log item. */
+  originalCurrencyCode?: string;
   /** Output tokens field on usage log item. */
   outputTokens: string;
   /** Path field on usage log item. */
   path: string;
+  /** Points field on usage log item. */
+  points: string;
   /** Provider native model field on usage log item. */
   providerNativeModel: string;
   /** Reasoning effort field on usage log item. */

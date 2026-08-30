@@ -23,12 +23,14 @@
   "scripts": {
     "dev": "tsc --noEmit --watch",
     "build": "tsc --noEmit",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run src --config ../../vite.config.ts --configLoader native --pool vmThreads"
   },
   "dependencies": {
     "@sdkwork/cloudroutes-pc-commons": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "~5.8.2"
+    "typescript": "~5.8.2",
+    "vitest": "catalog:"
   }
 }

@@ -65,6 +65,10 @@ pub struct AdminRecordLogItem {
     #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub output_tokens: i64,
     pub cost: String,
+    pub currency: String,
+    pub points: String,
+    pub original_currency_amount: String,
+    pub original_currency_code: String,
     pub multiplier: String,
     pub base_input_price: String,
     pub base_output_price: String,

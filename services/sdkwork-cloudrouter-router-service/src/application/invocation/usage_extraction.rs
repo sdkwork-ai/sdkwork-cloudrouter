@@ -621,7 +621,9 @@ fn usage_error(message: impl Into<String>) -> InvocationError {
 
 #[cfg(test)]
 mod tests {
-    use super::{StreamingUsageAccumulator, StreamingUsageFormat};
+    use serde_json::{json, Value};
+
+    use super::{cached_tokens, StreamingUsageAccumulator, StreamingUsageFormat};
 
     #[test]
     fn streaming_usage_accumulator_handles_fragmented_multiline_sse() {
@@ -696,5 +698,46 @@ mod tests {
             }
         }
         panic!("oversized SSE event should be rejected");
+    }
+
+    #[test]
+    fn cached_tokens_reads_top_level_field() {
+        let usage: Value = json!({ "prompt_tokens": 100, "cached_tokens": 30 });
+        assert_eq!(Some(30), cached_tokens(&usage));
+    }
+
+    #[test]
+    fn cached_tokens_reads_cached_tokens_details_nested_field() {
+        let usage: Value =
+            json!({ "prompt_tokens": 100, "prompt_tokens_details": { "cached_tokens": 25 } });
+        assert_eq!(Some(25), cached_tokens(&usage));
+    }
+
+    #[test]
+    fn cached_tokens_falls_back_to_input_tokens_details() {
+        let usage: Value =
+            json!({ "input_tokens": 100, "input_tokens_details": { "cached_tokens": 9 } });
+        assert_eq!(Some(9), cached_tokens(&usage));
+    }
+
+    #[test]
+    fn cached_tokens_parses_numeric_string_form() {
+        let usage: Value = json!({ "prompt_tokens": 50, "cached_tokens": "14" });
+        assert_eq!(Some(14), cached_tokens(&usage));
+    }
+
+    #[test]
+    fn cached_tokens_absent_yields_none() {
+        let usage: Value = json!({ "prompt_tokens": 40 });
+        assert_eq!(None, cached_tokens(&usage));
+    }
+
+    #[test]
+    fn cached_tokens_exceeding_input_is_detected_so_billable_input_stays_non_negative() {
+        // usage_extraction 仅在 billable_input > 0 时才添加 Input 行；cached 单独
+        // 成行，任何输入拆分都不会产生负值。
+        let usage: Value =
+            json!({ "prompt_tokens": 5, "cached_tokens": 20 });
+        assert_eq!(Some(20), cached_tokens(&usage));
     }
 }

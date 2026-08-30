@@ -2,13 +2,19 @@
 
 // Portal dist consistency checker (PACKAGING_SPEC §5.4 / release gate).
 //
-// Verifies that apps/sdkwork-cloudrouter-pc/dist is self-consistent before a
-// container image or install package is built: every /assets/* and
+// Verifies that the standalone production portal dist
+// (apps/sdkwork-cloudrouter-pc/dist/standalone/prod) is self-consistent before
+// a container image or install package is built: every /assets/* and
 // /runtime-env.js reference in dist/index.html must resolve to an existing
 // file inside the dist tree. A stale/mixed dist (index.html referencing a
 // hashed chunk that was removed by a later build) ships JS requests that the
 // gateway answers with the SPA fallback HTML, which browsers reject with
 // "Failed to load module script ... MIME type text/html".
+//
+// The canonical browser build layout is dist/<deploymentProfile>/<envAlias>
+// (browser-dist-layout.mjs); packagers flatten dist/standalone/prod into the
+// installed web root (RUNTIME_DIRECTORY_SPEC.md §4.1.1), so this checker
+// validates the standalone production subtree, not the bare dist root.
 //
 // Usage:
 //   node scripts/check-portal-dist-consistency.mjs [--check] [--json]
@@ -28,6 +34,8 @@ const PORTAL_DIST = path.join(
   'apps',
   'sdkwork-cloudrouter-pc',
   'dist',
+  'standalone',
+  'prod',
 );
 const INDEX_HTML = path.join(PORTAL_DIST, 'index.html');
 

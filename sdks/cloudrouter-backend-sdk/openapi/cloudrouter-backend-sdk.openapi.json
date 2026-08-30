@@ -1072,6 +1072,131 @@
         ],
         "type": "object"
       },
+      "AdminDefaultRegionItem": {
+        "additionalProperties": false,
+        "description": "Admin default region item schema exposed by Cloud Router.",
+        "properties": {
+          "catalogKey": {
+            "description": "Catalog key field on admin default region item.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "createdAt": {
+            "description": "Created at field on admin default region item.",
+            "format": "date-time",
+            "maxLength": 64,
+            "nullable": true,
+            "type": "string"
+          },
+          "currencyCode": {
+            "description": "Currency code field on admin default region item.",
+            "pattern": "^[A-Z]{3}$",
+            "type": "string"
+          },
+          "defaultRegionCode": {
+            "description": "Default region code field on admin default region item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "description": {
+            "description": "Description field on admin default region item.",
+            "maxLength": 8192,
+            "nullable": true,
+            "type": "string"
+          },
+          "effectiveFrom": {
+            "description": "Effective from field on admin default region item.",
+            "format": "date-time",
+            "maxLength": 64,
+            "nullable": true,
+            "type": "string"
+          },
+          "effectiveTo": {
+            "description": "Effective to field on admin default region item.",
+            "format": "date-time",
+            "maxLength": 64,
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on admin default region item.",
+            "maxLength": 96,
+            "minLength": 1,
+            "type": "string"
+          },
+          "productCode": {
+            "description": "Product code field on admin default region item.",
+            "maxLength": 160,
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on admin default region item.",
+            "enum": [
+              "active",
+              "inactive"
+            ],
+            "type": "string"
+          },
+          "updatedAt": {
+            "description": "Updated at field on admin default region item.",
+            "format": "date-time",
+            "maxLength": 64,
+            "nullable": true,
+            "type": "string"
+          },
+          "vendorCode": {
+            "description": "Vendor code field on admin default region item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "version": {
+            "description": "Version field on admin default region item.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
+          }
+        },
+        "required": [
+          "id",
+          "catalogKey",
+          "vendorCode",
+          "productCode",
+          "defaultRegionCode",
+          "currencyCode",
+          "status",
+          "version"
+        ],
+        "type": "object"
+      },
+      "AdminDefaultRegionListResponse": {
+        "additionalProperties": false,
+        "description": "Admin default region list response schema exposed by Cloud Router.",
+        "name": "AdminDefaultRegionListResponse",
+        "properties": {
+          "items": {
+            "description": "Items field on admin default region list response.",
+            "items": {
+              "$ref": "#/components/schemas/AdminDefaultRegionItem"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PageInfo"
+              }
+            ],
+            "description": "Page info field on admin default region list response."
+          }
+        },
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "type": "object"
+      },
       "AdminExchangeRule": {
         "additionalProperties": false,
         "description": "Admin exchange rule schema exposed by Cloud Router.",
@@ -2026,6 +2151,11 @@
             "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
             "type": "string"
           },
+          "currency": {
+            "description": "Currency field on admin record log item.",
+            "maxLength": 10,
+            "type": "string"
+          },
           "errorCode": {
             "description": "Error code field on admin record log item.",
             "maxLength": 256,
@@ -2098,6 +2228,16 @@
             "pattern": "^[0-9]+(?:\\.[0-9]{1,6})?$",
             "type": "string"
           },
+          "originalCurrencyAmount": {
+            "description": "Original currency amount field on admin record log item.",
+            "pattern": "^[0-9]+(?:\\.[0-9]{1,12})?$",
+            "type": "string"
+          },
+          "originalCurrencyCode": {
+            "description": "Original currency code field on admin record log item.",
+            "maxLength": 10,
+            "type": "string"
+          },
           "outputTokens": {
             "description": "Output tokens field on admin record log item.",
             "format": "int64",
@@ -2110,6 +2250,14 @@
             "description": "Path field on admin record log item.",
             "maxLength": 2048,
             "type": "string"
+          },
+          "points": {
+            "description": "Points field on admin record log item.",
+            "format": "int64",
+            "pattern": "^[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
           },
           "providerNativeModel": {
             "description": "Provider native model field on admin record log item.",
@@ -2204,12 +2352,14 @@
           "cacheReadTokens",
           "outputTokens",
           "cost",
+          "currency",
           "multiplier",
           "baseInputPrice",
           "baseOutputPrice",
           "cacheReadPrice",
           "unitSize",
           "path",
+          "points",
           "reasoningEffort",
           "ip",
           "userAgent"
@@ -5046,6 +5196,60 @@
         ],
         "description": "Default buckets update result schema exposed by Cloud Router.",
         "x-operation-id": "defaultBuckets.update"
+      },
+      "DefaultRegionsCreateResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by default regions create result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AdminDefaultRegionItem"
+                  }
+                ],
+                "description": "Data field on default regions create result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Default regions create result schema exposed by Cloud Router.",
+        "x-operation-id": "defaultRegions.create"
+      },
+      "DefaultRegionsListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by default regions list result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AdminDefaultRegionListResponse"
+                  }
+                ],
+                "description": "Data field on default regions list result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Default regions list result schema exposed by Cloud Router.",
+        "x-operation-id": "defaultRegions.list"
       },
       "ExchangeRuleMutationRequest": {
         "additionalProperties": false,
@@ -8097,6 +8301,63 @@
         ],
         "description": "Plans update result schema exposed by Cloud Router.",
         "x-operation-id": "plans.update"
+      },
+      "PricingDefaultRegionCreateRequest": {
+        "additionalProperties": false,
+        "description": "Pricing default region create request schema exposed by Cloud Router.",
+        "name": "PricingDefaultRegionCreateRequest",
+        "properties": {
+          "catalogKey": {
+            "description": "Catalog key field on pricing default region create request.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "currencyCode": {
+            "description": "Currency code field on pricing default region create request.",
+            "pattern": "^[A-Z]{3}$",
+            "type": "string"
+          },
+          "defaultRegionCode": {
+            "description": "Default region code field on pricing default region create request.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "description": {
+            "description": "Description field on pricing default region create request.",
+            "maxLength": 8192,
+            "type": "string"
+          },
+          "effectiveFrom": {
+            "description": "Effective from field on pricing default region create request.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "effectiveTo": {
+            "description": "Effective to field on pricing default region create request.",
+            "format": "date-time",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "productCode": {
+            "description": "Product code field on pricing default region create request.",
+            "maxLength": 160,
+            "type": "string"
+          },
+          "vendorCode": {
+            "description": "Vendor code field on pricing default region create request.",
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        "required": [
+          "catalogKey",
+          "vendorCode",
+          "productCode",
+          "defaultRegionCode",
+          "currencyCode"
+        ],
+        "type": "object"
       },
       "PricingPlanCreateRequest": {
         "additionalProperties": false,
@@ -19226,6 +19487,312 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-payments/src/paymentsService.ts",
         "x-write-tables": [
           "commerce_payment_provider"
+        ]
+      }
+    },
+    "/backend/v3/api/pricing/default_regions": {
+      "get": {
+        "description": "List pricing default regions. Reads pricing_default_region. Writes none. File targets none.",
+        "operationId": "defaultRegions.list",
+        "parameters": [
+          {
+            "description": "Q query parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 128,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page query parameter.",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "format": "int32",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size query parameter.",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 200,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultRegionsListResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List pricing default regions",
+        "tags": [
+          "pricing"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "pricing_default_region"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "pricing",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "pricing",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "defaultRegions",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+        "x-write-tables": []
+      },
+      "post": {
+        "description": "Create pricing default region. Reads pricing_default_region. Writes pricing_default_region, ops_audit_log. File targets none.",
+        "operationId": "defaultRegions.create",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PricingDefaultRegionCreateRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for create pricing default region.",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultRegionsCreateResult"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Create pricing default region",
+        "tags": [
+          "pricing"
+        ],
+        "x-contract-kind": "create",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "pricing_default_region"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "pricing",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "pricing",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "defaultRegions",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+        "x-write-tables": [
+          "pricing_default_region",
+          "ops_audit_log"
+        ]
+      }
+    },
+    "/backend/v3/api/pricing/default_regions/{defaultRegionId}": {
+      "delete": {
+        "description": "Delete pricing default region. Reads pricing_default_region. Writes pricing_default_region, ops_audit_log. File targets none.",
+        "operationId": "defaultRegions.delete",
+        "parameters": [
+          {
+            "description": "Default region id path parameter.",
+            "in": "path",
+            "name": "defaultRegionId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Delete pricing default region",
+        "tags": [
+          "pricing"
+        ],
+        "x-contract-kind": "delete",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "pricing_default_region"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "pricing",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "pricing",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "defaultRegions",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+        "x-write-tables": [
+          "pricing_default_region",
+          "ops_audit_log"
         ]
       }
     },

@@ -338,12 +338,7 @@ fn estimated_amount(invocation: &Invocation) -> Option<GatewayBillingAmount> {
         let quantity = conservative_quantity(&quote.meter, input_units, output_units);
         let unit_price =
             DecimalValue::parse(&quote.customer_charge_unit_price.to_fixed_string(12)).ok()?;
-        let unit_size = DecimalValue::parse(&quote.unit_size).ok()?;
-        let unit_size = if unit_size <= DecimalValue::ZERO {
-            DecimalValue::ONE
-        } else {
-            unit_size
-        };
+        let unit_size = unit_size_or_default(&quote.meter, &quote.unit_size)?;
         let calculated = unit_price
             .multiply_i64(quantity)
             .ok()?
@@ -439,6 +434,44 @@ fn conservative_output_units(invocation: &Invocation) -> i64 {
     requested.saturating_mul(n).clamp(1, 1_000_000)
 }
 
+fn unit_size_or_default(meter: &BillingMeter, persisted: &str) -> Option<DecimalValue> {
+    // A persisted, positive unit_size wins. A blank value, an unparsable
+    // value, or an explicit zero all fall through to the meter-appropriate
+    // default below.
+    if let Ok(unit_size) = DecimalValue::parse(persisted) {
+        if unit_size > DecimalValue::ZERO {
+            return Some(unit_size);
+        }
+    }
+    // Token-based meters are priced per million tokens. When a persisted
+    // unit_size is absent (zero/blank) the estimated precharge must divide by
+    // 1_000_000 instead of 1, otherwise a per-token price (unit_price ×
+    // quantity) would over-reserve the wallet ~1M×.
+    if is_token_meter(meter) {
+        DecimalValue::parse("1000000").ok()
+    } else {
+        Some(DecimalValue::ONE)
+    }
+}
+
+fn is_token_meter(meter: &BillingMeter) -> bool {
+    matches!(
+        meter,
+        BillingMeter::LlmInputToken
+            | BillingMeter::LlmOutputToken
+            | BillingMeter::LlmReasoningToken
+            | BillingMeter::LlmCacheWriteToken
+            | BillingMeter::LlmCacheReadToken
+            | BillingMeter::EmbeddingInputToken
+            | BillingMeter::AudioInputToken
+            | BillingMeter::AudioOutputToken
+            | BillingMeter::ImageInputToken
+            | BillingMeter::ImageOutputToken
+            | BillingMeter::VideoInputToken
+            | BillingMeter::VideoOutputToken
+    )
+}
+
 fn conservative_quantity(meter: &BillingMeter, input: i64, output: i64) -> i64 {
     match meter {
         BillingMeter::LlmOutputToken
@@ -480,6 +513,8 @@ fn provider_response_succeeded(invocation: &Invocation) -> bool {
 #[cfg(test)]
 mod tests {
     use super::aggregate_token_amounts;
+    use super::{is_token_meter, unit_size_or_default};
+    use crate::domain::{BillingMeter, DecimalValue};
 
     #[test]
     fn aggregates_decimal_lines_before_rounding_to_token_bank_units() {
@@ -503,5 +538,64 @@ mod tests {
     fn rounds_exact_tenths_without_an_extra_token() {
         let amount = aggregate_token_amounts([("USD", "1.200000000000")]).expect("valid amount");
         assert_eq!("12", amount.amount);
+    }
+
+    #[test]
+    fn token_meter_defaults_missing_unit_size_to_per_million() {
+        let million = DecimalValue::parse("1000000").expect("1M decimal");
+        for persisted in ["", "0", "000000000000"] {
+            let unit_size = unit_size_or_default(&BillingMeter::LlmInputToken, persisted)
+                .unwrap_or_else(|| panic!("{persisted:?} unit_size resolves"));
+            assert_eq!(million, unit_size, "persisted {persisted:?} defaults to per-million");
+        }
+    }
+
+    #[test]
+    fn non_token_meter_defaults_missing_unit_size_to_one() {
+        for persisted in ["", "0"] {
+            let unit_size = unit_size_or_default(&BillingMeter::ApiRequest, persisted)
+                .unwrap_or_else(|| panic!("{persisted:?} unit_size resolves"));
+            assert_eq!(DecimalValue::ONE, unit_size, "persisted {persisted:?} defaults to one");
+        }
+    }
+
+    #[test]
+    fn token_meter_preserves_a_valid_persisted_unit_size() {
+        let unit_size = unit_size_or_default(&BillingMeter::LlmOutputToken, "500000")
+            .expect("valid unit_size resolves");
+        assert_eq!(
+            DecimalValue::parse("500000").expect("valid decimal"),
+            unit_size
+        );
+    }
+
+    #[test]
+    fn token_meter_classification_round_trips() {
+        for meter in [
+            BillingMeter::LlmInputToken,
+            BillingMeter::LlmOutputToken,
+            BillingMeter::LlmReasoningToken,
+            BillingMeter::LlmCacheWriteToken,
+            BillingMeter::LlmCacheReadToken,
+            BillingMeter::EmbeddingInputToken,
+            BillingMeter::AudioInputToken,
+            BillingMeter::AudioOutputToken,
+            BillingMeter::ImageInputToken,
+            BillingMeter::ImageOutputToken,
+            BillingMeter::VideoInputToken,
+            BillingMeter::VideoOutputToken,
+        ] {
+            assert!(is_token_meter(&meter), "{meter:?} must be token-based");
+        }
+        for meter in [
+            BillingMeter::ApiRequest,
+            BillingMeter::ToolCall,
+            BillingMeter::ImageResult,
+            BillingMeter::ApiItem,
+            BillingMeter::SpeechCharacter,
+            BillingMeter::SttAudioMinute,
+        ] {
+            assert!(!is_token_meter(&meter), "{meter:?} must not be token-based");
+        }
     }
 }

@@ -49,11 +49,13 @@ export function Playground({
 }: PlaygroundProps) {
   return (
     <div className="sdkwork-playground-host flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden">
-      {/* The creative (生成) tab calls the generations app API surface, which has
-          no backend anywhere yet (sdkwork-generations owns the contract but ships no
-          server crates). Hide the tab instead of surfacing 404s until the backend lands. */}
+      {/* The creative (生成) tab renders the dedicated generation page (bottom input,
+          creative sidebar session list, and generation history) via @sdkwork/agents-pc-creative.
+          It is kept visible and removed from hiddenTabs so that inspiration submit routes to
+          the creative generation page instead of the unified chat agent interface.
+          presentation stays a hidden local demo surface with no SDKWork API integration. */}
       <AgentsWorkbench
-        hiddenTabs={['creative', 'presentation']}
+        hiddenTabs={['presentation']}
         overlayTopInset={overlayTopInset}
         showSidebarLogo={false}
       />

@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "@sdkwork/cloudrouter-backend-sdk"
   },
-  "changeFingerprint": "3cec67cefc9981e60cf1497f80e8761583d4a98f3795ba16ae311bc800498545",
+  "changeFingerprint": "9f798f9197957d540abd81c9b77fcb6b44937bf88dbf7caa6050f9c93150ef88",
   "changes": {
     "createdGeneratedFiles": [
       "bin/publish-core.mjs",
@@ -54,6 +54,8 @@
       "src/types/admin-dashboard-pie-chart-item.ts",
       "src/types/admin-dashboard-recent-usage-item.ts",
       "src/types/admin-dashboard-traffic-item.ts",
+      "src/types/admin-default-region-item.ts",
+      "src/types/admin-default-region-list-response.ts",
       "src/types/admin-exchange-rule-list-response.ts",
       "src/types/admin-exchange-rule.ts",
       "src/types/admin-firewall-rule-create-request.ts",
@@ -158,6 +160,7 @@
       "src/types/payment-provider-inventory-item.ts",
       "src/types/payment-provider-inventory-list-response.ts",
       "src/types/payment-provider-mutation-response.ts",
+      "src/types/pricing-default-region-create-request.ts",
       "src/types/pricing-plan-create-request.ts",
       "src/types/pricing-plan-update-request.ts",
       "src/types/pricing-rule-create-request.ts",
@@ -300,6 +303,8 @@
           "src/types/admin-dashboard-pie-chart-item.ts",
           "src/types/admin-dashboard-recent-usage-item.ts",
           "src/types/admin-dashboard-traffic-item.ts",
+          "src/types/admin-default-region-item.ts",
+          "src/types/admin-default-region-list-response.ts",
           "src/types/admin-exchange-rule-list-response.ts",
           "src/types/admin-exchange-rule.ts",
           "src/types/admin-firewall-rule-create-request.ts",
@@ -404,6 +409,7 @@
           "src/types/payment-provider-inventory-item.ts",
           "src/types/payment-provider-inventory-list-response.ts",
           "src/types/payment-provider-mutation-response.ts",
+          "src/types/pricing-default-region-create-request.ts",
           "src/types/pricing-plan-create-request.ts",
           "src/types/pricing-plan-update-request.ts",
           "src/types/pricing-rule-create-request.ts",

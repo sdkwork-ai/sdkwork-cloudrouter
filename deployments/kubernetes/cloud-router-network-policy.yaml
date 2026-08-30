@@ -1,6 +1,6 @@
 # Network policies for sdkwork-cloudrouter.
 # Implements zero-trust segmentation: deny-all default + explicit allow rules
-# for each component's required ingress traffic.
+# for the standalone deployment's required ingress/egress traffic.
 
 ---
 # Default deny-all ingress for the cloudrouter namespace.
@@ -18,19 +18,20 @@ spec:
     - Ingress
     - Egress
 ---
-# Edge: accept external traffic on port 3900.
+# Standalone: accept external traffic on port 3900 (the single application
+# public ingress served by the all-in-one cloudrouter binary).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: sdkwork-cloudrouter-edge-ingress
+  name: sdkwork-cloudrouter-standalone-ingress
   labels:
     app: sdkwork-cloudrouter
-    component: edge
+    component: standalone
 spec:
   podSelector:
     matchLabels:
       app: sdkwork-cloudrouter
-      component: edge
+      component: standalone
   policyTypes:
     - Ingress
   ingress:
@@ -38,83 +39,8 @@ spec:
         - protocol: TCP
           port: 3900
 ---
-# Gateway: accept traffic from edge on port 18080.
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: sdkwork-cloudrouter-gateway-ingress
-  labels:
-    app: sdkwork-cloudrouter
-    component: gateway
-spec:
-  podSelector:
-    matchLabels:
-      app: sdkwork-cloudrouter
-      component: gateway
-  policyTypes:
-    - Ingress
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app: sdkwork-cloudrouter
-              component: edge
-      ports:
-        - protocol: TCP
-          port: 18080
----
-# Admin API: accept traffic from edge on port 18081.
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: sdkwork-cloudrouter-admin-api-ingress
-  labels:
-    app: sdkwork-cloudrouter
-    component: admin-api
-spec:
-  podSelector:
-    matchLabels:
-      app: sdkwork-cloudrouter
-      component: admin-api
-  policyTypes:
-    - Ingress
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app: sdkwork-cloudrouter
-              component: edge
-      ports:
-        - protocol: TCP
-          port: 18081
----
-# App API: accept traffic from edge on port 18082.
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: sdkwork-cloudrouter-app-api-ingress
-  labels:
-    app: sdkwork-cloudrouter
-    component: app-api
-spec:
-  podSelector:
-    matchLabels:
-      app: sdkwork-cloudrouter
-      component: app-api
-  policyTypes:
-    - Ingress
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              app: sdkwork-cloudrouter
-              component: edge
-      ports:
-        - protocol: TCP
-          port: 18082
----
-# Redis: accept traffic from gateway/admin-api/app-api/edge on port 6379
-# and from other Redis pods on port 26379 (sentinel gossip).
+# Redis: accept traffic from the standalone pod on port 6379 and from other
+# Redis pods on port 26379 (sentinel gossip).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -134,19 +60,7 @@ spec:
         - podSelector:
             matchLabels:
               app: sdkwork-cloudrouter
-              component: gateway
-        - podSelector:
-            matchLabels:
-              app: sdkwork-cloudrouter
-              component: admin-api
-        - podSelector:
-            matchLabels:
-              app: sdkwork-cloudrouter
-              component: app-api
-        - podSelector:
-            matchLabels:
-              app: sdkwork-cloudrouter
-              component: edge
+              component: standalone
       ports:
         - protocol: TCP
           port: 6379
@@ -203,17 +117,5 @@ spec:
           port: 6379
         - protocol: TCP
           port: 26379
-    # Internal service-to-service (edge → gateway/admin-api/app-api)
-    - to:
-        - podSelector:
-            matchLabels:
-              app: sdkwork-cloudrouter
-      ports:
-        - protocol: TCP
-          port: 18080
-        - protocol: TCP
-          port: 18081
-        - protocol: TCP
-          port: 18082
     # Provider HTTPS is intentionally absent here. The required Cilium FQDN
     # policy owns that allowlist without opening a generic port-443 escape.

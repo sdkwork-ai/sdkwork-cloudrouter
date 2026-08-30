@@ -3,6 +3,14 @@
   "kind": "sdkwork.database.table-registry",
   "tables": [
     {
+      "table_name": "pricing_default_region",
+      "owner": "pricing-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
       "table_name": "pricing_import_run",
       "owner": "pricing-service",
       "compliance_level": "L2",

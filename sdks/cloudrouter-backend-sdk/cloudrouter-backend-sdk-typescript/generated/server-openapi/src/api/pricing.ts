@@ -1,7 +1,7 @@
 import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
-import type { AdminPricingPlan, AdminPricingPlanListResponse, AdminPricingRule, AdminPricingRuleListResponse, AdminRateCard, AdminRateCardListResponse, OfficialPricingCatalogResponse, OfficialPricingProductCatalogResponse, PricingPlanCreateRequest, PricingPlanUpdateRequest, PricingRuleCreateRequest, PricingRuleUpdateRequest, RateCardCreateRequest, RateCardUpdateRequest } from '../types';
+import type { AdminDefaultRegionItem, AdminDefaultRegionListResponse, AdminPricingPlan, AdminPricingPlanListResponse, AdminPricingRule, AdminPricingRuleListResponse, AdminRateCard, AdminRateCardListResponse, OfficialPricingCatalogResponse, OfficialPricingProductCatalogResponse, PricingDefaultRegionCreateRequest, PricingPlanCreateRequest, PricingPlanUpdateRequest, PricingRuleCreateRequest, PricingRuleUpdateRequest, RateCardCreateRequest, RateCardUpdateRequest } from '../types';
 
 
 export interface PricingRulesListParams {
@@ -202,7 +202,43 @@ export class PricingOfficialProductsApi {
   }
 }
 
+export interface PricingDefaultRegionsListParams {
+  q?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export class PricingDefaultRegionsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** List pricing default regions */
+  async list(params?: PricingDefaultRegionsListParams, requestOptions?: ApiRequestOptions): Promise<AdminDefaultRegionListResponse> {
+    const query = buildQueryString([
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<AdminDefaultRegionListResponse>(appendQueryString(backendApiPath(`/pricing/default_regions`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  }
+
+/** Create pricing default region */
+  async create(body: PricingDefaultRegionCreateRequest, requestOptions?: ApiRequestOptions): Promise<AdminDefaultRegionItem> {
+    return this.client.request<AdminDefaultRegionItem>(backendApiPath(`/pricing/default_regions`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+  }
+
+/** Delete pricing default region */
+  async delete(defaultRegionId: string, requestOptions?: ApiRequestOptions): Promise<void> {
+    return this.client.request<void>(backendApiPath(`/pricing/default_regions/${serializePathParameter(defaultRegionId, { name: 'defaultRegionId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
+  }
+}
+
 export class PricingApi {
+  public readonly defaultRegions: PricingDefaultRegionsApi;
   public readonly officialProducts: PricingOfficialProductsApi;
   public readonly officialRates: PricingOfficialRatesApi;
   public readonly plans: PricingPlansApi;
@@ -210,6 +246,7 @@ export class PricingApi {
   public readonly rules: PricingRulesApi;
 
   constructor(client: HttpClient) {
+    this.defaultRegions = new PricingDefaultRegionsApi(client);
     this.officialProducts = new PricingOfficialProductsApi(client);
     this.officialRates = new PricingOfficialRatesApi(client);
     this.plans = new PricingPlansApi(client);

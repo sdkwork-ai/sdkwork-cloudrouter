@@ -755,4 +755,76 @@ mod tests {
         assert_ne!(high_index, next_meter);
         assert!(next_meter <= i64::from(i32::MAX));
     }
+
+    #[test]
+    fn token_columns_split_input_role_into_prompt_tokens_only() {
+        // 非缓存输入 token（cached 已单独成行）只计入 prompt_tokens。
+        let line = InvocationUsageLine::new(
+            BillingMeter::LlmInputToken,
+            GatewayUsageQuantity::tokens(71).expect("valid"),
+        );
+        assert_eq!((71, 0, 0, 71), token_columns(&line, &line.quantity));
+    }
+
+    #[test]
+    fn token_columns_split_cache_read_role_into_cached_tokens_only() {
+        let line = InvocationUsageLine::new(
+            BillingMeter::LlmCacheReadToken,
+            GatewayUsageQuantity::tokens(29).expect("valid"),
+        );
+        assert_eq!((0, 0, 29, 29), token_columns(&line, &line.quantity));
+    }
+
+    #[test]
+    fn token_columns_split_output_role_into_completion_tokens_only() {
+        let line = InvocationUsageLine::new(
+            BillingMeter::LlmOutputToken,
+            GatewayUsageQuantity::tokens(12).expect("valid"),
+        );
+        assert_eq!((0, 12, 0, 12), token_columns(&line, &line.quantity));
+    }
+
+    #[test]
+    fn token_columns_for_cache_write_role_behave_like_input() {
+        let line = InvocationUsageLine::new(
+            BillingMeter::LlmCacheWriteToken,
+            GatewayUsageQuantity::tokens(8).expect("valid"),
+        );
+        assert_eq!((8, 0, 0, 8), token_columns(&line, &line.quantity));
+    }
+
+    #[test]
+    fn token_columns_zero_out_for_non_token_meter() {
+        let line = InvocationUsageLine::new(
+            BillingMeter::ApiRequest,
+            GatewayUsageQuantity::single_request(),
+        );
+        assert_eq!((0, 0, 0, 0), token_columns(&line, &line.quantity));
+    }
+
+    #[test]
+    fn unit_price_columns_apply_only_to_the_relevant_price_slot() {
+        let base = |meter: BillingMeter| {
+            let line = InvocationUsageLine::new(meter, GatewayUsageQuantity::tokens(1).expect("valid"));
+            (line, "0.5".to_owned())
+        };
+
+        let (output, price) = base(BillingMeter::LlmOutputToken);
+        assert_eq!(
+            ("0.000000".into(), "0.5".into(), "0.000000".into()),
+            unit_price_columns(&output, &price)
+        );
+
+        let (cache_read, price) = base(BillingMeter::LlmCacheReadToken);
+        assert_eq!(
+            ("0.000000".into(), "0.000000".into(), "0.5".into()),
+            unit_price_columns(&cache_read, &price)
+        );
+
+        let (input, price) = base(BillingMeter::LlmInputToken);
+        assert_eq!(
+            ("0.5".into(), "0.000000".into(), "0.000000".into()),
+            unit_price_columns(&input, &price)
+        );
+    }
 }

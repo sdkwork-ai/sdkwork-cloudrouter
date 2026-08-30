@@ -6,6 +6,7 @@ import { CopyButton } from '@sdkwork/cloudroutes-pc-commons';
 import type { Model } from '../data/models';
 import { ModelService } from '../modelService';
 import { deriveModelCatalogDetailView, type ModelCatalogModalityTone } from '../modelCatalog';
+import { ModelPricingPanel } from '../components/ModelPricingPanel';
 
 export function ModelDetails() {
   const { id, provider, model: modelParam } = useParams<{ id?: string, provider?: string, model?: string }>();
@@ -13,6 +14,28 @@ export function ModelDetails() {
   const { t } = useTranslation();
   const routeModelId = id ?? (provider && modelParam ? `${provider}/${modelParam}` : '');
   const [model, setModel] = useState<Model | null>(null);
+  const [groupSaleMultipliers, setGroupSaleMultipliers] = useState<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    let cancelled = false;
+
+    // 分组销售倍率仅用于展示，加载失败时静默降级（不显示销售价切换），不影响详情页。
+    ModelService.fetchAccountGroupSaleMultipliers()
+      .then((multipliers) => {
+        if (!cancelled) {
+          setGroupSaleMultipliers(multipliers);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setGroupSaleMultipliers(new Map());
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -207,17 +230,7 @@ export function ModelDetails() {
                 {t('models.pricing', 'Pricing')}
               </h3>
 
-              <div className="space-y-4">
-                {detail.pricingRows.map((row, index) => (
-                  <div key={row.key} className={`flex justify-between items-center ${index < detail.pricingRows.length - 1 ? 'pb-4 border-b border-slate-100 dark:border-white/5' : ''}`}>
-                    <span className="text-slate-600 dark:text-slate-400">{t(row.labelKey, row.fallbackLabel)}</span>
-                    <div className="text-right">
-                      <div className="font-semibold text-slate-900 dark:text-white">{row.value}</div>
-                      <div className="text-xs text-slate-500">{row.unitLabel}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <ModelPricingPanel model={model} groupSaleMultipliers={groupSaleMultipliers} showHeader={false} />
             </div>
 
             {/* Specifications Card */}

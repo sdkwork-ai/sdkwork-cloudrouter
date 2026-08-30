@@ -6,7 +6,7 @@ use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
 use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
-use axum::routing::{get, patch};
+use axum::routing::{delete, get, patch};
 use axum::{Json, Router};
 use chrono::{DateTime, NaiveDate, NaiveTime, SecondsFormat};
 use serde::{Deserialize, Serialize};
@@ -23,8 +23,9 @@ use crate::ports::{
     AdminPricingBasePriceSide, AdminPricingFormulaMode, AdminPricingListPage,
     AdminPricingRoundingMode, AdminPricingStatus, AdminPricingStore, AdminRateCardSubjectType,
     CreateAdminPricingPlanCommand, CreateAdminPricingRuleCommand, CreateAdminRateCardCommand,
-    DeleteAdminPricingRuleCommand, DeleteAdminRateCardCommand, ListAdminPricingPlansQuery,
-    ListAdminPricingRulesQuery, ListAdminRateCardsQuery, LoadAdminPricingPlanQuery,
+    DeleteAdminDefaultRegionCommand, DeleteAdminPricingRuleCommand, DeleteAdminRateCardCommand,
+    ListAdminDefaultRegionsQuery, ListAdminPricingPlansQuery, ListAdminPricingRulesQuery,
+    ListAdminRateCardsQuery, LoadAdminPricingPlanQuery, SaveAdminDefaultRegionCommand,
     UpdateAdminPricingPlanCommand, UpdateAdminPricingRuleCommand, UpdateAdminRateCardCommand,
 };
 
@@ -115,6 +116,31 @@ struct PricingRuleMutationRequest {
     status: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DefaultRegionMutationRequest {
+    catalog_key: Option<String>,
+    vendor_code: Option<String>,
+    product_code: Option<String>,
+    default_region_code: Option<String>,
+    currency_code: Option<String>,
+    description: Option<String>,
+    effective_from: Option<String>,
+    effective_to: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct NormalizedDefaultRegionMutation {
+    catalog_key: String,
+    vendor_code: String,
+    product_code: String,
+    default_region_code: String,
+    currency_code: String,
+    description: Option<String>,
+    effective_from: Option<String>,
+    effective_to: Option<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct NormalizedPricingPlanMutation {
     plan_code: Option<String>,
@@ -203,6 +229,14 @@ pub fn admin_pricing_router_with_store(
         .route(
             "/backend/v3/api/pricing/rules/{rule_id}",
             patch(update_pricing_rule).delete(delete_pricing_rule),
+        )
+        .route(
+            "/backend/v3/api/pricing/default_regions",
+            get(fetch_default_regions).post(create_default_region),
+        )
+        .route(
+            "/backend/v3/api/pricing/default_regions/{default_region_id}",
+            delete(delete_default_region),
         )
         .with_state(AdminPricingState {
             store,
@@ -787,6 +821,151 @@ async fn delete_pricing_rule(
         Ok(false) => not_found_response("pricing rule was not found"),
         Err(error) => pricing_system_response("pricing rule command store is unavailable", error),
     }
+}
+
+async fn fetch_default_regions(
+    State(state): State<AdminPricingState>,
+    Query(params): Query<AdminPricingListQueryRequest>,
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    _headers: HeaderMap,
+) -> Response {
+    let subject = scoped.into();
+    let parsed = match parse_pricing_list_query(params.page, params.page_size) {
+        Ok(parsed) => parsed,
+        Err(error) => return error.into_response(),
+    };
+    let q = match normalize_pricing_search(params.q.as_deref()) {
+        Ok(value) => value,
+        Err(message) => return bad_request(message),
+    };
+    match state
+        .store
+        .list_default_regions(ListAdminDefaultRegionsQuery {
+            subject,
+            q,
+            page_no: parsed.page_no,
+            page_size: parsed.page_size,
+            offset: parsed.offset,
+        })
+        .await
+    {
+        Ok(page) => pricing_list_response(page),
+        Err(error) => {
+            pricing_system_response("default region read model is unavailable", error)
+        }
+    }
+}
+
+async fn create_default_region(
+    State(state): State<AdminPricingState>,
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    _headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    let subject = scoped.into();
+    let request = match parse_json_body::<DefaultRegionMutationRequest>(&body, "default region") {
+        Ok(request) => request,
+        Err(message) => return bad_request(message),
+    };
+    let mutation = match normalize_default_region_mutation(request) {
+        Ok(mutation) => mutation,
+        Err(error) => return command_build_error_response(error),
+    };
+    let command = SaveAdminDefaultRegionCommand {
+        subject,
+        region_uuid: match generate_entity_uuid(&state) {
+            Ok(uuid) => uuid,
+            Err(error) => return command_build_error_response(error),
+        },
+        audit_log_uuid: match generate_entity_uuid(&state) {
+            Ok(uuid) => uuid,
+            Err(error) => return command_build_error_response(error),
+        },
+        vendor_code: mutation.vendor_code,
+        product_code: mutation.product_code,
+        catalog_key: mutation.catalog_key,
+        default_region_code: mutation.default_region_code,
+        currency_code: mutation.currency_code,
+        description: mutation.description,
+        effective_from: mutation
+            .effective_from
+            .unwrap_or_else(current_timestamp_string),
+        effective_to: mutation.effective_to,
+        request_id: match generate_server_request_id() {
+            Ok(request_id) => request_id,
+            Err(error) => return command_build_error_response(request_id_error(error)),
+        },
+        requested_at: current_timestamp_string(),
+    };
+    match state.store.save_default_region(command).await {
+        Ok(item) => json_created_response(None, AdminPricingItemEnvelope { item }),
+        Err(error) if error.is_conflict() => conflict_response(error),
+        Err(error) => {
+            pricing_system_response("default region command store is unavailable", error)
+        }
+    }
+}
+
+async fn delete_default_region(
+    State(state): State<AdminPricingState>,
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    _headers: HeaderMap,
+    Path(default_region_id): Path<String>,
+) -> Response {
+    let subject = scoped.into();
+    let default_region_id =
+        match normalize_pricing_path_id(&default_region_id, "default region id") {
+            Ok(default_region_id) => default_region_id,
+            Err(message) => return bad_request(message),
+        };
+    let command = DeleteAdminDefaultRegionCommand {
+        subject,
+        default_region_id,
+        audit_log_uuid: match generate_entity_uuid(&state) {
+            Ok(uuid) => uuid,
+            Err(error) => return command_build_error_response(error),
+        },
+        request_id: match generate_server_request_id() {
+            Ok(request_id) => request_id,
+            Err(error) => return command_build_error_response(request_id_error(error)),
+        },
+        requested_at: current_timestamp_string(),
+    };
+    match state.store.delete_default_region(command).await {
+        Ok(true) => no_content_response(None),
+        Ok(false) => not_found_response("default region was not found"),
+        Err(error) => {
+            pricing_system_response("default region command store is unavailable", error)
+        }
+    }
+}
+
+fn normalize_default_region_mutation(
+    request: DefaultRegionMutationRequest,
+) -> Result<NormalizedDefaultRegionMutation, AdminPricingCommandBuildError> {
+    let effective_from =
+        normalize_optional_datetime(request.effective_from.as_deref(), "effectiveFrom")?;
+    let effective_to = normalize_optional_datetime(request.effective_to.as_deref(), "effectiveTo")?;
+    validate_datetime_order(effective_from.as_deref(), effective_to.as_deref())?;
+    Ok(NormalizedDefaultRegionMutation {
+        catalog_key: normalize_required_text(request.catalog_key.as_deref(), "catalogKey", 256)?,
+        vendor_code: normalize_required_text(request.vendor_code.as_deref(), "vendorCode", 64)?,
+        product_code: normalize_required_text(request.product_code.as_deref(), "productCode", 160)?,
+        default_region_code: normalize_required_text(
+            request.default_region_code.as_deref(),
+            "defaultRegionCode",
+            64,
+        )?,
+        currency_code: normalize_currency_code(request.currency_code.as_deref())?,
+        description: request
+            .description
+            .as_deref()
+            .map(|value| normalize_optional_text(Some(value), "description", MAX_TEXT_LEN))
+            .transpose()?
+            .flatten(),
+        effective_from,
+        effective_to,
+    })
 }
 
 fn parse_pricing_list_query(

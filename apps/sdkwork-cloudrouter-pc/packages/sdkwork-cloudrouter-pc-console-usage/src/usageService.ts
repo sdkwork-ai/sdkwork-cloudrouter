@@ -123,6 +123,10 @@ function normalizeUsageLog(value: unknown): UsageLog {
       'Usage log cost must be a decimal string',
       SPEND_DECIMAL_DIGITS,
     ),
+    currency: readOptionalString(item, 'currency'),
+    points: readRequiredUnsignedInt64String(item, 'points', 'Usage log points are required'),
+    originalCurrencyAmount: readOptionalString(item, 'originalCurrencyAmount'),
+    originalCurrencyCode: readOptionalString(item, 'originalCurrencyCode'),
     multiplier: readRequiredDecimalString(
       item,
       'multiplier',

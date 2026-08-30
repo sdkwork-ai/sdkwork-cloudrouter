@@ -5,17 +5,20 @@ use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
-    AdminPricingCommandFuture, AdminPricingListPage, AdminPricingPlanItem, AdminPricingRuleItem,
-    AdminPricingStatus, AdminPricingStore, AdminPricingSubject, AdminRateCardItem,
-    CreateAdminPricingPlanCommand, CreateAdminPricingRuleCommand, CreateAdminRateCardCommand,
-    DeleteAdminPricingRuleCommand, DeleteAdminRateCardCommand, ListAdminPricingPlansQuery,
+    AdminDefaultRegionItem, AdminPricingCommandFuture, AdminPricingListPage, AdminPricingPlanItem,
+    AdminPricingRuleItem, AdminPricingStatus, AdminPricingStore, AdminPricingSubject,
+    AdminRateCardItem, CreateAdminPricingPlanCommand, CreateAdminPricingRuleCommand,
+    CreateAdminRateCardCommand, DeleteAdminDefaultRegionCommand, DeleteAdminPricingRuleCommand,
+    DeleteAdminRateCardCommand, ListAdminDefaultRegionsQuery, ListAdminPricingPlansQuery,
     ListAdminPricingRulesQuery, ListAdminRateCardsQuery, LoadAdminPricingPlanQuery,
-    UpdateAdminPricingPlanCommand, UpdateAdminPricingRuleCommand, UpdateAdminRateCardCommand,
+    SaveAdminDefaultRegionCommand, UpdateAdminPricingPlanCommand, UpdateAdminPricingRuleCommand,
+    UpdateAdminRateCardCommand,
 };
 
 const TARGET_TYPE_PRICING_PLAN: i32 = 79;
 const TARGET_TYPE_RATE_CARD: i32 = 80;
 const TARGET_TYPE_PRICING_RULE: i32 = 81;
+const TARGET_TYPE_DEFAULT_REGION: i32 = 82;
 const FALLBACK_POLICY_FAIL_CLOSED: &str = "fail_closed";
 const ADMIN_METADATA_SOURCE: &str = "admin_pricing";
 
@@ -129,6 +132,27 @@ impl AdminPricingStore for PostgresAdminPricingStore {
         command: DeleteAdminPricingRuleCommand,
     ) -> AdminPricingCommandFuture<'a, bool> {
         Box::pin(delete_pricing_rule(&self.pool, command))
+    }
+
+    fn list_default_regions<'a>(
+        &'a self,
+        query: ListAdminDefaultRegionsQuery,
+    ) -> AdminPricingCommandFuture<'a, AdminPricingListPage<AdminDefaultRegionItem>> {
+        Box::pin(list_default_regions(&self.pool, query))
+    }
+
+    fn save_default_region<'a>(
+        &'a self,
+        command: SaveAdminDefaultRegionCommand,
+    ) -> AdminPricingCommandFuture<'a, AdminDefaultRegionItem> {
+        Box::pin(save_default_region(&self.pool, command))
+    }
+
+    fn delete_default_region<'a>(
+        &'a self,
+        command: DeleteAdminDefaultRegionCommand,
+    ) -> AdminPricingCommandFuture<'a, bool> {
+        Box::pin(delete_default_region(&self.pool, command))
     }
 }
 
@@ -1425,4 +1449,386 @@ fn list_total(rows: &[sqlx::postgres::PgRow]) -> i64 {
 
 fn store_error(context: &str, error: sqlx::Error) -> DomainError {
     redacted_store_error(context, error)
+}
+
+async fn list_default_regions(
+    pool: &PgPool,
+    query: ListAdminDefaultRegionsQuery,
+) -> DomainResult<AdminPricingListPage<AdminDefaultRegionItem>> {
+    let mut sql = String::from(
+        r#"
+        SELECT
+            default_region.id::text AS id,
+            default_region.catalog_key,
+            default_region.vendor_code,
+            default_region.product_code,
+            default_region.default_region_code,
+            default_region.currency_code,
+            default_region.description,
+            default_region.status,
+            default_region.effective_from::text AS effective_from,
+            default_region.effective_to::text AS effective_to,
+            default_region.created_at::text AS created_at,
+            default_region.updated_at::text AS updated_at,
+            default_region.version,
+            COUNT(*) OVER() AS total
+        FROM pricing_default_region default_region
+        WHERE default_region.tenant_id = $1
+          AND default_region.organization_id = $2
+          AND default_region.deleted_at IS NULL
+        "#,
+    );
+    let mut next_bind = 3;
+    if let Some(search) = query.q.as_deref() {
+        let pattern = format!("%{}%", escape_like_pattern(search));
+        sql.push_str(&format!(
+            " AND (default_region.catalog_key ILIKE ${next_bind} ESCAPE '\\' OR default_region.default_region_code ILIKE ${next_bind} ESCAPE '\\')"
+        ));
+        next_bind += 1;
+        sql.push_str(&format!(
+            " ORDER BY default_region.id ASC LIMIT ${next_bind} OFFSET ${}",
+            next_bind + 1
+        ));
+        let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
+            .bind(query.subject.tenant_id)
+            .bind(query.subject.organization_id)
+            .bind(pattern)
+            .bind(query.page_size)
+            .bind(query.offset)
+            .fetch_all(pool)
+            .await
+            .map_err(|error| store_error("failed to list default regions", error))?;
+        return default_region_list_from_rows(rows, query.page_no, query.page_size);
+    }
+    sql.push_str(&format!(
+        " ORDER BY default_region.id ASC LIMIT ${next_bind} OFFSET ${}",
+        next_bind + 1
+    ));
+    let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
+        .bind(query.subject.tenant_id)
+        .bind(query.subject.organization_id)
+        .bind(query.page_size)
+        .bind(query.offset)
+        .fetch_all(pool)
+        .await
+        .map_err(|error| store_error("failed to list default regions", error))?;
+    default_region_list_from_rows(rows, query.page_no, query.page_size)
+}
+
+fn default_region_list_from_rows(
+    rows: Vec<sqlx::postgres::PgRow>,
+    page_no: i64,
+    page_size: i64,
+) -> DomainResult<AdminPricingListPage<AdminDefaultRegionItem>> {
+    let total = list_total(&rows);
+    let items = rows
+        .iter()
+        .map(default_region_from_row)
+        .collect::<DomainResult<Vec<_>>>()?;
+    Ok(AdminPricingListPage {
+        items,
+        total,
+        page_no,
+        page_size,
+    })
+}
+
+async fn save_default_region(
+    pool: &PgPool,
+    command: SaveAdminDefaultRegionCommand,
+) -> DomainResult<AdminDefaultRegionItem> {
+    if command.catalog_key.trim().is_empty() {
+        return Err(DomainError::new("catalog_key is required"));
+    }
+    if command.default_region_code.trim().is_empty() {
+        return Err(DomainError::new("default_region_code is required"));
+    }
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|error| store_error("failed to begin default region transaction", error))?;
+    require_default_region_regions(
+        &mut tx,
+        command.subject,
+        &command.catalog_key,
+        &command.default_region_code,
+    )
+    .await?;
+    let id = upsert_default_region_row(&mut tx, &command).await?;
+    insert_audit_log_for_target_uuid(
+        &mut tx,
+        AdminPricingAuditContext::new(
+            &command.audit_log_uuid,
+            &command.request_id,
+            command.subject,
+        ),
+        "save",
+        TARGET_TYPE_DEFAULT_REGION,
+        &id.to_string(),
+        serde_json::json!({
+            "action": "save",
+            "catalogKey": command.catalog_key,
+            "defaultRegionCode": command.default_region_code,
+        }),
+    )
+    .await?;
+    let item = load_default_region_in_transaction(&mut tx, id, command.subject).await?;
+    tx.commit()
+        .await
+        .map_err(|error| store_error("failed to commit default region save", error))?;
+    item.ok_or_else(|| DomainError::new("default region was not found after save"))
+}
+
+/// Confirms a default region may be set for the model: the model must expose
+/// active pricing in at least two distinct (non-global) regions, and the chosen
+/// default must be one of those regions.
+async fn require_default_region_regions(
+    tx: &mut Transaction<'_, Postgres>,
+    subject: AdminPricingSubject,
+    catalog_key: &str,
+    default_region_code: &str,
+) -> DomainResult<()> {
+    let rows = sqlx::query(
+        r#"
+        SELECT DISTINCT rate.region_code
+        FROM pricing_rate rate
+        JOIN pricing_price_book book
+          ON book.id = rate.price_book_id
+         AND book.tenant_id = $1
+         AND book.organization_id = $2
+        WHERE rate.catalog_key = $3
+          AND book.lifecycle_state = 'active'
+          AND rate.deleted_at IS NULL
+          AND book.deleted_at IS NULL
+          AND BTRIM(rate.region_code) NOT IN ('', 'global')
+        "#,
+    )
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(catalog_key)
+    .fetch_all(&mut **tx)
+    .await
+    .map_err(|error| store_error("failed to inspect priced regions for default region", error))?;
+    let regions: Vec<String> = rows
+        .iter()
+        .map(|row| string_cell(row, "region_code"))
+        .collect();
+    if regions.len() < 2 {
+        return Err(DomainError::new(
+            "model must expose active pricing in at least two regions before a default billing region can be configured",
+        ));
+    }
+    if !regions
+        .iter()
+        .any(|region| region.eq_ignore_ascii_case(default_region_code))
+    {
+        return Err(DomainError::new(
+            "default region must be one of the regions priced for this model",
+        ));
+    }
+    Ok(())
+}
+
+async fn upsert_default_region_row(
+    tx: &mut Transaction<'_, Postgres>,
+    command: &SaveAdminDefaultRegionCommand,
+) -> DomainResult<i64> {
+    let existing = sqlx::query(
+        r#"
+        SELECT id
+        FROM pricing_default_region
+        WHERE tenant_id = $1
+          AND organization_id = $2
+          AND catalog_key = $3
+          AND deleted_at IS NULL
+        LIMIT 1
+        "#,
+    )
+    .bind(command.subject.tenant_id)
+    .bind(command.subject.organization_id)
+    .bind(&command.catalog_key)
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(|error| store_error("failed to inspect default region for save", error))?;
+    if let Some(row) = existing {
+        let id: i64 = row
+            .try_get("id")
+            .map_err(|error| store_error("failed to read default region id", error))?;
+        sqlx::query(
+            r#"
+            UPDATE pricing_default_region
+            SET default_region_code = $1,
+                currency_code = $2,
+                description = $3,
+                effective_from = $4::timestamptz,
+                effective_to = $5::timestamptz,
+                status = $6,
+                updated_at = $7,
+                version = pricing_default_region.version + 1
+            WHERE id = $8
+              AND tenant_id = $9
+              AND organization_id = $10
+              AND deleted_at IS NULL
+            "#,
+        )
+        .bind(&command.default_region_code)
+        .bind(&command.currency_code)
+        .bind(command.description.as_deref())
+        .bind(&command.effective_from)
+        .bind(command.effective_to.as_deref())
+        .bind(1_i32)
+        .bind(&command.requested_at)
+        .bind(id)
+        .bind(command.subject.tenant_id)
+        .bind(command.subject.organization_id)
+        .execute(&mut **tx)
+        .await
+        .map_err(|error| store_error("failed to update default region", error))?;
+        return Ok(id);
+    }
+    let id = next_cloud_runtime_id("pricing_default_region")?;
+    sqlx::query(
+        r#"
+        INSERT INTO pricing_default_region
+            (id, uuid, tenant_id, organization_id, data_scope, status, metadata,
+             vendor_code, product_code, catalog_key, default_region_code, currency_code,
+             description, effective_from, effective_to, created_at, updated_at)
+        VALUES
+            ($1, $2, $3, $4, 0, $5, $6::jsonb,
+             $7, $8, $9, $10, $11, $12,
+             $13, $14::timestamptz, $15::timestamptz, $16, $16)
+        "#,
+    )
+    .bind(id)
+    .bind(&command.region_uuid)
+    .bind(command.subject.tenant_id)
+    .bind(command.subject.organization_id)
+    .bind(1_i32)
+    .bind(admin_metadata())
+    .bind(&command.vendor_code)
+    .bind(&command.product_code)
+    .bind(&command.catalog_key)
+    .bind(&command.default_region_code)
+    .bind(&command.currency_code)
+    .bind(command.description.as_deref())
+    .bind(&command.effective_from)
+    .bind(command.effective_to.as_deref())
+    .bind(&command.requested_at)
+    .execute(&mut **tx)
+    .await
+    .map_err(|error| store_error("failed to create default region", error))?;
+    Ok(id)
+}
+
+async fn delete_default_region(
+    pool: &PgPool,
+    command: DeleteAdminDefaultRegionCommand,
+) -> DomainResult<bool> {
+    let id = parse_pricing_id(&command.default_region_id, "default region id")?;
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|error| store_error("failed to begin default region delete transaction", error))?;
+    let deleted = sqlx::query(
+        r#"
+        UPDATE pricing_default_region
+        SET deleted_at = $1,
+            deleted_by = $2,
+            status = 0,
+            updated_at = $1
+        WHERE id = $3
+          AND tenant_id = $4
+          AND organization_id = $5
+          AND deleted_at IS NULL
+        "#,
+    )
+    .bind(&command.requested_at)
+    .bind(command.subject.operator_id)
+    .bind(id)
+    .bind(command.subject.tenant_id)
+    .bind(command.subject.organization_id)
+    .execute(&mut *tx)
+    .await
+    .map_err(|error| store_error("failed to delete default region", error))?;
+    if deleted.rows_affected() == 0 {
+        tx.commit()
+            .await
+            .map_err(|error| store_error("failed to commit default region delete", error))?;
+        return Ok(false);
+    }
+    insert_audit_log_for_target_uuid(
+        &mut tx,
+        AdminPricingAuditContext::new(
+            &command.audit_log_uuid,
+            &command.request_id,
+            command.subject,
+        ),
+        "delete",
+        TARGET_TYPE_DEFAULT_REGION,
+        &id.to_string(),
+        serde_json::json!({ "action": "delete" }),
+    )
+    .await?;
+    tx.commit()
+        .await
+        .map_err(|error| store_error("failed to commit default region delete", error))?;
+    Ok(true)
+}
+
+async fn load_default_region_in_transaction(
+    tx: &mut Transaction<'_, Postgres>,
+    id: i64,
+    subject: AdminPricingSubject,
+) -> DomainResult<Option<AdminDefaultRegionItem>> {
+    let row = sqlx::query(
+        r#"
+        SELECT
+            id::text AS id,
+            catalog_key,
+            vendor_code,
+            product_code,
+            default_region_code,
+            currency_code,
+            description,
+            status,
+            effective_from::text AS effective_from,
+            effective_to::text AS effective_to,
+            created_at::text AS created_at,
+            updated_at::text AS updated_at,
+            version
+        FROM pricing_default_region
+        WHERE id = $1
+          AND tenant_id = $2
+          AND organization_id = $3
+          AND deleted_at IS NULL
+        "#,
+    )
+    .bind(id)
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(|error| store_error("failed to load default region", error))?;
+    row.as_ref().map(default_region_from_row).transpose()
+}
+
+fn default_region_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<AdminDefaultRegionItem> {
+    Ok(AdminDefaultRegionItem {
+        id: string_cell(row, "id"),
+        catalog_key: string_cell(row, "catalog_key"),
+        vendor_code: string_cell(row, "vendor_code"),
+        product_code: string_cell(row, "product_code"),
+        default_region_code: string_cell(row, "default_region_code"),
+        currency_code: string_cell(row, "currency_code"),
+        description: optional_blank_string_cell(row, "description"),
+        effective_from: optional_string_cell(row, "effective_from"),
+        effective_to: optional_string_cell(row, "effective_to"),
+        status: AdminPricingStatus::from_db(
+            i32::try_from(integer_cell(row, "status")).unwrap_or(0),
+        )
+        .to_owned(),
+        created_at: optional_string_cell(row, "created_at"),
+        updated_at: optional_string_cell(row, "updated_at"),
+        version: integer_cell(row, "version"),
+    })
 }

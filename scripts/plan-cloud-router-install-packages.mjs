@@ -218,7 +218,7 @@ function buildArtifacts(binaryName, installerBinaryName, deploymentMode, platfor
     {
       kind: 'portal-dist',
       path: 'portal/dist',
-      source: 'apps/sdkwork-cloudrouter-pc/dist',
+      source: 'apps/sdkwork-cloudrouter-pc/dist/standalone/prod',
       required: true,
     },
     {

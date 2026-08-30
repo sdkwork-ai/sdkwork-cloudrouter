@@ -171,14 +171,15 @@ pub use admin_monitor_read_store::{
     AdminMonitorQuery, AdminMonitorReadFuture, AdminMonitorReadStore, AdminMonitorSubject,
 };
 pub use admin_pricing_store::{
-    AdminPricingBasePriceSide, AdminPricingCommandFuture, AdminPricingFormulaMode,
-    AdminPricingListPage, AdminPricingPlanItem, AdminPricingRoundingMode, AdminPricingRuleItem,
-    AdminPricingStatus, AdminPricingStore, AdminPricingSubject, AdminRateCardItem,
-    AdminRateCardSubjectType, CreateAdminPricingPlanCommand, CreateAdminPricingRuleCommand,
-    CreateAdminRateCardCommand, DeleteAdminPricingRuleCommand, DeleteAdminRateCardCommand,
+    AdminDefaultRegionItem, AdminPricingBasePriceSide, AdminPricingCommandFuture,
+    AdminPricingFormulaMode, AdminPricingListPage, AdminPricingPlanItem, AdminPricingRoundingMode,
+    AdminPricingRuleItem, AdminPricingStatus, AdminPricingStore, AdminPricingSubject,
+    AdminRateCardItem, AdminRateCardSubjectType, CreateAdminPricingPlanCommand,
+    CreateAdminPricingRuleCommand, CreateAdminRateCardCommand, DeleteAdminDefaultRegionCommand,
+    DeleteAdminPricingRuleCommand, DeleteAdminRateCardCommand, ListAdminDefaultRegionsQuery,
     ListAdminPricingPlansQuery, ListAdminPricingRulesQuery, ListAdminRateCardsQuery,
-    LoadAdminPricingPlanQuery, UpdateAdminPricingPlanCommand, UpdateAdminPricingRuleCommand,
-    UpdateAdminRateCardCommand,
+    LoadAdminPricingPlanQuery, SaveAdminDefaultRegionCommand, UpdateAdminPricingPlanCommand,
+    UpdateAdminPricingRuleCommand, UpdateAdminRateCardCommand,
 };
 pub use admin_record_store::{
     AdminRecordListPage, AdminRecordLogItem, AdminRecordReadFuture, AdminRecordStore,
@@ -340,7 +341,7 @@ pub use official_pricing_catalog_read_store::{
     OfficialPricingProductGroup, OfficialPricingRate, OfficialPricingRateCondition,
     OfficialPricingRateTier, OfficialPricingValueFacet,
 };
-pub use pricing_catalog::PricingCatalog;
+pub use pricing_catalog::{PricingCatalog, PricingDefaultRegionProvider};
 pub use provider_adapter_route_resolver::ProviderAdapterRouteResolver;
 pub use provider_secret_resolver::ProviderSecretResolver;
 pub use response_memory::ProviderResponseMemoryGuard;

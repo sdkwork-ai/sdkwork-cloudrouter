@@ -189,6 +189,11 @@ impl PostgresPricingCatalogLoader {
                 )
                 .await?,
             prices: database_rows.prices,
+            default_regions: row_mapping::load_pricing_default_regions(
+                &mut *tx,
+                PricingCatalogSql::load_pricing_default_regions(),
+            )
+            .await?,
         };
         tx.commit().await.map_err(PostgresCatalogLoadError::from)?;
         Ok(rows)
@@ -280,6 +285,10 @@ impl PostgresPricingCatalogLoader {
                 UNION ALL
                 SELECT 'pricing-rate:' || COALESCE(MAX(updated_at)::text, '')
                 FROM pricing_rate
+                WHERE deleted_at IS NULL
+                UNION ALL
+                SELECT 'pricing-default-region:' || COALESCE(MAX(updated_at)::text, '')
+                FROM pricing_default_region
                 WHERE deleted_at IS NULL
                 UNION ALL
                 SELECT 'cloudrouter-pricing-plan:' || COALESCE(MAX(updated_at)::text, '')

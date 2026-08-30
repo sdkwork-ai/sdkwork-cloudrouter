@@ -134,6 +134,13 @@ const MOUNTED_APP_CAPABILITIES: &[MountedAppCapability] = &[
         platform_gateway_mounts_separately: false,
         included_in_cloud_assembly_manifest: false,
     },
+    MountedAppCapability {
+        workspace: "sdkwork-generations",
+        owner: "sdkwork-generations",
+        manifest: sdkwork_api_generations_assembly::app_api_route_manifest,
+        platform_gateway_mounts_separately: false,
+        included_in_cloud_assembly_manifest: false,
+    },
 ];
 
 fn mounts_for_standalone_host(include_platform_gateway_mounted: bool) -> Vec<RouteManifestMount> {
@@ -244,6 +251,7 @@ mod tests {
             "sdkwork-drive",
             "sdkwork-assets",
             "sdkwork-skills",
+            "sdkwork-generations",
         ] {
             assert!(
                 workspaces.contains(&required),
@@ -259,6 +267,7 @@ mod tests {
             ("sdkwork-drive", "merge_federated_drive_app_router"),
             ("sdkwork-assets", "merge_federated_assets_app_router"),
             ("sdkwork-skills", "merge_federated_skills_app_router"),
+            ("sdkwork-generations", "merge_federated_generations_app_router"),
         ] {
             assert!(
                 MOUNTED_APP_CAPABILITIES
@@ -389,6 +398,10 @@ mod tests {
             .match_route("GET", "/app/v3/api/skill_categories")
             .expect("skills app-api route must be registered");
         assert_eq!(RouteAuth::DualToken, skills.auth);
+        let generations = manifest
+            .match_route("GET", "/app/v3/api/generations")
+            .expect("generations app-api route must be registered");
+        assert_eq!(RouteAuth::DualToken, generations.auth);
     }
 
     #[test]

@@ -14,13 +14,14 @@ use crate::infrastructure::in_memory_pricing_catalog::resolve_model_mapping_from
 use crate::infrastructure::sql::rows::{
     AccountRateCardRow, AiModelRow, GatewayAccessPolicyRow, GatewayApiKeyRow, GatewayRiskRuleRow,
     ModelMappingRuleRow, ModelPriceRow, ModelUpstreamRouteRow, ModelVendorRow, PricingPlanRow,
-    PricingRuleRow, QuotaPolicyRow, UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow,
-    UpstreamAccountModelAccessRow, UpstreamAccountRouteRow, UpstreamSupplierModelAccessRow,
+    PricingDefaultRegionRow, PricingRuleRow, QuotaPolicyRow, UpstreamAccountGroupMetricSnapshotRow,
+    UpstreamAccountGroupRow, UpstreamAccountModelAccessRow, UpstreamAccountRouteRow,
+    UpstreamSupplierModelAccessRow,
 };
 use crate::ports::{
     AccountBaseUrlConfig, AccountGroupModelAccess, AccountModelAccess, AdminLlmProtocolConfig,
-    PricingCatalog, SupplierModelAccess, UpstreamAccountRouteCatalog, UpstreamRouteGateDiagnosis,
-    VendorModelListEntry,
+    PricingCatalog, PricingDefaultRegionProvider, SupplierModelAccess, UpstreamAccountRouteCatalog,
+    UpstreamRouteGateDiagnosis, VendorModelListEntry,
 };
 
 #[derive(Default)]
@@ -42,6 +43,7 @@ pub struct PricingCatalogRows {
     pub gateway_risk_rules: Vec<GatewayRiskRuleRow>,
     pub upstream_account_group_metric_snapshots: Vec<UpstreamAccountGroupMetricSnapshotRow>,
     pub prices: Vec<ModelPriceRow>,
+    pub default_regions: Vec<PricingDefaultRegionRow>,
     /// Captured only when `upstream_account_routes` loads empty; explains
     /// which configuration gate blocked the whole account pool.
     pub upstream_route_gate_diagnosis: Option<UpstreamRouteGateDiagnosis>,
@@ -145,6 +147,8 @@ pub struct SqlPricingCatalogSnapshot {
     vendors_by_code: HashMap<String, ModelVendorDefinition>,
     model_upstream_routes_by_key: HashMap<String, Vec<ModelUpstreamRoute>>,
     prices_by_key: HashMap<String, Vec<ScopedModelPrice>>,
+    /// Default billing region per (tenant, organization, catalog_key).
+    default_regions_by_key: HashMap<(i64, i64, String), String>,
 }
 
 impl SqlPricingCatalogSnapshot {
@@ -220,6 +224,9 @@ impl SqlPricingCatalogSnapshot {
                     .map(|_| (row.account_id, row.billing_mode.clone()))
             })
             .collect::<HashMap<_, _>>();
+        // 默认计费 region 映射；按 tenant/org/catalog_key 唯一键组装。全局
+        // (0,0) 配置作为未匹配时的兜底，具体租户配置优先。
+        let default_regions_by_key = default_regions_by_key_from_rows(&rows.default_regions);
         // 供应商默认 Base URL 映射（非 LLM 资源请求走默认端点）；同一供应商多行取同一值
         let supplier_default_base_url_by_code = rows
             .upstream_account_routes
@@ -321,6 +328,7 @@ impl SqlPricingCatalogSnapshot {
             vendors_by_code: HashMap::new(),
             model_upstream_routes_by_key: HashMap::new(),
             prices_by_key: HashMap::new(),
+            default_regions_by_key,
         };
         snapshot.build_indexes();
         Ok(snapshot)
@@ -1120,6 +1128,40 @@ impl UpstreamAccountRouteCatalog for SqlPricingCatalogSnapshot {
         }
         vendors
     }
+}
+
+impl PricingDefaultRegionProvider for SqlPricingCatalogSnapshot {
+    fn default_billing_region(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+        catalog_key: &str,
+    ) -> Option<String> {
+        self.default_regions_by_key
+            .get(&(tenant_id, organization_id, catalog_key.to_owned()))
+            .or_else(|| {
+                self.default_regions_by_key
+                    .get(&(0, 0, catalog_key.to_owned()))
+            })
+            .cloned()
+    }
+}
+
+/// Builds a (tenant, organization, catalog_key) -> default region map from the
+/// persisted `pricing_default_region` rows. The schema's unique constraint
+/// guarantees at most one active default per catalog key within a scope, so the
+/// later global-scope row only serves as a `(0,0)` fallback entry.
+fn default_regions_by_key_from_rows(
+    rows: &[PricingDefaultRegionRow],
+) -> HashMap<(i64, i64, String), String> {
+    rows.iter()
+        .map(|row| {
+            (
+                (row.tenant_id, row.organization_id, row.catalog_key.clone()),
+                row.default_region_code.clone(),
+            )
+        })
+        .collect()
 }
 
 fn map_rows<R, T>(rows: Vec<R>, mapper: impl Fn(R) -> DomainResult<T>) -> DomainResult<Vec<T>> {

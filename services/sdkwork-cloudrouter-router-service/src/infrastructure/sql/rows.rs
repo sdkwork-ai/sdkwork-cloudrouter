@@ -791,19 +791,32 @@ pub struct ModelPriceRow {
     pub rate_metadata: Option<PricingRateMetadata>,
 }
 
+/// A persisted default billing region for a model (`catalog_key`) within a
+/// tenant/organization scope. Consumed by the billing engine to select the
+/// invoice region when an account carries no explicit region.
+#[derive(Clone)]
+pub struct PricingDefaultRegionRow {
+    pub tenant_id: i64,
+    pub organization_id: i64,
+    pub catalog_key: String,
+    pub default_region_code: String,
+}
+
 impl ModelPriceRow {
     pub fn try_into_domain(self) -> DomainResult<ModelPrice> {
         ensure_base_catalog_key(
             &self.catalog_key,
             "pricing_rate.catalog_key must use vendor/model identity",
         )?;
+        let billing_meter = BillingMeter::from_code(&self.billing_meter_code);
+        let unit_size = normalized_unit_size(&billing_meter, DecimalValue::parse(&self.unit_size)?);
         Ok(ModelPrice {
             catalog_key: self.catalog_key,
             model: self.model,
             region_code: normalized_region_code(self.region_code),
             price_side: parse_price_side(&self.price_side_code)?,
-            billing_meter: BillingMeter::from_code(&self.billing_meter_code),
-            unit_size: DecimalValue::parse(&self.unit_size)?,
+            billing_meter,
+            unit_size,
             unit_price: money_from_decimal(self.currency, self.unit_price)?,
             supplier_code: self.supplier_code,
             account_id: self.account_id,
@@ -811,6 +824,37 @@ impl ModelPriceRow {
             rate_metadata: self.rate_metadata,
         })
     }
+}
+
+/// Token-based billing meters are priced per million tokens. A persisted
+/// `unit_size` that is missing, zero, or collapsed to one (the legacy
+/// per-token default) would divide the rate by 1 instead of 1_000_000 and
+/// over-charge the customer ~1M×. Normalize so the rating computation
+/// `unit_price × rated_quantity / unit_size` matches the per-million contract.
+fn normalized_unit_size(meter: &BillingMeter, unit_size: DecimalValue) -> DecimalValue {
+    if is_token_meter(meter) && unit_size <= DecimalValue::ONE {
+        DecimalValue::parse("1000000").expect("per-million token unit size is valid")
+    } else {
+        unit_size
+    }
+}
+
+fn is_token_meter(meter: &BillingMeter) -> bool {
+    matches!(
+        meter,
+        BillingMeter::LlmInputToken
+            | BillingMeter::LlmOutputToken
+            | BillingMeter::LlmReasoningToken
+            | BillingMeter::LlmCacheWriteToken
+            | BillingMeter::LlmCacheReadToken
+            | BillingMeter::EmbeddingInputToken
+            | BillingMeter::AudioInputToken
+            | BillingMeter::AudioOutputToken
+            | BillingMeter::ImageInputToken
+            | BillingMeter::ImageOutputToken
+            | BillingMeter::VideoInputToken
+            | BillingMeter::VideoOutputToken
+    )
 }
 
 fn normalized_region_code(value: String) -> String {
@@ -1054,4 +1098,63 @@ fn parse_optional_decimal(value: Option<String>) -> DomainResult<Option<DecimalV
         .filter(|value| !value.trim().is_empty())
         .map(|value| DecimalValue::parse(&value))
         .transpose()
+}
+
+#[cfg(test)]
+mod price_row_unit_size_tests {
+    use super::{is_token_meter, normalized_unit_size};
+    use crate::domain::{BillingMeter, DecimalValue};
+
+    fn decimal(value: &str) -> DecimalValue {
+        DecimalValue::parse(value).expect("valid decimal")
+    }
+
+    #[test]
+    fn token_meter_normalizes_unit_size_one_to_per_million() {
+        for meter in [
+            BillingMeter::LlmInputToken,
+            BillingMeter::LlmOutputToken,
+            BillingMeter::LlmCacheReadToken,
+            BillingMeter::EmbeddingInputToken,
+        ] {
+            assert_eq!(decimal("1000000"), normalized_unit_size(&meter, decimal("1")));
+            assert_eq!(decimal("1000000"), normalized_unit_size(&meter, DecimalValue::ZERO));
+        }
+    }
+
+    #[test]
+    fn token_meter_preserves_an_explicit_positive_unit_size() {
+        let meter = BillingMeter::LlmInputToken;
+        assert_eq!(decimal("500000"), normalized_unit_size(&meter, decimal("500000")));
+        assert_eq!(decimal("1000000"), normalized_unit_size(&meter, decimal("1000000")));
+    }
+
+    #[test]
+    fn non_token_meter_keeps_its_unit_size_unchanged() {
+        let meter = BillingMeter::ApiRequest;
+        assert_eq!(DecimalValue::ONE, normalized_unit_size(&meter, DecimalValue::ONE));
+        assert_eq!(decimal("1000000"), normalized_unit_size(&meter, decimal("1000000")));
+    }
+
+    #[test]
+    fn token_meter_classification_covers_all_token_meters() {
+        for meter in [
+            BillingMeter::LlmInputToken,
+            BillingMeter::LlmOutputToken,
+            BillingMeter::LlmReasoningToken,
+            BillingMeter::LlmCacheWriteToken,
+            BillingMeter::LlmCacheReadToken,
+            BillingMeter::EmbeddingInputToken,
+            BillingMeter::AudioInputToken,
+            BillingMeter::AudioOutputToken,
+            BillingMeter::ImageInputToken,
+            BillingMeter::ImageOutputToken,
+            BillingMeter::VideoInputToken,
+            BillingMeter::VideoOutputToken,
+        ] {
+            assert!(is_token_meter(&meter), "{meter:?} must be a token meter");
+        }
+        assert!(!is_token_meter(&BillingMeter::ApiRequest));
+        assert!(!is_token_meter(&BillingMeter::ImageResult));
+    }
 }

@@ -357,6 +357,63 @@ pub struct AdminRateCardItem {
     pub updated_at: Option<String>,
 }
 
+// Default billing region per model (catalog_key). Only models that expose
+// pricing across multiple regions may carry a default region; the default is
+// used by the billing engine to pick a region when no explicit region is set.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ListAdminDefaultRegionsQuery {
+    pub subject: AdminPricingSubject,
+    pub q: Option<String>,
+    pub page_no: i64,
+    pub page_size: i64,
+    pub offset: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SaveAdminDefaultRegionCommand {
+    pub subject: AdminPricingSubject,
+    pub region_uuid: String,
+    pub audit_log_uuid: String,
+    pub vendor_code: String,
+    pub product_code: String,
+    pub catalog_key: String,
+    pub default_region_code: String,
+    pub currency_code: String,
+    pub description: Option<String>,
+    pub effective_from: String,
+    pub effective_to: Option<String>,
+    pub request_id: String,
+    pub requested_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DeleteAdminDefaultRegionCommand {
+    pub subject: AdminPricingSubject,
+    pub default_region_id: String,
+    pub audit_log_uuid: String,
+    pub request_id: String,
+    pub requested_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AdminDefaultRegionItem {
+    pub id: String,
+    pub catalog_key: String,
+    pub vendor_code: String,
+    pub product_code: String,
+    pub default_region_code: String,
+    pub currency_code: String,
+    pub description: Option<String>,
+    pub effective_from: Option<String>,
+    pub effective_to: Option<String>,
+    pub status: String,
+    pub created_at: Option<String>,
+    pub updated_at: Option<String>,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
+    pub version: i64,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminPricingRuleItem {
@@ -444,5 +501,20 @@ pub trait AdminPricingStore {
     fn delete_pricing_rule<'a>(
         &'a self,
         command: DeleteAdminPricingRuleCommand,
+    ) -> AdminPricingCommandFuture<'a, bool>;
+
+    fn list_default_regions<'a>(
+        &'a self,
+        query: ListAdminDefaultRegionsQuery,
+    ) -> AdminPricingCommandFuture<'a, AdminPricingListPage<AdminDefaultRegionItem>>;
+
+    fn save_default_region<'a>(
+        &'a self,
+        command: SaveAdminDefaultRegionCommand,
+    ) -> AdminPricingCommandFuture<'a, AdminDefaultRegionItem>;
+
+    fn delete_default_region<'a>(
+        &'a self,
+        command: DeleteAdminDefaultRegionCommand,
     ) -> AdminPricingCommandFuture<'a, bool>;
 }

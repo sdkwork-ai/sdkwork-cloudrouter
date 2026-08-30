@@ -10,7 +10,6 @@ import {
   createDefaultModelCatalogFilters,
   deriveModelCatalogCardView,
   deriveModelCatalogFilterOptions,
-  deriveModelCatalogPricingView,
   filterModelsForCatalog,
   filterProvidersForCatalog,
   modelCatalogCategoryLabelKey,
@@ -19,7 +18,6 @@ import {
   resolveDisplayedProvidersForCatalog,
   resolveProviderShowMoreStateForCatalog,
   type ModelCatalogFilters,
-  type ModelCatalogPricingCell,
 } from '../modelCatalog';
 import {
   ModelService,
@@ -30,6 +28,7 @@ import { FilterSidebar, CollapsibleSection, FilterCheckbox, BottomPagination } f
 
 import { ModalityIcon } from '../components/ModalityIcon';
 import { GroupSaleMultiplierBadge } from '../components/GroupSaleMultiplierBadge';
+import { ModelPricingPanel } from '../components/ModelPricingPanel';
 
 const MODEL_CATALOG_PAGE_SIZE_OPTIONS = [20, 50, 100, 200];
 const DEFAULT_MODEL_CATALOG_UI_PAGE_SIZE = 20;
@@ -394,7 +393,6 @@ export function Models() {
         <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" : "flex flex-col gap-4"}>
           {filteredModels.map((model, index) => {
             const card = deriveModelCatalogCardView(model);
-            const pricing = deriveModelCatalogPricingView(model);
 
             return (
               <motion.div
@@ -457,18 +455,7 @@ export function Models() {
                   </div>
 
                 <div className="col-span-2 sm:col-span-3 pt-2 mt-2 border-t border-slate-100 dark:border-white/5">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-slate-900 dark:text-white">{t('models.pricing')}</span>
-                    <span className="text-[10px] text-slate-500 bg-slate-100 dark:bg-white/5 px-1.5 py-0.5 rounded uppercase tracking-wider">{pricing.badgeLabel}</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {pricing.cells.map(cell => (
-                      <div key={cell.key} className={pricingCellContainerClassName(cell, pricing.layout)}>
-                        <div className={pricingCellLabelClassName(cell, pricing.layout)}>{t(cell.labelKey)}</div>
-                        <div className={pricingCellValueClassName(cell, pricing.layout)}>{cell.value}</div>
-                      </div>
-                    ))}
-                  </div>
+                  <ModelPricingPanel model={model} groupSaleMultipliers={groupSaleMultipliers} />
                 </div>
               </div>
               </motion.div>
@@ -523,42 +510,6 @@ export function Models() {
       </main>
     </div>
   );
-}
-
-function pricingCellContainerClassName(cell: ModelCatalogPricingCell, layout: 'token' | 'flat'): string {
-  if (layout === 'flat') {
-    return 'col-span-3 bg-slate-50 dark:bg-white/[0.02] rounded-lg p-3 border border-slate-100 dark:border-white/5 flex items-center justify-between';
-  }
-  if (cell.tone === 'cached') {
-    return 'bg-blue-50/50 dark:bg-blue-500/5 rounded-lg p-2 border border-blue-100 dark:border-blue-500/10';
-  }
-  if (cell.unavailable) {
-    return 'bg-slate-50 dark:bg-white/[0.02] rounded-lg p-2 border border-slate-100 dark:border-white/5 opacity-50';
-  }
-  return 'bg-slate-50 dark:bg-white/[0.02] rounded-lg p-2 border border-slate-100 dark:border-white/5';
-}
-
-function pricingCellLabelClassName(cell: ModelCatalogPricingCell, layout: 'token' | 'flat'): string {
-  if (layout === 'flat') {
-    return 'text-xs text-slate-500 uppercase tracking-wider font-medium';
-  }
-  if (cell.tone === 'cached') {
-    return 'text-[10px] text-blue-600 dark:text-blue-400 mb-0.5 uppercase tracking-wider truncate';
-  }
-  return 'text-[10px] text-slate-500 mb-0.5 uppercase tracking-wider truncate';
-}
-
-function pricingCellValueClassName(cell: ModelCatalogPricingCell, layout: 'token' | 'flat'): string {
-  if (layout === 'flat') {
-    return 'text-sm font-mono text-slate-900 dark:text-white font-semibold';
-  }
-  if (cell.tone === 'cached') {
-    return 'text-xs font-mono text-blue-700 dark:text-blue-300';
-  }
-  if (cell.unavailable) {
-    return 'text-xs font-mono text-slate-400';
-  }
-  return 'text-xs font-mono text-slate-700 dark:text-slate-300';
 }
 
 function resolveSelectedProviderCodes(

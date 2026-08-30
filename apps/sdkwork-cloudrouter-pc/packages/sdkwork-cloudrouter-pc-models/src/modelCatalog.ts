@@ -1,9 +1,11 @@
 import type { Model, ModelGroupKey } from './data/models';
 import {
   formatModelPrice,
+  formatModelPriceValue,
   isModelPricingFieldUnavailable,
   modelPricingBadgeLabel,
   modelPricingFieldUnitLabel,
+  parseSaleMultiplier,
 } from './pricing.ts';
 import { createCloudRouterAppSdkModelExample } from '@sdkwork/cloudroutes-pc-commons/runtime';
 
@@ -111,6 +113,25 @@ export type ModelCatalogPricingView = {
   badgeLabel: string;
   layout: 'token' | 'flat';
   cells: ModelCatalogPricingCell[];
+};
+
+/**
+ * 价格显示方式。参考完整价格体系，标准价/销售价来自现有目录数据；
+ * peak/offPeak 仅当区域内存在对应费率变体时才展示（当前 app 层暂不暴露这类数据）。
+ */
+export type ModelCatalogPriceType = 'standard' | 'sale' | 'peak' | 'offPeak';
+
+/** 模型卡片可切换的区域选项。 */
+export type ModelCatalogRegionOption = {
+  regionCode: string;
+  labelKey: string;
+  fallbackLabel: string;
+};
+
+/** 区域价格视图：为某个区域推导出的定价展示。 */
+export type ModelCatalogRegionPricing = {
+  regionCode: string;
+  view: ModelCatalogPricingView | null;
 };
 
 export type ModelCatalogModalityTone = 'text' | 'image' | 'video' | 'audio' | 'music' | 'default';
@@ -276,8 +297,12 @@ export function deriveModelCatalogCardView(model: Model): ModelCatalogCardView {
   };
 }
 
-export function deriveModelCatalogPricingView(model: Model): ModelCatalogPricingView {
+export function deriveModelCatalogPricingView(
+  model: Model,
+  options: { saleMultiplier?: string } = {},
+): ModelCatalogPricingView {
   const badgeLabel = modelPricingBadgeLabel(model);
+  const multiplier = parseSaleMultiplier(options.saleMultiplier);
   if (model.modality !== 'Text') {
     return {
       badgeLabel,
@@ -286,7 +311,7 @@ export function deriveModelCatalogPricingView(model: Model): ModelCatalogPricing
         {
           key: 'flatPrice',
           labelKey: 'models.flatPrice',
-          value: formatModelPrice(model.pricing, 'input'),
+          value: formatRuntimeFieldValue(model, 'input', multiplier),
           tone: 'flat',
           unavailable: isModelPricingFieldUnavailable(model.pricing, 'input'),
         },
@@ -301,26 +326,195 @@ export function deriveModelCatalogPricingView(model: Model): ModelCatalogPricing
       {
         key: 'input',
         labelKey: 'models.input',
-        value: formatModelPrice(model.pricing, 'input'),
+        value: formatRuntimeFieldValue(model, 'input', multiplier),
         tone: isModelPricingFieldUnavailable(model.pricing, 'input') ? 'muted' : 'default',
         unavailable: isModelPricingFieldUnavailable(model.pricing, 'input'),
       },
       {
         key: 'output',
         labelKey: 'models.output',
-        value: formatModelPrice(model.pricing, 'output'),
+        value: formatRuntimeFieldValue(model, 'output', multiplier),
         tone: isModelPricingFieldUnavailable(model.pricing, 'output') ? 'muted' : 'default',
         unavailable: isModelPricingFieldUnavailable(model.pricing, 'output'),
       },
       {
         key: 'cachedInput',
         labelKey: 'models.cachedIn',
-        value: formatModelPrice(model.pricing, 'cachedInput'),
+        value: formatRuntimeFieldValue(model, 'cachedInput', multiplier),
         tone: isModelPricingFieldUnavailable(model.pricing, 'cachedInput') ? 'muted' : 'cached',
         unavailable: isModelPricingFieldUnavailable(model.pricing, 'cachedInput'),
       },
     ],
   };
+}
+
+/**
+ * 推导模型的区域列表（来自现有 referencePrices，去重并按 global → cn → 其它 排序）。
+ * 已国际化的区域名通过 labelKey 表达，未匹配到词条时用 fallbackLabel 兜底。
+ */
+export function modelCatalogRegions(model: Model): ModelCatalogRegionOption[] {
+  const regions = new Set<string>();
+  for (const price of model.pricing.referencePrices ?? []) {
+    const code = normalizeModelRegionCode(price.regionCode);
+    if (code !== null) {
+      regions.add(code);
+    }
+  }
+  return Array.from(regions)
+    .sort((left, right) => modelCatalogRegionSortKey(left) - modelCatalogRegionSortKey(right) || left.localeCompare(right))
+    .map((regionCode) => ({
+      regionCode,
+      labelKey: modelCatalogRegionLabelKey(regionCode),
+      fallbackLabel: titleCase(regionCode),
+    }));
+}
+
+export function modelCatalogRegionLabelKey(regionCode: string): string {
+  return `models.region.${modelCatalogLabelKeySuffix(regionCode)}`;
+}
+
+/**
+ * 为某个区域推导定价展示。区域内没有参考价时返回 null。
+ * saleMultiplier 存在时所有价格按销售倍率缩放（销售价）。
+ */
+export function deriveModelCatalogRegionPricingView(
+  model: Model,
+  regionCode: string,
+  options: { saleMultiplier?: string } = {},
+): ModelCatalogPricingView | null {
+  const regionPrices = regionReferencePrices(model, regionCode);
+  if (regionPrices.length === 0) {
+    return null;
+  }
+  const multiplier = parseSaleMultiplier(options.saleMultiplier);
+  const badgeLabel = modelPricingBadgeLabel(model);
+  const currency = regionPrices[0].currency;
+  if (model.modality !== 'Text') {
+    return {
+      badgeLabel,
+      layout: 'flat',
+      cells: [
+        {
+          key: 'flatPrice',
+          labelKey: 'models.flatPrice',
+          value: formatRegionFieldValue(regionPrices, currency, 'input', multiplier),
+          tone: 'flat',
+          unavailable: regionFieldUnavailable(regionPrices, 'input'),
+        },
+      ],
+    };
+  }
+  return {
+    badgeLabel,
+    layout: 'token',
+    cells: [
+      regionPricingTokenCell(regionPrices, currency, 'input', multiplier, 'default'),
+      regionPricingTokenCell(regionPrices, currency, 'output', multiplier, 'default'),
+      regionPricingTokenCell(regionPrices, currency, 'cachedInput', multiplier, 'cached'),
+    ],
+  };
+}
+
+function regionReferencePrices(model: Model, regionCode: string): NonNullable<Model['pricing']['referencePrices']> {
+  const key = normalizeModelRegionCode(regionCode);
+  if (key === null) {
+    return [];
+  }
+  return (model.pricing.referencePrices ?? []).filter((price) => normalizeModelRegionCode(price.regionCode) === key);
+}
+
+function regionPricingTokenCell(
+  prices: NonNullable<Model['pricing']['referencePrices']>,
+  currency: string,
+  field: 'input' | 'output' | 'cachedInput',
+  multiplier: number | null,
+  baseTone: 'default' | 'cached',
+): ModelCatalogPricingCell {
+  const unavailable = regionFieldUnavailable(prices, field);
+  const tone = baseTone === 'cached' ? (unavailable ? 'muted' : 'cached') : unavailable ? 'muted' : 'default';
+  return {
+    key: field,
+    labelKey: field === 'input' ? 'models.input' : field === 'output' ? 'models.output' : 'models.cachedIn',
+    value: unavailable ? '-' : formatRegionFieldValue(prices, currency, field, multiplier),
+    tone,
+    unavailable,
+  };
+}
+
+function regionFieldUnavailable(
+  prices: NonNullable<Model['pricing']['referencePrices']>,
+  field: 'input' | 'output' | 'cachedInput',
+): boolean {
+  return regionFieldValue(prices, field) === undefined;
+}
+
+function formatRegionFieldValue(
+  prices: NonNullable<Model['pricing']['referencePrices']>,
+  currency: string,
+  field: 'input' | 'output' | 'cachedInput',
+  multiplier: number | null,
+): string {
+  const value = regionFieldValue(prices, field);
+  if (value === undefined) {
+    return '-';
+  }
+  return formatModelPriceValue(value, currency, multiplier !== null ? { saleMultiplier: multiplier } : undefined);
+}
+
+function regionFieldValue(
+  prices: NonNullable<Model['pricing']['referencePrices']>,
+  field: 'input' | 'output' | 'cachedInput',
+): number | undefined {
+  const meter = regionMeterForField(field);
+  return prices.find((price) => price.billingMeter === meter)?.unitPrice;
+}
+
+function regionMeterForField(field: 'input' | 'output' | 'cachedInput'): string {
+  switch (field) {
+    case 'input':
+      return 'llm_input_token';
+    case 'output':
+      return 'llm_output_token';
+    case 'cachedInput':
+      return 'llm_cache_read_token';
+  }
+}
+
+function normalizeModelRegionCode(value: string): string | null {
+  const normalized = value.trim().toLowerCase();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function modelCatalogRegionSortKey(regionCode: string): number {
+  switch (regionCode) {
+    case 'global':
+      return 0;
+    case 'cn':
+    case 'china':
+    case 'mainland':
+      return 10;
+    default:
+      return 20;
+  }
+}
+
+function formatRuntimeFieldValue(
+  model: Model,
+  field: 'input' | 'output' | 'cachedInput',
+  multiplier: number | null,
+): string {
+  if (isModelPricingFieldUnavailable(model.pricing, field)) {
+    return '-';
+  }
+  const value = model.pricing[field];
+  if (value === undefined) {
+    return '-';
+  }
+  return formatModelPriceValue(
+    value,
+    model.pricing.currency,
+    multiplier !== null ? { saleMultiplier: multiplier } : undefined,
+  );
 }
 
 export function deriveModelCatalogDetailView(model: Model): ModelCatalogDetailView {

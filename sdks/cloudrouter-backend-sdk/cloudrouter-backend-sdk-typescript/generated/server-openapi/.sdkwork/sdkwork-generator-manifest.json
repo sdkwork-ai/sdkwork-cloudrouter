@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "0da0f6fb9bbd77cb39410686e20a8ea3b4ef22e1915688c1bd65fc7d6852bece"
+      "sha256": "b0bab93c6eefc72d272783d2b852d0324050ffbd24787def1758eaacccd218f5"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -76,7 +76,7 @@
     },
     {
       "path": "src/api/pricing.ts",
-      "sha256": "a8a85d699fea5da8c2fe7ae92de0e78d046a5d31d9d58d52f6689d6785b50838"
+      "sha256": "a6717d4d1bc6d495d1d9f6e8e68454052ac7393e5ad3ff46b4ef1cf4bd809ae1"
     },
     {
       "path": "src/api/recharges.ts",
@@ -179,6 +179,14 @@
       "sha256": "6da62a05aa083fb3f1e8f8ab5c6d6779972a3d4f933fc5cff3689fb9e5b26fbe"
     },
     {
+      "path": "src/types/admin-default-region-item.ts",
+      "sha256": "0cd6f7d29471a526a9d5cb02a698dcf132c51ea20a70bd7ecbf1cf9c51169235"
+    },
+    {
+      "path": "src/types/admin-default-region-list-response.ts",
+      "sha256": "6b8355c8c43360f80b04e3168a10f9c1e70508025c5766d34f57d5defe58bf55"
+    },
+    {
       "path": "src/types/admin-exchange-rule-list-response.ts",
       "sha256": "76290c9123bb171be5481675a91d148edb70ed1d76c9f16801ae55ecccb95990"
     },
@@ -240,7 +248,7 @@
     },
     {
       "path": "src/types/admin-record-log-item.ts",
-      "sha256": "8999376248942bb4731b6a7702bdcc64f347eea516e53bc5f1831f418945b117"
+      "sha256": "0540be89ee185741e8906d99d499513265cbcc7b3df4abc38dfd4b6008917c66"
     },
     {
       "path": "src/types/admin-record-page.ts",
@@ -444,7 +452,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "e7157928ce3f685a5d339da8b92727e8185b09cbcb2faf84947808b9553958ea"
+      "sha256": "075f4a5f168bc3a78f5a325a0dd55341d85aee8f63d96847a0fbb6363887d012"
     },
     {
       "path": "src/types/installation-status-response.ts",
@@ -593,6 +601,10 @@
     {
       "path": "src/types/payment-provider-mutation-response.ts",
       "sha256": "5643811315b210f27467ef3abeb0e42f35e6ce604d61a89780995ca8fd34a3fd"
+    },
+    {
+      "path": "src/types/pricing-default-region-create-request.ts",
+      "sha256": "83b35eda8a6f4391c2eb6192dbc6b375d53eaf2c8433d97429323866cf10f4ae"
     },
     {
       "path": "src/types/pricing-plan-create-request.ts",
@@ -916,7 +928,7 @@
     },
     {
       "path": "tsconfig.json",
-      "sha256": "7c8a6c2b00fb208ec28e1e6045194487d1b3e563d6c44cef4783fd4fe0e8ffad"
+      "sha256": "35f6f0baf03ca4245339f0a532b02c6b0c8e64d66852a2f77d38ae063b2024b8"
     }
   ],
   "scaffoldFiles": [

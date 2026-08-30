@@ -8,8 +8,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::ports::{
-    AccountGroupModelAccess, AccountModelAccess, PricingCatalog, SupplierModelAccess,
-    UpstreamAccountRouteCatalog, UpstreamRouteGateDiagnosis,
+    AccountGroupModelAccess, AccountModelAccess, PricingCatalog, PricingDefaultRegionProvider,
+    SupplierModelAccess, UpstreamAccountRouteCatalog, UpstreamRouteGateDiagnosis,
 };
 
 #[derive(Debug, Default, Clone)]
@@ -31,6 +31,7 @@ pub struct InMemoryPricingCatalog {
     supplier_model_access: HashMap<String, SupplierModelAccess>,
     account_model_access: HashMap<i64, AccountModelAccess>,
     supplier_default_base_urls: HashMap<String, String>,
+    default_regions_by_key: HashMap<(i64, i64, String), String>,
     upstream_route_gate_diagnosis: Option<UpstreamRouteGateDiagnosis>,
 }
 
@@ -115,6 +116,21 @@ impl InMemoryPricingCatalog {
     pub fn set_supplier_default_base_url(&mut self, supplier_code: &str, url: &str) {
         self.supplier_default_base_urls
             .insert(supplier_code.to_owned(), url.to_owned());
+    }
+
+    /// Records the default billing region for a model within a
+    /// tenant/organization scope. `(0, 0)` represents the global default.
+    pub fn set_default_billing_region(
+        &mut self,
+        tenant_id: i64,
+        organization_id: i64,
+        catalog_key: &str,
+        region_code: &str,
+    ) {
+        self.default_regions_by_key.insert(
+            (tenant_id, organization_id, catalog_key.to_owned()),
+            region_code.to_owned(),
+        );
     }
 
     pub fn set_account_group_model_access(&mut self, access: AccountGroupModelAccess) {
@@ -361,6 +377,23 @@ impl UpstreamAccountRouteCatalog for InMemoryPricingCatalog {
 
     fn supplier_default_base_url(&self, supplier_code: &str) -> Option<String> {
         self.supplier_default_base_urls.get(supplier_code).cloned()
+    }
+}
+
+impl PricingDefaultRegionProvider for InMemoryPricingCatalog {
+    fn default_billing_region(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+        catalog_key: &str,
+    ) -> Option<String> {
+        self.default_regions_by_key
+            .get(&(tenant_id, organization_id, catalog_key.to_owned()))
+            .or_else(|| {
+                self.default_regions_by_key
+                    .get(&(0, 0, catalog_key.to_owned()))
+            })
+            .cloned()
     }
 }
 

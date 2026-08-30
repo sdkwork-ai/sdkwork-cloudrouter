@@ -181,6 +181,16 @@ pub(crate) async fn sync_official_pricing_catalog(
         price_book_ids.insert(price_book_key.clone(), id);
     }
 
+    // A new catalog version installs new price books while previous versions
+    // of the same book are still live. Rates keep stable UUIDs across versions
+    // (price book code, vendor, region, rate code, rate hash), so superseded
+    // versions must be retired and their rates soft-deleted before inserting
+    // the new ones, otherwise the partial unique index uk_pricing_rate_uuid
+    // (uuid WHERE deleted_at IS NULL) rejects the new rows as duplicates.
+    for price_book_key in price_book_ids.keys() {
+        supersede_previous_versions(&mut transaction, catalog, price_book_key).await?;
+    }
+
     for rate in &projection.rates {
         let price_book_id = price_book_ids
             .get(&rate.price_book_key)
@@ -633,6 +643,68 @@ async fn ensure_price_book(
     .execute(&mut **transaction)
     .await?;
     Ok(id)
+}
+
+/// Retires and soft-deletes every previous live version of the given price
+/// book before a new catalog version loads. The active-book integrity guard
+/// only allows an active book to become `retired`, so the book is retired
+/// first, then its rates and the book itself are soft-deleted. This must run
+/// before new rates are inserted so that stable rate UUIDs do not collide with
+/// the live rates of the superseded version.
+async fn supersede_previous_versions(
+    transaction: &mut Transaction<'_, Postgres>,
+    catalog: &ModelCatalog,
+    price_book_key: &PriceBookKey,
+) -> Result<(), OfficialPricingSyncError> {
+    sqlx::query(
+        r#"UPDATE pricing_price_book
+           SET lifecycle_state = 'retired', updated_at = CURRENT_TIMESTAMP,
+               version = version + 1
+           WHERE tenant_id = 0 AND organization_id = 0 AND namespace_code = 'models'
+             AND price_book_code = $1 AND vendor_code = $2 AND region_code = $3
+             AND price_book_version <> $4 AND lifecycle_state = 'active'
+             AND deleted_at IS NULL"#,
+    )
+    .bind(&price_book_key.price_book_code)
+    .bind(&price_book_key.vendor_code)
+    .bind(&price_book_key.region_code)
+    .bind(&catalog.manifest.catalog_version)
+    .execute(&mut **transaction)
+    .await?;
+    sqlx::query(
+        r#"UPDATE pricing_rate
+           SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP,
+               version = version + 1
+           WHERE tenant_id = 0 AND organization_id = 0 AND deleted_at IS NULL
+             AND price_book_id IN (
+                 SELECT id FROM pricing_price_book
+                 WHERE tenant_id = 0 AND organization_id = 0 AND namespace_code = 'models'
+                   AND price_book_code = $1 AND vendor_code = $2 AND region_code = $3
+                   AND price_book_version <> $4 AND deleted_at IS NULL
+             )"#,
+    )
+    .bind(&price_book_key.price_book_code)
+    .bind(&price_book_key.vendor_code)
+    .bind(&price_book_key.region_code)
+    .bind(&catalog.manifest.catalog_version)
+    .execute(&mut **transaction)
+    .await?;
+    sqlx::query(
+        r#"UPDATE pricing_price_book
+           SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP,
+               version = version + 1
+           WHERE tenant_id = 0 AND organization_id = 0 AND namespace_code = 'models'
+             AND price_book_code = $1 AND vendor_code = $2 AND region_code = $3
+             AND price_book_version <> $4 AND lifecycle_state = 'retired'
+             AND deleted_at IS NULL"#,
+    )
+    .bind(&price_book_key.price_book_code)
+    .bind(&price_book_key.vendor_code)
+    .bind(&price_book_key.region_code)
+    .bind(&catalog.manifest.catalog_version)
+    .execute(&mut **transaction)
+    .await?;
+    Ok(())
 }
 
 async fn ensure_rate(

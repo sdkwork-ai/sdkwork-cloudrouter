@@ -1,0 +1,203 @@
+# sdkwork-cloudrouter standalone container deployment.
+#
+# runtimeTarget = "container", deploymentProfile = "standalone". This is the
+# Kubernetes packaging of the standalone container image that the release
+# pipeline publishes (ghcr.io/sdkwork-cloudrouter/cloudrouter:<version>). The
+# image embeds one all-in-one gateway binary (cloudrouter) that serves the
+# portal, gateway, app API, and backend API through a single application
+# public ingress on port 3900, plus the cloudrouterctl operator binary used by
+# the migration Job.
+#
+# The container ENTRYPOINT runs `cloudrouterctl ensure` and
+# `cloudrouterctl refresh-catalog --force` before exec'ing cloudrouter, so the
+# Deployment must NOT override `command`/`args`. Configuration is mounted at
+# /etc/sdkwork/router/config.toml (RUNTIME_DIRECTORY_SPEC container scope);
+# durable data, cache, and logs live on mounted volumes because the container
+# filesystem is read-only.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sdkwork-cloudrouter
+  labels:
+    app: sdkwork-cloudrouter
+    component: standalone
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: sdkwork-cloudrouter
+      component: standalone
+  template:
+    metadata:
+      labels:
+        app: sdkwork-cloudrouter
+        component: standalone
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "3900"
+    spec:
+      automountServiceAccountToken: false
+      # Covers the 120-second provider stream timeout plus shutdown overhead.
+      terminationGracePeriodSeconds: 130
+      securityContext:
+        # The image declares USER sdkwork (non-root); runAsNonRoot is enforced
+        # without pinning a host UID so the image-owned install/data paths stay
+        # writable through their on-disk ownership.
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: sdkwork-cloudrouter
+              component: standalone
+      containers:
+        - name: cloudrouter
+          image: ghcr.io/sdkwork-cloudrouter/cloudrouter:0.3.0
+          ports:
+            - containerPort: 3900
+              name: http
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          env:
+            # Deployment identity (DEPLOYMENT_SPEC §5.2). These are the
+            # canonical env keys; the retired SDKWORK_CLOUDROUTER_ROUTER_*
+            # aliases are ignored at startup.
+            - name: SDKWORK_CLOUDROUTER_DEPLOYMENT_PROFILE
+              value: standalone
+            - name: SDKWORK_CLOUDROUTER_RUNTIME_TARGET
+              value: container
+            # Application public ingress bind: container-internal 3900.
+            - name: SDKWORK_CLOUDROUTER_APPLICATION_PUBLIC_INGRESS_BIND
+              value: 0.0.0.0:3900
+            - name: SDKWORK_CLOUDROUTER_SERVER_BIND
+              value: 0.0.0.0:3900
+            - name: SDKWORK_NODE_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: SDKWORK_NODE_INSTANCE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+            # Database, Redis, and runtime secrets are injected by the
+            # sdkwork-cloudrouter-config secret (see deployments/kubernetes/
+            # README.md). In a real deployment set the split database fields
+            # (SDKWORK_DATABASE_HOST/PORT/NAME/SCHEMA/USERNAME/PASSWORD), the
+            # Redis settings (SDKWORK_CLOUDROUTER_REDIS_*), and the API key
+            # pepper / signing secrets exactly as documented for the
+            # standalone container runtime (docker-compose.yml).
+          volumeMounts:
+            - name: config
+              mountPath: /etc/sdkwork/router
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/sdkwork/router
+            - name: cache
+              mountPath: /var/cache/sdkwork/router
+            - name: logs
+              mountPath: /var/log/sdkwork/router
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            # Google SRE Book capacity guidance: CPU 2:1 (compressible), memory
+            # kept close to 1:1 (not compressible).
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "1"
+              memory: 1.5Gi
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: config
+          secret:
+            secretName: sdkwork-cloudrouter-config
+        - name: data
+          emptyDir: {}
+        - name: cache
+          emptyDir: {}
+        - name: logs
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sdkwork-cloudrouter
+spec:
+  selector:
+    app: sdkwork-cloudrouter
+    component: standalone
+  ports:
+    - name: http
+      port: 3900
+      targetPort: http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: sdkwork-cloudrouter
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: sdkwork-cloudrouter
+      component: standalone
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: sdkwork-cloudrouter
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: sdkwork-cloudrouter
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70

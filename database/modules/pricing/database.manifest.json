@@ -41,8 +41,9 @@
     "provider": "default",
     "hooks": []
   },
-  "materializedTableCount": 3,
+  "materializedTableCount": 4,
   "materializedTables": [
+    "pricing_default_region",
     "pricing_import_run",
     "pricing_price_book",
     "pricing_rate"

@@ -10,8 +10,8 @@ use crate::domain::{
 
 use crate::infrastructure::sql::rows::{
     AccountRateCardRow, AiModelRow, GatewayAccessPolicyRow, GatewayApiKeyRow, GatewayRiskRuleRow,
-    ModelMappingRuleRow, ModelPriceRow, ModelVendorRow, PricingPlanRow, PricingRuleRow,
-    QuotaPolicyRow, UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow,
+    ModelMappingRuleRow, ModelPriceRow, ModelVendorRow, PricingDefaultRegionRow, PricingPlanRow,
+    PricingRuleRow, QuotaPolicyRow, UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow,
     UpstreamAccountRouteRow, UpstreamAccountModelAccessRow, UpstreamSupplierModelAccessRow,
 };
 
@@ -463,6 +463,22 @@ pub async fn load_prices(
             account_id: row.try_get("account_id")?,
             pricing_plan_code: row.try_get("pricing_plan_code")?,
             rate_metadata: Some(pricing_rate_metadata_from_row(&row, &currency)?),
+        })
+    })
+    .fetch(executor)
+    .await
+}
+
+pub async fn load_pricing_default_regions(
+    executor: impl sqlx::Executor<'_, Database = sqlx::Postgres>,
+    sql: &'static str,
+) -> Result<Vec<PricingDefaultRegionRow>, sqlx::Error> {
+    map_query(sql, |row| {
+        Ok(PricingDefaultRegionRow {
+            tenant_id: row.try_get("tenant_id")?,
+            organization_id: row.try_get("organization_id")?,
+            catalog_key: row.try_get("catalog_key")?,
+            default_region_code: row.try_get("default_region_code")?,
         })
     })
     .fetch(executor)

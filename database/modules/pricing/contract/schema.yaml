@@ -10,6 +10,193 @@ engines:
 table_prefix: pricing_
 source_registry: docs/schema-registry/sdkwork-cloudrouter.tables.yaml
 tables:
+  - name: pricing_default_region
+    domain: commerce
+    profile: tenant_entity
+    compliance_level: L2
+    write_owner: pricing-service
+    system_of_record: true
+    tenant_scope: tenant_with_global_fallback
+    soft_delete_policy: active_unique
+    columns:
+      id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL PRIMARY KEY
+      uuid:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      tenant_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      organization_id:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      data_scope:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 0
+      status:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL DEFAULT 1
+      created_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      updated_at:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL DEFAULT CURRENT_TIMESTAMP
+      version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 0
+      deleted_at:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+      deleted_by:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      metadata:
+        type: json
+        required: true
+        postgres_type: JSONB
+        constraints: NOT NULL DEFAULT '{}'::jsonb
+      vendor_code:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      product_code:
+        type: string(160)
+        required: true
+        postgres_type: VARCHAR(160)
+        constraints: NOT NULL
+      catalog_key:
+        type: string(256)
+        required: true
+        postgres_type: VARCHAR(256)
+        constraints: NOT NULL
+      default_region_code:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL
+      currency_code:
+        type: string(3)
+        required: true
+        postgres_type: VARCHAR(3)
+        constraints: NOT NULL
+      description:
+        type: string(1024)
+        required: false
+        postgres_type: VARCHAR(1024)
+        constraints: ''
+      effective_from:
+        type: instant
+        required: true
+        postgres_type: TIMESTAMPTZ
+        constraints: NOT NULL
+      effective_to:
+        type: instant
+        required: false
+        postgres_type: TIMESTAMPTZ
+        constraints: ''
+    constraints:
+      - name: pk_pricing_default_region
+        type: primary_key
+        columns:
+          - id
+      - name: ck_pricing_default_region_tenant_scope
+        type: check
+        columns:
+          - tenant_id
+          - organization_id
+        expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
+      - name: uk_pricing_default_region_uuid
+        type: unique
+        columns: &id001
+          - uuid
+        where: null
+      - name: uk_pricing_default_region_scope_id
+        type: unique
+        columns: &id002
+          - tenant_id
+          - organization_id
+          - id
+        where: null
+      - name: uk_pricing_default_region_catalog_key
+        type: unique
+        columns: &id003
+          - tenant_id
+          - organization_id
+          - catalog_key
+        where: deleted_at IS NULL
+      - name: ck_pricing_default_region_currency
+        type: check
+        columns: []
+        expression: currency_code ~ '^[A-Z]{3}$'
+      - name: ck_pricing_default_region_region_not_blank
+        type: check
+        columns: []
+        expression: BTRIM(default_region_code) <> ''
+      - name: ck_pricing_default_region_interval
+        type: check
+        columns: []
+        expression: effective_to IS NULL OR effective_to > effective_from
+    indexes:
+      - name: uk_pricing_default_region_uuid
+        columns: *id001
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_default_region_scope_id
+        columns: *id002
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_default_region_catalog_key
+        columns: *id003
+        unique: true
+        where: deleted_at IS NULL
+      - name: uq_pricing_default_region_scope_reference
+        columns:
+          - tenant_id
+          - organization_id
+          - id
+        unique: true
+        where: null
+      - name: idx_pricing_default_region_catalog_key
+        columns:
+          - tenant_id
+          - organization_id
+          - vendor_code
+          - catalog_key
+          - default_region_code
+          - id
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle: null
+    semantic_contracts: null
+    frontend_routes: []
   - name: pricing_import_run
     domain: commerce
     profile: event_log
@@ -147,19 +334,19 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_pricing_import_run_uuid
         type: unique
-        columns: &id001
+        columns: &id004
           - uuid
         where: null
       - name: uk_pricing_import_run_scope_id
         type: unique
-        columns: &id002
+        columns: &id005
           - tenant_id
           - organization_id
           - id
         where: null
       - name: uk_pricing_import_run_source
         type: unique
-        columns: &id003
+        columns: &id006
           - tenant_id
           - organization_id
           - source_system
@@ -177,15 +364,15 @@ tables:
         expression: import_state IN ('staging', 'validated', 'activated', 'rejected', 'failed')
     indexes:
       - name: uk_pricing_import_run_uuid
-        columns: *id001
+        columns: *id004
         unique: true
         where: null
       - name: uk_pricing_import_run_scope_id
-        columns: *id002
+        columns: *id005
         unique: true
         where: null
       - name: uk_pricing_import_run_source
-        columns: *id003
+        columns: *id006
         unique: true
         where: null
       - name: uq_pricing_import_run_scope_reference
@@ -416,19 +603,19 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_pricing_price_book_uuid
         type: unique
-        columns: &id004
+        columns: &id007
           - uuid
         where: null
       - name: uk_pricing_price_book_scope_id
         type: unique
-        columns: &id005
+        columns: &id008
           - tenant_id
           - organization_id
           - id
         where: null
       - name: uk_pricing_price_book_version
         type: unique
-        columns: &id006
+        columns: &id009
           - tenant_id
           - organization_id
           - namespace_code
@@ -439,7 +626,7 @@ tables:
         where: null
       - name: uk_pricing_price_book_source
         type: unique
-        columns: &id007
+        columns: &id010
           - tenant_id
           - organization_id
           - source_system
@@ -451,7 +638,7 @@ tables:
         where: null
       - name: uk_pricing_price_book_active
         type: unique
-        columns: &id008
+        columns: &id011
           - tenant_id
           - organization_id
           - namespace_code
@@ -489,23 +676,23 @@ tables:
         expression: effective_to IS NULL OR effective_to > effective_from
     indexes:
       - name: uk_pricing_price_book_uuid
-        columns: *id004
-        unique: true
-        where: deleted_at IS NULL
-      - name: uk_pricing_price_book_scope_id
-        columns: *id005
-        unique: true
-        where: deleted_at IS NULL
-      - name: uk_pricing_price_book_version
-        columns: *id006
-        unique: true
-        where: deleted_at IS NULL
-      - name: uk_pricing_price_book_source
         columns: *id007
         unique: true
         where: deleted_at IS NULL
-      - name: uk_pricing_price_book_active
+      - name: uk_pricing_price_book_scope_id
         columns: *id008
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_price_book_version
+        columns: *id009
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_price_book_source
+        columns: *id010
+        unique: true
+        where: deleted_at IS NULL
+      - name: uk_pricing_price_book_active
+        columns: *id011
         unique: true
         where: lifecycle_state = 'active' AND deleted_at IS NULL
       - name: uq_pricing_price_book_scope_reference
@@ -828,19 +1015,19 @@ tables:
         expression: tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)
       - name: uk_pricing_rate_uuid
         type: unique
-        columns: &id009
+        columns: &id012
           - uuid
         where: null
       - name: uk_pricing_rate_scope_id
         type: unique
-        columns: &id010
+        columns: &id013
           - tenant_id
           - organization_id
           - id
         where: null
       - name: uk_pricing_rate_book_code
         type: unique
-        columns: &id011
+        columns: &id014
           - tenant_id
           - organization_id
           - price_book_id
@@ -848,7 +1035,7 @@ tables:
         where: null
       - name: uk_pricing_rate_book_hash
         type: unique
-        columns: &id012
+        columns: &id015
           - tenant_id
           - organization_id
           - price_book_id
@@ -957,19 +1144,19 @@ tables:
           = 'formula') = (formula IS NOT NULL)
     indexes:
       - name: uk_pricing_rate_uuid
-        columns: *id009
+        columns: *id012
         unique: true
         where: deleted_at IS NULL
       - name: uk_pricing_rate_scope_id
-        columns: *id010
+        columns: *id013
         unique: true
         where: deleted_at IS NULL
       - name: uk_pricing_rate_book_code
-        columns: *id011
+        columns: *id014
         unique: true
         where: deleted_at IS NULL
       - name: uk_pricing_rate_book_hash
-        columns: *id012
+        columns: *id015
         unique: true
         where: deleted_at IS NULL
       - name: uq_pricing_rate_scope_reference

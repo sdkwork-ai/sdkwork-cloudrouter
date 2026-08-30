@@ -460,7 +460,7 @@
     },
     {
       "path": "src/types/usage-log-item.ts",
-      "sha256": "9ae482e2c9b78e18fe7ca559da1f9362946dfac5b13e20927669086a166cd8fb"
+      "sha256": "1dc887f288664b91363878857d7da1c7da48e616fd5021e6ad5212e28341d897"
     },
     {
       "path": "src/types/usage-logs-response.ts",

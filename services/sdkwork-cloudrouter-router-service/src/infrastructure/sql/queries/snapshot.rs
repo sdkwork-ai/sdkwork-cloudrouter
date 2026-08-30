@@ -19,6 +19,7 @@ impl PricingCatalogSql {
             Self::load_gateway_risk_rules(),
             Self::load_upstream_account_group_metric_snapshots(),
             Self::load_prices(),
+            Self::load_pricing_default_regions(),
         ]
     }
 
@@ -1543,6 +1544,27 @@ WHERE book.lifecycle_state IN ('active', 'retired')
   AND rate.status = 1
   AND rate.deleted_at IS NULL
 ORDER BY rate.priority ASC, rate.effective_from DESC, rate.id DESC
+"#
+    }
+
+    /// Loads the configured default billing region per model, scoped by
+    /// tenant/organization. Used by the billing engine to fall back to the
+    /// default region when an account carries no explicit region for a
+    /// multi-region model.
+    pub fn load_pricing_default_regions() -> &'static str {
+        r#"
+SELECT
+    tenant_id,
+    organization_id,
+    catalog_key,
+    BTRIM(default_region_code) AS default_region_code
+FROM pricing_default_region
+WHERE deleted_at IS NULL
+  AND effective_from <= CURRENT_TIMESTAMP
+  AND (effective_to IS NULL OR effective_to > CURRENT_TIMESTAMP)
+  AND BTRIM(default_region_code) <> ''
+  AND BTRIM(default_region_code) <> 'global'
+ORDER BY catalog_key ASC, id ASC
 "#
     }
 }

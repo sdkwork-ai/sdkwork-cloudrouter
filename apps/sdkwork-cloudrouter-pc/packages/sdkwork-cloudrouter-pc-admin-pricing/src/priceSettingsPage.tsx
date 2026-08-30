@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, Edit3, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, Edit3, Globe2, Plus, Trash2 } from 'lucide-react';
 import { BottomPagination } from '@sdkwork/cloudroutes-pc-commons';
 import { useTranslation } from 'react-i18next';
 import {
@@ -49,6 +49,7 @@ import {
   StatusBadge,
   TableState,
 } from './components';
+import { DefaultRegionManager } from './defaultRegionManager';
 
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
 export const PRICE_SETTING_RESOURCE_TYPES = ['all', 'llm', 'image', 'video', 'audio', 'music', 'embedding', 'sound', 'api', 'other'] as const;
@@ -136,6 +137,7 @@ export function PriceSettingsAdmin() {
   const [resourceType, setResourceType] = useState<PriceSettingResourceType>('all');
   const [vendorCodes, setVendorCodes] = useState<string[]>([]);
   const [regionCode, setRegionCode] = useState('');
+  const [defaultRegionsOpen, setDefaultRegionsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -301,7 +303,7 @@ export function PriceSettingsAdmin() {
   };
 
   return <AdminPageShell>
-    <div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 dark:border-white/10"><div><h1 className="text-lg font-semibold text-slate-900 dark:text-white">{t('admin.pricing.settings.title')}</h1><p className="mt-1 max-w-3xl text-sm text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.subtitle')}</p></div><button type="button" className={primaryButtonClass} onClick={openCreate}><Plus className="h-4 w-4" aria-hidden="true" />{t('admin.pricing.settings.actions.new')}</button></div>
+    <div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 dark:border-white/10"><div><h1 className="text-lg font-semibold text-slate-900 dark:text-white">{t('admin.pricing.settings.title')}</h1><p className="mt-1 max-w-3xl text-sm text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.subtitle')}</p></div><div className="flex shrink-0 items-center gap-2"><button type="button" className={secondaryButtonClass} onClick={() => setDefaultRegionsOpen(true)}><Globe2 className="h-4 w-4" aria-hidden="true" />{t('admin.pricing.settings.defaultRegion.open', { defaultValue: '默认计费 Region' })}</button><button type="button" className={primaryButtonClass} onClick={openCreate}><Plus className="h-4 w-4" aria-hidden="true" />{t('admin.pricing.settings.actions.new')}</button></div></div>
     <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-slate-200 px-5 pt-3 dark:border-white/10" role="tablist" aria-label={t('admin.pricing.settings.tabs.label')}>{resourceTabs.map((type) => <button key={type} type="button" role="tab" aria-selected={resourceType === type} onClick={() => { setResourceType(type); setPage(1); }} className={`whitespace-nowrap border-b-2 px-3 pb-2.5 text-sm font-medium transition ${resourceType === type ? 'border-lobster-500 text-lobster-600 dark:text-lobster-400' : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}>{resourceTypeLabel(type, t)} <span className="ml-1 text-xs tabular-nums text-slate-400">{counts.get(type) ?? 0}</span></button>)}</div>
     <div className="grid shrink-0 grid-cols-1 border-b border-slate-200 bg-slate-50/70 sm:grid-cols-3 dark:border-white/10 dark:bg-white/[0.03]"><SummaryMetric label={t('admin.pricing.settings.summary.products')} value={String(summary.products)} /><SummaryMetric label={t('admin.pricing.settings.summary.meters')} value={String(summary.meters)} /><SummaryMetric label={t('admin.pricing.settings.summary.configured')} value={`${summary.configured}/${summary.meters || 0}`} /></div>
     <AdminListToolbar filters={<div className="flex min-w-0 flex-wrap items-center gap-2"><SearchBox value={search} onChange={setSearch} onSubmit={(value) => { setAppliedSearch(value); setPage(1); }} placeholder={t('admin.pricing.settings.search.placeholder')} /><VendorMultiSelect vendors={vendorOptions} value={vendorCodes} onChange={(next) => { setVendorCodes(next); setPage(1); }} placeholder={t('admin.pricing.settings.filters.allVendors')} /><select className={toolbarSelectClass} value={pricingPlanId} aria-label={t('admin.pricing.settings.filters.pricingPlan')} onChange={(event) => { setPricingPlanId(event.target.value); setPage(1); }}>{plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.planName || plan.planCode}</option>)}</select><select className={toolbarSelectClass} value={resourceType} aria-label={t('admin.pricing.settings.filters.resourceType')} onChange={(event) => { setResourceType(event.target.value as PriceSettingResourceType); setPage(1); }}>{resourceTabs.map((type) => <option key={type} value={type}>{resourceTypeLabel(type, t)}</option>)}</select><select className={toolbarSelectClass} value={regionCode} aria-label={t('admin.pricing.settings.filters.region')} onChange={(event) => { setRegionCode(event.target.value); setPage(1); }}><option value="">{t('admin.pricing.settings.filters.allRegions')}</option>{(officialCatalog?.regions ?? []).map((region) => <option key={region.code} value={region.code}>{region.code} ({formatPricingQuantity(region.count)})</option>)}</select></div>} />
@@ -317,6 +319,7 @@ export function PriceSettingsAdmin() {
         <details className="rounded-lg border border-slate-200 dark:border-white/10"><summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white"><span>{t('admin.pricing.settings.form.advancedTitle')}</span><ChevronDown className="h-4 w-4 text-slate-400" aria-hidden="true" /></summary><div className="flex flex-col gap-4 border-t border-slate-200 px-4 py-4 dark:border-white/10"><Field label={t('admin.pricing.settings.form.priceMode')} hint={t('admin.pricing.settings.form.priceModeHint')}><div className="grid grid-cols-2 gap-2" role="group" aria-label={t('admin.pricing.settings.form.priceMode')}>{(['standard', 'time_window'] as const).map((mode) => <button key={mode} type="button" className={`rounded-md border px-3 py-2 text-sm font-medium transition ${form.priceMode === mode ? 'border-lobster-500 bg-lobster-50 text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-300' : 'border-slate-200 text-slate-600 hover:border-lobster-300 dark:border-white/10 dark:text-slate-300'}`} onClick={() => { setField('priceMode', mode); if (mode === 'time_window' && form.weeklyWindows.length === 0) setField('weeklyWindows', [{ ...DEFAULT_WINDOW }]); }}>{t(`admin.pricing.settings.mode.${mode === 'time_window' ? 'timeWindow' : 'standard'}`)}</button>)}</div></Field>{form.priceMode === 'time_window' ? <TimeWindowFields form={form} t={t} updateWindow={updateWindow} toggleWindowDay={toggleWindowDay} addWindow={addWindow} setField={setField} /> : null}<div className="grid gap-4 md:grid-cols-2"><Field label={t('admin.pricing.common.form.effectiveFrom')}><input className={inputClass} value={form.effectiveFrom} onChange={(event) => setField('effectiveFrom', event.target.value)} placeholder="2026-08-20T00:00:00Z" /></Field><Field label={t('admin.pricing.common.form.effectiveTo')}><input className={inputClass} value={form.effectiveTo} onChange={(event) => setField('effectiveTo', event.target.value)} placeholder="2026-08-20T00:00:00Z" /></Field></div></div></details>
       </form>
     </SidePanel> : null}
+    <DefaultRegionManager open={defaultRegionsOpen} onClose={() => setDefaultRegionsOpen(false)} />
   </AdminPageShell>;
 }
 

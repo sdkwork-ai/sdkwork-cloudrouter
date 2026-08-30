@@ -5,6 +5,7 @@ mod assets_runtime;
 mod commerce_runtime;
 mod community_runtime;
 mod drive_runtime;
+mod generations_runtime;
 mod http_route_manifest;
 mod invoice_runtime;
 pub mod manifest;

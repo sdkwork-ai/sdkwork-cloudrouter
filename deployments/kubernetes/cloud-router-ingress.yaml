@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: sdkwork-cloudrouter-edge
+  name: sdkwork-cloudrouter
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
@@ -19,7 +19,7 @@ spec:
         - router.birdcoder.com
         - router.dtupay.com
         - cloudrouter.sdkwork.com
-      secretName: sdkwork-cloudrouter-edge-tls
+      secretName: sdkwork-cloudrouter-tls
   rules:
     - host: router.sdkwork.com
       http:
@@ -28,7 +28,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: sdkwork-cloudrouter-edge
+                name: sdkwork-cloudrouter
                 port:
                   number: 3900
     - host: router.birdcoder.com
@@ -38,7 +38,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: sdkwork-cloudrouter-edge
+                name: sdkwork-cloudrouter
                 port:
                   number: 3900
     - host: router.dtupay.com
@@ -48,7 +48,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: sdkwork-cloudrouter-edge
+                name: sdkwork-cloudrouter
                 port:
                   number: 3900
     - host: cloudrouter.sdkwork.com
@@ -58,6 +58,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: sdkwork-cloudrouter-edge
+                name: sdkwork-cloudrouter
                 port:
                   number: 3900

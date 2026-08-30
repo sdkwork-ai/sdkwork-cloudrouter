@@ -78,6 +78,9 @@ tables:
       upstream_cost_amount: { type: decimal, required: false, postgres_type: NUMERIC(38,12), constraints: '' }
       customer_charge_amount: { type: decimal, required: false, postgres_type: NUMERIC(38,12), constraints: '' }
       currency: { type: string(10), required: true, postgres_type: VARCHAR(10), constraints: NOT NULL }
+      debit_points: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
+      original_currency_amount: { type: decimal, required: false, postgres_type: NUMERIC(38,12), constraints: '' }
+      original_currency_code: { type: string(10), required: false, postgres_type: VARCHAR(10), constraints: '' }
       pricing_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
       pricing_plan_id: { type: int64, required: false, postgres_type: BIGINT, constraints: '' }
       pricing_plan_code: { type: string(64), required: false, postgres_type: VARCHAR(64), constraints: '' }

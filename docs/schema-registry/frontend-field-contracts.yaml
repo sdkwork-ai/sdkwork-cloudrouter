@@ -1743,6 +1743,7 @@ frontend_operations:
                   x-sdkwork-int64-string: true
                   x-sdkwork-rust-type: i64
                 cost: {pattern: '^[0-9]+(?:\.[0-9]{1,9})?$', type: string}
+                currency: { maxLength: 10, type: string }
                 errorCode: { maxLength: 256, type: string }
                 errorMessage: { maxLength: 4096, type: string }
                 errorType: { maxLength: 128, type: string }
@@ -1760,6 +1761,8 @@ frontend_operations:
                 isStream: { type: boolean }
                 model: { maxLength: 256, type: string }
                 multiplier: {pattern: '^[0-9]+(?:\.[0-9]{1,6})?$', type: string}
+                originalCurrencyAmount: {pattern: '^[0-9]+(?:\.[0-9]{1,12})?$', type: string}
+                originalCurrencyCode: { maxLength: 10, type: string }
                 outputTokens:
                   format: int64
                   pattern: ^[0-9]+$
@@ -1767,6 +1770,12 @@ frontend_operations:
                   x-sdkwork-int64-string: true
                   x-sdkwork-rust-type: i64
                 path: { maxLength: 2048, type: string }
+                points:
+                  format: int64
+                  pattern: ^[0-9]+$
+                  type: string
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
                 providerNativeModel: { maxLength: 256, type: string }
                 reasoningEffort: { maxLength: 64, type: string }
                 regionCode: { maxLength: 128, type: string }
@@ -1780,7 +1789,7 @@ frontend_operations:
                 unitSize: {pattern: '^[0-9]+(?:\.[0-9]{1,6})?$', type: string}
                 userAgent: { maxLength: 2048, type: string }
               required: [id, gatewayRequestId, time, tokenName, group, type, model, providerNativeModel, requestedModelCatalogKey, regionCode, status, httpStatus, errorCode, errorType, errorMessage, totalTime, ttft, isStream, inputTokens, cacheReadTokens,
-                outputTokens, cost, multiplier, baseInputPrice, baseOutputPrice, cacheReadPrice, unitSize, path, reasoningEffort, ip, userAgent]
+                outputTokens, cost, currency, multiplier, baseInputPrice, baseOutputPrice, cacheReadPrice, unitSize, path, points, reasoningEffort, ip, userAgent]
               type: object
             type: array
           pageInfo:
@@ -9966,6 +9975,7 @@ frontend_operations:
                   x-sdkwork-int64-string: true
                   x-sdkwork-rust-type: i64
                 cost: {pattern: '^[0-9]+(?:\.[0-9]{1,6})?$', type: string}
+                currency: { maxLength: 10, type: string }
                 errorCode: { maxLength: 256, type: string }
                 errorMessage: { maxLength: 4096, type: string }
                 errorType: { maxLength: 128, type: string }
@@ -9983,6 +9993,8 @@ frontend_operations:
                 isStream: { type: boolean }
                 model: { maxLength: 256, type: string }
                 multiplier: {pattern: '^[0-9]+(?:\.[0-9]{1,6})?$', type: string}
+                originalCurrencyAmount: {pattern: '^[0-9]+(?:\.[0-9]{1,12})?$', type: string}
+                originalCurrencyCode: { maxLength: 10, type: string }
                 outputTokens:
                   format: int64
                   pattern: ^[0-9]+$
@@ -9990,6 +10002,12 @@ frontend_operations:
                   x-sdkwork-int64-string: true
                   x-sdkwork-rust-type: i64
                 path: { maxLength: 2048, type: string }
+                points:
+                  format: int64
+                  pattern: ^[0-9]+$
+                  type: string
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
                 providerNativeModel: { maxLength: 256, type: string }
                 reasoningEffort: { maxLength: 64, type: string }
                 regionCode: { maxLength: 128, type: string }
@@ -10005,7 +10023,7 @@ frontend_operations:
                 user: { maxLength: 320, type: string }
                 userAgent: { maxLength: 2048, type: string }
               required: [id, user, requestId, time, tokenName, group, type, model, providerNativeModel, requestedModelCatalogKey, regionCode, status, httpStatus, httpMethod, errorCode, errorType, errorMessage, totalTime, ttft, isStream, inputTokens,
-                cacheReadTokens, outputTokens, cost, multiplier, baseInputPrice, baseOutputPrice, cacheReadPrice, unitSize, path, reasoningEffort, ip, userAgent]
+                cacheReadTokens, outputTokens, cost, currency, multiplier, baseInputPrice, baseOutputPrice, cacheReadPrice, unitSize, path, points, reasoningEffort, ip, userAgent]
               type: object
             type: array
           pageInfo:
@@ -11617,6 +11635,138 @@ frontend_operations:
         type: object
     write_tables:
       - cloudrouter_pricing_rule
+      - ops_audit_log
+  - route: /admin/pricing/settings
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
+    operation: fetchPricingDefaultRegions
+    operation_id: defaultRegions.list
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/pricing/default_regions
+    sdk_domain: pricing
+    read_sources:
+      - pricing_default_region
+    response_schema:
+      name: AdminDefaultRegionListResponse
+      schema:
+        additionalProperties: false
+        name: AdminDefaultRegionListResponse
+        properties:
+          items:
+            items:
+              additionalProperties: false
+              name: AdminDefaultRegionItem
+              properties:
+                catalogKey: { maxLength: 256, type: string }
+                createdAt: { format: date-time, maxLength: 64, type: string, nullable: true }
+                currencyCode: { pattern: '^[A-Z]{3}$', type: string }
+                defaultRegionCode: { maxLength: 64, type: string }
+                description: { maxLength: 8192, type: string, nullable: true }
+                effectiveFrom: { format: date-time, maxLength: 64, type: string, nullable: true }
+                effectiveTo: { format: date-time, maxLength: 64, type: string, nullable: true }
+                id: { maxLength: 96, minLength: 1, type: string }
+                productCode: { maxLength: 160, type: string }
+                status: { enum: [active, inactive], type: string }
+                updatedAt: { format: date-time, maxLength: 64, type: string, nullable: true }
+                vendorCode: { maxLength: 64, type: string }
+                version:
+                  format: int64
+                  pattern: ^-?[0-9]+$
+                  type: string
+                  x-sdkwork-int64-string: true
+                  x-sdkwork-rust-type: i64
+              required: [id, catalogKey, vendorCode, productCode, defaultRegionCode, currencyCode, status, version]
+              type: object
+            type: array
+          pageInfo:
+            $ref: '#/components/schemas/PageInfo'
+        required: [items, pageInfo]
+        type: object
+    query_parameters:
+      - name: q
+        schema: { type: string, maxLength: 128 }
+      - name: page
+        schema: { type: integer, format: int32, minimum: 1, default: 1 }
+      - name: page_size
+        schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
+  - route: /admin/pricing/settings
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
+    operation: createPricingDefaultRegion
+    operation_id: defaultRegions.create
+    kind: create
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/pricing/default_regions
+    sdk_domain: pricing
+    read_sources:
+      - pricing_default_region
+    response_schema:
+      name: AdminDefaultRegionItem
+      schema:
+        additionalProperties: false
+        name: AdminDefaultRegionItem
+        properties:
+          catalogKey: { maxLength: 256, type: string }
+          createdAt: { format: date-time, maxLength: 64, type: string, nullable: true }
+          currencyCode: { pattern: '^[A-Z]{3}$', type: string }
+          defaultRegionCode: { maxLength: 64, type: string }
+          description: { maxLength: 8192, type: string, nullable: true }
+          effectiveFrom: { format: date-time, maxLength: 64, type: string, nullable: true }
+          effectiveTo: { format: date-time, maxLength: 64, type: string, nullable: true }
+          id: { maxLength: 96, minLength: 1, type: string }
+          productCode: { maxLength: 160, type: string }
+          status: { enum: [active, inactive], type: string }
+          updatedAt: { format: date-time, maxLength: 64, type: string, nullable: true }
+          vendorCode: { maxLength: 64, type: string }
+          version:
+            format: int64
+            pattern: ^-?[0-9]+$
+            type: string
+            x-sdkwork-int64-string: true
+            x-sdkwork-rust-type: i64
+        required: [id, catalogKey, vendorCode, productCode, defaultRegionCode, currencyCode, status, version]
+        type: object
+    request_schema:
+      name: PricingDefaultRegionCreateRequest
+      schema:
+        additionalProperties: false
+        name: PricingDefaultRegionCreateRequest
+        properties:
+          catalogKey: { maxLength: 256, type: string }
+          currencyCode: { pattern: '^[A-Z]{3}$', type: string }
+          defaultRegionCode: { maxLength: 64, type: string }
+          description: { maxLength: 8192, type: string }
+          effectiveFrom: { format: date-time, maxLength: 64, type: string }
+          effectiveTo: { format: date-time, maxLength: 64, type: string }
+          productCode: { maxLength: 160, type: string }
+          vendorCode: { maxLength: 64, type: string }
+        required: [catalogKey, vendorCode, productCode, defaultRegionCode, currencyCode]
+        type: object
+    request_body_required: true
+    write_tables:
+      - pricing_default_region
+      - ops_audit_log
+  - route: /admin/pricing/settings
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
+    operation: deletePricingDefaultRegion
+    operation_id: defaultRegions.delete
+    kind: delete
+    api_surface: backend
+    api_method: DELETE
+    api_path: /backend/v3/api/pricing/default_regions/{defaultRegionId}
+    sdk_domain: pricing
+    read_sources:
+      - pricing_default_region
+    response_schema:
+      name: NoData
+      schema:
+        additionalProperties: false
+        name: NoData
+        properties: {}
+        type: object
+    write_tables:
+      - pricing_default_region
       - ops_audit_log
 routes:
   - route: /

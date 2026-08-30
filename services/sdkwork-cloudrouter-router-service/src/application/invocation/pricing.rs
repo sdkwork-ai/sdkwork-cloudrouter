@@ -1,18 +1,19 @@
 use std::sync::Arc;
 
 use super::{
-    BillingMode, BillingQuantitySource, DispatchMode, Invocation, InvocationBody, InvocationError,
-    InvocationErrorKind, InvocationFuture, InvocationInterceptor, InvocationPricingQuote,
-    InvocationUsageLine,
+    BillingMode, BillingQuantitySource, DispatchMode, Invocation, InvocationAccount,
+    InvocationBody, InvocationError, InvocationErrorKind, InvocationFuture,
+    InvocationPricingQuote, InvocationUsageLine,
 };
 use crate::application::{
-    PriceResolution, PriceResolutionStatus, PriceService, ResolvedModelPrice,
+    InvocationInterceptor, PriceResolution, PriceResolutionStatus, PriceService,
+    ResolvedModelPrice,
 };
 use crate::domain::{
     AiRouteModelRequirement, BillingMeter, DecimalValue, PricingDimensionContext,
     ResourceDefinition,
 };
-use crate::ports::PricingCatalog;
+use crate::ports::{PricingCatalog, PricingDefaultRegionProvider};
 
 #[derive(Clone)]
 pub struct PricingPreflightInterceptor<C>
@@ -50,7 +51,7 @@ where
 
 impl<C> InvocationInterceptor for PricingPreflightInterceptor<C>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: PricingCatalog + PricingDefaultRegionProvider + Send + Sync + 'static,
 {
     fn name(&self) -> &str {
         "pricing_preflight"
@@ -133,7 +134,7 @@ where
 
 impl<C> InvocationInterceptor for PricingFinalizationInterceptor<C>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: PricingCatalog + PricingDefaultRegionProvider + Send + Sync + 'static,
 {
     fn name(&self) -> &str {
         "pricing_finalization"
@@ -271,7 +272,7 @@ fn resolve_price<C>(
     usage_line: Option<&InvocationUsageLine>,
 ) -> Result<PriceResolution, InvocationError>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: PricingCatalog + PricingDefaultRegionProvider + Send + Sync + 'static,
 {
     let account = invocation
         .account
@@ -283,6 +284,10 @@ where
         .ok_or_else(|| pricing_error("pricing requires api key context"))?;
     let catalog_key = priced_catalog_key(invocation, catalog_key_override)?;
     let dimensions = pricing_dimensions(invocation, &meter, usage_line);
+    // 账号未显式指定 region（空或 global）时，回退到该模型配置的默认计费
+    // region，使多 region 模型仍按正确的地域价格计费；未配置默认 region 则
+    // 保持账号原值，历史行为不变。
+    let region_code = effective_billing_region(catalog, invocation, account, &catalog_key);
     let mut resource = ResourceDefinition::new(catalog_key.clone(), meter, invocation.occurred_at)
         .with_pricing_subject(
             api_key_id,
@@ -292,7 +297,7 @@ where
         )
         .with_vendor_code(catalog_vendor_code(&catalog_key))
         .with_provider(account.supplier_code.clone(), Some(account.account_id))
-        .with_region_code(account.region_code.clone())
+        .with_region_code(region_code)
         .with_api_code(invocation.resource.api_code.clone())
         // product/operation code 不在此处推断填充：条件定价（rate_metadata）
         // 的 product_code/operation_code 以定价目录为准，若用模型名/api_code
@@ -313,6 +318,34 @@ where
     price_service
         .resolve(catalog, resource)
         .map_err(|error| pricing_error(error.to_string()))
+}
+
+/// Resolves the billing region for a resource. When the account carries no
+/// explicit region (blank or the generic `global` placeholder), falls back to
+/// the model's configured default billing region so multi-region models rate
+/// against the correct regional price. When no default is configured, keeps
+/// the account's original region so single-region and legacy catalogs behave
+/// exactly as before.
+fn effective_billing_region<C>(
+    catalog: &C,
+    invocation: &Invocation,
+    account: &InvocationAccount,
+    catalog_key: &str,
+) -> String
+where
+    C: PricingCatalog + PricingDefaultRegionProvider + Send + Sync + 'static,
+{
+    let region = account.region_code.trim();
+    if !region.is_empty() && !region.eq_ignore_ascii_case("global") {
+        return account.region_code.clone();
+    }
+    catalog
+        .default_billing_region(
+            invocation.subject.tenant_id,
+            invocation.subject.organization_id,
+            catalog_key,
+        )
+        .unwrap_or_else(|| account.region_code.clone())
 }
 
 fn priced_catalog_key(

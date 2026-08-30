@@ -98,15 +98,13 @@ const result = await client.payments.providers.list(params);
 ### pricing
 
 ```typescript
-// List pricing plans
+// List pricing default regions
 const params = {
   q: 'q',
-  base_price_side: 'official_reference',
-  status: 'active',
-  page: 4,
-  page_size: 5,
+  page: 2,
+  page_size: 3,
 };
-const result = await client.pricing.plans.list(params);
+const result = await client.pricing.defaultRegions.list(params);
 ```
 
 ### recharges
