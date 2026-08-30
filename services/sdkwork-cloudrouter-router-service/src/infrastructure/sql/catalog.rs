@@ -804,6 +804,18 @@ impl PricingCatalog for RefreshableSqlPricingCatalog {
     }
 }
 
+impl PricingDefaultRegionProvider for RefreshableSqlPricingCatalog {
+    fn default_billing_region(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+        catalog_key: &str,
+    ) -> Option<String> {
+        self.current_snapshot()
+            .default_billing_region(tenant_id, organization_id, catalog_key)
+    }
+}
+
 impl PricingCatalog for SqlPricingCatalogSnapshot {
     fn visit_models(&self, vendor_code: Option<&str>, visitor: &mut dyn FnMut(&AiModel) -> bool) {
         for model in self.models.iter().filter(|model| {

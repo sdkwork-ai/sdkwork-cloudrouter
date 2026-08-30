@@ -282,15 +282,33 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
-        "/backend/v3/api/pricing/official_rates",
+        "/backend/v3/api/pricing/default_regions",
         "pricing",
-        "officialRates.list",
+        "defaultRegions.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Post,
+        "/backend/v3/api/pricing/default_regions",
+        "pricing",
+        "defaultRegions.create",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Delete,
+        "/backend/v3/api/pricing/default_regions/{defaultRegionId}",
+        "pricing",
+        "defaultRegions.delete",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
         "/backend/v3/api/pricing/official_products",
         "pricing",
         "officialProducts.list",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/backend/v3/api/pricing/official_rates",
+        "pricing",
+        "officialRates.list",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,

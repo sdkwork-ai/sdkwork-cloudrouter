@@ -4570,6 +4570,17 @@ impl sdkwork_cloudrouter_router_service::ports::UpstreamAccountRouteCatalog for 
     }
 }
 
+impl sdkwork_cloudrouter_router_service::ports::PricingDefaultRegionProvider for TestRuntimeCatalog {
+    fn default_billing_region(
+        &self,
+        _tenant_id: i64,
+        _organization_id: i64,
+        _catalog_key: &str,
+    ) -> Option<String> {
+        None
+    }
+}
+
 #[derive(Debug)]
 struct RecordingStreamRelay {
     captured: Arc<Mutex<Vec<ChatCompletionRelayRequest>>>,

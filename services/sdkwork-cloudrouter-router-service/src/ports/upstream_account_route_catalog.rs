@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::domain::UpstreamAccountRoute;
 use crate::ports::AdminLlmProtocolConfig;
 
-use super::PricingCatalog;
+use super::{PricingCatalog, PricingDefaultRegionProvider};
 
 /// 账号级 Base URL 配置快照：账号覆盖（默认 + 各协议）与供应商协议 URL。
 /// 运行时按「账号配置 > 供应商配置 > 端点」的优先级解析调用地址：
@@ -154,7 +154,7 @@ pub struct AccountModelAccess {
     pub whitelist: Vec<VendorModelListEntry>,
 }
 
-pub trait UpstreamAccountRouteCatalog: PricingCatalog {
+pub trait UpstreamAccountRouteCatalog: PricingCatalog + PricingDefaultRegionProvider {
     fn shared_upstream_account_routes(&self) -> Arc<[UpstreamAccountRoute]>;
 
     /// Returns the per-gate account-pool diagnosis captured while loading the

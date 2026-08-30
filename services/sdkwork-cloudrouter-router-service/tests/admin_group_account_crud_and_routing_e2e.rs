@@ -53,8 +53,8 @@ use sdkwork_cloudrouter_router_service::infrastructure::provider::{
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use sdkwork_cloudrouter_router_service::ports::{
     AccountGroupModelAccess, GatewayUsageRecordCommand, GatewayUsageRecorder,
-    GatewayUsageRecordFuture, PricingCatalog, ProviderSecretResolver, SupplierModelAccess,
-    UpstreamAccountRouteCatalog,
+    GatewayUsageRecordFuture, PricingCatalog, PricingDefaultRegionProvider,
+    ProviderSecretResolver, SupplierModelAccess, UpstreamAccountRouteCatalog,
 };
 use sdkwork_cloudrouter_test_support::{
     app_session_dual_token_headers, app_session_config, default_trusted_request_subject,
@@ -462,6 +462,18 @@ impl UpstreamAccountRouteCatalog for SharedPricingCatalog {
 
     fn supplier_default_base_url(&self, supplier_code: &str) -> Option<String> {
         self.read().supplier_default_base_url(supplier_code)
+    }
+}
+
+impl PricingDefaultRegionProvider for SharedPricingCatalog {
+    fn default_billing_region(
+        &self,
+        tenant_id: i64,
+        organization_id: i64,
+        catalog_key: &str,
+    ) -> Option<String> {
+        self.read()
+            .default_billing_region(tenant_id, organization_id, catalog_key)
     }
 }
 

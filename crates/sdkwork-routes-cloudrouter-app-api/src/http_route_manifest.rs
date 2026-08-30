@@ -48,6 +48,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
+        "/app/v3/api/ai/settlements/dashboard",
+        "ai",
+        "settlements.dashboard.retrieve",
+    ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
         "/app/v3/api/ai/usage/logs",
         "ai",
         "usage.logs.list",
@@ -183,12 +189,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/app/v3/api/system/site/runtime",
         "system",
         "site.runtime.retrieve",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/app/v3/api/ai/settlements/dashboard",
-        "ai",
-        "settlements.dashboard.retrieve",
     ),
 ];
 

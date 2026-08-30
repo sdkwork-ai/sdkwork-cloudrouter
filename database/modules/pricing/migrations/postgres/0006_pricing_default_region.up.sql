@@ -33,17 +33,14 @@ CREATE TABLE IF NOT EXISTS pricing_default_region (
     effective_from TIMESTAMPTZ NOT NULL,
     effective_to TIMESTAMPTZ,
     CONSTRAINT ck_pricing_default_region_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT uk_pricing_default_region_uuid UNIQUE (uuid),
-    CONSTRAINT uk_pricing_default_region_scope_id UNIQUE (tenant_id, organization_id, id),
-    CONSTRAINT uk_pricing_default_region_catalog_key UNIQUE (tenant_id, organization_id, catalog_key) WHERE deleted_at IS NULL,
     CONSTRAINT ck_pricing_default_region_currency CHECK (currency_code ~ '^[A-Z]{3}$'),
     CONSTRAINT ck_pricing_default_region_region_not_blank CHECK (BTRIM(default_region_code) <> ''),
     CONSTRAINT ck_pricing_default_region_interval CHECK (effective_to IS NULL OR effective_to > effective_from)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_default_region_uuid ON pricing_default_region (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_default_region_scope_id ON pricing_default_region (tenant_id, organization_id, id);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_default_region_catalog_key ON pricing_default_region (tenant_id, organization_id, catalog_key);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_default_region_uuid ON pricing_default_region (uuid) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_default_region_scope_id ON pricing_default_region (tenant_id, organization_id, id) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_default_region_catalog_key ON pricing_default_region (tenant_id, organization_id, catalog_key) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_default_region_scope_reference ON pricing_default_region (tenant_id, organization_id, id);
 CREATE INDEX IF NOT EXISTS idx_pricing_default_region_catalog_key
     ON pricing_default_region (tenant_id, organization_id, vendor_code, catalog_key, default_region_code, id);
