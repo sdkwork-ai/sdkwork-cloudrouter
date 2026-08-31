@@ -184,7 +184,13 @@ impl PostgresGatewayBillingStore {
             BUSINESS_TYPE,
             &business_no,
             "gateway",
-            &context.request_id,
+            // `acct_hold.source_id` is BIGINT; the account repository rejects
+            // non-int64 values with "source_id must be a valid int64". The
+            // request id is a UUID and must not be passed here. Use the caller
+            // user id as the gateway billing source identity (request
+            // traceability is already carried by business_no/idempotency_key,
+            // which embed the request id).
+            &context.user_id.to_string(),
             &business_no,
             &idempotency_key,
             Some(expires_at.as_str()),
@@ -590,9 +596,11 @@ fn parse_charge_mode(value: Option<&str>) -> Result<CustomerChargeMode, DomainEr
 #[cfg(test)]
 mod tests {
     use super::{parse_charge_mode, parse_settlement_mode};
+    use sdkwork_account_service::CreateAccountHoldCommand;
     use sdkwork_cloudrouter_router_service::ports::{
-        CustomerChargeMode, GatewayBillingSettlementMode,
+        CustomerChargeMode, GatewayBillingContext, GatewayBillingSettlementMode,
     };
+    use sdkwork_contract_service::{CommerceAccountAssetType, CommerceMoney};
 
     #[test]
     fn billing_mode_parsers_accept_supported_aliases_and_reject_unknown_values() {
@@ -617,5 +625,42 @@ mod tests {
             Ok(GatewayBillingSettlementMode::Synchronous),
             parse_settlement_mode(None, GatewayBillingSettlementMode::Synchronous)
         );
+    }
+
+    /// Regression: `create_hold` must pass a numeric int64 source id to the
+    /// account repository. Passing the request id (UUID) previously failed in
+    /// `parse_subject_i64` with "source_id must be a valid int64", surfacing as
+    /// gateway 50201 `dispatch_failed` on `/v1/chat/completions`. This mirrors
+    /// the exact `CreateAccountHoldCommand` construction used by `create_hold`.
+    #[test]
+    fn precharge_hold_source_id_is_numeric_user_id() {
+        let context = GatewayBillingContext {
+            tenant_id: 100_001,
+            organization_id: 0,
+            user_id: 42,
+            request_id: "fe6bec23-7be1-47f0-a9b1-8f335f9ed036".to_owned(),
+            pricing_plan_code: "standard".to_owned(),
+        };
+        let business_no = format!("cloudrouter:{}:precharge", context.request_id);
+        let command = CreateAccountHoldCommand::new(
+            &context.tenant_id.to_string(),
+            Some(&context.organization_id.to_string()),
+            "acct-1",
+            &context.user_id.to_string(),
+            CommerceAccountAssetType::TokenBank,
+            CommerceMoney::new("100").expect("valid money"),
+            "gateway_invocation_billing",
+            &business_no,
+            "gateway",
+            // Must mirror gateway_billing_account.rs::create_hold: source_id is
+            // the numeric user id, never the UUID request id.
+            &context.user_id.to_string(),
+            &business_no,
+            &business_no,
+            Some("2099-01-01T00:00:00Z"),
+        )
+        .expect("valid hold command");
+        assert_eq!("42", command.source_id);
+        assert!(command.source_id.parse::<i64>().is_ok());
     }
 }
