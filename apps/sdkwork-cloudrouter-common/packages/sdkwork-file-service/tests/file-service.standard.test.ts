@@ -5,8 +5,8 @@ import {
   createDriveSpace,
   createFileSlotDefinition,
   createStorageUsageSnapshot,
-} from "../../sdkwork-file-contracts/src/index";
-import { createUnsupportedFilePlatformPorts, type FilePlatformPorts } from "../../sdkwork-file-sdk-ports/src/index";
+} from "@sdkwork/file-contracts";
+import { createUnsupportedFilePlatformPorts, type FilePlatformPorts } from "@sdkwork/file-sdk-ports";
 import {
   FilePlatformServiceError,
   createFilePlatformService,

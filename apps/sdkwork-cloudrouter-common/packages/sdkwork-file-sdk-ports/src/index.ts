@@ -11,7 +11,7 @@ import {
   type SdkworkStorageResourceStatus,
   type SdkworkStorageUsageScopeType,
   type SdkworkStorageUsageSnapshot,
-} from "../../sdkwork-file-contracts/src/index";
+} from "@sdkwork/file-contracts";
 
 export const SDKWORK_FILE_PORT_GROUPS = [
   "upload",

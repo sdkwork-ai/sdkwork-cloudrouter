@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { SDKWORK_FILE_APP_OPENAPI, SDKWORK_FILE_BACKEND_OPENAPI } from "../../sdkwork-file-api-contracts/src/index";
-import { createFileSlotDefinition } from "../../sdkwork-file-contracts/src/index";
-import type { FilePlatformService } from "../../sdkwork-file-service/src/index";
+import { SDKWORK_FILE_APP_OPENAPI, SDKWORK_FILE_BACKEND_OPENAPI } from "@sdkwork/file-api-contracts";
+import { createFileSlotDefinition } from "@sdkwork/file-contracts";
+import type { FilePlatformService } from "@sdkwork/file-service";
 import {
   SDKWORK_FILE_SDK_ADAPTER_METHODS,
   createFileAdminStoragePortFromBackendSdkClient,

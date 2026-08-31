@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createDriveNode, createDriveSpace, createFileRef } from "../../sdkwork-file-contracts/src/index";
+import { createDriveNode, createDriveSpace, createFileRef } from "@sdkwork/file-contracts";
 import {
   SDKWORK_ADMIN_STORAGE_BUCKET_CONFIGURATION_FIELDS,
   SDKWORK_ADMIN_STORAGE_PROVIDER_CONFIGURATION_FIELDS,

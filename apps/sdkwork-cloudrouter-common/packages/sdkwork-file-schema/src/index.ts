@@ -14,7 +14,7 @@ import {
   SDKWORK_STORAGE_QUOTA_RESERVATION_STATUSES,
   SDKWORK_STORAGE_RESOURCE_STATUSES,
   SDKWORK_STORAGE_USAGE_SCOPE_TYPES,
-} from "../../sdkwork-file-contracts/src/index";
+} from "@sdkwork/file-contracts";
 
 export const SDKWORK_FILE_SCHEMA_VERSION = "2026.05.file-platform.v1";
 

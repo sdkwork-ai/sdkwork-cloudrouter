@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 
-import { SDKWORK_FILE_APP_OPENAPI, SDKWORK_FILE_BACKEND_OPENAPI } from "../../sdkwork-file-api-contracts/src/index";
-import { SDKWORK_FILE_STANDARD } from "../../sdkwork-file-contracts/src/index";
+import { SDKWORK_FILE_APP_OPENAPI, SDKWORK_FILE_BACKEND_OPENAPI } from "@sdkwork/file-api-contracts";
+import { SDKWORK_FILE_STANDARD } from "@sdkwork/file-contracts";
 import {
   SDKWORK_FILE_SDK_ARTIFACT_ROOT,
   SDKWORK_FILE_SDK_GENERATION_MANIFEST_VERSION,

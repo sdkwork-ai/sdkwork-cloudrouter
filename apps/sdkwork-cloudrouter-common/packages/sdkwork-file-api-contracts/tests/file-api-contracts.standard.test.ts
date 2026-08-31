@@ -18,7 +18,7 @@ import {
   SDKWORK_STORAGE_PROVIDER_TYPES,
   SDKWORK_STORAGE_RESOURCE_STATUSES,
   SDKWORK_STORAGE_USAGE_SCOPE_TYPES,
-} from "../../sdkwork-file-contracts/src/index";
+} from "@sdkwork/file-contracts";
 import {
   SDKWORK_FILE_APP_OPENAPI,
   SDKWORK_FILE_BACKEND_OPENAPI,

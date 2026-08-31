@@ -2,7 +2,7 @@ import type {
   FileUploadProgress,
   UploadFileInput,
   UploadFileResult,
-} from "../../sdkwork-file-sdk-ports/src/index";
+} from "@sdkwork/file-sdk-ports";
 
 export type FileUploadClientStatus = UploadFileResult["status"];
 

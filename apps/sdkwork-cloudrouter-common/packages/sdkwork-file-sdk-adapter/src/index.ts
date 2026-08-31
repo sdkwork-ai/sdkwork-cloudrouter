@@ -2,7 +2,7 @@ import {
   SDKWORK_FILE_APP_OPENAPI,
   SDKWORK_FILE_BACKEND_OPENAPI,
   type SdkworkFileOpenApiDocument,
-} from "../../sdkwork-file-api-contracts/src/index";
+} from "@sdkwork/file-api-contracts";
 import type {
   DriveUploaderClient,
   DriveUploaderProfile,
@@ -16,7 +16,7 @@ import {
   type SdkworkFileSlotDefinition,
   type SdkworkStorageUsageScopeType,
   type SdkworkStorageUsageSnapshot,
-} from "../../sdkwork-file-contracts/src/index";
+} from "@sdkwork/file-contracts";
 import type {
   AdminStorageCreateGarbageCollectionJobInput,
   AdminStorageCreateQuotaPolicyInput,
@@ -31,7 +31,7 @@ import type {
   AdminStorageUsageSnapshotQuery,
   AdminStoragePort,
   FileUploadTarget,
-} from "../../sdkwork-file-sdk-ports/src/index";
+} from "@sdkwork/file-sdk-ports";
 import type {
   AbortManagedUploadInput,
   BindManagedFileInput,
@@ -43,7 +43,7 @@ import type {
   ListManagedBindingsInput,
   ManagedDriveUploadInput,
   ManagedDriveUploadResult,
-} from "../../sdkwork-file-service/src/index";
+} from "@sdkwork/file-service";
 
 export type SdkworkFileSdkAdapterSurface = "app" | "backend";
 

@@ -16,7 +16,7 @@ import {
   SDKWORK_STORAGE_QUOTA_RESERVATION_STATUSES,
   SDKWORK_STORAGE_RESOURCE_STATUSES,
   SDKWORK_STORAGE_USAGE_SCOPE_TYPES,
-} from "../../sdkwork-file-contracts/src/index";
+} from "@sdkwork/file-contracts";
 import {
   SDKWORK_FILE_SCHEMA_VERSION,
   SDKWORK_FILE_SCHEMA_TABLES,

@@ -6,7 +6,7 @@ import {
   type SdkworkStorageUsageScopeType,
   type SdkworkStorageUsageSnapshot,
   validateFileSlotDefinition,
-} from "../../sdkwork-file-contracts/src/index";
+} from "@sdkwork/file-contracts";
 import type {
   CompleteUploadResult,
   FileChecksum,
@@ -17,7 +17,7 @@ import type {
   FileUploadRetention,
   UploadFileResult,
   FileUploadBlobLike,
-} from "../../sdkwork-file-sdk-ports/src/index";
+} from "@sdkwork/file-sdk-ports";
 
 export interface CreateFilePlatformServiceOptions {
   ports: FilePlatformPorts;

@@ -7,11 +7,11 @@ import {
   SDKWORK_FILE_BACKEND_OPENAPI,
   type SdkworkFileOpenApiDocument,
   validateFileApiContractStandard,
-} from "../../sdkwork-file-api-contracts/src/index";
+} from "@sdkwork/file-api-contracts";
 import {
   SDKWORK_FILE_STANDARD,
   type SdkworkFileApiSurface,
-} from "../../sdkwork-file-contracts/src/index";
+} from "@sdkwork/file-contracts";
 
 export type SdkworkFileSdkGenerationLanguage = "typescript";
 export type SdkworkFileSdkGenerator = "sdkwork-openapi-typescript";

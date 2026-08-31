@@ -15,7 +15,7 @@ import {
   SDKWORK_STORAGE_PROVIDER_TYPES,
   SDKWORK_STORAGE_USAGE_SCOPE_TYPES,
   type SdkworkFileApiSurface,
-} from "../../sdkwork-file-contracts/src/index";
+} from "@sdkwork/file-contracts";
 
 type HttpMethod = "delete" | "get" | "patch" | "post";
 type JsonSchema = {
