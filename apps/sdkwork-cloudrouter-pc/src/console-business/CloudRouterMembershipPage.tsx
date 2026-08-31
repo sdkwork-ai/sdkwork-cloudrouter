@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Clock3,
@@ -21,6 +21,7 @@ import {
   useSdkworkMembershipController,
   useSdkworkMembershipControllerState,
   useSdkworkMembershipIntl,
+  type SdkworkMembershipMessagesOverrides,
   type SdkworkMembershipPurchaseResult,
   type SdkworkMembershipQuotaRechargeInput,
   type SdkworkMembershipSummary,
@@ -38,12 +39,65 @@ import { resolveConsoleMembershipLocale } from './consoleCommerceLocale.ts';
 const TOKEN_PLAN_SECTION_ID = 'cloud-router-membership-token-plan';
 
 export function CloudRouterMembershipPage() {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation();
   const locale = resolveConsoleMembershipLocale(i18n.resolvedLanguage ?? i18n.language);
+
+  const messages = useMemo<SdkworkMembershipMessagesOverrides>(
+    () => ({
+      quota: {
+        title: t('console.memberships.quota.title', 'Quota Recharge'),
+        description: t(
+          'console.memberships.quota.description',
+          'Add AI quota to your current membership period. Recharged quota stays valid until the subscription expires.',
+        ),
+        quantityLabel: t('console.memberships.quota.quantityLabel', 'Quota units'),
+        quantityPlaceholder: t('console.memberships.quota.quantityPlaceholder', 'e.g. 1000'),
+        amountLabel: t('console.memberships.quota.amountLabel', 'Amount (CNY)'),
+        amountPlaceholder: t('console.memberships.quota.amountPlaceholder', 'e.g. 10.00'),
+        submit: t('console.memberships.quota.submit', 'Recharge'),
+        submitting: t('console.memberships.quota.submitting', 'Recharging...'),
+        error: t(
+          'console.memberships.quota.error',
+          'Enter a positive quota quantity and amount.',
+        ),
+        onlyForMembers: t(
+          'console.memberships.quota.onlyForMembers',
+          'Quota recharge is available for active members only.',
+        ),
+      },
+      gates: {
+        title: t('console.memberships.gates.title', 'Member Features'),
+        description: t(
+          'console.memberships.gates.description',
+          'Some features are unlocked by membership level.',
+        ),
+        requiredLevel: t('console.memberships.gates.requiredLevel', 'Required level'),
+        unlocked: t('console.memberships.gates.unlocked', 'Unlocked'),
+        locked: t('console.memberships.gates.locked', 'Locked'),
+        labels: {
+          aiChat: t('console.memberships.gates.labels.aiChat', 'AI Chat'),
+          imageGeneration: t(
+            'console.memberships.gates.labels.imageGeneration',
+            'Image Generation',
+          ),
+          prioritySpeedUp: t(
+            'console.memberships.gates.labels.prioritySpeedUp',
+            'Priority Speed-up',
+          ),
+          priorityQueue: t('console.memberships.gates.labels.priorityQueue', 'Priority Queue'),
+          exclusiveModel: t(
+            'console.memberships.gates.labels.exclusiveModel',
+            'Exclusive Model',
+          ),
+        },
+      },
+    }),
+    [t],
+  );
 
   return (
     <CloudRouterTokenBankIntlProvider locale={locale}>
-      <SdkworkMembershipIntlProvider locale={locale}>
+      <SdkworkMembershipIntlProvider locale={locale} messages={messages}>
         <CloudRouterMembershipPageContent />
       </SdkworkMembershipIntlProvider>
     </CloudRouterTokenBankIntlProvider>
