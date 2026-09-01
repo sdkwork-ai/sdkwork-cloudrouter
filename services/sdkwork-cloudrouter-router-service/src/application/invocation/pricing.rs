@@ -323,10 +323,14 @@ where
 /// Resolves the billing region for a resource. When the account carries no
 /// explicit region (blank or the generic `global` placeholder), falls back to
 /// the model's configured default billing region so multi-region models rate
-/// against the correct regional price. When no default is configured, prefers
-/// the China mainland region (`cn`) when the model genuinely presents multiple
-/// billing regions that include `cn`; otherwise keeps the account's original
-/// region so single-region and legacy catalogs behave exactly as before.
+/// against the correct regional price. Next, an explicitly configured
+/// deployment region (REGION_SPEC `SDKWORK_CLOUDROUTER_ROUTER_REGION_CODE`,
+/// active registry code other than `global`) takes effect, so a China
+/// mainland deployment bills `cn` even when the account pins no region. When
+/// neither a default nor a deployment region is set, prefers the China
+/// mainland region (`cn`) when the model genuinely presents multiple billing
+/// regions that include `cn`; otherwise keeps the account's original region
+/// so single-region and legacy catalogs behave exactly as before.
 fn effective_billing_region<C>(
     catalog: &C,
     invocation: &Invocation,
@@ -347,16 +351,44 @@ where
     ) {
         return default;
     }
+    if let Some(deployment_region) = deployment_billing_region() {
+        return deployment_region;
+    }
     if billing_region_prefers_china(catalog, catalog_key) {
         return "cn".to_owned();
     }
     account.region_code.clone()
 }
 
+/// Resolves the explicitly configured deployment billing region. Returns
+/// `Some(region)` only when `SDKWORK_CLOUDROUTER_ROUTER_REGION_CODE` names an
+/// active REGION_SPEC registry code other than the generic `global` bucket;
+/// `None` otherwise so the billing chain keeps falling back to catalog
+/// defaults and the China-region preference.
+fn deployment_billing_region() -> Option<String> {
+    let region = sdkwork_cloudrouter_config::resolve_region_code().ok()?;
+    let region = region.trim();
+    if region.is_empty() || region.eq_ignore_ascii_case("global") {
+        return None;
+    }
+    if sdkwork_cloudrouter_config::is_active_region_code(region) {
+        Some(region.to_owned())
+    } else {
+        None
+    }
+}
+
 /// Reports whether a model advertises prices in more than one distinct billing
 /// region and includes the China mainland (`cn`) region among them. When true,
 /// the engine defaults billing to the China region for accounts that pin no
 /// specific region, instead of landing on the generic `global` bucket.
+///
+/// The `global` bucket counts as a real partition here: a model that rates in
+/// both `cn` and `global` (the typical mainland-china deployment shape, e.g.
+/// deepseek) genuinely presents two billing regions, so the account that pins
+/// no region must prefer `cn` — otherwise it silently falls back to the
+/// `global` price. Skipping `global` from the count would collapse such a
+/// model to a single region and defeat the preference entirely.
 fn billing_region_prefers_china<C>(catalog: &C, catalog_key: &str) -> bool
 where
     C: PricingCatalog,
@@ -365,7 +397,7 @@ where
     let mut has_cn = false;
     for price in catalog.list_model_prices_for_side(catalog_key, PriceSide::OfficialReference) {
         let region = price.region_code.trim();
-        if region.is_empty() || region.eq_ignore_ascii_case("global") {
+        if region.is_empty() {
             continue;
         }
         if !regions
@@ -659,7 +691,65 @@ fn route_key_catalog_key(invocation: &Invocation) -> Result<String, InvocationEr
 mod tests {
     use super::*;
     use crate::application::{PriceResolutionStatus, PricingAuditSnapshot, ResourceBillability};
-    use crate::domain::Money;
+    use crate::domain::{AiModel, ModelPrice, Money};
+    use crate::infrastructure::InMemoryPricingCatalog;
+    use std::sync::Mutex;
+
+    /// Serializes tests that mutate `SDKWORK_CLOUDROUTER_ROUTER_REGION_CODE`.
+    static REGION_ENV_LOCK: Mutex<()> = Mutex::new(());
+
+    /// A catalog where the model advertises official prices in both `cn`
+    /// (CNY) and `global` (USD) but declares no model upstream routes — the
+    /// real-world shape of a mainland-China deployment such as deepseek.
+    /// Routing-related predicates must play no part in the China billing
+    /// preference, so this scaffold deliberately carries zero model routes.
+    fn catalog_with_dual_region_chat_prices() -> InMemoryPricingCatalog {
+        let mut catalog = InMemoryPricingCatalog::default();
+        catalog.add_model(
+            AiModel::new("deepseek-chat", "DeepSeek Chat", "deepseek", vec!["chat"])
+                .with_catalog_key("deepseek/deepseek-chat"),
+        );
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                "deepseek/deepseek-chat",
+                "deepseek-chat",
+                PriceSide::OfficialReference,
+                BillingMeter::LlmInputToken,
+                Money::cny("0.020000").expect("valid cn price"),
+            )
+            .with_region_code("cn"),
+        );
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                "deepseek/deepseek-chat",
+                "deepseek-chat",
+                PriceSide::OfficialReference,
+                BillingMeter::LlmInputToken,
+                Money::usd("0.030000").expect("valid global price"),
+            )
+            .with_region_code("global"),
+        );
+        catalog
+    }
+
+    fn catalog_with_single_global_region_chat_prices() -> InMemoryPricingCatalog {
+        let mut catalog = InMemoryPricingCatalog::default();
+        catalog.add_model(
+            AiModel::new("legacy-model", "Legacy Model", "openai", vec!["chat"])
+                .with_catalog_key("openai/legacy-model"),
+        );
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                "openai/legacy-model",
+                "legacy-model",
+                PriceSide::OfficialReference,
+                BillingMeter::LlmInputToken,
+                Money::usd("0.100000").expect("valid global price"),
+            )
+            .with_region_code("global"),
+        );
+        catalog
+    }
 
     fn quote(
         meter: BillingMeter,
@@ -718,5 +808,76 @@ mod tests {
         assert_eq!("first-plan", deduped[0].pricing_plan_code);
         assert_eq!(BillingMeter::LlmOutputToken, deduped[1].meter);
         assert_eq!("output-model", deduped[1].requested_model);
+    }
+
+    /// The China billing preference must be driven by the price geography of
+    /// the model — `cn` + `global` official prices — not by model upstream
+    /// routes. The scaffold carries no model routes at all; with the old
+    /// route-coupled predicate this test failed because `has_cn_route` was
+    /// always false, and with the old partition count this test failed
+    /// because `global` was excluded so `cn` + `global` looked single-region.
+    #[test]
+    fn china_preference_is_driven_by_multi_region_prices_not_routes() {
+        let dual = catalog_with_dual_region_chat_prices();
+        assert!(
+            billing_region_prefers_china(&dual, "deepseek/deepseek-chat"),
+            "cn + global official prices must prefer the China billing region"
+        );
+
+        let single = catalog_with_single_global_region_chat_prices();
+        assert!(
+            !billing_region_prefers_china(&single, "openai/legacy-model"),
+            "a single-region catalog must not flip billing to cn"
+        );
+    }
+
+    /// `deployment_billing_region` must surface the deployment region exactly
+    /// as configured through `SDKWORK_CLOUDROUTER_ROUTER_REGION_CODE` when it
+    /// names an active registry code other than `global` — this is the direct
+    /// fix for "the gateway boots with region `cn` yet prices in `global`".
+    ///
+    /// Env-mutating tests are serialized behind `REGION_ENV_LOCK` because Rust
+    /// runs tests in parallel and `std::env::set_var` is process-global —
+    /// without the lock the cases clobber each other's variable.
+    #[test]
+    fn deployment_billing_region_surfaces_an_active_non_global_region() {
+        let _guard = REGION_ENV_LOCK.lock().unwrap();
+        set_region_env("cn");
+        let region = deployment_billing_region();
+        clear_region_env();
+        assert_eq!(Some("cn".to_owned()), region);
+    }
+
+    #[test]
+    fn deployment_billing_region_ignores_global_and_unset_env() {
+        let _guard = REGION_ENV_LOCK.lock().unwrap();
+        set_region_env("global");
+        let global_region = deployment_billing_region();
+        clear_region_env();
+
+        let unset_region = deployment_billing_region();
+
+        assert_eq!(None, global_region);
+        assert_eq!(None, unset_region);
+    }
+
+    #[test]
+    fn deployment_billing_region_ignores_codes_outside_the_active_registry() {
+        let _guard = REGION_ENV_LOCK.lock().unwrap();
+        set_region_env("unknown-market");
+        let region = deployment_billing_region();
+        clear_region_env();
+        assert_eq!(None, region);
+    }
+
+    fn set_region_env(value: &str) {
+        std::env::set_var(
+            sdkwork_cloudrouter_config::deployment::ENV_REGION_CODE,
+            value,
+        );
+    }
+
+    fn clear_region_env() {
+        std::env::remove_var(sdkwork_cloudrouter_config::deployment::ENV_REGION_CODE);
     }
 }

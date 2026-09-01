@@ -932,3 +932,170 @@ async fn finalization_rates_adapter_usage_through_price_service() {
         .pricing_snapshot
         .contains("\"strategy\":\"unit_quantity\""));
 }
+
+/// A mainland-China deployment shape: the model advertises official prices in
+/// both `cn` (CNY) and `global` (USD) and declares **no** model upstream
+/// routes — routing is carried by upstream account routes, so any predicate
+/// relying on `list_model_upstream_routes` is dead code. The billing region
+/// must be driven by the price geography, not by routes.
+fn catalog_with_deepseek_dual_region_chat_prices() -> InMemoryPricingCatalog {
+    let mut catalog = InMemoryPricingCatalog::default();
+    catalog.add_vendor(ModelVendorDefinition::new(
+        "deepseek",
+        sdkwork_cloudrouter_router_service::domain::ModelVendor::Unknown,
+        "DeepSeek",
+    ));
+    catalog.add_model(
+        AiModel::new("deepseek-chat", "DeepSeek Chat", "deepseek", vec!["chat"])
+            .with_catalog_key("deepseek/deepseek-chat"),
+    );
+    catalog.add_plan(PricingPlan::new(
+        "standard",
+        PriceSide::OfficialReference,
+        DecimalValue::parse("1.000000").unwrap(),
+        Money::usd("0.000000").unwrap(),
+    ));
+    catalog.add_upstream_account_group(UpstreamAccountGroup::new_scoped(
+        10,
+        10,
+        20,
+        "standard-group",
+        "standard",
+        DecimalValue::parse("1.000000").unwrap(),
+        DecimalValue::parse("1.000000").unwrap(),
+    ));
+    catalog
+        .add_api_key(GatewayApiKey::new(100, 10, "sk-test", "hash:sk-test").with_owner(10, 20, 30));
+    // 刻意不添加任何模型上游路由：模型路由已废弃（恒空），计费 region
+    // 判定不得依赖它。
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("deepseek_official", 3001)
+            .with_account_group_binding(10, 100, 100),
+    );
+    for meter in [BillingMeter::LlmInputToken, BillingMeter::LlmOutputToken] {
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                "deepseek/deepseek-chat",
+                "deepseek-chat",
+                PriceSide::OfficialReference,
+                meter.clone(),
+                Money::cny("0.020000").unwrap(),
+            )
+            .with_region_code("cn"),
+        );
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                "deepseek/deepseek-chat",
+                "deepseek-chat",
+                PriceSide::OfficialReference,
+                meter.clone(),
+                Money::usd("0.030000").unwrap(),
+            )
+            .with_region_code("global"),
+        );
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                "deepseek/deepseek-chat",
+                "deepseek-chat",
+                PriceSide::UpstreamCost,
+                meter.clone(),
+                Money::cny("0.014000").unwrap(),
+            )
+            .with_region_code("cn")
+            .for_upstream_account("deepseek_official", 3001),
+        );
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                "deepseek/deepseek-chat",
+                "deepseek-chat",
+                PriceSide::UpstreamCost,
+                meter,
+                Money::usd("0.021000").unwrap(),
+            )
+            .with_region_code("global")
+            .for_upstream_account("deepseek_official", 3001),
+        );
+    }
+    catalog
+}
+
+fn deepseek_chat_invocation() -> Invocation {
+    let classification = OpenAiResourceClassifier
+        .classify(&InvocationClassificationRequest::new(
+            Method::POST,
+            "/v1/chat/completions",
+        ))
+        .expect("classification");
+    let (mut resource, billing, routing) = classification.into_parts();
+    resource.requested_model = Some("deepseek-chat".to_owned());
+    resource.requested_model_catalog_key = Some("deepseek/deepseek-chat".to_owned());
+    resource.provider_native_model = Some("deepseek-chat-upstream".to_owned());
+
+    let mut invocation = Invocation::new(
+        InvocationRequest::new(Method::POST, "/v1/chat/completions")
+            .with_request_id("req-deepseek-cn")
+            .with_body(InvocationBody::json(json!({
+                "model": "deepseek-chat",
+                "messages": [{"role": "user", "content": "ping"}]
+            }))),
+        subject(),
+        resource,
+        billing,
+    );
+    invocation.routing = routing;
+    invocation.account = Some(InvocationAccount {
+        supplier_code: "deepseek_official".to_owned(),
+        account_id: 3001,
+        // 账号未固定任何 region：正是触发 cn 偏好兜底的场景。
+        region_code: "global".to_owned(),
+        credential_id: None,
+        credential_rotation: None,
+        base_url: Some("https://provider.example/deepseek".to_owned()),
+        secret_ref: Some("vault://provider/deepseek".to_owned()),
+        auth_profile: ProviderAuthProfile::default(),
+        timeout_ms: None,
+        retry_policy: None,
+        provider_model: Some("deepseek-chat-upstream".to_owned()),
+        billing_mode: AccountBillingMode::Prepay,
+        account_group_id: None,
+        account_group_code: None,
+        pricing_plan_code: None,
+    });
+    invocation.dispatch = InvocationDispatch::json_response(
+        200,
+        json!({"usage": {"prompt_tokens": 12, "completion_tokens": 8, "total_tokens": 20}}),
+    );
+    invocation
+}
+
+/// When an account pins no billing region, a model that rates in both `cn`
+/// and `global` must bill the China region — even though the model declares
+/// zero upstream routes. The old predicate excluded `global` from the region
+/// count, so this shape looked single-region and fell back to the `global`
+/// USD price; the account then silently paid the wrong price.
+#[tokio::test]
+async fn deepseek_multi_region_prices_prefer_cn_when_no_region_is_pinned() {
+    let catalog = Arc::new(catalog_with_deepseek_dual_region_chat_prices());
+    let mut invocation = deepseek_chat_invocation();
+
+    PricingPreflightInterceptor::new(Arc::clone(&catalog))
+        .before(&mut invocation)
+        .await
+        .expect("pricing");
+
+    let input = invocation
+        .usage
+        .quote_for_meter(&BillingMeter::LlmInputToken)
+        .expect("input quote");
+    assert_eq!("deepseek/deepseek-chat", input.catalog_key);
+    assert_eq!("cn", input.region_code);
+    assert_eq!("CNY", input.official_reference_unit_price.currency);
+    assert_eq!(
+        "0.020000",
+        input.official_reference_unit_price.to_fixed_string(6)
+    );
+    assert_eq!(
+        "0.020000",
+        input.customer_charge_unit_price.to_fixed_string(6)
+    );
+}

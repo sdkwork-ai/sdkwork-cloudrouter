@@ -1395,6 +1395,33 @@ pub(crate) fn merge_runtime_pricing_dictionary_rows(
             .filter(|row| model_keys.insert(row.catalog_key.clone())),
     );
 
+    // Graft the database record identity onto matching bundled-dictionary
+    // prices. The dictionary rows are built with `record_identity: None`, and
+    // the dedupe below keeps the dictionary row (so a stale database import
+    // cannot shadow the selected catalog version) — which strips the identity
+    // the settlement guard requires for rated chargeable usage. The identity
+    // is a database primary-key reference and is version-independent, so
+    // injecting it does not override newer catalog content.
+    let database_identity_by_key = database_prices
+        .iter()
+        .filter_map(|row| {
+            let identity = row.rate_metadata.as_ref()?.record_identity.clone()?;
+            Some((model_price_row_identity(row), identity))
+        })
+        .collect::<BTreeMap<_, _>>();
+    for row in &mut dictionary.prices {
+        let identity_key = model_price_row_identity(row);
+        let Some(metadata) = row.rate_metadata.as_mut() else {
+            continue;
+        };
+        if metadata.record_identity.is_some() {
+            continue;
+        }
+        if let Some(identity) = database_identity_by_key.get(&identity_key) {
+            metadata.record_identity = Some(identity.clone());
+        }
+    }
+
     let mut price_keys = dictionary
         .prices
         .iter()
@@ -1408,7 +1435,6 @@ pub(crate) fn merge_runtime_pricing_dictionary_rows(
 
     dictionary
 }
-
 type ModelPriceRowIdentity = (
     i64,
     i64,
@@ -1731,7 +1757,153 @@ fn bundled_price_side_label(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{price_supplier_code, stable_uuid};
+    use super::{merge_runtime_pricing_dictionary_rows, price_supplier_code, stable_uuid};
+    use crate::domain::{PricingRateMetadata, PricingRateRecordIdentity};
+    use crate::infrastructure::sql::rows::ModelPriceRow;
+
+    fn metadata(rate_hash: &str, record_identity: Option<PricingRateRecordIdentity>) -> Option<PricingRateMetadata> {
+        Some(PricingRateMetadata {
+            record_identity,
+            price_book_code: "models-deepseek-cn-cny-2026-08-15".to_owned(),
+            rate_hash: rate_hash.to_owned(),
+            product_code: "model-inference".to_owned(),
+            operation_code: "chat-completions".to_owned(),
+            billability: "chargeable".to_owned(),
+            charge_timing: "postpaid".to_owned(),
+            calculation_mode: "per_unit".to_owned(),
+            quantity_aggregation: "sum".to_owned(),
+            minimum_quantity: crate::domain::DecimalValue::parse("1").unwrap(),
+            quantity_step: None,
+            priority: 10,
+            effective_from: chrono::Utc::now(),
+            effective_to: None,
+            rate_variant: crate::domain::PricingRateVariant::Standard,
+            schedule: None,
+            conditions: Vec::new(),
+            tiers: Vec::new(),
+            formula: None,
+        })
+    }
+
+    fn price_row(
+        catalog_key: &str,
+        region_code: &str,
+        rate_hash: &str,
+        record_identity: Option<PricingRateRecordIdentity>,
+    ) -> ModelPriceRow {
+        ModelPriceRow {
+            tenant_id: 0,
+            organization_id: 0,
+            catalog_key: catalog_key.to_owned(),
+            model: catalog_key.to_owned(),
+            region_code: region_code.to_owned(),
+            price_side_code: "official_reference".to_owned(),
+            billing_meter_code: "llm_input_token".to_owned(),
+            unit_size: "1".to_owned(),
+            unit_price: "0.020000".to_owned(),
+            currency: "CNY".to_owned(),
+            supplier_code: None,
+            account_id: None,
+            pricing_plan_code: None,
+            rate_metadata: metadata(rate_hash, record_identity),
+        }
+    }
+
+    fn dictionary(rows: Vec<ModelPriceRow>) -> super::BundledPricingDictionaryRows {
+        super::BundledPricingDictionaryRows {
+            vendors: Vec::new(),
+            models: Vec::new(),
+            prices: rows,
+        }
+    }
+
+    /// A database row carrying a persisted rate identity must graft that
+    /// identity onto the bundled-dictionary row with the same key, because
+    /// the dedupe keeps the dictionary row (stale imports must not shadow the
+    /// selected catalog version) and the settlement guard rejects rated
+    /// chargeable usage whose rate lacks a persisted record identity.
+    #[test]
+    fn merge_grafts_database_record_identity_onto_matching_dictionary_rows() {
+        let identity = PricingRateRecordIdentity {
+            price_book_tenant_id: 1,
+            price_book_organization_id: 2,
+            price_book_id: 42,
+            rate_id: 7001,
+        };
+        let merged = merge_runtime_pricing_dictionary_rows(
+            dictionary(vec![price_row("deepseek/deepseek-chat", "cn", "sha256:book", None)]),
+            Vec::new(),
+            Vec::new(),
+            vec![price_row(
+                "deepseek/deepseek-chat",
+                "cn",
+                "sha256:book",
+                Some(identity),
+            )],
+        );
+
+        assert_eq!(1, merged.prices.len());
+        assert_eq!(
+            Some(identity),
+            merged.prices[0]
+                .rate_metadata
+                .as_ref()
+                .and_then(|metadata| metadata.record_identity),
+            "dictionary row must inherit the persisted rate identity from the database row"
+        );
+    }
+
+    /// Database rows with no dictionary counterpart are appended as-is, and a
+    /// dictionary row whose key has no database counterpart keeps its
+    /// `record_identity: None` (no fabricated identity).
+    #[test]
+    fn merge_keeps_database_only_rows_and_unmatched_dictionary_rows() {
+        let identity = PricingRateRecordIdentity {
+            price_book_tenant_id: 1,
+            price_book_organization_id: 2,
+            price_book_id: 42,
+            rate_id: 7002,
+        };
+        let merged = merge_runtime_pricing_dictionary_rows(
+            dictionary(vec![price_row("deepseek/deepseek-chat", "cn", "sha256:book", None)]),
+            Vec::new(),
+            Vec::new(),
+            vec![
+                price_row("deepseek/deepseek-chat", "cn", "sha256:book", Some(identity)),
+                price_row(
+                    "tenant/custom-model",
+                    "cn",
+                    "sha256:tenant-row",
+                    Some(identity),
+                ),
+            ],
+        );
+
+        assert_eq!(
+            2,
+            merged.prices.len(),
+            "database-only rows must be appended alongside the dictionary rows"
+        );
+        assert_eq!(
+            Some(identity),
+            merged.prices[0]
+                .rate_metadata
+                .as_ref()
+                .and_then(|metadata| metadata.record_identity),
+            "matching database row still grafts its identity onto the dictionary row"
+        );
+        assert!(
+            merged.prices.iter().any(|row| {
+                row.catalog_key == "tenant/custom-model"
+                    && row
+                        .rate_metadata
+                        .as_ref()
+                        .and_then(|metadata| metadata.record_identity)
+                        == Some(identity)
+            }),
+            "database-only rows keep their persisted identity"
+        );
+    }
 
     #[test]
     fn price_supplier_code_keeps_vendor_identity_separate_from_region() {

@@ -7,7 +7,7 @@ use sdkwork_contract_service::{
     CommerceAccountAssetType, CommerceLedgerDirection, CommerceMoney, CommerceRequestHash,
     CommerceServiceError,
 };
-use sdkwork_utils_rust::decimal_math::{decimal_to_scaled, scaled_to_decimal, DecimalRounding};
+use crate::infrastructure::decimal_math::{decimal_to_scaled, scaled_to_decimal, DecimalRounding};
 use sdkwork_utils_rust::sha256_hash;
 use sqlx::{PgPool, Postgres, Row, Transaction};
 

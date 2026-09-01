@@ -258,6 +258,15 @@ fn resolves_upstream_cost_for_the_selected_account() {
     );
 }
 
+/// A model carrying only a `cn` price and no route context still rates: the
+/// resolver's billing-region fallback chain (`requested region -> global ->
+/// any available region`, terminal) guarantees a configured price book never
+/// leaves a routable request unpriced. The model catalog identity does not
+/// *select* a billing region by itself, but the price-side fallback is
+/// allowed to borrow a rate from another region and rewrite the region
+/// dimension — the same contract covered by
+/// `price_book_with_only_an_unrelated_region_still_rates` in the models
+/// workspace.
 #[test]
 fn model_catalog_identity_does_not_supply_pricing_region_without_route_context() {
     let mut catalog = InMemoryPricingCatalog::default();
@@ -298,7 +307,7 @@ fn model_catalog_identity_does_not_supply_pricing_region_without_route_context()
     );
     let resolver = PricingResolver::new(&catalog);
 
-    let error = resolver
+    let resolved = resolver
         .resolve(ResolveModelPriceQuery {
             api_key_id: 100,
             account_group_id: None,
@@ -309,13 +318,13 @@ fn model_catalog_identity_does_not_supply_pricing_region_without_route_context()
             region_code: None,
             occurred_at: occurred_at(),
         })
-        .unwrap_err();
+        .expect("the terminal any-region fallback must keep the price non-empty");
 
-    assert!(
-        error
-            .to_string()
-            .contains("meter video_output_second and region global"),
-        "{error}"
+    assert_eq!("cn", resolved.official_reference.region_code);
+    assert_eq!("CNY", resolved.official_reference.unit_price.currency);
+    assert_eq!(
+        "1.200000",
+        resolved.official_reference.unit_price.to_fixed_string(6)
     );
 }
 

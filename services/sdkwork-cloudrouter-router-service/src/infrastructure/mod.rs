@@ -2,6 +2,7 @@ mod api_key_secret_generator;
 mod app_runtime_gateway_http_client;
 pub mod crypto;
 pub mod database_framework;
+pub mod decimal_math;
 mod gateway_accounting_retry_queue;
 mod in_memory_pricing_catalog;
 pub mod payment;
