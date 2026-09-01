@@ -11667,6 +11667,8 @@ frontend_operations:
                 effectiveTo: { format: date-time, maxLength: 64, type: string, nullable: true }
                 id: { maxLength: 96, minLength: 1, type: string }
                 productCode: { maxLength: 160, type: string }
+                providerCode: { maxLength: 64, type: string }
+                resourceCode: { maxLength: 256, type: string }
                 status: { enum: [active, inactive], type: string }
                 updatedAt: { format: date-time, maxLength: 64, type: string, nullable: true }
                 vendorCode: { maxLength: 64, type: string }
@@ -11716,6 +11718,8 @@ frontend_operations:
           effectiveTo: { format: date-time, maxLength: 64, type: string, nullable: true }
           id: { maxLength: 96, minLength: 1, type: string }
           productCode: { maxLength: 160, type: string }
+          providerCode: { maxLength: 64, type: string }
+          resourceCode: { maxLength: 256, type: string }
           status: { enum: [active, inactive], type: string }
           updatedAt: { format: date-time, maxLength: 64, type: string, nullable: true }
           vendorCode: { maxLength: 64, type: string }
@@ -11740,6 +11744,8 @@ frontend_operations:
           effectiveFrom: { format: date-time, maxLength: 64, type: string }
           effectiveTo: { format: date-time, maxLength: 64, type: string }
           productCode: { maxLength: 160, type: string }
+          providerCode: { maxLength: 64, type: string }
+          resourceCode: { maxLength: 256, type: string }
           vendorCode: { maxLength: 64, type: string }
         required: [catalogKey, vendorCode, productCode, defaultRegionCode, currencyCode]
         type: object

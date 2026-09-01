@@ -7385,6 +7385,14 @@
               "maxLength": 160,
               "type": "string"
             },
+            "providerCode": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "resourceCode": {
+              "maxLength": 256,
+              "type": "string"
+            },
             "vendorCode": {
               "maxLength": 64,
               "type": "string"
@@ -7448,6 +7456,14 @@
             },
             "productCode": {
               "maxLength": 160,
+              "type": "string"
+            },
+            "providerCode": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "resourceCode": {
+              "maxLength": 256,
               "type": "string"
             },
             "status": {
@@ -10381,6 +10397,14 @@
                   },
                   "productCode": {
                     "maxLength": 160,
+                    "type": "string"
+                  },
+                  "providerCode": {
+                    "maxLength": 64,
+                    "type": "string"
+                  },
+                  "resourceCode": {
+                    "maxLength": 256,
                     "type": "string"
                   },
                   "status": {
