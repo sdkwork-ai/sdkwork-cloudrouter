@@ -154,7 +154,7 @@
       }
     ],
     "metadata": {
-      "assetVersion": "0.3.0",
+      "assetVersion": "0.4.0",
       "defaultLocale": "en-US"
     }
   },
@@ -199,7 +199,7 @@
           "sourceType": "WEB_URL",
           "packageFormat": "ZIP",
           "platform": "WEB",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.3.0/web.zip",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.0/web.zip",
           "enabled": false,
           "metadata": {
             "checksumPendingBuild": true,
@@ -220,7 +220,7 @@
           "sourceType": "WEB_URL",
           "packageFormat": "ZIP",
           "platform": "WEB",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/TEST/0.3.0/web.zip",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/TEST/0.4.0/web.zip",
           "enabled": false,
           "metadata": {
             "checksumPendingBuild": true,
@@ -241,7 +241,7 @@
           "sourceType": "WEB_URL",
           "packageFormat": "ZIP",
           "platform": "WEB",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.3.0/standalone/web.zip",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.0/standalone/web.zip",
           "enabled": false,
           "metadata": {
             "checksumPendingBuild": true,
@@ -262,7 +262,7 @@
           "sourceType": "BINARY_URL",
           "packageFormat": "ZIP",
           "platform": "DESKTOP_WINDOWS",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.3.0/windows/x64/app.zip",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.0/windows/x64/app.zip",
           "enabled": false,
           "metadata": {
             "checksumPendingBuild": true,
@@ -283,7 +283,7 @@
           "sourceType": "BINARY_URL",
           "packageFormat": "DMG",
           "platform": "DESKTOP_MACOS",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.3.0/macos/universal/app.dmg",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.0/macos/universal/app.dmg",
           "enabled": false,
           "metadata": {
             "checksumPendingBuild": true,
@@ -304,7 +304,7 @@
           "sourceType": "BINARY_URL",
           "packageFormat": "APPIMAGE",
           "platform": "DESKTOP_LINUX",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.3.0/linux/generic/x64/app.AppImage",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.0/linux/generic/x64/app.AppImage",
           "enabled": false,
           "metadata": {
             "linux": {
@@ -332,16 +332,16 @@
     }
   },
   "release": {
-    "currentVersion": "0.3.0",
+    "currentVersion": "0.4.0",
     "defaultChannel": "STABLE",
     "latest": {
-      "STABLE": "0.3.0"
+      "STABLE": "0.4.0"
     },
     "notes": [
       {
-        "version": "0.3.0",
+        "version": "0.4.0",
         "releaseChannel": "STABLE",
-        "title": "SDKWork Cloud Router 0.3.0",
+        "title": "SDKWork Cloud Router 0.4.0",
         "summary": "SDKWork Cloud Router initialized standard release.",
         "content": "Initial SDKWork App Standard v3 manifest for SDKWork Cloud Router.",
         "highlights": [
@@ -359,7 +359,7 @@
         "publishedAt": "2026-05-07T00:00:00Z",
         "current": true,
         "forceUpdate": false,
-        "minSupportedVersion": "0.3.0",
+        "minSupportedVersion": "0.4.0",
         "metadata": {}
       }
     ]
