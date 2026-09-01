@@ -18,6 +18,10 @@ function pnpmCommand(platform = process.platform) {
   return platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 }
 
+function npmCommand(platform = process.platform) {
+  return platform === 'win32' ? 'npm.cmd' : 'npm';
+}
+
 function cargoCommand(platform = process.platform) {
   return platform === 'win32' ? 'cargo.exe' : 'cargo';
 }
@@ -82,10 +86,12 @@ function createProductionBuildPlan(
       label: 'workspace dist-based sibling packages build',
       run: async ({ runCommand }) => {
         for (const sibling of siblingDistPackages) {
-          if (directoryHasFiles(path.join(workspaceRoot, sibling.dir, sibling.distDir))) {
+          const packageRoot = path.join(workspaceRoot, sibling.dir);
+          if (directoryHasFiles(path.join(packageRoot, sibling.distDir))) {
             console.error(`[build-production] sibling ${sibling.dir}: skipped (${sibling.distDir} already present)`);
             continue;
           }
+          await ensureSiblingNodeModules(runCommand, npmCommand(platform), packageRoot);
           await runCommand(pnpmCommand(platform), ['--dir', sibling.dir, 'run', 'build'], workspaceRoot);
         }
       },
@@ -201,6 +207,32 @@ function directoryHasFiles(dir) {
     return fs.readdirSync(dir).length > 0;
   } catch {
     return false;
+  }
+}
+
+// Fresh CI checkouts materialize sibling repositories with no node_modules:
+// the main workspace install only covers workspace members, and generated
+// runtime subpackages live outside it — their parent repository root is a
+// sibling of the workspace root, so hoisted dependencies (typescript,
+// rollup) never resolve from generated/server-openapi. Install on demand;
+// populated local workspaces already have node_modules and skip this.
+async function ensureSiblingNodeModules(runCommand, npmCommand, packageRoot) {
+  const packageDirs = [packageRoot];
+  const generatedDir = path.join(packageRoot, 'generated', 'server-openapi');
+  if (fs.existsSync(path.join(generatedDir, 'package.json'))) {
+    packageDirs.push(generatedDir);
+  }
+  for (const packageDir of packageDirs) {
+    if (directoryHasFiles(path.join(packageDir, 'node_modules'))) {
+      continue;
+    }
+    const lockfilePresent = fs.existsSync(path.join(packageDir, 'package-lock.json'));
+    const args = lockfilePresent
+      ? ['ci', '--no-audit', '--no-fund']
+      : ['install', '--no-audit', '--no-fund'];
+    const label = path.relative(workspaceRoot, packageDir) || '.';
+    console.error(`[build-production] sibling dependencies missing, running npm ${args[0]} in ${label}`);
+    await runCommand(npmCommand, args, packageDir);
   }
 }
 
