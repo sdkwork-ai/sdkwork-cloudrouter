@@ -1,7 +1,9 @@
 use crate::gateway_api_key_auth::{
     authenticate_gateway_api_key, sanitize_authenticated_gateway_uri,
 };
-use crate::invocation_http::response_from_invocation_error;
+use crate::invocation_http::{
+    extract_client_ip, response_from_invocation_error,
+};
 use crate::openai_passthrough_routes::{
     apply_openai_method_passthrough_routes, apply_openai_passthrough_routes,
     apply_stored_chat_completion_passthrough_routes, reject_unsupported_openai_method,
@@ -1196,6 +1198,7 @@ where
         request_path: invocation.invocation.standard_path.clone(),
         http_method: invocation.invocation.method.clone(),
         user_agent: user_agent.map(str::to_owned),
+        client_ip: invocation.invocation.client_ip.clone(),
         http_status: response.status_code,
         streaming: invocation.invocation.stream,
         modality: adapter_modality_for_usage_line(invocation, &billing_meter),
@@ -1670,6 +1673,7 @@ fn build_provider_native_adapter_invocation(
             request_id: Some(generate_server_request_id()),
             trace_id: request_header_value(&parts.headers, "x-trace-id")
                 .or_else(|| request_header_value(&parts.headers, "traceparent")),
+            client_ip: extract_client_ip(parts, false),
         },
         subject: adapter_subject(context),
         provider: AdapterProviderContext {
@@ -2851,6 +2855,7 @@ mod tests {
                 stream: false,
                 request_id: Some("req-test".to_owned()),
                 trace_id: Some("trace-test".to_owned()),
+                client_ip: None,
             },
             subject: AdapterSubject {
                 tenant_id: 100001,

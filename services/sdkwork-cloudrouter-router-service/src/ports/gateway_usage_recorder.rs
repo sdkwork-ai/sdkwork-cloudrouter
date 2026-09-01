@@ -4,7 +4,7 @@ use std::pin::Pin;
 use serde::de::IgnoredAny;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use sdkwork_utils_rust::decimal_math::{decimal_multiply, decimal_to_scaled, DecimalRounding};
+use crate::infrastructure::decimal_math::{decimal_multiply, decimal_to_scaled, DecimalRounding};
 
 use crate::domain::{BillingMeter, DecimalValue, DomainError, DomainResult};
 use crate::ports::{RechargeSettingsModel, token_points_for_charge};
@@ -180,6 +180,7 @@ pub struct GatewayRequestTraceCommand {
     pub request_path: String,
     pub http_method: String,
     pub user_agent: Option<String>,
+    pub client_ip: Option<String>,
     pub http_status: Option<u16>,
     pub streaming: bool,
     pub prompt_tokens: i64,
@@ -281,6 +282,7 @@ pub struct GatewayUsageRecordCommand {
     pub request_path: String,
     pub http_method: String,
     pub user_agent: Option<String>,
+    pub client_ip: Option<String>,
     pub http_status: u16,
     pub streaming: bool,
     pub modality: i64,
@@ -1007,6 +1009,7 @@ impl GatewayUsageRecordCommand {
             request_path: self.request_path.clone(),
             http_method: self.http_method.clone(),
             user_agent: self.user_agent.clone(),
+            client_ip: self.client_ip.clone(),
             http_status: Some(self.http_status),
             streaming: self.streaming,
             prompt_tokens: self.prompt_tokens,

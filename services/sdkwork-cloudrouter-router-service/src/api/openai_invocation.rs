@@ -55,6 +55,7 @@ pub struct OpenAiInvocationContext {
     pub request_id: String,
     pub trace_id: Option<String>,
     pub user_agent: Option<String>,
+    pub client_ip: Option<String>,
 }
 
 impl OpenAiInvocationContext {
@@ -79,6 +80,7 @@ impl OpenAiInvocationContext {
             trace_id: header_value(headers, X_TRACE_ID),
             user_agent: header_value(headers, USER_AGENT.as_str())
                 .and_then(|value| normalize_user_agent_header(value.as_str())),
+            client_ip: forwarded_client_ip(headers),
         }
     }
 }
@@ -549,6 +551,18 @@ fn header_value(headers: &HeaderMap, name: &str) -> Option<String> {
         .map(str::trim)
         .filter(|value| !value.is_empty())
         .map(str::to_owned)
+}
+
+/// Client IP for the OpenAI-compatible relay surface. The relay runs behind a
+/// controlled reverse proxy by deployment design, so it trusts the first entry
+/// of `x-forwarded-for` and falls back to `x-real-ip`. This is intentionally
+/// different from the edge runtime, which reads the TCP peer from
+/// `ConnectInfo` and never trusts client-supplied headers.
+fn forwarded_client_ip(headers: &HeaderMap) -> Option<String> {
+    header_value(headers, "x-forwarded-for")
+        .and_then(|value| value.split(',').next().map(str::trim).map(str::to_owned))
+        .filter(|value| !value.is_empty())
+        .or_else(|| header_value(headers, "x-real-ip"))
 }
 
 #[cfg(test)]

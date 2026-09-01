@@ -273,6 +273,7 @@ fn command_from_pricing_decision(
         request_path: invocation.request.path.clone(),
         http_method: invocation.request.method.as_str().to_owned(),
         user_agent: invocation.request.user_agent.clone(),
+        client_ip: invocation.request.client_ip.clone(),
         http_status: effective_invocation_dispatch_status_code(invocation)
             .or_else(|| {
                 invocation

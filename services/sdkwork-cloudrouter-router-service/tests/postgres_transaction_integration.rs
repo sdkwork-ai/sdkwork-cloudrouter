@@ -546,6 +546,7 @@ fn usage_command(request_id: &str, http_status: u16) -> GatewayUsageRecordComman
         request_path: "/v1/chat/completions".to_owned(),
         http_method: "POST".to_owned(),
         user_agent: None,
+        client_ip: None,
         http_status,
         streaming: false,
         modality: 1,

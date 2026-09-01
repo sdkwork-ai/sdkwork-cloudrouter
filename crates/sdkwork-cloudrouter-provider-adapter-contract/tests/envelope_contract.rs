@@ -17,6 +17,7 @@ fn adapter_invocation_request_serializes_stable_gateway_envelope() {
             stream: false,
             request_id: Some("req-1".to_owned()),
             trace_id: Some("trace-1".to_owned()),
+            client_ip: None,
         },
         subject: AdapterSubject {
             tenant_id: 100001,

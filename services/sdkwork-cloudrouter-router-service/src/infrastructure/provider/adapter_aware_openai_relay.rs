@@ -84,6 +84,7 @@ pub(crate) fn build_openai_adapter_invocation_with_shape(
             stream,
             request_id: None,
             trace_id: None,
+            client_ip: None,
         },
         subject: AdapterSubject {
             tenant_id: parts.tenant_id,

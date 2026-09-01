@@ -151,6 +151,7 @@ fn invocation_context() -> OpenAiInvocationContext {
         request_id: "request-invocation-telemetry".to_owned(),
         trace_id: Some("trace-invocation-telemetry".to_owned()),
         user_agent: Some("integration-test".to_owned()),
+        client_ip: None,
     }
 }
 

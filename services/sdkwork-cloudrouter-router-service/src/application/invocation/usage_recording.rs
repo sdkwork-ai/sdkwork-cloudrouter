@@ -288,6 +288,7 @@ fn trace_command_from_invocation(
         request_path: invocation.request.path.clone(),
         http_method: invocation.request.method.as_str().to_owned(),
         user_agent: invocation.request.user_agent.clone(),
+        client_ip: invocation.request.client_ip.clone(),
         http_status,
         streaming: matches!(
             invocation.dispatch.invocation_shape,

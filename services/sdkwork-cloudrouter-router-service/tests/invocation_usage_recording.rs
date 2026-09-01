@@ -291,6 +291,7 @@ fn usage_command() -> GatewayUsageRecordCommand {
         request_path: "/v1/chat/completions".to_owned(),
         http_method: "POST".to_owned(),
         user_agent: Some("sdkwork-test-agent".to_owned()),
+        client_ip: None,
         http_status: 200,
         streaming: false,
         modality: 1,

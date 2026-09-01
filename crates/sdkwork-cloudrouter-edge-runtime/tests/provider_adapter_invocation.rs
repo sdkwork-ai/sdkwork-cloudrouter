@@ -108,6 +108,7 @@ fn adapter_request() -> AdapterInvocationRequest {
             stream: false,
             request_id: Some("req-1".to_owned()),
             trace_id: Some("trace-1".to_owned()),
+            client_ip: None,
         },
         subject: AdapterSubject {
             tenant_id: 100001,

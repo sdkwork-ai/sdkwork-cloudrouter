@@ -133,6 +133,7 @@ fn trace_command() -> GatewayRequestTraceCommand {
         request_path: "/v1/chat/completions".to_owned(),
         http_method: "POST".to_owned(),
         user_agent: Some("timeout-test-agent".to_owned()),
+        client_ip: None,
         http_status: Some(200),
         streaming: false,
         prompt_tokens: 1,

@@ -9,6 +9,7 @@ use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
     GatewayAccountingRecordContext, GatewayRequestTraceCommand, GatewayTraceAttribution,
     GatewayUsageRecordCommand, GatewayUsageRecordFuture, GatewayUsageRecorder,
+    token_points_for_charge_amount,
 };
 
 const OWNER_TYPE_USER: i64 = 1;
@@ -24,13 +25,14 @@ INSERT INTO ai_metering_request_trace
      gateway_node_name_snapshot,
      region_code, endpoint, request_path, http_method, http_status, started_at, ended_at, streaming,
      prompt_tokens, cached_tokens, completion_tokens, total_tokens, latency_ms, ttft_ms,
-     provider_error_code, error_type, error_message_masked, metadata, user_agent_hash)
+     provider_error_code, error_type, error_message_masked, metadata, user_agent_hash,
+     client_ip_masked)
 VALUES
     ($1, $2, $3, $4, $5, $6, $7, 1, 1, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
      $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28,
      to_timestamp($29::double precision / 1000.0),
      to_timestamp($30::double precision / 1000.0),
-     $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41::jsonb, $42)
+     $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41::jsonb, $42, $43)
 ON CONFLICT (tenant_id, organization_id, request_id, attempt_no) DO UPDATE SET
     trace_id = excluded.trace_id,
     api_key_id = excluded.api_key_id,
@@ -66,7 +68,8 @@ ON CONFLICT (tenant_id, organization_id, request_id, attempt_no) DO UPDATE SET
     error_type = excluded.error_type,
     error_message_masked = excluded.error_message_masked,
     metadata = excluded.metadata,
-    user_agent_hash = excluded.user_agent_hash
+    user_agent_hash = excluded.user_agent_hash,
+    client_ip_masked = COALESCE(ai_metering_request_trace.client_ip_masked, excluded.client_ip_masked)
 WHERE NOT EXISTS (
     SELECT 1
     FROM ai_metering_usage settled_usage
@@ -651,6 +654,7 @@ async fn upsert_trace(
         .bind(command.error_message_masked.as_deref())
         .bind(&metadata)
         .bind(context.user_agent_hash.as_deref())
+        .bind(command.client_ip.as_deref())
         .execute(&mut *connection)
         .await
         .map_err(|error| store_error("failed to upsert gateway request trace", error))?;
@@ -711,7 +715,7 @@ async fn upsert_usage_fact(
         .bind(context.ended_at_epoch_millis)
         .bind(SETTLEMENT_PENDING)
         .bind(usage_idempotency_key(command))
-        .bind(command.debit_points)
+        .bind(command_debit_points(command))
         .execute(&mut *connection)
         .await
         .map_err(|error| store_error("failed to upsert gateway usage fact", error))?;
@@ -943,7 +947,7 @@ async fn upsert_billing_ledger(
         .bind(&command.customer_charge_amount)
         .bind(&command.currency)
         .bind(context.ended_at_epoch_millis)
-        .bind(command.debit_points)
+        .bind(command_debit_points(command))
         .execute(&mut *connection)
         .await
         .map_err(|error| store_error("failed to upsert cloudrouter charge line", error))?;
@@ -1387,4 +1391,125 @@ fn update_identity_component(hasher: &mut Sha256, value: &[u8]) {
 
 fn store_error(context: &str, error: sqlx::Error) -> DomainError {
     redacted_store_error(context, error)
+}
+
+/// Resolves the Token Bank points actually persisted for a usage fact / charge
+/// line. Commands that flowed through the settlement allocation path already
+/// carry the cumulative-ceiling `debit_points` value and take precedence.
+/// Everything else falls back to the per-fact ceiling (`token_points_for_charge_amount`)
+/// when the fact is rated and chargeable, and to zero for non-chargeable facts
+/// so the admin usage records always have a displayable value.
+fn command_debit_points(command: &GatewayUsageRecordCommand) -> Option<i64> {
+    if let Some(points) = command.debit_points {
+        return Some(points);
+    }
+    if command.decision_status != "rated" || command.billability != "chargeable" {
+        return Some(0);
+    }
+    token_points_for_charge_amount(&command.customer_charge_amount)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    impl Default for GatewayUsageRecordCommand {
+        fn default() -> Self {
+            Self {
+                request_id: "req-default".to_owned(),
+                trace_id: None,
+                tenant_id: 1,
+                organization_id: 1,
+                user_id: 1,
+                api_key_id: 1,
+                api_key_name_snapshot: String::new(),
+                account_group_id: 1,
+                upstream_account_group_snapshot: String::new(),
+                catalog_key: String::new(),
+                requested_model: String::new(),
+                requested_model_catalog_key: String::new(),
+                supplier_code: String::new(),
+                account_id: 1,
+                provider_model: String::new(),
+                provider_native_model: String::new(),
+                region_code: String::new(),
+                request_path: String::new(),
+                http_method: "POST".to_owned(),
+                user_agent: None,
+                client_ip: None,
+                http_status: 200,
+                streaming: false,
+                modality: 0,
+                usage_type: 0,
+                billing_meter_code: String::new(),
+                unit_size: String::new(),
+                billable_quantity: String::new(),
+                rated_quantity: String::new(),
+                prompt_tokens: 0,
+                completion_tokens: 0,
+                cached_tokens: 0,
+                total_tokens: 0,
+                request_count: 0,
+                result_count: 0,
+                item_count: 0,
+                character_count: 0,
+                image_count: 0,
+                audio_seconds: None,
+                video_seconds: None,
+                latency_ms: None,
+                ttft_ms: None,
+                provider_error_code: None,
+                error_type: None,
+                error_message_masked: None,
+                decision_status: "rated".to_owned(),
+                billability: "chargeable".to_owned(),
+                reason_code: String::new(),
+                strategy_code: None,
+                base_input_unit_price: "0".to_owned(),
+                base_output_unit_price: "0".to_owned(),
+                cache_read_unit_price: "0".to_owned(),
+                rate_multiplier: "1".to_owned(),
+                reference_multiplier: "1".to_owned(),
+                official_reference_amount: "0".to_owned(),
+                customer_charge_amount: "0".to_owned(),
+                upstream_cost_amount: "0".to_owned(),
+                currency: "CNY".to_owned(),
+                debit_points: None,
+                pricing_plan_code: String::new(),
+                billing_components: String::new(),
+                pricing_snapshot: String::new(),
+                official_rate: None,
+            }
+        }
+    }
+
+    #[test]
+    fn command_debit_points_prefers_the_settlement_allocated_value() {
+        let mut command = GatewayUsageRecordCommand::default();
+        command.debit_points = Some(42);
+        assert_eq!(command_debit_points(&command), Some(42));
+    }
+
+    #[test]
+    fn command_debit_points_falls_back_to_per_fact_ceiling_for_rated_chargeable() {
+        let mut command = GatewayUsageRecordCommand::default();
+        command.customer_charge_amount = "0.15".to_owned();
+        assert_eq!(command_debit_points(&command), Some(1_500_000));
+    }
+
+    #[test]
+    fn command_debit_points_falls_back_to_zero_for_non_chargeable_facts() {
+        let mut command = GatewayUsageRecordCommand::default();
+        command.decision_status = "denied".to_owned();
+        command.billability = "not_chargeable".to_owned();
+        command.customer_charge_amount = "0.15".to_owned();
+        assert_eq!(command_debit_points(&command), Some(0));
+    }
+
+    #[test]
+    fn command_debit_points_returns_none_when_the_amount_cannot_be_converted() {
+        let mut command = GatewayUsageRecordCommand::default();
+        command.customer_charge_amount = "not-a-number".to_owned();
+        assert_eq!(command_debit_points(&command), None);
+    }
 }

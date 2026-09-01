@@ -62,6 +62,7 @@ fn sample_request() -> sdkwork_cloudrouter_provider_adapter_contract::AdapterInv
             stream: false,
             request_id: Some("req-1".to_owned()),
             trace_id: Some("trace-1".to_owned()),
+            client_ip: None,
         },
         subject: AdapterSubject {
             tenant_id: 100001,

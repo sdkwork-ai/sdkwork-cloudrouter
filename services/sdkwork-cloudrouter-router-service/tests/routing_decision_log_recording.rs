@@ -386,5 +386,6 @@ fn openai_context() -> OpenAiInvocationContext {
         request_id: "req-decision-openai".to_owned(),
         trace_id: None,
         user_agent: None,
+        client_ip: None,
     }
 }

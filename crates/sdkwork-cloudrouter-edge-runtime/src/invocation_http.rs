@@ -232,6 +232,7 @@ where
         parts.uri,
         parts.headers,
         body,
+        client_ip,
     );
     let account_group_id = auth_context.group_id;
     // 内部网关请求携带独立的 auth_type（InternalService），管道可据此
@@ -596,6 +597,7 @@ fn invocation_request_from_http(
     uri: Uri,
     headers: HeaderMap,
     body: InvocationBody,
+    client_ip: Option<String>,
 ) -> InvocationRequest {
     let request_id = generate_server_request_id();
     let trace_id =
@@ -603,7 +605,6 @@ fn invocation_request_from_http(
     let idempotency_key = header_text(&headers, "idempotency-key");
     let user_agent = header_text(&headers, header::USER_AGENT.as_str());
     let content_type = header_text(&headers, header::CONTENT_TYPE.as_str());
-    let client_ip = extract_client_ip_from_headers(&headers, false);
 
     let mut request = InvocationRequest::new(method, path)
         .with_request_id(request_id)
@@ -809,7 +810,7 @@ fn normalized_response_to_http(
 /// When `trust_forwarded_headers` is `true`, the function trusts the first
 /// valid IP from `x-forwarded-for` (falling back to `x-real-ip`). This must
 /// only be enabled behind a controlled reverse proxy.
-fn extract_client_ip(
+pub(crate) fn extract_client_ip(
     parts: &axum::http::request::Parts,
     trust_forwarded_headers: bool,
 ) -> Option<String> {
@@ -822,7 +823,7 @@ fn extract_client_ip(
     extract_client_ip_from_headers(&parts.headers, true)
 }
 
-fn extract_client_ip_from_headers(
+pub(crate) fn extract_client_ip_from_headers(
     headers: &HeaderMap,
     trust_forwarded_headers: bool,
 ) -> Option<String> {
