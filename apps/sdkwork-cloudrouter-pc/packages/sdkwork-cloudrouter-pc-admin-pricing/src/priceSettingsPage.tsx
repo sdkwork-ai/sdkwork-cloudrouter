@@ -53,7 +53,7 @@ import {
   StatusBadge,
   TableState,
 } from './components';
-import { DefaultRegionManager } from './defaultRegionManager';
+import { DefaultRegionManager, type DefaultRegionOption } from './defaultRegionManager';
 
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
 export const PRICE_SETTING_RESOURCE_TYPES = ['all', 'llm', 'image', 'video', 'audio', 'music', 'embedding', 'sound', 'api', 'other'] as const;
@@ -293,8 +293,26 @@ export function PriceSettingsAdmin() {
     return { products: productRows.rows.length, meters, configured };
   }, [defaultRegionByCatalogKey, productRows.rows]);
   const hasNextPage = officialCatalog?.pageInfo.hasMore ?? (officialCatalog?.pageInfo.totalPages ? page < officialCatalog.pageInfo.totalPages : false);
-  // Regions priced by the official catalog, offered as default-billing-region
-  // candidates in the management dialog.
+  // Region candidates for the default-region management dialog, keyed by
+  // catalog key: a default region must be one the *specific resource* prices,
+  // and the catalog-wide region facets would offer regions the model has no
+  // price in (the backend then rejects the save). Rows not on the current page
+  // fall back to the catalog-wide list.
+  const regionsByCatalogKey = useMemo(() => {
+    const map = new Map<string, DefaultRegionOption[]>();
+    for (const row of productRows.rows) {
+      const key = row.product.catalogKey?.trim();
+      if (!key) continue;
+      map.set(
+        key,
+        eligibleDefaultRegions(groupPriceSettingRatesByRegion(row.prices)).map((group) => ({
+          code: group.regionCode,
+          count: String(group.prices.length),
+        })),
+      );
+    }
+    return map;
+  }, [productRows.rows]);
   const defaultRegionOptions = useMemo(
     () => (officialCatalog?.regions ?? []).map((region) => ({ code: region.code, count: region.count })),
     [officialCatalog?.regions],
@@ -411,6 +429,7 @@ export function PriceSettingsAdmin() {
       open={defaultRegionsOpen}
       onClose={() => setDefaultRegionsOpen(false)}
       regionOptions={defaultRegionOptions}
+      regionsByCatalogKey={regionsByCatalogKey}
     />
   </AdminPageShell>;
 }
@@ -692,7 +711,7 @@ function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdi
       </td>
       <td className="px-4 py-4 align-top">
         <div className="flex w-full flex-col items-stretch gap-2">
-          {eligibleRegions.length > 0 ? (
+          {eligibleRegions.length > 1 ? (
             <div
               className="w-full rounded-md border border-slate-200 px-2 py-1.5 text-left transition hover:border-slate-300 dark:border-white/10 dark:hover:border-white/20"
               title={t('admin.pricing.settings.defaultRegion.setHint', { defaultValue: '为该资源选择默认计费 Region' })}
@@ -716,6 +735,14 @@ function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdi
                 ))}
               </select>
             </div>
+          ) : eligibleRegions.length === 1 ? (
+            <SingleDefaultRegionChoice
+              region={eligibleRegions[0]}
+              active={currentDefaultRegionCode.toLowerCase() === eligibleRegions[0].regionCode.trim().toLowerCase()}
+              saving={savingDefault}
+              onApply={() => applyDefaultRegion(eligibleRegions[0].regionCode)}
+              t={t}
+            />
           ) : (
             <span
               className="w-full rounded-md border border-dashed border-slate-200 px-2 py-1.5 text-[11px] text-slate-400 dark:border-white/10 dark:text-slate-500"
@@ -731,6 +758,45 @@ function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdi
         </div>
       </td>
     </tr>
+  );
+}
+
+/**
+ * A resource priced in exactly one specific Region has nothing to choose, so
+ * instead of a one-option dropdown the region is stated outright with a
+ * one-click apply. This mirrors the operator rule that a picker only makes
+ * sense when there is more than one candidate.
+ */
+function SingleDefaultRegionChoice({ region, active, saving, onApply, t }: { region: PriceSettingRegionGroup; active: boolean; saving: boolean; onApply: () => void; t: TranslationFunction }) {
+  return (
+    <div
+      className="w-full rounded-md border border-slate-200 px-2 py-1.5 text-left dark:border-white/10"
+      title={t('admin.pricing.settings.defaultRegion.singleRegionHint', { defaultValue: '该资源仅在此一个 Region 定价，无需选择' })}
+    >
+      <div className="flex items-center gap-1.5">
+        <Star className={`h-3.5 w-3.5 shrink-0 ${active ? 'fill-current text-lobster-500 dark:text-lobster-400' : 'text-slate-400'}`} aria-hidden="true" />
+        <span className="truncate text-xs font-semibold text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.defaultRegion.isDefaultLabel', { defaultValue: '默认 Region' })}</span>
+      </div>
+      <div className="mt-1.5 flex items-center justify-between gap-2">
+        <span className="truncate font-mono text-xs font-medium text-slate-700 dark:text-slate-200">
+          {region.regionCode}{region.currencyCode ? <span className="ml-1 font-sans text-slate-400">{region.currencyCode}</span> : null}
+        </span>
+        {active ? (
+          <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300">
+            {t('admin.pricing.settings.defaultRegion.active', { defaultValue: '已生效' })}
+          </span>
+        ) : (
+          <button
+            type="button"
+            className="inline-flex h-6 shrink-0 items-center rounded-md px-2 text-[11px] font-semibold text-lobster-600 transition hover:bg-lobster-50 disabled:cursor-not-allowed disabled:opacity-50 dark:text-lobster-300 dark:hover:bg-lobster-500/10"
+            disabled={saving}
+            onClick={() => onApply()}
+          >
+            {t('admin.pricing.settings.defaultRegion.setAsDefault', { defaultValue: '设为默认' })}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 

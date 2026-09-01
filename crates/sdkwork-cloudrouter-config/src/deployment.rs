@@ -164,8 +164,8 @@ pub fn resolve_deployment_runtime(
 /// lowercase ASCII `^[a-z][a-z0-9_]*$`, max 64 chars, default `global`.
 /// The region is orthogonal to deployment profile and environment and is
 /// injected through `SDKWORK_CLOUDROUTER_ROUTER_REGION_CODE`.
-pub const DEFAULT_REGION_CODE: &'static str = "global";
-pub const ENV_REGION_CODE: &'static str = "SDKWORK_CLOUDROUTER_ROUTER_REGION_CODE";
+pub const DEFAULT_REGION_CODE: &str = "global";
+pub const ENV_REGION_CODE: &str = "SDKWORK_CLOUDROUTER_ROUTER_REGION_CODE";
 const MAX_REGION_CODE_LEN: usize = 64;
 
 /// Bundled REGION_SPEC region registry (etc/region.registry.json), compiled

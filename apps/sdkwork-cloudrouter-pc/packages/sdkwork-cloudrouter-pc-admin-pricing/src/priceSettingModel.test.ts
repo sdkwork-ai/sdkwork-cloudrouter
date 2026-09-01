@@ -240,6 +240,22 @@ describe('price setting model', () => {
     expect(eligibleDefaultRegions(groups)).toHaveLength(0);
   });
 
+  it('narrows the default-region candidates to the resource own regions', () => {
+    const cnInput = { ...officialRate('llm_input_token', 'cn-input'), regionCode: 'cn', currencyCode: 'CNY' };
+    const globalInput = { ...officialRate('llm_input_token', 'global-input'), regionCode: 'global', currencyCode: 'USD' };
+    const groups = groupPriceSettingRatesByRegion([
+      { official: globalInput, rule: undefined },
+      { official: cnInput, rule: undefined },
+    ]);
+    // The picker must offer the regions THIS resource prices. Catalog-wide
+    // facets (us-east here) are not valid candidates: the model has no price
+    // there and the backend rejects a default the resource does not expose.
+    expect(eligibleDefaultRegions(groups).map((group) => group.regionCode)).toEqual(['cn']);
+    // A single candidate means there is nothing to choose, so the UI must not
+    // render a picker at all.
+    expect(eligibleDefaultRegions(groups)).toHaveLength(1);
+  });
+
   it('ignores a legacy global default when picking the active tab', () => {
     const cnInput = { ...officialRate('llm_input_token', 'cn-input'), regionCode: 'cn', currencyCode: 'CNY' };
     const globalInput = { ...officialRate('llm_input_token', 'global-input'), regionCode: 'global', currencyCode: 'USD' };

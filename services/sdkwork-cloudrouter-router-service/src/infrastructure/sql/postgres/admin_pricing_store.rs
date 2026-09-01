@@ -1796,69 +1796,25 @@ async fn require_default_region_regions(
     Ok(())
 }
 
+/// Writes the resource's default billing region.
+///
+/// A resource owns at most one default region row within a scope
+/// (`uk_pricing_default_region_resource_key`), so this is a genuine upsert:
+/// switching which region is default updates the existing row instead of
+/// creating a competing one. It is a single `INSERT ... ON CONFLICT DO UPDATE`
+/// rather than select-then-write because two concurrent first saves would
+/// otherwise both miss the pre-check and one would fail on the unique index.
+///
+/// The `::varchar` / `::text` casts are load bearing: every identity value
+/// below is bound once but consumed twice (its own column plus the
+/// `pricing_resource_key()` derivation), and Postgres refuses to infer a type
+/// for a parameter compared against both `character varying` and `text`.
 async fn upsert_default_region_row(
     tx: &mut Transaction<'_, Postgres>,
     command: &SaveAdminDefaultRegionCommand,
 ) -> DomainResult<i64> {
-    let existing = sqlx::query(
-        r#"
-        SELECT id
-        FROM pricing_default_region
-        WHERE tenant_id = $1
-          AND organization_id = $2
-          AND resource_key = pricing_resource_key($3, $4, $5, $6, $7)
-          AND deleted_at IS NULL
-        LIMIT 1
-        "#,
-    )
-    .bind(command.subject.tenant_id)
-    .bind(command.subject.organization_id)
-    .bind(&command.vendor_code)
-    .bind(&command.provider_code)
-    .bind(&command.catalog_key)
-    .bind(&command.product_code)
-    .bind(&command.resource_code)
-    .fetch_optional(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to inspect default region for save", error))?;
-    if let Some(row) = existing {
-        let id: i64 = row
-            .try_get("id")
-            .map_err(|error| store_error("failed to read default region id", error))?;
-        sqlx::query(
-            r#"
-            UPDATE pricing_default_region
-            SET default_region_code = $1,
-                currency_code = $2,
-                description = $3,
-                effective_from = $4::timestamptz,
-                effective_to = $5::timestamptz,
-                status = $6,
-                updated_at = $7,
-                version = pricing_default_region.version + 1
-            WHERE id = $8
-              AND tenant_id = $9
-              AND organization_id = $10
-              AND deleted_at IS NULL
-            "#,
-        )
-        .bind(&command.default_region_code)
-        .bind(&command.currency_code)
-        .bind(command.description.as_deref())
-        .bind(&command.effective_from)
-        .bind(command.effective_to.as_deref())
-        .bind(1_i32)
-        .bind(&command.requested_at)
-        .bind(id)
-        .bind(command.subject.tenant_id)
-        .bind(command.subject.organization_id)
-        .execute(&mut **tx)
-        .await
-        .map_err(|error| store_error("failed to update default region", error))?;
-        return Ok(id);
-    }
     let id = next_cloud_runtime_id("pricing_default_region")?;
-    sqlx::query(
+    let saved = sqlx::query(
         r#"
         INSERT INTO pricing_default_region
             (id, uuid, tenant_id, organization_id, data_scope, status, metadata,
@@ -1867,9 +1823,22 @@ async fn upsert_default_region_row(
              description, effective_from, effective_to, created_at, updated_at)
         VALUES
             ($1, $2, $3, $4, 0, $5, $6::jsonb,
-             $7, $8, $9, $10, $11,
-             pricing_resource_key($7, $8, $11, $9, $10), $12, $13, $14,
-             $15, $16::timestamptz, $17::timestamptz, $18, $18)
+             $7::varchar, $8::varchar, $9::varchar, $10::varchar, $11::varchar,
+             pricing_resource_key($7::text, $8::text, $11::text, $9::text, $10::text),
+             $12, $13, $14,
+             $15::timestamptz, $16::timestamptz, $17::timestamptz, $17::timestamptz)
+        ON CONFLICT (tenant_id, organization_id, resource_key)
+            WHERE deleted_at IS NULL AND BTRIM(resource_key) <> ''
+        DO UPDATE SET
+            default_region_code = EXCLUDED.default_region_code,
+            currency_code = EXCLUDED.currency_code,
+            description = EXCLUDED.description,
+            effective_from = EXCLUDED.effective_from,
+            effective_to = EXCLUDED.effective_to,
+            status = EXCLUDED.status,
+            updated_at = EXCLUDED.updated_at,
+            version = pricing_default_region.version + 1
+        RETURNING id
         "#,
     )
     .bind(id)
@@ -1889,10 +1858,12 @@ async fn upsert_default_region_row(
     .bind(&command.effective_from)
     .bind(command.effective_to.as_deref())
     .bind(&command.requested_at)
-    .execute(&mut **tx)
+    .fetch_one(&mut **tx)
     .await
-    .map_err(|error| store_error("failed to create default region", error))?;
-    Ok(id)
+    .map_err(|error| store_error("failed to save default region", error))?;
+    saved
+        .try_get("id")
+        .map_err(|error| store_error("failed to read saved default region id", error))
 }
 
 async fn delete_default_region(

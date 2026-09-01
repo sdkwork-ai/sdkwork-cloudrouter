@@ -296,7 +296,6 @@ where
     );
     let region_code = effective_billing_region(
         catalog,
-        invocation,
         account,
         &catalog_key,
         configured_default_region.as_deref(),
@@ -347,7 +346,6 @@ where
 /// so single-region and legacy catalogs behave exactly as before.
 fn effective_billing_region<C>(
     catalog: &C,
-    invocation: &Invocation,
     account: &InvocationAccount,
     catalog_key: &str,
     configured_default_region: Option<&str>,

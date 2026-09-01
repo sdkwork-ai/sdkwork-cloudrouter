@@ -1,47 +1,63 @@
 # cloudrouter-backend-sdk
 
-SDKWork Cloud Router backend API SDK
+Professional TypeScript SDK for SDKWork API.
 
 ## Installation
 
 ```bash
-npm install @sdkwork/cloudrouter-backend-sdk
+npm install sdkwork-cloudrouter-backend-sdk-generated-typescript
 # or
-yarn add @sdkwork/cloudrouter-backend-sdk
+yarn add sdkwork-cloudrouter-backend-sdk-generated-typescript
 # or
-pnpm add @sdkwork/cloudrouter-backend-sdk
+pnpm add sdkwork-cloudrouter-backend-sdk-generated-typescript
 ```
 
 ## Quick Start
 
 ```typescript
-import { SdkworkBackendClient } from '@sdkwork/cloudrouter-backend-sdk';
+import { SdkworkBackendClient } from 'sdkwork-cloudrouter-backend-sdk-generated-typescript';
 
 const client = new SdkworkBackendClient({
   baseUrl: 'http://localhost:18081',
   timeout: 30000,
 });
 
-// Authentication
-client.setAuthToken('your-auth-token');
-client.setAccessToken('your-access-token');
+// Mode A: API Key (recommended for server-to-server calls)
+client.setApiKey('your-api-key');
 
 // Use the SDK
-const result = await client.ai.upstreamResourceCatalog.retrieve();
+const result = await client.commerce.settingsRetrieve();
 ```
 
-## Authentication
+## Authentication Modes (Mutually Exclusive)
 
-```text
-Authorization: Bearer <authToken>
-Access-Token: <accessToken>
+Choose exactly one mode for the same client instance.
+
+### Mode A: API Key
+
+```typescript
+const client = new SdkworkBackendClient({ baseUrl: 'http://localhost:18081' });
+client.setApiKey('your-api-key');
+// Sends: Access-Token: <apiKey>
 ```
 
+### Mode B: Dual Token
+
+```typescript
+const client = new SdkworkBackendClient({ baseUrl: 'http://localhost:18081' });
+client.setAuthToken('your-auth-token');
+client.setAccessToken('your-access-token');
+// Sends:
+// Authorization: Bearer <authToken>
+// Access-Token: <accessToken>
+```
+
+> Do not call `setApiKey(...)` together with `setAuthToken(...)` + `setAccessToken(...)` on the same client.
 
 ## Configuration (Non-Auth)
 
 ```typescript
-import { SdkworkBackendClient } from '@sdkwork/cloudrouter-backend-sdk';
+import { SdkworkBackendClient } from 'sdkwork-cloudrouter-backend-sdk-generated-typescript';
 
 const client = new SdkworkBackendClient({
   baseUrl: 'http://localhost:18081',
@@ -54,45 +70,26 @@ const client = new SdkworkBackendClient({
 
 ## API Modules
 
-- `client.ai` - ai API
-- `client.billing` - billing API
-- `client.payments` - payments API
+- `client.intelligence` - intelligence API
+- `client.commerce` - commerce API
 - `client.pricing` - pricing API
-- `client.recharges` - recharges API
 - `client.storage` - storage API
 - `client.system` - system API
 
 ## Usage Examples
 
-### ai
+### intelligence
 
 ```typescript
 // List upstream resource catalog
-const result = await client.ai.upstreamResourceCatalog.retrieve();
+const result = await client.intelligence.upstreamResourceCatalogRetrieve();
 ```
 
-### billing
+### commerce
 
 ```typescript
-// List recharge records
-const params = {
-  page: 1,
-  page_size: 2,
-};
-const result = await client.billing.rechargeRecords.list(params);
-```
-
-### payments
-
-```typescript
-// Backend payments providers list
-const params = {
-  page: 1,
-  page_size: 2,
-  status: 'active',
-  provider_code: 'wechat_pay',
-};
-const result = await client.payments.providers.list(params);
+// Retrieve
+const result = await client.commerce.settingsRetrieve();
 ```
 
 ### pricing
@@ -104,14 +101,7 @@ const params = {
   page: 2,
   page_size: 3,
 };
-const result = await client.pricing.defaultRegions.list(params);
-```
-
-### recharges
-
-```typescript
-// Retrieve
-const result = await client.recharges.settings.retrieve();
+const result = await client.pricing.defaultRegionsList(params);
 ```
 
 ### storage
@@ -127,23 +117,23 @@ const params = {
   scope_id: 'scope_id',
   run_type: 'run_type',
 };
-const result = await client.storage.defaultBuckets.list(params);
+const result = await client.storage.defaultBucketsList(params);
 ```
 
 ### system
 
 ```typescript
 // List cloud router auth settings
-const result = await client.system.auth.settings.retrieve();
+const result = await client.system.authSettingsRetrieve();
 ```
 
 ## Error Handling
 
 ```typescript
-import { SdkworkBackendClient, NetworkError, TimeoutError, AuthenticationError } from '@sdkwork/cloudrouter-backend-sdk';
+import { SdkworkBackendClient, NetworkError, TimeoutError, AuthenticationError } from 'sdkwork-cloudrouter-backend-sdk-generated-typescript';
 
 try {
-  const result = await client.ai.upstreamResourceCatalog.retrieve();
+  const result = await client.commerce.settingsRetrieve();
 } catch (error) {
   if (error instanceof AuthenticationError) {
     console.error('Authentication failed:', error.message);
@@ -182,7 +172,7 @@ TypeScript check and publish commands use pnpm to materialize workspace dependen
 .\bin\publish.ps1 --action publish --channel test --dry-run
 ```
 
-> Configure npm registry credentials before release publish.
+> Set `NPM_TOKEN` (and optional `NPM_REGISTRY_URL`) before release publish.
 
 ## License
 

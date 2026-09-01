@@ -31,8 +31,13 @@ interface DefaultRegionManagerProps {
   open: boolean;
   onClose: () => void;
   /** Regions priced by the official catalog; `global` is filtered out because a
-   * `global` default never takes effect in the billing engine. */
+   * `global` default never takes effect in the billing engine. Used as the
+   * fallback when the typed catalog key is not on the current page. */
   regionOptions?: readonly DefaultRegionOption[];
+  /** Region candidates per resource (catalog key). A default region has to be
+   * one the specific resource prices, so whenever the form's catalog key
+   * matches a known resource these narrow the fallback list. */
+  regionsByCatalogKey?: ReadonlyMap<string, readonly DefaultRegionOption[]>;
 }
 
 const EMPTY_FORM = {
@@ -51,19 +56,10 @@ const EMPTY_FORM = {
 /** Admin management panel for per-model default billing regions. Lets the
  * operator select, for multi-region models, which region is used for billing
  * when an account carries no explicit region. */
-export function DefaultRegionManager({ open, onClose, regionOptions }: DefaultRegionManagerProps) {
+export function DefaultRegionManager({ open, onClose, regionOptions, regionsByCatalogKey }: DefaultRegionManagerProps) {
   const { t } = useTranslation();
   const translate = (key: string, fallback: string) =>
     String(t(key, { defaultValue: fallback }));
-
-  /** Only specific regions may be a default; `global` is rejected server-side
-   * and ignored by the billing engine, so it is never offered. */
-  const selectableRegions = useMemo(
-    () => (regionOptions ?? [])
-      .map((region) => region.code.trim())
-      .filter((code) => code !== '' && code.toLowerCase() !== GLOBAL_REGION_CODE),
-    [regionOptions],
-  );
 
   const [items, setItems] = useState<AdminDefaultRegionItem[]>([]);
   const [total, setTotal] = useState<number>(0);
@@ -79,6 +75,21 @@ export function DefaultRegionManager({ open, onClose, regionOptions }: DefaultRe
   /** Row being edited; while set the form runs in update mode and the resource
    * identity fields (catalog key / vendor / product) are locked to the row. */
   const [editing, setEditing] = useState<AdminDefaultRegionItem | null>(null);
+
+  /** Candidates for the form's catalog key: the regions that resource prices
+   * when it is known, otherwise the catalog-wide list. `global` is dropped
+   * either way because the billing engine ignores a `global` default. */
+  const formRegionOptions = useMemo(() => {
+    const scoped = regionsByCatalogKey?.get(form.catalogKey.trim());
+    return scoped ?? regionOptions ?? [];
+  }, [form.catalogKey, regionsByCatalogKey, regionOptions]);
+
+  const selectableRegions = useMemo(
+    () => formRegionOptions
+      .map((region) => region.code.trim())
+      .filter((code) => code !== '' && code.toLowerCase() !== GLOBAL_REGION_CODE),
+    [formRegionOptions],
+  );
 
   const beginCreate = () => {
     setEditing(null);
@@ -261,7 +272,7 @@ export function DefaultRegionManager({ open, onClose, regionOptions }: DefaultRe
                   ? translate('admin.pricing.settings.defaultRegion.formOptional', '必填')
                   : translate('admin.pricing.settings.defaultRegion.noRegionsHint', '官方目录暂无可选地域')}
               >
-                {selectableRegions.length > 0 ? (
+                {selectableRegions.length > 1 ? (
                   <select
                     className={selectClass}
                     value={form.defaultRegionCode}

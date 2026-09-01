@@ -206,6 +206,148 @@ fn admin_default_region_rejects_the_global_region_bucket() {
     );
 }
 
+/// The save is one atomic statement, not select-then-write.
+///
+/// Two concurrent first saves for the same resource would both miss a
+/// pre-check and one would then fail on `uk_pricing_default_region_resource_key`.
+/// `ON CONFLICT ... DO UPDATE` moves that decision into the database and also
+/// returns the surviving row's id, so switching the default region keeps the
+/// original row (and its audit trail) instead of churning ids.
+#[test]
+fn admin_default_region_save_is_a_single_atomic_upsert() {
+    let source = POSTGRES_ADMIN_PRICING_STORE;
+    let section = source_section(
+        source,
+        "async fn upsert_default_region_row",
+        "async fn delete_default_region",
+    );
+
+    assert!(
+        section.contains("ON CONFLICT (tenant_id, organization_id, resource_key)"),
+        "default region save must upsert on the resource identity unique index"
+    );
+    assert!(
+        section.contains("WHERE deleted_at IS NULL AND BTRIM(resource_key) <> ''"),
+        "the conflict target must repeat the partial index predicate, otherwise it never matches"
+    );
+    assert!(
+        section.contains("DO UPDATE SET") && section.contains("version = pricing_default_region.version + 1"),
+        "an existing default region must be switched in place rather than duplicated"
+    );
+    assert!(
+        section.contains("RETURNING id") && section.contains(".fetch_one("),
+        "the upsert must return the persisted row id for the audit log"
+    );
+    assert!(
+        !section.contains("SELECT id\n        FROM pricing_default_region"),
+        "a select-then-insert pre-check races with itself and must not come back"
+    );
+    assert!(
+        !section.contains("AND resource_key = pricing_resource_key($3, $4, $5, $6, $7)"),
+        "the removed pre-check was the only user of a second resource-key derivation"
+    );
+}
+
+/// Postgres rejects a statement whose `VALUES` arity does not match its column
+/// list at *prepare* time, and sqlx surfaces that as a plain protocol error —
+/// which `redacted_store_error` turns into an anonymous 500. That shipped once
+/// for the default-region save, so every parameterised statement in this store
+/// is now checked for placeholder/bind agreement.
+#[test]
+fn admin_pricing_store_binds_every_sql_placeholder() {
+    let source = POSTGRES_ADMIN_PRICING_STORE;
+    let (offenders, checked) = sqlx_arity_offenders(source);
+    assert!(
+        offenders.is_empty(),
+        "sqlx statements whose bind count does not match their placeholder count: {offenders:?}"
+    );
+    assert!(
+        checked >= 20,
+        "the arity scan must actually inspect the store's statements, only saw {checked}"
+    );
+}
+
+/// Collects `"<statement index>: max_placeholder=$N binds=M"` for every
+/// parameterised statement that disagrees with itself.
+///
+/// Only statements whose SQL is an inline `r#"..."#` literal are checked. The
+/// search/list builders compose their SQL with `format!` into
+/// `sqlx::AssertSqlSafe(sql)`, so their `$N` markers live outside the block the
+/// scanner can see; a static arity check there would be guesswork.
+fn sqlx_arity_offenders(source: &str) -> (Vec<String>, usize) {
+    let terminators = [
+        ".execute(",
+        ".fetch_all(",
+        ".fetch_optional(",
+        ".fetch_one(",
+        ".fetch_scalar(",
+    ];
+    let mut offenders = Vec::new();
+    let mut checked = 0;
+    let mut search_from = 0;
+    let mut statement_index = 0;
+
+    while let Some(offset) = source[search_from..].find("sqlx::query") {
+        let start = search_from + offset;
+        let end = terminators
+            .iter()
+            .filter_map(|terminator| {
+                source[start..]
+                    .find(terminator)
+                    .map(|offset| start + offset + terminator.len())
+            })
+            .min()
+            .unwrap_or(start);
+        let statement = &source[start..end];
+        search_from = end;
+        statement_index += 1;
+
+        let inline_literal = statement
+            .find('(')
+            .and_then(|open| statement[open..].find("r#\""))
+            .is_some();
+        if !inline_literal {
+            continue;
+        }
+        checked += 1;
+
+        let max_placeholder = placeholder_max(statement);
+        let binds = statement.matches(".bind(").count();
+        if max_placeholder != binds {
+            offenders.push(format!(
+                "statement #{statement_index}: max_placeholder=${max_placeholder} binds={binds}"
+            ));
+        }
+    }
+
+    (offenders, checked)
+}
+
+/// Highest `$N` referenced by a statement. Tokens such as `$7::text` and
+/// `$12,` are normalised before parsing.
+fn placeholder_max(statement: &str) -> usize {
+    let mut max = 0;
+    let bytes = statement.as_bytes();
+    let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] == b'$' {
+            let mut end = index + 1;
+            while end < bytes.len() && bytes[end].is_ascii_digit() {
+                end += 1;
+            }
+            if end > index + 1 {
+                if let Ok(value) = statement[index + 1..end].parse::<usize>() {
+                    max = max.max(value);
+                }
+            }
+            index = end;
+        } else {
+            index += 1;
+        }
+    }
+    max
+}
+
 #[test]
 fn admin_pricing_patch_preserves_unprovided_billing_modes() {
     assert!(
