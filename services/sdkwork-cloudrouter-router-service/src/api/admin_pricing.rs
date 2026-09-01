@@ -6,7 +6,7 @@ use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
 use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
-use axum::routing::{delete, get, patch};
+use axum::routing::{get, patch};
 use axum::{Json, Router};
 use chrono::{DateTime, NaiveDate, NaiveTime, SecondsFormat};
 use serde::{Deserialize, Serialize};
@@ -26,7 +26,8 @@ use crate::ports::{
     DeleteAdminDefaultRegionCommand, DeleteAdminPricingRuleCommand, DeleteAdminRateCardCommand,
     ListAdminDefaultRegionsQuery, ListAdminPricingPlansQuery, ListAdminPricingRulesQuery,
     ListAdminRateCardsQuery, LoadAdminPricingPlanQuery, SaveAdminDefaultRegionCommand,
-    UpdateAdminPricingPlanCommand, UpdateAdminPricingRuleCommand, UpdateAdminRateCardCommand,
+    UpdateAdminDefaultRegionCommand, UpdateAdminPricingPlanCommand,
+    UpdateAdminPricingRuleCommand, UpdateAdminRateCardCommand,
 };
 
 const MAX_CODE_LEN: usize = 96;
@@ -236,7 +237,7 @@ pub fn admin_pricing_router_with_store(
         )
         .route(
             "/backend/v3/api/pricing/default_regions/{default_region_id}",
-            delete(delete_default_region),
+            patch(update_default_region).delete(delete_default_region),
         )
         .with_state(AdminPricingState {
             store,
@@ -899,6 +900,61 @@ async fn create_default_region(
     };
     match state.store.save_default_region(command).await {
         Ok(item) => json_created_response(None, AdminPricingItemEnvelope { item }),
+        Err(error) if error.is_conflict() => conflict_response(error),
+        Err(error) => {
+            pricing_system_response("default region command store is unavailable", error)
+        }
+    }
+}
+
+/// Updates the default billing region of an existing per-model default region
+/// row. The resource identity (`catalogKey`/`vendorCode`/`productCode` in the
+/// body) is ignored: a catalog key maps to at most one default region within
+/// the scope, so operators switch which region is default by editing the row.
+async fn update_default_region(
+    State(state): State<AdminPricingState>,
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    _headers: HeaderMap,
+    Path(default_region_id): Path<String>,
+    body: Bytes,
+) -> Response {
+    let subject = scoped.into();
+    let default_region_id =
+        match normalize_pricing_path_id(&default_region_id, "default region id") {
+            Ok(default_region_id) => default_region_id,
+            Err(message) => return bad_request(message),
+        };
+    let request = match parse_json_body::<DefaultRegionMutationRequest>(&body, "default region") {
+        Ok(request) => request,
+        Err(message) => return bad_request(message),
+    };
+    let mutation = match normalize_default_region_mutation(request) {
+        Ok(mutation) => mutation,
+        Err(error) => return command_build_error_response(error),
+    };
+    let command = UpdateAdminDefaultRegionCommand {
+        subject,
+        default_region_id,
+        audit_log_uuid: match generate_entity_uuid(&state) {
+            Ok(uuid) => uuid,
+            Err(error) => return command_build_error_response(error),
+        },
+        default_region_code: mutation.default_region_code,
+        currency_code: mutation.currency_code,
+        description: mutation.description,
+        effective_from: mutation
+            .effective_from
+            .unwrap_or_else(current_timestamp_string),
+        effective_to: mutation.effective_to,
+        request_id: match generate_server_request_id() {
+            Ok(request_id) => request_id,
+            Err(error) => return command_build_error_response(request_id_error(error)),
+        },
+        requested_at: current_timestamp_string(),
+    };
+    match state.store.update_default_region(command).await {
+        Ok(Some(item)) => Json(success_envelope(AdminPricingItemEnvelope { item })).into_response(),
+        Ok(None) => not_found_response("default region was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
             pricing_system_response("default region command store is unavailable", error)

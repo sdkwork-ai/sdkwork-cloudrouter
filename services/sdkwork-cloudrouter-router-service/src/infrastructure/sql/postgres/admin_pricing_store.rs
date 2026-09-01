@@ -11,8 +11,8 @@ use crate::ports::{
     CreateAdminRateCardCommand, DeleteAdminDefaultRegionCommand, DeleteAdminPricingRuleCommand,
     DeleteAdminRateCardCommand, ListAdminDefaultRegionsQuery, ListAdminPricingPlansQuery,
     ListAdminPricingRulesQuery, ListAdminRateCardsQuery, LoadAdminPricingPlanQuery,
-    SaveAdminDefaultRegionCommand, UpdateAdminPricingPlanCommand, UpdateAdminPricingRuleCommand,
-    UpdateAdminRateCardCommand,
+    SaveAdminDefaultRegionCommand, UpdateAdminDefaultRegionCommand,
+    UpdateAdminPricingPlanCommand, UpdateAdminPricingRuleCommand, UpdateAdminRateCardCommand,
 };
 
 const TARGET_TYPE_PRICING_PLAN: i32 = 79;
@@ -146,6 +146,13 @@ impl AdminPricingStore for PostgresAdminPricingStore {
         command: SaveAdminDefaultRegionCommand,
     ) -> AdminPricingCommandFuture<'a, AdminDefaultRegionItem> {
         Box::pin(save_default_region(&self.pool, command))
+    }
+
+    fn update_default_region<'a>(
+        &'a self,
+        command: UpdateAdminDefaultRegionCommand,
+    ) -> AdminPricingCommandFuture<'a, Option<AdminDefaultRegionItem>> {
+        Box::pin(update_default_region(&self.pool, command))
     }
 
     fn delete_default_region<'a>(
@@ -1579,9 +1586,132 @@ async fn save_default_region(
     item.ok_or_else(|| DomainError::new("default region was not found after save"))
 }
 
+/// Updates an existing per-model default billing region row. The resource
+/// identity (`catalog_key`) is immutable on update: a catalog key maps to at
+/// most one default region within a scope (`uk_pricing_default_region_catalog_key`),
+/// so switching which region is default happens on the same row instead of
+/// creating a competing one. Returns `None` when the row does not exist in the
+/// operator's scope.
+async fn update_default_region(
+    pool: &PgPool,
+    command: UpdateAdminDefaultRegionCommand,
+) -> DomainResult<Option<AdminDefaultRegionItem>> {
+    let id = parse_pricing_id(&command.default_region_id, "default region id")?;
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|error| {
+            store_error("failed to begin default region update transaction", error)
+        })?;
+    let current = sqlx::query(
+        r#"
+        SELECT catalog_key
+        FROM pricing_default_region
+        WHERE id = $1
+          AND tenant_id = $2
+          AND organization_id = $3
+          AND deleted_at IS NULL
+        LIMIT 1
+        "#,
+    )
+    .bind(id)
+    .bind(command.subject.tenant_id)
+    .bind(command.subject.organization_id)
+    .fetch_optional(&mut *tx)
+    .await
+    .map_err(|error| store_error("failed to load default region for update", error))?;
+    let Some(row) = current else {
+        tx.commit()
+            .await
+            .map_err(|error| {
+                store_error("failed to commit default region update", error)
+            })?;
+        return Ok(None);
+    };
+    let catalog_key: String = row
+        .try_get("catalog_key")
+        .map_err(|error| store_error("failed to read default region catalog key", error))?;
+    require_default_region_regions(
+        &mut tx,
+        command.subject,
+        &catalog_key,
+        &command.default_region_code,
+    )
+    .await?;
+    let updated = sqlx::query(
+        r#"
+        UPDATE pricing_default_region
+        SET default_region_code = $1,
+            currency_code = $2,
+            description = $3,
+            effective_from = $4::timestamptz,
+            effective_to = $5::timestamptz,
+            status = $6,
+            updated_at = $7,
+            version = pricing_default_region.version + 1
+        WHERE id = $8
+          AND tenant_id = $9
+          AND organization_id = $10
+          AND deleted_at IS NULL
+        "#,
+    )
+    .bind(&command.default_region_code)
+    .bind(&command.currency_code)
+    .bind(command.description.as_deref())
+    .bind(&command.effective_from)
+    .bind(command.effective_to.as_deref())
+    .bind(1_i32)
+    .bind(&command.requested_at)
+    .bind(id)
+    .bind(command.subject.tenant_id)
+    .bind(command.subject.organization_id)
+    .execute(&mut *tx)
+    .await
+    .map_err(|error| store_error("failed to update default region", error))?;
+    if updated.rows_affected() == 0 {
+        tx.commit()
+            .await
+            .map_err(|error| {
+                store_error("failed to commit default region update", error)
+            })?;
+        return Ok(None);
+    }
+    insert_audit_log_for_target_uuid(
+        &mut tx,
+        AdminPricingAuditContext::new(
+            &command.audit_log_uuid,
+            &command.request_id,
+            command.subject,
+        ),
+        "update",
+        TARGET_TYPE_DEFAULT_REGION,
+        &id.to_string(),
+        serde_json::json!({
+            "action": "update",
+            "catalogKey": catalog_key,
+            "defaultRegionCode": command.default_region_code,
+        }),
+    )
+    .await?;
+    let item = load_default_region_in_transaction(&mut tx, id, command.subject).await?;
+    tx.commit()
+        .await
+        .map_err(|error| {
+            store_error("failed to commit default region update", error)
+        })?;
+    Ok(item)
+}
+
 /// Confirms a default region may be set for the model: the model must expose
-/// active pricing in at least two distinct (non-global) regions, and the chosen
+/// active pricing in at least one distinct non-global region, and the chosen
 /// default must be one of those regions.
+///
+/// The `global` bucket counts as a real pricing partition here (see
+/// `billing_region_prefers_china`): a model priced in both `cn` and `global`
+/// — the typical mainland-china deployment shape, e.g. deepseek — genuinely
+/// presents multiple billing regions, so configuring `cn` as the default is
+/// valid. Only models with zero non-global pricing are rejected, since a
+/// default region would be meaningless there.
 async fn require_default_region_regions(
     tx: &mut Transaction<'_, Postgres>,
     subject: AdminPricingSubject,
@@ -1613,9 +1743,9 @@ async fn require_default_region_regions(
         .iter()
         .map(|row| string_cell(row, "region_code"))
         .collect();
-    if regions.len() < 2 {
+    if regions.is_empty() {
         return Err(DomainError::new(
-            "model must expose active pricing in at least two regions before a default billing region can be configured",
+            "model must expose active pricing in at least one non-global region before a default billing region can be configured",
         ));
     }
     if !regions

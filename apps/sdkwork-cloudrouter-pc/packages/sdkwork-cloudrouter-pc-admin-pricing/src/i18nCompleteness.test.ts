@@ -3,8 +3,8 @@
  * and user-facing code paths keep localization helpers wired.
  */
 import { describe, expect, it } from 'vitest';
-import { pricingAdminEnUsMessages } from './i18n/en-US/pricing/pricing';
-import { pricingAdminZhCnMessages } from './i18n/zh-CN/pricing/pricing';
+import { pricingAdminEnUsMessages } from './i18n/en-US/cloudrouter/pricing/pricing';
+import { pricingAdminZhCnMessages } from './i18n/zh-CN/cloudrouter/pricing/pricing';
 import {
   formatPricingMeterLabel,
   formatPricingOperationLabel,

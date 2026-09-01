@@ -18,7 +18,7 @@ use crate::domain::{
 };
 use crate::ports::{
     GatewayRequestTraceCommand, GatewayUsageQuantity, GatewayUsageRecordCommand,
-    GatewayUsageRecorder, PricingCatalog,
+    GatewayUsageRecorder, PricingCatalog, PricingDefaultRegionProvider,
 };
 
 const MODALITY_TEXT: i64 = 1;
@@ -87,7 +87,7 @@ impl<C> OpenAiUsageRecorder<C> {
 
 impl<C> OpenAiUsageRecorder<C>
 where
-    C: PricingCatalog + Send + Sync + 'static,
+    C: PricingCatalog + PricingDefaultRegionProvider + Send + Sync + 'static,
 {
     pub async fn record_after_relay(
         &self,
@@ -507,7 +507,7 @@ pub(crate) fn build_usage_record_commands<C>(
     billing_profile: OpenAiUsageBillingProfile,
 ) -> DomainResult<Vec<GatewayUsageRecordCommand>>
 where
-    C: PricingCatalog + Send + Sync,
+    C: PricingCatalog + PricingDefaultRegionProvider + Send + Sync,
 {
     build_usage_record_command_builder(
         catalog,
@@ -641,7 +641,7 @@ pub(crate) fn build_usage_record_command_builder<C>(
     billing_profile: OpenAiUsageBillingProfile,
 ) -> DomainResult<GatewayUsageRecordCommandBuilder>
 where
-    C: PricingCatalog + Send + Sync,
+    C: PricingCatalog + PricingDefaultRegionProvider + Send + Sync,
 {
     let price_service = PriceService::new();
     let occurred_at = chrono::Utc::now();
@@ -727,26 +727,61 @@ fn resolve_openai_price<C>(
     occurred_at: chrono::DateTime<chrono::Utc>,
 ) -> DomainResult<PriceResolution>
 where
-    C: PricingCatalog + Send + Sync,
+    C: PricingCatalog + PricingDefaultRegionProvider + Send + Sync,
 {
     price_service.resolve(
         catalog,
-        openai_resource_definition(invocation_context, context, route, meter, occurred_at),
+        openai_resource_definition(catalog, invocation_context, context, route, meter, occurred_at),
     )
 }
 
-fn openai_resource_definition(
+/// Resolves the billing region for an OpenAI usage resource. The upstream route
+/// already folds model-route/tenant/account/deployment regions into
+/// `route.region_code`, which lands on the generic `global` bucket when nothing
+/// pins a specific region. In that case the configured default billing region
+/// for the catalog key (admin "default region" setting) takes effect, so
+/// multi-region models like deepseek-v4-flash rate against the correct
+/// regional price (e.g. `cn`/CNY) instead of the `global`/USD bucket. When no
+/// default is configured the route region is kept unchanged, preserving legacy
+/// resolution behavior.
+fn usage_billing_region<C>(
+    catalog: &C,
+    context: &AuthenticatedApiKeyContext,
+    route: &ResolvedOpenAiUpstreamRoute,
+) -> String
+where
+    C: PricingCatalog + PricingDefaultRegionProvider + Send + Sync,
+{
+    let region = route.region_code.trim();
+    if !region.is_empty() && !region.eq_ignore_ascii_case("global") {
+        return route.region_code.clone();
+    }
+    catalog
+        .default_billing_region(
+            context.tenant_id,
+            context.organization_id,
+            &route.catalog_key,
+        )
+        .unwrap_or_else(|| route.region_code.clone())
+}
+
+fn openai_resource_definition<C>(
+    catalog: &C,
     invocation_context: &OpenAiInvocationContext,
     context: &AuthenticatedApiKeyContext,
     route: &ResolvedOpenAiUpstreamRoute,
     meter: BillingMeter,
     occurred_at: chrono::DateTime<chrono::Utc>,
-) -> ResourceDefinition {
+) -> ResourceDefinition
+where
+    C: PricingCatalog + PricingDefaultRegionProvider + Send + Sync,
+{
+    let region_code = usage_billing_region(catalog, context, route);
     ResourceDefinition::new(route.catalog_key.clone(), meter, occurred_at)
         .with_pricing_subject(context.api_key_id, Some(route.group_id))
         .with_vendor_code(catalog_vendor_code(&route.catalog_key))
         .with_provider(route.supplier_code.clone(), Some(route.account_id))
-        .with_region_code(route.region_code.clone())
+        .with_region_code(region_code)
         .with_model(invocation_context.requested_model.clone())
         .with_api_code(openai_usage_api_code(invocation_context.endpoint))
 }
@@ -928,5 +963,122 @@ fn endpoint_label(endpoint: OpenAiInvocationEndpoint) -> &'static str {
         OpenAiInvocationEndpoint::ChatCompletions => "chat completion",
         OpenAiInvocationEndpoint::Responses => "response",
         OpenAiInvocationEndpoint::Embeddings => "embedding",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::infrastructure::InMemoryPricingCatalog;
+
+    fn context(tenant_id: i64, organization_id: i64) -> AuthenticatedApiKeyContext {
+        AuthenticatedApiKeyContext {
+            api_key_id: 9001,
+            tenant_id,
+            organization_id,
+            user_id: 7001,
+            api_key_name_snapshot: "test-key".to_owned(),
+            group_id: 5001,
+            group_code: "test-group".to_owned(),
+            pricing_plan_code: "test-plan".to_owned(),
+        }
+    }
+
+    fn route(catalog_key: &str, region_code: &str) -> ResolvedOpenAiUpstreamRoute {
+        ResolvedOpenAiUpstreamRoute {
+            catalog_key: catalog_key.to_owned(),
+            group_id: 5001,
+            group_code: "test-group".to_owned(),
+            pricing_plan_code: "test-plan".to_owned(),
+            supplier_code: "deepseek".to_owned(),
+            region_code: region_code.to_owned(),
+            account_id: 3001,
+            provider_model: "deepseek-v4-flash".to_owned(),
+            provider_base_url: Some("https://api.deepseek.com".to_owned()),
+            provider_secret_ref: Some("secret-ref".to_owned()),
+            provider_auth_profile: Default::default(),
+            provider_timeout_ms: None,
+            provider_retry_policy: None,
+        }
+    }
+
+    /// Explicit regional routes must keep their region untouched — the usage
+    /// billing region only kicks in for the empty/`global` route buckets.
+    #[test]
+    fn usage_billing_region_keeps_an_explicit_regional_route() {
+        let catalog = InMemoryPricingCatalog::default();
+        let ctx = context(7, 8);
+        let regional = route("deepseek/deepseek-v4-flash", "cn");
+
+        assert_eq!(
+            "cn",
+            usage_billing_region(&catalog, &ctx, &regional),
+            "an explicit cn route region must not be replaced by any default"
+        );
+    }
+
+    /// `global` routes resolve to the configured default billing region for
+    /// the catalog key when the account has no explicit region — this is the
+    /// core fix for usage stats pricing deepseek-v4-flash in USD instead of
+    /// the configured CNY default.
+    #[test]
+    fn usage_billing_region_falls_back_to_catalog_default_for_global_route() {
+        let mut catalog = InMemoryPricingCatalog::default();
+        catalog.set_default_billing_region(7, 8, "deepseek/deepseek-v4-flash", "cn");
+        let ctx = context(7, 8);
+        let global = route("deepseek/deepseek-v4-flash", "global");
+
+        assert_eq!(
+            "cn",
+            usage_billing_region(&catalog, &ctx, &global),
+            "a global route must fall back to the catalog default billing region"
+        );
+    }
+
+    /// The same fallback applies when the route region is entirely empty.
+    #[test]
+    fn usage_billing_region_falls_back_to_catalog_default_for_empty_route_region() {
+        let mut catalog = InMemoryPricingCatalog::default();
+        catalog.set_default_billing_region(7, 8, "deepseek/deepseek-v4-flash", "cn");
+        let ctx = context(7, 8);
+        let empty_region = route("deepseek/deepseek-v4-flash", "");
+
+        assert_eq!(
+            "cn",
+            usage_billing_region(&catalog, &ctx, &empty_region),
+            "an empty route region must fall back to the catalog default billing region"
+        );
+    }
+
+    /// Scoped defaults win over the global `(0, 0)` row, mirroring the
+    /// `SqlPricingCatalogSnapshot` lookup order.
+    #[test]
+    fn usage_billing_region_prefers_scoped_default_over_global_default() {
+        let mut catalog = InMemoryPricingCatalog::default();
+        catalog.set_default_billing_region(0, 0, "deepseek/deepseek-v4-flash", "us");
+        catalog.set_default_billing_region(7, 8, "deepseek/deepseek-v4-flash", "cn");
+        let ctx = context(7, 8);
+        let global = route("deepseek/deepseek-v4-flash", "global");
+
+        assert_eq!(
+            "cn",
+            usage_billing_region(&catalog, &ctx, &global),
+            "the tenant/organization scoped default must shadow the global default"
+        );
+    }
+
+    /// With no default configured the route region is preserved unchanged —
+    /// legacy behavior stays intact for models that only price `global`.
+    #[test]
+    fn usage_billing_region_preserves_route_region_when_no_default_configured() {
+        let catalog = InMemoryPricingCatalog::default();
+        let ctx = context(7, 8);
+        let global = route("openai/legacy-model", "global");
+
+        assert_eq!(
+            "global",
+            usage_billing_region(&catalog, &ctx, &global),
+            "without a configured default the global route region must be preserved"
+        );
     }
 }

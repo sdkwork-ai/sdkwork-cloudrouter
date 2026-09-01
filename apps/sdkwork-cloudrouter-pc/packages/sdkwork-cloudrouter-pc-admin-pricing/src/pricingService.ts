@@ -302,6 +302,13 @@ async function backendDefaultRegionsDelete(defaultRegionId: string) {
   return getCloudRouterBackendSdkClient().pricing.defaultRegions.delete(defaultRegionId);
 }
 
+async function backendDefaultRegionsUpdate(
+  defaultRegionId: string,
+  body: Parameters<BackendPricingService['defaultRegions']['update']>[1],
+) {
+  return getCloudRouterBackendSdkClient().pricing.defaultRegions.update(defaultRegionId, body);
+}
+
 export async function fetchAdminOfficialPricingRates(
   params: Parameters<BackendPricingService['officialRates']['list']>[0] = {},
 ): Promise<AdminOfficialPricingCatalog> {
@@ -491,6 +498,21 @@ export async function deletePricingDefaultRegion(defaultRegionId: string): Promi
   await backendDefaultRegionsDelete(requiredPricingText(defaultRegionId, 'defaultRegionId'));
 }
 
+/** Updates an existing default billing region row. The resource identity
+ * (`catalogKey`/`vendorCode`/`productCode`) is immutable: each catalog key maps
+ * to at most one default region (mutual exclusivity), so switching which region
+ * is default updates the existing row in place. */
+export async function updatePricingDefaultRegion(
+  defaultRegionId: string,
+  input: AdminDefaultRegionMutationInput,
+): Promise<AdminDefaultRegionItem> {
+  const result = await backendDefaultRegionsUpdate(
+    requiredPricingText(defaultRegionId, 'defaultRegionId'),
+    buildDefaultRegionCreateRequest(input),
+  );
+  return normalizeDefaultRegion(readRequiredApiItem(result, 'Default billing region could not be updated'));
+}
+
 export const pricingService = {
   officialProducts: {
     list: fetchAdminOfficialPricingProducts,
@@ -521,6 +543,7 @@ export const pricingService = {
   defaultRegions: {
     list: fetchPricingDefaultRegions,
     create: createPricingDefaultRegion,
+    update: updatePricingDefaultRegion,
     delete: deletePricingDefaultRegion,
   },
 };

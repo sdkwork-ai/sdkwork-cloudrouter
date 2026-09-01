@@ -235,6 +235,11 @@ export class PricingDefaultRegionsApi {
   async delete(defaultRegionId: string, requestOptions?: ApiRequestOptions): Promise<void> {
     return this.client.request<void>(backendApiPath(`/pricing/default_regions/${serializePathParameter(defaultRegionId, { name: 'defaultRegionId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
+
+/** Update pricing default region */
+  async update(defaultRegionId: string, body: PricingDefaultRegionCreateRequest, requestOptions?: ApiRequestOptions): Promise<AdminDefaultRegionItem> {
+    return this.client.request<AdminDefaultRegionItem>(backendApiPath(`/pricing/default_regions/${serializePathParameter(defaultRegionId, { name: 'defaultRegionId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+  }
 }
 
 export class PricingApi {

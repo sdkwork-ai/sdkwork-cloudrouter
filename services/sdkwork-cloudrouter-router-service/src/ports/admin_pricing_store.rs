@@ -395,6 +395,26 @@ pub struct DeleteAdminDefaultRegionCommand {
     pub requested_at: String,
 }
 
+/// Updates an existing per-model default billing region row. The resource
+/// identity (`catalog_key`/`vendor_code`/`product_code`) is immutable on
+/// update: a catalog key maps to at most one default region within a scope
+/// (mutual exclusivity), so operators switch which region is default by
+/// changing `default_region_code` on the existing row rather than creating a
+/// competing one.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UpdateAdminDefaultRegionCommand {
+    pub subject: AdminPricingSubject,
+    pub default_region_id: String,
+    pub audit_log_uuid: String,
+    pub default_region_code: String,
+    pub currency_code: String,
+    pub description: Option<String>,
+    pub effective_from: String,
+    pub effective_to: Option<String>,
+    pub request_id: String,
+    pub requested_at: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminDefaultRegionItem {
@@ -512,6 +532,11 @@ pub trait AdminPricingStore {
         &'a self,
         command: SaveAdminDefaultRegionCommand,
     ) -> AdminPricingCommandFuture<'a, AdminDefaultRegionItem>;
+
+    fn update_default_region<'a>(
+        &'a self,
+        command: UpdateAdminDefaultRegionCommand,
+    ) -> AdminPricingCommandFuture<'a, Option<AdminDefaultRegionItem>>;
 
     fn delete_default_region<'a>(
         &'a self,

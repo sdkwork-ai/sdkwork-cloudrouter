@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { Globe2, Plus, Search, Trash2, X } from 'lucide-react';
+import { Globe2, Pencil, Plus, Search, Star, Trash2, X } from 'lucide-react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { BottomPagination } from '@sdkwork/cloudroutes-pc-commons';
@@ -55,6 +55,36 @@ export function DefaultRegionManager({ open, onClose }: DefaultRegionManagerProp
   const [pageSize, setPageSize] = useState(20);
   const [form, setForm] = useState(EMPTY_FORM);
   const [showCreate, setShowCreate] = useState(false);
+  /** Row being edited; while set the form runs in update mode and the resource
+   * identity fields (catalog key / vendor / product) are locked to the row. */
+  const [editing, setEditing] = useState<AdminDefaultRegionItem | null>(null);
+
+  const beginCreate = () => {
+    setEditing(null);
+    setForm(EMPTY_FORM);
+    setShowCreate((value) => !value);
+  };
+
+  const beginEdit = (item: AdminDefaultRegionItem) => {
+    setShowCreate(true);
+    setEditing(item);
+    setForm({
+      catalogKey: item.catalogKey,
+      vendorCode: item.vendorCode,
+      productCode: item.productCode,
+      defaultRegionCode: item.defaultRegionCode,
+      currencyCode: item.currencyCode,
+      description: item.description ?? '',
+      effectiveFrom: item.effectiveFrom ?? '',
+      effectiveTo: item.effectiveTo ?? '',
+    });
+  };
+
+  const closeForm = () => {
+    setShowCreate(false);
+    setEditing(null);
+    setForm(EMPTY_FORM);
+  };
 
   const reload = useCallback(async (params: AdminPricingListParams = {}) => {
     setLoading(true);
@@ -76,6 +106,8 @@ export function DefaultRegionManager({ open, onClose }: DefaultRegionManagerProp
       setPage(1);
       setAppliedSearch('');
       setShowCreate(false);
+      setEditing(null);
+      setForm(EMPTY_FORM);
       void reload({ page: 1, pageSize });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -92,26 +124,36 @@ export function DefaultRegionManager({ open, onClose }: DefaultRegionManagerProp
     void reload({ q: appliedSearch || undefined, page: next, pageSize });
   };
 
-  const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSaving(true);
     setError(null);
+    const payload = {
+      catalogKey: form.catalogKey.trim(),
+      vendorCode: form.vendorCode.trim(),
+      productCode: form.productCode.trim(),
+      defaultRegionCode: form.defaultRegionCode.trim(),
+      currencyCode: form.currencyCode.trim().toUpperCase(),
+      description: form.description.trim() || undefined,
+      effectiveFrom: form.effectiveFrom.trim() || undefined,
+      effectiveTo: form.effectiveTo.trim() || undefined,
+    };
     try {
-      await pricingService.defaultRegions.create({
-        catalogKey: form.catalogKey.trim(),
-        vendorCode: form.vendorCode.trim(),
-        productCode: form.productCode.trim(),
-        defaultRegionCode: form.defaultRegionCode.trim(),
-        currencyCode: form.currencyCode.trim().toUpperCase(),
-        description: form.description.trim() || undefined,
-        effectiveFrom: form.effectiveFrom.trim() || undefined,
-        effectiveTo: form.effectiveTo.trim() || undefined,
-      });
-      setForm(EMPTY_FORM);
-      setShowCreate(false);
+      if (editing) {
+        await pricingService.defaultRegions.update(editing.id, payload);
+      } else {
+        await pricingService.defaultRegions.create(payload);
+      }
+      closeForm();
       await reload({ q: appliedSearch || undefined, page, pageSize });
     } catch (cause) {
-      setError(errorMessageI18n(cause, 'Default billing region could not be created', t));
+      setError(errorMessageI18n(
+        cause,
+        editing
+          ? 'Default billing region could not be updated'
+          : 'Default billing region could not be created',
+        t,
+      ));
     } finally {
       setSaving(false);
     }
@@ -143,11 +185,11 @@ export function DefaultRegionManager({ open, onClose }: DefaultRegionManagerProp
               {translate('admin.pricing.settings.defaultRegion.title', '默认计费 Region')}
             </h2>
             <p className="mt-0.5 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-              {translate('admin.pricing.settings.defaultRegion.subtitle', '为多 Region 模型指定在账号未显式选择地域时的默认计费地域。')}
+              {translate('admin.pricing.settings.defaultRegion.subtitle', '为多 Region 模型指定在账号未显式选择地域时的默认计费地域。每个模型（Catalog Key）互斥，仅允许一个默认 Region；重复设置将覆盖原配置。')}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <button type="button" className={primaryButtonClass} onClick={() => setShowCreate((value) => !value)}>
+            <button type="button" className={primaryButtonClass} onClick={beginCreate}>
               <Plus className="h-4 w-4" aria-hidden="true" />{translate('admin.pricing.settings.defaultRegion.new', '新建默认 Region')}
             </button>
             <button type="button" className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-white/10" onClick={onClose} aria-label={translate('admin.pricing.common.aria.close', 'Close')}>
@@ -157,17 +199,30 @@ export function DefaultRegionManager({ open, onClose }: DefaultRegionManagerProp
         </div>
 
         {showCreate ? (
-          <form className="shrink-0 border-b border-slate-200 bg-slate-50/80 px-5 py-4 dark:border-white/10 dark:bg-white/[0.04]" onSubmit={handleCreate}>
-            <h3 className="mb-3 text-sm font-semibold text-slate-900 dark:text-white">{translate('admin.pricing.settings.defaultRegion.formTitle', '新建默认计费 Region')}</h3>
+          <form className="shrink-0 border-b border-slate-200 bg-slate-50/80 px-5 py-4 dark:border-white/10 dark:bg-white/[0.04]" onSubmit={handleSubmit}>
+            <h3 className="mb-3 text-sm font-semibold text-slate-900 dark:text-white">
+              {editing
+                ? translate('admin.pricing.settings.defaultRegion.formTitleEdit', '编辑默认计费 Region')
+                : translate('admin.pricing.settings.defaultRegion.formTitle', '新建默认计费 Region')}
+            </h3>
+            {editing ? (
+              <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+                {translate('admin.pricing.settings.defaultRegion.formEditHint', '模型（Catalog Key）身份不可修改：每个模型互斥仅保留一个默认 Region，此处仅切换默认地域及有效期。')}
+              </p>
+            ) : (
+              <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+                {translate('admin.pricing.settings.defaultRegion.formCreateHint', '同一模型重复设置将覆盖原默认 Region（互斥）。')}
+              </p>
+            )}
             <div className="grid gap-3 md:grid-cols-2">
               <Field label={translate('admin.pricing.settings.defaultRegion.catalogKey', '模型 Catalog Key')} hint={translate('admin.pricing.settings.defaultRegion.formOptional', '必填')}>
-                <input className={inputClass} value={form.catalogKey} onChange={(event) => setForm({ ...form, catalogKey: event.target.value })} placeholder="openai/gpt-4o" required />
+                <input className={inputClass} value={form.catalogKey} onChange={(event) => setForm({ ...form, catalogKey: event.target.value })} placeholder="openai/gpt-4o" required disabled={Boolean(editing)} />
               </Field>
               <Field label={translate('admin.pricing.settings.defaultRegion.vendorCode', '厂商 Code')} hint={translate('admin.pricing.settings.defaultRegion.formOptional', '必填')}>
-                <input className={inputClass} value={form.vendorCode} onChange={(event) => setForm({ ...form, vendorCode: event.target.value })} placeholder="openai" required />
+                <input className={inputClass} value={form.vendorCode} onChange={(event) => setForm({ ...form, vendorCode: event.target.value })} placeholder="openai" required disabled={Boolean(editing)} />
               </Field>
               <Field label={translate('admin.pricing.settings.defaultRegion.productCode', '产品 Code')} hint={translate('admin.pricing.settings.defaultRegion.formOptional', '必填')}>
-                <input className={inputClass} value={form.productCode} onChange={(event) => setForm({ ...form, productCode: event.target.value })} placeholder="gpt-4o" required />
+                <input className={inputClass} value={form.productCode} onChange={(event) => setForm({ ...form, productCode: event.target.value })} placeholder="gpt-4o" required disabled={Boolean(editing)} />
               </Field>
               <Field label={translate('admin.pricing.settings.defaultRegion.defaultRegionCode', '默认计费 Region')} hint={translate('admin.pricing.settings.defaultRegion.formOptional', '必填')}>
                 <input className={inputClass} value={form.defaultRegionCode} onChange={(event) => setForm({ ...form, defaultRegionCode: event.target.value })} placeholder="cn-beijing" required />
@@ -186,7 +241,7 @@ export function DefaultRegionManager({ open, onClose }: DefaultRegionManagerProp
               </Field>
             </div>
             <div className="mt-4 flex justify-end gap-2">
-              <button type="button" className={secondaryButtonClass} onClick={() => setShowCreate(false)} disabled={saving}>{translate('admin.pricing.settings.defaultRegion.cancel', '取消')}</button>
+              <button type="button" className={secondaryButtonClass} onClick={closeForm} disabled={saving}>{translate('admin.pricing.settings.defaultRegion.cancel', '取消')}</button>
               <button type="submit" className={primaryButtonClass} disabled={saving}>{translate('admin.pricing.settings.defaultRegion.save', '保存')}</button>
             </div>
           </form>
@@ -221,14 +276,24 @@ export function DefaultRegionManager({ open, onClose }: DefaultRegionManagerProp
               items.map((item) => (
                 <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.03]">
                   <td className="px-4 py-3"><div className="truncate font-medium text-slate-900 dark:text-white">{item.catalogKey}</div><div className="truncate text-xs text-slate-500 dark:text-slate-400">{item.vendorCode} · {item.productCode}</div></td>
-                  <td className="px-4 py-3 font-mono text-slate-700 dark:text-slate-200">{item.defaultRegionCode}</td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex items-center gap-1.5 font-mono text-slate-700 dark:text-slate-200">
+                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-hidden="true" />
+                      {item.defaultRegionCode}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{item.currencyCode}</td>
                   <td className="px-4 py-3"><StatusBadge status={item.status} /></td>
                   <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">{item.effectiveFrom ?? '—'}{item.effectiveTo ? ` → ${item.effectiveTo}` : ''}</td>
                   <td className="px-4 py-3 text-right">
-                    <button type="button" className="inline-flex h-8 items-center justify-center gap-1 rounded-md px-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-500/10" onClick={() => void handleDelete(item.id)} aria-label={translate('admin.pricing.settings.defaultRegion.delete', '删除')}>
-                      <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />{translate('admin.pricing.settings.defaultRegion.delete', '删除')}
-                    </button>
+                    <div className="inline-flex items-center gap-1">
+                      <button type="button" className="inline-flex h-8 items-center justify-center gap-1 rounded-md px-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10" onClick={() => beginEdit(item)} aria-label={translate('admin.pricing.settings.defaultRegion.edit', '编辑')}>
+                        <Pencil className="h-3.5 w-3.5" aria-hidden="true" />{translate('admin.pricing.settings.defaultRegion.edit', '编辑')}
+                      </button>
+                      <button type="button" className="inline-flex h-8 items-center justify-center gap-1 rounded-md px-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-500/10" onClick={() => void handleDelete(item.id)} aria-label={translate('admin.pricing.settings.defaultRegion.delete', '删除')}>
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />{translate('admin.pricing.settings.defaultRegion.delete', '删除')}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

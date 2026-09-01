@@ -19990,6 +19990,116 @@
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
         "x-sdkwork-permission": "cloudrouter.defaultRegions.manage",
         "x-sdkwork-required-surface": "organizationMember"
+      },
+      "patch": {
+        "description": "Update pricing default region. Reads pricing_default_region. Writes pricing_default_region, ops_audit_log. File targets none.",
+        "operationId": "defaultRegions.update",
+        "parameters": [
+          {
+            "description": "Default region id path parameter.",
+            "in": "path",
+            "name": "defaultRegionId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PricingDefaultRegionCreateRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for update pricing default region.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultRegionsCreateResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "Update pricing default region",
+        "tags": [
+          "pricing"
+        ],
+        "x-contract-kind": "update",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "pricing_default_region"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "pricing",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter-backend-api",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "pricing",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-permission": "cloudrouter.defaultRegions.manage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-resource": "defaultRegions",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+        "x-write-tables": [
+          "pricing_default_region",
+          "ops_audit_log"
+        ]
       }
     },
     "/backend/v3/api/pricing/official_products": {

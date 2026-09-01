@@ -178,8 +178,8 @@ pub use admin_pricing_store::{
     CreateAdminPricingRuleCommand, CreateAdminRateCardCommand, DeleteAdminDefaultRegionCommand,
     DeleteAdminPricingRuleCommand, DeleteAdminRateCardCommand, ListAdminDefaultRegionsQuery,
     ListAdminPricingPlansQuery, ListAdminPricingRulesQuery, ListAdminRateCardsQuery,
-    LoadAdminPricingPlanQuery, SaveAdminDefaultRegionCommand, UpdateAdminPricingPlanCommand,
-    UpdateAdminPricingRuleCommand, UpdateAdminRateCardCommand,
+    LoadAdminPricingPlanQuery, SaveAdminDefaultRegionCommand, UpdateAdminDefaultRegionCommand,
+    UpdateAdminPricingPlanCommand, UpdateAdminPricingRuleCommand, UpdateAdminRateCardCommand,
 };
 pub use admin_record_store::{
     AdminRecordListPage, AdminRecordLogItem, AdminRecordReadFuture, AdminRecordStore,

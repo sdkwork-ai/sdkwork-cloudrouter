@@ -299,6 +299,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "defaultRegions.delete",
     ),
     HttpRoute::dual_token(
+        HttpMethod::Patch,
+        "/backend/v3/api/pricing/default_regions/{defaultRegionId}",
+        "pricing",
+        "defaultRegions.update",
+    ),
+    HttpRoute::dual_token(
         HttpMethod::Get,
         "/backend/v3/api/pricing/official_products",
         "pricing",
