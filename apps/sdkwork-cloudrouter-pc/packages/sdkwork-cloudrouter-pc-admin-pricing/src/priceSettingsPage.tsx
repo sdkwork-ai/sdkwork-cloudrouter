@@ -35,6 +35,7 @@ import {
   pickDefaultPriceSettingRegion,
   pricingRuleLifecycle,
   type PriceSettingProductRow,
+  type PriceSettingRegionGroup,
 } from './priceSettingModel';
 import {
   AdminListToolbar,
