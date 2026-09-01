@@ -901,6 +901,7 @@ async fn create_default_region(
     match state.store.save_default_region(command).await {
         Ok(item) => json_created_response(None, AdminPricingItemEnvelope { item }),
         Err(error) if error.is_conflict() => conflict_response(error),
+        Err(error) if error.is_bad_request() => bad_request(error.to_string()),
         Err(error) => {
             pricing_system_response("default region command store is unavailable", error)
         }
@@ -956,6 +957,7 @@ async fn update_default_region(
         Ok(Some(item)) => Json(success_envelope(AdminPricingItemEnvelope { item })).into_response(),
         Ok(None) => not_found_response("default region was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
+        Err(error) if error.is_bad_request() => bad_request(error.to_string()),
         Err(error) => {
             pricing_system_response("default region command store is unavailable", error)
         }

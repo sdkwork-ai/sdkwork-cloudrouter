@@ -1545,10 +1545,10 @@ async fn save_default_region(
     command: SaveAdminDefaultRegionCommand,
 ) -> DomainResult<AdminDefaultRegionItem> {
     if command.catalog_key.trim().is_empty() {
-        return Err(DomainError::new("catalog_key is required"));
+        return Err(DomainError::bad_request("catalog_key is required"));
     }
     if command.default_region_code.trim().is_empty() {
-        return Err(DomainError::new("default_region_code is required"));
+        return Err(DomainError::bad_request("default_region_code is required"));
     }
     let mut tx = pool
         .begin()
@@ -1744,7 +1744,7 @@ async fn require_default_region_regions(
         .map(|row| string_cell(row, "region_code"))
         .collect();
     if regions.is_empty() {
-        return Err(DomainError::new(
+        return Err(DomainError::bad_request(
             "model must expose active pricing in at least one non-global region before a default billing region can be configured",
         ));
     }
@@ -1752,7 +1752,7 @@ async fn require_default_region_regions(
         .iter()
         .any(|region| region.eq_ignore_ascii_case(default_region_code))
     {
-        return Err(DomainError::new(
+        return Err(DomainError::bad_request(
             "default region must be one of the regions priced for this model",
         ));
     }
