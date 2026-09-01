@@ -86,10 +86,10 @@ fn gateway_trace_upsert_placeholder_order_matches_all_postgres_bindings() {
         "async fn upsert_usage_fact(",
     );
     assert_eq!(
-        (1..=42).collect::<std::collections::BTreeSet<_>>(),
+        (1..=43).collect::<std::collections::BTreeSet<_>>(),
         numbered_placeholders(postgres_sql, '$')
     );
-    assert_eq!(42, postgres_bindings.matches(".bind(").count());
+    assert_eq!(43, postgres_bindings.matches(".bind(").count());
     assert_sql_contains(
         postgres_sql,
         "$28, to_timestamp($29::double precision / 1000.0), to_timestamp($30::double precision / 1000.0), $31",

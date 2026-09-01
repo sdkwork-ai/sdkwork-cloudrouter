@@ -180,7 +180,7 @@
     },
     {
       "path": "src/types/admin-default-region-item.ts",
-      "sha256": "0cd6f7d29471a526a9d5cb02a698dcf132c51ea20a70bd7ecbf1cf9c51169235"
+      "sha256": "3352c4e7f944b27c164a78ebdb7b423092dc48ae8f28b691003bcbf478e92b9a"
     },
     {
       "path": "src/types/admin-default-region-list-response.ts",
@@ -604,7 +604,7 @@
     },
     {
       "path": "src/types/pricing-default-region-create-request.ts",
-      "sha256": "83b35eda8a6f4391c2eb6192dbc6b375d53eaf2c8433d97429323866cf10f4ae"
+      "sha256": "87580c8a2a2f6018952b324e6220690abc20923c84f0c9b8e67e7f908cdd28ce"
     },
     {
       "path": "src/types/pricing-plan-create-request.ts",

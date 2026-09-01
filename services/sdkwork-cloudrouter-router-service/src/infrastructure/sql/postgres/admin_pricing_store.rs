@@ -1468,7 +1468,9 @@ async fn list_default_regions(
             default_region.id::text AS id,
             default_region.catalog_key,
             default_region.vendor_code,
+            default_region.provider_code,
             default_region.product_code,
+            default_region.resource_code,
             default_region.default_region_code,
             default_region.currency_code,
             default_region.description,
@@ -1769,14 +1771,18 @@ async fn upsert_default_region_row(
         FROM pricing_default_region
         WHERE tenant_id = $1
           AND organization_id = $2
-          AND catalog_key = $3
+          AND resource_key = pricing_resource_key($3, $4, $5, $6, $7)
           AND deleted_at IS NULL
         LIMIT 1
         "#,
     )
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
+    .bind(&command.vendor_code)
+    .bind(&command.provider_code)
     .bind(&command.catalog_key)
+    .bind(&command.product_code)
+    .bind(&command.resource_code)
     .fetch_optional(&mut **tx)
     .await
     .map_err(|error| store_error("failed to inspect default region for save", error))?;
@@ -1821,12 +1827,14 @@ async fn upsert_default_region_row(
         r#"
         INSERT INTO pricing_default_region
             (id, uuid, tenant_id, organization_id, data_scope, status, metadata,
-             vendor_code, product_code, catalog_key, default_region_code, currency_code,
+             vendor_code, provider_code, product_code, resource_code, catalog_key,
+             resource_key, default_region_code, currency_code,
              description, effective_from, effective_to, created_at, updated_at)
         VALUES
             ($1, $2, $3, $4, 0, $5, $6::jsonb,
-             $7, $8, $9, $10, $11, $12,
-             $13, $14::timestamptz, $15::timestamptz, $16, $16)
+             $7, $8, $9, $10, $11,
+             pricing_resource_key($7, $8, $11, $9, $10), $12, $13, $14,
+             $15, $16::timestamptz, $17::timestamptz, $18, $18)
         "#,
     )
     .bind(id)
@@ -1836,7 +1844,9 @@ async fn upsert_default_region_row(
     .bind(1_i32)
     .bind(admin_metadata())
     .bind(&command.vendor_code)
+    .bind(&command.provider_code)
     .bind(&command.product_code)
+    .bind(&command.resource_code)
     .bind(&command.catalog_key)
     .bind(&command.default_region_code)
     .bind(&command.currency_code)
@@ -1916,7 +1926,9 @@ async fn load_default_region_in_transaction(
             id::text AS id,
             catalog_key,
             vendor_code,
+            provider_code,
             product_code,
+            resource_code,
             default_region_code,
             currency_code,
             description,
@@ -1947,7 +1959,9 @@ fn default_region_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<AdminDef
         id: string_cell(row, "id"),
         catalog_key: string_cell(row, "catalog_key"),
         vendor_code: string_cell(row, "vendor_code"),
+        provider_code: string_cell(row, "provider_code"),
         product_code: string_cell(row, "product_code"),
+        resource_code: string_cell(row, "resource_code"),
         default_region_code: string_cell(row, "default_region_code"),
         currency_code: string_cell(row, "currency_code"),
         description: optional_blank_string_cell(row, "description"),

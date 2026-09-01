@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.5.0.
--- Registry SHA-256: 1a7169a14d4fdf8e24034dbe36dbdcce5e8d8e4165b8be555a6f0a46de253ce6.
+-- Registry SHA-256: 6b994396308e8480d180d9ad76a67c4051170bead55285ad15b34bf490f3da0d.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -19,8 +19,11 @@ CREATE TABLE IF NOT EXISTS pricing_default_region (
     deleted_by BIGINT,
     metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
     vendor_code VARCHAR(64) NOT NULL,
+    provider_code VARCHAR(64) NOT NULL DEFAULT '',
     product_code VARCHAR(160) NOT NULL,
+    resource_code VARCHAR(256) NOT NULL DEFAULT '',
     catalog_key VARCHAR(256) NOT NULL,
+    resource_key VARCHAR(64) NOT NULL DEFAULT '',
     default_region_code VARCHAR(64) NOT NULL,
     currency_code VARCHAR(3) NOT NULL,
     description VARCHAR(1024),
@@ -29,14 +32,16 @@ CREATE TABLE IF NOT EXISTS pricing_default_region (
     CONSTRAINT ck_pricing_default_region_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
     CONSTRAINT ck_pricing_default_region_currency CHECK (currency_code ~ '^[A-Z]{3}$'),
     CONSTRAINT ck_pricing_default_region_region_not_blank CHECK (BTRIM(default_region_code) <> ''),
-    CONSTRAINT ck_pricing_default_region_interval CHECK (effective_to IS NULL OR effective_to > effective_from)
+    CONSTRAINT ck_pricing_default_region_interval CHECK (effective_to IS NULL OR effective_to > effective_from),
+    CONSTRAINT ck_pricing_default_region_resource_key_blank CHECK (BTRIM(resource_key) <> '')
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_default_region_uuid ON pricing_default_region (uuid) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_default_region_scope_id ON pricing_default_region (tenant_id, organization_id, id) WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_default_region_catalog_key ON pricing_default_region (tenant_id, organization_id, catalog_key) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_default_region_resource_key ON pricing_default_region (tenant_id, organization_id, resource_key) WHERE deleted_at IS NULL AND BTRIM(resource_key) <> '';
 CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_default_region_scope_reference ON pricing_default_region (tenant_id, organization_id, id);
 CREATE INDEX IF NOT EXISTS idx_pricing_default_region_catalog_key ON pricing_default_region (tenant_id, organization_id, vendor_code, catalog_key, default_region_code, id);
+CREATE INDEX IF NOT EXISTS idx_pricing_default_region_resource_key ON pricing_default_region (tenant_id, organization_id, resource_key, default_region_code, id);
 
 CREATE TABLE IF NOT EXISTS pricing_import_run (
     id BIGINT NOT NULL PRIMARY KEY,

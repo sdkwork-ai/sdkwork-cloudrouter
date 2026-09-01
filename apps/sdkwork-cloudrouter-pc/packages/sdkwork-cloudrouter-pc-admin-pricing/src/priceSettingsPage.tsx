@@ -26,10 +26,12 @@ import {
   formatPricingUnitLabel,
   formatPricingQuantity,
   formatOfficialRateScheduleLines,
+  groupPriceSettingRatesByRegion,
   groupPriceSettingRatesByVariant,
   normalizePricingDecimal,
   officialRateVariantLabel,
   officialRateUnit,
+  pickDefaultPriceSettingRegion,
   pricingRuleLifecycle,
   type PriceSettingProductRow,
 } from './priceSettingModel';
@@ -202,19 +204,20 @@ export function PriceSettingsAdmin() {
 
   useEffect(() => { void loadDefaultRegions(); }, [loadDefaultRegions]);
 
-  const handleSetDefaultRegion = useCallback(async (row: PriceSettingProductRow) => {
+  const handleSetDefaultRegion = useCallback(async (row: PriceSettingProductRow, regionCode: string) => {
     const catalogKey = row.product.catalogKey?.trim();
-    if (!catalogKey) return;
-    const targetRegion = row.product.regionCode.trim();
+    const targetRegion = regionCode.trim();
+    if (!catalogKey || !targetRegion) return;
     const previous = defaultRegionByCatalogKey.get(catalogKey);
     if (previous?.defaultRegionCode === targetRegion) return;
     const currencyCode = row.prices
+      .filter(({ official }) => official.regionCode.trim() === targetRegion)
       .map(({ official }) => official.currencyCode?.trim())
       .find((code) => code) ?? plans[0]?.currencyCode?.trim() ?? 'CNY';
     try {
-      // Keep exactly one default per catalogKey: retire the previous default
-      // before creating the new one, mirroring the uk_pricing_default_region_
-      // catalog_key uniqueness rule.
+      // Keep exactly one default per resource: retire the previous default
+      // before creating the new one, mirroring the resource-level
+      // uk_pricing_default_region_resource_key uniqueness rule.
       if (previous?.id) {
         try { await pricingService.defaultRegions.delete(previous.id); }
         catch { /* the previous default may already be gone; proceed */ }
@@ -222,7 +225,9 @@ export function PriceSettingsAdmin() {
       const created = await pricingService.defaultRegions.create({
         catalogKey,
         vendorCode: row.product.vendorCode,
+        providerCode: row.product.providerCode,
         productCode: row.product.productCode,
+        resourceCode: row.product.resourceCode,
         defaultRegionCode: targetRegion,
         currencyCode,
         description: '',
@@ -264,24 +269,41 @@ export function PriceSettingsAdmin() {
     for (const code of vendorCodes) if (!options.has(code)) options.set(code, { code, count: '0' });
     return [...options.values()];
   }, [officialCatalog?.vendors, vendorCodes]);
-  const summary = useMemo(() => ({
-    products: productRows.rows.length,
-    meters: productRows.rows.reduce((total, row) => total + row.prices.length, 0),
-    configured: productRows.rows.reduce((total, row) => total + row.prices.filter((item) => pricingRuleLifecycle(item.rule) === 'active').length, 0),
-  }), [productRows.rows]);
+  const summary = useMemo(() => {
+    let meters = 0;
+    let configured = 0;
+    for (const row of productRows.rows) {
+      // Count the resource's default region tab only, so multi-region rows
+      // are not double-counted in the page summary.
+      const regionGroups = groupPriceSettingRatesByRegion(row.prices);
+      const region = pickDefaultPriceSettingRegion(
+        regionGroups,
+        defaultRegionByCatalogKey.get(row.product.catalogKey?.trim() ?? '')?.defaultRegionCode,
+        row.product.regionCode,
+      );
+      const prices = regionGroups.find((group) => group.regionCode === region)?.prices ?? row.prices;
+      meters += prices.length;
+      configured += prices.filter((item) => pricingRuleLifecycle(item.rule) === 'active').length;
+    }
+    return { products: productRows.rows.length, meters, configured };
+  }, [defaultRegionByCatalogKey, productRows.rows]);
   const hasNextPage = officialCatalog?.pageInfo.hasMore ?? (officialCatalog?.pageInfo.totalPages ? page < officialCatalog.pageInfo.totalPages : false);
 
   const openCreate = () => { setForm({ ...EMPTY_FORM, pricingPlanId: pricingPlanId || plans[0]?.id || '', weeklyWindows: [{ ...DEFAULT_WINDOW }], meterPrices: [emptyMeter()] }); setFormError(null); setCreating(true); setPanelOpen(true); };
-  const openProductSetting = (row: PriceSettingProductRow) => {
-    const firstRule = row.prices.find((item) => item.rule)?.rule;
-    const firstSchedule = row.prices.find((item) => item.rule?.schedule)?.rule?.schedule;
-    const existingRules = row.prices
+  const openProductSetting = (row: PriceSettingProductRow, regionCode: string) => {
+    const regionPrices = regionCode.trim()
+      ? row.prices.filter(({ official }) => official.regionCode.trim() === regionCode.trim())
+      : row.prices;
+    const prices = regionPrices.length > 0 ? regionPrices : row.prices;
+    const firstRule = prices.find((item) => item.rule)?.rule;
+    const firstSchedule = prices.find((item) => item.rule?.schedule)?.rule?.schedule;
+    const existingRules = prices
       .map((item) => item.rule)
       .filter((rule): rule is AdminPricingRuleItem => Boolean(rule));
     setForm({
-      catalogKey: row.product.catalogKey ?? '', vendorCode: row.product.vendorCode, productCode: row.product.productCode, resourceCode: row.product.resourceCode, resourceDisplayName: row.product.resourceDisplayName, providerCode: row.product.providerCode, regionCode: row.product.regionCode,
+      catalogKey: row.product.catalogKey ?? '', vendorCode: row.product.vendorCode, productCode: row.product.productCode, resourceCode: row.product.resourceCode, resourceDisplayName: row.product.resourceDisplayName, providerCode: row.product.providerCode, regionCode: prices[0]?.official.regionCode.trim() || row.product.regionCode,
       resourceType: resourceTypeOfProduct(row.product), pricingPlanId: pricingPlanId || firstRule?.pricingPlanId || plans[0]?.id || '',
-      meterPrices: row.prices.map(({ official, rule }) => ({ key: official.rateCode, rateCode: official.rateCode, ruleId: rule?.id, ruleCode: rule?.ruleCode, meterCode: official.meterCode, operationCode: official.operationCode, unitCode: official.unitCode, unitSize: formatPricingQuantity(official.unitSize, official.unitSize), official, customerPrice: normalizePricingDecimal(rule?.unitPriceOverride), existingFormulaMode: rule?.formulaMode, existingMultiplier: normalizePricingDecimal(rule?.multiplier) || rule?.multiplier, existingMarkupAmount: normalizePricingDecimal(rule?.markupAmount) || rule?.markupAmount, conditions: rule?.conditions ?? [] })),
+      meterPrices: prices.map(({ official, rule }) => ({ key: official.rateCode, rateCode: official.rateCode, ruleId: rule?.id, ruleCode: rule?.ruleCode, meterCode: official.meterCode, operationCode: official.operationCode, unitCode: official.unitCode, unitSize: formatPricingQuantity(official.unitSize, official.unitSize), official, customerPrice: normalizePricingDecimal(rule?.unitPriceOverride), existingFormulaMode: rule?.formulaMode, existingMultiplier: normalizePricingDecimal(rule?.multiplier) || rule?.multiplier, existingMarkupAmount: normalizePricingDecimal(rule?.markupAmount) || rule?.markupAmount, conditions: rule?.conditions ?? [] })),
       removedRuleIds: [],
       priceMode: firstSchedule ? 'time_window' : 'standard', timeZone: firstSchedule?.timeZone ?? 'Asia/Shanghai',
       weeklyWindows: firstSchedule?.weeklyWindows.map((window) => ({ ...window, daysOfWeek: [...window.daysOfWeek] })) ?? [{ ...DEFAULT_WINDOW }],
@@ -548,21 +570,33 @@ function VendorMultiSelect({ vendors, value, onChange, placeholder }: { vendors:
   );
 }
 
-function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdit, defaultRegion, onSetDefault }: { row: PriceSettingProductRow; activeResourceType: PriceSettingResourceType; plans: AdminPricingPlanItem[]; locale: string; t: TranslationFunction; onEdit: (row: PriceSettingProductRow) => void; defaultRegion?: AdminDefaultRegionItem; onSetDefault: (row: PriceSettingProductRow) => void }) {
+function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdit, defaultRegion, onSetDefault }: { row: PriceSettingProductRow; activeResourceType: PriceSettingResourceType; plans: AdminPricingPlanItem[]; locale: string; t: TranslationFunction; onEdit: (row: PriceSettingProductRow, regionCode: string) => void; defaultRegion?: AdminDefaultRegionItem; onSetDefault: (row: PriceSettingProductRow, regionCode: string) => void }) {
   const resourceType = activeResourceType === 'all' ? resourceTypeOfProduct(row.product) : activeResourceType;
   const translate = pricingConditionTranslate(t);
-  const variantGroups = useMemo(() => groupPriceSettingRatesByVariant(row.prices), [row.prices]);
+  // A resource row aggregates every region it prices; the region tabs switch
+  // the official reference price and sales price cells below.
+  const regionGroups = useMemo(() => groupPriceSettingRatesByRegion(row.prices), [row.prices]);
+  const [activeRegion, setActiveRegion] = useState(() => pickDefaultPriceSettingRegion(regionGroups, defaultRegion?.defaultRegionCode, row.product.regionCode));
+  useEffect(() => {
+    if (!regionGroups.some((group) => group.regionCode === activeRegion)) {
+      setActiveRegion(pickDefaultPriceSettingRegion(regionGroups, defaultRegion?.defaultRegionCode, row.product.regionCode));
+    }
+  }, [activeRegion, defaultRegion?.defaultRegionCode, regionGroups, row.product.regionCode]);
+  const activeRegionPrices = regionGroups.find((group) => group.regionCode === activeRegion)?.prices ?? row.prices;
+  const variantGroups = useMemo(() => groupPriceSettingRatesByVariant(activeRegionPrices), [activeRegionPrices]);
   const [activeVariant, setActiveVariant] = useState(variantGroups[0]?.key ?? 'standard');
   useEffect(() => {
     if (!variantGroups.some((group) => group.key === activeVariant)) {
       setActiveVariant(variantGroups[0]?.key ?? 'standard');
     }
   }, [activeVariant, variantGroups]);
-  const activePrices = variantGroups.find((group) => group.key === activeVariant)?.prices ?? row.prices;
+  const activePrices = variantGroups.find((group) => group.key === activeVariant)?.prices ?? activeRegionPrices;
   const showVariantTabs = variantGroups.length > 1;
+  const showRegionTabs = regionGroups.length > 1;
+  const activeRegionGroup = regionGroups.find((group) => group.regionCode === activeRegion);
   const catalogKey = row.product.catalogKey?.trim();
-  const canSetDefault = Boolean(catalogKey);
-  const isDefaultRegion = Boolean(canSetDefault && defaultRegion && defaultRegion.defaultRegionCode === row.product.regionCode.trim());
+  const canSetDefault = Boolean(catalogKey) && regionGroups.length > 1;
+  const isDefaultRegion = Boolean(canSetDefault && defaultRegion && defaultRegion.defaultRegionCode === activeRegion);
   return (
     <tr className="align-top hover:bg-slate-50 dark:hover:bg-white/5">
       <td className="px-4 py-4 text-slate-900 dark:text-white">
@@ -574,11 +608,25 @@ function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdi
         <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">{resourceTypeLabel(resourceType, t)}</span>
       </td>
       <td className="px-4 py-4 text-[11px] text-slate-500 dark:text-slate-400">
+        {showRegionTabs ? (
+          <PriceRegionTabs
+            groups={regionGroups}
+            activeRegion={activeRegion}
+            defaultRegionCode={defaultRegion?.defaultRegionCode}
+            onChange={setActiveRegion}
+            t={t}
+            className="mb-2"
+          />
+        ) : (
+          <div className="mb-2 inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">
+            {activeRegion}
+            {activeRegionGroup?.currencyCode ? <span className="tabular-nums text-slate-400">{activeRegionGroup.currencyCode}</span> : null}
+          </div>
+        )}
         <div>{t('admin.pricing.settings.scope.vendor')}: {row.product.vendorCode || '—'}</div>
         <div className="mt-1">{t('admin.pricing.settings.scope.provider')}: {row.product.providerCode || '—'}</div>
-        <div className="mt-1">{t('admin.pricing.settings.scope.region')}: {row.product.regionCode || '—'}</div>
         <div className="mt-1">{t('admin.pricing.settings.scope.product')}: {row.product.productCode || '—'}</div>
-        <div className="mt-2">{t('admin.pricing.settings.table.rateCount', { count: activePrices.length })}</div>
+        <div className="mt-2">{t('admin.pricing.settings.table.rateCount', { count: activeRegionPrices.length })}</div>
       </td>
       <td className="px-4 py-4">
         {showVariantTabs ? (
@@ -622,18 +670,44 @@ function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdi
               {t('admin.pricing.settings.defaultRegion.isDefaultLabel', { defaultValue: '默认 Region' })}
             </span>
           ) : (
-            <button type="button" className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white" onClick={() => onSetDefault(row)} title={t('admin.pricing.settings.defaultRegion.setHint', { defaultValue: '将该 Region 设为默认计费地域' })}>
+            <button type="button" className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white" onClick={() => onSetDefault(row, activeRegion)} title={t('admin.pricing.settings.defaultRegion.setHint', { defaultValue: '将当前 Region 设为默认计费地域' })}>
               <Star className="h-3.5 w-3.5" aria-hidden="true" />
               {t('admin.pricing.settings.defaultRegion.set', { defaultValue: '设置默认' })}
             </button>
           )) : null}
-          <button type="button" className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold text-lobster-600 transition hover:bg-lobster-50 dark:text-lobster-300 dark:hover:bg-lobster-500/10" onClick={() => onEdit(row)}>
+          <button type="button" className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold text-lobster-600 transition hover:bg-lobster-50 dark:text-lobster-300 dark:hover:bg-lobster-500/10" onClick={() => onEdit(row, activeRegion)}>
             <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
             {t('admin.pricing.settings.actions.editGroup')}
           </button>
         </div>
       </td>
     </tr>
+  );
+}
+
+function PriceRegionTabs({ groups, activeRegion, defaultRegionCode, onChange, t, className = '' }: { groups: ReturnType<typeof groupPriceSettingRatesByRegion>; activeRegion: string; defaultRegionCode?: string; onChange: (regionCode: string) => void; t: TranslationFunction; className?: string }) {
+  return (
+    <div className={`flex flex-wrap items-center gap-1 ${className}`.trim()} role="tablist" aria-label={t('admin.pricing.settings.tabs.regions', { defaultValue: '计费 Region' })}>
+      {groups.map((group) => {
+        const selected = group.regionCode === activeRegion;
+        const isDefault = Boolean(defaultRegionCode && defaultRegionCode === group.regionCode);
+        return (
+          <button
+            key={group.regionCode}
+            type="button"
+            role="tab"
+            aria-selected={selected}
+            title={isDefault ? t('admin.pricing.settings.defaultRegion.isDefault', { defaultValue: '默认计费 Region' }) : undefined}
+            onClick={() => onChange(group.regionCode)}
+            className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition ${selected ? 'bg-lobster-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/15'}`}
+          >
+            {isDefault ? <Star className="h-3 w-3 fill-current" aria-hidden="true" /> : null}
+            {group.regionCode}
+            <span className={`tabular-nums ${selected ? 'text-white/80' : 'text-slate-400'}`}>{group.prices.length}</span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

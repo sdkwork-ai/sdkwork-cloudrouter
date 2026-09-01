@@ -310,6 +310,69 @@ export interface PriceSettingVariantGroup {
   prices: PriceSettingRateRow[];
 }
 
+export interface PriceSettingRegionGroup {
+  regionCode: string;
+  currencyCode: string;
+  prices: PriceSettingRateRow[];
+}
+
+/**
+ * Group the prices of a resource row by region. Each resource (model) is now
+ * a single admin list row whose official reference prices and sales prices
+ * exist per region; the row renders one region tab per group and switches the
+ * price cells by the active region.
+ */
+export function groupPriceSettingRatesByRegion(
+  prices: readonly PriceSettingRateRow[],
+): PriceSettingRegionGroup[] {
+  const groups = new Map<string, PriceSettingRateRow[]>();
+  for (const price of prices) {
+    const regionCode = price.official.regionCode.trim() || 'global';
+    const current = groups.get(regionCode) ?? [];
+    current.push(price);
+    groups.set(regionCode, current);
+  }
+  return [...groups.entries()]
+    .map(([regionCode, groupPrices]) => ({
+      regionCode,
+      currencyCode: groupPrices.find((price) => price.official.currencyCode.trim())?.official.currencyCode.trim() ?? '',
+      prices: groupPrices,
+    }))
+    .sort(
+      (left, right) => regionTabOrder(left.regionCode) - regionTabOrder(right.regionCode)
+        || left.regionCode.localeCompare(right.regionCode),
+    );
+}
+
+/**
+ * Pick the region tab that should be active when a resource row opens:
+ * the configured default billing region wins, then the group-level region
+ * resolved by the backend (which already prefers the default region), then
+ * the first tab.
+ */
+export function pickDefaultPriceSettingRegion(
+  regions: readonly PriceSettingRegionGroup[],
+  configuredDefaultRegionCode?: string,
+  groupRegionCode?: string,
+): string {
+  if (regions.length === 0) return '';
+  const normalized = (value: string) => value.trim().toLowerCase();
+  const configured = normalized(configuredDefaultRegionCode ?? '');
+  const group = normalized(groupRegionCode ?? '');
+  return (
+    regions.find((region) => normalized(region.regionCode) === configured)?.regionCode
+    ?? regions.find((region) => normalized(region.regionCode) === group)?.regionCode
+    ?? regions[0].regionCode
+  );
+}
+
+function regionTabOrder(regionCode: string): number {
+  const normalized = regionCode.trim().toLowerCase();
+  if (normalized === 'global') return 0;
+  if (normalized === 'cn' || normalized === 'china') return 10;
+  return 20;
+}
+
 /** Group product meters by peak/off-peak (and other) variants for tabbed display. */
 export function groupPriceSettingRatesByVariant(
   prices: readonly PriceSettingRateRow[],

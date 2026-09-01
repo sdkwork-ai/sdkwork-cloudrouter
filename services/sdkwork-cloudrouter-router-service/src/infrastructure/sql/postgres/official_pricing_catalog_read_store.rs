@@ -35,9 +35,8 @@ const LOAD_RATES_PREFIX: &str = r#"
 WITH eligible AS (
     SELECT
         r.id, r.rate_code, r.rate_hash, __CATEGORY_CODES__ AS group_codes,
-        md5(concat_ws(chr(31), r.vendor_code, r.provider_code, r.region_code,
-            r.currency_code, book.price_book_code, book.price_book_version,
-            COALESCE(r.catalog_key, ''), r.product_code, r.resource_code)) AS product_group_key,
+        pricing_resource_key(r.vendor_code, r.provider_code, COALESCE(r.catalog_key, ''),
+            r.product_code, r.resource_code) AS product_group_key,
         r.product_code, r.product_kind, r.product_display_name,
         r.operation_code, r.operation_kind, r.operation_display_name,
         r.vendor_code, r.provider_code, r.region_code, r.resource_type,
@@ -63,12 +62,24 @@ WITH eligible AS (
         model.max_output_tokens AS model_max_output_tokens,
         model.supports_streaming AS model_supports_streaming,
         model.supports_tools AS model_supports_tools,
-        model.supports_json_schema AS model_supports_json_schema
+        model.supports_json_schema AS model_supports_json_schema,
+        -- Configured default billing region for the resource (admin feature).
+        -- Drives the region/currency shown at the group level of the admin
+        -- product list; the runtime billing fallback reads the same table.
+        default_region.default_region_code
     FROM pricing_rate r
     JOIN pricing_price_book book ON book.tenant_id = r.tenant_id
       AND book.organization_id = r.organization_id AND book.id = r.price_book_id
     LEFT JOIN ai_model model ON model.catalog_key = r.catalog_key
       AND model.status = 1 AND model.deleted_at IS NULL
+    LEFT JOIN pricing_default_region default_region
+      ON default_region.tenant_id = 0 AND default_region.organization_id = 0
+     AND default_region.deleted_at IS NULL
+     AND default_region.resource_key = pricing_resource_key(
+         r.vendor_code, r.provider_code, COALESCE(r.catalog_key, ''), r.product_code, r.resource_code)
+     AND BTRIM(default_region.default_region_code) NOT IN ('', 'global')
+     AND default_region.effective_from <= CURRENT_TIMESTAMP
+     AND (default_region.effective_to IS NULL OR default_region.effective_to > CURRENT_TIMESTAMP)
     WHERE r.tenant_id = 0 AND r.organization_id = 0 AND r.status = 1 AND r.deleted_at IS NULL
       AND book.status = 1 AND book.deleted_at IS NULL AND book.price_side = 'official_reference'
       AND book.lifecycle_state = 'active' AND book.effective_from <= CURRENT_TIMESTAMP
@@ -338,8 +349,10 @@ async fn load_product_catalog(
     .map_err(sql_error)?;
 
     let mut items: Vec<OfficialPricingProductGroup> = Vec::new();
+    let mut default_regions: Vec<String> = Vec::new();
     for row in rows {
         let group_key = string_cell(&row, "product_group_key");
+        let default_region = string_cell(&row, "default_region_code");
         let rate = rate_from_row(row)?;
         if let Some(group) = items
             .last_mut()
@@ -347,9 +360,17 @@ async fn load_product_catalog(
         {
             merge_group_codes(&mut group.group_codes, &rate.group_codes);
             group.rates.push(rate);
+            let index = items.len() - 1;
+            if default_regions[index].is_empty() && !default_region.trim().is_empty() {
+                default_regions[index] = default_region;
+            }
         } else {
             items.push(product_group_from_rate(group_key, rate));
+            default_regions.push(default_region);
         }
+    }
+    for (group, default_region) in items.iter_mut().zip(default_regions.iter()) {
+        apply_group_region_identity(group, default_region);
     }
     let groups = facets
         .into_iter()
@@ -407,6 +428,37 @@ fn product_group_from_rate(
         price_book_code: rate.price_book_code.clone(),
         price_book_version: rate.price_book_version.clone(),
         rates: vec![rate],
+    }
+}
+
+/// A product group now aggregates one resource across every region it prices
+/// (group_key is the resource identity, region-independent). The group-level
+/// region/currency/price-book scalars must stay deterministic for the admin
+/// list, so they are resolved from the configured default billing region when
+/// present, falling back to `global`, then to the first region in lexical
+/// order. All rates (every region) remain available in `group.rates` for the
+/// per-row region tabs.
+fn apply_group_region_identity(group: &mut OfficialPricingProductGroup, default_region_code: &str) {
+    let default_region = default_region_code.trim();
+    let identity = group
+        .rates
+        .iter()
+        .find(|rate| {
+            !default_region.is_empty()
+                && rate.region_code.eq_ignore_ascii_case(default_region)
+        })
+        .or_else(|| {
+            group
+                .rates
+                .iter()
+                .find(|rate| rate.region_code.eq_ignore_ascii_case("global"))
+        })
+        .or_else(|| group.rates.iter().min_by_key(|rate| rate.region_code.as_str()));
+    if let Some(rate) = identity {
+        group.region_code = rate.region_code.clone();
+        group.currency_code = rate.currency_code.clone();
+        group.price_book_code = rate.price_book_code.clone();
+        group.price_book_version = rate.price_book_version.clone();
     }
 }
 
@@ -628,5 +680,24 @@ mod tests {
         assert!(COUNT_PRODUCT_GROUPS_SUFFIX.contains("COUNT(DISTINCT product_group_key)"));
         assert!(LOAD_PRODUCT_GROUP_RATES_SUFFIX.contains("LIMIT $7 OFFSET $8"));
         assert!(LOAD_PRODUCT_GROUP_RATES_SUFFIX.contains("JOIN paged_products"));
+    }
+    #[test]
+    fn official_product_group_key_is_resource_scoped_not_region_scoped() {
+        // One row per resource: the group key must be derived from the
+        // resource identity only (vendor/provider/catalog/product/resource),
+        // never from region, currency, or price book, so multi-region
+        // resources render as a single admin row with region tabs inside.
+        assert!(LOAD_RATES_PREFIX.contains(
+            "pricing_resource_key(r.vendor_code, r.provider_code, COALESCE(r.catalog_key, ''),"
+        ));
+        assert!(!LOAD_RATES_PREFIX.contains(
+            "r.region_code, r.currency_code, book.price_book_code, book.price_book_version"
+        ));
+        assert!(!LOAD_RATES_PREFIX.contains("r.region_code,\n            r.currency_code, book"));
+    }
+    #[test]
+    fn official_product_groups_carry_configured_default_region() {
+        assert!(LOAD_RATES_PREFIX.contains("default_region.default_region_code"));
+        assert!(LOAD_RATES_PREFIX.contains("default_region.resource_key = pricing_resource_key("));
     }
 }

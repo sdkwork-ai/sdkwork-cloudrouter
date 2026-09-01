@@ -28,7 +28,9 @@ interface DefaultRegionManagerProps {
 const EMPTY_FORM = {
   catalogKey: '',
   vendorCode: '',
+  providerCode: '',
   productCode: '',
+  resourceCode: '',
   defaultRegionCode: '',
   currencyCode: 'CNY',
   description: '',
@@ -71,7 +73,9 @@ export function DefaultRegionManager({ open, onClose }: DefaultRegionManagerProp
     setForm({
       catalogKey: item.catalogKey,
       vendorCode: item.vendorCode,
+      providerCode: item.providerCode ?? '',
       productCode: item.productCode,
+      resourceCode: item.resourceCode ?? '',
       defaultRegionCode: item.defaultRegionCode,
       currencyCode: item.currencyCode,
       description: item.description ?? '',
@@ -131,7 +135,9 @@ export function DefaultRegionManager({ open, onClose }: DefaultRegionManagerProp
     const payload = {
       catalogKey: form.catalogKey.trim(),
       vendorCode: form.vendorCode.trim(),
+      providerCode: form.providerCode.trim() || undefined,
       productCode: form.productCode.trim(),
+      resourceCode: form.resourceCode.trim() || undefined,
       defaultRegionCode: form.defaultRegionCode.trim(),
       currencyCode: form.currencyCode.trim().toUpperCase(),
       description: form.description.trim() || undefined,
@@ -221,8 +227,14 @@ export function DefaultRegionManager({ open, onClose }: DefaultRegionManagerProp
               <Field label={translate('admin.pricing.settings.defaultRegion.vendorCode', '厂商 Code')} hint={translate('admin.pricing.settings.defaultRegion.formOptional', '必填')}>
                 <input className={inputClass} value={form.vendorCode} onChange={(event) => setForm({ ...form, vendorCode: event.target.value })} placeholder="openai" required disabled={Boolean(editing)} />
               </Field>
+              <Field label={translate('admin.pricing.settings.defaultRegion.providerCode', 'Provider Code')} hint={translate('admin.pricing.settings.defaultRegion.formCreateOptional', '可选')}>
+                <input className={inputClass} value={form.providerCode} onChange={(event) => setForm({ ...form, providerCode: event.target.value })} placeholder="openai" disabled={Boolean(editing)} />
+              </Field>
               <Field label={translate('admin.pricing.settings.defaultRegion.productCode', '产品 Code')} hint={translate('admin.pricing.settings.defaultRegion.formOptional', '必填')}>
                 <input className={inputClass} value={form.productCode} onChange={(event) => setForm({ ...form, productCode: event.target.value })} placeholder="gpt-4o" required disabled={Boolean(editing)} />
+              </Field>
+              <Field label={translate('admin.pricing.settings.defaultRegion.resourceCode', '资源 Code')} hint={translate('admin.pricing.settings.defaultRegion.formCreateOptional', '可选')}>
+                <input className={inputClass} value={form.resourceCode} onChange={(event) => setForm({ ...form, resourceCode: event.target.value })} placeholder="gpt-4o" disabled={Boolean(editing)} />
               </Field>
               <Field label={translate('admin.pricing.settings.defaultRegion.defaultRegionCode', '默认计费 Region')} hint={translate('admin.pricing.settings.defaultRegion.formOptional', '必填')}>
                 <input className={inputClass} value={form.defaultRegionCode} onChange={(event) => setForm({ ...form, defaultRegionCode: event.target.value })} placeholder="cn-beijing" required />
@@ -275,7 +287,7 @@ export function DefaultRegionManager({ open, onClose }: DefaultRegionManagerProp
             ) : (
               items.map((item) => (
                 <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.03]">
-                  <td className="px-4 py-3"><div className="truncate font-medium text-slate-900 dark:text-white">{item.catalogKey}</div><div className="truncate text-xs text-slate-500 dark:text-slate-400">{item.vendorCode} · {item.productCode}</div></td>
+                  <td className="px-4 py-3"><div className="truncate font-medium text-slate-900 dark:text-white">{item.catalogKey}</div><div className="truncate text-xs text-slate-500 dark:text-slate-400">{item.vendorCode} · {item.productCode}{item.resourceCode ? ` · ${item.resourceCode}` : ''}</div></td>
                   <td className="px-4 py-3">
                     <span className="inline-flex items-center gap-1.5 font-mono text-slate-700 dark:text-slate-200">
                       <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-hidden="true" />

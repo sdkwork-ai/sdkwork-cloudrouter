@@ -1129,6 +1129,11 @@
             "maxLength": 160,
             "type": "string"
           },
+          "resourceCode": {
+            "description": "Resource code field on admin default region item.",
+            "maxLength": 256,
+            "type": "string"
+          },
           "status": {
             "description": "Status field on admin default region item.",
             "enum": [
@@ -1146,6 +1151,11 @@
           },
           "vendorCode": {
             "description": "Vendor code field on admin default region item.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "providerCode": {
+            "description": "Provider code field on admin default region item.",
             "maxLength": 64,
             "type": "string"
           },
@@ -8344,8 +8354,18 @@
             "maxLength": 160,
             "type": "string"
           },
+          "resourceCode": {
+            "description": "Resource code field on pricing default region create request.",
+            "maxLength": 256,
+            "type": "string"
+          },
           "vendorCode": {
             "description": "Vendor code field on pricing default region create request.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "providerCode": {
+            "description": "Provider code field on pricing default region create request.",
             "maxLength": 64,
             "type": "string"
           }

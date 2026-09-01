@@ -56,6 +56,16 @@ pub struct OfficialPricingProductCatalogSnapshot {
     pub total_items: i64,
 }
 
+/// One admin list row per **resource** (model), aggregated across every region
+/// it prices. `group_key` is the stable resource identity hash produced by
+/// `pricing_resource_key(vendor_code, provider_code, catalog_key,
+/// product_code, resource_code)` — it deliberately excludes region, currency,
+/// and price book, so a resource priced in `cn` + `global` still renders as a
+/// single row. `rates` contains the rates of all regions (each carries its own
+/// `regionCode`/`currencyCode`), letting the UI switch official reference and
+/// sales prices via per-row region tabs. The group-level `region_code` /
+/// `currency_code` / `price_book_code` scalars resolve to the configured
+/// default billing region when present (fallback: `global`, then first region).
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct OfficialPricingProductGroup {

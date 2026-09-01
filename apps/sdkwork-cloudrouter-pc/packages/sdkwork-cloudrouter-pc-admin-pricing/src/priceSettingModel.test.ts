@@ -8,10 +8,12 @@ import {
   formatPricingMoney,
   formatPricingOperationLabel,
   formatPricingQuantity,
+  groupPriceSettingRatesByRegion,
   groupPriceSettingRatesByVariant,
   normalizePricingDecimal,
   officialRateVariantLabel,
   officialRateUnit,
+  pickDefaultPriceSettingRegion,
   pricingRuleMatchesOfficialRate,
   pricingRuleLifecycle,
   pricingScheduleMatchesAt,
@@ -203,6 +205,30 @@ describe('price setting model', () => {
       'input-off-peak',
       'output',
     ]);
+  });
+
+  it('groups one resource row across regions into region tabs', () => {
+    const cnInput = { ...officialRate('llm_input_token', 'cn-input'), regionCode: 'cn', currencyCode: 'CNY', unitPrice: '12' };
+    const globalInput = { ...officialRate('llm_input_token', 'global-input'), regionCode: 'global', currencyCode: 'USD', unitPrice: '2.5' };
+    const groups = groupPriceSettingRatesByRegion([
+      { official: cnInput, rule: undefined },
+      { official: globalInput, rule: undefined },
+    ]);
+    expect(groups.map((group) => group.regionCode)).toEqual(['global', 'cn']);
+    expect(groups.find((group) => group.regionCode === 'cn')?.currencyCode).toBe('CNY');
+    expect(groups.find((group) => group.regionCode === 'global')?.prices).toHaveLength(1);
+  });
+
+  it('prefers the configured default billing region when picking the active tab', () => {
+    const cnInput = { ...officialRate('llm_input_token', 'cn-input'), regionCode: 'cn', currencyCode: 'CNY' };
+    const globalInput = { ...officialRate('llm_input_token', 'global-input'), regionCode: 'global', currencyCode: 'USD' };
+    const groups = groupPriceSettingRatesByRegion([
+      { official: cnInput, rule: undefined },
+      { official: globalInput, rule: undefined },
+    ]);
+    expect(pickDefaultPriceSettingRegion(groups, 'cn')).toBe('cn');
+    expect(pickDefaultPriceSettingRegion(groups, undefined, 'global')).toBe('global');
+    expect(pickDefaultPriceSettingRegion(groups, undefined, undefined)).toBe('global');
   });
 
   it('shows the same fallback states as runtime pricing', () => {

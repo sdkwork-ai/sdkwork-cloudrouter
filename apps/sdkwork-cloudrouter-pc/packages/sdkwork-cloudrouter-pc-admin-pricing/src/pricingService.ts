@@ -163,7 +163,9 @@ export interface AdminDefaultRegionItem {
   id: string;
   catalogKey: string;
   vendorCode: string;
+  providerCode?: string;
   productCode: string;
+  resourceCode?: string;
   defaultRegionCode: string;
   currencyCode: string;
   description?: string;
@@ -178,7 +180,9 @@ export interface AdminDefaultRegionItem {
 export interface AdminDefaultRegionMutationInput {
   catalogKey: string;
   vendorCode: string;
+  providerCode?: string;
   productCode: string;
+  resourceCode?: string;
   defaultRegionCode: string;
   currencyCode: string;
   description?: string;
@@ -697,7 +701,9 @@ function normalizeDefaultRegion(value: unknown): AdminDefaultRegionItem {
     id: requireRecordString(item, 'id', 'Default billing region id is required'),
     catalogKey: requireRecordString(item, 'catalogKey', 'Default billing region catalog key is required'),
     vendorCode: requireRecordString(item, 'vendorCode', 'Default billing region vendor code is required'),
+    providerCode: optionalTrimmed(item, 'providerCode'),
     productCode: requireRecordString(item, 'productCode', 'Default billing region product code is required'),
+    resourceCode: optionalTrimmed(item, 'resourceCode'),
     defaultRegionCode: requireRecordString(item, 'defaultRegionCode', 'Default billing region code is required'),
     currencyCode: readString(item, 'currencyCode').trim() || 'CNY',
     description: optionalTrimmed(item, 'description'),
@@ -714,7 +720,9 @@ function buildDefaultRegionCreateRequest(input: AdminDefaultRegionMutationInput)
   return {
     catalogKey: requiredPricingText(input.catalogKey, 'catalogKey'),
     vendorCode: requiredPricingText(input.vendorCode, 'vendorCode'),
+    providerCode: optionalPricingText(input.providerCode),
     productCode: requiredPricingText(input.productCode, 'productCode'),
+    resourceCode: optionalPricingText(input.resourceCode),
     defaultRegionCode: requiredPricingText(input.defaultRegionCode, 'defaultRegionCode'),
     currencyCode: normalizeCurrencyCode(input.currencyCode),
     description: optionalPricingText(input.description),

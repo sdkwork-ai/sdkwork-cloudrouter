@@ -84,16 +84,31 @@ tables:
         required: true
         postgres_type: VARCHAR(64)
         constraints: NOT NULL
+      provider_code:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL DEFAULT ''
       product_code:
         type: string(160)
         required: true
         postgres_type: VARCHAR(160)
         constraints: NOT NULL
+      resource_code:
+        type: string(256)
+        required: true
+        postgres_type: VARCHAR(256)
+        constraints: NOT NULL DEFAULT ''
       catalog_key:
         type: string(256)
         required: true
         postgres_type: VARCHAR(256)
         constraints: NOT NULL
+      resource_key:
+        type: string(64)
+        required: true
+        postgres_type: VARCHAR(64)
+        constraints: NOT NULL DEFAULT ''
       default_region_code:
         type: string(64)
         required: true
@@ -142,13 +157,13 @@ tables:
           - organization_id
           - id
         where: null
-      - name: uk_pricing_default_region_catalog_key
+      - name: uk_pricing_default_region_resource_key
         type: unique
         columns: &id003
           - tenant_id
           - organization_id
-          - catalog_key
-        where: deleted_at IS NULL
+          - resource_key
+        where: deleted_at IS NULL AND BTRIM(resource_key) <> ''
       - name: ck_pricing_default_region_currency
         type: check
         columns: []
@@ -161,6 +176,10 @@ tables:
         type: check
         columns: []
         expression: effective_to IS NULL OR effective_to > effective_from
+      - name: ck_pricing_default_region_resource_key_blank
+        type: check
+        columns: []
+        expression: BTRIM(resource_key) <> ''
     indexes:
       - name: uk_pricing_default_region_uuid
         columns: *id001
@@ -170,10 +189,10 @@ tables:
         columns: *id002
         unique: true
         where: deleted_at IS NULL
-      - name: uk_pricing_default_region_catalog_key
+      - name: uk_pricing_default_region_resource_key
         columns: *id003
         unique: true
-        where: deleted_at IS NULL
+        where: deleted_at IS NULL AND BTRIM(resource_key) <> ''
       - name: uq_pricing_default_region_scope_reference
         columns:
           - tenant_id
@@ -187,6 +206,15 @@ tables:
           - organization_id
           - vendor_code
           - catalog_key
+          - default_region_code
+          - id
+        unique: false
+        where: null
+      - name: idx_pricing_default_region_resource_key
+        columns:
+          - tenant_id
+          - organization_id
+          - resource_key
           - default_region_code
           - id
         unique: false

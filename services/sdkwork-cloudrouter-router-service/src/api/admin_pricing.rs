@@ -122,7 +122,9 @@ struct PricingRuleMutationRequest {
 struct DefaultRegionMutationRequest {
     catalog_key: Option<String>,
     vendor_code: Option<String>,
+    provider_code: Option<String>,
     product_code: Option<String>,
+    resource_code: Option<String>,
     default_region_code: Option<String>,
     currency_code: Option<String>,
     description: Option<String>,
@@ -134,7 +136,9 @@ struct DefaultRegionMutationRequest {
 struct NormalizedDefaultRegionMutation {
     catalog_key: String,
     vendor_code: String,
+    provider_code: String,
     product_code: String,
+    resource_code: String,
     default_region_code: String,
     currency_code: String,
     description: Option<String>,
@@ -883,7 +887,9 @@ async fn create_default_region(
             Err(error) => return command_build_error_response(error),
         },
         vendor_code: mutation.vendor_code,
+        provider_code: mutation.provider_code,
         product_code: mutation.product_code,
+        resource_code: mutation.resource_code,
         catalog_key: mutation.catalog_key,
         default_region_code: mutation.default_region_code,
         currency_code: mutation.currency_code,
@@ -1008,7 +1014,19 @@ fn normalize_default_region_mutation(
     Ok(NormalizedDefaultRegionMutation {
         catalog_key: normalize_required_text(request.catalog_key.as_deref(), "catalogKey", 256)?,
         vendor_code: normalize_required_text(request.vendor_code.as_deref(), "vendorCode", 64)?,
+        provider_code: normalize_optional_text(
+            request.provider_code.as_deref(),
+            "providerCode",
+            64,
+        )?
+        .unwrap_or_default(),
         product_code: normalize_required_text(request.product_code.as_deref(), "productCode", 160)?,
+        resource_code: normalize_optional_text(
+            request.resource_code.as_deref(),
+            "resourceCode",
+            256,
+        )?
+        .unwrap_or_default(),
         default_region_code: normalize_required_text(
             request.default_region_code.as_deref(),
             "defaultRegionCode",

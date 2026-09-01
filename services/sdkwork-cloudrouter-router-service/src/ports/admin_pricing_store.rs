@@ -357,9 +357,12 @@ pub struct AdminRateCardItem {
     pub updated_at: Option<String>,
 }
 
-// Default billing region per model (catalog_key). Only models that expose
+// Default billing region per resource (model). Only resources that expose
 // pricing across multiple regions may carry a default region; the default is
 // used by the billing engine to pick a region when no explicit region is set.
+// Uniqueness is enforced on the resource identity (`resource_key`, derived by
+// the pricing_resource_key() SQL helper), not on catalog_key, so a resource
+// priced in several regions still owns exactly one default region row.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListAdminDefaultRegionsQuery {
     pub subject: AdminPricingSubject,
@@ -375,7 +378,9 @@ pub struct SaveAdminDefaultRegionCommand {
     pub region_uuid: String,
     pub audit_log_uuid: String,
     pub vendor_code: String,
+    pub provider_code: String,
     pub product_code: String,
+    pub resource_code: String,
     pub catalog_key: String,
     pub default_region_code: String,
     pub currency_code: String,
@@ -421,7 +426,9 @@ pub struct AdminDefaultRegionItem {
     pub id: String,
     pub catalog_key: String,
     pub vendor_code: String,
+    pub provider_code: String,
     pub product_code: String,
+    pub resource_code: String,
     pub default_region_code: String,
     pub currency_code: String,
     pub description: Option<String>,
