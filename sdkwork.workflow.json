@@ -10,7 +10,7 @@
   },
   "release": {
     "artifactPrefix": "cloudrouter",
-    "defaultVersion": "0.3.0",
+    "defaultVersion": "0.4.0",
     "versionInput": "package_version",
     "tagInput": "tag",
     "changelog": {
