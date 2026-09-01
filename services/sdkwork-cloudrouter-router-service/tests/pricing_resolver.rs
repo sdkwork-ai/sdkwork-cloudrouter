@@ -96,6 +96,7 @@ fn applies_account_contract_and_group_override_to_procurement_cost() {
             supplier_code: Some("openrouter".to_owned()),
             account_id: Some(3001),
             region_code: Some("global".to_owned()),
+            default_region_code: None,
             occurred_at: occurred_at(),
         })
         .unwrap();
@@ -139,6 +140,7 @@ fn resolves_customer_price_from_upstream_account_group_plan_and_official_referen
             supplier_code: Some("openrouter".to_owned()),
             account_id: Some(3001),
             region_code: None,
+            default_region_code: None,
             occurred_at: occurred_at(),
         })
         .unwrap();
@@ -244,6 +246,7 @@ fn resolves_upstream_cost_for_the_selected_account() {
             supplier_code: Some("openrouter".to_owned()),
             account_id: Some(3002),
             region_code: None,
+            default_region_code: None,
             occurred_at: occurred_at(),
         })
         .unwrap();
@@ -316,6 +319,7 @@ fn model_catalog_identity_does_not_supply_pricing_region_without_route_context()
             supplier_code: None,
             account_id: None,
             region_code: None,
+            default_region_code: None,
             occurred_at: occurred_at(),
         })
         .expect("the terminal any-region fallback must keep the price non-empty");
@@ -436,6 +440,7 @@ fn base_catalog_key_resolves_selected_account_region_price_stack() {
             supplier_code: Some("minimax_cn_direct".to_owned()),
             account_id: Some(3001),
             region_code: None,
+            default_region_code: None,
             occurred_at: occurred_at(),
         })
         .unwrap();
@@ -463,6 +468,7 @@ fn base_catalog_key_resolves_selected_account_region_price_stack() {
             supplier_code: Some("minimax_global_direct".to_owned()),
             account_id: Some(3002),
             region_code: None,
+            default_region_code: None,
             occurred_at: occurred_at(),
         })
         .unwrap();
@@ -579,6 +585,7 @@ fn selected_route_region_disambiguates_same_supplier_account_deployments() {
             supplier_code: Some("deepseek_official".to_owned()),
             account_id: Some(3001),
             region_code: Some("cn".to_owned()),
+            default_region_code: None,
             occurred_at: occurred_at(),
         })
         .unwrap();
@@ -616,6 +623,7 @@ fn rejects_selected_account_that_is_not_an_upstream_route_for_the_model() {
             supplier_code: Some("openrouter".to_owned()),
             account_id: Some(9999),
             region_code: None,
+            default_region_code: None,
             occurred_at: occurred_at(),
         })
         .unwrap_err();
@@ -695,6 +703,7 @@ fn upstream_account_route_resolves_price_stack_with_its_explicit_region() {
             supplier_code: Some("minimax_upstream".to_owned()),
             account_id: Some(4001),
             region_code: None,
+            default_region_code: None,
             occurred_at: occurred_at(),
         })
         .unwrap();
@@ -741,6 +750,7 @@ fn explicit_plan_customer_price_overrides_official_reference_and_keeps_group_mul
             supplier_code: Some("openrouter".to_owned()),
             account_id: Some(3001),
             region_code: None,
+            default_region_code: None,
             occurred_at: occurred_at(),
         })
         .unwrap();
@@ -788,6 +798,7 @@ fn supports_non_token_meter_without_new_pricing_table_shape() {
             supplier_code: None,
             account_id: None,
             region_code: None,
+            default_region_code: None,
             occurred_at: occurred_at(),
         })
         .unwrap();
@@ -813,6 +824,7 @@ fn missing_price_returns_a_domain_error_instead_of_fake_success() {
             supplier_code: None,
             account_id: None,
             region_code: None,
+            default_region_code: None,
             occurred_at: occurred_at(),
         })
         .unwrap_err();
@@ -856,6 +868,7 @@ fn pricing_resolver_returns_domain_error_when_decimal_math_overflows() {
             supplier_code: None,
             account_id: None,
             region_code: None,
+            default_region_code: None,
             occurred_at: occurred_at(),
         })
         .unwrap_err();

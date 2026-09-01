@@ -27,6 +27,13 @@ pub struct OfficialPricingProductCatalogQuery {
     pub category: String,
     pub search_query: Option<String>,
     pub vendor_codes: Vec<String>,
+    /// Preferred billing region, **not** a row filter. A resource stay a single
+    /// admin row no matter how many regions it prices; this value only decides
+    /// which region tab the row opens on. When the resource prices no rate in
+    /// the requested region the loader falls back through the documented chain
+    /// (configured default region -> requested region -> `global` -> first
+    /// region) so a row always renders a meaningful official reference price
+    /// and sales price.
     pub region_code: Option<String>,
     pub page_size: i64,
     pub offset: i64,
@@ -56,6 +63,19 @@ pub struct OfficialPricingProductCatalogSnapshot {
     pub total_items: i64,
 }
 
+/// A billing region the resource genuinely prices. Drives the per-row region
+/// tabs and the "default region" dropdown of the admin price settings list.
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct OfficialPricingRegionOption {
+    pub region_code: String,
+    pub currency_code: String,
+    pub rate_count: i32,
+    /// True for the generic `global` bucket; the region resolution chain treats
+    /// `global` as the last deterministic fallback before "first region".
+    pub is_global: bool,
+}
+
 /// One admin list row per **resource** (model), aggregated across every region
 /// it prices. `group_key` is the stable resource identity hash produced by
 /// `pricing_resource_key(vendor_code, provider_code, catalog_key,
@@ -64,8 +84,9 @@ pub struct OfficialPricingProductCatalogSnapshot {
 /// single row. `rates` contains the rates of all regions (each carries its own
 /// `regionCode`/`currencyCode`), letting the UI switch official reference and
 /// sales prices via per-row region tabs. The group-level `region_code` /
-/// `currency_code` / `price_book_code` scalars resolve to the configured
-/// default billing region when present (fallback: `global`, then first region).
+/// `currency_code` / `price_book_code` scalars resolve through the shared
+/// region chain: configured default region -> requested region -> `global` ->
+/// first region in the resource's own region list.
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct OfficialPricingProductGroup {
@@ -85,6 +106,15 @@ pub struct OfficialPricingProductGroup {
     pub price_book_code: String,
     pub price_book_version: String,
     pub rates: Vec<OfficialPricingRate>,
+    /// Every region this resource prices, ordered for display (non-global
+    /// regions first, then `global`). The admin row renders one tab per entry.
+    pub available_regions: Vec<OfficialPricingRegionOption>,
+    /// The default billing region configured for the resource; empty when the
+    /// operator has not pinned one.
+    pub default_region_code: String,
+    /// True when `region_code` is not the region the caller asked for, i.e. the
+    /// chain fell back to the default region, `global`, or the first region.
+    pub region_fallback: bool,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]

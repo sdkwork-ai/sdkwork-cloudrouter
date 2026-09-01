@@ -674,9 +674,23 @@ frontend_operations:
                   type: array
                   minItems: 1
                   items: *official-pricing-rate-schema
+                availableRegions:
+                  type: array
+                  items: &official-pricing-region-option-schema
+                    additionalProperties: false
+                    name: OfficialPricingRegionOption
+                    type: object
+                    properties:
+                      regionCode: { type: string }
+                      currencyCode: { type: string, pattern: '^[A-Z]{3}$' }
+                      rateCount: { type: integer, format: int32, minimum: 0 }
+                      isGlobal: { type: boolean }
+                    required: [regionCode, currencyCode, rateCount, isGlobal]
+                defaultRegionCode: { type: string }
+                regionFallback: { type: boolean }
               required: [groupKey, groupCodes, productCode, productKind, productDisplayName,
                 vendorCode, providerCode, regionCode, resourceType, resourceCode, resourceDisplayName, currencyCode,
-                priceBookCode, priceBookVersion, rates]
+                priceBookCode, priceBookVersion, rates, availableRegions, defaultRegionCode, regionFallback]
           pageInfo:
             $ref: '#/components/schemas/PageInfo'
           groups:
@@ -11771,6 +11785,67 @@ frontend_operations:
         name: NoData
         properties: {}
         type: object
+    write_tables:
+      - pricing_default_region
+      - ops_audit_log
+  - route: /admin/pricing/default_regions/{defaultRegionId}
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
+    operation: updatePricingDefaultRegion
+    operation_id: defaultRegions.update
+    kind: update
+    api_surface: backend
+    api_method: PATCH
+    api_path: /backend/v3/api/pricing/default_regions/{defaultRegionId}
+    sdk_domain: pricing
+    read_sources:
+      - pricing_default_region
+    response_schema:
+      name: AdminDefaultRegionItem
+      schema:
+        additionalProperties: false
+        name: AdminDefaultRegionItem
+        properties:
+          catalogKey: { maxLength: 256, type: string }
+          createdAt: { format: date-time, maxLength: 64, type: string, nullable: true }
+          currencyCode: { pattern: '^[A-Z]{3}$', type: string }
+          defaultRegionCode: { maxLength: 64, type: string }
+          description: { maxLength: 8192, type: string, nullable: true }
+          effectiveFrom: { format: date-time, maxLength: 64, type: string, nullable: true }
+          effectiveTo: { format: date-time, maxLength: 64, type: string, nullable: true }
+          id: { maxLength: 96, minLength: 1, type: string }
+          productCode: { maxLength: 160, type: string }
+          providerCode: { maxLength: 64, type: string }
+          resourceCode: { maxLength: 256, type: string }
+          status: { enum: [active, inactive], type: string }
+          updatedAt: { format: date-time, maxLength: 64, type: string, nullable: true }
+          vendorCode: { maxLength: 64, type: string }
+          version:
+            format: int64
+            pattern: ^-?[0-9]+$
+            type: string
+            x-sdkwork-int64-string: true
+            x-sdkwork-rust-type: i64
+        required: [id, catalogKey, vendorCode, productCode, defaultRegionCode, currencyCode, status, version]
+        type: object
+    request_schema:
+      name: PricingDefaultRegionCreateRequest
+      schema:
+        additionalProperties: false
+        name: PricingDefaultRegionCreateRequest
+        properties:
+          catalogKey: { maxLength: 256, type: string }
+          currencyCode: { pattern: '^[A-Z]{3}$', type: string }
+          defaultRegionCode: { maxLength: 64, type: string }
+          description: { maxLength: 8192, type: string }
+          effectiveFrom: { format: date-time, maxLength: 64, type: string }
+          effectiveTo: { format: date-time, maxLength: 64, type: string }
+          productCode: { maxLength: 160, type: string }
+          providerCode: { maxLength: 64, type: string }
+          resourceCode: { maxLength: 256, type: string }
+          vendorCode: { maxLength: 64, type: string }
+        required: [catalogKey, vendorCode, productCode, defaultRegionCode, currencyCode]
+        type: object
+    request_body_required: true
     write_tables:
       - pricing_default_region
       - ops_audit_log

@@ -286,8 +286,21 @@ where
     let dimensions = pricing_dimensions(invocation, &meter, usage_line);
     // 账号未显式指定 region（空或 global）时，回退到该模型配置的默认计费
     // region，使多 region 模型仍按正确的地域价格计费；未配置默认 region 则
-    // 保持账号原值，历史行为不变。
-    let region_code = effective_billing_region(catalog, invocation, account, &catalog_key);
+    // 保持账号原值，历史行为不变。默认 region 同时挂到资源上，作为价格解析
+    // 的 region 回退链（请求 region → 默认 region → global）的第一顺位回退，
+    // 即请求地域无价目时优先采用默认地域价格，而非直接借用 global。
+    let configured_default_region = catalog.default_billing_region(
+        invocation.subject.tenant_id,
+        invocation.subject.organization_id,
+        &catalog_key,
+    );
+    let region_code = effective_billing_region(
+        catalog,
+        invocation,
+        account,
+        &catalog_key,
+        configured_default_region.as_deref(),
+    );
     let mut resource = ResourceDefinition::new(catalog_key.clone(), meter, invocation.occurred_at)
         .with_pricing_subject(
             api_key_id,
@@ -298,6 +311,7 @@ where
         .with_vendor_code(catalog_vendor_code(&catalog_key))
         .with_provider(account.supplier_code.clone(), Some(account.account_id))
         .with_region_code(region_code)
+        .with_default_billing_region(configured_default_region)
         .with_api_code(invocation.resource.api_code.clone())
         // product/operation code 不在此处推断填充：条件定价（rate_metadata）
         // 的 product_code/operation_code 以定价目录为准，若用模型名/api_code
@@ -336,6 +350,7 @@ fn effective_billing_region<C>(
     invocation: &Invocation,
     account: &InvocationAccount,
     catalog_key: &str,
+    configured_default_region: Option<&str>,
 ) -> String
 where
     C: PricingCatalog + PricingDefaultRegionProvider + Send + Sync + 'static,
@@ -344,12 +359,8 @@ where
     if !region.is_empty() && !region.eq_ignore_ascii_case("global") {
         return account.region_code.clone();
     }
-    if let Some(default) = catalog.default_billing_region(
-        invocation.subject.tenant_id,
-        invocation.subject.organization_id,
-        catalog_key,
-    ) {
-        return default;
+    if let Some(default) = configured_default_region {
+        return default.to_owned();
     }
     if let Some(deployment_region) = deployment_billing_region() {
         return deployment_region;

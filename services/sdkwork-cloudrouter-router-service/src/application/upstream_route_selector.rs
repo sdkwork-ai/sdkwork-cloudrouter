@@ -935,11 +935,17 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         query: &SelectUpstreamAccountRouteQuery,
         route: &UpstreamAccountRoute,
     ) -> DomainResult<()> {
+        let configured_default_region = self.catalog.default_billing_region(
+            query.context.tenant_id,
+            query.context.organization_id,
+            &query.route_key,
+        );
         let mut resource =
             ResourceDefinition::new(&query.route_key, BillingMeter::ApiRequest, Utc::now())
                 .with_pricing_subject(query.context.api_key_id, Some(query.context.group_id))
                 .with_provider(&route.supplier_code, Some(route.account_id))
                 .with_region_code(&route.region_code)
+                .with_default_billing_region(configured_default_region)
                 .with_model(&query.route_key)
                 .with_api_code(&query.api_code);
         if let Some(identity) = parse_model_catalog_identity(&query.route_key) {
@@ -1051,12 +1057,18 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         route: &ModelUpstreamRoute,
     ) -> DomainResult<()> {
         let meters = composite_pricing_meters(&query.billing_meter);
+        let configured_default_region = self.catalog.default_billing_region(
+            query.context.tenant_id,
+            query.context.organization_id,
+            &route.catalog_key,
+        );
         for meter in meters {
             let mut resource =
                 ResourceDefinition::new(&route.catalog_key, meter.clone(), Utc::now())
                     .with_pricing_subject(query.context.api_key_id, Some(query.context.group_id))
                     .with_provider(&route.supplier_code, Some(route.account_id))
                     .with_region_code(&route.region_code)
+                    .with_default_billing_region(configured_default_region.clone())
                     .with_model(&query.requested_model)
                     .with_api_code(&query.api_code);
             if let Some(identity) = parse_model_catalog_identity(&route.catalog_key) {

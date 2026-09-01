@@ -8772,12 +8772,46 @@
                 "additionalProperties": false,
                 "name": "OfficialPricingProductGroup",
                 "properties": {
+                  "availableRegions": {
+                    "items": {
+                      "additionalProperties": false,
+                      "name": "OfficialPricingRegionOption",
+                      "properties": {
+                        "currencyCode": {
+                          "pattern": "^[A-Z]{3}$",
+                          "type": "string"
+                        },
+                        "isGlobal": {
+                          "type": "boolean"
+                        },
+                        "rateCount": {
+                          "format": "int32",
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "regionCode": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "regionCode",
+                        "currencyCode",
+                        "rateCount",
+                        "isGlobal"
+                      ],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
                   "catalogKey": {
                     "nullable": true,
                     "type": "string"
                   },
                   "currencyCode": {
                     "pattern": "^[A-Z]{3}$",
+                    "type": "string"
+                  },
+                  "defaultRegionCode": {
                     "type": "string"
                   },
                   "groupCodes": {
@@ -9353,6 +9387,9 @@
                   "regionCode": {
                     "type": "string"
                   },
+                  "regionFallback": {
+                    "type": "boolean"
+                  },
                   "resourceCode": {
                     "type": "string"
                   },
@@ -9381,7 +9418,10 @@
                   "currencyCode",
                   "priceBookCode",
                   "priceBookVersion",
-                  "rates"
+                  "rates",
+                  "availableRegions",
+                  "defaultRegionCode",
+                  "regionFallback"
                 ],
                 "type": "object"
               },
@@ -11403,6 +11443,197 @@
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
       "tag": "pricing",
       "write_tables": []
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/pricing/default_regions/{defaultRegionId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#updatePricingDefaultRegion@/admin/pricing/default_regions/{defaultRegionId}",
+      "kind": "update",
+      "module": "pc-admin-pricing",
+      "openapi_exposed": true,
+      "operation": "updatePricingDefaultRegion",
+      "operation_id": "defaultRegions.update",
+      "path_params": [
+        "defaultRegionId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "pricing_default_region"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "PricingDefaultRegionCreateRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "PricingDefaultRegionCreateRequest",
+          "properties": {
+            "catalogKey": {
+              "maxLength": 256,
+              "type": "string"
+            },
+            "currencyCode": {
+              "pattern": "^[A-Z]{3}$",
+              "type": "string"
+            },
+            "defaultRegionCode": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "description": {
+              "maxLength": 8192,
+              "type": "string"
+            },
+            "effectiveFrom": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "effectiveTo": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "productCode": {
+              "maxLength": 160,
+              "type": "string"
+            },
+            "providerCode": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "resourceCode": {
+              "maxLength": 256,
+              "type": "string"
+            },
+            "vendorCode": {
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          "required": [
+            "catalogKey",
+            "vendorCode",
+            "productCode",
+            "defaultRegionCode",
+            "currencyCode"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminDefaultRegionItem",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminDefaultRegionItem",
+          "properties": {
+            "catalogKey": {
+              "maxLength": 256,
+              "type": "string"
+            },
+            "createdAt": {
+              "format": "date-time",
+              "maxLength": 64,
+              "nullable": true,
+              "type": "string"
+            },
+            "currencyCode": {
+              "pattern": "^[A-Z]{3}$",
+              "type": "string"
+            },
+            "defaultRegionCode": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "description": {
+              "maxLength": 8192,
+              "nullable": true,
+              "type": "string"
+            },
+            "effectiveFrom": {
+              "format": "date-time",
+              "maxLength": 64,
+              "nullable": true,
+              "type": "string"
+            },
+            "effectiveTo": {
+              "format": "date-time",
+              "maxLength": 64,
+              "nullable": true,
+              "type": "string"
+            },
+            "id": {
+              "maxLength": 96,
+              "minLength": 1,
+              "type": "string"
+            },
+            "productCode": {
+              "maxLength": 160,
+              "type": "string"
+            },
+            "providerCode": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "resourceCode": {
+              "maxLength": 256,
+              "type": "string"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "type": "string"
+            },
+            "updatedAt": {
+              "format": "date-time",
+              "maxLength": 64,
+              "nullable": true,
+              "type": "string"
+            },
+            "vendorCode": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "version": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            }
+          },
+          "required": [
+            "id",
+            "catalogKey",
+            "vendorCode",
+            "productCode",
+            "defaultRegionCode",
+            "currencyCode",
+            "status",
+            "version"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/pricing/default_regions/{defaultRegionId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "pricing",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "tag": "pricing",
+      "write_tables": [
+        "pricing_default_region",
+        "ops_audit_log"
+      ]
     },
     {
       "api_method": "PATCH",
@@ -31400,23 +31631,23 @@
     "api_method_counts": {
       "DELETE": 21,
       "GET": 109,
-      "PATCH": 19,
+      "PATCH": 20,
       "POST": 56,
       "PUT": 12
     },
     "api_surface_counts": {
       "app": 75,
-      "backend": 142
+      "backend": 143
     },
-    "operation_count": 217,
+    "operation_count": 218,
     "route_scope_counts": {
-      "admin": 142,
+      "admin": 143,
       "console": 31,
       "public": 44
     },
     "sdk_client_counts": {
       "SdkworkAppClient": 75,
-      "SdkworkBackendClient": 142
+      "SdkworkBackendClient": 143
     }
   }
 }

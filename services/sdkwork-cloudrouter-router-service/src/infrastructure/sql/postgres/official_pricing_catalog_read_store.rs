@@ -7,7 +7,7 @@ use crate::ports::{
     OfficialPricingGroupFacet, OfficialPricingMeterFacet, OfficialPricingProductCatalogQuery,
     OfficialPricingProductCatalogReadFuture, OfficialPricingProductCatalogSnapshot,
     OfficialPricingProductGroup, OfficialPricingRate, OfficialPricingRateCondition,
-    OfficialPricingRateTier, OfficialPricingValueFacet,
+    OfficialPricingRateTier, OfficialPricingRegionOption, OfficialPricingValueFacet,
 };
 
 const CATEGORY_CODES_SQL: &str = r#"
@@ -101,6 +101,27 @@ const FILTERED_RATES_CTE_SUFFIX: &str = r#"
       AND ($4::text IS NULL OR region_code = $4)
       AND ($5::text IS NULL OR meter_code = $5)
       AND ($6::text IS NULL OR currency_code = $6)
+)
+"#;
+
+// The admin product list renders one row per resource with one tab per region,
+// so `region_code` must NOT prune rates here: dropping the other regions would
+// collapse the tabs and hide the very prices the operator needs to compare.
+// The parameter stays bound (and type-anchored via `::text`) because the same
+// positional signature feeds the paged/COUNT queries below; it is applied as a
+// display preference in `resolve_group_region` instead.
+const FILTERED_PRODUCT_RATES_CTE_SUFFIX: &str = r#"
+, filtered AS (
+    SELECT * FROM eligible
+    WHERE ($1 = 'all' OR $1 = ANY(group_codes))
+      AND ($2::text IS NULL OR lower(product_code) LIKE $2 OR lower(product_display_name) LIKE $2
+        OR lower(operation_code) LIKE $2 OR lower(vendor_code) LIKE $2 OR lower(provider_code) LIKE $2
+        OR lower(resource_code) LIKE $2 OR lower(COALESCE(catalog_key, '')) LIKE $2
+        OR lower(meter_code) LIKE $2 OR lower(meter_display_name) LIKE $2)
+      AND ($3::text IS NULL OR vendor_code = ANY(string_to_array($3, ',')))
+      AND ($4::text IS NULL OR TRUE)
+      AND ($5::text IS NULL OR TRUE)
+      AND ($6::text IS NULL OR TRUE)
 )
 "#;
 
@@ -303,7 +324,7 @@ async fn load_product_catalog(
     query: OfficialPricingProductCatalogQuery,
 ) -> Result<OfficialPricingProductCatalogSnapshot, DomainError> {
     let base_sql = LOAD_RATES_PREFIX.replace("__CATEGORY_CODES__", CATEGORY_CODES_SQL);
-    let filtered = format!("{base_sql}{FILTERED_RATES_CTE_SUFFIX}");
+    let filtered = format!("{base_sql}{FILTERED_PRODUCT_RATES_CTE_SUFFIX}");
     let search = keyword_like(query.search_query.as_deref());
     let vendor_codes = (!query.vendor_codes.is_empty()).then(|| query.vendor_codes.join(","));
     let total = sqlx::query(sqlx::AssertSqlSafe(format!(
@@ -370,7 +391,33 @@ async fn load_product_catalog(
         }
     }
     for (group, default_region) in items.iter_mut().zip(default_regions.iter()) {
-        apply_group_region_identity(group, default_region);
+        group.available_regions = available_regions_of(group);
+        let requested = query.region_code.as_deref().unwrap_or_default();
+        // The default region is stored on the group so the admin row can render
+        // the dropdown selection without a second lookup.
+        group.default_region_code = default_region.trim().to_owned();
+        group.region_fallback = is_region_missing(&group.available_regions, requested);
+        let identity = resolve_group_region(&group.available_regions, default_region, requested)
+            .and_then(|region| {
+                group
+                    .rates
+                    .iter()
+                    .find(|rate| rate.region_code == region.region_code)
+            });
+        if let Some(rate) = identity {
+            group.region_code = rate.region_code.clone();
+            group.currency_code = rate.currency_code.clone();
+            group.price_book_code = rate.price_book_code.clone();
+            group.price_book_version = rate.price_book_version.clone();
+        }
+        // Fall back to the first region in the group (which is already ordered)
+        // so a group always reports a concrete region for display.
+        if group.region_code.is_empty() {
+            if let Some(region) = group.available_regions.first() {
+                group.region_code = region.region_code.clone();
+                group.currency_code = region.currency_code.clone();
+            }
+        }
     }
     let groups = facets
         .into_iter()
@@ -428,38 +475,102 @@ fn product_group_from_rate(
         price_book_code: rate.price_book_code.clone(),
         price_book_version: rate.price_book_version.clone(),
         rates: vec![rate],
+        available_regions: Vec::new(),
+        default_region_code: String::new(),
+        region_fallback: false,
     }
 }
 
-/// A product group now aggregates one resource across every region it prices
-/// (group_key is the resource identity, region-independent). The group-level
-/// region/currency/price-book scalars must stay deterministic for the admin
-/// list, so they are resolved from the configured default billing region when
-/// present, falling back to `global`, then to the first region in lexical
-/// order. All rates (every region) remain available in `group.rates` for the
-/// per-row region tabs.
-fn apply_group_region_identity(group: &mut OfficialPricingProductGroup, default_region_code: &str) {
-    let default_region = default_region_code.trim();
-    let identity = group
-        .rates
-        .iter()
-        .find(|rate| {
-            !default_region.is_empty()
-                && rate.region_code.eq_ignore_ascii_case(default_region)
-        })
-        .or_else(|| {
-            group
-                .rates
-                .iter()
-                .find(|rate| rate.region_code.eq_ignore_ascii_case("global"))
-        })
-        .or_else(|| group.rates.iter().min_by_key(|rate| rate.region_code.as_str()));
-    if let Some(rate) = identity {
-        group.region_code = rate.region_code.clone();
-        group.currency_code = rate.currency_code.clone();
-        group.price_book_code = rate.price_book_code.clone();
-        group.price_book_version = rate.price_book_version.clone();
+/// Every region the resource prices, ordered for display: named regions first
+/// (lexical), then the generic `global` bucket. `global` deliberately sorts
+/// last so the admin row opens on a concrete region when one exists — but it
+/// stays the deterministic fallback of the resolution chain.
+fn available_regions_of(group: &OfficialPricingProductGroup) -> Vec<OfficialPricingRegionOption> {
+    let mut options: Vec<OfficialPricingRegionOption> = Vec::new();
+    for rate in &group.rates {
+        let region_code = rate.region_code.trim();
+        if region_code.is_empty() {
+            continue;
+        }
+        if let Some(option) = options
+            .iter_mut()
+            .find(|option| option.region_code.eq_ignore_ascii_case(region_code))
+        {
+            option.rate_count += 1;
+        } else {
+            options.push(OfficialPricingRegionOption {
+                region_code: region_code.to_owned(),
+                currency_code: rate.currency_code.clone(),
+                rate_count: 1,
+                is_global: region_code.eq_ignore_ascii_case(GLOBAL_REGION_CODE),
+            });
+        }
     }
+    options.sort_by(|left, right| {
+        region_display_order(&left.region_code)
+            .cmp(&region_display_order(&right.region_code))
+            .then_with(|| left.region_code.cmp(&right.region_code))
+    });
+    options
+}
+
+/// Display order for region tabs/dropdowns, mirroring the admin list so both
+/// sides render the same tab sequence: the generic `global` bucket first, then
+/// the China mainland region, then every other concrete region (lexical).
+fn region_display_order(region_code: &str) -> u8 {
+    if region_code.eq_ignore_ascii_case(GLOBAL_REGION_CODE) {
+        0
+    } else if region_code.eq_ignore_ascii_case("cn") || region_code.eq_ignore_ascii_case("china") {
+        1
+    } else {
+        2
+    }
+}
+
+const GLOBAL_REGION_CODE: &str = "global";
+
+/// Resolves which region a resource row renders. The chain is the single
+/// source of truth shared by the admin price settings list and any caller that
+/// loads prices for a region:
+///
+/// 1. the **configured default region** of the resource (when it prices there);
+/// 2. the **requested region** passed by the caller (when it prices there);
+/// 3. the resource's **`global`** bucket;
+/// 4. the first region of the resource's own region list (terminal fallback).
+///
+/// The default region intentionally outranks the requested region: it is the
+/// operator's explicit statement of "bill this model here", and the admin row
+/// still exposes every other region through its region tabs.
+fn resolve_group_region<'a>(
+    regions: &'a [OfficialPricingRegionOption],
+    default_region_code: &str,
+    requested_region_code: &str,
+) -> Option<&'a OfficialPricingRegionOption> {
+    let default_region = default_region_code.trim();
+    let requested = requested_region_code.trim();
+    find_region(regions, default_region)
+        .or_else(|| find_region(regions, requested))
+        .or_else(|| find_region(regions, GLOBAL_REGION_CODE))
+        .or_else(|| regions.first())
+}
+
+fn find_region<'a>(
+    regions: &'a [OfficialPricingRegionOption],
+    region_code: &str,
+) -> Option<&'a OfficialPricingRegionOption> {
+    if region_code.is_empty() {
+        return None;
+    }
+    regions
+        .iter()
+        .find(|region| region.region_code.eq_ignore_ascii_case(region_code))
+}
+
+/// True when the caller asked for a region the resource does not price, so the
+/// row is showing a fallback price rather than the requested one.
+fn is_region_missing(regions: &[OfficialPricingRegionOption], requested_region_code: &str) -> bool {
+    let requested = requested_region_code.trim();
+    !requested.is_empty() && find_region(regions, requested).is_none()
 }
 
 fn merge_group_codes(target: &mut Vec<String>, source: &[String]) {
@@ -699,5 +810,84 @@ mod tests {
     fn official_product_groups_carry_configured_default_region() {
         assert!(LOAD_RATES_PREFIX.contains("default_region.default_region_code"));
         assert!(LOAD_RATES_PREFIX.contains("default_region.resource_key = pricing_resource_key("));
+    }
+
+    #[test]
+    fn product_rows_keep_every_region_for_the_row_tabs() {
+        // A resource row aggregates all of its regions, so the requested region
+        // must never prune the rates that feed the row's region tabs.
+        assert!(FILTERED_PRODUCT_RATES_CTE_SUFFIX.contains("($4::text IS NULL OR TRUE)"));
+        assert!(!FILTERED_PRODUCT_RATES_CTE_SUFFIX.contains("region_code = $4"));
+        // The flat rate list keeps the strict region filter: it is a list of
+        // prices, not of resources.
+        assert!(FILTERED_RATES_CTE_SUFFIX.contains("AND ($4::text IS NULL OR region_code = $4)"));
+    }
+
+    fn region(codes: &[&str]) -> Vec<OfficialPricingRegionOption> {
+        let mut options: Vec<OfficialPricingRegionOption> = codes
+            .iter()
+            .map(|code| OfficialPricingRegionOption {
+                region_code: (*code).to_owned(),
+                currency_code: "CNY".to_owned(),
+                rate_count: 1,
+                is_global: code.eq_ignore_ascii_case("global"),
+            })
+            .collect();
+        options.sort_by(|left, right| {
+            region_display_order(&left.region_code)
+                .cmp(&region_display_order(&right.region_code))
+                .then_with(|| left.region_code.cmp(&right.region_code))
+        });
+        options
+    }
+
+    fn resolved(codes: &[&str], default: &str, requested: &str) -> String {
+        let regions = region(codes);
+        resolve_group_region(&regions, default, requested)
+            .map(|region| region.region_code.clone())
+            .unwrap_or_default()
+    }
+
+    #[test]
+    fn region_chain_prefers_the_configured_default_region() {
+        // 1. A configured default region wins over the requested region.
+        assert_eq!(resolved(&["cn", "global"], "cn", "global"), "cn");
+        assert_eq!(resolved(&["cn", "global"], "global", "cn"), "global");
+    }
+
+    #[test]
+    fn region_chain_falls_back_to_the_requested_region() {
+        // 2. Without a default region the caller's region is used.
+        assert_eq!(resolved(&["cn", "global"], "", "cn"), "cn");
+        assert_eq!(resolved(&["cn", "global"], "  ", "global"), "global");
+        // A default region that the resource does not price is ignored.
+        assert_eq!(resolved(&["cn", "global"], "us", "cn"), "cn");
+    }
+
+    #[test]
+    fn region_chain_falls_back_to_global_then_first_region() {
+        // 3. No default and no usable requested region -> global, then first.
+        assert_eq!(resolved(&["cn", "global"], "", "us"), "global");
+        assert_eq!(resolved(&["cn", "global"], "", ""), "global");
+        assert_eq!(resolved(&["ap-south", "cn"], "", "us"), "cn");
+        assert_eq!(resolved(&["ap-south", "cn"], "", ""), "cn");
+    }
+
+    #[test]
+    fn region_fallback_is_reported_only_when_the_request_is_unpriceable() {
+        let regions = region(&["cn", "global"]);
+        assert!(!is_region_missing(&regions, "cn"));
+        assert!(!is_region_missing(&regions, ""));
+        assert!(!is_region_missing(&regions, "CN"));
+        assert!(is_region_missing(&regions, "us"));
+    }
+
+    #[test]
+    fn region_options_are_ordered_global_then_china_then_others() {
+        let codes: Vec<String> = region(&["us-east", "cn", "global", "ap-south"])
+            .into_iter()
+            .map(|option| option.region_code)
+            .collect();
+        assert_eq!(codes, vec!["global", "cn", "ap-south", "us-east"]);
     }
 }

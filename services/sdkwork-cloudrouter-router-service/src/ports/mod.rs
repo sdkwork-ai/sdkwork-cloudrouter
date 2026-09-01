@@ -344,7 +344,7 @@ pub use official_pricing_catalog_read_store::{
     OfficialPricingGroupFacet, OfficialPricingMeterFacet, OfficialPricingProductCatalogQuery,
     OfficialPricingProductCatalogReadFuture, OfficialPricingProductCatalogSnapshot,
     OfficialPricingProductGroup, OfficialPricingRate, OfficialPricingRateCondition,
-    OfficialPricingRateTier, OfficialPricingValueFacet,
+    OfficialPricingRateTier, OfficialPricingRegionOption, OfficialPricingValueFacet,
 };
 pub use pricing_catalog::{PricingCatalog, PricingDefaultRegionProvider};
 pub use provider_adapter_route_resolver::ProviderAdapterRouteResolver;
