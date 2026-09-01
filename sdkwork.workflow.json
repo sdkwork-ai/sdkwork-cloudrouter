@@ -371,6 +371,12 @@
         "shell": "pwsh",
         "workingDirectory": ".",
         "run": "$ErrorActionPreference = \"Stop\"\n$packageId = $env:SDKWORK_PACKAGE_ID\n$variant = $env:SDKWORK_PACKAGE_VARIANT\n$artifactsDir = \"./deployments/artifacts\"\nif (-not (Test-Path $artifactsDir)) { New-Item -ItemType Directory -Path $artifactsDir -Force | Out-Null }\n\n# 1. Cosign (OCI images + generic artifacts) — requires COSIGN_PRIVATE_KEY / COSIGN_PASSWORD / COSIGN_PUBLIC_KEY\nif ($env:COSIGN_PRIVATE_KEY -and $env:SDKWORK_SIGNING_ENABLED -eq \"true\") {\n  Write-Host \"[sign] cosign available; signing artifacts in $artifactsDir\"\n  $sbomPath = Join-Path $artifactsDir \"sbom.spdx.json\"\n  if (Test-Path $sbomPath) {\n    cosign attach sbom --type spdxjson $sbomPath\n    cosign sign-blob --yes --output-certificate (Join-Path $artifactsDir \"sbom.spdx.json.pem\") --output-signature (Join-Path $artifactsDir \"sbom.spdx.json.sig\") $sbomPath\n    Write-Host \"[sign] cosign signed SBOM: $sbomPath\"\n  }\n  $checksumsPath = Join-Path $artifactsDir \"checksums.json\"\n  if (Test-Path $checksumsPath) {\n    cosign sign-blob --yes --output-certificate (Join-Path $artifactsDir \"checksums.json.pem\") --output-signature (Join-Path $artifactsDir \"checksums.json.sig\") $checksumsPath\n    Write-Host \"[sign] cosign signed checksums: $checksumsPath\"\n  }\n} else {\n  Write-Host \"[sign] cosign skipped (COSIGN_PRIVATE_KEY or SDKWORK_SIGNING_ENABLED not set) for $packageId ($variant)\"\n}\n\n# 2. Windows MSI — signtool (requires SDKWORK_SIGNTOOL_PATH + SDKWORK_CERT_PFX_PATH + SDKWORK_CERT_PASSWORD)\nif ($variant -eq \"windows-msi\" -and $env:SDKWORK_CERT_PFX_PATH -and $env:SDKWORK_CERT_PASSWORD) {\n  $signtool = if ($env:SDKWORK_SIGNTOOL_PATH) { $env:SDKWORK_SIGNTOOL_PATH } else { \"signtool.exe\" }\n  $msiFiles = Get-ChildItem -Path \"./dist/install-packages\" -Filter \"*.msi\" -ErrorAction SilentlyContinue\n  foreach ($msi in $msiFiles) {\n    & $signtool sign /f $env:SDKWORK_CERT_PFX_PATH /p $env:SDKWORK_CERT_PASSWORD /fd SHA256 /td SHA256 /tr http://timestamp.digicert.com $msi.FullName\n    if ($LASTEXITCODE -ne 0) { throw \"signtool failed for $($msi.FullName) (exit $LASTEXITCODE)\" }\n    Write-Host \"[sign] signtool signed MSI: $($msi.FullName)\"\n  }\n} else {\n  Write-Host \"[sign] signtool skipped (not windows-msi variant or missing SDKWORK_CERT_PFX_PATH)\"\n}\n\n# 3. macOS pkg — codesign + notarytool (requires SDKWORK_APPLE_DEVELOPER_ID + SDKWORK_APPLE_APP_SPECIFIC_PASSWORD + SDKWORK_APPLE_TEAM_ID + SDKWORK_APPLE_KEYCHAIN_PROFILE)\nif ($variant -eq \"macos-pkg\" -and $env:SDKWORK_APPLE_DEVELOPER_ID -and $env:SDKWORK_APPLE_APP_SPECIFIC_PASSWORD) {\n  $pkgFiles = Get-ChildItem -Path \"./dist/install-packages\" -Filter \"*.pkg\" -ErrorAction SilentlyContinue\n  foreach ($pkg in $pkgFiles) {\n    & codesign --force --sign $env:SDKWORK_APPLE_DEVELOPER_ID --timestamp $pkg.FullName\n    if ($LASTEXITCODE -ne 0) { throw \"codesign failed for $($pkg.FullName) (exit $LASTEXITCODE)\" }\n    & xcrun notarytool submit $pkg.FullName --apple-id $env:SDKWORK_APPLE_DEVELOPER_ID --password $env:SDKWORK_APPLE_APP_SPECIFIC_PASSWORD --team-id $env:SDKWORK_APPLE_TEAM_ID --wait\n    & xcrun stapler staple $pkg.FullName\n    if ($LASTEXITCODE -ne 0) { throw \"stapler failed for $($pkg.FullName) (exit $LASTEXITCODE)\" }\n    Write-Host \"[sign] codesign+notarytool signed pkg: $($pkg.FullName)\"\n  }\n} else {\n  Write-Host \"[sign] codesign skipped (not macos-pkg variant or missing SDKWORK_APPLE_DEVELOPER_ID)\"\n}\n\nWrite-Host \"[sign] signing pipeline complete for $packageId ($variant)\""
+      },
+      {
+        "name": "Create detached release signature",
+        "shell": "pwsh",
+        "workingDirectory": ".",
+        "run": "node scripts/release/workflow-supply-chain-evidence.mjs sign"
       }
     ],
     "sbom": [
@@ -379,6 +385,12 @@
         "shell": "pwsh",
         "workingDirectory": ".",
         "run": "node scripts/generate-release-sbom.mjs"
+      },
+      {
+        "name": "Create supply-chain attestation and artifact evidence",
+        "shell": "pwsh",
+        "workingDirectory": ".",
+        "run": "node scripts/release/workflow-supply-chain-evidence.mjs attest"
       }
     ]
   },
@@ -394,8 +406,10 @@
       ],
       "runner": "ubuntu-24.04",
       "outputGlobs": [
-        "dist/install-packages/*"
+        "dist/install-packages/*",
+        "dist/release-evidence/linux-x64-service/*"
       ],
+      "artifactPath": "dist/install-packages/cloudrouter-linux-x64-server-0.4.1.deb",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -410,8 +424,10 @@
       ],
       "runner": "ubuntu-24.04-arm",
       "outputGlobs": [
-        "dist/install-packages/*"
+        "dist/install-packages/*",
+        "dist/release-evidence/linux-arm64-service/*"
       ],
+      "artifactPath": "dist/install-packages/cloudrouter-linux-arm64-server-0.4.1.deb",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -425,8 +441,10 @@
       ],
       "runner": "ubuntu-24.04",
       "outputGlobs": [
-        "dist/install-packages/*"
+        "dist/install-packages/*",
+        "dist/release-evidence/linux-x64-archive/*"
       ],
+      "artifactPath": "dist/install-packages/cloudrouter-linux-x64-archive-0.4.1.tar.gz",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -440,8 +458,10 @@
       ],
       "runner": "ubuntu-24.04-arm",
       "outputGlobs": [
-        "dist/install-packages/*"
+        "dist/install-packages/*",
+        "dist/release-evidence/linux-arm64-archive/*"
       ],
+      "artifactPath": "dist/install-packages/cloudrouter-linux-arm64-archive-0.4.1.tar.gz",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -455,8 +475,10 @@
       ],
       "runner": "windows-2022",
       "outputGlobs": [
-        "dist/install-packages/*"
+        "dist/install-packages/*",
+        "dist/release-evidence/windows-x64-service/*"
       ],
+      "artifactPath": "dist/install-packages/cloudrouter-windows-x64-server-0.4.1.msi",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -470,8 +492,10 @@
       ],
       "runner": "windows-11-arm",
       "outputGlobs": [
-        "dist/install-packages/*"
+        "dist/install-packages/*",
+        "dist/release-evidence/windows-arm64-service/*"
       ],
+      "artifactPath": "dist/install-packages/cloudrouter-windows-arm64-server-0.4.1.msi",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -485,8 +509,10 @@
       ],
       "runner": "windows-2022",
       "outputGlobs": [
-        "dist/install-packages/*"
+        "dist/install-packages/*",
+        "dist/release-evidence/windows-x64-service/*"
       ],
+      "artifactPath": "dist/install-packages/cloudrouter-windows-x64-server-0.4.1.zip",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -500,8 +526,10 @@
       ],
       "runner": "windows-11-arm",
       "outputGlobs": [
-        "dist/install-packages/*"
+        "dist/install-packages/*",
+        "dist/release-evidence/windows-arm64-service/*"
       ],
+      "artifactPath": "dist/install-packages/cloudrouter-windows-arm64-server-0.4.1.zip",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -515,8 +543,10 @@
       ],
       "runner": "macos-15-intel",
       "outputGlobs": [
-        "dist/install-packages/*"
+        "dist/install-packages/*",
+        "dist/release-evidence/macos-x64-service/*"
       ],
+      "artifactPath": "dist/install-packages/cloudrouter-macos-x64-server-0.4.1.pkg",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -530,8 +560,10 @@
       ],
       "runner": "macos-14",
       "outputGlobs": [
-        "dist/install-packages/*"
+        "dist/install-packages/*",
+        "dist/release-evidence/macos-arm64-service/*"
       ],
+      "artifactPath": "dist/install-packages/cloudrouter-macos-arm64-server-0.4.1.pkg",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -545,8 +577,10 @@
       ],
       "runner": "macos-15-intel",
       "outputGlobs": [
-        "dist/install-packages/*"
+        "dist/install-packages/*",
+        "dist/release-evidence/macos-x64-archive/*"
       ],
+      "artifactPath": "dist/install-packages/cloudrouter-macos-x64-archive-0.4.1.tar.gz",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -560,8 +594,10 @@
       ],
       "runner": "macos-14",
       "outputGlobs": [
-        "dist/install-packages/*"
+        "dist/install-packages/*",
+        "dist/release-evidence/macos-arm64-archive/*"
       ],
+      "artifactPath": "dist/install-packages/cloudrouter-macos-arm64-archive-0.4.1.tar.gz",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -576,8 +612,10 @@
       ],
       "runner": "ubuntu-24.04",
       "outputGlobs": [
-        "dist/install-packages/*"
+        "dist/install-packages/*",
+        "dist/release-evidence/linux-x64-desktop/*"
       ],
+      "artifactPath": "dist/install-packages/cloudrouter-linux-x64-desktop-0.4.1.deb",
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop"
     },
@@ -592,8 +630,10 @@
       ],
       "runner": "ubuntu-24.04-arm",
       "outputGlobs": [
-        "dist/install-packages/*"
+        "dist/install-packages/*",
+        "dist/release-evidence/linux-arm64-desktop/*"
       ],
+      "artifactPath": "dist/install-packages/cloudrouter-linux-arm64-desktop-0.4.1.deb",
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop"
     },
@@ -607,8 +647,10 @@
       ],
       "runner": "windows-2022",
       "outputGlobs": [
-        "dist/install-packages/*"
+        "dist/install-packages/*",
+        "dist/release-evidence/windows-x64-desktop/*"
       ],
+      "artifactPath": "dist/install-packages/cloudrouter-windows-x64-desktop-0.4.1.msi",
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop"
     },
@@ -622,8 +664,10 @@
       ],
       "runner": "windows-11-arm",
       "outputGlobs": [
-        "dist/install-packages/*"
+        "dist/install-packages/*",
+        "dist/release-evidence/windows-arm64-desktop/*"
       ],
+      "artifactPath": "dist/install-packages/cloudrouter-windows-arm64-desktop-0.4.1.msi",
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop"
     },
@@ -637,8 +681,10 @@
       ],
       "runner": "macos-15-intel",
       "outputGlobs": [
-        "dist/install-packages/*"
+        "dist/install-packages/*",
+        "dist/release-evidence/macos-x64-desktop/*"
       ],
+      "artifactPath": "dist/install-packages/cloudrouter-macos-x64-desktop-0.4.1.pkg",
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop"
     },
@@ -652,8 +698,10 @@
       ],
       "runner": "macos-14",
       "outputGlobs": [
-        "dist/install-packages/*"
+        "dist/install-packages/*",
+        "dist/release-evidence/macos-arm64-desktop/*"
       ],
+      "artifactPath": "dist/install-packages/cloudrouter-macos-arm64-desktop-0.4.1.pkg",
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop"
     },
@@ -667,8 +715,10 @@
       ],
       "runner": "ubuntu-24.04",
       "outputGlobs": [
-        "dist/install-packages/*"
+        "dist/install-packages/*",
+        "dist/release-evidence/linux-x64-container/*"
       ],
+      "artifactPath": "dist/install-packages/cloudrouter-linux-x64-container-0.4.1.tar.gz",
       "deploymentProfile": "standalone",
       "runtimeTarget": "container"
     },
@@ -682,8 +732,10 @@
       ],
       "runner": "ubuntu-24.04-arm",
       "outputGlobs": [
-        "dist/install-packages/*"
+        "dist/install-packages/*",
+        "dist/release-evidence/linux-arm64-container/*"
       ],
+      "artifactPath": "dist/install-packages/cloudrouter-linux-arm64-container-0.4.1.tar.gz",
       "deploymentProfile": "standalone",
       "runtimeTarget": "container"
     }
