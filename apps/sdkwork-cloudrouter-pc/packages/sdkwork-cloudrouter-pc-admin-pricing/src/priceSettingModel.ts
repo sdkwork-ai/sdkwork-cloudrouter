@@ -345,6 +345,35 @@ export function groupPriceSettingRatesByRegion(
 }
 
 /**
+ * Region bucket that means "no specific region". It is a genuine pricing
+ * partition (and is rendered as a region tab) but can never be a *default*
+ * billing region: the runtime billing fallback and the admin catalog read both
+ * discard `global` defaults, so persisting one would save a setting that
+ * silently never applies. The backend rejects it with 40001.
+ */
+export const GLOBAL_REGION_CODE = 'global';
+
+function isGlobalRegionCode(regionCode: string): boolean {
+  return regionCode.trim().toLowerCase() === GLOBAL_REGION_CODE;
+}
+
+/**
+ * Regions of a resource that may be configured as its default billing region.
+ *
+ * Mirrors the backend rule (`require_default_region_regions`): a default
+ * region is only meaningful when the model exposes pricing in at least one
+ * specific, non-`global` region. Offering `global` in the picker would let the
+ * operator save a default that the billing engine then ignores.
+ */
+export function eligibleDefaultRegions(
+  regions: readonly PriceSettingRegionGroup[],
+): PriceSettingRegionGroup[] {
+  return regions.filter(
+    (region) => region.regionCode.trim() !== '' && !isGlobalRegionCode(region.regionCode),
+  );
+}
+
+/**
  * Pick the region tab that should be active when a resource row opens:
  * the configured default billing region wins, then the group-level region
  * resolved by the backend (which already prefers the default region), then
@@ -357,10 +386,14 @@ export function pickDefaultPriceSettingRegion(
 ): string {
   if (regions.length === 0) return '';
   const normalized = (value: string) => value.trim().toLowerCase();
+  // A legacy `global` default is ignored rather than followed: it never takes
+  // effect in the billing engine, so the operator should land on a region
+  // whose prices are actually configurable.
   const configured = normalized(configuredDefaultRegionCode ?? '');
+  const usableConfigured = configured === GLOBAL_REGION_CODE ? '' : configured;
   const group = normalized(groupRegionCode ?? '');
   return (
-    regions.find((region) => normalized(region.regionCode) === configured)?.regionCode
+    regions.find((region) => normalized(region.regionCode) === usableConfigured)?.regionCode
     ?? regions.find((region) => normalized(region.regionCode) === group)?.regionCode
     ?? regions[0].regionCode
   );

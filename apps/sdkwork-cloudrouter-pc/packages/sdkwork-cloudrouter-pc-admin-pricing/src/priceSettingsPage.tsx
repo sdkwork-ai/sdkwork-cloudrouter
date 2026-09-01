@@ -19,6 +19,7 @@ import {
 } from './pricingService';
 import {
   buildPriceSettingProductRows,
+  eligibleDefaultRegions,
   formatPriceSettingVariantTabLabel,
   formatPricingMeterLabel,
   formatPricingMoney,
@@ -214,25 +215,29 @@ export function PriceSettingsAdmin() {
       .filter(({ official }) => official.regionCode.trim() === targetRegion)
       .map(({ official }) => official.currencyCode?.trim())
       .find((code) => code) ?? plans[0]?.currencyCode?.trim() ?? 'CNY';
+    const identity = {
+      catalogKey,
+      vendorCode: row.product.vendorCode,
+      providerCode: row.product.providerCode,
+      productCode: row.product.productCode,
+      resourceCode: row.product.resourceCode,
+      currencyCode,
+      description: '',
+    };
     try {
-      // Keep exactly one default per resource: retire the previous default
-      // before creating the new one, mirroring the resource-level
-      // uk_pricing_default_region_resource_key uniqueness rule.
-      if (previous?.id) {
-        try { await pricingService.defaultRegions.delete(previous.id); }
-        catch { /* the previous default may already be gone; proceed */ }
-      }
-      const created = await pricingService.defaultRegions.create({
-        catalogKey,
-        vendorCode: row.product.vendorCode,
-        providerCode: row.product.providerCode,
-        productCode: row.product.productCode,
-        resourceCode: row.product.resourceCode,
-        defaultRegionCode: targetRegion,
-        currencyCode,
-        description: '',
-      });
-      if (created?.catalogKey) { setDefaultRegionByCatalogKey((current) => new Map(current).set(created.catalogKey, created)); }
+      // A resource keeps exactly one default, so switch it in place when a row
+      // already exists. Deleting first and recreating would leave the resource
+      // without a default whenever the create half is rejected.
+      const saved = previous?.id
+        ? await pricingService.defaultRegions.update(previous.id, {
+            ...identity,
+            defaultRegionCode: targetRegion,
+          })
+        : await pricingService.defaultRegions.create({
+            ...identity,
+            defaultRegionCode: targetRegion,
+          });
+      if (saved?.catalogKey) { setDefaultRegionByCatalogKey((current) => new Map(current).set(saved.catalogKey, saved)); }
       setError(null);
     } catch (cause) {
       setError(errorMessageI18n(cause, t('admin.pricing.settings.defaultRegion.setFailed'), t));
@@ -288,6 +293,12 @@ export function PriceSettingsAdmin() {
     return { products: productRows.rows.length, meters, configured };
   }, [defaultRegionByCatalogKey, productRows.rows]);
   const hasNextPage = officialCatalog?.pageInfo.hasMore ?? (officialCatalog?.pageInfo.totalPages ? page < officialCatalog.pageInfo.totalPages : false);
+  // Regions priced by the official catalog, offered as default-billing-region
+  // candidates in the management dialog.
+  const defaultRegionOptions = useMemo(
+    () => (officialCatalog?.regions ?? []).map((region) => ({ code: region.code, count: region.count })),
+    [officialCatalog?.regions],
+  );
 
   const openCreate = () => { setForm({ ...EMPTY_FORM, pricingPlanId: pricingPlanId || plans[0]?.id || '', weeklyWindows: [{ ...DEFAULT_WINDOW }], meterPrices: [emptyMeter()] }); setFormError(null); setCreating(true); setPanelOpen(true); };
   const openProductSetting = (row: PriceSettingProductRow, regionCode: string) => {
@@ -385,7 +396,7 @@ export function PriceSettingsAdmin() {
     <div className="grid shrink-0 grid-cols-1 border-b border-slate-200 bg-slate-50/70 sm:grid-cols-3 dark:border-white/10 dark:bg-white/[0.03]"><SummaryMetric label={t('admin.pricing.settings.summary.products')} value={String(summary.products)} /><SummaryMetric label={t('admin.pricing.settings.summary.meters')} value={String(summary.meters)} /><SummaryMetric label={t('admin.pricing.settings.summary.configured')} value={`${summary.configured}/${summary.meters || 0}`} /></div>
     <AdminListToolbar filters={<div className="flex min-w-0 flex-wrap items-center gap-2"><SearchBox value={search} onChange={setSearch} onSubmit={(value) => { setAppliedSearch(value); setPage(1); }} placeholder={t('admin.pricing.settings.search.placeholder')} /><VendorMultiSelect vendors={vendorOptions} value={vendorCodes} onChange={(next) => { setVendorCodes(next); setPage(1); }} placeholder={t('admin.pricing.settings.filters.allVendors')} /><select className={toolbarSelectClass} value={pricingPlanId} aria-label={t('admin.pricing.settings.filters.pricingPlan')} onChange={(event) => { setPricingPlanId(event.target.value); setPage(1); }}>{plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.planName || plan.planCode}</option>)}</select><select className={toolbarSelectClass} value={resourceType} aria-label={t('admin.pricing.settings.filters.resourceType')} onChange={(event) => { setResourceType(event.target.value as PriceSettingResourceType); setPage(1); }}>{resourceTabs.map((type) => <option key={type} value={type}>{resourceTypeLabel(type, t)}</option>)}</select><select className={toolbarSelectClass} value={regionCode} aria-label={t('admin.pricing.settings.filters.region')} onChange={(event) => { setRegionCode(event.target.value); setPage(1); }}><option value="">{t('admin.pricing.settings.filters.allRegions')}</option>{(officialCatalog?.regions ?? []).map((region) => <option key={region.code} value={region.code}>{region.code} ({formatPricingQuantity(region.count)})</option>)}</select></div>} />
     <AdminTableArea footer={<BottomPagination page={page} pageSize={pageSize} itemCount={productRows.rows.length + customRules.length} hasNextPage={hasNextPage} pageLabel={t('admin.pricing.common.pagination.page', { page })} pageSizeLabel={t('admin.pricing.common.pagination.rows')} previousLabel={t('admin.pricing.common.pagination.previous')} nextLabel={t('admin.pricing.common.pagination.next')} showingLabel={t('admin.pricing.common.pagination.showing')} onPreviousPage={() => setPage((current) => Math.max(1, current - 1))} onNextPage={() => setPage((current) => current + 1)} onPageSizeChange={(value) => { setPageSize(value); setPage(1); }} pageSizeOptions={[20, 50, 100]} />}>
-      <table className="w-full min-w-[1360px] table-fixed text-left text-sm"><thead className="sticky top-0 z-10 border-b border-slate-200 bg-white text-xs uppercase tracking-wide text-slate-400 dark:border-white/10 dark:bg-slate-900"><tr><th className="w-[16%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.resourceName')}</th><th className="w-[10%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.resourceType')}</th><th className="w-[19%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.pricingObject')}</th><th className="w-[25%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.officialPrice')}</th><th className="w-[22%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.customerPrice')}</th><th className="w-[8%] px-4 py-3 text-right font-medium">{t('admin.pricing.settings.table.actions')}</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-white/5">{loading || (productRows.rows.length === 0 && customRules.length === 0) ? <TableState loading={loading} empty={t('admin.pricing.settings.empty')} colSpan={6} /> : <>{productRows.rows.map((row) => <ProductPriceTableRow key={row.key} row={row} activeResourceType={resourceType} plans={plans} locale={displayLocale} t={t} onEdit={openProductSetting} defaultRegion={defaultRegionByCatalogKey.get(row.product.catalogKey?.trim() ?? '')} onSetDefault={handleSetDefaultRegion} />)}{customRules.map((rule) => <CustomPriceTableRow key={`rule:${rule.id}`} rule={rule} plans={plans} locale={displayLocale} t={t} onEdit={openCustomSetting} />)}</>}</tbody></table>
+      <table className="w-full min-w-[1440px] table-fixed text-left text-sm"><thead className="sticky top-0 z-10 border-b border-slate-200 bg-white text-xs uppercase tracking-wide text-slate-400 dark:border-white/10 dark:bg-slate-900"><tr><th className="w-[15%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.resourceName')}</th><th className="w-[8%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.resourceType')}</th><th className="w-[18%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.pricingObject')}</th><th className="w-[23%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.officialPrice')}</th><th className="w-[21%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.customerPrice')}</th><th className="w-[15%] px-4 py-3 text-right font-medium">{t('admin.pricing.settings.table.actions')}</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-white/5">{loading || (productRows.rows.length === 0 && customRules.length === 0) ? <TableState loading={loading} empty={t('admin.pricing.settings.empty')} colSpan={6} /> : <>{productRows.rows.map((row) => <ProductPriceTableRow key={row.key} row={row} activeResourceType={resourceType} plans={plans} locale={displayLocale} t={t} onEdit={openProductSetting} defaultRegion={defaultRegionByCatalogKey.get(row.product.catalogKey?.trim() ?? '')} onSetDefault={handleSetDefaultRegion} />)}{customRules.map((rule) => <CustomPriceTableRow key={`rule:${rule.id}`} rule={rule} plans={plans} locale={displayLocale} t={t} onEdit={openCustomSetting} />)}</>}</tbody></table>
     </AdminTableArea>
     <InlineError message={error} />
     {panelOpen ? <SidePanel wide title={t(creating ? 'admin.pricing.settings.form.createTitle' : 'admin.pricing.settings.form.editTitle')} description={t('admin.pricing.settings.form.batchDescription')} onClose={closePanel} footer={<><button type="button" className={secondaryButtonClass} onClick={closePanel} disabled={busy}>{t('admin.pricing.common.form.cancel')}</button><button type="submit" form="price-setting-form" className={primaryButtonClass} disabled={busy}>{t('admin.pricing.settings.form.saveItems', { count: form.meterPrices.length })}</button></>}>
@@ -396,7 +407,11 @@ export function PriceSettingsAdmin() {
         <details className="rounded-lg border border-slate-200 dark:border-white/10"><summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white"><span>{t('admin.pricing.settings.form.advancedTitle')}</span><ChevronDown className="h-4 w-4 text-slate-400" aria-hidden="true" /></summary><div className="flex flex-col gap-4 border-t border-slate-200 px-4 py-4 dark:border-white/10"><Field label={t('admin.pricing.settings.form.priceMode')} hint={t('admin.pricing.settings.form.priceModeHint')}><div className="grid grid-cols-2 gap-2" role="group" aria-label={t('admin.pricing.settings.form.priceMode')}>{(['standard', 'time_window'] as const).map((mode) => <button key={mode} type="button" className={`rounded-md border px-3 py-2 text-sm font-medium transition ${form.priceMode === mode ? 'border-lobster-500 bg-lobster-50 text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-300' : 'border-slate-200 text-slate-600 hover:border-lobster-300 dark:border-white/10 dark:text-slate-300'}`} onClick={() => { setField('priceMode', mode); if (mode === 'time_window' && form.weeklyWindows.length === 0) setField('weeklyWindows', [{ ...DEFAULT_WINDOW }]); }}>{t(`admin.pricing.settings.mode.${mode === 'time_window' ? 'timeWindow' : 'standard'}`)}</button>)}</div></Field>{form.priceMode === 'time_window' ? <TimeWindowFields form={form} t={t} updateWindow={updateWindow} toggleWindowDay={toggleWindowDay} addWindow={addWindow} setField={setField} /> : null}<div className="grid gap-4 md:grid-cols-2"><Field label={t('admin.pricing.common.form.effectiveFrom')}><input className={inputClass} value={form.effectiveFrom} onChange={(event) => setField('effectiveFrom', event.target.value)} placeholder="2026-08-20T00:00:00Z" /></Field><Field label={t('admin.pricing.common.form.effectiveTo')}><input className={inputClass} value={form.effectiveTo} onChange={(event) => setField('effectiveTo', event.target.value)} placeholder="2026-08-20T00:00:00Z" /></Field></div></div></details>
       </form>
     </SidePanel> : null}
-    <DefaultRegionManager open={defaultRegionsOpen} onClose={() => setDefaultRegionsOpen(false)} />
+    <DefaultRegionManager
+      open={defaultRegionsOpen}
+      onClose={() => setDefaultRegionsOpen(false)}
+      regionOptions={defaultRegionOptions}
+    />
   </AdminPageShell>;
 }
 
@@ -570,7 +585,7 @@ function VendorMultiSelect({ vendors, value, onChange, placeholder }: { vendors:
   );
 }
 
-function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdit, defaultRegion, onSetDefault }: { row: PriceSettingProductRow; activeResourceType: PriceSettingResourceType; plans: AdminPricingPlanItem[]; locale: string; t: TranslationFunction; onEdit: (row: PriceSettingProductRow, regionCode: string) => void; defaultRegion?: AdminDefaultRegionItem; onSetDefault: (row: PriceSettingProductRow, regionCode: string) => void }) {
+function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdit, defaultRegion, onSetDefault }: { row: PriceSettingProductRow; activeResourceType: PriceSettingResourceType; plans: AdminPricingPlanItem[]; locale: string; t: TranslationFunction; onEdit: (row: PriceSettingProductRow, regionCode: string) => void; defaultRegion?: AdminDefaultRegionItem; onSetDefault: (row: PriceSettingProductRow, regionCode: string) => Promise<void> | void }) {
   const resourceType = activeResourceType === 'all' ? resourceTypeOfProduct(row.product) : activeResourceType;
   const translate = pricingConditionTranslate(t);
   // A resource row aggregates every region it prices; the region tabs switch
@@ -595,8 +610,21 @@ function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdi
   const showRegionTabs = regionGroups.length > 1;
   const activeRegionGroup = regionGroups.find((group) => group.regionCode === activeRegion);
   const catalogKey = row.product.catalogKey?.trim();
-  const canSetDefault = Boolean(catalogKey) && regionGroups.length > 1;
-  const currentDefaultRegionCode = canSetDefault ? defaultRegion?.defaultRegionCode?.trim() ?? '' : '';
+  // Only specific, non-`global` regions can be a default billing region: the
+  // billing engine discards a `global` default, so offering it in the picker
+  // would let the operator save a setting that never applies.
+  const eligibleRegions = useMemo(() => eligibleDefaultRegions(regionGroups), [regionGroups]);
+  const currentDefaultRegionCode = catalogKey ? defaultRegion?.defaultRegionCode?.trim() ?? '' : '';
+  const [savingDefault, setSavingDefault] = useState(false);
+  const applyDefaultRegion = async (next: string) => {
+    if (!next || next === currentDefaultRegionCode) return;
+    setSavingDefault(true);
+    try {
+      await onSetDefault(row, next);
+    } finally {
+      setSavingDefault(false);
+    }
+  };
   return (
     <tr className="align-top hover:bg-slate-50 dark:hover:bg-white/5">
       <td className="px-4 py-4 text-slate-900 dark:text-white">
@@ -662,34 +690,41 @@ function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdi
           ))}
         </div>
       </td>
-      <td className="px-4 py-4 text-right">
-        <div className="inline-flex flex-col items-end gap-1.5">
-          {canSetDefault ? (
-            <label
-              className="inline-flex max-w-[180px] items-center gap-1.5 rounded-md border border-slate-200 px-2 py-1.5 transition hover:border-slate-300 dark:border-white/10 dark:hover:border-white/20"
+      <td className="px-4 py-4 align-top">
+        <div className="flex w-full flex-col items-stretch gap-2">
+          {eligibleRegions.length > 0 ? (
+            <div
+              className="w-full rounded-md border border-slate-200 px-2 py-1.5 text-left transition hover:border-slate-300 dark:border-white/10 dark:hover:border-white/20"
               title={t('admin.pricing.settings.defaultRegion.setHint', { defaultValue: '为该资源选择默认计费 Region' })}
             >
-              <Star className={`h-3.5 w-3.5 shrink-0 ${currentDefaultRegionCode ? 'fill-current text-lobster-500 dark:text-lobster-400' : 'text-slate-400'}`} aria-hidden="true" />
-              <span className="shrink-0 text-xs font-semibold text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.defaultRegion.isDefaultLabel', { defaultValue: '默认 Region' })}</span>
+              <div className="flex items-center gap-1.5">
+                <Star className={`h-3.5 w-3.5 shrink-0 ${currentDefaultRegionCode ? 'fill-current text-lobster-500 dark:text-lobster-400' : 'text-slate-400'}`} aria-hidden="true" />
+                <span className="truncate text-xs font-semibold text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.defaultRegion.isDefaultLabel', { defaultValue: '默认 Region' })}</span>
+              </div>
               <select
-                className="min-w-0 flex-1 rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-xs font-medium text-slate-700 transition focus:border-lobster-500 focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
+                className="mt-1.5 w-full rounded-md border border-slate-200 bg-white px-1.5 py-1 text-xs font-medium text-slate-700 transition focus:border-lobster-500 focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
                 value={currentDefaultRegionCode}
                 aria-label={t('admin.pricing.settings.defaultRegion.isDefaultLabel', { defaultValue: '默认 Region' })}
-                onChange={(event) => {
-                  const next = event.target.value.trim();
-                  if (next && next !== currentDefaultRegionCode) onSetDefault(row, next);
-                }}
+                disabled={savingDefault}
+                onChange={(event) => { void applyDefaultRegion(event.target.value.trim()); }}
               >
                 <option value="">{t('admin.pricing.settings.defaultRegion.selectPlaceholder', { defaultValue: '选择默认 Region' })}</option>
-                {regionGroups.map((group) => (
+                {eligibleRegions.map((group) => (
                   <option key={group.regionCode} value={group.regionCode}>
                     {group.regionCode}{group.currencyCode ? ` · ${group.currencyCode}` : ''}
                   </option>
                 ))}
               </select>
-            </label>
-          ) : null}
-          <button type="button" className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold text-lobster-600 transition hover:bg-lobster-50 dark:text-lobster-300 dark:hover:bg-lobster-500/10" onClick={() => onEdit(row, activeRegion)}>
+            </div>
+          ) : (
+            <span
+              className="w-full rounded-md border border-dashed border-slate-200 px-2 py-1.5 text-[11px] text-slate-400 dark:border-white/10 dark:text-slate-500"
+              title={t('admin.pricing.settings.defaultRegion.globalOnlyHint', { defaultValue: '该资源仅在 global 分区定价，无需设置默认 Region' })}
+            >
+              {t('admin.pricing.settings.defaultRegion.globalOnlyHint', { defaultValue: '该资源仅在 global 分区定价，无需设置默认 Region' })}
+            </span>
+          )}
+          <button type="button" className="inline-flex items-center justify-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold text-lobster-600 transition hover:bg-lobster-50 dark:text-lobster-300 dark:hover:bg-lobster-500/10" onClick={() => onEdit(row, activeRegion)}>
             <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
             {t('admin.pricing.settings.actions.editGroup')}
           </button>

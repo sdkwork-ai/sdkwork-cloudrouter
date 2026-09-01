@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildPriceSettingProductRows,
+  eligibleDefaultRegions,
   formatOfficialRateScheduleLines,
   formatPriceSettingVariantTabLabel,
   formatPricingCondition,
@@ -217,6 +218,36 @@ describe('price setting model', () => {
     expect(groups.map((group) => group.regionCode)).toEqual(['global', 'cn']);
     expect(groups.find((group) => group.regionCode === 'cn')?.currencyCode).toBe('CNY');
     expect(groups.find((group) => group.regionCode === 'global')?.prices).toHaveLength(1);
+  });
+
+  it('offers only non-global regions as default billing region candidates', () => {
+    const cnInput = { ...officialRate('llm_input_token', 'cn-input'), regionCode: 'cn', currencyCode: 'CNY' };
+    const globalInput = { ...officialRate('llm_input_token', 'global-input'), regionCode: 'global', currencyCode: 'USD' };
+    const usInput = { ...officialRate('llm_input_token', 'us-input'), regionCode: 'us-east', currencyCode: 'USD' };
+    const groups = groupPriceSettingRatesByRegion([
+      { official: globalInput, rule: undefined },
+      { official: cnInput, rule: undefined },
+      { official: usInput, rule: undefined },
+    ]);
+    // `global` stays a region tab but can never be the default: the billing
+    // engine discards a global default, so offering it would save a no-op.
+    expect(eligibleDefaultRegions(groups).map((group) => group.regionCode)).toEqual(['cn', 'us-east']);
+  });
+
+  it('reports no default region candidates for a global-only model', () => {
+    const globalInput = { ...officialRate('llm_input_token', 'global-input'), regionCode: 'global', currencyCode: 'USD' };
+    const groups = groupPriceSettingRatesByRegion([{ official: globalInput, rule: undefined }]);
+    expect(eligibleDefaultRegions(groups)).toHaveLength(0);
+  });
+
+  it('ignores a legacy global default when picking the active tab', () => {
+    const cnInput = { ...officialRate('llm_input_token', 'cn-input'), regionCode: 'cn', currencyCode: 'CNY' };
+    const globalInput = { ...officialRate('llm_input_token', 'global-input'), regionCode: 'global', currencyCode: 'USD' };
+    const groups = groupPriceSettingRatesByRegion([
+      { official: globalInput, rule: undefined },
+      { official: cnInput, rule: undefined },
+    ]);
+    expect(pickDefaultPriceSettingRegion(groups, 'global', 'cn')).toBe('cn');
   });
 
   it('prefers the configured default billing region when picking the active tab', () => {

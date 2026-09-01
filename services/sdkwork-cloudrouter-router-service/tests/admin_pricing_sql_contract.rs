@@ -147,6 +147,65 @@ fn admin_pricing_settlement_mode_defaults_to_synchronous_and_is_parameterized_on
     assert!(source.contains("WHERE id = $12"));
 }
 
+/// Regression: default-billing-region eligibility used to be resolved against
+/// the *operator's* price books. Official reference pricing lives at the global
+/// `(0, 0)` scope, so a tenant admin — who owns no `official_reference` book —
+/// got an empty region list and every save failed with 40001 even for models
+/// that price in `cn`. The check must read the same official catalog the admin
+/// product list builds its region tabs from.
+#[test]
+fn admin_default_region_eligibility_reads_official_reference_pricing() {
+    let source = POSTGRES_ADMIN_PRICING_STORE;
+    let section = source_section(
+        source,
+        "async fn require_default_region_regions",
+        "async fn upsert_default_region_row",
+    );
+
+    assert!(
+        section.contains("book.price_side = 'official_reference'"),
+        "default region eligibility must read official reference price books"
+    );
+    assert!(
+        section.contains("rate.tenant_id = 0 AND rate.organization_id = 0"),
+        "default region eligibility must include the global official catalog scope"
+    );
+    assert!(
+        section.contains("book.lifecycle_state = 'active'"),
+        "default region eligibility must only consider active price books"
+    );
+    assert!(
+        section.contains("BTRIM(rate.region_code) NOT IN ('', 'global')"),
+        "a global-only model has no meaningful default region and must be rejected"
+    );
+    assert!(
+        !section.contains("AND book.tenant_id = $1"),
+        "default region eligibility must not be scoped to the operator's own price books"
+    );
+}
+
+/// A `global` default is never applied: the runtime snapshot loader and the
+/// admin catalog read both discard it, so persisting one would silently do
+/// nothing. It has to be rejected up front with an actionable message.
+#[test]
+fn admin_default_region_rejects_the_global_region_bucket() {
+    let source = POSTGRES_ADMIN_PRICING_STORE;
+    let section = source_section(
+        source,
+        "async fn require_default_region_regions",
+        "async fn upsert_default_region_row",
+    );
+
+    assert!(
+        source.contains(r#"const GLOBAL_REGION_CODE: &str = "global";"#),
+        "the global region bucket must be a named constant shared with the reject path"
+    );
+    assert!(
+        section.contains("requested_region.eq_ignore_ascii_case(GLOBAL_REGION_CODE)"),
+        "default region save must reject `global` before touching the database"
+    );
+}
+
 #[test]
 fn admin_pricing_patch_preserves_unprovided_billing_modes() {
     assert!(

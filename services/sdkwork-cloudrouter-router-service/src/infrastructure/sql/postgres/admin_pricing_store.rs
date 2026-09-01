@@ -1704,6 +1704,12 @@ async fn update_default_region(
     Ok(item)
 }
 
+/// Region bucket that means "no specific region". It is a real pricing
+/// partition but never a legal *default*: the runtime billing fallback and the
+/// admin catalog read both discard `global` defaults, so accepting one here
+/// would persist a setting that silently never applies.
+const GLOBAL_REGION_CODE: &str = "global";
+
 /// Confirms a default region may be set for the model: the model must expose
 /// active pricing in at least one distinct non-global region, and the chosen
 /// default must be one of those regions.
@@ -1714,30 +1720,57 @@ async fn update_default_region(
 /// presents multiple billing regions, so configuring `cn` as the default is
 /// valid. Only models with zero non-global pricing are rejected, since a
 /// default region would be meaningless there.
+///
+/// Eligibility is resolved against the **official reference pricing**, not the
+/// operator's own price books. The admin product list builds its region tabs
+/// (and therefore the options the operator can pick) from the official catalog
+/// at the global `(0, 0)` scope, so validating against any other scope would
+/// reject every region the UI offers — a tenant admin owns no
+/// `official_reference` book and would always fail with 40001. The operator's
+/// own scope is still accepted so a tenant that publishes its own official
+/// book stays configurable.
 async fn require_default_region_regions(
     tx: &mut Transaction<'_, Postgres>,
     subject: AdminPricingSubject,
     catalog_key: &str,
     default_region_code: &str,
 ) -> DomainResult<()> {
+    let requested_region = default_region_code.trim();
+    if requested_region.is_empty() || requested_region.eq_ignore_ascii_case(GLOBAL_REGION_CODE) {
+        return Err(DomainError::bad_request(format!(
+            "default region must be a specific non-global region priced for this model, not '{GLOBAL_REGION_CODE}'"
+        )));
+    }
     let rows = sqlx::query(
         r#"
-        SELECT DISTINCT rate.region_code
+        SELECT DISTINCT BTRIM(rate.region_code) AS region_code
         FROM pricing_rate rate
         JOIN pricing_price_book book
           ON book.id = rate.price_book_id
-         AND book.tenant_id = $1
-         AND book.organization_id = $2
-        WHERE rate.catalog_key = $3
-          AND book.lifecycle_state = 'active'
+         AND book.tenant_id = rate.tenant_id
+         AND book.organization_id = rate.organization_id
+        WHERE BTRIM(rate.catalog_key) = $3
+          AND rate.status = 1
           AND rate.deleted_at IS NULL
+          AND book.status = 1
           AND book.deleted_at IS NULL
+          AND book.price_side = 'official_reference'
+          AND book.lifecycle_state = 'active'
+          AND (
+                (rate.tenant_id = 0 AND rate.organization_id = 0)
+             OR (rate.tenant_id = $1 AND rate.organization_id = $2)
+          )
+          AND book.effective_from <= CURRENT_TIMESTAMP
+          AND (book.effective_to IS NULL OR book.effective_to > CURRENT_TIMESTAMP)
+          AND rate.effective_from <= CURRENT_TIMESTAMP
+          AND (rate.effective_to IS NULL OR rate.effective_to > CURRENT_TIMESTAMP)
           AND BTRIM(rate.region_code) NOT IN ('', 'global')
+        ORDER BY region_code ASC
         "#,
     )
     .bind(subject.tenant_id)
     .bind(subject.organization_id)
-    .bind(catalog_key)
+    .bind(catalog_key.trim())
     .fetch_all(&mut **tx)
     .await
     .map_err(|error| store_error("failed to inspect priced regions for default region", error))?;
@@ -1746,17 +1779,19 @@ async fn require_default_region_regions(
         .map(|row| string_cell(row, "region_code"))
         .collect();
     if regions.is_empty() {
-        return Err(DomainError::bad_request(
-            "model must expose active pricing in at least one non-global region before a default billing region can be configured",
-        ));
+        return Err(DomainError::bad_request(format!(
+            "model must expose active pricing in at least one non-global region before a default billing region can be configured (catalogKey: {})",
+            catalog_key.trim(),
+        )));
     }
     if !regions
         .iter()
-        .any(|region| region.eq_ignore_ascii_case(default_region_code))
+        .any(|region| region.eq_ignore_ascii_case(requested_region))
     {
-        return Err(DomainError::bad_request(
-            "default region must be one of the regions priced for this model",
-        ));
+        return Err(DomainError::bad_request(format!(
+            "default region must be one of the regions priced for this model: {}",
+            regions.join(", "),
+        )));
     }
     Ok(())
 }

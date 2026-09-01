@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Globe2, Pencil, Plus, Search, Star, Trash2, X } from 'lucide-react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +8,7 @@ import {
   type AdminDefaultRegionItem,
   type AdminPricingListParams,
 } from './pricingService';
+import { GLOBAL_REGION_CODE } from './priceSettingModel';
 import {
   errorMessageI18n,
   Field,
@@ -20,9 +21,18 @@ import {
   TableState,
 } from './components';
 
+/** A region the official pricing catalog exposes, offered as a default candidate. */
+export interface DefaultRegionOption {
+  code: string;
+  count?: string;
+}
+
 interface DefaultRegionManagerProps {
   open: boolean;
   onClose: () => void;
+  /** Regions priced by the official catalog; `global` is filtered out because a
+   * `global` default never takes effect in the billing engine. */
+  regionOptions?: readonly DefaultRegionOption[];
 }
 
 const EMPTY_FORM = {
@@ -41,10 +51,19 @@ const EMPTY_FORM = {
 /** Admin management panel for per-model default billing regions. Lets the
  * operator select, for multi-region models, which region is used for billing
  * when an account carries no explicit region. */
-export function DefaultRegionManager({ open, onClose }: DefaultRegionManagerProps) {
+export function DefaultRegionManager({ open, onClose, regionOptions }: DefaultRegionManagerProps) {
   const { t } = useTranslation();
   const translate = (key: string, fallback: string) =>
     String(t(key, { defaultValue: fallback }));
+
+  /** Only specific regions may be a default; `global` is rejected server-side
+   * and ignored by the billing engine, so it is never offered. */
+  const selectableRegions = useMemo(
+    () => (regionOptions ?? [])
+      .map((region) => region.code.trim())
+      .filter((code) => code !== '' && code.toLowerCase() !== GLOBAL_REGION_CODE),
+    [regionOptions],
+  );
 
   const [items, setItems] = useState<AdminDefaultRegionItem[]>([]);
   const [total, setTotal] = useState<number>(0);
@@ -236,8 +255,31 @@ export function DefaultRegionManager({ open, onClose }: DefaultRegionManagerProp
               <Field label={translate('admin.pricing.settings.defaultRegion.resourceCode', '资源 Code')} hint={translate('admin.pricing.settings.defaultRegion.formCreateOptional', '可选')}>
                 <input className={inputClass} value={form.resourceCode} onChange={(event) => setForm({ ...form, resourceCode: event.target.value })} placeholder="gpt-4o" disabled={Boolean(editing)} />
               </Field>
-              <Field label={translate('admin.pricing.settings.defaultRegion.defaultRegionCode', '默认计费 Region')} hint={translate('admin.pricing.settings.defaultRegion.formOptional', '必填')}>
-                <input className={inputClass} value={form.defaultRegionCode} onChange={(event) => setForm({ ...form, defaultRegionCode: event.target.value })} placeholder="cn-beijing" required />
+              <Field
+                label={translate('admin.pricing.settings.defaultRegion.defaultRegionCode', '默认计费 Region')}
+                hint={selectableRegions.length > 0
+                  ? translate('admin.pricing.settings.defaultRegion.formOptional', '必填')
+                  : translate('admin.pricing.settings.defaultRegion.noRegionsHint', '官方目录暂无可选地域')}
+              >
+                {selectableRegions.length > 0 ? (
+                  <select
+                    className={selectClass}
+                    value={form.defaultRegionCode}
+                    onChange={(event) => setForm({ ...form, defaultRegionCode: event.target.value })}
+                    required
+                  >
+                    <option value="">{translate('admin.pricing.settings.defaultRegion.selectPlaceholder', '选择默认 Region')}</option>
+                    {selectableRegions.map((code) => <option key={code} value={code}>{code}</option>)}
+                  </select>
+                ) : (
+                  <input
+                    className={inputClass}
+                    value={form.defaultRegionCode}
+                    onChange={(event) => setForm({ ...form, defaultRegionCode: event.target.value })}
+                    placeholder="cn-beijing"
+                    required
+                  />
+                )}
               </Field>
               <Field label={translate('admin.pricing.settings.defaultRegion.currency', '币种')} hint={translate('admin.pricing.settings.defaultRegion.formOptional', '必填')}>
                 <input className={inputClass} value={form.currencyCode} onChange={(event) => setForm({ ...form, currencyCode: event.target.value.toUpperCase() })} placeholder="CNY" maxLength={3} required />
@@ -277,9 +319,9 @@ export function DefaultRegionManager({ open, onClose }: DefaultRegionManagerProp
         <InlineError message={error} />
 
         <div className="min-h-0 flex-1 overflow-auto">
-          <table className="w-full min-w-[720px] table-fixed text-left text-sm">
+          <table className="w-full min-w-[760px] table-fixed text-left text-sm">
             <thead className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-400 dark:border-white/10 dark:bg-slate-900">
-            <tr><th className="w-[26%] px-4 py-3 font-medium">{translate('admin.pricing.settings.defaultRegion.colModel', '模型')}</th><th className="w-[16%] px-4 py-3 font-medium">{translate('admin.pricing.settings.defaultRegion.colRegion', '默认 Region')}</th><th className="w-[12%] px-4 py-3 font-medium">{translate('admin.pricing.settings.defaultRegion.colCurrency', '币种')}</th><th className="w-[12%] px-4 py-3 font-medium">{translate('admin.pricing.settings.defaultRegion.colStatus', '状态')}</th><th className="w-[22%] px-4 py-3 font-medium">{translate('admin.pricing.settings.defaultRegion.colEffective', '生效时间')}</th><th className="w-[12%] px-4 py-3 text-right font-medium">{translate('admin.pricing.settings.defaultRegion.colActions', '操作')}</th></tr>
+            <tr><th className="w-[22%] px-4 py-3 font-medium">{translate('admin.pricing.settings.defaultRegion.colModel', '模型')}</th><th className="w-[13%] px-4 py-3 font-medium">{translate('admin.pricing.settings.defaultRegion.colRegion', '默认 Region')}</th><th className="w-[9%] px-4 py-3 font-medium">{translate('admin.pricing.settings.defaultRegion.colCurrency', '币种')}</th><th className="w-[11%] px-4 py-3 font-medium">{translate('admin.pricing.settings.defaultRegion.colStatus', '状态')}</th><th className="w-[21%] px-4 py-3 font-medium">{translate('admin.pricing.settings.defaultRegion.colEffective', '生效时间')}</th><th className="w-[24%] px-4 py-3 text-right font-medium">{translate('admin.pricing.settings.defaultRegion.colActions', '操作')}</th></tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-white/5">
             {loading || items.length === 0 ? (
@@ -297,12 +339,12 @@ export function DefaultRegionManager({ open, onClose }: DefaultRegionManagerProp
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{item.currencyCode}</td>
                   <td className="px-4 py-3"><StatusBadge status={item.status} /></td>
                   <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">{item.effectiveFrom ?? '—'}{item.effectiveTo ? ` → ${item.effectiveTo}` : ''}</td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="inline-flex items-center gap-1">
-                      <button type="button" className="inline-flex h-8 items-center justify-center gap-1 rounded-md px-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10" onClick={() => beginEdit(item)} aria-label={translate('admin.pricing.settings.defaultRegion.edit', '编辑')}>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-1 whitespace-nowrap">
+                      <button type="button" className="inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-md px-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10" onClick={() => beginEdit(item)} aria-label={translate('admin.pricing.settings.defaultRegion.edit', '编辑')}>
                         <Pencil className="h-3.5 w-3.5" aria-hidden="true" />{translate('admin.pricing.settings.defaultRegion.edit', '编辑')}
                       </button>
-                      <button type="button" className="inline-flex h-8 items-center justify-center gap-1 rounded-md px-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-500/10" onClick={() => void handleDelete(item.id)} aria-label={translate('admin.pricing.settings.defaultRegion.delete', '删除')}>
+                      <button type="button" className="inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-md px-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-500/10" onClick={() => void handleDelete(item.id)} aria-label={translate('admin.pricing.settings.defaultRegion.delete', '删除')}>
                         <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />{translate('admin.pricing.settings.defaultRegion.delete', '删除')}
                       </button>
                     </div>
