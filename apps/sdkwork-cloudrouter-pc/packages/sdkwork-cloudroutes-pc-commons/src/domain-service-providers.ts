@@ -4,6 +4,7 @@ import {
   configureSdkworkAccountSessionTokenProvider,
   createSdkworkAccountAppService,
   getSdkworkAccountService,
+  toSdkworkAccountPointsFromMicro,
   type SdkworkAccountAppService,
 } from '@sdkwork/account-service';
 import type { MembershipAppSdkClient } from '@sdkwork/membership-sdk-ports';
@@ -153,6 +154,26 @@ export function getCloudRouterMembershipCheckoutService(): SdkworkMembershipChec
 
 export function getCloudRouterAccountAppService(): SdkworkAccountAppService {
   return getSdkworkAccountService();
+}
+
+export interface CloudRouterTokenBankBalance {
+  /** Spendable Token Bank balance expressed in credit points. */
+  available: number;
+}
+
+/**
+ * Reads the signed-in account's spendable Token Bank balance in credit
+ * points. Resolves `null` when the account service is unavailable or the
+ * lookup fails (e.g. anonymous session), so callers can stay inert.
+ */
+export async function getCloudRouterTokenBankBalance(): Promise<CloudRouterTokenBankBalance | null> {
+  try {
+    const account = await getCloudRouterAccountAppService().tokenBank.account.retrieve();
+    const available = toSdkworkAccountPointsFromMicro(account?.availableAmount);
+    return Number.isFinite(available) ? { available } : null;
+  } catch {
+    return null;
+  }
 }
 
 export function getCloudRouterPaymentBackendService(): SdkworkPaymentBackendService {

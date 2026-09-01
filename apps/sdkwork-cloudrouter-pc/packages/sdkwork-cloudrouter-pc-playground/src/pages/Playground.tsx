@@ -19,6 +19,7 @@ import {
   getCloudRouterMembershipCheckoutService,
   getCloudRouterPointsRechargeService,
 } from '@sdkwork/cloudroutes-pc-commons/domain-service-providers';
+import { createPlaygroundBalancePort } from '../playgroundBalancePort';
 
 configureAgentsWorkbenchRuntime({
   getAgentsAppSdkClient: getSdkworkAgentAppSdkClient,
@@ -30,6 +31,7 @@ configureAgentsWorkbenchRuntime({
   getMemoryAppSdkClient: getSdkworkMemoryAppSdkClient,
   getPromptsAppSdkClient: getSdkworkPromptsAppSdkClient,
   getSkillsAppSdkClient: getSdkworkSkillsAppSdkClient,
+  balance: createPlaygroundBalancePort(),
   tokenPlan: {
     checkoutService: getCloudRouterMembershipCheckoutService(),
     couponRechargeService: getCloudRouterCouponRechargeService(),
