@@ -186,7 +186,7 @@
     "d3-voronoi": "^1.1.4",
     "decimal.js-light": "^2.5.1",
     "dotenv": "^17.2.3",
-    "es-toolkit": "^1.45.1",
+    "es-toolkit": "^1.51.0",
     "framer-motion": "catalog:",
     "html-parse-stringify": "^3.0.1",
     "html-to-image": "^1.11.13",
