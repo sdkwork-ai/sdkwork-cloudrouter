@@ -42,31 +42,31 @@ on:
       sdkwork_appbase_ref:
         description: sdkwork-appbase commit/ref.
         required: false
-        default: 4e287906b0d712213f8b6ede39b505aac3a67722
+        default: ba3a5103dd0a895a11dcda3ea2e5bac5428f38aa
       sdkwork_core_ref:
         description: sdkwork-core commit/ref.
         required: false
-        default: fd64773e8f73ce38f6995ded0ee63c00d6c5e675
+        default: 1cb61734ab62e1954ba7fcc3b7cd5465e6914149
       sdkwork_ui_ref:
         description: sdkwork-ui commit/ref.
         required: false
-        default: 672b9a990cdd077422f60651fbc9413b44343ab2
+        default: e53d25425dd13ec02d5e0173e79245d32c5926ff
       sdkwork_drive_ref:
         description: sdkwork-drive commit/ref.
         required: false
-        default: 1f56e3597a57153e9578f6f4c9645b90bc2a8cde
+        default: 46245a721cca19262c68742a7506a8a0aa752291
       sdkwork_generations_ref:
         description: sdkwork-generations commit/ref.
         required: false
-        default: 70795260d3caa66a894271a145ec596c06487593
+        default: 5823633ca3efc930f9c500e5c91e53e7210cae44
       sdkwork_image_ref:
         description: sdkwork-image commit/ref.
         required: false
-        default: 08b16ab2b1096a8488f160f52e695d11b283c950
+        default: 19aa219bee6bf9e926c73433748add88c0917083
       sdkwork_sdk_generator_ref:
         description: sdkwork-sdk-generator commit/ref.
         required: false
-        default: 715562e30be876661a1c78f4a84b058e75aba937
+        default: e11d0c69f7a19ad5e9bb680f22ac392e98a2bc49
 
 permissions:
   contents: write
