@@ -18,6 +18,7 @@ const APPLICATION_ID: &str = "sdkwork-cloudrouter";
 const OPEN_API_PREFIXES: &[&str] = &[
     "/v1",
     "/anthropic/v1",
+    "/elevenlabs/v1",
     "/google/v1beta",
     "/kling/v1",
     "/midjourney/v1",

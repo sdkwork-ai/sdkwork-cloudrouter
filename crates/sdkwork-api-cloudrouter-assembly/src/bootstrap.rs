@@ -1023,6 +1023,7 @@ mod tests {
         let open_api_prefixes = [
             "/v1",
             "/anthropic/v1",
+            "/elevenlabs/v1",
             "/google/v1beta",
             "/kling/v1",
             "/midjourney/v1",
@@ -1053,6 +1054,8 @@ mod tests {
             "/v1/assistants",
             "/v1/chat/completions",
             "/anthropic/v1/messages",
+            "/elevenlabs/v1/sound-generation",
+            "/elevenlabs/v1/text-to-speech/{voice_id}",
         ] {
             assert_eq!(
                 classify_api_surface(path, &profile),

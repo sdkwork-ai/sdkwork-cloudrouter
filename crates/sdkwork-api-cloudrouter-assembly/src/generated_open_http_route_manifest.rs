@@ -909,6 +909,18 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "Videos/volcengine",
         "volcengineRetrieveContentGenerationTask",
     ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/elevenlabs/v1/sound-generation",
+        "Audio/elevenlabs",
+        "elevenlabsCreateSoundGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/elevenlabs/v1/text-to-speech/{voice_id}",
+        "Audio/elevenlabs",
+        "elevenlabsCreateTextToSpeech",
+    ),
 ];
 
 pub fn http_route_manifest() -> HttpRouteManifest {
