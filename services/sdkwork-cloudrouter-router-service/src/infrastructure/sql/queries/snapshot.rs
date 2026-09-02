@@ -994,14 +994,14 @@ SELECT
     plan.organization_id,
     plan.plan_code,
     plan.base_price_side AS base_price_side_code,
-    default_rule.multiplier::text AS default_multiplier,
-    default_rule.markup_amount::text AS default_markup_amount,
+    COALESCE(default_rule.multiplier, 1)::text AS default_multiplier,
+    COALESCE(default_rule.markup_amount, 0)::text AS default_markup_amount,
     plan.currency_code AS currency,
     plan.rounding_mode,
     plan.minimum_charge_amount::text AS minimum_charge_amount,
-    plan.fallback_policy
+    COALESCE(plan.fallback_policy, 'fail_closed') AS fallback_policy
 FROM cloudrouter_pricing_plan plan
-JOIN LATERAL (
+LEFT JOIN LATERAL (
     SELECT rule.multiplier, rule.markup_amount
     FROM cloudrouter_pricing_rule rule
     WHERE rule.tenant_id = plan.tenant_id
@@ -1023,7 +1023,6 @@ JOIN LATERAL (
 ) default_rule ON TRUE
 WHERE plan.deleted_at IS NULL
   AND plan.status = 1
-  AND plan.fallback_policy = 'fail_closed'
   AND plan.effective_from <= CURRENT_TIMESTAMP
   AND (plan.effective_to IS NULL OR plan.effective_to > CURRENT_TIMESTAMP)
 ORDER BY plan.effective_from DESC, plan.id DESC
@@ -1157,7 +1156,6 @@ WHERE rule.status = 1
   AND rule.deleted_at IS NULL
   AND plan.status = 1
   AND plan.deleted_at IS NULL
-  AND plan.fallback_policy = 'fail_closed'
 ORDER BY rule.priority ASC, rule.effective_from DESC, rule.id DESC
 "#
     }

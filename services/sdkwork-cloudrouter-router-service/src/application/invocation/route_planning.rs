@@ -11,9 +11,11 @@ use crate::application::upstream_base_url::{
     protocol_code_from_api_code, resolve_upstream_base_url,
 };
 use crate::application::{
-    model_access_forbidden_message, model_access_forbidden_reason, AuthenticatedApiKeyContext,
-    SelectUpstreamAccountRouteQuery, SelectUpstreamModelRouteQuery, SelectedUpstreamAccountRoute,
-    SelectedUpstreamModelRoute, UpstreamRouteSelectionErrorKind, UpstreamRouteSelector,
+    model_access_forbidden_message, model_access_forbidden_reason,
+    upstream_route_selector::{ensure_route_is_priced, RoutePricingProbe},
+    AuthenticatedApiKeyContext, SelectUpstreamAccountRouteQuery, SelectUpstreamModelRouteQuery,
+    SelectedUpstreamAccountRoute, SelectedUpstreamModelRoute, UpstreamRouteSelectionErrorKind,
+    UpstreamRouteSelector,
 };
 use crate::domain::{
     has_text, provider_native_model_id, BillingMeter, ModelUpstreamRoute,
@@ -651,10 +653,13 @@ where
 /// Validates a resolved sticky constraint before pinning the route plan.
 ///
 /// A sticky binding may outlive its upstream account route: the admin can
-/// remove the account from the bound group, disable it, or mark it unhealthy.
-/// Pinning blindly would keep billing traffic on an account the group no
-/// longer covers, so the sticky target is re-validated against the live
-/// catalog and the caller falls back to regular route planning when invalid.
+/// remove the account from the bound group, disable it, mark it unhealthy,
+/// or redeploy the pricing catalog so the bound route no longer resolves a
+/// price. Pinning blindly would keep billing traffic on an account the group
+/// no longer covers, or let an unpriced route reach dispatch and only fail
+/// after the upstream call already happened, so the sticky target is
+/// re-validated against the live catalog and the caller falls back to regular
+/// route planning when invalid.
 fn sticky_route_invalid_reason<C>(
     catalog: &C,
     invocation: &Invocation,
@@ -663,7 +668,9 @@ fn sticky_route_invalid_reason<C>(
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
-    let account_route = matching_upstream_account_route(catalog, sticky_route)?;
+    let Some(account_route) = matching_upstream_account_route(catalog, sticky_route) else {
+        return Some("sticky upstream account route not found".to_owned());
+    };
     if !account_route.is_account_healthy() {
         return Some("sticky upstream account is not healthy".to_owned());
     }
@@ -708,7 +715,68 @@ where
             }
         }
     }
+    if let Some(reason) = sticky_route_unpriced_reason(catalog, invocation, sticky_route) {
+        return Some(reason);
+    }
     session_sticky_model_mismatch_reason(catalog, invocation, sticky_route)
+}
+
+/// Mirrors the model-path pricing gate (`ensure_route_is_priced`) for sticky
+/// bindings. Regular route selection only dispatches model routes whose every
+/// settled meter resolves a price; a sticky binding committed earlier must
+/// pass the same gate, otherwise the pinned route reaches dispatch, the
+/// upstream call succeeds, and pricing finalization fails the request
+/// afterwards. Only model-type invocations are probed: model-less API
+/// resource routes are not pricing-gated at selection time either.
+fn sticky_route_unpriced_reason<C>(
+    catalog: &C,
+    invocation: &Invocation,
+    sticky_route: &StickyRouteConstraint,
+) -> Option<String>
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    let requested_model = invocation
+        .resource
+        .requested_model
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())?;
+    let catalog_key = sticky_route
+        .catalog_key
+        .clone()
+        .or_else(|| invocation.resource.requested_model_catalog_key.clone())
+        .or_else(|| resolve_catalog_key(catalog, invocation, requested_model).ok())?;
+    let account_route = matching_upstream_account_route(catalog, sticky_route)?;
+    let region_code = sticky_route
+        .region_code
+        .clone()
+        .or_else(|| Some(account_route.region_code.clone()))
+        .unwrap_or_else(|| "global".to_owned());
+    let billing_meter = invocation
+        .billing
+        .meter
+        .clone()
+        .unwrap_or(BillingMeter::LlmInputToken);
+    let probe = RoutePricingProbe {
+        catalog_key: catalog_key.as_str(),
+        supplier_code: sticky_route.supplier_code.as_str(),
+        account_id: sticky_route.account_id,
+        region_code: region_code.as_str(),
+        requested_model,
+        api_code: invocation.resource.api_code.as_str(),
+        tenant_id: invocation.subject.tenant_id,
+        organization_id: invocation.subject.organization_id,
+        api_key_id: invocation.subject.api_key_id.unwrap_or_default(),
+        account_group_id: sticky_route
+            .account_group_id
+            .or(invocation.subject.account_group_id)
+            .unwrap_or_default(),
+        billing_meter: &billing_meter,
+    };
+    ensure_route_is_priced(catalog, &probe)
+        .err()
+        .map(|error| format!("sticky upstream route is not priced: {error}"))
 }
 
 /// 会话 sticky 绑定是按提交时的模型路由结果写入的 cache 亲和提示。客户端

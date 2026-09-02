@@ -447,6 +447,128 @@ async fn sticky_route_constraint_overrides_normal_route_selection() {
     assert_eq!(Some("sticky-model"), account.provider_model.as_deref());
 }
 
+/// A sticky binding committed before a catalog redeploy must not pin an
+/// unpriced model route: pricing finalization would fail the request only
+/// after the upstream call already succeeded. The binding is invalidated and
+/// regular route planning picks a priced candidate instead.
+#[tokio::test]
+async fn sticky_route_with_missing_prices_falls_back_to_regular_planning() {
+    let mut catalog = base_catalog();
+    add_model_route(
+        &mut catalog,
+        3001,
+        "priced-provider",
+        "gpt-4o-mini-priced",
+        "openai.chat_completions",
+        "0.110000",
+    );
+    // Model route + account route without any upstream cost price: reachable
+    // for sticky pinning, but must fail the pricing pre-gate.
+    catalog.add_model_upstream_route(
+        ModelUpstreamRoute::new_for_catalog_key(
+            "openai/gpt-4o-mini",
+            "gpt-4o-mini",
+            "unpriced-provider",
+            3005,
+            "gpt-4o-mini-unpriced",
+        )
+        .with_api_code("openai.chat_completions")
+        .with_upstream_endpoint(
+            Some("https://provider.example/unpriced-provider"),
+            Some("vault://providers/unpriced-provider/main"),
+        ),
+    );
+    add_account_route(&mut catalog, 3005, "unpriced-provider");
+    let catalog = Arc::new(catalog);
+    let mut invocation = openai_invocation(
+        Method::POST,
+        "/v1/chat/completions",
+        InvocationBody::json(json!({
+            "model": "gpt-4o-mini",
+            "messages": [{"role": "user", "content": "ping"}]
+        })),
+    );
+    invocation.resource.requested_model = Some("gpt-4o-mini".to_owned());
+    invocation.routing.sticky_route = Some(StickyRouteConstraint {
+        supplier_code: "unpriced-provider".to_owned(),
+        account_id: 3005,
+        account_group_id: Some(10),
+        vendor_code: Some("unpriced-provider".to_owned()),
+        api_code: Some("openai.chat_completions".to_owned()),
+        catalog_key: Some("openai/gpt-4o-mini".to_owned()),
+        provider_model: Some("gpt-4o-mini-unpriced".to_owned()),
+        region_code: Some("global".to_owned()),
+        sticky_scope: Some("session".to_owned()),
+    });
+
+    RoutePlanningInterceptor::new(catalog)
+        .before(&mut invocation)
+        .await
+        .expect("route planning falls back after invalid sticky pricing");
+
+    let plan = invocation.routing.route_plan.expect("route plan");
+    assert_eq!(
+        vec!["priced-provider"],
+        plan.candidates
+            .iter()
+            .map(|candidate| candidate.supplier_code.as_str())
+            .collect::<Vec<_>>()
+    );
+}
+
+/// A sticky binding whose bound route still resolves prices for every
+/// settled meter keeps pinning the route plan.
+#[tokio::test]
+async fn sticky_route_with_valid_prices_pins_model_route() {
+    let mut catalog = base_catalog();
+    add_model_route(
+        &mut catalog,
+        3006,
+        "pinned-provider",
+        "gpt-4o-mini-pinned",
+        "openai.chat_completions",
+        "0.110000",
+    );
+    let catalog = Arc::new(catalog);
+    let mut invocation = openai_invocation(
+        Method::POST,
+        "/v1/chat/completions",
+        InvocationBody::json(json!({
+            "model": "gpt-4o-mini",
+            "messages": [{"role": "user", "content": "ping"}]
+        })),
+    );
+    invocation.resource.requested_model = Some("gpt-4o-mini".to_owned());
+    invocation.routing.sticky_route = Some(StickyRouteConstraint {
+        supplier_code: "pinned-provider".to_owned(),
+        account_id: 3006,
+        account_group_id: Some(10),
+        vendor_code: Some("pinned-provider".to_owned()),
+        api_code: Some("openai.chat_completions".to_owned()),
+        catalog_key: Some("openai/gpt-4o-mini".to_owned()),
+        provider_model: Some("gpt-4o-mini-pinned".to_owned()),
+        region_code: Some("global".to_owned()),
+        sticky_scope: Some("session".to_owned()),
+    });
+
+    RoutePlanningInterceptor::new(catalog.clone())
+        .before(&mut invocation)
+        .await
+        .expect("route planning");
+    AccountResolutionInterceptor::new(catalog)
+        .before(&mut invocation)
+        .await
+        .expect("account resolution");
+
+    let account = invocation.account.expect("account");
+    assert_eq!("pinned-provider", account.supplier_code);
+    assert_eq!(3006, account.account_id);
+    assert_eq!(
+        Some("gpt-4o-mini-pinned"),
+        account.provider_model.as_deref()
+    );
+}
+
 #[tokio::test]
 async fn model_route_plan_preserves_account_group_failover_order() {
     let mut catalog = base_catalog_with_group_strategy(UpstreamAccountRoutingStrategy::Failover);

@@ -1077,44 +1077,83 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         query: &SelectUpstreamModelRouteQuery,
         route: &ModelUpstreamRoute,
     ) -> DomainResult<()> {
-        let meters = composite_pricing_meters(&query.billing_meter);
-        let configured_default_region = self.catalog.default_billing_region(
-            query.context.tenant_id,
-            query.context.organization_id,
-            &route.catalog_key,
-        );
-        for meter in meters {
-            let mut resource =
-                ResourceDefinition::new(&route.catalog_key, meter.clone(), Utc::now())
-                    .with_pricing_subject(query.context.api_key_id, Some(query.context.group_id))
-                    .with_provider(&route.supplier_code, Some(route.account_id))
-                    .with_region_code(&route.region_code)
-                    .with_default_billing_region(configured_default_region.clone())
-                    .with_model(&query.requested_model)
-                    .with_api_code(&query.api_code);
-            if let Some(identity) = parse_model_catalog_identity(&route.catalog_key) {
-                resource = resource.with_vendor_code(identity.vendor_code);
-            }
-            let resolution = PriceService::new().resolve(self.catalog, resource);
-            match resolution {
-                Ok(resolution) if has_quoted_procurement_cost(&resolution) => {}
-                Ok(_) if meter == BillingMeter::LlmCacheReadToken => {}
-                Ok(resolution) => {
-                    return Err(DomainError::new(format!(
-                        "upstream cost price not found for model {}, supplier {}, account {}, and region {}{}",
-                        route.catalog_key,
-                        route.supplier_code,
-                        route.account_id,
-                        route.region_code,
-                        price_resolution_failure_suffix(&resolution)
-                    )));
-                }
-                Err(_) if meter == BillingMeter::LlmCacheReadToken => {}
-                Err(error) => return Err(error),
-            }
-        }
-        Ok(())
+        ensure_route_is_priced(
+            self.catalog,
+            &RoutePricingProbe {
+                catalog_key: &route.catalog_key,
+                supplier_code: &route.supplier_code,
+                account_id: route.account_id,
+                region_code: &route.region_code,
+                requested_model: &query.requested_model,
+                api_code: &query.api_code,
+                tenant_id: query.context.tenant_id,
+                organization_id: query.context.organization_id,
+                api_key_id: query.context.api_key_id,
+                account_group_id: query.context.group_id,
+                billing_meter: &query.billing_meter,
+            },
+        )
     }
+}
+
+/// Inputs for the pricing pre-gate shared by model route selection and
+/// sticky-binding validation. Mirrors the resource identity the invocation
+/// pipeline will price with, so a route passing this gate cannot later fail
+/// pricing resolution for the same subject.
+pub(crate) struct RoutePricingProbe<'a> {
+    pub catalog_key: &'a str,
+    pub supplier_code: &'a str,
+    pub account_id: i64,
+    pub region_code: &'a str,
+    pub requested_model: &'a str,
+    pub api_code: &'a str,
+    pub tenant_id: i64,
+    pub organization_id: i64,
+    pub api_key_id: i64,
+    pub account_group_id: i64,
+    pub billing_meter: &'a BillingMeter,
+}
+
+pub(crate) fn ensure_route_is_priced<C>(
+    catalog: &C,
+    probe: &RoutePricingProbe<'_>,
+) -> DomainResult<()>
+where
+    C: UpstreamAccountRouteCatalog,
+{
+    let meters = composite_pricing_meters(probe.billing_meter);
+    let configured_default_region =
+        catalog.default_billing_region(probe.tenant_id, probe.organization_id, probe.catalog_key);
+    for meter in meters {
+        let mut resource = ResourceDefinition::new(probe.catalog_key, meter.clone(), Utc::now())
+            .with_pricing_subject(probe.api_key_id, Some(probe.account_group_id))
+            .with_provider(probe.supplier_code, Some(probe.account_id))
+            .with_region_code(probe.region_code)
+            .with_default_billing_region(configured_default_region.clone())
+            .with_model(probe.requested_model)
+            .with_api_code(probe.api_code);
+        if let Some(identity) = parse_model_catalog_identity(probe.catalog_key) {
+            resource = resource.with_vendor_code(identity.vendor_code);
+        }
+        let resolution = PriceService::new().resolve(catalog, resource);
+        match resolution {
+            Ok(resolution) if has_quoted_procurement_cost(&resolution) => {}
+            Ok(_) if meter == BillingMeter::LlmCacheReadToken => {}
+            Ok(resolution) => {
+                return Err(DomainError::new(format!(
+                    "upstream cost price not found for model {}, supplier {}, account {}, and region {}{}",
+                    probe.catalog_key,
+                    probe.supplier_code,
+                    probe.account_id,
+                    probe.region_code,
+                    price_resolution_failure_suffix(&resolution)
+                )));
+            }
+            Err(_) if meter == BillingMeter::LlmCacheReadToken => {}
+            Err(error) => return Err(error),
+        }
+    }
+    Ok(())
 }
 
 fn has_quoted_procurement_cost(resolution: &PriceResolution) -> bool {
