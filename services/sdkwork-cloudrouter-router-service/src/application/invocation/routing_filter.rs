@@ -169,8 +169,8 @@ impl CandidateFilter for ModelAccessFilter {
     }
 }
 
-/// 账号健康过滤：剔除健康状态未知或标记为不健康的账号（防御性过滤，
-/// 规划阶段已做主要筛选；sticky 候选同样受此约束）。
+/// 账号健康过滤：剔除健康快照中标记为不健康的账号（快照缺失视为健康，
+/// 防御性过滤，规划阶段已做主要筛选；sticky 候选同样受此约束）。
 pub struct HealthFilter;
 
 impl CandidateFilter for HealthFilter {

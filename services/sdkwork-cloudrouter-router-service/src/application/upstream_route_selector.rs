@@ -795,11 +795,16 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
                 );
             }
         }
-        let account_routes = plan_upstream_account_routes(
+        let mut account_routes = plan_upstream_account_routes(
             &group,
             self.binding_strategy_for_group(query.context.api_key_id, candidate.account_group_id),
             account_routes,
         )?;
+        // 同账户多 region 部署：默认计费 region 的部署优先（见
+        // `prefer_default_region_variants`），与定价的 region 作用域一致。
+        let preferred_region = self.default_billing_region_for(&query.context, &query.catalog_key);
+        account_routes =
+            prefer_default_region_variants(account_routes, preferred_region.as_deref());
         let mut resolved = Vec::new();
         for account_route in account_routes {
             let matching_model_routes = routes.iter().filter(|route| {
@@ -838,6 +843,17 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         has_text(route.base_url.as_deref())
             && (has_text(route.secret_ref.as_deref())
                 || !route.auth_profile.default_headers.is_empty())
+    }
+
+    /// 资源级默认计费 region（`pricing_default_region`，先租户作用域再回退
+    /// (0,0) 全局）。选路与定价共用同一 region 作用域来源。
+    fn default_billing_region_for(
+        &self,
+        context: &AuthenticatedApiKeyContext,
+        catalog_key: &str,
+    ) -> Option<String> {
+        self.catalog
+            .default_billing_region(context.tenant_id, context.organization_id, catalog_key)
     }
 
     fn evaluate_candidate_account_routes(
@@ -896,7 +912,7 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
                     return CandidateUpstreamAccountRouteEvaluation::RoutingInvalid(error)
                 }
             };
-            let routes = match plan_upstream_account_routes(
+            let mut routes = match plan_upstream_account_routes(
                 &group,
                 self.binding_strategy_for_group(
                     query.context.api_key_id,
@@ -909,6 +925,11 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
                     return CandidateUpstreamAccountRouteEvaluation::RoutingInvalid(error)
                 }
             };
+            // 同账户多 region 部署：默认计费 region 的部署优先（model-less
+            // 路径以 route_key 为资源键，与定价资源键保持一致）。
+            let preferred_region =
+                self.default_billing_region_for(&query.context, &query.route_key);
+            routes = prefer_default_region_variants(routes, preferred_region.as_deref());
             // 首个为最终账号，其余为故障转移序列（planner 已按策略排序并
             // 按 fallback mode 截断），供 dispatch 的 failover 使用。
             let Some((primary, failover)) = routes.split_first() else {
@@ -1211,6 +1232,48 @@ fn candidate_region_matches(route_region_code: &str, candidate_region_code: Opti
     candidate_region_code
         .map(|candidate_region_code| same_region(route_region_code, candidate_region_code))
         .unwrap_or(true)
+}
+
+/// 同账户多 region 部署共享 endpoint/credential 排序，其相对顺序即目录插入
+/// 顺序。资源声明了默认计费 region 时，把该 region 的部署稳定地排到最前，
+/// 使选路的 region 作用域与定价一致。仅在账户分组内部重排（planner 输出按
+/// 账户相邻），不改变策略层（priority/轮询）确定的账户顺序与 failover 序列。
+fn prefer_default_region_variants(
+    routes: Vec<UpstreamAccountRoute>,
+    preferred_region: Option<&str>,
+) -> Vec<UpstreamAccountRoute> {
+    let Some(preferred) = preferred_region
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    else {
+        return routes;
+    };
+    let mut result = Vec::with_capacity(routes.len());
+    let mut index = 0;
+    while index < routes.len() {
+        let key = (
+            routes[index].supplier_code.clone(),
+            routes[index].account_id,
+        );
+        let run_end = index
+            + routes[index..]
+                .iter()
+                .take_while(|route| route.supplier_code == key.0 && route.account_id == key.1)
+                .count();
+        let run = &routes[index..run_end];
+        result.extend(
+            run.iter()
+                .filter(|route| same_region(&route.region_code, preferred))
+                .cloned(),
+        );
+        result.extend(
+            run.iter()
+                .filter(|route| !same_region(&route.region_code, preferred))
+                .cloned(),
+        );
+        index = run_end;
+    }
+    result
 }
 
 fn same_region(left: &str, right: &str) -> bool {

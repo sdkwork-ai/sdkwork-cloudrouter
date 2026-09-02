@@ -692,7 +692,9 @@ fn credential_round_robin_rotates_equal_priority_credentials() {
         })
         .collect::<Vec<_>>();
 
-    assert_eq!(vec![1, 2, 1, 2], credentials);
+    // 同等优先级下凭证按 id 降序排列（最新凭证优先，防止轮换后 401 持续），
+    // round_robin 轮转因此从最新凭证（id 2）开始交替。
+    assert_eq!(vec![2, 1, 2, 1], credentials);
 }
 
 #[test]
@@ -829,6 +831,9 @@ fn region_scoped_group_candidate_selects_the_matching_deployment() {
             .with_region_code("cn"),
         );
     }
+    // 同账户 us+cn 双 region 部署：资源级默认计费 region（policy 时代
+    // region 作用域候选的现代等价物）决定选中哪个部署。
+    catalog.set_default_billing_region(TENANT_ID, ORGANIZATION_ID, MODEL_CATALOG_KEY, "cn");
 
     let selected = UpstreamRouteSelector::new(&catalog)
         .select_model_route(model_query(group_id))
