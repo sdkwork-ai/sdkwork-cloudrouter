@@ -69,6 +69,7 @@ VENDOR_PROVIDER_PREFIXES = {
     "kling",
     "vidu",
     "nano-banana",
+    "elevenlabs",
 }
 
 
@@ -3192,6 +3193,7 @@ class CloudRouterGatewayOpenApiGenerator:
             {"name": "Images/nano-banana", "description": "Nano Banana compatible image APIs exposed through Cloud Router vendor routing."},
             {"name": "Videos/kling", "description": "Kling-compatible video APIs exposed through Cloud Router vendor routing."},
             {"name": "Audio/suno", "description": "Suno-compatible music APIs exposed through Cloud Router vendor routing."},
+            {"name": "Audio/elevenlabs", "description": "ElevenLabs-compatible audio APIs exposed through Cloud Router vendor routing."},
             {"name": "Chat/google", "description": "Google Gemini content generation APIs exposed through Cloud Router vendor routing."},
             {"name": "Responses/google", "description": "Google Gemini cached content APIs exposed through Cloud Router vendor routing."},
             {"name": "Embeddings/google", "description": "Google Gemini embedding APIs exposed through Cloud Router vendor routing."},
@@ -3393,6 +3395,8 @@ class CloudRouterGatewayOpenApiGenerator:
             "/volcengine/api/v3/contents/generations/tasks/{task_id}": {"get": self._operation("Videos/volcengine", "volcengineRetrieveContentGenerationTask", "Volcengine Ark retrieve content generation task", "Retrieves a Volcengine Ark task using the configured Volcengine provider account.", None, "VolcengineContentGenerationTask", parameters=[self._path_param("task_id", "Volcengine content generation task identifier.")], provider="volcengine")},
             "/suno/v1/music/generations": {"post": self._operation("Audio/suno", "sunoCreateMusicGeneration", "Suno music generation", "Creates a Suno-compatible music generation using the configured Suno provider account.", "SunoMusicGenerationRequest", "SunoMusicGenerationResponse", provider="suno")},
             "/suno/v1/music/generations/{task_id}": {"get": self._operation("Audio/suno", "sunoRetrieveMusicGeneration", "Suno retrieve music generation", "Retrieves a Suno-compatible music generation task using the configured Suno provider account.", None, "SunoMusicGenerationTaskResponse", parameters=[self._path_param("task_id", "Suno task identifier.")], provider="suno")},
+            "/elevenlabs/v1/sound-generation": {"post": self._operation("Audio/elevenlabs", "elevenlabsCreateSoundGeneration", "Generate sound effect", "Generates a sound effect from a text description through the ElevenLabs-compatible sound generation surface.", "ElevenLabsSoundGenerationRequest", "ElevenLabsSoundGenerationResponse", parameters=[self._query_param("output_format", "Requested output audio format, for example mp3_44100_128.")], provider="elevenlabs")},
+            "/elevenlabs/v1/text-to-speech/{voice_id}": {"post": self._operation("Audio/elevenlabs", "elevenlabsCreateTextToSpeech", "Synthesize speech", "Synthesizes speech for the given voice through the ElevenLabs-compatible text-to-speech surface.", "ElevenLabsTextToSpeechRequest", "ElevenLabsTextToSpeechResponse", parameters=[self._path_param("voice_id", "ElevenLabs voice identifier."), self._query_param("output_format", "Requested output audio format, for example mp3_44100_128.")], provider="elevenlabs")},
             "/midjourney/v1/images/generations": {"post": self._operation("Images/midjourney", "midjourneyCreateImageGeneration", "Midjourney image generation", "Creates a Midjourney-compatible image generation using the configured Midjourney provider account.", "MidjourneyImageGenerationRequest", "MidjourneyImageGenerationTask", provider="midjourney")},
             "/midjourney/v1/images/generations/{task_id}": {"get": self._operation("Images/midjourney", "midjourneyRetrieveImageGeneration", "Midjourney retrieve image generation", "Retrieves a Midjourney-compatible image generation task using the configured Midjourney provider account.", None, "MidjourneyImageGenerationTask", parameters=[self._path_param("task_id", "Midjourney task identifier.")], provider="midjourney")},
             "/kling/v1/videos/generations": {"post": self._operation("Videos/kling", "klingCreateVideoGeneration", "Kling video generation", "Creates a Kling-compatible video generation using the configured Kling provider account.", "KlingVideoGenerationRequest", "KlingVideoGenerationTask", provider="kling")},
@@ -5196,6 +5200,62 @@ class CloudRouterGatewayOpenApiGenerator:
                     "image_url": {"type": "string", "description": "Cover image URL."},
                     "duration": {"type": "number", "description": "Track duration in seconds."},
                     "lyrics": {"type": "string", "description": "Generated lyrics."},
+                },
+            },
+            "ElevenLabsSoundGenerationRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["model_id", "text"],
+                "properties": {
+                    "model_id": {"type": "string", "description": "ElevenLabs-compatible model identifier."},
+                    "text": {"type": "string", "description": "Text description of the sound effect to generate."},
+                    "duration_seconds": {"type": "number", "description": "Requested sound effect duration in seconds."},
+                    "prompt_influence": {"type": "number", "description": "How strongly the prompt influences the generated sound."},
+                    "loop": {"type": "boolean", "description": "Whether the sound effect should loop seamlessly."},
+                },
+            },
+            "ElevenLabsSoundGenerationResponse": {
+                "type": "object",
+                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
+                "properties": {
+                    "id": {"type": "string", "description": "ElevenLabs task identifier."},
+                    "status": {"type": "string", "description": "Task status."},
+                    "audio_url": {"type": "string", "description": "URL of the generated sound effect audio."},
+                    "url": {"type": "string", "description": "Alias for the generated audio URL."},
+                    "audio": {
+                        "type": "object",
+                        "description": "Nested audio descriptor when the provider returns one.",
+                        "properties": {
+                            "id": {"type": "string", "description": "Audio descriptor identifier."},
+                            "url": {"type": "string", "description": "Audio descriptor URL."},
+                        },
+                    },
+                },
+            },
+            "ElevenLabsTextToSpeechRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["model_id", "text"],
+                "properties": {
+                    "model_id": {"type": "string", "description": "ElevenLabs-compatible model identifier."},
+                    "text": {"type": "string", "description": "Text to synthesize into speech."},
+                    "voice_settings": {
+                        "type": "object",
+                        "description": "Voice settings such as speed.",
+                        "properties": {
+                            "speed": {"type": "number", "description": "Speech speed factor."},
+                        },
+                    },
+                },
+            },
+            "ElevenLabsTextToSpeechResponse": {
+                "type": "object",
+                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
+                "properties": {
+                    "id": {"type": "string", "description": "ElevenLabs task identifier."},
+                    "status": {"type": "string", "description": "Task status."},
+                    "audio_url": {"type": "string", "description": "URL of the synthesized speech audio."},
+                    "url": {"type": "string", "description": "Alias for the synthesized audio URL."},
                 },
             },
             "MidjourneyImageGenerationRequest": {
