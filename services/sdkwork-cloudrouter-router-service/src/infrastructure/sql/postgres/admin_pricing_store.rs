@@ -1704,22 +1704,18 @@ async fn update_default_region(
     Ok(item)
 }
 
-/// Region bucket that means "no specific region". It is a real pricing
-/// partition but never a legal *default*: the runtime billing fallback and the
-/// admin catalog read both discard `global` defaults, so accepting one here
-/// would persist a setting that silently never applies.
-const GLOBAL_REGION_CODE: &str = "global";
-
 /// Confirms a default region may be set for the model: the model must expose
-/// active pricing in at least one distinct non-global region, and the chosen
-/// default must be one of those regions.
+/// active pricing in at least one distinct region, and the chosen default must
+/// be one of those regions.
 ///
-/// The `global` bucket counts as a real pricing partition here (see
-/// `billing_region_prefers_china`): a model priced in both `cn` and `global`
-/// — the typical mainland-china deployment shape, e.g. deepseek — genuinely
-/// presents multiple billing regions, so configuring `cn` as the default is
-/// valid. Only models with zero non-global pricing are rejected, since a
-/// default region would be meaningless there.
+/// Every pricing partition qualifies as a default — including the `global`
+/// bucket. `global` is a real partition (see `billing_region_prefers_china`):
+/// a model priced in both `cn` and `global` — the typical mainland-china
+/// deployment shape, e.g. deepseek — genuinely presents multiple billing
+/// regions, and an operator who wants region-less accounts billed at the
+/// global partition prices explicitly configures `global` as the default,
+/// which also suppresses the automatic `cn` preference. A model priced
+/// nowhere at all is rejected, since a default region would be meaningless.
 ///
 /// Eligibility is resolved against the **official reference pricing**, not the
 /// operator's own price books. The admin product list builds its region tabs
@@ -1736,10 +1732,10 @@ async fn require_default_region_regions(
     default_region_code: &str,
 ) -> DomainResult<()> {
     let requested_region = default_region_code.trim();
-    if requested_region.is_empty() || requested_region.eq_ignore_ascii_case(GLOBAL_REGION_CODE) {
-        return Err(DomainError::bad_request(format!(
-            "default region must be a specific non-global region priced for this model, not '{GLOBAL_REGION_CODE}'"
-        )));
+    if requested_region.is_empty() {
+        return Err(DomainError::bad_request(
+            "default billing region must name a region priced for this model",
+        ));
     }
     let rows = sqlx::query(
         r#"
@@ -1764,7 +1760,7 @@ async fn require_default_region_regions(
           AND (book.effective_to IS NULL OR book.effective_to > CURRENT_TIMESTAMP)
           AND rate.effective_from <= CURRENT_TIMESTAMP
           AND (rate.effective_to IS NULL OR rate.effective_to > CURRENT_TIMESTAMP)
-          AND BTRIM(rate.region_code) NOT IN ('', 'global')
+          AND BTRIM(rate.region_code) <> ''
         ORDER BY region_code ASC
         "#,
     )
@@ -1780,7 +1776,7 @@ async fn require_default_region_regions(
         .collect();
     if regions.is_empty() {
         return Err(DomainError::bad_request(format!(
-            "model must expose active pricing in at least one non-global region before a default billing region can be configured (catalogKey: {})",
+            "model must expose active pricing in at least one region before a default billing region can be configured (catalogKey: {})",
             catalog_key.trim(),
         )));
     }

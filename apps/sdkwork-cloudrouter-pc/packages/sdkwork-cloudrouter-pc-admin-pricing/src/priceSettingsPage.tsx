@@ -19,7 +19,6 @@ import {
 } from './pricingService';
 import {
   buildPriceSettingProductRows,
-  eligibleDefaultRegions,
   formatPriceSettingVariantTabLabel,
   formatPricingMeterLabel,
   formatPricingMoney,
@@ -29,7 +28,6 @@ import {
   formatOfficialRateScheduleLines,
   groupPriceSettingRatesByRegion,
   groupPriceSettingRatesByVariant,
-  isDefaultRegionEligible,
   normalizePricingDecimal,
   officialRateVariantLabel,
   officialRateUnit,
@@ -892,10 +890,9 @@ function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdi
   const showRegionTabs = regionGroups.length > 1;
   const activeRegionGroup = regionGroups.find((group) => group.regionCode === activeRegion);
   const catalogKey = row.product.catalogKey?.trim();
-  // Only specific, non-`global` regions can be a default billing region: the
-  // billing engine discards a `global` default, so offering it in the picker
-  // would let the operator save a setting that never applies.
-  const eligibleRegions = useMemo(() => eligibleDefaultRegions(regionGroups), [regionGroups]);
+  // Every priced partition may be the default billing region (`global`
+  // included), so the picker is fed straight from the resource's region
+  // groups — the backend validates the chosen region is actually priced.
   const currentDefaultRegionCode = catalogKey ? defaultRegion?.defaultRegionCode?.trim() ?? '' : '';
   const [savingDefault, setSavingDefault] = useState(false);
   const applyDefaultRegion = async (next: string) => {
@@ -983,10 +980,11 @@ function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdi
                 <Star className={`h-3.5 w-3.5 shrink-0 ${currentDefaultRegionCode ? 'fill-current text-lobster-500 dark:text-lobster-400' : 'text-slate-400'}`} aria-hidden="true" />
                 <span className="truncate text-xs font-semibold text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.defaultRegion.isDefaultLabel', { defaultValue: '默认 Region' })}</span>
               </div>
-              {/* The picker lists every region the resource prices. `global` is
-                  a real pricing partition but can never be a default (the
-                  billing engine discards it and the save API rejects it), so
-                  it is rendered as a disabled option instead of being hidden. */}
+              {/* The picker lists every region the resource prices. Every
+                  partition — `global` included — may be the default: the
+                  billing engine applies a configured default verbatim, so a
+                  global default bills region-less accounts at the global
+                  prices instead of the automatic `cn` preference. */}
               <select
                 className="mt-1.5 w-full rounded-md border border-slate-200 bg-white px-1.5 py-1 text-xs font-medium text-slate-700 transition focus:border-lobster-500 focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
                 value={currentDefaultRegionCode}
@@ -995,36 +993,21 @@ function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdi
                 onChange={(event) => { void applyDefaultRegion(event.target.value.trim()); }}
               >
                 <option value="">{t('admin.pricing.settings.defaultRegion.selectPlaceholder', { defaultValue: '选择默认 Region' })}</option>
-                {regionGroups.map((group) => {
-                  const eligible = isDefaultRegionEligible(group.regionCode);
-                  return (
-                    <option key={group.regionCode} value={eligible ? group.regionCode : ''} disabled={!eligible}>
-                      {group.regionCode}{group.currencyCode ? ` · ${group.currencyCode}` : ''}{eligible ? '' : ` · ${t('admin.pricing.settings.defaultRegion.ineligibleBadge', { defaultValue: '不可作默认' })}`}
-                    </option>
-                  );
-                })}
+                {regionGroups.map((group) => (
+                  <option key={group.regionCode} value={group.regionCode}>
+                    {group.regionCode}{group.currencyCode ? ` · ${group.currencyCode}` : ''}
+                  </option>
+                ))}
               </select>
-              {regionGroups.some((group) => !isDefaultRegionEligible(group.regionCode)) ? (
-                <p className="mt-1 text-[11px] leading-4 text-slate-400 dark:text-slate-500">
-                  {t('admin.pricing.settings.defaultRegion.globalNotDefaultHint', { defaultValue: 'global 分区不能作为默认计费 Region' })}
-                </p>
-              ) : null}
             </div>
-          ) : eligibleRegions.length === 1 ? (
+          ) : (
             <SingleDefaultRegionChoice
-              region={eligibleRegions[0]}
-              active={currentDefaultRegionCode.toLowerCase() === eligibleRegions[0].regionCode.trim().toLowerCase()}
+              region={regionGroups[0]}
+              active={currentDefaultRegionCode.toLowerCase() === regionGroups[0].regionCode.trim().toLowerCase()}
               saving={savingDefault}
-              onApply={() => applyDefaultRegion(eligibleRegions[0].regionCode)}
+              onApply={() => applyDefaultRegion(regionGroups[0].regionCode)}
               t={t}
             />
-          ) : (
-            <span
-              className="w-full rounded-md border border-dashed border-slate-200 px-2 py-1.5 text-[11px] text-slate-400 dark:border-white/10 dark:text-slate-500"
-              title={t('admin.pricing.settings.defaultRegion.globalOnlyHint', { defaultValue: '该资源仅在 global 分区定价，无需设置默认 Region' })}
-            >
-              {t('admin.pricing.settings.defaultRegion.globalOnlyHint', { defaultValue: '该资源仅在 global 分区定价，无需设置默认 Region' })}
-            </span>
           )}
           <button type="button" className="inline-flex items-center justify-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold text-lobster-600 transition hover:bg-lobster-50 dark:text-lobster-300 dark:hover:bg-lobster-500/10" onClick={() => onEdit(row)}>
             <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />

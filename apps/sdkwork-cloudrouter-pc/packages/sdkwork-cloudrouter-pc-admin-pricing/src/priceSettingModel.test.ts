@@ -223,7 +223,7 @@ describe('price setting model', () => {
     expect(groups.find((group) => group.regionCode === 'global')?.prices).toHaveLength(1);
   });
 
-  it('offers only non-global regions as default billing region candidates', () => {
+  it('offers every priced region as a default billing region candidate', () => {
     const cnInput = { ...officialRate('llm_input_token', 'cn-input'), regionCode: 'cn', currencyCode: 'CNY' };
     const globalInput = { ...officialRate('llm_input_token', 'global-input'), regionCode: 'global', currencyCode: 'USD' };
     const usInput = { ...officialRate('llm_input_token', 'us-input'), regionCode: 'us-east', currencyCode: 'USD' };
@@ -232,15 +232,16 @@ describe('price setting model', () => {
       { official: cnInput, rule: undefined },
       { official: usInput, rule: undefined },
     ]);
-    // `global` stays a region tab but can never be the default: the billing
-    // engine discards a global default, so offering it would save a no-op.
-    expect(eligibleDefaultRegions(groups).map((group) => group.regionCode)).toEqual(['cn', 'us-east']);
+    // Every partition — `global` included — may be the default: the billing
+    // engine applies a configured default verbatim, so a global default bills
+    // region-less accounts at the global prices.
+    expect(eligibleDefaultRegions(groups).map((group) => group.regionCode)).toEqual(['global', 'cn', 'us-east']);
   });
 
-  it('reports no default region candidates for a global-only model', () => {
+  it('offers the global partition as the only candidate of a global-only model', () => {
     const globalInput = { ...officialRate('llm_input_token', 'global-input'), regionCode: 'global', currencyCode: 'USD' };
     const groups = groupPriceSettingRatesByRegion([{ official: globalInput, rule: undefined }]);
-    expect(eligibleDefaultRegions(groups)).toHaveLength(0);
+    expect(eligibleDefaultRegions(groups).map((group) => group.regionCode)).toEqual(['global']);
   });
 
   it('narrows the default-region candidates to the resource own regions', () => {
@@ -253,29 +254,30 @@ describe('price setting model', () => {
     // The picker must offer the regions THIS resource prices. Catalog-wide
     // facets (us-east here) are not valid candidates: the model has no price
     // there and the backend rejects a default the resource does not expose.
-    expect(eligibleDefaultRegions(groups).map((group) => group.regionCode)).toEqual(['cn']);
+    expect(eligibleDefaultRegions(groups).map((group) => group.regionCode)).toEqual(['global', 'cn']);
   });
 
-  it('marks only specific non-global regions as default-region eligible', () => {
-    // `global` is a real pricing partition (it renders as a region tab) but is
-    // never a legal default: the billing engine discards it and the save API
-    // rejects it. Pickers must keep it visible but disabled.
+  it('marks every named region as default-region eligible', () => {
+    // `global` is a real pricing partition and a legal default: the billing
+    // chain applies it verbatim. Only a blank code is rejected.
     expect(isDefaultRegionEligible('cn')).toBe(true);
     expect(isDefaultRegionEligible('us-east')).toBe(true);
-    expect(isDefaultRegionEligible(' global ')).toBe(false);
-    expect(isDefaultRegionEligible('GLOBAL')).toBe(false);
+    expect(isDefaultRegionEligible(' global ')).toBe(true);
+    expect(isDefaultRegionEligible('GLOBAL')).toBe(true);
     expect(isDefaultRegionEligible('')).toBe(false);
     expect(isDefaultRegionEligible('   ')).toBe(false);
   });
 
-  it('ignores a legacy global default when picking the active tab', () => {
+  it('follows a configured global default when picking the active tab', () => {
     const cnInput = { ...officialRate('llm_input_token', 'cn-input'), regionCode: 'cn', currencyCode: 'CNY' };
     const globalInput = { ...officialRate('llm_input_token', 'global-input'), regionCode: 'global', currencyCode: 'USD' };
     const groups = groupPriceSettingRatesByRegion([
       { official: globalInput, rule: undefined },
       { official: cnInput, rule: undefined },
     ]);
-    expect(pickDefaultPriceSettingRegion(groups, 'global', 'cn')).toBe('cn');
+    // A global default is a real operator decision now: the billing engine
+    // applies it verbatim, so the editor opens on the global tab.
+    expect(pickDefaultPriceSettingRegion(groups, 'global', 'cn')).toBe('global');
   });
 
   it('prefers the configured default billing region when picking the active tab', () => {

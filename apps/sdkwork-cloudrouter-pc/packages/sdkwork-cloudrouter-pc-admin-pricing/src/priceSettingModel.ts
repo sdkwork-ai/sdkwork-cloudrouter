@@ -345,34 +345,23 @@ export function groupPriceSettingRatesByRegion(
 }
 
 /**
- * Region bucket that means "no specific region". It is a genuine pricing
- * partition (and is rendered as a region tab) but can never be a *default*
- * billing region: the runtime billing fallback and the admin catalog read both
- * discard `global` defaults, so persisting one would save a setting that
- * silently never applies. The backend rejects it with 40001.
- */
-export const GLOBAL_REGION_CODE = 'global';
-
-/**
  * Whether a region code may be configured as a default billing region.
  *
- * Mirrors the backend rule (`require_default_region_regions` plus the runtime
- * snapshot loader): only a specific, non-`global` region qualifies. `global`
- * is still shown in pickers — as a disabled option — so operators can see the
- * resource's full region list and why it cannot be picked.
+ * Mirrors the backend rule (`require_default_region_regions`): every priced
+ * region qualifies — including the `global` partition, which is a real
+ * pricing partition and bills region-less accounts at the global prices.
+ * Only a blank code is rejected.
  */
 export function isDefaultRegionEligible(regionCode: string): boolean {
-  const normalized = regionCode.trim().toLowerCase();
-  return normalized !== '' && normalized !== GLOBAL_REGION_CODE;
+  return regionCode.trim() !== '';
 }
 
 /**
  * Regions of a resource that may be configured as its default billing region.
  *
  * Mirrors the backend rule (`require_default_region_regions`): a default
- * region is only meaningful when the model exposes pricing in at least one
- * specific, non-`global` region. Offering `global` in the picker would let the
- * operator save a default that the billing engine then ignores.
+ * region must be one of the regions the model actually prices, so the picker
+ * is fed from the resource's own region groups only.
  */
 export function eligibleDefaultRegions(
   regions: readonly PriceSettingRegionGroup[],
@@ -393,14 +382,12 @@ export function pickDefaultPriceSettingRegion(
 ): string {
   if (regions.length === 0) return '';
   const normalized = (value: string) => value.trim().toLowerCase();
-  // A legacy `global` default is ignored rather than followed: it never takes
-  // effect in the billing engine, so the operator should land on a region
-  // whose prices are actually configurable.
+  // The configured default wins outright — `global` included, since a global
+  // default bills region-less accounts at the global partition prices.
   const configured = normalized(configuredDefaultRegionCode ?? '');
-  const usableConfigured = configured === GLOBAL_REGION_CODE ? '' : configured;
   const group = normalized(groupRegionCode ?? '');
   return (
-    regions.find((region) => normalized(region.regionCode) === usableConfigured)?.regionCode
+    regions.find((region) => normalized(region.regionCode) === configured)?.regionCode
     ?? regions.find((region) => normalized(region.regionCode) === group)?.regionCode
     ?? regions[0].regionCode
   );

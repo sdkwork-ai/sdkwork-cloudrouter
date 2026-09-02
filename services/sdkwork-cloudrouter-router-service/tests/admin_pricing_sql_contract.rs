@@ -9,6 +9,10 @@
 const POSTGRES_ADMIN_PRICING_STORE: &str =
     include_str!("../src/infrastructure/sql/postgres/admin_pricing_store.rs");
 const ADMIN_PRICING_API: &str = include_str!("../src/api/admin_pricing.rs");
+const PRICING_SNAPSHOT_QUERIES: &str =
+    include_str!("../src/infrastructure/sql/queries/snapshot.rs");
+const OFFICIAL_CATALOG_READ_STORE: &str =
+    include_str!("../src/infrastructure/sql/postgres/official_pricing_catalog_read_store.rs");
 
 #[test]
 fn admin_pricing_plans_use_cloudrouter_pricing_plan_table() {
@@ -175,8 +179,12 @@ fn admin_default_region_eligibility_reads_official_reference_pricing() {
         "default region eligibility must only consider active price books"
     );
     assert!(
-        section.contains("BTRIM(rate.region_code) NOT IN ('', 'global')"),
-        "a global-only model has no meaningful default region and must be rejected"
+        section.contains("BTRIM(rate.region_code) <> ''"),
+        "default region eligibility must consider every priced region, including the `global` partition"
+    );
+    assert!(
+        !section.contains("'global'"),
+        "default region eligibility must not special-case the `global` partition: any priced region may be the default"
     );
     assert!(
         !section.contains("AND book.tenant_id = $1"),
@@ -184,11 +192,16 @@ fn admin_default_region_eligibility_reads_official_reference_pricing() {
     );
 }
 
-/// A `global` default is never applied: the runtime snapshot loader and the
-/// admin catalog read both discard it, so persisting one would silently do
-/// nothing. It has to be rejected up front with an actionable message.
+/// Every pricing partition may be configured as the default billing region —
+/// including the `global` bucket. `global` is a real pricing partition, the
+/// runtime billing chain (`effective_billing_region`) applies a configured
+/// default verbatim, and price resolution treats `global` like any other
+/// region, so a global default bills region-less accounts at global prices
+/// and suppresses the automatic `cn` preference. All three persistence sites
+/// (save validation, runtime snapshot loader, admin catalog read) must treat
+/// it like any other region: filter blanks only, never the `global` bucket.
 #[test]
-fn admin_default_region_rejects_the_global_region_bucket() {
+fn admin_default_region_allows_the_global_region_bucket() {
     let source = POSTGRES_ADMIN_PRICING_STORE;
     let section = source_section(
         source,
@@ -197,12 +210,16 @@ fn admin_default_region_rejects_the_global_region_bucket() {
     );
 
     assert!(
-        source.contains(r#"const GLOBAL_REGION_CODE: &str = "global";"#),
-        "the global region bucket must be a named constant shared with the reject path"
+        !section.contains("GLOBAL_REGION_CODE"),
+        "default region save must not reject the `global` partition"
     );
     assert!(
-        section.contains("requested_region.eq_ignore_ascii_case(GLOBAL_REGION_CODE)"),
-        "default region save must reject `global` before touching the database"
+        !PRICING_SNAPSHOT_QUERIES.contains("<> 'global'"),
+        "the runtime snapshot loader must not discard configured `global` defaults"
+    );
+    assert!(
+        !OFFICIAL_CATALOG_READ_STORE.contains("NOT IN ('', 'global')"),
+        "the admin catalog read must surface configured `global` defaults"
     );
 }
 

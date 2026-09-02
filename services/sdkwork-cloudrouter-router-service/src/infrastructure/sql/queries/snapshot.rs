@@ -1563,7 +1563,6 @@ WHERE deleted_at IS NULL
   AND effective_from <= CURRENT_TIMESTAMP
   AND (effective_to IS NULL OR effective_to > CURRENT_TIMESTAMP)
   AND BTRIM(default_region_code) <> ''
-  AND BTRIM(default_region_code) <> 'global'
 ORDER BY catalog_key ASC, id ASC
 "#
     }

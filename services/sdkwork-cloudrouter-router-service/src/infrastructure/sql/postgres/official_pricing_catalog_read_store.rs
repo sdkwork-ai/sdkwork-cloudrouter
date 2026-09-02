@@ -77,7 +77,7 @@ WITH eligible AS (
      AND default_region.deleted_at IS NULL
      AND default_region.resource_key = pricing_resource_key(
          r.vendor_code, r.provider_code, COALESCE(r.catalog_key, ''), r.product_code, r.resource_code)
-     AND BTRIM(default_region.default_region_code) NOT IN ('', 'global')
+     AND BTRIM(default_region.default_region_code) <> ''
      AND default_region.effective_from <= CURRENT_TIMESTAMP
      AND (default_region.effective_to IS NULL OR default_region.effective_to > CURRENT_TIMESTAMP)
     WHERE r.tenant_id = 0 AND r.organization_id = 0 AND r.status = 1 AND r.deleted_at IS NULL
