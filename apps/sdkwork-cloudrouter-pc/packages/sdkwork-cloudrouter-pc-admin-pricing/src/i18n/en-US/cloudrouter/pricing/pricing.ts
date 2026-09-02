@@ -432,6 +432,8 @@ export const pricingAdminEnUsMessages = {
   'admin.pricing.settings.defaultRegion.setAsDefault': 'Set default',
   'admin.pricing.settings.defaultRegion.active': 'In effect',
   'admin.pricing.settings.defaultRegion.globalOnlyHint': 'This resource is priced only in the global partition; no default Region is needed',
+  'admin.pricing.settings.defaultRegion.ineligibleBadge': 'Not eligible',
+  'admin.pricing.settings.defaultRegion.globalNotDefaultHint': 'The global partition cannot be a default billing Region',
   'admin.pricing.settings.tabs.regions': 'Billing Region',
   'admin.pricing.settings.defaultRegion.providerCode': 'Provider Code',
   'admin.pricing.settings.defaultRegion.resourceCode': 'Resource Code',

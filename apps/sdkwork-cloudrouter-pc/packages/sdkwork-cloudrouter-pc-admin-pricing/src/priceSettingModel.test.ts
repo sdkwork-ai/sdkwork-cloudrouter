@@ -11,6 +11,7 @@ import {
   formatPricingQuantity,
   groupPriceSettingRatesByRegion,
   groupPriceSettingRatesByVariant,
+  isDefaultRegionEligible,
   normalizePricingDecimal,
   officialRateVariantLabel,
   officialRateUnit,
@@ -251,9 +252,18 @@ describe('price setting model', () => {
     // facets (us-east here) are not valid candidates: the model has no price
     // there and the backend rejects a default the resource does not expose.
     expect(eligibleDefaultRegions(groups).map((group) => group.regionCode)).toEqual(['cn']);
-    // A single candidate means there is nothing to choose, so the UI must not
-    // render a picker at all.
-    expect(eligibleDefaultRegions(groups)).toHaveLength(1);
+  });
+
+  it('marks only specific non-global regions as default-region eligible', () => {
+    // `global` is a real pricing partition (it renders as a region tab) but is
+    // never a legal default: the billing engine discards it and the save API
+    // rejects it. Pickers must keep it visible but disabled.
+    expect(isDefaultRegionEligible('cn')).toBe(true);
+    expect(isDefaultRegionEligible('us-east')).toBe(true);
+    expect(isDefaultRegionEligible(' global ')).toBe(false);
+    expect(isDefaultRegionEligible('GLOBAL')).toBe(false);
+    expect(isDefaultRegionEligible('')).toBe(false);
+    expect(isDefaultRegionEligible('   ')).toBe(false);
   });
 
   it('ignores a legacy global default when picking the active tab', () => {

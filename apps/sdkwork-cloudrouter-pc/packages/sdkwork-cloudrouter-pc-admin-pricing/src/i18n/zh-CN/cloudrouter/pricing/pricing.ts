@@ -432,6 +432,8 @@ export const pricingAdminZhCnMessages = {
   'admin.pricing.settings.defaultRegion.setAsDefault': '设为默认',
   'admin.pricing.settings.defaultRegion.active': '已生效',
   'admin.pricing.settings.defaultRegion.globalOnlyHint': '该资源仅在 global 分区定价，无需设置默认 Region',
+  'admin.pricing.settings.defaultRegion.ineligibleBadge': '不可作默认',
+  'admin.pricing.settings.defaultRegion.globalNotDefaultHint': 'global 分区不能作为默认计费 Region',
   'admin.pricing.settings.tabs.regions': '计费 Region',
   'admin.pricing.settings.defaultRegion.providerCode': 'Provider Code',
   'admin.pricing.settings.defaultRegion.resourceCode': '资源 Code',

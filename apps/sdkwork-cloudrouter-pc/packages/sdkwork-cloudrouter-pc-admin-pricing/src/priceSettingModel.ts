@@ -353,8 +353,17 @@ export function groupPriceSettingRatesByRegion(
  */
 export const GLOBAL_REGION_CODE = 'global';
 
-function isGlobalRegionCode(regionCode: string): boolean {
-  return regionCode.trim().toLowerCase() === GLOBAL_REGION_CODE;
+/**
+ * Whether a region code may be configured as a default billing region.
+ *
+ * Mirrors the backend rule (`require_default_region_regions` plus the runtime
+ * snapshot loader): only a specific, non-`global` region qualifies. `global`
+ * is still shown in pickers — as a disabled option — so operators can see the
+ * resource's full region list and why it cannot be picked.
+ */
+export function isDefaultRegionEligible(regionCode: string): boolean {
+  const normalized = regionCode.trim().toLowerCase();
+  return normalized !== '' && normalized !== GLOBAL_REGION_CODE;
 }
 
 /**
@@ -368,9 +377,7 @@ function isGlobalRegionCode(regionCode: string): boolean {
 export function eligibleDefaultRegions(
   regions: readonly PriceSettingRegionGroup[],
 ): PriceSettingRegionGroup[] {
-  return regions.filter(
-    (region) => region.regionCode.trim() !== '' && !isGlobalRegionCode(region.regionCode),
-  );
+  return regions.filter((region) => isDefaultRegionEligible(region.regionCode));
 }
 
 /**

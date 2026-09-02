@@ -8,7 +8,7 @@ import {
   type AdminDefaultRegionItem,
   type AdminPricingListParams,
 } from './pricingService';
-import { GLOBAL_REGION_CODE } from './priceSettingModel';
+import { isDefaultRegionEligible } from './priceSettingModel';
 import {
   errorMessageI18n,
   Field,
@@ -30,13 +30,15 @@ export interface DefaultRegionOption {
 interface DefaultRegionManagerProps {
   open: boolean;
   onClose: () => void;
-  /** Regions priced by the official catalog; `global` is filtered out because a
-   * `global` default never takes effect in the billing engine. Used as the
-   * fallback when the typed catalog key is not on the current page. */
+  /** Regions priced by the official catalog. `global` entries are allowed in
+   * the list but rendered as disabled picker options, because a `global`
+   * default never takes effect in the billing engine. Used as the fallback
+   * when the typed catalog key is not on the current page. */
   regionOptions?: readonly DefaultRegionOption[];
   /** Region candidates per resource (catalog key). A default region has to be
    * one the specific resource prices, so whenever the form's catalog key
-   * matches a known resource these narrow the fallback list. */
+   * matches a known resource these narrow the fallback list. Includes every
+   * priced region; ineligible ones (`global`) are disabled in the picker. */
   regionsByCatalogKey?: ReadonlyMap<string, readonly DefaultRegionOption[]>;
 }
 
@@ -77,19 +79,24 @@ export function DefaultRegionManager({ open, onClose, regionOptions, regionsByCa
   const [editing, setEditing] = useState<AdminDefaultRegionItem | null>(null);
 
   /** Candidates for the form's catalog key: the regions that resource prices
-   * when it is known, otherwise the catalog-wide list. `global` is dropped
-   * either way because the billing engine ignores a `global` default. */
+   * when it is known, otherwise the catalog-wide list. Every priced region is
+   * listed; ineligible ones (`global`) are disabled in the picker because the
+   * billing engine ignores a `global` default. */
   const formRegionOptions = useMemo(() => {
     const scoped = regionsByCatalogKey?.get(form.catalogKey.trim());
     return scoped ?? regionOptions ?? [];
   }, [form.catalogKey, regionsByCatalogKey, regionOptions]);
 
   const selectableRegions = useMemo(
-    () => formRegionOptions
-      .map((region) => region.code.trim())
-      .filter((code) => code !== '' && code.toLowerCase() !== GLOBAL_REGION_CODE),
+    () => formRegionOptions.filter((region) => isDefaultRegionEligible(region.code.trim())),
     [formRegionOptions],
   );
+  const hasIneligibleRegions = formRegionOptions.length > selectableRegions.length;
+  const regionFieldHint = selectableRegions.length === 0
+    ? translate('admin.pricing.settings.defaultRegion.noRegionsHint', '官方目录暂无可选地域')
+    : formRegionOptions.length === 1
+      ? translate('admin.pricing.settings.defaultRegion.singleRegionHint', '该资源仅在此一个 Region 定价，无需选择')
+      : translate('admin.pricing.settings.defaultRegion.formOptional', '必填');
 
   const beginCreate = () => {
     setEditing(null);
@@ -268,20 +275,35 @@ export function DefaultRegionManager({ open, onClose, regionOptions, regionsByCa
               </Field>
               <Field
                 label={translate('admin.pricing.settings.defaultRegion.defaultRegionCode', '默认计费 Region')}
-                hint={selectableRegions.length > 0
-                  ? translate('admin.pricing.settings.defaultRegion.formOptional', '必填')
-                  : translate('admin.pricing.settings.defaultRegion.noRegionsHint', '官方目录暂无可选地域')}
+                hint={regionFieldHint}
               >
-                {selectableRegions.length > 1 ? (
-                  <select
-                    className={selectClass}
-                    value={form.defaultRegionCode}
-                    onChange={(event) => setForm({ ...form, defaultRegionCode: event.target.value })}
-                    required
-                  >
-                    <option value="">{translate('admin.pricing.settings.defaultRegion.selectPlaceholder', '选择默认 Region')}</option>
-                    {selectableRegions.map((code) => <option key={code} value={code}>{code}</option>)}
-                  </select>
+                {selectableRegions.length > 0 ? (
+                  <div>
+                    {/* Lists every region the resource prices; `global` stays
+                        visible but disabled so the operator sees the full
+                        region list and why it cannot be picked. */}
+                    <select
+                      className={selectClass}
+                      value={form.defaultRegionCode}
+                      onChange={(event) => setForm({ ...form, defaultRegionCode: event.target.value })}
+                      required
+                    >
+                      <option value="">{translate('admin.pricing.settings.defaultRegion.selectPlaceholder', '选择默认 Region')}</option>
+                      {formRegionOptions.map((region) => {
+                        const eligible = isDefaultRegionEligible(region.code.trim());
+                        return (
+                          <option key={region.code} value={eligible ? region.code : ''} disabled={!eligible}>
+                            {region.code}{eligible ? '' : ` · ${translate('admin.pricing.settings.defaultRegion.ineligibleBadge', '不可作默认')}`}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    {hasIneligibleRegions ? (
+                      <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                        {translate('admin.pricing.settings.defaultRegion.globalNotDefaultHint', 'global 分区不能作为默认计费 Region')}
+                      </p>
+                    ) : null}
+                  </div>
                 ) : (
                   <input
                     className={inputClass}
