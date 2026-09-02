@@ -4,7 +4,8 @@ use sdkwork_cloudrouter_router_service::application::{
     InvocationBody,
     InvocationClassificationRequest, InvocationDispatch, InvocationErrorKind,
     InvocationInterceptor, InvocationRequest, InvocationResourceClassifier,
-    OpenAiResourceClassifier, StickyCommitInterceptor, StickyResolutionInterceptor,
+    OpenAiResourceClassifier, StickyCommitInterceptor, StickyMode, StickyResolutionInterceptor,
+    StickyRouting,
 };
 use sdkwork_cloudrouter_router_service::domain::{BillingMeter, ProviderAuthProfile};
 use sdkwork_cloudrouter_router_service::ports::{
@@ -343,6 +344,148 @@ async fn commit_skips_internal_adapter_wrapper_error_status() {
         }),
     );
     invocation.dispatch.mode = DispatchMode::InternalProviderAdapter;
+
+    StickyCommitInterceptor::new(store.clone())
+        .after(&mut invocation)
+        .await
+        .expect("sticky commit");
+
+    assert!(store.upserts.lock().expect("upserts").is_empty());
+}
+
+fn session_sticky_invocation() -> Invocation {
+    let mut invocation = classified_invocation(
+        Method::POST,
+        "/v1/chat/completions",
+        InvocationBody::json(json!({"model": "gpt-4o-mini", "messages": []})),
+    );
+    invocation.routing.sticky = Some(StickyRouting::session("session", "sess-1"));
+    invocation
+}
+
+#[tokio::test]
+async fn session_sticky_hit_binds_route_constraint() {
+    let mut binding = sticky_binding("session", "sess-1");
+    binding.sticky_scope = Some("session".to_owned());
+    binding.api_code = Some("openai.chat_completions".to_owned());
+    let store = Arc::new(MemoryStickyRouteStore::with_binding(binding));
+    let mut invocation = session_sticky_invocation();
+
+    StickyResolutionInterceptor::new(store.clone())
+        .before(&mut invocation)
+        .await
+        .expect("sticky resolution");
+
+    let lookup = store
+        .lookups
+        .lock()
+        .expect("lookups")
+        .first()
+        .cloned()
+        .expect("lookup");
+    assert_eq!("session", lookup.object_type);
+    assert_eq!("sess-1", lookup.object_id);
+
+    let sticky_route = invocation.routing.sticky_route.expect("sticky route");
+    assert_eq!("openai", sticky_route.supplier_code);
+    assert_eq!(300, sticky_route.account_id);
+    assert_eq!(Some(200), sticky_route.account_group_id);
+    assert_eq!(
+        Some("openai/gpt-4o-mini"),
+        sticky_route.catalog_key.as_deref()
+    );
+    assert_eq!(
+        Some("openai/gpt-4o-mini"),
+        invocation.resource.requested_model_catalog_key.as_deref()
+    );
+}
+
+#[tokio::test]
+async fn session_sticky_miss_falls_back_to_regular_routing() {
+    let store = Arc::new(MemoryStickyRouteStore::default());
+    let mut invocation = session_sticky_invocation();
+
+    StickyResolutionInterceptor::new(store)
+        .before(&mut invocation)
+        .await
+        .expect("session sticky miss must be soft");
+
+    assert!(
+        invocation.routing.sticky.is_none(),
+        "missed session sticky must fall back to regular routing"
+    );
+    assert!(invocation.routing.sticky_route.is_none());
+}
+
+#[tokio::test]
+async fn session_sticky_without_session_id_is_skipped() {
+    let store = Arc::new(MemoryStickyRouteStore::default());
+    let mut invocation = classified_invocation(
+        Method::POST,
+        "/v1/chat/completions",
+        InvocationBody::json(json!({"model": "gpt-4o-mini"})),
+    );
+    invocation.routing.sticky = Some(StickyRouting {
+        mode: StickyMode::SessionSticky,
+        object_type: "session".to_owned(),
+        object_id: None,
+        parent_object_type: None,
+        parent_object_id: None,
+        scope: sdkwork_cloudrouter_router_service::application::StickyScope::Session,
+    });
+
+    StickyResolutionInterceptor::new(store)
+        .before(&mut invocation)
+        .await
+        .expect("sticky resolution");
+
+    assert!(invocation.routing.sticky.is_none());
+    assert!(invocation.routing.sticky_route.is_none());
+}
+
+#[tokio::test]
+async fn session_commit_keys_binding_by_session_id() {
+    let store = Arc::new(MemoryStickyRouteStore::default());
+    let mut invocation = session_sticky_invocation();
+    invocation.account = Some(routed_account());
+    // 响应 id 与会话 id 不同：会话 sticky 必须以会话 id 为绑定键。
+    invocation.dispatch = InvocationDispatch::json_response(
+        200,
+        json!({
+            "id": "chatcmpl-resp-1",
+            "object": "chat.completion"
+        }),
+    );
+
+    StickyCommitInterceptor::new(store.clone())
+        .after(&mut invocation)
+        .await
+        .expect("sticky commit");
+
+    let upsert = store
+        .upserts
+        .lock()
+        .expect("upserts")
+        .first()
+        .cloned()
+        .expect("upsert");
+    assert_eq!("session", upsert.object_type);
+    assert_eq!("sess-1", upsert.object_id);
+    assert_eq!("session", upsert.sticky_scope);
+    assert_eq!("openai", upsert.supplier_code);
+    assert_eq!(300, upsert.account_id);
+    assert_eq!("openai.chat_completions", upsert.api_code);
+}
+
+#[tokio::test]
+async fn session_commit_skips_failed_response() {
+    let store = Arc::new(MemoryStickyRouteStore::default());
+    let mut invocation = session_sticky_invocation();
+    invocation.account = Some(routed_account());
+    invocation.dispatch = InvocationDispatch::json_response(
+        500,
+        json!({"error": {"message": "upstream failed"}}),
+    );
 
     StickyCommitInterceptor::new(store.clone())
         .after(&mut invocation)

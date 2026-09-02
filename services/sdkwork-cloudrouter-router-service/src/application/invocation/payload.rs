@@ -5,9 +5,11 @@ use super::multipart_form::{
     optional_model_from_multipart_form, request_content_type_is_multipart_form,
     require_multipart_boundary, require_non_blank_model,
 };
+use super::routing::SESSION_STICKY_OBJECT_TYPE;
 use super::{
     Invocation, InvocationBody, InvocationDispatch, InvocationError, InvocationErrorKind,
     InvocationFuture, InvocationInterceptor, InvocationShape, InvocationSurface, StickyMode,
+    StickyRouting,
 };
 use crate::domain::AiRouteModelRequirement;
 
@@ -24,6 +26,7 @@ impl InvocationInterceptor for PayloadExtractionInterceptor {
             extract_requested_model(invocation)?;
             extract_stream_flag(invocation);
             sync_sticky_ids(invocation);
+            apply_session_sticky_default(invocation);
             validate_required_model(invocation)
         })
     }
@@ -172,8 +175,70 @@ fn sync_sticky_ids(invocation: &mut Invocation) {
                 sticky.parent_object_id = invocation.resource.parent_resource_id.clone();
             }
         }
-        StickyMode::CreateThenSticky | StickyMode::None => {}
+        StickyMode::CreateThenSticky | StickyMode::None | StickyMode::SessionSticky => {}
     }
+}
+
+/// 无状态 LLM 会话型路由：同一会话固定打到同一上游账号时，请求体中的
+/// 会话 id 会原样透传给上游，从而最大化供应商侧 prompt cache 命中率。
+const SESSION_STICKY_ROUTE_KEYS: [&str; 2] = [
+    "openai/model/chat_completions",
+    "openai/model/completions",
+];
+
+/// 会话 sticky 默认路由：无状态会话型请求携带会话 id（请求体 `session_id`
+/// / `prompt_cache_key`，或请求头 `x-session-id`）时，按会话维度做账户
+/// sticky 绑定。已有显式对象 sticky（response/thread/file 等）时不覆盖；
+/// 未携带会话 id 时保持原有无 sticky 路由。
+fn apply_session_sticky_default(invocation: &mut Invocation) {
+    if invocation.routing.sticky.is_some() {
+        return;
+    }
+    if !SESSION_STICKY_ROUTE_KEYS.contains(&invocation.resource.route_key.as_str()) {
+        return;
+    }
+    let Some(session_id) = session_sticky_key(invocation) else {
+        return;
+    };
+    invocation.routing.sticky = Some(StickyRouting::session(
+        SESSION_STICKY_OBJECT_TYPE,
+        session_id,
+    ));
+}
+
+/// 会话 id 提取优先级：`session_id` > `prompt_cache_key`（OpenAI 官方的
+/// cache 亲和字段）> `x-session-id` 请求头。
+fn session_sticky_key(invocation: &Invocation) -> Option<String> {
+    if let Some(key) = request_body_text_field(invocation, "session_id")
+        .or_else(|| request_body_text_field(invocation, "prompt_cache_key"))
+    {
+        return Some(key);
+    }
+    invocation
+        .request
+        .headers
+        .get("x-session-id")
+        .and_then(|value| value.to_str().ok())
+        .and_then(non_empty_text)
+        .map(str::to_owned)
+}
+
+fn request_body_text_field(invocation: &Invocation, field: &str) -> Option<String> {
+    match &invocation.request.body {
+        InvocationBody::Json(value) => text_field(value, field),
+        InvocationBody::Bytes(bytes) => serde_json::from_slice::<Value>(bytes)
+            .ok()
+            .and_then(|value| text_field(&value, field)),
+        InvocationBody::Empty => None,
+    }
+}
+
+fn text_field(value: &Value, field: &str) -> Option<String> {
+    value
+        .get(field)
+        .and_then(Value::as_str)
+        .and_then(non_empty_text)
+        .map(str::to_owned)
 }
 
 fn validate_required_model(invocation: &Invocation) -> Result<(), InvocationError> {

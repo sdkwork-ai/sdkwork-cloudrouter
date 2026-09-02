@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use serde_json::Value;
 
+use super::routing::STICKY_SCOPE_SESSION;
 use super::{
     DispatchMode, Invocation, InvocationDispatchResponse, InvocationError, InvocationErrorKind,
     InvocationFuture, InvocationInterceptor, InvocationSurface, StickyMode, StickyRouteConstraint,
@@ -57,6 +58,19 @@ impl InvocationInterceptor for StickyResolutionInterceptor {
                         .unwrap_or_else(|| sticky.object_type.clone());
                     (object_type, object_id)
                 }
+                StickyMode::SessionSticky => {
+                    // 会话 sticky 缺少会话 id 时按无 sticky 处理，走常规路由。
+                    let Some(object_id) = sticky
+                        .object_id
+                        .clone()
+                        .map(|id| id.trim().to_owned())
+                        .filter(|id| !id.is_empty())
+                    else {
+                        invocation.routing.sticky = None;
+                        return Ok(());
+                    };
+                    (sticky.object_type.clone(), object_id)
+                }
             };
 
             let query = StickyObjectRouteLookup {
@@ -81,7 +95,13 @@ impl InvocationInterceptor for StickyResolutionInterceptor {
                     apply_sticky_binding(invocation, binding);
                     Ok(())
                 }
-                None if sticky.mode == StickyMode::ParentSticky => {
+                // 会话 sticky 是 cache 亲和提示而非资源依赖：未命中时回退
+                // 常规路由，成功后由 sticky_commit 首次写入会话绑定。
+                None if matches!(
+                    sticky.mode,
+                    StickyMode::ParentSticky | StickyMode::SessionSticky
+                ) =>
+                {
                     invocation.routing.sticky = None;
                     Ok(())
                 }
@@ -117,7 +137,7 @@ impl InvocationInterceptor for StickyCommitInterceptor {
             };
             if !matches!(
                 sticky.mode,
-                StickyMode::CreateThenSticky | StickyMode::ParentSticky
+                StickyMode::CreateThenSticky | StickyMode::ParentSticky | StickyMode::SessionSticky
             ) {
                 return Ok(());
             }
@@ -131,8 +151,13 @@ impl InvocationInterceptor for StickyCommitInterceptor {
             let Some(response_body) = effective_response_body(invocation, response) else {
                 return Ok(());
             };
-            let Some(object_id) = sticky_response_object_id(&sticky.object_type, &response_body)
-            else {
+            // 会话 sticky 以请求中的会话 id 作为绑定键（会话 id 会透传给
+            // 上游账号），其余模式仍从成功响应中提取对象 id。
+            let object_id = match sticky.mode {
+                StickyMode::SessionSticky => sticky.object_id.clone(),
+                _ => sticky_response_object_id(&sticky.object_type, &response_body),
+            };
+            let Some(object_id) = object_id else {
                 return Ok(());
             };
 
@@ -289,6 +314,7 @@ fn sticky_response_object_matches(expected_object_type: &str, actual_object: &st
 fn sticky_scope_code(mode: StickyMode) -> String {
     match mode {
         StickyMode::ParentSticky => "parent",
+        StickyMode::SessionSticky => STICKY_SCOPE_SESSION,
         StickyMode::CreateThenSticky | StickyMode::LookupSticky | StickyMode::None => "object",
     }
     .to_owned()

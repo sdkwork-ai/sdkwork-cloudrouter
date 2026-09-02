@@ -6,6 +6,7 @@ use super::{
     InvocationRouteCandidateKind, InvocationRoutePlan, ResourceType, RoutingPipeline,
     StickyRouteConstraint,
 };
+use super::routing::STICKY_SCOPE_SESSION;
 use crate::application::upstream_base_url::{
     protocol_code_from_api_code, resolve_upstream_base_url,
 };
@@ -707,7 +708,55 @@ where
             }
         }
     }
-    None
+    session_sticky_model_mismatch_reason(catalog, invocation, sticky_route)
+}
+
+/// 会话 sticky 绑定是按提交时的模型路由结果写入的 cache 亲和提示。客户端
+/// 在同一会话中切换模型时，绑定账号/catalog 可能已无法服务当前请求模型，
+/// 此时判定绑定失效：回退常规路由规划，成功后由 sticky_commit 以当前模型
+/// 的账号重写会话绑定。
+///
+/// 注意必须用模型目录按请求模型重新解析 catalog key（`resolve_catalog_key`
+/// 会直接返回 `apply_sticky_binding` 预先写入的绑定 catalog key，恒相等）。
+fn session_sticky_model_mismatch_reason<C>(
+    catalog: &C,
+    invocation: &Invocation,
+    sticky_route: &StickyRouteConstraint,
+) -> Option<String>
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    if sticky_route.sticky_scope.as_deref() != Some(STICKY_SCOPE_SESSION) {
+        return None;
+    }
+    let Some(requested_model) = invocation
+        .resource
+        .requested_model
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    else {
+        return None;
+    };
+    let Some(binding_catalog_key) = sticky_route
+        .catalog_key
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    else {
+        return None;
+    };
+    let matches_request = catalog
+        .model_catalog_keys_by_name(requested_model)
+        .iter()
+        .any(|key| key == binding_catalog_key);
+    if matches_request {
+        return None;
+    }
+    Some(format!(
+        "session sticky binding was committed for a different model: binding catalog key \
+         {binding_catalog_key} does not serve requested model {requested_model}"
+    ))
 }
 
 fn same_region(left: &str, right: &str) -> bool {

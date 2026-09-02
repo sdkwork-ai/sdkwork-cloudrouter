@@ -3,18 +3,28 @@ use crate::domain::{
     AiRouteFailureStrategy, AiRouteStrategy, ProviderAuthProfile, ProviderRetryPolicy,
 };
 
+/// `ai_upstream_object_route.object_type`：会话级 sticky 绑定。
+pub const SESSION_STICKY_OBJECT_TYPE: &str = "session";
+/// `ai_upstream_object_route.sticky_scope`：会话级 sticky 绑定。
+pub const STICKY_SCOPE_SESSION: &str = "session";
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StickyMode {
     None,
     CreateThenSticky,
     ParentSticky,
     LookupSticky,
+    /// Cache-affinity sticky: the request carries a session identifier that
+    /// is forwarded to the upstream account, so pinning the session to one
+    /// account maximizes provider-side prompt cache hits.
+    SessionSticky,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StickyScope {
     Object,
     Parent,
+    Session,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -135,6 +145,19 @@ impl StickyRouting {
             parent_object_type: Some(object_type),
             parent_object_id: Some(parent_object_id.into()),
             scope: StickyScope::Parent,
+        }
+    }
+
+    /// Session-scope sticky binding keyed by the session identifier that is
+    /// forwarded verbatim to the upstream account.
+    pub fn session(object_type: impl Into<String>, session_id: impl Into<String>) -> Self {
+        Self {
+            mode: StickyMode::SessionSticky,
+            object_type: object_type.into(),
+            object_id: Some(session_id.into()),
+            parent_object_type: None,
+            parent_object_id: None,
+            scope: StickyScope::Session,
         }
     }
 }

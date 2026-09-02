@@ -234,3 +234,158 @@ async fn required_model_missing_fails_before_routing() {
     );
     assert_eq!(InvocationShape::Json, invocation.dispatch.invocation_shape);
 }
+
+use sdkwork_cloudrouter_router_service::application::{StickyMode, StickyScope};
+
+fn assert_session_sticky(invocation: &Invocation, expected_session_id: &str) {
+    let sticky = invocation.routing.sticky.as_ref().expect("session sticky");
+    assert_eq!(StickyMode::SessionSticky, sticky.mode);
+    assert_eq!("session", sticky.object_type);
+    assert_eq!(Some(expected_session_id), sticky.object_id.as_deref());
+    assert_eq!(StickyScope::Session, sticky.scope);
+}
+
+#[tokio::test]
+async fn session_sticky_default_from_session_id_body_field() {
+    let mut invocation = classified_invocation(
+        Method::POST,
+        "/v1/chat/completions",
+        InvocationBody::json(json!({
+            "model": "gpt-4o-mini",
+            "session_id": "sess-abc",
+            "messages": [{"role": "user", "content": "ping"}]
+        })),
+    );
+
+    PayloadExtractionInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("payload extraction");
+
+    assert_session_sticky(&invocation, "sess-abc");
+}
+
+#[tokio::test]
+async fn session_sticky_default_from_prompt_cache_key_body_field() {
+    let mut invocation = classified_invocation(
+        Method::POST,
+        "/v1/chat/completions",
+        InvocationBody::json(json!({
+            "model": "gpt-4o-mini",
+            "prompt_cache_key": "cache-key-1",
+            "messages": [{"role": "user", "content": "ping"}]
+        })),
+    );
+
+    PayloadExtractionInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("payload extraction");
+
+    assert_session_sticky(&invocation, "cache-key-1");
+}
+
+#[tokio::test]
+async fn session_sticky_default_from_x_session_id_header() {
+    let mut invocation = classified_invocation(
+        Method::POST,
+        "/v1/chat/completions",
+        InvocationBody::json(json!({
+            "model": "gpt-4o-mini",
+            "messages": [{"role": "user", "content": "ping"}]
+        })),
+    );
+    invocation.request.headers.insert(
+        axum::http::HeaderName::from_static("x-session-id"),
+        axum::http::HeaderValue::from_static("sess-header-1"),
+    );
+
+    PayloadExtractionInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("payload extraction");
+
+    assert_session_sticky(&invocation, "sess-header-1");
+}
+
+#[tokio::test]
+async fn session_id_takes_priority_over_prompt_cache_key_and_header() {
+    let mut invocation = classified_invocation(
+        Method::POST,
+        "/v1/chat/completions",
+        InvocationBody::json(json!({
+            "model": "gpt-4o-mini",
+            "session_id": "sess-primary",
+            "prompt_cache_key": "cache-secondary",
+            "messages": [{"role": "user", "content": "ping"}]
+        })),
+    );
+    invocation.request.headers.insert(
+        axum::http::HeaderName::from_static("x-session-id"),
+        axum::http::HeaderValue::from_static("sess-header"),
+    );
+
+    PayloadExtractionInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("payload extraction");
+
+    assert_session_sticky(&invocation, "sess-primary");
+}
+
+#[tokio::test]
+async fn chat_completions_without_session_id_keeps_stateless_routing() {
+    let mut invocation = classified_invocation(
+        Method::POST,
+        "/v1/chat/completions",
+        InvocationBody::json(json!({
+            "model": "gpt-4o-mini",
+            "messages": [{"role": "user", "content": "ping"}]
+        })),
+    );
+
+    PayloadExtractionInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("payload extraction");
+
+    assert!(invocation.routing.sticky.is_none());
+}
+
+#[tokio::test]
+async fn explicit_object_sticky_is_not_overridden_by_session_id() {
+    let mut invocation = classified_invocation(
+        Method::POST,
+        "/v1/files",
+        InvocationBody::json(json!({"session_id": "sess-abc", "purpose": "batch"})),
+    );
+
+    PayloadExtractionInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("payload extraction");
+
+    let sticky = invocation.routing.sticky.as_ref().expect("object sticky");
+    assert_eq!(StickyMode::CreateThenSticky, sticky.mode);
+    assert_eq!("file", sticky.object_type);
+}
+
+#[tokio::test]
+async fn embeddings_session_id_does_not_apply_session_sticky() {
+    let mut invocation = classified_invocation(
+        Method::POST,
+        "/v1/embeddings",
+        InvocationBody::json(json!({
+            "model": "text-embedding-3-small",
+            "session_id": "sess-abc",
+            "input": "hello"
+        })),
+    );
+
+    PayloadExtractionInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("payload extraction");
+
+    assert!(invocation.routing.sticky.is_none());
+}
