@@ -1,7 +1,6 @@
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 fn main() {
     let manifest_dir = PathBuf::from(
@@ -16,134 +15,54 @@ fn main() {
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR must be set by Cargo"));
     let gateway_output_path = out_dir.join("gateway-openapi.json");
 
-    println!("cargo:rerun-if-env-changed=PYTHON");
-    println!("cargo:rerun-if-env-changed=SDKWORK_CLOUDROUTER_HTTP_OPENAPI_BUILD_MODE");
+    // Embedded OpenAPI documents come from git-tracked contract artifacts.
+    // Regeneration and freshness checks are explicit contract tooling steps
+    // (tools/cloudrouter_*_openapi_generator.py, scripts/verify-cloud-router-application.mjs),
+    // never part of `cargo build`, so the Rust build has no Python dependency.
     for changed_path in [
         workspace_root
-            .join("tools")
-            .join("cloudrouter_gateway_openapi_generator.py"),
-        workspace_root
-            .join("tools")
-            .join("cloudrouter_openapi_generator.py"),
-        workspace_root
-            .join("tools")
-            .join("api_contract_manifest.py"),
-        workspace_root
-            .join("docs")
-            .join("schema-registry")
-            .join("frontend-field-contracts.yaml"),
-        workspace_root
-            .join("docs")
-            .join("schema-registry")
-            .join("frontend-field-contracts")
-            .join("index.yaml"),
-        workspace_root
-            .join("docs")
-            .join("schema-registry")
-            .join("frontend-field-contracts")
-            .join("operations"),
-        workspace_root
-            .join("docs")
-            .join("schema-registry")
-            .join("frontend-field-contracts")
-            .join("models"),
-        workspace_root
-            .join("docs")
-            .join("schema-registry")
-            .join("frontend-field-contracts")
-            .join("routes"),
-        workspace_root
-            .join("docs")
-            .join("schema-registry")
-            .join("frontend-field-contracts")
-            .join("shared"),
-        workspace_root
-            .join("generated")
-            .join("api")
-            .join("api-contract-manifest.json"),
-        workspace_root
-            .join("generated")
+            .join("sdks")
+            .join("cloudrouter-open-sdk")
             .join("openapi")
-            .join("schema-components.yaml"),
+            .join("cloudrouter-open-sdk.openapi.json"),
         workspace_root
-            .join("services")
-            .join("sdkwork-cloudrouter-router-service")
-            .join("src")
-            .join("api")
-            .join("openai_contract.rs"),
+            .join("sdks")
+            .join("cloudrouter-app-sdk")
+            .join("openapi")
+            .join("cloudrouter-app-sdk.openapi.json"),
+        workspace_root
+            .join("sdks")
+            .join("cloudrouter-backend-sdk")
+            .join("openapi")
+            .join("cloudrouter-backend-sdk.openapi.json"),
     ] {
         println!("cargo:rerun-if-changed={}", changed_path.display());
     }
 
-    let build_mode = env::var("SDKWORK_CLOUDROUTER_HTTP_OPENAPI_BUILD_MODE")
-        .unwrap_or_else(|_| "generate".to_owned());
-    if build_mode == "copy" {
-        copy_openapi_if_changed(
-            workspace_root
-                .join("sdks")
-                .join("cloudrouter-open-sdk")
-                .join("openapi")
-                .join("cloudrouter-open-sdk.openapi.json"),
-            &gateway_output_path,
-        );
-        copy_openapi_if_changed(
-            workspace_root
-                .join("sdks")
-                .join("cloudrouter-app-sdk")
-                .join("openapi")
-                .join("cloudrouter-app-sdk.openapi.json"),
-            &out_dir.join("cloudrouter-app-openapi.json"),
-        );
-        copy_openapi_if_changed(
-            workspace_root
-                .join("sdks")
-                .join("cloudrouter-backend-sdk")
-                .join("openapi")
-                .join("cloudrouter-backend-sdk.openapi.json"),
-            &out_dir.join("cloudrouter-backend-openapi.json"),
-        );
-        validate_required_schemas(&out_dir);
-        return;
-    }
-    if build_mode != "generate" {
-        panic!("unsupported SDKWORK_CLOUDROUTER_HTTP_OPENAPI_BUILD_MODE: {build_mode}");
-    }
-
-    let python = env::var("PYTHON").unwrap_or_else(|_| "python".to_owned());
-    let gateway_status = Command::new(&python)
-        .current_dir(&workspace_root)
-        .arg("-B")
-        .arg("-m")
-        .arg("tools.cloudrouter_gateway_openapi_generator")
-        .arg("--root")
-        .arg(&workspace_root)
-        .arg("--output")
-        .arg(&gateway_output_path)
-        .status()
-        .unwrap_or_else(|error| panic!("failed to run {python} OpenAPI generator: {error}"));
-
-    if !gateway_status.success() {
-        panic!("gateway OpenAPI schema generation failed with status {gateway_status}");
-    }
-
-    let app_backend_status = Command::new(&python)
-        .current_dir(&workspace_root)
-        .arg("-B")
-        .arg("-m")
-        .arg("tools.cloudrouter_openapi_generator")
-        .arg("--root")
-        .arg(&workspace_root)
-        .arg("--output-dir")
-        .arg(&out_dir)
-        .status()
-        .unwrap_or_else(|error| {
-            panic!("failed to run {python} app/backend OpenAPI generator: {error}")
-        });
-
-    if !app_backend_status.success() {
-        panic!("app/backend OpenAPI schema generation failed with status {app_backend_status}");
-    }
-
+    copy_openapi_if_changed(
+        workspace_root
+            .join("sdks")
+            .join("cloudrouter-open-sdk")
+            .join("openapi")
+            .join("cloudrouter-open-sdk.openapi.json"),
+        &gateway_output_path,
+    );
+    copy_openapi_if_changed(
+        workspace_root
+            .join("sdks")
+            .join("cloudrouter-app-sdk")
+            .join("openapi")
+            .join("cloudrouter-app-sdk.openapi.json"),
+        &out_dir.join("cloudrouter-app-openapi.json"),
+    );
+    copy_openapi_if_changed(
+        workspace_root
+            .join("sdks")
+            .join("cloudrouter-backend-sdk")
+            .join("openapi")
+            .join("cloudrouter-backend-sdk.openapi.json"),
+        &out_dir.join("cloudrouter-backend-openapi.json"),
+    );
     validate_required_schemas(&out_dir);
 }
 
@@ -184,7 +103,7 @@ fn validate_required_schemas(out_dir: &Path) {
         let required_path = out_dir.join(required_schema);
         if !required_path.is_file() {
             panic!(
-                "OpenAPI schema generation did not produce required schema: {}",
+                "OpenAPI contract artifacts missing required schema: {}",
                 required_path.display()
             );
         }
