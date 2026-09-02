@@ -76,7 +76,7 @@
     },
     {
       "path": "src/api/pricing.ts",
-      "sha256": "0dccce563b71634864017615ebc2318749c3770e342a9a5a9710de16762876bf"
+      "sha256": "2e74ccec021a943964a95eeaec506dd670563a9a81829e92c3e93f0f83d2d424"
     },
     {
       "path": "src/api/recharges.ts",
@@ -180,7 +180,7 @@
     },
     {
       "path": "src/types/admin-default-region-item.ts",
-      "sha256": "3352c4e7f944b27c164a78ebdb7b423092dc48ae8f28b691003bcbf478e92b9a"
+      "sha256": "a345d3dd95ae67ac9e10c41b29d9df0c7bea3b15a4a077db20a976160e0fa176"
     },
     {
       "path": "src/types/admin-default-region-list-response.ts",
@@ -205,6 +205,14 @@
     {
       "path": "src/types/admin-model-limit-create-request.ts",
       "sha256": "5cdd8cb435cd01831eff2519c787a4da86e1d1785e07e161124c1a181deda325"
+    },
+    {
+      "path": "src/types/admin-official-rate-anchor.ts",
+      "sha256": "b96dcd58a7e8c75e1163c0a9dd6822132945ffd923cb508b927dd637bef374f1"
+    },
+    {
+      "path": "src/types/admin-price-setting-resolution.ts",
+      "sha256": "2862376665563b68d7ccb57767512b572836a5f76ecff92d7ad48186c30d257b"
     },
     {
       "path": "src/types/admin-pricing-plan-list-response.ts",
@@ -452,7 +460,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "075f4a5f168bc3a78f5a325a0dd55341d85aee8f63d96847a0fbb6363887d012"
+      "sha256": "e4d6941d37668d103975289ac8123d9b0e29ddc1fb536cb19ac4c5dd1a576ac5"
     },
     {
       "path": "src/types/installation-status-response.ts",
@@ -556,7 +564,7 @@
     },
     {
       "path": "src/types/official-pricing-product-group.ts",
-      "sha256": "b0bc4d33152dc50106860d3b6e98e0e59d564f4303970c4b1b42d1132913303a"
+      "sha256": "4db42f95bccacc511a83fddcb25b5114464fd120d82c35f0bfd0ebb2116cc0e2"
     },
     {
       "path": "src/types/official-pricing-product-region-facet.ts",
@@ -583,6 +591,10 @@
       "sha256": "4ed941913808528f9eb345f06841da58cada65013bf9077f81dd65f737c75090"
     },
     {
+      "path": "src/types/official-pricing-region-option.ts",
+      "sha256": "c139a4d81a99c315fca0a8f22e72fe1e8679a4e0f9ad7f5338f2524f2ee54748"
+    },
+    {
       "path": "src/types/official-pricing-value-facet.ts",
       "sha256": "407628162e3668ffa5b11fe77a8ec2928507aea573aa4609038b738916f16fe6"
     },
@@ -603,8 +615,40 @@
       "sha256": "5643811315b210f27467ef3abeb0e42f35e6ce604d61a89780995ca8fd34a3fd"
     },
     {
+      "path": "src/types/price-books-activate-request.ts",
+      "sha256": "954c63feb589a463bc93cc160519d13c8ae0d40992869eaa5f5406914aad96d0"
+    },
+    {
+      "path": "src/types/price-books-create-rate-request.ts",
+      "sha256": "8df6f0211dabd5bec3edfe6b3b30ee195c8e058c28186ce95f4c33248a1feb5a"
+    },
+    {
+      "path": "src/types/price-books-create-request.ts",
+      "sha256": "cd8cf37fe1b2104431aed497af836041fa6def7e538a564bfd469b30174d4a11"
+    },
+    {
+      "path": "src/types/price-books-deactivate-request.ts",
+      "sha256": "f8cd8d07e58ffdae341b20565f5908d672b9badc57abf4d392c80ecc01328ef3"
+    },
+    {
+      "path": "src/types/price-books-retire-request.ts",
+      "sha256": "926fed28b151a2421cf2396318bbae6b7b37d9a552fe527e477ada9df22c2b40"
+    },
+    {
+      "path": "src/types/price-books-update-rate-request.ts",
+      "sha256": "d907061954fcb6b1b7470afc8c2a897c24119c8d0e774f7a9c0307f03231ff3a"
+    },
+    {
+      "path": "src/types/price-books-update-request.ts",
+      "sha256": "239ef6a60a2a291592919766e9a921bd77bff87be2614eb8b695ccac919831a3"
+    },
+    {
+      "path": "src/types/price-setting-upsert-request.ts",
+      "sha256": "250fa93b8ba86775df4a203ad3ac786f0a2a98ce4504d65720b2bc91ee2642f3"
+    },
+    {
       "path": "src/types/pricing-default-region-create-request.ts",
-      "sha256": "87580c8a2a2f6018952b324e6220690abc20923c84f0c9b8e67e7f908cdd28ce"
+      "sha256": "4137eb9172f4193ab7813523e6f0fd7cb4a6d410b25ecdc3fccc0d645e00d67d"
     },
     {
       "path": "src/types/pricing-plan-create-request.ts",

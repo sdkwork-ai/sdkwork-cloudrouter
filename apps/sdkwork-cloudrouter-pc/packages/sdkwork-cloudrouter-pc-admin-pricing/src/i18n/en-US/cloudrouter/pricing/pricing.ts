@@ -346,6 +346,8 @@ export const pricingAdminEnUsMessages = {
   'admin.pricing.settings.form.priceGroupTitle': 'Price group',
   'admin.pricing.settings.form.priceGroupHint': 'Maintain every meter together. Official references are read-only; customer prices save as one group.',
   'admin.pricing.settings.form.addMeter': 'Add meter',
+  'admin.pricing.settings.form.copyFromRegion': 'Copy prices from another region',
+  'admin.pricing.settings.form.copyFromRegionOption': 'Copy {{region}} prices',
   'admin.pricing.settings.form.removeMeter': 'Remove meter',
   'admin.pricing.settings.form.existing': 'Existing setting',
   'admin.pricing.settings.form.metersRequired': 'Keep at least one meter',

@@ -1,8 +1,121 @@
 import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
-import type { AdminDefaultRegionItem, AdminDefaultRegionListResponse, AdminPricingPlan, AdminPricingPlanListResponse, AdminPricingRule, AdminPricingRuleListResponse, AdminRateCard, AdminRateCardListResponse, OfficialPricingCatalogResponse, OfficialPricingProductCatalogResponse, PricingDefaultRegionCreateRequest, PricingPlanCreateRequest, PricingPlanUpdateRequest, PricingRuleCreateRequest, PricingRuleUpdateRequest, RateCardCreateRequest, RateCardUpdateRequest } from '../types';
+import type { AdminDefaultRegionItem, AdminDefaultRegionListResponse, AdminPriceSettingResolution, AdminPricingPlan, AdminPricingPlanListResponse, AdminPricingRule, AdminPricingRuleListResponse, AdminRateCard, AdminRateCardListResponse, OfficialPricingCatalogResponse, OfficialPricingProductCatalogResponse, PriceBooksActivateRequest, PriceBooksCreateRateRequest, PriceBooksCreateRequest, PriceBooksDeactivateRequest, PriceBooksRetireRequest, PriceBooksUpdateRateRequest, PriceBooksUpdateRequest, PriceSettingUpsertRequest, PricingDefaultRegionCreateRequest, PricingPlanCreateRequest, PricingPlanUpdateRequest, PricingRuleCreateRequest, PricingRuleUpdateRequest, RateCardCreateRequest, RateCardUpdateRequest, SdkWorkCommandData, SdkWorkPageData } from '../types';
 
+
+export interface PricingPriceSettingsRetrieveParams {
+  officialRateCode: string;
+  regionCode?: string;
+  pricingPlanId?: string;
+  occurredAt?: string;
+}
+
+export class PricingPriceSettingsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Upsert price setting */
+  async upsert(body: PriceSettingUpsertRequest, requestOptions?: ApiRequestOptions): Promise<AdminPricingRule> {
+    return this.client.request<AdminPricingRule>(backendApiPath(`/pricing/price_settings/upsert`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json', sdkworkUnwrapKind: 'data' });
+  }
+
+/** Resolve price setting */
+  async retrieve(params: PricingPriceSettingsRetrieveParams, requestOptions?: ApiRequestOptions): Promise<AdminPriceSettingResolution> {
+    const query = buildQueryString([
+      { name: 'official_rate_code', value: params.officialRateCode, style: 'form', explode: true, allowReserved: false },
+      { name: 'region_code', value: params.regionCode, style: 'form', explode: true, allowReserved: false },
+      { name: 'pricing_plan_id', value: params.pricingPlanId, style: 'form', explode: true, allowReserved: false },
+      { name: 'occurred_at', value: params.occurredAt, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<AdminPriceSettingResolution>(appendQueryString(backendApiPath(`/pricing/price_settings/resolve`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'data' });
+  }
+}
+
+export interface PricingPriceBooksListParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+}
+
+export interface PricingPriceBooksRetrieveParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+}
+
+export class PricingPriceBooksApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** GET /backend/v3/api/pricing/price_books */
+  async list(params?: PricingPriceBooksListParams, requestOptions?: ApiRequestOptions): Promise<SdkWorkPageData> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<SdkWorkPageData>(appendQueryString(backendApiPath(`/pricing/price_books`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  }
+
+/** POST /backend/v3/api/pricing/price_books */
+  async create(body?: PriceBooksCreateRequest, requestOptions?: ApiRequestOptions): Promise<Record<string, unknown>> {
+    return this.client.request<Record<string, unknown>>(backendApiPath(`/pricing/price_books`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, ...(body !== undefined ? { body, contentType: 'application/json' } : {}), sdkworkUnwrapKind: 'item' });
+  }
+
+/** GET /backend/v3/api/pricing/price_books/{price_book_id} */
+  async retrieve(priceBookId: string | number, params?: PricingPriceBooksRetrieveParams, requestOptions?: ApiRequestOptions): Promise<Record<string, unknown>> {
+    const query = buildQueryString([
+      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
+      { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
+    ]);
+    return this.client.request<Record<string, unknown>>(appendQueryString(backendApiPath(`/pricing/price_books/${serializePathParameter(priceBookId, { name: 'priceBookId', style: 'simple', explode: false })}`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'item' });
+  }
+
+/** PATCH /backend/v3/api/pricing/price_books/{price_book_id} */
+  async update(priceBookId: string | number, body?: PriceBooksUpdateRequest, requestOptions?: ApiRequestOptions): Promise<SdkWorkCommandData> {
+    return this.client.request<SdkWorkCommandData>(backendApiPath(`/pricing/price_books/${serializePathParameter(priceBookId, { name: 'priceBookId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, ...(body !== undefined ? { body, contentType: 'application/json' } : {}), sdkworkUnwrapKind: 'command' });
+  }
+
+/** POST /backend/v3/api/pricing/price_books/{price_book_id}/activate */
+  async activate(priceBookId: string | number, body?: PriceBooksActivateRequest, requestOptions?: ApiRequestOptions): Promise<SdkWorkCommandData> {
+    return this.client.request<SdkWorkCommandData>(backendApiPath(`/pricing/price_books/${serializePathParameter(priceBookId, { name: 'priceBookId', style: 'simple', explode: false })}/activate`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, ...(body !== undefined ? { body, contentType: 'application/json' } : {}), sdkworkUnwrapKind: 'command' });
+  }
+
+/** POST /backend/v3/api/pricing/price_books/{price_book_id}/retire */
+  async retire(priceBookId: string | number, body?: PriceBooksRetireRequest, requestOptions?: ApiRequestOptions): Promise<SdkWorkCommandData> {
+    return this.client.request<SdkWorkCommandData>(backendApiPath(`/pricing/price_books/${serializePathParameter(priceBookId, { name: 'priceBookId', style: 'simple', explode: false })}/retire`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, ...(body !== undefined ? { body, contentType: 'application/json' } : {}), sdkworkUnwrapKind: 'command' });
+  }
+
+/** POST /backend/v3/api/pricing/price_books/{price_book_id}/rates */
+  async createRate(priceBookId: string | number, body?: PriceBooksCreateRateRequest, requestOptions?: ApiRequestOptions): Promise<SdkWorkCommandData> {
+    return this.client.request<SdkWorkCommandData>(backendApiPath(`/pricing/price_books/${serializePathParameter(priceBookId, { name: 'priceBookId', style: 'simple', explode: false })}/rates`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, ...(body !== undefined ? { body, contentType: 'application/json' } : {}), sdkworkUnwrapKind: 'command' });
+  }
+
+/** PATCH /backend/v3/api/pricing/price_books/{price_book_id}/rates/{rate_id} */
+  async updateRate(priceBookId: string | number, rateId: string | number, body?: PriceBooksUpdateRateRequest, requestOptions?: ApiRequestOptions): Promise<SdkWorkCommandData> {
+    return this.client.request<SdkWorkCommandData>(backendApiPath(`/pricing/price_books/${serializePathParameter(priceBookId, { name: 'priceBookId', style: 'simple', explode: false })}/rates/${serializePathParameter(rateId, { name: 'rateId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'PATCH' as any, ...(body !== undefined ? { body, contentType: 'application/json' } : {}), sdkworkUnwrapKind: 'command' });
+  }
+
+/** DELETE /backend/v3/api/pricing/price_books/{price_book_id}/rates/{rate_id} */
+  async deleteRate(priceBookId: string | number, rateId: string | number, requestOptions?: ApiRequestOptions): Promise<SdkWorkCommandData> {
+    return this.client.request<SdkWorkCommandData>(backendApiPath(`/pricing/price_books/${serializePathParameter(priceBookId, { name: 'priceBookId', style: 'simple', explode: false })}/rates/${serializePathParameter(rateId, { name: 'rateId', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any, sdkworkUnwrapKind: 'command' });
+  }
+
+/** POST /backend/v3/api/pricing/price_books/{price_book_id}/deactivate */
+  async deactivate(priceBookId: string | number, body?: PriceBooksDeactivateRequest, requestOptions?: ApiRequestOptions): Promise<SdkWorkCommandData> {
+    return this.client.request<SdkWorkCommandData>(backendApiPath(`/pricing/price_books/${serializePathParameter(priceBookId, { name: 'priceBookId', style: 'simple', explode: false })}/deactivate`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, ...(body !== undefined ? { body, contentType: 'application/json' } : {}), sdkworkUnwrapKind: 'command' });
+  }
+}
 
 export interface PricingRulesListParams {
   q?: string;
@@ -249,6 +362,8 @@ export class PricingApi {
   public readonly plans: PricingPlansApi;
   public readonly rateCards: PricingRateCardsApi;
   public readonly rules: PricingRulesApi;
+  public readonly priceBooks: PricingPriceBooksApi;
+  public readonly priceSettings: PricingPriceSettingsApi;
 
   constructor(client: HttpClient) {
     this.defaultRegions = new PricingDefaultRegionsApi(client);
@@ -257,6 +372,8 @@ export class PricingApi {
     this.plans = new PricingPlansApi(client);
     this.rateCards = new PricingRateCardsApi(client);
     this.rules = new PricingRulesApi(client);
+    this.priceBooks = new PricingPriceBooksApi(client);
+    this.priceSettings = new PricingPriceSettingsApi(client);
   }
 
 }

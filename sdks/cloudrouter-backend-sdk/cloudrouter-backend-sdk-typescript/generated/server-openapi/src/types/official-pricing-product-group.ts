@@ -1,11 +1,16 @@
 import type { OfficialPricingRate } from './official-pricing-rate';
+import type { OfficialPricingRegionOption } from './official-pricing-region-option';
 
 /** Official pricing product group schema exposed by Cloud Router. */
 export interface OfficialPricingProductGroup {
+  /** Available regions field on official pricing product group. */
+  availableRegions: OfficialPricingRegionOption[];
   /** Catalog key field on official pricing product group. */
   catalogKey?: string | null;
   /** Currency code field on official pricing product group. */
   currencyCode: string;
+  /** Default region code field on official pricing product group. */
+  defaultRegionCode: string;
   /** Group codes field on official pricing product group. */
   groupCodes: ('all' | 'llm' | 'image' | 'video' | 'audio' | 'music' | 'embedding' | 'sound' | 'api' | 'other')[];
   /** Group key field on official pricing product group. */
@@ -26,6 +31,8 @@ export interface OfficialPricingProductGroup {
   rates: OfficialPricingRate[];
   /** Region code field on official pricing product group. */
   regionCode: string;
+  /** Region fallback field on official pricing product group. */
+  regionFallback: boolean;
   /** Resource code field on official pricing product group. */
   resourceCode: string;
   /** Resource display name field on official pricing product group. */

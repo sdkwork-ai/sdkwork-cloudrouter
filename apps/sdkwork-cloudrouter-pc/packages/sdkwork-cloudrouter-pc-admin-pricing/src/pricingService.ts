@@ -278,6 +278,18 @@ async function backendRulesDelete(ruleId: string) {
   return getCloudRouterBackendSdkClient().pricing.rules.delete(ruleId);
 }
 
+async function backendPriceSettingsUpsert(
+  body: Parameters<BackendPricingService['priceSettings']['upsert']>[0],
+) {
+  return getCloudRouterBackendSdkClient().pricing.priceSettings.upsert(body);
+}
+
+async function backendPriceSettingsResolve(
+  params: Parameters<BackendPricingService['priceSettings']['retrieve']>[0],
+) {
+  return getCloudRouterBackendSdkClient().pricing.priceSettings.retrieve(params);
+}
+
 async function backendOfficialRatesList(
   params?: Parameters<BackendPricingService['officialRates']['list']>[0],
 ) {
@@ -477,6 +489,30 @@ export async function deletePricingRule(ruleId: string): Promise<void> {
   await backendRulesDelete(requiredPricingText(ruleId, 'ruleId'));
 }
 
+export type AdminPriceSettingUpsertInput = Parameters<BackendPricingService['priceSettings']['upsert']>[0];
+export type AdminPriceSettingResolveParams = Parameters<BackendPricingService['priceSettings']['retrieve']>[0];
+export type AdminPriceSettingResolution = Awaited<ReturnType<BackendPricingService['priceSettings']['retrieve']>>;
+
+/** Saves one (resource, region, meter) price setting through the atomic
+ * backend upsert. Scope dimensions are derived server-side from the anchored
+ * official rate, so the client cannot desynchronize the rule scope from the
+ * official catalog row the admin clicked. */
+export async function upsertPriceSetting(
+  input: AdminPriceSettingUpsertInput,
+): Promise<AdminPricingRuleItem> {
+  const result = await backendPriceSettingsUpsert(input);
+  return normalizePricingRule(readRequiredApiItem(result, 'Price setting could not be saved'));
+}
+
+/** Resolves the effective customer price for one (resource, region, meter)
+ * tuple using the same rule selector as the runtime billing path, so the
+ * admin preview can never disagree with what a customer is charged. */
+export async function resolvePriceSetting(
+  params: AdminPriceSettingResolveParams,
+): Promise<AdminPriceSettingResolution> {
+  return backendPriceSettingsResolve(params);
+}
+
 export async function fetchPricingDefaultRegions(
   params: AdminPricingListParams = {},
 ): Promise<AdminPricingPage<AdminDefaultRegionItem>> {
@@ -543,6 +579,10 @@ export const pricingService = {
     create: createPricingRule,
     update: updatePricingRule,
     delete: deletePricingRule,
+  },
+  priceSettings: {
+    upsert: upsertPriceSetting,
+    resolve: resolvePriceSetting,
   },
   defaultRegions: {
     list: fetchPricingDefaultRegions,

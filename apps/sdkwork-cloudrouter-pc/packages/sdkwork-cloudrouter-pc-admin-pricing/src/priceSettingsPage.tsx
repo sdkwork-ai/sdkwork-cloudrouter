@@ -16,6 +16,7 @@ import {
   type AdminPricingScheduleWindow,
   type AdminPricingStatus,
   type AdminDefaultRegionItem,
+  type AdminPriceSettingUpsertInput,
 } from './pricingService';
 import {
   buildPriceSettingProductRows,
@@ -90,6 +91,9 @@ export interface PriceSettingMeterForm {
 export interface PriceSettingMutation {
   action: 'upsert' | 'delete';
   id?: string;
+  /** Official rate code anchoring the edited meter; present when the mutation
+   * targets a catalog-backed meter and can go through the atomic upsert. */
+  rateCode?: string;
   input?: AdminPricingRuleMutationInput;
 }
 
@@ -469,6 +473,16 @@ export function PriceSettingsAdmin() {
   const updateGroup = (groupIndex: number, patch: Partial<PriceSettingRegionForm>) => setForm((current) => ({ ...current, regionGroups: current.regionGroups.map((group, index) => index === groupIndex ? { ...group, ...patch } : group) }));
   const updateMeter = (groupIndex: number, meterIndex: number, patch: Partial<PriceSettingMeterForm>) => setForm((current) => ({ ...current, regionGroups: current.regionGroups.map((group, index) => index === groupIndex ? { ...group, meters: group.meters.map((meter, meterIndex2) => meterIndex2 === meterIndex ? { ...meter, ...patch } : meter) } : group) }));
   const addMeter = (groupIndex: number) => setForm((current) => ({ ...current, regionGroups: current.regionGroups.map((group, index) => index === groupIndex ? { ...group, meters: [...group.meters, emptyMeter(`meter-${groupIndex}-${group.meters.length + 1}-${Date.now()}`)] } : group) }));
+  const copyMetersFromGroup = (sourceKey: string) => setForm((current) => {
+    const source = current.regionGroups.find((group) => group.key === sourceKey);
+    if (!source) return current;
+    return {
+      ...current,
+      regionGroups: current.regionGroups.map((group) => group.key === current.activeRegionKey
+        ? { ...group, meters: copyPriceSettingMeters(source, group) }
+        : group),
+    };
+  });
   const removeMeter = (groupIndex: number, meterIndex: number) => setForm((current) => {
     const group = current.regionGroups[groupIndex];
     if (!group) return current;
@@ -552,6 +566,14 @@ export function PriceSettingsAdmin() {
             await pricingService.rules.delete(mutation.id);
             applied.push({ mutation, before });
           }
+        } else if (canUseAtomicPriceSettingUpsert(mutation)) {
+          // Catalog-backed standard rules go through the atomic per-(resource,
+          // region, meter) upsert: one transactional call derives the rule
+          // scope server-side, so a partial batch can never leave the rule
+          // scope desynchronized from the official catalog row.
+          const before = rules.find((rule) => rule.id === mutation.id);
+          const after = await pricingService.priceSettings.upsert(toPriceSettingUpsertCommand(mutation));
+          applied.push({ mutation, before, afterId: after.id });
         } else if (mutation.id) {
           const before = rules.find((rule) => rule.id === mutation.id);
           const after = await pricingService.rules.update(mutation.id, mutation.input!);
@@ -679,7 +701,7 @@ export function PriceSettingsAdmin() {
             </div>
           </section>
           <section>
-            <div className="mb-3 flex items-end justify-between gap-3"><div><h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t('admin.pricing.settings.form.priceGroupTitle')}</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.form.priceGroupHint')}</p></div><button type="button" className={secondaryButtonClass} onClick={() => addMeter(activeGroupIndex)}><Plus className="h-3.5 w-3.5" aria-hidden="true" />{t('admin.pricing.settings.form.addMeter')}</button></div>
+            <div className="mb-3 flex flex-wrap items-end justify-between gap-3"><div><h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t('admin.pricing.settings.form.priceGroupTitle')}</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.form.priceGroupHint')}</p></div><div className="flex flex-wrap items-center gap-2">{form.regionGroups.length > 1 ? <select className={`${toolbarSelectClass} max-w-56`} value="" aria-label={t('admin.pricing.settings.form.copyFromRegion')} onChange={(event) => { if (event.target.value) copyMetersFromGroup(event.target.value); }}>{<option value="">{t('admin.pricing.settings.form.copyFromRegion')}</option>}{form.regionGroups.filter((group) => group.key !== activeGroup.key && group.meters.some((meter) => meter.customerPrice.trim())).map((group) => <option key={group.key} value={group.key}>{t('admin.pricing.settings.form.copyFromRegionOption', { region: group.regionCode || '—' })}</option>)}</select> : null}<button type="button" className={secondaryButtonClass} onClick={() => addMeter(activeGroupIndex)}><Plus className="h-3.5 w-3.5" aria-hidden="true" />{t('admin.pricing.settings.form.addMeter')}</button></div></div>
             <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-white/10"><div className="hidden grid-cols-[minmax(150px,1fr)_minmax(150px,1fr)_180px_36px] gap-3 border-b border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400 md:grid dark:border-white/10 dark:bg-white/[0.04]"><span>{t('admin.pricing.settings.form.meter')}</span><span>{t('admin.pricing.settings.table.officialPrice')}</span><span>{t('admin.pricing.settings.form.customerPrice')}</span><span /></div><div className="divide-y divide-slate-200 dark:divide-white/10">{activeGroup.meters.map((meter, meterIndex) => <MeterFormRow key={meter.key} meter={meter} groupIndex={activeGroupIndex} index={meterIndex} locale={displayLocale} t={t} updateMeter={updateMeter} removeMeter={removeMeter} />)}{activeGroup.meters.length === 0 ? <div className="px-3 py-6 text-center text-xs text-slate-400">{t('admin.pricing.settings.form.regionEmptyMeters')}</div> : null}</div></div>
           </section>
           <details className="rounded-lg border border-slate-200 dark:border-white/10"><summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white"><span>{t('admin.pricing.settings.form.advancedTitle')}</span><ChevronDown className="h-4 w-4 text-slate-400" aria-hidden="true" /></summary><div className="flex flex-col gap-4 border-t border-slate-200 px-4 py-4 dark:border-white/10"><Field label={t('admin.pricing.settings.form.priceMode')} hint={t('admin.pricing.settings.form.priceModeHint')}><div className="grid grid-cols-2 gap-2" role="group" aria-label={t('admin.pricing.settings.form.priceMode')}>{(['standard', 'time_window'] as const).map((mode) => <button key={mode} type="button" className={`rounded-md border px-3 py-2 text-sm font-medium transition ${activeGroup.priceMode === mode ? 'border-lobster-500 bg-lobster-50 text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-300' : 'border-slate-200 text-slate-600 hover:border-lobster-300 dark:border-white/10 dark:text-slate-300'}`} onClick={() => { updateGroup(activeGroupIndex, { priceMode: mode }); if (mode === 'time_window' && activeGroup.weeklyWindows.length === 0) updateGroup(activeGroupIndex, { weeklyWindows: [{ ...DEFAULT_WINDOW }] }); }}>{t(`admin.pricing.settings.mode.${mode === 'time_window' ? 'timeWindow' : 'standard'}`)}</button>)}</div></Field>{activeGroup.priceMode === 'time_window' ? <TimeWindowFields group={activeGroup} groupIndex={activeGroupIndex} t={t} updateWindow={updateWindow} toggleWindowDay={toggleWindowDay} addWindow={addWindow} updateGroup={updateGroup} /> : null}<div className="grid gap-4 md:grid-cols-2"><Field label={t('admin.pricing.common.form.effectiveFrom')}><input className={inputClass} value={activeGroup.effectiveFrom} onChange={(event) => updateGroup(activeGroupIndex, { effectiveFrom: event.target.value })} placeholder="2026-08-20T00:00:00Z" /></Field><Field label={t('admin.pricing.common.form.effectiveTo')}><input className={inputClass} value={activeGroup.effectiveTo} onChange={(event) => updateGroup(activeGroupIndex, { effectiveTo: event.target.value })} placeholder="2026-08-20T00:00:00Z" /></Field></div>{activeGroup.metadataConflict ? <div className="flex flex-col gap-2 rounded-md border border-amber-200 bg-amber-50/70 px-3 py-2 text-xs text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"><span>{t('admin.pricing.settings.form.metadataConflictHint', { region: activeGroup.regionCode })}</span><label className="inline-flex items-center gap-2 font-medium"><input type="checkbox" checked={Boolean(activeGroup.acknowledgeMetadataConflict)} onChange={(event) => updateGroup(activeGroupIndex, { acknowledgeMetadataConflict: event.target.checked })} />{t('admin.pricing.settings.form.metadataConflictAcknowledge')}</label></div> : null}</div></details>
@@ -1361,6 +1383,9 @@ export function buildPriceSettingMutations(form: PriceSettingFormState, t: Trans
       const meterCode = meter.meterCode.trim();
       const operationCode = meter.operationCode.trim();
       if (!meterCode && !operationCode) throw new Error(t('admin.pricing.settings.form.meterRequired'));
+      // Catalog-backed meters carry the official rate they anchor on; the
+      // atomic upsert derives the six scope dimensions from that row.
+      const anchorRateCode = meter.rateCode?.trim() || meter.official?.rateCode?.trim() || undefined;
       const unitPrice = meter.customerPrice.trim();
       if (!unitPrice) {
         if (!meter.ruleId) return [];
@@ -1368,6 +1393,7 @@ export function buildPriceSettingMutations(form: PriceSettingFormState, t: Trans
           return [{
             action: 'upsert',
             id: meter.ruleId,
+            rateCode: anchorRateCode,
             input: {
               ruleCode: meter.ruleCode,
               pricingPlanId: group.pricingPlanId.trim(),
@@ -1400,6 +1426,7 @@ export function buildPriceSettingMutations(form: PriceSettingFormState, t: Trans
       return [{
         action: 'upsert',
         id: meter.ruleId,
+        rateCode: anchorRateCode,
         input: {
           ruleCode: meter.ruleId ? meter.ruleCode : ruleCode,
           pricingPlanId: group.pricingPlanId.trim(),
@@ -1427,6 +1454,82 @@ export function buildPriceSettingMutations(form: PriceSettingFormState, t: Trans
   });
   if (mutations.length === 0) throw new Error(t('admin.pricing.settings.form.salesPriceRequired'));
   return mutations;
+}
+
+/** True when a mutation can be saved through the atomic per-(resource, region,
+ * meter) upsert instead of the legacy rule endpoints. The atomic path needs a
+ * catalog anchor; rules with explicit conditions would be silently stripped
+ * (the atomic upsert only writes the unconditioned standard rule), and
+ * brand-new time-window rules require a ruleId the client does not have yet,
+ * so those keep the legacy create/update path. */
+export function canUseAtomicPriceSettingUpsert(mutation: PriceSettingMutation): boolean {
+  if (mutation.action !== 'upsert' || !mutation.input || !mutation.rateCode?.trim()) return false;
+  if ((mutation.input.conditions ?? []).length > 0) return false;
+  if (mutation.input.schedule && !mutation.id) return false;
+  return true;
+}
+
+/** Converts a legacy rule mutation into the atomic price-setting upsert
+ * command. Scope dimensions (product/operation/meter/provider/region/
+ * catalogKey) are intentionally NOT sent: the backend derives them from the
+ * anchored official rate, which is the whole consistency guarantee. */
+export function toPriceSettingUpsertCommand(mutation: PriceSettingMutation): AdminPriceSettingUpsertInput {
+  const input = mutation.input;
+  if (!input) throw new Error('price setting mutation is missing its rule input');
+  if (!mutation.rateCode?.trim()) throw new Error('price setting mutation is missing its official rate anchor');
+  return {
+    officialRateCode: mutation.rateCode.trim(),
+    pricingPlanId: input.pricingPlanId,
+    ...(mutation.id ? { ruleId: mutation.id } : {}),
+    formulaMode: input.formulaMode,
+    ...(input.formulaMode === 'multiplier_markup' ? {
+      multiplier: input.multiplier ?? '1',
+      markupAmount: input.markupAmount ?? '0',
+    } : {
+      unitPriceOverride: input.unitPriceOverride ?? '0',
+    }),
+    ...(input.schedule ? { schedule: input.schedule } : {}),
+    priority: String(input.priority),
+    ...(input.effectiveFrom?.trim() ? { effectiveFrom: input.effectiveFrom.trim() } : {}),
+    ...(input.effectiveTo?.trim() ? { effectiveTo: input.effectiveTo.trim() } : {}),
+    status: input.status,
+  };
+}
+
+/** Copies the priced meters of a source region group into a target group so a
+ * resource can be priced across regions without retyping every meter.
+ * Meters are matched by (meterCode, operationCode); matched meters only take
+ * the source price, appended copies carry no anchor — `rateCode`/`official`
+ * point at the source region's catalog rows and must never cross regions, so
+ * an appended meter saves as a custom rule for the target region. */
+export function copyPriceSettingMeters(
+  source: PriceSettingRegionForm,
+  target: PriceSettingRegionForm,
+): PriceSettingMeterForm[] {
+  const priced = source.meters.filter((meter) => meter.customerPrice.trim());
+  if (priced.length === 0) return target.meters;
+  const nextMeters = [...target.meters];
+  let appended = 0;
+  for (const meter of priced) {
+    const meterCode = meter.meterCode.trim().toLowerCase();
+    const operationCode = meter.operationCode.trim().toLowerCase();
+    const matchIndex = nextMeters.findIndex((candidate) => candidate.meterCode.trim().toLowerCase() === meterCode
+      && candidate.operationCode.trim().toLowerCase() === operationCode);
+    if (matchIndex >= 0) {
+      nextMeters[matchIndex] = { ...nextMeters[matchIndex]!, customerPrice: meter.customerPrice.trim() };
+      continue;
+    }
+    appended += 1;
+    nextMeters.push({
+      key: `meter-copy-${target.key}-${appended}-${Date.now()}`,
+      meterCode: meter.meterCode.trim(),
+      operationCode: meter.operationCode.trim(),
+      unitCode: meter.unitCode,
+      unitSize: meter.unitSize,
+      customerPrice: meter.customerPrice.trim(),
+    });
+  }
+  return nextMeters;
 }
 
 type PriceSettingScheduleSource = Pick<PriceSettingRegionForm, 'priceMode' | 'timeZone' | 'weeklyWindows' | 'includeDates' | 'excludeDates'>;

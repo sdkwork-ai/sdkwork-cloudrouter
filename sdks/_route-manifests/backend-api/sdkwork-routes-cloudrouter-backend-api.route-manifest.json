@@ -1680,6 +1680,292 @@
       "apiSurface": "backend-api"
     },
     {
+      "method": "POST",
+      "path": "/backend/v3/api/pricing/price_settings/upsert",
+      "operationId": "priceSettings.upsert",
+      "tags": [
+        "pricing"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-backend-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "backend-api"
+    },
+    {
+      "method": "GET",
+      "path": "/backend/v3/api/pricing/price_settings/resolve",
+      "operationId": "priceSettings.retrieve",
+      "tags": [
+        "pricing"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-backend-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "backend-api"
+    },
+    {
+      "method": "GET",
+      "path": "/backend/v3/api/pricing/price_books",
+      "operationId": "priceBooks.list",
+      "tags": [
+        "pricing"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-backend-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "backend-api"
+    },
+    {
+      "method": "POST",
+      "path": "/backend/v3/api/pricing/price_books",
+      "operationId": "priceBooks.create",
+      "tags": [
+        "pricing"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-backend-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "backend-api"
+    },
+    {
+      "method": "GET",
+      "path": "/backend/v3/api/pricing/price_books/{price_book_id}",
+      "operationId": "priceBooks.retrieve",
+      "tags": [
+        "pricing"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-backend-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "backend-api"
+    },
+    {
+      "method": "PATCH",
+      "path": "/backend/v3/api/pricing/price_books/{price_book_id}",
+      "operationId": "priceBooks.update",
+      "tags": [
+        "pricing"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-backend-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "backend-api"
+    },
+    {
+      "method": "POST",
+      "path": "/backend/v3/api/pricing/price_books/{price_book_id}/activate",
+      "operationId": "priceBooks.activate",
+      "tags": [
+        "pricing"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-backend-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "backend-api"
+    },
+    {
+      "method": "POST",
+      "path": "/backend/v3/api/pricing/price_books/{price_book_id}/deactivate",
+      "operationId": "priceBooks.deactivate",
+      "tags": [
+        "pricing"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-backend-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "backend-api"
+    },
+    {
+      "method": "POST",
+      "path": "/backend/v3/api/pricing/price_books/{price_book_id}/rates",
+      "operationId": "priceBookRates.create",
+      "tags": [
+        "pricing"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-backend-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "backend-api"
+    },
+    {
+      "method": "PATCH",
+      "path": "/backend/v3/api/pricing/price_books/{price_book_id}/rates/{rate_id}",
+      "operationId": "priceBookRates.update",
+      "tags": [
+        "pricing"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-backend-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "backend-api"
+    },
+    {
+      "method": "DELETE",
+      "path": "/backend/v3/api/pricing/price_books/{price_book_id}/rates/{rate_id}",
+      "operationId": "priceBookRates.delete",
+      "tags": [
+        "pricing"
+      ],
+      "auth": {
+        "mode": "dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter-backend-api"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-backend-api",
+        "openApiAuthority": "apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "backend-api"
+    },
+    {
       "method": "GET",
       "path": "/backend/v3/api/recharges/packages",
       "operationId": "packages.list",

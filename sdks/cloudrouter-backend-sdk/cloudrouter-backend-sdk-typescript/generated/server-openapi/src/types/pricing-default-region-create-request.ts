@@ -14,10 +14,10 @@ export interface PricingDefaultRegionCreateRequest {
   effectiveTo?: string;
   /** Product code field on pricing default region create request. */
   productCode: string;
+  /** Provider code field on pricing default region create request. */
+  providerCode?: string;
   /** Resource code field on pricing default region create request. */
   resourceCode?: string;
   /** Vendor code field on pricing default region create request. */
   vendorCode: string;
-  /** Provider code field on pricing default region create request. */
-  providerCode?: string;
 }

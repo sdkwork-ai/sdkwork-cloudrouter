@@ -21,6 +21,12 @@
 --   * 脚本幂等：价格书/费率行按唯一键 upsert，可重复执行。
 --   * 手动写入 pricing_rate 后，内存快照在下次刷新时自动加载；如需立即
 --     生效，可在后台触发一次 catalog/价格快照刷新。
+--   * **执行前先检查是否已有同账号的 active CNY 成本册**（避免双册并存）：
+--       SELECT price_book_code, namespace_code, lifecycle_state FROM pricing_price_book
+--       WHERE price_side='upstream_cost' AND lifecycle_state='active';
+--     dev 库（sdkwork_ai_dev）已于 2026-09-02 手工建有 models/dev.upstream_cost.cn
+--     （active CNY），如目标库即该 dev 库，请勿再执行本脚本，改用 admin
+--     价格册管理端点维护费率。
 -- ============================================================================
 
 \set ON_ERROR_STOP 1

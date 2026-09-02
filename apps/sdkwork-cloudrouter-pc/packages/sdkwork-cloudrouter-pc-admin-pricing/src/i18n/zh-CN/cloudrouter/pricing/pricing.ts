@@ -346,6 +346,8 @@ export const pricingAdminZhCnMessages = {
   'admin.pricing.settings.form.priceGroupTitle': '价格组',
   'admin.pricing.settings.form.priceGroupHint': '在同一组中维护全部计量项，官方参考价只读，客户价格可批量保存。',
   'admin.pricing.settings.form.addMeter': '添加计价项',
+  'admin.pricing.settings.form.copyFromRegion': '从其他 Region 复制价格',
+  'admin.pricing.settings.form.copyFromRegionOption': '复制 {{region}} 的价格',
   'admin.pricing.settings.form.removeMeter': '删除计价项',
   'admin.pricing.settings.form.existing': '已有设置',
   'admin.pricing.settings.form.metersRequired': '至少保留一个计价项',

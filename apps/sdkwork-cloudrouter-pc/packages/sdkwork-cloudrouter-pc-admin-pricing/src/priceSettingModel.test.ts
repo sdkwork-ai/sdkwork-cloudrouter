@@ -22,7 +22,10 @@ import {
 } from './priceSettingModel';
 import {
   buildPriceSettingMutations,
+  canUseAtomicPriceSettingUpsert,
+  copyPriceSettingMeters,
   regionGroupFormsFromPrices,
+  toPriceSettingUpsertCommand,
   type PriceSettingFormState,
   type PriceSettingRegionForm,
 } from './priceSettingsPage';
@@ -482,6 +485,123 @@ describe('price setting model', () => {
       meters: [{ ...baseGroup().meters[0], ruleId: 'conditional-rule', customerPrice: '0.02', conditions }],
     }), translate);
     expect(mutations[0]?.input?.conditions).toEqual(conditions);
+  });
+
+  it('routes anchored standard rules through the atomic upsert and derives scope server-side', () => {
+    const mutations = buildPriceSettingMutations(baseForm({
+      meters: [{
+        ...baseGroup().meters[0],
+        rateCode: 'rate-gpt-4o-input',
+        ruleId: 'rule-input',
+        customerPrice: '0.02',
+      }],
+    }), translate);
+
+    expect(mutations).toHaveLength(1);
+    expect(canUseAtomicPriceSettingUpsert(mutations[0]!)).toBe(true);
+    const command = toPriceSettingUpsertCommand(mutations[0]!);
+    expect(command).toEqual({
+      officialRateCode: 'rate-gpt-4o-input',
+      pricingPlanId: 'plan-1',
+      ruleId: 'rule-input',
+      formulaMode: 'unit_price_override',
+      unitPriceOverride: '0.02',
+      priority: '100',
+      status: 'active',
+    });
+    // Scope dimensions must NOT be sent: the backend derives them from the
+    // anchored official rate row.
+    expect(command).not.toHaveProperty('productCode');
+    expect(command).not.toHaveProperty('regionCode');
+    expect(command).not.toHaveProperty('catalogKey');
+  });
+
+  it('keeps legacy paths for unanchored, conditioned, and brand-new scheduled rules', () => {
+    const unanchored = { action: 'upsert' as const, input: { pricingPlanId: 'plan-1', formulaMode: 'unit_price_override' as const, priority: 100, status: 'active' as const } };
+    expect(canUseAtomicPriceSettingUpsert(unanchored)).toBe(false);
+
+    const conditioned = {
+      action: 'upsert' as const,
+      rateCode: 'rate-1',
+      input: { pricingPlanId: 'plan-1', formulaMode: 'unit_price_override' as const, priority: 100, status: 'active' as const, conditions: [{ dimensionCode: 'tier_code', operatorCode: 'eq' as const, value: 'peak' }] },
+    };
+    expect(canUseAtomicPriceSettingUpsert(conditioned)).toBe(false);
+
+    const newScheduled = {
+      action: 'upsert' as const,
+      rateCode: 'rate-1',
+      input: {
+        pricingPlanId: 'plan-1',
+        formulaMode: 'unit_price_override' as const,
+        priority: 100,
+        status: 'active' as const,
+        schedule: { timeZone: 'Asia/Shanghai', weeklyWindows: [{ windowCode: 'business', daysOfWeek: [1], startTime: '09:00', endTime: '18:00', endDayOffset: 0 as const }], includeDates: [], excludeDates: [] },
+      },
+    };
+    expect(canUseAtomicPriceSettingUpsert(newScheduled)).toBe(false);
+
+    // With an explicit ruleId the scheduled update can go atomic.
+    expect(canUseAtomicPriceSettingUpsert({ ...newScheduled, id: 'rule-1' })).toBe(true);
+    expect(canUseAtomicPriceSettingUpsert({ action: 'delete', id: 'rule-1' })).toBe(false);
+  });
+
+  it('carries the multiplier formula and priority string into the atomic command', () => {
+    const mutations = buildPriceSettingMutations(baseForm({
+      meters: [{
+        ...baseGroup().meters[0],
+        rateCode: 'rate-gpt-4o-input',
+        ruleId: 'formula-rule',
+        customerPrice: '',
+        existingFormulaMode: 'multiplier_markup',
+        existingMultiplier: '1.2',
+        existingMarkupAmount: '0.0001',
+      }],
+    }), translate);
+    expect(canUseAtomicPriceSettingUpsert(mutations[0]!)).toBe(true);
+    expect(toPriceSettingUpsertCommand(mutations[0]!)).toMatchObject({
+      officialRateCode: 'rate-gpt-4o-input',
+      ruleId: 'formula-rule',
+      formulaMode: 'multiplier_markup',
+      multiplier: '1.2',
+      markupAmount: '0.0001',
+      priority: '100',
+    });
+  });
+
+  it('copies region prices by meter identity without crossing official anchors', () => {
+    const source = baseGroup({
+      key: 'region-cn',
+      regionCode: 'cn',
+      currencyCode: 'CNY',
+      meters: [
+        { key: 'cn-input', meterCode: 'llm_input_token', operationCode: 'chat.completions', unitCode: 'token', unitSize: '1M', customerPrice: '12' },
+        { key: 'cn-cache', meterCode: 'llm_cache_read_token', operationCode: 'chat.completions', unitCode: 'token', unitSize: '1M', customerPrice: '1.5', rateCode: 'rate-cn-cache', },
+      ],
+    });
+    const target = baseGroup({
+      key: 'region-us',
+      regionCode: 'us-east',
+      currencyCode: 'USD',
+      meters: [
+        { key: 'us-input', meterCode: 'llm_input_token', operationCode: 'chat.completions', unitCode: 'token', unitSize: '1M', customerPrice: '' },
+        { key: 'us-output', meterCode: 'llm_output_token', operationCode: 'chat.completions', unitCode: 'token', unitSize: '1M', customerPrice: '0.03', rateCode: 'rate-us-output' },
+      ],
+    });
+
+    const meters = copyPriceSettingMeters(source, target);
+
+    // Matched meter takes only the price; its own anchor stays untouched.
+    expect(meters[0]).toMatchObject({ key: 'us-input', customerPrice: '12' });
+    expect(meters[0]?.rateCode).toBeUndefined();
+    // Unpriced target meter is untouched.
+    expect(meters[1]).toMatchObject({ key: 'us-output', customerPrice: '0.03', rateCode: 'rate-us-output' });
+    // Unmatched source meter is appended WITHOUT its anchor: rateCode/official
+    // point at the source region's catalog rows and must not cross regions.
+    expect(meters).toHaveLength(3);
+    expect(meters[2]).toMatchObject({ meterCode: 'llm_cache_read_token', customerPrice: '1.5' });
+    expect(meters[2]?.rateCode).toBeUndefined();
+    expect(meters[2]?.official).toBeUndefined();
+    expect(meters[2]?.ruleId).toBeUndefined();
   });
 
   it('deletes rules for meters removed from the region group', () => {

@@ -124,6 +124,7 @@ export type { OfficialPricingRate } from './official-pricing-rate';
 export type { OfficialPricingRateCondition } from './official-pricing-rate-condition';
 export type { OfficialPricingRateTier } from './official-pricing-rate-tier';
 export type { OfficialPricingRegionFacet } from './official-pricing-region-facet';
+export type { OfficialPricingRegionOption } from './official-pricing-region-option';
 export type { OfficialPricingValueFacet } from './official-pricing-value-facet';
 
 export type { PageInfo } from './page-info';
@@ -222,3 +223,15 @@ export type { UpstreamSupplierResourceCollectionResponse } from './upstream-supp
 export type { UpstreamSupplierResourceListResponse } from './upstream-supplier-resource-list-response';
 
 export type { VerifyUpstreamAccountRequest } from './verify-upstream-account-request';
+
+export type { AdminOfficialRateAnchor } from './admin-official-rate-anchor';
+export type { AdminPriceSettingResolution } from './admin-price-setting-resolution';
+export type { PriceSettingUpsertRequest } from './price-setting-upsert-request';
+
+export type { PriceBooksCreateRequest } from './price-books-create-request';
+export type { PriceBooksUpdateRequest } from './price-books-update-request';
+export type { PriceBooksActivateRequest } from './price-books-activate-request';
+export type { PriceBooksRetireRequest } from './price-books-retire-request';
+export type { PriceBooksCreateRateRequest } from './price-books-create-rate-request';
+export type { PriceBooksUpdateRateRequest } from './price-books-update-rate-request';
+export type { PriceBooksDeactivateRequest } from './price-books-deactivate-request';

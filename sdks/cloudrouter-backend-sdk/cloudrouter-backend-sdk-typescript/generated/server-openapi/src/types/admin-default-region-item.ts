@@ -18,6 +18,8 @@ export interface AdminDefaultRegionItem {
   id: string;
   /** Product code field on admin default region item. */
   productCode: string;
+  /** Provider code field on admin default region item. */
+  providerCode?: string;
   /** Resource code field on admin default region item. */
   resourceCode?: string;
   /** Status field on admin default region item. */
@@ -26,8 +28,6 @@ export interface AdminDefaultRegionItem {
   updatedAt?: string | null;
   /** Vendor code field on admin default region item. */
   vendorCode: string;
-  /** Provider code field on admin default region item. */
-  providerCode?: string;
   /** Version field on admin default region item. */
   version: string;
 }

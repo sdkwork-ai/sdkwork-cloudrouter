@@ -6,7 +6,7 @@ use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
 use axum::http::HeaderMap;
 use axum::response::{IntoResponse, Response};
-use axum::routing::{get, patch};
+use axum::routing::{get, patch, post};
 use axum::{Json, Router};
 use chrono::{DateTime, NaiveDate, NaiveTime, SecondsFormat};
 use serde::{Deserialize, Serialize};
@@ -22,11 +22,14 @@ use crate::domain::DomainError;
 use crate::ports::{
     AdminPricingBasePriceSide, AdminPricingFormulaMode, AdminPricingListPage,
     AdminPricingRoundingMode, AdminPricingStatus, AdminPricingStore, AdminRateCardSubjectType,
-    CreateAdminPricingPlanCommand, CreateAdminPricingRuleCommand, CreateAdminRateCardCommand,
-    DeleteAdminDefaultRegionCommand, DeleteAdminPricingRuleCommand, DeleteAdminRateCardCommand,
+    CreateAdminPriceBookCommand, CreateAdminPriceBookRateCommand, CreateAdminPricingPlanCommand,
+    CreateAdminPricingRuleCommand, CreateAdminRateCardCommand, DeleteAdminDefaultRegionCommand,
+    DeleteAdminPricingRuleCommand, DeleteAdminPriceBookRateCommand, DeleteAdminRateCardCommand,
     ListAdminDefaultRegionsQuery, ListAdminPricingPlansQuery, ListAdminPricingRulesQuery,
-    ListAdminRateCardsQuery, LoadAdminPricingPlanQuery, SaveAdminDefaultRegionCommand,
-    UpdateAdminDefaultRegionCommand, UpdateAdminPricingPlanCommand,
+    ListAdminPriceBooksQuery, ListAdminRateCardsQuery, LoadAdminPriceBookQuery,
+    LoadAdminPricingPlanQuery, PriceBookLifecycleCommand, ResolveAdminPriceSettingQuery,
+    SaveAdminDefaultRegionCommand, SaveAdminPriceSettingCommand, UpdateAdminDefaultRegionCommand,
+    UpdateAdminPricingPlanCommand, UpdateAdminPriceBookCommand, UpdateAdminPriceBookRateCommand,
     UpdateAdminPricingRuleCommand, UpdateAdminRateCardCommand,
 };
 
@@ -119,6 +122,107 @@ struct PricingRuleMutationRequest {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct PriceSettingMutationRequest {
+    official_rate_code: Option<String>,
+    pricing_plan_id: Option<String>,
+    rule_id: Option<String>,
+    formula_mode: Option<String>,
+    multiplier: Option<Value>,
+    markup_amount: Option<Value>,
+    unit_price_override: Option<Value>,
+    schedule: Option<Value>,
+    priority: Option<Value>,
+    effective_from: Option<String>,
+    effective_to: Option<String>,
+    status: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct PriceSettingResolveQueryRequest {
+    official_rate_code: Option<String>,
+    region_code: Option<String>,
+    pricing_plan_id: Option<String>,
+    occurred_at: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PriceBookListQueryRequest {
+    q: Option<String>,
+    price_side: Option<String>,
+    lifecycle_state: Option<String>,
+    page: Option<i64>,
+    page_size: Option<i64>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PriceBookMutationRequest {
+    namespace_code: Option<String>,
+    price_book_code: Option<String>,
+    price_book_version: Option<String>,
+    price_side: Option<String>,
+    vendor_code: Option<String>,
+    region_code: Option<String>,
+    currency_code: Option<String>,
+    source_system: Option<String>,
+    effective_from: Option<String>,
+    effective_to: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PriceBookRateMutationRequest {
+    rate_code: Option<String>,
+    product_code: Option<String>,
+    product_kind: Option<String>,
+    product_display_name: Option<String>,
+    operation_code: Option<String>,
+    operation_kind: Option<String>,
+    operation_display_name: Option<String>,
+    meter_code: Option<String>,
+    meter_display_name: Option<String>,
+    quantity_kind: Option<String>,
+    unit_code: Option<String>,
+    provider_code: Option<String>,
+    account_id: Option<String>,
+    resource_type: Option<String>,
+    resource_code: Option<String>,
+    catalog_key: Option<String>,
+    api_format: Option<String>,
+    endpoint_code: Option<String>,
+    billability: Option<String>,
+    charge_timing: Option<String>,
+    calculation_mode: Option<String>,
+    quantity_aggregation: Option<String>,
+    unit_size: Option<Value>,
+    unit_price: Option<Value>,
+    minimum_quantity: Option<Value>,
+    quantity_step: Option<Value>,
+    priority: Option<Value>,
+    rate_variant: Option<String>,
+    conditions: Option<Value>,
+    tiers: Option<Value>,
+    schedule: Option<Value>,
+    effective_from: Option<String>,
+    effective_to: Option<String>,
+    source_url: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PriceBookRatePatchRequest {
+    unit_size: Option<Value>,
+    unit_price: Option<Value>,
+    minimum_quantity: Option<Value>,
+    quantity_step: Option<Value>,
+    priority: Option<Value>,
+    effective_from: Option<String>,
+    effective_to: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct DefaultRegionMutationRequest {
     catalog_key: Option<String>,
     vendor_code: Option<String>,
@@ -195,6 +299,76 @@ struct NormalizedPricingRuleMutation {
     status: AdminPricingStatus,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct NormalizedPriceBookCreate {
+    namespace_code: String,
+    price_book_code: String,
+    price_book_version: String,
+    price_side: AdminPricingBasePriceSide,
+    vendor_code: String,
+    region_code: String,
+    currency_code: String,
+    source_system: String,
+    effective_from: Option<String>,
+    effective_to: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct NormalizedPriceBookUpdate {
+    currency_code: String,
+    effective_from: Option<String>,
+    effective_to: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct NormalizedPriceBookRateCreate {
+    rate_code: String,
+    product_code: String,
+    product_kind: String,
+    product_display_name: String,
+    operation_code: String,
+    operation_kind: String,
+    operation_display_name: String,
+    meter_code: String,
+    meter_display_name: String,
+    quantity_kind: String,
+    unit_code: String,
+    provider_code: String,
+    account_id: Option<i64>,
+    resource_type: String,
+    resource_code: String,
+    catalog_key: Option<String>,
+    api_format: Option<String>,
+    endpoint_code: Option<String>,
+    billability: String,
+    charge_timing: String,
+    calculation_mode: String,
+    quantity_aggregation: String,
+    unit_size: String,
+    unit_price: String,
+    minimum_quantity: String,
+    quantity_step: Option<String>,
+    priority: i64,
+    rate_variant: String,
+    conditions: Value,
+    tiers: Value,
+    schedule: Option<Value>,
+    effective_from: Option<String>,
+    effective_to: Option<String>,
+    source_url: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct NormalizedPriceBookRatePatch {
+    unit_size: String,
+    unit_price: String,
+    minimum_quantity: String,
+    quantity_step: Option<String>,
+    priority: i64,
+    effective_from: Option<String>,
+    effective_to: Option<String>,
+}
+
 enum AdminPricingCommandBuildError {
     BadRequest(String),
     System(DomainError),
@@ -242,6 +416,38 @@ pub fn admin_pricing_router_with_store(
         .route(
             "/backend/v3/api/pricing/default_regions/{default_region_id}",
             patch(update_default_region).delete(delete_default_region),
+        )
+        .route(
+            "/backend/v3/api/pricing/price_books",
+            get(fetch_price_books).post(create_price_book),
+        )
+        .route(
+            "/backend/v3/api/pricing/price_books/{price_book_id}",
+            get(fetch_price_book).patch(update_price_book),
+        )
+        .route(
+            "/backend/v3/api/pricing/price_books/{price_book_id}/activate",
+            post(activate_price_book),
+        )
+        .route(
+            "/backend/v3/api/pricing/price_books/{price_book_id}/deactivate",
+            post(deactivate_price_book),
+        )
+        .route(
+            "/backend/v3/api/pricing/price_books/{price_book_id}/rates",
+            post(create_price_book_rate),
+        )
+        .route(
+            "/backend/v3/api/pricing/price_books/{price_book_id}/rates/{rate_id}",
+            patch(update_price_book_rate).delete(delete_price_book_rate),
+        )
+        .route(
+            "/backend/v3/api/pricing/price_settings/upsert",
+            post(upsert_price_setting),
+        )
+        .route(
+            "/backend/v3/api/pricing/price_settings/resolve",
+            get(resolve_price_setting),
         )
         .with_state(AdminPricingState {
             store,
@@ -673,6 +879,211 @@ async fn fetch_pricing_rules(
     }
 }
 
+struct NormalizedPriceSettingMutation {
+    official_rate_code: String,
+    pricing_plan_id: String,
+    rule_id: Option<String>,
+    formula_mode: AdminPricingFormulaMode,
+    multiplier: String,
+    markup_amount: String,
+    unit_price_override: Option<String>,
+    schedule: Option<Value>,
+    priority: i64,
+    effective_from: Option<String>,
+    effective_to: Option<String>,
+    status: AdminPricingStatus,
+}
+
+fn normalize_price_setting_mutation(
+    request: PriceSettingMutationRequest,
+) -> Result<NormalizedPriceSettingMutation, AdminPricingCommandBuildError> {
+    let official_rate_code =
+        normalize_required_text(request.official_rate_code.as_deref(), "officialRateCode", MAX_CODE_LEN)?;
+    let pricing_plan_id = normalize_required_pricing_id(
+        request.pricing_plan_id.as_deref(),
+        "pricingPlanId",
+    )?;
+    let rule_id = normalize_optional_text(request.rule_id.as_deref(), "ruleId", 32)?;
+    let formula_mode = normalize_formula_mode(request.formula_mode.as_deref())?;
+    let (multiplier, markup_amount, unit_price_override) = match formula_mode {
+        AdminPricingFormulaMode::MultiplierMarkup => {
+            let multiplier = match normalize_optional_decimal_value(
+                request.multiplier.as_ref(),
+                "multiplier",
+            )? {
+                Some(value) => value,
+                None => DEFAULT_RULE_MULTIPLIER.to_owned(),
+            };
+            let markup_amount = match normalize_optional_decimal_value(
+                request.markup_amount.as_ref(),
+                "markupAmount",
+            )? {
+                Some(value) => value,
+                None => DEFAULT_RULE_MARKUP.to_owned(),
+            };
+            (multiplier, markup_amount, None)
+        }
+        AdminPricingFormulaMode::UnitPriceOverride => {
+            let unit_price_override = match normalize_optional_decimal_value(
+                request.unit_price_override.as_ref(),
+                "unitPriceOverride",
+            )? {
+                Some(value) => value,
+                None => {
+                    return Err(AdminPricingCommandBuildError::BadRequest(
+                        "unitPriceOverride is required for unit_price_override mode".to_owned(),
+                    ));
+                }
+            };
+            (
+                DEFAULT_RULE_MULTIPLIER.to_owned(),
+                DEFAULT_RULE_MARKUP.to_owned(),
+                Some(unit_price_override),
+            )
+        }
+    };
+    let effective_from =
+        normalize_optional_datetime(request.effective_from.as_deref(), "effectiveFrom")?;
+    let effective_to = normalize_optional_datetime(request.effective_to.as_deref(), "effectiveTo")?;
+    validate_datetime_order(effective_from.as_deref(), effective_to.as_deref())?;
+    Ok(NormalizedPriceSettingMutation {
+        official_rate_code,
+        pricing_plan_id,
+        rule_id,
+        formula_mode,
+        multiplier,
+        markup_amount,
+        unit_price_override,
+        schedule: normalize_pricing_schedule(request.schedule.as_ref())?,
+        priority: normalize_optional_non_negative_integer(request.priority.as_ref(), "priority")?
+            .unwrap_or(100),
+        effective_from,
+        effective_to,
+        status: normalize_pricing_status(request.status.as_deref())?,
+    })
+}
+
+/// Creates or updates the single standard sales rule backing one
+/// (resource, region, meter) price setting. The scope dimensions are derived
+/// server-side from the anchored official rate row, so a mistyped product or
+/// meter code can no longer create a rule the runtime never selects.
+async fn upsert_price_setting(
+    State(state): State<AdminPricingState>,
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    _headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    let subject = scoped.into();
+    let request = match parse_json_body::<PriceSettingMutationRequest>(&body, "price setting") {
+        Ok(request) => request,
+        Err(message) => return bad_request(message),
+    };
+    let mutation = match normalize_price_setting_mutation(request) {
+        Ok(mutation) => mutation,
+        Err(error) => return command_build_error_response(error),
+    };
+    let command = SaveAdminPriceSettingCommand {
+        subject,
+        rule_uuid: match generate_entity_uuid(&state) {
+            Ok(uuid) => uuid,
+            Err(error) => return command_build_error_response(error),
+        },
+        audit_log_uuid: match generate_entity_uuid(&state) {
+            Ok(uuid) => uuid,
+            Err(error) => return command_build_error_response(error),
+        },
+        official_rate_code: mutation.official_rate_code,
+        pricing_plan_id: mutation.pricing_plan_id,
+        rule_id: mutation.rule_id,
+        formula_mode: mutation.formula_mode,
+        multiplier: mutation.multiplier,
+        markup_amount: mutation.markup_amount,
+        unit_price_override: mutation.unit_price_override,
+        schedule: mutation.schedule,
+        priority: mutation.priority,
+        effective_from: mutation.effective_from,
+        effective_to: mutation.effective_to,
+        status: mutation.status,
+        request_id: match generate_server_request_id() {
+            Ok(request_id) => request_id,
+            Err(error) => return command_build_error_response(request_id_error(error)),
+        },
+        requested_at: current_timestamp_string(),
+    };
+    match state.store.save_price_setting(command).await {
+        Ok(item) => Json(success_envelope(AdminPricingItemEnvelope { item })).into_response(),
+        Err(error) if error.is_conflict() => conflict_response(error),
+        Err(error) if error.is_not_found() => {
+            not_found_response("official rate or pricing rule was not found")
+        }
+        Err(error) => {
+            pricing_system_response("price setting command store is unavailable", error)
+        }
+    }
+}
+
+/// Server-computed "what will a customer actually pay" preview for one
+/// (resource, region, meter) tuple. Rule selection reuses the shared runtime
+/// selector, so this preview can never disagree with billing.
+async fn resolve_price_setting(
+    State(state): State<AdminPricingState>,
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    _headers: HeaderMap,
+    Query(params): Query<PriceSettingResolveQueryRequest>,
+) -> Response {
+    let subject = scoped.into();
+    let official_rate_code = match normalize_required_text(
+        params.official_rate_code.as_deref(),
+        "officialRateCode",
+        MAX_CODE_LEN,
+    ) {
+        Ok(value) => value,
+        Err(error) => return command_build_error_response(error),
+    };
+    let region_code =
+        match normalize_optional_text(params.region_code.as_deref(), "regionCode", 64) {
+            Ok(value) => value,
+            Err(error) => return command_build_error_response(error),
+        };
+    let pricing_plan_id =
+        match normalize_optional_pricing_id(params.pricing_plan_id.as_deref()) {
+            Ok(value) => value,
+            Err(message) => return bad_request(message),
+        };
+    let occurred_at = match params.occurred_at.as_deref().map(str::trim) {
+        None | Some("") => None,
+        Some(value) => match DateTime::parse_from_rfc3339(value) {
+            Ok(_) => Some(value.to_owned()),
+            Err(_) => return bad_request("occurredAt must be an RFC 3339 timestamp".to_owned()),
+        },
+    };
+    match state
+        .store
+        .resolve_price_setting(ResolveAdminPriceSettingQuery {
+            subject,
+            official_rate_code,
+            region_code,
+            pricing_plan_id,
+            occurred_at,
+        })
+        .await
+    {
+        Ok(Some(resolution)) => {
+            Json(success_envelope(AdminPricingItemEnvelope {
+                item: resolution,
+            }))
+            .into_response()
+        }
+        Ok(None) => not_found_response("official rate was not found"),
+        Err(error) if error.is_not_found() => {
+            not_found_response("official rate or pricing plan was not found")
+        }
+        Err(error) => {
+            pricing_system_response("price setting resolution is unavailable", error)
+        }
+    }
+}
+
 async fn create_pricing_rule(
     State(state): State<AdminPricingState>,
     scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
@@ -1001,6 +1412,740 @@ async fn delete_default_region(
         Err(error) => {
             pricing_system_response("default region command store is unavailable", error)
         }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Price books — admin management surface (pricing_price_book / pricing_rate).
+//
+// The lifecycle mirrors the official pricing sync semantics: created books
+// start as `staged`, activation retires any other active book with the same
+// identity key, and retirement soft-deletes the book's live rates.
+// ---------------------------------------------------------------------------
+
+async fn fetch_price_books(
+    State(state): State<AdminPricingState>,
+    Query(params): Query<PriceBookListQueryRequest>,
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    _headers: HeaderMap,
+) -> Response {
+    let subject = scoped.into();
+    let parsed = match parse_pricing_list_query(params.page, params.page_size) {
+        Ok(parsed) => parsed,
+        Err(error) => return error.into_response(),
+    };
+    let q = match normalize_pricing_search(params.q.as_deref()) {
+        Ok(value) => value,
+        Err(message) => return bad_request(message),
+    };
+    let price_side = match normalize_optional_base_price_side(params.price_side.as_deref()) {
+        Ok(value) => value,
+        Err(message) => return bad_request(message),
+    };
+    let lifecycle_state =
+        match normalize_optional_price_book_lifecycle(params.lifecycle_state.as_deref()) {
+            Ok(value) => value,
+            Err(message) => return bad_request(message),
+        };
+    match state
+        .store
+        .list_price_books(ListAdminPriceBooksQuery {
+            subject,
+            q,
+            price_side,
+            lifecycle_state,
+            page_no: parsed.page_no,
+            page_size: parsed.page_size,
+            offset: parsed.offset,
+        })
+        .await
+    {
+        Ok(page) => pricing_list_response(page),
+        Err(error) => pricing_system_response("price book read model is unavailable", error),
+    }
+}
+
+async fn fetch_price_book(
+    State(state): State<AdminPricingState>,
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    _headers: HeaderMap,
+    Path(price_book_id): Path<String>,
+) -> Response {
+    let subject = scoped.into();
+    let price_book_id = match normalize_pricing_path_id(&price_book_id, "price book id") {
+        Ok(price_book_id) => price_book_id,
+        Err(message) => return bad_request(message),
+    };
+    match state
+        .store
+        .load_price_book(LoadAdminPriceBookQuery {
+            subject,
+            price_book_id,
+        })
+        .await
+    {
+        Ok(Some(detail)) => {
+            Json(success_envelope(AdminPricingItemEnvelope { item: detail })).into_response()
+        }
+        Ok(None) => not_found_response("price book was not found"),
+        Err(error) => pricing_system_response("price book read model is unavailable", error),
+    }
+}
+
+async fn create_price_book(
+    State(state): State<AdminPricingState>,
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    _headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    let subject = scoped.into();
+    let request = match parse_json_body::<PriceBookMutationRequest>(&body, "price book") {
+        Ok(request) => request,
+        Err(message) => return bad_request(message),
+    };
+    let mutation = match normalize_price_book_create(request) {
+        Ok(mutation) => mutation,
+        Err(error) => return command_build_error_response(error),
+    };
+    let command = CreateAdminPriceBookCommand {
+        subject,
+        price_book_uuid: match generate_entity_uuid(&state) {
+            Ok(uuid) => uuid,
+            Err(error) => return command_build_error_response(error),
+        },
+        audit_log_uuid: match generate_entity_uuid(&state) {
+            Ok(uuid) => uuid,
+            Err(error) => return command_build_error_response(error),
+        },
+        namespace_code: mutation.namespace_code,
+        price_book_code: mutation.price_book_code,
+        price_book_version: mutation.price_book_version,
+        price_side: mutation.price_side,
+        vendor_code: mutation.vendor_code,
+        region_code: mutation.region_code,
+        currency_code: mutation.currency_code,
+        source_system: mutation.source_system,
+        effective_from: mutation.effective_from,
+        effective_to: mutation.effective_to,
+        request_id: match generate_server_request_id() {
+            Ok(request_id) => request_id,
+            Err(error) => return command_build_error_response(request_id_error(error)),
+        },
+        requested_at: current_timestamp_string(),
+    };
+    match state.store.create_price_book(command).await {
+        Ok(item) => json_created_response(None, AdminPricingItemEnvelope { item }),
+        Err(error) if error.is_conflict() => conflict_response(error),
+        Err(error) if error.is_bad_request() => bad_request(error.to_string()),
+        Err(error) => pricing_system_response("price book command store is unavailable", error),
+    }
+}
+
+async fn update_price_book(
+    State(state): State<AdminPricingState>,
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    _headers: HeaderMap,
+    Path(price_book_id): Path<String>,
+    body: Bytes,
+) -> Response {
+    let subject = scoped.into();
+    let price_book_id = match normalize_pricing_path_id(&price_book_id, "price book id") {
+        Ok(price_book_id) => price_book_id,
+        Err(message) => return bad_request(message),
+    };
+    let request = match parse_json_body::<PriceBookMutationRequest>(&body, "price book") {
+        Ok(request) => request,
+        Err(message) => return bad_request(message),
+    };
+    let mutation = match normalize_price_book_update(request) {
+        Ok(mutation) => mutation,
+        Err(error) => return command_build_error_response(error),
+    };
+    let command = UpdateAdminPriceBookCommand {
+        subject,
+        price_book_id,
+        audit_log_uuid: match generate_entity_uuid(&state) {
+            Ok(uuid) => uuid,
+            Err(error) => return command_build_error_response(error),
+        },
+        currency_code: mutation.currency_code,
+        effective_from: mutation.effective_from,
+        effective_to: mutation.effective_to,
+        request_id: match generate_server_request_id() {
+            Ok(request_id) => request_id,
+            Err(error) => return command_build_error_response(request_id_error(error)),
+        },
+        requested_at: current_timestamp_string(),
+    };
+    match state.store.update_price_book(command).await {
+        Ok(Some(item)) => Json(success_envelope(AdminPricingItemEnvelope { item })).into_response(),
+        Ok(None) => not_found_response("price book was not found"),
+        Err(error) if error.is_conflict() => conflict_response(error),
+        Err(error) if error.is_bad_request() => bad_request(error.to_string()),
+        Err(error) => pricing_system_response("price book command store is unavailable", error),
+    }
+}
+
+async fn activate_price_book(
+    State(state): State<AdminPricingState>,
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    _headers: HeaderMap,
+    Path(price_book_id): Path<String>,
+) -> Response {
+    transition_price_book_lifecycle(state, scoped, price_book_id, true).await
+}
+
+async fn deactivate_price_book(
+    State(state): State<AdminPricingState>,
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    _headers: HeaderMap,
+    Path(price_book_id): Path<String>,
+) -> Response {
+    transition_price_book_lifecycle(state, scoped, price_book_id, false).await
+}
+
+async fn transition_price_book_lifecycle(
+    state: AdminPricingState,
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    price_book_id: String,
+    activate: bool,
+) -> Response {
+    let subject = scoped.into();
+    let price_book_id = match normalize_pricing_path_id(&price_book_id, "price book id") {
+        Ok(price_book_id) => price_book_id,
+        Err(message) => return bad_request(message),
+    };
+    let command = PriceBookLifecycleCommand {
+        subject,
+        price_book_id,
+        audit_log_uuid: match generate_entity_uuid(&state) {
+            Ok(uuid) => uuid,
+            Err(error) => return command_build_error_response(error),
+        },
+        request_id: match generate_server_request_id() {
+            Ok(request_id) => request_id,
+            Err(error) => return command_build_error_response(request_id_error(error)),
+        },
+        requested_at: current_timestamp_string(),
+    };
+    let result = if activate {
+        state.store.activate_price_book(command).await
+    } else {
+        state.store.retire_price_book(command).await
+    };
+    match result {
+        Ok(Some(item)) => Json(success_envelope(AdminPricingItemEnvelope { item })).into_response(),
+        Ok(None) => not_found_response("price book was not found"),
+        Err(error) if error.is_conflict() => conflict_response(error),
+        Err(error) if error.is_bad_request() => bad_request(error.to_string()),
+        Err(error) => pricing_system_response("price book command store is unavailable", error),
+    }
+}
+
+async fn create_price_book_rate(
+    State(state): State<AdminPricingState>,
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    _headers: HeaderMap,
+    Path(price_book_id): Path<String>,
+    body: Bytes,
+) -> Response {
+    let subject = scoped.into();
+    let price_book_id = match normalize_pricing_path_id(&price_book_id, "price book id") {
+        Ok(price_book_id) => price_book_id,
+        Err(message) => return bad_request(message),
+    };
+    let request = match parse_json_body::<PriceBookRateMutationRequest>(&body, "price book rate") {
+        Ok(request) => request,
+        Err(message) => return bad_request(message),
+    };
+    let mutation = match normalize_price_book_rate_create(request) {
+        Ok(mutation) => mutation,
+        Err(error) => return command_build_error_response(error),
+    };
+    let command = CreateAdminPriceBookRateCommand {
+        subject,
+        price_book_id,
+        rate_uuid: match generate_entity_uuid(&state) {
+            Ok(uuid) => uuid,
+            Err(error) => return command_build_error_response(error),
+        },
+        audit_log_uuid: match generate_entity_uuid(&state) {
+            Ok(uuid) => uuid,
+            Err(error) => return command_build_error_response(error),
+        },
+        rate_code: mutation.rate_code,
+        product_code: mutation.product_code,
+        product_kind: mutation.product_kind,
+        product_display_name: mutation.product_display_name,
+        operation_code: mutation.operation_code,
+        operation_kind: mutation.operation_kind,
+        operation_display_name: mutation.operation_display_name,
+        meter_code: mutation.meter_code,
+        meter_display_name: mutation.meter_display_name,
+        quantity_kind: mutation.quantity_kind,
+        unit_code: mutation.unit_code,
+        provider_code: mutation.provider_code,
+        account_id: mutation.account_id,
+        resource_type: mutation.resource_type,
+        resource_code: mutation.resource_code,
+        catalog_key: mutation.catalog_key,
+        api_format: mutation.api_format,
+        endpoint_code: mutation.endpoint_code,
+        billability: mutation.billability,
+        charge_timing: mutation.charge_timing,
+        calculation_mode: mutation.calculation_mode,
+        quantity_aggregation: mutation.quantity_aggregation,
+        unit_size: mutation.unit_size,
+        unit_price: mutation.unit_price,
+        minimum_quantity: mutation.minimum_quantity,
+        quantity_step: mutation.quantity_step,
+        priority: mutation.priority,
+        rate_variant: mutation.rate_variant,
+        conditions: mutation.conditions,
+        tiers: mutation.tiers,
+        schedule: mutation.schedule,
+        effective_from: mutation.effective_from.unwrap_or_else(current_timestamp_string),
+        effective_to: mutation.effective_to,
+        source_url: mutation.source_url,
+        request_id: match generate_server_request_id() {
+            Ok(request_id) => request_id,
+            Err(error) => return command_build_error_response(request_id_error(error)),
+        },
+        requested_at: current_timestamp_string(),
+    };
+    match state.store.create_price_book_rate(command).await {
+        Ok(item) => json_created_response(None, AdminPricingItemEnvelope { item }),
+        Err(error) if error.is_conflict() => conflict_response(error),
+        Err(error) if error.is_bad_request() => bad_request(error.to_string()),
+        Err(error) => {
+            pricing_system_response("price book rate command store is unavailable", error)
+        }
+    }
+}
+
+async fn update_price_book_rate(
+    State(state): State<AdminPricingState>,
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    _headers: HeaderMap,
+    Path((price_book_id, rate_id)): Path<(String, String)>,
+    body: Bytes,
+) -> Response {
+    let subject = scoped.into();
+    let price_book_id = match normalize_pricing_path_id(&price_book_id, "price book id") {
+        Ok(price_book_id) => price_book_id,
+        Err(message) => return bad_request(message),
+    };
+    let rate_id = match normalize_pricing_path_id(&rate_id, "rate id") {
+        Ok(rate_id) => rate_id,
+        Err(message) => return bad_request(message),
+    };
+    let request = match parse_json_body::<PriceBookRatePatchRequest>(&body, "price book rate") {
+        Ok(request) => request,
+        Err(message) => return bad_request(message),
+    };
+    let mutation = match normalize_price_book_rate_patch(request) {
+        Ok(mutation) => mutation,
+        Err(error) => return command_build_error_response(error),
+    };
+    let command = UpdateAdminPriceBookRateCommand {
+        subject,
+        price_book_id,
+        rate_id,
+        audit_log_uuid: match generate_entity_uuid(&state) {
+            Ok(uuid) => uuid,
+            Err(error) => return command_build_error_response(error),
+        },
+        unit_size: mutation.unit_size,
+        unit_price: mutation.unit_price,
+        minimum_quantity: mutation.minimum_quantity,
+        quantity_step: mutation.quantity_step,
+        priority: mutation.priority,
+        effective_from: mutation.effective_from.unwrap_or_else(current_timestamp_string),
+        effective_to: mutation.effective_to,
+        request_id: match generate_server_request_id() {
+            Ok(request_id) => request_id,
+            Err(error) => return command_build_error_response(request_id_error(error)),
+        },
+        requested_at: current_timestamp_string(),
+    };
+    match state.store.update_price_book_rate(command).await {
+        Ok(Some(item)) => Json(success_envelope(AdminPricingItemEnvelope { item })).into_response(),
+        Ok(None) => not_found_response("price book rate was not found"),
+        Err(error) if error.is_conflict() => conflict_response(error),
+        Err(error) if error.is_bad_request() => bad_request(error.to_string()),
+        Err(error) => {
+            pricing_system_response("price book rate command store is unavailable", error)
+        }
+    }
+}
+
+async fn delete_price_book_rate(
+    State(state): State<AdminPricingState>,
+    scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    _headers: HeaderMap,
+    Path((price_book_id, rate_id)): Path<(String, String)>,
+) -> Response {
+    let subject = scoped.into();
+    let price_book_id = match normalize_pricing_path_id(&price_book_id, "price book id") {
+        Ok(price_book_id) => price_book_id,
+        Err(message) => return bad_request(message),
+    };
+    let rate_id = match normalize_pricing_path_id(&rate_id, "rate id") {
+        Ok(rate_id) => rate_id,
+        Err(message) => return bad_request(message),
+    };
+    let command = DeleteAdminPriceBookRateCommand {
+        subject,
+        price_book_id,
+        rate_id,
+        audit_log_uuid: match generate_entity_uuid(&state) {
+            Ok(uuid) => uuid,
+            Err(error) => return command_build_error_response(error),
+        },
+        request_id: match generate_server_request_id() {
+            Ok(request_id) => request_id,
+            Err(error) => return command_build_error_response(request_id_error(error)),
+        },
+        requested_at: current_timestamp_string(),
+    };
+    match state.store.delete_price_book_rate(command).await {
+        Ok(true) => no_content_response(None),
+        Ok(false) => not_found_response("price book rate was not found"),
+        Err(error) => {
+            pricing_system_response("price book rate command store is unavailable", error)
+        }
+    }
+}
+
+fn normalize_price_book_create(
+    request: PriceBookMutationRequest,
+) -> Result<NormalizedPriceBookCreate, AdminPricingCommandBuildError> {
+    let effective_from =
+        normalize_optional_datetime(request.effective_from.as_deref(), "effectiveFrom")?;
+    let effective_to = normalize_optional_datetime(request.effective_to.as_deref(), "effectiveTo")?;
+    validate_datetime_order(effective_from.as_deref(), effective_to.as_deref())?;
+    Ok(NormalizedPriceBookCreate {
+        namespace_code: normalize_required_text(
+            request.namespace_code.as_deref(),
+            "namespaceCode",
+            64,
+        )?,
+        price_book_code: normalize_required_code(
+            request.price_book_code.as_deref(),
+            "priceBookCode",
+        )?,
+        price_book_version: normalize_required_text(
+            request.price_book_version.as_deref(),
+            "priceBookVersion",
+            64,
+        )?,
+        price_side: normalize_required_price_side(request.price_side.as_deref())?,
+        vendor_code: normalize_required_text(request.vendor_code.as_deref(), "vendorCode", 64)?,
+        region_code: normalize_required_text(request.region_code.as_deref(), "regionCode", 64)?,
+        currency_code: normalize_currency_code(request.currency_code.as_deref())?,
+        source_system: normalize_optional_text(
+            request.source_system.as_deref(),
+            "sourceSystem",
+            64,
+        )?
+        .unwrap_or_else(|| "admin".to_owned()),
+        effective_from,
+        effective_to,
+    })
+}
+
+fn normalize_price_book_update(
+    request: PriceBookMutationRequest,
+) -> Result<NormalizedPriceBookUpdate, AdminPricingCommandBuildError> {
+    let effective_from =
+        normalize_optional_datetime(request.effective_from.as_deref(), "effectiveFrom")?;
+    let effective_to = normalize_optional_datetime(request.effective_to.as_deref(), "effectiveTo")?;
+    validate_datetime_order(effective_from.as_deref(), effective_to.as_deref())?;
+    Ok(NormalizedPriceBookUpdate {
+        currency_code: normalize_currency_code(request.currency_code.as_deref())?,
+        effective_from,
+        effective_to,
+    })
+}
+
+fn normalize_price_book_rate_create(
+    request: PriceBookRateMutationRequest,
+) -> Result<NormalizedPriceBookRateCreate, AdminPricingCommandBuildError> {
+    let unit_price = normalize_decimal_value(request.unit_price.as_ref(), "unitPrice")?;
+    let unit_size = normalize_optional_decimal_value(request.unit_size.as_ref(), "unitSize")?
+        .unwrap_or_else(|| "1".to_owned());
+    if canonicalize_decimal(&unit_size) == "0" {
+        return Err(AdminPricingCommandBuildError::BadRequest(
+            "unitSize must be greater than zero".to_owned(),
+        ));
+    }
+    let minimum_quantity =
+        normalize_optional_decimal_value(request.minimum_quantity.as_ref(), "minimumQuantity")?
+            .unwrap_or_else(|| "0".to_owned());
+    let quantity_step =
+        normalize_optional_decimal_value(request.quantity_step.as_ref(), "quantityStep")?;
+    let priority =
+        normalize_optional_non_negative_integer(request.priority.as_ref(), "priority")?.unwrap_or(100);
+    let billability = normalize_enum_choice(
+        request.billability.as_deref(),
+        "billability",
+        &["chargeable", "free", "not_applicable", "unknown"],
+    )?;
+    let charge_timing = normalize_enum_choice(
+        request.charge_timing.as_deref(),
+        "chargeTiming",
+        &["request_accepted", "successful_result", "usage_reported"],
+    )?;
+    let calculation_mode = normalize_enum_choice(
+        request.calculation_mode.as_deref(),
+        "calculationMode",
+        &["per_unit", "flat", "graduated", "volume"],
+    )
+    .map_err(|error| match error {
+        AdminPricingCommandBuildError::BadRequest(_) => AdminPricingCommandBuildError::BadRequest(
+            "calculationMode must be per_unit, flat, graduated, or volume (formula is not supported through the admin API)".to_owned(),
+        ),
+        other => other,
+    })?;
+    let quantity_aggregation = normalize_enum_choice(
+        request.quantity_aggregation.as_deref(),
+        "quantityAggregation",
+        &["sum", "maximum", "minimum", "last", "distinct_invocation"],
+    )?;
+    let rate_variant = normalize_enum_choice(
+        request.rate_variant.as_deref(),
+        "rateVariant",
+        &["standard", "time_window"],
+    )?;
+    let conditions = normalize_pricing_conditions(request.conditions.as_ref())?;
+    let tiers = match request.tiers.as_ref() {
+        Some(Value::Array(items)) => Value::Array(items.clone()),
+        Some(_) => {
+            return Err(AdminPricingCommandBuildError::BadRequest(
+                "tiers must be an array".to_owned(),
+            ));
+        }
+        None => Value::Array(Vec::new()),
+    };
+    let schedule = normalize_pricing_schedule(request.schedule.as_ref())?;
+    if calculation_mode == "flat" && canonicalize_decimal(&unit_size) != "1" {
+        return Err(AdminPricingCommandBuildError::BadRequest(
+            "unitSize must be 1 for flat calculation mode".to_owned(),
+        ));
+    }
+    if matches!(calculation_mode.as_str(), "graduated" | "volume")
+        && tiers.as_array().is_none_or(|items| items.is_empty())
+    {
+        return Err(AdminPricingCommandBuildError::BadRequest(
+            "tiers must contain at least one entry for graduated or volume calculation mode"
+                .to_owned(),
+        ));
+    }
+    if billability == "chargeable" && canonicalize_decimal(&unit_price) == "0" {
+        return Err(AdminPricingCommandBuildError::BadRequest(
+            "unitPrice must be greater than zero for chargeable rates".to_owned(),
+        ));
+    }
+    if matches!(billability.as_str(), "free" | "not_applicable")
+        && canonicalize_decimal(&unit_price) != "0"
+    {
+        return Err(AdminPricingCommandBuildError::BadRequest(
+            "unitPrice must be zero for free or not_applicable rates".to_owned(),
+        ));
+    }
+    if rate_variant == "time_window" && schedule.is_none() {
+        return Err(AdminPricingCommandBuildError::BadRequest(
+            "schedule is required for time_window rate variants".to_owned(),
+        ));
+    }
+    if rate_variant == "standard" && schedule.is_some() {
+        return Err(AdminPricingCommandBuildError::BadRequest(
+            "schedule is only allowed for time_window rate variants".to_owned(),
+        ));
+    }
+    let effective_from =
+        normalize_optional_datetime(request.effective_from.as_deref(), "effectiveFrom")?;
+    let effective_to = normalize_optional_datetime(request.effective_to.as_deref(), "effectiveTo")?;
+    validate_datetime_order(effective_from.as_deref(), effective_to.as_deref())?;
+    let account_id = match normalize_optional_pricing_id(request.account_id.as_deref()) {
+        Ok(value) => value.and_then(|value| value.parse::<i64>().ok()),
+        Err(message) => {
+            return Err(AdminPricingCommandBuildError::BadRequest(format!(
+                "accountId {message}"
+            )));
+        }
+    };
+    let product_code =
+        normalize_required_text(request.product_code.as_deref(), "productCode", MAX_TEXT_LEN)?;
+    let meter_code = normalize_required_text(request.meter_code.as_deref(), "meterCode", 96)?;
+    Ok(NormalizedPriceBookRateCreate {
+        rate_code: normalize_required_code(request.rate_code.as_deref(), "rateCode")?,
+        product_code: product_code.clone(),
+        product_kind: normalize_optional_text(
+            request.product_kind.as_deref(),
+            "productKind",
+            64,
+        )?
+        .unwrap_or_else(|| "model".to_owned()),
+        product_display_name: normalize_optional_text(
+            request.product_display_name.as_deref(),
+            "productDisplayName",
+            MAX_NAME_LEN,
+        )?
+        .unwrap_or_else(|| product_code.clone()),
+        operation_code: normalize_optional_text(
+            request.operation_code.as_deref(),
+            "operationCode",
+            96,
+        )?
+        .unwrap_or_default(),
+        operation_kind: normalize_optional_text(
+            request.operation_kind.as_deref(),
+            "operationKind",
+            64,
+        )?
+        .unwrap_or_default(),
+        operation_display_name: normalize_optional_text(
+            request.operation_display_name.as_deref(),
+            "operationDisplayName",
+            MAX_NAME_LEN,
+        )?
+        .unwrap_or_default(),
+        meter_code: meter_code.clone(),
+        meter_display_name: normalize_optional_text(
+            request.meter_display_name.as_deref(),
+            "meterDisplayName",
+            MAX_NAME_LEN,
+        )?
+        .unwrap_or(meter_code),
+        quantity_kind: normalize_optional_text(
+            request.quantity_kind.as_deref(),
+            "quantityKind",
+            64,
+        )?
+        .unwrap_or_else(|| "token".to_owned()),
+        unit_code: normalize_required_text(request.unit_code.as_deref(), "unitCode", 64)?,
+        provider_code: normalize_required_text(
+            request.provider_code.as_deref(),
+            "providerCode",
+            64,
+        )?,
+        account_id,
+        resource_type: normalize_optional_text(
+            request.resource_type.as_deref(),
+            "resourceType",
+            64,
+        )?
+        .unwrap_or_else(|| "model".to_owned()),
+        resource_code: normalize_optional_text(
+            request.resource_code.as_deref(),
+            "resourceCode",
+            MAX_TEXT_LEN,
+        )?
+        .unwrap_or_else(|| product_code.clone()),
+        catalog_key: normalize_optional_text(
+            request.catalog_key.as_deref(),
+            "catalogKey",
+            256,
+        )?,
+        api_format: normalize_optional_text(request.api_format.as_deref(), "apiFormat", 64)?,
+        endpoint_code: normalize_optional_text(
+            request.endpoint_code.as_deref(),
+            "endpointCode",
+            96,
+        )?,
+        billability,
+        charge_timing,
+        calculation_mode,
+        quantity_aggregation,
+        unit_size,
+        unit_price,
+        minimum_quantity,
+        quantity_step,
+        priority,
+        rate_variant,
+        conditions,
+        tiers,
+        schedule,
+        effective_from,
+        effective_to,
+        source_url: normalize_optional_text(request.source_url.as_deref(), "sourceUrl", 512)?
+            .unwrap_or_default(),
+    })
+}
+
+fn normalize_price_book_rate_patch(
+    request: PriceBookRatePatchRequest,
+) -> Result<NormalizedPriceBookRatePatch, AdminPricingCommandBuildError> {
+    let unit_size = normalize_decimal_value(request.unit_size.as_ref(), "unitSize")?;
+    if canonicalize_decimal(&unit_size) == "0" {
+        return Err(AdminPricingCommandBuildError::BadRequest(
+            "unitSize must be greater than zero".to_owned(),
+        ));
+    }
+    let unit_price = normalize_decimal_value(request.unit_price.as_ref(), "unitPrice")?;
+    let minimum_quantity = normalize_decimal_value(
+        request.minimum_quantity.as_ref(),
+        "minimumQuantity",
+    )?;
+    let quantity_step =
+        normalize_optional_decimal_value(request.quantity_step.as_ref(), "quantityStep")?;
+    let priority =
+        normalize_optional_non_negative_integer(request.priority.as_ref(), "priority")?.unwrap_or(100);
+    let effective_from =
+        normalize_optional_datetime(request.effective_from.as_deref(), "effectiveFrom")?;
+    let effective_to = normalize_optional_datetime(request.effective_to.as_deref(), "effectiveTo")?;
+    validate_datetime_order(effective_from.as_deref(), effective_to.as_deref())?;
+    Ok(NormalizedPriceBookRatePatch {
+        unit_size,
+        unit_price,
+        minimum_quantity,
+        quantity_step,
+        priority,
+        effective_from,
+        effective_to,
+    })
+}
+
+fn normalize_optional_price_book_lifecycle(value: Option<&str>) -> Result<Option<String>, String> {
+    let Some(value) = value else {
+        return Ok(None);
+    };
+    match value.trim().to_ascii_lowercase().as_str() {
+        "draft" | "staged" | "active" | "retired" | "rejected" => {
+            Ok(Some(value.trim().to_ascii_lowercase()))
+        }
+        _ => Err(
+            "lifecycleState must be draft, staged, active, retired, or rejected".to_owned(),
+        ),
+    }
+}
+
+fn normalize_required_price_side(
+    value: Option<&str>,
+) -> Result<AdminPricingBasePriceSide, AdminPricingCommandBuildError> {
+    match value {
+        Some(_) => normalize_base_price_side(value),
+        None => Err(AdminPricingCommandBuildError::BadRequest(
+            "priceSide is required".to_owned(),
+        )),
+    }
+}
+
+fn normalize_enum_choice(
+    value: Option<&str>,
+    field_name: &str,
+    allowed: &[&str],
+) -> Result<String, AdminPricingCommandBuildError> {
+    let normalized = normalize_required_text(value, field_name, 64)?;
+    let lowered = normalized.to_ascii_lowercase();
+    if allowed.contains(&lowered.as_str()) {
+        Ok(lowered)
+    } else {
+        Err(AdminPricingCommandBuildError::BadRequest(format!(
+            "{field_name} must be one of: {}",
+            allowed.join(", ")
+        )))
     }
 }
 
