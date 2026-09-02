@@ -389,3 +389,52 @@ async fn embeddings_session_id_does_not_apply_session_sticky() {
 
     assert!(invocation.routing.sticky.is_none());
 }
+
+#[tokio::test]
+async fn oversized_session_id_is_hashed_into_binding_key() {
+    // object_id 列为 VARCHAR(256)：超长会话 id 用 sha256 指纹作绑定键。
+    let oversized = "s".repeat(500);
+    let mut invocation = classified_invocation(
+        Method::POST,
+        "/v1/chat/completions",
+        InvocationBody::json(json!({
+            "model": "gpt-4o-mini",
+            "session_id": oversized,
+            "messages": [{"role": "user", "content": "ping"}]
+        })),
+    );
+
+    PayloadExtractionInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("payload extraction");
+
+    let sticky = invocation.routing.sticky.as_ref().expect("session sticky");
+    let binding_key = sticky.object_id.as_deref().expect("binding key");
+    assert_eq!(64, binding_key.len(), "sha256 hex fingerprint expected");
+    assert!(
+        binding_key.chars().all(|c| c.is_ascii_hexdigit()),
+        "binding key must be hex: {binding_key}"
+    );
+}
+
+#[tokio::test]
+async fn session_id_within_length_limit_is_kept_verbatim() {
+    let mut invocation = classified_invocation(
+        Method::POST,
+        "/v1/chat/completions",
+        InvocationBody::json(json!({
+            "model": "gpt-4o-mini",
+            "session_id": "sess-normal-id",
+            "messages": [{"role": "user", "content": "ping"}]
+        })),
+    );
+
+    PayloadExtractionInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("payload extraction");
+
+    let sticky = invocation.routing.sticky.as_ref().expect("session sticky");
+    assert_eq!(Some("sess-normal-id"), sticky.object_id.as_deref());
+}

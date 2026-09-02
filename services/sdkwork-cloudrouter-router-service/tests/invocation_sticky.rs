@@ -20,6 +20,7 @@ struct MemoryStickyRouteStore {
     bindings: Mutex<Vec<StickyObjectRouteBinding>>,
     lookups: Mutex<Vec<StickyObjectRouteLookup>>,
     upserts: Mutex<Vec<StickyObjectRouteUpsert>>,
+    fail_lookups: bool,
 }
 
 impl MemoryStickyRouteStore {
@@ -28,6 +29,14 @@ impl MemoryStickyRouteStore {
             bindings: Mutex::new(vec![binding]),
             lookups: Mutex::new(Vec::new()),
             upserts: Mutex::new(Vec::new()),
+            fail_lookups: false,
+        }
+    }
+
+    fn failing_lookups() -> Self {
+        Self {
+            fail_lookups: true,
+            ..Self::default()
         }
     }
 }
@@ -39,6 +48,11 @@ impl StickyRouteStore for MemoryStickyRouteStore {
     ) -> StickyRouteStoreFuture<'a, Option<StickyObjectRouteBinding>> {
         Box::pin(async move {
             self.lookups.lock().expect("lookups").push(query.clone());
+            if self.fail_lookups {
+                return Err(sdkwork_cloudrouter_router_service::domain::DomainError::new(
+                    "sticky store unavailable",
+                ));
+            }
             Ok(self
                 .bindings
                 .lock()
@@ -493,4 +507,75 @@ async fn session_commit_skips_failed_response() {
         .expect("sticky commit");
 
     assert!(store.upserts.lock().expect("upserts").is_empty());
+}
+
+#[tokio::test]
+async fn session_commit_works_for_streaming_response_without_json_body() {
+    // 流式（SSE）响应没有 JSON body/body_bytes：会话绑定不依赖响应体，
+    // 必须仍然提交，否则流式会话永远无法建立亲和绑定。
+    let store = Arc::new(MemoryStickyRouteStore::default());
+    let mut invocation = session_sticky_invocation();
+    invocation.account = Some(routed_account());
+    invocation.dispatch = InvocationDispatch {
+        mode: DispatchMode::DirectHttpPassthrough,
+        invocation_shape:
+            sdkwork_cloudrouter_router_service::application::InvocationShape::SseStream,
+        adapter_target: None,
+        resolved_secret: None,
+        provider_request: None,
+        response: Some(sdkwork_cloudrouter_router_service::application::InvocationDispatchResponse::streaming(
+            200,
+            Some("text/event-stream".to_owned()),
+            axum::body::Body::empty(),
+        )),
+    };
+
+    StickyCommitInterceptor::new(store.clone())
+        .after(&mut invocation)
+        .await
+        .expect("sticky commit");
+
+    let upsert = store
+        .upserts
+        .lock()
+        .expect("upserts")
+        .first()
+        .cloned()
+        .expect("upsert");
+    assert_eq!("session", upsert.object_type);
+    assert_eq!("sess-1", upsert.object_id);
+    assert_eq!("session", upsert.sticky_scope);
+}
+
+#[tokio::test]
+async fn session_sticky_store_failure_falls_back_to_regular_routing() {
+    // 与资源型 sticky 不同，会话亲和查找故障不应拖垮请求。
+    let store = Arc::new(MemoryStickyRouteStore::failing_lookups());
+    let mut invocation = session_sticky_invocation();
+
+    StickyResolutionInterceptor::new(store)
+        .before(&mut invocation)
+        .await
+        .expect("store failure must degrade to regular routing");
+
+    assert!(invocation.routing.sticky.is_none());
+    assert!(invocation.routing.sticky_route.is_none());
+}
+
+#[tokio::test]
+async fn object_sticky_store_failure_still_fails_closed() {
+    let store = Arc::new(MemoryStickyRouteStore::failing_lookups());
+    let mut invocation = classified_invocation(
+        Method::GET,
+        "/v1/files/file_123/content",
+        InvocationBody::Empty,
+    );
+
+    let error = StickyResolutionInterceptor::new(store)
+        .before(&mut invocation)
+        .await
+        .expect_err("object sticky store failure keeps fail-closed semantics");
+
+    assert_eq!(InvocationErrorKind::Routing, error.kind);
+    assert!(error.message.contains("failed to resolve sticky route binding"));
 }

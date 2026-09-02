@@ -1,5 +1,6 @@
 use axum::http::Method;
 use serde_json::Value;
+use sha2::{Digest, Sha256};
 
 use super::multipart_form::{
     optional_model_from_multipart_form, request_content_type_is_multipart_form,
@@ -202,8 +203,22 @@ fn apply_session_sticky_default(invocation: &mut Invocation) {
     };
     invocation.routing.sticky = Some(StickyRouting::session(
         SESSION_STICKY_OBJECT_TYPE,
-        session_id,
+        session_sticky_binding_key(&session_id),
     ));
+}
+
+/// `ai_upstream_object_route.object_id` 为 VARCHAR(256)。客户端可控的会话
+/// id 可能超过安全长度，超出时用 sha256 指纹作绑定键——查找与提交使用同一
+/// 归一化函数，保证两端一致；透传给上游的仍是原始会话 id，不影响缓存语义。
+const SESSION_STICKY_MAX_ID_LEN: usize = 200;
+
+fn session_sticky_binding_key(session_id: &str) -> String {
+    if session_id.chars().count() <= SESSION_STICKY_MAX_ID_LEN {
+        return session_id.to_owned();
+    }
+    let mut hasher = Sha256::new();
+    hasher.update(session_id.as_bytes());
+    hex::encode(hasher.finalize())
 }
 
 /// 会话 id 提取优先级：`session_id` > `prompt_cache_key`（OpenAI 官方的

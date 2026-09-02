@@ -76,19 +76,32 @@ impl InvocationInterceptor for StickyResolutionInterceptor {
             let query = StickyObjectRouteLookup {
                 tenant_id: invocation.subject.tenant_id,
                 organization_id: invocation.subject.organization_id,
-                object_type,
-                object_id,
+                object_type: object_type.clone(),
+                object_id: object_id.clone(),
             };
-            let binding = self
-                .store
-                .find_binding(query.clone())
-                .await
-                .map_err(|error| {
-                    sticky_error(format!(
+            let binding = match self.store.find_binding(query.clone()).await {
+                Ok(binding) => binding,
+                Err(error) => {
+                    // 会话 sticky 是 cache 亲和提示而非正确性约束：存储故障
+                    // 降级为常规路由，不让亲和查找拖垮请求。
+                    if sticky.mode == StickyMode::SessionSticky {
+                        tracing::warn!(
+                            tenant_id = invocation.subject.tenant_id,
+                            organization_id = invocation.subject.organization_id,
+                            object_type = %query.object_type,
+                            object_id = %query.object_id,
+                            error = %error,
+                            "session sticky lookup failed; falling back to regular routing"
+                        );
+                        invocation.routing.sticky = None;
+                        return Ok(());
+                    }
+                    return Err(sticky_error(format!(
                         "failed to resolve sticky route binding for {} {}: {error}",
                         query.object_type, query.object_id
-                    ))
-                })?;
+                    )));
+                }
+            };
 
             match binding {
                 Some(binding) => {
@@ -106,8 +119,7 @@ impl InvocationInterceptor for StickyResolutionInterceptor {
                     Ok(())
                 }
                 None => Err(sticky_error(format!(
-                    "sticky route binding not found for {} {}",
-                    query.object_type, query.object_id
+                    "sticky route binding not found for {object_type} {object_id}"
                 ))),
             }
         })
@@ -148,14 +160,21 @@ impl InvocationInterceptor for StickyCommitInterceptor {
             if !effective_response_is_success(invocation, response) {
                 return Ok(());
             }
-            let Some(response_body) = effective_response_body(invocation, response) else {
-                return Ok(());
-            };
             // 会话 sticky 以请求中的会话 id 作为绑定键（会话 id 会透传给
-            // 上游账号），其余模式仍从成功响应中提取对象 id。
+            // 上游账号），因此不依赖响应体——流式（SSE）响应没有 JSON body
+            // 也必须能提交绑定；其余模式仍从成功响应中提取对象 id。
             let object_id = match sticky.mode {
-                StickyMode::SessionSticky => sticky.object_id.clone(),
-                _ => sticky_response_object_id(&sticky.object_type, &response_body),
+                StickyMode::SessionSticky => sticky
+                    .object_id
+                    .clone()
+                    .map(|id| id.trim().to_owned())
+                    .filter(|id| !id.is_empty()),
+                _ => {
+                    let Some(response_body) = effective_response_body(invocation, response) else {
+                        return Ok(());
+                    };
+                    sticky_response_object_id(&sticky.object_type, &response_body)
+                }
             };
             let Some(object_id) = object_id else {
                 return Ok(());

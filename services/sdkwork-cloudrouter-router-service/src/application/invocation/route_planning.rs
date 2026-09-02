@@ -729,23 +729,14 @@ where
     if sticky_route.sticky_scope.as_deref() != Some(STICKY_SCOPE_SESSION) {
         return None;
     }
-    let Some(requested_model) = invocation
-        .resource
-        .requested_model
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-    else {
+    let requested_model = invocation.resource.requested_model.as_deref()?.trim();
+    if requested_model.is_empty() {
         return None;
-    };
-    let Some(binding_catalog_key) = sticky_route
-        .catalog_key
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-    else {
+    }
+    let binding_catalog_key = sticky_route.catalog_key.as_deref()?.trim();
+    if binding_catalog_key.is_empty() {
         return None;
-    };
+    }
     let matches_request = catalog
         .model_catalog_keys_by_name(requested_model)
         .iter()
