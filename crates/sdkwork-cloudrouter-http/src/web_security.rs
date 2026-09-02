@@ -11,6 +11,14 @@ fn parse_environment(value: Option<String>) -> WebEnvironment {
     {
         "dev" | "development" => WebEnvironment::Dev,
         "test" | "testing" => WebEnvironment::Test,
+        // Staging is production-like (startup_install.rs convention): it keeps
+        // the strict production posture including production assembly checks.
+        "staging" | "prod" | "production" => WebEnvironment::Prod,
+        // Demo is an isolated showcase tier, not production-like: it gets the
+        // relaxed private-network posture instead of the production assembly
+        // requirements (AuditEmitter, Redis stores, tenant-bound resolver).
+        "demo" => WebEnvironment::Test,
+        // Fail closed: unknown or unset environments keep the strict posture.
         _ => WebEnvironment::Prod,
     }
 }
@@ -32,6 +40,11 @@ pub fn resolve_cloud_web_environment_from_process_env() -> WebEnvironment {
 }
 
 /// Cloud Router HTTP service security policy aligned with IAM/Drive dev bootstrap behavior.
+///
+/// Registered SDKWork desktop WebView and mini program client origins
+/// (`app://dsh`, `app://birdcoder`, `tauri://localhost`,
+/// `https://servicewechat.com`, ...) are merged into every environment posture
+/// so the shells keep working even when deployment env files omit them.
 pub fn cloud_service_security_policy(environment: &WebEnvironment) -> SecurityPolicy {
     let configured_origins = sdkwork_web_bootstrap::cors_allowed_origins_from_process_env();
     let mut security_policy = if matches!(environment, WebEnvironment::Dev | WebEnvironment::Test) {
@@ -48,6 +61,7 @@ pub fn cloud_service_security_policy(environment: &WebEnvironment) -> SecurityPo
     } else {
         security_policy.cors.allowed_origins = configured_origins;
     }
+    security_policy.cors = security_policy.cors.with_registered_sdkwork_client_origins();
     security_policy
 }
 
@@ -78,6 +92,36 @@ mod tests {
     }
 
     #[test]
+    fn registered_client_origins_are_allowed_in_every_environment() {
+        for environment in [
+            WebEnvironment::Dev,
+            WebEnvironment::Test,
+            WebEnvironment::Prod,
+        ] {
+            let policy = cloud_service_security_policy(&environment);
+            for origin in [
+                "app://dsh",
+                "app://birdcoder",
+                "app://sdkwork",
+                "https://servicewechat.com",
+            ] {
+                policy
+                    .cors
+                    .validate_origin_value(origin)
+                    .unwrap_or_else(|error| {
+                        panic!("{origin} must be allowed in {environment:?}: {error}")
+                    });
+            }
+        }
+        // Unregistered custom schemes stay rejected in every posture.
+        let dev_policy = cloud_service_security_policy(&WebEnvironment::Dev);
+        dev_policy
+            .cors
+            .validate_origin_value("app://unregistered")
+            .expect_err("unregistered custom scheme must stay rejected");
+    }
+
+    #[test]
     fn resolve_environment_from_cloud_env_key() {
         unsafe {
             std::env::set_var("SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT", "development");
@@ -91,5 +135,31 @@ mod tests {
             std::env::remove_var("SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT");
             std::env::remove_var("SDKWORK_CLOUDROUTER_ENVIRONMENT");
         }
+    }
+
+    #[test]
+    fn demo_maps_to_test_not_prod() {
+        assert_eq!(super::parse_environment(Some("demo".into())), WebEnvironment::Test);
+        assert_eq!(
+            super::parse_environment(Some("Demo ".into())),
+            WebEnvironment::Test
+        );
+    }
+
+    #[test]
+    fn staging_maps_to_prod_like_development() {
+        assert_eq!(super::parse_environment(Some("staging".into())), WebEnvironment::Prod);
+        assert_eq!(super::parse_environment(Some("prod".into())), WebEnvironment::Prod);
+        assert_eq!(
+            super::parse_environment(Some("production".into())),
+            WebEnvironment::Prod
+        );
+    }
+
+    #[test]
+    fn unset_or_unknown_environment_fails_closed_to_prod() {
+        assert_eq!(super::parse_environment(None), WebEnvironment::Prod);
+        assert_eq!(super::parse_environment(Some(String::new())), WebEnvironment::Prod);
+        assert_eq!(super::parse_environment(Some("wat".into())), WebEnvironment::Prod);
     }
 }

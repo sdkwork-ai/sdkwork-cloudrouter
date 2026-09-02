@@ -702,6 +702,9 @@ impl EdgeServerConfig {
                 policy.allowed_origins.push(origin);
             }
         }
+        // Registered SDKWork desktop/mini-program client origins keep working
+        // even when the deployment env files omit them from the allow-list.
+        sdkwork_web_core::merge_registered_sdkwork_client_origins(&mut policy.allowed_origins);
         // Keep the hand-written behavior contract: the SDK clients send these
         // request headers and read x-request-id from responses.
         for header in ["x-goog-api-key", "x-request-id"] {
