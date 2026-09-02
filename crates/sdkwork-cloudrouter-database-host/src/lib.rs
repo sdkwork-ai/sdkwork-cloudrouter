@@ -111,7 +111,10 @@ pub fn connect_cloud_router_database(
 /// loads the module and retains a shared pool. A caller may enable the standard
 /// `SDKWORK_DATABASE_AUTO_MIGRATE` switch in a guarded development
 /// or controlled staging process; release and operator commands should call
-/// [`migrate_cloud_router_database`] instead. When
+/// [`migrate_cloud_router_database`] instead — the explicit lifecycle command
+/// (`sdkwork-api-cloud-gateway --migrate-databases`, which sets
+/// `SDKWORK_DATABASE_LIFECYCLE_COMMAND=migrate`) is admitted by
+/// [`explicit_lifecycle_command`]. When
 /// `SDKWORK_DATABASE_SEED_ON_BOOT` is enabled, required seed sets are applied
 /// through the seed pipeline if not yet recorded for the selected locale/profile
 /// (DATABASE_FRAMEWORK_SPEC.md §4.3).
@@ -123,7 +126,7 @@ pub async fn bootstrap_cloud_router_database(
     if options.auto_migrate {
         let environment =
             std::env::var("SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT").unwrap_or_default();
-        if production_like_environment(&environment) {
+        if production_like_environment(&environment) && !explicit_lifecycle_command() {
             return Err(
                 "production/staging runtime must not auto-migrate the Cloud Router database; run the explicit lifecycle migrate command before startup"
                     .to_owned(),
@@ -360,6 +363,23 @@ fn production_like_environment(value: &str) -> bool {
     )
 }
 
+/// True when this process is the explicit release/operator lifecycle command
+/// (for example `sdkwork-api-cloud-gateway --migrate-databases`, which sets
+/// `SDKWORK_DATABASE_LIFECYCLE_COMMAND=migrate`). That command is the
+/// sanctioned way to migrate production/staging databases before service
+/// startup; plain runtime processes never set the marker, so the
+/// production/staging auto-migration guard stays fail-closed for them.
+fn explicit_lifecycle_command() -> bool {
+    matches!(
+        std::env::var("SDKWORK_DATABASE_LIFECYCLE_COMMAND")
+            .unwrap_or_default()
+            .trim()
+            .to_ascii_lowercase()
+            .as_str(),
+        "migrate" | "migrate-databases" | "explicit" | "operator"
+    )
+}
+
 fn file_checksum(path: &Path) -> Result<String, String> {
     let bytes = std::fs::read(path)
         .map_err(|error| format!("failed to read {}: {error}", path.display()))?;
@@ -460,5 +480,19 @@ mod tests {
         assert!(production_like_environment("staging"));
         assert!(!production_like_environment("development"));
         assert!(!production_like_environment("test"));
+    }
+
+    #[test]
+    fn explicit_lifecycle_command_recognizes_operator_marker_only() {
+        // The test process does not set the lifecycle-command marker.
+        assert!(!explicit_lifecycle_command());
+        unsafe { std::env::set_var("SDKWORK_DATABASE_LIFECYCLE_COMMAND", "migrate") };
+        assert!(explicit_lifecycle_command());
+        unsafe { std::env::set_var("SDKWORK_DATABASE_LIFECYCLE_COMMAND", " Migrate-Databases ") };
+        assert!(explicit_lifecycle_command());
+        unsafe { std::env::set_var("SDKWORK_DATABASE_LIFECYCLE_COMMAND", "serve") };
+        assert!(!explicit_lifecycle_command());
+        unsafe { std::env::remove_var("SDKWORK_DATABASE_LIFECYCLE_COMMAND") };
+        assert!(!explicit_lifecycle_command());
     }
 }
