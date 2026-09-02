@@ -23,6 +23,8 @@ export type { AdminExchangeRuleListResponse } from './admin-exchange-rule-list-r
 export type { AdminFirewallRuleCreateRequest } from './admin-firewall-rule-create-request';
 export type { AdminIpLimitCreateRequest } from './admin-ip-limit-create-request';
 export type { AdminModelLimitCreateRequest } from './admin-model-limit-create-request';
+export type { AdminOfficialRateAnchor } from './admin-official-rate-anchor';
+export type { AdminPriceSettingResolution } from './admin-price-setting-resolution';
 export type { AdminPricingPlan } from './admin-pricing-plan';
 export type { AdminPricingPlanListResponse } from './admin-pricing-plan-list-response';
 export type { AdminPricingRule } from './admin-pricing-rule';
@@ -132,6 +134,8 @@ export type { PaymentProviderInventoryItem } from './payment-provider-inventory-
 export type { PaymentProviderInventoryListResponse } from './payment-provider-inventory-list-response';
 export type { PaymentProviderMutationResponse } from './payment-provider-mutation-response';
 
+export type { PriceSettingUpsertRequest } from './price-setting-upsert-request';
+
 export type { PricingDefaultRegionCreateRequest } from './pricing-default-region-create-request';
 export type { PricingPlanCreateRequest } from './pricing-plan-create-request';
 export type { PricingPlanUpdateRequest } from './pricing-plan-update-request';
@@ -223,15 +227,3 @@ export type { UpstreamSupplierResourceCollectionResponse } from './upstream-supp
 export type { UpstreamSupplierResourceListResponse } from './upstream-supplier-resource-list-response';
 
 export type { VerifyUpstreamAccountRequest } from './verify-upstream-account-request';
-
-export type { AdminOfficialRateAnchor } from './admin-official-rate-anchor';
-export type { AdminPriceSettingResolution } from './admin-price-setting-resolution';
-export type { PriceSettingUpsertRequest } from './price-setting-upsert-request';
-
-export type { PriceBooksCreateRequest } from './price-books-create-request';
-export type { PriceBooksUpdateRequest } from './price-books-update-request';
-export type { PriceBooksActivateRequest } from './price-books-activate-request';
-export type { PriceBooksRetireRequest } from './price-books-retire-request';
-export type { PriceBooksCreateRateRequest } from './price-books-create-rate-request';
-export type { PriceBooksUpdateRateRequest } from './price-books-update-rate-request';
-export type { PriceBooksDeactivateRequest } from './price-books-deactivate-request';

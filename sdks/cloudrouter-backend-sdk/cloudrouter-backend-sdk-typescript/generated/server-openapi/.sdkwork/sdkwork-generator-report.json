@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "7da889819d18b1870cdb30646863063ef2f10eac2f66992cbf23e274e4ae3d5d",
+  "changeFingerprint": "e7980d736ea96fbac3443cf940d88cd77fbb9dbe430987ae0a6943b3a1fc65aa",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -172,13 +172,6 @@
           "src/types/payment-provider-inventory-item.ts",
           "src/types/payment-provider-inventory-list-response.ts",
           "src/types/payment-provider-mutation-response.ts",
-          "src/types/price-books-activate-request.ts",
-          "src/types/price-books-create-rate-request.ts",
-          "src/types/price-books-create-request.ts",
-          "src/types/price-books-deactivate-request.ts",
-          "src/types/price-books-retire-request.ts",
-          "src/types/price-books-update-rate-request.ts",
-          "src/types/price-books-update-request.ts",
           "src/types/price-setting-upsert-request.ts",
           "src/types/pricing-default-region-create-request.ts",
           "src/types/pricing-plan-create-request.ts",
@@ -428,10 +421,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 346,
-    "models": 316,
+    "totalFiles": 339,
+    "models": 309,
     "apis": 7,
-    "types": 318
+    "types": 311
   },
   "warnings": [
     {
@@ -478,12 +471,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 243,
+    "writtenFiles": 236,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "7da889819d18b1870cdb30646863063ef2f10eac2f66992cbf23e274e4ae3d5d",
+    "changeFingerprint": "e7980d736ea96fbac3443cf940d88cd77fbb9dbe430987ae0a6943b3a1fc65aa",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -637,13 +630,6 @@
         "src/types/payment-provider-inventory-item.ts",
         "src/types/payment-provider-inventory-list-response.ts",
         "src/types/payment-provider-mutation-response.ts",
-        "src/types/price-books-activate-request.ts",
-        "src/types/price-books-create-rate-request.ts",
-        "src/types/price-books-create-request.ts",
-        "src/types/price-books-deactivate-request.ts",
-        "src/types/price-books-retire-request.ts",
-        "src/types/price-books-update-rate-request.ts",
-        "src/types/price-books-update-request.ts",
         "src/types/price-setting-upsert-request.ts",
         "src/types/pricing-default-region-create-request.ts",
         "src/types/pricing-plan-create-request.ts",
@@ -897,13 +883,6 @@
             "src/types/payment-provider-inventory-item.ts",
             "src/types/payment-provider-inventory-list-response.ts",
             "src/types/payment-provider-mutation-response.ts",
-            "src/types/price-books-activate-request.ts",
-            "src/types/price-books-create-rate-request.ts",
-            "src/types/price-books-create-request.ts",
-            "src/types/price-books-deactivate-request.ts",
-            "src/types/price-books-retire-request.ts",
-            "src/types/price-books-update-rate-request.ts",
-            "src/types/price-books-update-request.ts",
             "src/types/price-setting-upsert-request.ts",
             "src/types/pricing-default-region-create-request.ts",
             "src/types/pricing-plan-create-request.ts",
