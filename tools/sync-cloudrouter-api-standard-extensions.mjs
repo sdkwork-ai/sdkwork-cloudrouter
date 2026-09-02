@@ -83,6 +83,9 @@ function inferExternalProtocolId(routePath) {
   if (normalized.startsWith("/anthropic/")) {
     return "anthropic-messages";
   }
+  if (normalized.startsWith("/elevenlabs/")) {
+    return "elevenlabs-v1";
+  }
   if (normalized.startsWith("/google/")) {
     return "google-gemini-v1beta";
   }
@@ -119,6 +122,7 @@ function isExternalWireProtocolRoute(routePath) {
   }
   return (
     normalized.startsWith("/anthropic/") ||
+    normalized.startsWith("/elevenlabs/") ||
     normalized.startsWith("/google/") ||
     normalized.startsWith("/kling/") ||
     normalized.startsWith("/midjourney/") ||

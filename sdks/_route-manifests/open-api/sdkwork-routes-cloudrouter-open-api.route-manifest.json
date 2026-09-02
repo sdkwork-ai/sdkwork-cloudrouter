@@ -4503,7 +4503,7 @@
         "Audio/elevenlabs"
       ],
       "x-sdkwork-wire-protocol": "external",
-      "x-sdkwork-external-protocol-id": "cloudrouter-vendor-relay",
+      "x-sdkwork-external-protocol-id": "elevenlabs-v1",
       "auth": {
         "mode": "api-key-or-dual-token",
         "required": true
@@ -4531,7 +4531,7 @@
         "Audio/elevenlabs"
       ],
       "x-sdkwork-wire-protocol": "external",
-      "x-sdkwork-external-protocol-id": "cloudrouter-vendor-relay",
+      "x-sdkwork-external-protocol-id": "elevenlabs-v1",
       "auth": {
         "mode": "api-key-or-dual-token",
         "required": true
