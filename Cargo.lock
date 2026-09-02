@@ -4729,6 +4729,8 @@ name = "sdkwork-api-community-assembly"
 version = "0.1.0"
 dependencies = [
  "axum 0.8.9",
+ "sdkwork-community-commerce-membership-embedded",
+ "sdkwork-community-commerce-order-embedded",
  "sdkwork-community-service-host",
  "sdkwork-database-sqlx",
  "sdkwork-routes-community-app-api",
@@ -5644,6 +5646,25 @@ dependencies = [
  "sdkwork-utils-rust",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "sdkwork-community-commerce-membership-embedded"
+version = "0.1.0"
+dependencies = [
+ "sdkwork-community-service",
+ "sdkwork-database-sqlx",
+ "sdkwork-membership-repository-sqlx",
+]
+
+[[package]]
+name = "sdkwork-community-commerce-order-embedded"
+version = "0.1.0"
+dependencies = [
+ "sdkwork-community-service",
+ "sdkwork-database-sqlx",
+ "sdkwork-order-repository-sqlx",
+ "sdkwork-order-service",
 ]
 
 [[package]]

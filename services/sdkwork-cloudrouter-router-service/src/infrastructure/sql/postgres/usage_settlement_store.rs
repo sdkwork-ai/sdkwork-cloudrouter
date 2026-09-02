@@ -2,12 +2,12 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::Duration;
 
+use crate::infrastructure::decimal_math::{decimal_to_scaled, scaled_to_decimal, DecimalRounding};
 use sdkwork_account_service::{AccountLedgerAppendPort, AppendLedgerEntryCommand};
 use sdkwork_contract_service::{
     CommerceAccountAssetType, CommerceLedgerDirection, CommerceMoney, CommerceRequestHash,
     CommerceServiceError,
 };
-use crate::infrastructure::decimal_math::{decimal_to_scaled, scaled_to_decimal, DecimalRounding};
 use sdkwork_utils_rust::sha256_hash;
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
@@ -197,13 +197,9 @@ async fn settle_pending_usage_once(
     let groups = collect_settlement_groups(&mut tx, &command, usage_facts, &mut outcome).await?;
     for group in groups {
         let first = &group.candidates[0].usage_fact;
-        let settings = load_group_settings(
-            pool,
-            first.tenant_id,
-            first.organization_id,
-            first.user_id,
-        )
-        .await?;
+        let settings =
+            load_group_settings(pool, first.tenant_id, first.organization_id, first.user_id)
+                .await?;
         let group_outcome =
             settle_usage_group(&mut tx, &command, &group, &settings, account_store).await?;
         outcome.settled_count += group_outcome.settled_count;

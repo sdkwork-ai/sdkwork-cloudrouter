@@ -2,15 +2,14 @@ use std::sync::Arc;
 
 use super::{
     BillingMode, BillingQuantitySource, DispatchMode, Invocation, InvocationAccount,
-    InvocationBody, InvocationError, InvocationErrorKind, InvocationFuture,
-    InvocationPricingQuote, InvocationUsageLine,
+    InvocationBody, InvocationError, InvocationErrorKind, InvocationFuture, InvocationPricingQuote,
+    InvocationUsageLine,
 };
 use crate::application::{
-    InvocationInterceptor, PriceResolution, PriceResolutionStatus, PriceService,
-    ResolvedModelPrice,
+    InvocationInterceptor, PriceResolution, PriceResolutionStatus, PriceService, ResolvedModelPrice,
 };
 use crate::domain::{
-    AiRouteModelRequirement, BillingMeter, DecimalValue, PricingDimensionContext, PriceSide,
+    AiRouteModelRequirement, BillingMeter, DecimalValue, PriceSide, PricingDimensionContext,
     ResourceDefinition,
 };
 use crate::ports::{PricingCatalog, PricingDefaultRegionProvider};

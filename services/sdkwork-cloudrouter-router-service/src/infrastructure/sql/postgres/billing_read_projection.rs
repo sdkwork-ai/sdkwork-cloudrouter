@@ -162,9 +162,8 @@ mod tests {
     #[test]
     fn billable_usage_projects_user_id_for_subject_scoped_reads() {
         assert!(
-            BILLABLE_USAGE_SELECT.contains(
-                "COALESCE(c.user_id, m.user_id, trace_snapshot.user_id) AS user_id"
-            ),
+            BILLABLE_USAGE_SELECT
+                .contains("COALESCE(c.user_id, m.user_id, trace_snapshot.user_id) AS user_id"),
             "charge-line billable_usage rows must expose user_id for per-user usage reads"
         );
         assert!(
@@ -218,7 +217,12 @@ mod tests {
                 "billable_usage must project meter {meter} into base_input_unit_price"
             );
         }
-        for meter in ["llm_output_token", "image_output_token", "audio_output_token", "video_output_token"] {
+        for meter in [
+            "llm_output_token",
+            "image_output_token",
+            "audio_output_token",
+            "video_output_token",
+        ] {
             let quoted = format!("'{meter}'");
             assert!(
                 BILLABLE_USAGE_SELECT
@@ -242,7 +246,8 @@ mod tests {
     #[test]
     fn billable_usage_falls_back_unit_size_from_zero_to_default() {
         assert!(
-            BILLABLE_USAGE_SELECT.contains("COALESCE(NULLIF(d.unit_size, 0), 1000000) AS unit_size"),
+            BILLABLE_USAGE_SELECT
+                .contains("COALESCE(NULLIF(d.unit_size, 0), 1000000) AS unit_size"),
             "new-track billable_usage must treat a stored zero unit_size as the 1M default"
         );
         for expected in [

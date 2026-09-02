@@ -6,8 +6,8 @@ use super::{
 };
 use crate::domain::{BillingMeter, DecimalValue};
 use crate::ports::{
-    CustomerChargeMode, GatewayBillingAmount, GatewayBillingContext, GatewayBillingStore,
-    RechargeSettingsModel, token_points_for_charge,
+    token_points_for_charge, CustomerChargeMode, GatewayBillingAmount, GatewayBillingContext,
+    GatewayBillingStore, RechargeSettingsModel,
 };
 
 #[derive(Clone)]
@@ -312,15 +312,11 @@ impl InvocationInterceptor for BillingSettlementInterceptor {
                     if invocation.charging.settlement_mode
                         == crate::ports::GatewayBillingSettlementMode::Synchronous
                     {
-                        let hold_id = invocation
-                            .charging
-                            .hold_id
-                            .clone()
-                            .ok_or_else(|| {
-                                billing_error(
-                                    "prepaid synchronous settlement is missing its account hold",
-                                )
-                            })?;
+                        let hold_id = invocation.charging.hold_id.clone().ok_or_else(|| {
+                            billing_error(
+                                "prepaid synchronous settlement is missing its account hold",
+                            )
+                        })?;
                         self.store
                             .settle_hold(context, hold_id, actual)
                             .await
@@ -622,7 +618,10 @@ mod tests {
         for persisted in ["", "0", "000000000000"] {
             let unit_size = unit_size_or_default(&BillingMeter::LlmInputToken, persisted)
                 .unwrap_or_else(|| panic!("{persisted:?} unit_size resolves"));
-            assert_eq!(million, unit_size, "persisted {persisted:?} defaults to per-million");
+            assert_eq!(
+                million, unit_size,
+                "persisted {persisted:?} defaults to per-million"
+            );
         }
     }
 
@@ -631,7 +630,11 @@ mod tests {
         for persisted in ["", "0"] {
             let unit_size = unit_size_or_default(&BillingMeter::ApiRequest, persisted)
                 .unwrap_or_else(|| panic!("{persisted:?} unit_size resolves"));
-            assert_eq!(DecimalValue::ONE, unit_size, "persisted {persisted:?} defaults to one");
+            assert_eq!(
+                DecimalValue::ONE,
+                unit_size,
+                "persisted {persisted:?} defaults to one"
+            );
         }
     }
 

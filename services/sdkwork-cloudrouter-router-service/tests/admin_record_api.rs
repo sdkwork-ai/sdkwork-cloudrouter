@@ -65,10 +65,7 @@ async fn admin_record_route_lists_logs_and_normalizes_filters() {
     assert_eq!("0.150000", payload["data"]["items"][0]["baseInputPrice"]);
     assert_eq!("0.600000", payload["data"]["items"][0]["baseOutputPrice"]);
     assert_eq!("0.030000", payload["data"]["items"][0]["cacheReadPrice"]);
-    assert_eq!(
-        "1000000.000000",
-        payload["data"]["items"][0]["unitSize"]
-    );
+    assert_eq!("1000000.000000", payload["data"]["items"][0]["unitSize"]);
     assert_eq!("/v1/chat/completions", payload["data"]["items"][0]["path"]);
     assert_eq!("medium", payload["data"]["items"][0]["reasoningEffort"]);
     assert_eq!("203.0.113.***", payload["data"]["items"][0]["ip"]);

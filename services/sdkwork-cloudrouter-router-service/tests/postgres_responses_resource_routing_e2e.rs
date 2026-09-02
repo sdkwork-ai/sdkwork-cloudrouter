@@ -267,13 +267,17 @@ async fn mock_responses_handler(
     headers: HeaderMap,
     Json(body): Json<Value>,
 ) -> (StatusCode, Json<Value>) {
-    provider.captured.lock().unwrap().push(CapturedUpstreamRequest {
-        authorization: headers
-            .get("authorization")
-            .and_then(|value| value.to_str().ok())
-            .map(str::to_owned),
-        body,
-    });
+    provider
+        .captured
+        .lock()
+        .unwrap()
+        .push(CapturedUpstreamRequest {
+            authorization: headers
+                .get("authorization")
+                .and_then(|value| value.to_str().ok())
+                .map(str::to_owned),
+            body,
+        });
     (
         StatusCode::OK,
         Json(json!({
@@ -382,10 +386,12 @@ async fn seed_routing_topology(
             supplier_type: "official".to_owned(),
             adapter_code: "openai".to_owned(),
             protocol_code: "openai".to_owned(),
-            protocols: vec![sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
-                protocol_code: LlmProtocolCode::OpenaiChatCompletions,
-                base_url: provider_a_base_url.to_owned(),
-            }],
+            protocols: vec![
+                sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
+                    protocol_code: LlmProtocolCode::OpenaiChatCompletions,
+                    base_url: provider_a_base_url.to_owned(),
+                },
+            ],
             model_blacklist: Vec::new(),
             model_whitelist: Vec::new(),
             website_url: None,
@@ -464,10 +470,12 @@ async fn seed_routing_topology(
             supplier_id: supplier.id,
             preferred_endpoint_id: None,
             default_base_url: Some(provider_a_base_url.to_owned()),
-            protocols: vec![sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
-                protocol_code: LlmProtocolCode::OpenaiChatCompletions,
-                base_url: provider_a_base_url.to_owned(),
-            }],
+            protocols: vec![
+                sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
+                    protocol_code: LlmProtocolCode::OpenaiChatCompletions,
+                    base_url: provider_a_base_url.to_owned(),
+                },
+            ],
             account_code: "e2e-responses-account-a".to_owned(),
             account_name: "E2E Responses Account A".to_owned(),
             account_type: "standard".to_owned(),
@@ -499,10 +507,12 @@ async fn seed_routing_topology(
             supplier_id: supplier.id,
             preferred_endpoint_id: None,
             default_base_url: Some(provider_b_base_url.to_owned()),
-            protocols: vec![sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
-                protocol_code: LlmProtocolCode::OpenaiChatCompletions,
-                base_url: provider_b_base_url.to_owned(),
-            }],
+            protocols: vec![
+                sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
+                    protocol_code: LlmProtocolCode::OpenaiChatCompletions,
+                    base_url: provider_b_base_url.to_owned(),
+                },
+            ],
             account_code: "e2e-responses-account-b".to_owned(),
             account_name: "E2E Responses Account B".to_owned(),
             account_type: "standard".to_owned(),
@@ -539,9 +549,11 @@ async fn seed_routing_topology(
         )
         "#,
     )
-    .bind(chrono::DateTime::parse_from_rfc3339("2026-01-01T00:00:00Z")
-        .expect("parse plan effective from")
-        .with_timezone(&chrono::Utc))
+    .bind(
+        chrono::DateTime::parse_from_rfc3339("2026-01-01T00:00:00Z")
+            .expect("parse plan effective from")
+            .with_timezone(&chrono::Utc),
+    )
     .execute(pool)
     .await
     .expect("insert standard pricing plan");
@@ -561,9 +573,11 @@ async fn seed_routing_topology(
         )
         "#,
     )
-    .bind(chrono::DateTime::parse_from_rfc3339("2026-01-01T00:00:00Z")
-        .expect("parse rule effective from")
-        .with_timezone(&chrono::Utc))
+    .bind(
+        chrono::DateTime::parse_from_rfc3339("2026-01-01T00:00:00Z")
+            .expect("parse rule effective from")
+            .with_timezone(&chrono::Utc),
+    )
     .execute(pool)
     .await
     .expect("insert standard pricing rule");
@@ -871,15 +885,14 @@ fn rate_id_offset(meter: &str) -> i64 {
 /// Inserts an active `iam_gateway_api_key` bound to the default account group,
 /// hashed with the production HMAC-SHA256 hasher so `ApiKeyAuthenticator`
 /// (used by the Responses router) resolves the bearer secret to this key.
-async fn seed_gateway_api_key(
-    pool: &PgPool,
-    group_id: i64,
-) -> String {
+async fn seed_gateway_api_key(pool: &PgPool, group_id: i64) -> String {
     let hasher = Arc::new(
         HmacSha256ApiKeySecretHasher::new(API_KEY_PEPPER).expect("hasher must initialize"),
     );
     let raw_key = "sk-e2e-responses-gateway-secret";
-    let key_hash = hasher.hash_secret(raw_key).expect("hash gateway key secret");
+    let key_hash = hasher
+        .hash_secret(raw_key)
+        .expect("hash gateway key secret");
 
     sqlx::query(
         r#"
@@ -902,9 +915,11 @@ async fn seed_gateway_api_key(
     )
     .bind(TENANT_ID)
     .bind(ORG_ID)
-    .bind(chrono::DateTime::parse_from_rfc3339("2026-07-28T00:00:00Z")
-        .expect("parse api key created at")
-        .with_timezone(&chrono::Utc))
+    .bind(
+        chrono::DateTime::parse_from_rfc3339("2026-07-28T00:00:00Z")
+            .expect("parse api key created at")
+            .with_timezone(&chrono::Utc),
+    )
     .bind(group_id)
     .bind(&key_hash)
     .bind(raw_key)
@@ -920,7 +935,9 @@ async fn seed_gateway_api_key(
 // ---------------------------------------------------------------------------
 
 struct RecordingUsageRecorder {
-    records: Arc<std::sync::Mutex<Vec<sdkwork_cloudrouter_router_service::ports::GatewayUsageRecordCommand>>>,
+    records: Arc<
+        std::sync::Mutex<Vec<sdkwork_cloudrouter_router_service::ports::GatewayUsageRecordCommand>>,
+    >,
 }
 
 impl RecordingUsageRecorder {
@@ -930,9 +947,7 @@ impl RecordingUsageRecorder {
         }
     }
 
-    fn records(
-        &self,
-    ) -> Vec<sdkwork_cloudrouter_router_service::ports::GatewayUsageRecordCommand> {
+    fn records(&self) -> Vec<sdkwork_cloudrouter_router_service::ports::GatewayUsageRecordCommand> {
         self.records.lock().unwrap().clone()
     }
 }
@@ -950,14 +965,9 @@ impl GatewayUsageRecorder for RecordingUsageRecorder {
 async fn build_router(
     context: &PostgresTestContext,
     codec: Arc<RingAeadCredentialSecretCodec>,
-) -> (
-    axum::Router,
-    Arc<RecordingUsageRecorder>,
-) {
-    let loader = PostgresPricingCatalogLoader::with_credential_secret_codec(
-        context.pool.clone(),
-        codec,
-    );
+) -> (axum::Router, Arc<RecordingUsageRecorder>) {
+    let loader =
+        PostgresPricingCatalogLoader::with_credential_secret_codec(context.pool.clone(), codec);
     let snapshot = loader
         .load_snapshot()
         .await
@@ -1051,8 +1061,16 @@ async fn real_gateway_key_routes_responses_through_default_group_pool_to_routing
 
     let captured_a = provider_a.captured.lock().unwrap();
     let captured_b = provider_b.captured.lock().unwrap();
-    assert_eq!(1, captured_a.len(), "primary responses account A must be called exactly once");
-    assert_eq!(0, captured_b.len(), "failover responses account B must NOT be called");
+    assert_eq!(
+        1,
+        captured_a.len(),
+        "primary responses account A must be called exactly once"
+    );
+    assert_eq!(
+        0,
+        captured_b.len(),
+        "failover responses account B must NOT be called"
+    );
     assert_eq!(
         Some(format!("Bearer {}", "sk-e2e-responses-account-a-secret")),
         captured_a[0].authorization,
@@ -1108,7 +1126,10 @@ async fn disabling_responses_primary_account_fails_over_and_re_enable_restores_r
     let (router, _) = build_router(&context, codec.clone()).await;
     let (status, body) = send_responses_request(router, &raw_key, false).await;
     assert_eq!(StatusCode::OK, status, "unexpected response body: {body}");
-    assert!(body.contains("resp-e2e-responses-failover-account-a"), "{body}");
+    assert!(
+        body.contains("resp-e2e-responses-failover-account-a"),
+        "{body}"
+    );
     assert_eq!(1, provider_a.captured.lock().unwrap().len());
     assert_eq!(0, provider_b.captured.lock().unwrap().len());
 
@@ -1142,10 +1163,12 @@ async fn disabling_responses_primary_account_fails_over_and_re_enable_restores_r
             supplier_id: account_a.supplier_id,
             preferred_endpoint_id: None,
             default_base_url: Some(base_a.clone()),
-            protocols: vec![sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
-                protocol_code: LlmProtocolCode::OpenaiChatCompletions,
-                base_url: base_a.clone(),
-            }],
+            protocols: vec![
+                sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
+                    protocol_code: LlmProtocolCode::OpenaiChatCompletions,
+                    base_url: base_a.clone(),
+                },
+            ],
             account_code: "e2e-responses-account-a".to_owned(),
             account_name: "E2E Responses Account A".to_owned(),
             account_type: "standard".to_owned(),
@@ -1189,10 +1212,12 @@ async fn disabling_responses_primary_account_fails_over_and_re_enable_restores_r
             supplier_id: account_a.supplier_id,
             preferred_endpoint_id: None,
             default_base_url: Some(base_a.clone()),
-            protocols: vec![sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
-                protocol_code: LlmProtocolCode::OpenaiChatCompletions,
-                base_url: base_a.clone(),
-            }],
+            protocols: vec![
+                sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
+                    protocol_code: LlmProtocolCode::OpenaiChatCompletions,
+                    base_url: base_a.clone(),
+                },
+            ],
             account_code: "e2e-responses-account-a".to_owned(),
             account_name: "E2E Responses Account A".to_owned(),
             account_type: "standard".to_owned(),

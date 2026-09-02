@@ -171,13 +171,9 @@ pub(super) async fn get(
         .map(map_account_row)
         .transpose()?;
     if let Some(account) = &mut item {
-        if let Some((blacklist, whitelist)) = super::model_access::load_scope_model_access(
-            pool,
-            &subject,
-            "account",
-            account.id,
-        )
-        .await?
+        if let Some((blacklist, whitelist)) =
+            super::model_access::load_scope_model_access(pool, &subject, "account", account.id)
+                .await?
         {
             account.model_blacklist = blacklist;
             account.model_whitelist = whitelist;
@@ -1302,8 +1298,12 @@ fn map_account_row(row: PgRow) -> DomainResult<AdminUpstreamAccountItem> {
             "failed to map upstream account RPM limit",
         )?,
         timeout_ms: column(&row, "timeout_ms", "failed to map upstream account timeout")?,
-        billing_mode: column(&row, "billing_mode", "failed to map upstream account billing mode")
-            .unwrap_or_else(|_| "prepay".to_owned()),
+        billing_mode: column(
+            &row,
+            "billing_mode",
+            "failed to map upstream account billing mode",
+        )
+        .unwrap_or_else(|_| "prepay".to_owned()),
         // Model access rules live in the unified ai_model_access_policy table
         // (scope_type='account'); they are aggregated into these lists by the
         // model access loader after the row is mapped (see list/get/save).
@@ -1341,12 +1341,8 @@ fn map_credential_row_with_secret(
         .filter(|value| !value.trim().is_empty());
     let mut item = map_credential_row(row)?;
     if let (Some(ciphertext), Some(key_id)) = (ciphertext, key_id) {
-        let context = UpstreamCredentialSecretContext::new(
-            tenant_id,
-            organization_id,
-            account_id,
-            item.id,
-        );
+        let context =
+            UpstreamCredentialSecretContext::new(tenant_id, organization_id, account_id, item.id);
         match secret_codec.decode_secret(context, &key_id, &ciphertext) {
             Ok(plaintext) => item.secret = Some(plaintext),
             Err(error) => {

@@ -1117,23 +1117,41 @@ mod price_row_unit_size_tests {
             BillingMeter::LlmCacheReadToken,
             BillingMeter::EmbeddingInputToken,
         ] {
-            assert_eq!(decimal("1000000"), normalized_unit_size(&meter, decimal("1")));
-            assert_eq!(decimal("1000000"), normalized_unit_size(&meter, DecimalValue::ZERO));
+            assert_eq!(
+                decimal("1000000"),
+                normalized_unit_size(&meter, decimal("1"))
+            );
+            assert_eq!(
+                decimal("1000000"),
+                normalized_unit_size(&meter, DecimalValue::ZERO)
+            );
         }
     }
 
     #[test]
     fn token_meter_preserves_an_explicit_positive_unit_size() {
         let meter = BillingMeter::LlmInputToken;
-        assert_eq!(decimal("500000"), normalized_unit_size(&meter, decimal("500000")));
-        assert_eq!(decimal("1000000"), normalized_unit_size(&meter, decimal("1000000")));
+        assert_eq!(
+            decimal("500000"),
+            normalized_unit_size(&meter, decimal("500000"))
+        );
+        assert_eq!(
+            decimal("1000000"),
+            normalized_unit_size(&meter, decimal("1000000"))
+        );
     }
 
     #[test]
     fn non_token_meter_keeps_its_unit_size_unchanged() {
         let meter = BillingMeter::ApiRequest;
-        assert_eq!(DecimalValue::ONE, normalized_unit_size(&meter, DecimalValue::ONE));
-        assert_eq!(decimal("1000000"), normalized_unit_size(&meter, decimal("1000000")));
+        assert_eq!(
+            DecimalValue::ONE,
+            normalized_unit_size(&meter, DecimalValue::ONE)
+        );
+        assert_eq!(
+            decimal("1000000"),
+            normalized_unit_size(&meter, decimal("1000000"))
+        );
     }
 
     #[test]

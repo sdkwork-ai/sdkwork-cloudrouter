@@ -18,10 +18,11 @@ use sdkwork_cloudrouter_http::{
 };
 use sdkwork_cloudrouter_security::INTERNAL_GATEWAY_ROUTE_PREFIX;
 use sdkwork_web_bootstrap::{
-    ApiAssemblyContribution, CompositeReadinessCheck, ReadinessCheck, ReadinessFuture,
+    ApiAssemblyContribution, CompositeReadinessCheck, ReadinessCheck, ReadinessFuture, WebModule,
 };
 use sdkwork_web_contract::{
-    build_openapi_document, merge_openapi_documents, route_inventory_from_routes, HttpRoute,
+    build_openapi_document, enrich_owned_openapi_document, merge_openapi_documents,
+    route_inventory_from_routes, HttpRoute,
 };
 use sdkwork_web_core::HttpRouteManifest;
 use serde_json::{Map, Value};
@@ -136,10 +137,9 @@ pub async fn assemble_api_router(
     let (upstreams, account_provisioner, feeds_open) = if context.includes_dependency_apis() {
         let iam_router = iam::wire_iam_app_router().await?;
         let provisioner = resolve_account_provisioner().await?;
-        let feeds_open =
-            crate::feeds_open_runtime::wire_federated_feeds_open_router(true)
-                .await
-                .map_err(anyhow::Error::msg)?;
+        let feeds_open = crate::feeds_open_runtime::wire_federated_feeds_open_router(true)
+            .await
+            .map_err(anyhow::Error::msg)?;
         (
             upstreams.with_dependency_api_router(iam_router),
             Some(provisioner),
@@ -148,7 +148,12 @@ pub async fn assemble_api_router(
     } else {
         (upstreams, None, None)
     };
-    assemble_api_router_with_in_process_upstreams(context, upstreams, account_provisioner, feeds_open)
+    assemble_api_router_with_in_process_upstreams(
+        context,
+        upstreams,
+        account_provisioner,
+        feeds_open,
+    )
 }
 
 /// Bootstraps the account-domain service host and returns its PostgreSQL
@@ -690,6 +695,44 @@ fn is_feeds_path(path: &str) -> bool {
     path == "/feeds" || path.starts_with("/feeds/")
 }
 
+/// Installs this application as a Web Module with caller-supplied assembly
+/// context (API_ASSEMBLY_SPEC §4.1.1).
+pub async fn web_module_with_context(context: ApiAssemblyContext) -> Result<WebModule, String> {
+    let assembly = assemble_api_router(context)
+        .await
+        .map_err(|error| error.to_string())?;
+    // The module owns its complete OpenAPI definition: stamp the owner and the
+    // per-route contract extensions here so every host publishes the same
+    // document instead of each host repeating the enrichment.
+    let openapi = enrich_owned_openapi_document(
+        assembly.openapi,
+        "sdkwork-cloudrouter",
+        assembly.route_manifest.routes(),
+    )
+    .map_err(|error| format!("cloudrouter OpenAPI enrichment failed: {error}"))?;
+    Ok(WebModule::from_contribution(ApiAssemblyContribution {
+        owner: "sdkwork-cloudrouter",
+        router: assembly.router,
+        route_manifest: assembly.route_manifest,
+        openapi,
+        permission_catalog: assembly.permission_catalog,
+        domain_context_injectors: assembly.domain_context_injectors,
+        readiness_check: assembly.readiness_check,
+    }))
+}
+
+/// Canonical Web Module definition for this application
+/// (API_ASSEMBLY_SPEC §4.1.1): the complete HTTP surface — every route,
+/// manifest, and OpenAPI document of this owner — as one installable module.
+///
+/// The default context is the standalone profile, which inlines the
+/// dependency-owned IAM, Account, and Feeds Open surfaces. The platform cloud
+/// gateway installs [`web_module_with_context`] with
+/// [`ApiAssemblyContext::cloud_gateway`] instead.
+pub async fn web_module() -> Result<WebModule, String> {
+    web_module_with_context(ApiAssemblyContext::default()).await
+}
+
 #[cfg(test)]
 mod tests {
     use axum::{
@@ -1001,7 +1044,8 @@ mod tests {
 
         let app_manifest =
             sdkwork_routes_cloudrouter_app_api::cloud_router_app_composed_route_manifest();
-        let backend_manifest = sdkwork_routes_cloudrouter_backend_api::cloud_router_backend_composed_route_manifest();
+        let backend_manifest =
+            sdkwork_routes_cloudrouter_backend_api::cloud_router_backend_composed_route_manifest();
         let open_manifest = crate::generated_open_http_route_manifest::http_route_manifest();
         super::validate_no_route_collisions(&[
             ("sdkwork-cloudrouter-app-api", &app_manifest),
@@ -1113,7 +1157,10 @@ mod tests {
                 .and_then(|paths| paths.get(path))
                 .and_then(|path_item| path_item.get(method))
                 .unwrap_or_else(|| panic!("{method} {path} must exist in augmented OpenAPI"));
-            assert!(operation.is_object(), "{method} {path} must be an operation object");
+            assert!(
+                operation.is_object(),
+                "{method} {path} must be an operation object"
+            );
         }
     }
 }

@@ -61,7 +61,8 @@ pub async fn wire_federated_feeds_open_router(
         .await
         .map_err(|error| format!("compose sdkwork-feeds open-api contribution failed: {error}"))?;
     let manifest = sdkwork_api_feeds_assembly::open_api_route_manifest();
-    let router = wrap_feeds_open_router_with_web_framework(contribution.router, manifest.clone()).await;
+    let router =
+        wrap_feeds_open_router_with_web_framework(contribution.router, manifest.clone()).await;
     Ok(Some(FederatedFeedsOpenSurface { router, manifest }))
 }
 
@@ -71,7 +72,9 @@ mod tests {
     fn federated_feeds_consumes_feeds_open_api_contribution() {
         let source = include_str!("feeds_open_runtime.rs");
 
-        assert!(source.contains("sdkwork_api_feeds_assembly::assemble_open_api_contribution_from_env("));
+        assert!(
+            source.contains("sdkwork_api_feeds_assembly::assemble_open_api_contribution_from_env(")
+        );
         assert!(source.contains("sdkwork_api_feeds_assembly::open_api_route_manifest("));
         assert!(source.contains("build_web_framework_builder_with_open_api_prefixes("));
         assert!(source.contains("wrap_feeds_open_router_with_web_framework("));

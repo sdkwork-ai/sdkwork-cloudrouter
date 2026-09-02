@@ -394,7 +394,9 @@ pub(crate) async fn postgres_ai_routing_seed_complete(pool: &PgPool) -> Result<b
 
 /// The bundled default routing strategies must be present so the account-group
 /// `routing_strategy_code` (price_first) resolves to a real strategy.
-async fn postgres_default_admin_routing_strategies_complete(pool: &PgPool) -> Result<bool, sqlx::Error> {
+async fn postgres_default_admin_routing_strategies_complete(
+    pool: &PgPool,
+) -> Result<bool, sqlx::Error> {
     for strategy in default_admin_routing_strategies() {
         let exists = sqlx::query_scalar::<_, bool>(
             r#"

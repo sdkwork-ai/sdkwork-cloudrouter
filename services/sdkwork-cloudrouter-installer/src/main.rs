@@ -545,10 +545,9 @@ where
 fn normalize_bootstrap_token_id(value: String, name: &str) -> anyhow::Result<String> {
     let trimmed = value.trim().to_owned();
     if trimmed.is_empty() {
-        return Err(InstallerCliError::InvalidArgument(format!(
-            "--{name} must not be blank"
-        ))
-        .into());
+        return Err(
+            InstallerCliError::InvalidArgument(format!("--{name} must not be blank")).into(),
+        );
     }
     Ok(trimmed)
 }
@@ -574,18 +573,11 @@ async fn run_issue_bootstrap_token_postgres(
         .tenant_id
         .as_deref()
         .unwrap_or(DEFAULT_IAM_TENANT_ID);
-    let app_id = options
-        .app_id
-        .as_deref()
-        .unwrap_or("sdkwork-cloudrouter");
-    let issued = issue_standalone_bootstrap_access_credential(
-        pool,
-        tenant_id,
-        app_id,
-        options.ttl_seconds,
-    )
-    .await
-    .map_err(|error| InstallerCliError::InvalidState(error))?;
+    let app_id = options.app_id.as_deref().unwrap_or("sdkwork-cloudrouter");
+    let issued =
+        issue_standalone_bootstrap_access_credential(pool, tenant_id, app_id, options.ttl_seconds)
+            .await
+            .map_err(|error| InstallerCliError::InvalidState(error))?;
 
     print_json(&IssueBootstrapTokenOutput {
         status: "issued",
@@ -774,7 +766,11 @@ impl InstallerCommand {
         match self {
             Self::Install | Self::Upgrade | Self::Ensure => true,
             Self::RefreshCatalog(options) => options.mode != "dry_run",
-            Self::Status | Self::Backup(_) | Self::Restore(_) | Self::ResetAdmin(_) | Self::IssueBootstrapToken(_) => false,
+            Self::Status
+            | Self::Backup(_)
+            | Self::Restore(_)
+            | Self::ResetAdmin(_)
+            | Self::IssueBootstrapToken(_) => false,
         }
     }
 }

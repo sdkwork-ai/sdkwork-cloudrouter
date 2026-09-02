@@ -109,10 +109,7 @@ fn normalize_dispatch_response(
             body_bytes: None,
             content_type: response.content_type.clone(),
             headers: response.headers.clone(),
-            stream_body: Mutex::new(Some(restore_streaming_model(
-                invocation,
-                stream,
-            ))),
+            stream_body: Mutex::new(Some(restore_streaming_model(invocation, stream))),
             memory_guard: response.memory_guard.clone(),
         };
     }
@@ -214,7 +211,10 @@ fn restore_json_model_field(body: &mut Value, requested_model: &str) -> bool {
     };
     match object.get("model") {
         Some(Value::String(current)) if current != requested_model => {
-            object.insert("model".to_owned(), Value::String(requested_model.to_owned()));
+            object.insert(
+                "model".to_owned(),
+                Value::String(requested_model.to_owned()),
+            );
             true
         }
         _ => false,
@@ -250,10 +250,7 @@ fn restore_streaming_model(invocation: &Invocation, stream: Body) -> Body {
 /// and forwards everything else byte-for-byte.
 async fn next_sse_model_restore_frame(
     mut state: SseModelRestoreState,
-) -> Option<(
-    Result<Bytes, axum::Error>,
-    SseModelRestoreState,
-)> {
+) -> Option<(Result<Bytes, axum::Error>, SseModelRestoreState)> {
     // Pull one upstream frame and flush every complete line it contains. The
     // per-frame output is concatenated so downstream receives the same framing
     // cadence as upstream.
@@ -267,7 +264,8 @@ async fn next_sse_model_restore_frame(
                     if line.last() == Some(&b'\r') {
                         line.pop();
                     }
-                    output.extend_from_slice(&rewrite_sse_model_line(&line, &state.requested_model));
+                    output
+                        .extend_from_slice(&rewrite_sse_model_line(&line, &state.requested_model));
                     output.push(b'\n');
                     continue;
                 }

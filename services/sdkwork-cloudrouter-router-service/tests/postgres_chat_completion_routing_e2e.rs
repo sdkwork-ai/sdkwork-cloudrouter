@@ -37,10 +37,12 @@ use sdkwork_cloudrouter_router_service::api::{
     OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig,
 };
 use sdkwork_cloudrouter_router_service::application::AuthenticatedApiKeyContext;
+use sdkwork_cloudrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::RingAeadCredentialSecretCodec;
 use sdkwork_cloudrouter_router_service::infrastructure::provider::{
     ProviderResponseMemoryBudget, RefreshableProviderSecretMapResolver,
-    SecretRefOpenAiCompatibleChatCompletionRelay, SecretRefOpenAiCompatibleChatCompletionStreamRelay,
+    SecretRefOpenAiCompatibleChatCompletionRelay,
+    SecretRefOpenAiCompatibleChatCompletionStreamRelay,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::sql::catalog::RefreshableSqlPricingCatalog;
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
@@ -56,7 +58,6 @@ use sdkwork_cloudrouter_test_support::{
     app_session_config, app_session_dual_token_headers, default_trusted_request_subject,
     API_KEY_PEPPER,
 };
-use sdkwork_cloudrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
 use sdkwork_web_core::default_open_api_bearer_classifier;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
@@ -260,20 +261,17 @@ impl OpenAiAuthTokenAuthenticator for RealTestAuthTokenAuthenticator {
         AuthenticatedApiKeyContext,
         sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenError,
     > {
-        let bearer_subject = match verify_app_session_token(
-            &self.config,
-            raw_bearer_token,
-            self.now_unix_seconds,
-        ) {
-            Ok(subject) => subject,
-            Err(error) => {
-                return Err(openai_auth_error(
-                    StatusCode::UNAUTHORIZED,
-                    "invalid_auth_token",
-                    &format!("bearer token verification failed: {error}"),
-                ));
-            }
-        };
+        let bearer_subject =
+            match verify_app_session_token(&self.config, raw_bearer_token, self.now_unix_seconds) {
+                Ok(subject) => subject,
+                Err(error) => {
+                    return Err(openai_auth_error(
+                        StatusCode::UNAUTHORIZED,
+                        "invalid_auth_token",
+                        &format!("bearer token verification failed: {error}"),
+                    ));
+                }
+            };
         if let Some(access) = access_token
             .map(str::trim)
             .filter(|value| !value.is_empty())
@@ -358,13 +356,17 @@ async fn mock_chat_handler(
     headers: HeaderMap,
     Json(body): Json<Value>,
 ) -> (StatusCode, Json<Value>) {
-    provider.captured.lock().unwrap().push(CapturedUpstreamRequest {
-        authorization: headers
-            .get("authorization")
-            .and_then(|value| value.to_str().ok())
-            .map(str::to_owned),
-        body,
-    });
+    provider
+        .captured
+        .lock()
+        .unwrap()
+        .push(CapturedUpstreamRequest {
+            authorization: headers
+                .get("authorization")
+                .and_then(|value| value.to_str().ok())
+                .map(str::to_owned),
+            body,
+        });
     (
         StatusCode::OK,
         Json(json!({
@@ -435,10 +437,12 @@ async fn seed_routing_topology(
             supplier_type: "official".to_owned(),
             adapter_code: "openai".to_owned(),
             protocol_code: "openai".to_owned(),
-            protocols: vec![sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
-                protocol_code: LlmProtocolCode::OpenaiChatCompletions,
-                base_url: provider_a_base_url.to_owned(),
-            }],
+            protocols: vec![
+                sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
+                    protocol_code: LlmProtocolCode::OpenaiChatCompletions,
+                    base_url: provider_a_base_url.to_owned(),
+                },
+            ],
             model_blacklist: Vec::new(),
             model_whitelist: Vec::new(),
             website_url: None,
@@ -518,10 +522,12 @@ async fn seed_routing_topology(
             supplier_id: supplier.id,
             preferred_endpoint_id: None,
             default_base_url: Some(provider_a_base_url.to_owned()),
-            protocols: vec![sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
-                protocol_code: LlmProtocolCode::OpenaiChatCompletions,
-                base_url: provider_a_base_url.to_owned(),
-            }],
+            protocols: vec![
+                sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
+                    protocol_code: LlmProtocolCode::OpenaiChatCompletions,
+                    base_url: provider_a_base_url.to_owned(),
+                },
+            ],
             account_code: "e2e-account-a".to_owned(),
             account_name: "E2E Account A".to_owned(),
             account_type: "standard".to_owned(),
@@ -554,10 +560,12 @@ async fn seed_routing_topology(
             supplier_id: supplier.id,
             preferred_endpoint_id: None,
             default_base_url: Some(provider_b_base_url.to_owned()),
-            protocols: vec![sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
-                protocol_code: LlmProtocolCode::OpenaiChatCompletions,
-                base_url: provider_b_base_url.to_owned(),
-            }],
+            protocols: vec![
+                sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
+                    protocol_code: LlmProtocolCode::OpenaiChatCompletions,
+                    base_url: provider_b_base_url.to_owned(),
+                },
+            ],
             account_code: "e2e-account-b".to_owned(),
             account_name: "E2E Account B".to_owned(),
             account_type: "standard".to_owned(),
@@ -597,9 +605,11 @@ async fn seed_routing_topology(
         )
         "#,
     )
-    .bind(chrono::DateTime::parse_from_rfc3339("2026-01-01T00:00:00Z")
-        .expect("parse plan effective from")
-        .with_timezone(&chrono::Utc))
+    .bind(
+        chrono::DateTime::parse_from_rfc3339("2026-01-01T00:00:00Z")
+            .expect("parse plan effective from")
+            .with_timezone(&chrono::Utc),
+    )
     .execute(pool)
     .await
     .expect("insert standard pricing plan");
@@ -621,9 +631,11 @@ async fn seed_routing_topology(
         )
         "#,
     )
-    .bind(chrono::DateTime::parse_from_rfc3339("2026-01-01T00:00:00Z")
-        .expect("parse rule effective from")
-        .with_timezone(&chrono::Utc))
+    .bind(
+        chrono::DateTime::parse_from_rfc3339("2026-01-01T00:00:00Z")
+            .expect("parse rule effective from")
+            .with_timezone(&chrono::Utc),
+    )
     .execute(pool)
     .await
     .expect("insert standard pricing rule");
@@ -727,9 +739,7 @@ async fn seed_routing_topology(
     // pricing preflight (`ensure_route_is_priced`) succeeds.
     seed_pricing(pool, account_a.id, account_b.id).await;
 
-    SeededTopology {
-        group_id: group.id,
-    }
+    SeededTopology { group_id: group.id }
 }
 
 async fn seed_pricing(pool: &PgPool, account_a_id: i64, account_b_id: i64) {
@@ -996,10 +1006,8 @@ async fn build_router(
     codec: Arc<RingAeadCredentialSecretCodec>,
     group_id: i64,
 ) -> axum::Router {
-    let loader = PostgresPricingCatalogLoader::with_credential_secret_codec(
-        context.pool.clone(),
-        codec,
-    );
+    let loader =
+        PostgresPricingCatalogLoader::with_credential_secret_codec(context.pool.clone(), codec);
     let snapshot = loader
         .load_snapshot()
         .await
@@ -1019,22 +1027,19 @@ async fn build_router(
         .with_shared_response_memory_budget(budget.clone()),
     );
     let stream_relay = Arc::new(
-        SecretRefOpenAiCompatibleChatCompletionStreamRelay::for_local_development(
-            secret_resolver,
-        )
-        .with_shared_response_memory_budget(budget),
+        SecretRefOpenAiCompatibleChatCompletionStreamRelay::for_local_development(secret_resolver)
+            .with_shared_response_memory_budget(budget),
     );
     let hasher = Arc::new(
         HmacSha256ApiKeySecretHasher::new(API_KEY_PEPPER).expect("hasher must initialize"),
     );
-    let authenticator: Arc<dyn OpenAiAuthTokenAuthenticator> = Arc::new(
-        RealTestAuthTokenAuthenticator {
+    let authenticator: Arc<dyn OpenAiAuthTokenAuthenticator> =
+        Arc::new(RealTestAuthTokenAuthenticator {
             config: app_session_config().expect("app session config must initialize"),
             now_unix_seconds: TEST_NOW_UNIX_SECONDS,
             group_id,
             group_code: DEFAULT_GROUP_CODE.to_owned(),
-        },
-    );
+        });
     let runtime_config = OpenAiRuntimeRouteConfig::new(
         sdkwork_cloudrouter_router_service::domain::ProviderRetryPolicy::default(),
         OpenAiRuntimeFailureStrategy::FailClosed,
@@ -1123,7 +1128,11 @@ async fn real_login_routes_through_default_group_pool_to_routing_target() {
 
     let captured_a = provider_a.captured.lock().unwrap();
     let captured_b = provider_b.captured.lock().unwrap();
-    assert_eq!(1, captured_a.len(), "primary account A must be called exactly once");
+    assert_eq!(
+        1,
+        captured_a.len(),
+        "primary account A must be called exactly once"
+    );
     assert_eq!(0, captured_b.len(), "failover account B must NOT be called");
     assert_eq!(
         Some(format!("Bearer {}", "sk-e2e-account-a-secret")),
@@ -1182,10 +1191,12 @@ async fn admin_adds_account_to_group_then_routing_reaches_it() {
             },
             preferred_endpoint_id: None,
             default_base_url: Some(base_c.clone()),
-            protocols: vec![sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
-                protocol_code: LlmProtocolCode::OpenaiChatCompletions,
-                base_url: base_c.clone(),
-            }],
+            protocols: vec![
+                sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
+                    protocol_code: LlmProtocolCode::OpenaiChatCompletions,
+                    base_url: base_c.clone(),
+                },
+            ],
             account_code: "e2e-account-c".to_owned(),
             account_name: "E2E Account C".to_owned(),
             account_type: "standard".to_owned(),
@@ -1317,10 +1328,12 @@ async fn admin_adds_account_to_group_then_routing_reaches_it() {
             supplier_id: account_c.supplier_id,
             preferred_endpoint_id: None,
             default_base_url: Some(base_c.clone()),
-            protocols: vec![sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
-                protocol_code: LlmProtocolCode::OpenaiChatCompletions,
-                base_url: base_c.clone(),
-            }],
+            protocols: vec![
+                sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
+                    protocol_code: LlmProtocolCode::OpenaiChatCompletions,
+                    base_url: base_c.clone(),
+                },
+            ],
             account_code: "e2e-account-c".to_owned(),
             account_name: "E2E Account C".to_owned(),
             account_type: "standard".to_owned(),
@@ -1377,10 +1390,12 @@ async fn admin_adds_account_to_group_then_routing_reaches_it() {
             supplier_id: account_c.supplier_id,
             preferred_endpoint_id: None,
             default_base_url: Some(base_c.clone()),
-            protocols: vec![sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
-                protocol_code: LlmProtocolCode::OpenaiChatCompletions,
-                base_url: base_c.clone(),
-            }],
+            protocols: vec![
+                sdkwork_cloudrouter_router_service::ports::AdminLlmProtocolConfig {
+                    protocol_code: LlmProtocolCode::OpenaiChatCompletions,
+                    base_url: base_c.clone(),
+                },
+            ],
             account_code: "e2e-account-c".to_owned(),
             account_name: "E2E Account C".to_owned(),
             account_type: "standard".to_owned(),

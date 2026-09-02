@@ -8,7 +8,6 @@ use sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenAuthenticator;
 use sdkwork_cloudrouter_router_service::application::{
     ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
 };
-use sdkwork_web_core::default_open_api_bearer_classifier;
 use sdkwork_cloudrouter_router_service::ports::PricingCatalog;
 use sdkwork_cloudrouter_security::{
     InternalGatewayPrincipal, InternalGatewayRequestVerifier, SignedInternalGatewayRequest,
@@ -17,6 +16,7 @@ use sdkwork_cloudrouter_security::{
     X_SDKWORK_INTERNAL_ISSUED_AT, X_SDKWORK_INTERNAL_NONCE, X_SDKWORK_INTERNAL_ORGANIZATION_ID,
     X_SDKWORK_INTERNAL_SIGNATURE, X_SDKWORK_INTERNAL_TENANT_ID, X_SDKWORK_INTERNAL_USER_ID,
 };
+use sdkwork_web_core::default_open_api_bearer_classifier;
 use serde_json::json;
 
 #[derive(Debug)]
@@ -167,12 +167,14 @@ where
             authenticator
                 .authenticate(credential_secret, access_token)
                 .await
-                .map_err(|_response| gateway_auth_error(
-                    StatusCode::UNAUTHORIZED,
-                    "invalid_auth_token",
-                    "invalid_request_error",
-                    "auth token authentication failed",
-                ))
+                .map_err(|_response| {
+                    gateway_auth_error(
+                        StatusCode::UNAUTHORIZED,
+                        "invalid_auth_token",
+                        "invalid_request_error",
+                        "auth token authentication failed",
+                    )
+                })
         }
     }
 }

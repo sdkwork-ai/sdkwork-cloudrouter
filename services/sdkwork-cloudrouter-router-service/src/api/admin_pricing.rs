@@ -24,12 +24,12 @@ use crate::ports::{
     AdminPricingRoundingMode, AdminPricingStatus, AdminPricingStore, AdminRateCardSubjectType,
     CreateAdminPriceBookCommand, CreateAdminPriceBookRateCommand, CreateAdminPricingPlanCommand,
     CreateAdminPricingRuleCommand, CreateAdminRateCardCommand, DeleteAdminDefaultRegionCommand,
-    DeleteAdminPricingRuleCommand, DeleteAdminPriceBookRateCommand, DeleteAdminRateCardCommand,
-    ListAdminDefaultRegionsQuery, ListAdminPricingPlansQuery, ListAdminPricingRulesQuery,
-    ListAdminPriceBooksQuery, ListAdminRateCardsQuery, LoadAdminPriceBookQuery,
+    DeleteAdminPriceBookRateCommand, DeleteAdminPricingRuleCommand, DeleteAdminRateCardCommand,
+    ListAdminDefaultRegionsQuery, ListAdminPriceBooksQuery, ListAdminPricingPlansQuery,
+    ListAdminPricingRulesQuery, ListAdminRateCardsQuery, LoadAdminPriceBookQuery,
     LoadAdminPricingPlanQuery, PriceBookLifecycleCommand, ResolveAdminPriceSettingQuery,
     SaveAdminDefaultRegionCommand, SaveAdminPriceSettingCommand, UpdateAdminDefaultRegionCommand,
-    UpdateAdminPricingPlanCommand, UpdateAdminPriceBookCommand, UpdateAdminPriceBookRateCommand,
+    UpdateAdminPriceBookCommand, UpdateAdminPriceBookRateCommand, UpdateAdminPricingPlanCommand,
     UpdateAdminPricingRuleCommand, UpdateAdminRateCardCommand,
 };
 
@@ -897,12 +897,13 @@ struct NormalizedPriceSettingMutation {
 fn normalize_price_setting_mutation(
     request: PriceSettingMutationRequest,
 ) -> Result<NormalizedPriceSettingMutation, AdminPricingCommandBuildError> {
-    let official_rate_code =
-        normalize_required_text(request.official_rate_code.as_deref(), "officialRateCode", MAX_CODE_LEN)?;
-    let pricing_plan_id = normalize_required_pricing_id(
-        request.pricing_plan_id.as_deref(),
-        "pricingPlanId",
+    let official_rate_code = normalize_required_text(
+        request.official_rate_code.as_deref(),
+        "officialRateCode",
+        MAX_CODE_LEN,
     )?;
+    let pricing_plan_id =
+        normalize_required_pricing_id(request.pricing_plan_id.as_deref(), "pricingPlanId")?;
     let rule_id = normalize_optional_text(request.rule_id.as_deref(), "ruleId", 32)?;
     let formula_mode = normalize_formula_mode(request.formula_mode.as_deref())?;
     let (multiplier, markup_amount, unit_price_override) = match formula_mode {
@@ -1016,9 +1017,7 @@ async fn upsert_price_setting(
         Err(error) if error.is_not_found() => {
             not_found_response("official rate or pricing rule was not found")
         }
-        Err(error) => {
-            pricing_system_response("price setting command store is unavailable", error)
-        }
+        Err(error) => pricing_system_response("price setting command store is unavailable", error),
     }
 }
 
@@ -1040,16 +1039,15 @@ async fn resolve_price_setting(
         Ok(value) => value,
         Err(error) => return command_build_error_response(error),
     };
-    let region_code =
-        match normalize_optional_text(params.region_code.as_deref(), "regionCode", 64) {
-            Ok(value) => value,
-            Err(error) => return command_build_error_response(error),
-        };
-    let pricing_plan_id =
-        match normalize_optional_pricing_id(params.pricing_plan_id.as_deref()) {
-            Ok(value) => value,
-            Err(message) => return bad_request(message),
-        };
+    let region_code = match normalize_optional_text(params.region_code.as_deref(), "regionCode", 64)
+    {
+        Ok(value) => value,
+        Err(error) => return command_build_error_response(error),
+    };
+    let pricing_plan_id = match normalize_optional_pricing_id(params.pricing_plan_id.as_deref()) {
+        Ok(value) => value,
+        Err(message) => return bad_request(message),
+    };
     let occurred_at = match params.occurred_at.as_deref().map(str::trim) {
         None | Some("") => None,
         Some(value) => match DateTime::parse_from_rfc3339(value) {
@@ -1068,19 +1066,15 @@ async fn resolve_price_setting(
         })
         .await
     {
-        Ok(Some(resolution)) => {
-            Json(success_envelope(AdminPricingItemEnvelope {
-                item: resolution,
-            }))
-            .into_response()
-        }
+        Ok(Some(resolution)) => Json(success_envelope(AdminPricingItemEnvelope {
+            item: resolution,
+        }))
+        .into_response(),
         Ok(None) => not_found_response("official rate was not found"),
         Err(error) if error.is_not_found() => {
             not_found_response("official rate or pricing plan was not found")
         }
-        Err(error) => {
-            pricing_system_response("price setting resolution is unavailable", error)
-        }
+        Err(error) => pricing_system_response("price setting resolution is unavailable", error),
     }
 }
 
@@ -1266,9 +1260,7 @@ async fn fetch_default_regions(
         .await
     {
         Ok(page) => pricing_list_response(page),
-        Err(error) => {
-            pricing_system_response("default region read model is unavailable", error)
-        }
+        Err(error) => pricing_system_response("default region read model is unavailable", error),
     }
 }
 
@@ -1319,9 +1311,7 @@ async fn create_default_region(
         Ok(item) => json_created_response(None, AdminPricingItemEnvelope { item }),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) if error.is_bad_request() => bad_request(error.to_string()),
-        Err(error) => {
-            pricing_system_response("default region command store is unavailable", error)
-        }
+        Err(error) => pricing_system_response("default region command store is unavailable", error),
     }
 }
 
@@ -1337,11 +1327,11 @@ async fn update_default_region(
     body: Bytes,
 ) -> Response {
     let subject = scoped.into();
-    let default_region_id =
-        match normalize_pricing_path_id(&default_region_id, "default region id") {
-            Ok(default_region_id) => default_region_id,
-            Err(message) => return bad_request(message),
-        };
+    let default_region_id = match normalize_pricing_path_id(&default_region_id, "default region id")
+    {
+        Ok(default_region_id) => default_region_id,
+        Err(message) => return bad_request(message),
+    };
     let request = match parse_json_body::<DefaultRegionMutationRequest>(&body, "default region") {
         Ok(request) => request,
         Err(message) => return bad_request(message),
@@ -1375,9 +1365,7 @@ async fn update_default_region(
         Ok(None) => not_found_response("default region was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) if error.is_bad_request() => bad_request(error.to_string()),
-        Err(error) => {
-            pricing_system_response("default region command store is unavailable", error)
-        }
+        Err(error) => pricing_system_response("default region command store is unavailable", error),
     }
 }
 
@@ -1388,11 +1376,11 @@ async fn delete_default_region(
     Path(default_region_id): Path<String>,
 ) -> Response {
     let subject = scoped.into();
-    let default_region_id =
-        match normalize_pricing_path_id(&default_region_id, "default region id") {
-            Ok(default_region_id) => default_region_id,
-            Err(message) => return bad_request(message),
-        };
+    let default_region_id = match normalize_pricing_path_id(&default_region_id, "default region id")
+    {
+        Ok(default_region_id) => default_region_id,
+        Err(message) => return bad_request(message),
+    };
     let command = DeleteAdminDefaultRegionCommand {
         subject,
         default_region_id,
@@ -1409,9 +1397,7 @@ async fn delete_default_region(
     match state.store.delete_default_region(command).await {
         Ok(true) => no_content_response(None),
         Ok(false) => not_found_response("default region was not found"),
-        Err(error) => {
-            pricing_system_response("default region command store is unavailable", error)
-        }
+        Err(error) => pricing_system_response("default region command store is unavailable", error),
     }
 }
 
@@ -1704,7 +1690,9 @@ async fn create_price_book_rate(
         conditions: mutation.conditions,
         tiers: mutation.tiers,
         schedule: mutation.schedule,
-        effective_from: mutation.effective_from.unwrap_or_else(current_timestamp_string),
+        effective_from: mutation
+            .effective_from
+            .unwrap_or_else(current_timestamp_string),
         effective_to: mutation.effective_to,
         source_url: mutation.source_url,
         request_id: match generate_server_request_id() {
@@ -1760,7 +1748,9 @@ async fn update_price_book_rate(
         minimum_quantity: mutation.minimum_quantity,
         quantity_step: mutation.quantity_step,
         priority: mutation.priority,
-        effective_from: mutation.effective_from.unwrap_or_else(current_timestamp_string),
+        effective_from: mutation
+            .effective_from
+            .unwrap_or_else(current_timestamp_string),
         effective_to: mutation.effective_to,
         request_id: match generate_server_request_id() {
             Ok(request_id) => request_id,
@@ -1884,8 +1874,8 @@ fn normalize_price_book_rate_create(
             .unwrap_or_else(|| "0".to_owned());
     let quantity_step =
         normalize_optional_decimal_value(request.quantity_step.as_ref(), "quantityStep")?;
-    let priority =
-        normalize_optional_non_negative_integer(request.priority.as_ref(), "priority")?.unwrap_or(100);
+    let priority = normalize_optional_non_negative_integer(request.priority.as_ref(), "priority")?
+        .unwrap_or(100);
     let billability = normalize_enum_choice(
         request.billability.as_deref(),
         "billability",
@@ -1981,12 +1971,8 @@ fn normalize_price_book_rate_create(
     Ok(NormalizedPriceBookRateCreate {
         rate_code: normalize_required_code(request.rate_code.as_deref(), "rateCode")?,
         product_code: product_code.clone(),
-        product_kind: normalize_optional_text(
-            request.product_kind.as_deref(),
-            "productKind",
-            64,
-        )?
-        .unwrap_or_else(|| "model".to_owned()),
+        product_kind: normalize_optional_text(request.product_kind.as_deref(), "productKind", 64)?
+            .unwrap_or_else(|| "model".to_owned()),
         product_display_name: normalize_optional_text(
             request.product_display_name.as_deref(),
             "productDisplayName",
@@ -2043,11 +2029,7 @@ fn normalize_price_book_rate_create(
             MAX_TEXT_LEN,
         )?
         .unwrap_or_else(|| product_code.clone()),
-        catalog_key: normalize_optional_text(
-            request.catalog_key.as_deref(),
-            "catalogKey",
-            256,
-        )?,
+        catalog_key: normalize_optional_text(request.catalog_key.as_deref(), "catalogKey", 256)?,
         api_format: normalize_optional_text(request.api_format.as_deref(), "apiFormat", 64)?,
         endpoint_code: normalize_optional_text(
             request.endpoint_code.as_deref(),
@@ -2084,14 +2066,12 @@ fn normalize_price_book_rate_patch(
         ));
     }
     let unit_price = normalize_decimal_value(request.unit_price.as_ref(), "unitPrice")?;
-    let minimum_quantity = normalize_decimal_value(
-        request.minimum_quantity.as_ref(),
-        "minimumQuantity",
-    )?;
+    let minimum_quantity =
+        normalize_decimal_value(request.minimum_quantity.as_ref(), "minimumQuantity")?;
     let quantity_step =
         normalize_optional_decimal_value(request.quantity_step.as_ref(), "quantityStep")?;
-    let priority =
-        normalize_optional_non_negative_integer(request.priority.as_ref(), "priority")?.unwrap_or(100);
+    let priority = normalize_optional_non_negative_integer(request.priority.as_ref(), "priority")?
+        .unwrap_or(100);
     let effective_from =
         normalize_optional_datetime(request.effective_from.as_deref(), "effectiveFrom")?;
     let effective_to = normalize_optional_datetime(request.effective_to.as_deref(), "effectiveTo")?;
@@ -2115,9 +2095,7 @@ fn normalize_optional_price_book_lifecycle(value: Option<&str>) -> Result<Option
         "draft" | "staged" | "active" | "retired" | "rejected" => {
             Ok(Some(value.trim().to_ascii_lowercase()))
         }
-        _ => Err(
-            "lifecycleState must be draft, staged, active, retired, or rejected".to_owned(),
-        ),
+        _ => Err("lifecycleState must be draft, staged, active, retired, or rejected".to_owned()),
     }
 }
 

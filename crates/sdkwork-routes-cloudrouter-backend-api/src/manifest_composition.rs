@@ -112,14 +112,11 @@ fn dependency_mounts() -> Vec<RouteManifestMount> {
 
 fn compose_backend_route_manifest() -> HttpRouteManifest {
     let mounts = dependency_mounts();
-    let composed = HttpRouteManifest::try_merge_mounts(
-        "sdkwork-cloudrouter",
-        http_route_manifest(),
-        &mounts,
-    )
-    .unwrap_or_else(|error| {
-        panic!("cloud router backend-api manifest composition failed: {error}");
-    });
+    let composed =
+        HttpRouteManifest::try_merge_mounts("sdkwork-cloudrouter", http_route_manifest(), &mounts)
+            .unwrap_or_else(|error| {
+                panic!("cloud router backend-api manifest composition failed: {error}");
+            });
     composed
         .validate_includes_dependency_manifests(&mounts)
         .unwrap_or_else(|error| {
@@ -184,9 +181,18 @@ mod tests {
         for (workspace, merge_marker) in [
             ("sdkwork-iam", "assemble_backend_api_contribution"),
             ("sdkwork-messaging", "assemble_backend_api_contribution"),
-            ("sdkwork-partner", "assemble_backend_business_router_with_pool"),
-            ("sdkwork-promotion", "assemble_backend_business_router_with_pool"),
-            ("sdkwork-community", "assemble_backend_business_router_with_pool"),
+            (
+                "sdkwork-partner",
+                "assemble_backend_business_router_with_pool",
+            ),
+            (
+                "sdkwork-promotion",
+                "assemble_backend_business_router_with_pool",
+            ),
+            (
+                "sdkwork-community",
+                "assemble_backend_business_router_with_pool",
+            ),
             ("sdkwork-rtc", "assemble_backend_api_contribution_with_pool"),
         ] {
             assert!(

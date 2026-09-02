@@ -391,10 +391,14 @@ fn attach_route_failure_headers(
         .take(512)
         .collect();
     if let Ok(value) = HeaderValue::from_str(stage) {
-        response.headers_mut().insert("x-sdkwork-route-stage", value);
+        response
+            .headers_mut()
+            .insert("x-sdkwork-route-stage", value);
     }
     if let Ok(value) = HeaderValue::from_str(&reason) {
-        response.headers_mut().insert("x-sdkwork-route-reason", value);
+        response
+            .headers_mut()
+            .insert("x-sdkwork-route-reason", value);
     }
 }
 
@@ -419,9 +423,7 @@ fn attach_trace_response_headers(
         }
     }
     if let Ok(value) = HeaderValue::from_str(&format!("00-{trace_id}-0000000000000000-01")) {
-        response
-            .headers_mut()
-            .insert("traceparent", value);
+        response.headers_mut().insert("traceparent", value);
     }
 }
 
@@ -429,8 +431,7 @@ fn attach_trace_response_headers(
 /// (`00-<trace-id>-<span-id>-<flags>`); any other value is returned unchanged.
 fn trace_id_from_wire_value(value: &str) -> Option<String> {
     let parts = value.split('-').collect::<Vec<_>>();
-    (parts.len() == 4 && parts[0] == "00" && parts[1].len() == 32)
-        .then(|| parts[1].to_owned())
+    (parts.len() == 4 && parts[0] == "00" && parts[1].len() == 32).then(|| parts[1].to_owned())
 }
 
 fn contains_public_api_key_credential(headers: &HeaderMap) -> bool {

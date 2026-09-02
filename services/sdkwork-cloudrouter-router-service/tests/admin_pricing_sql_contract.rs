@@ -248,7 +248,8 @@ fn admin_default_region_save_is_a_single_atomic_upsert() {
         "the conflict target must repeat the partial index predicate, otherwise it never matches"
     );
     assert!(
-        section.contains("DO UPDATE SET") && section.contains("version = pricing_default_region.version + 1"),
+        section.contains("DO UPDATE SET")
+            && section.contains("version = pricing_default_region.version + 1"),
         "an existing default region must be switched in place rather than duplicated"
     );
     assert!(

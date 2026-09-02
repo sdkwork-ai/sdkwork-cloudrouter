@@ -267,7 +267,10 @@ mod tests {
             ("sdkwork-drive", "merge_federated_drive_app_router"),
             ("sdkwork-assets", "merge_federated_assets_app_router"),
             ("sdkwork-skills", "merge_federated_skills_app_router"),
-            ("sdkwork-generations", "merge_federated_generations_app_router"),
+            (
+                "sdkwork-generations",
+                "merge_federated_generations_app_router",
+            ),
         ] {
             assert!(
                 MOUNTED_APP_CAPABILITIES

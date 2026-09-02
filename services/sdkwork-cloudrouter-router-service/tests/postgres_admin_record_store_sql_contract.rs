@@ -22,9 +22,8 @@ fn sql_const<'a>(source: &'a str, name: &str) -> &'a str {
 fn postgres_billing_read_projection_exposes_user_id_for_subject_scoped_reads() {
     let projection_sql = compact_sql(POSTGRES_BILLING_READ_PROJECTION);
     assert!(
-        projection_sql.contains(
-            "COALESCE(c.user_id, m.user_id, trace_snapshot.user_id) AS user_id"
-        ),
+        projection_sql
+            .contains("COALESCE(c.user_id, m.user_id, trace_snapshot.user_id) AS user_id"),
         "billable_usage CTE must expose user_id from charge line, measurement, and trace fallback"
     );
     assert!(

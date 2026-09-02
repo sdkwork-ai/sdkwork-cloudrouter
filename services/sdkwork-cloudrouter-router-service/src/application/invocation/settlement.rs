@@ -87,9 +87,11 @@ impl InvocationInterceptor for PricingSettlementInterceptor {
             // conversion uses the configured cash→Token-Bank exchange settings
             // stashed by `BillingTransactionInterceptor`, keeping the recorded
             // `debit_points` consistent with the wallet for every currency.
-            let settings = invocation.charging.points_settings.clone().or_else(|| {
-                parse_recharge_settings_model(None, None, None).ok()
-            });
+            let settings = invocation
+                .charging
+                .points_settings
+                .clone()
+                .or_else(|| parse_recharge_settings_model(None, None, None).ok());
             if let Some(settings) = settings {
                 allocate_request_debit_points(&mut commands, &settings);
             }
@@ -822,7 +824,8 @@ mod tests {
     #[test]
     fn unit_price_columns_apply_only_to_the_relevant_price_slot() {
         let base = |meter: BillingMeter| {
-            let line = InvocationUsageLine::new(meter, GatewayUsageQuantity::tokens(1).expect("valid"));
+            let line =
+                InvocationUsageLine::new(meter, GatewayUsageQuantity::tokens(1).expect("valid"));
             (line, "0.5".to_owned())
         };
 

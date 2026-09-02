@@ -144,7 +144,12 @@ pub(super) async fn load_scope_model_access(
     subject: &AdminUpstreamSubject,
     scope_type: &str,
     scope_id: i64,
-) -> DomainResult<Option<(Vec<AdminUpstreamModelListEntry>, Vec<AdminUpstreamModelListEntry>)>> {
+) -> DomainResult<
+    Option<(
+        Vec<AdminUpstreamModelListEntry>,
+        Vec<AdminUpstreamModelListEntry>,
+    )>,
+> {
     let rows = sqlx::query(
         r#"
         SELECT scope_type, scope_id, scope_code, effect,
@@ -228,7 +233,12 @@ pub(super) async fn load_scope_model_access_in_tx(
     subject: &AdminUpstreamSubject,
     scope_type: &str,
     scope_id: i64,
-) -> DomainResult<Option<(Vec<AdminUpstreamModelListEntry>, Vec<AdminUpstreamModelListEntry>)>> {
+) -> DomainResult<
+    Option<(
+        Vec<AdminUpstreamModelListEntry>,
+        Vec<AdminUpstreamModelListEntry>,
+    )>,
+> {
     let rows = sqlx::query(
         r#"
         SELECT scope_type, scope_id, scope_code, effect,
@@ -271,5 +281,3 @@ pub(super) async fn load_scope_model_access_in_tx(
     }
     Ok(Some((blacklist, whitelist)))
 }
-
-

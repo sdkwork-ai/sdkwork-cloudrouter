@@ -1761,7 +1761,10 @@ mod tests {
     use crate::domain::{PricingRateMetadata, PricingRateRecordIdentity};
     use crate::infrastructure::sql::rows::ModelPriceRow;
 
-    fn metadata(rate_hash: &str, record_identity: Option<PricingRateRecordIdentity>) -> Option<PricingRateMetadata> {
+    fn metadata(
+        rate_hash: &str,
+        record_identity: Option<PricingRateRecordIdentity>,
+    ) -> Option<PricingRateMetadata> {
         Some(PricingRateMetadata {
             record_identity,
             price_book_code: "models-deepseek-cn-cny-2026-08-15".to_owned(),
@@ -1831,7 +1834,12 @@ mod tests {
             rate_id: 7001,
         };
         let merged = merge_runtime_pricing_dictionary_rows(
-            dictionary(vec![price_row("deepseek/deepseek-chat", "cn", "sha256:book", None)]),
+            dictionary(vec![price_row(
+                "deepseek/deepseek-chat",
+                "cn",
+                "sha256:book",
+                None,
+            )]),
             Vec::new(),
             Vec::new(),
             vec![price_row(
@@ -1865,11 +1873,21 @@ mod tests {
             rate_id: 7002,
         };
         let merged = merge_runtime_pricing_dictionary_rows(
-            dictionary(vec![price_row("deepseek/deepseek-chat", "cn", "sha256:book", None)]),
+            dictionary(vec![price_row(
+                "deepseek/deepseek-chat",
+                "cn",
+                "sha256:book",
+                None,
+            )]),
             Vec::new(),
             Vec::new(),
             vec![
-                price_row("deepseek/deepseek-chat", "cn", "sha256:book", Some(identity)),
+                price_row(
+                    "deepseek/deepseek-chat",
+                    "cn",
+                    "sha256:book",
+                    Some(identity),
+                ),
                 price_row(
                     "tenant/custom-model",
                     "cn",

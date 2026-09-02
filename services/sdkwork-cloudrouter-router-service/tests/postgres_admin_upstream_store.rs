@@ -398,10 +398,7 @@ async fn postgres_upstream_store_enforces_scope_concurrency_and_secret_safety() 
     .expect("parse denied account group bindings");
     // 账号无自身绑定 + 分组被拒绝 → 无任何可用作用域，apiScope 为空数组
     // （`__deny__` 哨兵仅对"有自身绑定但无有效作用域"的账号触发）。
-    assert_eq!(
-        serde_json::json!([]),
-        denied_bindings[0]["apiScope"]
-    );
+    assert_eq!(serde_json::json!([]), denied_bindings[0]["apiScope"]);
     // 账号无自身绑定 → resourceEntitlements 保持 null（V2 契约）。
     assert!(
         denied_bindings[0]["resourceEntitlements"].is_null(),

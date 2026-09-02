@@ -8,9 +8,8 @@ use sdkwork_account_service::{
 };
 use sdkwork_cloudrouter_router_service::domain::DomainError;
 use sdkwork_cloudrouter_router_service::ports::{
-    parse_recharge_settings_model, CustomerChargeMode, GatewayBillingAmount,
-    GatewayBillingContext, GatewayBillingFuture, GatewayBillingSettlementMode, GatewayBillingStore,
-    RechargeSettingsModel,
+    parse_recharge_settings_model, CustomerChargeMode, GatewayBillingAmount, GatewayBillingContext,
+    GatewayBillingFuture, GatewayBillingSettlementMode, GatewayBillingStore, RechargeSettingsModel,
 };
 use sdkwork_contract_service::{
     CommerceAccountAssetType, CommerceLedgerDirection, CommerceMoney, CommerceRequestHash,
@@ -233,25 +232,20 @@ impl PostgresGatewayBillingStore {
     ) -> Result<(), DomainError> {
         let request_no = format!("cloudrouter:{}:{}", context.request_id, RELEASE_SUFFIX);
         let idempotency_key = request_no.clone();
-        let command =
-            ReleaseAccountHoldCommand::new(
-                &context.tenant_id.to_string(),
-                hold_id,
-                &request_no,
-                &idempotency_key,
-            )
-            .map_err(|error| DomainError::new(error.message().to_owned()))?;
+        let command = ReleaseAccountHoldCommand::new(
+            &context.tenant_id.to_string(),
+            hold_id,
+            &request_no,
+            &idempotency_key,
+        )
+        .map_err(|error| DomainError::new(error.message().to_owned()))?;
         let request_hash_payload = format!(
             "{}|{}|{}|{}",
             command.tenant_id, command.hold_id, command.request_no, command.idempotency_key
         );
         let hash = CommerceRequestHash::new(&sha256_hex(&request_hash_payload))
             .map_err(|error| DomainError::new(error.message().to_owned()))?;
-        match self
-            .account_store
-            .release_account_hold(command, hash)
-            .await
-        {
+        match self.account_store.release_account_hold(command, hash).await {
             Ok(_) => Ok(()),
             Err(error) => {
                 let message = error.message().to_owned();
@@ -451,12 +445,14 @@ async fn load_cash_to_points_settings(
 ) -> Result<RechargeSettingsModel, DomainError> {
     let row = match load_cash_to_points_settings_row(pool, tenant_id, organization_id).await? {
         Some(row) => Some(row),
-        None => load_cash_to_points_settings_row(
-            pool,
-            platform_catalog_tenant_id(),
-            PLATFORM_CATALOG_ORGANIZATION_ID,
-        )
-        .await?,
+        None => {
+            load_cash_to_points_settings_row(
+                pool,
+                platform_catalog_tenant_id(),
+                PLATFORM_CATALOG_ORGANIZATION_ID,
+            )
+            .await?
+        }
     };
     let currency_rates = row
         .as_ref()
@@ -469,13 +465,11 @@ async fn load_cash_to_points_settings(
     let rate = row
         .as_ref()
         .and_then(|item| item.try_get::<Option<String>, _>("rate").ok().flatten());
-    let base_currency_code = row
-        .as_ref()
-        .and_then(|item| {
-            item.try_get::<Option<String>, _>("base_currency_code")
-                .ok()
-                .flatten()
-        });
+    let base_currency_code = row.as_ref().and_then(|item| {
+        item.try_get::<Option<String>, _>("base_currency_code")
+            .ok()
+            .flatten()
+    });
     parse_recharge_settings_model(
         rate.as_deref(),
         base_currency_code.as_deref(),

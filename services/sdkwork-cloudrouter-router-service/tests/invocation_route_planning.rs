@@ -7,9 +7,8 @@ use sdkwork_cloudrouter_router_service::application::{
 };
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
-    ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
-    RoutingCapability, UpstreamAccountGroup,
-    UpstreamAccountRoute, UpstreamAccountRoutingStrategy,
+    ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, RoutingCapability,
+    UpstreamAccountGroup, UpstreamAccountRoute, UpstreamAccountRoutingStrategy,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use serde_json::json;

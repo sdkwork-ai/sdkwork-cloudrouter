@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
+use super::routing::STICKY_SCOPE_SESSION;
 use super::{
     AccountBillingMode, BillingMode, DispatchMode, Invocation, InvocationError,
     InvocationErrorKind, InvocationFuture, InvocationInterceptor, InvocationRouteCandidate,
     InvocationRouteCandidateKind, InvocationRoutePlan, ResourceType, RoutingPipeline,
     StickyRouteConstraint,
 };
-use super::routing::STICKY_SCOPE_SESSION;
 use crate::application::upstream_base_url::{
     protocol_code_from_api_code, resolve_upstream_base_url,
 };
@@ -132,7 +132,8 @@ where
     // vendor 列表（对应 sdkwork-models 目录的模型→vendor 解析）。
     let catalog_key = resolve_catalog_key(catalog, invocation, &requested_model)?;
     invocation.resource.requested_model_catalog_key = Some(catalog_key.clone());
-    invocation.resource.resolved_vendor_codes = catalog.model_vendor_codes_by_name(&requested_model);
+    invocation.resource.resolved_vendor_codes =
+        catalog.model_vendor_codes_by_name(&requested_model);
     tracing::trace!(
         tenant_id = invocation.subject.tenant_id,
         organization_id = invocation.subject.organization_id,

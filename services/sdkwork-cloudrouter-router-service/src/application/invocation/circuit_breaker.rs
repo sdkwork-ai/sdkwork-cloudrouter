@@ -1347,19 +1347,17 @@ mod tests {
         // Simulate final route attempts: an upstream 401 (invalid credential)
         // must be neutral for the breaker — repeated 401s must not open it.
         for _ in 0..5 {
-            cb.record_final_route_attempts(&[
-                InvocationRouteAttempt {
-                    supplier_code: "deepseek".to_owned(),
-                    account_id: 42,
-                    candidate_index: 0,
-                    status_code: Some(401),
-                    success: false,
-                    retryable: false,
-                    error_code: Some("provider_status".to_owned()),
-                    error_message: Some("Authentication Fails".to_owned()),
-                    latency_ms: Some(70),
-                },
-            ])
+            cb.record_final_route_attempts(&[InvocationRouteAttempt {
+                supplier_code: "deepseek".to_owned(),
+                account_id: 42,
+                candidate_index: 0,
+                status_code: Some(401),
+                success: false,
+                retryable: false,
+                error_code: Some("provider_status".to_owned()),
+                error_message: Some("Authentication Fails".to_owned()),
+                latency_ms: Some(70),
+            }])
             .await;
         }
 
@@ -1368,19 +1366,17 @@ mod tests {
 
         // 429 (rate limiting) remains a transient upstream signal and trips.
         for _ in 0..3 {
-            cb.record_final_route_attempts(&[
-                InvocationRouteAttempt {
-                    supplier_code: "deepseek".to_owned(),
-                    account_id: 43,
-                    candidate_index: 0,
-                    status_code: Some(429),
-                    success: false,
-                    retryable: true,
-                    error_code: Some("provider_status".to_owned()),
-                    error_message: Some("rate limited".to_owned()),
-                    latency_ms: Some(30),
-                },
-            ])
+            cb.record_final_route_attempts(&[InvocationRouteAttempt {
+                supplier_code: "deepseek".to_owned(),
+                account_id: 43,
+                candidate_index: 0,
+                status_code: Some(429),
+                success: false,
+                retryable: true,
+                error_code: Some("provider_status".to_owned()),
+                error_message: Some("rate limited".to_owned()),
+                latency_ms: Some(30),
+            }])
             .await;
         }
         assert_eq!(CircuitState::Open, cb.get_state(43));

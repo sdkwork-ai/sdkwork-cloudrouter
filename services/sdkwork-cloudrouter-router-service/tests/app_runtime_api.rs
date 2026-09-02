@@ -3012,7 +3012,10 @@ async fn app_runtime_gateway_executor_routes_openai_video_generation_to_gateway_
     let event_commands = store.create_event_commands.lock().unwrap();
     let asset_event = single_event_command_of_type(&event_commands, "generation.asset");
     assert_eq!("video", asset_event.payload_json["assets"][0]["modality"]);
-    assert_eq!("video", asset_event.payload_json["assets"][0]["asset"]["kind"]);
+    assert_eq!(
+        "video",
+        asset_event.payload_json["assets"][0]["asset"]["kind"]
+    );
     assert_eq!(
         "https://cdn.example.test/generated/veo.mp4",
         asset_event.payload_json["assets"][0]["asset"]["url"]
@@ -4570,7 +4573,9 @@ impl sdkwork_cloudrouter_router_service::ports::UpstreamAccountRouteCatalog for 
     }
 }
 
-impl sdkwork_cloudrouter_router_service::ports::PricingDefaultRegionProvider for TestRuntimeCatalog {
+impl sdkwork_cloudrouter_router_service::ports::PricingDefaultRegionProvider
+    for TestRuntimeCatalog
+{
     fn default_billing_region(
         &self,
         _tenant_id: i64,

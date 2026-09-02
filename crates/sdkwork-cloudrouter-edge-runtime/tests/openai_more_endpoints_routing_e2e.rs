@@ -26,7 +26,8 @@ use axum::Json;
 use sdkwork_cloudrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, ModelPrice, ModelVendor, ModelVendorDefinition, Money,
-    PriceSide, PricingPlan, ProviderRetryPolicy, RoutingCapability, UpstreamAccountGroup, UpstreamAccountRoute,
+    PriceSide, PricingPlan, ProviderRetryPolicy, RoutingCapability, UpstreamAccountGroup,
+    UpstreamAccountRoute,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
@@ -57,15 +58,15 @@ impl MapSecretResolver {
 }
 
 impl ProviderSecretResolver for MapSecretResolver {
-    fn resolve_secret_value(&self, secret_ref: &str) -> sdkwork_cloudrouter_router_service::domain::DomainResult<String> {
-        self.secrets
-            .get(secret_ref)
-            .cloned()
-            .ok_or_else(|| {
-                sdkwork_cloudrouter_router_service::domain::DomainError::new(format!(
-                    "secret not found: {secret_ref}"
-                ))
-            })
+    fn resolve_secret_value(
+        &self,
+        secret_ref: &str,
+    ) -> sdkwork_cloudrouter_router_service::domain::DomainResult<String> {
+        self.secrets.get(secret_ref).cloned().ok_or_else(|| {
+            sdkwork_cloudrouter_router_service::domain::DomainError::new(format!(
+                "secret not found: {secret_ref}"
+            ))
+        })
     }
 }
 
@@ -317,7 +318,10 @@ fn catalog_with_endpoints(
         }
         // Composite audio endpoints may settle an input-token line as well as
         // the seconds line; embeddings settle input tokens only.
-        if matches!(api_code, "openai.audio.speech" | "openai.audio.transcriptions") {
+        if matches!(
+            api_code,
+            "openai.audio.speech" | "openai.audio.transcriptions"
+        ) {
             add_price(
                 &mut catalog,
                 catalog_key,
@@ -333,8 +337,13 @@ fn catalog_with_endpoints(
     // moderations is a model-less account route: pricing resolves under its
     // route key with an ApiRequest meter, so register a model + price there.
     catalog.add_model(
-        AiModel::new("openai.moderations", "OpenAI Moderation", "openai", vec!["network"])
-            .with_catalog_key("openai.moderations"),
+        AiModel::new(
+            "openai.moderations",
+            "OpenAI Moderation",
+            "openai",
+            vec!["network"],
+        )
+        .with_catalog_key("openai.moderations"),
     );
     add_price(
         &mut catalog,
@@ -361,8 +370,10 @@ fn catalog_with_endpoints(
         DecimalValue::parse("1.100000").unwrap(),
     ));
     catalog.add_api_key(
-        sdkwork_cloudrouter_router_service::domain::GatewayApiKey::new(101, 10, "sk-live", key_hash)
-            .with_owner(10, 20, 30),
+        sdkwork_cloudrouter_router_service::domain::GatewayApiKey::new(
+            101, 10, "sk-live", key_hash,
+        )
+        .with_owner(10, 20, 30),
     );
 
     // One shared account route bound to the default group with the full api
@@ -400,15 +411,44 @@ fn catalog_with_endpoints(
         (RoutingCapability::Image, 9300),
         (RoutingCapability::Audio, 9400),
         (RoutingCapability::Network, 9500),
-    ] {
-    }
+    ] {}
     for (rule_id, _code, match_key, _target) in [
-        (9111, "embeddings-rule", "openai/text-embedding-3-small", "openai/text-embedding-3-small"),
-        (9211, "completions-rule", "openai/gpt-4o-mini", "openai/gpt-4o-mini"),
-        (9311, "images-edits-rule", "openai/gpt-image-2", "openai/gpt-image-2"),
-        (9411, "audio-speech-rule", "openai/gpt-4o-mini-tts", "openai/gpt-4o-mini-tts"),
-        (9412, "audio-transcriptions-rule", "openai/whisper-1", "openai/whisper-1"),
-        (9511, "moderations-rule", "openai.moderations", "openai.moderations"),
+        (
+            9111,
+            "embeddings-rule",
+            "openai/text-embedding-3-small",
+            "openai/text-embedding-3-small",
+        ),
+        (
+            9211,
+            "completions-rule",
+            "openai/gpt-4o-mini",
+            "openai/gpt-4o-mini",
+        ),
+        (
+            9311,
+            "images-edits-rule",
+            "openai/gpt-image-2",
+            "openai/gpt-image-2",
+        ),
+        (
+            9411,
+            "audio-speech-rule",
+            "openai/gpt-4o-mini-tts",
+            "openai/gpt-4o-mini-tts",
+        ),
+        (
+            9412,
+            "audio-transcriptions-rule",
+            "openai/whisper-1",
+            "openai/whisper-1",
+        ),
+        (
+            9511,
+            "moderations-rule",
+            "openai.moderations",
+            "openai.moderations",
+        ),
     ] {
         let _match_expression = if rule_id == 9511 {
             format!(r#"{{"routeKey":"{match_key}"}}"#)
@@ -423,7 +463,10 @@ fn catalog_with_endpoints(
 // Router assembly + request helper
 // ---------------------------------------------------------------------------
 
-async fn build_router(catalog: InMemoryPricingCatalog, secrets: Vec<(String, String)>) -> axum::Router {
+async fn build_router(
+    catalog: InMemoryPricingCatalog,
+    secrets: Vec<(String, String)>,
+) -> axum::Router {
     let hasher = hasher();
     let dispatcher = sdkwork_cloudrouter_edge_runtime::InvocationHttpDispatcher::
         with_outbound_target_policy_and_response_max_bytes(

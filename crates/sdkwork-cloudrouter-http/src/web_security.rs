@@ -61,7 +61,9 @@ pub fn cloud_service_security_policy(environment: &WebEnvironment) -> SecurityPo
     } else {
         security_policy.cors.allowed_origins = configured_origins;
     }
-    security_policy.cors = security_policy.cors.with_registered_sdkwork_client_origins();
+    security_policy.cors = security_policy
+        .cors
+        .with_registered_sdkwork_client_origins();
     security_policy
 }
 
@@ -139,7 +141,10 @@ mod tests {
 
     #[test]
     fn demo_maps_to_test_not_prod() {
-        assert_eq!(super::parse_environment(Some("demo".into())), WebEnvironment::Test);
+        assert_eq!(
+            super::parse_environment(Some("demo".into())),
+            WebEnvironment::Test
+        );
         assert_eq!(
             super::parse_environment(Some("Demo ".into())),
             WebEnvironment::Test
@@ -148,8 +153,14 @@ mod tests {
 
     #[test]
     fn staging_maps_to_prod_like_development() {
-        assert_eq!(super::parse_environment(Some("staging".into())), WebEnvironment::Prod);
-        assert_eq!(super::parse_environment(Some("prod".into())), WebEnvironment::Prod);
+        assert_eq!(
+            super::parse_environment(Some("staging".into())),
+            WebEnvironment::Prod
+        );
+        assert_eq!(
+            super::parse_environment(Some("prod".into())),
+            WebEnvironment::Prod
+        );
         assert_eq!(
             super::parse_environment(Some("production".into())),
             WebEnvironment::Prod
@@ -159,7 +170,13 @@ mod tests {
     #[test]
     fn unset_or_unknown_environment_fails_closed_to_prod() {
         assert_eq!(super::parse_environment(None), WebEnvironment::Prod);
-        assert_eq!(super::parse_environment(Some(String::new())), WebEnvironment::Prod);
-        assert_eq!(super::parse_environment(Some("wat".into())), WebEnvironment::Prod);
+        assert_eq!(
+            super::parse_environment(Some(String::new())),
+            WebEnvironment::Prod
+        );
+        assert_eq!(
+            super::parse_environment(Some("wat".into())),
+            WebEnvironment::Prod
+        );
     }
 }

@@ -122,9 +122,13 @@ pub(super) async fn get(
         .map(map_row)
         .transpose()?;
     if let Some(group) = item.as_mut() {
-        if let Some((blacklist, whitelist)) =
-            super::model_access::load_scope_model_access(pool, &subject, "account_group", account_group_id)
-                .await?
+        if let Some((blacklist, whitelist)) = super::model_access::load_scope_model_access(
+            pool,
+            &subject,
+            "account_group",
+            account_group_id,
+        )
+        .await?
         {
             group.model_blacklist = blacklist;
             group.model_whitelist = whitelist;
@@ -261,10 +265,7 @@ pub(super) async fn delete(
             "account group cannot be deleted while active API key entitlements reference it",
         ));
     }
-    for table in [
-        "ai_upstream_account_group_member",
-        "ai_resource_binding",
-    ] {
+    for table in ["ai_upstream_account_group_member", "ai_resource_binding"] {
         let sql = format!(
             r#"
             UPDATE {table}

@@ -18,9 +18,7 @@ use sdkwork_cloudrouter_http::TenantIsolationViolation;
 
 use crate::api::response::{problem_from_wire_code, ApiResponseError};
 use crate::api::subject::unauthorized_subject_response;
-use crate::ports::{
-    AppChatSubject, AppNotificationSubject, AppRoutingSubject, SettingsSubject,
-};
+use crate::ports::{AppChatSubject, AppNotificationSubject, AppRoutingSubject, SettingsSubject};
 
 /// Default operator type for authenticated app-api users (matches legacy `TrustedRequestSubject` bridge).
 pub const APP_USER_OPERATOR_TYPE: i32 = 1;

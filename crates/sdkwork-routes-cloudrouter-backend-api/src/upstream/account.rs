@@ -1202,7 +1202,6 @@ mod tests {
                 timeout_ms: None,
                 status: None,
 
-
                 billing_mode: None,
                 model_blacklist: None,
                 model_whitelist: None,
@@ -1238,7 +1237,6 @@ mod tests {
                 timeout_ms: None,
                 status: None,
 
-
                 billing_mode: None,
                 model_blacklist: None,
                 model_whitelist: None,
@@ -1270,7 +1268,6 @@ mod tests {
                 rpm_limit: None,
                 timeout_ms: None,
                 status: None,
-
 
                 billing_mode: None,
                 model_blacklist: None,
@@ -1376,7 +1373,6 @@ mod tests {
                 rpm_limit: None,
                 timeout_ms: None,
                 status: None,
-
 
                 billing_mode: None,
                 model_blacklist: None,

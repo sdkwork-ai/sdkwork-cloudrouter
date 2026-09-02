@@ -704,11 +704,7 @@ fn upstream_route_selection_error(error: UpstreamRouteSelectionError) -> OpenAiR
 ///
 /// The reason header value is scrubbed to visible ASCII and length-capped so
 /// a provider-echoed value cannot leak credentials or exceed header limits.
-fn attach_route_selection_debug_headers(
-    response: &mut Response,
-    stage: &str,
-    message: &str,
-) {
+fn attach_route_selection_debug_headers(response: &mut Response, stage: &str, message: &str) {
     const HEADER_NAME: &str = "x-sdkwork-route-reason";
     let header_name = HeaderName::from_static(HEADER_NAME);
     if let Ok(value) = HeaderValue::from_str(stage) {

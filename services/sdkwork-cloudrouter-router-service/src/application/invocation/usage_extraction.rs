@@ -736,8 +736,7 @@ mod tests {
     fn cached_tokens_exceeding_input_is_detected_so_billable_input_stays_non_negative() {
         // usage_extraction 仅在 billable_input > 0 时才添加 Input 行；cached 单独
         // 成行，任何输入拆分都不会产生负值。
-        let usage: Value =
-            json!({ "prompt_tokens": 5, "cached_tokens": 20 });
+        let usage: Value = json!({ "prompt_tokens": 5, "cached_tokens": 20 });
         assert_eq!(Some(20), cached_tokens(&usage));
     }
 }

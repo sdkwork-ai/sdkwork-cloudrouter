@@ -452,24 +452,17 @@ fn error_envelope_contract_matches_official_openai_error_shape() {
     }))
     .unwrap();
 
-    assert_eq!(
-        "Incorrect API key provided",
-        envelope.error.message
-    );
+    assert_eq!("Incorrect API key provided", envelope.error.message);
     assert_eq!("authentication_error", envelope.error.error_type);
     assert_eq!(None, envelope.error.param);
     assert_eq!("invalid_api_key", envelope.error.code);
 
     let serialized = serde_json::to_value(&envelope).unwrap();
     assert_eq!(
-        "authentication_error",
-        serialized["error"]["type"],
+        "authentication_error", serialized["error"]["type"],
         "error type must serialize under the official `type` field name"
     );
-    assert_eq!(
-        "invalid_api_key",
-        serialized["error"]["code"]
-    );
+    assert_eq!("invalid_api_key", serialized["error"]["code"]);
     assert!(serialized["error"]["param"].is_null());
     assert!(serialized["error"].get("message").is_some());
     assert_eq!(

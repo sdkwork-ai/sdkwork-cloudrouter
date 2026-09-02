@@ -217,10 +217,7 @@ mod tests {
         // 无模型目录时模型类规划失败是预期行为；管道本身可构造可调用。
         let _ = pipeline;
         let _ = &mut invocation;
-        assert_eq!(
-            RouteKind::Model,
-            RouteKind::of(&invocation.resource)
-        );
+        assert_eq!(RouteKind::Model, RouteKind::of(&invocation.resource));
     }
 
     #[test]
@@ -254,15 +251,16 @@ mod tests {
         use crate::domain::{UpstreamAccountRoute, UpstreamResourceEntitlement};
         let mut catalog = crate::infrastructure::InMemoryPricingCatalog::default();
         // 构造一条资源 entitlement，显式标记 route_kind = model。
-        let mut entitlement = UpstreamResourceEntitlement::new("openai.chat_completions", "api_endpoint")
-            .with_route_kind("model");
+        let mut entitlement =
+            UpstreamResourceEntitlement::new("openai.chat_completions", "api_endpoint")
+                .with_route_kind("model");
         entitlement.api_code = Some("openai.chat_completions".to_owned());
         let route = UpstreamAccountRoute::new("s1", 1)
             .with_upstream_endpoint(Some("https://example.com"), Some("secret"))
-            .with_account_group_bindings(vec![
-                crate::domain::UpstreamAccountGroupBinding::new(1, 100, 100)
-                    .with_resource_entitlements(vec![entitlement]),
-            ]);
+            .with_account_group_bindings(vec![crate::domain::UpstreamAccountGroupBinding::new(
+                1, 100, 100,
+            )
+            .with_resource_entitlements(vec![entitlement])]);
         catalog.add_upstream_account_route(route);
         let catalog = Arc::new(catalog);
         // 路由 key 为 openai/chat/completions（归一化后 = openai.chat_completions），
@@ -284,15 +282,16 @@ mod tests {
     fn explicit_route_kind_wins_over_persisted_marker() {
         use crate::domain::{UpstreamAccountRoute, UpstreamResourceEntitlement};
         let mut catalog = crate::infrastructure::InMemoryPricingCatalog::default();
-        let mut entitlement = UpstreamResourceEntitlement::new("openai.chat_completions", "api_endpoint")
-            .with_route_kind("model");
+        let mut entitlement =
+            UpstreamResourceEntitlement::new("openai.chat_completions", "api_endpoint")
+                .with_route_kind("model");
         entitlement.api_code = Some("openai.chat_completions".to_owned());
         let route = UpstreamAccountRoute::new("s1", 1)
             .with_upstream_endpoint(Some("https://example.com"), Some("secret"))
-            .with_account_group_bindings(vec![
-                crate::domain::UpstreamAccountGroupBinding::new(1, 100, 100)
-                    .with_resource_entitlements(vec![entitlement]),
-            ]);
+            .with_account_group_bindings(vec![crate::domain::UpstreamAccountGroupBinding::new(
+                1, 100, 100,
+            )
+            .with_resource_entitlements(vec![entitlement])]);
         catalog.add_upstream_account_route(route);
         let catalog = Arc::new(catalog);
         let mut invocation = invocation();

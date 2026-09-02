@@ -1,9 +1,7 @@
 use crate::gateway_api_key_auth::{
     authenticate_gateway_api_key, sanitize_authenticated_gateway_uri,
 };
-use crate::invocation_http::{
-    extract_client_ip, response_from_invocation_error,
-};
+use crate::invocation_http::{extract_client_ip, response_from_invocation_error};
 use crate::openai_passthrough_routes::{
     apply_openai_method_passthrough_routes, apply_openai_passthrough_routes,
     apply_stored_chat_completion_passthrough_routes, reject_unsupported_openai_method,

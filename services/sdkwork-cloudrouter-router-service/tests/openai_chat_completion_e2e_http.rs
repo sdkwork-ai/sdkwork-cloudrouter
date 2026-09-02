@@ -26,15 +26,17 @@ use sdkwork_cloudrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, DomainError, DomainResult, GatewayApiKey, ModelPrice,
     ModelUpstreamRoute, ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan,
-    ProviderRetryPolicy, UpstreamAccountGroup, UpstreamAccountRoute, UpstreamAccountRoutingStrategy,
+    ProviderRetryPolicy, UpstreamAccountGroup, UpstreamAccountRoute,
+    UpstreamAccountRoutingStrategy,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::infrastructure::provider::{
-    SecretRefOpenAiCompatibleChatCompletionRelay, SecretRefOpenAiCompatibleChatCompletionStreamRelay,
+    SecretRefOpenAiCompatibleChatCompletionRelay,
+    SecretRefOpenAiCompatibleChatCompletionStreamRelay,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use sdkwork_cloudrouter_router_service::ports::{
-    GatewayUsageRecordCommand, GatewayUsageRecorder, GatewayUsageRecordFuture,
+    GatewayUsageRecordCommand, GatewayUsageRecordFuture, GatewayUsageRecorder,
     ProviderSecretResolver,
 };
 use serde_json::{json, Value};
@@ -52,7 +54,8 @@ const SECRET_REF: &str = "vault://providers/openrouter/account/main";
 /// uses) lets tests run in parallel without global serialization.
 const TEST_RESPONSE_MEMORY_BUDGET_BYTES: usize = 256 * 1024 * 1024;
 
-fn test_response_memory_budget() -> sdkwork_cloudrouter_router_service::infrastructure::provider::ProviderResponseMemoryBudget {
+fn test_response_memory_budget(
+) -> sdkwork_cloudrouter_router_service::infrastructure::provider::ProviderResponseMemoryBudget {
     sdkwork_cloudrouter_router_service::infrastructure::provider::ProviderResponseMemoryBudget::new(
         NonZeroUsize::new(TEST_RESPONSE_MEMORY_BUDGET_BYTES)
             .expect("test response memory budget must be nonzero"),
@@ -268,7 +271,11 @@ async fn e2e_chat_completion_reaches_routing_target_api_and_relays_response() {
     // 4. The routing target API was actually called: exactly one upstream hit,
     //    carrying the account's resolved secret and the provider model.
     let captured = captured.lock().unwrap();
-    assert_eq!(1, captured.len(), "routing target API must be called exactly once");
+    assert_eq!(
+        1,
+        captured.len(),
+        "routing target API must be called exactly once"
+    );
     assert_eq!(
         Some(format!("Bearer {UPSTREAM_SECRET}")),
         captured[0].authorization,
@@ -280,9 +287,16 @@ async fn e2e_chat_completion_reaches_routing_target_api_and_relays_response() {
 
     // 5. Usage was recorded after the real upstream success.
     let usage = usage_recorder.records();
-    assert!(!usage.is_empty(), "usage must be recorded after upstream success");
+    assert!(
+        !usage.is_empty(),
+        "usage must be recorded after upstream success"
+    );
     assert_eq!(3, usage.len());
-    for meter_code in ["llm_input_token", "llm_output_token", "llm_cache_read_token"] {
+    for meter_code in [
+        "llm_input_token",
+        "llm_output_token",
+        "llm_cache_read_token",
+    ] {
         assert!(
             usage.iter().any(|r| r.billing_meter_code == meter_code),
             "missing {meter_code} usage record"
@@ -334,7 +348,11 @@ async fn e2e_chat_completion_stream_reaches_routing_target_api() {
     assert!(body.contains("data: [DONE]"));
 
     let captured = captured.lock().unwrap();
-    assert_eq!(1, captured.len(), "routing target API must be called exactly once");
+    assert_eq!(
+        1,
+        captured.len(),
+        "routing target API must be called exactly once"
+    );
     assert_eq!(
         Some(format!("Bearer {UPSTREAM_SECRET}")),
         captured[0].authorization,
@@ -353,7 +371,10 @@ async fn e2e_chat_completion_routing_account_error_is_reported_as_502_not_leaked
     let addr = listener.local_addr().unwrap();
     drop(listener);
 
-    let catalog = Arc::new(catalog_for_upstream_base_url(key_hash, &format!("http://{addr}")));
+    let catalog = Arc::new(catalog_for_upstream_base_url(
+        key_hash,
+        &format!("http://{addr}"),
+    ));
     let router = build_router_with_usage(catalog, Arc::new(RecordingUsageRecorder::new()));
 
     let response = router

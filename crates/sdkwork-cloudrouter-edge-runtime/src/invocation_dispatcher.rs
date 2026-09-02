@@ -421,8 +421,7 @@ fn timeout_duration(timeout_ms: u64) -> Option<Duration> {
 /// production SSRF guard. Production and test environments keep the strict
 /// public-IP-only policy.
 fn outbound_target_policy_from_process_env() -> OutboundTargetPolicy {
-    let environment =
-        sdkwork_cloudrouter_http::resolve_cloud_web_environment_from_process_env();
+    let environment = sdkwork_cloudrouter_http::resolve_cloud_web_environment_from_process_env();
     match environment {
         sdkwork_web_core::WebEnvironment::Dev | sdkwork_web_core::WebEnvironment::Test => {
             OutboundTargetPolicy::Development
@@ -657,7 +656,8 @@ mod tests {
             timeout_ms: Some(DEFAULT_DISPATCH_TIMEOUT_MS),
             retry_policy: None,
             provider_model: None,
-            billing_mode: sdkwork_cloudrouter_router_service::application::AccountBillingMode::Prepay,
+            billing_mode:
+                sdkwork_cloudrouter_router_service::application::AccountBillingMode::Prepay,
             account_group_id: None,
             account_group_code: None,
             pricing_plan_code: None,
@@ -669,9 +669,15 @@ mod tests {
         let mut upstream = HeaderMap::new();
         upstream.insert(header::RETRY_AFTER, HeaderValue::from_static("30"));
         upstream.insert("x-request-id", HeaderValue::from_static("req_123"));
-        upstream.insert("x-ratelimit-limit-tokens", HeaderValue::from_static("100000"));
+        upstream.insert(
+            "x-ratelimit-limit-tokens",
+            HeaderValue::from_static("100000"),
+        );
         upstream.insert("openai-organization", HeaderValue::from_static("org-x"));
-        upstream.insert(header::CONTENT_TYPE, HeaderValue::from_static("application/json"));
+        upstream.insert(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static("application/json"),
+        );
         upstream.insert(header::CONNECTION, HeaderValue::from_static("keep-alive"));
         upstream.insert("set-cookie", HeaderValue::from_static("session=abc"));
         upstream.insert("x-secret", HeaderValue::from_static("leak"));
@@ -681,7 +687,9 @@ mod tests {
         // SDK-facing headers survive for 429 backoff and tracing.
         assert_eq!(
             Some("30"),
-            preserved.get(header::RETRY_AFTER).and_then(|v| v.to_str().ok())
+            preserved
+                .get(header::RETRY_AFTER)
+                .and_then(|v| v.to_str().ok())
         );
         assert_eq!(
             Some("req_123"),

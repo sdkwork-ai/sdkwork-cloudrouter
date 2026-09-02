@@ -129,46 +129,46 @@ impl InvocationPipeline {
         let span = invocation_pipeline_span(invocation);
         async {
             let mut started = Vec::new();
-        for (index, interceptor) in self.interceptors.iter().enumerate() {
-            if let Err(error) = ensure_invocation_active(invocation) {
-                self.notify_error(invocation, &started, &error).await;
-                return Err(error);
-            }
-            match interceptor.before(invocation).await {
-                Ok(()) => {
-                    started.push(index);
-                    if let Err(error) = ensure_invocation_active(invocation) {
+            for (index, interceptor) in self.interceptors.iter().enumerate() {
+                if let Err(error) = ensure_invocation_active(invocation) {
+                    self.notify_error(invocation, &started, &error).await;
+                    return Err(error);
+                }
+                match interceptor.before(invocation).await {
+                    Ok(()) => {
+                        started.push(index);
+                        if let Err(error) = ensure_invocation_active(invocation) {
+                            self.notify_error(invocation, &started, &error).await;
+                            return Err(error);
+                        }
+                    }
+                    Err(error) => {
+                        // Notify the failed interceptor first so it can perform
+                        // any necessary cleanup, then notify all interceptors
+                        // that successfully completed `before`.
+                        let _ = interceptor.on_error(invocation, &error).await;
                         self.notify_error(invocation, &started, &error).await;
                         return Err(error);
                     }
                 }
-                Err(error) => {
-                    // Notify the failed interceptor first so it can perform
-                    // any necessary cleanup, then notify all interceptors
-                    // that successfully completed `before`.
-                    let _ = interceptor.on_error(invocation, &error).await;
+            }
+
+            for index in started.iter().rev() {
+                if let Err(error) = ensure_invocation_active(invocation) {
+                    self.notify_error(invocation, &started, &error).await;
+                    return Err(error);
+                }
+                if let Err(error) = self.interceptors[*index].after(invocation).await {
+                    self.notify_error(invocation, &started, &error).await;
+                    return Err(error);
+                }
+                if let Err(error) = ensure_invocation_active(invocation) {
                     self.notify_error(invocation, &started, &error).await;
                     return Err(error);
                 }
             }
-        }
 
-        for index in started.iter().rev() {
-            if let Err(error) = ensure_invocation_active(invocation) {
-                self.notify_error(invocation, &started, &error).await;
-                return Err(error);
-            }
-            if let Err(error) = self.interceptors[*index].after(invocation).await {
-                self.notify_error(invocation, &started, &error).await;
-                return Err(error);
-            }
-            if let Err(error) = ensure_invocation_active(invocation) {
-                self.notify_error(invocation, &started, &error).await;
-                return Err(error);
-            }
-        }
-
-        Ok(())
+            Ok(())
         }
         .instrument(span)
         .await
@@ -185,63 +185,63 @@ impl InvocationPipeline {
         let span = invocation_pipeline_span(&invocation);
         async {
             let mut started = Vec::new();
-        for (index, interceptor) in self.interceptors.iter().enumerate() {
-            if let Err(error) = ensure_invocation_active(&invocation) {
-                self.notify_error(&mut invocation, &started, &error).await;
-                return Err(InvocationPipelineFailure { invocation, error });
-            }
-            match interceptor.before(&mut invocation).await {
-                Ok(()) => {
-                    started.push(index);
-                    if let Err(error) = ensure_invocation_active(&invocation) {
+            for (index, interceptor) in self.interceptors.iter().enumerate() {
+                if let Err(error) = ensure_invocation_active(&invocation) {
+                    self.notify_error(&mut invocation, &started, &error).await;
+                    return Err(InvocationPipelineFailure { invocation, error });
+                }
+                match interceptor.before(&mut invocation).await {
+                    Ok(()) => {
+                        started.push(index);
+                        if let Err(error) = ensure_invocation_active(&invocation) {
+                            self.notify_error(&mut invocation, &started, &error).await;
+                            return Err(InvocationPipelineFailure { invocation, error });
+                        }
+                    }
+                    Err(error) => {
+                        let _ = interceptor.on_error(&mut invocation, &error).await;
                         self.notify_error(&mut invocation, &started, &error).await;
                         return Err(InvocationPipelineFailure { invocation, error });
                     }
                 }
-                Err(error) => {
-                    let _ = interceptor.on_error(&mut invocation, &error).await;
+            }
+
+            if !has_pending_stream(&invocation) {
+                if let Err(error) = self.finish_after(&mut invocation, &started, &[]).await {
+                    return Err(InvocationPipelineFailure { invocation, error });
+                }
+                return Ok(InvocationPipelineExecution::Completed(invocation));
+            }
+
+            let mut completed_before_stream = Vec::new();
+            for index in started.iter().rev() {
+                let interceptor = &self.interceptors[*index];
+                if !interceptor.completes_before_stream() {
+                    continue;
+                }
+                if let Err(error) = ensure_invocation_active(&invocation) {
+                    self.notify_error(&mut invocation, &started, &error).await;
+                    return Err(InvocationPipelineFailure { invocation, error });
+                }
+                if let Err(error) = interceptor.after(&mut invocation).await {
+                    self.notify_error(&mut invocation, &started, &error).await;
+                    return Err(InvocationPipelineFailure { invocation, error });
+                }
+                completed_before_stream.push(*index);
+                if let Err(error) = ensure_invocation_active(&invocation) {
                     self.notify_error(&mut invocation, &started, &error).await;
                     return Err(InvocationPipelineFailure { invocation, error });
                 }
             }
-        }
 
-        if !has_pending_stream(&invocation) {
-            if let Err(error) = self.finish_after(&mut invocation, &started, &[]).await {
-                return Err(InvocationPipelineFailure { invocation, error });
-            }
-            return Ok(InvocationPipelineExecution::Completed(invocation));
-        }
-
-        let mut completed_before_stream = Vec::new();
-        for index in started.iter().rev() {
-            let interceptor = &self.interceptors[*index];
-            if !interceptor.completes_before_stream() {
-                continue;
-            }
-            if let Err(error) = ensure_invocation_active(&invocation) {
-                self.notify_error(&mut invocation, &started, &error).await;
-                return Err(InvocationPipelineFailure { invocation, error });
-            }
-            if let Err(error) = interceptor.after(&mut invocation).await {
-                self.notify_error(&mut invocation, &started, &error).await;
-                return Err(InvocationPipelineFailure { invocation, error });
-            }
-            completed_before_stream.push(*index);
-            if let Err(error) = ensure_invocation_active(&invocation) {
-                self.notify_error(&mut invocation, &started, &error).await;
-                return Err(InvocationPipelineFailure { invocation, error });
-            }
-        }
-
-        Ok(InvocationPipelineExecution::DeferredStream(
-            DeferredStreamInvocation {
-                pipeline: self.clone(),
-                started,
-                completed_before_stream,
-                invocation,
-            },
-        ))
+            Ok(InvocationPipelineExecution::DeferredStream(
+                DeferredStreamInvocation {
+                    pipeline: self.clone(),
+                    started,
+                    completed_before_stream,
+                    invocation,
+                },
+            ))
         }
         .instrument(span)
         .await
@@ -348,71 +348,71 @@ impl DeferredStreamInvocation {
         let span = invocation_pipeline_span(&self.invocation);
         async move {
             match outcome {
-            StreamTerminalOutcome::Completed {
-                usage_body,
-                ttft_ms,
-            } => {
-                self.invocation.telemetry.ttft_ms = ttft_ms;
-                if self
-                    .invocation
-                    .request
-                    .cancellation_signal()
-                    .is_tenant_lease_lost()
-                {
-                    return self.fail_terminal(tenant_lease_loss_error()).await;
-                }
-                if streaming_usage_is_required(&self.invocation) {
-                    let Some(usage_body) = usage_body else {
-                        return self
-                            .fail_terminal(stream_lifecycle_error(
-                                "successful streaming provider response did not include usage",
-                            ))
-                            .await;
-                    };
-                    if let Err(error) =
-                        record_streaming_usage_body(&mut self.invocation, &usage_body)
+                StreamTerminalOutcome::Completed {
+                    usage_body,
+                    ttft_ms,
+                } => {
+                    self.invocation.telemetry.ttft_ms = ttft_ms;
+                    if self
+                        .invocation
+                        .request
+                        .cancellation_signal()
+                        .is_tenant_lease_lost()
                     {
-                        return self.fail_terminal(error).await;
+                        return self.fail_terminal(tenant_lease_loss_error()).await;
                     }
-                    if self.invocation.usage.lines.is_empty() {
-                        return self
+                    if streaming_usage_is_required(&self.invocation) {
+                        let Some(usage_body) = usage_body else {
+                            return self
+                                .fail_terminal(stream_lifecycle_error(
+                                    "successful streaming provider response did not include usage",
+                                ))
+                                .await;
+                        };
+                        if let Err(error) =
+                            record_streaming_usage_body(&mut self.invocation, &usage_body)
+                        {
+                            return self.fail_terminal(error).await;
+                        }
+                        if self.invocation.usage.lines.is_empty() {
+                            return self
                             .fail_terminal(stream_lifecycle_error(
                                 "successful streaming provider response produced no billable usage",
                             ))
                             .await;
+                        }
                     }
+                    self.pipeline
+                        .finish_after(
+                            &mut self.invocation,
+                            &self.started,
+                            &self.completed_before_stream,
+                        )
+                        .await
                 }
-                self.pipeline
-                    .finish_after(
-                        &mut self.invocation,
-                        &self.started,
-                        &self.completed_before_stream,
-                    )
+                StreamTerminalOutcome::Cancelled { ttft_ms } => {
+                    self.invocation.telemetry.ttft_ms = ttft_ms;
+                    self.fail_terminal(stream_lifecycle_error("client cancelled provider stream"))
+                        .await
+                }
+                StreamTerminalOutcome::TimedOut { stage, ttft_ms } => {
+                    self.invocation.telemetry.ttft_ms = ttft_ms;
+                    self.fail_terminal(stream_lifecycle_error(format!(
+                        "provider stream {stage} deadline exceeded"
+                    )))
                     .await
-            }
-            StreamTerminalOutcome::Cancelled { ttft_ms } => {
-                self.invocation.telemetry.ttft_ms = ttft_ms;
-                self.fail_terminal(stream_lifecycle_error("client cancelled provider stream"))
+                }
+                StreamTerminalOutcome::UpstreamError { message, ttft_ms } => {
+                    self.invocation.telemetry.ttft_ms = ttft_ms;
+                    self.fail_terminal(stream_lifecycle_error(format!(
+                        "provider stream failed: {message}"
+                    )))
                     .await
-            }
-            StreamTerminalOutcome::TimedOut { stage, ttft_ms } => {
-                self.invocation.telemetry.ttft_ms = ttft_ms;
-                self.fail_terminal(stream_lifecycle_error(format!(
-                    "provider stream {stage} deadline exceeded"
-                )))
-                .await
-            }
-            StreamTerminalOutcome::UpstreamError { message, ttft_ms } => {
-                self.invocation.telemetry.ttft_ms = ttft_ms;
-                self.fail_terminal(stream_lifecycle_error(format!(
-                    "provider stream failed: {message}"
-                )))
-                .await
-            }
-            StreamTerminalOutcome::LeaseLost { ttft_ms } => {
-                self.invocation.telemetry.ttft_ms = ttft_ms;
-                self.fail_terminal(tenant_lease_loss_error()).await
-            }
+                }
+                StreamTerminalOutcome::LeaseLost { ttft_ms } => {
+                    self.invocation.telemetry.ttft_ms = ttft_ms;
+                    self.fail_terminal(tenant_lease_loss_error()).await
+                }
             }
         }
         .instrument(span)

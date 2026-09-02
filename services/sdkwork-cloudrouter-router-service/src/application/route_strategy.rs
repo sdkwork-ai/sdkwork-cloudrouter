@@ -316,9 +316,7 @@ pub fn resolve_account_routing_strategy(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::application::invocation::{
-        AccountBillingMode, InvocationRouteCandidateKind,
-    };
+    use crate::application::invocation::{AccountBillingMode, InvocationRouteCandidateKind};
 
     fn candidate(account_id: i64) -> InvocationRouteCandidate {
         InvocationRouteCandidate {
@@ -456,10 +454,7 @@ mod tests {
             STRATEGY_PRICE_FIRST,
             registry.resolve(STRATEGY_PRICE_FIRST).code()
         );
-        assert_eq!(
-            STRATEGY_STICKY,
-            registry.resolve(STRATEGY_STICKY).code()
-        );
+        assert_eq!(STRATEGY_STICKY, registry.resolve(STRATEGY_STICKY).code());
         assert_eq!(
             STRATEGY_PRICE_FIRST,
             registry.resolve("unknown_strategy").code()

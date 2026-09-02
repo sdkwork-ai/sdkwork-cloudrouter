@@ -50,10 +50,9 @@ pub fn token_points_for_charge(
     // Ceil at the micro scale: the shared exact product at scale 6 already
     // yields `ceil(amount × factor × 1e6) / 1e6` points, and reading it back as
     // integer micro-points gives the ceilinged micro value in one pass.
-    let product = decimal_multiply(amount, &factor, 6, DecimalRounding::Ceil)
-        .map_err(decimal_error)?;
-    let micro = decimal_to_scaled(&product, 6, DecimalRounding::Floor)
-        .map_err(decimal_error)?;
+    let product =
+        decimal_multiply(amount, &factor, 6, DecimalRounding::Ceil).map_err(decimal_error)?;
+    let micro = decimal_to_scaled(&product, 6, DecimalRounding::Floor).map_err(decimal_error)?;
     if micro <= 0 {
         return Ok(0);
     }
@@ -69,8 +68,13 @@ pub fn points_per_currency_unit_string(
     settings: &RechargeSettingsModel,
 ) -> DomainResult<String> {
     let rate = currency_to_cny_rate(currency_code, settings);
-    decimal_multiply(&rate, &settings.base_points_per_cny, 12, DecimalRounding::Ceil)
-        .map_err(decimal_error)
+    decimal_multiply(
+        &rate,
+        &settings.base_points_per_cny,
+        12,
+        DecimalRounding::Ceil,
+    )
+    .map_err(decimal_error)
 }
 
 /// Resolves the currency→CNY rate with the recharge fallback chain:
@@ -159,7 +163,8 @@ pub(crate) fn compute_grant_amount(
     settings: &RechargeSettingsModel,
 ) -> DomainResult<i64> {
     // Validate and require a positive amount (cents precision as before).
-    let amount_scaled = decimal_to_scaled(amount, 2, DecimalRounding::Floor).map_err(decimal_error)?;
+    let amount_scaled =
+        decimal_to_scaled(amount, 2, DecimalRounding::Floor).map_err(decimal_error)?;
     if amount_scaled <= 0 {
         return Err(DomainError::new(
             "recharge amount must be greater than zero",
@@ -170,11 +175,13 @@ pub(crate) fn compute_grant_amount(
     // grant points = amount × currency→CNY × base points per CNY, rounded to the
     // nearest micro (all factors are at most 6 decimals each, so the scale-24
     // intermediates stay exact and a single final rounding applies).
-    let product_currency =
-        decimal_multiply(amount, &currency_rate, 24, DecimalRounding::HalfUp).map_err(decimal_error)?;
+    let product_currency = decimal_multiply(amount, &currency_rate, 24, DecimalRounding::HalfUp)
+        .map_err(decimal_error)?;
     let product_points =
-        decimal_multiply(&product_currency, base_points, 24, DecimalRounding::HalfUp).map_err(decimal_error)?;
-    let micro = decimal_to_scaled(&product_points, 6, DecimalRounding::HalfUp).map_err(decimal_error)?;
+        decimal_multiply(&product_currency, base_points, 24, DecimalRounding::HalfUp)
+            .map_err(decimal_error)?;
+    let micro =
+        decimal_to_scaled(&product_points, 6, DecimalRounding::HalfUp).map_err(decimal_error)?;
     let bonus_micro = (bonus_points as i128)
         .checked_mul(1_000_000_i128)
         .ok_or_else(|| DomainError::new("recharge credited points overflow"))?;

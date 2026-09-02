@@ -9,9 +9,7 @@ async fn debug_admin_login_database_state() {
         "postgresql://sdkwork_ai_dev:sdkworkdev123@127.0.0.1:5432/sdkwork_ai_dev?sslmode=disable"
             .to_owned()
     });
-    let pool = PgPool::connect(&url)
-        .await
-        .expect("connect postgres");
+    let pool = PgPool::connect(&url).await.expect("connect postgres");
 
     let user = sqlx::query("SELECT id, tenant_id FROM iam_user WHERE username = 'admin' LIMIT 1")
         .fetch_one(&pool)
@@ -63,13 +61,12 @@ async fn debug_admin_login_database_state() {
     .expect("load tenant application");
     eprintln!("tenant application rows: {}", app.len());
 
-    let signing_key = sqlx::query(
-        "SELECT kid FROM iam_tenant_signing_key WHERE tenant_id = $1 LIMIT 1",
-    )
-    .bind(&tenant_id)
-    .fetch_all(&pool)
-    .await
-    .expect("load signing key");
+    let signing_key =
+        sqlx::query("SELECT kid FROM iam_tenant_signing_key WHERE tenant_id = $1 LIMIT 1")
+            .bind(&tenant_id)
+            .fetch_all(&pool)
+            .await
+            .expect("load signing key");
     eprintln!("signing key rows: {}", signing_key.len());
 
     let insert = sqlx::query(

@@ -51,10 +51,7 @@ impl ProviderRequestBuilder {
             &invocation.request.headers,
             account.provider_model.as_deref(),
         )?;
-        let path = rewrite_path_model(
-            &invocation.request.path,
-            account.provider_model.as_deref(),
-        );
+        let path = rewrite_path_model(&invocation.request.path, account.provider_model.as_deref());
         Ok(InvocationProviderRequest {
             method: invocation.request.method.clone(),
             url: provider_url(account.base_url.as_deref(), &path, query.as_deref()),
@@ -239,12 +236,9 @@ fn rewrite_path_model(path: &str, provider_model: Option<&str>) -> String {
 /// Rewrites `/v1beta/models/{model}:{action}` and `/v1/models/{model}:{action}`
 /// so Gemini-style native calls use the account-mapped provider model.
 fn rewrite_models_action_path(path: &str, provider_model: &str) -> Option<String> {
-    let (prefix, rest) = [
-        "/v1beta/models/",
-        "/v1/models/",
-    ]
-    .into_iter()
-    .find_map(|prefix| path.strip_prefix(prefix).map(|rest| (prefix, rest)))?;
+    let (prefix, rest) = ["/v1beta/models/", "/v1/models/"]
+        .into_iter()
+        .find_map(|prefix| path.strip_prefix(prefix).map(|rest| (prefix, rest)))?;
     let (model, action) = rest.split_once(':')?;
     if model.trim().is_empty() || action.trim().is_empty() || model == provider_model {
         return None;

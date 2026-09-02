@@ -26,6 +26,8 @@ use axum::response::IntoResponse;
 use serde_json::Value;
 use tower::ServiceExt;
 
+use sdkwork_cloudrouter_config::AppSessionConfig;
+use sdkwork_cloudrouter_http::verify_app_session_token;
 use sdkwork_cloudrouter_router_service::api::{
     openai_chat_completions_router_with_auth_extensions, OpenAiAuthTokenAuthenticator,
     OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig,
@@ -33,8 +35,8 @@ use sdkwork_cloudrouter_router_service::api::{
 use sdkwork_cloudrouter_router_service::application::AuthenticatedApiKeyContext;
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, ModelPrice, ModelUpstreamRoute, ModelVendor,
-    ModelVendorDefinition, Money, PriceSide, PricingPlan, ProviderAuthProfile,
-    ProviderRetryPolicy, UpstreamAccountGroup, UpstreamAccountRoute,
+    ModelVendorDefinition, Money, PriceSide, PricingPlan, ProviderAuthProfile, ProviderRetryPolicy,
+    UpstreamAccountGroup, UpstreamAccountRoute,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
@@ -42,11 +44,9 @@ use sdkwork_cloudrouter_router_service::ports::{
     ChatCompletionRelay, ChatCompletionRelayRequest, ChatCompletionRelayResponse,
 };
 use sdkwork_cloudrouter_test_support::{
-    app_session_bearer_token, app_session_dual_token_headers, app_session_config,
+    app_session_bearer_token, app_session_config, app_session_dual_token_headers,
     default_trusted_request_subject, API_KEY_PEPPER,
 };
-use sdkwork_cloudrouter_config::AppSessionConfig;
-use sdkwork_cloudrouter_http::verify_app_session_token;
 use sdkwork_web_core::default_open_api_bearer_classifier;
 
 // ---------------------------------------------------------------------------
@@ -164,7 +164,6 @@ fn build_test_catalog() -> InMemoryPricingCatalog {
         );
     }
 
-
     catalog
 }
 
@@ -220,19 +219,28 @@ impl RealTestAuthTokenAuthenticator {
     /// deployment this would be an IAM lookup; here we map the canonical test
     /// tenant to its seeded group so the downstream route planner can find a
     /// group with id = DEFAULT_GROUP_ID.
-    fn resolve_group(
-        &self,
-        tenant_id: i64,
-    ) -> (i64, String, String) {
+    fn resolve_group(&self, tenant_id: i64) -> (i64, String, String) {
         // tenant_id → (group_id, group_code, pricing_plan_code)
         match tenant_id {
-            TENANT_ID => (DEFAULT_GROUP_ID, DEFAULT_GROUP_CODE.to_owned(), "standard".to_owned()),
-            _ => (DEFAULT_GROUP_ID, DEFAULT_GROUP_CODE.to_owned(), "standard".to_owned()),
+            TENANT_ID => (
+                DEFAULT_GROUP_ID,
+                DEFAULT_GROUP_CODE.to_owned(),
+                "standard".to_owned(),
+            ),
+            _ => (
+                DEFAULT_GROUP_ID,
+                DEFAULT_GROUP_CODE.to_owned(),
+                "standard".to_owned(),
+            ),
         }
     }
 }
 
-fn openai_auth_error(status: StatusCode, code: &str, message: &str) -> Box<axum::response::Response> {
+fn openai_auth_error(
+    status: StatusCode,
+    code: &str,
+    message: &str,
+) -> Box<axum::response::Response> {
     let body = serde_json::json!({
         "error": {
             "message": message,
@@ -250,30 +258,26 @@ impl OpenAiAuthTokenAuthenticator for RealTestAuthTokenAuthenticator {
         &self,
         raw_bearer_token: &str,
         access_token: Option<&str>,
-    ) -> Result<AuthenticatedApiKeyContext, sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenError>
-    {
+    ) -> Result<
+        AuthenticatedApiKeyContext,
+        sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenError,
+    > {
         // 1. Verify the bearer token signature and time window.
-        let bearer_subject = match verify_app_session_token(
-            &self.config,
-            raw_bearer_token,
-            self.now_unix_seconds,
-        ) {
-            Ok(subject) => subject,
-            Err(error) => {
-                return Err(openai_auth_error(
-                    StatusCode::UNAUTHORIZED,
-                    "invalid_auth_token",
-                    &format!("bearer token verification failed: {error}"),
-                ));
-            }
-        };
+        let bearer_subject =
+            match verify_app_session_token(&self.config, raw_bearer_token, self.now_unix_seconds) {
+                Ok(subject) => subject,
+                Err(error) => {
+                    return Err(openai_auth_error(
+                        StatusCode::UNAUTHORIZED,
+                        "invalid_auth_token",
+                        &format!("bearer token verification failed: {error}"),
+                    ));
+                }
+            };
 
         // 2. If an access token is present, verify it and confirm it matches
         //    the bearer <REDACTED> subject.
-        if let Some(access) = access_token
-            .map(str::trim)
-            .filter(|v| !v.is_empty())
-        {
+        if let Some(access) = access_token.map(str::trim).filter(|v| !v.is_empty()) {
             match verify_app_session_token(&self.config, access, self.now_unix_seconds) {
                 Ok(access_subject) => {
                     if bearer_subject.tenant_id != access_subject.tenant_id
@@ -298,7 +302,8 @@ impl OpenAiAuthTokenAuthenticator for RealTestAuthTokenAuthenticator {
         }
 
         // 3. Map verified subject to an authenticated context.
-        let (group_id, group_code, pricing_plan_code) = self.resolve_group(bearer_subject.tenant_id);
+        let (group_id, group_code, pricing_plan_code) =
+            self.resolve_group(bearer_subject.tenant_id);
 
         Ok(AuthenticatedApiKeyContext {
             api_key_id: 0,
@@ -323,12 +328,11 @@ fn build_test_router() -> axum::Router {
         HmacSha256ApiKeySecretHasher::new(API_KEY_PEPPER).expect("hasher must initialize"),
     );
     let relay: Arc<dyn ChatCompletionRelay + Send + Sync> = Arc::new(MockChatRelay);
-    let authenticator: Arc<dyn OpenAiAuthTokenAuthenticator> = Arc::new(
-        RealTestAuthTokenAuthenticator {
+    let authenticator: Arc<dyn OpenAiAuthTokenAuthenticator> =
+        Arc::new(RealTestAuthTokenAuthenticator {
             config: app_session_config().expect("app session config must initialize"),
             now_unix_seconds: TEST_NOW_UNIX_SECONDS,
-        },
-    );
+        });
 
     let runtime_config = OpenAiRuntimeRouteConfig::new(
         ProviderRetryPolicy::default(),
@@ -339,9 +343,9 @@ fn build_test_router() -> axum::Router {
         catalog,
         hasher,
         Some(relay),
-        None,            // stream_relay
-        None,            // usage_recorder
-        Vec::new(),      // plugins
+        None,       // stream_relay
+        None,       // usage_recorder
+        Vec::new(), // plugins
         runtime_config,
         Some(authenticator),
         default_open_api_bearer_classifier(),
@@ -401,7 +405,11 @@ async fn unauthenticated_request_returns_401() {
     )
     .await;
 
-    eprintln!("[no_auth] 响应: HTTP {}  body={}", status.as_u16(), body_text);
+    eprintln!(
+        "[no_auth] 响应: HTTP {}  body={}",
+        status.as_u16(),
+        body_text
+    );
     assert_eq!(
         StatusCode::UNAUTHORIZED,
         status,
@@ -433,7 +441,11 @@ async fn malformed_bearer_token_returns_401() {
     )
     .await;
 
-    eprintln!("[malformed] 响应: HTTP {}  body={}", status.as_u16(), body_text);
+    eprintln!(
+        "[malformed] 响应: HTTP {}  body={}",
+        status.as_u16(),
+        body_text
+    );
     assert_eq!(
         StatusCode::UNAUTHORIZED,
         status,
@@ -458,11 +470,13 @@ async fn auth_token_chat_completion_happy_path() {
     let subject = default_trusted_request_subject();
     let issued_at = 1_800_000_000_i64;
     let expires_at = issued_at + 300;
-    let (bearer, access_token) =
-        app_session_dual_token_headers(subject, issued_at, expires_at)
-            .expect("failed to sign dual-token headers");
+    let (bearer, access_token) = app_session_dual_token_headers(subject, issued_at, expires_at)
+        .expect("failed to sign dual-token headers");
 
-    eprintln!("[happy_path] 双 token 签名完成: user_id={}", subject.user_id);
+    eprintln!(
+        "[happy_path] 双 token 签名完成: user_id={}",
+        subject.user_id
+    );
 
     let request_body = serde_json::json!({
         "model": "gpt-4o",
@@ -479,7 +493,11 @@ async fn auth_token_chat_completion_happy_path() {
     )
     .await;
 
-    eprintln!("[happy_path] 响应: HTTP {}  body长度={}", status.as_u16(), body_text.len());
+    eprintln!(
+        "[happy_path] 响应: HTTP {}  body长度={}",
+        status.as_u16(),
+        body_text.len()
+    );
 
     // Assert: HTTP 200 with a valid chat completion response body.
     assert_eq!(
@@ -488,8 +506,7 @@ async fn auth_token_chat_completion_happy_path() {
         "auth-token chat completion should return 200 OK"
     );
 
-    let body: Value =
-        serde_json::from_str(&body_text).expect("response body must be valid JSON");
+    let body: Value = serde_json::from_str(&body_text).expect("response body must be valid JSON");
     assert_eq!(
         "chat.completion",
         body["object"].as_str().unwrap_or(""),
@@ -506,12 +523,15 @@ async fn auth_token_chat_completion_happy_path() {
     );
     assert_eq!(
         "assistant",
-        body["choices"][0]["message"]["role"]
-            .as_str()
-            .unwrap_or(""),
+        body["choices"][0]["message"]["role"].as_str().unwrap_or(""),
         "choice message role must be 'assistant'"
     );
-    eprintln!("[happy_path] 响应内容: {}", body["choices"][0]["message"]["content"].as_str().unwrap_or(""));
+    eprintln!(
+        "[happy_path] 响应内容: {}",
+        body["choices"][0]["message"]["content"]
+            .as_str()
+            .unwrap_or("")
+    );
     assert!(
         body["usage"]["total_tokens"].as_i64().unwrap_or(0) > 0,
         "response must report token usage"
@@ -532,13 +552,8 @@ async fn api_key_bearer_takes_api_key_channel() {
     });
 
     // Act: use a sk- prefixed credential that the catalog does not have.
-    let (status, body_text) = send_chat_request(
-        router,
-        Some("sk-live-test-unknown"),
-        None,
-        request_body,
-    )
-    .await;
+    let (status, body_text) =
+        send_chat_request(router, Some("sk-live-test-unknown"), None, request_body).await;
 
     // Assert: The API-key channel must not panic. Either:
     // - 200 OK (if the API key resolves), or
@@ -576,14 +591,17 @@ async fn mismatched_dual_token_returns_401() {
 
     let bearer = app_session_bearer_token(subject_a, issued_at, expires_at)
         .expect("failed to sign bearer token");
-    let mismatched_access =
-        app_session_bearer_token(subject_b, issued_at + 1, expires_at + 1)
-            .expect("failed to sign mismatched access token");
+    let mismatched_access = app_session_bearer_token(subject_b, issued_at + 1, expires_at + 1)
+        .expect("failed to sign mismatched access token");
 
-    eprintln!("[mismatch] Bearer <REDACTED>   : user_id={} (tenant_id={})",
-        subject_a.user_id, subject_a.tenant_id);
-    eprintln!("[mismatch] Access-Token: user_id={} (tenant_id={})  ← 不同用户!",
-        subject_b.user_id, subject_b.tenant_id);
+    eprintln!(
+        "[mismatch] Bearer <REDACTED>   : user_id={} (tenant_id={})",
+        subject_a.user_id, subject_a.tenant_id
+    );
+    eprintln!(
+        "[mismatch] Access-Token: user_id={} (tenant_id={})  ← 不同用户!",
+        subject_b.user_id, subject_b.tenant_id
+    );
 
     let request_body = serde_json::json!({
         "model": "gpt-4o",
@@ -599,7 +617,11 @@ async fn mismatched_dual_token_returns_401() {
     )
     .await;
 
-    eprintln!("[mismatch] 响应: HTTP {}  body={}", status.as_u16(), body_text);
+    eprintln!(
+        "[mismatch] 响应: HTTP {}  body={}",
+        status.as_u16(),
+        body_text
+    );
 
     // Assert: mismatched dual tokens must be rejected with 401.
     assert_eq!(
@@ -642,7 +664,11 @@ async fn empty_messages_returns_non_200() {
     )
     .await;
 
-    eprintln!("[empty_msg] 响应: HTTP {}  body={}", status.as_u16(), body_text);
+    eprintln!(
+        "[empty_msg] 响应: HTTP {}  body={}",
+        status.as_u16(),
+        body_text
+    );
 
     // Empty messages should trigger a validation error (non-200).
     assert_ne!(
@@ -669,18 +695,29 @@ async fn full_login_to_chat_completion_flow() {
     let issued_at = 1_800_000_000_i64;
     let expires_at = issued_at + 300;
 
-    eprintln!("  登录身份: tenant_id={}, user_id={}, operator_id={}",
-        subject.tenant_id, subject.user_id, subject.operator_id);
-    eprintln!("  时间窗口: issued_at={}, expires_at={} (有效期 {}s)",
-        issued_at, expires_at, expires_at - issued_at);
+    eprintln!(
+        "  登录身份: tenant_id={}, user_id={}, operator_id={}",
+        subject.tenant_id, subject.user_id, subject.operator_id
+    );
+    eprintln!(
+        "  时间窗口: issued_at={}, expires_at={} (有效期 {}s)",
+        issued_at,
+        expires_at,
+        expires_at - issued_at
+    );
 
     // Dual-token channel: authorization bearer + access-token header.
-    let (bearer, access_token) =
-        app_session_dual_token_headers(subject, issued_at, expires_at)
-            .expect("login: failed to sign dual-token headers");
+    let (bearer, access_token) = app_session_dual_token_headers(subject, issued_at, expires_at)
+        .expect("login: failed to sign dual-token headers");
 
-    eprintln!("  Bearer <REDACTED> 签名完成: {}...", &bearer[..std::cmp::min(80, bearer.len())]);
-    eprintln!("  Access-Token 签名完成: {}...", &access_token[..std::cmp::min(80, access_token.len())]);
+    eprintln!(
+        "  Bearer <REDACTED> 签名完成: {}...",
+        &bearer[..std::cmp::min(80, bearer.len())]
+    );
+    eprintln!(
+        "  Access-Token 签名完成: {}...",
+        &access_token[..std::cmp::min(80, access_token.len())]
+    );
 
     eprintln!("----------------------------------------");
     eprintln!("[full_login] STEP 2: 验签（round-trip 验证）");
@@ -694,14 +731,16 @@ async fn full_login_to_chat_completion_flow() {
         TEST_NOW_UNIX_SECONDS,
     )
     .expect("bearer <REDACTED> signature must verify");
-    eprintln!("  验签成功! 解析结果: tenant_id={}, user_id={}, operator_id={}",
-        verified_subject.tenant_id, verified_subject.user_id, verified_subject.operator_id);
+    eprintln!(
+        "  验签成功! 解析结果: tenant_id={}, user_id={}, operator_id={}",
+        verified_subject.tenant_id, verified_subject.user_id, verified_subject.operator_id
+    );
 
     assert_eq!(
         subject.tenant_id, verified_subject.tenant_id,
         "tenant id must survive token round-trip"
     );
-        assert_eq!(
+    assert_eq!(
         subject.user_id, verified_subject.user_id,
         "user id must survive token round-trip"
     );
@@ -759,8 +798,14 @@ async fn full_login_to_chat_completion_flow() {
 
     // Validate the response shape matches OpenAI /v1/chat/completions schema.
     assert_eq!("chat.completion", body["object"].as_str().unwrap_or(""));
-    assert!(!body["id"].as_str().unwrap_or("").is_empty(), "id is required");
-    assert!(body["created"].as_i64().unwrap_or(0) > 0, "created timestamp is required");
+    assert!(
+        !body["id"].as_str().unwrap_or("").is_empty(),
+        "id is required"
+    );
+    assert!(
+        body["created"].as_i64().unwrap_or(0) > 0,
+        "created timestamp is required"
+    );
     assert_eq!("gpt-4o", body["model"].as_str().unwrap_or(""));
 
     let choices = body["choices"]
@@ -772,15 +817,28 @@ async fn full_login_to_chat_completion_flow() {
         choices[0]["message"]["role"].as_str().unwrap_or("")
     );
     eprintln!("  ✓ choices[0].message.role = assistant");
-    eprintln!("    choices[0].message.content = {}",
-        choices[0]["message"]["content"].as_str().unwrap_or(""));
-    eprintln!("    choices[0].finish_reason = {}",
-        choices[0]["finish_reason"].as_str().unwrap_or(""));
+    eprintln!(
+        "    choices[0].message.content = {}",
+        choices[0]["message"]["content"].as_str().unwrap_or("")
+    );
+    eprintln!(
+        "    choices[0].finish_reason = {}",
+        choices[0]["finish_reason"].as_str().unwrap_or("")
+    );
 
     let usage = body["usage"].as_object().expect("usage object is required");
-    eprintln!("    usage.prompt_tokens     = {}", usage["prompt_tokens"].as_i64().unwrap_or(0));
-    eprintln!("    usage.completion_tokens = {}", usage["completion_tokens"].as_i64().unwrap_or(0));
-    eprintln!("    usage.total_tokens      = {}", usage["total_tokens"].as_i64().unwrap_or(0));
+    eprintln!(
+        "    usage.prompt_tokens     = {}",
+        usage["prompt_tokens"].as_i64().unwrap_or(0)
+    );
+    eprintln!(
+        "    usage.completion_tokens = {}",
+        usage["completion_tokens"].as_i64().unwrap_or(0)
+    );
+    eprintln!(
+        "    usage.total_tokens      = {}",
+        usage["total_tokens"].as_i64().unwrap_or(0)
+    );
     assert!(
         usage["total_tokens"].as_i64().unwrap_or(0) > 0,
         "total_tokens must be reported"

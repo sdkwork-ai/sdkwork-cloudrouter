@@ -233,10 +233,7 @@ mod tests {
         };
         super::materialize_federated_database_env_from_config(&config);
 
-        assert_eq!(
-            std::env::var(key).expect("feeds default tenant"),
-            "100001"
-        );
+        assert_eq!(std::env::var(key).expect("feeds default tenant"), "100001");
 
         match previous {
             Some(value) => std::env::set_var(key, value),

@@ -9,17 +9,17 @@
 use std::sync::Arc;
 use std::sync::Mutex;
 
+use async_trait::async_trait;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
-use async_trait::async_trait;
 use sdkwork_cloudrouter_router_service::api::{
     openai_chat_completions_router_with_auth_extensions, OpenAiAuthTokenAuthenticator,
     OpenAiAuthTokenError, OpenAiRuntimeRouteConfig,
 };
 use sdkwork_cloudrouter_router_service::application::AuthenticatedApiKeyContext;
 use sdkwork_cloudrouter_router_service::domain::{
-    AiModel, BillingMeter, DecimalValue, DomainResult, ModelPrice, ModelUpstreamRoute,
-    ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, ProviderRetryPolicy,
+    AiModel, BillingMeter, DecimalValue, DomainResult, ModelPrice, ModelUpstreamRoute, ModelVendor,
+    ModelVendorDefinition, Money, PriceSide, PricingPlan, ProviderRetryPolicy,
     UpstreamAccountGroup, UpstreamAccountRoute,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
@@ -204,9 +204,7 @@ fn catalog_with_default_group_and_account_for_group_id(
 }
 
 fn hasher() -> Arc<HmacSha256ApiKeySecretHasher> {
-    Arc::new(
-        HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap(),
-    )
+    Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap())
 }
 
 /// 登录后直接用 auth token 调 `/v1/chat/completions`：
@@ -255,8 +253,16 @@ async fn auth_token_chat_completion_reaches_relay_when_default_group_and_account
         "auth-token chat completion failed with HTTP {status}: {text}"
     );
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
-    assert_eq!("auth-token-pong", payload["choices"][0]["message"]["content"]);
-    let request = captured.lock().unwrap().first().cloned().expect("relay called");
+    assert_eq!(
+        "auth-token-pong",
+        payload["choices"][0]["message"]["content"]
+    );
+    let request = captured
+        .lock()
+        .unwrap()
+        .first()
+        .cloned()
+        .expect("relay called");
     assert_eq!(SUPPLIER_CODE, request.supplier_code);
 }
 
@@ -272,8 +278,7 @@ async fn auth_token_chat_completion_returns_503_when_default_group_id_mismatches
     // 复用完整种子，但把唯一的默认分组行 id 改成与鉴权上下文/账号绑定不同的值，
     // 以模拟库里分组 id 与绑定引用的 group_id 不一致（即没有 id=DEFAULT_GROUP_ID
     // 的分组行，导致 find_upstream_account_group(2001) 落空）。
-    let catalog =
-        catalog_with_default_group_and_account_for_group_id(DEFAULT_GROUP_ID + 999);
+    let catalog = catalog_with_default_group_and_account_for_group_id(DEFAULT_GROUP_ID + 999);
 
     let captured = Arc::new(Mutex::new(Vec::new()));
     let relay = Arc::new(GatewayRecordingRelay::new(Arc::clone(&captured)));

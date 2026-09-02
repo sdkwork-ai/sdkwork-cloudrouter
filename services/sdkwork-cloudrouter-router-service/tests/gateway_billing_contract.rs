@@ -11,13 +11,7 @@ fn gateway_billing_uses_token_bank_currency_for_account_ledger_entries() {
 
 #[test]
 fn gateway_billing_operations_have_distinct_request_scoped_idempotency_suffixes() {
-    for suffix in [
-        "precharge",
-        "consumption",
-        "release",
-        "postpaid",
-        "refund",
-    ] {
+    for suffix in ["precharge", "consumption", "release", "postpaid", "refund"] {
         assert!(
             BILLING_STORE.contains(&format!("\"{suffix}\"")),
             "missing idempotency suffix {suffix}"

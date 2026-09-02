@@ -295,7 +295,12 @@ sdkwork_routes_commerce_catalog_app_api = { package = "sdkwork-routes-catalog-ap
 sdkwork_catalog_service_host = { package = "sdkwork-catalog-service-host", path = "../sdkwork-catalog/crates/sdkwork-catalog-service-host" }
 sdkwork_catalog_database_host = { package = "sdkwork-catalog-database-host", path = "../sdkwork-catalog/crates/sdkwork-catalog-database-host" }
 sdkwork_invoice_database_bootstrap = { package = "sdkwork-invoice-database-bootstrap", path = "../sdkwork-invoice/crates/sdkwork-invoice-database-bootstrap" }
-sdkwork_api_community_assembly = { package = "sdkwork-api-community-assembly", path = "../sdkwork-community/crates/sdkwork-api-community-assembly" }
+# The community module is embedded, so its commerce integrations reach membership
+# and order through the in-process ports wired by the composition root
+# (`EmbeddedMembershipPackagePublisher` / `EmbeddedOrderPaymentVerifier`)
+# instead of an HTTP base URL that would loop back into this gateway's own
+# listener (APPLICATION_GATEWAY_SPEC §2.3).
+sdkwork_api_community_assembly = { package = "sdkwork-api-community-assembly", path = "../sdkwork-community/crates/sdkwork-api-community-assembly", features = ["commerce-membership-embedded", "commerce-order-embedded"] }
 # SDKWork communication RTC capability: the RTC backend surface
 # (`/backend/v3/api/rtc/*`) enters through the RTC API assembly contribution
 # (API_ASSEMBLY_SPEC §3/§6.1), never through a direct route-crate import.

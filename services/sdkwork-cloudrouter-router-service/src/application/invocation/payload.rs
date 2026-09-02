@@ -182,10 +182,8 @@ fn sync_sticky_ids(invocation: &mut Invocation) {
 
 /// 无状态 LLM 会话型路由：同一会话固定打到同一上游账号时，请求体中的
 /// 会话 id 会原样透传给上游，从而最大化供应商侧 prompt cache 命中率。
-const SESSION_STICKY_ROUTE_KEYS: [&str; 2] = [
-    "openai/model/chat_completions",
-    "openai/model/completions",
-];
+const SESSION_STICKY_ROUTE_KEYS: [&str; 2] =
+    ["openai/model/chat_completions", "openai/model/completions"];
 
 /// 会话 sticky 默认路由：无状态会话型请求携带会话 id（请求体 `session_id`
 /// / `prompt_cache_key`，或请求头 `x-session-id`）时，按会话维度做账户

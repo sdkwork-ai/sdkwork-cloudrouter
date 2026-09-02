@@ -2266,10 +2266,7 @@ fn build_runtime_gemini_video_generation_request_body(
         .or_else(|| object.get("generation_config"));
     let mut config = Map::new();
     if let Some(duration) = video_generation_duration(generation_config) {
-        config.insert(
-            "durationSeconds".to_owned(),
-            Value::Number(duration.into()),
-        );
+        config.insert("durationSeconds".to_owned(), Value::Number(duration.into()));
     }
     if let Some(aspect_ratio) = video_generation_aspect_ratio(generation_config) {
         config.insert("aspectRatio".to_owned(), Value::String(aspect_ratio));

@@ -10,12 +10,12 @@
 
 use axum::http::Method;
 use sdkwork_cloudrouter_router_service::application::{
-    AccountBillingMode, AuthenticatedApiKeyContext, BillingMode, BillingQuantitySource,
-    Invocation, InvocationAccount, InvocationBilling, InvocationBody, InvocationClassificationRequest,
-    InvocationDispatch, InvocationInterceptor, InvocationRequest,
-    InvocationResourceClassifier, InvocationSubject, OpenAiResourceClassifier,
-    PricingFinalizationInterceptor, PricingPreflightInterceptor, PricingSettlementInterceptor,
-    ResourceType, UsageExtractionInterceptor,
+    AccountBillingMode, AuthenticatedApiKeyContext, BillingMode, BillingQuantitySource, Invocation,
+    InvocationAccount, InvocationBilling, InvocationBody, InvocationClassificationRequest,
+    InvocationDispatch, InvocationInterceptor, InvocationRequest, InvocationResourceClassifier,
+    InvocationSubject, OpenAiResourceClassifier, PricingFinalizationInterceptor,
+    PricingPreflightInterceptor, PricingSettlementInterceptor, ResourceType,
+    UsageExtractionInterceptor,
 };
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
@@ -91,15 +91,13 @@ fn media_catalog(prices: &[(BillingMeter, &str)]) -> InMemoryPricingCatalog {
             .with_account_group_binding(10, 100, 100),
     );
     for (meter, price) in prices {
-        catalog.add_price(
-            ModelPrice::new_for_catalog_key(
-                "openai/gpt-4o-mini",
-                "gpt-4o-mini",
-                PriceSide::OfficialReference,
-                meter.clone(),
-                Money::usd(price).unwrap(),
-            ),
-        );
+        catalog.add_price(ModelPrice::new_for_catalog_key(
+            "openai/gpt-4o-mini",
+            "gpt-4o-mini",
+            PriceSide::OfficialReference,
+            meter.clone(),
+            Money::usd(price).unwrap(),
+        ));
     }
     catalog
 }
@@ -121,7 +119,10 @@ fn invocation_with(
 
     let mut invocation = Invocation::new(
         InvocationRequest::new(Method::POST, path)
-            .with_request_id(format!("req-{}", path.trim_start_matches('/').replace('/', "-")))
+            .with_request_id(format!(
+                "req-{}",
+                path.trim_start_matches('/').replace('/', "-")
+            ))
             .with_body(InvocationBody::json(body)),
         subject(),
         resource,
@@ -271,7 +272,10 @@ async fn video_result_billing_contract() {
 
 #[tokio::test]
 async fn audio_seconds_billing_contract() {
-    let catalog = Arc::new(media_catalog(&[(BillingMeter::AudioInputSecond, "0.002000")]));
+    let catalog = Arc::new(media_catalog(&[(
+        BillingMeter::AudioInputSecond,
+        "0.002000",
+    )]));
     let invocation = invocation_with(
         "/v1/audio/transcriptions",
         json!({"model": "gpt-4o-mini"}),
@@ -302,7 +306,10 @@ async fn audio_seconds_billing_contract() {
 
 #[tokio::test]
 async fn music_output_seconds_billing_contract() {
-    let catalog = Arc::new(media_catalog(&[(BillingMeter::MusicOutputSecond, "0.003000")]));
+    let catalog = Arc::new(media_catalog(&[(
+        BillingMeter::MusicOutputSecond,
+        "0.003000",
+    )]));
     let invocation = invocation_with(
         "/v1/chat/completions",
         json!({"model": "gpt-4o-mini", "messages": [{"role": "user", "content": "hi"}]}),

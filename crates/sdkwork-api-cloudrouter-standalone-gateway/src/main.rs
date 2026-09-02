@@ -3,15 +3,15 @@ use std::sync::Arc;
 use axum::routing::get;
 use sdkwork_api_cloudrouter_standalone_gateway::portal::{mount_portal_static, PortalStaticConfig};
 use sdkwork_cloudrouter_config::RedisConfig;
+use sdkwork_cloudrouter_security::INTERNAL_GATEWAY_ROUTE_PREFIX;
 use sdkwork_iam_web_adapter::{
     build_web_framework_builder_with_open_api_prefixes,
     iam_web_request_context_resolver_from_env_for_audiences, resolve_iam_postgres_pool_from_env,
     IamAuditEmitter, IamSecurityEventEmitter,
 };
 use sdkwork_web_bootstrap::{
-    infra_public_path_prefixes, ComposedApiAssembly, CompositeReadinessCheck,
+    infra_public_path_prefixes, ApiModuleRegistry, ComposedApiAssembly, CompositeReadinessCheck,
 };
-use sdkwork_cloudrouter_security::INTERNAL_GATEWAY_ROUTE_PREFIX;
 use sdkwork_web_core::{WebEnvironment, WebRequestContextProfile};
 
 const APPLICATION_ID: &str = "sdkwork-cloudrouter";
@@ -171,8 +171,9 @@ async fn gateway_main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
                 "production",
             )));
     }
-    let mut composed =
-        ComposedApiAssembly::try_compose("SDKWork Cloud Router API", vec![assembly])?;
+    let mut module_registry = ApiModuleRegistry::new();
+    module_registry.add_modules(vec![assembly]);
+    let mut composed = module_registry.try_compose("SDKWork Cloud Router API")?;
     let mut readiness_checks = vec![composed.readiness_check.clone()];
     if let Some(portal) = &portal {
         readiness_checks.push(portal.readiness_check());

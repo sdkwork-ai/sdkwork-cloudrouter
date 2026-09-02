@@ -216,12 +216,7 @@ impl UsageLogsReadStore for PostgresUsageLogsReadStore {
                 .into_iter()
                 .map(row_to_usage_log)
                 .collect::<Result<Vec<_>, DomainError>>()?;
-            let logs = enrich_with_points_per_unit(
-                &self.pool,
-                subject,
-                logs,
-            )
-            .await;
+            let logs = enrich_with_points_per_unit(&self.pool, subject, logs).await;
             Ok(UsageLogsPage {
                 logs,
                 total,

@@ -46,11 +46,12 @@ impl AiRoutingCacheInvalidator {
     pub async fn current_routing_config_version(&self) -> DomainResult<i64> {
         let value = self
             .manager
-            .get_json(ROUTING_CONFIG_VERSION_CACHE_NAMESPACE, Self::CONFIG_VERSION_KEY)
+            .get_json(
+                ROUTING_CONFIG_VERSION_CACHE_NAMESPACE,
+                Self::CONFIG_VERSION_KEY,
+            )
             .await?;
-        Ok(value
-            .and_then(|value| value.as_i64())
-            .unwrap_or(0))
+        Ok(value.and_then(|value| value.as_i64()).unwrap_or(0))
     }
 
     /// Atomically-ish bumps the routing config version (admin configuration change).
@@ -100,7 +101,10 @@ mod tests {
         let invalidator = AiRoutingCacheInvalidator::new(manager.clone());
 
         // Fresh: version 0, no snapshot cached.
-        assert_eq!(0, invalidator.current_routing_config_version().await.unwrap());
+        assert_eq!(
+            0,
+            invalidator.current_routing_config_version().await.unwrap()
+        );
 
         // Simulate a reader caching a snapshot stamped at the current version.
         manager

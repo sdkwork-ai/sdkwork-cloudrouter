@@ -48,9 +48,7 @@ pub fn classify_route_selection_failure(message: &str) -> RouteSelectionFailureS
         RouteSelectionFailureStage::SnapshotEmpty
     } else if message.contains("has no accounts bound") {
         RouteSelectionFailureStage::NoGroupBindings
-    } else if message.contains("is forbidden")
-        || message.contains("not allowed by account group")
-    {
+    } else if message.contains("is forbidden") || message.contains("not allowed by account group") {
         RouteSelectionFailureStage::ModelForbidden
     } else if message.contains("pricing is not available")
         || message.contains("upstream cost price not found")
@@ -208,10 +206,7 @@ pub fn log_rejected_group_account(
 /// Parses captured tracing text and returns the most specific selector stage.
 pub fn diagnose_call_chain_from_logs(logs: &str) -> Option<RouteSelectionFailureStage> {
     const CODES: &[(&str, RouteSelectionFailureStage)] = &[
-        (
-            "snapshot_empty",
-            RouteSelectionFailureStage::SnapshotEmpty,
-        ),
+        ("snapshot_empty", RouteSelectionFailureStage::SnapshotEmpty),
         (
             "no_group_bindings",
             RouteSelectionFailureStage::NoGroupBindings,
@@ -250,8 +245,7 @@ pub fn diagnose_call_chain_from_logs(logs: &str) -> Option<RouteSelectionFailure
         ),
     ];
     for (code, stage) in CODES {
-        if logs.contains(&format!("stage={code}")) || logs.contains(&format!("stage=\"{code}\""))
-        {
+        if logs.contains(&format!("stage={code}")) || logs.contains(&format!("stage=\"{code}\"")) {
             return Some(*stage);
         }
     }

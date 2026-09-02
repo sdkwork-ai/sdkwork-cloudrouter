@@ -48,7 +48,10 @@ pub(crate) fn restore_relayed_model(mut body: Value, requested_model: &str) -> V
     };
     match object.get("model") {
         Some(Value::String(current)) if current != requested_model => {
-            object.insert("model".to_owned(), Value::String(requested_model.to_owned()));
+            object.insert(
+                "model".to_owned(),
+                Value::String(requested_model.to_owned()),
+            );
         }
         _ => {}
     }
@@ -77,10 +80,7 @@ pub(crate) fn restore_relayed_streaming_model(stream: Body, requested_model: &st
 
 async fn next_relay_sse_model_restore_frame(
     mut state: RelaySseModelRestoreState,
-) -> Option<(
-    Result<Bytes, axum::Error>,
-    RelaySseModelRestoreState,
-)> {
+) -> Option<(Result<Bytes, axum::Error>, RelaySseModelRestoreState)> {
     let frame = state.upstream.next().await?;
     let mut output: Vec<u8> = Vec::new();
     match frame {
@@ -177,7 +177,8 @@ mod tests {
 
     #[test]
     fn relayed_json_model_is_restored_to_requested_model() {
-        let body = json!({"id":"x","object":"chat.completion","model":"provider-native-9","choices":[]});
+        let body =
+            json!({"id":"x","object":"chat.completion","model":"provider-native-9","choices":[]});
         let restored = restore_relayed_model(body, "gpt-4o-mini");
         assert_eq!("gpt-4o-mini", restored["model"]);
         assert_eq!("x", restored["id"]);

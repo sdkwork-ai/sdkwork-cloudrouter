@@ -731,7 +731,14 @@ where
 {
     price_service.resolve(
         catalog,
-        openai_resource_definition(catalog, invocation_context, context, route, meter, occurred_at),
+        openai_resource_definition(
+            catalog,
+            invocation_context,
+            context,
+            route,
+            meter,
+            occurred_at,
+        ),
     )
 }
 
@@ -781,8 +788,11 @@ where
     // fallback chain (requested -> default -> global), so a usage line pinned
     // to a region the price book does not carry still rates against the
     // model's default regional price instead of borrowing `global`.
-    let configured_default_region =
-        catalog.default_billing_region(context.tenant_id, context.organization_id, &route.catalog_key);
+    let configured_default_region = catalog.default_billing_region(
+        context.tenant_id,
+        context.organization_id,
+        &route.catalog_key,
+    );
     ResourceDefinition::new(route.catalog_key.clone(), meter, occurred_at)
         .with_pricing_subject(context.api_key_id, Some(route.group_id))
         .with_vendor_code(catalog_vendor_code(&route.catalog_key))

@@ -29,8 +29,9 @@ use std::sync::{Arc, Mutex};
 use axum::body::Body;
 use axum::extract::State;
 use axum::http::{HeaderMap, Method, Request, StatusCode};
-use axum::routing::{post, any};
+use axum::routing::{any, post};
 use axum::Json;
+use sdkwork_cloudrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::domain::{
     AiModel, BillingMeter, DecimalValue, ModelPrice, ModelVendor, ModelVendorDefinition, Money,
     PriceSide, PricingPlan, ProviderRetryPolicy, UpstreamAccountGroup, UpstreamAccountRoute,
@@ -41,7 +42,6 @@ use sdkwork_cloudrouter_router_service::ports::{
     GatewayRequestTraceCommand, GatewayUsageRecordCommand, GatewayUsageRecordFuture,
     GatewayUsageRecorder, ProviderSecretResolver,
 };
-use sdkwork_cloudrouter_router_service::application::ApiKeySecretHasher;
 use serde_json::{json, Value};
 use tower::ServiceExt;
 
@@ -69,15 +69,15 @@ impl MapSecretResolver {
 }
 
 impl ProviderSecretResolver for MapSecretResolver {
-    fn resolve_secret_value(&self, secret_ref: &str) -> sdkwork_cloudrouter_router_service::domain::DomainResult<String> {
-        self.secrets
-            .get(secret_ref)
-            .cloned()
-            .ok_or_else(|| {
-                sdkwork_cloudrouter_router_service::domain::DomainError::new(format!(
-                    "secret not found: {secret_ref}"
-                ))
-            })
+    fn resolve_secret_value(
+        &self,
+        secret_ref: &str,
+    ) -> sdkwork_cloudrouter_router_service::domain::DomainResult<String> {
+        self.secrets.get(secret_ref).cloned().ok_or_else(|| {
+            sdkwork_cloudrouter_router_service::domain::DomainError::new(format!(
+                "secret not found: {secret_ref}"
+            ))
+        })
     }
 }
 
@@ -167,13 +167,17 @@ async fn media_handler(
     Json(body): Json<Value>,
 ) -> (StatusCode, Json<Value>) {
     provider.calls.fetch_add(1, Ordering::SeqCst);
-    provider.captured.lock().unwrap().push(CapturedUpstreamRequest {
-        authorization: headers
-            .get("authorization")
-            .and_then(|value| value.to_str().ok())
-            .map(str::to_owned),
-        body,
-    });
+    provider
+        .captured
+        .lock()
+        .unwrap()
+        .push(CapturedUpstreamRequest {
+            authorization: headers
+                .get("authorization")
+                .and_then(|value| value.to_str().ok())
+                .map(str::to_owned),
+            body,
+        });
     (
         StatusCode::OK,
         Json(json!({
@@ -284,22 +288,12 @@ fn catalog_with_all_media_accounts(
         "Volcengine",
     ));
     catalog.add_model(
-        AiModel::new(
-            "gpt-image-2",
-            "OpenAI image2",
-            "openai",
-            vec!["image"],
-        )
-        .with_catalog_key("openai/gpt-image-2"),
+        AiModel::new("gpt-image-2", "OpenAI image2", "openai", vec!["image"])
+            .with_catalog_key("openai/gpt-image-2"),
     );
     catalog.add_model(
-        AiModel::new(
-            "veo-3.0-generate-001",
-            "Veo 3",
-            "google",
-            vec!["video"],
-        )
-        .with_catalog_key("google/veo-3.0-generate-001"),
+        AiModel::new("veo-3.0-generate-001", "Veo 3", "google", vec!["video"])
+            .with_catalog_key("google/veo-3.0-generate-001"),
     );
     // Provider-native media routes price on their route key (api_code) as the
     // catalog key, so each needs a model registered under that key.
@@ -601,18 +595,51 @@ fn catalog_with_all_media_accounts(
         DecimalValue::parse("1.000000").unwrap(),
         DecimalValue::parse("1.100000").unwrap(),
     ));
-    catalog.add_api_key(sdkwork_cloudrouter_router_service::domain::GatewayApiKey::new(
-        101, 10, "sk-live", key_hash,
-    ).with_owner(10, 20, 30));
+    catalog.add_api_key(
+        sdkwork_cloudrouter_router_service::domain::GatewayApiKey::new(
+            101, 10, "sk-live", key_hash,
+        )
+        .with_owner(10, 20, 30),
+    );
 
     // Routing policies (capability-scoped) + rules (route-key scoped).
     for (rule_id, _code, match_key, _target) in [
-        (9303, "standard-group-openai-video", "openai/video-1", "openai/video-1"),
-        (9304, "standard-group-gemini-image", "gemini.image_generation", "gemini.image_generation"),
-        (9305, "standard-group-gemini-video", "gemini.video_generation", "gemini.video_generation"),
-        (9306, "standard-group-kling-text2video", "kling.text_to_video", "kling.text_to_video"),
-        (9307, "standard-group-vidu-video", "vidu.start_end_to_video", "vidu.start_end_to_video"),
-        (9308, "standard-group-volcengine-video", "volcengine.video_generation", "volcengine.video_generation"),
+        (
+            9303,
+            "standard-group-openai-video",
+            "openai/video-1",
+            "openai/video-1",
+        ),
+        (
+            9304,
+            "standard-group-gemini-image",
+            "gemini.image_generation",
+            "gemini.image_generation",
+        ),
+        (
+            9305,
+            "standard-group-gemini-video",
+            "gemini.video_generation",
+            "gemini.video_generation",
+        ),
+        (
+            9306,
+            "standard-group-kling-text2video",
+            "kling.text_to_video",
+            "kling.text_to_video",
+        ),
+        (
+            9307,
+            "standard-group-vidu-video",
+            "vidu.start_end_to_video",
+            "vidu.start_end_to_video",
+        ),
+        (
+            9308,
+            "standard-group-volcengine-video",
+            "volcengine.video_generation",
+            "volcengine.video_generation",
+        ),
     ] {
         // OpenAI-compatible video generation matches by catalog key (the
         // request body carries `model`); provider-native routes match by route
@@ -630,7 +657,10 @@ fn catalog_with_all_media_accounts(
 // Router assembly
 // ---------------------------------------------------------------------------
 
-async fn build_router(catalog: InMemoryPricingCatalog, secrets: Vec<(String, String)>) -> axum::Router {
+async fn build_router(
+    catalog: InMemoryPricingCatalog,
+    secrets: Vec<(String, String)>,
+) -> axum::Router {
     let hasher = hasher();
     // The provider response memory budget is process-wide and shared. Each
     // concurrent response reserves `response_max_bytes * 4` (the reservation
@@ -761,13 +791,16 @@ async fn media_routing_openai_image2_routes_to_openai_account() {
     let hasher = hasher();
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
     let catalog = catalog_with_all_media_accounts(&key_hash, accounts);
-    let router = build_router(catalog, collect_secrets(&media_accounts(
-        &openai.base_url,
-        &google.base_url,
-        &kling.base_url,
-        &vidu.base_url,
-        &volcengine.base_url,
-    )))
+    let router = build_router(
+        catalog,
+        collect_secrets(&media_accounts(
+            &openai.base_url,
+            &google.base_url,
+            &kling.base_url,
+            &vidu.base_url,
+            &volcengine.base_url,
+        )),
+    )
     .await;
 
     let (status, body) = send_request(
@@ -805,13 +838,16 @@ async fn media_routing_openai_video_generations_routes_to_openai_account() {
     let hasher = hasher();
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
     let catalog = catalog_with_all_media_accounts(&key_hash, accounts);
-    let router = build_router(catalog, collect_secrets(&media_accounts(
-        &openai.base_url,
-        &google.base_url,
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
-    )))
+    let router = build_router(
+        catalog,
+        collect_secrets(&media_accounts(
+            &openai.base_url,
+            &google.base_url,
+            &"http://127.0.0.1:9".to_owned(),
+            &"http://127.0.0.1:9".to_owned(),
+            &"http://127.0.0.1:9".to_owned(),
+        )),
+    )
     .await;
 
     let (status, body) = send_request(
@@ -823,7 +859,11 @@ async fn media_routing_openai_video_generations_routes_to_openai_account() {
     assert_eq!(StatusCode::OK, status, "unexpected body: {body}");
 
     let calls = openai.provider.captured();
-    assert_eq!(1, calls.len(), "OpenAI video generation must hit the OpenAI account");
+    assert_eq!(
+        1,
+        calls.len(),
+        "OpenAI video generation must hit the OpenAI account"
+    );
     assert_eq!(
         Some("Bearer sk-openai-media-secret".to_owned()),
         calls[0].authorization
@@ -846,13 +886,16 @@ async fn media_routing_gemini_image_generation_routes_to_google_account() {
     let hasher = hasher();
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
     let catalog = catalog_with_all_media_accounts(&key_hash, accounts);
-    let router = build_router(catalog, collect_secrets(&media_accounts(
-        &openai.base_url,
-        &google.base_url,
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
-    )))
+    let router = build_router(
+        catalog,
+        collect_secrets(&media_accounts(
+            &openai.base_url,
+            &google.base_url,
+            &"http://127.0.0.1:9".to_owned(),
+            &"http://127.0.0.1:9".to_owned(),
+            &"http://127.0.0.1:9".to_owned(),
+        )),
+    )
     .await;
 
     let (status, body) = send_request(
@@ -864,7 +907,11 @@ async fn media_routing_gemini_image_generation_routes_to_google_account() {
     assert_eq!(StatusCode::OK, status, "unexpected body: {body}");
 
     let calls = google.provider.captured();
-    assert_eq!(1, calls.len(), "Gemini image generation must hit the Google account");
+    assert_eq!(
+        1,
+        calls.len(),
+        "Gemini image generation must hit the Google account"
+    );
     assert_eq!(
         Some("Bearer sk-google-media-secret".to_owned()),
         calls[0].authorization
@@ -886,13 +933,16 @@ async fn media_routing_gemini_veo_video_generation_routes_to_google_account() {
     let hasher = hasher();
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
     let catalog = catalog_with_all_media_accounts(&key_hash, accounts);
-    let router = build_router(catalog, collect_secrets(&media_accounts(
-        &openai.base_url,
-        &google.base_url,
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
-    )))
+    let router = build_router(
+        catalog,
+        collect_secrets(&media_accounts(
+            &openai.base_url,
+            &google.base_url,
+            &"http://127.0.0.1:9".to_owned(),
+            &"http://127.0.0.1:9".to_owned(),
+            &"http://127.0.0.1:9".to_owned(),
+        )),
+    )
     .await;
 
     let (status, body) = send_request(
@@ -926,13 +976,16 @@ async fn media_routing_kling_video_generation_routes_to_kling_account() {
     let hasher = hasher();
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
     let catalog = catalog_with_all_media_accounts(&key_hash, accounts);
-    let router = build_router(catalog, collect_secrets(&media_accounts(
-        &openai.base_url,
-        &"http://127.0.0.1:9".to_owned(),
-        &kling.base_url,
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
-    )))
+    let router = build_router(
+        catalog,
+        collect_secrets(&media_accounts(
+            &openai.base_url,
+            &"http://127.0.0.1:9".to_owned(),
+            &kling.base_url,
+            &"http://127.0.0.1:9".to_owned(),
+            &"http://127.0.0.1:9".to_owned(),
+        )),
+    )
     .await;
 
     let (status, body) = send_request(
@@ -966,13 +1019,16 @@ async fn media_routing_vidu_video_generation_routes_to_vidu_account() {
     let hasher = hasher();
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
     let catalog = catalog_with_all_media_accounts(&key_hash, accounts);
-    let router = build_router(catalog, collect_secrets(&media_accounts(
-        &openai.base_url,
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
-        &vidu.base_url,
-        &"http://127.0.0.1:9".to_owned(),
-    )))
+    let router = build_router(
+        catalog,
+        collect_secrets(&media_accounts(
+            &openai.base_url,
+            &"http://127.0.0.1:9".to_owned(),
+            &"http://127.0.0.1:9".to_owned(),
+            &vidu.base_url,
+            &"http://127.0.0.1:9".to_owned(),
+        )),
+    )
     .await;
 
     let (status, body) = send_request(
@@ -1006,13 +1062,16 @@ async fn media_routing_seedance_video_generation_routes_to_volcengine_account() 
     let hasher = hasher();
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
     let catalog = catalog_with_all_media_accounts(&key_hash, accounts);
-    let router = build_router(catalog, collect_secrets(&media_accounts(
-        &openai.base_url,
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
-        &volcengine.base_url,
-    )))
+    let router = build_router(
+        catalog,
+        collect_secrets(&media_accounts(
+            &openai.base_url,
+            &"http://127.0.0.1:9".to_owned(),
+            &"http://127.0.0.1:9".to_owned(),
+            &"http://127.0.0.1:9".to_owned(),
+            &volcengine.base_url,
+        )),
+    )
     .await;
 
     let (status, body) = send_request(

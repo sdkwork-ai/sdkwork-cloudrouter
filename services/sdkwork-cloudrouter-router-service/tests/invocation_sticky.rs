@@ -1,8 +1,7 @@
 use axum::http::Method;
 use sdkwork_cloudrouter_router_service::application::{
     AccountBillingMode, AuthenticatedApiKeyContext, DispatchMode, Invocation, InvocationAccount,
-    InvocationBody,
-    InvocationClassificationRequest, InvocationDispatch, InvocationErrorKind,
+    InvocationBody, InvocationClassificationRequest, InvocationDispatch, InvocationErrorKind,
     InvocationInterceptor, InvocationRequest, InvocationResourceClassifier,
     OpenAiResourceClassifier, StickyCommitInterceptor, StickyMode, StickyResolutionInterceptor,
     StickyRouting,
@@ -49,9 +48,11 @@ impl StickyRouteStore for MemoryStickyRouteStore {
         Box::pin(async move {
             self.lookups.lock().expect("lookups").push(query.clone());
             if self.fail_lookups {
-                return Err(sdkwork_cloudrouter_router_service::domain::DomainError::new(
-                    "sticky store unavailable",
-                ));
+                return Err(
+                    sdkwork_cloudrouter_router_service::domain::DomainError::new(
+                        "sticky store unavailable",
+                    ),
+                );
             }
             Ok(self
                 .bindings
@@ -496,10 +497,8 @@ async fn session_commit_skips_failed_response() {
     let store = Arc::new(MemoryStickyRouteStore::default());
     let mut invocation = session_sticky_invocation();
     invocation.account = Some(routed_account());
-    invocation.dispatch = InvocationDispatch::json_response(
-        500,
-        json!({"error": {"message": "upstream failed"}}),
-    );
+    invocation.dispatch =
+        InvocationDispatch::json_response(500, json!({"error": {"message": "upstream failed"}}));
 
     StickyCommitInterceptor::new(store.clone())
         .after(&mut invocation)
@@ -523,11 +522,13 @@ async fn session_commit_works_for_streaming_response_without_json_body() {
         adapter_target: None,
         resolved_secret: None,
         provider_request: None,
-        response: Some(sdkwork_cloudrouter_router_service::application::InvocationDispatchResponse::streaming(
-            200,
-            Some("text/event-stream".to_owned()),
-            axum::body::Body::empty(),
-        )),
+        response: Some(
+            sdkwork_cloudrouter_router_service::application::InvocationDispatchResponse::streaming(
+                200,
+                Some("text/event-stream".to_owned()),
+                axum::body::Body::empty(),
+            ),
+        ),
     };
 
     StickyCommitInterceptor::new(store.clone())
@@ -577,5 +578,7 @@ async fn object_sticky_store_failure_still_fails_closed() {
         .expect_err("object sticky store failure keeps fail-closed semantics");
 
     assert_eq!(InvocationErrorKind::Routing, error.kind);
-    assert!(error.message.contains("failed to resolve sticky route binding"));
+    assert!(error
+        .message
+        .contains("failed to resolve sticky route binding"));
 }

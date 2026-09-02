@@ -347,11 +347,26 @@ mod tests {
             None,
             Some(LlmProtocolCode::OpenaiChatCompletions),
         );
-        assert!(message.contains("vendor 'OpenAI'"), "must name vendor: {message}");
-        assert!(message.contains("supplier 'openai'"), "must name supplier: {message}");
-        assert!(message.contains("account 3001"), "must name account: {message}");
-        assert!(message.contains("openai/gpt-4o-mini"), "must name model: {message}");
-        assert!(message.contains("none configured"), "must report no source: {message}");
+        assert!(
+            message.contains("vendor 'OpenAI'"),
+            "must name vendor: {message}"
+        );
+        assert!(
+            message.contains("supplier 'openai'"),
+            "must name supplier: {message}"
+        );
+        assert!(
+            message.contains("account 3001"),
+            "must name account: {message}"
+        );
+        assert!(
+            message.contains("openai/gpt-4o-mini"),
+            "must name model: {message}"
+        );
+        assert!(
+            message.contains("none configured"),
+            "must report no source: {message}"
+        );
 
         // With sources present but account/supplier empty, they are listed.
         let with_supplier_default = describe_base_url_missing(

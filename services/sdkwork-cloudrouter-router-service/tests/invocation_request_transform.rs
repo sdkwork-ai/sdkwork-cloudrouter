@@ -2,10 +2,9 @@ use axum::http::{header, HeaderName, HeaderValue, Method};
 use sdkwork_cloudrouter_provider_adapter_contract::AdapterInvocationShape;
 use sdkwork_cloudrouter_router_service::application::{
     AccountBillingMode, AuthenticatedApiKeyContext, Invocation, InvocationAccount,
-    InvocationAdapterTarget,
-    InvocationBilling, InvocationBody, InvocationInterceptor, InvocationRequest,
-    InvocationResource, InvocationShape, InvocationSubject, RequestTransformInterceptor,
-    SecretResolutionInterceptor,
+    InvocationAdapterTarget, InvocationBilling, InvocationBody, InvocationInterceptor,
+    InvocationRequest, InvocationResource, InvocationShape, InvocationSubject,
+    RequestTransformInterceptor, SecretResolutionInterceptor,
 };
 use sdkwork_cloudrouter_router_service::domain::{
     AiRouteModelRequirement, BillingMeter, DomainError, DomainResult, ProviderAuthHeader,

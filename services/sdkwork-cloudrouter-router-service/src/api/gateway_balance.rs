@@ -250,8 +250,8 @@ mod tests {
     use crate::domain::{
         AiModel, BillingMeter, GatewayAccessPolicy, GatewayApiKey, GatewayRiskRule,
         ModelMappingRule, ModelPrice, ModelUpstreamRoute, ModelVendorDefinition, PriceSide,
-        PricingPlan, QuotaPolicy, ResolveModelMappingContext,
-        UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot, UpstreamAccountRoute,
+        PricingPlan, QuotaPolicy, ResolveModelMappingContext, UpstreamAccountGroup,
+        UpstreamAccountGroupMetricSnapshot, UpstreamAccountRoute,
     };
 
     /// Minimal catalog: no keys, no models. Only `find_api_key_by_hash` is

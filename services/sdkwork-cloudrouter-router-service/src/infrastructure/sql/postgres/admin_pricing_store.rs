@@ -10,18 +10,18 @@ use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::infrastructure::sql::PricingCatalogSql;
 use crate::ports::{
-    AdminDefaultRegionItem, AdminOfficialRateAnchor, AdminPricingCommandFuture,
+    AdminDefaultRegionItem, AdminOfficialRateAnchor, AdminPriceBookDetail, AdminPriceBookItem,
+    AdminPriceBookRateItem, AdminPriceSettingResolution, AdminPricingCommandFuture,
     AdminPricingFormulaMode, AdminPricingListPage, AdminPricingPlanItem, AdminPricingRuleItem,
-    AdminPricingStatus, AdminPricingStore, AdminPricingSubject, AdminPriceBookDetail,
-    AdminPriceBookItem, AdminPriceBookRateItem, AdminPriceSettingResolution, AdminRateCardItem,
+    AdminPricingStatus, AdminPricingStore, AdminPricingSubject, AdminRateCardItem,
     CreateAdminPriceBookCommand, CreateAdminPriceBookRateCommand, CreateAdminPricingPlanCommand,
     CreateAdminPricingRuleCommand, CreateAdminRateCardCommand, DeleteAdminDefaultRegionCommand,
-    DeleteAdminPricingRuleCommand, DeleteAdminPriceBookRateCommand, DeleteAdminRateCardCommand,
-    ListAdminDefaultRegionsQuery, ListAdminPricingPlansQuery, ListAdminPricingRulesQuery,
-    ListAdminPriceBooksQuery, ListAdminRateCardsQuery, LoadAdminPriceBookQuery,
+    DeleteAdminPriceBookRateCommand, DeleteAdminPricingRuleCommand, DeleteAdminRateCardCommand,
+    ListAdminDefaultRegionsQuery, ListAdminPriceBooksQuery, ListAdminPricingPlansQuery,
+    ListAdminPricingRulesQuery, ListAdminRateCardsQuery, LoadAdminPriceBookQuery,
     LoadAdminPricingPlanQuery, PriceBookLifecycleCommand, ResolveAdminPriceSettingQuery,
     SaveAdminDefaultRegionCommand, SaveAdminPriceSettingCommand, UpdateAdminDefaultRegionCommand,
-    UpdateAdminPricingPlanCommand, UpdateAdminPriceBookCommand, UpdateAdminPriceBookRateCommand,
+    UpdateAdminPriceBookCommand, UpdateAdminPriceBookRateCommand, UpdateAdminPricingPlanCommand,
     UpdateAdminPricingRuleCommand, UpdateAdminRateCardCommand,
 };
 
@@ -1691,9 +1691,7 @@ async fn update_default_region(
     let mut tx = pool
         .begin()
         .await
-        .map_err(|error| {
-            store_error("failed to begin default region update transaction", error)
-        })?;
+        .map_err(|error| store_error("failed to begin default region update transaction", error))?;
     let current = sqlx::query(
         r#"
         SELECT catalog_key
@@ -1714,9 +1712,7 @@ async fn update_default_region(
     let Some(row) = current else {
         tx.commit()
             .await
-            .map_err(|error| {
-                store_error("failed to commit default region update", error)
-            })?;
+            .map_err(|error| store_error("failed to commit default region update", error))?;
         return Ok(None);
     };
     let catalog_key: String = row
@@ -1762,9 +1758,7 @@ async fn update_default_region(
     if updated.rows_affected() == 0 {
         tx.commit()
             .await
-            .map_err(|error| {
-                store_error("failed to commit default region update", error)
-            })?;
+            .map_err(|error| store_error("failed to commit default region update", error))?;
         return Ok(None);
     }
     insert_audit_log_for_target_uuid(
@@ -1787,9 +1781,7 @@ async fn update_default_region(
     let item = load_default_region_in_transaction(&mut tx, id, command.subject).await?;
     tx.commit()
         .await
-        .map_err(|error| {
-            store_error("failed to commit default region update", error)
-        })?;
+        .map_err(|error| store_error("failed to commit default region update", error))?;
     Ok(item)
 }
 
@@ -2078,8 +2070,7 @@ fn default_region_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<AdminDef
 
 const TARGET_TYPE_PRICE_BOOK: i32 = 83;
 const PRICE_BOOK_EDITABLE_STATES: [&str; 2] = ["draft", "staged"];
-const PRICE_BOOK_LIFECYCLE_STATES: [&str; 5] =
-    ["draft", "staged", "active", "retired", "rejected"];
+const PRICE_BOOK_LIFECYCLE_STATES: [&str; 5] = ["draft", "staged", "active", "retired", "rejected"];
 
 fn validate_price_book_lifecycle_filter(value: &str) -> DomainResult<()> {
     if PRICE_BOOK_LIFECYCLE_STATES.contains(&value) {
@@ -3205,23 +3196,12 @@ async fn save_price_setting(
             rule_id
         }
         None => {
-            match find_standard_price_setting_rule(
-                &mut tx,
-                &command,
-                &anchor,
-                pricing_plan_id,
-            )
-            .await?
+            match find_standard_price_setting_rule(&mut tx, &command, &anchor, pricing_plan_id)
+                .await?
             {
                 Some(rule_id) => {
-                    update_price_setting_rule(
-                        &mut tx,
-                        &command,
-                        &anchor,
-                        pricing_plan_id,
-                        rule_id,
-                    )
-                    .await?;
+                    update_price_setting_rule(&mut tx, &command, &anchor, pricing_plan_id, rule_id)
+                        .await?;
                     rule_id
                 }
                 None => {
@@ -3367,9 +3347,7 @@ async fn resolve_price_setting(
     let (resolved_unit_price, currency_code, source) = match selected_rule.as_ref() {
         Some(rule) if rule.formula_mode == "unit_price_override" => {
             let money = rule.unit_price_override.clone().ok_or_else(|| {
-                DomainError::new(
-                    "unit_price_override pricing rule is missing its override price",
-                )
+                DomainError::new("unit_price_override pricing rule is missing its override price")
             })?;
             let price = money.unit_price.to_fixed_string(12);
             let currency = money.currency;
@@ -3470,7 +3448,10 @@ fn price_setting_rule_code(anchor: &AdminOfficialRateAnchor) -> String {
     // because rate codes sharing a 96-char prefix are practically identical
     // identifiers, and a real collision surfaces as an explicit constraint
     // error instead of a silent overwrite.
-    derived.chars().take(PRICE_SETTING_RULE_CODE_MAX_CHARS).collect()
+    derived
+        .chars()
+        .take(PRICE_SETTING_RULE_CODE_MAX_CHARS)
+        .collect()
 }
 
 /// Loads the official rate row a price setting edit anchors on, under the
@@ -3936,10 +3917,7 @@ fn admin_rule_item_from_domain(rule: &PricingRule) -> AdminPricingRuleItem {
             .clone()
             .filter(|value| !value.is_empty()),
         meter_code: rule.meter_code.clone().filter(|value| !value.is_empty()),
-        provider_code: rule
-            .provider_code
-            .clone()
-            .filter(|value| !value.is_empty()),
+        provider_code: rule.provider_code.clone().filter(|value| !value.is_empty()),
         region_code: rule.region_code.clone().filter(|value| !value.is_empty()),
         catalog_key: rule.catalog_key.clone().filter(|value| !value.is_empty()),
         formula_mode: rule.formula_mode.clone(),

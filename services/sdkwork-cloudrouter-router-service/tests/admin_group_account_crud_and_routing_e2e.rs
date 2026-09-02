@@ -48,16 +48,17 @@ use sdkwork_cloudrouter_router_service::domain::{
 };
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::HmacSha256ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::infrastructure::provider::{
-    SecretRefOpenAiCompatibleChatCompletionRelay, SecretRefOpenAiCompatibleChatCompletionStreamRelay,
+    SecretRefOpenAiCompatibleChatCompletionRelay,
+    SecretRefOpenAiCompatibleChatCompletionStreamRelay,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use sdkwork_cloudrouter_router_service::ports::{
-    AccountGroupModelAccess, GatewayUsageRecordCommand, GatewayUsageRecorder,
-    GatewayUsageRecordFuture, PricingCatalog, PricingDefaultRegionProvider,
-    ProviderSecretResolver, SupplierModelAccess, UpstreamAccountRouteCatalog,
+    AccountGroupModelAccess, GatewayUsageRecordCommand, GatewayUsageRecordFuture,
+    GatewayUsageRecorder, PricingCatalog, PricingDefaultRegionProvider, ProviderSecretResolver,
+    SupplierModelAccess, UpstreamAccountRouteCatalog,
 };
 use sdkwork_cloudrouter_test_support::{
-    app_session_dual_token_headers, app_session_config, default_trusted_request_subject,
+    app_session_config, app_session_dual_token_headers, default_trusted_request_subject,
     API_KEY_PEPPER,
 };
 use sdkwork_web_core::default_open_api_bearer_classifier;
@@ -89,7 +90,8 @@ const ACCOUNT_C: i64 = 3003;
 /// uses) lets tests run in parallel without global serialization.
 const TEST_RESPONSE_MEMORY_BUDGET_BYTES: usize = 256 * 1024 * 1024;
 
-fn test_response_memory_budget() -> sdkwork_cloudrouter_router_service::infrastructure::provider::ProviderResponseMemoryBudget {
+fn test_response_memory_budget(
+) -> sdkwork_cloudrouter_router_service::infrastructure::provider::ProviderResponseMemoryBudget {
     sdkwork_cloudrouter_router_service::infrastructure::provider::ProviderResponseMemoryBudget::new(
         NonZeroUsize::new(TEST_RESPONSE_MEMORY_BUDGET_BYTES)
             .expect("test response memory budget must be nonzero"),
@@ -128,23 +130,22 @@ impl OpenAiAuthTokenAuthenticator for RealTestAuthTokenAuthenticator {
         &self,
         raw_bearer_token: &str,
         access_token: Option<&str>,
-    ) -> Result<AuthenticatedApiKeyContext, sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenError>
-    {
+    ) -> Result<
+        AuthenticatedApiKeyContext,
+        sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenError,
+    > {
         // Real HMAC-SHA256 signature + time-window verification.
-        let bearer_subject = match verify_app_session_token(
-            &self.config,
-            raw_bearer_token,
-            self.now_unix_seconds,
-        ) {
-            Ok(subject) => subject,
-            Err(error) => {
-                return Err(openai_auth_error(
-                    StatusCode::UNAUTHORIZED,
-                    "invalid_auth_token",
-                    &format!("bearer token verification failed: {error}"),
-                ));
-            }
-        };
+        let bearer_subject =
+            match verify_app_session_token(&self.config, raw_bearer_token, self.now_unix_seconds) {
+                Ok(subject) => subject,
+                Err(error) => {
+                    return Err(openai_auth_error(
+                        StatusCode::UNAUTHORIZED,
+                        "invalid_auth_token",
+                        &format!("bearer token verification failed: {error}"),
+                    ));
+                }
+            };
 
         // Access token must match the bearer subject.
         if let Some(access) = access_token
@@ -279,7 +280,10 @@ impl SharedPricingCatalog {
                 let _ = official;
             }
         }
-        self.deleted_account_ids.write().unwrap().retain(|id| *id != account_id);
+        self.deleted_account_ids
+            .write()
+            .unwrap()
+            .retain(|id| *id != account_id);
     }
 
     /// Disables a group-bound account by clearing its health statuses, so the
@@ -349,7 +353,9 @@ impl PricingCatalog for SharedPricingCatalog {
             .filter(|route| !self.is_deleted(route.account_id))
             .collect()
     }
-    fn list_model_mappings(&self) -> Vec<sdkwork_cloudrouter_router_service::domain::ModelMappingRule> {
+    fn list_model_mappings(
+        &self,
+    ) -> Vec<sdkwork_cloudrouter_router_service::domain::ModelMappingRule> {
         self.read().list_model_mappings()
     }
     fn list_api_keys(&self) -> Vec<GatewayApiKey> {
@@ -364,7 +370,8 @@ impl PricingCatalog for SharedPricingCatalog {
         price_side: PriceSide,
         billing_meter: BillingMeter,
     ) -> Vec<ModelPrice> {
-        self.read().list_model_prices(model, price_side, billing_meter)
+        self.read()
+            .list_model_prices(model, price_side, billing_meter)
     }
     fn list_model_prices_for_side(&self, model: &str, price_side: PriceSide) -> Vec<ModelPrice> {
         self.read().list_model_prices_for_side(model, price_side)
@@ -398,7 +405,8 @@ impl PricingCatalog for SharedPricingCatalog {
     fn find_latest_upstream_account_group_metric_snapshot(
         &self,
         account_group_id: i64,
-    ) -> Option<sdkwork_cloudrouter_router_service::domain::UpstreamAccountGroupMetricSnapshot> {
+    ) -> Option<sdkwork_cloudrouter_router_service::domain::UpstreamAccountGroupMetricSnapshot>
+    {
         self.read()
             .find_latest_upstream_account_group_metric_snapshot(account_group_id)
     }
@@ -418,7 +426,11 @@ impl PricingCatalog for SharedPricingCatalog {
     ) -> Option<sdkwork_cloudrouter_router_service::domain::ModelMappingRule> {
         self.read().resolve_model_mapping(source_model, context)
     }
-    fn find_model_upstream_route(&self, model: &str, supplier_code: &str) -> Option<ModelUpstreamRoute> {
+    fn find_model_upstream_route(
+        &self,
+        model: &str,
+        supplier_code: &str,
+    ) -> Option<ModelUpstreamRoute> {
         self.read()
             .find_model_upstream_route(model, supplier_code)
             .filter(|route| !self.is_deleted(route.account_id))
@@ -571,13 +583,17 @@ async fn mock_chat_handler(
     headers: HeaderMap,
     Json(body): Json<Value>,
 ) -> (StatusCode, Json<Value>) {
-    provider.captured.lock().unwrap().push(CapturedUpstreamRequest {
-        authorization: headers
-            .get("authorization")
-            .and_then(|value| value.to_str().ok())
-            .map(str::to_owned),
-        body,
-    });
+    provider
+        .captured
+        .lock()
+        .unwrap()
+        .push(CapturedUpstreamRequest {
+            authorization: headers
+                .get("authorization")
+                .and_then(|value| value.to_str().ok())
+                .map(str::to_owned),
+            body,
+        });
     (
         StatusCode::OK,
         Json(json!({
@@ -686,7 +702,9 @@ fn seed_catalog(provider_a: &str, provider_b: &str) -> InMemoryPricingCatalog {
     // Routing policy + rule scoped to the default group.
 
     // A dummy api key so `find_api_key(0)` is absent (auth-token channel).
-    catalog.add_api_key(GatewayApiKey::new(101, DEFAULT_GROUP_ID, "sk-live", "dummy").with_owner(TENANT_ID, 20, 30));
+    catalog.add_api_key(
+        GatewayApiKey::new(101, DEFAULT_GROUP_ID, "sk-live", "dummy").with_owner(TENANT_ID, 20, 30),
+    );
 
     catalog
 }
@@ -717,12 +735,11 @@ fn build_router(
         SecretRefOpenAiCompatibleChatCompletionStreamRelay::for_local_development(resolver)
             .with_shared_response_memory_budget(budget),
     );
-    let authenticator: Arc<dyn OpenAiAuthTokenAuthenticator> = Arc::new(
-        RealTestAuthTokenAuthenticator {
+    let authenticator: Arc<dyn OpenAiAuthTokenAuthenticator> =
+        Arc::new(RealTestAuthTokenAuthenticator {
             config: app_session_config().expect("app session config must initialize"),
             now_unix_seconds: TEST_NOW_UNIX_SECONDS,
-        },
-    );
+        });
     let runtime_config = OpenAiRuntimeRouteConfig::new(
         ProviderRetryPolicy::default(),
         OpenAiRuntimeFailureStrategy::FailClosed,
@@ -805,7 +822,11 @@ async fn real_login_routes_through_default_group_pool_to_routing_target() {
 
     let captured_a = provider_a.captured.lock().unwrap();
     let captured_b = provider_b.captured.lock().unwrap();
-    assert_eq!(1, captured_a.len(), "primary account A must be called exactly once");
+    assert_eq!(
+        1,
+        captured_a.len(),
+        "primary account A must be called exactly once"
+    );
     assert_eq!(0, captured_b.len(), "failover account B must NOT be called");
     assert_eq!(
         Some(format!("Bearer {}", account_secret_value(ACCOUNT_A))),
@@ -816,7 +837,10 @@ async fn real_login_routes_through_default_group_pool_to_routing_target() {
     assert_eq!(Some(false), captured_a[0].body["stream"].as_bool());
 
     let usage = usage.records();
-    assert!(!usage.is_empty(), "usage must be recorded after real upstream success");
+    assert!(
+        !usage.is_empty(),
+        "usage must be recorded after real upstream success"
+    );
 }
 
 /// Admin creates a new group-bound account → the very next routing request
@@ -892,7 +916,11 @@ async fn admin_disable_account_fails_over_in_real_time() {
 
     let captured_a = provider_a.captured.lock().unwrap();
     let captured_b = provider_b.captured.lock().unwrap();
-    assert_eq!(1, captured_a.len(), "account A must NOT be called after disable");
+    assert_eq!(
+        1,
+        captured_a.len(),
+        "account A must NOT be called after disable"
+    );
     assert_eq!(1, captured_b.len(), "account B must take over");
 }
 
@@ -941,10 +969,14 @@ async fn admin_delete_account_removes_it_from_pool_in_real_time() {
     // List (admin read path): B is gone, A remains.
     let group_accounts = shared.admin_list_group_accounts(DEFAULT_GROUP_ID);
     assert!(
-        group_accounts.iter().all(|route| route.account_id != ACCOUNT_B),
+        group_accounts
+            .iter()
+            .all(|route| route.account_id != ACCOUNT_B),
         "deleted account must be absent from group account list"
     );
-    assert!(group_accounts.iter().any(|route| route.account_id == ACCOUNT_A));
+    assert!(group_accounts
+        .iter()
+        .any(|route| route.account_id == ACCOUNT_A));
 
     // Routing still works via A.
     let (status, body) = send_chat_request(router.clone(), &bearer, &access, false).await;

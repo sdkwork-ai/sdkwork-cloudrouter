@@ -25,11 +25,9 @@ pub(crate) fn redacted_store_error(context: &str, error: Error) -> DomainError {
         // Data-shape rejections (not_null, check, foreign_key, invalid input,
         // string truncation, ...) are input problems, not server faults: the
         // caller can act on them, so they must not be reported as 5xx.
-        Some(code) if code.starts_with("23") || code.starts_with("22") => {
-            DomainError::bad_request(format!(
-                "{context}: the write was rejected by a data integrity rule ({code})"
-            ))
-        }
+        Some(code) if code.starts_with("23") || code.starts_with("22") => DomainError::bad_request(
+            format!("{context}: the write was rejected by a data integrity rule ({code})"),
+        ),
         _ => DomainError::new(format!("{context}: database operation failed")),
     }
 }
@@ -90,8 +88,10 @@ mod tests {
 
     #[test]
     fn unique_violation_maps_to_conflict() {
-        let error =
-            redacted_store_error("save default region", store_error_with_sqlstate(Some("23505")));
+        let error = redacted_store_error(
+            "save default region",
+            store_error_with_sqlstate(Some("23505")),
+        );
         assert!(error.is_conflict());
         assert!(!error.is_bad_request());
     }
@@ -105,8 +105,14 @@ mod tests {
                 "save default region",
                 store_error_with_sqlstate(Some(sqlstate)),
             );
-            assert!(error.is_bad_request(), "sqlstate {sqlstate} must map to bad_request");
-            assert!(!error.is_conflict(), "sqlstate {sqlstate} must not map to conflict");
+            assert!(
+                error.is_bad_request(),
+                "sqlstate {sqlstate} must map to bad_request"
+            );
+            assert!(
+                !error.is_conflict(),
+                "sqlstate {sqlstate} must not map to conflict"
+            );
         }
     }
 
@@ -116,13 +122,20 @@ mod tests {
         // undefined table (42P01) and connection failure (08003) must stay
         // internal errors instead of pretending the input was wrong.
         for sqlstate in [None, Some("42501"), Some("42P01"), Some("08003")] {
-            let error = redacted_store_error(
-                "save default region",
-                store_error_with_sqlstate(sqlstate),
+            let error =
+                redacted_store_error("save default region", store_error_with_sqlstate(sqlstate));
+            assert!(
+                !error.is_bad_request(),
+                "{sqlstate:?} must not map to bad_request"
             );
-            assert!(!error.is_bad_request(), "{sqlstate:?} must not map to bad_request");
-            assert!(!error.is_conflict(), "{sqlstate:?} must not map to conflict");
-            assert!(!error.is_not_found(), "{sqlstate:?} must not map to not_found");
+            assert!(
+                !error.is_conflict(),
+                "{sqlstate:?} must not map to conflict"
+            );
+            assert!(
+                !error.is_not_found(),
+                "{sqlstate:?} must not map to not_found"
+            );
         }
     }
 }

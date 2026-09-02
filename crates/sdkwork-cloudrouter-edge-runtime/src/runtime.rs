@@ -189,8 +189,7 @@ struct InvocationRuntimeRoutesInput<'a, C> {
     provider_response_timeout: Duration,
     provider_http_pool_config: ProviderRelayHttpPoolConfig,
     internal_gateway_verifier: Arc<InternalGatewayRequestVerifier>,
-    auth_token_authenticator:
-        Option<Arc<dyn OpenAiAuthTokenAuthenticator + Send + Sync>>,
+    auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator + Send + Sync>>,
     call_chain: Option<CallChainInterceptor>,
     billing_store: Option<
         Arc<dyn sdkwork_cloudrouter_router_service::ports::GatewayBillingStore + Send + Sync>,
@@ -2278,8 +2277,7 @@ async fn build_gateway_router_from_all_in_one_context(
             // catch-all can handle it. Only install it when neither the
             // provider secret resolver nor a static relay config exists
             // (mirrors the database-runtime wiring).
-            context.provider_secret_resolver.is_none()
-                && context.provider_relay_config.is_none(),
+            context.provider_secret_resolver.is_none() && context.provider_relay_config.is_none(),
             readiness_check,
             Some(context.deployment_mode),
         ),

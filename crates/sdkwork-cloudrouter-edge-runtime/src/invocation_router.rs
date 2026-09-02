@@ -11,6 +11,7 @@ use sdkwork_cloudrouter_config::{
     ProviderAdapterConfig, RedisConfig, RequestLimitsConfig, RuntimeTomlConfig,
 };
 use sdkwork_cloudrouter_http::QueryStringApiKeyPolicy;
+use sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenAuthenticator;
 use sdkwork_cloudrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::application::{
     AccountResolutionInterceptor, BillingPolicyInterceptor, BillingSettlementInterceptor,
@@ -28,7 +29,6 @@ use sdkwork_cloudrouter_router_service::ports::{
     ProviderSecretResolver, RoutingDecisionLogRecorder, StickyRouteStore,
     UpstreamAccountRouteCatalog,
 };
-use sdkwork_cloudrouter_router_service::api::OpenAiAuthTokenAuthenticator;
 use sdkwork_cloudrouter_security::{InternalGatewayRequestVerifier, INTERNAL_GATEWAY_ROUTE_PREFIX};
 
 use crate::call_chain::CallChainInterceptor;
@@ -125,8 +125,7 @@ pub struct InvocationRouterOptions<'a> {
     /// into an account route context for chat completions. Mirrors the
     /// legacy openai router channel so the invocation pipeline accepts the
     /// agents turn executor's auth-token credential.
-    pub auth_token_authenticator:
-        Option<Arc<dyn OpenAiAuthTokenAuthenticator + Send + Sync>>,
+    pub auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator + Send + Sync>>,
 }
 
 impl Default for InvocationRouterOptions<'_> {

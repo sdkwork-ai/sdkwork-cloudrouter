@@ -1,13 +1,13 @@
 use std::future::Future;
 use std::pin::Pin;
 
+use crate::infrastructure::decimal_math::{decimal_multiply, decimal_to_scaled, DecimalRounding};
 use serde::de::IgnoredAny;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use crate::infrastructure::decimal_math::{decimal_multiply, decimal_to_scaled, DecimalRounding};
 
 use crate::domain::{BillingMeter, DecimalValue, DomainError, DomainResult};
-use crate::ports::{RechargeSettingsModel, token_points_for_charge};
+use crate::ports::{token_points_for_charge, RechargeSettingsModel};
 
 pub type GatewayUsageRecordFuture<'a> = Pin<Box<dyn Future<Output = DomainResult<()>> + Send + 'a>>;
 
@@ -808,9 +808,7 @@ pub fn allocate_request_debit_points(
 ) {
     let Some(currency) = commands
         .iter()
-        .find(|command| {
-            command.decision_status == "rated" && command.billability == "chargeable"
-        })
+        .find(|command| command.decision_status == "rated" && command.billability == "chargeable")
         .map(|command| command.currency.clone())
     else {
         return;
@@ -833,17 +831,14 @@ pub fn allocate_request_debit_points(
             command.debit_points = Some(0);
             continue;
         };
-        let cumulative_points = match token_points_for_charge(
-            &sum.to_fixed_string(12),
-            &currency,
-            settings,
-        ) {
-            Ok(points) => points,
-            Err(_) => {
-                command.debit_points = Some(0);
-                continue;
-            }
-        };
+        let cumulative_points =
+            match token_points_for_charge(&sum.to_fixed_string(12), &currency, settings) {
+                Ok(points) => points,
+                Err(_) => {
+                    command.debit_points = Some(0);
+                    continue;
+                }
+            };
         let Some(command_points) = cumulative_points.checked_sub(allocated) else {
             command.debit_points = Some(0);
             continue;
@@ -1304,9 +1299,10 @@ mod tests {
         let settings = RechargeSettingsModel {
             base_currency_code: "CNY".to_owned(),
             base_points_per_cny: "10".to_owned(),
-            currency_to_cny_rates: std::collections::BTreeMap::from([
-                ("CNY".to_owned(), "1".to_owned()),
-            ]),
+            currency_to_cny_rates: std::collections::BTreeMap::from([(
+                "CNY".to_owned(),
+                "1".to_owned(),
+            )]),
         };
         let amount = "123.456789";
         let legacy = token_points_for_decimal(DecimalValue::parse(amount).unwrap()).unwrap();

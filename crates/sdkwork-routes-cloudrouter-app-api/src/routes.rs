@@ -30,11 +30,11 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::pool::connect_stand
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
     PostgresAdminAuthSettingsStore, PostgresAdminTransactionCenterStore, PostgresAppChatStore,
     PostgresAppGatewayTracesReadStore, PostgresAppInviteStore, PostgresAppNotificationStore,
-    PostgresAppRoutingReadStore, PostgresAppRuntimeStore,
-    PostgresCatalogLoadError, PostgresDashboardOverviewReadStore,
-    PostgresGatewayApiKeyCommandStore, PostgresOfficialPricingCatalogReadStore,
-    PostgresPaymentIntentRuntimeStore, PostgresPricingCatalogLoader, PostgresSettingsStore,
-    PostgresSiteSettingsStore, PostgresUsageLogsReadStore,
+    PostgresAppRoutingReadStore, PostgresAppRuntimeStore, PostgresCatalogLoadError,
+    PostgresDashboardOverviewReadStore, PostgresGatewayApiKeyCommandStore,
+    PostgresOfficialPricingCatalogReadStore, PostgresPaymentIntentRuntimeStore,
+    PostgresPricingCatalogLoader, PostgresSettingsStore, PostgresSiteSettingsStore,
+    PostgresUsageLogsReadStore,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::{
     AppRuntimeGatewayHttpClient, OsApiKeySecretGenerator, RedisRuntimeStreamBus,
@@ -44,11 +44,11 @@ use sdkwork_cloudrouter_router_service::ports::ChatCompletionStreamRelay;
 use sdkwork_cloudrouter_router_service::ports::UpstreamAccountRouteCatalog;
 use sdkwork_cloudrouter_router_service::ports::{
     AdminAuthSettingsStore, AppChatStore, AppGatewayTracesReadStore, AppInviteStore,
-    AppNotificationStore, AppRoutingReadStore, AppRuntimeStore,
-    DashboardOverviewReadStore, GatewayApiKeyCommandStore, GatewayApiKeyManagementReadStore,
-    ModelRankingRefreshOutcome, ModelRankingRefreshRunStatus, ModelRankingRefreshStore,
-    ModelRankingsCacheInvalidation, ModelRankingsReadModelStore, OfficialPricingCatalogReadStore,
-    SettingsStore, SettlementsDashboardReadStore, SiteSettingsStore, UsageLogsReadStore,
+    AppNotificationStore, AppRoutingReadStore, AppRuntimeStore, DashboardOverviewReadStore,
+    GatewayApiKeyCommandStore, GatewayApiKeyManagementReadStore, ModelRankingRefreshOutcome,
+    ModelRankingRefreshRunStatus, ModelRankingRefreshStore, ModelRankingsCacheInvalidation,
+    ModelRankingsReadModelStore, OfficialPricingCatalogReadStore, SettingsStore,
+    SettlementsDashboardReadStore, SiteSettingsStore, UsageLogsReadStore,
 };
 use sdkwork_cloudrouter_settlements_dashboard_repository_sqlx::PostgresSettlementsDashboardReadStore;
 use sdkwork_content_documents_sdk_reference::app_sdk_reference_router;
@@ -339,13 +339,15 @@ async fn finalize_product_router_with_federated_capabilities(
         .await
         .map_err(ProductCatalogRouterError::Config)?;
         let router = match database_pool {
-            Some(database_pool) => crate::generations_runtime::merge_federated_generations_app_router(
-                router,
-                database_pool,
-                subject_boundary_config.clone(),
-            )
-            .await
-            .map_err(ProductCatalogRouterError::Config)?,
+            Some(database_pool) => {
+                crate::generations_runtime::merge_federated_generations_app_router(
+                    router,
+                    database_pool,
+                    subject_boundary_config.clone(),
+                )
+                .await
+                .map_err(ProductCatalogRouterError::Config)?
+            }
             None => router,
         };
         match database_pool {

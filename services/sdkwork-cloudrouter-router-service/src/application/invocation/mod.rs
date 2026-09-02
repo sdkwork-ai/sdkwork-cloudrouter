@@ -25,9 +25,9 @@ mod request_transform;
 mod resource;
 mod response_normalization;
 mod route_planning;
-mod routing_pipeline;
 mod routing;
 mod routing_filter;
+mod routing_pipeline;
 mod secrets;
 mod settlement;
 mod state;
@@ -79,13 +79,13 @@ pub use request_transform::RequestTransformInterceptor;
 pub use resource::{InvocationResource, InvocationSurface, ResourceType};
 pub use response_normalization::ResponseNormalizationInterceptor;
 pub use route_planning::RoutePlanningInterceptor;
-pub use routing_pipeline::{RouteKind, RoutingPipeline};
 pub use routing::{
     InvocationRouteAttempt, InvocationRouteCandidate, InvocationRouteCandidateKind,
     InvocationRoutePlan, InvocationRouting, StickyMode, StickyRouteConstraint, StickyRouting,
     StickyScope,
 };
 pub use routing_filter::{routing_filter_context, FilterRejectionKind, RoutingFilterChain};
+pub use routing_pipeline::{RouteKind, RoutingPipeline};
 pub use secrets::SecretResolutionInterceptor;
 pub use settlement::PricingSettlementInterceptor;
 pub use state::{Invocation, InvocationCancellationSignal, InvocationId, InvocationRequest};

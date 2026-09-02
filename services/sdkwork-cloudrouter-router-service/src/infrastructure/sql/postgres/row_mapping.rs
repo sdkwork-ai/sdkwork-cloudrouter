@@ -12,7 +12,7 @@ use crate::infrastructure::sql::rows::{
     AccountRateCardRow, AiModelRow, GatewayAccessPolicyRow, GatewayApiKeyRow, GatewayRiskRuleRow,
     ModelMappingRuleRow, ModelPriceRow, ModelVendorRow, PricingDefaultRegionRow, PricingPlanRow,
     PricingRuleRow, QuotaPolicyRow, UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow,
-    UpstreamAccountRouteRow, UpstreamAccountModelAccessRow, UpstreamSupplierModelAccessRow,
+    UpstreamAccountModelAccessRow, UpstreamAccountRouteRow, UpstreamSupplierModelAccessRow,
 };
 
 pub async fn load_vendors(

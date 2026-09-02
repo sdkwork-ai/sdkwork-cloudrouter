@@ -53,13 +53,7 @@ impl InvocationInterceptor for UsageRecordingInterceptor {
                 .usage
                 .lines
                 .iter()
-                .map(|line| {
-                    format!(
-                        "{}={}",
-                        line.meter.code(),
-                        line.quantity.billable_quantity
-                    )
-                })
+                .map(|line| format!("{}={}", line.meter.code(), line.quantity.billable_quantity))
                 .collect::<Vec<_>>()
                 .join(", ");
             tracing::debug!(
