@@ -11849,6 +11849,145 @@ frontend_operations:
     write_tables:
       - pricing_default_region
       - ops_audit_log
+  - route: /admin/pricing/settings
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
+    operation: upsertPriceSetting
+    operation_id: priceSettings.upsert
+    kind: create
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/pricing/price_settings/upsert
+    sdk_domain: pricing
+    read_sources:
+      - cloudrouter_pricing_rule
+      - pricing_rate
+    response_schema:
+      name: AdminPricingRule
+      schema:
+        additionalProperties: false
+        name: AdminPricingRule
+        properties:
+          catalogKey: { maxLength: 256, type: string }
+          createdAt: { format: date-time, maxLength: 64, type: string }
+          effectiveFrom: { format: date-time, maxLength: 64, type: string }
+          effectiveTo: { format: date-time, maxLength: 64, type: string }
+          formulaMode: { enum: [multiplier_markup, unit_price_override], type: string }
+          id:
+            format: int64
+            pattern: ^-?[0-9]+$
+            type: string
+            x-sdkwork-int64-string: true
+            x-sdkwork-rust-type: i64
+          markupAmount: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
+          meterCode: { maxLength: 96, type: string }
+          multiplier: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
+          operationCode: { maxLength: 160, type: string }
+          planCode: { maxLength: 96, type: string }
+          pricingPlanId:
+            format: int64
+            pattern: ^-?[0-9]+$
+            type: string
+            x-sdkwork-int64-string: true
+            x-sdkwork-rust-type: i64
+          priority: { format: int32, minimum: 0, type: integer }
+          productCode: { maxLength: 160, type: string }
+          providerCode: { maxLength: 64, type: string }
+          regionCode: { maxLength: 64, type: string }
+          ruleCode: { maxLength: 96, type: string }
+          status: { enum: [active, inactive], type: string }
+          unitPriceOverride: {pattern: '^[0-9]+(\.[0-9]{1,12})?$', type: string}
+          conditions: *admin-pricing-rule-conditions
+          schedule: *admin-pricing-rule-schedule
+          updatedAt: { format: date-time, maxLength: 64, type: string }
+        required: [id, pricingPlanId, ruleCode, formulaMode, status]
+        type: object
+    request_schema:
+      name: PriceSettingUpsertRequest
+      schema:
+        additionalProperties: false
+        name: PriceSettingUpsertRequest
+        properties:
+          effectiveFrom: { type: string }
+          effectiveTo: { type: string }
+          formulaMode: { enum: [multiplier_markup, unit_price_override], type: string }
+          markupAmount: {pattern: '^-?[0-9]+(\.[0-9]+)?$', type: string}
+          multiplier: {pattern: '^-?[0-9]+(\.[0-9]+)?$', type: string}
+          officialRateCode: { maxLength: 160, minLength: 1, type: string }
+          pricingPlanId:
+            format: int64
+            pattern: ^-?[0-9]+$
+            type: string
+            x-sdkwork-int64-string: true
+            x-sdkwork-rust-type: i64
+          priority:
+            format: int64
+            pattern: ^-?[0-9]+$
+            type: string
+            x-sdkwork-int64-string: true
+            x-sdkwork-rust-type: i64
+          ruleId:
+            format: int64
+            pattern: ^-?[0-9]+$
+            type: string
+            x-sdkwork-int64-string: true
+            x-sdkwork-rust-type: i64
+          schedule: *admin-pricing-rule-schedule
+          status: { enum: [active, inactive], type: string }
+          unitPriceOverride: {pattern: '^-?[0-9]+(\.[0-9]+)?$', type: string}
+        required: [officialRateCode, pricingPlanId, formulaMode]
+        type: object
+    request_body_required: true
+    write_tables:
+      - cloudrouter_pricing_rule
+      - ops_audit_log
+  - route: /admin/pricing/settings
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
+    operation: resolvePriceSetting
+    operation_id: priceSettings.retrieve
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/pricing/price_settings/resolve
+    sdk_domain: pricing
+    read_sources:
+      - pricing_rate
+      - pricing_price_book
+      - cloudrouter_pricing_plan
+      - cloudrouter_pricing_rule
+    query_parameters:
+      - name: official_rate_code
+        required: true
+        schema: { type: string, minLength: 1, maxLength: 160 }
+      - name: region_code
+        schema: { type: string, maxLength: 64 }
+      - name: pricing_plan_id
+        schema: { type: string, pattern: '^-?[0-9]+$', x-sdkwork-int64-string: true }
+      - name: occurred_at
+        schema: { type: string, format: date-time }
+    response_schema:
+      name: AdminPriceSettingResolution
+      schema:
+        additionalProperties: false
+        name: AdminPriceSettingResolution
+        properties:
+          currencyCode: { maxLength: 3, minLength: 3, type: string }
+          official: { $ref: '#/components/schemas/AdminOfficialRateAnchor' }
+          pricingPlanCode: { maxLength: 96, type: string }
+          pricingPlanId:
+            format: int64
+            pattern: ^-?[0-9]+$
+            type: string
+            x-sdkwork-int64-string: true
+            x-sdkwork-rust-type: i64
+          regionCode: { maxLength: 64, type: string }
+          regionFallback: { type: boolean }
+          resolvedUnitPrice: {pattern: '^-?[0-9]+(\.[0-9]+)?$', type: string}
+          rule:
+            allOf:
+              - $ref: '#/components/schemas/AdminPricingRule'
+          source: { enum: [rule_override, rule_multiplier_markup, official_reference], type: string }
+        required: [official, regionCode, regionFallback, pricingPlanId, pricingPlanCode, resolvedUnitPrice, currencyCode, source]
+        type: object
 routes:
   - route: /
     dependency_owned: true

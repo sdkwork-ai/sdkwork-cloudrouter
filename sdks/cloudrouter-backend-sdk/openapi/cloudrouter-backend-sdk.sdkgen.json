@@ -1373,82 +1373,16 @@
         "description": "Official catalog rate row a price setting anchors on, loaded under the official catalog scope (0, 0) with an active official_reference book.",
         "name": "AdminOfficialRateAnchor",
         "properties": {
-          "rateCode": {
-            "description": "Official rate code that anchors the price setting.",
-            "type": "string",
-            "maxLength": 160,
-            "minLength": 1
-          },
-          "productCode": {
-            "description": "Product code of the anchored official rate.",
-            "type": "string",
-            "maxLength": 160
-          },
-          "operationCode": {
-            "description": "Operation code of the anchored official rate.",
-            "type": "string",
-            "maxLength": 160
-          },
-          "meterCode": {
-            "description": "Meter code of the anchored official rate.",
-            "type": "string",
-            "maxLength": 160
-          },
-          "meterDisplayName": {
-            "description": "Display name of the meter.",
-            "type": "string",
-            "maxLength": 256
-          },
-          "providerCode": {
-            "description": "Provider code of the anchored official rate.",
-            "type": "string",
-            "maxLength": 64
-          },
-          "regionCode": {
-            "description": "Region code the official rate is published in.",
-            "type": "string",
-            "maxLength": 64
-          },
           "catalogKey": {
             "description": "Catalog key of the anchored official rate (empty when the resource has no model catalog identity).",
-            "type": "string",
-            "maxLength": 256
-          },
-          "vendorCode": {
-            "description": "Vendor code of the anchored official rate.",
-            "type": "string",
-            "maxLength": 160
-          },
-          "resourceType": {
-            "description": "Resource type of the anchored official rate.",
-            "type": "string",
-            "maxLength": 64
-          },
-          "resourceCode": {
-            "description": "Resource code of the anchored official rate.",
-            "type": "string",
-            "maxLength": 256
-          },
-          "unitCode": {
-            "description": "Billing unit code.",
-            "type": "string",
-            "maxLength": 64
-          },
-          "unitSize": {
-            "description": "Units consumed per billing step.",
-            "type": "string",
-            "pattern": "^-?[0-9]+(\\.[0-9]+)?$"
-          },
-          "unitPrice": {
-            "description": "Official single-unit reference price in the catalog currency.",
-            "type": "string",
-            "pattern": "^-?[0-9]+(\\.[0-9]+)?$"
+            "maxLength": 256,
+            "type": "string"
           },
           "currencyCode": {
             "description": "ISO 4217 currency of the official unit price.",
-            "type": "string",
             "maxLength": 3,
-            "minLength": 3
+            "minLength": 3,
+            "type": "string"
           },
           "effectiveFrom": {
             "description": "Official rate window start (ISO 8601).",
@@ -1456,6 +1390,72 @@
           },
           "effectiveTo": {
             "description": "Official rate window end (ISO 8601); null when open-ended.",
+            "type": "string"
+          },
+          "meterCode": {
+            "description": "Meter code of the anchored official rate.",
+            "maxLength": 160,
+            "type": "string"
+          },
+          "meterDisplayName": {
+            "description": "Display name of the meter.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "operationCode": {
+            "description": "Operation code of the anchored official rate.",
+            "maxLength": 160,
+            "type": "string"
+          },
+          "productCode": {
+            "description": "Product code of the anchored official rate.",
+            "maxLength": 160,
+            "type": "string"
+          },
+          "providerCode": {
+            "description": "Provider code of the anchored official rate.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "rateCode": {
+            "description": "Official rate code that anchors the price setting.",
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "regionCode": {
+            "description": "Region code the official rate is published in.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "resourceCode": {
+            "description": "Resource code of the anchored official rate.",
+            "maxLength": 256,
+            "type": "string"
+          },
+          "resourceType": {
+            "description": "Resource type of the anchored official rate.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "unitCode": {
+            "description": "Billing unit code.",
+            "maxLength": 64,
+            "type": "string"
+          },
+          "unitPrice": {
+            "description": "Official single-unit reference price in the catalog currency.",
+            "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+            "type": "string"
+          },
+          "unitSize": {
+            "description": "Units consumed per billing step.",
+            "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+            "type": "string"
+          },
+          "vendorCode": {
+            "description": "Vendor code of the anchored official rate.",
+            "maxLength": 160,
             "type": "string"
           }
         },
@@ -1483,28 +1483,39 @@
         "description": "Server-computed effective customer price for one (resource, region, meter) price setting. Rule selection reuses the shared runtime selector, so the admin preview can never disagree with billing.",
         "name": "AdminPriceSettingResolution",
         "properties": {
+          "currencyCode": {
+            "description": "Currency of the resolved unit price.",
+            "maxLength": 3,
+            "minLength": 3,
+            "type": "string"
+          },
           "official": {
             "$ref": "#/components/schemas/AdminOfficialRateAnchor"
           },
+          "pricingPlanCode": {
+            "description": "Code of the resolved sales plan.",
+            "maxLength": 96,
+            "type": "string"
+          },
+          "pricingPlanId": {
+            "description": "Sales plan the preview resolved against.",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true
+          },
           "regionCode": {
             "description": "Region the official reference resolved in after the fallback chain (requested -> configured default -> global -> any).",
-            "type": "string",
-            "maxLength": 64
+            "maxLength": 64,
+            "type": "string"
           },
           "regionFallback": {
             "description": "True when the resolved region is not the requested region.",
             "type": "boolean"
           },
-          "pricingPlanId": {
-            "description": "Sales plan the preview resolved against.",
-            "type": "string",
-            "pattern": "^-?[0-9]+$",
-            "x-sdkwork-int64-string": true
-          },
-          "pricingPlanCode": {
-            "description": "Code of the resolved sales plan.",
-            "type": "string",
-            "maxLength": 96
+          "resolvedUnitPrice": {
+            "description": "Final single-unit customer price.",
+            "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+            "type": "string"
           },
           "rule": {
             "allOf": [
@@ -1513,17 +1524,6 @@
               }
             ],
             "description": "Winning sales rule under the shared runtime selector; null when no rule matches and the official reference applies."
-          },
-          "resolvedUnitPrice": {
-            "description": "Final single-unit customer price.",
-            "type": "string",
-            "pattern": "^-?[0-9]+(\\.[0-9]+)?$"
-          },
-          "currencyCode": {
-            "description": "Currency of the resolved unit price.",
-            "type": "string",
-            "maxLength": 3,
-            "minLength": 3
           },
           "source": {
             "description": "Where the resolved price came from.",
@@ -8573,23 +8573,13 @@
         "description": "Create or update the standard sales rule backing one (resource, region, meter) price setting. Scope dimensions are derived server-side from the anchored official rate.",
         "name": "PriceSettingUpsertRequest",
         "properties": {
-          "officialRateCode": {
-            "description": "Official rate code the edit anchors on; the store derives the six scope dimensions from this row.",
-            "type": "string",
-            "maxLength": 160,
-            "minLength": 1
+          "effectiveFrom": {
+            "description": "Rule window start (ISO 8601); defaults to now for new rules.",
+            "type": "string"
           },
-          "pricingPlanId": {
-            "description": "Sales plan the price setting belongs to.",
-            "type": "string",
-            "pattern": "^-?[0-9]+$",
-            "x-sdkwork-int64-string": true
-          },
-          "ruleId": {
-            "description": "Explicit update target; required for time-window variants. Omit to update (or create) the unconditioned standard rule for the tuple.",
-            "type": "string",
-            "pattern": "^-?[0-9]+$",
-            "x-sdkwork-int64-string": true
+          "effectiveTo": {
+            "description": "Rule window end (ISO 8601); null when open-ended.",
+            "type": "string"
           },
           "formulaMode": {
             "description": "Price formula mode.",
@@ -8599,20 +8589,40 @@
             ],
             "type": "string"
           },
-          "multiplier": {
-            "description": "Multiplier applied to the official unit price (multiplier_markup mode; defaults to 1).",
-            "type": "string",
-            "pattern": "^-?[0-9]+(\\.[0-9]+)?$"
-          },
           "markupAmount": {
             "description": "Fixed per-unit markup amount (multiplier_markup mode; defaults to 0).",
-            "type": "string",
-            "pattern": "^-?[0-9]+(\\.[0-9]+)?$"
+            "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+            "type": "string"
           },
-          "unitPriceOverride": {
-            "description": "Absolute unit price (unit_price_override mode).",
+          "multiplier": {
+            "description": "Multiplier applied to the official unit price (multiplier_markup mode; defaults to 1).",
+            "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+            "type": "string"
+          },
+          "officialRateCode": {
+            "description": "Official rate code the edit anchors on; the store derives the six scope dimensions from this row.",
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "pricingPlanId": {
+            "description": "Sales plan the price setting belongs to.",
+            "pattern": "^-?[0-9]+$",
             "type": "string",
-            "pattern": "^-?[0-9]+(\\.[0-9]+)?$"
+            "x-sdkwork-int64-string": true
+          },
+          "priority": {
+            "description": "Rule priority (lower wins; defaults to 100). Serialized as a string per the int64 wire contract.",
+            "format": "int64",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true
+          },
+          "ruleId": {
+            "description": "Explicit update target; required for time-window variants. Omit to update (or create) the unconditioned standard rule for the tuple.",
+            "pattern": "^-?[0-9]+$",
+            "type": "string",
+            "x-sdkwork-int64-string": true
           },
           "schedule": {
             "additionalProperties": false,
@@ -8712,27 +8722,17 @@
             ],
             "type": "object"
           },
-          "priority": {
-            "description": "Rule priority (lower wins; defaults to 100). Serialized as a string per the int64 wire contract.",
-            "type": "string",
-            "format": "int64",
-            "pattern": "^-?[0-9]+$",
-            "x-sdkwork-int64-string": true
-          },
-          "effectiveFrom": {
-            "description": "Rule window start (ISO 8601); defaults to now for new rules.",
-            "type": "string"
-          },
-          "effectiveTo": {
-            "description": "Rule window end (ISO 8601); null when open-ended.",
-            "type": "string"
-          },
           "status": {
             "description": "Rule status.",
             "enum": [
               "active",
               "inactive"
             ],
+            "type": "string"
+          },
+          "unitPriceOverride": {
+            "description": "Absolute unit price (unit_price_override mode).",
+            "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
             "type": "string"
           }
         },
@@ -8743,7 +8743,7 @@
         ],
         "type": "object"
       },
-      "PriceSettingsResolveResult": {
+      "PriceSettingsRetrieveResult": {
         "allOf": [
           {
             "$ref": "#/components/schemas/SdkWorkApiResponse"
@@ -21240,8 +21240,8 @@
             "name": "pricing_plan_id",
             "required": false,
             "schema": {
-              "type": "string",
               "pattern": "^-?[0-9]+$",
+              "type": "string",
               "x-sdkwork-int64-string": true
             }
           },
@@ -21251,8 +21251,8 @@
             "name": "occurred_at",
             "required": false,
             "schema": {
-              "type": "string",
-              "format": "date-time"
+              "format": "date-time",
+              "type": "string"
             }
           }
         ],
@@ -21261,7 +21261,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PriceSettingsResolveResult"
+                  "$ref": "#/components/schemas/PriceSettingsRetrieveResult"
                 }
               }
             },
@@ -21330,17 +21330,6 @@
         ],
         "x-contract-kind": "resolve",
         "x-file-targets": [],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "pricing",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-auth-mode": "dual-token",
-        "x-sdkwork-domain": "pricing",
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-resource": "priceSettings",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-required-surface": "organizationMember",
         "x-read-sources": [
           "pricing_rate",
           "pricing_price_book",
@@ -21349,8 +21338,19 @@
           "cloudrouter_account_rate_card",
           "pricing_default_region"
         ],
-        "x-write-tables": [],
-        "x-sdkwork-permission": "cloudrouter.rules.manage"
+        "x-route-scope": "admin",
+        "x-sdk-domain": "pricing",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "pricing",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-permission": "cloudrouter.rules.manage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-resource": "priceSettings",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
+        "x-write-tables": []
       }
     },
     "/backend/v3/api/pricing/price_settings/upsert": {
@@ -21443,17 +21443,6 @@
         ],
         "x-contract-kind": "upsert",
         "x-file-targets": [],
-        "x-route-scope": "admin",
-        "x-sdk-domain": "pricing",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
-        "x-sdkwork-api-surface": "backend-api",
-        "x-sdkwork-auth-mode": "dual-token",
-        "x-sdkwork-domain": "pricing",
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-resource": "priceSettings",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
-        "x-sdkwork-required-surface": "organizationMember",
         "x-read-sources": [
           "pricing_rate",
           "pricing_price_book",
@@ -21462,11 +21451,22 @@
           "cloudrouter_account_rate_card",
           "pricing_default_region"
         ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "pricing",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "pricing",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-permission": "cloudrouter.rules.manage",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-required-surface": "organizationMember",
+        "x-sdkwork-resource": "priceSettings",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
         "x-write-tables": [
           "cloudrouter_pricing_rule",
           "ops_audit_log"
-        ],
-        "x-sdkwork-permission": "cloudrouter.rules.manage"
+        ]
       }
     },
     "/backend/v3/api/pricing/rate_cards": {

@@ -208,11 +208,11 @@
     },
     {
       "path": "src/types/admin-official-rate-anchor.ts",
-      "sha256": "b96dcd58a7e8c75e1163c0a9dd6822132945ffd923cb508b927dd637bef374f1"
+      "sha256": "d05c54afe1b8b8fc9000f5179234e25ef6e26829b035baca9c9c52dfd8d0bc84"
     },
     {
       "path": "src/types/admin-price-setting-resolution.ts",
-      "sha256": "2862376665563b68d7ccb57767512b572836a5f76ecff92d7ad48186c30d257b"
+      "sha256": "a5e227c95f4f6907eb8a0a4e1c771210caf466e2d25316b775fd3d667c689ef3"
     },
     {
       "path": "src/types/admin-pricing-plan-list-response.ts",
@@ -616,7 +616,7 @@
     },
     {
       "path": "src/types/price-setting-upsert-request.ts",
-      "sha256": "250fa93b8ba86775df4a203ad3ac786f0a2a98ce4504d65720b2bc91ee2642f3"
+      "sha256": "8e306f0fa84aa399684d5a5c057badf76ddc06de3afc77286bec8e157532dcb2"
     },
     {
       "path": "src/types/pricing-default-region-create-request.ts",

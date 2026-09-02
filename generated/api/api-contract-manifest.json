@@ -11445,6 +11445,143 @@
       "write_tables": []
     },
     {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/pricing/price_settings/resolve",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#resolvePriceSetting@/admin/pricing/settings",
+      "kind": "read",
+      "module": "pc-admin-pricing",
+      "openapi_exposed": true,
+      "operation": "resolvePriceSetting",
+      "operation_id": "priceSettings.retrieve",
+      "path_params": [],
+      "query_parameters": [
+        {
+          "in": "query",
+          "name": "official_rate_code",
+          "required": true,
+          "schema": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "region_code",
+          "required": false,
+          "schema": {
+            "maxLength": 64,
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "pricing_plan_id",
+          "required": false,
+          "schema": {
+            "pattern": "^-?[0-9]+$",
+            "type": "string"
+          }
+        },
+        {
+          "in": "query",
+          "name": "occurred_at",
+          "required": false,
+          "schema": {
+            "format": "date-time",
+            "type": "string"
+          }
+        }
+      ],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "pricing_rate",
+        "pricing_price_book",
+        "cloudrouter_pricing_plan",
+        "cloudrouter_pricing_rule"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AdminPriceSettingResolution",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminPriceSettingResolution",
+          "properties": {
+            "currencyCode": {
+              "maxLength": 3,
+              "minLength": 3,
+              "type": "string"
+            },
+            "official": {
+              "$ref": "#/components/schemas/AdminOfficialRateAnchor"
+            },
+            "pricingPlanCode": {
+              "maxLength": 96,
+              "type": "string"
+            },
+            "pricingPlanId": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "regionCode": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "regionFallback": {
+              "type": "boolean"
+            },
+            "resolvedUnitPrice": {
+              "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+              "type": "string"
+            },
+            "rule": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/AdminPricingRule"
+                }
+              ]
+            },
+            "source": {
+              "enum": [
+                "rule_override",
+                "rule_multiplier_markup",
+                "official_reference"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "official",
+            "regionCode",
+            "regionFallback",
+            "pricingPlanId",
+            "pricingPlanCode",
+            "resolvedUnitPrice",
+            "currencyCode",
+            "source"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/pricing/settings",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "pricing",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "tag": "pricing",
+      "write_tables": []
+    },
+    {
       "api_method": "PATCH",
       "api_path": "/backend/v3/api/pricing/default_regions/{defaultRegionId}",
       "api_surface": "backend",
@@ -12589,6 +12726,465 @@
         }
       },
       "route": "/admin/pricing/rules/{ruleId}",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "pricing",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "tag": "pricing",
+      "write_tables": [
+        "cloudrouter_pricing_rule",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/pricing/price_settings/upsert",
+      "api_surface": "backend",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#upsertPriceSetting@/admin/pricing/settings",
+      "kind": "create",
+      "module": "pc-admin-pricing",
+      "openapi_exposed": true,
+      "operation": "upsertPriceSetting",
+      "operation_id": "priceSettings.upsert",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "cloudrouter_pricing_rule",
+        "pricing_rate"
+      ],
+      "request_body_required": true,
+      "request_id_header": false,
+      "request_schema": {
+        "name": "PriceSettingUpsertRequest",
+        "schema": {
+          "additionalProperties": false,
+          "name": "PriceSettingUpsertRequest",
+          "properties": {
+            "effectiveFrom": {
+              "type": "string"
+            },
+            "effectiveTo": {
+              "type": "string"
+            },
+            "formulaMode": {
+              "enum": [
+                "multiplier_markup",
+                "unit_price_override"
+              ],
+              "type": "string"
+            },
+            "markupAmount": {
+              "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+              "type": "string"
+            },
+            "multiplier": {
+              "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+              "type": "string"
+            },
+            "officialRateCode": {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            "pricingPlanId": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "priority": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "ruleId": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "schedule": {
+              "additionalProperties": false,
+              "nullable": true,
+              "properties": {
+                "excludeDates": {
+                  "items": {
+                    "format": "date",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                    "type": "string"
+                  },
+                  "maxItems": 366,
+                  "type": "array"
+                },
+                "includeDates": {
+                  "items": {
+                    "format": "date",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                    "type": "string"
+                  },
+                  "maxItems": 366,
+                  "type": "array"
+                },
+                "timeZone": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "weeklyWindows": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "daysOfWeek": {
+                        "items": {
+                          "maximum": 7,
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "maxItems": 7,
+                        "minItems": 1,
+                        "type": "array"
+                      },
+                      "endDayOffset": {
+                        "enum": [
+                          0,
+                          1
+                        ],
+                        "type": "integer"
+                      },
+                      "endTime": {
+                        "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                        "type": "string"
+                      },
+                      "startTime": {
+                        "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                        "type": "string"
+                      },
+                      "windowCode": {
+                        "maxLength": 96,
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "windowCode",
+                      "daysOfWeek",
+                      "startTime",
+                      "endTime",
+                      "endDayOffset"
+                    ],
+                    "type": "object"
+                  },
+                  "maxItems": 64,
+                  "minItems": 1,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "timeZone",
+                "weeklyWindows",
+                "includeDates",
+                "excludeDates"
+              ],
+              "type": "object"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "type": "string"
+            },
+            "unitPriceOverride": {
+              "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+              "type": "string"
+            }
+          },
+          "required": [
+            "officialRateCode",
+            "pricingPlanId",
+            "formulaMode"
+          ],
+          "type": "object"
+        }
+      },
+      "response_schema": {
+        "name": "AdminPricingRule",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminPricingRule",
+          "properties": {
+            "catalogKey": {
+              "maxLength": 256,
+              "type": "string"
+            },
+            "conditions": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "dimensionCode": {
+                    "maxLength": 96,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "operatorCode": {
+                    "enum": [
+                      "exists",
+                      "eq",
+                      "neq",
+                      "gt",
+                      "gte",
+                      "lt",
+                      "lte",
+                      "in",
+                      "not_in"
+                    ],
+                    "type": "string"
+                  },
+                  "value": {
+                    "oneOf": [
+                      {
+                        "maxLength": 512,
+                        "type": "string"
+                      },
+                      {
+                        "format": "double",
+                        "type": "number"
+                      },
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "items": {
+                          "oneOf": [
+                            {
+                              "maxLength": 512,
+                              "type": "string"
+                            },
+                            {
+                              "format": "double",
+                              "type": "number"
+                            },
+                            {
+                              "type": "boolean"
+                            }
+                          ]
+                        },
+                        "maxItems": 64,
+                        "minItems": 1,
+                        "type": "array"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "dimensionCode",
+                  "operatorCode",
+                  "value"
+                ],
+                "type": "object"
+              },
+              "maxItems": 32,
+              "type": "array"
+            },
+            "createdAt": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "effectiveFrom": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "effectiveTo": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            },
+            "formulaMode": {
+              "enum": [
+                "multiplier_markup",
+                "unit_price_override"
+              ],
+              "type": "string"
+            },
+            "id": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "markupAmount": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
+              "type": "string"
+            },
+            "meterCode": {
+              "maxLength": 96,
+              "type": "string"
+            },
+            "multiplier": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
+              "type": "string"
+            },
+            "operationCode": {
+              "maxLength": 160,
+              "type": "string"
+            },
+            "planCode": {
+              "maxLength": 96,
+              "type": "string"
+            },
+            "pricingPlanId": {
+              "format": "int64",
+              "pattern": "^-?[0-9]+$",
+              "type": "string",
+              "x-sdkwork-int64-string": true,
+              "x-sdkwork-rust-type": "i64"
+            },
+            "priority": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "productCode": {
+              "maxLength": 160,
+              "type": "string"
+            },
+            "providerCode": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "regionCode": {
+              "maxLength": 64,
+              "type": "string"
+            },
+            "ruleCode": {
+              "maxLength": 96,
+              "type": "string"
+            },
+            "schedule": {
+              "additionalProperties": false,
+              "nullable": true,
+              "properties": {
+                "excludeDates": {
+                  "items": {
+                    "format": "date",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                    "type": "string"
+                  },
+                  "maxItems": 366,
+                  "type": "array"
+                },
+                "includeDates": {
+                  "items": {
+                    "format": "date",
+                    "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+                    "type": "string"
+                  },
+                  "maxItems": 366,
+                  "type": "array"
+                },
+                "timeZone": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "weeklyWindows": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "daysOfWeek": {
+                        "items": {
+                          "maximum": 7,
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "maxItems": 7,
+                        "minItems": 1,
+                        "type": "array"
+                      },
+                      "endDayOffset": {
+                        "enum": [
+                          0,
+                          1
+                        ],
+                        "type": "integer"
+                      },
+                      "endTime": {
+                        "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                        "type": "string"
+                      },
+                      "startTime": {
+                        "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$",
+                        "type": "string"
+                      },
+                      "windowCode": {
+                        "maxLength": 96,
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "windowCode",
+                      "daysOfWeek",
+                      "startTime",
+                      "endTime",
+                      "endDayOffset"
+                    ],
+                    "type": "object"
+                  },
+                  "maxItems": 64,
+                  "minItems": 1,
+                  "type": "array"
+                }
+              },
+              "required": [
+                "timeZone",
+                "weeklyWindows",
+                "includeDates",
+                "excludeDates"
+              ],
+              "type": "object"
+            },
+            "status": {
+              "enum": [
+                "active",
+                "inactive"
+              ],
+              "type": "string"
+            },
+            "unitPriceOverride": {
+              "pattern": "^[0-9]+(\\.[0-9]{1,12})?$",
+              "type": "string"
+            },
+            "updatedAt": {
+              "format": "date-time",
+              "maxLength": 64,
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "pricingPlanId",
+            "ruleCode",
+            "formulaMode",
+            "status"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/pricing/settings",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
@@ -31630,24 +32226,24 @@
   "summary": {
     "api_method_counts": {
       "DELETE": 21,
-      "GET": 109,
+      "GET": 110,
       "PATCH": 20,
-      "POST": 56,
+      "POST": 57,
       "PUT": 12
     },
     "api_surface_counts": {
       "app": 75,
-      "backend": 143
+      "backend": 145
     },
-    "operation_count": 218,
+    "operation_count": 220,
     "route_scope_counts": {
-      "admin": 143,
+      "admin": 145,
       "console": 31,
       "public": 44
     },
     "sdk_client_counts": {
       "SdkworkAppClient": 75,
-      "SdkworkBackendClient": 143
+      "SdkworkBackendClient": 145
     }
   }
 }
