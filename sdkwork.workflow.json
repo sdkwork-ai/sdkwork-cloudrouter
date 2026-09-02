@@ -407,7 +407,7 @@
       "runner": "ubuntu-24.04",
       "outputGlobs": [
         "dist/install-packages/*",
-        "dist/release-evidence/linux-x64-service/*"
+        "dist/release-evidence/linux-debian-x64-standalone-server-deb/*"
       ],
       "artifactPath": "dist/install-packages/cloudrouter-linux-x64-server-0.4.1.deb",
       "deploymentProfile": "standalone",
@@ -425,7 +425,7 @@
       "runner": "ubuntu-24.04-arm",
       "outputGlobs": [
         "dist/install-packages/*",
-        "dist/release-evidence/linux-arm64-service/*"
+        "dist/release-evidence/linux-debian-arm64-standalone-server-deb/*"
       ],
       "artifactPath": "dist/install-packages/cloudrouter-linux-arm64-server-0.4.1.deb",
       "deploymentProfile": "standalone",
@@ -442,7 +442,7 @@
       "runner": "ubuntu-24.04",
       "outputGlobs": [
         "dist/install-packages/*",
-        "dist/release-evidence/linux-x64-archive/*"
+        "dist/release-evidence/linux-x64-standalone-server-tar-gz/*"
       ],
       "artifactPath": "dist/install-packages/cloudrouter-linux-x64-archive-0.4.1.tar.gz",
       "deploymentProfile": "standalone",
@@ -459,7 +459,7 @@
       "runner": "ubuntu-24.04-arm",
       "outputGlobs": [
         "dist/install-packages/*",
-        "dist/release-evidence/linux-arm64-archive/*"
+        "dist/release-evidence/linux-arm64-standalone-server-tar-gz/*"
       ],
       "artifactPath": "dist/install-packages/cloudrouter-linux-arm64-archive-0.4.1.tar.gz",
       "deploymentProfile": "standalone",
@@ -476,7 +476,7 @@
       "runner": "windows-2022",
       "outputGlobs": [
         "dist/install-packages/*",
-        "dist/release-evidence/windows-x64-service/*"
+        "dist/release-evidence/windows-x64-standalone-server-msi/*"
       ],
       "artifactPath": "dist/install-packages/cloudrouter-windows-x64-server-0.4.1.msi",
       "deploymentProfile": "standalone",
@@ -493,7 +493,7 @@
       "runner": "windows-11-arm",
       "outputGlobs": [
         "dist/install-packages/*",
-        "dist/release-evidence/windows-arm64-service/*"
+        "dist/release-evidence/windows-arm64-standalone-server-msi/*"
       ],
       "artifactPath": "dist/install-packages/cloudrouter-windows-arm64-server-0.4.1.msi",
       "deploymentProfile": "standalone",
@@ -510,7 +510,7 @@
       "runner": "windows-2022",
       "outputGlobs": [
         "dist/install-packages/*",
-        "dist/release-evidence/windows-x64-archive/*"
+        "dist/release-evidence/windows-x64-standalone-server-zip/*"
       ],
       "artifactPath": "dist/install-packages/cloudrouter-windows-x64-archive-0.4.1.zip",
       "deploymentProfile": "standalone",
@@ -527,7 +527,7 @@
       "runner": "windows-11-arm",
       "outputGlobs": [
         "dist/install-packages/*",
-        "dist/release-evidence/windows-arm64-service/*"
+        "dist/release-evidence/windows-arm64-standalone-server-zip/*"
       ],
       "artifactPath": "dist/install-packages/cloudrouter-windows-arm64-archive-0.4.1.zip",
       "deploymentProfile": "standalone",
@@ -544,7 +544,7 @@
       "runner": "macos-15-intel",
       "outputGlobs": [
         "dist/install-packages/*",
-        "dist/release-evidence/macos-x64-service/*"
+        "dist/release-evidence/macos-x64-standalone-server-pkg/*"
       ],
       "artifactPath": "dist/install-packages/cloudrouter-macos-x64-server-0.4.1.pkg",
       "deploymentProfile": "standalone",
@@ -561,7 +561,7 @@
       "runner": "macos-14",
       "outputGlobs": [
         "dist/install-packages/*",
-        "dist/release-evidence/macos-arm64-service/*"
+        "dist/release-evidence/macos-arm64-standalone-server-pkg/*"
       ],
       "artifactPath": "dist/install-packages/cloudrouter-macos-arm64-server-0.4.1.pkg",
       "deploymentProfile": "standalone",
@@ -578,7 +578,7 @@
       "runner": "macos-15-intel",
       "outputGlobs": [
         "dist/install-packages/*",
-        "dist/release-evidence/macos-x64-archive/*"
+        "dist/release-evidence/macos-x64-standalone-server-tar-gz/*"
       ],
       "artifactPath": "dist/install-packages/cloudrouter-macos-x64-archive-0.4.1.tar.gz",
       "deploymentProfile": "standalone",
@@ -595,7 +595,7 @@
       "runner": "macos-14",
       "outputGlobs": [
         "dist/install-packages/*",
-        "dist/release-evidence/macos-arm64-archive/*"
+        "dist/release-evidence/macos-arm64-standalone-server-tar-gz/*"
       ],
       "artifactPath": "dist/install-packages/cloudrouter-macos-arm64-archive-0.4.1.tar.gz",
       "deploymentProfile": "standalone",
@@ -613,7 +613,7 @@
       "runner": "ubuntu-24.04",
       "outputGlobs": [
         "dist/install-packages/*",
-        "dist/release-evidence/linux-x64-desktop/*"
+        "dist/release-evidence/linux-debian-x64-standalone-desktop-deb/*"
       ],
       "artifactPath": "dist/install-packages/cloudrouter-linux-x64-desktop-0.4.1.deb",
       "deploymentProfile": "standalone",
@@ -631,7 +631,7 @@
       "runner": "ubuntu-24.04-arm",
       "outputGlobs": [
         "dist/install-packages/*",
-        "dist/release-evidence/linux-arm64-desktop/*"
+        "dist/release-evidence/linux-debian-arm64-standalone-desktop-deb/*"
       ],
       "artifactPath": "dist/install-packages/cloudrouter-linux-arm64-desktop-0.4.1.deb",
       "deploymentProfile": "standalone",
@@ -648,7 +648,7 @@
       "runner": "windows-2022",
       "outputGlobs": [
         "dist/install-packages/*",
-        "dist/release-evidence/windows-x64-desktop/*"
+        "dist/release-evidence/windows-x64-standalone-desktop-msi/*"
       ],
       "artifactPath": "dist/install-packages/cloudrouter-windows-x64-desktop-0.4.1.msi",
       "deploymentProfile": "standalone",
@@ -665,7 +665,7 @@
       "runner": "windows-11-arm",
       "outputGlobs": [
         "dist/install-packages/*",
-        "dist/release-evidence/windows-arm64-desktop/*"
+        "dist/release-evidence/windows-arm64-standalone-desktop-msi/*"
       ],
       "artifactPath": "dist/install-packages/cloudrouter-windows-arm64-desktop-0.4.1.msi",
       "deploymentProfile": "standalone",
@@ -682,7 +682,7 @@
       "runner": "macos-15-intel",
       "outputGlobs": [
         "dist/install-packages/*",
-        "dist/release-evidence/macos-x64-desktop/*"
+        "dist/release-evidence/macos-x64-standalone-desktop-pkg/*"
       ],
       "artifactPath": "dist/install-packages/cloudrouter-macos-x64-desktop-0.4.1.pkg",
       "deploymentProfile": "standalone",
@@ -699,7 +699,7 @@
       "runner": "macos-14",
       "outputGlobs": [
         "dist/install-packages/*",
-        "dist/release-evidence/macos-arm64-desktop/*"
+        "dist/release-evidence/macos-arm64-standalone-desktop-pkg/*"
       ],
       "artifactPath": "dist/install-packages/cloudrouter-macos-arm64-desktop-0.4.1.pkg",
       "deploymentProfile": "standalone",
@@ -716,7 +716,7 @@
       "runner": "ubuntu-24.04",
       "outputGlobs": [
         "dist/install-packages/*",
-        "dist/release-evidence/linux-x64-container/*"
+        "dist/release-evidence/linux-x64-standalone-container-oci/*"
       ],
       "artifactPath": "dist/install-packages/cloudrouter-linux-x64-container-0.4.1.tar.gz",
       "deploymentProfile": "standalone",
@@ -733,7 +733,7 @@
       "runner": "ubuntu-24.04-arm",
       "outputGlobs": [
         "dist/install-packages/*",
-        "dist/release-evidence/linux-arm64-container/*"
+        "dist/release-evidence/linux-arm64-standalone-container-oci/*"
       ],
       "artifactPath": "dist/install-packages/cloudrouter-linux-arm64-container-0.4.1.tar.gz",
       "deploymentProfile": "standalone",
