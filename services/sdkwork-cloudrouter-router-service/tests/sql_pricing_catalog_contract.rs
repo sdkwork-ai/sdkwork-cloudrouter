@@ -98,6 +98,19 @@ fn price_snapshot_uses_only_the_consolidated_pricing_tables() {
         !sql.contains("CURRENT_TIMESTAMP"),
         "price snapshot eligibility must be evaluated against ResourceDefinition.occurred_at"
     );
+    // Runtime request pricing must load active price books only. A retired
+    // book (e.g. a retired USD upstream-cost book) must never anchor the
+    // resolver's currency preference or shadow the configured default billing
+    // region; historical usage-record identity validation keeps its own
+    // `IN ('active', 'retired')` lookup in gateway_usage_recorder.
+    assert!(
+        sql.contains("WHERE book.lifecycle_state = 'active'"),
+        "price snapshot must load active price books only so retired books cannot price new requests"
+    );
+    assert!(
+        !sql.contains("'retired'"),
+        "price snapshot must not include retired price books"
+    );
     for retired_reference in [
         "pricing_product_binding",
         "pricing_rate_binding",

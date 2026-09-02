@@ -1485,6 +1485,18 @@ ORDER BY account_group_id ASC, snapshot_at DESC, id DESC
 "#
     }
 
+    /// Loads the price rows that feed runtime request pricing.
+    ///
+    /// Eligibility deliberately restricts the price book to
+    /// `lifecycle_state = 'active'`: a retired book must never price a *new*
+    /// request. Otherwise a retired upstream-cost book keeps anchoring the
+    /// resolver's currency preference (e.g. a retired USD cost book forces the
+    /// official reference into the `global`/USD region even when the admin
+    /// default billing region points at `cn`/CNY), silently overriding the
+    /// configured default billing region. Historical usage-record identity
+    /// validation keeps its own `IN ('active', 'retired')` lookup
+    /// (gateway_usage_recorder) because records priced by a book that was
+    /// active at billing time must stay verifiable after the book retires.
     pub fn load_prices() -> &'static str {
         r#"
 SELECT
@@ -1536,7 +1548,7 @@ LEFT JOIN ai_model model
   ON model.catalog_key = rate.catalog_key
  AND model.deleted_at IS NULL
  AND model.status = 1
-WHERE book.lifecycle_state IN ('active', 'retired')
+WHERE book.lifecycle_state = 'active'
   AND book.status = 1
   AND book.deleted_at IS NULL
   AND rate.status = 1
