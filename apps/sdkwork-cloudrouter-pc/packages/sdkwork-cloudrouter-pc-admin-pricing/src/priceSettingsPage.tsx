@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, Edit3, Globe2, Plus, Star, Trash2 } from 'lucide-react';
+import { ChevronDown, Edit3, Globe2, Plus, Star, Trash2, X } from 'lucide-react';
 import { BottomPagination } from '@sdkwork/cloudroutes-pc-commons';
 import { useTranslation } from 'react-i18next';
 import {
@@ -95,17 +95,24 @@ export interface PriceSettingMutation {
   input?: AdminPricingRuleMutationInput;
 }
 
-export interface PriceSettingFormState {
-  catalogKey: string;
-  vendorCode: string;
-  productCode: string;
-  resourceCode: string;
-  resourceDisplayName: string;
-  providerCode: string;
+/**
+ * One region group of the price editor. Every resource is a single admin row,
+ * and its prices exist per region — so the drawer edits one section per
+ * region, each with its own lifecycle policy (plan, priority, status,
+ * effective window, time-window schedule) and its own meter list. Regions the
+ * resource does not price yet can be added as new, empty groups.
+ */
+export interface PriceSettingRegionForm {
+  /** Stable identity for React keys and the active-group selector. */
+  key: string;
   regionCode: string;
-  resourceType: Exclude<PriceSettingResourceType, 'all'>;
+  /** Existing groups seeded from real prices keep their region fixed; only
+   * custom groups (brand-new resource pricing) accept a typed region. */
+  regionLocked: boolean;
+  /** Display only: the currency the official prices of this region use. */
+  currencyCode: string;
   pricingPlanId: string;
-  meterPrices: PriceSettingMeterForm[];
+  meters: PriceSettingMeterForm[];
   removedRuleIds: string[];
   priceMode: PriceSettingMode;
   timeZone: string;
@@ -116,21 +123,122 @@ export interface PriceSettingFormState {
   effectiveFrom: string;
   effectiveTo: string;
   status: AdminPricingStatus;
-  /** Saving a price group applies one shared lifecycle policy to every meter. */
-  metadataConflict?: boolean;
-  acknowledgeMetadataConflict?: boolean;
+  /** True when the region's existing rules carry conflicting lifecycle
+   * metadata; saving then overwrites all of them with this group's policy. */
+  metadataConflict: boolean;
+  acknowledgeMetadataConflict: boolean;
+}
+
+export interface PriceSettingFormState {
+  catalogKey: string;
+  vendorCode: string;
+  productCode: string;
+  resourceCode: string;
+  resourceDisplayName: string;
+  providerCode: string;
+  resourceType: Exclude<PriceSettingResourceType, 'all'>;
+  regionGroups: PriceSettingRegionForm[];
+  activeRegionKey: string;
 }
 
 function emptyMeter(key = 'meter-1'): PriceSettingMeterForm {
   return { key, meterCode: '', operationCode: '', unitCode: 'unit', unitSize: '1', customerPrice: '' };
 }
 
+let regionGroupSequence = 0;
+
+function nextRegionGroupKey(regionCode: string): string {
+  regionGroupSequence += 1;
+  return `${regionCode || 'region'}-${regionGroupSequence}`;
+}
+
+/** An empty region group: used for brand-new custom pricing and for regions
+ * added to an existing resource that do not price anything yet. */
+export function emptyRegionGroupForm(
+  regionCode: string,
+  options: { pricingPlanId?: string; regionLocked?: boolean; currencyCode?: string } = {},
+): PriceSettingRegionForm {
+  return {
+    key: nextRegionGroupKey(regionCode),
+    regionCode,
+    regionLocked: options.regionLocked ?? false,
+    currencyCode: options.currencyCode ?? '',
+    pricingPlanId: options.pricingPlanId ?? '',
+    meters: [emptyMeter()],
+    removedRuleIds: [],
+    priceMode: 'standard',
+    timeZone: 'Asia/Shanghai',
+    weeklyWindows: [{ ...DEFAULT_WINDOW }],
+    includeDates: '',
+    excludeDates: '',
+    priority: '100',
+    effectiveFrom: '',
+    effectiveTo: '',
+    status: 'active',
+    metadataConflict: false,
+    acknowledgeMetadataConflict: false,
+  };
+}
+
+/**
+ * Seed one region group per priced region of a resource row. Each group keeps
+ * the lifecycle metadata of that region's existing rules (plan, priority,
+ * schedule, ...), so regions stay individually configured instead of being
+ * flattened onto one shared policy.
+ */
+export function regionGroupFormsFromPrices(
+  prices: readonly { official: AdminOfficialPricingRateItem; rule?: AdminPricingRuleItem }[],
+  fallbackPlanId: string,
+): PriceSettingRegionForm[] {
+  return groupPriceSettingRatesByRegion(prices).map((group) => {
+    const groupRules = group.prices
+      .map((item) => item.rule)
+      .filter((rule): rule is AdminPricingRuleItem => Boolean(rule));
+    const firstRule = groupRules[0];
+    const firstSchedule = firstRule?.schedule;
+    return {
+      key: nextRegionGroupKey(group.regionCode),
+      regionCode: group.regionCode,
+      regionLocked: true,
+      currencyCode: group.currencyCode,
+      pricingPlanId: firstRule?.pricingPlanId || fallbackPlanId,
+      meters: group.prices.map(({ official, rule }) => ({
+        key: official.rateCode,
+        rateCode: official.rateCode,
+        ruleId: rule?.id,
+        ruleCode: rule?.ruleCode,
+        meterCode: official.meterCode,
+        operationCode: official.operationCode,
+        unitCode: official.unitCode,
+        unitSize: formatPricingQuantity(official.unitSize, official.unitSize),
+        official,
+        customerPrice: normalizePricingDecimal(rule?.unitPriceOverride),
+        existingFormulaMode: rule?.formulaMode,
+        existingMultiplier: normalizePricingDecimal(rule?.multiplier) || rule?.multiplier,
+        existingMarkupAmount: normalizePricingDecimal(rule?.markupAmount) || rule?.markupAmount,
+        conditions: rule?.conditions ?? [],
+      })),
+      removedRuleIds: [],
+      priceMode: firstSchedule ? 'time_window' as const : 'standard' as const,
+      timeZone: firstSchedule?.timeZone ?? 'Asia/Shanghai',
+      weeklyWindows: firstSchedule?.weeklyWindows.map((window) => ({ ...window, daysOfWeek: [...window.daysOfWeek] }))
+        ?? [{ ...DEFAULT_WINDOW }],
+      includeDates: firstSchedule?.includeDates.join(', ') ?? '',
+      excludeDates: firstSchedule?.excludeDates.join(', ') ?? '',
+      priority: String(firstRule?.priority ?? 100),
+      effectiveFrom: firstRule?.effectiveFrom ?? '',
+      effectiveTo: firstRule?.effectiveTo ?? '',
+      status: firstRule?.status ?? 'active',
+      metadataConflict: hasSharedMetadataConflict(groupRules),
+      acknowledgeMetadataConflict: false,
+    };
+  });
+}
+
 const EMPTY_FORM: PriceSettingFormState = {
-  catalogKey: '', vendorCode: '', productCode: '', resourceCode: '', resourceDisplayName: '', providerCode: '', regionCode: '', resourceType: 'llm', pricingPlanId: '',
-  meterPrices: [emptyMeter()], priceMode: 'standard', timeZone: 'Asia/Shanghai', weeklyWindows: [{ ...DEFAULT_WINDOW }],
-  removedRuleIds: [],
-  includeDates: '', excludeDates: '', priority: '100', effectiveFrom: '', effectiveTo: '', status: 'active',
-  metadataConflict: false, acknowledgeMetadataConflict: false,
+  catalogKey: '', vendorCode: '', productCode: '', resourceCode: '', resourceDisplayName: '', providerCode: '', resourceType: 'llm',
+  regionGroups: [emptyRegionGroupForm('')],
+  activeRegionKey: '',
 };
 
 export function PriceSettingsAdmin() {
@@ -179,7 +287,11 @@ export function PriceSettingsAdmin() {
       ]);
       if (sequence !== loadSequence.current) return;
       setRules(pricingRules); setPlans(pricingPlans.items); setOfficialCatalog(officialPrices); setPricingPlanId(resolvedPlanId);
-      setForm((current) => current.pricingPlanId || !resolvedPlanId ? current : { ...current, pricingPlanId: resolvedPlanId });
+      // Pre-fill the plan of groups the operator has not picked one for yet,
+      // so creating a new region group does not start from an empty plan.
+      setForm((current) => !resolvedPlanId || current.regionGroups.every((group) => group.pricingPlanId)
+        ? current
+        : { ...current, regionGroups: current.regionGroups.map((group) => group.pricingPlanId ? group : { ...group, pricingPlanId: resolvedPlanId }) });
     } catch (cause) {
       if (sequence !== loadSequence.current) return;
       setError(errorMessageI18n(cause, t('admin.pricing.settings.errors.loadFailed'), t));
@@ -322,64 +434,117 @@ export function PriceSettingsAdmin() {
     [officialCatalog?.regions],
   );
 
-  const openCreate = () => { setForm({ ...EMPTY_FORM, pricingPlanId: pricingPlanId || plans[0]?.id || '', weeklyWindows: [{ ...DEFAULT_WINDOW }], meterPrices: [emptyMeter()] }); setFormError(null); setCreating(true); setPanelOpen(true); };
-  const openProductSetting = (row: PriceSettingProductRow, regionCode: string) => {
-    const regionPrices = regionCode.trim()
-      ? row.prices.filter(({ official }) => official.regionCode.trim() === regionCode.trim())
-      : row.prices;
-    const prices = regionPrices.length > 0 ? regionPrices : row.prices;
-    const firstRule = prices.find((item) => item.rule)?.rule;
-    const firstSchedule = prices.find((item) => item.rule?.schedule)?.rule?.schedule;
-    const existingRules = prices
-      .map((item) => item.rule)
-      .filter((rule): rule is AdminPricingRuleItem => Boolean(rule));
+  const openCreate = () => {
+    const group = emptyRegionGroupForm('', { pricingPlanId: pricingPlanId || plans[0]?.id || '' });
+    setForm({ ...EMPTY_FORM, regionGroups: [group], activeRegionKey: group.key });
+    setFormError(null); setCreating(true); setPanelOpen(true);
+  };
+  // The drawer edits the resource's WHOLE region layout: one group per priced
+  // region, each seeded with that region's own rule metadata, plus the ability
+  // to add brand-new region groups from the catalog facets.
+  const openProductSetting = (row: PriceSettingProductRow) => {
+    const regionGroups = regionGroupFormsFromPrices(row.prices, pricingPlanId || plans[0]?.id || '');
     setForm({
-      catalogKey: row.product.catalogKey ?? '', vendorCode: row.product.vendorCode, productCode: row.product.productCode, resourceCode: row.product.resourceCode, resourceDisplayName: row.product.resourceDisplayName, providerCode: row.product.providerCode, regionCode: prices[0]?.official.regionCode.trim() || row.product.regionCode,
-      resourceType: resourceTypeOfProduct(row.product), pricingPlanId: pricingPlanId || firstRule?.pricingPlanId || plans[0]?.id || '',
-      meterPrices: prices.map(({ official, rule }) => ({ key: official.rateCode, rateCode: official.rateCode, ruleId: rule?.id, ruleCode: rule?.ruleCode, meterCode: official.meterCode, operationCode: official.operationCode, unitCode: official.unitCode, unitSize: formatPricingQuantity(official.unitSize, official.unitSize), official, customerPrice: normalizePricingDecimal(rule?.unitPriceOverride), existingFormulaMode: rule?.formulaMode, existingMultiplier: normalizePricingDecimal(rule?.multiplier) || rule?.multiplier, existingMarkupAmount: normalizePricingDecimal(rule?.markupAmount) || rule?.markupAmount, conditions: rule?.conditions ?? [] })),
-      removedRuleIds: [],
-      priceMode: firstSchedule ? 'time_window' : 'standard', timeZone: firstSchedule?.timeZone ?? 'Asia/Shanghai',
-      weeklyWindows: firstSchedule?.weeklyWindows.map((window) => ({ ...window, daysOfWeek: [...window.daysOfWeek] })) ?? [{ ...DEFAULT_WINDOW }],
-      includeDates: firstSchedule?.includeDates.join(', ') ?? '', excludeDates: firstSchedule?.excludeDates.join(', ') ?? '', priority: String(firstRule?.priority ?? 100), effectiveFrom: firstRule?.effectiveFrom ?? '', effectiveTo: firstRule?.effectiveTo ?? '', status: firstRule?.status ?? 'active',
-      metadataConflict: hasSharedMetadataConflict(existingRules), acknowledgeMetadataConflict: false,
+      catalogKey: row.product.catalogKey ?? '', vendorCode: row.product.vendorCode, productCode: row.product.productCode, resourceCode: row.product.resourceCode, resourceDisplayName: row.product.resourceDisplayName, providerCode: row.product.providerCode,
+      resourceType: resourceTypeOfProduct(row.product),
+      regionGroups,
+      activeRegionKey: regionGroups[0]?.key ?? '',
     });
     setFormError(null); setCreating(false); setPanelOpen(true);
   };
   const openCustomSetting = (rule: AdminPricingRuleItem) => {
-    setForm({
-      catalogKey: rule.catalogKey ?? '', vendorCode: vendorFromCatalogKey(rule.catalogKey) || rule.providerCode || '', productCode: rule.productCode ?? rule.catalogKey ?? '', resourceCode: resourceFromCatalogKey(rule.catalogKey) || rule.productCode || '', resourceDisplayName: resourceFromCatalogKey(rule.catalogKey) || rule.productCode || '', providerCode: rule.providerCode ?? '', regionCode: rule.regionCode ?? '', resourceType: resourceTypeOf(rule), pricingPlanId: rule.pricingPlanId,
-      meterPrices: [{ key: `rule:${rule.id}`, ruleId: rule.id, ruleCode: rule.ruleCode, meterCode: rule.meterCode ?? '', operationCode: rule.operationCode ?? '', unitCode: 'unit', unitSize: '1', customerPrice: normalizePricingDecimal(rule.unitPriceOverride), existingFormulaMode: rule.formulaMode, existingMultiplier: normalizePricingDecimal(rule.multiplier) || rule.multiplier, existingMarkupAmount: normalizePricingDecimal(rule.markupAmount) || rule.markupAmount, conditions: rule.conditions }],
-      removedRuleIds: [],
+    const group: PriceSettingRegionForm = {
+      ...emptyRegionGroupForm(rule.regionCode ?? '', { pricingPlanId: rule.pricingPlanId }),
+      meters: [{ key: `rule:${rule.id}`, ruleId: rule.id, ruleCode: rule.ruleCode, meterCode: rule.meterCode ?? '', operationCode: rule.operationCode ?? '', unitCode: 'unit', unitSize: '1', customerPrice: normalizePricingDecimal(rule.unitPriceOverride), existingFormulaMode: rule.formulaMode, existingMultiplier: normalizePricingDecimal(rule.multiplier) || rule.multiplier, existingMarkupAmount: normalizePricingDecimal(rule.markupAmount) || rule.markupAmount, conditions: rule.conditions }],
       priceMode: rule.schedule ? 'time_window' : 'standard', timeZone: rule.schedule?.timeZone ?? 'Asia/Shanghai', weeklyWindows: rule.schedule?.weeklyWindows.map((window) => ({ ...window, daysOfWeek: [...window.daysOfWeek] })) ?? [{ ...DEFAULT_WINDOW }], includeDates: rule.schedule?.includeDates.join(', ') ?? '', excludeDates: rule.schedule?.excludeDates.join(', ') ?? '', priority: String(rule.priority), effectiveFrom: rule.effectiveFrom ?? '', effectiveTo: rule.effectiveTo ?? '', status: rule.status,
-      metadataConflict: false, acknowledgeMetadataConflict: false,
+    };
+    setForm({
+      catalogKey: rule.catalogKey ?? '', vendorCode: vendorFromCatalogKey(rule.catalogKey) || rule.providerCode || '', productCode: rule.productCode ?? rule.catalogKey ?? '', resourceCode: resourceFromCatalogKey(rule.catalogKey) || rule.productCode || '', resourceDisplayName: resourceFromCatalogKey(rule.catalogKey) || rule.productCode || '', providerCode: rule.providerCode ?? '',
+      resourceType: resourceTypeOf(rule),
+      regionGroups: [group],
+      activeRegionKey: group.key,
     });
     setFormError(null); setCreating(false); setPanelOpen(true);
   };
   const closePanel = () => { setCreating(false); setFormError(null); setPanelOpen(false); };
   const setField = <K extends keyof PriceSettingFormState>(key: K, value: PriceSettingFormState[K]) => setForm((current) => ({ ...current, [key]: value }));
-  const updateMeter = (index: number, patch: Partial<PriceSettingMeterForm>) => setForm((current) => ({ ...current, meterPrices: current.meterPrices.map((meter, meterIndex) => meterIndex === index ? { ...meter, ...patch } : meter) }));
-  const addMeter = () => setForm((current) => ({ ...current, meterPrices: [...current.meterPrices, emptyMeter(`meter-${current.meterPrices.length + 1}-${Date.now()}`)] }));
-  const removeMeter = (index: number) => setForm((current) => {
-    const meter = current.meterPrices[index];
-    const removedRuleIds = meter?.ruleId && !current.removedRuleIds.includes(meter.ruleId)
-      ? [...current.removedRuleIds, meter.ruleId]
-      : current.removedRuleIds;
-    return { ...current, removedRuleIds, meterPrices: current.meterPrices.filter((_, meterIndex) => meterIndex !== index) };
+  const updateGroup = (groupIndex: number, patch: Partial<PriceSettingRegionForm>) => setForm((current) => ({ ...current, regionGroups: current.regionGroups.map((group, index) => index === groupIndex ? { ...group, ...patch } : group) }));
+  const updateMeter = (groupIndex: number, meterIndex: number, patch: Partial<PriceSettingMeterForm>) => setForm((current) => ({ ...current, regionGroups: current.regionGroups.map((group, index) => index === groupIndex ? { ...group, meters: group.meters.map((meter, meterIndex2) => meterIndex2 === meterIndex ? { ...meter, ...patch } : meter) } : group) }));
+  const addMeter = (groupIndex: number) => setForm((current) => ({ ...current, regionGroups: current.regionGroups.map((group, index) => index === groupIndex ? { ...group, meters: [...group.meters, emptyMeter(`meter-${groupIndex}-${group.meters.length + 1}-${Date.now()}`)] } : group) }));
+  const removeMeter = (groupIndex: number, meterIndex: number) => setForm((current) => {
+    const group = current.regionGroups[groupIndex];
+    if (!group) return current;
+    const meter = group.meters[meterIndex];
+    const removedRuleIds = meter?.ruleId && !group.removedRuleIds.includes(meter.ruleId)
+      ? [...group.removedRuleIds, meter.ruleId]
+      : group.removedRuleIds;
+    return { ...current, regionGroups: current.regionGroups.map((item, index) => index === groupIndex ? { ...group, removedRuleIds, meters: group.meters.filter((_, meterIndex2) => meterIndex2 !== meterIndex) } : item) };
   });
-  const updateWindow = (index: number, patch: Partial<AdminPricingScheduleWindow>) => setForm((current) => ({ ...current, weeklyWindows: current.weeklyWindows.map((window, windowIndex) => windowIndex === index ? { ...window, ...patch } : window) }));
-  const toggleWindowDay = (index: number, day: number) => { const window = form.weeklyWindows[index]; if (!window) return; updateWindow(index, { daysOfWeek: window.daysOfWeek.includes(day) ? window.daysOfWeek.filter((value) => value !== day) : [...window.daysOfWeek, day].sort((left, right) => left - right) }); };
-  const addWindow = () => setForm((current) => { const existing = new Set(current.weeklyWindows.map((window) => window.windowCode)); let suffix = current.weeklyWindows.length + 1; let windowCode = `window-${suffix}`; while (existing.has(windowCode)) { suffix += 1; windowCode = `window-${suffix}`; } return { ...current, priceMode: 'time_window', weeklyWindows: [...current.weeklyWindows, { ...DEFAULT_WINDOW, windowCode }] }; });
+  /** Removes a whole region group: new groups are dropped, existing groups
+   * queue every rule of the region for deletion so saving the form persists
+   * the removal. */
+  const removeRegionGroup = (groupIndex: number) => setForm((current) => {
+    const group = current.regionGroups[groupIndex];
+    if (!group || current.regionGroups.length <= 1) return current;
+    const regionGroups = current.regionGroups
+      .filter((_, index) => index !== groupIndex)
+      .map((item) => !group.regionLocked ? item : {
+        ...item,
+        removedRuleIds: [...item.removedRuleIds, ...group.meters.flatMap((meter) => meter.ruleId && !item.removedRuleIds.includes(meter.ruleId) ? [meter.ruleId] : [])],
+      });
+    return { ...current, regionGroups, activeRegionKey: regionGroups[0]?.key ?? '' };
+  });
+  /** Adds an empty region group from the catalog facet list; the region stays
+   * fixed once chosen so the operator sees exactly what will be saved. */
+  const addRegionGroup = (regionCode: string) => setForm((current) => {
+    const trimmed = regionCode.trim();
+    if (!trimmed || current.regionGroups.some((group) => group.regionCode.trim().toLowerCase() === trimmed.toLowerCase())) return current;
+    const group = emptyRegionGroupForm(trimmed, { regionLocked: true, pricingPlanId: current.regionGroups[0]?.pricingPlanId ?? '' });
+    return { ...current, regionGroups: [...current.regionGroups, group], activeRegionKey: group.key };
+  });
+  const updateWindow = (groupIndex: number, windowIndex: number, patch: Partial<AdminPricingScheduleWindow>) => setForm((current) => ({ ...current, regionGroups: current.regionGroups.map((group, index) => index === groupIndex ? { ...group, weeklyWindows: group.weeklyWindows.map((window, windowIndex2) => windowIndex2 === windowIndex ? { ...window, ...patch } : window) } : group) }));
+  const toggleWindowDay = (groupIndex: number, windowIndex: number, day: number) => {
+    const group = form.regionGroups[groupIndex];
+    const window = group?.weeklyWindows[windowIndex];
+    if (!window) return;
+    updateWindow(groupIndex, windowIndex, { daysOfWeek: window.daysOfWeek.includes(day) ? window.daysOfWeek.filter((value) => value !== day) : [...window.daysOfWeek, day].sort((left, right) => left - right) });
+  };
+  const addWindow = (groupIndex: number) => setForm((current) => ({ ...current, regionGroups: current.regionGroups.map((group, index) => {
+    if (index !== groupIndex) return group;
+    const existing = new Set(group.weeklyWindows.map((window) => window.windowCode));
+    let suffix = group.weeklyWindows.length + 1;
+    let windowCode = `window-${suffix}`;
+    while (existing.has(windowCode)) { suffix += 1; windowCode = `window-${suffix}`; }
+    return { ...group, priceMode: 'time_window' as const, weeklyWindows: [...group.weeklyWindows, { ...DEFAULT_WINDOW, windowCode }] };
+  }) }));
+
+  const totalMeterCount = form.regionGroups.reduce((count, group) => count + group.meters.length, 0);
+  const activeGroup = form.regionGroups.find((group) => group.key === form.activeRegionKey) ?? form.regionGroups[0];
+  const activeGroupIndex = activeGroup ? form.regionGroups.indexOf(activeGroup) : -1;
+  // Catalog facet regions the resource does not price yet: candidates for a
+  // brand-new region group in the drawer.
+  const regionCandidates = (officialCatalog?.regions ?? []).filter((region) => !form.regionGroups.some((group) => group.regionCode.trim().toLowerCase() === region.code.trim().toLowerCase()));
+  const activeDefaultRegion = defaultRegionByCatalogKey.get(form.catalogKey.trim());
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault(); setFormError(null);
     const applied: AppliedPriceSettingMutation[] = [];
     try {
       let confirmedForm = form;
-      if (form.metadataConflict && !form.acknowledgeMetadataConflict) {
-        if (!window.confirm(t('admin.pricing.settings.form.metadataConflictConfirm'))) {
+      // Region groups whose existing rules carry conflicting lifecycle metadata
+      // are overwritten with the group's policy; require one explicit ack.
+      const conflictingRegions = form.regionGroups
+        .filter((group) => group.metadataConflict && !group.acknowledgeMetadataConflict)
+        .map((group) => group.regionCode || form.regionGroups.indexOf(group).toString());
+      if (conflictingRegions.length > 0) {
+        const detail = conflictingRegions.join(', ');
+        if (!window.confirm(t('admin.pricing.settings.form.metadataConflictConfirm') + ` (${detail})`)) {
           throw new Error(t('admin.pricing.settings.form.metadataConflictRequired'));
         }
-        confirmedForm = { ...form, acknowledgeMetadataConflict: true };
+        confirmedForm = {
+          ...form,
+          regionGroups: form.regionGroups.map((group) => group.metadataConflict ? { ...group, acknowledgeMetadataConflict: true } : group),
+        };
       }
       const mutations = buildPriceSettingMutations(confirmedForm, t); setBusy(true);
       for (const mutation of mutations) {
@@ -421,12 +586,106 @@ export function PriceSettingsAdmin() {
       <table className="w-full min-w-[1440px] table-fixed text-left text-sm"><thead className="sticky top-0 z-10 border-b border-slate-200 bg-white text-xs uppercase tracking-wide text-slate-400 dark:border-white/10 dark:bg-slate-900"><tr><th className="w-[15%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.resourceName')}</th><th className="w-[8%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.resourceType')}</th><th className="w-[18%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.pricingObject')}</th><th className="w-[23%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.officialPrice')}</th><th className="w-[21%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.customerPrice')}</th><th className="w-[15%] px-4 py-3 text-right font-medium">{t('admin.pricing.settings.table.actions')}</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-white/5">{loading || (productRows.rows.length === 0 && customRules.length === 0) ? <TableState loading={loading} empty={t('admin.pricing.settings.empty')} colSpan={6} /> : <>{productRows.rows.map((row) => <ProductPriceTableRow key={row.key} row={row} activeResourceType={resourceType} plans={plans} locale={displayLocale} t={t} onEdit={openProductSetting} defaultRegion={defaultRegionByCatalogKey.get(row.product.catalogKey?.trim() ?? '')} onSetDefault={handleSetDefaultRegion} />)}{customRules.map((rule) => <CustomPriceTableRow key={`rule:${rule.id}`} rule={rule} plans={plans} locale={displayLocale} t={t} onEdit={openCustomSetting} />)}</>}</tbody></table>
     </AdminTableArea>
     <InlineError message={error} />
-    {panelOpen ? <SidePanel wide title={t(creating ? 'admin.pricing.settings.form.createTitle' : 'admin.pricing.settings.form.editTitle')} description={t('admin.pricing.settings.form.batchDescription')} onClose={closePanel} footer={<><button type="button" className={secondaryButtonClass} onClick={closePanel} disabled={busy}>{t('admin.pricing.common.form.cancel')}</button><button type="submit" form="price-setting-form" className={primaryButtonClass} disabled={busy}>{t('admin.pricing.settings.form.saveItems', { count: form.meterPrices.length })}</button></>}>
+    {panelOpen ? <SidePanel wide title={t(creating ? 'admin.pricing.settings.form.createTitle' : 'admin.pricing.settings.form.editTitle')} description={t('admin.pricing.settings.form.batchDescription')} onClose={closePanel} footer={<><button type="button" className={secondaryButtonClass} onClick={closePanel} disabled={busy}>{t('admin.pricing.common.form.cancel')}</button><button type="submit" form="price-setting-form" className={primaryButtonClass} disabled={busy}>{t('admin.pricing.settings.form.saveItems', { count: totalMeterCount })}</button></>}>
       <form id="price-setting-form" className="flex flex-col gap-5" onSubmit={handleSubmit}><InlineError message={formError} />
-        <section className="rounded-lg border border-slate-200 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-white/[0.04]"><div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t('admin.pricing.settings.form.objectTitle')}</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.form.objectHint')}</p></div><span className="rounded-full bg-lobster-50 px-2.5 py-1 text-xs font-medium text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-300">{resourceTypeLabel(form.resourceType, t)}</span></div>{form.resourceCode ? <div className="mb-4 border-b border-slate-200 pb-4 dark:border-white/10"><div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{t('admin.pricing.settings.form.resourceIdentity')}</div><div className="mt-1 text-base font-semibold text-slate-900 dark:text-white">{form.resourceDisplayName || form.resourceCode}</div><div className="mt-1 break-all font-mono text-xs text-slate-500 dark:text-slate-400">{form.resourceCode}{form.catalogKey && form.catalogKey !== form.resourceCode ? ` · ${form.catalogKey}` : ''}</div></div> : null}<div className="grid gap-4 md:grid-cols-2"><Field label={t('admin.pricing.settings.form.vendor')} hint={t('admin.pricing.settings.form.vendorHint')}><input className={inputClass} value={form.vendorCode} onChange={(event) => setField('vendorCode', event.target.value)} placeholder="openai / anthropic" readOnly={Boolean(form.catalogKey)} required /></Field><Field label={t('admin.pricing.settings.form.product')} hint={t('admin.pricing.settings.form.productHint')}><input className={inputClass} value={form.productCode} onChange={(event) => setField('productCode', event.target.value)} placeholder="gpt-4o / image-generation" required /></Field><Field label={t('admin.pricing.settings.form.resourceType')}><select className={selectClass} value={form.resourceType} onChange={(event) => setField('resourceType', event.target.value as PriceSettingFormState['resourceType'])}>{PRICE_SETTING_RESOURCE_TYPES.filter((type) => type !== 'all').map((type) => <option key={type} value={type}>{resourceTypeLabel(type, t)}</option>)}</select></Field><Field label={t('admin.pricing.settings.form.provider')} hint={t('admin.pricing.settings.form.providerHint')}><input className={inputClass} value={form.providerCode} onChange={(event) => setField('providerCode', event.target.value)} placeholder="openrouter / aliyun" /></Field><Field label={t('admin.pricing.settings.form.region')} hint={t('admin.pricing.settings.form.regionHint')}><input className={inputClass} value={form.regionCode} onChange={(event) => setField('regionCode', event.target.value)} placeholder="global / cn" /></Field></div></section>
-        <section><div className="mb-3 flex items-end justify-between gap-3"><div><h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t('admin.pricing.settings.form.priceGroupTitle')}</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.form.priceGroupHint')}</p></div><button type="button" className={secondaryButtonClass} onClick={addMeter}><Plus className="h-3.5 w-3.5" aria-hidden="true" />{t('admin.pricing.settings.form.addMeter')}</button></div><div className="overflow-hidden rounded-lg border border-slate-200 dark:border-white/10"><div className="hidden grid-cols-[minmax(150px,1fr)_minmax(150px,1fr)_180px_36px] gap-3 border-b border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400 md:grid dark:border-white/10 dark:bg-white/[0.04]"><span>{t('admin.pricing.settings.form.meter')}</span><span>{t('admin.pricing.settings.table.officialPrice')}</span><span>{t('admin.pricing.settings.form.customerPrice')}</span><span /></div><div className="divide-y divide-slate-200 dark:divide-white/10">{form.meterPrices.map((meter, index) => <MeterFormRow key={meter.key} meter={meter} index={index} locale={displayLocale} t={t} updateMeter={updateMeter} removeMeter={removeMeter} />)}</div></div></section>
-        <section className="grid gap-4 rounded-lg border border-slate-200 p-4 md:grid-cols-2 dark:border-white/10"><Field label={t('admin.pricing.settings.form.pricingPlan')} hint={t('admin.pricing.settings.form.pricingPlanHint')}><select className={selectClass} value={form.pricingPlanId} onChange={(event) => setField('pricingPlanId', event.target.value)} disabled={!creating} required><option value="">{t('admin.pricing.settings.form.pricingPlanPlaceholder')}</option>{plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.planName} ({plan.planCode})</option>)}</select></Field><Field label={t('admin.pricing.common.form.priority')}><input className={inputClass} value={form.priority} onChange={(event) => setField('priority', event.target.value)} inputMode="numeric" /></Field><Field label={t('admin.pricing.common.form.status')}><select className={selectClass} value={form.status} onChange={(event) => setField('status', event.target.value as AdminPricingStatus)}>{STATUSES.map((value) => <option key={value} value={value}>{t(`admin.pricing.common.status.${value}`)}</option>)}</select></Field><Field label={t('admin.pricing.settings.form.catalogKey')} hint={t('admin.pricing.settings.form.optional')}><input className={inputClass} value={form.catalogKey} onChange={(event) => setField('catalogKey', event.target.value)} placeholder="vendor/model" /></Field></section>
-        <details className="rounded-lg border border-slate-200 dark:border-white/10"><summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white"><span>{t('admin.pricing.settings.form.advancedTitle')}</span><ChevronDown className="h-4 w-4 text-slate-400" aria-hidden="true" /></summary><div className="flex flex-col gap-4 border-t border-slate-200 px-4 py-4 dark:border-white/10"><Field label={t('admin.pricing.settings.form.priceMode')} hint={t('admin.pricing.settings.form.priceModeHint')}><div className="grid grid-cols-2 gap-2" role="group" aria-label={t('admin.pricing.settings.form.priceMode')}>{(['standard', 'time_window'] as const).map((mode) => <button key={mode} type="button" className={`rounded-md border px-3 py-2 text-sm font-medium transition ${form.priceMode === mode ? 'border-lobster-500 bg-lobster-50 text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-300' : 'border-slate-200 text-slate-600 hover:border-lobster-300 dark:border-white/10 dark:text-slate-300'}`} onClick={() => { setField('priceMode', mode); if (mode === 'time_window' && form.weeklyWindows.length === 0) setField('weeklyWindows', [{ ...DEFAULT_WINDOW }]); }}>{t(`admin.pricing.settings.mode.${mode === 'time_window' ? 'timeWindow' : 'standard'}`)}</button>)}</div></Field>{form.priceMode === 'time_window' ? <TimeWindowFields form={form} t={t} updateWindow={updateWindow} toggleWindowDay={toggleWindowDay} addWindow={addWindow} setField={setField} /> : null}<div className="grid gap-4 md:grid-cols-2"><Field label={t('admin.pricing.common.form.effectiveFrom')}><input className={inputClass} value={form.effectiveFrom} onChange={(event) => setField('effectiveFrom', event.target.value)} placeholder="2026-08-20T00:00:00Z" /></Field><Field label={t('admin.pricing.common.form.effectiveTo')}><input className={inputClass} value={form.effectiveTo} onChange={(event) => setField('effectiveTo', event.target.value)} placeholder="2026-08-20T00:00:00Z" /></Field></div></div></details>
+        <section className="rounded-lg border border-slate-200 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-white/[0.04]"><div className="mb-3 flex items-center justify-between gap-3"><div><h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t('admin.pricing.settings.form.objectTitle')}</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.form.objectHint')}</p></div><span className="rounded-full bg-lobster-50 px-2.5 py-1 text-xs font-medium text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-300">{resourceTypeLabel(form.resourceType, t)}</span></div>{form.resourceCode ? <div className="mb-4 border-b border-slate-200 pb-4 dark:border-white/10"><div className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{t('admin.pricing.settings.form.resourceIdentity')}</div><div className="mt-1 text-base font-semibold text-slate-900 dark:text-white">{form.resourceDisplayName || form.resourceCode}</div><div className="mt-1 break-all font-mono text-xs text-slate-500 dark:text-slate-400">{form.resourceCode}{form.catalogKey && form.catalogKey !== form.resourceCode ? ` · ${form.catalogKey}` : ''}</div></div> : null}<div className="grid gap-4 md:grid-cols-2"><Field label={t('admin.pricing.settings.form.vendor')} hint={t('admin.pricing.settings.form.vendorHint')}><input className={inputClass} value={form.vendorCode} onChange={(event) => setField('vendorCode', event.target.value)} placeholder="openai / anthropic" readOnly={Boolean(form.catalogKey)} required /></Field><Field label={t('admin.pricing.settings.form.product')} hint={t('admin.pricing.settings.form.productHint')}><input className={inputClass} value={form.productCode} onChange={(event) => setField('productCode', event.target.value)} placeholder="gpt-4o / image-generation" required /></Field><Field label={t('admin.pricing.settings.form.resourceType')}><select className={selectClass} value={form.resourceType} onChange={(event) => setField('resourceType', event.target.value as PriceSettingFormState['resourceType'])}>{PRICE_SETTING_RESOURCE_TYPES.filter((type) => type !== 'all').map((type) => <option key={type} value={type}>{resourceTypeLabel(type, t)}</option>)}</select></Field><Field label={t('admin.pricing.settings.form.provider')} hint={t('admin.pricing.settings.form.providerHint')}><input className={inputClass} value={form.providerCode} onChange={(event) => setField('providerCode', event.target.value)} placeholder="openrouter / aliyun" /></Field><Field label={t('admin.pricing.settings.form.catalogKey')} hint={t('admin.pricing.settings.form.optional')}><input className={inputClass} value={form.catalogKey} onChange={(event) => setField('catalogKey', event.target.value)} placeholder="vendor/model" /></Field></div></section>
+        <section>
+          <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t('admin.pricing.settings.form.regionGroupTitle')}</h3>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.form.regionGroupHint')}</p>
+            </div>
+            {regionCandidates.length > 0 ? (
+              <select
+                className={`${selectClass} max-w-56`}
+                value=""
+                aria-label={t('admin.pricing.settings.form.addRegion')}
+                onChange={(event) => { if (event.target.value) addRegionGroup(event.target.value); }}
+              >
+                <option value="">{t('admin.pricing.settings.form.addRegion')}</option>
+                {regionCandidates.map((region) => (
+                  <option key={region.code} value={region.code}>
+                    {region.code} ({formatPricingQuantity(region.count)})
+                  </option>
+                ))}
+              </select>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5" role="tablist" aria-label={t('admin.pricing.settings.tabs.regions')}>
+            {form.regionGroups.map((group, groupIndex) => {
+              const selected = group.key === activeGroup?.key;
+              const configured = group.meters.some((meter) => meter.ruleId || meter.customerPrice.trim());
+              return (
+                <button
+                  key={group.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  title={group.metadataConflict ? t('admin.pricing.settings.form.metadataConflictTitle') : undefined}
+                  onClick={() => setField('activeRegionKey', group.key)}
+                  className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition ${selected ? 'border-lobster-600 bg-lobster-600 text-white shadow-sm' : 'border-slate-200 bg-white text-slate-600 hover:border-lobster-300 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:border-lobster-500/40'}`}
+                >
+                  <Globe2 className={`h-3 w-3 shrink-0 ${selected ? 'text-white/90' : 'text-slate-400'}`} aria-hidden="true" />
+                  <span className="font-mono">{group.regionCode || '—'}</span>
+                  {group.currencyCode ? <span className={`tabular-nums ${selected ? 'text-white/80' : 'text-slate-400'}`}>{group.currencyCode}</span> : null}
+                  <span className={`rounded-full px-1.5 tabular-nums ${selected ? 'bg-white/20' : 'bg-slate-100 dark:bg-white/10'}`}>{group.meters.length}</span>
+                  {!configured ? <span className={`h-1.5 w-1.5 rounded-full ${selected ? 'bg-white/70' : 'bg-slate-300 dark:bg-slate-600'}`} title={t('admin.pricing.settings.form.regionNotConfigured')} /> : null}
+                  {group.metadataConflict ? <span className="h-1.5 w-1.5 rounded-full bg-amber-400" title={t('admin.pricing.settings.form.metadataConflictTitle')} /> : null}
+                  {form.regionGroups.length > 1 ? (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      aria-label={t('admin.pricing.settings.form.removeRegion', { region: group.regionCode })}
+                      title={t('admin.pricing.settings.form.removeRegion', { region: group.regionCode })}
+                      className={`-mr-0.5 rounded p-0.5 transition hover:bg-black/10 dark:hover:bg-white/10 ${selected ? 'text-white/80' : 'text-slate-300 hover:text-red-500 dark:text-slate-600'}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (group.regionLocked && !window.confirm(t('admin.pricing.settings.form.removeRegionConfirm', { region: group.regionCode }))) return;
+                        removeRegionGroup(groupIndex);
+                      }}
+                      onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.currentTarget.click(); } }}
+                    >
+                      <X className="h-3 w-3" aria-hidden="true" />
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+          {regionCandidates.length === 0 ? (
+            <p className="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500">{t('admin.pricing.settings.form.noRegionCandidates')}</p>
+          ) : null}
+        </section>
+        {activeGroup && activeGroupIndex >= 0 ? <>
+          <section className="rounded-lg border border-slate-200 p-4 dark:border-white/10">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                {activeGroup.regionLocked ? (
+                  <>
+                    <span className="rounded-md bg-slate-900 px-2 py-1 font-mono text-xs font-semibold text-white dark:bg-white dark:text-slate-900">{activeGroup.regionCode}</span>
+                    {activeGroup.currencyCode ? <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium tabular-nums text-slate-500 dark:bg-white/10 dark:text-slate-400">{activeGroup.currencyCode}</span> : null}
+                    {activeDefaultRegion?.defaultRegionCode?.trim().toLowerCase() === activeGroup.regionCode.trim().toLowerCase() ? <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-600 dark:bg-amber-500/10 dark:text-amber-300"><Star className="h-3 w-3 fill-current" aria-hidden="true" />{t('admin.pricing.settings.defaultRegion.isDefault')}</span> : null}
+                  </>
+                ) : (
+                  <Field label={t('admin.pricing.settings.form.region')} hint={t('admin.pricing.settings.form.regionHint')}>
+                    <input className={inputClass} value={activeGroup.regionCode} onChange={(event) => updateGroup(activeGroupIndex, { regionCode: event.target.value })} placeholder="global / cn" required />
+                  </Field>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">{t('admin.pricing.settings.form.regionPolicyHint')}</p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <Field label={t('admin.pricing.settings.form.pricingPlan')} hint={t('admin.pricing.settings.form.pricingPlanHint')}><select className={selectClass} value={activeGroup.pricingPlanId} onChange={(event) => updateGroup(activeGroupIndex, { pricingPlanId: event.target.value })} required><option value="">{t('admin.pricing.settings.form.pricingPlanPlaceholder')}</option>{plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.planName} ({plan.planCode})</option>)}</select></Field>
+              <Field label={t('admin.pricing.common.form.priority')}><input className={inputClass} value={activeGroup.priority} onChange={(event) => updateGroup(activeGroupIndex, { priority: event.target.value })} inputMode="numeric" /></Field>
+              <Field label={t('admin.pricing.common.form.status')}><select className={selectClass} value={activeGroup.status} onChange={(event) => updateGroup(activeGroupIndex, { status: event.target.value as AdminPricingStatus })}>{STATUSES.map((value) => <option key={value} value={value}>{t(`admin.pricing.common.status.${value}`)}</option>)}</select></Field>
+            </div>
+          </section>
+          <section>
+            <div className="mb-3 flex items-end justify-between gap-3"><div><h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t('admin.pricing.settings.form.priceGroupTitle')}</h3><p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.form.priceGroupHint')}</p></div><button type="button" className={secondaryButtonClass} onClick={() => addMeter(activeGroupIndex)}><Plus className="h-3.5 w-3.5" aria-hidden="true" />{t('admin.pricing.settings.form.addMeter')}</button></div>
+            <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-white/10"><div className="hidden grid-cols-[minmax(150px,1fr)_minmax(150px,1fr)_180px_36px] gap-3 border-b border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400 md:grid dark:border-white/10 dark:bg-white/[0.04]"><span>{t('admin.pricing.settings.form.meter')}</span><span>{t('admin.pricing.settings.table.officialPrice')}</span><span>{t('admin.pricing.settings.form.customerPrice')}</span><span /></div><div className="divide-y divide-slate-200 dark:divide-white/10">{activeGroup.meters.map((meter, meterIndex) => <MeterFormRow key={meter.key} meter={meter} groupIndex={activeGroupIndex} index={meterIndex} locale={displayLocale} t={t} updateMeter={updateMeter} removeMeter={removeMeter} />)}{activeGroup.meters.length === 0 ? <div className="px-3 py-6 text-center text-xs text-slate-400">{t('admin.pricing.settings.form.regionEmptyMeters')}</div> : null}</div></div>
+          </section>
+          <details className="rounded-lg border border-slate-200 dark:border-white/10"><summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-slate-900 dark:text-white"><span>{t('admin.pricing.settings.form.advancedTitle')}</span><ChevronDown className="h-4 w-4 text-slate-400" aria-hidden="true" /></summary><div className="flex flex-col gap-4 border-t border-slate-200 px-4 py-4 dark:border-white/10"><Field label={t('admin.pricing.settings.form.priceMode')} hint={t('admin.pricing.settings.form.priceModeHint')}><div className="grid grid-cols-2 gap-2" role="group" aria-label={t('admin.pricing.settings.form.priceMode')}>{(['standard', 'time_window'] as const).map((mode) => <button key={mode} type="button" className={`rounded-md border px-3 py-2 text-sm font-medium transition ${activeGroup.priceMode === mode ? 'border-lobster-500 bg-lobster-50 text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-300' : 'border-slate-200 text-slate-600 hover:border-lobster-300 dark:border-white/10 dark:text-slate-300'}`} onClick={() => { updateGroup(activeGroupIndex, { priceMode: mode }); if (mode === 'time_window' && activeGroup.weeklyWindows.length === 0) updateGroup(activeGroupIndex, { weeklyWindows: [{ ...DEFAULT_WINDOW }] }); }}>{t(`admin.pricing.settings.mode.${mode === 'time_window' ? 'timeWindow' : 'standard'}`)}</button>)}</div></Field>{activeGroup.priceMode === 'time_window' ? <TimeWindowFields group={activeGroup} groupIndex={activeGroupIndex} t={t} updateWindow={updateWindow} toggleWindowDay={toggleWindowDay} addWindow={addWindow} updateGroup={updateGroup} /> : null}<div className="grid gap-4 md:grid-cols-2"><Field label={t('admin.pricing.common.form.effectiveFrom')}><input className={inputClass} value={activeGroup.effectiveFrom} onChange={(event) => updateGroup(activeGroupIndex, { effectiveFrom: event.target.value })} placeholder="2026-08-20T00:00:00Z" /></Field><Field label={t('admin.pricing.common.form.effectiveTo')}><input className={inputClass} value={activeGroup.effectiveTo} onChange={(event) => updateGroup(activeGroupIndex, { effectiveTo: event.target.value })} placeholder="2026-08-20T00:00:00Z" /></Field></div>{activeGroup.metadataConflict ? <div className="flex flex-col gap-2 rounded-md border border-amber-200 bg-amber-50/70 px-3 py-2 text-xs text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"><span>{t('admin.pricing.settings.form.metadataConflictHint', { region: activeGroup.regionCode })}</span><label className="inline-flex items-center gap-2 font-medium"><input type="checkbox" checked={Boolean(activeGroup.acknowledgeMetadataConflict)} onChange={(event) => updateGroup(activeGroupIndex, { acknowledgeMetadataConflict: event.target.checked })} />{t('admin.pricing.settings.form.metadataConflictAcknowledge')}</label></div> : null}</div></details>
+        </> : null}
       </form>
     </SidePanel> : null}
     <DefaultRegionManager
@@ -608,7 +867,7 @@ function VendorMultiSelect({ vendors, value, onChange, placeholder }: { vendors:
   );
 }
 
-function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdit, defaultRegion, onSetDefault }: { row: PriceSettingProductRow; activeResourceType: PriceSettingResourceType; plans: AdminPricingPlanItem[]; locale: string; t: TranslationFunction; onEdit: (row: PriceSettingProductRow, regionCode: string) => void; defaultRegion?: AdminDefaultRegionItem; onSetDefault: (row: PriceSettingProductRow, regionCode: string) => Promise<void> | void }) {
+function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdit, defaultRegion, onSetDefault }: { row: PriceSettingProductRow; activeResourceType: PriceSettingResourceType; plans: AdminPricingPlanItem[]; locale: string; t: TranslationFunction; onEdit: (row: PriceSettingProductRow) => void; defaultRegion?: AdminDefaultRegionItem; onSetDefault: (row: PriceSettingProductRow, regionCode: string) => Promise<void> | void }) {
   const resourceType = activeResourceType === 'all' ? resourceTypeOfProduct(row.product) : activeResourceType;
   const translate = pricingConditionTranslate(t);
   // A resource row aggregates every region it prices; the region tabs switch
@@ -767,9 +1026,9 @@ function ProductPriceTableRow({ row, activeResourceType, plans, locale, t, onEdi
               {t('admin.pricing.settings.defaultRegion.globalOnlyHint', { defaultValue: '该资源仅在 global 分区定价，无需设置默认 Region' })}
             </span>
           )}
-          <button type="button" className="inline-flex items-center justify-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold text-lobster-600 transition hover:bg-lobster-50 dark:text-lobster-300 dark:hover:bg-lobster-500/10" onClick={() => onEdit(row, activeRegion)}>
+          <button type="button" className="inline-flex items-center justify-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold text-lobster-600 transition hover:bg-lobster-50 dark:text-lobster-300 dark:hover:bg-lobster-500/10" onClick={() => onEdit(row)}>
             <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
-            {t('admin.pricing.settings.actions.editGroup')}
+            {t('admin.pricing.settings.actions.editPrice')}
           </button>
         </div>
       </td>
@@ -1036,16 +1295,16 @@ function CustomPriceTableRow({ rule, plans, locale, t, onEdit }: { rule: AdminPr
   return <tr className="align-top hover:bg-slate-50 dark:hover:bg-white/5"><td className="px-4 py-4 text-slate-900 dark:text-white"><div className="break-words font-semibold">{resourceCode}</div><div className="mt-1 break-all font-mono text-xs text-slate-500 dark:text-slate-400">{rule.catalogKey || rule.productCode || rule.ruleCode}</div><div className="mt-2 text-xs text-slate-400">{t('admin.pricing.settings.table.customPrice')}</div></td><td className="px-4 py-4"><span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">{resourceTypeLabel(resourceType, t)}</span></td><td className="px-4 py-4 text-[11px] text-slate-500 dark:text-slate-400"><div>{t('admin.pricing.settings.scope.provider')}: {rule.providerCode || '—'}</div><div className="mt-1">{t('admin.pricing.settings.scope.region')}: {rule.regionCode || '—'}</div><div className="mt-1">{t('admin.pricing.settings.scope.product')}: {rule.productCode || '—'}</div></td><td className="px-4 py-4 text-sm text-slate-400">{t('admin.pricing.settings.table.noOfficial')}</td><td className="px-4 py-4"><CustomerRateLine official={official} rule={rule} plans={plans} locale={locale} t={t} /></td><td className="px-4 py-4 text-right"><button type="button" className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-2 text-xs font-semibold text-lobster-600 transition hover:bg-lobster-50 dark:text-lobster-300 dark:hover:bg-lobster-500/10" onClick={() => onEdit(rule)}><Edit3 className="h-3.5 w-3.5" aria-hidden="true" />{t('admin.pricing.settings.common.edit')}</button></td></tr>;
 }
 
-function MeterFormRow({ meter, index, locale, t, updateMeter, removeMeter }: { meter: PriceSettingMeterForm; index: number; locale: string; t: TranslationFunction; updateMeter: (index: number, patch: Partial<PriceSettingMeterForm>) => void; removeMeter: (index: number) => void }) {
+function MeterFormRow({ meter, groupIndex, index, locale, t, updateMeter, removeMeter }: { meter: PriceSettingMeterForm; groupIndex: number; index: number; locale: string; t: TranslationFunction; updateMeter: (groupIndex: number, meterIndex: number, patch: Partial<PriceSettingMeterForm>) => void; removeMeter: (groupIndex: number, meterIndex: number) => void }) {
   const formula = meter.existingFormulaMode === 'multiplier_markup';
   const translate = pricingConditionTranslate(t);
   const variantLabel = meter.official ? officialRateVariantLabel(meter.official, translate) : undefined;
   const scheduleLines = meter.official ? formatOfficialRateScheduleLines(meter.official.schedule, translate) : [];
-  return <div className="grid gap-3 px-3 py-3 md:grid-cols-[minmax(150px,1fr)_minmax(150px,1fr)_180px_36px] md:items-start"><div className="grid gap-2"><input className={inputClass} value={meter.meterCode} onChange={(event) => updateMeter(index, { meterCode: event.target.value })} placeholder={t('admin.pricing.settings.form.meterPlaceholder')} required={!meter.operationCode} /><input className={inputClass} value={meter.operationCode} onChange={(event) => updateMeter(index, { operationCode: event.target.value })} placeholder={t('admin.pricing.settings.form.operationPlaceholder')} required={!meter.meterCode} /><div className="text-[11px] text-slate-400">{formatPricingQuantity(meter.unitSize)} {formatPricingUnitLabel(meter.unitCode, translate)}{variantLabel ? ` · ${variantLabel}` : ''}{meter.ruleId ? ` · ${t('admin.pricing.settings.form.existing')}` : ''}</div></div><div className="group/rate relative min-h-9 rounded-md bg-slate-50 px-3 py-2 dark:bg-white/[0.04]">{meter.official ? <><div className="font-semibold tabular-nums text-slate-900 dark:text-white">{formatPricingMoney(meter.official.unitPrice, meter.official.currencyCode, locale)}</div><div className="mt-0.5 text-[11px] text-slate-400">/ {officialRateUnit(meter.official, translate)}{variantLabel ? ` · ${variantLabel}` : ''}</div>{scheduleLines.length > 0 ? <div role="tooltip" className="pointer-events-none absolute left-0 top-full z-40 mt-1 hidden w-max max-w-xs rounded-md border border-slate-200 bg-white px-3 py-2 text-left text-[11px] leading-5 text-slate-600 shadow-lg group-hover/rate:block dark:border-white/10 dark:bg-[#1a1a1a] dark:text-slate-300"><div className="mb-1 font-semibold text-slate-800 dark:text-slate-100">{t('admin.pricing.schedule.title')}</div>{scheduleLines.map((line) => <div key={line}>{line}</div>)}</div> : null}</> : <span className="text-xs text-slate-400">{t('admin.pricing.settings.table.noOfficial')}</span>}</div><div><label className="mb-1 block text-[11px] font-medium text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.form.customerPrice')}</label><input className={inputClass} value={meter.customerPrice} onChange={(event) => updateMeter(index, { customerPrice: event.target.value, existingFormulaMode: event.target.value.trim() ? undefined : meter.existingFormulaMode })} placeholder={formula ? t('admin.pricing.settings.form.formulaPreserved') : t('admin.pricing.settings.form.followOfficialPlaceholder')} inputMode="decimal" /><div className="mt-1 text-[11px] text-slate-400">{formula ? t('admin.pricing.settings.form.formulaPreservedHint', { multiplier: normalizePricingDecimal(meter.existingMultiplier) || '1', markup: normalizePricingDecimal(meter.existingMarkupAmount) || '0' }) : t('admin.pricing.settings.form.followOfficialHint')}</div></div><button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-white/10 dark:hover:text-white" title={t('admin.pricing.settings.form.removeMeter')} aria-label={t('admin.pricing.settings.form.removeMeter')} onClick={() => removeMeter(index)}><Trash2 className="h-4 w-4" aria-hidden="true" /></button></div>;
+  return <div className="grid gap-3 px-3 py-3 md:grid-cols-[minmax(150px,1fr)_minmax(150px,1fr)_180px_36px] md:items-start"><div className="grid gap-2"><input className={inputClass} value={meter.meterCode} onChange={(event) => updateMeter(groupIndex, index, { meterCode: event.target.value })} placeholder={t('admin.pricing.settings.form.meterPlaceholder')} required={!meter.operationCode} /><input className={inputClass} value={meter.operationCode} onChange={(event) => updateMeter(groupIndex, index, { operationCode: event.target.value })} placeholder={t('admin.pricing.settings.form.operationPlaceholder')} required={!meter.meterCode} /><div className="text-[11px] text-slate-400">{formatPricingQuantity(meter.unitSize)} {formatPricingUnitLabel(meter.unitCode, translate)}{variantLabel ? ` · ${variantLabel}` : ''}{meter.ruleId ? ` · ${t('admin.pricing.settings.form.existing')}` : ''}</div></div><div className="group/rate relative min-h-9 rounded-md bg-slate-50 px-3 py-2 dark:bg-white/[0.04]">{meter.official ? <><div className="font-semibold tabular-nums text-slate-900 dark:text-white">{formatPricingMoney(meter.official.unitPrice, meter.official.currencyCode, locale)}</div><div className="mt-0.5 text-[11px] text-slate-400">/ {officialRateUnit(meter.official, translate)}{variantLabel ? ` · ${variantLabel}` : ''}</div>{scheduleLines.length > 0 ? <div role="tooltip" className="pointer-events-none absolute left-0 top-full z-40 mt-1 hidden w-max max-w-xs rounded-md border border-slate-200 bg-white px-3 py-2 text-left text-[11px] leading-5 text-slate-600 shadow-lg group-hover/rate:block dark:border-white/10 dark:bg-[#1a1a1a] dark:text-slate-300"><div className="mb-1 font-semibold text-slate-800 dark:text-slate-100">{t('admin.pricing.schedule.title')}</div>{scheduleLines.map((line) => <div key={line}>{line}</div>)}</div> : null}</> : <span className="text-xs text-slate-400">{t('admin.pricing.settings.table.noOfficial')}</span>}</div><div><label className="mb-1 block text-[11px] font-medium text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.form.customerPrice')}</label><input className={inputClass} value={meter.customerPrice} onChange={(event) => updateMeter(groupIndex, index, { customerPrice: event.target.value, existingFormulaMode: event.target.value.trim() ? undefined : meter.existingFormulaMode })} placeholder={formula ? t('admin.pricing.settings.form.formulaPreserved') : t('admin.pricing.settings.form.followOfficialPlaceholder')} inputMode="decimal" /><div className="mt-1 text-[11px] text-slate-400">{formula ? t('admin.pricing.settings.form.formulaPreservedHint', { multiplier: normalizePricingDecimal(meter.existingMultiplier) || '1', markup: normalizePricingDecimal(meter.existingMarkupAmount) || '0' }) : t('admin.pricing.settings.form.followOfficialHint')}</div></div><button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-white/10 dark:hover:text-white" title={t('admin.pricing.settings.form.removeMeter')} aria-label={t('admin.pricing.settings.form.removeMeter')} onClick={() => removeMeter(groupIndex, index)}><Trash2 className="h-4 w-4" aria-hidden="true" /></button></div>;
 }
 
-function TimeWindowFields({ form, t, updateWindow, toggleWindowDay, addWindow, setField }: { form: PriceSettingFormState; t: TranslationFunction; updateWindow: (index: number, patch: Partial<AdminPricingScheduleWindow>) => void; toggleWindowDay: (index: number, day: number) => void; addWindow: () => void; setField: <K extends keyof PriceSettingFormState>(key: K, value: PriceSettingFormState[K]) => void }) {
-  return <div className="flex flex-col gap-4 rounded-md bg-slate-50 p-3 dark:bg-white/[0.04]"><Field label={t('admin.pricing.settings.form.timeZone')} hint={t('admin.pricing.settings.form.timeZoneHint')}><input className={inputClass} list="pricing-time-zones" value={form.timeZone} onChange={(event) => setField('timeZone', event.target.value)} placeholder="Asia/Shanghai" required /><datalist id="pricing-time-zones"><option value="UTC" /><option value="Asia/Shanghai" /><option value="Asia/Tokyo" /><option value="America/Los_Angeles" /><option value="America/New_York" /><option value="Europe/London" /></datalist></Field><div className="flex items-center justify-between"><span className="text-sm font-medium text-slate-700 dark:text-slate-200">{t('admin.pricing.settings.form.windows')}</span><button type="button" className={secondaryButtonClass} onClick={addWindow}><Plus className="h-3.5 w-3.5" aria-hidden="true" />{t('admin.pricing.settings.form.addWindow')}</button></div>{form.weeklyWindows.map((window, index) => <div key={index} className="flex flex-col gap-3 rounded-md border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900"><div className="grid gap-3 md:grid-cols-[1fr_1fr_36px]"><Field label={t('admin.pricing.settings.form.windowCode')}><input className={inputClass} value={window.windowCode} onChange={(event) => updateWindow(index, { windowCode: event.target.value })} required /></Field><div className="grid grid-cols-2 gap-2"><Field label={t('admin.pricing.settings.form.startTime')}><input type="time" className={inputClass} value={window.startTime} onChange={(event) => updateWindow(index, { startTime: event.target.value })} required /></Field><Field label={t('admin.pricing.settings.form.endTime')}><input type="time" className={inputClass} value={window.endTime} onChange={(event) => updateWindow(index, { endTime: event.target.value })} required /></Field></div><button type="button" className="mt-5 inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10" title={t('admin.pricing.settings.form.removeWindow')} aria-label={t('admin.pricing.settings.form.removeWindow')} disabled={form.weeklyWindows.length <= 1} onClick={() => setField('weeklyWindows', form.weeklyWindows.filter((_, windowIndex) => windowIndex !== index))}><Trash2 className="h-4 w-4" aria-hidden="true" /></button></div><div><span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.form.days')}</span><div className="flex flex-wrap gap-2">{DAY_OPTIONS.map((day, dayIndex) => <label key={day} className="inline-flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300"><input type="checkbox" checked={window.daysOfWeek.includes(day)} onChange={() => toggleWindowDay(index, day)} />{t(`admin.pricing.settings.days.${day}`, { defaultValue: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][dayIndex] })}</label>)}</div></div><label className="inline-flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300"><input type="checkbox" checked={window.endDayOffset === 1} onChange={(event) => updateWindow(index, { endDayOffset: event.target.checked ? 1 : 0 })} />{t('admin.pricing.settings.form.crossMidnight')}</label></div>)}</div>;
+function TimeWindowFields({ group, groupIndex, t, updateWindow, toggleWindowDay, addWindow, updateGroup }: { group: PriceSettingRegionForm; groupIndex: number; t: TranslationFunction; updateWindow: (groupIndex: number, windowIndex: number, patch: Partial<AdminPricingScheduleWindow>) => void; toggleWindowDay: (groupIndex: number, windowIndex: number, day: number) => void; addWindow: (groupIndex: number) => void; updateGroup: (groupIndex: number, patch: Partial<PriceSettingRegionForm>) => void }) {
+  return <div className="flex flex-col gap-4 rounded-md bg-slate-50 p-3 dark:bg-white/[0.04]"><Field label={t('admin.pricing.settings.form.timeZone')} hint={t('admin.pricing.settings.form.timeZoneHint')}><input className={inputClass} list="pricing-time-zones" value={group.timeZone} onChange={(event) => updateGroup(groupIndex, { timeZone: event.target.value })} placeholder="Asia/Shanghai" required /><datalist id="pricing-time-zones"><option value="UTC" /><option value="Asia/Shanghai" /><option value="Asia/Tokyo" /><option value="America/Los_Angeles" /><option value="America/New_York" /><option value="Europe/London" /></datalist></Field><div className="flex items-center justify-between"><span className="text-sm font-medium text-slate-700 dark:text-slate-200">{t('admin.pricing.settings.form.windows')}</span><button type="button" className={secondaryButtonClass} onClick={() => addWindow(groupIndex)}><Plus className="h-3.5 w-3.5" aria-hidden="true" />{t('admin.pricing.settings.form.addWindow')}</button></div>{group.weeklyWindows.map((window, index) => <div key={index} className="flex flex-col gap-3 rounded-md border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900"><div className="grid gap-3 md:grid-cols-[1fr_1fr_36px]"><Field label={t('admin.pricing.settings.form.windowCode')}><input className={inputClass} value={window.windowCode} onChange={(event) => updateWindow(groupIndex, index, { windowCode: event.target.value })} required /></Field><div className="grid grid-cols-2 gap-2"><Field label={t('admin.pricing.settings.form.startTime')}><input type="time" className={inputClass} value={window.startTime} onChange={(event) => updateWindow(groupIndex, index, { startTime: event.target.value })} required /></Field><Field label={t('admin.pricing.settings.form.endTime')}><input type="time" className={inputClass} value={window.endTime} onChange={(event) => updateWindow(groupIndex, index, { endTime: event.target.value })} required /></Field></div><button type="button" className="mt-5 inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10" title={t('admin.pricing.settings.form.removeWindow')} aria-label={t('admin.pricing.settings.form.removeWindow')} disabled={group.weeklyWindows.length <= 1} onClick={() => updateGroup(groupIndex, { weeklyWindows: group.weeklyWindows.filter((_, windowIndex) => windowIndex !== index) })}><Trash2 className="h-4 w-4" aria-hidden="true" /></button></div><div><span className="mb-1 block text-xs font-medium text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.form.days')}</span><div className="flex flex-wrap gap-2">{DAY_OPTIONS.map((day, dayIndex) => <label key={day} className="inline-flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300"><input type="checkbox" checked={window.daysOfWeek.includes(day)} onChange={() => toggleWindowDay(groupIndex, index, day)} />{t(`admin.pricing.settings.days.${day}`, { defaultValue: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][dayIndex] })}</label>)}</div></div><label className="inline-flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300"><input type="checkbox" checked={window.endDayOffset === 1} onChange={(event) => updateWindow(groupIndex, index, { endDayOffset: event.target.checked ? 1 : 0 })} />{t('admin.pricing.settings.form.crossMidnight')}</label></div>)}</div>;
 }
 
 function isPriceSettingResourceType(value: string): value is PriceSettingResourceType { return PRICE_SETTING_RESOURCE_TYPES.includes(value as PriceSettingResourceType); }
@@ -1086,95 +1345,110 @@ export function buildPriceSettingMutations(form: PriceSettingFormState, t: Trans
   const vendorCode = form.vendorCode.trim();
   if (!productCode) throw new Error(t('admin.pricing.settings.form.productRequired'));
   if (!vendorCode) throw new Error(t('admin.pricing.settings.form.vendorRequired'));
-  if (!form.pricingPlanId.trim()) throw new Error(t('admin.pricing.settings.form.pricingPlanRequired'));
-  if (form.meterPrices.length === 0 && form.removedRuleIds.length === 0) throw new Error(t('admin.pricing.settings.form.metersRequired'));
-  if (form.metadataConflict && !form.acknowledgeMetadataConflict) {
-    throw new Error(t('admin.pricing.settings.form.metadataConflictRequired'));
-  }
-  const priority = Number.parseInt(form.priority, 10);
-  if (!Number.isInteger(priority) || priority < 0) throw new Error(t('admin.pricing.settings.form.priorityInvalid'));
-  const effectiveFrom = parseFormTimestamp(form.effectiveFrom);
-  const effectiveTo = parseFormTimestamp(form.effectiveTo);
-  if (form.effectiveFrom.trim() && effectiveFrom === undefined) throw new Error(t('admin.pricing.settings.form.datetimeInvalid'));
-  if (form.effectiveTo.trim() && effectiveTo === undefined) throw new Error(t('admin.pricing.settings.form.datetimeInvalid'));
-  if (effectiveFrom !== undefined && effectiveTo !== undefined && effectiveTo <= effectiveFrom) {
-    throw new Error(t('admin.pricing.settings.form.datetimeOrderInvalid'));
-  }
-  const schedule = buildPriceSchedule(form, t);
+  if (form.regionGroups.length === 0) throw new Error(t('admin.pricing.settings.form.metersRequired'));
   const now = Date.now();
   const catalogKey = form.catalogKey.trim() || `${vendorCode}/${productCode}`;
-  const mutations = form.meterPrices.flatMap((meter, index): PriceSettingMutation[] => {
-    const meterCode = meter.meterCode.trim();
-    const operationCode = meter.operationCode.trim();
-    if (!meterCode && !operationCode) throw new Error(t('admin.pricing.settings.form.meterRequired'));
-    const unitPrice = meter.customerPrice.trim();
-    if (!unitPrice) {
-      if (!meter.ruleId) return [];
-      if (meter.existingFormulaMode === 'multiplier_markup') {
-        return [{
-          action: 'upsert',
-          id: meter.ruleId,
-          input: {
-            ruleCode: meter.ruleCode,
-            pricingPlanId: form.pricingPlanId.trim(),
-            productCode,
-            operationCode: operationCode || undefined,
-            meterCode: meterCode || undefined,
-            providerCode: form.providerCode.trim() || undefined,
-            regionCode: form.regionCode.trim() || undefined,
-            catalogKey,
-            formulaMode: 'multiplier_markup',
-            multiplier: meter.existingMultiplier || '1',
-            markupAmount: meter.existingMarkupAmount || '0',
-            schedule,
-            priority,
-            effectiveFrom: form.effectiveFrom.trim() || undefined,
-            effectiveTo: form.effectiveTo.trim() || undefined,
-            status: form.status,
-            conditions: meter.conditions ?? [],
-          },
-        }];
+  // Each region group validates and mutates independently: a save is a batch
+  // of per-region rule upserts/deletes, one rule per meter row.
+  const mutations = form.regionGroups.flatMap((group, groupIndex) => {
+    if (!group.pricingPlanId.trim()) throw new Error(t('admin.pricing.settings.form.pricingPlanRequired'));
+    if (group.meters.length === 0 && group.removedRuleIds.length === 0) {
+      // A brand-new group still needs at least one meter to be worth saving.
+      if (group.regionLocked) return [];
+      throw new Error(t('admin.pricing.settings.form.metersRequired'));
+    }
+    if (group.metadataConflict && !group.acknowledgeMetadataConflict) {
+      throw new Error(t('admin.pricing.settings.form.metadataConflictRequired'));
+    }
+    const regionCode = group.regionCode.trim();
+    if (!regionCode && !group.regionLocked) {
+      throw new Error(t('admin.pricing.settings.form.regionRequired'));
+    }
+    const priority = Number.parseInt(group.priority, 10);
+    if (!Number.isInteger(priority) || priority < 0) throw new Error(t('admin.pricing.settings.form.priorityInvalid'));
+    const effectiveFrom = parseFormTimestamp(group.effectiveFrom);
+    const effectiveTo = parseFormTimestamp(group.effectiveTo);
+    if (group.effectiveFrom.trim() && effectiveFrom === undefined) throw new Error(t('admin.pricing.settings.form.datetimeInvalid'));
+    if (group.effectiveTo.trim() && effectiveTo === undefined) throw new Error(t('admin.pricing.settings.form.datetimeInvalid'));
+    if (effectiveFrom !== undefined && effectiveTo !== undefined && effectiveTo <= effectiveFrom) {
+      throw new Error(t('admin.pricing.settings.form.datetimeOrderInvalid'));
+    }
+    const schedule = buildPriceSchedule(group, t);
+    const groupMutations = group.meters.flatMap((meter, index): PriceSettingMutation[] => {
+      const meterCode = meter.meterCode.trim();
+      const operationCode = meter.operationCode.trim();
+      if (!meterCode && !operationCode) throw new Error(t('admin.pricing.settings.form.meterRequired'));
+      const unitPrice = meter.customerPrice.trim();
+      if (!unitPrice) {
+        if (!meter.ruleId) return [];
+        if (meter.existingFormulaMode === 'multiplier_markup') {
+          return [{
+            action: 'upsert',
+            id: meter.ruleId,
+            input: {
+              ruleCode: meter.ruleCode,
+              pricingPlanId: group.pricingPlanId.trim(),
+              productCode,
+              operationCode: operationCode || undefined,
+              meterCode: meterCode || undefined,
+              providerCode: form.providerCode.trim() || undefined,
+              regionCode: regionCode || undefined,
+              catalogKey,
+              formulaMode: 'multiplier_markup',
+              multiplier: meter.existingMultiplier || '1',
+              markupAmount: meter.existingMarkupAmount || '0',
+              schedule,
+              priority,
+              effectiveFrom: group.effectiveFrom.trim() || undefined,
+              effectiveTo: group.effectiveTo.trim() || undefined,
+              status: group.status,
+              conditions: meter.conditions ?? [],
+            },
+          }];
+        }
+        return [{ action: 'delete', id: meter.ruleId }];
       }
-      return [{ action: 'delete', id: meter.ruleId }];
-    }
-    if (!/^[0-9]+(?:\.[0-9]{1,12})?$/.test(unitPrice)) throw new Error(t('admin.pricing.settings.form.unitPriceRequired'));
-    const normalizedUnitPrice = normalizePricingDecimal(unitPrice);
-    if (!normalizedUnitPrice || !/^[0-9]+(?:\.[0-9]{1,12})?$/.test(normalizedUnitPrice)) {
-      throw new Error(t('admin.pricing.settings.form.unitPriceRequired'));
-    }
-    const ruleCode = meter.ruleCode || `${productCode}-${meterCode || operationCode || 'default'}-${now}-${index}`.replace(/[^A-Za-z0-9_.:-]/g, '-').slice(0, 96);
-    return [{
-      action: 'upsert',
-      id: meter.ruleId,
-      input: {
-        ruleCode: meter.ruleId ? meter.ruleCode : ruleCode,
-        pricingPlanId: form.pricingPlanId.trim(),
-        productCode,
-        operationCode: operationCode || undefined,
-        meterCode: meterCode || undefined,
-        providerCode: form.providerCode.trim() || undefined,
-        regionCode: form.regionCode.trim() || undefined,
-        catalogKey,
-        formulaMode: 'unit_price_override',
-        unitPriceOverride: normalizedUnitPrice,
-        schedule,
-        priority,
-        effectiveFrom: form.effectiveFrom.trim() || undefined,
-        effectiveTo: form.effectiveTo.trim() || undefined,
-        status: form.status,
-        conditions: meter.conditions ?? [],
-      },
-    }];
+      if (!/^[0-9]+(?:\.[0-9]{1,12})?$/.test(unitPrice)) throw new Error(t('admin.pricing.settings.form.unitPriceRequired'));
+      const normalizedUnitPrice = normalizePricingDecimal(unitPrice);
+      if (!normalizedUnitPrice || !/^[0-9]+(?:\.[0-9]{1,12})?$/.test(normalizedUnitPrice)) {
+        throw new Error(t('admin.pricing.settings.form.unitPriceRequired'));
+      }
+      const ruleCode = meter.ruleCode || `${productCode}-${meterCode || operationCode || 'default'}-${now}-${groupIndex}-${index}`.replace(/[^A-Za-z0-9_.:-]/g, '-').slice(0, 96);
+      return [{
+        action: 'upsert',
+        id: meter.ruleId,
+        input: {
+          ruleCode: meter.ruleId ? meter.ruleCode : ruleCode,
+          pricingPlanId: group.pricingPlanId.trim(),
+          productCode,
+          operationCode: operationCode || undefined,
+          meterCode: meterCode || undefined,
+          providerCode: form.providerCode.trim() || undefined,
+          regionCode: regionCode || undefined,
+          catalogKey,
+          formulaMode: 'unit_price_override',
+          unitPriceOverride: normalizedUnitPrice,
+          schedule,
+          priority,
+          effectiveFrom: group.effectiveFrom.trim() || undefined,
+          effectiveTo: group.effectiveTo.trim() || undefined,
+          status: group.status,
+          conditions: meter.conditions ?? [],
+        },
+      }];
+    });
+    const removed = group.removedRuleIds
+      .filter((id) => !groupMutations.some((mutation) => mutation.id === id))
+      .map((id): PriceSettingMutation => ({ action: 'delete', id }));
+    return [...groupMutations, ...removed];
   });
-  const removed = form.removedRuleIds
-    .filter((id) => !mutations.some((mutation) => mutation.id === id))
-    .map((id): PriceSettingMutation => ({ action: 'delete', id }));
-  const allMutations = [...mutations, ...removed];
-  if (allMutations.length === 0) throw new Error(t('admin.pricing.settings.form.salesPriceRequired'));
-  return allMutations;
+  if (mutations.length === 0) throw new Error(t('admin.pricing.settings.form.salesPriceRequired'));
+  return mutations;
 }
 
-function buildPriceSchedule(form: PriceSettingFormState, t: TranslationFunction): AdminPricingSchedule | undefined {
+type PriceSettingScheduleSource = Pick<PriceSettingRegionForm, 'priceMode' | 'timeZone' | 'weeklyWindows' | 'includeDates' | 'excludeDates'>;
+
+function buildPriceSchedule(form: PriceSettingScheduleSource, t: TranslationFunction): AdminPricingSchedule | undefined {
   if (form.priceMode === 'standard') return undefined;
 
   const timeZone = form.timeZone.trim();

@@ -22,7 +22,9 @@ import {
 } from './priceSettingModel';
 import {
   buildPriceSettingMutations,
+  regionGroupFormsFromPrices,
   type PriceSettingFormState,
+  type PriceSettingRegionForm,
 } from './priceSettingsPage';
 import type {
   AdminOfficialPricingProductItem,
@@ -325,10 +327,7 @@ describe('price setting model', () => {
 
   it('creates one mutation per meter while preserving decimal strings and existing ids', () => {
     const form = baseForm({
-      productCode: 'gpt-4o',
-      providerCode: 'openai',
-      regionCode: 'global',
-      meterPrices: [
+      meters: [
         {
           key: 'input',
           ruleId: 'rule-input',
@@ -368,10 +367,80 @@ describe('price setting model', () => {
     expect(mutations[1]?.input?.catalogKey).toBe('openai/global/gpt-4o');
   });
 
+  it('seeds one personalized region group per priced region', () => {
+    const cnInput = { ...officialRate('llm_input_token', 'cn-input'), regionCode: 'cn', currencyCode: 'CNY', unitCode: 'token', unitSize: '1M', unitPrice: '12' };
+    const cnOutput = { ...officialRate('llm_output_token', 'cn-output'), regionCode: 'cn', currencyCode: 'CNY', unitCode: 'token', unitSize: '1M', unitPrice: '30' };
+    const globalInput = { ...officialRate('llm_input_token', 'global-input'), regionCode: 'global', currencyCode: 'USD', unitCode: 'token', unitSize: '1M', unitPrice: '2.5' };
+    const cnInputRule = pricingRule({
+      id: 'rule-cn-input',
+      regionCode: 'cn',
+      meterCode: 'llm_input_token',
+      pricingPlanId: 'plan-2',
+      priority: 50,
+      schedule: {
+        timeZone: 'Asia/Shanghai',
+        weeklyWindows: [{ windowCode: 'business', daysOfWeek: [1, 2, 3, 4, 5], startTime: '09:00:00', endTime: '18:00:00', endDayOffset: 0 }],
+        includeDates: [],
+        excludeDates: [],
+      },
+    });
+    const cnOutputRule = pricingRule({ id: 'rule-cn-output', regionCode: 'cn', meterCode: 'llm_output_token', pricingPlanId: 'plan-2', priority: 60, status: 'inactive' });
+    const globalRule = pricingRule({ id: 'rule-global', regionCode: 'global', meterCode: 'llm_input_token' });
+
+    const groups = regionGroupFormsFromPrices([
+      { official: cnInput, rule: cnInputRule },
+      { official: cnOutput, rule: cnOutputRule },
+      { official: globalInput, rule: globalRule },
+    ], 'plan-1');
+
+    expect(groups.map((group) => group.regionCode)).toEqual(['global', 'cn']);
+    expect(groups.every((group) => group.regionLocked)).toBe(true);
+
+    const cn = groups[1];
+    // The cn group keeps its own lifecycle (plan, priority, schedule) instead
+    // of inheriting the global group's policy.
+    expect(cn?.currencyCode).toBe('CNY');
+    expect(cn?.pricingPlanId).toBe('plan-2');
+    expect(cn?.priority).toBe('50');
+    expect(cn?.status).toBe('active');
+    expect(cn?.priceMode).toBe('time_window');
+    expect(cn?.weeklyWindows).toEqual([{ windowCode: 'business', daysOfWeek: [1, 2, 3, 4, 5], startTime: '09:00:00', endTime: '18:00:00', endDayOffset: 0 }]);
+    expect(cn?.meters).toHaveLength(2);
+    // The two cn rules disagree on priority/status, so applying the group's
+    // unified lifecycle needs an explicit acknowledgement before saving.
+    expect(cn?.metadataConflict).toBe(true);
+    expect(groups[0]?.metadataConflict).toBe(false);
+  });
+
+  it('emits per-region mutations for each region group', () => {
+    const form = baseForm({
+      regionCode: 'cn',
+      currencyCode: 'CNY',
+      meters: [{ key: 'input', meterCode: 'llm_input_token', operationCode: 'chat.completions', unitCode: 'token', unitSize: '1M', customerPrice: '12' }],
+    });
+    form.regionGroups.push(baseGroup({ key: 'region-global', regionCode: 'global', currencyCode: 'USD' }));
+
+    const mutations = buildPriceSettingMutations(form, translate);
+
+    expect(mutations.map((mutation) => mutation.input?.regionCode)).toEqual(['cn', 'global']);
+    expect(mutations.every((mutation) => mutation.input?.catalogKey === 'openai/global/gpt-4o')).toBe(true);
+  });
+
+  it('requires a region on new unlocked groups and skips empty locked groups', () => {
+    expect(() => buildPriceSettingMutations(baseForm({ regionLocked: false, regionCode: '' }), translate))
+      .toThrow('admin.pricing.settings.form.regionRequired');
+
+    // A locked group with nothing configured contributes no mutations instead
+    // of failing the whole save.
+    const form = baseForm();
+    form.regionGroups.push(baseGroup({ key: 'region-us', regionCode: 'us-east', meters: [], removedRuleIds: [] }));
+    expect(buildPriceSettingMutations(form, translate)).toHaveLength(1);
+  });
+
   it('deletes a cleared sales rule so runtime falls back to the official price', () => {
     const mutations = buildPriceSettingMutations(baseForm({
-      meterPrices: [{
-        ...baseForm().meterPrices[0],
+      meters: [{
+        ...baseGroup().meters[0],
         ruleId: 'rule-input',
         customerPrice: '',
       }],
@@ -382,8 +451,8 @@ describe('price setting model', () => {
 
   it('preserves an existing multiplier and markup rule when no direct sales price is entered', () => {
     const mutations = buildPriceSettingMutations(baseForm({
-      meterPrices: [{
-        ...baseForm().meterPrices[0],
+      meters: [{
+        ...baseGroup().meters[0],
         ruleId: 'formula-rule',
         ruleCode: 'gpt-4o-input-formula',
         customerPrice: '',
@@ -408,14 +477,14 @@ describe('price setting model', () => {
   it('preserves conditions on a custom rule edited from the price settings page', () => {
     const conditions = [{ dimensionCode: 'resolution', operatorCode: 'eq' as const, value: '1080p' }];
     const mutations = buildPriceSettingMutations(baseForm({
-      meterPrices: [{ ...baseForm().meterPrices[0], ruleId: 'conditional-rule', customerPrice: '0.02', conditions }],
+      meters: [{ ...baseGroup().meters[0], ruleId: 'conditional-rule', customerPrice: '0.02', conditions }],
     }), translate);
     expect(mutations[0]?.input?.conditions).toEqual(conditions);
   });
 
-  it('deletes rules for meters removed from the batch editor', () => {
+  it('deletes rules for meters removed from the region group', () => {
     const mutations = buildPriceSettingMutations(baseForm({
-      meterPrices: [],
+      meters: [],
       removedRuleIds: ['rule-input', 'rule-output'],
     }), translate);
 
@@ -426,19 +495,24 @@ describe('price setting model', () => {
   });
 
   it('builds the vendor/product catalog scope when creating a new setting', () => {
-    const mutations = buildPriceSettingMutations(baseForm({ catalogKey: '' }), translate);
+    const mutations = buildPriceSettingMutations(baseForm({}, { catalogKey: '' }), translate);
     expect(mutations[0]?.input?.catalogKey).toBe('openai/gpt-4o');
   });
 
-  it('rejects incomplete batch settings before any request is sent', () => {
-    expect(() => buildPriceSettingMutations(baseForm({ meterPrices: [] }), translate)).toThrow(
+  it('rejects incomplete region groups before any request is sent', () => {
+    // A locked group with nothing to save contributes no mutations, so an
+    // all-empty form fails closed on the final sales-price guard.
+    expect(() => buildPriceSettingMutations(baseForm({ meters: [], removedRuleIds: [] }), translate)).toThrow(
+      'admin.pricing.settings.form.salesPriceRequired',
+    );
+    expect(() => buildPriceSettingMutations(baseForm({ regionLocked: false, meters: [], removedRuleIds: [] }), translate)).toThrow(
       'admin.pricing.settings.form.metersRequired',
     );
     expect(() => buildPriceSettingMutations(baseForm({
-      meterPrices: [{ ...baseForm().meterPrices[0], meterCode: '', operationCode: '', customerPrice: '0.01' }],
+      meters: [{ ...baseGroup().meters[0], meterCode: '', operationCode: '', customerPrice: '0.01' }],
     }), translate)).toThrow('admin.pricing.settings.form.meterRequired');
     expect(() => buildPriceSettingMutations(baseForm({
-      meterPrices: [{ ...baseForm().meterPrices[0], customerPrice: '1e-6' }],
+      meters: [{ ...baseGroup().meters[0], customerPrice: '1e-6' }],
     }), translate)).toThrow('admin.pricing.settings.form.unitPriceRequired');
     expect(() => buildPriceSettingMutations(baseForm({ effectiveFrom: '2026-08-20T00:00:00Z', effectiveTo: '2026-08-19T00:00:00Z' }), translate)).toThrow('admin.pricing.settings.form.datetimeOrderInvalid');
     expect(() => buildPriceSettingMutations(baseForm({ priceMode: 'time_window', includeDates: '2026-02-30' }), translate)).toThrow('admin.pricing.settings.form.dateInvalid');
@@ -474,19 +548,14 @@ describe('price setting model', () => {
   });
 });
 
-function baseForm(overrides: Partial<PriceSettingFormState> = {}): PriceSettingFormState {
+function baseGroup(overrides: Partial<PriceSettingRegionForm> = {}): PriceSettingRegionForm {
   return {
-    catalogKey: 'openai/global/gpt-4o',
-    vendorCode: 'openai',
-    productCode: 'gpt-4o',
-    resourceCode: 'gpt-4o',
-    resourceDisplayName: 'GPT-4o',
-    providerCode: 'openai',
+    key: 'region-global',
     regionCode: 'global',
-    resourceType: 'llm',
+    regionLocked: true,
+    currencyCode: 'USD',
     pricingPlanId: 'plan-1',
-    removedRuleIds: [],
-    meterPrices: [{
+    meters: [{
       key: 'input',
       meterCode: 'llm_input_token',
       operationCode: 'chat.completions',
@@ -494,6 +563,7 @@ function baseForm(overrides: Partial<PriceSettingFormState> = {}): PriceSettingF
       unitSize: '1M',
       customerPrice: '0.01',
     }],
+    removedRuleIds: [],
     priceMode: 'standard',
     timeZone: 'Asia/Shanghai',
     weeklyWindows: [{ windowCode: 'business-hours', daysOfWeek: [1, 2, 3, 4, 5], startTime: '09:00', endTime: '12:00', endDayOffset: 0 }],
@@ -503,7 +573,27 @@ function baseForm(overrides: Partial<PriceSettingFormState> = {}): PriceSettingF
     effectiveFrom: '',
     effectiveTo: '',
     status: 'active',
+    metadataConflict: false,
+    acknowledgeMetadataConflict: false,
     ...overrides,
+  };
+}
+
+function baseForm(
+  groupOverrides: Partial<PriceSettingRegionForm> = {},
+  formOverrides: Partial<Omit<PriceSettingFormState, 'regionGroups' | 'activeRegionKey'>> = {},
+): PriceSettingFormState {
+  return {
+    catalogKey: 'openai/global/gpt-4o',
+    vendorCode: 'openai',
+    productCode: 'gpt-4o',
+    resourceCode: 'gpt-4o',
+    resourceDisplayName: 'GPT-4o',
+    providerCode: 'openai',
+    resourceType: 'llm',
+    regionGroups: [baseGroup(groupOverrides)],
+    activeRegionKey: 'region-global',
+    ...formOverrides,
   };
 }
 
