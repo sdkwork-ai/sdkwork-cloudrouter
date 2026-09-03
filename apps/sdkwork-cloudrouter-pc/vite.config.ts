@@ -274,8 +274,69 @@ function cloudrouterImportMetaHotTransform() {
   };
 }
 
+/**
+ * Fields of the deploy-time browser runtime document
+ * (apps/<app>/public/runtime-env.json — ENVIRONMENT_SPEC.md §5.1.0.1) that
+ * override the dotenv-derived values for a *built* bundle.
+ *
+ * The dotenv surface additionally carries the dev:cloud local gateway override
+ * (SDKWORK_LOCAL_PLATFORM_API_GATEWAY_HTTP_URL → 127.0.0.1:3900), which only
+ * makes sense for `pnpm dev:cloud`: baking a loopback API base into a deployed
+ * artifact would leave the browser calling its own origin. The runtime document
+ * is materialized by the canonical build runner immediately before Vite runs,
+ * so it is the deploy-time authority for the profile being built.
+ *
+ * driveAppApiBaseUrl is intentionally absent: drive is a separate service with
+ * its own topology URL, not the platform gateway.
+ */
+const BROWSER_RUNTIME_ENV_DOCUMENT_FILE = 'runtime-env.json';
+const BROWSER_RUNTIME_ENV_DOCUMENT_URL_FIELDS = {
+  VITE_API_BASE_URL: 'openApiBaseUrl',
+  VITE_CLOUDROUTER_OPEN_API_BASE_URL: 'openApiBaseUrl',
+  VITE_CLOUDROUTER_APP_API_BASE_URL: 'appApiBaseUrl',
+  VITE_CLOUDROUTER_BACKEND_API_BASE_URL: 'backendApiBaseUrl',
+  VITE_SDKWORK_APPBASE_APP_API_BASE_URL: 'appbaseAppApiBaseUrl',
+} as const;
+
+/** Fold a ';'-joined multi-origin list to its registered primary origin. */
+function primaryBrowserRuntimeOrigin(value: unknown): string | undefined {
+  const trimmed = typeof value === 'string' ? value.trim() : '';
+  if (!trimmed) {
+    return undefined;
+  }
+  return trimmed.split(';')[0]?.trim() || undefined;
+}
+
+export function readBrowserRuntimeEnvDocumentOverrides(configDir: string): Record<string, string> {
+  const documentPath = path.join(configDir, 'public', BROWSER_RUNTIME_ENV_DOCUMENT_FILE);
+  if (!fs.existsSync(documentPath)) {
+    return {};
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(fs.readFileSync(documentPath, 'utf8'));
+  } catch {
+    return {};
+  }
+  if (!parsed || typeof parsed !== 'object') {
+    return {};
+  }
+
+  const document = parsed as Record<string, unknown>;
+  const overrides: Record<string, string> = {};
+  for (const [targetKey, documentField] of Object.entries(BROWSER_RUNTIME_ENV_DOCUMENT_URL_FIELDS)) {
+    const value = primaryBrowserRuntimeOrigin(document[documentField]);
+    if (value) {
+      overrides[targetKey] = value;
+    }
+  }
+  return overrides;
+}
+
 function cloudrouterRuntimeEnvPlugin(
   resolveEnv: () => NodeJS.ProcessEnv = () => process.env,
+  configDir: string = process.cwd(),
 ): Plugin {
   return {
     name: 'cloudrouter-runtime-env',
@@ -290,6 +351,23 @@ function cloudrouterRuntimeEnvPlugin(
         response.setHeader('Content-Type', 'application/javascript; charset=utf-8');
         response.setHeader('Cache-Control', 'no-store');
         response.end(buildPortalRuntimeEnvScript(resolvePortalRuntimeEnv(resolveEnv())));
+      });
+    },
+    // Static hosting has no dev middleware: emit the same script the dev server
+    // serves so `window.__CLOUDROUTER_ENV__` is defined at runtime. Without this
+    // the injected <script src="/runtime-env.js"> tag resolves to a missing
+    // file, static hosts answer with the SPA fallback (index.html served as
+    // text/html), the module script fails to parse, and every SDK base URL
+    // falls back to its root-relative same-origin prefix — e.g. POST
+    // /app/v3/api/oauth/device_authorizations hitting the static handler (405).
+    generateBundle() {
+      this.emitFile({
+        type: 'asset',
+        fileName: RUNTIME_ENV_SCRIPT_PATH.replace(/^\//u, ''),
+        source: buildPortalRuntimeEnvScript({
+          ...resolvePortalRuntimeEnv(resolveEnv()),
+          ...readBrowserRuntimeEnvDocumentOverrides(configDir),
+        }),
       });
     },
     transformIndexHtml: {
@@ -683,7 +761,7 @@ export default defineConfig(({mode}) => {
         environment: mode,
       }),
       cloudrouterMarkdownCjsInteropShim(configDir),
-      cloudrouterRuntimeEnvPlugin(() => ({ ...process.env, ...env })),
+      cloudrouterRuntimeEnvPlugin(() => ({ ...process.env, ...env }), configDir),
       react(),
       cloudrouterNodeEnvTransform(),
       cloudrouterImportMetaHotTransform(),
