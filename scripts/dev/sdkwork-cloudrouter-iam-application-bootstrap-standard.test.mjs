@@ -12,9 +12,9 @@ function read(relativePath, root = repoRoot) {
 }
 
 const bootstrapSource = read(
-  'services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/iam_application_bootstrap.rs',
+  'crates/sdkwork-api-cloudrouter-assembly/src/bootstrap/iam.rs',
 );
-const routerServiceCargo = read('services/sdkwork-cloudrouter-router-service/Cargo.toml');
+const bootstrapCargo = read('crates/sdkwork-api-cloudrouter-assembly/Cargo.toml');
 const workspaceCargo = read('Cargo.toml');
 const topologySource = read('scripts/lib/cloud-router-topology.mjs');
 const sharedBootstrapSource = read(
@@ -28,20 +28,20 @@ const iamAdapterSource = read(
 
 assert.match(
   bootstrapSource,
-  /ensure_tenant_application_from_app_root_with_env_and_fallback/u,
-  'Cloud Router IAM bootstrap must delegate to the shared embedded bootstrap crate with repository-root fallback.',
+  /ensure_tenant_application_from_app_root/u,
+  'Cloud Router assembly IAM bootstrap must delegate to the shared embedded bootstrap crate.',
 );
 
 assert.doesNotMatch(
   bootstrapSource,
   /ensure_tenant_application_runtime/u,
-  'Cloud Router adapter must not duplicate ensure_tenant_application_runtime.',
+  'Cloud Router assembly adapter must not duplicate ensure_tenant_application_runtime.',
 );
 
 assert.match(
-  routerServiceCargo,
+  bootstrapCargo,
   /sdkwork-iam-embedded-application-bootstrap/u,
-  'Router service must depend on sdkwork-iam-embedded-application-bootstrap.',
+  'Assembly crate must depend on sdkwork-iam-embedded-application-bootstrap.',
 );
 
 assert.match(

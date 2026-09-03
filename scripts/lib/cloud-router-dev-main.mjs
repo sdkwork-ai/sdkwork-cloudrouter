@@ -28,9 +28,13 @@ function mapTargetToProductMode(target, legacyMode, deploymentProfile = 'standal
     return deploymentProfile === 'cloud' ? 'client' : 'browser';
   }
   if (target === 'browser') {
-    // Cloud development consumes already deployed cloud.development API
-    // surfaces: start only the local developer-facing client (Vite) against
-    // the remote cloud gateway, never a local API/gateway/database process.
+    // Cloud development starts only the local developer-facing client (Vite).
+    // Its base URLs bind to the locally started sdkwork-api-cloud-gateway
+    // (`pnpm dev:cloud` in sdkwork-api-cloud-gateway, 127.0.0.1:3900 — see
+    // SDKWORK_LOCAL_PLATFORM_API_GATEWAY_HTTP_URL in etc/topology/
+    // cloud.development.env), never a local API/gateway/database process
+    // owned by this repository. Domain edges (api-dev.<base-domain>) are a
+    // cloud-mode build/deploy concern, not a dev:cloud concern.
     return deploymentProfile === 'cloud' ? 'client' : 'server';
   }
   if (target === 'plan') {

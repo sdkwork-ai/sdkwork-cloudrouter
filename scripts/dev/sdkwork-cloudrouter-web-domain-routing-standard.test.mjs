@@ -26,13 +26,7 @@ const expectedCloudApiBaseUrls = {
   staging: 'https://api-staging.sdkwork.com/',
   production: 'https://api.sdkwork.com/',
 };
-// Topology cloudPublicHosts application.public-ingress host sets per environment.
-const expectedHostSets = {
-  development: ['router-dev.sdkwork.com', 'router-dev.birdcoder.com', 'router-dev.dtupay.com', 'cloudrouter-dev.sdkwork.com'],
-  test: ['router-test.sdkwork.com', 'router-test.birdcoder.com', 'router-test.dtupay.com', 'cloudrouter-test.sdkwork.com'],
-  staging: ['router-staging.sdkwork.com', 'router-staging.birdcoder.com', 'router-staging.dtupay.com', 'cloudrouter-staging.sdkwork.com'],
-  production: ['router.sdkwork.com', 'router.birdcoder.com', 'router.dtupay.com', 'cloudrouter.sdkwork.com'],
-};
+// Topology cloudPublicHosts application.public-ingress spot checks.
 
 for (const [environment, expectedOrigin] of Object.entries(expectedOrigins)) {
   const canonical = deployment.environments?.[environment];
@@ -42,7 +36,16 @@ for (const [environment, expectedOrigin] of Object.entries(expectedOrigins)) {
   const parsed = new URL(expectedOrigin);
   assert.equal(parsed.pathname, '/', `${environment} must be served at the origin root`);
   assert.doesNotMatch(parsed.hostname, /^api(?:-|\.)/u);
-  assert.equal(canonical.cloudApiBaseUrl, expectedCloudApiBaseUrls[environment]);
+  // cloudApiBaseUrl declares the full registered api-<suffix>.<base-domain>
+  // family (';'-joined, ENVIRONMENT_SPEC §5.1.0.1); the canonical sdkwork.com
+  // origin must be a member of that family.
+  const cloudApiOriginFamily = String(canonical.cloudApiBaseUrl)
+    .split(';')
+    .map((origin) => origin.trim().replace(/\/+$/u, ''));
+  assert.ok(
+    cloudApiOriginFamily.includes(expectedCloudApiBaseUrls[environment].replace(/\/+$/u, '')),
+    `${environment} cloudApiBaseUrl must register ${expectedCloudApiBaseUrls[environment]}`,
+  );
 }
 
 const publicHosts = topology.cloudPublicHosts?.['application.public-ingress'];
@@ -100,20 +103,34 @@ const workspaceConfigText = [
 ].join('\n');
 assert.doesNotMatch(workspaceConfigText, /testapi\.sdkwork\.com/u, 'testapi.sdkwork.com is retired');
 
-// deploy.yaml cloud expose domain + aliases must all belong to the registered host set.
+// deploy.yaml cloud expose domain + aliases must all belong to a host family
+// registered in the topology cloudPublicHosts registry (any surface, any
+// environment; ADR-20260810-multi-base-domain-production-binding).
 // (standalone.production uses an internal customer domain and is exempt.)
+const registeredHostSets = new Set(
+  Object.values(topology.cloudPublicHosts ?? {})
+    .flatMap((entry) => [
+      ...(Array.isArray(entry.httpHosts) ? entry.httpHosts : []),
+      ...Object.values(entry.environments ?? {}).flatMap(
+        (envEntry) => (Array.isArray(envEntry?.httpHosts) ? envEntry.httpHosts : []),
+      ),
+    ])
+    .map((host) => String(host).trim())
+    .filter(Boolean),
+);
 const cloudSection = deployManifest.split('standalone.production:')[0] ?? deployManifest;
-const hostSets = new Set(Object.values(expectedHostSets).flat());
-const exposeBlocks = [...cloudSection.matchAll(/domain:\s*([^\s]+)[\s\S]*?(?=\n\s{4}- domain:|\n\s{2}cloud\.|\n\s{2}standalone\.|$)/gu)];
-assert.ok(exposeBlocks.length >= 3, 'deploy.yaml must declare cloud test/staging/production exposes');
-for (const block of exposeBlocks) {
-  const domain = block[1];
-  assert.ok(hostSets.has(domain), `expose domain ${domain} must be registered in cloudPublicHosts`);
-  for (const aliasMatch of block[0].matchAll(/aliases:\s*\n((?:\s+- [^\n]+\n?)+)/gu)) {
-    for (const aliasLine of aliasMatch[1].matchAll(/^\s+- ([^\n]+)$/gmu)) {
-      const alias = aliasLine[1].trim();
-      assert.ok(hostSets.has(alias), `expose alias ${alias} must be registered in cloudPublicHosts`);
-    }
+// Each expose block starts at `      - domain:`; split on the domain markers so
+// alias extraction can never bleed into the next block.
+const exposeChunks = cloudSection.split(/\n(?=\s*- domain:\s)/u).slice(1);
+assert.ok(exposeChunks.length >= 3, 'deploy.yaml must declare cloud test/staging/production exposes');
+for (const chunk of exposeChunks) {
+  const domain = chunk.match(/^\s*- domain:\s*([^\s]+)/u)?.[1];
+  assert.ok(domain, 'expose block must declare a domain');
+  assert.ok(registeredHostSets.has(domain), `expose domain ${domain} must be registered in cloudPublicHosts`);
+  const aliasBlock = chunk.match(/aliases:\s*\n((?:\s+- [^\n]+\n?)*)/u)?.[1] ?? '';
+  for (const aliasLine of aliasBlock.matchAll(/^\s+- ([^\n]+)$/gmu)) {
+    const alias = aliasLine[1].trim();
+    assert.ok(registeredHostSets.has(alias), `expose alias ${alias} must be registered in cloudPublicHosts`);
   }
 }
 
