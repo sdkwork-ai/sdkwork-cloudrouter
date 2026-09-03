@@ -28,6 +28,8 @@ import {
   resolveBrowserDevProxyOrigin,
   sanitizeBrowserDevelopmentEnvRecord,
   sanitizeBrowserProductionEnvRecord,
+  alignCloudLocalGatewayBrowserDevelopmentEnv,
+  CLOUD_ROUTER_LOCAL_PLATFORM_API_GATEWAY_ENV_KEY,
 } from '../lib/cloud-router-browser-env-contract.mjs';
 import {
   CLOUD_ROUTER_RELEASE_EDGE_ENV_KEY_COMMENTS,
@@ -222,7 +224,17 @@ export function buildCloudRouterBrowserDevelopmentGeneratedEnv({
     }
   }
 
-  return alignStandaloneSameOriginBrowserSdkRuntimeEnv(generated);
+  // dev:cloud: bind the Vite dev surface to the local platform API gateway
+  // (sdkwork-api-cloud-gateway, SDKWORK_LOCAL_PLATFORM_API_GATEWAY_HTTP_URL)
+  // instead of any api-dev.<base-domain> edge.
+  const localPlatformApiGatewayHttpUrl = deploymentProfile === 'cloud'
+    ? normalizeText(env[CLOUD_ROUTER_LOCAL_PLATFORM_API_GATEWAY_ENV_KEY])
+    : undefined;
+
+  return alignCloudLocalGatewayBrowserDevelopmentEnv(
+    alignStandaloneSameOriginBrowserSdkRuntimeEnv(generated),
+    { localPlatformApiGatewayHttpUrl },
+  );
 }
 
 export function buildCloudRouterBrowserProductionGeneratedEnv({
@@ -305,14 +317,24 @@ export function ensureCloudRouterBrowserDevelopmentEnv({
       ...pickBrowserDevelopmentPortalRuntimeEnv(portalRuntimeEnv),
     }, generatedEnv),
   );
-  const formattedContent = formatEnvFileContent(sanitizedMergedEnv, {
+  // Applied after the existing-value merge: dev:cloud must overwrite stale
+  // absolute api-dev.<base-domain> base URLs persisted in .env.development.
+  const alignedMergedEnv = alignCloudLocalGatewayBrowserDevelopmentEnv(
+    sanitizedMergedEnv,
+    {
+      localPlatformApiGatewayHttpUrl: deploymentProfile === 'cloud'
+        ? normalizeText(env[CLOUD_ROUTER_LOCAL_PLATFORM_API_GATEWAY_ENV_KEY])
+        : undefined,
+    },
+  );
+  const formattedContent = formatEnvFileContent(alignedMergedEnv, {
     headerLines: [...BROWSER_DEVELOPMENT_ENV_HEADER],
     keyOrder: CLOUD_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_ORDER,
     keyComments: CLOUD_ROUTER_BROWSER_DEVELOPMENT_ENV_KEY_COMMENTS,
     sectionBreaks: CLOUD_ROUTER_BROWSER_DEVELOPMENT_ENV_SECTIONS,
   });
-  const sanitizedChanged = envFileChanged(result.mergedEnv, sanitizedMergedEnv)
-    || envFileChanged(existingBeforeEnsure, sanitizedMergedEnv);
+  const sanitizedChanged = envFileChanged(result.mergedEnv, alignedMergedEnv)
+    || envFileChanged(existingBeforeEnsure, alignedMergedEnv);
   if (!dryRun && (result.changed || sanitizedChanged)) {
     mkdirSync(path.dirname(result.profileFilePath), { recursive: true });
     writeFileSync(result.profileFilePath, formattedContent, 'utf8');
@@ -332,7 +354,7 @@ export function ensureCloudRouterBrowserDevelopmentEnv({
   });
   return {
     ...result,
-    mergedEnv: sanitizedMergedEnv,
+    mergedEnv: alignedMergedEnv,
     changed: result.changed || sanitizedChanged || bootstrapLocal.changed,
     bootstrapLocalPath: bootstrapLocal.bootstrapLocalPath,
   };

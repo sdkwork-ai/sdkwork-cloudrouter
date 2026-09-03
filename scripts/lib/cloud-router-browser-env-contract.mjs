@@ -358,6 +358,39 @@ function resolveStandaloneFeedsOpenApiBaseUrl(runtimeEnv, value) {
   return resolveStandaloneOpenApiBaseUrl(runtimeEnv);
 }
 
+export const CLOUD_ROUTER_LOCAL_PLATFORM_API_GATEWAY_ENV_KEY =
+  'SDKWORK_LOCAL_PLATFORM_API_GATEWAY_HTTP_URL';
+
+/**
+ * dev:cloud binds the Vite dev surface to the locally started
+ * sdkwork-api-cloud-gateway (`pnpm dev` in sdkwork-api-cloud-gateway, bind
+ * 127.0.0.1:3900 — see SDKWORK_LOCAL_PLATFORM_API_GATEWAY_HTTP_URL in
+ * etc/topology/cloud.development.env; PNPM_SCRIPT_SPEC §3). Browser-visible
+ * SDK base URLs stay same-origin so every surface flows through the Vite dev
+ * proxy, and the proxy upstream origins bind to the local gateway process
+ * instead of any api-dev.<base-domain> edge (a cloud-mode build/deploy
+ * concern, never a dev:cloud concern). Applied after the existing-value merge
+ * so stale absolute domain URLs previously persisted in .env.development are
+ * corrected on the next dev:cloud startup.
+ */
+export function alignCloudLocalGatewayBrowserDevelopmentEnv(record = {}, {
+  localPlatformApiGatewayHttpUrl,
+} = {}) {
+  const gatewayHttpUrl = normalizeText(localPlatformApiGatewayHttpUrl);
+  if (!gatewayHttpUrl) {
+    return record;
+  }
+  const aligned = { ...record };
+  aligned[CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.openApi] = gatewayHttpUrl;
+  aligned[CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.backendApi] = gatewayHttpUrl;
+  aligned[CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.appApi] = gatewayHttpUrl;
+  aligned.VITE_API_BASE_URL = STANDALONE_SAME_ORIGIN_API_PREFIXES.openApi;
+  aligned.VITE_CLOUDROUTER_OPEN_API_BASE_URL = STANDALONE_SAME_ORIGIN_API_PREFIXES.openApi;
+  aligned.VITE_CLOUDROUTER_APP_API_BASE_URL = STANDALONE_SAME_ORIGIN_API_PREFIXES.appApi;
+  aligned.VITE_CLOUDROUTER_BACKEND_API_BASE_URL = STANDALONE_SAME_ORIGIN_API_PREFIXES.backendApi;
+  return aligned;
+}
+
 /**
  * Standalone browser dev mounts every composed SDK surface on the portal edge.
  * Rewrite loopback absolute dependency SDK URLs to same-origin prefixes and

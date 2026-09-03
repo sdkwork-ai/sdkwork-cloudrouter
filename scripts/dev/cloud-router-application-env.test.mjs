@@ -16,6 +16,8 @@ import { fileURLToPath } from 'node:url';
 
 import {
   CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS,
+  CLOUD_ROUTER_LOCAL_PLATFORM_API_GATEWAY_ENV_KEY,
+  alignCloudLocalGatewayBrowserDevelopmentEnv,
   migrateLegacyBrowserDevelopmentEnvRecord,
   sanitizeBrowserDevelopmentEnvRecord,
 } from '../lib/cloud-router-browser-env-contract.mjs';
@@ -201,6 +203,112 @@ test('ensureCloudRouterBrowserDevelopmentEnv writes .env.development and preserv
     assert.match(written, /SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_OPEN_API_ORIGIN=http:\/\/127\.0\.0\.1:3999/u);
     assert.doesNotMatch(written, /^PORTAL_PUBLIC_/mu);
     assert.doesNotMatch(written, /^PORTAL_DEV_PROXY_/mu);
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true });
+  }
+});
+
+test('alignCloudLocalGatewayBrowserDevelopmentEnv rewrites stale domain base URLs', () => {
+  const gatewayHttpUrl = 'http://127.0.0.1:3900';
+  const aligned = alignCloudLocalGatewayBrowserDevelopmentEnv({
+    VITE_API_BASE_URL: 'https://api-dev.sdkwork.com/v1',
+    VITE_CLOUDROUTER_OPEN_API_BASE_URL: 'https://api-dev.sdkwork.com/v1',
+    VITE_CLOUDROUTER_APP_API_BASE_URL: 'https://api-dev.sdkwork.com/app/v3/api',
+    VITE_CLOUDROUTER_BACKEND_API_BASE_URL: 'https://api-dev.sdkwork.com/backend/v3/api',
+    VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL: 'http://drive-dev.sdkwork.com:3900',
+  }, { localPlatformApiGatewayHttpUrl: gatewayHttpUrl });
+
+  assert.equal(aligned.VITE_API_BASE_URL, '/v1');
+  assert.equal(aligned.VITE_CLOUDROUTER_OPEN_API_BASE_URL, '/v1');
+  assert.equal(aligned.VITE_CLOUDROUTER_APP_API_BASE_URL, '/app/v3/api');
+  assert.equal(aligned.VITE_CLOUDROUTER_BACKEND_API_BASE_URL, '/backend/v3/api');
+  assert.equal(
+    aligned[CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.openApi],
+    gatewayHttpUrl,
+  );
+  assert.equal(
+    aligned[CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.backendApi],
+    gatewayHttpUrl,
+  );
+  assert.equal(
+    aligned[CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.appApi],
+    gatewayHttpUrl,
+  );
+  // Federated drive surface stays on its owned gateway domain.
+  assert.equal(aligned.VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL, 'http://drive-dev.sdkwork.com:3900');
+
+  // Without the local gateway override the record is returned untouched.
+  const untouched = alignCloudLocalGatewayBrowserDevelopmentEnv({
+    VITE_CLOUDROUTER_APP_API_BASE_URL: 'https://api-dev.sdkwork.com/app/v3/api',
+  });
+  assert.equal(untouched.VITE_CLOUDROUTER_APP_API_BASE_URL, 'https://api-dev.sdkwork.com/app/v3/api');
+});
+
+test('ensureCloudRouterBrowserDevelopmentEnv binds cloud dev to the local platform gateway', () => {
+  const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'cloud-router-browser-env-'));
+  const applicationRoot = path.join(tempRoot, 'apps', 'sdkwork-cloudrouter-pc');
+  const manifestPath = path.join(tempRoot, 'sdkwork.app.config.json');
+  const profileFilePath = path.join(applicationRoot, '.env.development');
+
+  try {
+    writeFileSync(
+      manifestPath,
+      JSON.stringify({
+        app: { key: 'sdkwork-cloudrouter' },
+        backend: {
+          appId: 'sdkwork-cloudrouter',
+          tenantId: '100001',
+          organizationId: '0',
+          accessTokenPermissionScope: ['iam.users.read'],
+        },
+      }),
+      'utf8',
+    );
+    mkdirSync(applicationRoot, { recursive: true });
+    // Stale cloud dev profile persisted before the local-gateway convention:
+    // absolute domain base URLs that bypass the Vite dev proxy entirely.
+    writeFileSync(
+      profileFilePath,
+      [
+        'SDKWORK_CLOUDROUTER_ROUTER_CONFIG_PROFILE=dev',
+        'SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT=development',
+        'SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE=cloud',
+        'SDKWORK_CLOUDROUTER_ROUTER_RUNTIME_TARGET=browser',
+        'VITE_CLOUDROUTER_APP_API_BASE_URL=https://api-dev.sdkwork.com/app/v3/api',
+        'VITE_CLOUDROUTER_BACKEND_API_BASE_URL=https://api-dev.sdkwork.com/backend/v3/api',
+        '',
+      ].join('\n'),
+      'utf8',
+    );
+
+    const result = ensureCloudRouterBrowserDevelopmentEnv({
+      workspaceRoot: tempRoot,
+      applicationRoot,
+      deploymentProfile: 'cloud',
+      env: {
+        [CLOUD_ROUTER_LOCAL_PLATFORM_API_GATEWAY_ENV_KEY]: 'http://127.0.0.1:3900',
+      },
+    });
+
+    assert.equal(result.mergedEnv.VITE_CLOUDROUTER_APP_API_BASE_URL, '/app/v3/api');
+    assert.equal(result.mergedEnv.VITE_CLOUDROUTER_BACKEND_API_BASE_URL, '/backend/v3/api');
+    assert.equal(result.mergedEnv.VITE_API_BASE_URL, '/v1');
+    assert.equal(
+      result.mergedEnv[CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.appApi],
+      'http://127.0.0.1:3900',
+    );
+    assert.equal(
+      result.mergedEnv[CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.backendApi],
+      'http://127.0.0.1:3900',
+    );
+
+    const written = readFileSync(profileFilePath, 'utf8');
+    assert.match(written, /VITE_CLOUDROUTER_APP_API_BASE_URL=\/app\/v3\/api/u);
+    assert.doesNotMatch(written, /api-dev\.sdkwork\.com\/app\/v3\/api/u);
+    assert.match(
+      written,
+      /SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_APP_API_ORIGIN=http:\/\/127\.0\.0\.1:3900/u,
+    );
   } finally {
     rmSync(tempRoot, { recursive: true, force: true });
   }
