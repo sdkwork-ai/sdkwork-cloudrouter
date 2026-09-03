@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::num::NonZeroUsize;
+use std::pin::Pin;
 use std::time::Duration;
 
 use axum::body::Body as AxumBody;
@@ -10,9 +11,11 @@ use bytes::Bytes;
 use http_body_util::{BodyExt, Full, LengthLimitError, Limited};
 use hyper::Request as HyperRequest;
 use hyper_rustls::HttpsConnector;
+use hyper_util::client::legacy::connect::proxy::Tunnel;
 use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
+use hyper_util::rt::TokioIo;
 use sdkwork_cloudrouter_http::ensure_rustls_crypto_provider;
 use sdkwork_cloudrouter_http::OutboundDnsResolver;
 use sdkwork_cloudrouter_router_service::application::{
@@ -25,13 +28,25 @@ use sdkwork_cloudrouter_router_service::ports::{
     InvocationDispatchError, InvocationDispatcher, InvocationDispatcherFuture,
 };
 use sdkwork_cloudrouter_security::{validate_outbound_url, OutboundTargetPolicy};
+use tower::Service as TowerService;
 
 const INVOCATION_UPSTREAM_BODY_LIMIT_BYTES: usize = 32 * 1024 * 1024;
 const DEFAULT_DISPATCH_TIMEOUT_MS: u64 = 30_000;
 
+/// Outbound HTTP proxy for provider dispatch (`http://host:port`).
+///
+/// The provider relay client is built on hyper-util's legacy client, which —
+/// unlike reqwest — never reads `HTTP_PROXY`/`HTTPS_PROXY`. Deployment hosts
+/// behind an egress proxy (or whose DNS answers with proxy fake-IPs) must
+/// therefore name the proxy explicitly. Because the CONNECT target hostname is
+/// resolved by the proxy itself, this also bypasses local fake-IP DNS, which
+/// the production outbound policy would otherwise reject.
+pub const ENV_OUTBOUND_HTTP_PROXY: &str = "SDKWORK_CLOUDROUTER_OUTBOUND_HTTP_PROXY";
+
 type InvocationHttpBody = Full<Bytes>;
-type InvocationHttpConnector = HttpsConnector<HttpConnector<OutboundDnsResolver>>;
+type InvocationHttpConnector = HttpsConnector<OutboundConnector>;
 type InvocationHttpClient = Client<InvocationHttpConnector, InvocationHttpBody>;
+type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
 #[derive(Clone)]
 pub struct InvocationHttpDispatcher {
@@ -103,7 +118,11 @@ impl InvocationHttpDispatcher {
     ) -> Self {
         let response_memory_budget = ProviderResponseMemoryBudget::with_default_limit();
         Self {
-            client: build_invocation_http_client(outbound_target_policy, http_pool_config),
+            client: build_invocation_http_client(
+                outbound_target_policy,
+                http_pool_config,
+                outbound_http_proxy_or_warn(),
+            ),
             outbound_target_policy,
             response_max_bytes,
             response_timeout,
@@ -140,8 +159,9 @@ impl InvocationHttpDispatcher {
             .validate_response_limit(response_max_bytes.get() as u64)
             .map_err(|error| error.to_string())?;
         let outbound_target_policy = outbound_target_policy_from_process_env();
+        let proxy = outbound_http_proxy_from_process_env()?;
         Ok(Self {
-            client: build_invocation_http_client(outbound_target_policy, http_pool_config),
+            client: build_invocation_http_client(outbound_target_policy, http_pool_config, proxy),
             outbound_target_policy,
             response_max_bytes,
             response_timeout,
@@ -210,7 +230,10 @@ impl InvocationDispatcher for InvocationHttpDispatcher {
             .map_err(|error| {
                 dispatch_error(
                     "provider_http_transport_failed",
-                    format!("provider HTTP request failed: {error}"),
+                    format!(
+                        "provider HTTP request failed: {}",
+                        format_error_with_causes(&error)
+                    ),
                     None,
                     true,
                 )
@@ -420,6 +443,116 @@ fn timeout_duration(timeout_ms: u64) -> Option<Duration> {
 /// proxy fake-IP ranges such as 198.18.0.0/15) are not rejected by the
 /// production SSRF guard. Production and test environments keep the strict
 /// public-IP-only policy.
+/// Renders an error together with its full source chain.
+///
+/// hyper's legacy client error displays only as `client error (Connect)`
+/// while the actionable cause (DNS resolution failure, a forbidden resolved
+/// address, TCP connect refusal, TLS handshake failure) hangs off
+/// [`std::error::Error::source`]. Without the chain a transport failure is
+/// undiagnosable from the error alone.
+fn format_error_with_causes(error: &(dyn std::error::Error + 'static)) -> String {
+    let mut rendered = error.to_string();
+    let mut source = error.source();
+    while let Some(cause) = source {
+        rendered.push_str(": ");
+        rendered.push_str(&cause.to_string());
+        source = cause.source();
+    }
+    rendered
+}
+
+/// Resolves the outbound proxy from the process environment, treating an
+/// invalid value as a hard configuration error.
+fn outbound_http_proxy_from_process_env() -> Result<Option<Uri>, String> {
+    for key in [
+        ENV_OUTBOUND_HTTP_PROXY,
+        "HTTPS_PROXY",
+        "https_proxy",
+        "HTTP_PROXY",
+        "http_proxy",
+    ] {
+        let Ok(value) = std::env::var(key) else {
+            continue;
+        };
+        let value = value.trim();
+        if value.is_empty() {
+            continue;
+        }
+        return parse_outbound_http_proxy(value).map(Some);
+    }
+    Ok(None)
+}
+
+/// Environment-reading variant for constructors that cannot fail: an invalid
+/// proxy value is logged and ignored so the dispatcher still builds (the
+/// direct path keeps its own outbound policy).
+pub(crate) fn outbound_http_proxy_or_warn() -> Option<Uri> {
+    match outbound_http_proxy_from_process_env() {
+        Ok(proxy) => proxy,
+        Err(error) => {
+            tracing::error!("{error}; ignoring the outbound proxy for provider HTTP dispatch");
+            None
+        }
+    }
+}
+
+fn parse_outbound_http_proxy(value: &str) -> Result<Uri, String> {
+    let uri: Uri = value
+        .parse()
+        .map_err(|_| format!("outbound proxy `{value}` is not a valid URI"))?;
+    if uri.scheme_str() != Some("http") {
+        return Err(format!(
+            "outbound proxy `{value}` must use the http scheme (CONNECT tunneling); found {:?}",
+            uri.scheme_str()
+        ));
+    }
+    if uri.host().is_none() {
+        return Err(format!("outbound proxy `{value}` has no host"));
+    }
+    Ok(uri)
+}
+
+/// The provider relay connector: direct (DNS-resolving, policy-checked) or
+/// tunnelled through an explicitly configured HTTP proxy. The tunnel
+/// (`hyper_util` `proxy::Tunnel`) sends the CONNECT target hostname to the
+/// proxy, so the target is resolved by the proxy itself — bypassing local
+/// fake-IP DNS that the production outbound policy would otherwise reject.
+#[derive(Clone)]
+pub(crate) enum OutboundConnector {
+    Direct(HttpConnector<OutboundDnsResolver>),
+    Tunnelled(Tunnel<HttpConnector>),
+}
+
+impl TowerService<Uri> for OutboundConnector {
+    type Response = TokioIo<tokio::net::TcpStream>;
+    type Error = BoxError;
+    type Future =
+        Pin<Box<dyn std::future::Future<Output = Result<Self::Response, BoxError>> + Send>>;
+
+    fn poll_ready(
+        &mut self,
+        context: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Result<(), Self::Error>> {
+        match self {
+            OutboundConnector::Direct(inner) => inner.poll_ready(context).map_err(Into::into),
+            OutboundConnector::Tunnelled(inner) => inner.poll_ready(context).map_err(Into::into),
+        }
+    }
+
+    fn call(&mut self, dst: Uri) -> Self::Future {
+        match self {
+            OutboundConnector::Direct(inner) => {
+                let future = inner.call(dst);
+                Box::pin(async move { future.await.map_err(Into::into) })
+            }
+            OutboundConnector::Tunnelled(inner) => {
+                let future = inner.call(dst);
+                Box::pin(async move { future.await.map_err(Into::into) })
+            }
+        }
+    }
+}
+
 fn outbound_target_policy_from_process_env() -> OutboundTargetPolicy {
     let environment = sdkwork_cloudrouter_http::resolve_cloud_web_environment_from_process_env();
     match environment {
@@ -433,23 +566,32 @@ fn outbound_target_policy_from_process_env() -> OutboundTargetPolicy {
 fn build_invocation_http_client(
     policy: OutboundTargetPolicy,
     pool_config: ProviderRelayHttpPoolConfig,
+    proxy: Option<Uri>,
 ) -> InvocationHttpClient {
     ensure_rustls_crypto_provider();
-    let mut http_connector = HttpConnector::new_with_resolver(OutboundDnsResolver::new(policy));
-    http_connector.set_connect_timeout(Some(pool_config.connect_timeout));
-    http_connector.enforce_http(false);
-    let connector = match policy {
-        OutboundTargetPolicy::Production => hyper_rustls::HttpsConnectorBuilder::new()
-            .with_webpki_roots()
-            .https_only()
-            .enable_http1()
-            .wrap_connector(http_connector),
-        OutboundTargetPolicy::Development => hyper_rustls::HttpsConnectorBuilder::new()
-            .with_webpki_roots()
-            .https_or_http()
-            .enable_http1()
-            .wrap_connector(http_connector),
+    let builder = hyper_rustls::HttpsConnectorBuilder::new().with_webpki_roots();
+    let builder = match policy {
+        OutboundTargetPolicy::Production => builder.https_only(),
+        OutboundTargetPolicy::Development => builder.https_or_http(),
     };
+    let outbound_connector = match proxy {
+        Some(proxy) => {
+            // The proxy is operator infrastructure: resolved by the system
+            // resolver (no SSRF validation) and connected over plain TCP; the
+            // tunnelled target keeps the full outbound-policy chain.
+            let mut proxy_connector = HttpConnector::new();
+            proxy_connector.set_connect_timeout(Some(pool_config.connect_timeout));
+            OutboundConnector::Tunnelled(Tunnel::new(proxy, proxy_connector))
+        }
+        None => {
+            let mut http_connector =
+                HttpConnector::new_with_resolver(OutboundDnsResolver::new(policy));
+            http_connector.set_connect_timeout(Some(pool_config.connect_timeout));
+            http_connector.enforce_http(false);
+            OutboundConnector::Direct(http_connector)
+        }
+    };
+    let connector = builder.enable_http1().wrap_connector(outbound_connector);
     Client::builder(TokioExecutor::new())
         .pool_idle_timeout(Some(pool_config.pool_idle_timeout))
         .pool_max_idle_per_host(pool_config.pool_max_idle_per_host)
@@ -642,6 +784,175 @@ fn dispatch_error(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Serializes env-mutating proxy tests: `std::env` is process-global.
+    fn proxy_env_guard() -> &'static std::sync::Mutex<()> {
+        static GUARD: std::sync::OnceLock<std::sync::Mutex<()>> = std::sync::OnceLock::new();
+        GUARD.get_or_init(|| std::sync::Mutex::new(()))
+    }
+
+    const PROXY_ENV_KEYS: [&str; 5] = [
+        ENV_OUTBOUND_HTTP_PROXY,
+        "HTTPS_PROXY",
+        "https_proxy",
+        "HTTP_PROXY",
+        "http_proxy",
+    ];
+
+    #[test]
+    fn parses_an_http_proxy_and_rejects_other_schemes() {
+        assert_eq!(
+            parse_outbound_http_proxy("http://127.0.0.1:7897")
+                .expect("valid http proxy")
+                .host(),
+            Some("127.0.0.1")
+        );
+        assert!(parse_outbound_http_proxy("https://127.0.0.1:7897").is_err());
+        assert!(parse_outbound_http_proxy("not a uri").is_err());
+        assert!(parse_outbound_http_proxy("http://").is_err());
+    }
+
+    #[test]
+    fn resolves_the_proxy_from_the_first_configured_env_key() {
+        let _guard = proxy_env_guard().lock().unwrap();
+        let previous: Vec<(String, Option<String>)> = PROXY_ENV_KEYS
+            .iter()
+            .map(|key| (key.to_string(), std::env::var(key).ok()))
+            .collect();
+        // SAFETY: test-only, serialized by proxy_env_guard.
+        for key in PROXY_ENV_KEYS {
+            unsafe { std::env::remove_var(key) };
+        }
+
+        assert_eq!(
+            outbound_http_proxy_from_process_env().expect("no proxy configured"),
+            None
+        );
+        // SAFETY: test-only, serialized by proxy_env_guard.
+        unsafe { std::env::set_var(ENV_OUTBOUND_HTTP_PROXY, "http://10.0.0.2:3128") };
+        assert_eq!(
+            outbound_http_proxy_from_process_env()
+                .expect("valid proxy")
+                .map(|uri| uri.to_string()),
+            // Uri normalization appends the empty path "/".
+            Some("http://10.0.0.2:3128/".to_owned())
+        );
+        // SAFETY: test-only, serialized by proxy_env_guard.
+        unsafe { std::env::set_var(ENV_OUTBOUND_HTTP_PROXY, "socks5://10.0.0.2:1080") };
+        assert!(outbound_http_proxy_from_process_env().is_err());
+
+        for (key, value) in &previous {
+            // SAFETY: test-only, serialized by proxy_env_guard.
+            unsafe {
+                match value {
+                    Some(value) => std::env::set_var(key, value),
+                    None => std::env::remove_var(key),
+                }
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn tunnels_through_a_proxy_that_answers_connect() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let proxy_addr = format!("http://{}", listener.local_addr().unwrap());
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut request = vec![0u8; 512];
+            let read = socket.read(&mut request).await.unwrap();
+            let request = String::from_utf8_lossy(&request[..read]).into_owned();
+            assert!(request.starts_with("CONNECT example.com:443 HTTP/1.1\r\n"));
+            assert!(request.contains("Host: example.com:443\r\n"));
+            socket
+                .write_all(b"HTTP/1.1 200 Connection established\r\n\r\n")
+                .await
+                .unwrap();
+            // The client must observe the response head ending in CRLFCRLF
+            // before the tunneled payload arrives; writing both back-to-back
+            // can coalesce into one read and break the header scan.
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+            socket.write_all(b"tunnel-ready").await.unwrap();
+        });
+
+        let proxy: Uri = proxy_addr.parse().unwrap();
+        let mut tunnel = Tunnel::new(proxy, HttpConnector::new());
+        let stream = tunnel
+            .call(Uri::from_static("https://example.com:443"))
+            .await
+            .expect("CONNECT tunnel established");
+
+        // `Tunnel` yields a `TokioIo<tokio::net::TcpStream>` which only implements
+        // hyper's `rt::Read`; unwrap it back to the tokio stream for tokio io traits.
+        let mut stream = stream.into_inner();
+        let mut echoed = Vec::new();
+        stream.read_to_end(&mut echoed).await.unwrap();
+        assert_eq!(echoed, b"tunnel-ready");
+        server.await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn surfaces_a_proxy_connect_rejection() {
+        // hyper-util 0.1.20 does not re-export `TunnelError` from the proxy
+        // module, so assert via its `Display` ("unsuccessful" for a non-2xx
+        // CONNECT answer) instead of matching on the type.
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let proxy_addr = format!("http://{}", listener.local_addr().unwrap());
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut request = vec![0u8; 512];
+            let _ = socket.read(&mut request).await.unwrap();
+            socket
+                .write_all(b"HTTP/1.1 403 Forbidden\r\n\r\n")
+                .await
+                .unwrap();
+        });
+
+        let proxy: Uri = proxy_addr.parse().unwrap();
+        let mut tunnel = Tunnel::new(proxy, HttpConnector::new());
+        let error = tunnel
+            .call(Uri::from_static("https://example.com:443"))
+            .await
+            .expect_err("403 proxy answer must fail the tunnel");
+        assert!(
+            error.to_string().contains("unsuccessful"),
+            "unexpected tunnel error: {error}"
+        );
+        server.await.unwrap();
+    }
+
+    #[test]
+    fn renders_the_full_error_source_chain() {
+        // Mimics hyper's legacy client error shape: an opaque display
+        // (`client error (Connect)`) with the actionable cause in `source()`.
+        #[derive(Debug)]
+        struct OpaqueConnectError(std::io::Error);
+        impl std::fmt::Display for OpaqueConnectError {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "client error (Connect)")
+            }
+        }
+        impl std::error::Error for OpaqueConnectError {
+            fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+                Some(&self.0)
+            }
+        }
+
+        let error = OpaqueConnectError(std::io::Error::new(
+            std::io::ErrorKind::PermissionDenied,
+            "outbound target DNS resolution returned a forbidden address",
+        ));
+
+        let rendered = format_error_with_causes(&error);
+
+        assert_eq!(
+            rendered,
+            "client error (Connect): outbound target DNS resolution returned a forbidden address"
+        );
+    }
 
     fn account() -> InvocationAccount {
         InvocationAccount {

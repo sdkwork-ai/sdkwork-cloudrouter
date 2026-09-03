@@ -1,6 +1,7 @@
 use crate::gateway_api_key_auth::{
     authenticate_gateway_api_key, sanitize_authenticated_gateway_uri,
 };
+use crate::invocation_dispatcher::outbound_http_proxy_or_warn;
 use crate::invocation_http::{extract_client_ip, response_from_invocation_error};
 use crate::openai_passthrough_routes::{
     apply_openai_method_passthrough_routes, apply_openai_passthrough_routes,
@@ -745,7 +746,11 @@ impl ProviderPassthroughRuntime {
                 )
             });
         Self {
-            client: build_provider_passthrough_client(outbound_target_policy, http_pool_config),
+            client: build_provider_passthrough_client(
+                outbound_target_policy,
+                http_pool_config,
+                outbound_http_proxy_or_warn(),
+            ),
             outbound_target_policy,
             providers: Arc::new(
                 openai_target

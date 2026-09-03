@@ -1,3 +1,4 @@
+use crate::invocation_dispatcher::OutboundConnector;
 use axum::body::{Body, Bytes, HttpBody};
 use axum::http::header::{self, HeaderName, HeaderValue};
 use axum::http::request::{Builder as RequestBuilder, Parts as RequestParts};
@@ -8,6 +9,7 @@ use http_body::Frame;
 use http_body_util::Full;
 use hyper::Request as HyperRequest;
 use hyper_rustls::HttpsConnector;
+use hyper_util::client::legacy::connect::proxy::Tunnel;
 use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
@@ -25,7 +27,7 @@ use std::task::{Context, Poll};
 use std::time::Duration;
 
 pub(crate) type PassthroughBody = Full<Bytes>;
-pub(crate) type PassthroughConnector = HttpsConnector<HttpConnector<OutboundDnsResolver>>;
+pub(crate) type PassthroughConnector = HttpsConnector<OutboundConnector>;
 pub(crate) type PassthroughClient = Client<PassthroughConnector, PassthroughBody>;
 
 #[derive(Clone)]
@@ -112,24 +114,32 @@ impl ProviderPassthroughTarget {
 pub(crate) fn build_provider_passthrough_client(
     outbound_target_policy: OutboundTargetPolicy,
     pool_config: ProviderRelayHttpPoolConfig,
+    proxy: Option<Uri>,
 ) -> PassthroughClient {
     ensure_rustls_crypto_provider();
-    let mut http_connector =
-        HttpConnector::new_with_resolver(OutboundDnsResolver::new(outbound_target_policy));
-    http_connector.set_connect_timeout(Some(pool_config.connect_timeout));
-    http_connector.enforce_http(false);
-    let connector = match outbound_target_policy {
-        OutboundTargetPolicy::Production => hyper_rustls::HttpsConnectorBuilder::new()
-            .with_webpki_roots()
-            .https_only()
-            .enable_http1()
-            .wrap_connector(http_connector),
-        OutboundTargetPolicy::Development => hyper_rustls::HttpsConnectorBuilder::new()
-            .with_webpki_roots()
-            .https_or_http()
-            .enable_http1()
-            .wrap_connector(http_connector),
+    let outbound_connector = match proxy {
+        Some(proxy) => {
+            // The proxy is operator infrastructure: resolved by the system
+            // resolver (no SSRF validation) and connected over plain TCP; the
+            // tunnelled target is resolved by the proxy itself.
+            let mut proxy_connector = HttpConnector::new();
+            proxy_connector.set_connect_timeout(Some(pool_config.connect_timeout));
+            OutboundConnector::Tunnelled(Tunnel::new(proxy, proxy_connector))
+        }
+        None => {
+            let mut http_connector =
+                HttpConnector::new_with_resolver(OutboundDnsResolver::new(outbound_target_policy));
+            http_connector.set_connect_timeout(Some(pool_config.connect_timeout));
+            http_connector.enforce_http(false);
+            OutboundConnector::Direct(http_connector)
+        }
     };
+    let builder = hyper_rustls::HttpsConnectorBuilder::new().with_webpki_roots();
+    let builder = match outbound_target_policy {
+        OutboundTargetPolicy::Production => builder.https_only(),
+        OutboundTargetPolicy::Development => builder.https_or_http(),
+    };
+    let connector = builder.enable_http1().wrap_connector(outbound_connector);
     Client::builder(TokioExecutor::new())
         .pool_idle_timeout(Some(pool_config.pool_idle_timeout))
         .pool_max_idle_per_host(pool_config.pool_max_idle_per_host)
@@ -437,6 +447,7 @@ mod tests {
             &build_provider_passthrough_client(
                 OutboundTargetPolicy::Production,
                 ProviderRelayHttpPoolConfig::default(),
+                None,
             ),
             OutboundTargetPolicy::Production,
             parts,
@@ -527,6 +538,7 @@ mod tests {
             &build_provider_passthrough_client(
                 OutboundTargetPolicy::Development,
                 ProviderRelayHttpPoolConfig::default(),
+                None,
             ),
             OutboundTargetPolicy::Development,
             parts,
