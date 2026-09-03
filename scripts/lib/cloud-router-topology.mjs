@@ -2,6 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  applyDevelopmentLocalGatewayBinding,
   buildProfileId,
   createTopologyRuntime,
   isTcpPortReachable,
@@ -220,7 +221,7 @@ function loopbackHttpOriginFromBind(bind) {
 
 export function resolveWorkspaceRuntimePlan(settings) {
   const profileId = settings.profileId ?? resolveDevProfileId(settings.deploymentProfile);
-  const profileEnv = runtime.loadProfile(profileId);
+  const profileEnv = loadProfile(profileId);
   const effectiveEnv = runtime.applyProfileEnv(profileId, [
     profileEnv,
     {
@@ -361,7 +362,10 @@ export function loadTopologyProfileForWorkspace({
   };
 }
 
-export const loadProfile = runtime.loadProfile;
+export const loadProfile = (profileId) => applyDevelopmentLocalGatewayBinding(
+  runtime.loadProfile(profileId),
+  { profileId },
+);
 export const applyProfileEnv = runtime.applyProfileEnv;
 export const mergeRuntimeEnv = runtime.mergeRuntimeEnv;
 export const loadEnvFile = runtime.loadEnvFile;
