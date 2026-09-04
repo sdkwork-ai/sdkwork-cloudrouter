@@ -1104,10 +1104,29 @@ fn validate_resolved_identities(
         .currency_code
         .eq_ignore_ascii_case(&command.currency)
     {
-        return Err(pricing_identity_error(
-            command,
-            "pricing plan currency does not match the PriceService decision",
-        ));
+        // Regional price books can price the same resource in a currency other
+        // than the plan's declared billing currency (e.g. a tenant default
+        // region `cn` pricing CNY under a USD plan). The decision currency
+        // follows the priced rate; the plan currency only governs plan-scoped
+        // amounts. Rejecting the whole usage fact here would silently zero the
+        // billing pipeline, so degrade the currency-dependent plan checks
+        // instead and only fail closed when a plan amount could actually be
+        // misinterpreted (non-zero markup in another currency).
+        let markup_amount = DecimalValue::parse(&pricing_plan.markup_amount)?;
+        let currency_dependent_amount = !markup_amount.is_zero();
+        if currency_dependent_amount {
+            return Err(pricing_identity_error(
+                command,
+                "pricing plan currency does not match the PriceService decision",
+            ));
+        }
+        tracing::warn!(
+            request_id = %command.request_id,
+            meter = %command.billing_meter_code,
+            plan_currency = %pricing_plan.currency_code,
+            decision_currency = %command.currency,
+            "pricing plan currency differs from the priced region currency; plan-scoped amounts are skipped for this usage fact"
+        );
     }
     let reference = command.official_rate.as_ref().ok_or_else(|| {
         pricing_identity_error(

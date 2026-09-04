@@ -681,6 +681,13 @@ where
 
     let requested_model_catalog_key = route.catalog_key.clone();
     let provider_native_model = provider_native_model_id(&route.provider_model);
+    // The usage fact must carry the billing region that actually priced the
+    // request (route region with the admin default-region override applied),
+    // not the raw routing region. The recorder validates the persisted official
+    // rate against `command.region_code`; a `global` stamp on a request priced
+    // by a `cn` regional rate fails that validation and the usage fact would
+    // never reach the billing ledger.
+    let billing_region_code = usage_billing_region(catalog, context, route);
     Ok(GatewayUsageRecordCommandBuilder {
         request_id: invocation_context.request_id.clone(),
         trace_id: invocation_context.trace_id.clone(),
@@ -698,7 +705,7 @@ where
         account_id: route.account_id,
         provider_model: provider_native_model.clone(),
         provider_native_model,
-        region_code: route.region_code.clone(),
+        region_code: billing_region_code,
         request_path: invocation_context.request_path.clone(),
         http_method: invocation_context.http_method.clone(),
         user_agent: invocation_context.user_agent.clone(),
