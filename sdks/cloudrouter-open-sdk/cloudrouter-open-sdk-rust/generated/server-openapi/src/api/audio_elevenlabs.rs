@@ -20,7 +20,7 @@ impl AudioElevenlabsApi {
         let query = build_query_string(&[
             QueryParameterSpec::new("output_format", output_format, "form", true, false, None),
         ]);
-        let path = append_query_string(ai_path(&"/elevenlabs/v1/sound-generation".to_string()), &query);
+        let path = append_query_string("/elevenlabs/v1/sound-generation".to_string(), &query);
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
@@ -29,7 +29,7 @@ impl AudioElevenlabsApi {
         let query = build_query_string(&[
             QueryParameterSpec::new("output_format", output_format, "form", true, false, None),
         ]);
-        let path = append_query_string(ai_path(&format!("/elevenlabs/v1/text-to-speech/{}", serialize_path_parameter(voice_id, PathParameterSpec::new("voice_id", "simple", false)))), &query);
+        let path = append_query_string(format!("/elevenlabs/v1/text-to-speech/{}", serialize_path_parameter(voice_id, PathParameterSpec::new("voice_id", "simple", false))), &query);
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 

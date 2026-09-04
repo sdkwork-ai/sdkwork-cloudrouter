@@ -62,6 +62,7 @@ client.set_header("X-Custom-Header", "value");
 - `client.files_anthropic()` - files_anthropic API
 - `client.chat_anthropic()` - chat_anthropic API
 - `client.batches_anthropic()` - batches_anthropic API
+- `client.audio_elevenlabs()` - audio_elevenlabs API
 - `client.responses_google()` - responses_google API
 - `client.files_google()` - files_google API
 - `client.embeddings_google()` - embeddings_google API
@@ -91,7 +92,6 @@ client.set_header("X-Custom-Header", "value");
 - `client.videos_vidu()` - videos_vidu API
 - `client.images_vidu()` - images_vidu API
 - `client.videos_volcengine()` - videos_volcengine API
-- `client.audio_elevenlabs()` - audio_elevenlabs API
 
 ## Usage Examples
 
@@ -143,6 +143,26 @@ query.insert("before_id".to_string(), serde_json::json!("1"));
 query.insert("after_id".to_string(), serde_json::json!("1"));
 query.insert("limit".to_string(), serde_json::json!(3));
 let result = client.batches_anthropic().get_list_v1_messages_batches(Some(&query)).await?;
+println!("{result:?}");
+```
+
+### audio_elevenlabs
+
+```rust
+use cloudrouter_open_sdk::*;
+use std::collections::HashMap;
+// Generate sound effect
+let body = ElevenLabsSoundGenerationRequest {
+    duration_seconds: Some(1.0_f64),
+    r#loop: Some(false),
+    model_id: "1".to_string(),
+    prompt_influence: Some(4.0_f64),
+    text: "text".to_string(),
+    ..Default::default()
+};
+let mut query = HashMap::new();
+query.insert("output_format".to_string(), serde_json::json!("output-format"));
+let result = client.audio_elevenlabs().create_v1_sound_generation(&body, Some(&query)).await?;
 println!("{result:?}");
 ```
 
@@ -627,26 +647,6 @@ let body = VolcengineContentGenerationTaskCreateRequest {
     ..Default::default()
 };
 let result = client.videos_volcengine().create_api_v3_contents_generations_task(&body).await?;
-println!("{result:?}");
-```
-
-### audio_elevenlabs
-
-```rust
-use cloudrouter_open_sdk::*;
-use std::collections::HashMap;
-// Generate sound effect
-let body = ElevenLabsSoundGenerationRequest {
-    model_id: "1".to_string(),
-    text: "text".to_string(),
-    duration_seconds: Some(3.0_f64),
-    prompt_influence: Some(4.0_f64),
-    r#loop: Some(true),
-    ..Default::default()
-};
-let mut query = HashMap::new();
-query.insert("output_format".to_string(), serde_json::json!("output-format"));
-let result = client.audio_elevenlabs().create_v1_sound_generation(&body, Some(&query)).await?;
 println!("{result:?}");
 ```
 

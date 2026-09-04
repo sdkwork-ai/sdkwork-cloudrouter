@@ -1061,6 +1061,154 @@
         ],
         "type": "object"
       },
+      "ElevenLabsSoundGenerationRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional eleven labs sound generation request values using the provider json value module."
+        },
+        "description": "Eleven labs sound generation request schema exposed by Cloud Router.",
+        "properties": {
+          "duration_seconds": {
+            "description": "Requested sound effect duration in seconds.",
+            "type": "number"
+          },
+          "loop": {
+            "description": "Whether the sound effect should loop seamlessly.",
+            "type": "boolean"
+          },
+          "model_id": {
+            "description": "ElevenLabs-compatible model identifier.",
+            "type": "string"
+          },
+          "prompt_influence": {
+            "description": "How strongly the prompt influences the generated sound.",
+            "type": "number"
+          },
+          "text": {
+            "description": "Text description of the sound effect to generate.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "model_id",
+          "text"
+        ],
+        "type": "object"
+      },
+      "ElevenLabsSoundGenerationResponse": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional eleven labs sound generation response values using the provider json value module."
+        },
+        "description": "Eleven labs sound generation response schema exposed by Cloud Router.",
+        "properties": {
+          "audio": {
+            "description": "Nested audio descriptor when the provider returns one.",
+            "properties": {
+              "id": {
+                "description": "Audio descriptor identifier.",
+                "type": "string"
+              },
+              "url": {
+                "description": "Audio descriptor URL.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "audio_url": {
+            "description": "URL of the generated sound effect audio.",
+            "type": "string"
+          },
+          "id": {
+            "description": "ElevenLabs task identifier.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Task status.",
+            "type": "string"
+          },
+          "url": {
+            "description": "Alias for the generated audio URL.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ElevenLabsTextToSpeechRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional eleven labs text to speech request values using the provider json value module."
+        },
+        "description": "Eleven labs text to speech request schema exposed by Cloud Router.",
+        "properties": {
+          "model_id": {
+            "description": "ElevenLabs-compatible model identifier.",
+            "type": "string"
+          },
+          "text": {
+            "description": "Text to synthesize into speech.",
+            "type": "string"
+          },
+          "voice_settings": {
+            "description": "Voice settings such as speed.",
+            "properties": {
+              "speed": {
+                "description": "Speech speed factor.",
+                "type": "number"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "model_id",
+          "text"
+        ],
+        "type": "object"
+      },
+      "ElevenLabsTextToSpeechResponse": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional eleven labs text to speech response values using the provider json value module."
+        },
+        "description": "Eleven labs text to speech response schema exposed by Cloud Router.",
+        "properties": {
+          "audio_url": {
+            "description": "URL of the synthesized speech audio.",
+            "type": "string"
+          },
+          "id": {
+            "description": "ElevenLabs task identifier.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Task status.",
+            "type": "string"
+          },
+          "url": {
+            "description": "Alias for the synthesized audio URL.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "GoogleBatchEmbedContentsRequest": {
         "additionalProperties": {
           "allOf": [
@@ -12104,117 +12252,6 @@
           "type"
         ],
         "type": "object"
-      },
-      "ElevenLabsSoundGenerationRequest": {
-        "type": "object",
-        "required": [
-          "model_id",
-          "text"
-        ],
-        "properties": {
-          "model_id": {
-            "description": "ElevenLabs-compatible model identifier.",
-            "type": "string"
-          },
-          "text": {
-            "description": "Text description of the sound effect to generate.",
-            "type": "string"
-          },
-          "duration_seconds": {
-            "description": "Requested sound effect duration in seconds.",
-            "type": "number"
-          },
-          "prompt_influence": {
-            "description": "How strongly the prompt influences the generated sound.",
-            "type": "number"
-          },
-          "loop": {
-            "description": "Whether the sound effect should loop seamlessly.",
-            "type": "boolean"
-          }
-        }
-      },
-      "ElevenLabsSoundGenerationResponse": {
-        "type": "object",
-        "additionalProperties": {
-          "$ref": "#/components/schemas/ProviderJsonValue"
-        },
-        "properties": {
-          "id": {
-            "description": "ElevenLabs task identifier.",
-            "type": "string"
-          },
-          "status": {
-            "description": "Task status.",
-            "type": "string"
-          },
-          "audio_url": {
-            "description": "URL of the generated sound effect audio.",
-            "type": "string"
-          },
-          "url": {
-            "description": "Alias for the generated audio URL.",
-            "type": "string"
-          },
-          "audio": {
-            "description": "Nested audio descriptor when the provider returns one.",
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "url": {
-                "type": "string"
-              }
-            }
-          }
-        }
-      },
-      "ElevenLabsTextToSpeechRequest": {
-        "type": "object",
-        "required": [
-          "model_id",
-          "text"
-        ],
-        "properties": {
-          "model_id": {
-            "description": "ElevenLabs-compatible model identifier.",
-            "type": "string"
-          },
-          "text": {
-            "description": "Text to synthesize into speech.",
-            "type": "string"
-          },
-          "voice_settings": {
-            "description": "Voice settings such as speed.",
-            "type": "object",
-            "properties": {
-              "speed": {
-                "type": "number"
-              }
-            }
-          }
-        }
-      },
-      "ElevenLabsTextToSpeechResponse": {
-        "type": "object",
-        "additionalProperties": {
-          "$ref": "#/components/schemas/ProviderJsonValue"
-        },
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "status": {
-            "type": "string"
-          },
-          "audio_url": {
-            "type": "string"
-          },
-          "url": {
-            "type": "string"
-          }
-        }
       }
     },
     "securitySchemes": {
@@ -13283,6 +13320,221 @@
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
         "x-sdkwork-external-protocol-id": "anthropic-messages"
+      }
+    },
+    "/elevenlabs/v1/sound-generation": {
+      "post": {
+        "description": "Generates a sound effect from a text description through the ElevenLabs-compatible sound generation surface.",
+        "operationId": "elevenlabsCreateSoundGeneration",
+        "parameters": [
+          {
+            "description": "Requested output audio format, for example mp3_44100_128.",
+            "in": "query",
+            "name": "output_format",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ElevenLabsSoundGenerationRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for the elevenlabs create sound generation operation.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ElevenLabsSoundGenerationResponse"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Generate sound effect",
+        "tags": [
+          "Audio/elevenlabs"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "cloudrouter-vendor-relay"
+      }
+    },
+    "/elevenlabs/v1/text-to-speech/{voice_id}": {
+      "post": {
+        "description": "Synthesizes speech for the given voice through the ElevenLabs-compatible text-to-speech surface.",
+        "operationId": "elevenlabsCreateTextToSpeech",
+        "parameters": [
+          {
+            "description": "ElevenLabs voice identifier.",
+            "in": "path",
+            "name": "voice_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Requested output audio format, for example mp3_44100_128.",
+            "in": "query",
+            "name": "output_format",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ElevenLabsTextToSpeechRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for the elevenlabs create text to speech operation.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ElevenLabsTextToSpeechResponse"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Synthesize speech",
+        "tags": [
+          "Audio/elevenlabs"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "cloudrouter-vendor-relay"
       }
     },
     "/google/v1beta/cachedContents": {
@@ -28267,117 +28519,6 @@
         "x-sdkwork-wire-protocol": "external",
         "x-sdkwork-external-protocol-id": "volcengine-v1"
       }
-    },
-    "/elevenlabs/v1/sound-generation": {
-      "post": {
-        "description": "Generates a sound effect from a text description through the ElevenLabs-compatible sound generation surface.",
-        "operationId": "elevenlabsCreateSoundGeneration",
-        "parameters": [
-          {
-            "description": "Requested output audio format, for example mp3_44100_128.",
-            "in": "query",
-            "name": "output_format",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ElevenLabsSoundGenerationRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ElevenLabsSoundGenerationResponse"
-                }
-              }
-            },
-            "description": "Successful response from Cloud Router or the selected upstream provider."
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Generate sound effect",
-        "tags": [
-          "Audio/elevenlabs"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "cloudrouter-vendor-relay"
-      }
-    },
-    "/elevenlabs/v1/text-to-speech/{voice_id}": {
-      "post": {
-        "description": "Synthesizes speech for the given voice through the ElevenLabs-compatible text-to-speech surface.",
-        "operationId": "elevenlabsCreateTextToSpeech",
-        "parameters": [
-          {
-            "description": "ElevenLabs voice identifier.",
-            "in": "path",
-            "name": "voice_id",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "description": "Requested output audio format, for example mp3_44100_128.",
-            "in": "query",
-            "name": "output_format",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ElevenLabsTextToSpeechRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ElevenLabsTextToSpeechResponse"
-                }
-              }
-            },
-            "description": "Successful response from Cloud Router or the selected upstream provider."
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Synthesize speech",
-        "tags": [
-          "Audio/elevenlabs"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "cloudrouter-vendor-relay"
-      }
     }
   },
   "security": [
@@ -28489,6 +28630,10 @@
       "name": "Audio/suno"
     },
     {
+      "description": "ElevenLabs-compatible audio APIs exposed through Cloud Router vendor routing.",
+      "name": "Audio/elevenlabs"
+    },
+    {
       "description": "Google Gemini content generation APIs exposed through Cloud Router vendor routing.",
       "name": "Chat/google"
     },
@@ -28523,6 +28668,17 @@
   ],
   "x-api-prefix": "/v1",
   "x-router-product": "sdkwork-cloudrouter",
+  "x-sdkwork-vendor-path-prefixes": [
+    "anthropic",
+    "elevenlabs",
+    "google",
+    "kling",
+    "midjourney",
+    "nano-banana",
+    "suno",
+    "vidu",
+    "volcengine"
+  ],
   "x-sdkwork-int64-openai-compat": true,
   "x-sdkwork-owner": "sdkwork-cloudrouter",
   "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",

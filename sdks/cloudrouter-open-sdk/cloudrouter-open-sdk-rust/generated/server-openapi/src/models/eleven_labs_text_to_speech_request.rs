@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+/// Eleven labs text to speech request schema exposed by Cloud Router.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct ElevenLabsTextToSpeechRequest {
     /// ElevenLabs-compatible model identifier.

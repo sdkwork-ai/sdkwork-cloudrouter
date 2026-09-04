@@ -21,19 +21,19 @@ impl FilesGoogleApi {
             QueryParameterSpec::new("pageSize", page_size, "form", true, false, None),
             QueryParameterSpec::new("pageToken", page_token, "form", true, false, None),
         ]);
-        let path = append_query_string(ai_path(&"/google/v1beta/files".to_string()), &query);
+        let path = append_query_string("/google/v1beta/files".to_string(), &query);
         self.client.get(&path, None, None).await
     }
 
     /// Google Gemini upload file
     pub async fn create_v1beta_file(&self, body: &GoogleFileUploadMultipartRequest) -> Result<GoogleFile, SdkworkError> {
-        let path = ai_path(&"/google/v1beta/files".to_string());
+        let path = "/google/v1beta/files".to_string();
         self.client.post(&path, Some(body), None, None, Some("multipart/form-data")).await
     }
 
     /// Google Gemini delete file
     pub async fn delete_v1beta_files(&self, file_id: &str) -> Result<GoogleEmptyResponse, SdkworkError> {
-        let path = ai_path(&format!("/google/v1beta/files/{}", serialize_path_parameter(file_id, PathParameterSpec::new("file_id", "simple", false))));
+        let path = format!("/google/v1beta/files/{}", serialize_path_parameter(file_id, PathParameterSpec::new("file_id", "simple", false)));
         self.client.delete(&path, None, None).await
     }
 

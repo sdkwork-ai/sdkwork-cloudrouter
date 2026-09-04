@@ -16,13 +16,13 @@ impl AudioSunoApi {
 
     /// Suno music generation
     pub async fn create_v1_music_generation(&self, body: &SunoMusicGenerationRequest) -> Result<SunoMusicGenerationResponse, SdkworkError> {
-        let path = ai_path(&"/suno/v1/music/generations".to_string());
+        let path = "/suno/v1/music/generations".to_string();
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Suno retrieve music generation
     pub async fn list_v1_music_generations(&self, task_id: &str) -> Result<SunoMusicGenerationTaskResponse, SdkworkError> {
-        let path = ai_path(&format!("/suno/v1/music/generations/{}", serialize_path_parameter(task_id, PathParameterSpec::new("task_id", "simple", false))));
+        let path = format!("/suno/v1/music/generations/{}", serialize_path_parameter(task_id, PathParameterSpec::new("task_id", "simple", false)));
         self.client.get(&path, None, None).await
     }
 

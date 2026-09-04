@@ -16,13 +16,13 @@ impl ImagesNanoBananaApi {
 
     /// Nano Banana image generation
     pub async fn create_generations(&self, body: &NanoBananaImageGenerationRequest) -> Result<NanoBananaImageGenerationTask, SdkworkError> {
-        let path = ai_path(&"/nano-banana/v1/images/generations".to_string());
+        let path = "/nano-banana/v1/images/generations".to_string();
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Nano Banana retrieve image generation
     pub async fn retrieve_generations(&self, task_id: &str) -> Result<NanoBananaImageGenerationTask, SdkworkError> {
-        let path = ai_path(&format!("/nano-banana/v1/images/generations/{}", serialize_path_parameter(task_id, PathParameterSpec::new("task_id", "simple", false))));
+        let path = format!("/nano-banana/v1/images/generations/{}", serialize_path_parameter(task_id, PathParameterSpec::new("task_id", "simple", false)));
         self.client.get(&path, None, None).await
     }
 

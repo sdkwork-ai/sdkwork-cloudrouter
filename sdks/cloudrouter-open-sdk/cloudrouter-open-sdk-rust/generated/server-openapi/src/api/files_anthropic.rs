@@ -24,32 +24,32 @@ impl FilesAnthropicApi {
             QueryParameterSpec::new("after_id", after_id, "form", true, false, None),
             QueryParameterSpec::new("limit", limit, "form", true, false, None),
         ]);
-        let path = append_query_string(ai_path(&"/anthropic/v1/files".to_string()), &query);
+        let path = append_query_string("/anthropic/v1/files".to_string(), &query);
         self.client.get(&path, None, None).await
     }
 
     /// Anthropic upload file
     pub async fn create_v1_file(&self, body: &AnthropicFileUploadMultipartRequest) -> Result<AnthropicFile, SdkworkError> {
-        let path = ai_path(&"/anthropic/v1/files".to_string());
+        let path = "/anthropic/v1/files".to_string();
         self.client.post(&path, Some(body), None, None, Some("multipart/form-data")).await
     }
 
     /// Anthropic delete file
     pub async fn delete_v1_files(&self, file_id: &str) -> Result<AnthropicDeleteResponse, SdkworkError> {
-        let path = ai_path(&format!("/anthropic/v1/files/{}", serialize_path_parameter(file_id, PathParameterSpec::new("file_id", "simple", false))));
+        let path = format!("/anthropic/v1/files/{}", serialize_path_parameter(file_id, PathParameterSpec::new("file_id", "simple", false)));
         self.client.delete(&path, None, None).await
     }
 
     /// Anthropic retrieve file content
     pub async fn list_v1_files_content(&self, file_id: &str) -> Result<Vec<u8>, SdkworkError> {
-        let path = ai_path(&format!("/anthropic/v1/files/{}/content", serialize_path_parameter(file_id, PathParameterSpec::new("file_id", "simple", false))));
+        let path = format!("/anthropic/v1/files/{}/content", serialize_path_parameter(file_id, PathParameterSpec::new("file_id", "simple", false)));
         self.client.request_bytes(Method::GET, &path, Option::<&serde_json::Value>::None, None, None, None, false, false).await
     }
 
     /// Streaming variant of the same operation: yields the binary body in
     /// bounded chunks without materializing the whole payload in memory.
     pub async fn list_v1_files_content_stream(&self, file_id: &str) -> Result<BinaryResponseStream, SdkworkError> {
-        let path = ai_path(&format!("/anthropic/v1/files/{}/content", serialize_path_parameter(file_id, PathParameterSpec::new("file_id", "simple", false))));
+        let path = format!("/anthropic/v1/files/{}/content", serialize_path_parameter(file_id, PathParameterSpec::new("file_id", "simple", false)));
         self.client.request_bytes_stream(Method::GET, &path, Option::<&serde_json::Value>::None, None, None, None, false, false).await
     }
 

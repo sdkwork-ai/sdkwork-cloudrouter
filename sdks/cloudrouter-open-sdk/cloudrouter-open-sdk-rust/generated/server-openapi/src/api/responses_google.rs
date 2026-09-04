@@ -21,19 +21,19 @@ impl ResponsesGoogleApi {
             QueryParameterSpec::new("pageSize", page_size, "form", true, false, None),
             QueryParameterSpec::new("pageToken", page_token, "form", true, false, None),
         ]);
-        let path = append_query_string(ai_path(&"/google/v1beta/cachedContents".to_string()), &query);
+        let path = append_query_string("/google/v1beta/cachedContents".to_string(), &query);
         self.client.get(&path, None, None).await
     }
 
     /// Google Gemini create cached content
     pub async fn create_v1beta_cached_content(&self, body: &GoogleCachedContentCreateRequest) -> Result<GoogleCachedContent, SdkworkError> {
-        let path = ai_path(&"/google/v1beta/cachedContents".to_string());
+        let path = "/google/v1beta/cachedContents".to_string();
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Google Gemini cached content
     pub async fn delete_v1beta_cached_contents(&self, cached_content_id: &str) -> Result<GoogleEmptyResponse, SdkworkError> {
-        let path = ai_path(&format!("/google/v1beta/cachedContents/{}", serialize_path_parameter(cached_content_id, PathParameterSpec::new("cached_content_id", "simple", false))));
+        let path = format!("/google/v1beta/cachedContents/{}", serialize_path_parameter(cached_content_id, PathParameterSpec::new("cached_content_id", "simple", false)));
         self.client.delete(&path, None, None).await
     }
 

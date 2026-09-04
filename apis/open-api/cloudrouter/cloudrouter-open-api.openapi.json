@@ -29300,6 +29300,17 @@
   ],
   "x-api-prefix": "/v1",
   "x-router-product": "sdkwork-cloudrouter",
+  "x-sdkwork-vendor-path-prefixes": [
+    "anthropic",
+    "elevenlabs",
+    "google",
+    "kling",
+    "midjourney",
+    "nano-banana",
+    "suno",
+    "vidu",
+    "volcengine"
+  ],
   "x-sdkwork-int64-openai-compat": true,
   "x-sdkwork-owner": "sdkwork-cloudrouter",
   "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai"

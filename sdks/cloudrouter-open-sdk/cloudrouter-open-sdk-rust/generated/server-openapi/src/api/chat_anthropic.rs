@@ -16,13 +16,13 @@ impl ChatAnthropicApi {
 
     /// Anthropic Claude message
     pub async fn create_v1_message(&self, body: &AnthropicMessageCreateRequest) -> Result<AnthropicMessage, SdkworkError> {
-        let path = ai_path(&"/anthropic/v1/messages".to_string());
+        let path = "/anthropic/v1/messages".to_string();
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Anthropic count message tokens
     pub async fn create_v1_messages_count_token(&self, body: &AnthropicCountMessageTokensRequest) -> Result<AnthropicCountMessageTokensResponse, SdkworkError> {
-        let path = ai_path(&"/anthropic/v1/messages/count_tokens".to_string());
+        let path = "/anthropic/v1/messages/count_tokens".to_string();
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 

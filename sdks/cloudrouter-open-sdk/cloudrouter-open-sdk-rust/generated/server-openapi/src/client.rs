@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::api::{FilesAnthropicApi, ChatAnthropicApi, BatchesAnthropicApi, ResponsesGoogleApi, FilesGoogleApi, EmbeddingsGoogleApi, ChatGoogleApi, VideosKlingApi, ImagesMidjourneyApi, ImagesNanoBananaApi, AudioSunoApi, AssistantsApi, AudioApi, BatchesApi, ChatApi, CompletionApi, ContainerApi, ConversationApi, EmbeddingsApi, FilesApi, ImagesApi, ModelsApi, ModerationsApi, RealtimeApi, ResponsesApi, ThreadsApi, UploadsApi, VectorStoresApi, VideoApi, VideosViduApi, ImagesViduApi, VideosVolcengineApi, AudioElevenlabsApi};
+use crate::api::{FilesAnthropicApi, ChatAnthropicApi, BatchesAnthropicApi, AudioElevenlabsApi, ResponsesGoogleApi, FilesGoogleApi, EmbeddingsGoogleApi, ChatGoogleApi, VideosKlingApi, ImagesMidjourneyApi, ImagesNanoBananaApi, AudioSunoApi, AssistantsApi, AudioApi, BatchesApi, ChatApi, CompletionApi, ContainerApi, ConversationApi, EmbeddingsApi, FilesApi, ImagesApi, ModelsApi, ModerationsApi, RealtimeApi, ResponsesApi, ThreadsApi, UploadsApi, VectorStoresApi, VideoApi, VideosViduApi, ImagesViduApi, VideosVolcengineApi};
 use crate::http::{SdkworkConfig, SdkworkError, SdkworkHttpClient};
 
 #[derive(Clone)]
@@ -54,6 +54,10 @@ impl SdkworkAiClient {
 
     pub fn batches_anthropic(&self) -> BatchesAnthropicApi {
             BatchesAnthropicApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn audio_elevenlabs(&self) -> AudioElevenlabsApi {
+            AudioElevenlabsApi::new(Arc::clone(&self.http))
         }
 
     pub fn responses_google(&self) -> ResponsesGoogleApi {
@@ -170,9 +174,5 @@ impl SdkworkAiClient {
 
     pub fn videos_volcengine(&self) -> VideosVolcengineApi {
             VideosVolcengineApi::new(Arc::clone(&self.http))
-        }
-
-    pub fn audio_elevenlabs(&self) -> AudioElevenlabsApi {
-            AudioElevenlabsApi::new(Arc::clone(&self.http))
         }
 }

@@ -36,7 +36,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "d1eacfc8e6f44b7059e4315b8d00e8803791ceb8b072fd6e8fd5855999f0d70e"
+      "sha256": "d53ba502741a0400927df2aa498c87cb2b50d58ef504e133c143f966f434dec6"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -48,11 +48,11 @@
     },
     {
       "path": "src/api/audio_elevenlabs.rs",
-      "sha256": "63e58f5fb6c9a987fa32e32bc23ea66e2f9285847b7d02f948decd2a1e6ebf6d"
+      "sha256": "caa6e6ee7075b764a697314bdd2df41b5ae114d4f95a4407819a588395d1c627"
     },
     {
       "path": "src/api/audio_suno.rs",
-      "sha256": "1706ecf843439d7f80f1f767c1d1854b875d806a3287f0df3888e5f357be96fc"
+      "sha256": "8378ea23fdc35f5c3d95daffdf222bf29654d326019661900ef7bc5e41d5e387"
     },
     {
       "path": "src/api/audio.rs",
@@ -64,7 +64,7 @@
     },
     {
       "path": "src/api/batches_anthropic.rs",
-      "sha256": "7b7769143e2a739a4e0f6e9ab667934137720c0e1208d48a696002d7f891d975"
+      "sha256": "4d5ec9a3fd9b5f199ef4f9ec2c58442bef8946606eef6dea6ebd5ef6ee4d62d8"
     },
     {
       "path": "src/api/batches.rs",
@@ -72,11 +72,11 @@
     },
     {
       "path": "src/api/chat_anthropic.rs",
-      "sha256": "6e069934d745e62ce58e73d1f62a377d1e32b1693ec1499c0bf3a0c162c3f6a8"
+      "sha256": "a06d76d4de6f2b4707c8fb7366141036d33a211a3cf5088cca5d447241633a6d"
     },
     {
       "path": "src/api/chat_google.rs",
-      "sha256": "a2bbb4991616abb8b171e165707a2f7457aaa236d052730ad98d3c55f818405a"
+      "sha256": "7cc573880f21ee8fb15c613635a4330f4593944ca70e5b96b7c08dc5ae66bd0b"
     },
     {
       "path": "src/api/chat.rs",
@@ -96,7 +96,7 @@
     },
     {
       "path": "src/api/embeddings_google.rs",
-      "sha256": "f1166788e65fedeca70af3c7ed81dd4e89e48f35bd626680360f19e7c360a764"
+      "sha256": "ec4dce08cc2321388cee06ff268ca4cdf66138ddf61720e3ab5847df0ee18e5f"
     },
     {
       "path": "src/api/embeddings.rs",
@@ -104,11 +104,11 @@
     },
     {
       "path": "src/api/files_anthropic.rs",
-      "sha256": "20636f7edf981a78021c8e9dd6042f9f7a29b69eb1544e59d1b6daf7444f9089"
+      "sha256": "3b26e3c7f04c3da2332ea25be3b8a821cd2c5c0e015fe5b57632de63fb76462a"
     },
     {
       "path": "src/api/files_google.rs",
-      "sha256": "248a5fb844cf2a3d1c835f84f9863f0ae465b620436abf56b580ee33df45c082"
+      "sha256": "f82ea4e7362afa142dce3d4835aea92161a07ca045e0a378cbe272c52193bdac"
     },
     {
       "path": "src/api/files.rs",
@@ -116,15 +116,15 @@
     },
     {
       "path": "src/api/images_midjourney.rs",
-      "sha256": "fa8c4a7773e427e1452f811d1c6e177395bd8238cc8247b57741a398397396d8"
+      "sha256": "4158247b8ee40fbdae0e0f71f065aeac45d5744f0ef9a34b0f7ca29ac56c8523"
     },
     {
       "path": "src/api/images_nano_banana.rs",
-      "sha256": "a861870b56c00cd9c79c0a508dc04fae0fca810a8c6d92412b26b777bcc42b0a"
+      "sha256": "c0c83a7946168ccc4e6c126f13aa9941337f2d8d9a7643a8a2643d33dc9ec639"
     },
     {
       "path": "src/api/images_vidu.rs",
-      "sha256": "a96af527b95d4e4d0b24fc180d6bfbccf53553b50c2866326437a5d5ae3bef36"
+      "sha256": "17b8e1e0db4becb69c6f7015d211106972d8b6bbe4a7291042dafda8ff699e57"
     },
     {
       "path": "src/api/images.rs",
@@ -132,7 +132,7 @@
     },
     {
       "path": "src/api/mod.rs",
-      "sha256": "bb997465dc5caae8a131fe67b8c32007bccd9af54d2e7e933dcfb55f7f467df7"
+      "sha256": "9f93c408f4e7e5f17d27d29e6ea090b2e2af02ca59f6f6f7761a4e3c85a6a775"
     },
     {
       "path": "src/api/models.rs",
@@ -152,7 +152,7 @@
     },
     {
       "path": "src/api/responses_google.rs",
-      "sha256": "81f1512fa663c32da5a9c12d61751989ed15921c93baa7c8295f0a65de96bbd3"
+      "sha256": "56dac495e2f51256c4bad29f1566a7b49384d8bfdb1f1656c8a28b680458f1b7"
     },
     {
       "path": "src/api/responses.rs",
@@ -176,19 +176,19 @@
     },
     {
       "path": "src/api/videos_kling.rs",
-      "sha256": "b733159bc52ffad8444e15facfcb4fddb775728f0b2f89bbdd3a764d647b1d29"
+      "sha256": "c527d055b2dc41f3fd2d12496441f2a1948f3c2aa0ac7dc0f3ec89b59b08e3cc"
     },
     {
       "path": "src/api/videos_vidu.rs",
-      "sha256": "4e8e6f1c9f7c26afb53559097228cdb66f606f8197bb72b4227b415cb05d90ba"
+      "sha256": "f59e67a4e61a147a13e4b984751c824a1b235268487d32f70e6c81f299af8d22"
     },
     {
       "path": "src/api/videos_volcengine.rs",
-      "sha256": "bf4d7d7d11fc780e05fcceae6c16b02e08dda32e0ca7fa61077ffbe6123ce97a"
+      "sha256": "3aa0f09fbfd1c82d46ff8ee8851f2f6ed102fdbc1fdd69e0a1be683f81367b7b"
     },
     {
       "path": "src/client.rs",
-      "sha256": "caa70068c23c976952f129fd40d22827e6220e1cf1cfbb3128a0fedd6d63c8f5"
+      "sha256": "123131b03377ec09782549616f231cd87b5b9df5f9c15c82d6691295ce2f411f"
     },
     {
       "path": "src/http/client.rs",
@@ -304,19 +304,19 @@
     },
     {
       "path": "src/models/eleven_labs_sound_generation_request.rs",
-      "sha256": "9d33b84e65bd50b8558657f0949d1eeaa19ab7c769520e23b3d1283dd1b22483"
+      "sha256": "a8d8edf26c605fe0aa2fd99477f251d99ad475ab0bdeb33a48eee332fef5a56b"
     },
     {
       "path": "src/models/eleven_labs_sound_generation_response.rs",
-      "sha256": "e9815fa347633b4842d92cd0386dda931a83a9af631d96694d5ecd975bc4c8ea"
+      "sha256": "e8338883d64c293ef1c89814a5362dcb63da9391d5790142e8a5f769c45cf331"
     },
     {
       "path": "src/models/eleven_labs_text_to_speech_request.rs",
-      "sha256": "d4573ae854aa4d9651971f105f91190bcc86d55776741646f677a1bd6b92e7d6"
+      "sha256": "b56ca5636b81a12b4285761398a594527d387069ea0f000f85a5ea3456bc1192"
     },
     {
       "path": "src/models/eleven_labs_text_to_speech_response.rs",
-      "sha256": "e6affc4726e3635623bfb67fd4a0cbd7ecd34c601e7412e08fc2fe94374ed134"
+      "sha256": "41fe5be0b47396984ae577584dd73f857b3db371af8f37ae526929bc4f4eb9cb"
     },
     {
       "path": "src/models/google_batch_embed_contents_request.rs",
@@ -508,7 +508,7 @@
     },
     {
       "path": "src/models/mod.rs",
-      "sha256": "b3c0934213630d66e2360e8d89ffacaadb5652d10b862eaa3d166b391a2fd0b6"
+      "sha256": "435b06065bf4887dd55328e673f4cf1caae29d6dc2eacbcf65d364984733ec3a"
     },
     {
       "path": "src/models/nano_banana_image_generation_request.rs",

@@ -22,19 +22,19 @@ impl BatchesAnthropicApi {
             QueryParameterSpec::new("after_id", after_id, "form", true, false, None),
             QueryParameterSpec::new("limit", limit, "form", true, false, None),
         ]);
-        let path = append_query_string(ai_path(&"/anthropic/v1/messages/batches".to_string()), &query);
+        let path = append_query_string("/anthropic/v1/messages/batches".to_string(), &query);
         self.client.get(&path, None, None).await
     }
 
     /// Anthropic create message batch
     pub async fn create_v1_messages_batch(&self, body: &AnthropicMessageBatchCreateRequest) -> Result<AnthropicMessageBatch, SdkworkError> {
-        let path = ai_path(&"/anthropic/v1/messages/batches".to_string());
+        let path = "/anthropic/v1/messages/batches".to_string();
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Anthropic cancel message batch
     pub async fn create_v1_messages_batches_cancel(&self, batch_id: &str) -> Result<AnthropicMessageBatch, SdkworkError> {
-        let path = ai_path(&format!("/anthropic/v1/messages/batches/{}/cancel", serialize_path_parameter(batch_id, PathParameterSpec::new("batch_id", "simple", false))));
+        let path = format!("/anthropic/v1/messages/batches/{}/cancel", serialize_path_parameter(batch_id, PathParameterSpec::new("batch_id", "simple", false)));
         self.client.post(&path, Option::<&serde_json::Value>::None, None, None, None).await
     }
 

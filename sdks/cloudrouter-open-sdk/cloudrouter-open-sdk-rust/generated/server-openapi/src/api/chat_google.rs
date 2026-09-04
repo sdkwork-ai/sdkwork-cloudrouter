@@ -16,19 +16,19 @@ impl ChatGoogleApi {
 
     /// Google Gemini count tokens
     pub async fn create_v1beta_models_model_count_token(&self, model: &str, body: &GoogleCountTokensRequest) -> Result<GoogleCountTokensResponse, SdkworkError> {
-        let path = ai_path(&format!("/google/v1beta/models/{}:countTokens", serialize_path_parameter(model, PathParameterSpec::new("model", "simple", false))));
+        let path = format!("/google/v1beta/models/{}:countTokens", serialize_path_parameter(model, PathParameterSpec::new("model", "simple", false)));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Google Gemini generate content
     pub async fn create_v1beta_models_model_generate_content(&self, model: &str, body: &GoogleGenerateContentRequest) -> Result<GoogleGenerateContentResponse, SdkworkError> {
-        let path = ai_path(&format!("/google/v1beta/models/{}:generateContent", serialize_path_parameter(model, PathParameterSpec::new("model", "simple", false))));
+        let path = format!("/google/v1beta/models/{}:generateContent", serialize_path_parameter(model, PathParameterSpec::new("model", "simple", false)));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Google Gemini stream generate content
     pub async fn create_v1beta_models_model_stream_generate_content(&self, model: &str, body: &GoogleGenerateContentRequest) -> Result<GoogleGenerateContentResponse, SdkworkError> {
-        let path = ai_path(&format!("/google/v1beta/models/{}:streamGenerateContent", serialize_path_parameter(model, PathParameterSpec::new("model", "simple", false))));
+        let path = format!("/google/v1beta/models/{}:streamGenerateContent", serialize_path_parameter(model, PathParameterSpec::new("model", "simple", false)));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 

@@ -16,13 +16,13 @@ impl EmbeddingsGoogleApi {
 
     /// Google Gemini batch embed contents
     pub async fn create_v1beta_models_model_batch_embed_content(&self, model: &str, body: &GoogleBatchEmbedContentsRequest) -> Result<GoogleBatchEmbedContentsResponse, SdkworkError> {
-        let path = ai_path(&format!("/google/v1beta/models/{}:batchEmbedContents", serialize_path_parameter(model, PathParameterSpec::new("model", "simple", false))));
+        let path = format!("/google/v1beta/models/{}:batchEmbedContents", serialize_path_parameter(model, PathParameterSpec::new("model", "simple", false)));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Google Gemini embed content
     pub async fn create_v1beta_models_model_embed_content(&self, model: &str, body: &GoogleEmbedContentRequest) -> Result<GoogleEmbedContentResponse, SdkworkError> {
-        let path = ai_path(&format!("/google/v1beta/models/{}:embedContent", serialize_path_parameter(model, PathParameterSpec::new("model", "simple", false))));
+        let path = format!("/google/v1beta/models/{}:embedContent", serialize_path_parameter(model, PathParameterSpec::new("model", "simple", false)));
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
