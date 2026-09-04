@@ -382,6 +382,26 @@ fn admin_pricing_patch_preserves_unprovided_billing_modes() {
     );
 }
 
+#[test]
+fn admin_pricing_integer_cell_decodes_int4_columns() {
+    // `status` is INT4 across pricing_default_region / cloudrouter_pricing_plan /
+    // cloudrouter_pricing_rule / cloudrouter_account_rate_card / pricing_price_book.
+    // sqlx decodes strictly (INT4 -> i32), so an i64-only reader silently fell
+    // back to 0 and every admin pricing item surfaced as `status: "inactive"` —
+    // which made the admin console drop configured default billing regions on
+    // load. The reader must try i32 before the textual fallback.
+    let source = POSTGRES_ADMIN_PRICING_STORE;
+    let section = source_section(source, "fn integer_cell", "async fn list_default_regions");
+    assert!(
+        section.contains("try_get::<i32, _>(column)"),
+        "integer_cell must decode INT4 columns via i32; an i64-only reader returns 0 for them"
+    );
+    assert!(
+        section.contains("unwrap_or(0)"),
+        "integer_cell must keep the 0 terminal fallback for missing cells"
+    );
+}
+
 fn source_section<'a>(source: &'a str, start: &str, end: &str) -> &'a str {
     let start_index = source.find(start).expect("section start must exist");
     let end_index = source[start_index..]

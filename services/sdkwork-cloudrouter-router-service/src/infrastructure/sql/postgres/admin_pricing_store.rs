@@ -1524,10 +1524,28 @@ fn string_cell(row: &sqlx::postgres::PgRow, column: &str) -> String {
     optional_string_cell(row, column).unwrap_or_default()
 }
 
+/// Reads an integer cell across the int types the pricing tables actually use.
+///
+/// sqlx decodes Postgres columns strictly (`INT4` -> `i32`, `INT8` -> `i64`),
+/// so an i64-only reader silently fails on every `integer` column — e.g. the
+/// `status` columns are `INT4` across pricing_default_region /
+/// cloudrouter_pricing_plan / cloudrouter_pricing_rule /
+/// cloudrouter_account_rate_card / pricing_price_book, and a 0 fallback made
+/// every admin pricing item surface as `status: "inactive"` regardless of the
+/// stored value (which in turn made the admin console drop configured default
+/// billing regions on load). Try i64, then i32, then nullable variants, then
+/// the textual form.
 fn integer_cell(row: &sqlx::postgres::PgRow, column: &str) -> i64 {
     row.try_get::<i64, _>(column)
         .ok()
+        .or_else(|| row.try_get::<i32, _>(column).map(i64::from).ok())
         .or_else(|| row.try_get::<Option<i64>, _>(column).ok().flatten())
+        .or_else(|| {
+            row.try_get::<Option<i32>, _>(column)
+                .ok()
+                .flatten()
+                .map(i64::from)
+        })
         .or_else(|| {
             string_cell(row, column)
                 .split('.')

@@ -8,6 +8,7 @@ use sdkwork_utils_rust::PageInfo;
 use sdkwork_web_core::WebRequestContext;
 use serde::{Deserialize, Serialize};
 
+use crate::api::app_sql_subject::ResolvedAppSqlScopedSubject;
 use crate::api::response::{
     json_success_response, normalize_list_search_query, offset_page_info, parse_offset_list_query,
     problem_from_wire_code_for_context, validation_problem_for_context,
@@ -177,15 +178,23 @@ async fn list_pricing_rates(
 async fn list_pricing_products(
     State(state): State<AppPricingState>,
     request_context: Option<Extension<WebRequestContext>>,
+    subject: ResolvedAppSqlScopedSubject,
     Query(query): Query<AdminProductPricingQuery>,
 ) -> Response {
     let ctx = request_context.map(|context| context.0);
-    let (store_query, page_no, page_size) = match validate_product_query(query) {
-        Ok(value) => value,
-        Err(message) => {
-            return validation_problem_for_context(ctx.as_ref(), message).into_response();
-        }
-    };
+    // The caller's scope drives the configured default billing region
+    // preference; anonymous callers fall back to the official (0,0) scope.
+    let (tenant_id, organization_id) = subject
+        .0
+        .map(|scope| (scope.tenant_id, scope.organization_id))
+        .unwrap_or((0, 0));
+    let (store_query, page_no, page_size) =
+        match validate_product_query(query, tenant_id, organization_id) {
+            Ok(value) => value,
+            Err(message) => {
+                return validation_problem_for_context(ctx.as_ref(), message).into_response();
+            }
+        };
 
     match state
         .read_store
@@ -233,6 +242,8 @@ fn validate_query(
 
 fn validate_product_query(
     query: AdminProductPricingQuery,
+    tenant_id: i64,
+    organization_id: i64,
 ) -> Result<(OfficialPricingProductCatalogQuery, i64, i64), String> {
     let pagination = parse_offset_list_query(query.page, query.page_size)?;
     Ok((
@@ -241,6 +252,8 @@ fn validate_product_query(
             search_query: normalize_list_search_query(query.q, "q")?,
             vendor_codes: normalize_facet_codes(query.vendor_codes, "vendor_codes")?,
             region_code: normalize_facet_code(query.region_code, "region_code")?,
+            tenant_id,
+            organization_id,
             page_size: pagination.page_size,
             offset: pagination.offset,
         },
@@ -374,28 +387,37 @@ mod tests {
 
     #[test]
     fn product_pricing_query_pages_products_and_normalizes_category() {
-        let (query, page, page_size) = validate_product_query(AdminProductPricingQuery {
-            category: Some("LLM".to_owned()),
-            q: Some("claude".to_owned()),
-            vendor_codes: Some("OpenAI, anthropic,openai".to_owned()),
-            region_code: None,
-            page: Some(3),
-            page_size: Some(20),
-        })
+        let (query, page, page_size) = validate_product_query(
+            AdminProductPricingQuery {
+                category: Some("LLM".to_owned()),
+                q: Some("claude".to_owned()),
+                vendor_codes: Some("OpenAI, anthropic,openai".to_owned()),
+                region_code: None,
+                page: Some(3),
+                page_size: Some(20),
+            },
+            100001,
+            0,
+        )
         .unwrap();
         assert_eq!("llm", query.category);
         assert_eq!(Some("claude".to_owned()), query.search_query);
         assert_eq!(vec!["anthropic", "openai"], query.vendor_codes);
         assert_eq!(40, query.offset);
         assert_eq!((3, 20), (page, page_size));
+        assert_eq!((100001, 0), (query.tenant_id, query.organization_id));
     }
 
     #[test]
     fn product_pricing_query_rejects_invalid_vendor_codes() {
-        assert!(validate_product_query(AdminProductPricingQuery {
-            vendor_codes: Some("open ai".to_owned()),
-            ..AdminProductPricingQuery::default()
-        })
+        assert!(validate_product_query(
+            AdminProductPricingQuery {
+                vendor_codes: Some("open ai".to_owned()),
+                ..AdminProductPricingQuery::default()
+            },
+            0,
+            0
+        )
         .is_err());
     }
 }

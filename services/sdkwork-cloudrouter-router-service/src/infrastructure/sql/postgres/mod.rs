@@ -36,6 +36,7 @@ mod openai_invocation_telemetry_plugin;
 mod payment_intent_runtime_store;
 mod payment_provider_route_resolver;
 mod payment_reconciliation_runtime_store;
+mod pricing_region_preference;
 mod routing_decision_log_recorder;
 mod row_mapping;
 mod runtime_region_settings_store;

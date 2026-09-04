@@ -35,6 +35,14 @@ pub struct OfficialPricingProductCatalogQuery {
     /// region) so a row always renders a meaningful official reference price
     /// and sales price.
     pub region_code: Option<String>,
+    /// Caller scope for the configured default billing region preference
+    /// (`pricing_default_region`). The loader prefers the caller's own scope
+    /// and falls back to the official `(0, 0)` scope; use `(0, 0)` when the
+    /// caller is anonymous so the platform-configured defaults still apply.
+    /// The preference itself is applied in memory over the full price set of
+    /// each resource — never inside the price SQL.
+    pub tenant_id: i64,
+    pub organization_id: i64,
     pub page_size: i64,
     pub offset: i64,
 }
