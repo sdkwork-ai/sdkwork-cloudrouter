@@ -161,6 +161,7 @@ pub use openai_responses::openai_responses_router_with_relay_and_usage_recorder_
 pub use openai_responses::openai_responses_router_with_relay_plugins_and_failure_strategy;
 pub use openai_responses::openai_responses_router_with_relay_usage_recorder_plugins_and_failure_strategy;
 pub use openai_responses::openai_responses_router_with_relay_usage_recorder_plugins_and_runtime_config;
+pub use openai_responses::openai_responses_router_with_relays_plugins_and_failure_strategy;
 pub use openai_runtime::{OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig};
 pub use openai_usage::OpenAiUsageRecorder;
 pub use openai_vendors::{list_group_scoped_vendors, openai_vendors_router};

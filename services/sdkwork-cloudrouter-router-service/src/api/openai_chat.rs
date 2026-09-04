@@ -981,11 +981,9 @@ where
     // here are the only prices the streaming usage recorder may use. A
     // pricing failure terminates the request before any upstream tokens are
     // consumed instead of streaming traffic that cannot be billed.
-    let prebuilt_usage =
-        match usage_recording {
-            Some(usage_recording) => match usage_recording
-                .prepare_usage_command_builder(invocation_context, route, true)
-            {
+    let prebuilt_usage = match usage_recording {
+        Some(usage_recording) => {
+            match usage_recording.prepare_usage_command_builder(invocation_context, route, true) {
                 Ok(builder) => Some(builder),
                 Err(error) => {
                     let message = format!("pricing preflight failed before relay: {error}");
@@ -1011,9 +1009,10 @@ where
                     notify_error(plugins, invocation_context, Some(route), &error).await;
                     return Err(RouteRelayFailure::Terminal(error.into_openai_response()));
                 }
-            },
-            None => None,
-        };
+            }
+        }
+        None => None,
+    };
     let started_at = Instant::now();
     let response = match relay
         .create_chat_completion_stream(ChatCompletionRelayRequest {
@@ -1149,11 +1148,7 @@ where
     }
     if let Some(usage_recording) = usage_recording.as_ref() {
         if let Err(fault) = usage_recording
-            .record_after_success(
-                invocation_context,
-                &relay_outcome,
-                prebuilt_usage.clone(),
-            )
+            .record_after_success(invocation_context, &relay_outcome, prebuilt_usage.clone())
             .await
         {
             record_request_trace(
@@ -1214,6 +1209,8 @@ where
                 invocation_context.clone(),
                 route.clone(),
                 relay_outcome,
+                chat_usage_from_stream_event,
+                OpenAiInvocationEndpoint::ChatCompletions,
             ))
         }
         _ => {
@@ -1338,11 +1335,9 @@ where
     // terminate the request immediately instead of relaying traffic that
     // cannot be billed; the usage recording phase below only reads the
     // preloaded builder and never re-resolves prices.
-    let prebuilt_usage =
-        match usage_recording {
-            Some(usage_recording) => match usage_recording
-                .prepare_usage_command_builder(invocation_context, route, false)
-            {
+    let prebuilt_usage = match usage_recording {
+        Some(usage_recording) => {
+            match usage_recording.prepare_usage_command_builder(invocation_context, route, false) {
                 Ok(builder) => Some(builder),
                 Err(error) => {
                     let message = format!("pricing preflight failed before relay: {error}");
@@ -1368,9 +1363,10 @@ where
                     notify_error(plugins, invocation_context, Some(route), &error).await;
                     return Err(RouteRelayFailure::Terminal(error.into_openai_response()));
                 }
-            },
-            None => None,
-        };
+            }
+        }
+        None => None,
+    };
     let started_at = Instant::now();
     let response = match relay
         .create_chat_completion(ChatCompletionRelayRequest {
@@ -1535,7 +1531,13 @@ where
     ))
 }
 
-struct StreamingUsageRecordingBody {
+/// Function that pulls the terminal token usage out of one parsed SSE event
+/// payload. Chat completion chunks and Responses API events differ in shape,
+/// so the recording body is parameterized over the extractor.
+pub(crate) type StreamUsageExtractor =
+    fn(&Value) -> crate::domain::DomainResult<Option<OpenAiTokenUsage>>;
+
+pub(crate) struct StreamingUsageRecordingBody {
     inner: Body,
     usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
     command_builder: Option<GatewayUsageRecordCommandBuilder>,
@@ -1543,6 +1545,8 @@ struct StreamingUsageRecordingBody {
     invocation_context: OpenAiInvocationContext,
     route: ResolvedOpenAiUpstreamRoute,
     relay_outcome: OpenAiInvocationRelayOutcome,
+    usage_extractor: StreamUsageExtractor,
+    endpoint: OpenAiInvocationEndpoint,
     event_buffer: Vec<u8>,
     usage: Option<OpenAiTokenUsage>,
     recording: Option<GatewayUsageRecordFuture<'static>>,
@@ -1554,7 +1558,7 @@ struct StreamingUsageRecordingBody {
 }
 
 impl StreamingUsageRecordingBody {
-    fn new(
+    pub(crate) fn new(
         inner: Body,
         usage_recorder: Arc<dyn GatewayUsageRecorder + Send + Sync>,
         command_builder: GatewayUsageRecordCommandBuilder,
@@ -1562,6 +1566,8 @@ impl StreamingUsageRecordingBody {
         invocation_context: OpenAiInvocationContext,
         route: ResolvedOpenAiUpstreamRoute,
         relay_outcome: OpenAiInvocationRelayOutcome,
+        usage_extractor: StreamUsageExtractor,
+        endpoint: OpenAiInvocationEndpoint,
     ) -> Self {
         Self {
             inner,
@@ -1571,6 +1577,8 @@ impl StreamingUsageRecordingBody {
             invocation_context,
             route,
             relay_outcome,
+            usage_extractor,
+            endpoint,
             event_buffer: Vec::new(),
             usage: None,
             recording: None,
@@ -1659,11 +1667,11 @@ impl StreamingUsageRecordingBody {
         let Ok(payload) = serde_json::from_str::<Value>(&data) else {
             return;
         };
-        match chat_usage_from_stream_event(&payload) {
+        match (self.usage_extractor)(&payload) {
             Ok(Some(usage)) => self.usage = Some(usage),
             Ok(None) => {}
             Err(error) => {
-                tracing::warn!(error = %redact_error_message(&error), "failed to parse streaming chat usage event");
+                tracing::warn!(error = %redact_error_message(&error), "failed to parse streaming provider usage event");
                 self.terminal_error = Some(error.to_string());
             }
         }
@@ -1680,9 +1688,9 @@ impl StreamingUsageRecordingBody {
             return;
         };
         let Some(usage) = self.usage else {
-            observe_provider_usage_missing(OpenAiInvocationEndpoint::ChatCompletions, true);
+            observe_provider_usage_missing(self.endpoint, true);
             tracing::error!(
-                endpoint = "chat_completions",
+                endpoint = ?self.endpoint,
                 streaming = true,
                 error_code = "provider_usage_missing",
                 reconciliation_required = true,
@@ -1710,7 +1718,7 @@ impl StreamingUsageRecordingBody {
         let commands = match command_builder.build(usage) {
             Ok(commands) => commands,
             Err(error) => {
-                tracing::warn!(error = %redact_error_message(&error), "failed to build streaming chat usage record");
+                tracing::warn!(error = %redact_error_message(&error), endpoint = ?self.endpoint, "failed to build streaming provider usage record");
                 self.terminal_error = Some(error.to_string());
                 return;
             }
@@ -1748,14 +1756,14 @@ impl StreamingUsageRecordingBody {
             Poll::Ready(Err(error)) => {
                 self.recording = None;
                 if self.recording_is_trace_only {
-                    tracing::warn!(error = %redact_error_message(&error), "failed to record streaming chat trace");
+                    tracing::warn!(error = %redact_error_message(&error), "failed to record streaming provider trace");
                     self.recording_is_trace_only = false;
                     self.usage_recorder = None;
                     self.command_builder = None;
                     self.prepare_missing_usage_notification();
                     return self.poll_completion_notification(cx);
                 }
-                tracing::warn!(error = %redact_error_message(&error), "failed to record streaming chat usage");
+                tracing::warn!(error = %redact_error_message(&error), "failed to record streaming provider usage");
                 self.terminal_error = Some(error.to_string());
                 self.poll_terminal_error(cx)
             }

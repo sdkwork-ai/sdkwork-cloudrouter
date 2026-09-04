@@ -50,6 +50,7 @@ mod provider_adapter_route_resolver;
 mod provider_secret_resolver;
 mod response_memory;
 mod responses_relay;
+mod responses_stream_relay;
 mod routing_decision_log_recorder;
 mod runtime_region_settings_store;
 mod settings_store;
@@ -357,6 +358,9 @@ pub use provider_secret_resolver::ProviderSecretResolver;
 pub use response_memory::ProviderResponseMemoryGuard;
 pub use responses_relay::{
     ResponsesRelay, ResponsesRelayFuture, ResponsesRelayRequest, ResponsesRelayResponse,
+};
+pub use responses_stream_relay::{
+    ResponsesStreamRelay, ResponsesStreamRelayFuture, ResponsesStreamRelayResponse,
 };
 pub use routing_decision_log_recorder::{
     RoutingDecisionLogRecorder, RoutingDecisionRecordCommand, RoutingDecisionRecordFuture,

@@ -36,8 +36,9 @@ pub(crate) fn guarded_openai_json_response(
 /// provider requires a different native name). OpenAI-compatible clients send
 /// a catalog/alias `model` and must receive that same id back, so the relayed
 /// response's `model` field is restored to the requested value before it is
-/// returned. This mirrors `restore_openai_compatible_model` in the invocation
-/// pipeline.
+/// returned. For Responses API objects the nested `response.model` field is
+/// restored as well. This mirrors `restore_openai_compatible_model` in the
+/// invocation pipeline.
 pub(crate) fn restore_relayed_model(mut body: Value, requested_model: &str) -> Value {
     let requested_model = requested_model.trim();
     if requested_model.is_empty() {
@@ -46,6 +47,14 @@ pub(crate) fn restore_relayed_model(mut body: Value, requested_model: &str) -> V
     let Some(object) = body.as_object_mut() else {
         return body;
     };
+    restore_model_field(object, requested_model);
+    if let Some(Value::Object(nested)) = object.get_mut("response") {
+        restore_model_field(nested, requested_model);
+    }
+    body
+}
+
+fn restore_model_field(object: &mut serde_json::Map<String, Value>, requested_model: &str) {
     match object.get("model") {
         Some(Value::String(current)) if current != requested_model => {
             object.insert(
@@ -55,14 +64,15 @@ pub(crate) fn restore_relayed_model(mut body: Value, requested_model: &str) -> V
         }
         _ => {}
     }
-    body
 }
 
 /// Restores the client-requested `model` in each OpenAI-compatible SSE frame of
 /// a relayed streaming response. The outbound relay rewrites `model` to the
 /// provider-native id when the account has a `provider_native_model` override;
 /// streaming frames echo that id back, so we rewrite `model` inside each
-/// `data: {json}` payload line. All other bytes are forwarded verbatim.
+/// `data: {json}` payload line. Responses API events nest the model under the
+/// `response` object (`response.model`), which is restored the same way. All
+/// other bytes are forwarded verbatim.
 pub(crate) fn restore_relayed_streaming_model(stream: Body, requested_model: &str) -> Body {
     let requested_model = requested_model.trim();
     if requested_model.is_empty() {
@@ -197,6 +207,30 @@ mod tests {
         let restored = restore_relayed_model(body, "gpt-4o-mini");
         assert_eq!("x", restored["id"]);
         assert!(restored.get("model").is_none());
+    }
+
+    #[test]
+    fn relayed_responses_nested_model_is_restored_to_requested_model() {
+        let body = json!({
+            "id":"resp_1",
+            "object":"response",
+            "response":{
+                "id":"resp_1",
+                "model":"provider-native-9",
+                "usage":{"input_tokens":3,"output_tokens":2,"total_tokens":5}
+            }
+        });
+        let restored = restore_relayed_model(body, "gpt-5");
+        assert_eq!("gpt-5", restored["response"]["model"]);
+        assert_eq!(restored.get("model"), None);
+    }
+
+    #[test]
+    fn relayed_chat_chunk_without_response_object_is_unchanged_shape() {
+        let body = json!({"id":"x","object":"chat.completion.chunk","model":"gpt-4o-mini","choices":[]});
+        let restored = restore_relayed_model(body, "gpt-4o-mini");
+        assert!(restored.get("response").is_none());
+        assert_eq!("gpt-4o-mini", restored["model"]);
     }
 
     #[test]

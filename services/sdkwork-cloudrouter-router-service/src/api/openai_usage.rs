@@ -458,6 +458,34 @@ pub(crate) fn chat_usage_from_stream_event(body: &Value) -> DomainResult<Option<
     .map(Some)
 }
 
+/// Extracts token usage from an OpenAI Responses API SSE event.
+///
+/// The standard upstream reports usage only on the terminal
+/// `response.completed` event, nested as `response.usage`. Some aggregating
+/// suppliers instead emit a top-level `usage` field on that event, so both
+/// locations are checked; earlier events without usage yield `Ok(None)`.
+pub(crate) fn responses_usage_from_stream_event(
+    body: &Value,
+) -> DomainResult<Option<OpenAiTokenUsage>> {
+    let usage = body
+        .get("response")
+        .and_then(|response| response.get("usage"))
+        .or_else(|| body.get("usage"));
+    let Some(usage) = usage else {
+        return Ok(None);
+    };
+    if usage.is_null() {
+        return Ok(None);
+    }
+    usage_from_fields(
+        usage,
+        "input_tokens",
+        "output_tokens",
+        "input_tokens_details",
+    )
+    .map(Some)
+}
+
 fn responses_usage_from_response(body: &Value) -> DomainResult<OpenAiTokenUsage> {
     let usage = body
         .get("usage")
@@ -552,9 +580,7 @@ fn non_negative_integer(field: &str, integer: i64) -> DomainResult<i64> {
 /// (`unrated`). Recording such a fact would persist zero amounts — the exact
 /// failure mode that silently dropped billing — so the request is rejected
 /// before the upstream relay instead of being billed at zero afterwards.
-fn validate_prebuilt_quotes(
-    builder: &GatewayUsageRecordCommandBuilder,
-) -> DomainResult<()> {
+fn validate_prebuilt_quotes(builder: &GatewayUsageRecordCommandBuilder) -> DomainResult<()> {
     let mut quotes: Vec<(&str, &PriceResolution)> = Vec::new();
     quotes.push(("input", &builder.input_quote));
     if let Some(output_quote) = builder.output_quote.as_ref() {
@@ -971,6 +997,10 @@ pub(crate) fn chat_usage_billing_profile() -> OpenAiUsageBillingProfile {
     OpenAiUsageBillingProfile::chat()
 }
 
+pub(crate) fn responses_usage_billing_profile() -> OpenAiUsageBillingProfile {
+    OpenAiUsageBillingProfile::responses()
+}
+
 pub(crate) fn provider_usage_record_error(error: DomainError) -> OpenAiInvocationPluginError {
     OpenAiInvocationPluginError::new(
         StatusCode::BAD_GATEWAY,
@@ -1232,5 +1262,69 @@ mod tests {
 
         assert_eq!(146, parsed.prompt_tokens);
         assert_eq!(0, parsed.cached_tokens);
+    }
+
+    /// Responses API SSE events nest usage inside the terminal
+    /// `response.completed` event as `response.usage`.
+    #[test]
+    fn responses_usage_from_stream_event_reads_nested_response_usage() {
+        let event = serde_json::json!({
+            "type": "response.completed",
+            "response": {
+                "id": "resp-1",
+                "usage": {
+                    "input_tokens": 12,
+                    "output_tokens": 5,
+                    "input_tokens_details": { "cached_tokens": 4 },
+                    "total_tokens": 17
+                }
+            }
+        });
+
+        let parsed = responses_usage_from_stream_event(&event).expect("usage must parse");
+
+        let parsed = parsed.expect("terminal event must carry usage");
+        assert_eq!(12, parsed.prompt_tokens);
+        assert_eq!(4, parsed.cached_tokens);
+        assert_eq!(5, parsed.completion_tokens);
+        assert_eq!(17, parsed.total_tokens);
+    }
+
+    /// Aggregating suppliers sometimes emit a top-level `usage` on the event;
+    /// both locations must be honored.
+    #[test]
+    fn responses_usage_from_stream_event_falls_back_to_top_level_usage() {
+        let event = serde_json::json!({
+            "type": "response.completed",
+            "usage": {
+                "input_tokens": 33,
+                "output_tokens": 119,
+                "input_tokens_details": { "cached_tokens": 128 },
+                "total_tokens": 280
+            }
+        });
+
+        let parsed = responses_usage_from_stream_event(&event).expect("usage must parse");
+
+        let parsed = parsed.expect("terminal event must carry usage");
+        // Miss-only reporting is normalized to inclusive semantics.
+        assert_eq!(161, parsed.prompt_tokens);
+        assert_eq!(128, parsed.cached_tokens);
+        assert_eq!(119, parsed.completion_tokens);
+        assert_eq!(280, parsed.total_tokens);
+    }
+
+    /// Events before the terminal one carry no usage and must yield `None`
+    /// without an error.
+    #[test]
+    fn responses_usage_from_stream_event_returns_none_when_usage_absent() {
+        let event = serde_json::json!({
+            "type": "response.output_text.delta",
+            "delta": "pong"
+        });
+
+        let parsed = responses_usage_from_stream_event(&event).expect("parse must not fail");
+
+        assert!(parsed.is_none());
     }
 }

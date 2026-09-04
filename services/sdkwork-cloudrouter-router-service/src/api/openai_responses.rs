@@ -1,8 +1,9 @@
 use std::sync::Arc;
 use std::time::Instant;
 
-use axum::body::Bytes;
+use axum::body::{Body, Bytes};
 use axum::extract::State;
+use axum::http::header::CONTENT_TYPE;
 use axum::http::{HeaderMap, StatusCode, Uri};
 use axum::response::Response;
 use axum::routing::post;
@@ -11,6 +12,7 @@ use sdkwork_cloudrouter_http::ApiKeyIdentity;
 use serde_json::Value;
 
 use crate::api::openai_contract::OpenAiResponsesRequest;
+use crate::api::openai_chat::StreamingUsageRecordingBody;
 use crate::api::openai_error::openai_error;
 use crate::api::openai_invocation::{
     notify_after_relay_observers, notify_after_route_selection, notify_before_relay,
@@ -20,8 +22,8 @@ use crate::api::openai_invocation::{
     OpenAiInvocationRelayOutcome,
 };
 use crate::api::openai_relay_execution::{
-    guarded_openai_json_response, restore_relayed_model, OpenAiRelayExecution,
-    OpenAiRouteRelayExecution,
+    guarded_openai_json_response, restore_relayed_model, restore_relayed_streaming_model,
+    OpenAiRelayExecution, OpenAiRouteRelayExecution,
 };
 use crate::api::openai_runtime::{
     authenticate_api_key, provider_relay_attempt_retry_policy, resolve_openai_upstream_route_plan,
@@ -29,21 +31,25 @@ use crate::api::openai_runtime::{
     OpenAiRuntimeRouteConfig, ResolvedOpenAiUpstreamRoutePlan,
 };
 use crate::api::openai_usage::{
-    build_request_trace_command, provider_error_code_from_body, provider_error_message_from_body,
-    provider_error_type_from_body, provider_usage_plugin_error_from_fault, record_request_trace,
+    build_request_trace_command, build_usage_record_command_builder,
+    provider_error_code_from_body, provider_error_message_from_body,
+    provider_error_type_from_body, provider_usage_plugin_error_from_fault,
+    record_request_trace, responses_usage_billing_profile, responses_usage_from_stream_event,
     OpenAiUsageRecorder,
 };
 use crate::application::{ApiKeySecretHasher, AuthenticatedApiKeyContext};
 use crate::domain::{BillingMeter, ProviderRetryPolicy, RoutingCapability};
 use crate::ports::{
     GatewayUsageRecorder, GetRuntimeRegionSettingsQuery, ResponsesRelay, ResponsesRelayRequest,
-    RuntimeRegionSettingsStore, RuntimeRegionSettingsSubject, UpstreamAccountRouteCatalog,
+    ResponsesStreamRelay, RuntimeRegionSettingsStore, RuntimeRegionSettingsSubject,
+    UpstreamAccountRouteCatalog,
 };
 
 struct OpenAiResponsesState<C> {
     catalog: Arc<C>,
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
     relay: Option<Arc<dyn ResponsesRelay + Send + Sync>>,
+    stream_relay: Option<Arc<dyn ResponsesStreamRelay + Send + Sync>>,
     usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
     usage_recording: Option<Arc<OpenAiUsageRecorder<C>>>,
     plugins: Vec<OpenAiInvocationPluginRef>,
@@ -58,6 +64,7 @@ impl<C> Clone for OpenAiResponsesState<C> {
             catalog: Arc::clone(&self.catalog),
             api_key_hasher: Arc::clone(&self.api_key_hasher),
             relay: self.relay.clone(),
+            stream_relay: self.stream_relay.clone(),
             usage_recorder: self.usage_recorder.clone(),
             usage_recording: self.usage_recording.clone(),
             plugins: self.plugins.clone(),
@@ -123,10 +130,32 @@ pub fn openai_responses_router_with_relay_plugins_and_failure_strategy<C>(
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
+    openai_responses_router_with_relays_plugins_and_failure_strategy(
+        catalog,
+        api_key_hasher,
+        relay,
+        None,
+        plugins,
+        failure_strategy,
+    )
+}
+
+pub fn openai_responses_router_with_relays_plugins_and_failure_strategy<C>(
+    catalog: Arc<C>,
+    api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
+    relay: Arc<dyn ResponsesRelay + Send + Sync>,
+    stream_relay: Option<Arc<dyn ResponsesStreamRelay + Send + Sync>>,
+    plugins: Vec<OpenAiInvocationPluginRef>,
+    failure_strategy: OpenAiRuntimeFailureStrategy,
+) -> Router
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
     openai_responses_router_with_optional_relay_and_failure_strategy(
         catalog,
         api_key_hasher,
         Some(relay),
+        stream_relay,
         None,
         plugins,
         failure_strategy,
@@ -186,6 +215,7 @@ where
         catalog,
         api_key_hasher,
         Some(relay),
+        None,
         Some(usage_recorder),
         plugins,
         failure_strategy,
@@ -196,6 +226,7 @@ pub fn openai_responses_router_with_relay_usage_recorder_plugins_and_runtime_con
     catalog: Arc<C>,
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
     relay: Arc<dyn ResponsesRelay + Send + Sync>,
+    stream_relay: Option<Arc<dyn ResponsesStreamRelay + Send + Sync>>,
     usage_recorder: Arc<dyn GatewayUsageRecorder + Send + Sync>,
     plugins: Vec<OpenAiInvocationPluginRef>,
     runtime_config: OpenAiRuntimeRouteConfig,
@@ -207,6 +238,7 @@ where
         catalog,
         api_key_hasher,
         Some(relay),
+        stream_relay,
         Some(usage_recorder),
         plugins,
         runtime_config,
@@ -227,6 +259,7 @@ where
         catalog,
         api_key_hasher,
         relay,
+        None,
         usage_recorder,
         plugins,
         OpenAiRuntimeFailureStrategy::default(),
@@ -237,6 +270,7 @@ fn openai_responses_router_with_optional_relay_and_failure_strategy<C>(
     catalog: Arc<C>,
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
     relay: Option<Arc<dyn ResponsesRelay + Send + Sync>>,
+    stream_relay: Option<Arc<dyn ResponsesStreamRelay + Send + Sync>>,
     usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
     plugins: Vec<OpenAiInvocationPluginRef>,
     failure_strategy: OpenAiRuntimeFailureStrategy,
@@ -248,6 +282,7 @@ where
         catalog,
         api_key_hasher,
         relay,
+        stream_relay,
         usage_recorder,
         plugins,
         OpenAiRuntimeRouteConfig::new(
@@ -257,10 +292,12 @@ where
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 fn openai_responses_router_with_optional_relay_and_runtime_config<C>(
     catalog: Arc<C>,
     api_key_hasher: Arc<dyn ApiKeySecretHasher + Send + Sync>,
     relay: Option<Arc<dyn ResponsesRelay + Send + Sync>>,
+    stream_relay: Option<Arc<dyn ResponsesStreamRelay + Send + Sync>>,
     usage_recorder: Option<Arc<dyn GatewayUsageRecorder + Send + Sync>>,
     plugins: Vec<OpenAiInvocationPluginRef>,
     runtime_config: OpenAiRuntimeRouteConfig,
@@ -281,6 +318,7 @@ where
             catalog,
             api_key_hasher,
             relay,
+            stream_relay,
             usage_recorder,
             usage_recording,
             plugins: with_builtin_invocation_plugins(plugins),
@@ -443,25 +481,47 @@ where
     }
 
     if request.stream {
-        record_request_trace(
-            state.usage_recorder.as_ref(),
-            build_request_trace_command(
-                &invocation_context,
-                Some(&route),
-                Some(StatusCode::NOT_IMPLEMENTED.as_u16()),
-                None,
-                Some("streaming_relay_not_configured".to_owned()),
-                Some("server_error".to_owned()),
-                Some("streaming provider relay is not implemented for /v1/responses".to_owned()),
-            ),
+        let Some(stream_relay) = state.stream_relay.as_ref() else {
+            record_request_trace(
+                state.usage_recorder.as_ref(),
+                build_request_trace_command(
+                    &invocation_context,
+                    Some(&route),
+                    Some(StatusCode::NOT_IMPLEMENTED.as_u16()),
+                    None,
+                    Some("streaming_relay_not_configured".to_owned()),
+                    Some("server_error".to_owned()),
+                    Some("streaming provider relay is not implemented for /v1/responses".to_owned()),
+                ),
+            )
+            .await;
+            return openai_error(
+                StatusCode::NOT_IMPLEMENTED,
+                "streaming_relay_not_configured",
+                "server_error",
+                "streaming provider relay is not implemented for /v1/responses",
+            );
+        };
+        return match relay_response_stream(
+            stream_relay.as_ref(),
+            state.catalog.as_ref(),
+            OpenAiRelayExecution {
+                usage_recorder: state.usage_recorder.clone(),
+                usage_recording: state.usage_recording.clone(),
+                plugins: &state.plugins,
+                invocation_context: &invocation_context,
+                context,
+                route_plan,
+                request,
+                failure_strategy: state.failure_strategy,
+                default_retry_policy: &state.default_retry_policy,
+            },
         )
-        .await;
-        return openai_error(
-            StatusCode::NOT_IMPLEMENTED,
-            "streaming_relay_not_configured",
-            "server_error",
-            "streaming provider relay is not implemented for /v1/responses",
-        );
+        .await
+        {
+            Ok(response) => response,
+            Err(response) => response,
+        };
     }
 
     let Some(relay) = state.relay.as_ref() else {
@@ -649,11 +709,9 @@ where
     // terminate the request immediately instead of relaying traffic that
     // cannot be billed; the usage recording phase below only reads the
     // preloaded builder and never re-resolves prices.
-    let prebuilt_usage =
-        match usage_recording {
-            Some(usage_recording) => match usage_recording
-                .prepare_usage_command_builder(invocation_context, route, false)
-            {
+    let prebuilt_usage = match usage_recording {
+        Some(usage_recording) => {
+            match usage_recording.prepare_usage_command_builder(invocation_context, route, false) {
                 Ok(builder) => Some(builder),
                 Err(error) => {
                     let message = format!("pricing preflight failed before relay: {error}");
@@ -679,9 +737,10 @@ where
                     notify_error(plugins, invocation_context, Some(route), &error).await;
                     return Err(RouteRelayFailure::Terminal(error.into_openai_response()));
                 }
-            },
-            None => None,
-        };
+            }
+        }
+        None => None,
+    };
     let started_at = Instant::now();
     let response = match relay
         .create_response(ResponsesRelayRequest {
@@ -843,4 +902,343 @@ where
         restore_relayed_model(response.body, requested_model),
         response.memory_guard,
     ))
+}
+
+async fn relay_response_stream<C>(
+    relay: &(dyn ResponsesStreamRelay + Send + Sync),
+    catalog: &C,
+    execution: OpenAiRelayExecution<'_, C, ParsedOpenAiResponsesRequest>,
+) -> Result<Response, Response>
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    let OpenAiRelayExecution {
+        usage_recorder,
+        usage_recording,
+        plugins,
+        invocation_context,
+        context,
+        route_plan,
+        request,
+        failure_strategy,
+        default_retry_policy,
+    } = execution;
+    let requested_model = request.model;
+    let request_body = request.request_body;
+    let mut last_error = None;
+    let route_count = route_plan.routes.len();
+    for (index, mut route) in route_plan.routes.into_iter().enumerate() {
+        let is_last_route = index + 1 == route_count;
+        if let Err(error) = notify_before_relay(plugins, invocation_context, &mut route).await {
+            notify_error(plugins, invocation_context, Some(&route), &error).await;
+            return Err(error.into_openai_response());
+        }
+        match relay_response_stream_route(
+            relay,
+            catalog,
+            OpenAiRouteRelayExecution {
+                usage_recorder: usage_recorder.clone(),
+                usage_recording: usage_recording.as_ref(),
+                plugins,
+                invocation_context,
+                context: &context,
+                route: &route,
+                requested_model: &requested_model,
+                request_body: request_body.clone(),
+                failure_strategy,
+                route_count,
+                default_retry_policy,
+            },
+        )
+        .await
+        {
+            Ok(response) => return Ok(response),
+            Err(RouteRelayFailure::Retryable(response))
+                if failure_strategy.should_try_next_route(is_last_route) =>
+            {
+                last_error = Some(response);
+                continue;
+            }
+            Err(RouteRelayFailure::Retryable(response))
+            | Err(RouteRelayFailure::Terminal(response)) => return Err(response),
+        }
+    }
+    Err(last_error.unwrap_or_else(|| {
+        openai_error(
+            StatusCode::BAD_GATEWAY,
+            "provider_stream_relay_failed",
+            "server_error",
+            "streaming provider relay failed for all configured route candidates",
+        )
+    }))
+}
+
+async fn relay_response_stream_route<C>(
+    relay: &(dyn ResponsesStreamRelay + Send + Sync),
+    catalog: &C,
+    execution: OpenAiRouteRelayExecution<'_, C>,
+) -> Result<Response, RouteRelayFailure>
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
+    let OpenAiRouteRelayExecution {
+        usage_recorder,
+        usage_recording,
+        plugins,
+        invocation_context,
+        context,
+        route,
+        requested_model,
+        request_body,
+        failure_strategy,
+        route_count,
+        default_retry_policy,
+    } = execution;
+    let provider_retry_policy =
+        provider_relay_attempt_retry_policy(route, failure_strategy, route_count);
+    // Preflight pricing before the stream is dispatched: the quotes loaded
+    // here are the only prices the streaming usage recorder may use. A
+    // pricing failure terminates the request before any upstream tokens are
+    // consumed instead of streaming traffic that cannot be billed.
+    let prebuilt_usage = match usage_recording {
+        Some(usage_recording) => {
+            match usage_recording.prepare_usage_command_builder(invocation_context, route, true) {
+                Ok(builder) => Some(builder),
+                Err(error) => {
+                    let message = format!("pricing preflight failed before relay: {error}");
+                    record_request_trace(
+                        usage_recorder.as_ref(),
+                        build_request_trace_command(
+                            invocation_context,
+                            Some(route),
+                            None,
+                            None,
+                            None,
+                            Some("server_error".to_owned()),
+                            Some(message.clone()),
+                        ),
+                    )
+                    .await;
+                    let error = OpenAiInvocationPluginError::new(
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        "pricing_unavailable",
+                        "server_error",
+                        message,
+                    );
+                    notify_error(plugins, invocation_context, Some(route), &error).await;
+                    return Err(RouteRelayFailure::Terminal(error.into_openai_response()));
+                }
+            }
+        }
+        None => None,
+    };
+    let started_at = Instant::now();
+    let response = match relay
+        .create_response_stream(ResponsesRelayRequest {
+            api_key_id: context.api_key_id,
+            tenant_id: context.tenant_id,
+            organization_id: context.organization_id,
+            user_id: context.user_id,
+            group_id: route.group_id,
+            group_code: route.group_code.clone(),
+            pricing_plan_code: route.pricing_plan_code.clone(),
+            model: requested_model.to_owned(),
+            supplier_code: route.supplier_code.clone(),
+            provider_account_id: route.account_id,
+            provider_region_code: route.region_code.clone(),
+            provider_model: route.provider_model.clone(),
+            provider_base_url: route.provider_base_url.clone(),
+            provider_secret_ref: route.provider_secret_ref.clone(),
+            provider_auth_profile: route.provider_auth_profile.clone(),
+            provider_timeout_ms: route.provider_timeout_ms,
+            provider_retry_policy,
+            request_body,
+        })
+        .await
+    {
+        Ok(response) => response,
+        Err(error) => {
+            let fault = OpenAiInvocationFault::relay_transport(error.to_string())
+                .with_latency_ms(elapsed_millis(started_at));
+            record_request_trace(
+                usage_recorder.as_ref(),
+                build_request_trace_command(
+                    invocation_context,
+                    Some(route),
+                    Some(502),
+                    fault.latency_ms,
+                    Some(fault.error_code.clone()),
+                    Some("server_error".to_owned()),
+                    Some(fault.message.clone()),
+                ),
+            )
+            .await;
+            let plugin_error = OpenAiInvocationPluginError::new(
+                StatusCode::BAD_GATEWAY,
+                "provider_stream_relay_failed",
+                "server_error",
+                fault.message.clone(),
+            );
+            notify_route_fault(plugins, invocation_context, route, &fault).await;
+            notify_error(plugins, invocation_context, Some(route), &plugin_error).await;
+            return Err(RouteRelayFailure::Retryable(
+                plugin_error.into_openai_response(),
+            ));
+        }
+    };
+
+    let status = match StatusCode::from_u16(response.status_code) {
+        Ok(status) => status,
+        Err(_) => {
+            let fault = OpenAiInvocationFault::relay_invalid_status(
+                "provider relay returned an invalid HTTP status",
+            )
+            .with_latency_ms(elapsed_millis(started_at));
+            record_request_trace(
+                usage_recorder.as_ref(),
+                build_request_trace_command(
+                    invocation_context,
+                    Some(route),
+                    Some(502),
+                    fault.latency_ms,
+                    Some(fault.error_code.clone()),
+                    Some("server_error".to_owned()),
+                    Some(fault.message.clone()),
+                ),
+            )
+            .await;
+            notify_route_fault(plugins, invocation_context, route, &fault).await;
+            return Err(RouteRelayFailure::Retryable(openai_error(
+                StatusCode::BAD_GATEWAY,
+                "provider_relay_invalid_status",
+                "server_error",
+                "provider relay returned an invalid HTTP status",
+            )));
+        }
+    };
+    let mut builder = Response::builder().status(status);
+    let content_type = response
+        .content_type
+        .unwrap_or_else(|| "text/event-stream".to_owned());
+    let relay_outcome =
+        OpenAiInvocationRelayOutcome::stream(response.status_code, Some(content_type.clone()))
+            .with_latency_ms(elapsed_millis(started_at));
+    if !status.is_success() {
+        let retryable =
+            route_http_status_is_retryable(route, default_retry_policy, response.status_code);
+        let fault = OpenAiInvocationFault::relay_http_status(
+            response.status_code,
+            retryable,
+            format!(
+                "provider stream relay returned HTTP {}",
+                response.status_code
+            ),
+        )
+        .with_latency_ms(elapsed_millis(started_at));
+        record_request_trace(
+            usage_recorder.as_ref(),
+            build_request_trace_command(
+                invocation_context,
+                Some(route),
+                Some(response.status_code),
+                fault.latency_ms,
+                Some(fault.error_code.clone()),
+                Some("server_error".to_owned()),
+                Some(fault.message.clone()),
+            ),
+        )
+        .await;
+        notify_route_fault(plugins, invocation_context, route, &fault).await;
+        notify_after_relay_observers(plugins, invocation_context, route, &relay_outcome).await;
+        builder = builder.header(CONTENT_TYPE, content_type);
+        let response = builder.body(response.body).map_err(|_| {
+            RouteRelayFailure::Terminal(openai_error(
+                StatusCode::BAD_GATEWAY,
+                "provider_stream_relay_failed",
+                "server_error",
+                "provider stream relay returned an invalid response",
+            ))
+        })?;
+        return if retryable {
+            Err(RouteRelayFailure::Retryable(response))
+        } else {
+            Err(RouteRelayFailure::Terminal(response))
+        };
+    }
+    if let Some(usage_recording) = usage_recording.as_ref() {
+        if let Err(fault) = usage_recording
+            .record_after_success(invocation_context, &relay_outcome, prebuilt_usage.clone())
+            .await
+        {
+            record_request_trace(
+                usage_recorder.as_ref(),
+                build_request_trace_command(
+                    invocation_context,
+                    Some(route),
+                    Some(502),
+                    fault.latency_ms.or(relay_outcome.latency_ms),
+                    Some(fault.error_code.clone()),
+                    Some("server_error".to_owned()),
+                    Some(fault.message.clone()),
+                ),
+            )
+            .await;
+            notify_route_fault(plugins, invocation_context, route, &fault).await;
+            let error = provider_usage_plugin_error_from_fault(fault);
+            notify_error(plugins, invocation_context, Some(route), &error).await;
+            return Err(RouteRelayFailure::Terminal(error.into_openai_response()));
+        }
+    }
+    builder = builder.header(CONTENT_TYPE, content_type);
+    let body = match usage_recorder {
+        Some(usage_recorder) if status.is_success() => {
+            let command_builder = match prebuilt_usage {
+                Some(builder) => builder
+                    .with_http_status(response.status_code)
+                    .with_latency_ms(relay_outcome.latency_ms),
+                None => build_usage_record_command_builder(
+                    catalog,
+                    invocation_context,
+                    context,
+                    route,
+                    response.status_code,
+                    true,
+                    responses_usage_billing_profile(),
+                )
+                .map_err(|error| {
+                    RouteRelayFailure::Terminal(openai_error(
+                        StatusCode::BAD_GATEWAY,
+                        "provider_usage_record_failed",
+                        "server_error",
+                        error,
+                    ))
+                })?
+                .with_latency_ms(relay_outcome.latency_ms),
+            };
+            Body::new(StreamingUsageRecordingBody::new(
+                restore_relayed_streaming_model(response.body, requested_model),
+                usage_recorder,
+                command_builder,
+                plugins.to_vec(),
+                invocation_context.clone(),
+                route.clone(),
+                relay_outcome,
+                responses_usage_from_stream_event,
+                OpenAiInvocationEndpoint::Responses,
+            ))
+        }
+        _ => {
+            notify_route_success(plugins, invocation_context, route, &relay_outcome).await;
+            notify_after_relay_observers(plugins, invocation_context, route, &relay_outcome).await;
+            response.body
+        }
+    };
+    builder.body(body).map_err(|_| {
+        RouteRelayFailure::Terminal(openai_error(
+            StatusCode::BAD_GATEWAY,
+            "provider_stream_relay_failed",
+            "server_error",
+            "provider stream relay returned an invalid response",
+        ))
+    })
 }

@@ -25,7 +25,8 @@ use crate::ports::{
     ChatCompletionRelayResponse, ChatCompletionStreamRelay, ChatCompletionStreamRelayFuture,
     ChatCompletionStreamRelayResponse, EmbeddingsRelay, EmbeddingsRelayFuture,
     EmbeddingsRelayRequest, EmbeddingsRelayResponse, ProviderSecretResolver, ResponsesRelay,
-    ResponsesRelayFuture, ResponsesRelayRequest, ResponsesRelayResponse,
+    ResponsesRelayFuture, ResponsesRelayRequest, ResponsesRelayResponse, ResponsesStreamRelay,
+    ResponsesStreamRelayFuture, ResponsesStreamRelayResponse,
 };
 
 type RequestBody = Full<Bytes>;
@@ -1088,6 +1089,153 @@ impl SecretRefOpenAiCompatibleResponsesRelay {
 }
 
 #[derive(Clone)]
+pub struct OpenAiCompatibleResponsesStreamRelay {
+    endpoint: UpstreamProviderEndpoint,
+    runtime: ProviderRelayRuntime,
+}
+
+impl OpenAiCompatibleResponsesStreamRelay {
+    pub fn new(endpoint: UpstreamProviderEndpoint) -> Self {
+        let runtime = ProviderRelayRuntime::for_target_policy(endpoint.target_policy);
+        Self { endpoint, runtime }
+    }
+
+    pub fn with_response_timeout(
+        endpoint: UpstreamProviderEndpoint,
+        response_timeout: Duration,
+    ) -> Self {
+        Self::with_runtime(endpoint, response_timeout, ProviderRetryPolicy::default())
+    }
+
+    pub fn with_runtime(
+        endpoint: UpstreamProviderEndpoint,
+        response_timeout: Duration,
+        default_retry_policy: ProviderRetryPolicy,
+    ) -> Self {
+        Self::with_full_runtime(
+            endpoint,
+            response_timeout,
+            DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT,
+            DEFAULT_PROVIDER_RESPONSE_MAX_BYTES,
+            default_retry_policy,
+            ProviderRelayHttpPoolConfig::default(),
+        )
+    }
+
+    /// Build a relay with the full set of provider relay runtime tunables.
+    ///
+    /// Exposed so deployers can wire TOML/env-resolved values for stream
+    /// timeout, response body cap, and HTTP connection-pool tuning instead of
+    /// relying on the compiled defaults.
+    pub fn with_full_runtime(
+        endpoint: UpstreamProviderEndpoint,
+        response_timeout: Duration,
+        stream_response_timeout: Duration,
+        response_max_bytes: u64,
+        default_retry_policy: ProviderRetryPolicy,
+        http_pool_config: ProviderRelayHttpPoolConfig,
+    ) -> Self {
+        let target_policy = endpoint.target_policy;
+        Self {
+            endpoint,
+            runtime: ProviderRelayRuntime::with_default_retry_policy(
+                response_timeout,
+                stream_response_timeout,
+                response_max_bytes,
+                default_retry_policy,
+                http_pool_config,
+                target_policy,
+            ),
+        }
+    }
+
+    async fn send_response_stream(
+        &self,
+        request: ResponsesRelayRequest,
+    ) -> DomainResult<ResponsesStreamRelayResponse> {
+        let runtime = self.runtime.for_request(request.provider_timeout_ms);
+        send_responses_stream_with_runtime(&runtime, &self.endpoint, request).await
+    }
+}
+
+#[derive(Clone)]
+pub struct SecretRefOpenAiCompatibleResponsesStreamRelay {
+    secret_resolver: std::sync::Arc<dyn ProviderSecretResolver + Send + Sync>,
+    runtime: ProviderRelayRuntime,
+}
+
+impl SecretRefOpenAiCompatibleResponsesStreamRelay {
+    pub fn new(secret_resolver: std::sync::Arc<dyn ProviderSecretResolver + Send + Sync>) -> Self {
+        Self {
+            secret_resolver,
+            runtime: ProviderRelayRuntime::default(),
+        }
+    }
+
+    /// Creates a relay for an explicitly local development or test provider.
+    pub fn for_local_development(
+        secret_resolver: std::sync::Arc<dyn ProviderSecretResolver + Send + Sync>,
+    ) -> Self {
+        Self {
+            secret_resolver,
+            runtime: ProviderRelayRuntime::for_target_policy(OutboundTargetPolicy::Development),
+        }
+    }
+
+    pub fn with_response_timeout(
+        secret_resolver: std::sync::Arc<dyn ProviderSecretResolver + Send + Sync>,
+        response_timeout: Duration,
+    ) -> Self {
+        Self::with_runtime(
+            secret_resolver,
+            response_timeout,
+            ProviderRetryPolicy::default(),
+        )
+    }
+
+    pub fn with_runtime(
+        secret_resolver: std::sync::Arc<dyn ProviderSecretResolver + Send + Sync>,
+        response_timeout: Duration,
+        default_retry_policy: ProviderRetryPolicy,
+    ) -> Self {
+        Self::with_full_runtime(
+            secret_resolver,
+            response_timeout,
+            DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT,
+            DEFAULT_PROVIDER_RESPONSE_MAX_BYTES,
+            default_retry_policy,
+            ProviderRelayHttpPoolConfig::default(),
+        )
+    }
+
+    /// Build a relay with the full set of provider relay runtime tunables.
+    ///
+    /// Exposed so deployers can wire TOML/env-resolved values for stream
+    /// timeout, response body cap, and HTTP connection-pool tuning instead of
+    /// relying on the compiled defaults.
+    pub fn with_full_runtime(
+        secret_resolver: std::sync::Arc<dyn ProviderSecretResolver + Send + Sync>,
+        response_timeout: Duration,
+        stream_response_timeout: Duration,
+        response_max_bytes: u64,
+        default_retry_policy: ProviderRetryPolicy,
+        http_pool_config: ProviderRelayHttpPoolConfig,
+    ) -> Self {
+        Self {
+            secret_resolver,
+            runtime: ProviderRelayRuntime::with_default_retry_policy(
+                response_timeout,
+                stream_response_timeout,
+                response_max_bytes,
+                default_retry_policy,
+                http_pool_config,
+                OutboundTargetPolicy::Production,
+            ),
+        }
+    }
+}
+
+#[derive(Clone)]
 pub struct SecretRefOpenAiCompatibleEmbeddingsRelay {
     secret_resolver: std::sync::Arc<dyn ProviderSecretResolver + Send + Sync>,
     runtime: ProviderRelayRuntime,
@@ -1245,6 +1393,42 @@ impl EmbeddingsRelay for SecretRefOpenAiCompatibleEmbeddingsRelay {
 impl ResponsesRelay for OpenAiCompatibleResponsesRelay {
     fn create_response<'a>(&'a self, request: ResponsesRelayRequest) -> ResponsesRelayFuture<'a> {
         Box::pin(async move { self.send_response(request).await })
+    }
+}
+
+impl ResponsesStreamRelay for OpenAiCompatibleResponsesStreamRelay {
+    fn create_response_stream<'a>(
+        &'a self,
+        request: ResponsesRelayRequest,
+    ) -> ResponsesStreamRelayFuture<'a> {
+        Box::pin(async move { self.send_response_stream(request).await })
+    }
+}
+
+impl ResponsesStreamRelay for SecretRefOpenAiCompatibleResponsesStreamRelay {
+    fn create_response_stream<'a>(
+        &'a self,
+        request: ResponsesRelayRequest,
+    ) -> ResponsesStreamRelayFuture<'a> {
+        Box::pin(async move {
+            let base_url = request
+                .provider_base_url
+                .clone()
+                .ok_or_else(|| DomainError::new("provider base URL is required for relay"))?;
+            let secret_ref = request
+                .provider_secret_ref
+                .clone()
+                .ok_or_else(|| DomainError::new("provider secret_ref is required for relay"))?;
+            let bearer_token = self.secret_resolver.resolve_secret_value(&secret_ref)?;
+            let endpoint = UpstreamProviderEndpoint::new_with_policy(
+                base_url,
+                bearer_token,
+                self.runtime.target_policy,
+            )?
+            .with_auth_profile(request.provider_auth_profile.clone());
+            let runtime = self.runtime.for_request(request.provider_timeout_ms);
+            send_responses_stream_with_runtime(&runtime, &endpoint, request).await
+        })
     }
 }
 
@@ -1409,6 +1593,61 @@ async fn send_response_with_runtime(
     .await?;
 
     Ok(ResponsesRelayResponse::json(status_code, body).with_memory_guard(memory_guard))
+}
+
+/// Relays a streaming (SSE) Responses API call: the request body already
+/// carries `"stream": true` from the client, so it is forwarded verbatim
+/// (after the provider-model rewrite) and the upstream byte stream is handed
+/// back unbuffered. Usage accounting happens in the API layer's streaming
+/// recorder, which inspects the `response.completed` event.
+async fn send_responses_stream_with_runtime(
+    runtime: &ProviderRelayRuntime,
+    endpoint: &UpstreamProviderEndpoint,
+    request: ResponsesRelayRequest,
+) -> DomainResult<ResponsesStreamRelayResponse> {
+    let body =
+        upstream_model_request_body(request.request_body, &request.provider_model, "responses stream")?;
+    let upstream_uri = endpoint.responses_uri()?;
+    tracing::debug!(
+        supplier_code = %request.supplier_code,
+        provider_account_id = request.provider_account_id,
+        upstream_host = %redact_url(&endpoint.base_url),
+        upstream_path = %upstream_uri.path(),
+        model = body.get("model").and_then(|value| value.as_str()).unwrap_or(""),
+        "forwarding OpenAI-compatible responses stream request to upstream provider"
+    );
+    let builder = Request::builder()
+        .method(Method::POST)
+        .uri(endpoint.authenticated_uri(upstream_uri)?)
+        .header(CONTENT_TYPE, "application/json");
+    let http_request = endpoint
+        .apply_auth_headers(builder)?
+        .body(Full::new(Bytes::from(body.to_string())))
+        .map_err(|error| {
+            DomainError::new(format!(
+                "failed to build upstream provider request: {error}"
+            ))
+        })?;
+
+    let response = send_provider_request(runtime, http_request).await?;
+    let status_code = response.status().as_u16();
+    let content_type = response
+        .headers()
+        .get(CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_owned);
+    tracing::info!(
+        supplier_code = %request.supplier_code,
+        provider_account_id = request.provider_account_id,
+        status_code,
+        content_type = content_type.as_deref().unwrap_or(""),
+        "upstream OpenAI-compatible responses stream response received"
+    );
+    Ok(ResponsesStreamRelayResponse::new(
+        status_code,
+        content_type,
+        Body::new(response.into_body()),
+    ))
 }
 
 async fn send_embedding_with_runtime(

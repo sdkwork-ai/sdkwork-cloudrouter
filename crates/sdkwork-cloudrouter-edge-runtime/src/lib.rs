@@ -67,7 +67,8 @@ pub use runtime::{
     router_with_optional_database_config, router_with_product_catalog_and_api_key_hasher, router_with_product_catalog_api_key_hasher_and_chat_completion_relay,
     router_with_product_catalog_api_key_hasher_and_chat_completion_streaming_relay,
     router_with_product_catalog_api_key_hasher_and_embeddings_relay,
-    router_with_product_catalog_api_key_hasher_and_responses_relay, GatewayRouterError,
+    router_with_product_catalog_api_key_hasher_and_responses_relay,
+    router_with_product_catalog_api_key_hasher_and_responses_relays, GatewayRouterError,
 };
 
 pub const SERVICE_NAME: &str = "sdkwork-cloudrouter-edge-runtime";

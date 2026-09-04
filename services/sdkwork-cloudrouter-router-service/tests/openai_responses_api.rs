@@ -5,7 +5,7 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_cloudrouter_router_service::api::{
     OpenAiInvocationContext, OpenAiInvocationPlugin, OpenAiInvocationPluginFuture,
-    OpenAiInvocationRelayOutcome, OpenAiUpstreamRoute,
+    OpenAiInvocationRelayOutcome, OpenAiRuntimeRouteConfig, OpenAiUpstreamRoute,
 };
 use sdkwork_cloudrouter_router_service::application::ApiKeySecretHasher;
 use sdkwork_cloudrouter_router_service::domain::{
@@ -17,7 +17,8 @@ use sdkwork_cloudrouter_router_service::infrastructure::crypto::HmacSha256ApiKey
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use sdkwork_cloudrouter_router_service::ports::{
     GatewayUsageRecordCommand, GatewayUsageRecorder, ResponsesRelay, ResponsesRelayRequest,
-    ResponsesRelayResponse,
+    ResponsesRelayResponse, ResponsesStreamRelay, ResponsesStreamRelayFuture,
+    ResponsesStreamRelayResponse,
 };
 use sdkwork_cloudrouter_test_support::assert_server_generated_request_id;
 use tower::ServiceExt;
@@ -907,4 +908,212 @@ async fn openai_responses_rejects_streaming_before_fake_chunks() {
         "streaming_relay_not_configured",
         payload["error"]["code"].as_str().unwrap()
     );
+}
+
+const RESPONSES_STREAM_SSE_BODY: &str = concat!(
+    "event: response.created\n",
+    "data: {\"type\":\"response.created\",\"response\":{\"id\":\"resp-stream-1\",",
+    "\"object\":\"response\",\"model\":\"provider-native-x\"}}\n",
+    "\n",
+    "event: response.output_text.delta\n",
+    "data: {\"type\":\"response.output_text.delta\",\"delta\":\"pong\"}\n",
+    "\n",
+    "event: response.completed\n",
+    "data: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp-stream-1\",",
+    "\"object\":\"response\",\"model\":\"provider-native-x\",",
+    "\"usage\":{\"input_tokens\":12,\"output_tokens\":5,",
+    "\"input_tokens_details\":{\"cached_tokens\":4},\"total_tokens\":17}}}\n",
+    "\n",
+    "data: [DONE]\n",
+    "\n",
+);
+
+const RESPONSES_STREAM_SSE_BODY_WITHOUT_USAGE: &str = concat!(
+    "event: response.created\n",
+    "data: {\"type\":\"response.created\",\"response\":{\"id\":\"resp-stream-2\",",
+    "\"object\":\"response\",\"model\":\"provider-native-x\"}}\n",
+    "\n",
+    "event: response.output_text.delta\n",
+    "data: {\"type\":\"response.output_text.delta\",\"delta\":\"pong\"}\n",
+    "\n",
+    "data: [DONE]\n",
+    "\n",
+);
+
+#[derive(Debug)]
+struct RecordingResponsesStreamRelay {
+    captured: Arc<Mutex<Vec<ResponsesRelayRequest>>>,
+    body: &'static str,
+}
+
+impl RecordingResponsesStreamRelay {
+    fn new(captured: Arc<Mutex<Vec<ResponsesRelayRequest>>>, body: &'static str) -> Self {
+        Self { captured, body }
+    }
+}
+
+impl ResponsesStreamRelay for RecordingResponsesStreamRelay {
+    fn create_response_stream<'a>(
+        &'a self,
+        request: ResponsesRelayRequest,
+    ) -> ResponsesStreamRelayFuture<'a> {
+        self.captured.lock().unwrap().push(request);
+        Box::pin(async {
+            Ok(ResponsesStreamRelayResponse::new(
+                200,
+                Some("text/event-stream".to_owned()),
+                Body::from(self.body),
+            ))
+        })
+    }
+}
+
+#[tokio::test]
+async fn openai_responses_streams_events_and_records_usage_from_completed_event() {
+    let hasher =
+        Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let stream_relay_captured = Arc::new(Mutex::new(Vec::new()));
+    let usage_captured = Arc::new(Mutex::new(Vec::new()));
+    let stream_relay = Arc::new(RecordingResponsesStreamRelay::new(
+        Arc::clone(&stream_relay_captured),
+        RESPONSES_STREAM_SSE_BODY,
+    ));
+    let recorder = Arc::new(RecordingUsageRecorder::new(Arc::clone(&usage_captured)));
+    let router = sdkwork_cloudrouter_router_service::api::openai_responses_router_with_relay_usage_recorder_plugins_and_runtime_config(
+        Arc::new(catalog_with_hashed_api_key(key_hash)),
+        hasher,
+        Arc::new(RecordingResponsesRelay::new(Arc::new(Mutex::new(Vec::new())))),
+        Some(stream_relay),
+        recorder,
+        Vec::new(),
+        OpenAiRuntimeRouteConfig::default(),
+    );
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/responses")
+                .header("authorization", "Bearer sk-live-secret")
+                .header("content-type", "application/json")
+                .header("x-request-id", "req-responses-stream-usage-1")
+                .body(Body::from(
+                    r#"{"model":"gpt-4.1-mini","input":"hello","stream":true}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(StatusCode::OK, response.status());
+    assert_eq!(
+        "text/event-stream",
+        response
+            .headers()
+            .get("content-type")
+            .and_then(|value| value.to_str().ok())
+            .unwrap_or_default()
+    );
+
+    // The recording body observes events while streaming, so the body must be
+    // drained before the usage assertions can run.
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let body = String::from_utf8(body.to_vec()).unwrap();
+
+    // Provider-native model names inside the SSE events must be restored to
+    // the requested model before reaching the client.
+    assert!(body.contains("\"model\":\"gpt-4.1-mini\""));
+    assert!(!body.contains("provider-native-x"));
+    // The terminal usage event and the [DONE] sentinel are forwarded intact.
+    assert!(body.contains("\"type\":\"response.completed\""));
+    assert!(body.contains("data: [DONE]"));
+
+    {
+        let captured = stream_relay_captured.lock().unwrap();
+        assert_eq!(1, captured.len());
+        let request = &captured[0];
+        assert_eq!("gpt-4.1-mini", request.model);
+        assert_eq!("openrouter", request.supplier_code);
+        assert_eq!(3001, request.provider_account_id);
+        assert_eq!(Some(&serde_json::json!(true)), request.request_body.get("stream"));
+    }
+
+    let captured = usage_captured.lock().unwrap();
+    assert_eq!(3, captured.len());
+    for command in captured.iter() {
+        assert!(command.streaming);
+        assert_eq!("/v1/responses", command.request_path);
+        assert_eq!(200, command.http_status);
+        assert_eq!("openai/gpt-4.1-mini", command.catalog_key);
+        assert_eq!("gpt-4.1-mini", command.provider_model);
+        assert_eq!("openrouter", command.supplier_code);
+        assert_eq!(3001, command.account_id);
+    }
+    let command = usage_record_for_meter(&captured, "llm_input_token");
+    let output = usage_record_for_meter(&captured, "llm_output_token");
+    let cache = usage_record_for_meter(&captured, "llm_cache_read_token");
+    assert_server_generated_request_id(&command.request_id, "req-responses-stream-usage-1");
+    // Each command carries only its own meter's quantity. The input line is
+    // the billable (cache-miss) share: 12 input tokens minus 4 cache hits —
+    // matching the non-streaming recording path.
+    assert_eq!(8, command.prompt_tokens);
+    assert_eq!(8, command.total_tokens);
+    assert_eq!(0, command.cached_tokens);
+    assert_eq!(5, output.completion_tokens);
+    assert_eq!(5, output.total_tokens);
+    assert_eq!(4, cache.cached_tokens);
+    assert_eq!(4, cache.total_tokens);
+}
+
+#[tokio::test]
+async fn openai_responses_stream_forwards_body_and_records_trace_when_usage_event_missing() {
+    let hasher =
+        Arc::new(HmacSha256ApiKeySecretHasher::new("0123456789abcdef0123456789abcdef").unwrap());
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let usage_captured = Arc::new(Mutex::new(Vec::new()));
+    let stream_relay = Arc::new(RecordingResponsesStreamRelay::new(
+        Arc::new(Mutex::new(Vec::new())),
+        RESPONSES_STREAM_SSE_BODY_WITHOUT_USAGE,
+    ));
+    let recorder = Arc::new(RecordingUsageRecorder::new(Arc::clone(&usage_captured)));
+    let router = sdkwork_cloudrouter_router_service::api::openai_responses_router_with_relay_usage_recorder_plugins_and_runtime_config(
+        Arc::new(catalog_with_hashed_api_key(key_hash)),
+        hasher,
+        Arc::new(RecordingResponsesRelay::new(Arc::new(Mutex::new(Vec::new())))),
+        Some(stream_relay),
+        recorder,
+        Vec::new(),
+        OpenAiRuntimeRouteConfig::default(),
+    );
+
+    let response = router
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/responses")
+                .header("authorization", "Bearer sk-live-secret")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"model":"gpt-4.1-mini","input":"hello","stream":true}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    // A stream that never reports usage must still reach the client intact —
+    // the missing-usage handling is trace-only reconciliation, never a broken
+    // response.
+    assert_eq!(StatusCode::OK, response.status());
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    let body = String::from_utf8(body.to_vec()).unwrap();
+    assert!(body.contains("\"type\":\"response.output_text.delta\""));
+    assert!(body.contains("data: [DONE]"));
+
+    assert!(usage_captured.lock().unwrap().is_empty());
 }

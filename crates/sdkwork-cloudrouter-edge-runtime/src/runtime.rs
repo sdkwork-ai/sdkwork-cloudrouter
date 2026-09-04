@@ -46,13 +46,15 @@ use sdkwork_cloudrouter_router_service::infrastructure::provider::{
     AdapterAwareChatCompletionRelay, AdapterAwareChatCompletionStreamRelay,
     AdapterAwareEmbeddingsRelay, AdapterAwareResponsesRelay, OpenAiCompatibleChatCompletionRelay,
     OpenAiCompatibleChatCompletionStreamRelay, OpenAiCompatibleEmbeddingsRelay,
-    OpenAiCompatibleResponsesRelay, ProviderRelayHttpPoolConfig, ProviderResponseMemoryBudget,
-    RefreshableProviderSecretMapResolver, SecretRefOpenAiCompatibleChatCompletionRelay,
+    OpenAiCompatibleResponsesRelay, OpenAiCompatibleResponsesStreamRelay,
+    ProviderRelayHttpPoolConfig, ProviderResponseMemoryBudget, RefreshableProviderSecretMapResolver,
+    SecretRefOpenAiCompatibleChatCompletionRelay,
     SecretRefOpenAiCompatibleChatCompletionStreamRelay, SecretRefOpenAiCompatibleEmbeddingsRelay,
-    SecretRefOpenAiCompatibleResponsesRelay, UpstreamProviderEndpoint,
-    DEFAULT_PROVIDER_RESPONSE_MAX_BYTES, DEFAULT_PROVIDER_RESPONSE_MEMORY_BUDGET_BYTES,
-    DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS, DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS,
-    MAX_PROVIDER_RESPONSE_MAX_BYTES, MAX_PROVIDER_RESPONSE_MEMORY_BUDGET_BYTES,
+    SecretRefOpenAiCompatibleResponsesRelay, SecretRefOpenAiCompatibleResponsesStreamRelay,
+    UpstreamProviderEndpoint, DEFAULT_PROVIDER_RESPONSE_MAX_BYTES,
+    DEFAULT_PROVIDER_RESPONSE_MEMORY_BUDGET_BYTES, DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS,
+    DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS, MAX_PROVIDER_RESPONSE_MAX_BYTES,
+    MAX_PROVIDER_RESPONSE_MEMORY_BUDGET_BYTES,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::sql::catalog::{
     RefreshableSqlPricingCatalog, SqlPricingCatalogSnapshotSummary,
@@ -74,9 +76,9 @@ use sdkwork_cloudrouter_router_service::ports::{
     ChatCompletionRelay, ChatCompletionStreamRelay, EmbeddingsRelay,
     GatewayAccountingRecordContext, GatewayAccountingRetryQueue, GatewayRequestTraceCommand,
     GatewayTraceAttribution, GatewayUsageRecordCommand, GatewayUsageRecordFuture,
-    GatewayUsageRecorder, ProviderSecretResolver, ResponsesRelay, RoutingDecisionLogRecorder,
-    StickyRouteStore, UpstreamAccountRouteCatalog, UpstreamCredentialRotationStore,
-    UsageRetentionStore, UsageSettlementStore,
+    GatewayUsageRecorder, ProviderSecretResolver, ResponsesRelay, ResponsesStreamRelay,
+    RoutingDecisionLogRecorder, StickyRouteStore, UpstreamAccountRouteCatalog,
+    UpstreamCredentialRotationStore, UsageRetentionStore, UsageSettlementStore,
 };
 use sdkwork_cloudrouter_security::{
     redact_error_message, InMemoryInternalGatewayReplayStore, InternalGatewayReplayStore,
@@ -101,6 +103,7 @@ type ChatRelay = Arc<dyn ChatCompletionRelay + Send + Sync>;
 type ChatStreamRelay = Arc<dyn ChatCompletionStreamRelay + Send + Sync>;
 type EmbeddingRelay = Arc<dyn EmbeddingsRelay + Send + Sync>;
 type ResponseRelay = Arc<dyn ResponsesRelay + Send + Sync>;
+type ResponseStreamRelay = Arc<dyn ResponsesStreamRelay + Send + Sync>;
 type UsageRecorder = Arc<dyn GatewayUsageRecorder + Send + Sync>;
 type AccountingRetryQueue = Arc<dyn GatewayAccountingRetryQueue + Send + Sync>;
 type SettlementStore = Arc<dyn UsageSettlementStore + Send + Sync>;
@@ -770,6 +773,7 @@ struct OpenAiRuntimeRelays {
     chat_stream: Option<ChatStreamRelay>,
     embeddings: Option<EmbeddingRelay>,
     responses: Option<ResponseRelay>,
+    responses_stream: Option<ResponseStreamRelay>,
 }
 
 struct OpenAiRuntimeRoutesInput<C> {
@@ -829,6 +833,7 @@ where
             chat_stream: None,
             embeddings: None,
             responses: None,
+            responses_stream: None,
         },
         usage_recorder: None,
         decision_log_recorder: None,
@@ -858,6 +863,7 @@ where
             chat_stream: Some(chat_stream_relay),
             embeddings: None,
             responses: None,
+            responses_stream: None,
         },
         usage_recorder: None,
         decision_log_recorder: None,
@@ -887,6 +893,7 @@ where
             chat_stream: None,
             embeddings: Some(embeddings_relay),
             responses: None,
+            responses_stream: None,
         },
         usage_recorder: None,
         decision_log_recorder: None,
@@ -907,6 +914,23 @@ pub fn router_with_product_catalog_api_key_hasher_and_responses_relay<C>(
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
+    router_with_product_catalog_api_key_hasher_and_responses_relays(
+        catalog,
+        api_key_hasher,
+        responses_relay,
+        None,
+    )
+}
+
+pub fn router_with_product_catalog_api_key_hasher_and_responses_relays<C>(
+    catalog: Arc<C>,
+    api_key_hasher: ApiKeyHasher,
+    responses_relay: ResponseRelay,
+    responses_stream_relay: Option<ResponseStreamRelay>,
+) -> Router
+where
+    C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
+{
     router_with_openai_runtime_routes(OpenAiRuntimeRoutesInput {
         base_router: router(),
         catalog,
@@ -916,6 +940,7 @@ where
             chat_stream: None,
             embeddings: None,
             responses: Some(responses_relay),
+            responses_stream: responses_stream_relay,
         },
         usage_recorder: None,
         decision_log_recorder: None,
@@ -1042,13 +1067,14 @@ where
         }
     };
     let responses_failure_strategy = OpenAiRuntimeFailureStrategy::FailClosed;
-    let responses_router = match relays.responses {
-        Some(relay) => {
+    let responses_router = match (relays.responses, relays.responses_stream) {
+        (Some(relay), stream_relay) => {
             if let Some(usage_recorder) = usage_recorder.clone() {
                 sdkwork_cloudrouter_router_service::api::openai_responses_router_with_relay_usage_recorder_plugins_and_runtime_config(
                     Arc::clone(&catalog),
                     Arc::clone(&api_key_hasher),
                     relay,
+                    stream_relay,
                     usage_recorder,
                     invocation_plugins.clone(),
                     OpenAiRuntimeRouteConfig::new(
@@ -1057,16 +1083,17 @@ where
                     ),
                 )
             } else {
-                sdkwork_cloudrouter_router_service::api::openai_responses_router_with_relay_plugins_and_failure_strategy(
+                sdkwork_cloudrouter_router_service::api::openai_responses_router_with_relays_plugins_and_failure_strategy(
                     Arc::clone(&catalog),
                     Arc::clone(&api_key_hasher),
                     relay,
+                    stream_relay,
                     invocation_plugins.clone(),
                     responses_failure_strategy,
                 )
             }
         }
-        None => sdkwork_cloudrouter_router_service::api::openai_responses_router(
+        (None, _) => sdkwork_cloudrouter_router_service::api::openai_responses_router(
             Arc::clone(&catalog),
             Arc::clone(&api_key_hasher),
         ),
@@ -2998,15 +3025,25 @@ fn build_openai_runtime_relays(
             )),
             responses: Some(Arc::new(
                 OpenAiCompatibleResponsesRelay::with_full_runtime(
+                    endpoint.clone(),
+                    provider_runtime.response_timeout,
+                    provider_runtime.stream_response_timeout,
+                    provider_runtime.response_max_bytes,
+                    provider_runtime.default_retry_policy.clone(),
+                    provider_runtime.http_pool_config,
+                )
+                .with_shared_response_memory_budget(
+                    provider_runtime.response_memory_budget.clone(),
+                ),
+            )),
+            responses_stream: Some(Arc::new(
+                OpenAiCompatibleResponsesStreamRelay::with_full_runtime(
                     endpoint,
                     provider_runtime.response_timeout,
                     provider_runtime.stream_response_timeout,
                     provider_runtime.response_max_bytes,
                     provider_runtime.default_retry_policy,
                     provider_runtime.http_pool_config,
-                )
-                .with_shared_response_memory_budget(
-                    provider_runtime.response_memory_budget.clone(),
                 ),
             )),
         });
@@ -3059,14 +3096,24 @@ fn secret_ref_openai_runtime_relays(
         )),
         responses: Some(Arc::new(
             SecretRefOpenAiCompatibleResponsesRelay::with_full_runtime(
+                resolver.clone(),
+                provider_runtime.response_timeout,
+                provider_runtime.stream_response_timeout,
+                provider_runtime.response_max_bytes,
+                provider_runtime.default_retry_policy.clone(),
+                provider_runtime.http_pool_config,
+            )
+            .with_shared_response_memory_budget(provider_runtime.response_memory_budget.clone()),
+        )),
+        responses_stream: Some(Arc::new(
+            SecretRefOpenAiCompatibleResponsesStreamRelay::with_full_runtime(
                 resolver,
                 provider_runtime.response_timeout,
                 provider_runtime.stream_response_timeout,
                 provider_runtime.response_max_bytes,
                 provider_runtime.default_retry_policy,
                 provider_runtime.http_pool_config,
-            )
-            .with_shared_response_memory_budget(provider_runtime.response_memory_budget.clone()),
+            ),
         )),
     }
 }

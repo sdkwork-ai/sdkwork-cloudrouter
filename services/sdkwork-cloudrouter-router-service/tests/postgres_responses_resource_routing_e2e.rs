@@ -997,6 +997,7 @@ async fn build_router(
         catalog,
         hasher,
         relay,
+        None,
         usage_recorder.clone(),
         Vec::new(),
         runtime_config,
