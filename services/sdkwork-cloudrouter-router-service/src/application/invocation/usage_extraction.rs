@@ -623,9 +623,17 @@ fn extract_adapter_usage_lines(invocation: &mut Invocation) -> Result<(), Invoca
 }
 
 fn token_line(meter: &BillingMeter, body: &Value) -> Result<InvocationUsageLine, InvocationError> {
-    let usage = body.get("usage").unwrap_or(body);
-    let tokens = integer_field(usage, &["prompt_tokens", "input_tokens", "total_tokens"])
-        .ok_or_else(|| usage_error("token response usage is missing token count"))?;
+    // Google Gemini embeds its usage in a top-level `usageMetadata` object
+    // (with `promptTokenCount`) instead of OpenAI/Anthropic's `usage`.
+    let usage = body
+        .get("usage")
+        .or_else(|| body.get("usageMetadata"))
+        .unwrap_or(body);
+    let tokens = integer_field(
+        usage,
+        &["prompt_tokens", "input_tokens", "promptTokenCount", "total_tokens"],
+    )
+    .ok_or_else(|| usage_error("token response usage is missing token count"))?;
     Ok(InvocationUsageLine::new(
         meter.clone(),
         GatewayUsageQuantity::tokens(tokens).map_err(|error| usage_error(error.to_string()))?,
@@ -852,9 +860,10 @@ mod tests {
     use serde_json::{json, Value};
 
     use super::{
-        cached_tokens, composite_usage_components, normalized_input_tokens,
+        cached_tokens, composite_usage_components, normalized_input_tokens, token_line,
         StreamingUsageAccumulator, StreamingUsageFormat,
     };
+    use crate::domain::BillingMeter;
 
     #[test]
     fn streaming_usage_accumulator_handles_fragmented_multiline_sse() {
@@ -1189,5 +1198,44 @@ mod tests {
         let usage = accumulator.finish().unwrap().expect("usage frame");
         assert_eq!(Some(12), usage.pointer("/usage/prompt_tokens").and_then(|v| v.as_i64()));
         assert_eq!(Some(34), usage.pointer("/usage/completion_tokens").and_then(|v| v.as_i64()));
+    }
+
+    #[test]
+    fn token_line_reads_gemini_usage_metadata() {
+        // Gemini 非流式响应把 usage 放在顶层 usageMetadata（promptTokenCount），
+        // Token/ResponseBody 提取必须识别该形态，否则 gemini.embedContent
+        // 的 token 计费会因找不到数量而失败。
+        let line = token_line(
+            &BillingMeter::EmbeddingInputToken,
+            &json!({ "usageMetadata": { "promptTokenCount": 210 } }),
+        )
+        .expect("gemini usage line");
+        assert_eq!(BillingMeter::EmbeddingInputToken, line.meter);
+        assert_eq!("210", line.quantity.billable_quantity);
+    }
+
+    #[test]
+    fn token_line_still_reads_openai_anthropic_and_bare_usage_shapes() {
+        let openai = token_line(
+            &BillingMeter::EmbeddingInputToken,
+            &json!({ "usage": { "prompt_tokens": 100 } }),
+        )
+        .expect("openai usage line");
+        assert_eq!("100", openai.quantity.billable_quantity);
+
+        // 无 usage 包装时回退到 body 本身找 token 数量（anthropic 原始形态）。
+        let anthropic = token_line(
+            &BillingMeter::EmbeddingInputToken,
+            &json!({ "input_tokens": 33 }),
+        )
+        .expect("bare usage line");
+        assert_eq!("33", anthropic.quantity.billable_quantity);
+    }
+
+    #[test]
+    fn token_line_errors_when_no_token_count_is_present() {
+        let error = token_line(&BillingMeter::EmbeddingInputToken, &json!({ "embedding": [] }))
+            .expect_err("missing usage must fail");
+        assert!(error.to_string().contains("missing token count"));
     }
 }

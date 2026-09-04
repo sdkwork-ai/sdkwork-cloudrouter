@@ -1,10 +1,11 @@
 use axum::http::Method;
 use sdkwork_cloudrouter_router_service::application::{
-    AuthenticatedApiKeyContext, BillingMode, BillingQuantitySource, Invocation, InvocationBilling,
-    InvocationClassificationRequest, InvocationDispatch, InvocationInterceptor,
-    InvocationPricingQuote, InvocationRequest, InvocationResource, InvocationResourceClassifier,
-    InvocationSubject, InvocationSurface, OpenAiResourceClassifier, PriceResolutionStatus,
-    PricingAuditSnapshot, ResourceBillability, ResourceType, UsageExtractionInterceptor,
+    AuthenticatedApiKeyContext, BillingMode, BillingPolicyInterceptor, BillingQuantitySource,
+    Invocation, InvocationBilling, InvocationClassificationRequest, InvocationDispatch,
+    InvocationInterceptor, InvocationPricingQuote, InvocationRequest, InvocationResource,
+    InvocationResourceClassifier, InvocationSubject, InvocationSurface, OpenAiResourceClassifier,
+    PriceResolutionStatus, PricingAuditSnapshot, ProviderNativeResourceClassifier,
+    ResourceBillability, ResourceType, UsageExtractionInterceptor,
 };
 use sdkwork_cloudrouter_router_service::domain::{
     BillingMeter, Money, ResourceDefinition, RoutingCapability,
@@ -560,4 +561,109 @@ async fn free_invocations_do_not_create_usage_lines() {
         .expect("usage extraction");
 
     assert!(invocation.usage.lines.is_empty());
+}
+
+fn provider_native_invocation(method: Method, path: &str, supplier_code: &str) -> Invocation {
+    let classification = ProviderNativeResourceClassifier
+        .classify(
+            &InvocationClassificationRequest::new(method.clone(), path)
+                .with_supplier_code(supplier_code),
+        )
+        .expect("provider native classification");
+    let (resource, billing, routing) = classification.into_parts();
+    let mut invocation = Invocation::new(
+        InvocationRequest::new(method, path).with_request_id("req-provider-native-usage"),
+        subject(),
+        resource,
+        billing,
+    );
+    invocation.routing = routing;
+    invocation
+}
+
+#[tokio::test]
+async fn extracts_anthropic_messages_token_lines_from_non_streaming_body() {
+    // ProviderNative 非流式 LLM 端点（anthropic.messages）修复后走 Composite
+    // 记账：非流式 body 的 token 量必须按 Input/CacheRead/Output 三行结算，
+    // 而不是塌缩成单条 ApiRequest。
+    let mut invocation =
+        provider_native_invocation(Method::POST, "/anthropic/v1/messages", "anthropic");
+    BillingPolicyInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("billing policy");
+    assert_eq!(
+        BillingQuantitySource::Composite,
+        invocation.billing.quantity_source
+    );
+    invocation.dispatch = InvocationDispatch::json_response(
+        200,
+        json!({
+            "id": "msg_1",
+            "role": "assistant",
+            "content": [{"type": "text", "text": "hi"}],
+            "usage": {
+                "input_tokens": 3000,
+                "cache_read_input_tokens": 1000,
+                "output_tokens": 42
+            }
+        }),
+    );
+
+    UsageExtractionInterceptor
+        .after(&mut invocation)
+        .await
+        .expect("usage extraction");
+
+    assert_eq!(3, invocation.usage.lines.len());
+    assert_eq!(BillingMeter::LlmInputToken, invocation.usage.lines[0].meter);
+    assert_eq!("3000", invocation.usage.lines[0].quantity.billable_quantity);
+    assert_eq!(
+        BillingMeter::LlmCacheReadToken,
+        invocation.usage.lines[1].meter
+    );
+    assert_eq!("1000", invocation.usage.lines[1].quantity.billable_quantity);
+    assert_eq!(
+        BillingMeter::LlmOutputToken,
+        invocation.usage.lines[2].meter
+    );
+    assert_eq!("42", invocation.usage.lines[2].quantity.billable_quantity);
+}
+
+#[tokio::test]
+async fn extracts_gemini_embed_content_token_line_from_usage_metadata() {
+    // gemini.embedContent 修复后按 EmbeddingInputToken 的 Token/ResponseBody
+    // 结算：usageMetadata.promptTokenCount 必须被识别为计费数量。
+    let mut invocation = provider_native_invocation(
+        Method::POST,
+        "/google/v1beta/models/gemini-embedding-001:embedContent",
+        "google",
+    );
+    BillingPolicyInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("billing policy");
+    assert_eq!(
+        BillingQuantitySource::ResponseBody,
+        invocation.billing.quantity_source
+    );
+    invocation.dispatch = InvocationDispatch::json_response(
+        200,
+        json!({
+            "embedding": {"values": [0.1, 0.2, 0.3]},
+            "usageMetadata": {"promptTokenCount": 210}
+        }),
+    );
+
+    UsageExtractionInterceptor
+        .after(&mut invocation)
+        .await
+        .expect("usage extraction");
+
+    assert_eq!(1, invocation.usage.lines.len());
+    assert_eq!(
+        BillingMeter::EmbeddingInputToken,
+        invocation.usage.lines[0].meter
+    );
+    assert_eq!("210", invocation.usage.lines[0].quantity.billable_quantity);
 }

@@ -40,14 +40,7 @@ fn billing_policy_for(invocation: &Invocation) -> InvocationBilling {
                         .unwrap_or(BillingMeter::LlmInputToken),
                 )
             } else {
-                InvocationBilling {
-                    mode: BillingMode::ExternalUsageLine,
-                    meter: invocation.billing.meter.clone(),
-                    quantity_source: BillingQuantitySource::FixedRequest,
-                    pricing_required: true,
-                    settlement_required: true,
-                    prepaid_required: false,
-                }
+                provider_native_non_streaming_policy(invocation)
             }
         }
         InvocationSurface::OpenAiCompatible => openai_compatible_policy(invocation),
@@ -64,6 +57,33 @@ fn openai_compatible_policy(invocation: &Invocation) -> InvocationBilling {
         return api_request_policy();
     }
     openai_compatible_policy_by_resource_type(invocation)
+}
+
+/// Non-streaming provider-native billing. The interceptor used to collapse
+/// every non-streaming provider-native request onto a single ApiRequest fact,
+/// which under-billed the token-based endpoints whose streaming siblings
+/// already bill tokens (`anthropic.messages`, `gemini.generate_content`,
+/// `gemini.embed_content`). The body extraction chain
+/// (`extract_composite_usage_from_body`) understands all three providers'
+/// non-streaming usage shapes, so those meters now settle tokens exactly like
+/// the OpenAI-compatible surface does. Media/task meters keep the request
+/// fact: their result quantities are produced asynchronously by provider
+/// adapters, not by this response body.
+fn provider_native_non_streaming_policy(invocation: &Invocation) -> InvocationBilling {
+    match invocation.billing.meter.as_ref() {
+        Some(BillingMeter::LlmInputToken) => composite_policy(BillingMeter::LlmInputToken),
+        Some(BillingMeter::EmbeddingInputToken) => {
+            single_token_policy(BillingMeter::EmbeddingInputToken)
+        }
+        _ => InvocationBilling {
+            mode: BillingMode::ExternalUsageLine,
+            meter: invocation.billing.meter.clone(),
+            quantity_source: BillingQuantitySource::FixedRequest,
+            pricing_required: true,
+            settlement_required: true,
+            prepaid_required: false,
+        },
+    }
 }
 
 fn openai_compatible_policy_by_resource_type(invocation: &Invocation) -> InvocationBilling {
