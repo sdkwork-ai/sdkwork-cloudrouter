@@ -110,6 +110,13 @@ fn extract_composite_usage_from_body(
     )
     .unwrap_or(0);
     let cached_tokens = cached_tokens(usage).unwrap_or(0);
+    // 部分供应商 miss-only 上报缓存：prompt_tokens 只包含未命中部分，
+    // cached_tokens 单独放在 details（因此可能大于 prompt_tokens）。此时
+    // prompt 实为 billable 输入而非总输入 —— 归一为 inclusive（prompt +=
+    // cached），与 openai relay 路径 usage_from_fields 的语义保持一致；
+    // 否则 billable_input 负数会在这里 Err 中断整条 after 拦截器链，价格
+    // 结算与 usage 落库全部不再执行（前端只能看到零价格 + 零扣费）。
+    let input_tokens = normalized_input_tokens(input_tokens, cached_tokens);
     let billable_input = input_tokens
         .checked_sub(cached_tokens)
         .ok_or_else(|| usage_error("cached tokens must not exceed input tokens"))?;
@@ -581,6 +588,17 @@ fn cached_tokens(usage: &Value) -> Option<i64> {
     })
 }
 
+/// Normalizes miss-only cached reporting: when the provider reports more
+/// cached tokens than prompt tokens, `prompt_tokens` only covers the cache
+/// misses, so the inclusive prompt total is `prompt + cached`.
+fn normalized_input_tokens(input_tokens: i64, cached_tokens: i64) -> i64 {
+    if cached_tokens > input_tokens {
+        input_tokens + cached_tokens
+    } else {
+        input_tokens
+    }
+}
+
 fn integer_field(value: &Value, names: &[&str]) -> Option<i64> {
     names.iter().find_map(|name| {
         value.get(*name).and_then(|field| {
@@ -623,7 +641,7 @@ fn usage_error(message: impl Into<String>) -> InvocationError {
 mod tests {
     use serde_json::{json, Value};
 
-    use super::{cached_tokens, StreamingUsageAccumulator, StreamingUsageFormat};
+    use super::{cached_tokens, normalized_input_tokens, StreamingUsageAccumulator, StreamingUsageFormat};
 
     #[test]
     fn streaming_usage_accumulator_handles_fragmented_multiline_sse() {
@@ -738,5 +756,20 @@ mod tests {
         // 成行，任何输入拆分都不会产生负值。
         let usage: Value = json!({ "prompt_tokens": 5, "cached_tokens": 20 });
         assert_eq!(Some(20), cached_tokens(&usage));
+    }
+
+    #[test]
+    fn normalized_input_tokens_treats_miss_only_cached_reporting_as_exclusive_prompt() {
+        // 供应商 miss-only 上报（prompt=33 为未命中、cached=128 在 details）：
+        // 归一为 inclusive 总输入 = 33 + 128 = 161。
+        assert_eq!(161, normalized_input_tokens(33, 128));
+        assert_eq!(201, normalized_input_tokens(73, 128));
+    }
+
+    #[test]
+    fn normalized_input_tokens_keeps_inclusive_and_plain_reporting() {
+        // inclusive 上报（prompt 已含 cached）与无缓存上报保持不变。
+        assert_eq!(161, normalized_input_tokens(161, 128));
+        assert_eq!(40, normalized_input_tokens(40, 0));
     }
 }

@@ -546,8 +546,13 @@ async fn pricing_preflight_prices_api_request_resources_by_route_key_without_mod
     assert_eq!("1", invocation.usage.lines[0].quantity.billable_quantity);
 }
 
+/// Fail-closed invariant (mirrors the openai relay preflight): a billable
+/// meter whose price cannot be resolved must reject the request BEFORE any
+/// upstream dispatch instead of relaying traffic that could only be recorded
+/// as an unrated (zero) fact. The old behavior allowed the request through
+/// and settled an unrated line, silently rendering zero in usage statistics.
 #[tokio::test]
-async fn pricing_preflight_keeps_missing_official_price_for_unrated_settlement() {
+async fn pricing_preflight_fails_closed_when_no_official_price_exists() {
     let catalog = Arc::new(catalog_with_chat_prices());
     let mut invocation = chat_invocation();
     invocation.resource.resource_type = ResourceType::File;
@@ -557,20 +562,21 @@ async fn pricing_preflight_keeps_missing_official_price_for_unrated_settlement()
     invocation.resource.requested_model_catalog_key = None;
     invocation.billing = InvocationBilling::api_request(BillingMeter::ApiRequest);
 
-    PricingPreflightInterceptor::new(Arc::clone(&catalog))
+    let error = PricingPreflightInterceptor::new(Arc::clone(&catalog))
         .before(&mut invocation)
         .await
-        .expect("missing price must not fail the provider call");
+        .expect_err("an unpriced billable meter must fail the request closed");
 
-    assert!(invocation.billing.pricing_required);
-    assert!(invocation.billing.settlement_required);
-    assert_eq!(
-        BillingQuantitySource::FixedRequest,
-        invocation.billing.quantity_source
+    assert!(
+        error
+            .message
+            .contains("pricing is not fully resolved for meter api_request"),
+        "unexpected preflight error: {error:?}"
     );
-    assert!(invocation.usage.pricing_quotes.is_empty());
-    assert_eq!(1, invocation.usage.lines.len());
-    assert_eq!(BillingMeter::ApiRequest, invocation.usage.lines[0].meter);
+    assert!(
+        error.message.contains("refusing to dispatch billable traffic"),
+        "unexpected preflight error: {error:?}"
+    );
 }
 
 #[tokio::test]
@@ -900,7 +906,30 @@ async fn finalization_rates_adapter_usage_through_price_service() {
         settlement_required: true,
         prepaid_required: false,
     };
-    let catalog = Arc::new(catalog_with_chat_prices());
+    let mut catalog = catalog_with_chat_prices();
+    // AdapterUsageLines billing requires complete pricing for ApiResult AND
+    // ApiItem meters (fail-closed preflight), so the catalog must carry an
+    // ApiItem rate for the preflight to pass.
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "openai/gpt-4o-mini",
+            "gpt-4o-mini",
+            PriceSide::OfficialReference,
+            BillingMeter::ApiItem,
+            Money::usd("0.002000").unwrap(),
+        ),
+    );
+    catalog.add_price(
+        ModelPrice::new_for_catalog_key(
+            "openai/gpt-4o-mini",
+            "gpt-4o-mini",
+            PriceSide::UpstreamCost,
+            BillingMeter::ApiItem,
+            Money::usd("0.001500").unwrap(),
+        )
+        .for_upstream_account("openrouter", 3001),
+    );
+    let catalog = Arc::new(catalog);
     PricingPreflightInterceptor::new(Arc::clone(&catalog))
         .before(&mut invocation)
         .await
@@ -1098,4 +1127,64 @@ async fn deepseek_multi_region_prices_prefer_cn_when_no_region_is_pinned() {
         "0.020000",
         input.customer_charge_unit_price.to_fixed_string(6)
     );
+}
+
+/// Regression (invocation-pipeline billing): the settlement command must be
+/// stamped with the region that actually priced the request — the resolved
+/// official reference region (`cn` after the default-billing-region fallback),
+/// NOT the raw account routing region (`global`). The usage recorder resolves
+/// the persisted official rate with `rate.region_code = command.region_code`,
+/// so a `global` stamp on a cn-priced fact fails identity validation, the
+/// retrying recorder swallows the error, all four billing tables stay empty,
+/// and the console usage statistics silently render zero while the provider
+/// tokens were already consumed. (The openai relay path was fixed in
+/// 9b4140d2; this covers the InvocationPipeline path.)
+#[tokio::test]
+async fn settlement_stamps_the_priced_region_not_the_routing_region() {
+    let catalog = Arc::new(catalog_with_deepseek_dual_region_chat_prices());
+    let mut invocation = deepseek_chat_invocation();
+
+    PricingPreflightInterceptor::new(Arc::clone(&catalog))
+        .before(&mut invocation)
+        .await
+        .expect("pricing preflight");
+
+    // Simulate usage extraction (Composite chat billing): one input line and
+    // one output line measured from the provider response.
+    invocation.usage.add_line(
+        sdkwork_cloudrouter_router_service::application::InvocationUsageLine::new(
+            BillingMeter::LlmInputToken,
+            GatewayUsageQuantity::tokens(12).unwrap(),
+        ),
+    );
+    invocation.usage.add_line(
+        sdkwork_cloudrouter_router_service::application::InvocationUsageLine::new(
+            BillingMeter::LlmOutputToken,
+            GatewayUsageQuantity::tokens(8).unwrap(),
+        ),
+    );
+
+    PricingFinalizationInterceptor::new(Arc::clone(&catalog))
+        .after(&mut invocation)
+        .await
+        .expect("pricing finalization");
+    PricingSettlementInterceptor
+        .after(&mut invocation)
+        .await
+        .expect("settlement");
+
+    assert!(
+        !invocation.usage.settlement_commands.is_empty(),
+        "rated usage lines must produce settlement commands"
+    );
+    for command in &invocation.usage.settlement_commands {
+        assert_eq!(
+            "cn", command.region_code,
+            "usage facts must carry the priced region, not the account routing region"
+        );
+        assert_eq!(
+            "CNY", command.currency,
+            "the fact currency must match the priced cn book, not the global USD book"
+        );
+    }
 }

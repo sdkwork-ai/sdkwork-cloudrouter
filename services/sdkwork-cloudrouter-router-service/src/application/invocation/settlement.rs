@@ -153,6 +153,14 @@ fn command_for_line(
     }
     let pricing = GatewayPricingDecision::from_resolution(resolution)
         .map_err(|error| settlement_error(error.to_string()))?;
+    // The usage fact must carry the region that actually priced the request
+    // (`quote.region_code` = the resolved official reference region, which
+    // already folds in the admin default-billing-region override), not the
+    // raw account routing region. The usage recorder validates the persisted
+    // official rate with `rate.region_code = command.region_code`; stamping
+    // the routing region (`global`) on a request priced by a `cn` regional
+    // rate fails that validation and the usage fact never reaches the billing
+    // ledger — silently rendering zero in the console usage statistics.
     command_from_pricing_decision(
         invocation,
         line,
@@ -160,6 +168,7 @@ fn command_for_line(
         quote.catalog_key.clone(),
         quote.requested_model.clone(),
         pricing_snapshot(invocation, line, quote),
+        quote.region_code.clone(),
         pricing,
     )
 }
@@ -203,6 +212,19 @@ fn command_for_resolution(
         .unwrap_or_else(|| pricing_resolution_snapshot(invocation, line, resolution));
     let pricing = GatewayPricingDecision::from_resolution(resolution)
         .map_err(|error| settlement_error(error.to_string()))?;
+    // Mirror `command_for_line`: quoted resolutions carry the priced region on
+    // their quote. Unrated facts have no official-rate identity to validate,
+    // so the account routing region remains a safe informational stamp.
+    let region_code = quote
+        .as_ref()
+        .map(|quote| quote.region_code.clone())
+        .unwrap_or_else(|| {
+            invocation
+                .account
+                .as_ref()
+                .map(|account| account.region_code.clone())
+                .unwrap_or_default()
+        });
     command_from_pricing_decision(
         invocation,
         line,
@@ -210,6 +232,7 @@ fn command_for_resolution(
         catalog_key,
         requested_model,
         pricing_snapshot,
+        region_code,
         pricing,
     )
 }
@@ -221,6 +244,7 @@ fn command_from_pricing_decision(
     catalog_key: String,
     requested_model: String,
     pricing_snapshot: String,
+    region_code: String,
     pricing: GatewayPricingDecision,
 ) -> Result<GatewayUsageRecordCommand, InvocationError> {
     let account = invocation
@@ -271,7 +295,7 @@ fn command_from_pricing_decision(
             .map(provider_native_model_id)
             .unwrap_or_default(),
         provider_native_model: provider_native_model_for_settlement(invocation, account),
-        region_code: account.region_code.clone(),
+        region_code,
         request_path: invocation.request.path.clone(),
         http_method: invocation.request.method.as_str().to_owned(),
         user_agent: invocation.request.user_agent.clone(),
