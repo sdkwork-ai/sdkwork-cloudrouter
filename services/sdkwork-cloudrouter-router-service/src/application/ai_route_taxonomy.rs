@@ -390,6 +390,12 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         "claude_code_session",
     ),
     model(
+        "anthropic.messages",
+        "anthropic.messages",
+        RoutingCapability::Chat,
+        BillingMeter::LlmInputToken,
+    ),
+    model(
         "gemini.generate_content",
         "gemini.generate_content",
         RoutingCapability::Chat,

@@ -99,27 +99,8 @@ fn extract_composite_usage_from_body(
         Some(usage) => usage,
         None => return Ok(()),
     };
-    let input_tokens = integer_field(
-        usage,
-        &["prompt_tokens", "input_tokens", "promptTokenCount"],
-    )
-    .unwrap_or(0);
-    let output_tokens = integer_field(
-        usage,
-        &["completion_tokens", "output_tokens", "candidatesTokenCount"],
-    )
-    .unwrap_or(0);
-    let cached_tokens = cached_tokens(usage).unwrap_or(0);
-    // 部分供应商 miss-only 上报缓存：prompt_tokens 只包含未命中部分，
-    // cached_tokens 单独放在 details（因此可能大于 prompt_tokens）。此时
-    // prompt 实为 billable 输入而非总输入 —— 归一为 inclusive（prompt +=
-    // cached），与 openai relay 路径 usage_from_fields 的语义保持一致；
-    // 否则 billable_input 负数会在这里 Err 中断整条 after 拦截器链，价格
-    // 结算与 usage 落库全部不再执行（前端只能看到零价格 + 零扣费）。
-    let input_tokens = normalized_input_tokens(input_tokens, cached_tokens);
-    let billable_input = input_tokens
-        .checked_sub(cached_tokens)
-        .ok_or_else(|| usage_error("cached tokens must not exceed input tokens"))?;
+    let (billable_input, cached_tokens, cache_write_tokens, output_tokens) =
+        composite_usage_components(usage);
 
     if billable_input > 0 {
         invocation.usage.add_line(InvocationUsageLine::new(
@@ -139,6 +120,16 @@ fn extract_composite_usage_from_body(
                 .map_err(|error| usage_error(error.to_string()))?,
         ));
     }
+    if cache_write_tokens > 0 {
+        // Cache writes settle as an unrated fact when the catalog defines no
+        // cache-write price (cache meters are exempt from the fail-closed
+        // preflight), so emitting the line is always safe.
+        invocation.usage.add_line(InvocationUsageLine::new(
+            BillingMeter::LlmCacheWriteToken,
+            GatewayUsageQuantity::tokens(cache_write_tokens)
+                .map_err(|error| usage_error(error.to_string()))?,
+        ));
+    }
     if output_tokens > 0 {
         invocation.usage.add_line(InvocationUsageLine::new(
             BillingMeter::LlmOutputToken,
@@ -147,6 +138,62 @@ fn extract_composite_usage_from_body(
         ));
     }
     Ok(())
+}
+
+/// Splits one provider usage frame into the four billable token components:
+/// `(billable_input, cache_read, cache_write, output)`.
+///
+/// Providers disagree on whether the reported input total already includes
+/// cached tokens:
+/// - OpenAI (`prompt_tokens`) and Google (`promptTokenCount` +
+///   `cachedContentTokenCount`) report an inclusive total, so the full-rate
+///   portion is `input - cached`.
+/// - Anthropic reports the three input portions exclusively (`input_tokens`,
+///   `cache_read_input_tokens`, `cache_creation_input_tokens` never overlap),
+///   which is recognized structurally by the presence of the cache fields —
+///   a magnitude comparison cannot distinguish the two shapes, and would
+///   under-bill whenever the cached share is smaller than the fresh share.
+/// - Some providers report miss-only (the prompt total covers only cache
+///   misses while the cached count reported in the details exceeds it); the
+///   inclusive total is then `input + cached`.
+fn composite_usage_components(usage: &Value) -> (i64, i64, i64, i64) {
+    let input_tokens = integer_field(
+        usage,
+        &["prompt_tokens", "input_tokens", "promptTokenCount"],
+    )
+    .unwrap_or(0);
+    let output_tokens = integer_field(
+        usage,
+        &["completion_tokens", "output_tokens", "candidatesTokenCount"],
+    )
+    .unwrap_or(0);
+    let cached_tokens = cached_tokens(usage).unwrap_or(0);
+    let cache_write_tokens =
+        integer_field(usage, &["cache_creation_input_tokens"]).unwrap_or(0);
+    let anthropic_exclusive_reporting = usage.get("cache_read_input_tokens").is_some()
+        || usage.get("cache_creation_input_tokens").is_some();
+    let total_input = if anthropic_exclusive_reporting {
+        input_tokens
+            .saturating_add(cached_tokens)
+            .saturating_add(cache_write_tokens)
+    } else {
+        // 部分供应商 miss-only 上报缓存：prompt_tokens 只包含未命中部分，
+        // cached_tokens 单独放在 details（因此可能大于 prompt_tokens）。此时
+        // prompt 实为 billable 输入而非总输入 —— 归一为 inclusive（prompt +=
+        // cached），与 openai relay 路径 usage_from_fields 的语义保持一致；
+        // 否则 billable_input 负数会在这里 Err 中断整条 after 拦截器链，价格
+        // 结算与 usage 落库全部不再执行（前端只能看到零价格 + 零扣费）。
+        normalized_input_tokens(input_tokens, cached_tokens)
+    };
+    let billable_input = total_input
+        .saturating_sub(cached_tokens)
+        .saturating_sub(cache_write_tokens);
+    (
+        billable_input,
+        cached_tokens,
+        cache_write_tokens,
+        output_tokens,
+    )
 }
 
 fn extract_streaming_usage(invocation: &mut Invocation) -> Result<(), InvocationError> {
@@ -291,7 +338,7 @@ impl StreamingUsageAccumulator {
         };
         self.observe_streamed_output(&value);
         if let Some(usage_body) = streaming_usage_body_from_event(value) {
-            self.latest_usage_body = Some(usage_body);
+            merge_streaming_usage_body(&mut self.latest_usage_body, usage_body);
         }
     }
 
@@ -301,26 +348,37 @@ impl StreamingUsageAccumulator {
     /// text, reasoning text, tool-call argument fragments); unknown shapes are
     /// simply not counted.
     fn observe_streamed_output(&mut self, event: &Value) {
-        let Some(choices) = event.get("choices").and_then(Value::as_array) else {
-            return;
-        };
-        for choice in choices {
-            let Some(delta) = choice.get("delta") else {
-                continue;
-            };
-            for key in ["content", "reasoning_content", "reasoning"] {
-                if let Some(text) = delta.get(key).and_then(Value::as_str) {
-                    self.observe_output_text(text);
+        if let Some(choices) = event.get("choices").and_then(Value::as_array) {
+            for choice in choices {
+                let Some(delta) = choice.get("delta") else {
+                    continue;
+                };
+                for key in ["content", "reasoning_content", "reasoning"] {
+                    if let Some(text) = delta.get(key).and_then(Value::as_str) {
+                        self.observe_output_text(text);
+                    }
+                }
+                if let Some(tool_calls) = delta.get("tool_calls").and_then(Value::as_array) {
+                    for tool_call in tool_calls {
+                        if let Some(arguments) = tool_call
+                            .get("function")
+                            .and_then(|function| function.get("arguments"))
+                            .and_then(Value::as_str)
+                        {
+                            self.observe_output_text(arguments);
+                        }
+                    }
                 }
             }
-            if let Some(tool_calls) = delta.get("tool_calls").and_then(Value::as_array) {
-                for tool_call in tool_calls {
-                    if let Some(arguments) = tool_call
-                        .get("function")
-                        .and_then(|function| function.get("arguments"))
-                        .and_then(Value::as_str)
-                    {
-                        self.observe_output_text(arguments);
+        }
+        // Anthropic streams carry output text in content_block_delta events
+        // (`delta.text` for visible text, `delta.thinking` for reasoning);
+        // they have no `choices` array, so they are counted here.
+        if event.get("type").and_then(Value::as_str) == Some("content_block_delta") {
+            if let Some(delta) = event.get("delta") {
+                for key in ["text", "thinking"] {
+                    if let Some(text) = delta.get(key).and_then(Value::as_str) {
+                        self.observe_output_text(text);
                     }
                 }
             }
@@ -381,6 +439,17 @@ fn streaming_usage_body_from_event(mut event: Value) -> Option<Value> {
         return Some(usage_body);
     }
 
+    // Anthropic `message_start` nests the input-token usage inside the
+    // initial message snapshot: {"type":"message_start","message":{...,
+    // "usage":{"input_tokens":N,...}}}.
+    if let Some(usage_body) = event
+        .get_mut("message")
+        .and_then(Value::as_object_mut)
+        .and_then(take_usage_body)
+    {
+        return Some(usage_body);
+    }
+
     event
         .get_mut("response")
         .and_then(Value::as_object_mut)
@@ -397,6 +466,53 @@ fn take_usage_body(object: &mut serde_json::Map<String, Value>) -> Option<Value>
         }
     }
     None
+}
+
+/// Merges a newly observed usage frame into the retained one instead of
+/// replacing it. Providers split usage across several stream events —
+/// Anthropic reports input tokens in `message_start` and output tokens in
+/// `message_delta`, Gemini streams cumulative `usageMetadata` per chunk — so
+/// per-field latest-wins merging is required to bill the complete request.
+/// Whole-frame replacement (the previous behavior) dropped the input half of
+/// Anthropic streams entirely and billed only the output tokens.
+fn merge_streaming_usage_body(existing: &mut Option<Value>, incoming: Value) {
+    let Some(current) = existing else {
+        *existing = Some(incoming);
+        return;
+    };
+    let (Some(current_object), Some(incoming_object)) =
+        (current.as_object_mut(), incoming.as_object())
+    else {
+        *existing = Some(incoming);
+        return;
+    };
+    let Some(current_field) = current_object.keys().next().cloned() else {
+        *existing = Some(incoming);
+        return;
+    };
+    let Some(incoming_field) = incoming_object.keys().next().cloned() else {
+        return;
+    };
+    if current_field != incoming_field {
+        // Frames wrapped under different keys ("usage" vs "usageMetadata")
+        // cannot be merged field-by-field; the latest frame wins as before.
+        *existing = Some(incoming);
+        return;
+    }
+    let Some(current_usage) = current_object
+        .get_mut(&current_field)
+        .and_then(Value::as_object_mut)
+    else {
+        *existing = Some(incoming);
+        return;
+    };
+    let Some(incoming_usage) = incoming_object.get(&incoming_field).and_then(Value::as_object)
+    else {
+        return;
+    };
+    for (field, value) in incoming_usage {
+        current_usage.insert(field.clone(), value.clone());
+    }
 }
 
 fn trim_ascii_start(bytes: &[u8]) -> &[u8] {
@@ -668,12 +784,18 @@ fn openai_sse_usage_body(text: &str) -> Option<Value> {
 }
 
 fn cached_tokens(usage: &Value) -> Option<i64> {
-    integer_field(usage, &["cached_tokens"]).or_else(|| {
-        usage
-            .get("prompt_tokens_details")
-            .or_else(|| usage.get("input_tokens_details"))
-            .and_then(|details| integer_field(details, &["cached_tokens"]))
-    })
+    integer_field(usage, &["cached_tokens"])
+        // Anthropic reports cache reads as a top-level usage field.
+        .or_else(|| integer_field(usage, &["cache_read_input_tokens"]))
+        // Google reports the cached share of the prompt as a top-level
+        // usageMetadata field.
+        .or_else(|| integer_field(usage, &["cachedContentTokenCount"]))
+        .or_else(|| {
+            usage
+                .get("prompt_tokens_details")
+                .or_else(|| usage.get("input_tokens_details"))
+                .and_then(|details| integer_field(details, &["cached_tokens"]))
+        })
 }
 
 /// Normalizes miss-only cached reporting: when the provider reports more
@@ -730,7 +852,8 @@ mod tests {
     use serde_json::{json, Value};
 
     use super::{
-        cached_tokens, normalized_input_tokens, StreamingUsageAccumulator, StreamingUsageFormat,
+        cached_tokens, composite_usage_components, normalized_input_tokens,
+        StreamingUsageAccumulator, StreamingUsageFormat,
     };
 
     #[test]
@@ -903,5 +1026,168 @@ mod tests {
             StreamingUsageAccumulator::new(StreamingUsageFormat::ServerSentEvents);
         accumulator.observe(b"data: {\"choices\":[{\"delta\":{}}]}\n\n").unwrap();
         assert!(accumulator.partial_usage_body().is_none());
+    }
+
+    #[test]
+    fn cached_tokens_reads_anthropic_cache_read_field() {
+        let usage: Value = json!({ "input_tokens": 2095, "cache_read_input_tokens": 15126 });
+        assert_eq!(Some(15126), cached_tokens(&usage));
+    }
+
+    #[test]
+    fn cached_tokens_reads_google_cached_content_field() {
+        let usage: Value = json!({ "promptTokenCount": 210, "cachedContentTokenCount": 180 });
+        assert_eq!(Some(180), cached_tokens(&usage));
+    }
+
+    #[test]
+    fn anthropic_exclusive_input_reporting_is_normalized_to_inclusive_components() {
+        // Anthropic 独占上报：input_tokens 不含缓存部分。3000 未命中 + 1000
+        // 缓存读 + 500 缓存写 ⇒ 总输入 4500，全价输入 3000。
+        let usage: Value = json!({
+            "input_tokens": 3000,
+            "cache_read_input_tokens": 1000,
+            "cache_creation_input_tokens": 500,
+        });
+        assert_eq!((3000, 1000, 500, 0), composite_usage_components(&usage));
+    }
+
+    #[test]
+    fn anthropic_fully_cached_input_bills_only_the_cache_read_line() {
+        let usage: Value = json!({ "input_tokens": 0, "cache_read_input_tokens": 5000 });
+        assert_eq!((0, 5000, 0, 0), composite_usage_components(&usage));
+    }
+
+    #[test]
+    fn anthropic_exclusive_reporting_beats_the_magnitude_heuristic() {
+        // 缓存占比小于未命中时，独占上报不能走 cached > input 启发式，
+        // 否则全价输入会被错误扣减（3000 - 1000 = 2000）。
+        let usage: Value = json!({
+            "input_tokens": 3000,
+            "cache_read_input_tokens": 1000,
+            "output_tokens": 42,
+        });
+        assert_eq!((3000, 1000, 0, 42), composite_usage_components(&usage));
+    }
+
+    #[test]
+    fn google_inclusive_input_reporting_subtracts_the_cached_share() {
+        // Google 上报 promptTokenCount 为包含缓存的总量。
+        let usage: Value = json!({
+            "promptTokenCount": 210,
+            "cachedContentTokenCount": 180,
+            "candidatesTokenCount": 33,
+        });
+        assert_eq!((30, 180, 0, 33), composite_usage_components(&usage));
+    }
+
+    #[test]
+    fn openai_inclusive_input_reporting_is_unchanged() {
+        let usage: Value = json!({
+            "prompt_tokens": 100,
+            "completion_tokens": 7,
+            "prompt_tokens_details": { "cached_tokens": 30 },
+        });
+        assert_eq!((70, 30, 0, 7), composite_usage_components(&usage));
+    }
+
+    #[test]
+    fn anthropic_streaming_usage_is_merged_across_message_start_and_delta() {
+        // Anthropic 流式：message_start 携带 input/cache_read（嵌在 message
+        // 内），message_delta 携带累计 output。两帧必须合并，否则输入侧
+        // 完全漏计。
+        let mut accumulator =
+            StreamingUsageAccumulator::new(StreamingUsageFormat::ServerSentEvents);
+        accumulator
+            .observe(
+                b"event: message_start\n\
+                  data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_1\",\
+                  \"usage\":{\"input_tokens\":2095,\"cache_read_input_tokens\":15126}}}\n\n\
+                  event: content_block_delta\n\
+                  data: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"Hello\"}}\n\n\
+                  event: message_delta\n\
+                  data: {\"type\":\"message_delta\",\"usage\":{\"output_tokens\":42}}\n\n",
+            )
+            .unwrap();
+
+        let usage = accumulator.finish().unwrap().expect("merged usage");
+        assert_eq!(
+            Some(2095),
+            usage.pointer("/usage/input_tokens").and_then(|v| v.as_i64())
+        );
+        assert_eq!(
+            Some(15126),
+            usage
+                .pointer("/usage/cache_read_input_tokens")
+                .and_then(|v| v.as_i64())
+        );
+        assert_eq!(
+            Some(42),
+            usage.pointer("/usage/output_tokens").and_then(|v| v.as_i64())
+        );
+    }
+
+    #[test]
+    fn anthropic_interrupted_stream_bills_input_from_message_start() {
+        // 截断流只到达 message_start（未见 message_delta）：partial 仍应
+        // 保留输入侧 usage，而不是回退到纯估算。
+        let mut accumulator =
+            StreamingUsageAccumulator::new(StreamingUsageFormat::ServerSentEvents);
+        accumulator
+            .observe(
+                b"data: {\"type\":\"message_start\",\"message\":\
+                  {\"usage\":{\"input_tokens\":800}}}\n\n\
+                  data: {\"type\":\"content_block_delta\",\"delta\":{\"text\":\"partial\"}}\n\n",
+            )
+            .unwrap();
+
+        let usage = accumulator.partial_usage_body().expect("partial usage");
+        assert_eq!(
+            Some(800),
+            usage.pointer("/usage/input_tokens").and_then(|v| v.as_i64())
+        );
+    }
+
+    #[test]
+    fn gemini_cumulative_usage_metadata_frames_merge_to_the_latest_values() {
+        let mut accumulator =
+            StreamingUsageAccumulator::new(StreamingUsageFormat::ServerSentEvents);
+        accumulator
+            .observe(
+                b"data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"he\"}]}}],\
+                          \"usageMetadata\":{\"promptTokenCount\":210,\"candidatesTokenCount\":2}}\n\n\
+                  data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"llo\"}]}}],\
+                          \"usageMetadata\":{\"promptTokenCount\":210,\"candidatesTokenCount\":33}}\n\n",
+            )
+            .unwrap();
+
+        let usage = accumulator.finish().unwrap().expect("merged usage");
+        assert_eq!(
+            Some(210),
+            usage.pointer("/usageMetadata/promptTokenCount").and_then(|v| v.as_i64())
+        );
+        assert_eq!(
+            Some(33),
+            usage.pointer("/usageMetadata/candidatesTokenCount").and_then(|v| v.as_i64())
+        );
+    }
+
+    #[test]
+    fn openai_final_usage_frame_still_wins_per_field() {
+        // OpenAI 兼容流只在尾帧携带 usage；合并逻辑必须保持字段级
+        // latest-wins（尾帧为最终值）。
+        let mut accumulator =
+            StreamingUsageAccumulator::new(StreamingUsageFormat::ServerSentEvents);
+        accumulator
+            .observe(
+                b"data: {\"choices\":[{\"delta\":{\"content\":\"hi\"}}]}\n\n\
+                  data: {\"choices\":[{\"delta\":{}}],\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":34}}\n\n\
+                  data: [DONE]\n\n",
+            )
+            .unwrap();
+
+        let usage = accumulator.finish().unwrap().expect("usage frame");
+        assert_eq!(Some(12), usage.pointer("/usage/prompt_tokens").and_then(|v| v.as_i64()));
+        assert_eq!(Some(34), usage.pointer("/usage/completion_tokens").and_then(|v| v.as_i64()));
     }
 }

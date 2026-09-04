@@ -162,6 +162,7 @@ fn provider_native_api_code_from_standard_path(
     let path = normalize_provider_api_path(supplier_code, provider.as_str(), standard_path);
     let api_code = match provider.as_str() {
         "anthropic" if path == "/v1/claude-code/sessions" => "anthropic.claude_code",
+        "anthropic" if path == "/v1/messages" => "anthropic.messages",
         "google" | "gemini" if path == "/v1beta/live/sessions" => "gemini.live",
         "google" | "gemini" if gemini_model_action_matches(path.as_str(), "generatecontent") => {
             "gemini.generate_content"
@@ -311,4 +312,87 @@ fn infer_endpoint_key(path: &str) -> String {
         .map(normalize_key)
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| "native_api".to_owned())
+}
+
+#[cfg(test)]
+mod tests {
+    use axum::http::Method;
+
+    use super::*;
+
+    fn classify_post(path: &str, supplier_code: &str) -> InvocationClassification {
+        let request = InvocationClassificationRequest::new(Method::POST, path)
+            .with_supplier_code(supplier_code);
+        ProviderNativeResourceClassifier
+            .classify(&request)
+            .expect("provider-native classification")
+    }
+
+    #[test]
+    fn anthropic_v1_messages_classifies_as_builtin_chat_route() {
+        let classification = classify_post("/v1/messages", "anthropic");
+        assert_eq!("anthropic.messages", classification.resource.route_key);
+        assert_eq!("anthropic.messages", classification.resource.api_code);
+        assert_eq!(
+            Some(BillingMeter::LlmInputToken),
+            classification.billing.meter
+        );
+        assert_eq!(RoutingCapability::Chat, classification.resource.capability);
+        assert_eq!(
+            AiRouteModelRequirement::Required,
+            classification.resource.model_requirement
+        );
+        assert_eq!(
+            AiRouteStrategy::StatelessFailover,
+            classification.routing.strategy
+        );
+        assert_eq!(
+            AiRouteFailureStrategy::Failover,
+            classification.routing.failure_strategy
+        );
+    }
+
+    #[test]
+    fn anthropic_messages_with_supplier_prefix_still_hits_the_builtin_route() {
+        // 公共代理与内部转发会分别以 /anthropic/v1/messages 与
+        // /v1/messages 形态到达；supplier 前缀必须被剥掉后命中同一路由。
+        let classification = classify_post("/anthropic/v1/messages", "anthropic");
+        assert_eq!("anthropic.messages", classification.resource.route_key);
+        assert_eq!(
+            Some(BillingMeter::LlmInputToken),
+            classification.billing.meter
+        );
+    }
+
+    #[test]
+    fn unknown_anthropic_path_still_falls_back_fail_closed() {
+        let classification = classify_post("/v1/totally-unknown", "anthropic");
+        assert_eq!("anthropic.totally.unknown", classification.resource.route_key);
+        assert_eq!(None, classification.billing.meter);
+        assert_eq!(RoutingCapability::Network, classification.resource.capability);
+        assert_eq!(
+            AiRouteStrategy::StatelessFailClosed,
+            classification.routing.strategy
+        );
+    }
+
+    #[test]
+    fn claude_code_route_is_unchanged() {
+        let classification = classify_post("/v1/claude-code/sessions", "anthropic");
+        assert_eq!("anthropic.claude_code", classification.resource.route_key);
+        assert_eq!(
+            Some(BillingMeter::LlmInputToken),
+            classification.billing.meter
+        );
+    }
+
+    #[test]
+    fn gemini_stream_generate_content_route_is_unchanged() {
+        let classification =
+            classify_post("/v1beta/models/gemini-2.5-pro:streamGenerateContent", "google");
+        assert_eq!(
+            "gemini.stream_generate_content",
+            classification.resource.route_key
+        );
+    }
 }
