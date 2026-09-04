@@ -500,7 +500,7 @@ async fn update_pricing_plan(
                 jsonb_set(COALESCE(metadata, '{}'::jsonb), '{chargeMode}', to_jsonb($9::text), true),
                 '{settlementMode}', to_jsonb($10::text), true
             ),
-            updated_at = $11,
+            updated_at = $11::timestamptz,
             version = cloudrouter_pricing_plan.version + 1
         WHERE id = $12
           AND tenant_id = $13
@@ -804,7 +804,7 @@ async fn update_rate_card(
             effective_from = $8::timestamptz,
             effective_to = $9::timestamptz,
             status = $10,
-            updated_at = $11,
+            updated_at = $11::timestamptz,
             version = cloudrouter_account_rate_card.version + 1
         WHERE id = $12
           AND tenant_id = $13
@@ -913,9 +913,9 @@ async fn delete_rate_card(
     let result = sqlx::query(
         r#"
         UPDATE cloudrouter_account_rate_card
-        SET deleted_at = $1,
+        SET deleted_at = $1::timestamptz,
             deleted_by = $2,
-            updated_at = $1,
+            updated_at = $1::timestamptz,
             version = cloudrouter_account_rate_card.version + 1
         WHERE id = $3
           AND tenant_id = $4
@@ -1190,7 +1190,7 @@ async fn update_pricing_rule(
             effective_from = $14::timestamptz,
             effective_to = $15::timestamptz,
             status = $16,
-            updated_at = $17,
+            updated_at = $17::timestamptz,
             version = cloudrouter_pricing_rule.version + 1
         WHERE id = $18
           AND tenant_id = $19
@@ -1315,9 +1315,9 @@ async fn delete_pricing_rule(
     let result = sqlx::query(
         r#"
         UPDATE cloudrouter_pricing_rule
-        SET deleted_at = $1,
+        SET deleted_at = $1::timestamptz,
             deleted_by = $2,
-            updated_at = $1,
+            updated_at = $1::timestamptz,
             version = cloudrouter_pricing_rule.version + 1
         WHERE id = $3
           AND tenant_id = $4
@@ -1734,7 +1734,7 @@ async fn update_default_region(
             effective_from = $4::timestamptz,
             effective_to = $5::timestamptz,
             status = $6,
-            updated_at = $7,
+            updated_at = $7::timestamptz,
             version = pricing_default_region.version + 1
         WHERE id = $8
           AND tenant_id = $9
@@ -1955,10 +1955,10 @@ async fn delete_default_region(
     let deleted = sqlx::query(
         r#"
         UPDATE pricing_default_region
-        SET deleted_at = $1,
+        SET deleted_at = $1::timestamptz,
             deleted_by = $2,
             status = 0,
-            updated_at = $1
+            updated_at = $1::timestamptz
         WHERE id = $3
           AND tenant_id = $4
           AND organization_id = $5
@@ -3691,7 +3691,7 @@ async fn update_price_setting_rule(
             effective_from = $13::timestamptz,
             effective_to = $14::timestamptz,
             status = $15,
-            updated_at = $16,
+            updated_at = $16::timestamptz,
             version = cloudrouter_pricing_rule.version + 1
         WHERE id = $17
           AND tenant_id = $18
