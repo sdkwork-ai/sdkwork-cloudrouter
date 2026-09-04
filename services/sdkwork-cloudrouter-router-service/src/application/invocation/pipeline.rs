@@ -46,6 +46,11 @@ pub struct DeferredStreamResponse {
 
 /// Terminal state supplied by the streaming transport after it has observed
 /// the upstream body incrementally.
+///
+/// Every non-`Completed` outcome carries `partial_usage`: the last provider
+/// usage frame observed before the interruption, or an estimate derived from
+/// the streamed output, so an interrupted stream is still billed for the
+/// spend the provider already incurred.
 #[derive(Debug)]
 pub enum StreamTerminalOutcome {
     Completed {
@@ -54,17 +59,21 @@ pub enum StreamTerminalOutcome {
     },
     Cancelled {
         ttft_ms: Option<i64>,
+        partial_usage: Option<Value>,
     },
     TimedOut {
         stage: &'static str,
         ttft_ms: Option<i64>,
+        partial_usage: Option<Value>,
     },
     UpstreamError {
         message: String,
         ttft_ms: Option<i64>,
+        partial_usage: Option<Value>,
     },
     LeaseLost {
         ttft_ms: Option<i64>,
+        partial_usage: Option<Value>,
     },
 }
 
@@ -390,33 +399,103 @@ impl DeferredStreamInvocation {
                         )
                         .await
                 }
-                StreamTerminalOutcome::Cancelled { ttft_ms } => {
+                StreamTerminalOutcome::Cancelled { ttft_ms, partial_usage } => {
                     self.invocation.telemetry.ttft_ms = ttft_ms;
-                    self.fail_terminal(stream_lifecycle_error("client cancelled provider stream"))
-                        .await
-                }
-                StreamTerminalOutcome::TimedOut { stage, ttft_ms } => {
-                    self.invocation.telemetry.ttft_ms = ttft_ms;
-                    self.fail_terminal(stream_lifecycle_error(format!(
-                        "provider stream {stage} deadline exceeded"
-                    )))
+                    self.settle_partial_then_fail(
+                        partial_usage,
+                        stream_lifecycle_error("client cancelled provider stream"),
+                    )
                     .await
                 }
-                StreamTerminalOutcome::UpstreamError { message, ttft_ms } => {
+                StreamTerminalOutcome::TimedOut { stage, ttft_ms, partial_usage } => {
                     self.invocation.telemetry.ttft_ms = ttft_ms;
-                    self.fail_terminal(stream_lifecycle_error(format!(
-                        "provider stream failed: {message}"
-                    )))
+                    self.settle_partial_then_fail(
+                        partial_usage,
+                        stream_lifecycle_error(format!(
+                            "provider stream {stage} deadline exceeded"
+                        )),
+                    )
                     .await
                 }
-                StreamTerminalOutcome::LeaseLost { ttft_ms } => {
+                StreamTerminalOutcome::UpstreamError { message, ttft_ms, partial_usage } => {
                     self.invocation.telemetry.ttft_ms = ttft_ms;
-                    self.fail_terminal(tenant_lease_loss_error()).await
+                    self.settle_partial_then_fail(
+                        partial_usage,
+                        stream_lifecycle_error(format!(
+                            "provider stream failed: {message}"
+                        )),
+                    )
+                    .await
+                }
+                StreamTerminalOutcome::LeaseLost { ttft_ms, partial_usage } => {
+                    self.invocation.telemetry.ttft_ms = ttft_ms;
+                    self.settle_partial_then_fail(
+                        partial_usage,
+                        tenant_lease_loss_error(),
+                    )
+                    .await
                 }
             }
         }
         .instrument(span)
         .await
+    }
+
+    /// Finalizes an interrupted stream that may already have produced billable
+    /// provider spend (timeout, client cancellation, upstream failure, lease
+    /// loss). The observed partial usage is recorded through the same pricing
+    /// path as a successful stream, then the full after-chain persists the
+    /// usage facts and settles the produced tokens. The terminal error is only
+    /// surfaced when that settlement path itself fails — the HTTP client has
+    /// already observed the truncated stream, so `Ok(())` here does not hide
+    /// the interruption from the caller's response body.
+    async fn settle_partial_then_fail(
+        mut self,
+        partial_usage: Option<Value>,
+        error: InvocationError,
+    ) -> Result<(), InvocationError> {
+        if let Some(usage_body) = partial_usage.as_ref() {
+            if streaming_usage_is_required(&self.invocation) {
+                if let Err(record_error) =
+                    record_streaming_usage_body(&mut self.invocation, usage_body)
+                {
+                    tracing::warn!(
+                        error = %record_error,
+                        request_id = %self.invocation.request.request_id,
+                        "interrupted stream partial usage was not billable"
+                    );
+                }
+            }
+        }
+        let outcome = match self
+            .pipeline
+            .finish_after(
+                &mut self.invocation,
+                &self.started,
+                &self.completed_before_stream,
+            )
+            .await
+        {
+            Ok(()) => {
+                if partial_usage.is_some() {
+                    tracing::warn!(
+                        request_id = %self.invocation.request.request_id,
+                        trace_id = %self.invocation.telemetry.trace_id.as_deref().unwrap_or(""),
+                        "interrupted provider stream settled for the usage it produced"
+                    );
+                }
+                Ok(())
+            }
+            Err(settlement_error) => {
+                tracing::warn!(
+                    error = %settlement_error,
+                    request_id = %self.invocation.request.request_id,
+                    "interrupted stream settlement failed; surfacing terminal error"
+                );
+                self.fail_terminal(error).await
+            }
+        };
+        outcome
     }
 
     async fn fail_terminal(&mut self, error: InvocationError) -> Result<(), InvocationError> {

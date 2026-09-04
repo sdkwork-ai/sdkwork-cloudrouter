@@ -12,7 +12,15 @@ use sdkwork_cloudrouter_router_service::application::{
 use tokio::sync::{mpsc, oneshot};
 use tokio::time::{timeout_at, Instant as TokioInstant};
 
-pub(crate) const DEFAULT_STREAM_TOTAL_TIMEOUT: Duration = Duration::from_secs(120);
+/// Ceiling for one established provider stream (30 minutes).
+///
+/// Long agent/coding completions legitimately stream for minutes; the prior
+/// 120-second total truncated healthy streams with
+/// `provider stream total deadline exceeded`. Stream health is still enforced
+/// per-frame by `DEFAULT_STREAM_FIRST_FRAME_TIMEOUT` and
+/// `DEFAULT_STREAM_IDLE_TIMEOUT`, so a stalled upstream is cut within seconds
+/// regardless of this ceiling.
+pub(crate) const DEFAULT_STREAM_TOTAL_TIMEOUT: Duration = Duration::from_secs(1800);
 const DEFAULT_STREAM_FIRST_FRAME_TIMEOUT: Duration = Duration::from_secs(30);
 const DEFAULT_STREAM_IDLE_TIMEOUT: Duration = Duration::from_secs(30);
 
@@ -63,7 +71,10 @@ pub(crate) fn wrap_invocation_stream(
         let outcome = terminal_receiver
             .recv()
             .await
-            .unwrap_or(StreamTerminalOutcome::Cancelled { ttft_ms: None });
+            .unwrap_or(StreamTerminalOutcome::Cancelled {
+                ttft_ms: None,
+                partial_usage: None,
+            });
         if let Err(error) = deferred.complete(outcome).await {
             tracing::warn!(error_kind = ?error.kind, "stream terminal lifecycle failed");
         }
@@ -179,8 +190,12 @@ impl DownstreamStreamState {
 
 impl Drop for DownstreamStreamState {
     fn drop(&mut self) {
+        // The producer-side usage accumulator lives in a different task, so a
+        // dropped downstream body cannot attach partial usage here; the
+        // producer's own terminal branches carry it instead.
         self.completion.complete(StreamTerminalOutcome::Cancelled {
             ttft_ms: self.ttft_ms(),
+            partial_usage: None,
         });
     }
 }
@@ -257,8 +272,10 @@ async fn run_stream_producer(
         let demand_result = tokio::select! {
             biased;
             _ = cancellation_signal.wait_for_tenant_lease_loss() => {
+                let partial_usage = state.usage.partial_usage_body();
                 completion.complete(StreamTerminalOutcome::LeaseLost {
                     ttft_ms: state.ttft_ms(),
+                    partial_usage,
                 });
                 return;
             }
@@ -267,15 +284,19 @@ async fn run_stream_producer(
         let response_sender = match demand_result {
             Ok(Some(sender)) => sender,
             Ok(None) => {
+                let partial_usage = state.usage.partial_usage_body();
                 completion.complete(StreamTerminalOutcome::Cancelled {
                     ttft_ms: state.ttft_ms(),
+                    partial_usage,
                 });
                 return;
             }
             Err(_) => {
+                let partial_usage = state.usage.partial_usage_body();
                 completion.complete(StreamTerminalOutcome::TimedOut {
                     stage: "total",
                     ttft_ms: state.ttft_ms(),
+                    partial_usage,
                 });
                 return;
             }
@@ -286,15 +307,19 @@ async fn run_stream_producer(
         let next_frame = tokio::select! {
             biased;
             _ = cancellation_signal.wait_for_tenant_lease_loss() => {
+                let partial_usage = state.usage.partial_usage_body();
                 completion.complete(StreamTerminalOutcome::LeaseLost {
                     ttft_ms: state.ttft_ms(),
+                    partial_usage,
                 });
                 return;
             }
             result = timeout_at(deadline, state.upstream.next()) => result,
             _ = response_sender.closed() => {
+                let partial_usage = state.usage.partial_usage_body();
                 completion.complete(StreamTerminalOutcome::Cancelled {
                     ttft_ms: state.ttft_ms(),
+                    partial_usage,
                 });
                 return;
             }
@@ -305,31 +330,39 @@ async fn run_stream_producer(
                     state.record_frame_received();
                     if let Err(error) = state.usage.observe(&bytes) {
                         tracing::warn!(error_kind = ?error.kind, "stream usage accumulator rejected provider data");
+                        let partial_usage = state.usage.partial_usage_body();
                         completion.complete(StreamTerminalOutcome::UpstreamError {
                             message: "stream usage accounting failed".to_owned(),
                             ttft_ms: state.ttft_ms(),
+                            partial_usage,
                         });
                         return;
                     }
                 }
                 if response_sender.send(StreamEvent::Data(bytes)).is_err() {
+                    let partial_usage = state.usage.partial_usage_body();
                     completion.complete(StreamTerminalOutcome::Cancelled {
                         ttft_ms: state.ttft_ms(),
+                        partial_usage,
                     });
                     return;
                 }
             }
             Ok(Some(Err(error))) => {
+                let partial_usage = state.usage.partial_usage_body();
                 let outcome = StreamTerminalOutcome::UpstreamError {
                     message: "upstream stream body could not be read".to_owned(),
                     ttft_ms: state.ttft_ms(),
+                    partial_usage,
                 };
                 if response_sender
                     .send(StreamEvent::Failure { error, outcome })
                     .is_err()
                 {
+                    let partial_usage = state.usage.partial_usage_body();
                     completion.complete(StreamTerminalOutcome::Cancelled {
                         ttft_ms: state.ttft_ms(),
+                        partial_usage,
                     });
                 }
                 return;
@@ -342,9 +375,11 @@ async fn run_stream_producer(
                     },
                     Err(error) => {
                         tracing::warn!(error_kind = ?error.kind, "stream usage accumulator failed at EOF");
+                        let partial_usage = state.usage.partial_usage_body();
                         StreamTerminalOutcome::UpstreamError {
                             message: "stream usage accounting failed".to_owned(),
                             ttft_ms: state.ttft_ms(),
+                            partial_usage,
                         }
                     }
                 };
@@ -352,16 +387,20 @@ async fn run_stream_producer(
                     .send(StreamEvent::Terminal(outcome))
                     .is_err()
                 {
+                    let partial_usage = state.usage.partial_usage_body();
                     completion.complete(StreamTerminalOutcome::Cancelled {
                         ttft_ms: state.ttft_ms(),
+                        partial_usage,
                     });
                 }
                 return;
             }
             Err(_) => {
+                let partial_usage = state.usage.partial_usage_body();
                 completion.complete(StreamTerminalOutcome::TimedOut {
                     stage: timeout_stage,
                     ttft_ms: state.ttft_ms(),
+                    partial_usage,
                 });
                 return;
             }

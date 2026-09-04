@@ -44,8 +44,12 @@ spec:
         prometheus.io/port: "3900"
     spec:
       automountServiceAccountToken: false
-      # Covers the 120-second provider stream timeout plus shutdown overhead.
-      terminationGracePeriodSeconds: 130
+      # Graceful-shutdown window for in-flight work. The provider stream total
+      # ceiling is now 30 minutes (long coding completions), so rolling updates
+      # may cut multi-minute streams; their partial spend is settled by the
+      # interrupted-stream billing path instead of holding pods for half an
+      # hour. Five minutes covers the common case plus shutdown overhead.
+      terminationGracePeriodSeconds: 310
       securityContext:
         # The image declares USER sdkwork (non-root); runAsNonRoot is enforced
         # without pinning a host UID so the image-owned install/data paths stay

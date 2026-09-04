@@ -173,6 +173,12 @@ pub struct StreamingUsageAccumulator {
     pending_line: Vec<u8>,
     event_data: Vec<u8>,
     latest_usage_body: Option<Value>,
+    /// Output text observed in streamed deltas, split into ASCII and wide
+    /// (non-ASCII, predominantly CJK) character counts. Used only to estimate
+    /// completion tokens for streams that terminate without a provider usage
+    /// frame; never used when the provider reported usage.
+    observed_ascii_chars: u64,
+    observed_wide_chars: u64,
 }
 
 const MAX_STREAM_USAGE_LINE_BYTES: usize = 64 * 1024;
@@ -185,6 +191,8 @@ impl StreamingUsageAccumulator {
             pending_line: Vec::new(),
             event_data: Vec::new(),
             latest_usage_body: None,
+            observed_ascii_chars: 0,
+            observed_wide_chars: 0,
         }
     }
 
@@ -281,9 +289,89 @@ impl StreamingUsageAccumulator {
         let Ok(value) = serde_json::from_str::<Value>(text) else {
             return;
         };
+        self.observe_streamed_output(&value);
         if let Some(usage_body) = streaming_usage_body_from_event(value) {
             self.latest_usage_body = Some(usage_body);
         }
+    }
+
+    /// Accumulates the output text carried by one streamed event so a stream
+    /// that ends without a provider usage frame can still be billed for what
+    /// it produced. Covers the OpenAI chat-completions delta shape (visible
+    /// text, reasoning text, tool-call argument fragments); unknown shapes are
+    /// simply not counted.
+    fn observe_streamed_output(&mut self, event: &Value) {
+        let Some(choices) = event.get("choices").and_then(Value::as_array) else {
+            return;
+        };
+        for choice in choices {
+            let Some(delta) = choice.get("delta") else {
+                continue;
+            };
+            for key in ["content", "reasoning_content", "reasoning"] {
+                if let Some(text) = delta.get(key).and_then(Value::as_str) {
+                    self.observe_output_text(text);
+                }
+            }
+            if let Some(tool_calls) = delta.get("tool_calls").and_then(Value::as_array) {
+                for tool_call in tool_calls {
+                    if let Some(arguments) = tool_call
+                        .get("function")
+                        .and_then(|function| function.get("arguments"))
+                        .and_then(Value::as_str)
+                    {
+                        self.observe_output_text(arguments);
+                    }
+                }
+            }
+        }
+    }
+
+    fn observe_output_text(&mut self, text: &str) {
+        for character in text.chars() {
+            if character.is_ascii() {
+                self.observed_ascii_chars += 1;
+            } else {
+                self.observed_wide_chars += 1;
+            }
+        }
+    }
+
+    /// Approximates completion tokens from the output text observed so far.
+    ///
+    /// GPT-family BPE tokenizers encode roughly 4 ASCII characters per token,
+    /// while CJK glyphs average about 0.75 tokens per character (~1.33 chars
+    /// per token), so the two classes are estimated separately. The estimate
+    /// deliberately errs low: under-billing a truncated stream is recoverable,
+    /// billing tokens the provider never produced is not.
+    fn estimated_completion_tokens(&self) -> u64 {
+        self.observed_ascii_chars / 4 + self.observed_wide_chars * 3 / 4
+    }
+
+    /// Terminal usage for a stream that reached a non-successful end
+    /// (timeout, cancellation, upstream failure) before the provider emitted
+    /// its usage frame. Prefers the last real provider usage body when one
+    /// arrived; otherwise estimates completion tokens from the observed
+    /// output text. Returns `None` when nothing billable was observed.
+    ///
+    /// Input tokens are not estimated: they cannot be reconstructed from the
+    /// response stream, so a truncated request bills only its produced output.
+    pub fn partial_usage_body(&mut self) -> Option<Value> {
+        // Flush any trailing line/event first so a usage frame that arrived
+        // without its terminating newline is still recognized.
+        if let Ok(Some(usage_body)) = self.finish() {
+            return Some(usage_body);
+        }
+        let estimated = self.estimated_completion_tokens();
+        if estimated == 0 {
+            return None;
+        }
+        Some(serde_json::json!({
+            "usage": {
+                "prompt_tokens": 0,
+                "completion_tokens": estimated,
+            }
+        }))
     }
 }
 
@@ -641,7 +729,9 @@ fn usage_error(message: impl Into<String>) -> InvocationError {
 mod tests {
     use serde_json::{json, Value};
 
-    use super::{cached_tokens, normalized_input_tokens, StreamingUsageAccumulator, StreamingUsageFormat};
+    use super::{
+        cached_tokens, normalized_input_tokens, StreamingUsageAccumulator, StreamingUsageFormat,
+    };
 
     #[test]
     fn streaming_usage_accumulator_handles_fragmented_multiline_sse() {
@@ -771,5 +861,47 @@ mod tests {
         // inclusive 上报（prompt 已含 cached）与无缓存上报保持不变。
         assert_eq!(161, normalized_input_tokens(161, 128));
         assert_eq!(40, normalized_input_tokens(40, 0));
+    }
+
+    #[test]
+    fn partial_usage_prefers_the_last_provider_usage_frame() {
+        let mut accumulator =
+            StreamingUsageAccumulator::new(StreamingUsageFormat::ServerSentEvents);
+        accumulator
+            .observe(
+                b"data: {\"choices\":[{\"delta\":{\"content\":\"partial answer\"}}]}\n\n\
+                 data: {\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":34}}\n",
+            )
+            .unwrap();
+
+        let usage = accumulator.partial_usage_body().expect("provider usage");
+        assert_eq!(Some(34), usage.pointer("/usage/completion_tokens").and_then(|v| v.as_i64()));
+        assert_eq!(Some(12), usage.pointer("/usage/prompt_tokens").and_then(|v| v.as_i64()));
+    }
+
+    #[test]
+    fn partial_usage_estimates_completion_tokens_from_streamed_output_without_usage() {
+        let mut accumulator =
+            StreamingUsageAccumulator::new(StreamingUsageFormat::ServerSentEvents);
+        // 8 ASCII chars -> 2 estimated tokens; CJK chars add 0.75 tokens each.
+        accumulator
+            .observe(
+                b"data: {\"choices\":[{\"delta\":{\"content\":\"AAAAAAAA\"}}]}\n\n\
+                 data: {\"choices\":[{\"delta\":{\"reasoning_content\":\"\\u4e2d\\u6587\"}}]}\n\n",
+            )
+            .unwrap();
+
+        let usage = accumulator.partial_usage_body().expect("estimated usage");
+        // 8/4 = 2 ASCII tokens + wide(2) * 3/4 = 1 -> 3 total.
+        assert_eq!(Some(3), usage.pointer("/usage/completion_tokens").and_then(|v| v.as_i64()));
+        assert_eq!(Some(0), usage.pointer("/usage/prompt_tokens").and_then(|v| v.as_i64()));
+    }
+
+    #[test]
+    fn partial_usage_is_none_for_a_stream_that_produced_nothing() {
+        let mut accumulator =
+            StreamingUsageAccumulator::new(StreamingUsageFormat::ServerSentEvents);
+        accumulator.observe(b"data: {\"choices\":[{\"delta\":{}}]}\n\n").unwrap();
+        assert!(accumulator.partial_usage_body().is_none());
     }
 }

@@ -36,8 +36,15 @@ type ProviderClient = Client<ProviderConnector, RequestBody>;
 /// Lowered from 120 seconds to bound resource usage on stalled upstream calls.
 /// Streaming (SSE) responses use [`DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS`].
 pub const DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS: u64 = 60_000;
-/// Default streaming (SSE) provider response timeout (120 seconds).
-pub const DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS: u64 = 120_000;
+/// Default streaming (SSE) provider response timeout (30 minutes).
+///
+/// Long agent/coding completions routinely stream for several minutes; the
+/// previous 120-second default truncated healthy streams mid-answer. The
+/// per-frame health of an established stream is still bounded by the
+/// first-frame/idle timeouts in the edge runtime, so this total is only a
+/// leak-prevention ceiling, not the operant SLA. Override per deployment with
+/// `SDKWORK_CLOUDROUTER_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS`.
+pub const DEFAULT_PROVIDER_STREAM_RESPONSE_TIMEOUT_MILLIS: u64 = 1_800_000;
 /// Default cap on a non-streaming provider response body (64 MiB).
 pub const DEFAULT_PROVIDER_RESPONSE_MAX_BYTES: u64 = 64 * 1024 * 1024;
 /// Hard cap for configurable non-streaming provider responses (256 MiB).
