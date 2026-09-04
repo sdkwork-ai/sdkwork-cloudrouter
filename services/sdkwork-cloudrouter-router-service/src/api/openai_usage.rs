@@ -498,6 +498,24 @@ fn usage_from_fields(
         .transpose()?
         .unwrap_or(0);
     let total_tokens = required_integer_field(usage, "total_tokens")?;
+
+    // Providers disagree on whether `prompt_tokens` includes cache-hit tokens.
+    // Standard OpenAI semantics: prompt_tokens covers hits + misses, so the
+    // billable (miss) input is `prompt_tokens - cached_tokens`. Some upstreams
+    // (observed with aggregating suppliers) report `prompt_tokens` as the
+    // miss-only count and put the cache hits solely into
+    // `prompt_tokens_details.cached_tokens`; `cached_tokens > prompt_tokens`
+    // is impossible under the inclusive semantics, so it identifies the
+    // miss-only reporting unambiguously. Normalizing here keeps the billable
+    // input non-negative for every downstream consumer — without it,
+    // `billable_input_tokens` underflows and the whole usage fact is dropped,
+    // silently billing zero for every cache-hit request.
+    let prompt_tokens = if cached_tokens > prompt_tokens {
+        prompt_tokens + cached_tokens
+    } else {
+        prompt_tokens
+    };
+
     Ok(OpenAiTokenUsage {
         prompt_tokens,
         completion_tokens,
@@ -1143,5 +1161,76 @@ mod tests {
             usage_billing_region(&catalog, &ctx, &global),
             "without a configured default the global route region must be preserved"
         );
+    }
+
+    /// Some upstream suppliers report `prompt_tokens` as the cache-miss-only
+    /// count with cache hits solely in `cached_tokens`
+    /// (`cached_tokens > prompt_tokens` identifies this unambiguously). The
+    /// parser must normalize to inclusive semantics, otherwise the billable
+    /// input underflows and the entire usage fact is dropped — silently
+    /// billing zero for every cache-hit request.
+    #[test]
+    fn usage_from_fields_normalizes_miss_only_cached_reporting() {
+        let usage = serde_json::json!({
+            "usage": {
+                "prompt_tokens": 33,
+                "completion_tokens": 119,
+                "total_tokens": 280,
+                "prompt_tokens_details": { "cached_tokens": 128 }
+            }
+        });
+
+        let parsed = usage_from_response(OpenAiInvocationEndpoint::ChatCompletions, &usage)
+            .expect("usage must parse");
+
+        assert_eq!(161, parsed.prompt_tokens, "33 miss + 128 cache hit");
+        assert_eq!(128, parsed.cached_tokens);
+        assert_eq!(119, parsed.completion_tokens);
+        assert_eq!(280, parsed.total_tokens);
+        assert_eq!(
+            33,
+            billable_input_tokens(parsed.prompt_tokens, parsed.cached_tokens)
+                .expect("normalized usage must yield a non-negative billable input"),
+            "billable input must be the cache-miss share"
+        );
+    }
+
+    /// Standard inclusive reporting (cached subset of prompt) must stay
+    /// untouched by the normalization.
+    #[test]
+    fn usage_from_fields_keeps_inclusive_cached_reporting() {
+        let usage = serde_json::json!({
+            "usage": {
+                "prompt_tokens": 161,
+                "completion_tokens": 119,
+                "total_tokens": 280,
+                "prompt_tokens_details": { "cached_tokens": 128 }
+            }
+        });
+
+        let parsed = usage_from_response(OpenAiInvocationEndpoint::ChatCompletions, &usage)
+            .expect("usage must parse");
+
+        assert_eq!(161, parsed.prompt_tokens);
+        assert_eq!(128, parsed.cached_tokens);
+        assert_eq!(280, parsed.total_tokens);
+    }
+
+    /// Usage without cache details is unaffected by the normalization.
+    #[test]
+    fn usage_from_fields_keeps_plain_reporting() {
+        let usage = serde_json::json!({
+            "usage": {
+                "prompt_tokens": 146,
+                "completion_tokens": 52,
+                "total_tokens": 198
+            }
+        });
+
+        let parsed = usage_from_response(OpenAiInvocationEndpoint::ChatCompletions, &usage)
+            .expect("usage must parse");
+
+        assert_eq!(146, parsed.prompt_tokens);
+        assert_eq!(0, parsed.cached_tokens);
     }
 }
