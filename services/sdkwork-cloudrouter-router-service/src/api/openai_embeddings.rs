@@ -614,6 +614,44 @@ where
     } = execution;
     let provider_retry_policy =
         provider_relay_attempt_retry_policy(route, failure_strategy, route_count);
+    // Preflight pricing: resolve and validate every quote for this route once,
+    // before any upstream tokens can be consumed. A pricing failure must
+    // terminate the request immediately instead of relaying traffic that
+    // cannot be billed; the usage recording phase below only reads the
+    // preloaded builder and never re-resolves prices.
+    let prebuilt_usage =
+        match usage_recording {
+            Some(usage_recording) => match usage_recording
+                .prepare_usage_command_builder(invocation_context, route, false)
+            {
+                Ok(builder) => Some(builder),
+                Err(error) => {
+                    let message = format!("pricing preflight failed before relay: {error}");
+                    record_request_trace(
+                        usage_recorder.as_ref(),
+                        build_request_trace_command(
+                            invocation_context,
+                            Some(route),
+                            None,
+                            None,
+                            None,
+                            Some("server_error".to_owned()),
+                            Some(message.clone()),
+                        ),
+                    )
+                    .await;
+                    let error = OpenAiInvocationPluginError::new(
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        "pricing_unavailable",
+                        "server_error",
+                        message,
+                    );
+                    notify_error(plugins, invocation_context, Some(route), &error).await;
+                    return Err(RouteRelayFailure::Terminal(error.into_openai_response()));
+                }
+            },
+            None => None,
+        };
     let started_at = Instant::now();
     let response = match relay
         .create_embedding(EmbeddingsRelayRequest {
@@ -746,7 +784,7 @@ where
     }
     if let Some(usage_recording) = usage_recording {
         if let Err(fault) = usage_recording
-            .record_after_success(invocation_context, route, &outcome)
+            .record_after_success(invocation_context, &outcome, prebuilt_usage)
             .await
         {
             record_request_trace(

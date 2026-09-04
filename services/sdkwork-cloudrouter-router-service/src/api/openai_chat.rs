@@ -977,6 +977,43 @@ where
     } = execution;
     let provider_retry_policy =
         provider_relay_attempt_retry_policy(route, failure_strategy, route_count);
+    // Preflight pricing before the stream is dispatched: the quotes loaded
+    // here are the only prices the streaming usage recorder may use. A
+    // pricing failure terminates the request before any upstream tokens are
+    // consumed instead of streaming traffic that cannot be billed.
+    let prebuilt_usage =
+        match usage_recording {
+            Some(usage_recording) => match usage_recording
+                .prepare_usage_command_builder(invocation_context, route, true)
+            {
+                Ok(builder) => Some(builder),
+                Err(error) => {
+                    let message = format!("pricing preflight failed before relay: {error}");
+                    record_request_trace(
+                        usage_recorder.as_ref(),
+                        build_request_trace_command(
+                            invocation_context,
+                            Some(route),
+                            None,
+                            None,
+                            None,
+                            Some("server_error".to_owned()),
+                            Some(message.clone()),
+                        ),
+                    )
+                    .await;
+                    let error = OpenAiInvocationPluginError::new(
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        "pricing_unavailable",
+                        "server_error",
+                        message,
+                    );
+                    notify_error(plugins, invocation_context, Some(route), &error).await;
+                    return Err(RouteRelayFailure::Terminal(error.into_openai_response()));
+                }
+            },
+            None => None,
+        };
     let started_at = Instant::now();
     let response = match relay
         .create_chat_completion_stream(ChatCompletionRelayRequest {
@@ -1112,7 +1149,11 @@ where
     }
     if let Some(usage_recording) = usage_recording.as_ref() {
         if let Err(fault) = usage_recording
-            .record_after_success(invocation_context, route, &relay_outcome)
+            .record_after_success(
+                invocation_context,
+                &relay_outcome,
+                prebuilt_usage.clone(),
+            )
             .await
         {
             record_request_trace(
@@ -1142,24 +1183,29 @@ where
     builder = builder.header(CONTENT_TYPE, content_type);
     let body = match usage_recorder {
         Some(usage_recorder) if status.is_success() => {
-            let command_builder = build_usage_record_command_builder(
-                catalog,
-                invocation_context,
-                context,
-                route,
-                response.status_code,
-                true,
-                chat_usage_billing_profile(),
-            )
-            .map_err(|error| {
-                RouteRelayFailure::Terminal(openai_error(
-                    StatusCode::BAD_GATEWAY,
-                    "provider_usage_record_failed",
-                    "server_error",
-                    error,
-                ))
-            })?
-            .with_latency_ms(relay_outcome.latency_ms);
+            let command_builder = match prebuilt_usage {
+                Some(builder) => builder
+                    .with_http_status(response.status_code)
+                    .with_latency_ms(relay_outcome.latency_ms),
+                None => build_usage_record_command_builder(
+                    catalog,
+                    invocation_context,
+                    context,
+                    route,
+                    response.status_code,
+                    true,
+                    chat_usage_billing_profile(),
+                )
+                .map_err(|error| {
+                    RouteRelayFailure::Terminal(openai_error(
+                        StatusCode::BAD_GATEWAY,
+                        "provider_usage_record_failed",
+                        "server_error",
+                        error,
+                    ))
+                })?
+                .with_latency_ms(relay_outcome.latency_ms),
+            };
             Body::new(StreamingUsageRecordingBody::new(
                 restore_relayed_streaming_model(response.body, requested_model),
                 usage_recorder,
@@ -1287,6 +1333,44 @@ where
     } = execution;
     let provider_retry_policy =
         provider_relay_attempt_retry_policy(route, failure_strategy, route_count);
+    // Preflight pricing: resolve and validate every quote for this route once,
+    // before any upstream tokens can be consumed. A pricing failure must
+    // terminate the request immediately instead of relaying traffic that
+    // cannot be billed; the usage recording phase below only reads the
+    // preloaded builder and never re-resolves prices.
+    let prebuilt_usage =
+        match usage_recording {
+            Some(usage_recording) => match usage_recording
+                .prepare_usage_command_builder(invocation_context, route, false)
+            {
+                Ok(builder) => Some(builder),
+                Err(error) => {
+                    let message = format!("pricing preflight failed before relay: {error}");
+                    record_request_trace(
+                        usage_recorder.as_ref(),
+                        build_request_trace_command(
+                            invocation_context,
+                            Some(route),
+                            None,
+                            None,
+                            None,
+                            Some("server_error".to_owned()),
+                            Some(message.clone()),
+                        ),
+                    )
+                    .await;
+                    let error = OpenAiInvocationPluginError::new(
+                        StatusCode::SERVICE_UNAVAILABLE,
+                        "pricing_unavailable",
+                        "server_error",
+                        message,
+                    );
+                    notify_error(plugins, invocation_context, Some(route), &error).await;
+                    return Err(RouteRelayFailure::Terminal(error.into_openai_response()));
+                }
+            },
+            None => None,
+        };
     let started_at = Instant::now();
     let response = match relay
         .create_chat_completion(ChatCompletionRelayRequest {
@@ -1420,7 +1504,7 @@ where
     }
     if let Some(usage_recording) = usage_recording {
         if let Err(fault) = usage_recording
-            .record_after_success(invocation_context, route, &relay_outcome)
+            .record_after_success(invocation_context, &relay_outcome, prebuilt_usage)
             .await
         {
             record_request_trace(

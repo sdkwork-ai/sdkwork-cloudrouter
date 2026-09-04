@@ -89,11 +89,36 @@ impl<C> OpenAiUsageRecorder<C>
 where
     C: PricingCatalog + PricingDefaultRegionProvider + Send + Sync + 'static,
 {
-    pub async fn record_after_relay(
+    /// Preflight: resolves every billing quote for this route exactly once,
+    /// before any upstream traffic is dispatched. The returned builder is the
+    /// single source of prices for the whole invocation — the usage recording
+    /// phase must only read it and never re-resolve, so the price used for
+    /// billing is exactly the price validated before upstream tokens were
+    /// consumed. Fails closed when pricing cannot be loaded or validated.
+    pub(crate) fn prepare_usage_command_builder(
         &self,
         context: &OpenAiInvocationContext,
         route: &ResolvedOpenAiUpstreamRoute,
+        streaming: bool,
+    ) -> DomainResult<GatewayUsageRecordCommandBuilder> {
+        let builder = build_usage_record_command_builder(
+            self.catalog.as_ref(),
+            context,
+            &context.api_key_context,
+            route,
+            0,
+            streaming,
+            OpenAiUsageBillingProfile::for_endpoint(context.endpoint),
+        )?;
+        validate_prebuilt_quotes(&builder)?;
+        Ok(builder)
+    }
+
+    pub(crate) async fn record_after_relay(
+        &self,
+        context: &OpenAiInvocationContext,
         outcome: &OpenAiInvocationRelayOutcome,
+        prebuilt: GatewayUsageRecordCommandBuilder,
     ) -> Result<(), OpenAiInvocationPluginError> {
         if context.stream || !(200..=299).contains(&outcome.status_code) {
             return Ok(());
@@ -118,16 +143,13 @@ where
         }
         let usage =
             usage_from_response(context.endpoint, body).map_err(provider_usage_record_error)?;
-        let mut commands = build_usage_record_commands(
-            self.catalog.as_ref(),
-            context,
-            route,
-            outcome.status_code,
-            false,
-            usage,
-            OpenAiUsageBillingProfile::for_endpoint(context.endpoint),
-        )
-        .map_err(provider_usage_record_error)?;
+        // The recorded prices come exclusively from the preflight builder that
+        // was resolved and validated before the upstream relay. Re-resolving
+        // here would race catalog changes and could silently bill zero.
+        let mut commands = prebuilt
+            .with_http_status(outcome.status_code)
+            .build(usage)
+            .map_err(provider_usage_record_error)?;
         for command in &mut commands {
             command.latency_ms = outcome.latency_ms;
         }
@@ -141,10 +163,16 @@ where
     pub(crate) async fn record_after_success(
         &self,
         context: &OpenAiInvocationContext,
-        route: &ResolvedOpenAiUpstreamRoute,
         outcome: &OpenAiInvocationRelayOutcome,
+        prebuilt: Option<GatewayUsageRecordCommandBuilder>,
     ) -> Result<(), OpenAiInvocationFault> {
-        self.record_after_relay(context, route, outcome)
+        let prebuilt = prebuilt.ok_or_else(|| {
+            OpenAiInvocationFault::usage_recording(
+                "usage pricing was not preloaded before the relay; refusing to record usage without preflight quotes"
+                    .to_owned(),
+            )
+        })?;
+        self.record_after_relay(context, outcome, prebuilt)
             .await
             .map_err(|error| {
                 if error.code == "provider_usage_missing" {
@@ -360,6 +388,11 @@ impl GatewayUsageRecordCommandBuilder {
         }
     }
 
+    pub(crate) fn with_http_status(mut self, http_status: u16) -> Self {
+        self.http_status = http_status;
+        self
+    }
+
     pub(crate) fn with_latency_ms(mut self, latency_ms: Option<i64>) -> Self {
         self.latency_ms = latency_ms.map(|value| value.max(0));
         self
@@ -497,28 +530,34 @@ fn non_negative_integer(field: &str, integer: i64) -> DomainResult<i64> {
     Ok(integer)
 }
 
-pub(crate) fn build_usage_record_commands<C>(
-    catalog: &C,
-    invocation_context: &OpenAiInvocationContext,
-    route: &ResolvedOpenAiUpstreamRoute,
-    http_status: u16,
-    streaming: bool,
-    usage: OpenAiTokenUsage,
-    billing_profile: OpenAiUsageBillingProfile,
-) -> DomainResult<Vec<GatewayUsageRecordCommand>>
-where
-    C: PricingCatalog + PricingDefaultRegionProvider + Send + Sync,
-{
-    build_usage_record_command_builder(
-        catalog,
-        invocation_context,
-        &invocation_context.api_key_context,
-        route,
-        http_status,
-        streaming,
-        billing_profile,
-    )?
-    .build(usage)
+/// Fails closed when any required quote resolved without a concrete rate
+/// (`unrated`). Recording such a fact would persist zero amounts — the exact
+/// failure mode that silently dropped billing — so the request is rejected
+/// before the upstream relay instead of being billed at zero afterwards.
+fn validate_prebuilt_quotes(
+    builder: &GatewayUsageRecordCommandBuilder,
+) -> DomainResult<()> {
+    let mut quotes: Vec<(&str, &PriceResolution)> = Vec::new();
+    quotes.push(("input", &builder.input_quote));
+    if let Some(output_quote) = builder.output_quote.as_ref() {
+        quotes.push(("output", output_quote));
+    }
+    if let Some(cache_read_quote) = builder.cache_read_quote.as_ref() {
+        quotes.push(("cache_read", cache_read_quote));
+    }
+    for (label, quote) in quotes {
+        if quote.resolved_price.is_none() {
+            return Err(DomainError::new(format!(
+                "pricing catalog has no resolved {} rate for {} in region {} (supplier {}, account {}); refusing to relay unbilled traffic",
+                label,
+                builder.catalog_key,
+                builder.region_code,
+                builder.supplier_code,
+                builder.account_id,
+            )));
+        }
+    }
+    Ok(())
 }
 
 pub(crate) fn build_request_trace_command(
