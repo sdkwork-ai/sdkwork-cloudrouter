@@ -1,7 +1,7 @@
 use serde_json::Value;
 
 use super::{
-    BillingMode, BillingQuantitySource, DispatchMode, Invocation, InvocationError,
+    BillingMode, BillingQuantitySource, DispatchMode, Invocation, InvocationBody, InvocationError,
     InvocationErrorKind, InvocationFuture, InvocationInterceptor, InvocationUsageLine,
 };
 use crate::domain::BillingMeter;
@@ -168,8 +168,7 @@ fn composite_usage_components(usage: &Value) -> (i64, i64, i64, i64) {
     )
     .unwrap_or(0);
     let cached_tokens = cached_tokens(usage).unwrap_or(0);
-    let cache_write_tokens =
-        integer_field(usage, &["cache_creation_input_tokens"]).unwrap_or(0);
+    let cache_write_tokens = integer_field(usage, &["cache_creation_input_tokens"]).unwrap_or(0);
     let anthropic_exclusive_reporting = usage.get("cache_read_input_tokens").is_some()
         || usage.get("cache_creation_input_tokens").is_some();
     let total_input = if anthropic_exclusive_reporting {
@@ -506,7 +505,9 @@ fn merge_streaming_usage_body(existing: &mut Option<Value>, incoming: Value) {
         *existing = Some(incoming);
         return;
     };
-    let Some(incoming_usage) = incoming_object.get(&incoming_field).and_then(Value::as_object)
+    let Some(incoming_usage) = incoming_object
+        .get(&incoming_field)
+        .and_then(Value::as_object)
     else {
         return;
     };
@@ -538,15 +539,22 @@ fn extract_response_body_usage(invocation: &mut Invocation) -> Result<(), Invoca
         .meter
         .clone()
         .ok_or_else(|| usage_error("response body usage extraction requires billing meter"))?;
-    let body = response_body(invocation)?;
+    // Only token metering is allowed to fail on an unparsable provider body:
+    // every token-capable vendor answers with JSON, so a missing or malformed
+    // body is a real metering fault worth surfacing. Character and media
+    // meters, by contrast, legitimately answer with binary payloads (TTS audio)
+    // or with receipts that omit the measured quantity (non-verbose STT,
+    // async video/music jobs). Those shapes must fall back instead of
+    // aborting the `after` chain — an abort here silently drops settlement and
+    // usage recording for a call the client was already served.
     let line = match invocation.billing.mode {
-        BillingMode::Token => token_line(&meter, &body)?,
-        BillingMode::ResultCount => result_line(&meter, &body)?,
-        BillingMode::ItemCount => item_line(&meter, &body)?,
-        BillingMode::Character => character_line(&meter, &body)?,
-        BillingMode::AudioSecond => audio_line(&meter, &body)?,
-        BillingMode::VideoSecond => video_line(&meter, &body)?,
-        _ => generic_line(&meter, &body)?,
+        BillingMode::Token => token_line(&meter, &response_body(invocation)?)?,
+        BillingMode::ResultCount => result_line(&meter, invocation)?,
+        BillingMode::ItemCount => item_line(&meter, invocation)?,
+        BillingMode::Character => character_line(&meter, invocation)?,
+        BillingMode::AudioSecond => audio_line(&meter, invocation)?,
+        BillingMode::VideoSecond => video_line(&meter, invocation)?,
+        _ => generic_line(&meter, invocation)?,
     };
     invocation.usage.add_line(line);
     Ok(())
@@ -631,7 +639,12 @@ fn token_line(meter: &BillingMeter, body: &Value) -> Result<InvocationUsageLine,
         .unwrap_or(body);
     let tokens = integer_field(
         usage,
-        &["prompt_tokens", "input_tokens", "promptTokenCount", "total_tokens"],
+        &[
+            "prompt_tokens",
+            "input_tokens",
+            "promptTokenCount",
+            "total_tokens",
+        ],
     )
     .ok_or_else(|| usage_error("token response usage is missing token count"))?;
     Ok(InvocationUsageLine::new(
@@ -640,94 +653,253 @@ fn token_line(meter: &BillingMeter, body: &Value) -> Result<InvocationUsageLine,
     ))
 }
 
-fn result_line(meter: &BillingMeter, body: &Value) -> Result<InvocationUsageLine, InvocationError> {
-    let count = integer_field(body, &["result_count", "count"])
-        .or_else(|| {
-            body.get("data")
-                .and_then(Value::as_array)
-                .map(|items| items.len() as i64)
+fn result_line(
+    meter: &BillingMeter,
+    invocation: &Invocation,
+) -> Result<InvocationUsageLine, InvocationError> {
+    let body = optional_response_body(invocation);
+    let count = body
+        .as_ref()
+        .and_then(|body| {
+            integer_field(body, &["result_count", "count"]).or_else(|| {
+                body.get("usage")
+                    .and_then(|usage| integer_field(usage, &["result_count", "count"]))
+            })
         })
-        .unwrap_or(1);
-    Ok(InvocationUsageLine::new(
-        meter.clone(),
-        GatewayUsageQuantity::for_meter(meter.clone(), count.to_string())
-            .map_err(|error| usage_error(error.to_string()))?,
-    ))
+        .or_else(|| {
+            body.as_ref()
+                .and_then(|body| array_length_field(body, RESULT_ARRAYS))
+        })
+        // Image vendors answer with binary payloads when the caller asks for a
+        // raw format; the request's `n` still states how many results were
+        // produced.
+        .or_else(|| request_integer_field(invocation, &["n"]))
+        .unwrap_or(1)
+        .max(1);
+    measured_line(meter, count.to_string())
 }
 
-fn item_line(meter: &BillingMeter, body: &Value) -> Result<InvocationUsageLine, InvocationError> {
-    let count = integer_field(body, &["item_count", "count"])
-        .or_else(|| {
-            body.get("data")
-                .and_then(Value::as_array)
-                .map(|items| items.len() as i64)
+fn item_line(
+    meter: &BillingMeter,
+    invocation: &Invocation,
+) -> Result<InvocationUsageLine, InvocationError> {
+    let body = optional_response_body(invocation);
+    let count = body
+        .as_ref()
+        .and_then(|body| {
+            let usage = body.get("usage").unwrap_or(body);
+            integer_field(
+                usage,
+                &[
+                    "item_count",
+                    "document_count",
+                    "documents_count",
+                    "num_documents",
+                    "searched_documents",
+                ],
+            )
         })
-        .unwrap_or(1);
-    Ok(InvocationUsageLine::new(
-        meter.clone(),
-        GatewayUsageQuantity::for_meter(meter.clone(), count.to_string())
-            .map_err(|error| usage_error(error.to_string()))?,
-    ))
+        // Rerank endpoints meter the documents submitted for ranking. Vendors
+        // return a truncated `results`/`data` array whenever `top_n` is set, so
+        // the request's document array is the authoritative billable quantity
+        // whenever the response does not state one explicitly.
+        .or_else(|| request_array_length_field(invocation, RERANK_REQUEST_ARRAYS))
+        .or_else(|| {
+            body.as_ref()
+                .and_then(|body| array_length_field(body, RESULT_ARRAYS))
+        })
+        .or_else(|| {
+            body.as_ref()
+                .and_then(|body| integer_field(body, &["count"]))
+        })
+        .unwrap_or(1)
+        .max(1);
+    measured_line(meter, count.to_string())
 }
 
+/// Character metering (text-to-speech).
+///
+/// TTS responses are binary audio streams, so the response body can never
+/// carry the billed quantity. The industry-standard unit is the number of
+/// characters in the text the caller asked to synthesize, which lives in the
+/// request body as `input` (OpenAI / Azure / MiniMax) or `text` (ElevenLabs /
+/// Fish Audio). Vendors that do report a character count still win.
 fn character_line(
     meter: &BillingMeter,
-    body: &Value,
+    invocation: &Invocation,
 ) -> Result<InvocationUsageLine, InvocationError> {
-    let usage = body.get("usage").unwrap_or(body);
-    let count = integer_field(
-        usage,
-        &["character_count", "characters", "input_characters"],
-    )
-    .ok_or_else(|| usage_error("character response usage is missing character count"))?;
-    Ok(InvocationUsageLine::new(
-        meter.clone(),
-        GatewayUsageQuantity::for_meter(meter.clone(), count.to_string())
-            .map_err(|error| usage_error(error.to_string()))?,
-    ))
+    let reported = optional_response_body(invocation)
+        .as_ref()
+        .map(|body| body.get("usage").unwrap_or(body))
+        .and_then(|usage| {
+            integer_field(
+                usage,
+                &[
+                    "character_count",
+                    "characters",
+                    "input_characters",
+                    "input_character_count",
+                    "characterCount",
+                ],
+            )
+        });
+    let count = match reported {
+        Some(count) if count > 0 => count,
+        _ => match request_character_count(invocation) {
+            Some(count) => count,
+            None => {
+                tracing::warn!(
+                    meter = %meter.code(),
+                    "character-metered response reported no character count and the request \
+                     carried no synthesizable text; falling back to a single character"
+                );
+                1
+            }
+        },
+    };
+    measured_line(meter, count.to_string())
 }
 
-fn audio_line(meter: &BillingMeter, body: &Value) -> Result<InvocationUsageLine, InvocationError> {
-    let usage = body.get("usage").unwrap_or(body);
-    let quantity = text_field(usage, &["audio_seconds", "seconds", "duration_seconds"])
-        .or_else(|| {
-            number_field_as_string(usage, &["audio_seconds", "seconds", "duration_seconds"])
-        })
-        .ok_or_else(|| usage_error("audio response usage is missing seconds"))?;
-    Ok(InvocationUsageLine::new(
-        meter.clone(),
-        GatewayUsageQuantity::for_meter(meter.clone(), quantity)
-            .map_err(|error| usage_error(error.to_string()))?,
-    ))
+/// Seconds metering (speech-to-text, music).
+///
+/// OpenAI reports the recognized audio length as `duration` and only on
+/// `verbose_json` responses; a default `json` (or `text`/`srt`/`vtt`) response
+/// carries no duration at all. Vendor adapters use the longer spellings. When
+/// nothing measurable is present the call is billed a single unit rather than
+/// aborting settlement — the alternative leaves a served request unmetered.
+fn audio_line(
+    meter: &BillingMeter,
+    invocation: &Invocation,
+) -> Result<InvocationUsageLine, InvocationError> {
+    let quantity = optional_response_body(invocation)
+        .as_ref()
+        .map(|body| body.get("usage").unwrap_or(body))
+        .and_then(|usage| seconds_field(usage, AUDIO_SECOND_FIELDS));
+    match quantity {
+        Some(quantity) => measured_line(meter, quantity),
+        None => {
+            tracing::warn!(
+                meter = %meter.code(),
+                "audio-metered response reported no duration; falling back to a single second"
+            );
+            measured_line(meter, "1".to_owned())
+        }
+    }
 }
 
-fn video_line(meter: &BillingMeter, body: &Value) -> Result<InvocationUsageLine, InvocationError> {
-    let usage = body.get("usage").unwrap_or(body);
-    let quantity = text_field(usage, &["video_seconds", "seconds", "duration_seconds"])
-        .or_else(|| {
-            number_field_as_string(usage, &["video_seconds", "seconds", "duration_seconds"])
-        })
-        .ok_or_else(|| usage_error("video response usage is missing seconds"))?;
-    Ok(InvocationUsageLine::new(
-        meter.clone(),
-        GatewayUsageQuantity::for_meter(meter.clone(), quantity)
-            .map_err(|error| usage_error(error.to_string()))?,
-    ))
+fn video_line(
+    meter: &BillingMeter,
+    invocation: &Invocation,
+) -> Result<InvocationUsageLine, InvocationError> {
+    let quantity = optional_response_body(invocation)
+        .as_ref()
+        .map(|body| body.get("usage").unwrap_or(body))
+        .and_then(|usage| seconds_field(usage, VIDEO_SECOND_FIELDS));
+    match quantity {
+        Some(quantity) => measured_line(meter, quantity),
+        None => {
+            tracing::warn!(
+                meter = %meter.code(),
+                "video-metered response reported no duration; falling back to a single second"
+            );
+            measured_line(meter, "1".to_owned())
+        }
+    }
 }
 
 fn generic_line(
     meter: &BillingMeter,
-    body: &Value,
+    invocation: &Invocation,
 ) -> Result<InvocationUsageLine, InvocationError> {
-    let usage = body.get("usage").unwrap_or(body);
-    let quantity = text_field(usage, &["quantity", "billable_quantity", "count"])
-        .or_else(|| number_field_as_string(usage, &["quantity", "billable_quantity", "count"]))
+    let quantity = optional_response_body(invocation)
+        .as_ref()
+        .map(|body| body.get("usage").unwrap_or(body))
+        .and_then(|usage| {
+            text_field(usage, &["quantity", "billable_quantity", "count"]).or_else(|| {
+                number_field_as_string(usage, &["quantity", "billable_quantity", "count"])
+            })
+        })
         .unwrap_or_else(|| "1".to_owned());
+    measured_line(meter, quantity)
+}
+
+const RESULT_ARRAYS: &[&str] = &["data", "results", "images", "items", "videos"];
+const RERANK_REQUEST_ARRAYS: &[&str] = &["documents", "texts", "passages", "inputs"];
+const AUDIO_SECOND_FIELDS: &[&str] = &[
+    "duration",
+    "audio_seconds",
+    "duration_seconds",
+    "audio_duration",
+    "seconds",
+];
+const VIDEO_SECOND_FIELDS: &[&str] = &[
+    "duration",
+    "video_seconds",
+    "duration_seconds",
+    "video_duration",
+    "seconds",
+];
+
+fn measured_line(
+    meter: &BillingMeter,
+    quantity: impl AsRef<str>,
+) -> Result<InvocationUsageLine, InvocationError> {
     Ok(InvocationUsageLine::new(
         meter.clone(),
         GatewayUsageQuantity::for_meter(meter.clone(), quantity)
             .map_err(|error| usage_error(error.to_string()))?,
     ))
+}
+
+/// Provider body for meters whose payload is not guaranteed to be JSON.
+/// Returns `None` instead of failing so callers can fall back to the request
+/// body or to a single unit instead of aborting the settlement chain.
+fn optional_response_body(invocation: &Invocation) -> Option<Value> {
+    response_body(invocation).ok()
+}
+
+fn request_json(invocation: &Invocation) -> Option<&Value> {
+    match invocation.request.body {
+        InvocationBody::Json(ref value) => Some(value),
+        _ => None,
+    }
+}
+
+fn request_integer_field(invocation: &Invocation, names: &[&str]) -> Option<i64> {
+    request_json(invocation).and_then(|body| integer_field(body, names))
+}
+
+fn request_array_length_field(invocation: &Invocation, names: &[&str]) -> Option<i64> {
+    request_json(invocation).and_then(|body| array_length_field(body, names))
+}
+
+/// Number of characters in the request's synthesizable text. Empty text is
+/// reported as `None` so callers can distinguish "no text" from "empty text".
+fn request_character_count(invocation: &Invocation) -> Option<i64> {
+    let body = request_json(invocation)?;
+    ["input", "text"].iter().find_map(|name| {
+        body.get(*name)
+            .and_then(Value::as_str)
+            .map(|text| text.chars().count() as i64)
+            .filter(|count| *count > 0)
+    })
+}
+
+fn array_length_field(value: &Value, names: &[&str]) -> Option<i64> {
+    names.iter().find_map(|name| {
+        value
+            .get(*name)
+            .and_then(Value::as_array)
+            .map(|items| items.len() as i64)
+            .filter(|count| *count > 0)
+    })
+}
+
+fn seconds_field(value: &Value, names: &[&str]) -> Option<String> {
+    number_field_as_string(value, names)
+        // Some adapters stringify the duration.
+        .or_else(|| text_field(value, names))
+        .filter(|seconds| seconds.trim().parse::<f64>().is_ok_and(|value| value > 0.0))
 }
 
 fn response_body(invocation: &Invocation) -> Result<Value, InvocationError> {
@@ -1007,8 +1179,18 @@ mod tests {
             .unwrap();
 
         let usage = accumulator.partial_usage_body().expect("provider usage");
-        assert_eq!(Some(34), usage.pointer("/usage/completion_tokens").and_then(|v| v.as_i64()));
-        assert_eq!(Some(12), usage.pointer("/usage/prompt_tokens").and_then(|v| v.as_i64()));
+        assert_eq!(
+            Some(34),
+            usage
+                .pointer("/usage/completion_tokens")
+                .and_then(|v| v.as_i64())
+        );
+        assert_eq!(
+            Some(12),
+            usage
+                .pointer("/usage/prompt_tokens")
+                .and_then(|v| v.as_i64())
+        );
     }
 
     #[test]
@@ -1025,15 +1207,27 @@ mod tests {
 
         let usage = accumulator.partial_usage_body().expect("estimated usage");
         // 8/4 = 2 ASCII tokens + wide(2) * 3/4 = 1 -> 3 total.
-        assert_eq!(Some(3), usage.pointer("/usage/completion_tokens").and_then(|v| v.as_i64()));
-        assert_eq!(Some(0), usage.pointer("/usage/prompt_tokens").and_then(|v| v.as_i64()));
+        assert_eq!(
+            Some(3),
+            usage
+                .pointer("/usage/completion_tokens")
+                .and_then(|v| v.as_i64())
+        );
+        assert_eq!(
+            Some(0),
+            usage
+                .pointer("/usage/prompt_tokens")
+                .and_then(|v| v.as_i64())
+        );
     }
 
     #[test]
     fn partial_usage_is_none_for_a_stream_that_produced_nothing() {
         let mut accumulator =
             StreamingUsageAccumulator::new(StreamingUsageFormat::ServerSentEvents);
-        accumulator.observe(b"data: {\"choices\":[{\"delta\":{}}]}\n\n").unwrap();
+        accumulator
+            .observe(b"data: {\"choices\":[{\"delta\":{}}]}\n\n")
+            .unwrap();
         assert!(accumulator.partial_usage_body().is_none());
     }
 
@@ -1122,7 +1316,9 @@ mod tests {
         let usage = accumulator.finish().unwrap().expect("merged usage");
         assert_eq!(
             Some(2095),
-            usage.pointer("/usage/input_tokens").and_then(|v| v.as_i64())
+            usage
+                .pointer("/usage/input_tokens")
+                .and_then(|v| v.as_i64())
         );
         assert_eq!(
             Some(15126),
@@ -1132,7 +1328,9 @@ mod tests {
         );
         assert_eq!(
             Some(42),
-            usage.pointer("/usage/output_tokens").and_then(|v| v.as_i64())
+            usage
+                .pointer("/usage/output_tokens")
+                .and_then(|v| v.as_i64())
         );
     }
 
@@ -1153,7 +1351,9 @@ mod tests {
         let usage = accumulator.partial_usage_body().expect("partial usage");
         assert_eq!(
             Some(800),
-            usage.pointer("/usage/input_tokens").and_then(|v| v.as_i64())
+            usage
+                .pointer("/usage/input_tokens")
+                .and_then(|v| v.as_i64())
         );
     }
 
@@ -1173,11 +1373,15 @@ mod tests {
         let usage = accumulator.finish().unwrap().expect("merged usage");
         assert_eq!(
             Some(210),
-            usage.pointer("/usageMetadata/promptTokenCount").and_then(|v| v.as_i64())
+            usage
+                .pointer("/usageMetadata/promptTokenCount")
+                .and_then(|v| v.as_i64())
         );
         assert_eq!(
             Some(33),
-            usage.pointer("/usageMetadata/candidatesTokenCount").and_then(|v| v.as_i64())
+            usage
+                .pointer("/usageMetadata/candidatesTokenCount")
+                .and_then(|v| v.as_i64())
         );
     }
 
@@ -1196,8 +1400,18 @@ mod tests {
             .unwrap();
 
         let usage = accumulator.finish().unwrap().expect("usage frame");
-        assert_eq!(Some(12), usage.pointer("/usage/prompt_tokens").and_then(|v| v.as_i64()));
-        assert_eq!(Some(34), usage.pointer("/usage/completion_tokens").and_then(|v| v.as_i64()));
+        assert_eq!(
+            Some(12),
+            usage
+                .pointer("/usage/prompt_tokens")
+                .and_then(|v| v.as_i64())
+        );
+        assert_eq!(
+            Some(34),
+            usage
+                .pointer("/usage/completion_tokens")
+                .and_then(|v| v.as_i64())
+        );
     }
 
     #[test]
@@ -1234,8 +1448,11 @@ mod tests {
 
     #[test]
     fn token_line_errors_when_no_token_count_is_present() {
-        let error = token_line(&BillingMeter::EmbeddingInputToken, &json!({ "embedding": [] }))
-            .expect_err("missing usage must fail");
+        let error = token_line(
+            &BillingMeter::EmbeddingInputToken,
+            &json!({ "embedding": [] }),
+        )
+        .expect_err("missing usage must fail");
         assert!(error.to_string().contains("missing token count"));
     }
 }

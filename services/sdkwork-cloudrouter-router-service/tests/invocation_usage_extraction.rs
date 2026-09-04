@@ -1,14 +1,15 @@
 use axum::http::Method;
 use sdkwork_cloudrouter_router_service::application::{
     AuthenticatedApiKeyContext, BillingMode, BillingPolicyInterceptor, BillingQuantitySource,
-    Invocation, InvocationBilling, InvocationClassificationRequest, InvocationDispatch,
-    InvocationInterceptor, InvocationPricingQuote, InvocationRequest, InvocationResource,
-    InvocationResourceClassifier, InvocationSubject, InvocationSurface, OpenAiResourceClassifier,
-    PriceResolutionStatus, PricingAuditSnapshot, ProviderNativeResourceClassifier,
-    ResourceBillability, ResourceType, UsageExtractionInterceptor,
+    Invocation, InvocationBilling, InvocationBody, InvocationClassificationRequest,
+    InvocationDispatch, InvocationDispatchResponse, InvocationInterceptor, InvocationPricingQuote,
+    InvocationRequest, InvocationResource, InvocationResourceClassifier, InvocationSubject,
+    InvocationSurface, OpenAiResourceClassifier, PriceResolutionStatus, PricingAuditSnapshot,
+    ProviderNativeResourceClassifier, ResourceBillability, ResourceType,
+    UsageExtractionInterceptor,
 };
 use sdkwork_cloudrouter_router_service::domain::{
-    BillingMeter, Money, ResourceDefinition, RoutingCapability,
+    AiRouteModelRequirement, BillingMeter, Money, ResourceDefinition, RoutingCapability,
 };
 use serde_json::json;
 
@@ -666,4 +667,227 @@ async fn extracts_gemini_embed_content_token_line_from_usage_metadata() {
         invocation.usage.lines[0].meter
     );
     assert_eq!("210", invocation.usage.lines[0].quantity.billable_quantity);
+}
+
+fn openai_invocation_with_body(method: Method, path: &str, body: serde_json::Value) -> Invocation {
+    let mut invocation = openai_invocation(method, path);
+    invocation.request.body = InvocationBody::json(body);
+    invocation
+}
+
+/// `/v1/rerank` is a model-scoped route: the resource carries the Rerank
+/// capability, which the billing policy maps onto document counting.
+fn rerank_invocation(document_count: usize) -> Invocation {
+    Invocation::new(
+        InvocationRequest::new(Method::POST, "/v1/rerank")
+            .with_request_id("req-rerank-usage")
+            .with_body(InvocationBody::json(json!({
+                "model": "bge-reranker-v2-m3",
+                "query": "what is a panda?",
+                "top_n": 2,
+                "documents": (0..document_count)
+                    .map(|index| format!("candidate document {index}"))
+                    .collect::<Vec<_>>(),
+            }))),
+        subject(),
+        InvocationResource::model_call(
+            "rerank/rerank",
+            "rerank",
+            RoutingCapability::Rerank,
+            AiRouteModelRequirement::Required,
+        ),
+        InvocationBilling::composite(BillingMeter::LlmInputToken),
+    )
+}
+
+#[tokio::test]
+async fn bills_text_to_speech_by_request_input_characters() {
+    // A TTS response is a binary audio stream, so the billed quantity can only
+    // come from the request. Before this fix the extractor errored out on the
+    // non-JSON body and aborted the whole `after` chain, leaving a served
+    // request completely unmetered.
+    let mut invocation = openai_invocation_with_body(
+        Method::POST,
+        "/v1/audio/speech",
+        json!({"model": "tts-1", "voice": "alloy", "input": "Hello, world!"}),
+    );
+    BillingPolicyInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("billing policy");
+    assert_eq!(BillingMode::Character, invocation.billing.mode);
+    assert_eq!(
+        Some(BillingMeter::TtsInputCharacter),
+        invocation.billing.meter
+    );
+    invocation.dispatch.response = Some(InvocationDispatchResponse::bytes(
+        200,
+        b"ID3\x03binary-mp3-payload".to_vec(),
+        Some("audio/mpeg".to_owned()),
+    ));
+
+    UsageExtractionInterceptor
+        .after(&mut invocation)
+        .await
+        .expect("usage extraction");
+
+    assert_eq!(1, invocation.usage.lines.len());
+    assert_eq!(
+        BillingMeter::TtsInputCharacter,
+        invocation.usage.lines[0].meter
+    );
+    assert_eq!("13", invocation.usage.lines[0].quantity.billable_quantity);
+}
+
+#[tokio::test]
+async fn bills_text_to_speech_by_reported_character_count_when_present() {
+    let mut invocation = openai_invocation_with_body(
+        Method::POST,
+        "/v1/audio/speech",
+        json!({"model": "tts-1", "voice": "alloy", "input": "Hello, world!"}),
+    );
+    BillingPolicyInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("billing policy");
+    invocation.dispatch = InvocationDispatch::json_response(
+        200,
+        json!({"usage": {"character_count": 42}, "audio": "base64"}),
+    );
+
+    UsageExtractionInterceptor
+        .after(&mut invocation)
+        .await
+        .expect("usage extraction");
+
+    assert_eq!(1, invocation.usage.lines.len());
+    assert_eq!("42", invocation.usage.lines[0].quantity.billable_quantity);
+}
+
+#[tokio::test]
+async fn bills_speech_to_text_by_verbose_json_duration() {
+    let mut invocation = openai_invocation(Method::POST, "/v1/audio/transcriptions");
+    BillingPolicyInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("billing policy");
+    assert_eq!(BillingMode::AudioSecond, invocation.billing.mode);
+    assert_eq!(
+        Some(BillingMeter::AudioInputSecond),
+        invocation.billing.meter
+    );
+    invocation.dispatch = InvocationDispatch::json_response(
+        200,
+        json!({
+            "task": "transcribe",
+            "language": "english",
+            "duration": 12.5,
+            "text": "Hello, world!"
+        }),
+    );
+
+    UsageExtractionInterceptor
+        .after(&mut invocation)
+        .await
+        .expect("usage extraction");
+
+    assert_eq!(1, invocation.usage.lines.len());
+    assert_eq!(
+        BillingMeter::AudioInputSecond,
+        invocation.usage.lines[0].meter
+    );
+    assert_eq!(
+        "12.500000000000",
+        invocation.usage.lines[0].quantity.billable_quantity
+    );
+}
+
+#[tokio::test]
+async fn bills_speech_to_text_single_second_when_duration_is_not_reported() {
+    // OpenAI only reports `duration` on `verbose_json`; a default `json`
+    // response (and `text`/`srt`/`vtt` formats) carries none. That shape must
+    // still settle instead of aborting the chain.
+    let mut invocation = openai_invocation(Method::POST, "/v1/audio/transcriptions");
+    BillingPolicyInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("billing policy");
+    invocation.dispatch = InvocationDispatch::json_response(200, json!({"text": "Hello, world!"}));
+
+    UsageExtractionInterceptor
+        .after(&mut invocation)
+        .await
+        .expect("usage extraction");
+
+    assert_eq!(1, invocation.usage.lines.len());
+    assert_eq!(
+        "1.000000000000",
+        invocation.usage.lines[0].quantity.billable_quantity
+    );
+}
+
+#[tokio::test]
+async fn bills_rerank_by_submitted_document_count_not_truncated_results() {
+    // Vendors truncate `results` to `top_n`, so counting the response array
+    // under-bills every rerank call that asks for fewer results than it
+    // submits.
+    let mut invocation = rerank_invocation(4);
+    BillingPolicyInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("billing policy");
+    assert_eq!(BillingMode::ItemCount, invocation.billing.mode);
+    assert_eq!(Some(BillingMeter::RerankDocument), invocation.billing.meter);
+    invocation.dispatch = InvocationDispatch::json_response(
+        200,
+        json!({
+            "id": "rerank-1",
+            "results": [
+                {"index": 2, "relevance_score": 0.91},
+                {"index": 0, "relevance_score": 0.73}
+            ]
+        }),
+    );
+
+    UsageExtractionInterceptor
+        .after(&mut invocation)
+        .await
+        .expect("usage extraction");
+
+    assert_eq!(1, invocation.usage.lines.len());
+    assert_eq!(
+        BillingMeter::RerankDocument,
+        invocation.usage.lines[0].meter
+    );
+    assert_eq!("4", invocation.usage.lines[0].quantity.billable_quantity);
+}
+
+#[tokio::test]
+async fn bills_image_generations_by_response_result_count() {
+    let mut invocation = openai_invocation(Method::POST, "/v1/images/generations");
+    BillingPolicyInterceptor
+        .before(&mut invocation)
+        .await
+        .expect("billing policy");
+    assert_eq!(BillingMode::ResultCount, invocation.billing.mode);
+    assert_eq!(Some(BillingMeter::ImageResult), invocation.billing.meter);
+    invocation.dispatch = InvocationDispatch::json_response(
+        200,
+        json!({
+            "created": 1711111111,
+            "data": [
+                {"url": "https://example.test/a.png"},
+                {"url": "https://example.test/b.png"}
+            ]
+        }),
+    );
+
+    UsageExtractionInterceptor
+        .after(&mut invocation)
+        .await
+        .expect("usage extraction");
+
+    assert_eq!(1, invocation.usage.lines.len());
+    assert_eq!(BillingMeter::ImageResult, invocation.usage.lines[0].meter);
+    assert_eq!("2", invocation.usage.lines[0].quantity.billable_quantity);
 }
