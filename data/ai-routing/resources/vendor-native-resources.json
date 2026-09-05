@@ -19,6 +19,23 @@
       "sortOrder": 400
     },
     {
+      "resourceCode": "api.anthropic.messages",
+      "resourceType": "api_endpoint",
+      "displayName": "Anthropic Messages",
+      "vendorCode": "anthropic",
+      "modalityCode": "llm",
+      "apiCode": "anthropic.messages",
+      "method": "POST",
+      "pathTemplate": "/v1/messages",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "chat",
+        "streaming"
+      ],
+      "sortOrder": 405
+    },
+    {
       "resourceCode": "api.gemini.generate_content",
       "resourceType": "api_endpoint",
       "displayName": "Gemini Generate Content",

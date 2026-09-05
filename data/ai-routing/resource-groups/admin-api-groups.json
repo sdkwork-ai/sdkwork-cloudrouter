@@ -119,6 +119,10 @@
         },
         {
           "itemType": "resource",
+          "resourceCode": "api.anthropic.messages"
+        },
+        {
+          "itemType": "resource",
           "resourceCode": "api.gemini.generate_content"
         },
         {
@@ -397,15 +401,19 @@
     },
     {
       "groupCode": "api.claude.code",
-      "groupName": "Claude Code API",
+      "groupName": "Anthropic API",
       "groupType": "api_group",
       "selectionMode": "all",
-      "description": "Anthropic Claude Code API resources.",
+      "description": "Anthropic Messages and Claude Code API resources.",
       "sortOrder": 8,
       "items": [
         {
           "itemType": "resource",
           "resourceCode": "api.anthropic.claude_code"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.anthropic.messages"
         }
       ]
     },

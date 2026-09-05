@@ -163,10 +163,10 @@
     },
     {
       "groupCode": "official.anthropic.claude_code",
-      "groupName": "Official Claude Code",
+      "groupName": "Official Anthropic",
       "groupType": "api_group",
       "selectionMode": "all",
-      "description": "Anthropic Claude Code session routing resources.",
+      "description": "Anthropic Messages and Claude Code session routing resources.",
       "sortOrder": 120,
       "items": [
         {
@@ -176,6 +176,10 @@
         {
           "itemType": "resource",
           "resourceCode": "api.anthropic.claude_code"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.anthropic.messages"
         }
       ]
     },
