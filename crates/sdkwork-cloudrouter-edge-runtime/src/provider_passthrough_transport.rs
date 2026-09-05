@@ -437,7 +437,7 @@ mod tests {
         );
         let (parts, _) = Request::builder()
             .method("POST")
-            .uri("/provider/test-provider/v1/invoke")
+            .uri("/test-provider/v1/invoke")
             .body(())
             .unwrap()
             .into_parts();
@@ -526,7 +526,7 @@ mod tests {
         );
         let (parts, _) = Request::builder()
             .method("POST")
-            .uri("/provider/test-provider/v1/invoke")
+            .uri("/test-provider/v1/invoke")
             .body(())
             .expect("test passthrough request")
             .into_parts();

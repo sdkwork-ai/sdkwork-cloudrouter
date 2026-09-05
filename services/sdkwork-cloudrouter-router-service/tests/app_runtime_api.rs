@@ -2261,7 +2261,7 @@ async fn app_runtime_gateway_executor_routes_claude_code_to_anthropic_messages()
     assert!(body.contains(r#""textDelta":"hello""#), "{body}");
     let gateway_requests = gateway_requests.lock().unwrap();
     assert_eq!(1, gateway_requests.len());
-    assert_eq!("/provider/anthropic/v1/messages", gateway_requests[0].path);
+    assert_eq!("/anthropic/v1/messages", gateway_requests[0].path);
     assert_eq!(Some(true), gateway_requests[0].body["stream"].as_bool());
     assert_eq!("claude-sonnet-4-5", gateway_requests[0].body["model"]);
     assert_eq!(
@@ -2313,7 +2313,7 @@ async fn app_runtime_gateway_executor_routes_gemini_models_to_google_stream_gene
     let gateway_requests = gateway_requests.lock().unwrap();
     assert_eq!(1, gateway_requests.len());
     assert_eq!(
-        "/provider/google/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse",
+        "/google/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse",
         gateway_requests[0].path
     );
     assert_eq!(
@@ -2473,7 +2473,7 @@ async fn app_runtime_gateway_executor_routes_frontend_chat_claude_model_to_anthr
     assert_eq!(StatusCode::OK, response.status());
     let gateway_requests = gateway_requests.lock().unwrap();
     assert_eq!(1, gateway_requests.len());
-    assert_eq!("/provider/anthropic/v1/messages", gateway_requests[0].path);
+    assert_eq!("/anthropic/v1/messages", gateway_requests[0].path);
     assert_eq!(Some(true), gateway_requests[0].body["stream"].as_bool());
     assert_eq!("claude-sonnet-4-5", gateway_requests[0].body["model"]);
     assert_eq!(
@@ -2527,7 +2527,7 @@ async fn app_runtime_gateway_executor_routes_frontend_chat_gemini_model_to_googl
     let gateway_requests = gateway_requests.lock().unwrap();
     assert_eq!(1, gateway_requests.len());
     assert_eq!(
-        "/provider/google/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse",
+        "/google/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse",
         gateway_requests[0].path
     );
     assert_eq!(
@@ -2584,7 +2584,7 @@ async fn app_runtime_gateway_executor_routes_frontend_agent_gemini_image_shape_t
     let gateway_requests = gateway_requests.lock().unwrap();
     assert_eq!(1, gateway_requests.len());
     assert_eq!(
-        "/provider/google/v1beta/models/gemini-2.5-flash-image:streamGenerateContent?alt=sse",
+        "/google/v1beta/models/gemini-2.5-flash-image:streamGenerateContent?alt=sse",
         gateway_requests[0].path
     );
     assert_eq!(
@@ -2815,7 +2815,7 @@ async fn app_runtime_gateway_executor_routes_gemini_image_generation_and_emits_i
     let gateway_requests = gateway_requests.lock().unwrap();
     assert_eq!(1, gateway_requests.len());
     assert_eq!(
-        "/provider/google/v1beta/models/gemini-2.5-flash-image:streamGenerateContent?alt=sse",
+        "/google/v1beta/models/gemini-2.5-flash-image:streamGenerateContent?alt=sse",
         gateway_requests[0].path
     );
     assert_eq!(
@@ -2897,7 +2897,7 @@ async fn app_runtime_gateway_executor_routes_suno_music_generation_to_provider_m
     assert_eq!(1, gateway_requests.len());
     assert_eq!(Method::POST, gateway_requests[0].method);
     assert_eq!(
-        "/provider/suno/v1/music/generations",
+        "/suno/v1/music/generations",
         gateway_requests[0].path
     );
     assert!(gateway_requests[0].authorization.is_empty());
@@ -3076,7 +3076,7 @@ async fn app_runtime_gateway_executor_routes_gemini_video_generation_to_provider
     assert_eq!(1, gateway_requests.len());
     assert_eq!(Method::POST, gateway_requests[0].method);
     assert_eq!(
-        "/provider/google/v1beta/models/veo-3.0-generate-001:generateVideos",
+        "/google/v1beta/models/veo-3.0-generate-001:generateVideos",
         gateway_requests[0].path
     );
     assert_eq!(
@@ -3147,7 +3147,7 @@ async fn app_runtime_gateway_executor_routes_kling_video_generation_to_provider_
     assert_eq!(1, gateway_requests.len());
     assert_eq!(Method::POST, gateway_requests[0].method);
     assert_eq!(
-        "/provider/kling/v1/videos/text2video",
+        "/kling/v1/videos/text2video",
         gateway_requests[0].path
     );
     assert_eq!("kling-v2", gateway_requests[0].body["model"]);
@@ -3212,7 +3212,7 @@ async fn app_runtime_gateway_executor_routes_vidu_video_generation_to_provider_s
     assert_eq!(1, gateway_requests.len());
     assert_eq!(Method::POST, gateway_requests[0].method);
     assert_eq!(
-        "/provider/vidu/ent/v2/start-end2video",
+        "/vidu/ent/v2/start-end2video",
         gateway_requests[0].path
     );
     assert_eq!("vidu-v2", gateway_requests[0].body["model"]);
@@ -3277,7 +3277,7 @@ async fn app_runtime_gateway_executor_routes_seedance_video_generation_to_provid
     assert_eq!(1, gateway_requests.len());
     assert_eq!(Method::POST, gateway_requests[0].method);
     assert_eq!(
-        "/provider/volcengine/v1/videos/generations",
+        "/volcengine/v1/videos/generations",
         gateway_requests[0].path
     );
     assert_eq!("seedance-1.0", gateway_requests[0].body["model"]);
@@ -3494,7 +3494,7 @@ async fn app_runtime_gateway_executor_routes_gemini_tts_generation_with_audio_co
     let gateway_requests = gateway_requests.lock().unwrap();
     assert_eq!(1, gateway_requests.len());
     assert_eq!(
-        "/provider/google/v1beta/models/gemini-3.1-flash-tts-preview:streamGenerateContent?alt=sse",
+        "/google/v1beta/models/gemini-3.1-flash-tts-preview:streamGenerateContent?alt=sse",
         gateway_requests[0].path
     );
     assert_eq!(
@@ -3579,7 +3579,7 @@ async fn app_runtime_gateway_executor_routes_elevenlabs_audio_generation_to_text
     let gateway_requests = gateway_requests.lock().unwrap();
     assert_eq!(1, gateway_requests.len());
     assert_eq!(
-        "/provider/elevenlabs/v1/text-to-speech/JBFqnCBsd6RMkjVDRZzb?output_format=wav_44100",
+        "/elevenlabs/v1/text-to-speech/JBFqnCBsd6RMkjVDRZzb?output_format=wav_44100",
         gateway_requests[0].path
     );
     assert_eq!(
@@ -3664,7 +3664,7 @@ async fn app_runtime_gateway_executor_routes_elevenlabs_sfx_generation_and_keeps
     let gateway_requests = gateway_requests.lock().unwrap();
     assert_eq!(1, gateway_requests.len());
     assert_eq!(
-        "/provider/elevenlabs/v1/sound-generation?output_format=wav_48000",
+        "/elevenlabs/v1/sound-generation?output_format=wav_48000",
         gateway_requests[0].path
     );
     assert_eq!(
@@ -4843,20 +4843,20 @@ impl AppRuntimeGatewayClient for RecordingGatewayRuntimeClient {
                 Body::from(
                     "{\"created\":1710000000,\"data\":[{\"url\":\"https://cdn.example.test/generated/poster.png\",\"mimeType\":\"image/png\"}],\"usage\":{\"input_tokens\":12,\"output_tokens\":2,\"total_tokens\":14}}",
                 )
-            } else if request.path == "/provider/suno/v1/music/generations" {
+            } else if request.path == "/suno/v1/music/generations" {
                 Body::from(
                     "{\"id\":\"song_1\",\"data\":[{\"audioUrl\":\"https://cdn.example.test/generated/theme.mp3\",\"mimeType\":\"audio/mpeg\",\"durationSeconds\":30}],\"usage\":{\"total_tokens\":9}}",
                 )
             } else if request
                 .path
-                .starts_with("/provider/elevenlabs/v1/sound-generation")
+                .starts_with("/elevenlabs/v1/sound-generation")
             {
                 Body::from(
                     "{\"asset\":{\"url\":\"https://cdn.example.test/generated/impact.wav\",\"mimeType\":\"audio/wav\",\"durationSeconds\":5}}",
                 )
             } else if request
                 .path
-                .starts_with("/provider/elevenlabs/v1/text-to-speech/")
+                .starts_with("/elevenlabs/v1/text-to-speech/")
             {
                 Body::from("elevenlabs-audio")
             } else if request.path == "/v1/audio/speech" {
@@ -4864,9 +4864,9 @@ impl AppRuntimeGatewayClient for RecordingGatewayRuntimeClient {
             } else if request.path == "/v1/responses" {
                 Body::from("{\"id\":\"resp_1\",\"output_text\":\"hello\"}")
             } else if request.path == "/v1/videos/generations"
-                || request.path.starts_with("/provider/kling/v1/videos/")
-                || request.path == "/provider/vidu/ent/v2/start-end2video"
-                || request.path == "/provider/volcengine/v1/videos/generations"
+                || request.path.starts_with("/kling/v1/videos/")
+                || request.path == "/vidu/ent/v2/start-end2video"
+                || request.path == "/volcengine/v1/videos/generations"
                 || request.path.contains(":generateVideos")
             {
                 Body::from(
@@ -4907,19 +4907,19 @@ impl AppRuntimeGatewayClient for RecordingGatewayRuntimeClient {
                 || request.path == "/v1/images/generations"
                 || request.path == "/v1/images/edits"
                 || request.path == "/v1/videos/generations"
-                || request.path.starts_with("/provider/kling/v1/videos/")
-                || request.path == "/provider/vidu/ent/v2/start-end2video"
-                || request.path == "/provider/volcengine/v1/videos/generations"
+                || request.path.starts_with("/kling/v1/videos/")
+                || request.path == "/vidu/ent/v2/start-end2video"
+                || request.path == "/volcengine/v1/videos/generations"
                 || request.path.contains(":generateVideos")
-                || request.path == "/provider/suno/v1/music/generations"
+                || request.path == "/suno/v1/music/generations"
                 || request
                     .path
-                    .starts_with("/provider/elevenlabs/v1/sound-generation")
+                    .starts_with("/elevenlabs/v1/sound-generation")
             {
                 Some("application/json".to_owned())
             } else if request
                 .path
-                .starts_with("/provider/elevenlabs/v1/text-to-speech/")
+                .starts_with("/elevenlabs/v1/text-to-speech/")
             {
                 if request.path.contains("output_format=wav_44100") {
                     Some("audio/wav".to_owned())

@@ -900,7 +900,7 @@ async fn media_routing_gemini_image_generation_routes_to_google_account() {
 
     let (status, body) = send_request(
         router,
-        "/provider/google/v1beta/models/gemini-2.0-flash-preview-image-generation:generateImages",
+        "/google/v1beta/models/gemini-2.0-flash-preview-image-generation:generateImages",
         json!({"instances": [{"prompt": "mountain"}], "parameters": {}}),
     )
     .await;
@@ -947,7 +947,7 @@ async fn media_routing_gemini_veo_video_generation_routes_to_google_account() {
 
     let (status, body) = send_request(
         router,
-        "/provider/google/v1beta/models/veo-3.0-generate-001:generateVideos",
+        "/google/v1beta/models/veo-3.0-generate-001:generateVideos",
         json!({"instances": [{"prompt": "tide"}], "parameters": {"durationSeconds": 8}}),
     )
     .await;
@@ -990,7 +990,7 @@ async fn media_routing_kling_video_generation_routes_to_kling_account() {
 
     let (status, body) = send_request(
         router,
-        "/provider/kling/v1/videos/text2video",
+        "/kling/v1/videos/text2video",
         json!({"prompt": "city skyline", "duration": 8}),
     )
     .await;
@@ -1033,7 +1033,7 @@ async fn media_routing_vidu_video_generation_routes_to_vidu_account() {
 
     let (status, body) = send_request(
         router,
-        "/provider/vidu/ent/v2/start-end2video",
+        "/vidu/ent/v2/start-end2video",
         json!({"prompt": "sunset over the sea", "startImg": {"url": "x"}, "endImg": {"url": "y"}}),
     )
     .await;
@@ -1076,7 +1076,7 @@ async fn media_routing_seedance_video_generation_routes_to_volcengine_account() 
 
     let (status, body) = send_request(
         router,
-        "/provider/volcengine/v1/videos/generations",
+        "/volcengine/v1/videos/generations",
         json!({"model": "seedance-1.0", "prompt": "aurora borealis"}),
     )
     .await;

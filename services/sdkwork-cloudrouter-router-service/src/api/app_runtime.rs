@@ -1937,14 +1937,14 @@ where
         RuntimeGatewayApi::GeminiVideoGeneration => AppRuntimeGatewayRequest::new(
             Method::POST,
             format!(
-                "/provider/google/v1beta/models/{}:generateVideos",
+                "/google/v1beta/models/{}:generateVideos",
                 percent_encode_path_segment(&provider_model)
             ),
             build_runtime_gemini_video_generation_request_body(&execution.request_json)?,
         ),
         RuntimeGatewayApi::KlingVideoGeneration => AppRuntimeGatewayRequest::new(
             Method::POST,
-            "/provider/kling/v1/videos/text2video",
+            "/kling/v1/videos/text2video",
             build_runtime_provider_video_generation_request_body(
                 &provider_model,
                 &execution.request_json,
@@ -1952,7 +1952,7 @@ where
         ),
         RuntimeGatewayApi::ViduVideoGeneration => AppRuntimeGatewayRequest::new(
             Method::POST,
-            "/provider/vidu/ent/v2/start-end2video",
+            "/vidu/ent/v2/start-end2video",
             build_runtime_provider_video_generation_request_body(
                 &provider_model,
                 &execution.request_json,
@@ -1960,7 +1960,7 @@ where
         ),
         RuntimeGatewayApi::VolcengineVideoGeneration => AppRuntimeGatewayRequest::new(
             Method::POST,
-            "/provider/volcengine/v1/videos/generations",
+            "/volcengine/v1/videos/generations",
             build_runtime_provider_video_generation_request_body(
                 &provider_model,
                 &execution.request_json,
@@ -1976,7 +1976,7 @@ where
         ),
         RuntimeGatewayApi::SunoMusicGenerations => AppRuntimeGatewayRequest::new(
             Method::POST,
-            "/provider/suno/v1/music/generations",
+            "/suno/v1/music/generations",
             build_runtime_suno_music_request_body(provider_model.clone(), &execution.request_json)?,
         ),
         RuntimeGatewayApi::ElevenLabsSoundGeneration => {
@@ -1991,7 +1991,7 @@ where
         )?,
         RuntimeGatewayApi::AnthropicMessages => AppRuntimeGatewayRequest::new(
             Method::POST,
-            "/provider/anthropic/v1/messages",
+            "/anthropic/v1/messages",
             build_runtime_anthropic_messages_request_body(
                 provider_model.clone(),
                 &execution.request_json,
@@ -2000,7 +2000,7 @@ where
         RuntimeGatewayApi::GeminiGenerateContent => AppRuntimeGatewayRequest::new(
             Method::POST,
             format!(
-                "/provider/google/v1beta/models/{}:streamGenerateContent?alt=sse",
+                "/google/v1beta/models/{}:streamGenerateContent?alt=sse",
                 percent_encode_path_segment(&provider_model)
             ),
             build_runtime_gemini_request_body(&execution.request_json)?,
@@ -2430,9 +2430,9 @@ fn build_runtime_elevenlabs_sound_gateway_request(
         .ok_or_else(|| DomainError::new("runtime requestJson must be an object"))?;
     let path = runtime_elevenlabs_sound_output_format(object)
         .map(|output_format| {
-            format!("/provider/elevenlabs/v1/sound-generation?output_format={output_format}")
+            format!("/elevenlabs/v1/sound-generation?output_format={output_format}")
         })
-        .unwrap_or_else(|| "/provider/elevenlabs/v1/sound-generation".to_owned());
+        .unwrap_or_else(|| "/elevenlabs/v1/sound-generation".to_owned());
     Ok(AppRuntimeGatewayRequest::new(
         Method::POST,
         path,
@@ -2466,7 +2466,7 @@ fn build_runtime_elevenlabs_tts_gateway_request(
     Ok(AppRuntimeGatewayRequest::new(
         Method::POST,
         format!(
-            "/provider/elevenlabs/v1/text-to-speech/{}?output_format={}",
+            "/elevenlabs/v1/text-to-speech/{}?output_format={}",
             percent_encode_path_segment(&voice_id),
             output_format
         ),

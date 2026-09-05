@@ -181,12 +181,14 @@ fn apply_provider_native_passthrough_routes<S>(
 where
     S: Clone + Send + Sync + 'static,
 {
+    // Only the vendor-prefixed form is registered: `/provider/{vendor}/...`
+    // was a legacy alias that shadowed the industry-standard vendor surface
+    // (`/anthropic/v1/messages`, `/kling/v1/videos/text2video`, ...). Both
+    // forms resolved identically, so the alias only widened the public
+    // contract surface without adding capability.
     for provider in PROVIDER_NATIVE_PASSTHROUGH_PROVIDERS {
         let vendor_path = format!("/{provider}/{{*path}}");
-        let legacy_path = format!("/provider/{provider}/{{*path}}");
-        router = router
-            .route(&vendor_path, handler.clone())
-            .route(&legacy_path, handler.clone());
+        router = router.route(&vendor_path, handler.clone());
     }
     router
 }
@@ -2081,9 +2083,7 @@ fn provider_from_passthrough_path(path: &str) -> Option<&str> {
 }
 
 fn split_provider_passthrough_path(path: &str) -> Option<(&str, &str)> {
-    let path = path
-        .strip_prefix("/provider/")
-        .or_else(|| path.strip_prefix('/'))?;
+    let path = path.strip_prefix('/')?;
     let (provider, provider_path) = path.split_once('/')?;
     (!provider.is_empty() && !provider_path.is_empty()).then_some((provider, provider_path))
 }

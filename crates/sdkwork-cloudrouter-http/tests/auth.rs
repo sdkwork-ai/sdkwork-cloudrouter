@@ -114,7 +114,7 @@ fn typed_policy_allows_query_keys_only_on_exact_google_route_segments() {
 
     for path in [
         "/google/v1beta/models",
-        "/provider/google/v1beta/models",
+        "/google/v1beta/models/gemini-2.5-flash:generateContent",
         "/providers/google/v1beta/models",
     ] {
         let uri: Uri = format!("{path}?key=sk-query").parse().unwrap();
@@ -131,7 +131,7 @@ fn typed_policy_allows_query_keys_only_on_exact_google_route_segments() {
         "/v1/models",
         "/anthropic/v1/messages",
         "/googleevil/v1beta/models",
-        "/provider/googleevil/v1beta/models",
+        "/providerx/google/v1beta/models",
         "/providers/google-v2/v1beta/models",
     ] {
         let uri: Uri = format!("{path}?key=sk-query").parse().unwrap();

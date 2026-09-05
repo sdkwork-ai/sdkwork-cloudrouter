@@ -141,9 +141,7 @@ fn path_item_method_mask(item: &OpenApiPathItem) -> u8 {
 }
 
 fn split_provider_route(path: &str) -> Option<(&str, &str)> {
-    let path = path
-        .strip_prefix("/provider/")
-        .or_else(|| path.strip_prefix('/'))?;
+    let path = path.strip_prefix('/')?;
     let (provider, provider_path) = path.split_once('/')?;
     (!provider.is_empty() && !provider_path.is_empty()).then_some((provider, provider_path))
 }
@@ -348,7 +346,7 @@ mod tests {
     fn provider_contract_accepts_declared_direct_and_aliased_routes() {
         assert!(reject_unsupported_provider_route(&request(
             Method::POST,
-            "/provider/google/v1beta/models/gemini-2.5-flash:generateContent",
+            "/google/v1beta/models/gemini-2.5-flash:generateContent",
         ))
         .is_none());
         assert!(reject_unsupported_provider_route(&request(
@@ -362,7 +360,7 @@ mod tests {
     fn provider_contract_rejects_unknown_paths_before_forwarding() {
         let response = reject_unsupported_provider_route(&request(
             Method::POST,
-            "/provider/google/v1beta/projects/project-1/locations/global",
+            "/google/v1beta/projects/project-1/locations/global",
         ))
         .expect("unknown provider-native route must be rejected");
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
@@ -372,7 +370,7 @@ mod tests {
     fn provider_contract_rejects_undeclared_methods_with_allow_header() {
         let response = reject_unsupported_provider_route(&request(
             Method::DELETE,
-            "/provider/anthropic/v1/messages",
+            "/anthropic/v1/messages",
         ))
         .expect("undeclared provider-native method must be rejected");
         assert_eq!(response.status(), StatusCode::METHOD_NOT_ALLOWED);

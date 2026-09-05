@@ -1295,7 +1295,7 @@ async fn invocation_router_dispatches_provider_native_request_with_standard_upst
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/provider/kling/v1/videos/text2video")
+                .uri("/kling/v1/videos/text2video")
                 .header("authorization", "Bearer sk-live-secret")
                 .header("content-type", "application/json")
                 .body(Body::from(
@@ -1393,7 +1393,7 @@ async fn invocation_router_provider_native_adapter_uses_standard_chain_and_recor
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/provider/kling/v1/videos/text2video")
+                .uri("/kling/v1/videos/text2video")
                 .header("authorization", "Bearer sk-live-secret")
                 .header("content-type", "application/json")
                 .header("x-request-id", "req-provider-native-adapter")
@@ -1507,7 +1507,7 @@ async fn invocation_router_fallback_preserves_explicit_provider_native_routes() 
     let router =
         axum::Router::new()
             .route(
-                "/provider/kling/{*path}",
+                "/kling/{*path}",
                 any(
                     |State(explicit_hits): State<Arc<Mutex<Vec<String>>>>,
                      request: Request<Body>| async move {
@@ -1527,7 +1527,7 @@ async fn invocation_router_fallback_preserves_explicit_provider_native_routes() 
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/provider/kling/v1/videos/text2video")
+                .uri("/kling/v1/videos/text2video")
                 .header("authorization", "Bearer sk-live-secret")
                 .header("content-type", "application/json")
                 .body(Body::from(r#"{"prompt":"city skyline"}"#))
@@ -1546,7 +1546,7 @@ async fn invocation_router_fallback_preserves_explicit_provider_native_routes() 
         provider_payload["id"].as_str().unwrap()
     );
     assert_eq!(
-        vec!["/provider/kling/v1/videos/text2video".to_owned()],
+        vec!["/kling/v1/videos/text2video".to_owned()],
         explicit_hits.lock().unwrap().clone()
     );
     assert!(
@@ -1574,7 +1574,7 @@ async fn invocation_router_fallback_preserves_explicit_provider_native_routes() 
     assert_eq!(1, calls.len());
     assert_eq!("/v1/chat/completions", calls[0].request_path);
     assert_eq!(
-        vec!["/provider/kling/v1/videos/text2video".to_owned()],
+        vec!["/kling/v1/videos/text2video".to_owned()],
         explicit_hits.lock().unwrap().clone()
     );
 }

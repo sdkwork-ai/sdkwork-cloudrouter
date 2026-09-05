@@ -209,9 +209,15 @@ fn gateway_request_uri(base_url: &str, path: &str) -> DomainResult<Uri> {
         format!("/{path}")
     };
     let base_url = base_url.trim_end_matches('/');
+    // A `/v1`-rooted gateway base URL already carries the OpenAI-compatible
+    // namespace, so `/v1/...` paths only strip the duplicated prefix.
+    // Vendor-prefixed paths (`/anthropic/v1/messages`, `/kling/v1/...`) are
+    // served from the gateway root, so the base's `/v1` is dropped instead.
+    // The `/provider/{vendor}/...` alias was removed; this branch now covers
+    // the vendor-prefixed form the runtime emits.
     let url = if base_url.ends_with("/v1") && normalized_path.starts_with("/v1/") {
         format!("{}{}", base_url, normalized_path.trim_start_matches("/v1"))
-    } else if base_url.ends_with("/v1") && normalized_path.starts_with("/provider/") {
+    } else if base_url.ends_with("/v1") {
         format!("{}{}", base_url.trim_end_matches("/v1"), normalized_path)
     } else {
         format!("{base_url}{normalized_path}")
