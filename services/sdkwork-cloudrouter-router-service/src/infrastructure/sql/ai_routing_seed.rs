@@ -259,6 +259,17 @@ fn modality_group_type(modality: &str) -> &'static str {
     }
 }
 
+/// Extra resource groups granted to the default mixed account group on top of
+/// its primary `resource_group_code`.
+///
+/// The group/supplier resource intersection (`matched_resource_scope`) drops
+/// every resource the group does not also grant. OpenAI-compatible vendors
+/// such as DeepSeek declare Anthropic Messages / Claude Code native protocols,
+/// so without an anthropic-shaped group grant those resources are intersected
+/// away and the account can never serve `/anthropic/v1/messages` (50201 "no
+/// upstream account routes are configured").
+const DEFAULT_GROUP_EXTRA_RESOURCE_GROUP_CODES: [&str; 1] = ["api.claude.code"];
+
 fn default_admin_upstream_account_group() -> DefaultAdminUpstreamAccountGroupSeed {
     DefaultAdminUpstreamAccountGroupSeed {
         group_code: "default-group".to_owned(),
@@ -273,6 +284,19 @@ fn default_admin_upstream_account_group() -> DefaultAdminUpstreamAccountGroupSee
         priority: 100,
         routing_weight: 100,
         is_default: true,
+    }
+}
+
+impl DefaultAdminUpstreamAccountGroupSeed {
+    /// Resource groups granted to this account group: the primary grant, plus
+    /// curated extras for the default mixed group only.
+    fn resource_group_codes(&self) -> Vec<&str> {
+        if !self.is_default {
+            return vec![self.resource_group_code.as_str()];
+        }
+        let mut codes = vec![self.resource_group_code.as_str()];
+        codes.extend(DEFAULT_GROUP_EXTRA_RESOURCE_GROUP_CODES.iter().copied());
+        codes
     }
 }
 
@@ -1395,56 +1419,58 @@ async fn import_postgres_default_admin_upstream_topology(
             .await?;
         }
 
-        sqlx::query(
-            r#"
-            INSERT INTO ai_resource_binding (
-                id, uuid, tenant_id, organization_id, data_scope, status, metadata,
-                binding_scope, account_group_id, account_group_code,
-                resource_id, resource_code, resource_group_code,
-                grant_type, priority
+        for resource_group_code in group.resource_group_codes() {
+            sqlx::query(
+                r#"
+                INSERT INTO ai_resource_binding (
+                    id, uuid, tenant_id, organization_id, data_scope, status, metadata,
+                    binding_scope, account_group_id, account_group_code,
+                    resource_id, resource_code, resource_group_code,
+                    grant_type, priority
+                )
+                VALUES (
+                    $1, $2, $3, $4, $5, 1, $6::jsonb,
+                    'account_group', $7, NULL,
+                    NULL, NULL, $8,
+                    'allow', $9
+                )
+                ON CONFLICT (id) DO UPDATE SET
+                    grant_type = EXCLUDED.grant_type,
+                    priority = EXCLUDED.priority,
+                    status = EXCLUDED.status,
+                    metadata = EXCLUDED.metadata,
+                    deleted_at = NULL,
+                    deleted_by = NULL
+                "#,
             )
-            VALUES (
-                $1, $2, $3, $4, $5, 1, $6::jsonb,
-                'account_group', $7, NULL,
-                NULL, NULL, $8,
-                'allow', $9
-            )
-            ON CONFLICT (id) DO UPDATE SET
-                grant_type = EXCLUDED.grant_type,
-                priority = EXCLUDED.priority,
-                status = EXCLUDED.status,
-                metadata = EXCLUDED.metadata,
-                deleted_at = NULL,
-                deleted_by = NULL
-            "#,
-        )
-        .bind(stable_seed_id(
-            "sdk-ai-upstream-account-group-resource-id",
-            &[
-                &DEFAULT_IAM_TENANT_ID.to_string(),
-                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
-                group.group_code.as_str(),
-                group.resource_group_code.as_str(),
-            ],
-        ))
-        .bind(stable_seed_uuid(
-            "sdk-ai-upstream-account-group-resource",
-            &[
-                &DEFAULT_IAM_TENANT_ID.to_string(),
-                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
-                group.group_code.as_str(),
-                group.resource_group_code.as_str(),
-            ],
-        ))
-        .bind(DEFAULT_IAM_TENANT_ID)
-        .bind(DEFAULT_IAM_ORGANIZATION_ID)
-        .bind(DEFAULT_ADMIN_DATA_SCOPE)
-        .bind(&metadata)
-        .bind(account_group_id)
-        .bind(group.resource_group_code.as_str())
-        .bind(group.priority)
-        .execute(&mut **tx)
-        .await?;
+            .bind(stable_seed_id(
+                "sdk-ai-upstream-account-group-resource-id",
+                &[
+                    &DEFAULT_IAM_TENANT_ID.to_string(),
+                    &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                    group.group_code.as_str(),
+                    resource_group_code,
+                ],
+            ))
+            .bind(stable_seed_uuid(
+                "sdk-ai-upstream-account-group-resource",
+                &[
+                    &DEFAULT_IAM_TENANT_ID.to_string(),
+                    &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                    group.group_code.as_str(),
+                    resource_group_code,
+                ],
+            ))
+            .bind(DEFAULT_IAM_TENANT_ID)
+            .bind(DEFAULT_IAM_ORGANIZATION_ID)
+            .bind(DEFAULT_ADMIN_DATA_SCOPE)
+            .bind(&metadata)
+            .bind(account_group_id)
+            .bind(resource_group_code)
+            .bind(group.priority)
+            .execute(&mut **tx)
+            .await?;
+        }
     }
 
     Ok(())
