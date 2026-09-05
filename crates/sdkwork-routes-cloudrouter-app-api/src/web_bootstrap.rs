@@ -12,7 +12,9 @@ use sdkwork_iam_web_adapter::{
     IamAuthorizationPolicy, IamWebRequestContextResolver,
 };
 use sdkwork_web_axum::{with_web_request_context, WebFrameworkLayer};
-use sdkwork_web_core::{DomainContextInjector, WebRequestContext, WebRequestContextProfile};
+use sdkwork_web_core::{
+    DomainContextInjector, HttpRouteManifest, WebRequestContext, WebRequestContextProfile,
+};
 use sqlx::PgPool;
 
 use crate::manifest_composition::cloud_router_app_prepared_route_manifest;
@@ -29,11 +31,37 @@ pub fn cloud_router_app_public_path_prefixes() -> Vec<String> {
 /// Projects IAM `AppContext` from the canonical `WebRequestContext` injected by
 /// sdkwork-web-framework. SQL-scoped app read handlers resolve `TenantAppContext`
 /// directly and do not require legacy `TrustedRequestSubject` projection.
+///
+/// When `owned_routes` is set (all production registrations), legacy header and
+/// extension projection applies **only** to paths matched by this surface's own
+/// route manifest. Composite hosts (the all-in-one platform cloud gateway)
+/// register this injector on the outer pipeline where every dependency surface
+/// flows through it: without the guard, the internal
+/// `x-sdkwork-tenant-id`/`x-sdkwork-organization-id`/`x-sdkwork-user-id`
+/// projection headers leak into foreign nested Web Framework pipelines (for
+/// example the IM `/im/v3/api/*` routers), whose surface classification rejects
+/// them as client-supplied identity projection (40001).
 #[derive(Clone, Default)]
-struct CloudRouterAppDomainInjector;
+struct CloudRouterAppDomainInjector {
+    owned_routes: Option<Arc<HttpRouteManifest>>,
+}
+
+impl CloudRouterAppDomainInjector {
+    fn path_is_owned(&self, method: &str, path: &str) -> bool {
+        match &self.owned_routes {
+            Some(manifest) => manifest.match_route(method, path).is_some(),
+            // Unguarded construction keeps the pre-guard behaviour for direct
+            // unit tests; production registrations always pass a manifest.
+            None => true,
+        }
+    }
+}
 
 impl DomainContextInjector for CloudRouterAppDomainInjector {
     fn inject(&self, request: &mut axum::extract::Request, context: &WebRequestContext) {
+        if !self.path_is_owned(&context.transport.method, &context.transport.path) {
+            return;
+        }
         if let Some(iam_context) = iam_app_context_from_web_request(context) {
             request.extensions_mut().insert(iam_context);
         }
@@ -41,8 +69,15 @@ impl DomainContextInjector for CloudRouterAppDomainInjector {
     }
 }
 
+/// Host-level registration guarded by this surface's prepared route manifest:
+/// only app-api routes owned by this surface receive the legacy subject
+/// projection, so composite hosts never poison foreign nested pipelines.
 pub fn cloud_router_app_domain_context_injector() -> Arc<dyn DomainContextInjector> {
-    Arc::new(CloudRouterAppDomainInjector)
+    let manifest =
+        cloud_router_app_prepared_route_manifest(&cloud_router_app_public_path_prefixes(), true);
+    Arc::new(CloudRouterAppDomainInjector {
+        owned_routes: Some(Arc::new(manifest)),
+    })
 }
 
 fn build_cloud_router_app_web_framework_layer(
@@ -62,8 +97,12 @@ fn build_cloud_router_app_web_framework_layer(
         .with_security_policy(security_policy)
         .with_route_manifest(route_manifest.clone())
         .with_metrics(shared_http_metrics_registry())
-        .with_authorization_policy(Arc::new(IamAuthorizationPolicy::new(route_manifest)))
-        .with_domain_injector(Arc::new(CloudRouterAppDomainInjector))
+        .with_authorization_policy(Arc::new(IamAuthorizationPolicy::new(
+            route_manifest.clone(),
+        )))
+        .with_domain_injector(Arc::new(CloudRouterAppDomainInjector {
+            owned_routes: Some(Arc::new(route_manifest)),
+        }))
 }
 
 pub fn wrap_router_with_web_framework(
@@ -183,7 +222,7 @@ mod tests {
             operation: None,
             idempotency_key: None,
         };
-        let injector = CloudRouterAppDomainInjector;
+        let injector = CloudRouterAppDomainInjector::default();
         let mut request = Request::new(Body::empty());
         injector.inject(&mut request, &context);
 
@@ -197,6 +236,103 @@ mod tests {
         assert_eq!(
             subject,
             trusted_request_subject_from_web_context(&context).expect("mapped subject")
+        );
+    }
+
+    fn dual_token_context(path: &str) -> WebRequestContext {
+        let principal = WebRequestPrincipal::builder()
+            .tenant_id("100001")
+            .organization_id(Some("0".to_owned()))
+            .user_id("30")
+            .login_scope(WebLoginScope::Organization)
+            .session_id(Some("session-1".to_owned()))
+            .app_id("sdkwork-im-pc")
+            .environment(WebEnvironment::Dev)
+            .deployment_mode(WebDeploymentMode::Private)
+            .auth_level(WebAuthLevel::Password)
+            .build();
+        WebRequestContext {
+            request_id: ServerRequestId("test-request".to_owned()),
+            trace_id: None,
+            api_surface: WebApiSurface::AppApi,
+            auth_mode: WebAuthMode::DualToken,
+            transport: WebTransportFacts {
+                path: path.to_owned(),
+                method: "GET".to_owned(),
+                auth_token_present: true,
+                access_token_present: true,
+                api_key_present: false,
+                ingress_token_present: false,
+                oauth_bearer_present: false,
+                agent_token_present: false,
+            },
+            principal: Some(principal),
+            locale: None,
+            client_kind: None,
+            operation: None,
+            idempotency_key: None,
+        }
+    }
+
+    /// Regression: composite hosts register this injector on the outer
+    /// pipeline, so a foreign nested Web Framework surface (IM
+    /// `/im/v3/api/*`) must never receive the internal trusted-subject
+    /// projection headers — its surface classification rejects them as
+    /// client-supplied identity projection (40001).
+    #[test]
+    fn host_level_injector_skips_foreign_nested_pipeline_paths() {
+        let injector = super::cloud_router_app_domain_context_injector();
+        let mut request = Request::new(Body::empty());
+        injector.inject(&mut request, &dual_token_context("/im/v3/api/social/users"));
+
+        assert!(
+            request.headers().get("x-sdkwork-tenant-id").is_none(),
+            "host injector must not project x-sdkwork-tenant-id into foreign surfaces"
+        );
+        assert!(request.headers().get("x-sdkwork-user-id").is_none());
+        assert!(
+            request
+                .extensions()
+                .get::<TrustedRequestSubject>()
+                .is_none(),
+            "host injector must not project TrustedRequestSubject into foreign surfaces"
+        );
+    }
+
+    /// Owned app-api manifest routes keep the legacy projection so standalone
+    /// SQL handlers continue to resolve `TrustedRequestSubject::from_headers`.
+    #[test]
+    fn host_level_injector_projects_owned_manifest_routes() {
+        let manifest = crate::manifest_composition::cloud_router_app_prepared_route_manifest(
+            &super::cloud_router_app_public_path_prefixes(),
+            true,
+        );
+        let route = manifest
+            .routes()
+            .iter()
+            .find(|route| {
+                route.method == sdkwork_web_contract::HttpMethod::Get && !route.path.contains('{')
+            })
+            .expect("prepared app manifest exposes at least one literal GET route");
+        let injector = super::cloud_router_app_domain_context_injector();
+        let mut request = Request::new(Body::empty());
+        injector.inject(&mut request, &dual_token_context(route.path));
+
+        assert_eq!(
+            "100001",
+            request
+                .headers()
+                .get("x-sdkwork-tenant-id")
+                .expect("tenant header projected for owned route")
+                .to_str()
+                .expect("tenant header utf8"),
+        );
+        assert!(
+            request
+                .extensions()
+                .get::<TrustedRequestSubject>()
+                .is_some(),
+            "trusted subject extension projected for owned route"
         );
     }
 }

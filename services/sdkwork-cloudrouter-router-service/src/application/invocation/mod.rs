@@ -95,7 +95,8 @@ pub use telemetry::{InvocationNormalizedResponse, InvocationTelemetry};
 pub use tenant_inflight::{TenantInflightConfig, TenantInflightInterceptor};
 pub use trace::TraceTelemetryInterceptor;
 pub use usage::{
-    InvocationPricingQuote, InvocationUsage, InvocationUsageLine, InvocationUsageLineRole,
+    InvocationPreflightResolution, InvocationPricingQuote, InvocationUsage, InvocationUsageLine,
+    InvocationUsageLineRole,
 };
 pub use usage_extraction::{
     record_streaming_usage_body, StreamingUsageAccumulator, StreamingUsageFormat,

@@ -7,6 +7,11 @@ pub struct InvocationUsage {
     pub request_count: i64,
     pub lines: Vec<InvocationUsageLine>,
     pub pricing_quotes: Vec<InvocationPricingQuote>,
+    /// Full price resolutions captured once by the pricing preflight, keyed by
+    /// meter. Usage recording and settlement must consume these resolutions —
+    /// the single price object that flows through the whole pipeline — instead
+    /// of re-reading prices independently.
+    pub preflight_resolutions: Vec<InvocationPreflightResolution>,
     pub settlement_commands: Vec<GatewayUsageRecordCommand>,
     pub trace_recorded: bool,
     pub recording_failure_count: usize,
@@ -40,6 +45,37 @@ impl InvocationUsage {
             .iter()
             .find(|quote| &quote.meter == meter)
     }
+
+    /// Retains the preflight price resolution for a meter, replacing any
+    /// earlier resolution for the same meter.
+    pub fn add_preflight_resolution(&mut self, resolution: InvocationPreflightResolution) {
+        if let Some(existing) = self
+            .preflight_resolutions
+            .iter_mut()
+            .find(|existing| existing.meter == resolution.meter)
+        {
+            *existing = resolution;
+            return;
+        }
+        self.preflight_resolutions.push(resolution);
+    }
+
+    pub fn preflight_resolution_for_meter(&self, meter: &BillingMeter) -> Option<&PriceResolution> {
+        self.preflight_resolutions
+            .iter()
+            .find(|existing| &existing.meter == meter)
+            .map(|existing| &existing.resolution)
+    }
+}
+
+/// One meter's price resolution captured by the pricing preflight. This is
+/// the authoritative price object for the invocation: precharge estimation
+/// and settlement both derive from it, and finalization verifies its usage
+/// lines against it instead of re-reading prices from scratch.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InvocationPreflightResolution {
+    pub meter: BillingMeter,
+    pub resolution: PriceResolution,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

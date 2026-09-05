@@ -1104,6 +1104,7 @@ mod tests {
             auth_method_code: "api-key".to_owned(),
             credential_name: "primary".to_owned(),
             masked_label: Some("sk-****1234".to_owned()),
+            secret: None,
             credential_version: 1,
             priority: 100,
             is_active: true,

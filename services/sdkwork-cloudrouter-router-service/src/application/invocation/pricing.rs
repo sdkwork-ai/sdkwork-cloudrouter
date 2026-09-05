@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use super::{
     BillingMode, BillingQuantitySource, DispatchMode, Invocation, InvocationAccount,
-    InvocationBody, InvocationError, InvocationErrorKind, InvocationFuture, InvocationPricingQuote,
-    InvocationUsageLine,
+    InvocationBody, InvocationError, InvocationErrorKind, InvocationFuture,
+    InvocationPreflightResolution, InvocationPricingQuote, InvocationUsageLine,
 };
 use crate::application::{
     InvocationInterceptor, PriceResolution, PriceResolutionStatus, PriceService, ResolvedModelPrice,
@@ -104,13 +104,39 @@ where
                     trace_id = %invocation.request.trace_id.as_deref().unwrap_or(""),
                     "pricing preflight resolution"
                 );
-                if matches!(
+                // Fail-closed: a billable meter whose price cannot be fully
+                // resolved must reject the request BEFORE upstream dispatch —
+                // the same invariant as the openai relay preflight — instead
+                // of silently relaying traffic that can never be charged.
+                // Cache meters stay optional: providers may report cache hits
+                // on catalogs without cache pricing, which settlement records
+                // as an unrated fact rather than a rejected request.
+                let fully_resolved = matches!(
                     resolution.status,
                     PriceResolutionStatus::Quoted | PriceResolutionStatus::Rated
-                ) {
-                    invocation
-                        .usage
-                        .add_pricing_quote(quote_from_resolution(invocation, resolution, false));
+                );
+                if requires_complete_pricing(invocation, &meter) && !fully_resolved {
+                    let failure_code = resolution
+                        .failure
+                        .as_ref()
+                        .map(|failure| format!("{:?}", failure.code))
+                        .unwrap_or_else(|| "unresolved".to_owned());
+                    return Err(pricing_error(format!(
+                        "pricing is not fully resolved for meter {} (status {}, reason {failure_code}) — refusing to dispatch billable traffic without a complete price",
+                        meter.code(),
+                        resolution.status.code(),
+                    )));
+                }
+                let quote = fully_resolved
+                    .then(|| quote_from_resolution(invocation, resolution.clone(), false));
+                invocation
+                    .usage
+                    .add_preflight_resolution(InvocationPreflightResolution {
+                        meter: meter.clone(),
+                        resolution,
+                    });
+                if let Some(quote) = quote {
+                    invocation.usage.add_pricing_quote(quote);
                 }
             }
 
@@ -162,6 +188,30 @@ where
                         line.requested_model_catalog_key.as_deref(),
                         Some(line),
                     )?;
+                    // The preflight resolution is the single price object of
+                    // the pipeline. Finalization must re-rate with the
+                    // measured quantity (Rated settlement requires the usage
+                    // line quantity inside the billing structure), but the
+                    // price identity — region, rate hash, plan, unit price —
+                    // must still come from the same resolution the precharge
+                    // was estimated against. Any drift means two pricing
+                    // reads disagreed, which is a defect, not a silent
+                    // rebilling.
+                    if let Some(preflight) = invocation
+                        .usage
+                        .preflight_resolution_for_meter(&line.meter)
+                    {
+                        if !preflight_resolution_matches(preflight, &resolution) {
+                            tracing::warn!(
+                                stage = "pricing_finalization",
+                                meter = %line.meter.code(),
+                                preflight_status = ?preflight.status,
+                                finalization_status = ?resolution.status,
+                                request_id = %invocation.request.request_id,
+                                "finalized usage pricing drifted from the pricing preflight resolution"
+                            );
+                        }
+                    }
                     let quote = matches!(
                         resolution.status,
                         PriceResolutionStatus::Quoted | PriceResolutionStatus::Rated
@@ -190,6 +240,63 @@ where
             invocation.usage.pricing_quotes = pricing_quotes;
             Ok(())
         })
+    }
+}
+
+/// Reports whether a finalized usage-line resolution carries the same price
+/// identity as the preflight resolution for the same meter. Identity covers
+/// everything that determines the charged unit price: resolution status,
+/// billing region, rate hash (conditional pricing), pricing plan, and the
+/// effective customer charge. Quantity differences are expected — the
+/// finalization re-rates with the measured quantity — and must not count as
+/// drift.
+fn preflight_resolution_matches(preflight: &PriceResolution, fresh: &PriceResolution) -> bool {
+    if preflight.status != fresh.status {
+        return false;
+    }
+    match (
+        preflight.resolved_price.as_ref(),
+        fresh.resolved_price.as_ref(),
+    ) {
+        (Some(preflight_price), Some(fresh_price)) => {
+            preflight_price.official_reference.region_code
+                == fresh_price.official_reference.region_code
+                && preflight_price.official_reference.rate_metadata
+                    == fresh_price.official_reference.rate_metadata
+                && preflight_price.pricing_plan_code == fresh_price.pricing_plan_code
+                && preflight_price.customer_charge == fresh_price.customer_charge
+        }
+        (None, None) => true,
+        _ => false,
+    }
+}
+
+/// Reports whether the meter is guaranteed to produce a chargeable usage
+/// line for this invocation, so an unresolved price must fail the request at
+/// the preflight instead of silently relaying unbillable traffic. Cache
+/// meters are excluded: providers may report cache hits even when the
+/// catalog defines no cache price, and those hits settle as unrated facts.
+fn requires_complete_pricing(invocation: &Invocation, meter: &BillingMeter) -> bool {
+    if matches!(
+        meter,
+        BillingMeter::LlmCacheReadToken | BillingMeter::LlmCacheWriteToken
+    ) {
+        return false;
+    }
+    match invocation.billing.mode {
+        BillingMode::Composite => {
+            Some(meter) == invocation.billing.meter.as_ref()
+                || *meter == BillingMeter::LlmOutputToken
+        }
+        BillingMode::ExternalUsageLine => match invocation.billing.quantity_source {
+            BillingQuantitySource::FixedRequest => *meter == BillingMeter::ApiRequest,
+            BillingQuantitySource::AdapterUsageLines => {
+                Some(meter) == invocation.billing.meter.as_ref()
+                    || matches!(meter, BillingMeter::ApiResult | BillingMeter::ApiItem)
+            }
+            _ => Some(meter) == invocation.billing.meter.as_ref(),
+        },
+        _ => Some(meter) == invocation.billing.meter.as_ref(),
     }
 }
 
