@@ -38,7 +38,7 @@ effective(<profile>.<environment>) =
 | development | `server.development.toml` | 49 | `router-dev.sdkwork.com` | 80 |
 | test | `server.test.toml` | 49 | `router-test.sdkwork.com` | 80 |
 | staging | `server.staging.toml` | 49 | `router-staging.sdkwork.com` | 80 |
-| demo | `server.demo.toml` | 43 | `router-demo.sdkwork.com` | 80 |
+| demo | `server.demo.toml` | 49 | `router-demo.sdkwork.com` | 80 |
 | production | `server.production.toml` | 49 | `router.sdkwork.com` | 443 ssl + 80 |
 
 Surfaces: application.public-ingress, application.backend-http, application.open-http.
