@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, Edit3, Globe2, Plus, Star, Trash2, X } from 'lucide-react';
+import { ChevronDown, Edit3, Globe2, Plus, RefreshCw, Star, Trash2, X } from 'lucide-react';
 import { BottomPagination } from '@sdkwork/cloudroutes-pc-commons';
 import { useTranslation } from 'react-i18next';
 import {
@@ -44,6 +44,7 @@ import {
   errorMessageI18n,
   Field,
   InlineError,
+  InlineNotice,
   inputClass,
   primaryButtonClass,
   SearchBox,
@@ -269,6 +270,8 @@ export function PriceSettingsAdmin() {
   const [formError, setFormError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [refreshingOfficial, setRefreshingOfficial] = useState(false);
+  const [refreshNotice, setRefreshNotice] = useState<string | null>(null);
   const [form, setForm] = useState<PriceSettingFormState>(EMPTY_FORM);
   const loadSequence = useRef(0);
 
@@ -320,6 +323,42 @@ export function PriceSettingsAdmin() {
   }, []);
 
   useEffect(() => { void loadDefaultRegions(); }, [loadDefaultRegions]);
+
+  /** Re-imports sdkwork-models and realigns the stored official prices. The
+   * server owns the whole reconciliation (insert changed prices, write new
+   * models, switch off deprecated ones), so the page only reports the outcome
+   * and reloads. A failure is transactional, so no reload is needed. */
+  const handleRefreshOfficialPrices = useCallback(async () => {
+    if (refreshingOfficial) return;
+    if (!window.confirm(t('admin.pricing.settings.refresh.confirm'))) return;
+    setRefreshingOfficial(true);
+    setRefreshNotice(null);
+    setError(null);
+    try {
+      const result = await pricingService.officialRates.refresh();
+      const availabilityChanged = result.deprecatedPriceSettingCount
+        + result.removedPriceSettingCount
+        + result.restoredPriceSettingCount;
+      setRefreshNotice(
+        !result.changed && availabilityChanged === 0
+          ? t('admin.pricing.settings.refresh.unchanged', { version: result.catalogVersion || '—' })
+          : t('admin.pricing.settings.refresh.done', {
+            version: result.catalogVersion || '—',
+            rateCount: result.rateCount,
+            modelCount: result.modelCount,
+            deprecated: result.deprecatedPriceSettingCount,
+            removed: result.removedPriceSettingCount,
+            restored: result.restoredPriceSettingCount,
+          }),
+      );
+      await load();
+      await loadDefaultRegions();
+    } catch (cause) {
+      setError(errorMessageI18n(cause, t('admin.pricing.settings.refresh.failed'), t));
+    } finally {
+      setRefreshingOfficial(false);
+    }
+  }, [load, loadDefaultRegions, refreshingOfficial, t]);
 
   const handleSetDefaultRegion = useCallback(async (row: PriceSettingProductRow, regionCode: string) => {
     const catalogKey = row.product.catalogKey?.trim();
@@ -601,7 +640,8 @@ export function PriceSettingsAdmin() {
     <div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 dark:border-white/10"><div><h1 className="text-lg font-semibold text-slate-900 dark:text-white">{t('admin.pricing.settings.title')}</h1><p className="mt-1 max-w-3xl text-sm text-slate-500 dark:text-slate-400">{t('admin.pricing.settings.subtitle')}</p></div><div className="flex shrink-0 items-center gap-2"><button type="button" className={secondaryButtonClass} onClick={() => setDefaultRegionsOpen(true)}><Globe2 className="h-4 w-4" aria-hidden="true" />{t('admin.pricing.settings.defaultRegion.open', { defaultValue: '默认计费 Region' })}</button><button type="button" className={primaryButtonClass} onClick={openCreate}><Plus className="h-4 w-4" aria-hidden="true" />{t('admin.pricing.settings.actions.new')}</button></div></div>
     <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-slate-200 px-5 pt-3 dark:border-white/10" role="tablist" aria-label={t('admin.pricing.settings.tabs.label')}>{resourceTabs.map((type) => <button key={type} type="button" role="tab" aria-selected={resourceType === type} onClick={() => { setResourceType(type); setPage(1); }} className={`whitespace-nowrap border-b-2 px-3 pb-2.5 text-sm font-medium transition ${resourceType === type ? 'border-lobster-500 text-lobster-600 dark:text-lobster-400' : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'}`}>{resourceTypeLabel(type, t)} <span className="ml-1 text-xs tabular-nums text-slate-400">{counts.get(type) ?? 0}</span></button>)}</div>
     <div className="grid shrink-0 grid-cols-1 border-b border-slate-200 bg-slate-50/70 sm:grid-cols-3 dark:border-white/10 dark:bg-white/[0.03]"><SummaryMetric label={t('admin.pricing.settings.summary.products')} value={String(summary.products)} /><SummaryMetric label={t('admin.pricing.settings.summary.meters')} value={String(summary.meters)} /><SummaryMetric label={t('admin.pricing.settings.summary.configured')} value={`${summary.configured}/${summary.meters || 0}`} /></div>
-    <AdminListToolbar filters={<div className="flex min-w-0 flex-wrap items-center gap-2"><SearchBox value={search} onChange={setSearch} onSubmit={(value) => { setAppliedSearch(value); setPage(1); }} placeholder={t('admin.pricing.settings.search.placeholder')} /><VendorMultiSelect vendors={vendorOptions} value={vendorCodes} onChange={(next) => { setVendorCodes(next); setPage(1); }} placeholder={t('admin.pricing.settings.filters.allVendors')} /><select className={toolbarSelectClass} value={pricingPlanId} aria-label={t('admin.pricing.settings.filters.pricingPlan')} onChange={(event) => { setPricingPlanId(event.target.value); setPage(1); }}>{plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.planName || plan.planCode}</option>)}</select><select className={toolbarSelectClass} value={resourceType} aria-label={t('admin.pricing.settings.filters.resourceType')} onChange={(event) => { setResourceType(event.target.value as PriceSettingResourceType); setPage(1); }}>{resourceTabs.map((type) => <option key={type} value={type}>{resourceTypeLabel(type, t)}</option>)}</select><select className={toolbarSelectClass} value={regionCode} aria-label={t('admin.pricing.settings.filters.region')} onChange={(event) => { setRegionCode(event.target.value); setPage(1); }}><option value="">{t('admin.pricing.settings.filters.allRegions')}</option>{(officialCatalog?.regions ?? []).map((region) => <option key={region.code} value={region.code}>{region.code} ({formatPricingQuantity(region.count)})</option>)}</select></div>} />
+    <AdminListToolbar filters={<div className="flex min-w-0 flex-wrap items-center gap-2"><SearchBox value={search} onChange={setSearch} onSubmit={(value) => { setAppliedSearch(value); setPage(1); }} placeholder={t('admin.pricing.settings.search.placeholder')} /><VendorMultiSelect vendors={vendorOptions} value={vendorCodes} onChange={(next) => { setVendorCodes(next); setPage(1); }} placeholder={t('admin.pricing.settings.filters.allVendors')} /><select className={toolbarSelectClass} value={pricingPlanId} aria-label={t('admin.pricing.settings.filters.pricingPlan')} onChange={(event) => { setPricingPlanId(event.target.value); setPage(1); }}>{plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.planName || plan.planCode}</option>)}</select><select className={toolbarSelectClass} value={resourceType} aria-label={t('admin.pricing.settings.filters.resourceType')} onChange={(event) => { setResourceType(event.target.value as PriceSettingResourceType); setPage(1); }}>{resourceTabs.map((type) => <option key={type} value={type}>{resourceTypeLabel(type, t)}</option>)}</select><select className={toolbarSelectClass} value={regionCode} aria-label={t('admin.pricing.settings.filters.region')} onChange={(event) => { setRegionCode(event.target.value); setPage(1); }}><option value="">{t('admin.pricing.settings.filters.allRegions')}</option>{(officialCatalog?.regions ?? []).map((region) => <option key={region.code} value={region.code}>{region.code} ({formatPricingQuantity(region.count)})</option>)}</select></div>} actions={<button type="button" className={secondaryButtonClass} onClick={() => { void handleRefreshOfficialPrices(); }} disabled={refreshingOfficial} title={t('admin.pricing.settings.actions.refreshOfficial')} aria-label={t('admin.pricing.settings.actions.refreshOfficial')} data-admin-pricing-official-refresh><RefreshCw className={`h-4 w-4 ${refreshingOfficial ? 'animate-spin' : ''}`} aria-hidden="true" />{refreshingOfficial ? t('admin.pricing.settings.actions.refreshOfficialBusy') : t('admin.pricing.settings.actions.refreshOfficial')}</button>} />
+    {refreshNotice ? <div className="shrink-0 px-5 pb-1"><InlineNotice message={refreshNotice} /></div> : null}
     <AdminTableArea footer={<BottomPagination page={page} pageSize={pageSize} itemCount={productRows.rows.length + customRules.length} hasNextPage={hasNextPage} pageLabel={t('admin.pricing.common.pagination.page', { page })} pageSizeLabel={t('admin.pricing.common.pagination.rows')} previousLabel={t('admin.pricing.common.pagination.previous')} nextLabel={t('admin.pricing.common.pagination.next')} showingLabel={t('admin.pricing.common.pagination.showing')} onPreviousPage={() => setPage((current) => Math.max(1, current - 1))} onNextPage={() => setPage((current) => current + 1)} onPageSizeChange={(value) => { setPageSize(value); setPage(1); }} pageSizeOptions={[20, 50, 100]} />}>
       <table className="w-full min-w-[1440px] table-fixed text-left text-sm"><thead className="sticky top-0 z-10 border-b border-slate-200 bg-white text-xs uppercase tracking-wide text-slate-400 dark:border-white/10 dark:bg-slate-900"><tr><th className="w-[15%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.resourceName')}</th><th className="w-[8%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.resourceType')}</th><th className="w-[18%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.pricingObject')}</th><th className="w-[23%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.officialPrice')}</th><th className="w-[21%] px-4 py-3 font-medium">{t('admin.pricing.settings.table.customerPrice')}</th><th className="w-[15%] px-4 py-3 text-right font-medium">{t('admin.pricing.settings.table.actions')}</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-white/5">{loading || (productRows.rows.length === 0 && customRules.length === 0) ? <TableState loading={loading} empty={t('admin.pricing.settings.empty')} colSpan={6} /> : <>{productRows.rows.map((row) => <ProductPriceTableRow key={row.key} row={row} activeResourceType={resourceType} plans={plans} locale={displayLocale} t={t} onEdit={openProductSetting} defaultRegion={defaultRegionByCatalogKey.get(row.product.catalogKey?.trim() ?? '')} onSetDefault={handleSetDefaultRegion} />)}{customRules.map((rule) => <CustomPriceTableRow key={`rule:${rule.id}`} rule={rule} plans={plans} locale={displayLocale} t={t} onEdit={openCustomSetting} />)}</>}</tbody></table>
     </AdminTableArea>

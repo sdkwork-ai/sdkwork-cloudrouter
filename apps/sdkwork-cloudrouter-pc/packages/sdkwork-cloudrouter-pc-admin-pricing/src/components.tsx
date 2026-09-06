@@ -156,6 +156,23 @@ export function InlineError({ message }: { message: string | null }) {
   );
 }
 
+/** Positive counterpart of `InlineError`: confirms an action and reports what
+ * it changed, so a refresh that touched nothing is visibly different from one
+ * that retired deprecated price settings. */
+export function InlineNotice({ message }: { message: string | null }) {
+  if (!message) {
+    return null;
+  }
+  return (
+    <div
+      className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300"
+      role="status"
+    >
+      {message}
+    </div>
+  );
+}
+
 export function TableState({ loading, empty, colSpan }: { loading: boolean; empty: string; colSpan: number }) {
   const { t } = useTranslation();
   return (

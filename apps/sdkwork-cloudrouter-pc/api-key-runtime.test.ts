@@ -5,7 +5,12 @@ import {
   clearStoredAppSessionToken,
   storeAppSessionFromResult,
 } from "./packages/sdkwork-cloudroutes-pc-commons/src/app-session-token.ts";
-import { resetCloudRouterSdkClients } from "./packages/sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts";
+import {
+  getCloudRouterAppSdkClient,
+  getModelsAppSdkClient,
+  resetCloudRouterSdkClients,
+} from "./packages/sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts";
+import { configureApiKeyServiceClients } from "./packages/sdkwork-cloudrouter-pc-console-api-keys/src/serviceClients.ts";
 import {
   createApiKeyInputsFromForm,
   createApiKeyInputFromForm,
@@ -22,6 +27,13 @@ import { formatGroupMultiplier } from "./packages/sdkwork-cloudroutes-pc-commons
 
 const originalFetch = globalThis.fetch;
 const originalWindowDescriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
+
+// The service layer resolves clients through the injectable seam; bind the
+// shared console factories with their lazy-singleton semantics preserved.
+configureApiKeyServiceClients({
+  appClient: () => getCloudRouterAppSdkClient(),
+  modelsClient: () => getModelsAppSdkClient(),
+});
 
 type CapturedSdkRequest = {
   url: string;

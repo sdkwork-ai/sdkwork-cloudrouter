@@ -15,6 +15,25 @@ export type AdminOfficialPricingRateItem = AdminOfficialPricingCatalog['items'][
 export type AdminOfficialPricingProductCatalog = Awaited<ReturnType<BackendPricingService['officialProducts']['list']>>;
 export type AdminOfficialPricingProductItem = AdminOfficialPricingProductCatalog['items'][number];
 
+/**
+ * Outcome of one "refresh official prices" run. The three availability counts
+ * report what the refresh changed on the operator price settings, which is what
+ * makes the action auditable: a run that only rewrote identical prices reports
+ * zero everywhere.
+ */
+export interface AdminOfficialPricingRefreshResult {
+  /** False when the loaded catalog was identical to what is already stored. */
+  changed: boolean;
+  catalogVersion: string;
+  modelCount: number;
+  priceCount: number;
+  priceBookCount: number;
+  rateCount: number;
+  deprecatedPriceSettingCount: number;
+  removedPriceSettingCount: number;
+  restoredPriceSettingCount: number;
+}
+
 export type AdminPricingStatus = 'active' | 'inactive';
 export type AdminBasePriceSide =
   | 'official_reference'
@@ -296,6 +315,10 @@ async function backendOfficialRatesList(
   return getCloudRouterBackendSdkClient().pricing.officialRates.list(params);
 }
 
+async function backendOfficialRatesRefresh() {
+  return getCloudRouterBackendSdkClient().pricing.officialRates.refresh();
+}
+
 async function backendOfficialProductsList(
   params?: Parameters<BackendPricingService['officialProducts']['list']>[0],
 ) {
@@ -335,6 +358,29 @@ export async function fetchAdminOfficialPricingProducts(
   params: Parameters<BackendPricingService['officialProducts']['list']>[0] = {},
 ): Promise<AdminOfficialPricingProductCatalog> {
   return backendOfficialProductsList(params);
+}
+
+/**
+ * Re-imports the sdkwork-models catalog and realigns the official prices that
+ * are already stored in the database. The server owns the whole reconciliation,
+ * so the counts describe what actually changed on the operator price settings.
+ */
+export async function refreshAdminOfficialPricingRates(): Promise<AdminOfficialPricingRefreshResult> {
+  const item = readRequiredApiItem(
+    await backendOfficialRatesRefresh(),
+    'Official prices could not be refreshed',
+  );
+  return {
+    changed: readString(item, 'changed') === 'true',
+    catalogVersion: readString(item, 'catalogVersion').trim(),
+    modelCount: readNumber(item, 'modelCount', 0),
+    priceCount: readNumber(item, 'priceCount', 0),
+    priceBookCount: readNumber(item, 'priceBookCount', 0),
+    rateCount: readNumber(item, 'rateCount', 0),
+    deprecatedPriceSettingCount: readNumber(item, 'deprecatedPriceSettingCount', 0),
+    removedPriceSettingCount: readNumber(item, 'removedPriceSettingCount', 0),
+    restoredPriceSettingCount: readNumber(item, 'restoredPriceSettingCount', 0),
+  };
 }
 
 export async function fetchPricingPlans(
@@ -559,6 +605,7 @@ export const pricingService = {
   },
   officialRates: {
     list: fetchAdminOfficialPricingRates,
+    refresh: refreshAdminOfficialPricingRates,
   },
   plans: {
     list: fetchPricingPlans,

@@ -55,8 +55,8 @@ use sdkwork_cloudrouter_router_service::ports::{
     AdminRecordStore, AdminReferralStore, AdminServiceNodeStore, AdminStorageStore,
     AdminTransactionCenterStore, AdminUpstreamAccountVerifier, AdminUpstreamStore,
     GatewayApiKeyCommandStore, ModelRankingRefreshStore, ModelRankingsReadModelStore,
-    OfficialPricingCatalogReadStore, RuntimeRegionSettingsStore, SiteSettingsStore,
-    UpstreamAccountRouteCatalog,
+    OfficialPricingCatalogReadStore, OfficialPricingRefreshStore, RuntimeRegionSettingsStore,
+    SiteSettingsStore, UpstreamAccountRouteCatalog,
 };
 use sdkwork_database_sqlx::DatabasePool;
 use sdkwork_models_catalog_repository_sqlx::{
@@ -105,6 +105,7 @@ type AdminFinanceRuntimeStore = Arc<dyn AdminFinanceStore + Send + Sync>;
 type AdminMarketingRuntimeStore = Arc<dyn AdminMarketingStore + Send + Sync>;
 type AdminPricingRuntimeStore = Arc<dyn AdminPricingStore + Send + Sync>;
 type OfficialPricingRuntimeReadStore = Arc<dyn OfficialPricingCatalogReadStore + Send + Sync>;
+type OfficialPricingRefreshRuntimeStore = Arc<dyn OfficialPricingRefreshStore + Send + Sync>;
 type AdminMcpRuntimeStore = Arc<dyn AdminMcpStore + Send + Sync>;
 type AdminReferralRuntimeStore = Arc<dyn AdminReferralStore + Send + Sync>;
 type AdminServiceNodeRuntimeStore = Arc<dyn AdminServiceNodeStore + Send + Sync>;
@@ -338,6 +339,13 @@ where
     } = runtime;
 
     let routing_cache_manager = cache_manager.clone();
+    // Captured before `database_installer` is consumed by the system router.
+    // The installer owns the whole official price reconciliation, so the
+    // pricing surface reuses it instead of growing a second import path;
+    // runtimes without an installer keep every other pricing route.
+    let official_pricing_refresher: Option<OfficialPricingRefreshRuntimeStore> = database_installer
+        .clone()
+        .map(|installer| installer as OfficialPricingRefreshRuntimeStore);
     let route_explain_router =
         sdkwork_cloudrouter_router_service::api::admin_route_explain_router(Arc::clone(&catalog));
     let catalog_router = match api_key_hasher.as_ref() {
@@ -581,6 +589,7 @@ where
                 sdkwork_cloudrouter_router_service::api::admin_pricing_router_with_store(
                     store,
                     Arc::new(OsApiKeySecretGenerator),
+                    official_pricing_refresher,
                 ),
             ));
         }

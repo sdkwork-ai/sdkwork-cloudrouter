@@ -311,6 +311,115 @@
       },
       "description": "AdminModelLimitCreateRequest contract."
     },
+    "AdminOfficialRateAnchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rateCode",
+        "productCode",
+        "operationCode",
+        "meterCode",
+        "meterDisplayName",
+        "providerCode",
+        "regionCode",
+        "catalogKey",
+        "vendorCode",
+        "resourceType",
+        "resourceCode",
+        "unitCode",
+        "unitSize",
+        "unitPrice",
+        "currencyCode"
+      ],
+      "properties": {
+        "rateCode": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "description": "Official rate code that anchors the price setting."
+        },
+        "productCode": {
+          "type": "string",
+          "maxLength": 160,
+          "description": "Product code of the anchored official rate."
+        },
+        "operationCode": {
+          "type": "string",
+          "maxLength": 160,
+          "description": "Operation code of the anchored official rate."
+        },
+        "meterCode": {
+          "type": "string",
+          "maxLength": 160,
+          "description": "Meter code of the anchored official rate."
+        },
+        "meterDisplayName": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Display name of the meter."
+        },
+        "providerCode": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Provider code of the anchored official rate."
+        },
+        "regionCode": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Region code the official rate is published in."
+        },
+        "catalogKey": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Catalog key of the anchored official rate (empty when the resource has no model catalog identity)."
+        },
+        "vendorCode": {
+          "type": "string",
+          "maxLength": 160,
+          "description": "Vendor code of the anchored official rate."
+        },
+        "resourceType": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Resource type of the anchored official rate."
+        },
+        "resourceCode": {
+          "type": "string",
+          "maxLength": 256,
+          "description": "Resource code of the anchored official rate."
+        },
+        "unitCode": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Billing unit code."
+        },
+        "unitSize": {
+          "type": "string",
+          "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+          "description": "Units consumed per billing step."
+        },
+        "unitPrice": {
+          "type": "string",
+          "pattern": "^-?[0-9]+(\\.[0-9]+)?$",
+          "description": "Official single-unit reference price in the catalog currency."
+        },
+        "currencyCode": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 3,
+          "description": "ISO 4217 currency of the official unit price."
+        },
+        "effectiveFrom": {
+          "type": "string",
+          "description": "Official rate window start (ISO 8601)."
+        },
+        "effectiveTo": {
+          "type": "string",
+          "description": "Official rate window end (ISO 8601); null when open-ended."
+        }
+      },
+      "description": "Official catalog rate row a price setting anchors on, loaded under the official catalog scope (0, 0) with an active official_reference book."
+    },
     "AdminProviderSecretCreateRequest": {
       "type": "object",
       "additionalProperties": false,

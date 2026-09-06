@@ -6,14 +6,18 @@ import type { ApiKeyUsageToolId } from './toolProfiles';
 
 // Monaco 主包体积较大，采用动态加载：仅在配置编辑器首次挂载时按需下载。
 // worker 仅注册基础语法 tokenization 所需的 editor worker 与 JSON 校验 worker。
-self.MonacoEnvironment = {
-  getWorker(_workerId: string, label: string) {
-    if (label === 'json') {
-      return new jsonWorker();
-    }
-    return new editorWorker();
-  },
-};
+// 守卫非浏览器求值 lane（嵌入宿主的 Node 测试 / 打包 lanes 中 `self` 不存在），
+// 浏览器行为不变。
+if (typeof self !== 'undefined') {
+  self.MonacoEnvironment = {
+    getWorker(_workerId: string, label: string) {
+      if (label === 'json') {
+        return new jsonWorker();
+      }
+      return new editorWorker();
+    },
+  };
+}
 
 /** 各工具的配置文件语言（与 VSCode 语法高亮一致） */
 const TOOL_LANGUAGE: Record<ApiKeyUsageToolId, string> = {
@@ -51,6 +55,7 @@ export function ConfigCodeEditor({ toolId, value }: ConfigCodeEditorProps) {
     () => window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false,
   );
   const [monacoReady, setMonacoReady] = useState(false);
+  const [monacoFailed, setMonacoFailed] = useState(false);
 
   // 首次挂载时加载本地 Monaco 实例并绑定到 @monaco-editor/react 的 loader，
   // 避免依赖 CDN（离线可用）与首屏加载大包。
@@ -62,6 +67,12 @@ export function ConfigCodeEditor({ toolId, value }: ConfigCodeEditorProps) {
       }
       loader.config({ monaco: monacoModule });
       setMonacoReady(true);
+    }).catch(() => {
+      if (disposed) {
+        return;
+      }
+      // Monaco 加载失败（离线 / CDN 缺失等）：降级为只读 <pre> 回退。
+      setMonacoFailed(true);
     });
     return () => {
       disposed = true;
@@ -134,6 +145,13 @@ export function ConfigCodeEditor({ toolId, value }: ConfigCodeEditorProps) {
           options={options}
           loading={null}
         />
+      ) : monacoFailed ? (
+        <pre
+          className="h-full overflow-auto whitespace-pre font-mono text-xs text-slate-600 dark:text-slate-300"
+          data-tool-id-fallback={toolId}
+        >
+          {value}
+        </pre>
       ) : (
         <div className="flex h-full items-center justify-center font-mono text-xs text-slate-400 dark:text-slate-500">
           Loading editor…

@@ -13,6 +13,8 @@ const PRICING_SNAPSHOT_QUERIES: &str =
     include_str!("../src/infrastructure/sql/queries/snapshot.rs");
 const OFFICIAL_CATALOG_READ_STORE: &str =
     include_str!("../src/infrastructure/sql/postgres/official_pricing_catalog_read_store.rs");
+const OFFICIAL_PRICING_SYNC: &str =
+    include_str!("../src/infrastructure/sql/official_pricing_sync.rs");
 
 #[test]
 fn admin_pricing_plans_use_cloudrouter_pricing_plan_table() {
@@ -399,6 +401,88 @@ fn admin_pricing_integer_cell_decodes_int4_columns() {
     assert!(
         section.contains("unwrap_or(0)"),
         "integer_cell must keep the 0 terminal fallback for missing cells"
+    );
+}
+
+/// Deprecated and dropped models must switch off the operator-owned price
+/// settings, never the official rate rows: `pricing_guard_active_rate` makes
+/// `pricing_rate` immutable while its price book is active, so writing
+/// availability there would abort the whole refresh at runtime.
+#[test]
+fn official_pricing_refresh_switches_off_price_settings_not_immutable_rates() {
+    let alignment = source_section(
+        OFFICIAL_PRICING_SYNC,
+        "async fn align_price_settings_availability",
+        "async fn mark_price_settings_unavailable",
+    );
+    assert!(
+        alignment.contains("FROM cloudrouter_pricing_rule"),
+        "availability alignment must read the operator-owned price settings"
+    );
+
+    let writes = format!(
+        "{}{}",
+        source_section(
+            OFFICIAL_PRICING_SYNC,
+            "async fn mark_price_settings_unavailable",
+            "async fn restore_price_settings_availability"
+        ),
+        source_section(
+            OFFICIAL_PRICING_SYNC,
+            "async fn restore_price_settings_availability",
+            "fn normalize_price_side"
+        ),
+    );
+    assert!(writes.contains("UPDATE cloudrouter_pricing_rule"));
+    assert!(
+        writes.contains("SET status = 0"),
+        "deprecated models must be marked unavailable"
+    );
+    assert!(
+        writes.contains("SET status = 1"),
+        "models that become available again must be restored"
+    );
+    assert!(
+        writes.contains("AVAILABILITY_SOURCE"),
+        "only rows this refresh switched off may be switched back on"
+    );
+    assert!(
+        !writes.contains("UPDATE pricing_rate"),
+        "pricing_rate rows in an active price book are immutable"
+    );
+}
+
+/// A same-version catalog content change must replace the stale price book
+/// instead of aborting: sdkwork-models can publish new prices without bumping
+/// the catalog version, and the refresh button has to keep working then.
+#[test]
+fn official_pricing_refresh_replaces_a_stale_price_book_of_the_same_version() {
+    let section = source_section(
+        OFFICIAL_PRICING_SYNC,
+        "async fn ensure_price_book",
+        "async fn supersede_stale_price_book",
+    );
+    assert!(
+        section.contains("supersede_stale_price_book"),
+        "a price book whose source hash drifted must be superseded, not rejected"
+    );
+    assert!(
+        !section.contains("changed content hash"),
+        "the same-version drift path must not abort the refresh"
+    );
+
+    let supersede = source_section(
+        OFFICIAL_PRICING_SYNC,
+        "async fn supersede_stale_price_book",
+        "/// Retires and soft-deletes every previous live version",
+    );
+    assert!(
+        supersede.contains("lifecycle_state = 'retired'"),
+        "an active book may only become retired before its rates become mutable"
+    );
+    assert!(
+        supersede.contains("UPDATE pricing_rate"),
+        "the stale book's rates must be soft-deleted so a replacement fits the unique indexes"
     );
 }
 

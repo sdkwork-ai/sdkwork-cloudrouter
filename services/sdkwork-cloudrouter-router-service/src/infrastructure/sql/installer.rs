@@ -7,6 +7,7 @@ use sdkwork_models::ModelCatalog;
 use sdkwork_utils_rust as sdkwork_utils;
 use sqlx::{PgPool, Row};
 
+use crate::domain::DomainError;
 use crate::infrastructure::sql::ai_routing_seed::{
     import_postgres_ai_routing_seed, postgres_ai_routing_seed_complete,
 };
@@ -17,7 +18,10 @@ use crate::infrastructure::sql::model_catalog_import::{
     DEFAULT_CATALOG_REFRESH_SOURCE,
 };
 use crate::infrastructure::sql::official_pricing_sync::sync_official_pricing_catalog;
-use crate::ports::{AdminModelStore, AdminModelSubject, SyncAdminModelCatalogCommand};
+use crate::ports::{
+    AdminModelStore, AdminModelSubject, OfficialPricingRefreshFuture, OfficialPricingRefreshReport,
+    OfficialPricingRefreshStore, SyncAdminModelCatalogCommand,
+};
 
 /// The database contract version reported by the bootstrap surface.
 ///
@@ -227,6 +231,19 @@ pub struct CatalogRefreshReport {
     pub accepted_count: i64,
     pub snapshot_id: Option<String>,
     pub sync_run_id: Option<String>,
+    /// Official pricing alignment counters. They stay zero for a `dry_run`
+    /// refresh because no official price is written in that mode.
+    pub price_book_count: usize,
+    pub rate_count: usize,
+    /// Price settings switched off because sdkwork-models deprecated the model.
+    pub deprecated_price_setting_count: usize,
+    /// Price settings switched off because the model left the catalog.
+    pub removed_price_setting_count: usize,
+    /// Price settings switched back on because the model is published again.
+    pub restored_price_setting_count: usize,
+    /// False when the loaded catalog was byte-identical to what is already
+    /// stored and no price setting needed to change.
+    pub pricing_changed: bool,
 }
 
 /// Idempotent application-data bootstrap.
@@ -394,10 +411,13 @@ impl DatabaseInstaller {
             .await
             .map_err(|error| DatabaseInstallError::InvalidState(error.to_string()))?;
 
+        let mut pricing_sync = None;
         if sync_pricing {
-            sync_official_pricing_catalog(&self.pool, &catalog)
-                .await
-                .map_err(|error| DatabaseInstallError::InvalidState(error.to_string()))?;
+            pricing_sync = Some(
+                sync_official_pricing_catalog(&self.pool, &catalog)
+                    .await
+                    .map_err(|error| DatabaseInstallError::InvalidState(error.to_string()))?,
+            );
         }
 
         if item.synced {
@@ -420,6 +440,30 @@ impl DatabaseInstaller {
             accepted_count: counts.accepted_count(),
             snapshot_id: item.snapshot_id,
             sync_run_id: item.sync_run_id,
+            price_book_count: pricing_sync
+                .as_ref()
+                .map(|report| report.price_book_count)
+                .unwrap_or_default(),
+            rate_count: pricing_sync
+                .as_ref()
+                .map(|report| report.rate_count)
+                .unwrap_or_default(),
+            deprecated_price_setting_count: pricing_sync
+                .as_ref()
+                .map(|report| report.deprecated_price_setting_count)
+                .unwrap_or_default(),
+            removed_price_setting_count: pricing_sync
+                .as_ref()
+                .map(|report| report.removed_price_setting_count)
+                .unwrap_or_default(),
+            restored_price_setting_count: pricing_sync
+                .as_ref()
+                .map(|report| report.restored_price_setting_count)
+                .unwrap_or_default(),
+            pricing_changed: pricing_sync
+                .as_ref()
+                .map(|report| report.changed)
+                .unwrap_or_default(),
         })
     }
 
@@ -900,6 +944,37 @@ fn normalize_install_code(value: String, name: &str) -> Result<String, DatabaseI
         )));
     }
     Ok(value)
+}
+
+impl OfficialPricingRefreshStore for DatabaseInstaller {
+    /// Re-runs the catalog refresh with the default options: the catalog root
+    /// and version pin configured for the process, no vendor filter, and
+    /// `force` so an unchanged catalog still realigns the stored prices.
+    fn refresh_official_pricing(&self) -> OfficialPricingRefreshFuture<'_> {
+        Box::pin(async move {
+            let report = self
+                .refresh_catalog(CatalogRefreshOptions::default())
+                .await
+                .map_err(|error| DomainError::new(error.to_string()))?;
+            Ok(OfficialPricingRefreshReport {
+                synced: report.synced,
+                source: report.source,
+                mode: report.mode,
+                catalog_version: report.catalog_version,
+                vendor_count: report.vendor_count,
+                model_count: report.model_count,
+                price_count: report.price_count,
+                price_book_count: report.price_book_count,
+                rate_count: report.rate_count,
+                deprecated_price_setting_count: report.deprecated_price_setting_count,
+                removed_price_setting_count: report.removed_price_setting_count,
+                restored_price_setting_count: report.restored_price_setting_count,
+                changed: report.pricing_changed,
+                snapshot_id: report.snapshot_id.unwrap_or_default(),
+                sync_run_id: report.sync_run_id.unwrap_or_default(),
+            })
+        })
+    }
 }
 
 #[cfg(test)]

@@ -11,6 +11,13 @@
 # ingress. PostgreSQL and Redis stay on the compose network and expose no host
 # ports, so the container composition is conflict-free by construction.
 
+# Bounded json-file log rotation: unbounded container logs eventually fill
+# the host disk on long-lived deployments (OPERATIONS_SPEC.md §2.3).
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "3"
 services:
   postgres:
     image: postgres:16-alpine
@@ -34,6 +41,11 @@ services:
       timeout: 5s
       retries: 12
 
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
   redis:
     image: redis:7-alpine
     # Survive host/WSL restarts together with the gateway (commercial ops).
@@ -46,6 +58,11 @@ services:
       timeout: 3s
       retries: 12
 
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
   cloudrouter:
     image: cloudrouter:local
     ports:
@@ -172,6 +189,11 @@ services:
           cpus: ${CLOUDROUTER_CPU_RESERVATION:-1.0}
           memory: ${CLOUDROUTER_MEMORY_RESERVATION:-1g}
 
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
 volumes:
   postgres-data:
   redis-data:

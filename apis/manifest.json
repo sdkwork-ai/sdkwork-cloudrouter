@@ -11,7 +11,7 @@
       "source": "sdks/cloudrouter-open-sdk/openapi/cloudrouter-open-sdk.openapi.json",
       "apiAuthority": "sdkwork-cloudrouter-open-api",
       "sdkFamily": "cloudrouter-open-sdk",
-      "sha256": "755ed5a6fe2eb1dcfcac6b4496ed1a0a1ccea0ce6395337023602e3c6bd1562c"
+      "sha256": "80753dce62edabccaebf0ee062609723ba6142a7cf1940799f7466bb94cab743"
     },
     {
       "surface": "app-api",
@@ -29,7 +29,7 @@
       "source": "generated/openapi/cloudrouter-backend-openapi.json",
       "apiAuthority": "sdkwork-cloudrouter-backend-api",
       "sdkFamily": "cloudrouter-backend-sdk",
-      "sha256": "96baac47ef6c3f1db2b7b6d89c00fd33b07e13c206004906ba1ff39a97d31a4c"
+      "sha256": "d708028db01e40eff8a8d1a9349d655cdd287f3edf5a620613a33e9a65cd1312"
     }
   ],
   "materializeScript": "scripts/materialize-apis-contracts.mjs",

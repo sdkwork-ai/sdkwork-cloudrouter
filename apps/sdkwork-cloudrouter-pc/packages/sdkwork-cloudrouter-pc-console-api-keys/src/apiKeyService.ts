@@ -1,28 +1,31 @@
 import { createClientOperationToken } from '@sdkwork/cloudroutes-pc-commons/idempotency';
-import { getCloudRouterAppSdkClient } from '@sdkwork/cloudrouter-pc-console-core/sdk';
 import {
   ensureSdkworkApiSuccess,
-  isBlank,
   isRecord,
-  optionalBoundedPositiveInteger as optionalQueryPageSize,
-  optionalPositiveInteger as optionalQueryPage,
-  optionalText as optionalQueryText,
-  pruneUndefinedQueryParams,
-  readBoolean,
   readApiRecord,
+  readBoolean,
   readNullableString,
   readRequiredApiItems,
   readRequiredNonNegativeNumber,
   readRequiredString,
   readString,
   type ApiRecord,
-} from '@sdkwork/cloudroutes-pc-commons/runtime';
+} from '@sdkwork/cloudroutes-pc-commons/api-result';
+import {
+  optionalBoundedPositiveInteger as optionalQueryPageSize,
+  optionalPositiveInteger as optionalQueryPage,
+  optionalText as optionalQueryText,
+  pruneUndefinedQueryParams,
+} from '@sdkwork/cloudroutes-pc-commons/sdk-request-boundary';
+import { isBlank } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
 import type {
-  CreateApiKeyRequest,
   AppApiKeyListResponse as SdkAppApiKeyListResponse,
+  CreateApiKeyRequest,
+  SdkworkAppClient,
   UpdateApiKeyRequest,
-} from '@sdkwork/cloudrouter-pc-console-core/sdk';
+} from '@sdkwork/cloudrouter-app-sdk';
 import { DEFAULT_ACCOUNT_GROUP } from './apiKeyForm.ts';
+import { resolveApiKeyServiceAppClient } from './serviceClients.ts';
 
 type ApiKeyModality = NonNullable<CreateApiKeyRequest['modalities']>[number];
 export type ApiKeyGroupRoutingStrategy = 'weighted' | 'price_first' | 'quality_first';
@@ -116,7 +119,7 @@ type ApiKeyListPage = {
 export class ApiKeyService {
   static async fetchKeys(filters: ApiKeyListFilters = {}): Promise<ApiKeyListPage> {
     try {
-      const result = await getCloudRouterAppSdkClient().iam.apiKeys.list(toApiKeyListQueryParams(filters));
+      const result = await resolveApiKeyServiceAppClient().iam.apiKeys.list(toApiKeyListQueryParams(filters));
       ensureSdkworkApiSuccess(result, 'console.apiKeys.errors.loadFallback');
       const data = readApiRecord(result);
       const items = readRequiredApiItems(result, 'console.apiKeys.errors.loadFallback');
@@ -132,7 +135,7 @@ export class ApiKeyService {
   static async fetchGroups(): Promise<AccountGroup[]> {
     try {
       // 分组数量可能超过默认页大小（20），显式拉取全量避免厂商/分组截断
-      const result = await getCloudRouterAppSdkClient().ai.routing.accountGroups.list({ pageSize: 100 });
+      const result = await resolveApiKeyServiceAppClient().ai.routing.accountGroups.list({ pageSize: 100 });
       ensureSdkworkApiSuccess(result, 'console.apiKeys.errors.loadGroupsFallback');
       const items = readRequiredApiItems(result, 'console.apiKeys.errors.loadGroupsFallback');
       return items.map(normalizeAccountGroup);
@@ -144,7 +147,7 @@ export class ApiKeyService {
   static async createKey(input: CreateApiKeyInput): Promise<CreatedApiKey> {
     const idempotencyKey = createClientOperationToken('create-api-key');
     try {
-      const result = await getCloudRouterAppSdkClient().iam.apiKeys.create(
+      const result = await resolveApiKeyServiceAppClient().iam.apiKeys.create(
         toCreateApiKeyRequest(input),
         { idempotencyKey },
       );
@@ -163,7 +166,7 @@ export class ApiKeyService {
 
   static async updateKey(keyId: string, input: UpdateApiKeyInput): Promise<ApiKey> {
     try {
-      const result = await getCloudRouterAppSdkClient().iam.apiKeys.update(
+      const result = await resolveApiKeyServiceAppClient().iam.apiKeys.update(
         requiredText(keyId, 'apiKeyId'),
         toUpdateApiKeyRequest(input),
       );
@@ -175,7 +178,7 @@ export class ApiKeyService {
 
   static async deleteKey(keyId: string): Promise<void> {
     try {
-      const result = await getCloudRouterAppSdkClient().iam.apiKeys.delete(requiredText(keyId, 'apiKeyId'));
+      const result = await resolveApiKeyServiceAppClient().iam.apiKeys.delete(requiredText(keyId, 'apiKeyId'));
       ensureSdkworkApiSuccess(result, 'console.apiKeys.errors.deleteFallback');
     } catch (error) {
       throw rethrowSdkError(error, 'console.apiKeys.errors.deleteFallback');

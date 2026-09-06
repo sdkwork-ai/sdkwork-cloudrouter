@@ -1,0 +1,49 @@
+{
+  "name": "sdkwork-cloudrouter-h5",
+  "private": true,
+  "version": "0.1.0",
+  "license": "SEE LICENSE IN ../../LICENSE",
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev": "vite --configLoader native",
+    "preview": "vite preview --configLoader native",
+    "build:dev": "node ../../../sdkwork-specs/tools/build-browser-client.mjs --app-root . --environment dev",
+    "build:test": "node ../../../sdkwork-specs/tools/build-browser-client.mjs --app-root . --environment test",
+    "build:staging": "node ../../../sdkwork-specs/tools/build-browser-client.mjs --app-root . --environment staging",
+    "build:demo": "node ../../../sdkwork-specs/tools/build-browser-client.mjs --app-root . --environment demo",
+    "build:prod": "node ../../../sdkwork-specs/tools/build-browser-client.mjs --app-root . --environment prod",
+    "build:dev:cloud": "node ../../../sdkwork-specs/tools/build-browser-client.mjs --app-root . --environment dev --deployment-profile cloud",
+    "build:test:cloud": "node ../../../sdkwork-specs/tools/build-browser-client.mjs --app-root . --environment test --deployment-profile cloud",
+    "build:staging:cloud": "node ../../../sdkwork-specs/tools/build-browser-client.mjs --app-root . --environment staging --deployment-profile cloud",
+    "build:demo:cloud": "node ../../../sdkwork-specs/tools/build-browser-client.mjs --app-root . --environment demo --deployment-profile cloud",
+    "build:prod:cloud": "node ../../../sdkwork-specs/tools/build-browser-client.mjs --app-root . --environment prod --deployment-profile cloud",
+    "build:h5:dev": "pnpm build:dev",
+    "build:h5:test": "pnpm build:test",
+    "build:h5:staging": "pnpm build:staging",
+    "build:h5:demo": "pnpm build:prod",
+    "build:h5:prod": "pnpm build:prod",
+    "build:h5:dev:cloud": "pnpm build:dev:cloud",
+    "build:h5:test:cloud": "pnpm build:test:cloud",
+    "build:h5:staging:cloud": "pnpm build:staging:cloud",
+    "build:h5:demo:cloud": "pnpm build:prod:cloud",
+    "build:h5:prod:cloud": "pnpm build:prod:cloud"
+  },
+  "dependencies": {
+    "clsx": "catalog:",
+    "lucide-react": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-router-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "tailwindcss": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}

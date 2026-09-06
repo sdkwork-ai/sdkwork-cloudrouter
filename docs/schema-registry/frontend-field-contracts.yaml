@@ -628,6 +628,51 @@ frontend_operations:
     query_parameters: *official-pricing-query-parameters
   - route: /admin/pricing/settings
     source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
+    operation: refreshAdminOfficialPricingRates
+    operation_id: officialRates.refresh
+    kind: action
+    api_surface: backend
+    api_method: POST
+    api_path: /backend/v3/api/pricing/official_refresh
+    sdk_domain: pricing
+    description: Re-imports the sdkwork-models catalog and realigns the official prices already stored in the database; models that gained or changed a price are written, models new to the catalog are inserted, and models the catalog deprecated or dropped have their price settings switched off.
+    read_sources:
+      - pricing_price_book
+      - pricing_rate
+      - pricing_import_run
+      - cloudrouter_pricing_rule
+    response_schema:
+      name: OfficialPricingRefreshResponse
+      schema:
+        additionalProperties: false
+        name: OfficialPricingRefreshResponse
+        properties:
+          synced: { type: boolean }
+          changed: { type: boolean }
+          source: { type: string }
+          mode: { type: string }
+          catalogVersion: { type: string }
+          vendorCount: { format: int32, minimum: 0, type: integer }
+          modelCount: { format: int32, minimum: 0, type: integer }
+          priceCount: { format: int32, minimum: 0, type: integer }
+          priceBookCount: { format: int32, minimum: 0, type: integer }
+          rateCount: { format: int32, minimum: 0, type: integer }
+          deprecatedPriceSettingCount: { format: int32, minimum: 0, type: integer }
+          removedPriceSettingCount: { format: int32, minimum: 0, type: integer }
+          restoredPriceSettingCount: { format: int32, minimum: 0, type: integer }
+          snapshotId: { type: string }
+          syncRunId: { type: string }
+        required: [synced, changed, source, mode, catalogVersion, vendorCount, modelCount, priceCount, priceBookCount, rateCount, deprecatedPriceSettingCount, removedPriceSettingCount, restoredPriceSettingCount, snapshotId, syncRunId]
+        type: object
+    request_body_required: false
+    write_tables:
+      - pricing_price_book
+      - pricing_rate
+      - pricing_import_run
+      - cloudrouter_pricing_rule
+      - ops_audit_log
+  - route: /admin/pricing/settings
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
     operation: fetchAdminOfficialPricingProducts
     operation_id: officialProducts.list
     kind: read
@@ -12601,6 +12646,10 @@ routes:
     required_tables:
       - cloudrouter_pricing_plan
       - cloudrouter_pricing_rule
+      - pricing_default_region
+      - pricing_import_run
+      - pricing_price_book
+      - pricing_rate
       - ops_audit_log
   - route: /partner-join
     dependency_owned: true

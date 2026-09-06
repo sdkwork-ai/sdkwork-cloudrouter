@@ -1,0 +1,216 @@
+# SDKWork Cloud Router — unified install-image bundle composition.
+#
+# One image, any environment, N instances per environment (DEPLOYMENT_SPEC.md
+# §6 / OPERATIONS_SPEC.md). This file is environment-neutral: deploy.sh
+# supplies SDKWORK_CLOUDROUTER_ENVIRONMENT, the per-instance management port,
+# the image tag, and the shared network and volumes named below (created once
+# per environment).
+#
+# Layout:
+#   deps project:     docker compose -p sdkwork-cloudrouter-<env>-deps \
+#                       --env-file env/<env>.env --profile deps up -d
+#   instance project: docker compose -p sdkwork-cloudrouter-<env>-i<i> \
+#                       --env-file env/<env>.env --profile instance up -d
+#
+# Values marked `:?required` MUST come from the --env-file or process env.
+
+# Bounded json-file log rotation: unbounded container logs eventually fill
+# the host disk on long-lived deployments (OPERATIONS_SPEC.md §2.3).
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "3"
+
+x-cloudrouter-common: &cloudrouter-common
+  image: registry.sdkwork.com/apps/sdkwork-cloudrouter:${SDKWORK_CLOUDROUTER_IMAGE_TAG:-0.4.0}
+  restart: unless-stopped
+  logging: *default-logging
+  security_opt:
+    - no-new-privileges:true
+  # Resource governance (OPERATIONS_SPEC.md §6 runtime hardening).
+  deploy:
+    resources:
+      limits:
+        cpus: "${SDKWORK_CLOUDROUTER_CPU_LIMIT:-4.0}"
+        memory: ${SDKWORK_CLOUDROUTER_MEMORY_LIMIT:-4g}
+        pids: 512
+      reservations:
+        cpus: "0.5"
+        memory: 512m
+  ulimits:
+    nofile:
+      soft: 65536
+      hard: 65536
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  # Network is env-driven: the default joins the per-environment external
+  # network created by deploy.sh; development may opt into host networking
+  # (SDKWORK_CLOUDROUTER_NETWORK_MODE=host) so the gateway reaches the
+  # workspace development PostgreSQL through 127.0.0.1
+  # (ENVIRONMENT_SPEC §7.1 local development allowance).
+  network_mode: ${SDKWORK_CLOUDROUTER_NETWORK_MODE:-sdkwork-cloudrouter-${SDKWORK_CLOUDROUTER_ENVIRONMENT}}
+  environment:
+    SDKWORK_CLOUDROUTER_CONFIG_FILE: /etc/sdkwork/router/config.toml
+    SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE: server
+    SDKWORK_CLOUDROUTER_DEPLOYMENT_PROFILE: standalone
+    SDKWORK_CLOUDROUTER_RUNTIME_TARGET: container
+    SDKWORK_CLOUDROUTER_ENVIRONMENT: ${SDKWORK_CLOUDROUTER_ENVIRONMENT:?required}
+    # Web-framework environment classification (defaults to production-like
+    # when unset, which forces production assembly requirements).
+    SDKWORK_ENVIRONMENT: ${SDKWORK_CLOUDROUTER_ENVIRONMENT:?required}
+    # Gateway web posture + startup install policy read this key.
+    SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT: ${SDKWORK_CLOUDROUTER_ENVIRONMENT:?required}
+    SDKWORK_CLOUDROUTER_PROFILE_ID: ${SDKWORK_CLOUDROUTER_PROFILE_ID:-standalone.${SDKWORK_CLOUDROUTER_ENVIRONMENT}}
+    # Unique per instance (deploy.sh sets standalone-<env>-i<index>).
+    SDKWORK_CLOUDROUTER_NODE_UUID: ${SDKWORK_CLOUDROUTER_NODE_UUID:-}
+    # Database + Redis (per-environment values from the env file).
+    SDKWORK_DATABASE_ENGINE: postgresql
+    SDKWORK_DATABASE_HOST: ${SDKWORK_DATABASE_HOST:-postgres}
+    SDKWORK_DATABASE_PORT: ${SDKWORK_DATABASE_PORT:-5432}
+    SDKWORK_DATABASE_NAME: ${SDKWORK_DATABASE_NAME:-sdkwork_ai_dev}
+    SDKWORK_DATABASE_SCHEMA: ${SDKWORK_DATABASE_SCHEMA:-${SDKWORK_DATABASE_NAME:-sdkwork_ai_dev}}
+    SDKWORK_DATABASE_USERNAME: ${SDKWORK_DATABASE_USERNAME:-sdkwork_ai_dev}
+    SDKWORK_DATABASE_PASSWORD: ${SDKWORK_DATABASE_PASSWORD:-}
+    SDKWORK_DATABASE_SSL_MODE: ${SDKWORK_DATABASE_SSL_MODE:-disable}
+    SDKWORK_DATABASE_MAX_CONNECTIONS: ${SDKWORK_DATABASE_MAX_CONNECTIONS:-10}
+    SDKWORK_CLOUDROUTER_REDIS_HOST: ${SDKWORK_CLOUDROUTER_REDIS_HOST:-redis}
+    SDKWORK_CLOUDROUTER_REDIS_PORT: ${SDKWORK_CLOUDROUTER_REDIS_PORT:-6379}
+    SDKWORK_CLOUDROUTER_REDIS_DATABASE: ${SDKWORK_CLOUDROUTER_REDIS_DATABASE:-0}
+    SDKWORK_CLOUDROUTER_REDIS_PASSWORD: ${SDKWORK_CLOUDROUTER_REDIS_PASSWORD:-}
+    # Standalone platform deployment: these workers operate in platform scope
+    # (tenant_id=0 is invalid for them otherwise, fail-closed at startup).
+    SDKWORK_CLOUDROUTER_USAGE_SETTLEMENT_PLATFORM_SCOPE: "true"
+    SDKWORK_CLOUDROUTER_PAYMENT_RECONCILIATION_PLATFORM_SCOPE: "true"
+    SDKWORK_CLOUDROUTER_CREDENTIAL_ROTATION_PLATFORM_SCOPE: "true"
+    SDKWORK_CLOUDROUTER_METERING_RETENTION_PLATFORM_SCOPE: "true"
+    # RTC persistence hydration scope (a "default" literal is rejected).
+    SDKWORK_RTC_HYDRATE_TENANT_ID: "100001"
+    SDKWORK_RTC_HYDRATE_ORGANIZATION_ID: "0"
+    # Drive deploy sandbox: the default /opt/deploy is not writable in the
+    # container; redirect it onto the persistent data volume.
+    SDKWORK_DEPLOY_SANDBOX_ROOT: /var/lib/sdkwork/router/deploy-sandbox
+    # Payment credential cipher (sdkwork-payment-service-host): explicit
+    # master key file mounted from the per-environment secrets directory.
+    SDKWORK_PAYMENT_CREDENTIAL_MASTER_KEY_FILE: /run/secrets/sdkwork/router/payment-credential-master.key
+    RUST_LOG: ${RUST_LOG:-info}
+  volumes:
+    - cloudrouter-secrets:/etc/sdkwork/router/secrets
+    - cloudrouter-data:/var/lib/sdkwork/router
+    # Per-environment runtime config rendered by the operator (INSTALL.md):
+    # [database]/[redis] must point at the external dependencies before boot.
+    - ../env/config/${SDKWORK_CLOUDROUTER_ENVIRONMENT}.config.toml:/etc/sdkwork/router/config.toml:ro
+    - ../env/secrets/${SDKWORK_CLOUDROUTER_ENVIRONMENT}:/run/secrets/sdkwork/router:ro
+  healthcheck:
+    test:
+      [
+        "CMD-SHELL",
+        "curl -fsS http://127.0.0.1:${SDKWORK_CLOUDROUTER_SERVER_PORT:-3900}/healthz || exit 1",
+      ]
+    interval: 15s
+    timeout: 5s
+    retries: 8
+    start_period: 60s
+
+services:
+  # Embedded dependencies (opt in with --embedded). The default is external:
+  # supply SDKWORK_DATABASE_HOST / SDKWORK_CLOUDROUTER_REDIS_HOST via the
+  # env file.
+  postgres:
+    image: pgvector/pgvector:pg16
+    profiles: [deps]
+    restart: unless-stopped
+    logging: *default-logging
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: "${PG_CPU_LIMIT:-2.0}"
+          memory: ${PG_MEMORY_LIMIT:-2g}
+          pids: 256
+        reservations:
+          cpus: "0.5"
+          memory: 512m
+    command: ["postgres", "-c", "max_connections=${PG_MAX_CONNECTIONS:-200}"]
+    networks:
+      - sdkwork
+    environment:
+      POSTGRES_USER: ${CLOUDROUTER_POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${CLOUDROUTER_POSTGRES_PASSWORD:?CLOUDROUTER_POSTGRES_PASSWORD must be set}
+      POSTGRES_DB: ${CLOUDROUTER_POSTGRES_DB:-postgres}
+    volumes:
+      - cloudrouter-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${CLOUDROUTER_POSTGRES_USER:-postgres} -d ${CLOUDROUTER_POSTGRES_DB:-postgres}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:8-alpine
+    profiles: [deps]
+    restart: unless-stopped
+    logging: *default-logging
+    security_opt:
+      - no-new-privileges:true
+    command:
+      - redis-server
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+      - --maxmemory
+      - ${REDIS_MAXMEMORY:-768mb}
+      - --maxmemory-policy
+      - ${REDIS_MAXMEMORY_POLICY:-allkeys-lru}
+    deploy:
+      resources:
+        limits:
+          cpus: "${REDIS_CPU_LIMIT:-1.0}"
+          memory: ${REDIS_MEMORY_LIMIT:-1g}
+          pids: 128
+        reservations:
+          cpus: "0.25"
+          memory: 128m
+    networks:
+      - sdkwork
+    volumes:
+      - cloudrouter-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  # One router instance. deploy.sh runs each instance as its own compose
+  # project so N instances coexist without fixed container_name collisions.
+  cloudrouter:
+    <<: *cloudrouter-common
+    profiles: [instance]
+    ports:
+      - "${SDKWORK_CLOUDROUTER_MGMT_HOST_PORT:?required}:3900"
+    logging: *default-logging
+
+networks:
+  sdkwork:
+    name: sdkwork-cloudrouter-${SDKWORK_CLOUDROUTER_ENVIRONMENT:?required}
+    external: true
+
+volumes:
+  cloudrouter-secrets:
+    name: sdkwork-cloudrouter-${SDKWORK_CLOUDROUTER_ENVIRONMENT:?required}-secrets
+    external: true
+  cloudrouter-data:
+    name: sdkwork-cloudrouter-${SDKWORK_CLOUDROUTER_ENVIRONMENT:?required}-data
+    external: true
+  cloudrouter-postgres-data:
+    name: sdkwork-cloudrouter-${SDKWORK_CLOUDROUTER_ENVIRONMENT:?required}-postgres-data
+    external: true
+  cloudrouter-redis-data:
+    name: sdkwork-cloudrouter-${SDKWORK_CLOUDROUTER_ENVIRONMENT:?required}-redis-data
+    external: true

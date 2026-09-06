@@ -1,10 +1,10 @@
 import {
-  getModelsAppSdkClient,
   isRecord,
   readRequiredApiItems,
   readString,
-} from '@sdkwork/cloudroutes-pc-commons/runtime';
+} from '@sdkwork/cloudroutes-pc-commons/api-result';
 import type { GroupPickerVendor } from '@sdkwork/cloudroutes-pc-commons/components/GroupPicker';
+import { resolveApiKeyServiceModelsClient } from './serviceClients.ts';
 
 /**
  * 模型厂商兜底显示名：与 sdkwork-models `models/vendors.json`（catalogVersion 2026.08.13.1）
@@ -58,7 +58,11 @@ function toVendorOption(item: unknown): GroupPickerVendor | null {
  */
 export async function fetchModelVendors(): Promise<GroupPickerVendor[]> {
   try {
-    const result = await getModelsAppSdkClient().ai.modelVendors.list();
+    const modelsClient = resolveApiKeyServiceModelsClient();
+    if (modelsClient === undefined) {
+      return FALLBACK_VENDOR_LABELS.map(([code, label]) => ({ code, label }));
+    }
+    const result = await modelsClient.ai.modelVendors.list();
     const vendors = new Map<string, GroupPickerVendor>();
     for (const item of readRequiredApiItems(result, 'console.apiKeys.errors.loadVendorsFallback')) {
       const vendor = toVendorOption(item);

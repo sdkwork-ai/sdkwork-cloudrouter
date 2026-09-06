@@ -45,6 +45,7 @@ mod invocation_dispatcher;
 mod model_ranking_refresh_store;
 mod model_rankings_read_store;
 mod official_pricing_catalog_read_store;
+mod official_pricing_refresh_store;
 mod pricing_catalog;
 mod provider_adapter_route_resolver;
 mod provider_secret_resolver;
@@ -351,6 +352,9 @@ pub use official_pricing_catalog_read_store::{
     OfficialPricingProductCatalogReadFuture, OfficialPricingProductCatalogSnapshot,
     OfficialPricingProductGroup, OfficialPricingRate, OfficialPricingRateCondition,
     OfficialPricingRateTier, OfficialPricingRegionOption, OfficialPricingValueFacet,
+};
+pub use official_pricing_refresh_store::{
+    OfficialPricingRefreshFuture, OfficialPricingRefreshReport, OfficialPricingRefreshStore,
 };
 pub use pricing_catalog::{PricingCatalog, PricingDefaultRegionProvider};
 pub use provider_adapter_route_resolver::ProviderAdapterRouteResolver;

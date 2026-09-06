@@ -27,8 +27,8 @@ use crate::ports::{
     DeleteAdminPriceBookRateCommand, DeleteAdminPricingRuleCommand, DeleteAdminRateCardCommand,
     ListAdminDefaultRegionsQuery, ListAdminPriceBooksQuery, ListAdminPricingPlansQuery,
     ListAdminPricingRulesQuery, ListAdminRateCardsQuery, LoadAdminPriceBookQuery,
-    LoadAdminPricingPlanQuery, PriceBookLifecycleCommand, ResolveAdminPriceSettingQuery,
-    SaveAdminDefaultRegionCommand, SaveAdminPriceSettingCommand, UpdateAdminDefaultRegionCommand,
+    LoadAdminPricingPlanQuery, OfficialPricingRefreshStore, PriceBookLifecycleCommand,
+    ResolveAdminPriceSettingQuery, SaveAdminDefaultRegionCommand, SaveAdminPriceSettingCommand, UpdateAdminDefaultRegionCommand,
     UpdateAdminPriceBookCommand, UpdateAdminPriceBookRateCommand, UpdateAdminPricingPlanCommand,
     UpdateAdminPricingRuleCommand, UpdateAdminRateCardCommand,
 };
@@ -48,6 +48,10 @@ const DEFAULT_RULE_MARKUP: &str = "0";
 struct AdminPricingState {
     store: Arc<dyn AdminPricingStore + Send + Sync>,
     entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
+    /// Optional on purpose: the pricing surface also boots in runtimes that
+    /// never configure the model catalog installer, and those must still serve
+    /// every price-setting read and write. Only the refresh action needs it.
+    official_pricing_refresher: Option<Arc<dyn OfficialPricingRefreshStore + Send + Sync>>,
 }
 
 #[derive(Debug, Serialize)]
@@ -383,6 +387,7 @@ impl From<String> for AdminPricingCommandBuildError {
 pub fn admin_pricing_router_with_store(
     store: Arc<dyn AdminPricingStore + Send + Sync>,
     entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
+    official_pricing_refresher: Option<Arc<dyn OfficialPricingRefreshStore + Send + Sync>>,
 ) -> Router {
     Router::new()
         .route(
@@ -442,6 +447,10 @@ pub fn admin_pricing_router_with_store(
             patch(update_price_book_rate).delete(delete_price_book_rate),
         )
         .route(
+            "/backend/v3/api/pricing/official_refresh",
+            post(refresh_official_pricing),
+        )
+        .route(
             "/backend/v3/api/pricing/price_settings/upsert",
             post(upsert_price_setting),
         )
@@ -452,6 +461,7 @@ pub fn admin_pricing_router_with_store(
         .with_state(AdminPricingState {
             store,
             entity_uuid_generator,
+            official_pricing_refresher,
         })
 }
 
@@ -962,6 +972,35 @@ fn normalize_price_setting_mutation(
         effective_to,
         status: normalize_pricing_status(request.status.as_deref())?,
     })
+}
+
+/// Re-imports sdkwork-models and realigns the official prices already stored in
+/// the database.
+///
+/// The refresh is authoritative in both directions, so the price settings table
+/// can never drift from the catalog: models that gained or changed a price are
+/// written, models that are new to the catalog are inserted, and models the
+/// catalog deprecated or dropped have their price settings switched off. The
+/// response reports how many settings each direction touched.
+async fn refresh_official_pricing(
+    State(state): State<AdminPricingState>,
+    _scoped: crate::api::admin_sql_subject::SqlScopedAdminSubject,
+    _headers: HeaderMap,
+) -> Response {
+    let refresher = match state.official_pricing_refresher.as_ref() {
+        Some(refresher) => refresher,
+        None => {
+            return problem_from_wire_code(
+                "5000",
+                "official price refresh is not configured for this runtime",
+            )
+            .into_response();
+        }
+    };
+    match refresher.refresh_official_pricing().await {
+        Ok(report) => Json(success_envelope(report)).into_response(),
+        Err(error) => pricing_system_response("official price refresh failed", error),
+    }
 }
 
 /// Creates or updates the single standard sales rule backing one

@@ -71,6 +71,18 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "anthropicCountMessageTokens",
     ),
     HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/elevenlabs/v1/sound-generation",
+        "Audio/elevenlabs",
+        "elevenlabsCreateSoundGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/elevenlabs/v1/text-to-speech/{voice_id}",
+        "Audio/elevenlabs",
+        "elevenlabsCreateTextToSpeech",
+    ),
+    HttpRoute::api_key_or_dual_token(
         HttpMethod::Get,
         "/google/v1beta/cachedContents",
         "Responses/google",
@@ -908,18 +920,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/volcengine/api/v3/contents/generations/tasks/{task_id}",
         "Videos/volcengine",
         "volcengineRetrieveContentGenerationTask",
-    ),
-    HttpRoute::api_key_or_dual_token(
-        HttpMethod::Post,
-        "/elevenlabs/v1/sound-generation",
-        "Audio/elevenlabs",
-        "elevenlabsCreateSoundGeneration",
-    ),
-    HttpRoute::api_key_or_dual_token(
-        HttpMethod::Post,
-        "/elevenlabs/v1/text-to-speech/{voice_id}",
-        "Audio/elevenlabs",
-        "elevenlabsCreateTextToSpeech",
     ),
 ];
 

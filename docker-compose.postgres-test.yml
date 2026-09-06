@@ -1,3 +1,10 @@
+# Bounded json-file log rotation: unbounded container logs eventually fill
+# the host disk on long-lived deployments (OPERATIONS_SPEC.md §2.3).
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "3"
 services:
   postgres-test:
     image: postgres:16-alpine
@@ -19,3 +26,9 @@ services:
       timeout: 3s
       retries: 30
       start_period: 3s
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"

@@ -3,6 +3,7 @@ packages:
   - "apps/sdkwork-cloudrouter-common/packages/*"
   - "apps/sdkwork-cloudrouter-pc"
   - "apps/sdkwork-cloudrouter-pc/packages/*"
+  - "apps/sdkwork-cloudrouter-h5"
   - "sdks/*/*-typescript"
   - "../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-contracts"
   - "../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-runtime"

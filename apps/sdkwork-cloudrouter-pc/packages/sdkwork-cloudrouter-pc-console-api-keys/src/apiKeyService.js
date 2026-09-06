@@ -1,0 +1,406 @@
+import { createClientOperationToken } from '@sdkwork/cloudroutes-pc-commons/idempotency';
+import { ensureSdkworkApiSuccess, isRecord, readApiRecord, readBoolean, readNullableString, readRequiredApiItems, readRequiredNonNegativeNumber, readRequiredString, readString, } from '@sdkwork/cloudroutes-pc-commons/api-result';
+import { optionalBoundedPositiveInteger as optionalQueryPageSize, optionalPositiveInteger as optionalQueryPage, optionalText as optionalQueryText, pruneUndefinedQueryParams, } from '@sdkwork/cloudroutes-pc-commons/sdk-request-boundary';
+import { isBlank } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
+import { DEFAULT_ACCOUNT_GROUP } from "./apiKeyForm.js";
+import { resolveApiKeyServiceAppClient } from "./serviceClients.js";
+const UNRESTRICTED_MODALITIES = ['text', 'image', 'video', 'audio', 'music'];
+const MAX_API_KEY_LIST_PAGE_SIZE = 200;
+const MAX_API_KEY_LIST_QUERY_TEXT_LENGTH = 128;
+export class ApiKeyService {
+    static async fetchKeys(filters = {}) {
+        try {
+            const result = await resolveApiKeyServiceAppClient().iam.apiKeys.list(toApiKeyListQueryParams(filters));
+            ensureSdkworkApiSuccess(result, 'console.apiKeys.errors.loadFallback');
+            const data = readApiRecord(result);
+            const items = readRequiredApiItems(result, 'console.apiKeys.errors.loadFallback');
+            return {
+                keys: items.map(normalizeApiKey),
+                total: readApiKeyListPageTotal(data),
+            };
+        }
+        catch (error) {
+            throw rethrowSdkError(error, 'console.apiKeys.errors.loadFallback');
+        }
+    }
+    static async fetchGroups() {
+        try {
+            // 分组数量可能超过默认页大小（20），显式拉取全量避免厂商/分组截断
+            const result = await resolveApiKeyServiceAppClient().ai.routing.accountGroups.list({ pageSize: 100 });
+            ensureSdkworkApiSuccess(result, 'console.apiKeys.errors.loadGroupsFallback');
+            const items = readRequiredApiItems(result, 'console.apiKeys.errors.loadGroupsFallback');
+            return items.map(normalizeAccountGroup);
+        }
+        catch (error) {
+            throw rethrowSdkError(error, 'console.apiKeys.errors.loadGroupsFallback');
+        }
+    }
+    static async createKey(input) {
+        const idempotencyKey = createClientOperationToken('create-api-key');
+        try {
+            const result = await resolveApiKeyServiceAppClient().iam.apiKeys.create(toCreateApiKeyRequest(input), { idempotencyKey });
+            const data = readApiRecord(result);
+            const rawKey = readString(data, 'rawKey');
+            if (!rawKey) {
+                throw new Error('API key creation response is missing key material');
+            }
+            const key = normalizeCreatedApiKey(data.item);
+            return { key, rawKey };
+        }
+        catch (error) {
+            throw rethrowSdkError(error, 'console.apiKeys.errors.createFallback');
+        }
+    }
+    static async updateKey(keyId, input) {
+        try {
+            const result = await resolveApiKeyServiceAppClient().iam.apiKeys.update(requiredText(keyId, 'apiKeyId'), toUpdateApiKeyRequest(input));
+            return normalizeApiKey(result);
+        }
+        catch (error) {
+            throw rethrowSdkError(error, 'console.apiKeys.errors.updateFallback');
+        }
+    }
+    static async deleteKey(keyId) {
+        try {
+            const result = await resolveApiKeyServiceAppClient().iam.apiKeys.delete(requiredText(keyId, 'apiKeyId'));
+            ensureSdkworkApiSuccess(result, 'console.apiKeys.errors.deleteFallback');
+        }
+        catch (error) {
+            throw rethrowSdkError(error, 'console.apiKeys.errors.deleteFallback');
+        }
+    }
+}
+/**
+ * Rethrows the original SDK error — preserving `problem` metadata for i18nKey
+ * translation — or wraps a keyed fallback message so the UI can resolve it
+ * through the catalog (`I18N_SPEC.md` §7).
+ */
+function rethrowSdkError(error, fallbackKey) {
+    if (error instanceof Error) {
+        const message = error.message.trim();
+        if (message && message !== 'Unknown error') {
+            return error;
+        }
+        if (isBlank(fallbackKey)) {
+            return error;
+        }
+    }
+    return new Error(fallbackKey);
+}
+function toApiKeyListQueryParams(filters = {}) {
+    const page = optionalQueryPage(filters.page, 'page');
+    const pageSize = optionalQueryPageSize(filters.pageSize, 'pageSize', MAX_API_KEY_LIST_PAGE_SIZE);
+    const q = optionalQueryText(filters.q ?? filters.searchQuery, 'q', MAX_API_KEY_LIST_QUERY_TEXT_LENGTH);
+    return pruneUndefinedQueryParams({
+        page,
+        pageSize,
+        q,
+    });
+}
+function readApiKeyListPageTotal(data) {
+    if (data.total !== undefined && data.total !== null && data.total !== '') {
+        return readRequiredNonNegativeNumber(data, 'total', 'API key list total is required');
+    }
+    const pageInfo = data.pageInfo;
+    if (isRecord(pageInfo)) {
+        for (const key of ['totalItems', 'total_items']) {
+            const value = pageInfo[key];
+            if (value === undefined || value === null || value === '') {
+                continue;
+            }
+            const parsed = typeof value === 'number' ? value : Number(String(value).trim());
+            if (Number.isFinite(parsed) && parsed >= 0) {
+                return parsed;
+            }
+            throw new Error('API key list total must be a non-negative number');
+        }
+    }
+    const items = data.items;
+    if (Array.isArray(items)) {
+        return items.length;
+    }
+    throw new Error('API key list total is required');
+}
+function toCreateApiKeyRequest(input) {
+    const request = {
+        name: requiredText(input.name, 'name'),
+        accountGroups: normalizeAccountGroups(input.accountGroups),
+        quota: decimalQuota(input.quota),
+        isUnlimitedQuota: Boolean(input.isUnlimitedQuota),
+        modalities: toApiKeyModalities(input.modalities),
+        ipLimit: optionalText(input.ipLimit) ?? 'unrestricted',
+        expires: optionalText(input.expires) ?? 'never',
+    };
+    const groupRoutingPolicies = toGroupRoutingPolicies(input);
+    if (groupRoutingPolicies !== undefined) {
+        request.groupRoutingPolicies = groupRoutingPolicies;
+    }
+    if (input.defaultForRuntime !== undefined) {
+        request.defaultForRuntime = Boolean(input.defaultForRuntime);
+    }
+    return request;
+}
+function toUpdateApiKeyRequest(input) {
+    const request = {};
+    if (input.name !== undefined) {
+        request.name = requiredText(input.name, 'name');
+    }
+    if (input.accountGroups !== undefined) {
+        request.accountGroups = normalizeAccountGroups(input.accountGroups);
+    }
+    if (input.accountGroups !== undefined || input.groupRoutingPolicies !== undefined) {
+        const groupRoutingPolicies = toGroupRoutingPolicies(input);
+        if (groupRoutingPolicies !== undefined) {
+            request.groupRoutingPolicies = groupRoutingPolicies;
+        }
+    }
+    if (input.quota !== undefined) {
+        request.quota = decimalQuota(input.quota);
+    }
+    if (input.isUnlimitedQuota !== undefined) {
+        request.isUnlimitedQuota = Boolean(input.isUnlimitedQuota);
+    }
+    if (input.modalities !== undefined) {
+        request.modalities = toApiKeyModalities(input.modalities);
+    }
+    if (input.ipLimit !== undefined) {
+        request.ipLimit = optionalText(input.ipLimit) ?? 'unrestricted';
+    }
+    if (input.expires !== undefined) {
+        request.expires = optionalText(input.expires) ?? 'never';
+    }
+    if (input.defaultForRuntime !== undefined) {
+        request.defaultForRuntime = Boolean(input.defaultForRuntime);
+    }
+    if (input.chain != null) {
+        request.chain = normalizeChainInput(input.chain);
+    }
+    return request;
+}
+function normalizeChainInput(chain) {
+    return {
+        concurrency: chain.concurrency
+            ? {
+                maxInflight: chain.concurrency.maxInflight == null
+                    ? undefined
+                    : String(chain.concurrency.maxInflight),
+                maxInflightPerScope: chain.concurrency.maxInflightPerScope
+                    ? Object.fromEntries(Object.entries(chain.concurrency.maxInflightPerScope).map(([scope, limit]) => [
+                        scope,
+                        String(limit),
+                    ]))
+                    : undefined,
+            }
+            : undefined,
+        ipAccess: chain.ipAccess
+            ? {
+                mode: chain.ipAccess.mode || undefined,
+                allowlist: chain.ipAccess.allowlist ?? undefined,
+                denylist: chain.ipAccess.denylist ?? undefined,
+            }
+            : undefined,
+        stages: chain.stages
+            ? {
+                enabledOnly: chain.stages.enabledOnly ?? undefined,
+                disabled: chain.stages.disabled ?? undefined,
+            }
+            : undefined,
+    };
+}
+function normalizeAccountGroups(values) {
+    const groups = [];
+    for (const rawValue of values) {
+        const value = rawValue.trim();
+        if (!value) {
+            continue;
+        }
+        if (!groups.includes(value)) {
+            groups.push(value);
+        }
+    }
+    if (groups.length === 0) {
+        groups.push(DEFAULT_ACCOUNT_GROUP);
+    }
+    return groups;
+}
+/**
+ * Normalizes the form's per-group routing policies into the wire request.
+ * Only policies referencing a bound group are sent; undefined (or empty)
+ * payloads are omitted entirely so the server defaults apply.
+ */
+function toGroupRoutingPolicies(input) {
+    const policies = input.groupRoutingPolicies;
+    if (!Array.isArray(policies) || policies.length === 0) {
+        return undefined;
+    }
+    const bound = new Set(normalizeAccountGroups(input.accountGroups ?? []));
+    const normalized = policies
+        .map((policy) => ({
+        accountGroup: requiredText(policy.accountGroup, 'groupRoutingPolicies accountGroup'),
+        routingStrategy: policy.routingStrategy,
+        weight: policy.weight,
+    }))
+        .filter((policy) => bound.has(policy.accountGroup));
+    return normalized.length > 0 ? normalized : undefined;
+}
+function requiredText(value, fieldName) {
+    const normalized = value.trim();
+    if (!normalized) {
+        throw new Error(`${fieldName} is required`);
+    }
+    return normalized;
+}
+function optionalText(value) {
+    const normalized = value.trim();
+    return normalized ? normalized : undefined;
+}
+function decimalQuota(value) {
+    const normalized = requiredText(value, 'quota').replace(/,/g, '');
+    if (!/^\d+(?:\.\d{1,6})?$/.test(normalized)) {
+        throw new Error('quota must be a non-negative decimal');
+    }
+    return normalized;
+}
+function normalizeApiKey(value) {
+    if (!isRecord(value)) {
+        throw new Error('API key record is required');
+    }
+    const id = readRequiredString(value, 'id', 'API key id is required');
+    const name = readRequiredString(value, 'name', 'API key name is required');
+    const maskedKey = readRequiredString(value, 'maskedKey', 'API key masked value is required');
+    return {
+        id,
+        name,
+        displayName: readApiKeyDisplayName(name),
+        maskedKey,
+        rawKey: readNullableString(value, 'rawKey'),
+        accountGroup: readRequiredString(value, 'accountGroup', 'API key account group is required'),
+        accountGroupName: readNullableString(value, 'accountGroupName'),
+        accountGroups: readStringArray(value, 'accountGroups'),
+        groupBindings: readGroupBindings(value),
+        rate: readNullableString(value, 'rate'),
+        quota: readRequiredString(value, 'quota', 'API key quota is required'),
+        usedQuota: readRequiredString(value, 'usedQuota', 'API key used quota is required'),
+        modalities: readApiKeyModalities(value),
+        ipLimit: readRequiredString(value, 'ipLimit', 'API key IP limit is required'),
+        created: readRequiredString(value, 'created', 'API key created time is required'),
+        expires: readRequiredString(value, 'expires', 'API key expiration is required'),
+        status: readApiKeyStatus(value),
+        defaultForRuntime: readBoolean(value, 'defaultForRuntime'),
+    };
+}
+function readApiKeyDisplayName(name) {
+    const normalized = name.trim();
+    if (!normalized) {
+        // 无名称时由视图层通过 console.apiKeys.unnamed 国际化格式化，避免硬编码英文
+        return '';
+    }
+    return normalized;
+}
+function normalizeCreatedApiKey(value) {
+    try {
+        return normalizeApiKey(value);
+    }
+    catch {
+        throw new Error('API key creation response is missing key data');
+    }
+}
+function normalizeAccountGroup(value) {
+    if (!isRecord(value)) {
+        throw new Error('Account group record is required');
+    }
+    return {
+        id: readRequiredString(value, 'id', 'Account group id is required'),
+        code: readRequiredString(value, 'groupCode', 'Account group code is required'),
+        name: readRequiredString(value, 'groupName', 'Account group name is required'),
+        description: readNullableString(value, 'description'),
+        rate: readNullableString(value, 'saleMultiplier'),
+        routingStrategy: readNullableString(value, 'routingStrategy'),
+        vendorCode: readNullableString(value, 'vendorCode'),
+        modalities: readStringArray(value, 'modalities'),
+        tags: readStringArray(value, 'tags'),
+    };
+}
+function readStringArray(value, field) {
+    const raw = value[field];
+    if (!Array.isArray(raw)) {
+        return [];
+    }
+    return raw.filter((item) => typeof item === 'string');
+}
+/** 读取绑定分组策略数组；服务端未返回（旧部署）时回退为空数组 */
+function readGroupBindings(value) {
+    const raw = value.groupBindings;
+    if (!Array.isArray(raw)) {
+        return [];
+    }
+    const bindings = [];
+    for (const item of raw) {
+        if (!isRecord(item)) {
+            continue;
+        }
+        const accountGroup = readString(item, 'accountGroup');
+        if (!accountGroup) {
+            continue;
+        }
+        const routingStrategy = readString(item, 'routingStrategy');
+        if (routingStrategy !== 'weighted' && routingStrategy !== 'price_first' && routingStrategy !== 'quality_first') {
+            continue;
+        }
+        const weight = typeof item.weight === 'number' && Number.isFinite(item.weight) ? item.weight : 100;
+        const priority = typeof item.priority === 'number' && Number.isFinite(item.priority) ? item.priority : 100;
+        bindings.push({ accountGroup, routingStrategy, weight, priority });
+    }
+    return bindings;
+}
+function toApiKeyModalities(values) {
+    const modalities = [];
+    for (const value of values) {
+        const modality = value.trim().toLowerCase();
+        if (!modality) {
+            continue;
+        }
+        if (!isApiKeyModality(modality)) {
+            throw new Error(`Unsupported API key modality: ${modality}`);
+        }
+        if (!modalities.includes(modality)) {
+            modalities.push(modality);
+        }
+    }
+    if (modalities.length === 0) {
+        throw new Error('modalities must include at least one item');
+    }
+    return modalities;
+}
+function isApiKeyModality(value) {
+    return UNRESTRICTED_MODALITIES.includes(value);
+}
+function readApiKeyModalities(value) {
+    const raw = value.modalities;
+    if (!Array.isArray(raw)) {
+        throw new Error('API key modalities are required');
+    }
+    const modalities = [];
+    for (const item of raw) {
+        const modality = typeof item === 'string' ? item.trim().toLowerCase() : '';
+        if (!modality) {
+            throw new Error('API key modalities are required');
+        }
+        if (!isApiKeyModality(modality)) {
+            throw new Error(`Unsupported API key modality: ${modality}`);
+        }
+        modalities.push(modality);
+    }
+    if (modalities.length === 0) {
+        throw new Error('API key modalities are required');
+    }
+    return [...new Set(modalities)];
+}
+function readApiKeyStatus(value) {
+    const status = readRequiredString(value, 'status', 'API key status is required');
+    if (status === 'enabled' || status === 'disabled') {
+        return status;
+    }
+    throw new Error(`Unsupported API key status: ${status}`);
+}
+//# sourceMappingURL=apiKeyService.js.map

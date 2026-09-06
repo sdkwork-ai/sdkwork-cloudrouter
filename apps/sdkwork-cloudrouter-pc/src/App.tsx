@@ -19,6 +19,8 @@ import {
 import { RequireAdminSession, RequirePortalSession, PortalAuthenticatedAuthRouteGuard } from './auth/protectedPortalRoutes';
 import { SdkworkSessionAuthBrowserRoot } from '@sdkwork/auth-pc-react';
 import { PortalErrorBoundary } from '@sdkwork/cloudroutes-pc-commons';
+import { getCloudRouterAppSdkClient, getModelsAppSdkClient } from '@sdkwork/cloudrouter-pc-console-core/sdk';
+import { configureApiKeyServiceClients } from '@sdkwork/cloudrouter-pc-console-api-keys';
 import { CloudRouterConsoleBusinessHostRoutes } from './console-business/consoleBusinessHostMount';
 import { CloudRouterConsoleIamOauthMenuRoute } from './console-business/consoleIamOauthMenuHost';
 import { CloudRouterConsoleBusinessNavbarActions } from './console-business/consoleBusinessNavbar';
@@ -45,6 +47,14 @@ const DashboardView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-da
 const UsageView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-usage'), 'UsageView');
 const GatewayView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-gateway'), 'GatewayView');
 const ApiKeysView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-api-keys'), 'ApiKeysView');
+
+// The api-keys service layer resolves clients through the injectable seam
+// (embeddable hosts construct their own); the console binds the shared
+// factories here with lazy-singleton semantics preserved.
+configureApiKeyServiceClients({
+  appClient: () => getCloudRouterAppSdkClient(),
+  modelsClient: () => getModelsAppSdkClient(),
+});
 const MessagesView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-messages'), 'MessagesView');
 const UserView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-user'), 'UserView');
 const SettingsView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-settings'), 'SettingsView');

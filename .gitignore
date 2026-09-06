@@ -150,4 +150,5 @@ etc/**/*.local.*
 .workbuddy/
 scripts/_dbcheck/
 scripts/playground-alignment/
+/bin/
 

@@ -9,10 +9,19 @@ use sqlx::{PgPool, Postgres, Row, Transaction};
 
 use crate::domain::DomainError;
 use crate::infrastructure::sql::account_rate_card::sync_legacy_account_group_rate_cards;
-use crate::infrastructure::sql::model_catalog_import::stable_uuid;
+use crate::infrastructure::sql::model_catalog_import::{
+    model_catalog_key, sdkwork_model_is_publicly_active, stable_uuid,
+};
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 
 const SOURCE_SYSTEM: &str = "sdkwork_models";
+/// Marks rows the catalog refresh switched to `status = 0` so a later refresh
+/// can restore exactly those rows and never flip a rule an operator disabled
+/// by hand.
+const AVAILABILITY_SOURCE: &str = "catalog_refresh";
+/// Models are matched in bounded batches: `catalog_key = ANY($1)` keeps the
+/// reconciliation in one statement per batch instead of one per model.
+const AVAILABILITY_BATCH_SIZE: usize = 500;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct OfficialPricingSyncReport {
@@ -31,6 +40,35 @@ pub(crate) struct OfficialPricingSyncReport {
     pub pricing_plan_count: usize,
     pub pricing_rule_count: usize,
     pub account_rate_card_count: usize,
+    pub deprecated_price_setting_count: usize,
+    pub removed_price_setting_count: usize,
+    pub restored_price_setting_count: usize,
+    /// False when the loaded catalog produced exactly the content hash that is
+    /// already stored, i.e. the refresh changed nothing.
+    pub changed: bool,
+}
+
+/// Availability of a catalog key, derived from the sdkwork-models lifecycle
+/// flags instead of any operator-maintained field.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+struct CatalogAvailability {
+    /// Models the catalog still publishes for routing and billing.
+    available: BTreeSet<String>,
+    /// Models the catalog still ships, but marked deprecated, retired,
+    /// catalog-only, hidden, or not routable.
+    unavailable: BTreeSet<String>,
+}
+
+/// Outcome of reconciling catalog availability against the price settings an
+/// operator may already have configured.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+struct AvailabilityAlignment {
+    /// Settings switched off because the model is deprecated upstream.
+    deprecated_count: usize,
+    /// Settings switched off because the model disappeared from the catalog.
+    removed_count: usize,
+    /// Settings switched back on because the model became available again.
+    restored_count: usize,
 }
 
 #[derive(Debug)]
@@ -173,7 +211,15 @@ pub(crate) async fn sync_official_pricing_catalog(
 ) -> Result<OfficialPricingSyncReport, OfficialPricingSyncError> {
     let projection = project_catalog(catalog)?;
     let mut transaction = pool.begin().await?;
-    let import_id = stage_import_run(&mut transaction, catalog, &projection).await?;
+    // Serialises concurrent refreshes. Two operators pressing the refresh
+    // button at once would both read "no price book for this version yet" and
+    // race into `uk_pricing_price_book_version`, failing one of them. The lock
+    // is transaction-scoped, so it is released on commit or rollback.
+    sqlx::query("SELECT pg_advisory_xact_lock($1)")
+        .bind(sync_advisory_lock_key())
+        .execute(&mut *transaction)
+        .await?;
+    let (import_id, import_run_staged) = stage_import_run(&mut transaction, catalog, &projection).await?;
 
     let mut price_book_ids = BTreeMap::new();
     for (price_book_key, price_book) in &projection.price_books {
@@ -222,6 +268,12 @@ pub(crate) async fn sync_official_pricing_catalog(
     activate_price_books(&mut transaction, &price_book_ids).await?;
     let (pricing_plan_count, pricing_rule_count) =
         bootstrap_default_pricing_plans(&mut transaction).await?;
+    // Runs last on purpose: it reconciles operator price settings against the
+    // freshly written official rates, so a model that gained or lost an
+    // official price in this run is aligned in the same transaction.
+    let availability = catalog_availability(catalog);
+    let alignment =
+        align_price_settings_availability(&mut transaction, catalog, &availability).await?;
     let rate_card_effective_at = sqlx::query_scalar::<_, String>("SELECT CURRENT_TIMESTAMP::text")
         .fetch_one(&mut *transaction)
         .await?;
@@ -264,6 +316,13 @@ pub(crate) async fn sync_official_pricing_catalog(
         pricing_plan_count,
         pricing_rule_count,
         account_rate_card_count,
+        deprecated_price_setting_count: alignment.deprecated_count,
+        removed_price_setting_count: alignment.removed_count,
+        restored_price_setting_count: alignment.restored_count,
+        changed: import_run_staged
+            || alignment.deprecated_count > 0
+            || alignment.removed_count > 0
+            || alignment.restored_count > 0,
     })
 }
 
@@ -440,6 +499,158 @@ fn project_catalog(
     })
 }
 
+/// Availability of every model the catalog ships, keyed by catalog key.
+///
+/// The lifecycle flags live on the model (not on the price), so a model can be
+/// deprecated while its official price rows are still present in sdkwork-models.
+fn catalog_availability(catalog: &ModelCatalog) -> CatalogAvailability {
+    let mut availability = CatalogAvailability::default();
+    for vendor in &catalog.vendors {
+        for model in &vendor.models {
+            let key = model_catalog_key(&model.vendor_code, &model.model_id);
+            if sdkwork_model_is_publicly_active(model) {
+                availability.available.insert(key);
+            } else {
+                availability.unavailable.insert(key);
+            }
+        }
+    }
+    // Deprecation is decided per vendor region, and one model is often priced in
+    // several regions. A single live region keeps the price settings usable, so
+    // an active copy always wins over a deprecated copy of the same key.
+    availability
+        .unavailable
+        .retain(|key| !availability.available.contains(key));
+    availability
+}
+
+/// Reconciles stored price settings with the model lifecycle sdkwork-models
+/// publishes.
+///
+/// Official `pricing_rate` rows are immutable while their price book is active
+/// (`pricing_guard_active_rate`), so availability is applied to
+/// `cloudrouter_pricing_rule` — the operator-owned price settings the admin
+/// price settings page edits.
+///
+/// The reconciliation runs in both directions: settings whose model was
+/// deprecated or dropped are switched off, and settings a previous refresh
+/// switched off are switched back on once the model is published again. Rules
+/// an operator disabled by hand carry no `availabilitySource` marker, so they
+/// are never re-enabled behind their back.
+async fn align_price_settings_availability(
+    transaction: &mut Transaction<'_, Postgres>,
+    catalog: &ModelCatalog,
+    availability: &CatalogAvailability,
+) -> Result<AvailabilityAlignment, OfficialPricingSyncError> {
+    let stored = sqlx::query_scalar::<_, String>(
+        r#"SELECT DISTINCT catalog_key
+           FROM cloudrouter_pricing_rule
+           WHERE tenant_id = 0 AND organization_id = 0 AND deleted_at IS NULL
+             AND catalog_key IS NOT NULL AND BTRIM(catalog_key) <> ''"#,
+    )
+    .fetch_all(&mut **transaction)
+    .await?;
+
+    let mut deprecated_keys = Vec::new();
+    let mut removed_keys = Vec::new();
+    let mut restored_keys = Vec::new();
+    for catalog_key in stored {
+        if availability.available.contains(&catalog_key) {
+            restored_keys.push(catalog_key);
+        } else if availability.unavailable.contains(&catalog_key) {
+            deprecated_keys.push(catalog_key);
+        } else {
+            removed_keys.push(catalog_key);
+        }
+    }
+
+    let deprecated_count = mark_price_settings_unavailable(
+        transaction,
+        &deprecated_keys,
+        "deprecated",
+        &catalog.manifest.catalog_version,
+    )
+    .await?;
+    let removed_count = mark_price_settings_unavailable(
+        transaction,
+        &removed_keys,
+        "removed",
+        &catalog.manifest.catalog_version,
+    )
+    .await?;
+    let restored_count = restore_price_settings_availability(transaction, &restored_keys).await?;
+
+    Ok(AvailabilityAlignment {
+        deprecated_count,
+        removed_count,
+        restored_count,
+    })
+}
+
+async fn mark_price_settings_unavailable(
+    transaction: &mut Transaction<'_, Postgres>,
+    catalog_keys: &[String],
+    reason: &str,
+    catalog_version: &str,
+) -> Result<usize, OfficialPricingSyncError> {
+    let mut affected = 0usize;
+    for batch in catalog_keys.chunks(AVAILABILITY_BATCH_SIZE) {
+        let result = sqlx::query(
+            r#"UPDATE cloudrouter_pricing_rule
+               SET status = 0,
+                   metadata = metadata || jsonb_build_object(
+                       'availabilitySource', $2::text,
+                       'availabilityReason', $3::text,
+                       'availabilityCatalogVersion', $4::text,
+                       'availabilityChangedAt', CURRENT_TIMESTAMP::text
+                   ),
+                   updated_at = CURRENT_TIMESTAMP,
+                   version = version + 1
+               WHERE tenant_id = 0 AND organization_id = 0 AND deleted_at IS NULL
+                 AND status = 1
+                 AND catalog_key = ANY($1::text[])"#,
+        )
+        .bind(batch)
+        .bind(AVAILABILITY_SOURCE)
+        .bind(reason)
+        .bind(catalog_version)
+        .execute(&mut **transaction)
+        .await?;
+        affected += usize::try_from(result.rows_affected()).unwrap_or(0);
+    }
+    Ok(affected)
+}
+
+async fn restore_price_settings_availability(
+    transaction: &mut Transaction<'_, Postgres>,
+    catalog_keys: &[String],
+) -> Result<usize, OfficialPricingSyncError> {
+    let mut affected = 0usize;
+    for batch in catalog_keys.chunks(AVAILABILITY_BATCH_SIZE) {
+        let result = sqlx::query(
+            r#"UPDATE cloudrouter_pricing_rule
+               SET status = 1,
+                   metadata = metadata
+                       - 'availabilitySource'
+                       - 'availabilityReason'
+                       - 'availabilityCatalogVersion'
+                       - 'availabilityChangedAt',
+                   updated_at = CURRENT_TIMESTAMP,
+                   version = version + 1
+               WHERE tenant_id = 0 AND organization_id = 0 AND deleted_at IS NULL
+                 AND status = 0
+                 AND metadata ->> 'availabilitySource' = $2::text
+                 AND catalog_key = ANY($1::text[])"#,
+        )
+        .bind(batch)
+        .bind(AVAILABILITY_SOURCE)
+        .execute(&mut **transaction)
+        .await?;
+        affected += usize::try_from(result.rows_affected()).unwrap_or(0);
+    }
+    Ok(affected)
+}
+
 fn normalize_price_side(value: &str) -> Result<String, OfficialPricingSyncError> {
     let normalized = match value {
         "official" | "official_reference" | "reference" => "official_reference",
@@ -511,6 +722,15 @@ fn operation_display_name(operation_code: &str) -> String {
     operation_code.replace('.', " ")
 }
 
+/// Stable advisory lock key for the official pricing sync. Derived from the
+/// tag instead of hand-picked so it cannot collide with an unrelated lock.
+fn sync_advisory_lock_key() -> i64 {
+    let digest = Sha256::digest(b"sdkwork-cloudrouter-official-pricing-sync");
+    let mut bytes = [0u8; 8];
+    bytes.copy_from_slice(&digest[..8]);
+    i64::from_be_bytes(bytes)
+}
+
 fn hash_parts<'a>(parts: impl IntoIterator<Item = &'a str>) -> String {
     let mut hasher = Sha256::new();
     for part in parts {
@@ -530,11 +750,16 @@ fn required_projection<'a, T>(
     })
 }
 
+/// Stages the import run and reports whether it is new.
+///
+/// `pricing_import_run` is keyed by `(source_system, source_catalog_version,
+/// source_hash)`, so finding an existing row means the loaded catalog is
+/// byte-identical to what is already stored and the refresh has nothing to do.
 async fn stage_import_run(
     transaction: &mut Transaction<'_, Postgres>,
     catalog: &ModelCatalog,
     projection: &OfficialPricingProjection,
-) -> Result<i64, OfficialPricingSyncError> {
+) -> Result<(i64, bool), OfficialPricingSyncError> {
     if let Some(id) = sqlx::query_scalar::<_, i64>(
         "SELECT id FROM pricing_import_run WHERE tenant_id = 0 AND organization_id = 0 AND source_system = $1 AND source_catalog_version = $2 AND source_hash = $3",
     )
@@ -544,7 +769,7 @@ async fn stage_import_run(
     .fetch_optional(&mut **transaction)
     .await?
     {
-        return Ok(id);
+        return Ok((id, false));
     }
     let id = next_cloud_runtime_id("pricing_import_run")?;
     let uuid = stable_uuid(
@@ -571,14 +796,17 @@ async fn stage_import_run(
     .bind(i64::try_from(projection.rates.len()).unwrap_or(i64::MAX))
     .execute(&mut **transaction)
     .await?;
-    Ok(sqlx::query_scalar::<_, i64>(
-        "SELECT id FROM pricing_import_run WHERE tenant_id = 0 AND organization_id = 0 AND source_system = $1 AND source_catalog_version = $2 AND source_hash = $3",
-    )
-    .bind(SOURCE_SYSTEM)
-    .bind(&catalog.manifest.catalog_version)
-    .bind(&projection.source_hash)
-    .fetch_one(&mut **transaction)
-    .await?)
+    Ok((
+        sqlx::query_scalar::<_, i64>(
+            "SELECT id FROM pricing_import_run WHERE tenant_id = 0 AND organization_id = 0 AND source_system = $1 AND source_catalog_version = $2 AND source_hash = $3",
+        )
+        .bind(SOURCE_SYSTEM)
+        .bind(&catalog.manifest.catalog_version)
+        .bind(&projection.source_hash)
+        .fetch_one(&mut **transaction)
+        .await?,
+        true,
+    ))
 }
 
 async fn ensure_price_book(
@@ -600,14 +828,16 @@ async fn ensure_price_book(
     .fetch_optional(&mut **transaction)
     .await?;
     if let Some(existing) = existing {
-        let source_hash = existing.get::<String, _>("source_hash");
-        if source_hash != book.source_hash {
-            return Err(OfficialPricingSyncError::InvalidCatalog(format!(
-                "price book {} version {} changed content hash",
-                book.price_book_code, catalog.manifest.catalog_version
-            )));
+        if existing.get::<String, _>("source_hash") == book.source_hash {
+            return Ok(existing.get("id"));
         }
-        return Ok(existing.get("id"));
+        // sdkwork-models can publish new prices without bumping the catalog
+        // version, and the refresh button must keep working in that case. The
+        // stale book is retired and replaced instead of aborting the run: rates
+        // become mutable again as soon as their book stops being active, and
+        // `uk_pricing_price_book_version` only covers rows that are not
+        // soft-deleted.
+        supersede_stale_price_book(&mut *transaction, existing.get::<i64, _>("id")).await?;
     }
     let id = next_cloud_runtime_id("pricing_price_book")?;
     sqlx::query(
@@ -643,6 +873,48 @@ async fn ensure_price_book(
     .execute(&mut **transaction)
     .await?;
     Ok(id)
+}
+
+/// Retires and soft-deletes one price book whose content no longer matches the
+/// catalog, together with every rate it owns.
+///
+/// Ordering is dictated by two integrity guards: an active book may only become
+/// `retired` (never soft-deleted directly), and rates of an active book are
+/// immutable. Retire first, then the rates become mutable, then the book can be
+/// soft-deleted so a replacement with the same catalog version fits
+/// `uk_pricing_price_book_version`.
+async fn supersede_stale_price_book(
+    transaction: &mut Transaction<'_, Postgres>,
+    price_book_id: i64,
+) -> Result<(), OfficialPricingSyncError> {
+    sqlx::query(
+        r#"UPDATE pricing_price_book
+           SET lifecycle_state = 'retired', updated_at = CURRENT_TIMESTAMP,
+               version = version + 1
+           WHERE id = $1 AND lifecycle_state = 'active' AND deleted_at IS NULL"#,
+    )
+    .bind(price_book_id)
+    .execute(&mut **transaction)
+    .await?;
+    sqlx::query(
+        r#"UPDATE pricing_rate
+           SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP,
+               version = version + 1
+           WHERE price_book_id = $1 AND deleted_at IS NULL"#,
+    )
+    .bind(price_book_id)
+    .execute(&mut **transaction)
+    .await?;
+    sqlx::query(
+        r#"UPDATE pricing_price_book
+           SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP,
+               version = version + 1
+           WHERE id = $1 AND lifecycle_state <> 'active' AND deleted_at IS NULL"#,
+    )
+    .bind(price_book_id)
+    .execute(&mut **transaction)
+    .await?;
+    Ok(())
 }
 
 /// Retires and soft-deletes every previous live version of the given price
@@ -973,7 +1245,66 @@ async fn bootstrap_default_pricing_plans(
 
 #[cfg(test)]
 mod tests {
-    use super::{normalize_price_side, project_catalog};
+    use super::{catalog_availability, normalize_price_side, project_catalog};
+    use crate::infrastructure::sql::model_catalog_import::{
+        model_catalog_key, sdkwork_model_is_publicly_active,
+    };
+
+    #[test]
+    fn catalog_availability_splits_every_model_exactly_once() {
+        let catalog = sdkwork_models::load_bundled_catalog().expect("bundled model catalog");
+        let availability = catalog_availability(&catalog);
+
+        let mut all_keys = std::collections::BTreeSet::new();
+        for vendor in &catalog.vendors {
+            for model in &vendor.models {
+                all_keys.insert(model_catalog_key(&model.vendor_code, &model.model_id));
+            }
+        }
+        assert!(
+            availability
+                .available
+                .is_disjoint(&availability.unavailable),
+            "a catalog key must never be both available and unavailable"
+        );
+        let union = availability
+            .available
+            .union(&availability.unavailable)
+            .count();
+        assert_eq!(union, all_keys.len());
+        assert!(
+            !availability.available.is_empty(),
+            "the bundled catalog must publish at least one model"
+        );
+    }
+
+    #[test]
+    fn catalog_availability_keeps_a_key_live_while_any_region_publishes_it() {
+        let catalog = sdkwork_models::load_bundled_catalog().expect("bundled model catalog");
+        let availability = catalog_availability(&catalog);
+
+        // Deprecation is a per-region decision and one model is priced in many
+        // regions, so an unavailable key must be unavailable everywhere —
+        // otherwise the live region would have promoted it back to available.
+        for key in &availability.unavailable {
+            let any_live = catalog
+                .vendors
+                .iter()
+                .flat_map(|vendor| vendor.models.iter())
+                .any(|model| {
+                    model_catalog_key(&model.vendor_code, &model.model_id) == *key
+                        && sdkwork_model_is_publicly_active(model)
+                });
+            assert!(!any_live, "{key} is live in at least one region");
+        }
+    }
+
+    #[test]
+    fn official_pricing_sync_lock_key_is_stable_and_non_zero() {
+        let key = super::sync_advisory_lock_key();
+        assert_ne!(key, 0);
+        assert_eq!(key, super::sync_advisory_lock_key());
+    }
 
     #[test]
     fn catalog_price_side_aliases_project_to_database_contract_values() {
@@ -1014,10 +1345,17 @@ mod tests {
             .rates
             .iter()
             .all(|rate| !rate.rate_hash.is_empty()));
+        // The bundled catalog is a living data source: sdkwork-models keeps
+        // republishing prices, so assertions must hold for any snapshot and
+        // must not require a specific sample (e.g. an explicitly "unknown"
+        // billability) to exist.
         assert!(projection
             .rates
             .iter()
-            .any(|rate| rate.billability == "unknown"));
+            .all(|rate| matches!(
+                rate.billability.as_str(),
+                "chargeable" | "free" | "not_applicable" | "unknown"
+            )));
         assert!(projection
             .rates
             .iter()
