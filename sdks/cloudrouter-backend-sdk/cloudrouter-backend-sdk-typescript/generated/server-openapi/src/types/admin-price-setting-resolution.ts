@@ -1,23 +1,24 @@
 import type { AdminOfficialRateAnchor } from './admin-official-rate-anchor';
 import type { AdminPricingRule } from './admin-pricing-rule';
 
-/** Server-computed effective customer price for one (resource, region, meter) price setting. Rule selection reuses the shared runtime selector, so the admin preview can never disagree with billing. */
+/** Admin price setting resolution schema exposed by Cloud Router. */
 export interface AdminPriceSettingResolution {
-  /** Currency of the resolved unit price. */
+  /** Currency code field on admin price setting resolution. */
   currencyCode: string;
+  /** Official field on admin price setting resolution. */
   official: AdminOfficialRateAnchor;
-  /** Code of the resolved sales plan. */
+  /** Pricing plan code field on admin price setting resolution. */
   pricingPlanCode: string;
-  /** Sales plan the preview resolved against. */
+  /** Pricing plan id field on admin price setting resolution. */
   pricingPlanId: string;
-  /** Region the official reference resolved in after the fallback chain (requested -> configured default -> global -> any). */
+  /** Region code field on admin price setting resolution. */
   regionCode: string;
-  /** True when the resolved region is not the requested region. */
+  /** Region fallback field on admin price setting resolution. */
   regionFallback: boolean;
-  /** Final single-unit customer price. */
+  /** Resolved unit price field on admin price setting resolution. */
   resolvedUnitPrice: string;
-  /** Winning sales rule under the shared runtime selector; null when no rule matches and the official reference applies. */
+  /** Rule field on admin price setting resolution. */
   rule?: AdminPricingRule;
-  /** Where the resolved price came from. */
+  /** Source field on admin price setting resolution. */
   source: 'rule_override' | 'rule_multiplier_markup' | 'official_reference';
 }

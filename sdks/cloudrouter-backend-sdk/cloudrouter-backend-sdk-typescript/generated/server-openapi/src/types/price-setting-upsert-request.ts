@@ -1,27 +1,27 @@
-/** Create or update the standard sales rule backing one (resource, region, meter) price setting. Scope dimensions are derived server-side from the anchored official rate. */
+/** Price setting upsert request schema exposed by Cloud Router. */
 export interface PriceSettingUpsertRequest {
-  /** Rule window start (ISO 8601); defaults to now for new rules. */
+  /** Effective from field on price setting upsert request. */
   effectiveFrom?: string;
-  /** Rule window end (ISO 8601); null when open-ended. */
+  /** Effective to field on price setting upsert request. */
   effectiveTo?: string;
-  /** Price formula mode. */
+  /** Formula mode field on price setting upsert request. */
   formulaMode: 'multiplier_markup' | 'unit_price_override';
-  /** Fixed per-unit markup amount (multiplier_markup mode; defaults to 0). */
+  /** Markup amount field on price setting upsert request. */
   markupAmount?: string;
-  /** Multiplier applied to the official unit price (multiplier_markup mode; defaults to 1). */
+  /** Multiplier field on price setting upsert request. */
   multiplier?: string;
-  /** Official rate code the edit anchors on; the store derives the six scope dimensions from this row. */
+  /** Official rate code field on price setting upsert request. */
   officialRateCode: string;
-  /** Sales plan the price setting belongs to. */
+  /** Pricing plan id field on price setting upsert request. */
   pricingPlanId: string;
-  /** Rule priority (lower wins; defaults to 100). Serialized as a string per the int64 wire contract. */
+  /** Priority field on price setting upsert request. */
   priority?: string;
-  /** Explicit update target; required for time-window variants. Omit to update (or create) the unconditioned standard rule for the tuple. */
+  /** Rule id field on price setting upsert request. */
   ruleId?: string;
-  /** Time-window schedule (weekly windows plus include/exclude dates); requires ruleId. */
+  /** Schedule field on price setting upsert request. */
   schedule?: { excludeDates: string[]; includeDates: string[]; timeZone: string; weeklyWindows: ({ daysOfWeek: number[]; endDayOffset: 0 | 1; endTime: string; startTime: string; windowCode: string; })[]; } | null;
-  /** Rule status. */
+  /** Status field on price setting upsert request. */
   status?: 'active' | 'inactive';
-  /** Absolute unit price (unit_price_override mode). */
+  /** Unit price override field on price setting upsert request. */
   unitPriceOverride?: string;
 }

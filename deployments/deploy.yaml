@@ -38,6 +38,13 @@ profiles:
         aliases:
           - router-open-test.dtupay.com
           - router-test.dtupay.com
+      - domain: router-admin-test.noaper.com
+        tls: noaper.com
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open-test.noaper.com
+          - router-test.noaper.com
       - domain: router-admin-test.sdkwork.cn
         tls: sdkwork.cn
         mode: web+api
@@ -59,6 +66,13 @@ profiles:
         aliases:
           - router-open-test.dtupay.cn
           - router-test.dtupay.cn
+      - domain: router-admin-test.noaper.cn
+        tls: noaper.cn
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open-test.noaper.cn
+          - router-test.noaper.cn
       - domain: router-admin-test.skubc.com
         tls: skubc.com
         mode: web+api
@@ -158,6 +172,13 @@ profiles:
         aliases:
           - router-open-staging.dtupay.com
           - router-staging.dtupay.com
+      - domain: router-admin-staging.noaper.com
+        tls: noaper.com
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open-staging.noaper.com
+          - router-staging.noaper.com
       - domain: router-admin-staging.sdkwork.cn
         tls: sdkwork.cn
         mode: web+api
@@ -179,6 +200,13 @@ profiles:
         aliases:
           - router-open-staging.dtupay.cn
           - router-staging.dtupay.cn
+      - domain: router-admin-staging.noaper.cn
+        tls: noaper.cn
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open-staging.noaper.cn
+          - router-staging.noaper.cn
       - domain: router-admin-staging.skubc.com
         tls: skubc.com
         mode: web+api
@@ -280,6 +308,13 @@ profiles:
         aliases:
           - router-open.dtupay.com
           - router.dtupay.com
+      - domain: router-admin.noaper.com
+        tls: noaper.com
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open.noaper.com
+          - router.noaper.com
       - domain: router-admin.sdkwork.cn
         tls: sdkwork.cn
         mode: web+api
@@ -301,6 +336,13 @@ profiles:
         aliases:
           - router-open.dtupay.cn
           - router.dtupay.cn
+      - domain: router-admin.noaper.cn
+        tls: noaper.cn
+        mode: web+api
+        web: adaptive
+        aliases:
+          - router-open.noaper.cn
+          - router.noaper.cn
       - domain: router-admin.skubc.com
         tls: skubc.com
         mode: web+api
@@ -405,6 +447,14 @@ profiles:
         aliases:
           - router-open.dtupay.com
           - router.dtupay.com
+      - domain: router-admin.noaper.com
+        tls: noaper.com
+        mode: web+api
+        web: adaptive
+        apiPathStyle: full-prefix
+        aliases:
+          - router-open.noaper.com
+          - router.noaper.com
       - domain: router-admin.sdkwork.cn
         tls: sdkwork.cn
         mode: web+api
@@ -429,6 +479,14 @@ profiles:
         aliases:
           - router-open.dtupay.cn
           - router.dtupay.cn
+      - domain: router-admin.noaper.cn
+        tls: noaper.cn
+        mode: web+api
+        web: adaptive
+        apiPathStyle: full-prefix
+        aliases:
+          - router-open.noaper.cn
+          - router.noaper.cn
       - domain: router-admin.skubc.com
         tls: skubc.com
         mode: web+api

@@ -11445,6 +11445,135 @@
       "write_tables": []
     },
     {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/pricing/official_refresh",
+      "api_surface": "backend",
+      "description": "Re-imports the sdkwork-models catalog and realigns the official prices already stored in the database; models that gained or changed a price are written, models new to the catalog are inserted, and models the catalog deprecated or dropped have their price settings switched off.",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#refreshAdminOfficialPricingRates@/admin/pricing/settings",
+      "kind": "action",
+      "module": "pc-admin-pricing",
+      "openapi_exposed": true,
+      "operation": "refreshAdminOfficialPricingRates",
+      "operation_id": "officialRates.refresh",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "pricing_price_book",
+        "pricing_rate",
+        "pricing_import_run",
+        "cloudrouter_pricing_rule"
+      ],
+      "request_body_required": false,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "OfficialPricingRefreshResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "OfficialPricingRefreshResponse",
+          "properties": {
+            "catalogVersion": {
+              "type": "string"
+            },
+            "changed": {
+              "type": "boolean"
+            },
+            "deprecatedPriceSettingCount": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "mode": {
+              "type": "string"
+            },
+            "modelCount": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "priceBookCount": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "priceCount": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "rateCount": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "removedPriceSettingCount": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "restoredPriceSettingCount": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "snapshotId": {
+              "type": "string"
+            },
+            "source": {
+              "type": "string"
+            },
+            "syncRunId": {
+              "type": "string"
+            },
+            "synced": {
+              "type": "boolean"
+            },
+            "vendorCount": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "synced",
+            "changed",
+            "source",
+            "mode",
+            "catalogVersion",
+            "vendorCount",
+            "modelCount",
+            "priceCount",
+            "priceBookCount",
+            "rateCount",
+            "deprecatedPriceSettingCount",
+            "removedPriceSettingCount",
+            "restoredPriceSettingCount",
+            "snapshotId",
+            "syncRunId"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/pricing/settings",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "pricing",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "tag": "pricing",
+      "write_tables": [
+        "pricing_price_book",
+        "pricing_rate",
+        "pricing_import_run",
+        "cloudrouter_pricing_rule",
+        "ops_audit_log"
+      ]
+    },
+    {
       "api_method": "GET",
       "api_path": "/backend/v3/api/pricing/price_settings/resolve",
       "api_surface": "backend",
@@ -32228,22 +32357,22 @@
       "DELETE": 21,
       "GET": 110,
       "PATCH": 20,
-      "POST": 57,
+      "POST": 58,
       "PUT": 12
     },
     "api_surface_counts": {
       "app": 75,
-      "backend": 145
+      "backend": 146
     },
-    "operation_count": 220,
+    "operation_count": 221,
     "route_scope_counts": {
-      "admin": 145,
+      "admin": 146,
       "console": 31,
       "public": 44
     },
     "sdk_client_counts": {
       "SdkworkAppClient": 75,
-      "SdkworkBackendClient": 145
+      "SdkworkBackendClient": 146
     }
   }
 }

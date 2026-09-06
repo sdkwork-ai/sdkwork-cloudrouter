@@ -1,7 +1,7 @@
 import { backendApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
-import type { AdminDefaultRegionItem, AdminDefaultRegionListResponse, AdminPriceSettingResolution, AdminPricingPlan, AdminPricingPlanListResponse, AdminPricingRule, AdminPricingRuleListResponse, AdminRateCard, AdminRateCardListResponse, OfficialPricingCatalogResponse, OfficialPricingProductCatalogResponse, PriceSettingUpsertRequest, PricingDefaultRegionCreateRequest, PricingPlanCreateRequest, PricingPlanUpdateRequest, PricingRuleCreateRequest, PricingRuleUpdateRequest, RateCardCreateRequest, RateCardUpdateRequest } from '../types';
+import type { AdminDefaultRegionItem, AdminDefaultRegionListResponse, AdminPriceSettingResolution, AdminPricingPlan, AdminPricingPlanListResponse, AdminPricingRule, AdminPricingRuleListResponse, AdminRateCard, AdminRateCardListResponse, OfficialPricingCatalogResponse, OfficialPricingProductCatalogResponse, OfficialPricingRefreshResponse, PriceSettingUpsertRequest, PricingDefaultRegionCreateRequest, PricingPlanCreateRequest, PricingPlanUpdateRequest, PricingRuleCreateRequest, PricingRuleUpdateRequest, RateCardCreateRequest, RateCardUpdateRequest } from '../types';
 
 
 export interface PricingRulesListParams {
@@ -200,6 +200,11 @@ export class PricingOfficialRatesApi {
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
     ]);
     return this.client.request<OfficialPricingCatalogResponse>(appendQueryString(backendApiPath(`/pricing/official_rates`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'page' });
+  }
+
+/** Refresh admin official pricing rates */
+  async refresh(requestOptions?: ApiRequestOptions): Promise<OfficialPricingRefreshResponse> {
+    return this.client.request<OfficialPricingRefreshResponse>(backendApiPath(`/pricing/official_refresh`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, sdkworkUnwrapKind: 'data' });
   }
 }
 

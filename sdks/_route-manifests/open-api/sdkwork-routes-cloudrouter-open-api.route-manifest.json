@@ -324,6 +324,62 @@
       "apiSurface": "open-api"
     },
     {
+      "method": "POST",
+      "path": "/elevenlabs/v1/sound-generation",
+      "operationId": "elevenlabsCreateSoundGeneration",
+      "tags": [
+        "Audio/elevenlabs"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "elevenlabs-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter.ai"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/elevenlabs/v1/text-to-speech/{voice_id}",
+      "operationId": "elevenlabsCreateTextToSpeech",
+      "tags": [
+        "Audio/elevenlabs"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "elevenlabs-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter.ai"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
       "method": "GET",
       "path": "/google/v1beta/cachedContents",
       "operationId": "googleListCachedContents",
@@ -4476,62 +4532,6 @@
       ],
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "volcengine-v1",
-      "auth": {
-        "mode": "api-key-or-dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-cloudrouter",
-        "apiAuthority": "sdkwork-cloudrouter.ai"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "open-api"
-    },
-    {
-      "method": "POST",
-      "path": "/elevenlabs/v1/sound-generation",
-      "operationId": "elevenlabsCreateSoundGeneration",
-      "tags": [
-        "Audio/elevenlabs"
-      ],
-      "x-sdkwork-wire-protocol": "external",
-      "x-sdkwork-external-protocol-id": "elevenlabs-v1",
-      "auth": {
-        "mode": "api-key-or-dual-token",
-        "required": true
-      },
-      "handler": {
-        "module": "crate::routes",
-        "name": null
-      },
-      "ownership": {
-        "owner": "sdkwork-cloudrouter",
-        "apiAuthority": "sdkwork-cloudrouter.ai"
-      },
-      "source": {
-        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
-        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
-      },
-      "requestContext": "WebRequestContext",
-      "apiSurface": "open-api"
-    },
-    {
-      "method": "POST",
-      "path": "/elevenlabs/v1/text-to-speech/{voice_id}",
-      "operationId": "elevenlabsCreateTextToSpeech",
-      "tags": [
-        "Audio/elevenlabs"
-      ],
-      "x-sdkwork-wire-protocol": "external",
-      "x-sdkwork-external-protocol-id": "elevenlabs-v1",
       "auth": {
         "mode": "api-key-or-dual-token",
         "required": true

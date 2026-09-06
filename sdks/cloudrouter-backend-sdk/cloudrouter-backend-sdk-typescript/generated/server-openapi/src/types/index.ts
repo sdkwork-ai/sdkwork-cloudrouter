@@ -125,6 +125,7 @@ export type { OfficialPricingProductVendorFacet } from './official-pricing-produ
 export type { OfficialPricingRate } from './official-pricing-rate';
 export type { OfficialPricingRateCondition } from './official-pricing-rate-condition';
 export type { OfficialPricingRateTier } from './official-pricing-rate-tier';
+export type { OfficialPricingRefreshResponse } from './official-pricing-refresh-response';
 export type { OfficialPricingRegionFacet } from './official-pricing-region-facet';
 export type { OfficialPricingRegionOption } from './official-pricing-region-option';
 export type { OfficialPricingValueFacet } from './official-pricing-value-facet';

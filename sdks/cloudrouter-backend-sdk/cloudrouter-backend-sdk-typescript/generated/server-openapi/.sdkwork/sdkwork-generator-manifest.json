@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "b0bab93c6eefc72d272783d2b852d0324050ffbd24787def1758eaacccd218f5"
+      "sha256": "e683393916105ffd869afe8bcd599a059215d68647b4a8cd04b91d52b3f4b97c"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -76,7 +76,7 @@
     },
     {
       "path": "src/api/pricing.ts",
-      "sha256": "e15524820b57a24fd04e198a7294fde5adeab0cb155d5aab649f8af9ff1d48bf"
+      "sha256": "155a3a7162799c37cf5b889f4ed0af4936ef85d0f52af7cee7bfbd922fb85c60"
     },
     {
       "path": "src/api/recharges.ts",
@@ -212,7 +212,7 @@
     },
     {
       "path": "src/types/admin-price-setting-resolution.ts",
-      "sha256": "a5e227c95f4f6907eb8a0a4e1c771210caf466e2d25316b775fd3d667c689ef3"
+      "sha256": "b0676b2aac0e71b57298059e5ba163a8bcf599e6043a9e868a1d2d6a9fee24aa"
     },
     {
       "path": "src/types/admin-pricing-plan-list-response.ts",
@@ -460,7 +460,7 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "85c4e6829db7a752f1bb9537da2785cc4a1a72243a51ed1ea5b7c8768ec1a4f3"
+      "sha256": "7bbd9320e5b56e96fde48729915d7ef1a57e01ae36fbdb896beed61750626c75"
     },
     {
       "path": "src/types/installation-status-response.ts",
@@ -587,6 +587,10 @@
       "sha256": "2a7aeee03e6a6457f5d6fea4eb0c2deaa3d9efdb2e2f65d15714494d1e2f51b6"
     },
     {
+      "path": "src/types/official-pricing-refresh-response.ts",
+      "sha256": "59dc70f5aae2e9426d25557daddf12ef04a1db724182e16e09f259cec15c6dc8"
+    },
+    {
       "path": "src/types/official-pricing-region-facet.ts",
       "sha256": "4ed941913808528f9eb345f06841da58cada65013bf9077f81dd65f737c75090"
     },
@@ -616,7 +620,7 @@
     },
     {
       "path": "src/types/price-setting-upsert-request.ts",
-      "sha256": "8e306f0fa84aa399684d5a5c057badf76ddc06de3afc77286bec8e157532dcb2"
+      "sha256": "a27ce824f3ddce86a7a23d2d9ecb31ba2b809763a4002e8ae045b655356bbda1"
     },
     {
       "path": "src/types/pricing-default-region-create-request.ts",
