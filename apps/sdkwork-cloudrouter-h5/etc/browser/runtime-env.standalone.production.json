@@ -1,0 +1,32 @@
+{
+  "environment": "production",
+  "deploymentProfile": "standalone",
+  "profileId": "standalone.production",
+  "runtimeTarget": "browser",
+  "browserOriginMode": "same-origin",
+  "cloudApiBaseUrls": [
+    "https://api.sdkwork.com",
+    "https://api.birdcoder.com",
+    "https://api.noaper.com",
+    "https://api.dtupay.com",
+    "https://api.sdkwork.cn",
+    "https://api.birdcoder.cn",
+    "https://api.noaper.cn",
+    "https://api.dtupay.cn",
+    "https://api.skubc.com",
+    "https://api.skubc.cn",
+    "https://api.zowalk.com",
+    "https://api.zowalk.cn",
+    "https://api.offer86.com",
+    "https://api.offer86.cn",
+    "https://api.86offer.com",
+    "https://api.86offer.cn"
+  ],
+  "appApiBaseUrl": "/",
+  "backendApiBaseUrl": "/",
+  "driveAppApiBaseUrl": "/",
+  "appbaseAppApiBaseUrl": "/",
+  "deployAppApiBaseUrl": "/",
+  "openApiBaseUrl": "/",
+  "sdkBaseUrl": "/"
+}

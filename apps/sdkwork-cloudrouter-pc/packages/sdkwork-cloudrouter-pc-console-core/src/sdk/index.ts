@@ -1,4 +1,4 @@
-export { getCloudRouterAppSdkClient } from '@sdkwork/cloudroutes-pc-commons/runtime';
+export { getCloudRouterAppSdkClient, getModelsAppSdkClient } from '@sdkwork/cloudroutes-pc-commons/runtime';
 export type {
   AiUsageLogsListParams,
   AiGatewayTracesListParams,

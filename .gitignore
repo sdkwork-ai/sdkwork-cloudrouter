@@ -152,3 +152,11 @@ scripts/_dbcheck/
 scripts/playground-alignment/
 /bin/
 
+sdks/**/*.js
+sdks/**/*.d.ts
+sdks/**/*.js.map
+sdks/**/*.d.ts.map
+/_tmp_*
+/NUL.*
+
+# Local build artifacts / workspace junk (auto-sync)
