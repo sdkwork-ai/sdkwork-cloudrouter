@@ -1,28 +1,11 @@
-import { isBlank, trim } from './sdkwork-utils.ts';
+import { resolveBaseUrl } from '@sdkwork/sdk-common';
 export { resolveBrowserReachableBaseUrl } from './browser-base-url.ts';
 
-function normalizePrefix(prefix: string): string {
-  const normalized = trim(prefix).replace(/^\/+|\/+$/g, '');
-  return normalized ? `/${normalized}` : '';
-}
-
-function stripTrailingSlash(value: string): string {
-  return value.replace(/\/+$/g, '');
-}
-
-export function normalizeGeneratedSdkBaseUrl(baseUrl: string, apiPrefix: string): string {
-  const trimmedBaseUrl = trim(baseUrl);
-  const normalizedPrefix = normalizePrefix(apiPrefix);
-  if (isBlank(trimmedBaseUrl) || isBlank(normalizedPrefix)) {
-    return trimmedBaseUrl;
-  }
-
-  const withoutTrailingSlash = stripTrailingSlash(trimmedBaseUrl);
-  if (withoutTrailingSlash === normalizedPrefix) {
-    return '';
-  }
-  if (withoutTrailingSlash.endsWith(normalizedPrefix)) {
-    return stripTrailingSlash(withoutTrailingSlash.slice(0, -normalizedPrefix.length));
-  }
-  return withoutTrailingSlash;
+/**
+ * Reduce a generated SDK base url to its bare origin, stripping any sdk-owned
+ * path suffix (e.g. `/app/v3/api`). Delegates to @sdkwork/sdk-common's
+ * resolveBaseUrl normalization, eliminating the self-implemented strip logic.
+ */
+export function normalizeGeneratedSdkBaseUrl(baseUrl: string, _apiPrefix: string): string {
+  return resolveBaseUrl({ baseUrls: [baseUrl] }).url;
 }
