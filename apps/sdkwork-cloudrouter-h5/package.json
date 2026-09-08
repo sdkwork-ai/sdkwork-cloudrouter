@@ -30,6 +30,7 @@
     "build:h5:prod:cloud": "pnpm build:prod:cloud"
   },
   "dependencies": {
+    "@sdkwork/sdk-common": "workspace:*",
     "clsx": "catalog:",
     "lucide-react": "catalog:",
     "react": "catalog:",

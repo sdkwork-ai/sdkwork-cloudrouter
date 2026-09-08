@@ -4,6 +4,8 @@
  * runner before Vite runs; the SPA reads it at runtime.
  */
 
+import { resolveBaseUrl } from '@sdkwork/sdk-common';
+
 export interface RuntimeEnv {
   environment?: string;
   deploymentProfile?: string;
@@ -16,13 +18,6 @@ export interface RuntimeEnv {
 }
 
 let cached: RuntimeEnv | null = null;
-
-/** `a;b;c` origin materialization lists collapse to the first origin. */
-function firstOrigin(value: string | undefined): string {
-  const raw = String(value ?? '').trim();
-  if (!raw) return '';
-  return raw.split(/[;,]/)[0].trim().replace(/\/+$/u, '');
-}
 
 export async function loadRuntimeEnv(): Promise<RuntimeEnv> {
   if (cached) return cached;
@@ -40,12 +35,16 @@ export async function loadRuntimeEnv(): Promise<RuntimeEnv> {
 
 /**
  * Resolve the app API origin for `/app/v3/api/...` calls.
- * - cross-origin (cloud): first materialized appApiBaseUrl origin
+ * - cross-origin (cloud): resolve the materialized appApiBaseUrl list through
+ *   @sdkwork/sdk-common (env + brand + protocol aware), which collapses the
+ *   `;`/`,` candidates to the matched origin.
  * - fallback: same-origin (webserver sidecar proxies /api/)
  */
 export function resolveAppApiOrigin(env: RuntimeEnv): string {
-  const origin = firstOrigin(env.appApiBaseUrl);
-  if (origin) return origin;
+  if (env.appApiBaseUrl) {
+    const resolved = resolveBaseUrl({ baseUrls: [env.appApiBaseUrl] }).url;
+    if (resolved) return resolved;
+  }
   if (typeof window !== 'undefined') return window.location.origin;
   return '';
 }
