@@ -4,7 +4,7 @@
  * runner before Vite runs; the SPA reads it at runtime.
  */
 
-import { resolveBaseUrl } from '@sdkwork/sdk-common';
+import {resolveBaseUrlWithAlignProtocol} from '@sdkwork/sdk-common';
 
 export interface RuntimeEnv {
   environment?: string;
@@ -42,7 +42,7 @@ export async function loadRuntimeEnv(): Promise<RuntimeEnv> {
  */
 export function resolveAppApiOrigin(env: RuntimeEnv): string {
   if (env.appApiBaseUrl) {
-    const resolved = resolveBaseUrl({ baseUrls: [env.appApiBaseUrl] }).url;
+    const resolved = resolveBaseUrlWithAlignProtocol({ baseUrls: [env.appApiBaseUrl] }).url;
     if (resolved) return resolved;
   }
   if (typeof window !== 'undefined') return window.location.origin;
