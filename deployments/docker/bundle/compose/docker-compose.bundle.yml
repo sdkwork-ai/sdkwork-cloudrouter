@@ -94,6 +94,10 @@ x-cloudrouter-common: &cloudrouter-common
     # master key file mounted from the per-environment secrets directory.
     SDKWORK_PAYMENT_CREDENTIAL_MASTER_KEY_FILE: /run/secrets/sdkwork/router/payment-credential-master.key
     RUST_LOG: ${RUST_LOG:-info}
+    # IAM signing master secret (federated feeds IAM resolver): required
+    # outside explicit development IAM deployments. Value lives in the
+    # per-environment env file (SDKWORK_IAM_SIGNING_MASTER_SECRET=...).
+    SDKWORK_IAM_SIGNING_MASTER_SECRET: ${SDKWORK_IAM_SIGNING_MASTER_SECRET:-}
   volumes:
     - cloudrouter-secrets:/etc/sdkwork/router/secrets
     - cloudrouter-data:/var/lib/sdkwork/router

@@ -1,0 +1,15 @@
+[package]
+name = "sdkwork-provider-adapter-tencent-cloud"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+[lib]
+name = "sdkwork_provider_adapter_tencent_cloud"
+
+[dependencies]
+sdkwork-cloudrouter-provider-adapter-contract.workspace = true
+sdkwork-cloudrouter-provider-adapter.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+tokio.workspace = true
