@@ -99,7 +99,7 @@ services:
       # SDKWork service (SOURCE_CONFIG_SPEC): both the IAM API surfaces
       # (sdkwork-iam-web-adapter) and the Cloud Router API surfaces
       # (sdkwork-cloudrouter-http) resolve the same allow-list from it.
-      SDKWORK_CORS_ALLOWED_ORIGINS: ${SDKWORK_CORS_ALLOWED_ORIGINS:-http://testrouterdocker.sdkwork.com,http://testdocker.dtuplay.com,http://testdocker.birdcoder.com,http://localhost:3903,http://127.0.0.1:3903}
+      SDKWORK_CORS_ALLOWED_ORIGINS: ${SDKWORK_CORS_ALLOWED_ORIGINS:-http://testrouterdocker.sdkwork.com,http://testdocker.birdcoder.com,http://localhost:3903,http://127.0.0.1:3903,https://router-dev.sdkwork.com,http://router-dev.sdkwork.com,https://router-dev.birdcoder.com,http://router-dev.birdcoder.com,https://router-dev.dtupay.com,http://router-dev.dtupay.com,https://router-dev.noaper.com,http://router-dev.noaper.com,https://router-dev.sdkwork.cn,http://router-dev.sdkwork.cn,https://router-dev.birdcoder.cn,http://router-dev.birdcoder.cn,https://router-dev.dtupay.cn,http://router-dev.dtupay.cn,https://router-dev.noaper.cn,http://router-dev.noaper.cn,https://router-dev.skubc.com,http://router-dev.skubc.com,https://router-dev.skubc.cn,http://router-dev.skubc.cn,https://router-dev.zowalk.com,http://router-dev.zowalk.com,https://router-dev.zowalk.cn,http://router-dev.zowalk.cn,https://router-dev.offer86.com,http://router-dev.offer86.com,https://router-dev.offer86.cn,http://router-dev.offer86.cn,https://router-dev.86offer.com,http://router-dev.86offer.com,https://router-dev.86offer.cn,http://router-dev.86offer.cn,app://dsh,app://birdcoder,app://sdkwork,app://dtupay,tauri://localhost,https://servicewechat.com}
       # Application public ingress bind: topology-resolved, never hard-coded
       # in source. Container-internal 3900 is the spec default; the host port
       # mapping above keeps it off the `pnpm dev` ports.
@@ -116,7 +116,7 @@ services:
       SDKWORK_DATABASE_SCHEMA: ${CLOUDROUTER_POSTGRES_SCHEMA:-sdkwork_ai_prod}
       SDKWORK_DATABASE_USERNAME: ${CLOUDROUTER_POSTGRES_USER:-sdkwork_ai_prod}
       SDKWORK_DATABASE_PASSWORD: ${CLOUDROUTER_POSTGRES_PASSWORD:-sdkwork_ai_prod}
-      SDKWORK_DATABASE_SSL_MODE: disable
+      SDKWORK_DATABASE_SSL_MODE: ${CLOUDROUTER_DATABASE_SSL_MODE:-disable}
       # Connection pool sizing for high-concurrency workloads. Rule of thumb:
       # max_connections ~= CPU cores x 4 (capped), keep PG server
       # max_connections (PG_MAX_CONNECTIONS) comfortably above it. Tune all of
@@ -133,19 +133,22 @@ services:
       SDKWORK_CLOUDROUTER_REDIS_KEY_PREFIX: cloudrouter
       # Redis connection pool for high-concurrency workloads (tunable via .env).
       SDKWORK_CLOUDROUTER_REDIS_MAX_CONNECTIONS: ${CLOUDROUTER_REDIS_MAX_CONNECTIONS:-50}
-      # API key pepper: injected at runtime, never baked into the image.
-      # Override via .env (CLOUDROUTER_API_KEY_PEPPER); production should use
-      # SDKWORK_CLOUDROUTER_API_KEY_PEPPER_FILE with a mounted secret instead.
-      SDKWORK_CLOUDROUTER_API_KEY_PEPPER: ${CLOUDROUTER_API_KEY_PEPPER:-cloudrouter-local-dev-pepper-change-me}
+      # Runtime secrets are mandatory and per-deployment. Compose refuses to
+      # start when any of them is missing: run
+      # `node scripts/generate-dev-secrets.mjs` once to create `.env`
+      # (git-ignored) with a fresh API-key pepper, upstream credential key
+      # ring, and signing secrets. Never reuse values from another
+      # deployment; the runtime rejects known-default material in
+      # production-like environments (CONFIG_SPEC fail-closed posture).
+      SDKWORK_CLOUDROUTER_API_KEY_PEPPER: ${CLOUDROUTER_API_KEY_PEPPER:?Required. Run: node scripts/generate-dev-secrets.mjs}
       # Upstream credential encryption key ring (camelCase JSON, keys >= 32
-      # bytes) and internal gateway signing secret. Same injection rules as
-      # the pepper above; regenerate the ring for any real deployment.
-      SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING: '{"activeKeyId":"local-dev-key-ring-001","activeKey":"dyfeQDB++uTwSSRGuRju9yHE8iX3wTH+ySmqpjimX6w=","fingerprintKey":"kg/5KOatnHH9XgtbCS16VkjUEQoohdS5miD2U5GhtBc=","decryptionKeys":[]}'
-      SDKWORK_CLOUDROUTER_INTERNAL_GATEWAY_SIGNING_SECRET: ${CLOUDROUTER_INTERNAL_GATEWAY_SIGNING_SECRET:-cloudrouter-local-dev-signing-secret-change-me}
-      # All-in-one runtime secrets (trusted subject, app session, payment
-      # webhook). Local defaults; override via .env for anything real.
-      SDKWORK_CLOUDROUTER_TRUSTED_SUBJECT_SECRET: ${CLOUDROUTER_TRUSTED_SUBJECT_SECRET:-cloudrouter-local-dev-trusted-subject-change-me}
-      SDKWORK_CLOUDROUTER_APP_SESSION_SECRET: ${CLOUDROUTER_APP_SESSION_SECRET:-cloudrouter-local-dev-app-session-change-me}
+      # bytes): encrypts every tenant upstream credential at rest, so it must
+      # be unique per deployment. Production should prefer
+      # SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING_FILE on a mounted secret.
+      SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING: ${CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING:?Required. Run: node scripts/generate-dev-secrets.mjs}
+      SDKWORK_CLOUDROUTER_INTERNAL_GATEWAY_SIGNING_SECRET: ${CLOUDROUTER_INTERNAL_GATEWAY_SIGNING_SECRET:?Required. Run: node scripts/generate-dev-secrets.mjs}
+      SDKWORK_CLOUDROUTER_TRUSTED_SUBJECT_SECRET: ${CLOUDROUTER_TRUSTED_SUBJECT_SECRET:?Required. Run: node scripts/generate-dev-secrets.mjs}
+      SDKWORK_CLOUDROUTER_APP_SESSION_SECRET: ${CLOUDROUTER_APP_SESSION_SECRET:?Required. Run: node scripts/generate-dev-secrets.mjs}
       # Payment sandbox: local/development deployments default to the built-in
       # sandbox provider registry so recharge/checkout flows are exercisable.
       # Set CLOUDROUTER_PAYMENT_SANDBOX=0 (and configure provider secrets) for

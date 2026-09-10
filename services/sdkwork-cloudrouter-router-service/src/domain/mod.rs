@@ -1,5 +1,7 @@
+mod billing_owner;
 mod upstream_auth;
 
+pub use billing_owner::BillingOwnerKind;
 pub use sdkwork_models_catalog_service::domain::ResourceDefinition;
 pub use sdkwork_models_catalog_service::domain::{
     ensure_canonical_model_catalog_key, is_model_region_segment, model_catalog_scope_matches_key,

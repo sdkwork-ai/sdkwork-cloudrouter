@@ -6123,17 +6123,6 @@ test('API router product chain is covered from portal services through SDK and R
     ),
     'utf8',
   );
-  const appGenerationHistorySource = readFileSync(
-    path.join(
-      workspaceRoot,
-      'services',
-      'sdkwork-cloudrouter-router-service',
-      'src',
-      'api',
-      'app_generation_history.rs',
-    ),
-    'utf8',
-  );
   const edgeSmokeSource = readFileSync(
     path.join(workspaceRoot, 'crates', 'sdkwork-cloudrouter-edge-runtime', 'tests', 'edge_server.rs'),
     'utf8',
@@ -6170,18 +6159,6 @@ test('API router product chain is covered from portal services through SDK and R
       rustRoutePath: '/app/v3/api/ai/models',
       edgeSmokePath: '/app/v3/api/ai/models',
       skipOpenApiCheck: true,
-    },
-    {
-      operation: 'fetchGenerationHistory',
-      method: 'GET',
-      manifestPath: '/app/v3/api/ai/generations',
-      manifestSource: 'apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/playgroundService.ts',
-      portalRoute: '/playground',
-      sdkPath: '/generations',
-      rustSource: appGenerationHistorySource,
-      rustRoutePath: '/app/v3/api/ai/generations',
-      edgeSmokePath: '/app/v3/api/ai/generations',
-      skipEdgeSmokeCheck: true,
     },
     {
       operation: 'fetchGroups',

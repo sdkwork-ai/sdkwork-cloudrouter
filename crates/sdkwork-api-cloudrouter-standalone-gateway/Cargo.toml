@@ -2,6 +2,9 @@
 name = "sdkwork-api-cloudrouter-standalone-gateway"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
+[lib]
+name = "sdkwork_api_cloudrouter_standalone_gateway"
 
 [dependencies]
 axum.workspace = true
@@ -17,3 +20,6 @@ serde_json.workspace = true
 tokio.workspace = true
 tower.workspace = true
 tracing.workspace = true
+
+[lints]
+workspace = true

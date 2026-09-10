@@ -1,4 +1,27 @@
 tables:
+- table: iam_gateway_membership
+  domain: iam_gateway
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: gateway-iam-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - worker
+  columns:
+    user_id: int64
+    organization_name_snapshot: string(200)
+    is_primary: int32
+    member_no: string(64)
+    joined_at: instant
+  indexes:
+  - name: idx_iam_gateway_membership_tenant_user_status
+    columns:
+    - tenant_id
+    - user_id
+    - status
+    - deleted_at
+    - organization_id
 - table: iam_gateway_access_policy
   domain: iam_gateway
   profile: tenant_entity

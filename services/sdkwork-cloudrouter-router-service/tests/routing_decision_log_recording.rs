@@ -19,7 +19,8 @@ use sdkwork_cloudrouter_router_service::domain::{
 };
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use sdkwork_cloudrouter_router_service::ports::{
-    RoutingDecisionLogRecorder, RoutingDecisionRecordCommand, RoutingDecisionRecordFuture,
+    ResolvedBillingSubject, RoutingDecisionLogRecorder, RoutingDecisionRecordCommand,
+    RoutingDecisionRecordFuture,
 };
 
 /// Collects recorded decision commands in memory for assertions.
@@ -380,6 +381,7 @@ fn openai_context() -> OpenAiInvocationContext {
         },
         requested_model: "gpt-4o-mini".to_owned(),
         stream: false,
+        billing: ResolvedBillingSubject::personal(),
         request_body: serde_json::json!({"model": "gpt-4o-mini"}),
         request_path: "/v1/chat/completions".to_owned(),
         http_method: "POST".to_owned(),

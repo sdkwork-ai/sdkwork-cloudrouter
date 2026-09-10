@@ -232,10 +232,7 @@ impl AdminUpstreamStore for PostgresAdminUpstreamStore {
         query: AdminUpstreamListQuery,
         account_id: i64,
     ) -> AdminUpstreamFuture<'a, AdminUpstreamPage<AdminUpstreamAccountCredentialItem>> {
-        Box::pin(async move {
-            account::list_credentials(&self.pool, query, account_id, self.secret_codec.as_ref())
-                .await
-        })
+        Box::pin(async move { account::list_credentials(&self.pool, query, account_id).await })
     }
 
     fn create_account_credential<'a>(

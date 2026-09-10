@@ -2,10 +2,12 @@
 name = "sdkwork-cloudrouter-settlements-dashboard-repository-sqlx"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license-file.workspace = true
 description = "SDKWork Cloud Router settlements dashboard read-model SQLx repository"
 
 [lib]
+name = "sdkwork_cloudrouter_settlements_dashboard_repository_sqlx"
 path = "src/lib.rs"
 
 [dependencies]
@@ -15,3 +17,6 @@ sqlx = { workspace = true }
 sdkwork-database-sqlx.workspace = true
 sdkwork_models_catalog_service.workspace = true
 sdkwork-cloudrouter-router-service.workspace = true
+
+[lints]
+workspace = true

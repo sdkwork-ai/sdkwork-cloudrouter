@@ -67,7 +67,7 @@ spec:
               component: standalone
       containers:
         - name: cloudrouter
-          image: ghcr.io/sdkwork-cloudrouter/cloudrouter:0.3.0
+          image: ghcr.io/sdkwork-cloudrouter/cloudrouter:0.4.1
           ports:
             - containerPort: 3900
               name: http
@@ -97,6 +97,14 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.uid
+            # Redis-outage fallback: when the distributed rate limiter degrades
+            # to per-process enforcement, each replica divides the configured
+            # quota by this fleet estimate so the cluster still enforces
+            # roughly the intended limit. Keep it equal to the steady-state
+            # replica count (spec.replicas, currently 2) and update it when
+            # scaling the deployment.
+            - name: SDKWORK_CLOUDROUTER_PROVIDER_RATE_LIMIT_ESTIMATED_INSTANCE_COUNT
+              value: "2"
             # Database, Redis, and runtime secrets are injected by the
             # sdkwork-cloudrouter-config secret (see deployments/kubernetes/
             # README.md). In a real deployment set the split database fields

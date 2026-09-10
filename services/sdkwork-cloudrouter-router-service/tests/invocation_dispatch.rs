@@ -8,10 +8,8 @@ use sdkwork_cloudrouter_router_service::application::{
     InvocationRouteCandidateKind, InvocationRoutePlan, InvocationRouting, InvocationShape,
     InvocationSubject, ResolvedProviderSecret,
 };
-use sdkwork_cloudrouter_router_service::domain::{
-    AiRouteModelRequirement, AiRouteStrategy, BillingMeter, DomainError, DomainResult,
-    ProviderAuthProfile, ProviderRetryPolicy, RoutingCapability,
-};
+use sdkwork_cloudrouter_router_service::domain::{AiRouteModelRequirement, AiRouteStrategy, BillingMeter, DomainError, DomainResult,
+    ProviderAuthProfile, ProviderRetryPolicy, RoutingCapability,};
 use sdkwork_cloudrouter_router_service::ports::{
     InvocationDispatchError, InvocationDispatcher, InvocationDispatcherFuture,
     ProviderAdapterRouteResolver, ProviderSecretResolver,

@@ -24,9 +24,9 @@ use crate::api::openai_relay_execution::{
     OpenAiRouteRelayExecution,
 };
 use crate::api::openai_runtime::{
-    authenticate_api_key, provider_relay_attempt_retry_policy, resolve_openai_upstream_route_plan,
-    route_http_status_is_retryable, OpenAiRouteError, OpenAiRuntimeFailureStrategy,
-    OpenAiRuntimeRouteConfig, ResolvedOpenAiUpstreamRoutePlan,
+    authenticate_api_key, provider_relay_attempt_retry_policy, resolve_billing_subject_or_personal,
+    resolve_openai_upstream_route_plan, route_http_status_is_retryable, OpenAiRouteError,
+    OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig, ResolvedOpenAiUpstreamRoutePlan,
 };
 use crate::api::openai_usage::{
     build_request_trace_command, provider_error_code_from_body, provider_error_message_from_body,
@@ -50,6 +50,8 @@ struct OpenAiEmbeddingsState<C> {
     failure_strategy: OpenAiRuntimeFailureStrategy,
     default_retry_policy: ProviderRetryPolicy,
     region_settings_store: Option<Arc<dyn RuntimeRegionSettingsStore + Send + Sync>>,
+    /// 计费主体解析器（团队计费）；`None` 保持个人主体既有行为。
+    billing_subject_resolver: Option<Arc<dyn crate::ports::BillingSubjectResolver>>,
 }
 
 impl<C> Clone for OpenAiEmbeddingsState<C> {
@@ -64,6 +66,7 @@ impl<C> Clone for OpenAiEmbeddingsState<C> {
             failure_strategy: self.failure_strategy,
             default_retry_policy: self.default_retry_policy.clone(),
             region_settings_store: self.region_settings_store.clone(),
+            billing_subject_resolver: self.billing_subject_resolver.clone(),
         }
     }
 }
@@ -289,6 +292,7 @@ where
             failure_strategy: runtime_config.failure_strategy,
             default_retry_policy: runtime_config.default_retry_policy,
             region_settings_store: runtime_config.region_settings_store.clone(),
+            billing_subject_resolver: runtime_config.billing_subject_resolver.clone(),
         })
 }
 
@@ -331,6 +335,15 @@ where
         Ok(context) => context,
         Err(response) => return *response,
     };
+    let billing_resolution = match resolve_billing_subject_or_personal(
+        state.billing_subject_resolver.as_ref(),
+        &context,
+    )
+    .await
+    {
+        Ok(resolved) => resolved,
+        Err(response) => return *response,
+    };
     let invocation_context = OpenAiInvocationContext::new(
         OpenAiInvocationEndpoint::Embeddings,
         context.clone(),
@@ -339,7 +352,8 @@ where
         request.request_body.clone(),
         &headers,
         &uri,
-    );
+    )
+    .with_billing(billing_resolution);
     if let Err(error) = notify_before_route_selection(&state.plugins, &invocation_context).await {
         record_request_trace(
             state.usage_recorder.as_ref(),
@@ -619,11 +633,9 @@ where
     // terminate the request immediately instead of relaying traffic that
     // cannot be billed; the usage recording phase below only reads the
     // preloaded builder and never re-resolves prices.
-    let prebuilt_usage =
-        match usage_recording {
-            Some(usage_recording) => match usage_recording
-                .prepare_usage_command_builder(invocation_context, route, false)
-            {
+    let prebuilt_usage = match usage_recording {
+        Some(usage_recording) => {
+            match usage_recording.prepare_usage_command_builder(invocation_context, route, false) {
                 Ok(builder) => Some(builder),
                 Err(error) => {
                     let message = format!("pricing preflight failed before relay: {error}");
@@ -649,9 +661,10 @@ where
                     notify_error(plugins, invocation_context, Some(route), &error).await;
                     return Err(RouteRelayFailure::Terminal(error.into_openai_response()));
                 }
-            },
-            None => None,
-        };
+            }
+        }
+        None => None,
+    };
     let started_at = Instant::now();
     let response = match relay
         .create_embedding(EmbeddingsRelayRequest {

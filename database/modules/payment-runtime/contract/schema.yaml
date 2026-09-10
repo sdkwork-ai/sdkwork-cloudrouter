@@ -1,0 +1,242 @@
+schema_version: 1
+kind: sdkwork.database.schema
+database_role: authoritative-server
+module_id: payment-runtime
+contract_version: 0.1.0
+owner_team: sdkwork-cloudrouter
+compliance_level: L2
+engines:
+  - postgres
+table_prefix: commerce_
+tables:
+  - name: commerce_payment_intent
+    lifecycle_status: active
+    owner: sdkwork-cloudrouter
+    domain: payment
+    profile: payment_runtime_entity
+    compliance_level: L2
+    system_of_record: true
+    write_owner: router-service
+    columns:
+      id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL PRIMARY KEY }
+      tenant_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      organization_id: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      owner_user_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      order_id: { type: string(128), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      merchant_order_no: { type: string(128), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      subject: { type: string(256), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      provider: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      supplier_code: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      payment_method: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      scene_code: { type: string(32), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT 'web' }
+      amount: { type: string(32), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      currency_code: { type: string(10), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT 'CNY' }
+      status: { type: string(32), required: true, postgres_type: TEXT, constraints: 'NOT NULL CHECK (status IN (''requires_confirmation'', ''requires_action'', ''processing'', ''succeeded'', ''failed'', ''canceled''))' }
+      request_no: { type: string(128), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      idempotency_key: { type: string(128), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      metadata_json: { type: json_text, required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '{}' }
+      provider_native_json: { type: json_text, required: false, postgres_type: TEXT, constraints: '' }
+      next_action_json: { type: json_text, required: false, postgres_type: TEXT, constraints: '' }
+      captured_amount: { type: string(32), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '0.00' }
+      refunded_amount: { type: string(32), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '0.00' }
+      version: { type: int64, required: true, postgres_type: BIGINT, constraints: NOT NULL DEFAULT 0 }
+      created_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL DEFAULT NOW() }
+      updated_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL DEFAULT NOW() }
+      deleted_at: { type: instant, required: false, postgres_type: TIMESTAMPTZ, constraints: '' }
+    indexes:
+      - ux_commerce_payment_intent_tenant_idempotency UNIQUE (tenant_id, idempotency_key)
+      - idx_commerce_payment_intent_owner (tenant_id, owner_user_id, created_at DESC, id)
+      - idx_commerce_payment_intent_status (tenant_id, status, created_at)
+  - name: commerce_payment_attempt
+    lifecycle_status: active
+    owner: sdkwork-cloudrouter
+    domain: payment
+    profile: payment_runtime_entity
+    compliance_level: L2
+    system_of_record: true
+    write_owner: router-service
+    columns:
+      id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL PRIMARY KEY }
+      tenant_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      organization_id: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      owner_user_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      payment_intent_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      order_id: { type: string(128), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      provider: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      out_trade_no: { type: string(128), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      amount: { type: string(32), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      currency_code: { type: string(10), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT 'CNY' }
+      status: { type: string(32), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT 'requires_confirmation' }
+      callback_payload: { type: json_text, required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '{}' }
+      paid_at: { type: instant, required: false, postgres_type: TIMESTAMPTZ, constraints: '' }
+      created_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL DEFAULT NOW() }
+      updated_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL DEFAULT NOW() }
+    indexes:
+      - idx_commerce_payment_attempt_intent (tenant_id, payment_intent_id)
+      - idx_commerce_payment_attempt_out_trade_no (tenant_id, out_trade_no)
+  - name: commerce_payment_route_decision
+    lifecycle_status: active
+    owner: sdkwork-cloudrouter
+    domain: payment
+    profile: payment_runtime_entity
+    compliance_level: L2
+    system_of_record: true
+    write_owner: router-service
+    columns:
+      id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL PRIMARY KEY }
+      tenant_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      organization_id: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      payment_intent_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      payment_attempt_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      route_rule_id: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      account_id: { type: string(128), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      supplier_code: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      provider_account_id: { type: string(128), required: false, postgres_type: TEXT, constraints: '' }
+      method_code: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      scene_code: { type: string(32), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      country_code: { type: string(8), required: false, postgres_type: TEXT, constraints: '' }
+      currency_code: { type: string(10), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT 'CNY' }
+      amount: { type: string(32), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '0.00' }
+      risk_level: { type: string(16), required: false, postgres_type: TEXT, constraints: '' }
+      decision_reason: { type: string(256), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      fallback_from_account_id: { type: string(128), required: false, postgres_type: TEXT, constraints: '' }
+      created_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL DEFAULT NOW() }
+    indexes:
+      - idx_commerce_payment_route_decision_intent (tenant_id, payment_intent_id)
+  - name: commerce_payment_operation_attempt
+    lifecycle_status: active
+    owner: sdkwork-cloudrouter
+    domain: payment
+    profile: payment_runtime_entity
+    compliance_level: L2
+    system_of_record: true
+    write_owner: router-service
+    columns:
+      id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL PRIMARY KEY }
+      tenant_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      organization_id: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      operation_no: { type: string(128), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      supplier_code: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      provider_account_id: { type: string(128), required: false, postgres_type: TEXT, constraints: '' }
+      account_id: { type: string(128), required: false, postgres_type: TEXT, constraints: '' }
+      operation_code: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      sdkwork_resource_type: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      sdkwork_resource_id: { type: string(128), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      idempotency_key: { type: string(128), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      request_digest: { type: string(256), required: false, postgres_type: TEXT, constraints: '' }
+      response_digest: { type: string(256), required: false, postgres_type: TEXT, constraints: '' }
+      native_request_id: { type: string(128), required: false, postgres_type: TEXT, constraints: '' }
+      native_trade_id: { type: string(128), required: false, postgres_type: TEXT, constraints: '' }
+      native_refund_id: { type: string(128), required: false, postgres_type: TEXT, constraints: '' }
+      http_status: { type: int32, required: false, postgres_type: INTEGER, constraints: '' }
+      provider_error_code: { type: string(128), required: false, postgres_type: TEXT, constraints: '' }
+      provider_error_message: { type: string(1024), required: false, postgres_type: TEXT, constraints: '' }
+      retryable: { type: boolean, required: true, postgres_type: BOOLEAN, constraints: NOT NULL DEFAULT FALSE }
+      status: { type: string(32), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT 'PENDING' }
+      started_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL }
+      completed_at: { type: instant, required: false, postgres_type: TIMESTAMPTZ, constraints: '' }
+      created_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL DEFAULT NOW() }
+    indexes:
+      - idx_commerce_payment_operation_attempt_no (tenant_id, operation_no)
+      - idx_commerce_payment_operation_attempt_resource (tenant_id, sdkwork_resource_type, sdkwork_resource_id)
+  - name: commerce_refund
+    lifecycle_status: active
+    owner: sdkwork-cloudrouter
+    domain: payment
+    profile: payment_runtime_entity
+    compliance_level: L2
+    system_of_record: true
+    write_owner: router-service
+    columns:
+      id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL PRIMARY KEY }
+      tenant_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      organization_id: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      payment_intent_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      payment_attempt_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      refund_no: { type: string(128), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      amount: { type: string(32), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      currency_code: { type: string(10), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT 'CNY' }
+      supplier_code: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      reason: { type: string(256), required: false, postgres_type: TEXT, constraints: '' }
+      status: { type: string(32), required: true, postgres_type: TEXT, constraints: 'NOT NULL CHECK (status IN (''pending'', ''processing'', ''succeeded'', ''failed'', ''canceled''))' }
+      request_no: { type: string(128), required: false, postgres_type: TEXT, constraints: '' }
+      idempotency_key: { type: string(128), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      version: { type: int64, required: true, postgres_type: BIGINT, constraints: NOT NULL DEFAULT 0 }
+      created_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL DEFAULT NOW() }
+      updated_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL DEFAULT NOW() }
+      deleted_at: { type: instant, required: false, postgres_type: TIMESTAMPTZ, constraints: '' }
+    indexes:
+      - ux_commerce_refund_tenant_idempotency UNIQUE (tenant_id, idempotency_key)
+      - idx_commerce_refund_intent_active (tenant_id, payment_intent_id, status)
+      - idx_commerce_refund_claim (tenant_id, status, created_at)
+  - name: commerce_refund_attempt
+    lifecycle_status: active
+    owner: sdkwork-cloudrouter
+    domain: payment
+    profile: payment_runtime_entity
+    compliance_level: L2
+    system_of_record: true
+    write_owner: router-service
+    columns:
+      id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL PRIMARY KEY }
+      tenant_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      organization_id: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      refund_attempt_no: { type: string(128), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      refund_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      supplier_code: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      provider_account_id: { type: string(128), required: false, postgres_type: TEXT, constraints: '' }
+      out_refund_no: { type: string(128), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      provider_refund_id: { type: string(128), required: false, postgres_type: TEXT, constraints: '' }
+      amount: { type: string(32), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '0.00' }
+      currency_code: { type: string(10), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT 'CNY' }
+      status: { type: string(32), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT 'RECEIVED' }
+      failure_code: { type: string(128), required: false, postgres_type: TEXT, constraints: '' }
+      failure_message: { type: string(1024), required: false, postgres_type: TEXT, constraints: '' }
+      submitted_at: { type: instant, required: false, postgres_type: TIMESTAMPTZ, constraints: '' }
+      succeeded_at: { type: instant, required: false, postgres_type: TIMESTAMPTZ, constraints: '' }
+      failed_at: { type: instant, required: false, postgres_type: TIMESTAMPTZ, constraints: '' }
+      created_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL DEFAULT NOW() }
+      updated_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL DEFAULT NOW() }
+    indexes:
+      - idx_commerce_refund_attempt_refund (tenant_id, refund_id)
+  - name: commerce_refund_item
+    lifecycle_status: active
+    owner: sdkwork-cloudrouter
+    domain: payment
+    profile: payment_runtime_entity
+    compliance_level: L2
+    system_of_record: true
+    write_owner: router-service
+    columns:
+      id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL PRIMARY KEY }
+      tenant_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      organization_id: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      refund_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      order_item_id: { type: string(128), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '' }
+      quantity: { type: int32, required: true, postgres_type: INTEGER, constraints: NOT NULL DEFAULT 0 }
+      refund_amount: { type: string(32), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '0.00' }
+      tax_refund_amount: { type: string(32), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '0.00' }
+      shipping_refund_amount: { type: string(32), required: true, postgres_type: TEXT, constraints: NOT NULL DEFAULT '0.00' }
+      created_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL DEFAULT NOW() }
+    indexes:
+      - idx_commerce_refund_item_refund (tenant_id, refund_id)
+  - name: commerce_refund_event
+    lifecycle_status: active
+    owner: sdkwork-cloudrouter
+    domain: payment
+    profile: payment_runtime_entity
+    compliance_level: L2
+    system_of_record: true
+    write_owner: router-service
+    columns:
+      id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL PRIMARY KEY }
+      tenant_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      organization_id: { type: string(64), required: false, postgres_type: TEXT, constraints: '' }
+      refund_id: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      event_type: { type: string(64), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      from_status: { type: string(32), required: false, postgres_type: TEXT, constraints: '' }
+      to_status: { type: string(32), required: true, postgres_type: TEXT, constraints: NOT NULL }
+      reason: { type: string(256), required: false, postgres_type: TEXT, constraints: '' }
+      created_at: { type: instant, required: true, postgres_type: TIMESTAMPTZ, constraints: NOT NULL DEFAULT NOW() }
+    indexes:
+      - idx_commerce_refund_event_refund (tenant_id, refund_id, created_at DESC)

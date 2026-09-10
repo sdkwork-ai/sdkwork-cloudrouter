@@ -382,6 +382,13 @@ function maskDeepLinkSecrets(link: string): string {
  * keys can resolve different account groups, so the available models are
  * key-specific. Returns an empty list when the key has no plaintext value or
  * the endpoint is unavailable.
+ *
+ * Boundary exception (APP_SDK_INTEGRATION): this probe intentionally bypasses
+ * `@sdkwork/cloudrouter-app-sdk`. The generated SDK is bound to the platform
+ * base URL and IAM session auth, while this call exercises the public
+ * OpenAI-compatible gateway surface with a customer-scoped `sk-` key exactly
+ * as an external client would. It is a connectivity/entitlement probe, not a
+ * management-plane API call.
  */
 export async function fetchGatewayModelList(rawKey: string): Promise<string[]> {
   if (!rawKey) {
@@ -410,7 +417,8 @@ export async function fetchGatewayModelList(rawKey: string): Promise<string[]> {
           : ''
       ))
       .filter((id) => id.length > 0);
-  } catch {
+  } catch (error) {
+    console.warn('[quick-import] gateway model probe failed; continuing with an empty list', error);
     return [];
   }
 }

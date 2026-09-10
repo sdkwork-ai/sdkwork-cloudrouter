@@ -8,12 +8,10 @@ use sdkwork_cloudrouter_router_service::application::{
     PricingFinalizationInterceptor, PricingPreflightInterceptor, PricingSettlementInterceptor,
     ResourceType,
 };
-use sdkwork_cloudrouter_router_service::domain::{
-    AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
+use sdkwork_cloudrouter_router_service::domain::{AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
     ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, PricingRateCondition,
     PricingRateMetadata, PricingRateVariant, ProviderAuthProfile, RoutingCapability,
-    UpstreamAccountGroup, UpstreamAccountRoute,
-};
+    UpstreamAccountGroup, UpstreamAccountRoute,};
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use sdkwork_cloudrouter_router_service::ports::GatewayUsageQuantity;
 use serde_json::json;
@@ -574,7 +572,9 @@ async fn pricing_preflight_fails_closed_when_no_official_price_exists() {
         "unexpected preflight error: {error:?}"
     );
     assert!(
-        error.message.contains("refusing to dispatch billable traffic"),
+        error
+            .message
+            .contains("refusing to dispatch billable traffic"),
         "unexpected preflight error: {error:?}"
     );
 }
@@ -910,15 +910,13 @@ async fn finalization_rates_adapter_usage_through_price_service() {
     // AdapterUsageLines billing requires complete pricing for ApiResult AND
     // ApiItem meters (fail-closed preflight), so the catalog must carry an
     // ApiItem rate for the preflight to pass.
-    catalog.add_price(
-        ModelPrice::new_for_catalog_key(
-            "openai/gpt-4o-mini",
-            "gpt-4o-mini",
-            PriceSide::OfficialReference,
-            BillingMeter::ApiItem,
-            Money::usd("0.002000").unwrap(),
-        ),
-    );
+    catalog.add_price(ModelPrice::new_for_catalog_key(
+        "openai/gpt-4o-mini",
+        "gpt-4o-mini",
+        PriceSide::OfficialReference,
+        BillingMeter::ApiItem,
+        Money::usd("0.002000").unwrap(),
+    ));
     catalog.add_price(
         ModelPrice::new_for_catalog_key(
             "openai/gpt-4o-mini",

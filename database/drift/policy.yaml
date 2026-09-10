@@ -19,15 +19,13 @@ rules:
     - "flyway_schema_history"
 
   # Columns excluded from drift comparison (table.column notation).
-  ignoreColumns:
-    # Partitioned tables: default partitions are managed by retention jobs.
-    - "ai_request_trace_default.*"
-    - "ai_routing_decision_log_default.*"
-    - "ai_usage_default.*"
-    - "ai_usage_default.*"
-    - "ops_audit_log_default.*"
-    - "ops_gateway_heartbeat_default.*"
-    - "iam_user_login_event_default.*"
+  ignoreColumns: []
+    # NOTE: historical entries referenced `_default` partition columns of
+    # pre-rename tables (`ai_request_trace`, `ai_usage`) and partition
+    # strategies that were never implemented. Growth on the hot tables is
+    # governed by the retention purge jobs (`usage_retention_store`) instead
+    # of declarative partitioning; re-add ignoreColumns only when a real
+    # partition strategy lands.
 
   # Indexes excluded from drift comparison (auto-created by query planner).
   ignoreIndexes: []

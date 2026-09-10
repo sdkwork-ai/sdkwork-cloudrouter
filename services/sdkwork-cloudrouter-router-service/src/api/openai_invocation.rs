@@ -1,3 +1,4 @@
+use crate::ports::ResolvedBillingSubject;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -47,6 +48,8 @@ pub enum OpenAiInvocationEndpoint {
 pub struct OpenAiInvocationContext {
     pub endpoint: OpenAiInvocationEndpoint,
     pub api_key_context: AuthenticatedApiKeyContext,
+    /// 计费主体解析结果（鉴权后由 BillingSubjectResolver 填充）。
+    pub billing: ResolvedBillingSubject,
     pub requested_model: String,
     pub stream: bool,
     pub request_body: Value,
@@ -71,6 +74,8 @@ impl OpenAiInvocationContext {
         Self {
             endpoint,
             api_key_context,
+            // 未接入计费解析的组合保持个人主体（既有行为）。
+            billing: ResolvedBillingSubject::personal(),
             requested_model: requested_model.into(),
             stream,
             request_body,
@@ -82,6 +87,12 @@ impl OpenAiInvocationContext {
                 .and_then(|value| normalize_user_agent_header(value.as_str())),
             client_ip: forwarded_client_ip(headers),
         }
+    }
+
+    /// 填充计费主体解析结果（链式）。
+    pub fn with_billing(mut self, billing: ResolvedBillingSubject) -> Self {
+        self.billing = billing;
+        self
     }
 }
 

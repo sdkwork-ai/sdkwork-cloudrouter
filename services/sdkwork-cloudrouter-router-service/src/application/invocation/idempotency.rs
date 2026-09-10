@@ -7,6 +7,9 @@ use sdkwork_cloudrouter_config::RedisConfig;
 use sdkwork_utils_rust::{sha256_hash, uuid};
 use serde::{Deserialize, Serialize};
 
+#[cfg(test)]
+use crate::domain::BillingOwnerKind;
+
 use super::{
     DispatchMode, Invocation, InvocationAuthType, InvocationBody, InvocationDispatchResponse,
     InvocationError, InvocationErrorKind, InvocationFuture, InvocationInterceptor, InvocationShape,
@@ -1167,6 +1170,8 @@ mod tests {
                 tenant_id,
                 organization_id,
                 user_id,
+                billing_organization_id: 0,
+                billing_owner: BillingOwnerKind::Personal,
                 account_group_id: Some(10),
                 account_group_code: Some("standard".to_owned()),
                 pricing_plan_code: Some("standard".to_owned()),

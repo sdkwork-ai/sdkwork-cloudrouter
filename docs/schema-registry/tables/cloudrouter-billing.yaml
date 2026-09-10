@@ -269,6 +269,9 @@ tables:
     charged_at: { type: instant, constraints: NOT NULL }
     settlement_id: int64
     settled_at: instant
+    debit_points: int64
+    original_currency_amount: decimal
+    original_currency_code: string(10)
   unique_constraints:
   - { name: uk_cloudrouter_charge_line_scope_id, columns: [tenant_id, organization_id, id] }
   - { name: uk_cloudrouter_charge_line_idempotency, columns: [tenant_id, organization_id, idempotency_key] }

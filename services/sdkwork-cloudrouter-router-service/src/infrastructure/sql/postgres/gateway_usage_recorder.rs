@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use sha2::{Digest, Sha256};
 use sqlx::{PgConnection, PgPool};
 
-use crate::domain::{DecimalValue, DomainError};
+use crate::domain::{BillingOwnerKind, DecimalValue, DomainError};
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
@@ -12,7 +12,14 @@ use crate::ports::{
     GatewayUsageRecorder,
 };
 
-const OWNER_TYPE_USER: i64 = 1;
+/// usage 归因 owner_id：个人主体 = 实际成员 user_id；组织主体 = 团队 org id。
+fn usage_owner_id(billing_owner: BillingOwnerKind, user_id: i64, organization_id: i64) -> i64 {
+    match billing_owner {
+        BillingOwnerKind::Personal => user_id,
+        BillingOwnerKind::Organization => organization_id,
+    }
+}
+
 const SETTLEMENT_PENDING: i64 = 0;
 
 const UPSERT_TRACE: &str = r#"
@@ -26,13 +33,13 @@ INSERT INTO ai_metering_request_trace
      region_code, endpoint, request_path, http_method, http_status, started_at, ended_at, streaming,
      prompt_tokens, cached_tokens, completion_tokens, total_tokens, latency_ms, ttft_ms,
      provider_error_code, error_type, error_message_masked, metadata, user_agent_hash,
-     client_ip_masked)
+     client_ip_masked, owner_name_snapshot)
 VALUES
     ($1, $2, $3, $4, $5, $6, $7, 1, 1, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
      $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28,
      to_timestamp($29::double precision / 1000.0),
      to_timestamp($30::double precision / 1000.0),
-     $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41::jsonb, $42, $43)
+     $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41::jsonb, $42, $43, $44)
 ON CONFLICT (tenant_id, organization_id, request_id, attempt_no) DO UPDATE SET
     trace_id = excluded.trace_id,
     api_key_id = excluded.api_key_id,
@@ -69,7 +76,8 @@ ON CONFLICT (tenant_id, organization_id, request_id, attempt_no) DO UPDATE SET
     error_message_masked = excluded.error_message_masked,
     metadata = excluded.metadata,
     user_agent_hash = excluded.user_agent_hash,
-    client_ip_masked = COALESCE(ai_metering_request_trace.client_ip_masked, excluded.client_ip_masked)
+    client_ip_masked = COALESCE(ai_metering_request_trace.client_ip_masked, excluded.client_ip_masked),
+    owner_name_snapshot = excluded.owner_name_snapshot
 WHERE NOT EXISTS (
     SELECT 1
     FROM ai_metering_usage settled_usage
@@ -138,6 +146,7 @@ ON CONFLICT (tenant_id, organization_id, request_id, usage_type) DO UPDATE SET
     currency = excluded.currency,
     pricing_plan_code = excluded.pricing_plan_code,
     pricing_snapshot = excluded.pricing_snapshot,
+    owner_name_snapshot = excluded.owner_name_snapshot,
     idempotency_key = excluded.idempotency_key,
     occurred_at = excluded.occurred_at,
     settlement_status = excluded.settlement_status,
@@ -623,8 +632,12 @@ async fn upsert_trace(
         .bind(&command.api_key_name_snapshot)
         .bind(command.account_group_id)
         .bind(&command.upstream_account_group_snapshot)
-        .bind(OWNER_TYPE_USER)
-        .bind(command.user_id)
+        .bind(command.billing_owner.usage_owner_type())
+        .bind(usage_owner_id(
+            command.billing_owner,
+            command.user_id,
+            command.organization_id,
+        ))
         .bind(command.account_id)
         .bind(Option::<&str>::None)
         .bind(&command.requested_model)
@@ -655,6 +668,7 @@ async fn upsert_trace(
         .bind(&metadata)
         .bind(context.user_agent_hash.as_deref())
         .bind(command.client_ip.as_deref())
+        .bind(command.billing_owner_name.as_deref())
         .execute(&mut *connection)
         .await
         .map_err(|error| store_error("failed to upsert gateway request trace", error))?;
@@ -678,8 +692,12 @@ async fn upsert_usage_fact(
         .bind(&command.api_key_name_snapshot)
         .bind(command.account_group_id)
         .bind(&command.upstream_account_group_snapshot)
-        .bind(OWNER_TYPE_USER)
-        .bind(command.user_id)
+        .bind(command.billing_owner.usage_owner_type())
+        .bind(usage_owner_id(
+            command.billing_owner,
+            command.user_id,
+            command.organization_id,
+        ))
         .bind(&command.catalog_key)
         .bind(&command.requested_model_catalog_key)
         .bind(&command.requested_model)
@@ -716,6 +734,7 @@ async fn upsert_usage_fact(
         .bind(SETTLEMENT_PENDING)
         .bind(usage_idempotency_key(command))
         .bind(command_debit_points(command))
+        .bind(command.billing_owner_name.as_deref())
         .execute(&mut *connection)
         .await
         .map_err(|error| store_error("failed to upsert gateway usage fact", error))?;
@@ -1440,6 +1459,8 @@ mod tests {
                 tenant_id: 1,
                 organization_id: 1,
                 user_id: 1,
+                billing_owner: BillingOwnerKind::Personal,
+                billing_owner_name: None,
                 api_key_id: 1,
                 api_key_name_snapshot: String::new(),
                 account_group_id: 1,

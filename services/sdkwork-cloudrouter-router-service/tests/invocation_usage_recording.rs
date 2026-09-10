@@ -9,9 +9,7 @@ use sdkwork_cloudrouter_router_service::application::{
     InvocationUsageLine, ResourceType, ResponseNormalizationInterceptor, TraceTelemetryInterceptor,
     UsageRecordingInterceptor,
 };
-use sdkwork_cloudrouter_router_service::domain::{
-    AiRouteModelRequirement, BillingMeter, DomainError, RoutingCapability,
-};
+use sdkwork_cloudrouter_router_service::domain::{BillingOwnerKind, AiRouteModelRequirement, BillingMeter, DomainError, RoutingCapability,};
 use sdkwork_cloudrouter_router_service::ports::{
     GatewayOfficialRateReference, GatewayRequestTraceCommand, GatewayUsageQuantity,
     GatewayUsageRecordCommand, GatewayUsageRecordFuture, GatewayUsageRecorder,
@@ -276,6 +274,8 @@ fn usage_command() -> GatewayUsageRecordCommand {
         tenant_id: 100001,
         organization_id: 0,
         user_id: 30,
+        billing_owner: BillingOwnerKind::Personal,
+        billing_owner_name: None,
         api_key_id: 101,
         api_key_name_snapshot: "Owner Usage Key".to_owned(),
         account_group_id: 10,

@@ -1,3 +1,7 @@
+import {
+  readMediaResourceUrl,
+  toNullableExternalUrlMediaResource,
+} from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -45,13 +49,17 @@ function splitTags(value: string): string[] {
     .filter((entry) => entry.length > 0);
 }
 
+function toMediaResourceUrl(value: unknown): string {
+  return typeof value === 'string' ? value : readMediaResourceUrl(value);
+}
+
 export function CircleDrawerForm({ mode, initialValue, onSubmit }: CircleDrawerFormProps) {
   const { t } = useTranslation();
   const [slug, setSlug] = useState(initialValue?.slug ?? '');
   const [title, setTitle] = useState(initialValue?.title ?? '');
   const [description, setDescription] = useState(initialValue?.description ?? '');
-  const [coverImage, setCoverImage] = useState(initialValue?.coverImage ?? '');
-  const [avatar, setAvatar] = useState(initialValue?.avatar ?? '');
+  const [coverImage, setCoverImage] = useState(toMediaResourceUrl(initialValue?.coverImage));
+  const [avatar, setAvatar] = useState(toMediaResourceUrl(initialValue?.avatar));
   const [priority, setPriority] = useState(initialValue ? String(initialValue.priority) : '0');
   const [enabled, setEnabled] = useState<'' | 'true' | 'false'>(
     initialValue == null ? 'true' : initialValue.enabled ? 'true' : 'false',
@@ -82,8 +90,8 @@ export function CircleDrawerForm({ mode, initialValue, onSubmit }: CircleDrawerF
       const circle: CommunityAdminCircleUpdateInput = {
         title: title.trim(),
         description: description.trim() || undefined,
-        coverImage: coverImage.trim() || undefined,
-        avatar: avatar.trim() || undefined,
+        coverImage: toNullableExternalUrlMediaResource(coverImage.trim()) ?? undefined,
+        avatar: toNullableExternalUrlMediaResource(avatar.trim()) ?? undefined,
         isPaid: isPaid === '' ? undefined : isPaid === 'true',
         memberLimit: parseOptionalNonNegativeInt(memberLimit, undefined),
         price: parseOptionalMoney(price),

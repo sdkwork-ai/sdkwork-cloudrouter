@@ -1,20 +1,23 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_cloudrouter_router_service::application::{
-    default_payment_provider_registry, EntityUuidGenerator, InMemoryPaymentIntentRuntimeStore,
-    PaymentAdapterFuture, PaymentAdapterOperation, PaymentCancelPaymentIntentRequest,
-    PaymentCancelRefundRequest, PaymentCapturePaymentIntentRequest,
-    PaymentConfirmPaymentIntentRequest, PaymentCreateIntentRequest, PaymentCreateRefundRequest,
-    PaymentDownloadStatementRequest, PaymentNativeOperationOutcome, PaymentNativeOperationRequest,
-    PaymentNormalizeWebhookRequest, PaymentNormalizedWebhookEvent, PaymentParseStatementRequest,
+    default_payment_provider_registry, EntityUuidGenerator, PaymentAdapterFuture,
+    PaymentAdapterOperation, PaymentCancelPaymentIntentRequest, PaymentCancelRefundRequest,
+    PaymentCapturePaymentIntentRequest, PaymentConfirmPaymentIntentRequest,
+    PaymentCreateIntentRequest, PaymentCreateRefundRequest, PaymentDownloadStatementRequest,
+    PaymentIntentRuntimeRecord, PaymentIntentRuntimeStore, PaymentIntentRuntimeStoreFuture,
+    PaymentIntentStatus, PaymentNativeOperationOutcome, PaymentNativeOperationRequest, PaymentNormalizeWebhookRequest,
+    PaymentNormalizedWebhookEvent, PaymentOperationAttemptRecord, PaymentParseStatementRequest,
     PaymentProviderAdapter, PaymentProviderCapabilities, PaymentProviderOperationOutcome,
     PaymentProviderRegistry, PaymentProviderRegistryError, PaymentQueryRefundRequest,
-    PaymentStatementDownloadOutcome, PaymentStatementParseOutcome, PaymentVerifyWebhookRequest,
-    PaymentWebhookVerificationOutcome,
+    PaymentRefundAttemptRecord, PaymentRefundEventRecord, PaymentRefundItemRecord,
+    PaymentRefundRuntimeRecord, PaymentRefundRuntimeStore, PaymentRefundRuntimeStoreFuture,
+    PaymentRefundStatus, PaymentRouteDecisionRecord, PaymentStatementDownloadOutcome,
+    PaymentStatementParseOutcome, PaymentVerifyWebhookRequest, PaymentWebhookVerificationOutcome,
 };
-use sdkwork_cloudrouter_router_service::domain::DomainResult;
+use sdkwork_cloudrouter_router_service::domain::{DomainError, DomainResult};
 use serde_json::json;
 use tower::ServiceExt;
 
@@ -1004,4 +1007,274 @@ fn fake_unsupported<T>(
             operation,
         })
     })
+}
+
+#[derive(Default, Clone)]
+struct InMemoryPaymentIntentRuntimeStore {
+    state: Arc<Mutex<InMemoryPaymentIntentRuntimeState>>,
+}
+
+#[derive(Default)]
+struct InMemoryPaymentIntentRuntimeState {
+    payment_intents: Vec<PaymentIntentRuntimeRecord>,
+    route_decisions: Vec<PaymentRouteDecisionRecord>,
+    operation_attempts: Vec<PaymentOperationAttemptRecord>,
+    refunds: Vec<PaymentRefundRuntimeRecord>,
+    refund_items: Vec<PaymentRefundItemRecord>,
+    refund_attempts: Vec<PaymentRefundAttemptRecord>,
+    refund_events: Vec<PaymentRefundEventRecord>,
+}
+
+impl InMemoryPaymentIntentRuntimeStore {
+    fn payment_intents(&self) -> Vec<PaymentIntentRuntimeRecord> {
+        self.state.lock().unwrap().payment_intents.clone()
+    }
+
+    pub fn route_decisions(&self) -> Vec<PaymentRouteDecisionRecord> {
+        self.state.lock().unwrap().route_decisions.clone()
+    }
+
+    pub fn operation_attempts(&self) -> Vec<PaymentOperationAttemptRecord> {
+        self.state.lock().unwrap().operation_attempts.clone()
+    }
+
+    pub fn refunds(&self) -> Vec<PaymentRefundRuntimeRecord> {
+        self.state.lock().unwrap().refunds.clone()
+    }
+
+    pub fn refund_items(&self) -> Vec<PaymentRefundItemRecord> {
+        self.state.lock().unwrap().refund_items.clone()
+    }
+
+    pub fn refund_attempts(&self) -> Vec<PaymentRefundAttemptRecord> {
+        self.state.lock().unwrap().refund_attempts.clone()
+    }
+
+    pub fn refund_events(&self) -> Vec<PaymentRefundEventRecord> {
+        self.state.lock().unwrap().refund_events.clone()
+    }
+}
+
+impl PaymentIntentRuntimeStore for InMemoryPaymentIntentRuntimeStore {
+    fn load_by_idempotency(
+        &self,
+        tenant_id: String,
+        idempotency_key: String,
+    ) -> PaymentIntentRuntimeStoreFuture<'_, Option<PaymentIntentRuntimeRecord>> {
+        let state = self.state.clone();
+        Box::pin(async move {
+            Ok(state
+                .lock()
+                .unwrap()
+                .payment_intents
+                .iter()
+                .find(|intent| {
+                    intent.tenant_id == tenant_id && intent.idempotency_key == idempotency_key
+                })
+                .cloned())
+        })
+    }
+
+    fn load_by_id(
+        &self,
+        tenant_id: String,
+        id: String,
+    ) -> PaymentIntentRuntimeStoreFuture<'_, Option<PaymentIntentRuntimeRecord>> {
+        let state = self.state.clone();
+        Box::pin(async move {
+            Ok(state
+                .lock()
+                .unwrap()
+                .payment_intents
+                .iter()
+                .find(|intent| intent.tenant_id == tenant_id && intent.id == id)
+                .cloned())
+        })
+    }
+
+    fn insert_payment_intent(
+        &self,
+        intent: PaymentIntentRuntimeRecord,
+        route_decision: PaymentRouteDecisionRecord,
+    ) -> PaymentIntentRuntimeStoreFuture<'_, PaymentIntentRuntimeRecord> {
+        let state = self.state.clone();
+        Box::pin(async move {
+            let mut state = state.lock().unwrap();
+            state.route_decisions.push(route_decision);
+            state.payment_intents.push(intent.clone());
+            Ok(intent)
+        })
+    }
+
+    fn record_intent_provider_dispatch(
+        &self,
+        tenant_id: String,
+        intent_id: String,
+        status: PaymentIntentStatus,
+        next_action_json: Option<String>,
+        updated_at: String,
+    ) -> PaymentIntentRuntimeStoreFuture<'_, ()> {
+        let state = self.state.clone();
+        Box::pin(async move {
+            let mut state = state.lock().unwrap();
+            let intent = state
+                .payment_intents
+                .iter_mut()
+                .find(|intent| intent.tenant_id == tenant_id && intent.id == intent_id)
+                .ok_or_else(|| DomainError::not_found("payment intent was not found"))?;
+            intent.status = status;
+            intent.updated_at = updated_at;
+            let _ = next_action_json;
+            Ok(())
+        })
+    }
+
+    fn insert_operation_attempt(
+        &self,
+        attempt: PaymentOperationAttemptRecord,
+    ) -> PaymentIntentRuntimeStoreFuture<'_, PaymentOperationAttemptRecord> {
+        let state = self.state.clone();
+        Box::pin(async move {
+            state
+                .lock()
+                .unwrap()
+                .operation_attempts
+                .push(attempt.clone());
+            Ok(attempt)
+        })
+    }
+
+    fn finish_operation_attempt(
+        &self,
+        id: String,
+        status: String,
+        response_digest: Option<String>,
+        provider_error_code: Option<String>,
+        provider_error_message: Option<String>,
+        completed_at: String,
+    ) -> PaymentIntentRuntimeStoreFuture<'_, PaymentOperationAttemptRecord> {
+        let state = self.state.clone();
+        Box::pin(async move {
+            let mut state = state.lock().unwrap();
+            let attempt = state
+                .operation_attempts
+                .iter_mut()
+                .find(|attempt| attempt.id == id)
+                .ok_or_else(|| DomainError::not_found("payment operation attempt was not found"))?;
+            attempt.status = status;
+            attempt.response_digest = response_digest;
+            attempt.provider_error_code = provider_error_code;
+            attempt.provider_error_message = provider_error_message;
+            attempt.completed_at = Some(completed_at);
+            Ok(attempt.clone())
+        })
+    }
+}
+
+impl PaymentRefundRuntimeStore for InMemoryPaymentIntentRuntimeStore {
+    fn load_refund_by_idempotency(
+        &self,
+        tenant_id: String,
+        idempotency_key: String,
+    ) -> PaymentRefundRuntimeStoreFuture<'_, Option<PaymentRefundRuntimeRecord>> {
+        let state = self.state.clone();
+        Box::pin(async move {
+            Ok(state
+                .lock()
+                .unwrap()
+                .refunds
+                .iter()
+                .find(|refund| {
+                    refund.tenant_id == tenant_id && refund.idempotency_key == idempotency_key
+                })
+                .cloned())
+        })
+    }
+
+    fn load_refund_by_id(
+        &self,
+        tenant_id: String,
+        id: String,
+    ) -> PaymentRefundRuntimeStoreFuture<'_, Option<PaymentRefundRuntimeRecord>> {
+        let state = self.state.clone();
+        Box::pin(async move {
+            Ok(state
+                .lock()
+                .unwrap()
+                .refunds
+                .iter()
+                .find(|refund| refund.tenant_id == tenant_id && refund.id == id)
+                .cloned())
+        })
+    }
+
+    fn insert_refund(
+        &self,
+        refund: PaymentRefundRuntimeRecord,
+        attempt: PaymentRefundAttemptRecord,
+        items: Vec<PaymentRefundItemRecord>,
+    ) -> PaymentRefundRuntimeStoreFuture<'_, PaymentRefundRuntimeRecord> {
+        let state = self.state.clone();
+        Box::pin(async move {
+            let mut state = state.lock().unwrap();
+            state.refund_attempts.push(attempt);
+            state.refund_items.extend(items);
+            state.refunds.push(refund.clone());
+            Ok(refund)
+        })
+    }
+
+    fn finish_refund_attempt(
+        &self,
+        id: String,
+        status: String,
+        provider_refund_id: Option<String>,
+        failure_code: Option<String>,
+        failure_message: Option<String>,
+        finished_at: String,
+    ) -> PaymentRefundRuntimeStoreFuture<'_, PaymentRefundAttemptRecord> {
+        let state = self.state.clone();
+        Box::pin(async move {
+            let mut state = state.lock().unwrap();
+            let attempt = state
+                .refund_attempts
+                .iter_mut()
+                .find(|attempt| attempt.id == id || attempt.refund_id == id)
+                .ok_or_else(|| DomainError::not_found("payment refund attempt was not found"))?;
+            attempt.status = status;
+            attempt.provider_refund_id = provider_refund_id;
+            attempt.failure_code = failure_code;
+            attempt.failure_message = failure_message;
+            match attempt.status.as_str() {
+                "SUCCEEDED" => attempt.succeeded_at = Some(finished_at.clone()),
+                "FAILED" => attempt.failed_at = Some(finished_at.clone()),
+                _ => {}
+            }
+            attempt.updated_at = finished_at;
+            Ok(attempt.clone())
+        })
+    }
+
+    fn finish_refund(
+        &self,
+        id: String,
+        status: PaymentRefundStatus,
+        updated_at: String,
+        event: PaymentRefundEventRecord,
+    ) -> PaymentRefundRuntimeStoreFuture<'_, PaymentRefundRuntimeRecord> {
+        let state = self.state.clone();
+        Box::pin(async move {
+            let mut state = state.lock().unwrap();
+            let refund = state
+                .refunds
+                .iter_mut()
+                .find(|refund| refund.id == id)
+                .ok_or_else(|| DomainError::not_found("payment refund was not found"))?;
+            refund.status = status;
+            refund.updated_at = updated_at;
+            let refund = refund.clone();
+            state.refund_events.push(event);
+            Ok(refund)
+        })
+    }
 }

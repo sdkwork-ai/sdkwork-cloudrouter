@@ -399,13 +399,29 @@ export async function fetchPricingPlans(
   };
 }
 
-/** Loads every plan for selectors and rule-scope resolution. */
-export async function fetchAllPricingPlans(
+/** A bounded reference catalog exceeded its documented page budget. */
+export class PricingCatalogTooLargeError extends Error {
+  constructor(catalog: 'plans' | 'rules', maxItems: number) {
+    super(`${catalog} catalog exceeded the supported ${maxItems}-item reference budget; use the server-paginated table`);
+    this.name = 'PricingCatalogTooLargeError';
+  }
+}
+
+/** Hard reference-catalog page budget (server page_size max is 200). */
+const PRICING_CATALOG_MAX_PAGES = 3;
+
+/**
+ * Loads the bounded plan reference catalog (selectors and rule-scope
+ * resolution). Server-paged one page at a time, capped at
+ * `PRICING_CATALOG_MAX_PAGES`; a catalog beyond the budget fails loudly via
+ * `PricingCatalogTooLargeError` instead of aggregating unboundedly.
+ */
+export async function fetchPricingPlanCatalog(
   params: AdminPricingListParams = {},
 ): Promise<AdminPricingPlanItem[]> {
   const pageSize = Math.min(params.pageSize ?? 200, 200);
   const items: AdminPricingPlanItem[] = [];
-  for (let page = 1; page <= 1000; page += 1) {
+  for (let page = 1; page <= PRICING_CATALOG_MAX_PAGES; page += 1) {
     const current = await fetchPricingPlans({ ...params, page, pageSize });
     items.push(...current.items);
     const totalPages = current.pageInfo.totalPages;
@@ -413,7 +429,7 @@ export async function fetchAllPricingPlans(
       ?? (totalPages !== undefined ? page < totalPages : current.items.length === pageSize);
     if (!hasMore) return items;
   }
-  throw new Error('Pricing plans exceeded the supported catalog size');
+  throw new PricingCatalogTooLargeError('plans', PRICING_CATALOG_MAX_PAGES * pageSize);
 }
 
 export async function fetchPricingPlan(planId: string): Promise<AdminPricingPlanItem> {
@@ -497,12 +513,12 @@ export async function fetchPricingRules(
  * A fixed first page silently hides sales rules once a plan exceeds 200 rules,
  * which can make an existing customer price appear to be the official price.
  */
-export async function fetchAllPricingRules(
+export async function fetchPricingRuleCatalog(
   params: AdminPricingListParams = {},
 ): Promise<AdminPricingRuleItem[]> {
   const pageSize = Math.min(params.pageSize ?? 200, 200);
   const items: AdminPricingRuleItem[] = [];
-  for (let page = 1; page <= 1000; page += 1) {
+  for (let page = 1; page <= PRICING_CATALOG_MAX_PAGES; page += 1) {
     const current = await fetchPricingRules({ ...params, page, pageSize });
     items.push(...current.items);
     const totalPages = current.pageInfo.totalPages;
@@ -510,7 +526,7 @@ export async function fetchAllPricingRules(
       ?? (totalPages !== undefined ? page < totalPages : current.items.length === pageSize);
     if (!hasMore) return items;
   }
-  throw new Error('Pricing rules exceeded the supported catalog size');
+  throw new PricingCatalogTooLargeError('rules', PRICING_CATALOG_MAX_PAGES * pageSize);
 }
 
 export async function createPricingRule(
@@ -609,7 +625,7 @@ export const pricingService = {
   },
   plans: {
     list: fetchPricingPlans,
-    listAll: fetchAllPricingPlans,
+    catalog: fetchPricingPlanCatalog,
     retrieve: fetchPricingPlan,
     create: createPricingPlan,
     update: updatePricingPlan,
@@ -622,7 +638,7 @@ export const pricingService = {
   },
   rules: {
     list: fetchPricingRules,
-    listAll: fetchAllPricingRules,
+    catalog: fetchPricingRuleCatalog,
     create: createPricingRule,
     update: updatePricingRule,
     delete: deletePricingRule,

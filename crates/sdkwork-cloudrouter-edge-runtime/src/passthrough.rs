@@ -48,7 +48,7 @@ use sdkwork_cloudrouter_router_service::application::{
 };
 use sdkwork_cloudrouter_router_service::domain::{
     ensure_canonical_model_catalog_key, parse_model_catalog_identity, provider_native_model_id,
-    BillingMeter, DecimalValue, DomainError, DomainResult, ResourceDefinition,
+    BillingMeter, BillingOwnerKind, DecimalValue, DomainError, DomainResult, ResourceDefinition,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::provider::{
     ProviderRelayHttpPoolConfig, DEFAULT_PROVIDER_RESPONSE_TIMEOUT_MILLIS,
@@ -1188,6 +1188,9 @@ where
         tenant_id: context.tenant_id,
         organization_id: context.organization_id,
         user_id: context.user_id,
+        // passthrough 适配链路未接计费主体解析，保持个人主体（既有行为）。
+        billing_owner: BillingOwnerKind::Personal,
+        billing_owner_name: None,
         api_key_id: context.api_key_id,
         api_key_name_snapshot: context.api_key_name_snapshot.clone(),
         account_group_id: context.group_id,

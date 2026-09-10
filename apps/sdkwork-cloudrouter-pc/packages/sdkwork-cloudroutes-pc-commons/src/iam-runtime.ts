@@ -40,7 +40,7 @@ import {
   resetCloudRouterSdkClients,
 } from './sdk-clients.ts';
 import { resetCloudRouterMessagingVerificationService } from './messaging-verification-service.ts';
-import { normalizeGeneratedSdkBaseUrl } from './sdk-base-url.ts';
+import { normalizeGeneratedSdkBaseUrl, resolveSharedDependencySurfaceBaseUrl } from './sdk-base-url.ts';
 import { readCloudRouterRuntimeEnv } from './utils/env.ts';
 
 const CLOUD_ROUTER_IAM_RUNTIME_APP_ID =
@@ -134,6 +134,7 @@ function resolveAppbaseAppApiBaseUrl(): string {
   return normalizeGeneratedSdkBaseUrl(
     readCloudRouterRuntimeEnv('VITE_SDKWORK_APPBASE_APP_API_BASE_URL')
     ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_APP_API_BASE_URL')
+    ?? resolveSharedDependencySurfaceBaseUrl(APP_API_PREFIX)
     ?? APP_API_PREFIX,
     APP_API_PREFIX,
   );

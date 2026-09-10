@@ -112,10 +112,10 @@ pub(super) fn optional_https_base_url(
 pub(super) type UpstreamStore = Arc<dyn AdminUpstreamStore + Send + Sync>;
 pub(super) type UpstreamVerifier = Arc<dyn AdminUpstreamAccountVerifier + Send + Sync>;
 pub(super) type UpstreamResourceStore = Arc<dyn AdminAiResourceStore + Send + Sync>;
-pub(super) type RequestResult<T> = Result<T, RequestProblem>;
+pub(crate) type RequestResult<T> = Result<T, RequestProblem>;
 
 #[derive(Debug)]
-pub(super) struct RequestProblem {
+pub(crate) struct RequestProblem {
     code: SdkWorkResultCode,
     detail: String,
     /// Specific localization key (`I18N_SPEC.md` §5): `validation.<domain>.<resource>.<field>.<rule>`

@@ -3,15 +3,10 @@ use std::sync::Arc;
 
 use base64::{engine::general_purpose, Engine as _};
 use bytes::Bytes;
-use http_body_util::{BodyExt, Full};
+use http_body_util::Full;
 use hyper::header::{HeaderName, HeaderValue};
 use hyper::header::{AUTHORIZATION, CONTENT_TYPE};
 use hyper::{Method, Request, Uri};
-use hyper_rustls::HttpsConnector;
-use hyper_util::client::legacy::connect::HttpConnector;
-use hyper_util::client::legacy::Client;
-use hyper_util::rt::TokioExecutor;
-use sdkwork_cloudrouter_http::ensure_rustls_crypto_provider;
 use serde_json::{json, Value};
 
 use super::{
@@ -25,10 +20,12 @@ use super::{
     PaymentStatementParseOutcome, PaymentVerifyWebhookRequest, PaymentWebhookVerificationOutcome,
 };
 use crate::application::payment_adapter::STANDARD_PAYMENT_ADAPTER_OPERATIONS;
+use crate::application::payment_provider_http::{
+    build_payment_provider_http_client, send_bounded, PaymentProviderHttpClient,
+    PaymentProviderHttpError,
+};
 
-type PayPalRequestBody = Full<Bytes>;
-type PayPalConnector = HttpsConnector<HttpConnector>;
-type PayPalHttpClient = Client<PayPalConnector, PayPalRequestBody>;
+type PayPalHttpClient = PaymentProviderHttpClient;
 
 const PAYPAL_PROVIDER_CODE: &str = "paypal";
 const PAYPAL_API_BASE_URL: &str = "https://api-m.paypal.com";
@@ -516,26 +513,11 @@ impl PayPalHyperPaymentHttpClient {
                     format!("PayPal OAuth request could not be built: {error}"),
                 )
             })?;
-        let response = self.client.request(request).await.map_err(|error| {
-            provider_failed(
-                PaymentAdapterOperation::InvokeNativeOperation,
-                format!("PayPal OAuth request failed: {error}"),
-                true,
-            )
-        })?;
-        let status_code = response.status().as_u16();
-        let bytes = response
-            .into_body()
-            .collect()
+        let response = send_bounded(&self.client, request)
             .await
-            .map_err(|error| {
-                provider_failed(
-                    PaymentAdapterOperation::InvokeNativeOperation,
-                    format!("PayPal OAuth response body failed: {error}"),
-                    true,
-                )
-            })?
-            .to_bytes();
+            .map_err(paypal_http_error)?;
+        let status_code = response.status.as_u16();
+        let bytes = response.body;
         if !(200..300).contains(&status_code) {
             return Err(provider_failed(
                 PaymentAdapterOperation::InvokeNativeOperation,
@@ -602,26 +584,11 @@ impl PayPalHyperPaymentHttpClient {
                 format!("PayPal request could not be built: {error}"),
             )
         })?;
-        let response = self.client.request(request).await.map_err(|error| {
-            provider_failed(
-                PaymentAdapterOperation::InvokeNativeOperation,
-                format!("PayPal request failed: {error}"),
-                true,
-            )
-        })?;
-        let status_code = response.status().as_u16();
-        let bytes = response
-            .into_body()
-            .collect()
+        let response = send_bounded(&self.client, request)
             .await
-            .map_err(|error| {
-                provider_failed(
-                    PaymentAdapterOperation::InvokeNativeOperation,
-                    format!("PayPal response body failed: {error}"),
-                    true,
-                )
-            })?
-            .to_bytes();
+            .map_err(paypal_http_error)?;
+        let status_code = response.status.as_u16();
+        let bytes = response.body;
         if !(200..300).contains(&status_code) {
             return Err(provider_failed(
                 PaymentAdapterOperation::InvokeNativeOperation,
@@ -1019,11 +986,19 @@ fn invalid_response(
 }
 
 fn build_paypal_http_client() -> PayPalHttpClient {
-    ensure_rustls_crypto_provider();
-    let connector = hyper_rustls::HttpsConnectorBuilder::new()
-        .with_webpki_roots()
-        .https_or_http()
-        .enable_http1()
-        .build();
-    Client::builder(TokioExecutor::new()).build(connector)
+    build_payment_provider_http_client()
+}
+
+fn paypal_http_error(error: PaymentProviderHttpError) -> PaymentProviderRegistryError {
+    match error {
+        PaymentProviderHttpError::ResponseTooLarge { limit_bytes } => invalid_response(
+            PaymentAdapterOperation::InvokeNativeOperation,
+            format!("PayPal response body exceeded the {limit_bytes} byte bound"),
+        ),
+        PaymentProviderHttpError::Transport(message) => provider_failed(
+            PaymentAdapterOperation::InvokeNativeOperation,
+            format!("PayPal request failed: {message}"),
+            true,
+        ),
+    }
 }

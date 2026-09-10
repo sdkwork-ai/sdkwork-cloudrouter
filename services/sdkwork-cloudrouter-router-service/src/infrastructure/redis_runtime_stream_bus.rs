@@ -1,6 +1,8 @@
+use std::sync::Arc;
 use std::time::Duration;
 
 use redis::aio::ConnectionManager;
+use tokio::sync::Semaphore;
 
 use crate::application::{RuntimeStreamBus, RuntimeStreamBusFuture};
 use crate::domain::{DomainError, DomainResult};
@@ -9,10 +11,17 @@ use crate::ports::AppRuntimeEventItem;
 const DEFAULT_RUNTIME_STREAM_KEY_PREFIX: &str = "cloudrouter";
 const DEFAULT_RUNTIME_STREAM_MAX_LEN: usize = 10_000;
 const DEFAULT_RUNTIME_STREAM_TTL_SECONDS: u64 = 86_400;
+/// Upper bound on concurrent blocking `XREAD` connections. Each waiter owns a
+/// dedicated connection while it blocks, so the bound caps the extra socket
+/// fan-out; beyond it, waiters degrade to non-blocking polls on the shared
+/// connection (persisted events remain the source of truth for the caller).
+const MAX_CONCURRENT_BLOCKING_READS: usize = 64;
 
 #[derive(Debug, Clone)]
 pub struct RedisRuntimeStreamBus {
     connection: ConnectionManager,
+    client: redis::Client,
+    blocking_read_permits: Arc<Semaphore>,
     command_timeout: Duration,
     key_prefix: String,
     stream_max_len: usize,
@@ -36,6 +45,8 @@ impl RedisRuntimeStreamBus {
             })?;
         Ok(Self {
             connection,
+            client,
+            blocking_read_permits: Arc::new(Semaphore::new(MAX_CONCURRENT_BLOCKING_READS)),
             command_timeout,
             key_prefix: normalize_key_prefix(key_prefix),
             stream_max_len: DEFAULT_RUNTIME_STREAM_MAX_LEN,
@@ -211,21 +222,63 @@ impl RuntimeStreamBus for RedisRuntimeStreamBus {
         timeout: Duration,
     ) -> RuntimeStreamBusFuture<'a, ()> {
         Box::pin(async move {
-            let mut connection = self.connection();
-            let _: redis::Value = self
-                .with_timeout(
+            // A blocking XREAD must never run on the shared multiplexed
+            // connection: redis-rs pipelines every command over one TCP
+            // connection, so a server-side BLOCK would head-of-line block
+            // every claim/renew/publish from other requests. Run it on a
+            // dedicated short-lived connection, bounded by a permit; when
+            // permits are saturated, fall back to a non-blocking poll on the
+            // shared connection — persisted events remain the caller's
+            // source of truth, so a degraded poll is correctness-safe.
+            let permit = self.blocking_read_permits.clone().try_acquire_owned().ok();
+            let read = if permit.is_some() {
+                let connection = match tokio::time::timeout(
+                    self.command_timeout,
+                    self.client.get_connection_manager(),
+                )
+                .await
+                {
+                    Ok(Ok(connection)) => Ok(connection),
+                    Ok(Err(error)) => Err(DomainError::new(format!(
+                        "redis runtime stream blocking connection failed: {error}"
+                    ))),
+                    Err(_) => Err(DomainError::new(
+                        "redis runtime stream blocking connection timed out",
+                    )),
+                };
+                match connection {
+                    Ok(mut connection) => {
+                        self.with_timeout(
+                            redis::cmd("XREAD")
+                                .arg("BLOCK")
+                                .arg(duration_millis(timeout))
+                                .arg("COUNT")
+                                .arg(1_u32)
+                                .arg("STREAMS")
+                                .arg(self.stream_key(invocation_id))
+                                .arg("$")
+                                .query_async(&mut connection),
+                            "redis runtime stream wait for event",
+                        )
+                        .await
+                    }
+                    Err(error) => Err(error),
+                }
+            } else {
+                let mut connection = self.connection();
+                self.with_timeout(
                     redis::cmd("XREAD")
-                        .arg("BLOCK")
-                        .arg(duration_millis(timeout))
                         .arg("COUNT")
                         .arg(1_u32)
                         .arg("STREAMS")
                         .arg(self.stream_key(invocation_id))
                         .arg("$")
                         .query_async(&mut connection),
-                    "redis runtime stream wait for event",
+                    "redis runtime stream poll events",
                 )
-                .await?;
+                .await
+            };
+            let _: redis::Value = read?;
             Ok(())
         })
     }

@@ -2,7 +2,10 @@
 name = "sdkwork-cloudrouter-test-support"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license-file.workspace = true
+[lib]
+name = "sdkwork_cloudrouter_test_support"
 
 [dependencies]
 anyhow.workspace = true
@@ -14,3 +17,6 @@ sqlx.workspace = true
 
 [dev-dependencies]
 axum.workspace = true
+
+[lints]
+workspace = true

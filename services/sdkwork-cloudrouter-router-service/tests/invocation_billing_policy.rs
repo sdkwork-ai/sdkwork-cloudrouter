@@ -6,7 +6,7 @@ use sdkwork_cloudrouter_router_service::application::{
     InvocationResourceClassifier, OpenAiResourceClassifier, PayloadExtractionInterceptor,
     ProviderNativeResourceClassifier,
 };
-use sdkwork_cloudrouter_router_service::domain::{BillingMeter, RoutingCapability};
+use sdkwork_cloudrouter_router_service::domain::{BillingMeter, RoutingCapability,};
 use serde_json::json;
 
 fn test_subject() -> sdkwork_cloudrouter_router_service::application::InvocationSubject {

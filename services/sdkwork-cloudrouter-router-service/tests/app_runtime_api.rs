@@ -2896,10 +2896,7 @@ async fn app_runtime_gateway_executor_routes_suno_music_generation_to_provider_m
     let gateway_requests = gateway_requests.lock().unwrap();
     assert_eq!(1, gateway_requests.len());
     assert_eq!(Method::POST, gateway_requests[0].method);
-    assert_eq!(
-        "/suno/v1/music/generations",
-        gateway_requests[0].path
-    );
+    assert_eq!("/suno/v1/music/generations", gateway_requests[0].path);
     assert!(gateway_requests[0].authorization.is_empty());
     assert_eq!(
         101,
@@ -3146,10 +3143,7 @@ async fn app_runtime_gateway_executor_routes_kling_video_generation_to_provider_
     let gateway_requests = gateway_requests.lock().unwrap();
     assert_eq!(1, gateway_requests.len());
     assert_eq!(Method::POST, gateway_requests[0].method);
-    assert_eq!(
-        "/kling/v1/videos/text2video",
-        gateway_requests[0].path
-    );
+    assert_eq!("/kling/v1/videos/text2video", gateway_requests[0].path);
     assert_eq!("kling-v2", gateway_requests[0].body["model"]);
     assert_eq!("city skyline at night", gateway_requests[0].body["prompt"]);
     assert_eq!(8, gateway_requests[0].body["duration"]);
@@ -3211,10 +3205,7 @@ async fn app_runtime_gateway_executor_routes_vidu_video_generation_to_provider_s
     let gateway_requests = gateway_requests.lock().unwrap();
     assert_eq!(1, gateway_requests.len());
     assert_eq!(Method::POST, gateway_requests[0].method);
-    assert_eq!(
-        "/vidu/ent/v2/start-end2video",
-        gateway_requests[0].path
-    );
+    assert_eq!("/vidu/ent/v2/start-end2video", gateway_requests[0].path);
     assert_eq!("vidu-v2", gateway_requests[0].body["model"]);
     assert_eq!("sunset over the sea", gateway_requests[0].body["prompt"]);
     assert_eq!(8, gateway_requests[0].body["duration"]);
@@ -4847,17 +4838,11 @@ impl AppRuntimeGatewayClient for RecordingGatewayRuntimeClient {
                 Body::from(
                     "{\"id\":\"song_1\",\"data\":[{\"audioUrl\":\"https://cdn.example.test/generated/theme.mp3\",\"mimeType\":\"audio/mpeg\",\"durationSeconds\":30}],\"usage\":{\"total_tokens\":9}}",
                 )
-            } else if request
-                .path
-                .starts_with("/elevenlabs/v1/sound-generation")
-            {
+            } else if request.path.starts_with("/elevenlabs/v1/sound-generation") {
                 Body::from(
                     "{\"asset\":{\"url\":\"https://cdn.example.test/generated/impact.wav\",\"mimeType\":\"audio/wav\",\"durationSeconds\":5}}",
                 )
-            } else if request
-                .path
-                .starts_with("/elevenlabs/v1/text-to-speech/")
-            {
+            } else if request.path.starts_with("/elevenlabs/v1/text-to-speech/") {
                 Body::from("elevenlabs-audio")
             } else if request.path == "/v1/audio/speech" {
                 Body::from("audio-bytes")
@@ -4912,15 +4897,10 @@ impl AppRuntimeGatewayClient for RecordingGatewayRuntimeClient {
                 || request.path == "/volcengine/v1/videos/generations"
                 || request.path.contains(":generateVideos")
                 || request.path == "/suno/v1/music/generations"
-                || request
-                    .path
-                    .starts_with("/elevenlabs/v1/sound-generation")
+                || request.path.starts_with("/elevenlabs/v1/sound-generation")
             {
                 Some("application/json".to_owned())
-            } else if request
-                .path
-                .starts_with("/elevenlabs/v1/text-to-speech/")
-            {
+            } else if request.path.starts_with("/elevenlabs/v1/text-to-speech/") {
                 if request.path.contains("output_format=wav_44100") {
                     Some("audio/wav".to_owned())
                 } else {

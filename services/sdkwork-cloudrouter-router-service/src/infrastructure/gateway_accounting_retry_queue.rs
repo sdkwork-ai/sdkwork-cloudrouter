@@ -8,6 +8,9 @@ use redis::streams::{StreamAutoClaimOptions, StreamReadOptions, StreamReadReply}
 use redis::{AsyncCommands, Script};
 use sha2::{Digest, Sha256};
 
+#[cfg(test)]
+use crate::domain::BillingOwnerKind;
+
 use crate::domain::{DomainError, DomainResult};
 use crate::ports::{
     now_epoch_millis, GatewayAccountingRetryDelivery, GatewayAccountingRetryEnvelope,
@@ -884,6 +887,8 @@ mod tests {
             tenant_id: 100_001,
             organization_id: 0,
             user_id: 30,
+            billing_owner: BillingOwnerKind::Personal,
+            billing_owner_name: None,
             api_key_id: 101,
             api_key_name_snapshot: "Accounting Retry Test Key".to_owned(),
             account_group_id: 10,

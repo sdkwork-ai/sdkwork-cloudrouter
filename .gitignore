@@ -156,7 +156,14 @@ sdks/**/*.js
 sdks/**/*.d.ts
 sdks/**/*.js.map
 sdks/**/*.d.ts.map
+sdks/**/generated/
 /_tmp_*
 /NUL.*
 
 # Local build artifacts / workspace junk (auto-sync)
+
+# Compiled TypeScript output accidentally committed under PC package sources;
+# package exports point at src/*.ts, so these are build droppings.
+apps/sdkwork-cloudrouter-pc/packages/*/src/**/*.js
+apps/sdkwork-cloudrouter-pc/packages/*/src/**/*.js.map
+apps/sdkwork-cloudrouter-pc/packages/*/src/**/*.d.ts

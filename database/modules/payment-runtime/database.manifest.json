@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 2,
+  "kind": "sdkwork.database.module",
+  "databaseRole": "authoritative-server",
+  "moduleId": "payment-runtime",
+  "serviceCode": "CLOUD_ROUTER_PAYMENT_RUNTIME",
+  "displayName": "Cloud Router Payment Runtime Database",
+  "owner": "cloud-router-platform",
+  "engines": [
+    "postgres"
+  ],
+  "defaultEngine": "postgres",
+  "tablePrefix": "commerce_",
+  "contractVersion": "0.1.0",
+  "baselineStrategy": "baseline-plus-migrations",
+  "baselineAnchorTable": "commerce_payment_intent",
+  "modules": [],
+  "lifecycle": {
+    "autoMigrate": false,
+    "seedOnBoot": false,
+    "defaultSeedLocale": "zh-CN",
+    "defaultSeedProfile": "standard",
+    "supportedSeedLocales": [
+      "zh-CN",
+      "en-US"
+    ],
+    "activeSeedLocales": [],
+    "driftCheckIntervalSec": 60
+  },
+  "paths": {
+    "contract": "contract/schema.yaml",
+    "migrations": "migrations",
+    "driftPolicy": "drift/policy.yaml",
+    "seeds": "seeds"
+  },
+  "spi": {
+    "provider": "default",
+    "hooks": []
+  },
+  "materializedTables": [
+    "commerce_payment_intent",
+    "commerce_payment_attempt",
+    "commerce_payment_route_decision",
+    "commerce_payment_operation_attempt",
+    "commerce_refund",
+    "commerce_refund_attempt",
+    "commerce_refund_item",
+    "commerce_refund_event"
+  ],
+  "materializedTableCount": 8
+}

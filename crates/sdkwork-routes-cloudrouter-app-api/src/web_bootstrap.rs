@@ -17,6 +17,7 @@ use sdkwork_web_core::{
 };
 use sqlx::PgPool;
 
+use crate::http_route_manifest::cloud_router_app_http_route_manifest;
 use crate::manifest_composition::cloud_router_app_prepared_route_manifest;
 
 pub fn cloud_router_app_public_path_prefixes() -> Vec<String> {
@@ -73,8 +74,11 @@ impl DomainContextInjector for CloudRouterAppDomainInjector {
 /// only app-api routes owned by this surface receive the legacy subject
 /// projection, so composite hosts never poison foreign nested pipelines.
 pub fn cloud_router_app_domain_context_injector() -> Arc<dyn DomainContextInjector> {
-    let manifest =
-        cloud_router_app_prepared_route_manifest(&cloud_router_app_public_path_prefixes(), true);
+    let manifest = cloud_router_app_prepared_route_manifest(
+        cloud_router_app_http_route_manifest(),
+        &cloud_router_app_public_path_prefixes(),
+        true,
+    );
     Arc::new(CloudRouterAppDomainInjector {
         owned_routes: Some(Arc::new(manifest)),
     })
@@ -84,7 +88,11 @@ fn build_cloud_router_app_web_framework_layer(
     resolver: IamWebRequestContextResolver,
 ) -> WebFrameworkLayer<IamWebRequestContextResolver> {
     let prefixes = cloud_router_app_public_path_prefixes();
-    let route_manifest = cloud_router_app_prepared_route_manifest(&prefixes, true);
+    let route_manifest = cloud_router_app_prepared_route_manifest(
+        cloud_router_app_http_route_manifest(),
+        &prefixes,
+        true,
+    );
     let environment = resolve_cloud_web_environment_from_process_env();
     let security_policy = cloud_service_security_policy(&environment);
 
@@ -304,6 +312,7 @@ mod tests {
     #[test]
     fn host_level_injector_projects_owned_manifest_routes() {
         let manifest = crate::manifest_composition::cloud_router_app_prepared_route_manifest(
+            crate::http_route_manifest::cloud_router_app_http_route_manifest(),
             &super::cloud_router_app_public_path_prefixes(),
             true,
         );

@@ -2,7 +2,10 @@
 name = "sdkwork-cloudrouter-standalone-gateway"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license-file.workspace = true
+[lib]
+name = "sdkwork_cloudrouter_standalone_gateway"
 
 [[bin]]
 name = "sdkwork-cloudrouter-standalone-gateway"
@@ -38,3 +41,6 @@ serde_json.workspace = true
 sha2.workspace = true
 sqlx.workspace = true
 tower.workspace = true
+
+[lints]
+workspace = true

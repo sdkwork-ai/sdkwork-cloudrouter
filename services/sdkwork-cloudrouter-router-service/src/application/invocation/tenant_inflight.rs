@@ -1,6 +1,6 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use redis::aio::ConnectionManager;
 use sdkwork_cloudrouter_config::RedisConfig;
@@ -71,13 +71,20 @@ impl TenantInflightLease {
     }
 }
 
+/// Safety net for leases whose owner future was dropped or panicked between
+/// the acquire and release interceptor hooks: slots self-heal after this TTL
+/// instead of being lost for the process lifetime.
+const LOCAL_LEASE_TTL: Duration = Duration::from_secs(15 * 60);
+
 /// Per-node in-flight counter backed by an in-memory map.
 ///
 /// Acceptable for single-node/desktop deployments. Multi-node production
-/// deployments should use [`RedisTenantInflightCounter`].
+/// deployments should use [`RedisTenantInflightCounter`]. Leases expire after
+/// [`LOCAL_LEASE_TTL`] without renewal so cancelled or panicked invocations
+/// cannot permanently consume capacity.
 pub struct LocalTenantInflightCounter {
     max_inflight: u32,
-    leases: Mutex<HashMap<i64, HashSet<String>>>,
+    leases: Mutex<HashMap<i64, HashMap<String, Instant>>>,
 }
 
 impl LocalTenantInflightCounter {
@@ -97,13 +104,16 @@ impl TenantInflightCounter for LocalTenantInflightCounter {
             Err(poisoned) => poisoned.into_inner(),
         };
         let tenant_leases = leases.entry(lease.tenant_id).or_default();
-        if tenant_leases.contains(&lease.owner_token) {
+        tenant_leases.retain(|_, seen| seen.elapsed() < LOCAL_LEASE_TTL);
+        if tenant_leases.contains_key(&lease.owner_token) {
             return true;
         }
         if tenant_leases.len() >= self.max_inflight as usize {
             return false;
         }
-        tenant_leases.insert(lease.owner_token.clone())
+        tenant_leases
+            .insert(lease.owner_token.clone(), Instant::now())
+            .is_none()
     }
 
     async fn renew(&self, lease: &TenantInflightLease) -> TenantInflightRenewal {
@@ -111,13 +121,11 @@ impl TenantInflightCounter for LocalTenantInflightCounter {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
-        if leases
-            .get(&lease.tenant_id)
-            .is_some_and(|tokens| tokens.contains(&lease.owner_token))
-        {
-            TenantInflightRenewal::Renewed
-        } else {
-            TenantInflightRenewal::LeaseLost
+        match leases.get(&lease.tenant_id) {
+            Some(tokens) if tokens.contains_key(&lease.owner_token) => {
+                TenantInflightRenewal::Renewed
+            }
+            _ => TenantInflightRenewal::LeaseLost,
         }
     }
 
@@ -403,6 +411,7 @@ impl TenantInflightInterceptor {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
+        tasks.retain(|_, handle| !handle.is_finished());
         if let Some(previous) = tasks.insert(owner_token, task) {
             previous.abort();
         }

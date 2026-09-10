@@ -63,6 +63,8 @@ pub struct OpenAiRuntimeRouteConfig {
     /// and prefers it over the deployment region default.
     pub region_settings_store:
         Option<Arc<dyn crate::ports::RuntimeRegionSettingsStore + Send + Sync>>,
+    /// Optional 计费主体解析器（团队计费）。`None` 保持个人主体既有行为。
+    pub billing_subject_resolver: Option<Arc<dyn crate::ports::BillingSubjectResolver>>,
 }
 
 impl OpenAiRuntimeRouteConfig {
@@ -74,6 +76,7 @@ impl OpenAiRuntimeRouteConfig {
             default_retry_policy,
             failure_strategy,
             region_settings_store: None,
+            billing_subject_resolver: None,
         }
     }
 
@@ -84,6 +87,14 @@ impl OpenAiRuntimeRouteConfig {
         >,
     ) -> Self {
         self.region_settings_store = region_settings_store;
+        self
+    }
+
+    pub fn with_billing_subject_resolver(
+        mut self,
+        billing_subject_resolver: Option<Arc<dyn crate::ports::BillingSubjectResolver>>,
+    ) -> Self {
+        self.billing_subject_resolver = billing_subject_resolver;
         self
     }
 }
@@ -115,6 +126,42 @@ where
                 "api key credential is invalid",
             ))
         })
+}
+
+/// 鉴权成功后解析计费主体（团队计费）。
+///
+/// - `MembershipRequired`：key 绑定组织但用户已不是成员 → 显式 403。
+/// - `Transient`：解析失败降级个人主体（fail-safe），打告警日志。
+/// - 组合未注入解析器：保持个人主体既有行为。
+pub(super) async fn resolve_billing_subject_or_personal(
+    resolver: Option<&Arc<dyn crate::ports::BillingSubjectResolver>>,
+    context: &AuthenticatedApiKeyContext,
+) -> Result<crate::ports::ResolvedBillingSubject, OpenAiRouteError> {
+    let Some(resolver) = resolver else {
+        return Ok(crate::ports::ResolvedBillingSubject::personal());
+    };
+    match resolver.resolve(context).await {
+        Ok(resolved) => Ok(resolved),
+        Err(crate::ports::BillingSubjectError::MembershipRequired { organization_id }) => {
+            Err(Box::new(openai_error(
+                StatusCode::FORBIDDEN,
+                "billing_subject_membership_required",
+                "invalid_request_error",
+                format!(
+                    "api key is bound to organization {organization_id} but the user is no longer an active member"
+                ),
+            )))
+        }
+        Err(crate::ports::BillingSubjectError::Transient(message)) => {
+            tracing::warn!(
+                error = %message,
+                tenant_id = context.tenant_id,
+                user_id = context.user_id,
+                "billing subject resolution failed; falling back to personal billing"
+            );
+            Ok(crate::ports::ResolvedBillingSubject::personal())
+        }
+    }
 }
 
 pub(super) fn find_catalog_model<C>(catalog: &C, model: &str) -> Result<AiModel, OpenAiRouteError>

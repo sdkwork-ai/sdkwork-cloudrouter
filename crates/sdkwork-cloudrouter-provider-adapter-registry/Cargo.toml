@@ -2,9 +2,15 @@
 name = "sdkwork-cloudrouter-provider-adapter-registry"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license-file.workspace = true
+[lib]
+name = "sdkwork_cloudrouter_provider_adapter_registry"
 
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
 sdkwork-cloudrouter-provider-adapter-contract.workspace = true
+
+[lints]
+workspace = true

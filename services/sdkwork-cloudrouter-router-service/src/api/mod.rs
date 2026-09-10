@@ -28,7 +28,6 @@ mod app_api_keys;
 mod app_chat;
 mod app_dashboard;
 mod app_gateway;
-mod app_generation_history;
 mod app_invite;
 mod app_notification;
 mod app_pricing;
@@ -83,15 +82,13 @@ pub use admin_service_node::admin_service_node_router_with_store;
 pub use admin_storage::admin_storage_router_with_store;
 pub use admin_system::admin_system_router_with_installer;
 pub use admin_transaction_center::admin_transaction_center_router_with_store;
-pub use admin_user::{admin_user_api_key_command_router_with_store, admin_user_router_with_store};
+pub use admin_user::admin_user_api_key_command_router_with_store;
 pub use app_api_keys::app_api_key_router_with_read_store_and_command_store;
 pub use app_chat::app_chat_router;
 pub use app_chat::app_chat_router_with_store;
 pub use app_dashboard::app_dashboard_overview_router;
 pub use app_dashboard::app_dashboard_overview_router_with_read_store;
 pub use app_gateway::{app_gateway_traces_router, app_gateway_traces_router_with_read_store};
-pub use app_generation_history::app_generation_history_router;
-pub use app_generation_history::app_generation_history_router_with_read_store;
 pub use app_invite::app_invite_router_with_store;
 pub use app_notification::app_notification_router;
 pub use app_notification::app_notification_router_with_store;
@@ -165,10 +162,7 @@ pub use openai_responses::openai_responses_router_with_relays_plugins_and_failur
 pub use openai_runtime::{OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig};
 pub use openai_usage::OpenAiUsageRecorder;
 pub use openai_vendors::{list_group_scoped_vendors, openai_vendors_router};
-pub use payment_aggregate::{
-    payment_aggregate_router, payment_aggregate_router_with_runtime_store,
-    payment_aggregate_router_with_runtime_store_and_registry,
-};
+pub use payment_aggregate::payment_aggregate_router_with_runtime_store_and_registry;
 pub use sdkwork_models_catalog_service::admin_ai_resource_router_with_store;
 pub use sdkwork_models_catalog_service::{
     admin_model_catalog_router, admin_model_catalog_router_with_api_key_hasher,

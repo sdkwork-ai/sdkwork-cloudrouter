@@ -401,6 +401,21 @@ tables:
         required: false
         postgres_type: TIMESTAMPTZ
         constraints: ''
+      debit_points:
+        type: int64
+        required: false
+        postgres_type: BIGINT
+        constraints: ''
+      original_currency_amount:
+        type: decimal
+        required: false
+        postgres_type: NUMERIC(38, 12)
+        constraints: ''
+      original_currency_code:
+        type: string(10)
+        required: false
+        postgres_type: VARCHAR(10)
+        constraints: ''
     constraints:
       - name: pk_cloudrouter_charge_line
         type: primary_key

@@ -238,6 +238,7 @@ table_fragments:
 - tables/iam-gateway.yaml
 - tables/ops-runtime.yaml
 - tables/ai-chat-runtime.yaml
+- tables/ai-mcp-runtime.yaml
 - tables/user-settings.yaml
 modules:
   user-settings:

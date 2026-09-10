@@ -18,14 +18,25 @@ import {
   pruneUndefinedQueryParams,
 } from '@sdkwork/cloudroutes-pc-commons/sdk-request-boundary';
 import { isBlank } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
+import { getCloudRouterAppSdkClient } from '@sdkwork/cloudroutes-pc-commons/sdk-clients';
+import type { SdkworkAppClient } from '@sdkwork/cloudroutes-pc-commons/sdk-clients';
 import type {
   AppApiKeyListResponse as SdkAppApiKeyListResponse,
   CreateApiKeyRequest,
-  SdkworkAppClient,
   UpdateApiKeyRequest,
-} from '@sdkwork/cloudrouter-app-sdk';
+} from '@sdkwork/cloudroutes-pc-commons/sdk-clients';
 import { DEFAULT_ACCOUNT_GROUP } from './apiKeyForm.ts';
-import { resolveApiKeyServiceAppClient } from './serviceClients.ts';
+import { readBoundAppClient } from './serviceClients.ts';
+
+/**
+ * Resolve the app SDK client for one service call. Embedding hosts bind
+ * their own generated client via `configureApiKeyServiceClients`; without a
+ * binding, fall back to the console's shared app SDK factory.
+ */
+function resolveApiKeyServiceAppClient(): SdkworkAppClient {
+  const factory = readBoundAppClient() ?? ((): SdkworkAppClient => getCloudRouterAppSdkClient());
+  return typeof factory === 'function' ? factory() : factory;
+}
 
 type ApiKeyModality = NonNullable<CreateApiKeyRequest['modalities']>[number];
 export type ApiKeyGroupRoutingStrategy = 'weighted' | 'price_first' | 'quality_first';

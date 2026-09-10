@@ -1,4 +1,30 @@
 tables:
+- table: sdkwork_node_registry
+  domain: ops
+  profile: runtime_infrastructure
+  compliance_level: L2
+  system_of_record: true
+  write_owner: sdkwork-database-id
+  api_surfaces:
+  - worker
+  columns:
+    node_id: int32
+    service_name: string(256)
+    instance_identity: string(256)
+    hostname: string(256)
+    pid: int64
+    lease_token: string(64)
+    lease_version: int64
+    started_at_ms: int64
+    last_heartbeat_at_ms: int64
+    expires_at_ms: int64
+  indexes:
+  - name: idx_sdkwork_node_registry_service_expiry
+    columns:
+    - service_name
+    - expires_at_ms
+  lifecycle:
+    storage_strategy: live_state
 - table: ops_alert_event
   domain: ops
   profile: audit_event

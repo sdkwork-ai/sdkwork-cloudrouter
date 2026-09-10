@@ -4,9 +4,14 @@
 **Last Updated:** 2026-07-30
 **Owner:** Platform Engineering
 **Review Frequency:** Quarterly
-**Status:** Target recovery design only. It has not been exercised for the
-current candidate and does not establish deployable HA, backup, restore, RPO,
-or RTO capability.
+**Status:** Logical backup/restore capability is implemented and schedulable
+(`bin/backup.sh` delegates to the canonical `ops-backup.sh` entrypoint;
+`deployments/kubernetes/cloud-router-db-backup-cronjob.yaml` provides a
+nightly `pg_dump -Fc` CronJob with a restorability check and 7-set retention,
+targeting RPO <= 24h). PITR/WAL archiving, an approved backup scheduler for
+every deployment class, and a recorded restore drill remain unestablished;
+deployable HA, exercised RPO/RTO, and production approval still require the
+evidence listed in section "Recovery Objectives" below.
 
 > Do not execute destructive commands in this document against a deployment
 > until the deployed topology, immutable artifact, backup inventory, recovery

@@ -9,9 +9,6 @@
 const POSTGRES_API_KEY_COMMAND_STORE: &str =
     include_str!("../src/infrastructure/sql/postgres/api_key_command_store.rs");
 
-const POSTGRES_ADMIN_USER_STORE: &str =
-    include_str!("../src/infrastructure/sql/postgres/admin_user_store.rs");
-
 fn compact_sql(value: &str) -> String {
     value.split_whitespace().collect::<Vec<_>>().join(" ")
 }
@@ -75,24 +72,6 @@ fn api_key_command_store_default_group_upsert_uses_canonical_multiplier_columns(
         ".bind(command.sale_multiplier.to_fixed_string(6))",
         "COALESCE(cost_multiplier::text, '1.000000') AS cost_multiplier",
         "COALESCE(sale_multiplier::text, '1.000000') AS sale_multiplier",
-    ] {
-        assert_sql_contains(sql, expected);
-    }
-    assert_no_retired_multiplier_columns(sql);
-}
-
-#[test]
-fn admin_user_store_default_group_upsert_uses_canonical_multiplier_columns() {
-    let sql = function_block(
-        POSTGRES_ADMIN_USER_STORE,
-        "INSERT INTO ai_upstream_account_group",
-        ".fetch_one(&mut **tx)",
-    );
-    for expected in [
-        "cost_multiplier",
-        "sale_multiplier",
-        "cost_multiplier = COALESCE(ai_upstream_account_group.cost_multiplier, EXCLUDED.cost_multiplier)",
-        "sale_multiplier = COALESCE(ai_upstream_account_group.sale_multiplier, EXCLUDED.sale_multiplier)",
     ] {
         assert_sql_contains(sql, expected);
     }

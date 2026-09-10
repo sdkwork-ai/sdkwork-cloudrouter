@@ -227,7 +227,8 @@ mod tests {
 
     #[test]
     fn relayed_chat_chunk_without_response_object_is_unchanged_shape() {
-        let body = json!({"id":"x","object":"chat.completion.chunk","model":"gpt-4o-mini","choices":[]});
+        let body =
+            json!({"id":"x","object":"chat.completion.chunk","model":"gpt-4o-mini","choices":[]});
         let restored = restore_relayed_model(body, "gpt-4o-mini");
         assert!(restored.get("response").is_none());
         assert_eq!("gpt-4o-mini", restored["model"]);

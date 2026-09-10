@@ -63,6 +63,10 @@ const RUNTIME_STREAM_CANCELLATION_TTL: Duration = Duration::from_secs(60 * 60);
 const RUNTIME_STREAM_CANCELLATION_CHECK_INTERVAL: Duration = Duration::from_millis(250);
 const RUNTIME_STREAM_TERMINAL_RECHECK_INTERVAL: Duration = Duration::from_secs(10);
 const RUNTIME_STREAM_TAIL_WAIT_TIMEOUT: Duration = Duration::from_millis(500);
+/// Total wall-clock budget for draining one runtime stream response. A
+/// stalled internal runtime stream must release the execution lease and
+/// the spawn instead of pinning them forever behind a healthy heartbeat.
+const RUNTIME_STREAM_DRAIN_TOTAL_DEADLINE: Duration = Duration::from_secs(30 * 60);
 
 #[derive(Clone)]
 struct AppRuntimeState {
@@ -1216,12 +1220,19 @@ async fn start_runtime_stream_execution_if_needed(
         terminal_recheck.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
         let drain = drain_runtime_stream_response(response);
         tokio::pin!(drain);
+        let drain_deadline = tokio::time::Instant::now() + RUNTIME_STREAM_DRAIN_TOTAL_DEADLINE;
         let outcome = loop {
             tokio::select! {
-                result = &mut drain => {
-                    break result
-                        .map(|_| RuntimeStreamExecutionOutcome::Completed)
-                        .unwrap_or_else(|error| RuntimeStreamExecutionOutcome::Failed(error.to_string()));
+                result = tokio::time::timeout_at(drain_deadline, &mut drain) => {
+                    break match result {
+                        Ok(Ok(())) => RuntimeStreamExecutionOutcome::Completed,
+                        Ok(Err(error)) => {
+                            RuntimeStreamExecutionOutcome::Failed(error.to_string())
+                        }
+                        Err(_elapsed) => RuntimeStreamExecutionOutcome::Failed(
+                            "runtime stream drain exceeded the total deadline".to_owned(),
+                        ),
+                    };
                 }
                 _ = heartbeat.tick() => {
                     match stream_bus

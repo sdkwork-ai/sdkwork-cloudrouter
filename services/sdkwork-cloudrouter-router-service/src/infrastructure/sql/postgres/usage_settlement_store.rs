@@ -24,6 +24,10 @@ use crate::ports::{
 /// the gateway balance endpoint, which reads the same Token Bank wallet).
 const TOKEN_BANK_CURRENCY_CODE: &str = "TOKEN_BANK";
 const USAGE_SETTLEMENT_BUSINESS_TYPE: &str = "usage_settlement";
+/// `ai_metering_usage.owner_type` 的组织编码（与 1=用户对齐）。
+const ORGANIZATION_USAGE_OWNER_TYPE: i64 = 2;
+/// `acct_account.owner_type` 的组织钱包取值。
+const ORGANIZATION_WALLET_OWNER_TYPE: &str = "ORGANIZATION";
 /// Stable account-domain contract message for a debit that the wallet cannot
 /// satisfy (either the token bank account is missing or its balance is too low).
 const INSUFFICIENT_BALANCE_MESSAGE: &str = "insufficient account balance";
@@ -116,6 +120,8 @@ struct UsageFactForSettlement {
     tenant_id: i64,
     organization_id: i64,
     user_id: i64,
+    /// ai_metering_usage.owner_type（1=用户，2=组织）：决定结算扣哪个钱包。
+    usage_owner_type: i64,
     request_id: String,
     billing_meter_code: String,
     amount: String,
@@ -223,6 +229,7 @@ async fn load_settleable_usage_facts(
             CAST(tenant_id AS TEXT) AS tenant_id,
             CAST(organization_id AS TEXT) AS organization_id,
             CAST(COALESCE(user_id, owner_id, 0) AS TEXT) AS user_id,
+            CAST(COALESCE(owner_type, 1) AS BIGINT) AS usage_owner_type,
             request_id,
             billing_meter_code,
             CAST(COALESCE(NULLIF(CAST(customer_charge_amount AS TEXT), ''), '0') AS TEXT) AS amount,
@@ -260,6 +267,7 @@ async fn load_settleable_usage_facts(
             tenant_id: integer_cell(row, "tenant_id"),
             organization_id: integer_cell(row, "organization_id"),
             user_id: integer_cell(row, "user_id"),
+            usage_owner_type: integer_cell(row, "usage_owner_type"),
             request_id: string_cell(row, "request_id"),
             billing_meter_code: string_cell(row, "billing_meter_code"),
             amount: string_cell(row, "amount"),
@@ -701,10 +709,22 @@ async fn append_user_token_bank(
     direction: CommerceLedgerDirection,
     transaction_id: &str,
 ) -> Result<(), CommerceServiceError> {
+    // 组织计费主体（usage owner_type=2）扣团队钱包：owner_type=ORGANIZATION
+    // 且 owner_user_id=组织 id，与网关预扣的钱包定位约定一致；个人主体
+    // 保持 USER 钱包（owner_type=None 默认）。
+    let (usage_owner_type, wallet_owner_user_id) =
+        if usage_fact.usage_owner_type == ORGANIZATION_USAGE_OWNER_TYPE {
+            (
+                Some(ORGANIZATION_WALLET_OWNER_TYPE.to_owned()),
+                usage_fact.organization_id.to_string(),
+            )
+        } else {
+            (None, usage_fact.user_id.to_string())
+        };
     let append = AppendLedgerEntryCommand {
         tenant_id: usage_fact.tenant_id.to_string(),
         organization_id: Some(usage_fact.organization_id.to_string()),
-        owner_user_id: usage_fact.user_id.to_string(),
+        owner_user_id: wallet_owner_user_id,
         account_id: String::new(),
         asset_type: CommerceAccountAssetType::TokenBank,
         currency_code: Some(TOKEN_BANK_CURRENCY_CODE.to_owned()),
@@ -721,7 +741,7 @@ async fn append_user_token_bank(
         // idempotency_key remain the operation-specific replay keys.
         request_no: usage_fact.request_id.clone(),
         idempotency_key: transaction_id.to_owned(),
-        owner_type: None,
+        owner_type: usage_owner_type,
         account_purpose: None,
         expires_at: None,
         reversed_ledger_id: None,

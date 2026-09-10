@@ -135,16 +135,6 @@ impl From<SqlScopedSubject> for crate::ports::SettlementsDashboardSubject {
     }
 }
 
-impl From<SqlScopedSubject> for crate::ports::AppGenerationHistorySubject {
-    fn from(subject: SqlScopedSubject) -> Self {
-        Self {
-            tenant_id: subject.tenant_id,
-            organization_id: subject.organization_id,
-            user_id: subject.user_id,
-        }
-    }
-}
-
 macro_rules! impl_app_user_sql_subject_from {
     ($ty:ty) => {
         impl From<SqlScopedSubject> for $ty {

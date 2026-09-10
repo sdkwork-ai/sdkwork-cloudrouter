@@ -2,6 +2,7 @@
 name = "sdkwork-provider-adapter-tencent-cloud"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license-file.workspace = true
 [lib]
 name = "sdkwork_provider_adapter_tencent_cloud"
@@ -13,3 +14,6 @@ serde_json.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true
+
+[lints]
+workspace = true

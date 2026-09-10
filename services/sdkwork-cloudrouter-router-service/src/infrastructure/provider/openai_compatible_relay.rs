@@ -1605,8 +1605,11 @@ async fn send_responses_stream_with_runtime(
     endpoint: &UpstreamProviderEndpoint,
     request: ResponsesRelayRequest,
 ) -> DomainResult<ResponsesStreamRelayResponse> {
-    let body =
-        upstream_model_request_body(request.request_body, &request.provider_model, "responses stream")?;
+    let body = upstream_model_request_body(
+        request.request_body,
+        &request.provider_model,
+        "responses stream",
+    )?;
     let upstream_uri = endpoint.responses_uri()?;
     tracing::debug!(
         supplier_code = %request.supplier_code,

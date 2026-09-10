@@ -7,6 +7,7 @@ use sdkwork_cloudrouter_router_service::api::{
 use sdkwork_cloudrouter_router_service::application::AuthenticatedApiKeyContext;
 use sdkwork_cloudrouter_router_service::domain::ProviderAuthProfile;
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::PostgresOpenAiInvocationTelemetryPlugin;
+use sdkwork_cloudrouter_router_service::ports::ResolvedBillingSubject;
 use serde_json::json;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{PgPool, Row};
@@ -145,6 +146,7 @@ fn invocation_context() -> OpenAiInvocationContext {
         },
         requested_model: "gpt-test".to_owned(),
         stream: false,
+        billing: ResolvedBillingSubject::personal(),
         request_body: json!({"model": "gpt-test"}),
         request_path: "/v1/chat/completions".to_owned(),
         http_method: "POST".to_owned(),

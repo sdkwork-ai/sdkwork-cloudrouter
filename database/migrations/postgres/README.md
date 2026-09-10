@@ -57,6 +57,14 @@ development lifecycle history stays readable.
 - `0029_api_key_group_binding_routing_strategy.up.sql` migrates legacy API key
   account group bindings from `routing_strategy` `auto` (follow group default)
   to the default business routing strategy.
+- `0041_ai_mcp_registry_and_gateway_membership.up.sql` forward-fixes the
+  unversioned baseline drift that added the `ai_mcp_binding` /
+  `ai_mcp_server` / `ai_mcp_server_revision` / `ai_mcp_tool` registry tables,
+  `iam_gateway_membership`, and the `ai_metering_usage` settlement-claim and
+  tenant-occurred indexes without any incremental migration. Databases
+  installed from the earlier 0.5.0 baseline never received the new objects and
+  the `postgres-runtime-schema` readiness probe failed closed; the migration
+  provisions them idempotently so migrated and fresh-install schemas converge.
 
 ## Historical migrations
 

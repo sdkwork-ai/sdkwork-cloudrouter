@@ -7,7 +7,7 @@ use axum::{Json, Router};
 use sdkwork_cloudrouter_router_service::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use sdkwork_cloudrouter_router_service::ports::{
     AdminUpstreamAccountGroupItem, AdminUpstreamAccountGroupMemberInput,
-    AdminUpstreamAccountGroupMemberItem, AdminUpstreamModelListEntry, AdminUpstreamResourceInput,
+    AdminUpstreamAccountGroupMemberItem, AdminUpstreamResourceInput,
     SaveAdminUpstreamAccountGroupCommand,
 };
 use sdkwork_utils_rust::SdkWorkResultCode;

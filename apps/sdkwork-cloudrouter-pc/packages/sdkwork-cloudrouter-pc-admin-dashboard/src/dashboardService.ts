@@ -1,5 +1,5 @@
 import { formatMoney } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
-import { formatTokenBankPoints, microPointsToDecimalString } from '@sdkwork/cloudroutes-pc-commons';
+import { formatTokenBankPoints, microPointsToDecimalString } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import {
   getCloudRouterBackendSdkClient,
   isRecord,

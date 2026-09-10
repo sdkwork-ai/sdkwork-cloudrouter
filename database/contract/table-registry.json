@@ -67,6 +67,38 @@
       "system_of_record": true
     },
     {
+      "table_name": "ai_mcp_binding",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_mcp_server",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_mcp_server_revision",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "ai_mcp_tool",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "tenant_entity",
+      "system_of_record": true
+    },
+    {
       "table_name": "ai_metering_request_trace",
       "owner": "router-service",
       "compliance_level": "L2",

@@ -1,18 +1,20 @@
+pub mod common;
 use std::sync::Arc;
 
+use common::payment_in_memory_stores::InMemoryPaymentIntentRuntimeStore;
 use sdkwork_cloudrouter_router_service::application::{
-    default_payment_provider_registry, EntityUuidGenerator, InMemoryPaymentIntentRuntimeStore,
-    PaymentAdapterFuture, PaymentAdapterOperation, PaymentCancelPaymentIntentRequest,
-    PaymentCancelRefundRequest, PaymentCapturePaymentIntentRequest,
-    PaymentConfirmPaymentIntentRequest, PaymentCreateIntentRequest, PaymentCreateRefundRequest,
-    PaymentDownloadStatementRequest, PaymentIntentRuntimeService, PaymentIntentStatus,
-    PaymentNativeOperationOutcome, PaymentNativeOperationRequest, PaymentNormalizeWebhookRequest,
-    PaymentNormalizedWebhookEvent, PaymentParseStatementRequest, PaymentProviderAdapter,
-    PaymentProviderCapabilities, PaymentProviderOperationOutcome, PaymentProviderRegistryError,
-    PaymentQueryRefundRequest, PaymentStatementDownloadOutcome, PaymentStatementParseOutcome,
-    PaymentVerifyWebhookRequest, PaymentWebhookVerificationOutcome,
-    RuntimeCancelPaymentIntentCommand, RuntimeCapturePaymentIntentCommand,
-    RuntimeConfirmPaymentIntentCommand, RuntimeCreatePaymentIntentCommand,
+    default_payment_provider_registry, EntityUuidGenerator, PaymentAdapterFuture,
+    PaymentAdapterOperation, PaymentCancelPaymentIntentRequest, PaymentCancelRefundRequest,
+    PaymentCapturePaymentIntentRequest, PaymentConfirmPaymentIntentRequest,
+    PaymentCreateIntentRequest, PaymentCreateRefundRequest, PaymentDownloadStatementRequest,
+    PaymentIntentRuntimeService, PaymentIntentStatus, PaymentNativeOperationOutcome,
+    PaymentNativeOperationRequest, PaymentNormalizeWebhookRequest, PaymentNormalizedWebhookEvent,
+    PaymentParseStatementRequest, PaymentProviderAdapter, PaymentProviderCapabilities,
+    PaymentProviderOperationOutcome, PaymentProviderRegistryError, PaymentQueryRefundRequest,
+    PaymentStatementDownloadOutcome, PaymentStatementParseOutcome, PaymentVerifyWebhookRequest,
+    PaymentWebhookVerificationOutcome, RuntimeCancelPaymentIntentCommand,
+    RuntimeCapturePaymentIntentCommand, RuntimeConfirmPaymentIntentCommand,
+    RuntimeCreatePaymentIntentCommand,
 };
 use sdkwork_cloudrouter_router_service::domain::DomainResult;
 use serde_json::json;
@@ -235,7 +237,8 @@ async fn create_payment_intent_places_provider_order_when_adapter_is_real() {
 }
 
 #[tokio::test]
-async fn create_payment_intent_fails_without_persisting_when_provider_order_fails() {
+async fn create_payment_intent_marks_intent_failed_but_keeps_durable_record_when_provider_order_fails()
+{
     let store = InMemoryPaymentIntentRuntimeStore::default();
     let registry = default_payment_provider_registry().with_adapter(
         "wechat_pay",
@@ -256,8 +259,21 @@ async fn create_payment_intent_fails_without_persisting_when_provider_order_fail
         .unwrap_err();
 
     assert!(error.to_string().contains("provider"));
-    assert!(store.payment_intents().is_empty());
-    assert!(store.route_decisions().is_empty());
+    // The intent is durably persisted BEFORE the provider call, so a provider
+    // failure leaves an auditable record transitioned to `failed` (and the
+    // failed operation attempt) instead of a live provider order with no
+    // local fact.
+    let intents = store.payment_intents();
+    assert_eq!(1, intents.len());
+    assert_eq!(
+        PaymentIntentStatus::Failed,
+        intents[0].status,
+        "provider failure must mark the intent failed"
+    );
+    assert_eq!(1, store.route_decisions().len());
+    let attempts = store.operation_attempts();
+    assert_eq!(1, attempts.len());
+    assert_eq!("FAILED", attempts[0].status);
 }
 
 const FAKE_QR_OPERATIONS: &[PaymentAdapterOperation] = &[

@@ -3,15 +3,10 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use hmac::{Hmac, Mac};
-use http_body_util::{BodyExt, Full};
+use http_body_util::Full;
 use hyper::header::{HeaderName, HeaderValue};
 use hyper::header::{AUTHORIZATION, CONTENT_TYPE};
 use hyper::{Method, Request, Uri};
-use hyper_rustls::HttpsConnector;
-use hyper_util::client::legacy::connect::HttpConnector;
-use hyper_util::client::legacy::Client;
-use hyper_util::rt::TokioExecutor;
-use sdkwork_cloudrouter_http::ensure_rustls_crypto_provider;
 use serde_json::{json, Value};
 use sha2::Sha256;
 
@@ -26,11 +21,13 @@ use super::{
     PaymentStatementParseOutcome, PaymentVerifyWebhookRequest, PaymentWebhookVerificationOutcome,
 };
 use crate::application::payment_adapter::STANDARD_PAYMENT_ADAPTER_OPERATIONS;
+use crate::application::payment_provider_http::{
+    build_payment_provider_http_client, send_bounded, PaymentProviderHttpClient,
+    PaymentProviderHttpError,
+};
 
 type HmacSha256 = Hmac<Sha256>;
-type StripeRequestBody = Full<Bytes>;
-type StripeConnector = HttpsConnector<HttpConnector>;
-type StripeHttpClient = Client<StripeConnector, StripeRequestBody>;
+type StripeHttpClient = PaymentProviderHttpClient;
 
 const STRIPE_PROVIDER_CODE: &str = "stripe";
 const STRIPE_API_BASE_URL: &str = "https://api.stripe.com";
@@ -338,7 +335,16 @@ impl PaymentProviderAdapter for StripePaymentProviderAdapter {
                     provider_event_id: None,
                 });
             };
-            let verified = verify_stripe_signature(webhook_secret, signature_header, &request.body);
+            let now_unix_seconds = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|duration| duration.as_secs() as i64)
+                .unwrap_or(0);
+            let verified = verify_stripe_signature(
+                webhook_secret,
+                signature_header,
+                &request.body,
+                now_unix_seconds,
+            );
             let provider_event_id = if verified {
                 parse_webhook_event_id(&request.body)?
             } else {
@@ -555,26 +561,11 @@ impl StripePaymentHttpClient for StripeHyperPaymentHttpClient {
                         format!("Stripe request could not be built: {error}"),
                     )
                 })?;
-            let response = self.client.request(request).await.map_err(|error| {
-                provider_failed(
-                    PaymentAdapterOperation::InvokeNativeOperation,
-                    format!("Stripe request failed: {error}"),
-                    true,
-                )
-            })?;
-            let status_code = response.status().as_u16();
-            let bytes = response
-                .into_body()
-                .collect()
+            let response = send_bounded(&self.client, request)
                 .await
-                .map_err(|error| {
-                    provider_failed(
-                        PaymentAdapterOperation::InvokeNativeOperation,
-                        format!("Stripe response body failed: {error}"),
-                        true,
-                    )
-                })?
-                .to_bytes();
+                .map_err(stripe_http_error)?;
+            let status_code = response.status.as_u16();
+            let bytes = response.body;
 
             if !(200..300).contains(&status_code) {
                 return Err(provider_failed(
@@ -607,26 +598,11 @@ impl StripePaymentHttpClient for StripeHyperPaymentHttpClient {
                         format!("Stripe request could not be built: {error}"),
                     )
                 })?;
-            let response = self.client.request(request).await.map_err(|error| {
-                provider_failed(
-                    PaymentAdapterOperation::InvokeNativeOperation,
-                    format!("Stripe request failed: {error}"),
-                    true,
-                )
-            })?;
-            let status_code = response.status().as_u16();
-            let bytes = response
-                .into_body()
-                .collect()
+            let response = send_bounded(&self.client, request)
                 .await
-                .map_err(|error| {
-                    provider_failed(
-                        PaymentAdapterOperation::InvokeNativeOperation,
-                        format!("Stripe response body failed: {error}"),
-                        true,
-                    )
-                })?
-                .to_bytes();
+                .map_err(stripe_http_error)?;
+            let status_code = response.status.as_u16();
+            let bytes = response.body;
 
             if !(200..300).contains(&status_code) {
                 return Err(provider_failed(
@@ -790,10 +766,30 @@ fn find_header<'a>(headers: &'a [(String, String)], header_name: &str) -> Option
         .map(|(_, value)| value.as_str())
 }
 
-fn verify_stripe_signature(webhook_secret: &str, signature_header: &str, body: &[u8]) -> bool {
+/// Maximum |now - t| for a Stripe signature timestamp, matching the official
+/// Stripe SDK default (~300s). Bounds the replay window for a captured valid
+/// delivery in addition to provider event dedupe.
+const STRIPE_WEBHOOK_MAX_TIMESTAMP_AGE_SECONDS: i64 = 300;
+
+fn verify_stripe_signature(
+    webhook_secret: &str,
+    signature_header: &str,
+    body: &[u8],
+    now_unix_seconds: i64,
+) -> bool {
     let Some(timestamp) = stripe_signature_value(signature_header, "t") else {
         return false;
     };
+    let Ok(timestamp_seconds) = timestamp.parse::<i64>() else {
+        return false;
+    };
+    let timestamp_age = now_unix_seconds
+        .checked_sub(timestamp_seconds)
+        .map(i64::abs)
+        .unwrap_or(i64::MAX);
+    if timestamp_age > STRIPE_WEBHOOK_MAX_TIMESTAMP_AGE_SECONDS {
+        return false;
+    }
     let signatures = stripe_signature_values(signature_header, "v1");
     if signatures.is_empty() {
         return false;
@@ -1062,11 +1058,19 @@ fn invalid_response(
 }
 
 fn build_stripe_http_client() -> StripeHttpClient {
-    ensure_rustls_crypto_provider();
-    let connector = hyper_rustls::HttpsConnectorBuilder::new()
-        .with_webpki_roots()
-        .https_or_http()
-        .enable_http1()
-        .build();
-    Client::builder(TokioExecutor::new()).build(connector)
+    build_payment_provider_http_client()
+}
+
+fn stripe_http_error(error: PaymentProviderHttpError) -> PaymentProviderRegistryError {
+    match error {
+        PaymentProviderHttpError::ResponseTooLarge { limit_bytes } => invalid_response(
+            PaymentAdapterOperation::InvokeNativeOperation,
+            format!("Stripe response body exceeded the {limit_bytes} byte bound"),
+        ),
+        PaymentProviderHttpError::Transport(message) => provider_failed(
+            PaymentAdapterOperation::InvokeNativeOperation,
+            format!("Stripe request failed: {message}"),
+            true,
+        ),
+    }
 }

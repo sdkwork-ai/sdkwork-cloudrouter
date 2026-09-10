@@ -770,7 +770,7 @@ frontend_operations:
   api_path: /backend/v3/api/log/request_logs
   sdk_operations:
   - sdk_family: sdkwork-log-backend-sdk
-    operation_id: log.requestLogs.list
+    operation_id: requestLogs.list
   read_sources:
   - log
 - route: /admin/request-log
@@ -782,6 +782,6 @@ frontend_operations:
   api_path: /backend/v3/api/log/request_logs/{id}
   sdk_operations:
   - sdk_family: sdkwork-log-backend-sdk
-    operation_id: log.requestLogs.detail
+    operation_id: requestLogs.retrieve
   read_sources:
   - log

@@ -26,11 +26,9 @@ export type UsageLogListParams = AiUsageLogsListParams;
 export interface UsageLogPage {
   items: UsageLog[];
   pageInfo: {
-    mode: 'offset';
-    page: number;
+    mode: 'cursor';
     pageSize: number;
-    totalItems: string;
-    totalPages: number;
+    nextCursor?: string;
     hasMore: boolean;
   };
 }
@@ -48,32 +46,27 @@ function normalizeUsageLogPage(value: SdkUsageLogsResponse): UsageLogPage {
     throw new Error('Usage log items are required');
   }
   const pageInfo = readRequiredRecord(page.pageInfo, 'Usage logs page info is required');
-  if (pageInfo.mode !== 'offset') {
-    throw new Error('Usage logs must use offset pagination');
-  }
-  if (pageInfo.nextCursor !== undefined && pageInfo.nextCursor !== null) {
-    throw new Error('Usage logs offset pagination must not return nextCursor');
+  if (pageInfo.mode !== 'cursor') {
+    throw new Error('Usage logs must use cursor pagination');
   }
 
-  const pageNumber = readRequiredNonNegativeSafeInteger(pageInfo, 'page', 'Usage log page is required');
   const pageSize = readRequiredNonNegativeSafeInteger(pageInfo, 'pageSize', 'Usage log page size is required');
-  const totalPages = readRequiredNonNegativeSafeInteger(pageInfo, 'totalPages', 'Usage log total pages are required');
-  if (pageNumber < 1) {
-    throw new Error('Usage log page must be greater than or equal to 1');
-  }
   if (pageSize < 1 || pageSize > 200) {
     throw new Error('Usage log page size must be between 1 and 200');
   }
+  const rawNextCursor = pageInfo.nextCursor;
+  if (rawNextCursor !== undefined && rawNextCursor !== null && typeof rawNextCursor !== 'string') {
+    throw new Error('Usage log nextCursor must be a string');
+  }
+  const hasMore = readRequiredBoolean(pageInfo, 'hasMore', 'Usage log hasMore flag is required');
 
   return {
     items: page.items.map(normalizeUsageLog),
     pageInfo: {
-      mode: 'offset',
-      page: pageNumber,
+      mode: 'cursor',
       pageSize,
-      totalItems: readRequiredUnsignedInt64String(pageInfo, 'totalItems', 'Usage log total items are required'),
-      totalPages,
-      hasMore: readRequiredBoolean(pageInfo, 'hasMore', 'Usage log hasMore flag is required'),
+      nextCursor: typeof rawNextCursor === 'string' && rawNextCursor.length > 0 ? rawNextCursor : undefined,
+      hasMore,
     },
   };
 }

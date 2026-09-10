@@ -551,7 +551,17 @@ fn string_cell(row: &sqlx::postgres::PgRow, column: &str) -> String {
 }
 
 fn integer_cell(row: &sqlx::postgres::PgRow, column: &str) -> i64 {
-    row.try_get::<i64, _>(column).unwrap_or(0)
+    match row.try_get::<i64, _>(column) {
+        Ok(value) => value,
+        Err(error) => {
+            tracing::warn!(
+                column = column,
+                error = %error,
+                "referral aggregate column decode failed; defaulting to 0"
+            );
+            0
+        }
+    }
 }
 
 fn store_error(context: &str, error: sqlx::Error) -> DomainError {

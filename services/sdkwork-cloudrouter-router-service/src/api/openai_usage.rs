@@ -13,8 +13,8 @@ use crate::application::{
     AuthenticatedApiKeyContext, GatewayPricingDecision, PriceResolution, PriceService,
 };
 use crate::domain::{
-    provider_native_model_id, BillingMeter, DecimalValue, DomainError, DomainResult,
-    ResourceDefinition,
+    provider_native_model_id, BillingMeter, BillingOwnerKind, DecimalValue, DomainError,
+    DomainResult, ResourceDefinition,
 };
 use crate::ports::{
     GatewayRequestTraceCommand, GatewayUsageQuantity, GatewayUsageRecordCommand,
@@ -191,6 +191,8 @@ pub(crate) struct GatewayUsageRecordCommandBuilder {
     tenant_id: i64,
     organization_id: i64,
     user_id: i64,
+    billing_owner: BillingOwnerKind,
+    billing_owner_name: Option<String>,
     api_key_id: i64,
     api_key_name_snapshot: String,
     account_group_id: i64,
@@ -290,6 +292,8 @@ impl GatewayUsageRecordCommandBuilder {
             tenant_id: self.tenant_id,
             organization_id: self.organization_id,
             user_id: self.user_id,
+            billing_owner: self.billing_owner,
+            billing_owner_name: self.billing_owner_name.clone(),
             api_key_id: self.api_key_id,
             api_key_name_snapshot: self.api_key_name_snapshot.clone(),
             account_group_id: self.account_group_id,
@@ -385,6 +389,8 @@ impl GatewayUsageRecordCommandBuilder {
             provider_error_code: self.provider_error_code.clone(),
             error_type: self.error_type.clone(),
             error_message_masked: self.error_message_masked.clone(),
+            billing_owner: self.billing_owner,
+            billing_owner_name: self.billing_owner_name.clone(),
         }
     }
 
@@ -614,6 +620,11 @@ pub(crate) fn build_request_trace_command(
     error_message: Option<String>,
 ) -> GatewayRequestTraceCommand {
     let context = &invocation_context.api_key_context;
+    // usage 归因 organization_id = 计费主体组织（与钱包扣费一致）。
+    let attribution_organization_id = match invocation_context.billing.kind {
+        BillingOwnerKind::Organization => invocation_context.billing.organization_id,
+        BillingOwnerKind::Personal => context.organization_id,
+    };
     let requested_model_catalog_key = route
         .map(|route| route.catalog_key.clone())
         .unwrap_or_else(|| invocation_context.requested_model.clone());
@@ -624,8 +635,13 @@ pub(crate) fn build_request_trace_command(
         request_id: invocation_context.request_id.clone(),
         trace_id: invocation_context.trace_id.clone(),
         tenant_id: context.tenant_id,
-        organization_id: context.organization_id,
+        organization_id: attribution_organization_id,
         user_id: context.user_id,
+        billing_owner: invocation_context.billing.kind,
+        billing_owner_name: invocation_context
+            .billing
+            .organization_name_snapshot
+            .clone(),
         api_key_id: context.api_key_id,
         api_key_name_snapshot: context.api_key_name_snapshot.clone(),
         // Attribute the trace to the account group that actually routed the
@@ -771,12 +787,22 @@ where
     // by a `cn` regional rate fails that validation and the usage fact would
     // never reach the billing ledger.
     let billing_region_code = usage_billing_region(catalog, context, route);
+    // usage 归因 organization_id = 计费主体组织（与钱包扣费一致）。
+    let billing_organization_id = match invocation_context.billing.kind {
+        BillingOwnerKind::Organization => invocation_context.billing.organization_id,
+        BillingOwnerKind::Personal => context.organization_id,
+    };
     Ok(GatewayUsageRecordCommandBuilder {
         request_id: invocation_context.request_id.clone(),
         trace_id: invocation_context.trace_id.clone(),
         tenant_id: context.tenant_id,
-        organization_id: context.organization_id,
+        organization_id: billing_organization_id,
         user_id: context.user_id,
+        billing_owner: invocation_context.billing.kind,
+        billing_owner_name: invocation_context
+            .billing
+            .organization_name_snapshot
+            .clone(),
         api_key_id: context.api_key_id,
         api_key_name_snapshot: context.api_key_name_snapshot.clone(),
         account_group_id: route.group_id,

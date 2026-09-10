@@ -2,7 +2,10 @@
 name = "sdkwork-cloudrouter-paas-plugin"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license-file.workspace = true
+[lib]
+name = "sdkwork_cloudrouter_paas_plugin"
 
 [dependencies]
 serde.workspace = true
@@ -10,3 +13,6 @@ serde_json.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true
+
+[lints]
+workspace = true

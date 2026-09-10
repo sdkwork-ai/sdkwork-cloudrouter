@@ -16,7 +16,8 @@
     "gateway-iam",
     "operations",
     "pricing",
-    "cloudrouter-billing"
+    "cloudrouter-billing",
+    "payment-runtime"
   ],
   "lifecycle": {
     "autoMigrate": false,
@@ -48,7 +49,7 @@
     "provider": "default",
     "hooks": []
   },
-  "materializedTableCount": 38,
+  "materializedTableCount": 42,
   "materializedTables": [
     "ai_chat_context_snapshot",
     "ai_chat_conversation",
@@ -58,6 +59,10 @@
     "ai_chat_turn",
     "ai_config_change_event",
     "ai_config_version",
+    "ai_mcp_binding",
+    "ai_mcp_server",
+    "ai_mcp_server_revision",
+    "ai_mcp_tool",
     "ai_metering_request_trace",
     "ai_metering_usage",
     "ai_model_access_policy",

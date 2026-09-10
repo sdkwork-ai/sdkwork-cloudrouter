@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.5.0.
--- Registry SHA-256: 6b994396308e8480d180d9ad76a67c4051170bead55285ad15b34bf490f3da0d.
+-- Registry SHA-256: 49368459d8224063b687875b137a8beb3f7f92405504f41c5ec72dbd857e550c.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -272,6 +272,9 @@ CREATE TABLE IF NOT EXISTS cloudrouter_charge_line (
     charged_at TIMESTAMPTZ NOT NULL,
     settlement_id BIGINT,
     settled_at TIMESTAMPTZ,
+    debit_points BIGINT,
+    original_currency_amount NUMERIC(38, 12),
+    original_currency_code VARCHAR(10),
     CONSTRAINT ck_cloudrouter_charge_line_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
     CONSTRAINT fk_cloudrouter_charge_line_decision FOREIGN KEY (tenant_id, organization_id, rating_decision_id) REFERENCES cloudrouter_rating_decision (tenant_id, organization_id, id),
     CONSTRAINT ck_cloudrouter_charge_line_amount CHECK (quantity > 0 AND reference_amount >= 0 AND cost_amount >= 0 AND amount > 0),

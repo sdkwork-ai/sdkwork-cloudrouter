@@ -370,7 +370,6 @@ class RustBackendArchitectureGuardian:
         query_dir = sql_dir / "queries"
         required_query_files = {
             "mod.rs": "PricingCatalog SQL query module",
-            "lookup.rs": "PricingCatalog SQL lookup query boundaries",
             "snapshot.rs": "PricingCatalog SQL snapshot load query boundaries",
         }
         for filename, purpose in required_query_files.items():

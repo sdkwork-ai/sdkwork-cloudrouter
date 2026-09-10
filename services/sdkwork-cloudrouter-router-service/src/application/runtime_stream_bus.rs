@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
 use tokio::sync::Notify;
@@ -57,6 +57,8 @@ pub trait RuntimeStreamBus: Send + Sync {
     ) -> RuntimeStreamBusFuture<'a, Option<String>>;
 }
 
+/// Desktop-development bus. All state is process-local and every map is swept
+/// of expired or released entries so long-running processes stay bounded.
 #[derive(Debug, Default)]
 pub struct InMemoryRuntimeStreamBus {
     claims: Mutex<HashMap<String, InMemoryExecutionClaim>>,
@@ -76,13 +78,27 @@ struct InMemoryCancellationRequest {
     expires_at: Instant,
 }
 
+/// A poisoned guard means a panic happened while holding it; the map contents
+/// remain valid, so recovery keeps the bus usable instead of panicking every
+/// later request.
+fn lock_or_recover<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
+    mutex
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
 impl InMemoryRuntimeStreamBus {
     fn notifier(&self, invocation_id: &str) -> Arc<Notify> {
-        let mut notifiers = self.notifiers.lock().unwrap();
+        let mut notifiers = lock_or_recover(&self.notifiers);
         notifiers
             .entry(invocation_id.to_owned())
             .or_insert_with(|| Arc::new(Notify::new()))
             .clone()
+    }
+
+    fn drop_notifier(&self, invocation_id: &str) {
+        let mut notifiers = lock_or_recover(&self.notifiers);
+        notifiers.remove(invocation_id);
     }
 }
 
@@ -95,7 +111,10 @@ impl RuntimeStreamBus for InMemoryRuntimeStreamBus {
     ) -> RuntimeStreamBusFuture<'a, bool> {
         Box::pin(async move {
             let now = Instant::now();
-            let mut claims = self.claims.lock().unwrap();
+            let mut claims = lock_or_recover(&self.claims);
+            // Opportunistic sweep: expired leases for any invocation must not
+            // accumulate in long-lived desktop processes.
+            claims.retain(|_, claim| claim.expires_at > now);
             if claims
                 .get(invocation_id)
                 .is_some_and(|claim| claim.expires_at > now)
@@ -120,7 +139,7 @@ impl RuntimeStreamBus for InMemoryRuntimeStreamBus {
         lease_ttl: Duration,
     ) -> RuntimeStreamBusFuture<'a, bool> {
         Box::pin(async move {
-            let mut claims = self.claims.lock().unwrap();
+            let mut claims = lock_or_recover(&self.claims);
             let Some(claim) = claims.get_mut(invocation_id) else {
                 return Ok(false);
             };
@@ -138,13 +157,18 @@ impl RuntimeStreamBus for InMemoryRuntimeStreamBus {
         owner_id: &'a str,
     ) -> RuntimeStreamBusFuture<'a, ()> {
         Box::pin(async move {
-            let mut claims = self.claims.lock().unwrap();
-            if claims
-                .get(invocation_id)
-                .is_some_and(|claim| claim.owner_id == owner_id)
             {
-                claims.remove(invocation_id);
+                let mut claims = lock_or_recover(&self.claims);
+                if claims
+                    .get(invocation_id)
+                    .is_some_and(|claim| claim.owner_id == owner_id)
+                {
+                    claims.remove(invocation_id);
+                }
             }
+            // Waiting tasks hold their own `Arc` clones, so dropping the map
+            // entry only ends future lookups; no live waiter is broken.
+            self.drop_notifier(invocation_id);
             Ok(())
         })
     }
@@ -179,14 +203,17 @@ impl RuntimeStreamBus for InMemoryRuntimeStreamBus {
         ttl: Duration,
     ) -> RuntimeStreamBusFuture<'a, ()> {
         Box::pin(async move {
-            let mut cancellations = self.cancellations.lock().unwrap();
+            let now = Instant::now();
+            let mut cancellations = lock_or_recover(&self.cancellations);
+            cancellations.retain(|_, request| request.expires_at > now);
             cancellations.insert(
                 invocation_id.to_owned(),
                 InMemoryCancellationRequest {
                     reason: reason.to_owned(),
-                    expires_at: Instant::now() + ttl,
+                    expires_at: now + ttl,
                 },
             );
+            drop(cancellations);
             self.notifier(invocation_id).notify_waiters();
             Ok(())
         })
@@ -197,7 +224,7 @@ impl RuntimeStreamBus for InMemoryRuntimeStreamBus {
         invocation_id: &'a str,
     ) -> RuntimeStreamBusFuture<'a, Option<String>> {
         Box::pin(async move {
-            let mut cancellations = self.cancellations.lock().unwrap();
+            let mut cancellations = lock_or_recover(&self.cancellations);
             let Some(request) = cancellations.get(invocation_id) else {
                 return Ok(None);
             };

@@ -5,13 +5,20 @@ use sqlx::{PgPool, Row};
 
 use crate::domain::{DecimalValue, DomainError};
 use crate::ports::{
-    AdminBillingRecordItem, AdminFinanceCollection, AdminFinanceReadFuture, AdminFinanceStore,
-    AdminTransactionRecordItem, ListAdminBillingRecordsQuery, ListAdminTransactionsQuery,
+    AdminBillingRecordItem, AdminFinanceCollection, AdminFinanceCursor, AdminFinanceReadFuture,
+    AdminFinanceStore, AdminTransactionRecordItem, ListAdminBillingRecordsQuery,
+    ListAdminTransactionsQuery,
 };
 
+// Keyset seek on the stable (sort_time, sort_id) tuple per PAGINATION_SPEC.md
+// §6/§12: fast-growing ledger views must not use OFFSET or window-count totals.
+// Recommended physical index for the dependency-owned base table:
+//   CREATE INDEX ON acct_ledger_entry (tenant_id, organization_id, created_at DESC, id DESC);
 const LIST_ADMIN_TRANSACTIONS: &str = r#"
 WITH ledger_entries AS (
     SELECT
+        COALESCE(e.created_at, '-infinity'::timestamptz) AS sort_time,
+        e.id AS sort_id,
         CAST(e.id AS TEXT) AS id,
         CAST(e.created_at AS TEXT) AS occurred_at,
         CAST(e.owner_id AS TEXT) AS user_id,
@@ -98,18 +105,22 @@ filtered_entries AS (
     FROM ledger_entries
     WHERE ($3::text IS NULL OR id ILIKE ('%' || $3 || '%') OR user_id ILIKE ('%' || $3 || '%') OR description ILIKE ('%' || $3 || '%'))
       AND ($4::text IS NULL OR normalized_status = $4 OR normalized_status = '__unsupported__')
-      AND ($5::text IS NULL OR occurred_at >= $5)
-      AND ($6::text IS NULL OR occurred_at <= $6)
+      AND ($5::text IS NULL OR sort_time >= $5::timestamptz)
+      AND ($6::text IS NULL OR sort_time <= $6::timestamptz)
+      AND ($7::bigint IS NULL OR (sort_time, sort_id) < (to_timestamp($7::double precision / 1000000.0), $8::bigint))
 )
-SELECT id, occurred_at, user_id, normalized_type, amount, balance, description, status_source, transaction_status, payment_status, refund_status, order_status, normalized_status, COUNT(*) OVER() AS total
+SELECT id, occurred_at, user_id, normalized_type, amount, balance, description, status_source, transaction_status, payment_status, refund_status, order_status, normalized_status,
+       (EXTRACT(EPOCH FROM sort_time) * 1000000.0)::bigint AS cursor_micros, sort_id AS cursor_id
 FROM filtered_entries
-ORDER BY occurred_at DESC NULLS LAST, id DESC
-LIMIT $7 OFFSET $8
+ORDER BY sort_time DESC, sort_id DESC
+LIMIT $9
 "#;
 
 const LIST_ADMIN_BILLING_RECORDS: &str = r#"
 WITH billing_entries AS (
     SELECT
+        COALESCE(s.period_end, s.updated_at, s.created_at, '-infinity'::timestamptz) AS sort_time,
+        s.id AS sort_id,
         COALESCE(NULLIF(s.statement_no, ''), 'statement-' || CAST(s.id AS TEXT)) AS id,
         CAST(COALESCE(s.owner_id, pi.owner_user_id, 0) AS TEXT) AS user_id,
         COALESCE(NULLIF(s.period, ''), substr(CAST(s.period_start AS TEXT), 1, 7), '-') AS period,
@@ -131,7 +142,6 @@ WITH billing_entries AS (
             ELSE '__unsupported__'
         END AS normalized_status,
         CAST(COALESCE(s.due_at, pi.issued_at, s.period_end, s.updated_at, s.created_at) AS TEXT) AS due_date,
-        CAST(COALESCE(s.period_end, s.updated_at, s.created_at) AS TEXT) AS sort_time,
         COUNT(DISTINCT charge.id) AS settlement_count
     FROM commerce_statement s
     LEFT JOIN commerce_invoice pi
@@ -172,13 +182,15 @@ filtered_entries AS (
     FROM billing_entries
     WHERE ($3::text IS NULL OR id ILIKE ('%' || $3 || '%') OR user_id ILIKE ('%' || $3 || '%') OR period ILIKE ('%' || $3 || '%'))
       AND ($4::text IS NULL OR normalized_status = $4 OR normalized_status = '__unsupported__')
-      AND ($5::text IS NULL OR sort_time >= $5)
-      AND ($6::text IS NULL OR sort_time <= $6)
+      AND ($5::text IS NULL OR sort_time >= $5::timestamptz)
+      AND ($6::text IS NULL OR sort_time <= $6::timestamptz)
+      AND ($7::bigint IS NULL OR (sort_time, sort_id) < (to_timestamp($7::double precision / 1000000.0), $8::bigint))
 )
-SELECT id, user_id, period, total_tokens, total_cost, payment_status_code, statement_status_code, invoice_id, invoice_status_code, normalized_status, due_date, COUNT(*) OVER() AS total
+SELECT id, user_id, period, total_tokens, total_cost, payment_status_code, statement_status_code, invoice_id, invoice_status_code, normalized_status, due_date,
+       (EXTRACT(EPOCH FROM sort_time) * 1000000.0)::bigint AS cursor_micros, sort_id AS cursor_id
 FROM filtered_entries
-ORDER BY sort_time DESC NULLS LAST, id DESC
-LIMIT $7 OFFSET $8
+ORDER BY sort_time DESC, sort_id DESC
+LIMIT $9
 "#;
 
 #[derive(Debug, Clone)]
@@ -212,6 +224,7 @@ async fn list_transactions(
     pool: &PgPool,
     query: ListAdminTransactionsQuery,
 ) -> Result<AdminFinanceCollection<AdminTransactionRecordItem>, DomainError> {
+    // Fetch one extra row so has_more is decided without a total-count scan.
     let rows = sqlx::query(LIST_ADMIN_TRANSACTIONS)
         .bind(query.subject.tenant_id)
         .bind(query.subject.organization_id)
@@ -219,25 +232,35 @@ async fn list_transactions(
         .bind(query.status.as_deref())
         .bind(query.start_time.as_deref())
         .bind(query.end_time.as_deref())
-        .bind(query.page_size)
-        .bind(offset(query.page_no, query.page_size))
+        .bind(query.cursor.map(|cursor| cursor.occurred_at_micros))
+        .bind(query.cursor.map(|cursor| cursor.id))
+        .bind(query.page_size + 1)
         .fetch_all(pool)
         .await
         .map_err(sql_error)?;
 
-    let total = rows
-        .first()
-        .map(|row| integer_cell(row, "total"))
-        .unwrap_or(0);
-    let items = rows
+    let has_more = rows.len() as i64 > query.page_size;
+    let page_rows: Vec<_> = rows
+        .into_iter()
+        .take(usize::try_from(query.page_size).unwrap_or(usize::MAX))
+        .collect();
+    let next_cursor = if has_more {
+        page_rows.last().map(|row| AdminFinanceCursor {
+            occurred_at_micros: integer_cell(row, "cursor_micros"),
+            id: integer_cell(row, "cursor_id"),
+        })
+    } else {
+        None
+    };
+    let items = page_rows
         .into_iter()
         .map(row_to_transaction)
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(AdminFinanceCollection {
         items,
-        total,
-        page_no: query.page_no,
+        next_cursor,
+        has_more,
         page_size: query.page_size,
     })
 }
@@ -253,25 +276,35 @@ async fn list_billing_records(
         .bind(query.status.as_deref())
         .bind(query.start_time.as_deref())
         .bind(query.end_time.as_deref())
-        .bind(query.page_size)
-        .bind(offset(query.page_no, query.page_size))
+        .bind(query.cursor.map(|cursor| cursor.occurred_at_micros))
+        .bind(query.cursor.map(|cursor| cursor.id))
+        .bind(query.page_size + 1)
         .fetch_all(pool)
         .await
         .map_err(sql_error)?;
 
-    let total = rows
-        .first()
-        .map(|row| integer_cell(row, "total"))
-        .unwrap_or(0);
-    let items = rows
+    let has_more = rows.len() as i64 > query.page_size;
+    let page_rows: Vec<_> = rows
+        .into_iter()
+        .take(usize::try_from(query.page_size).unwrap_or(usize::MAX))
+        .collect();
+    let next_cursor = if has_more {
+        page_rows.last().map(|row| AdminFinanceCursor {
+            occurred_at_micros: integer_cell(row, "cursor_micros"),
+            id: integer_cell(row, "cursor_id"),
+        })
+    } else {
+        None
+    };
+    let items = page_rows
         .into_iter()
         .map(row_to_billing_record)
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(AdminFinanceCollection {
         items,
-        total,
-        page_no: query.page_no,
+        next_cursor,
+        has_more,
         page_size: query.page_size,
     })
 }
@@ -311,10 +344,6 @@ fn row_to_billing_record(
             .to_owned(),
         due_date: string_cell(&row, "due_date"),
     })
-}
-
-fn offset(page_no: i64, page_size: i64) -> i64 {
-    (page_no - 1) * page_size
 }
 
 fn string_cell(row: &sqlx::postgres::PgRow, column: &str) -> String {

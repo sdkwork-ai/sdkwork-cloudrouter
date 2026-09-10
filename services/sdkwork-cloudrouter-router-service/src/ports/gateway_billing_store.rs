@@ -1,7 +1,7 @@
 use std::future::Future;
 use std::pin::Pin;
 
-use crate::domain::DomainResult;
+use crate::domain::{BillingOwnerKind, DomainResult};
 use crate::ports::RechargeSettingsModel;
 
 pub type GatewayBillingFuture<'a, T> = Pin<Box<dyn Future<Output = DomainResult<T>> + Send + 'a>>;
@@ -43,10 +43,35 @@ pub struct GatewayBillingAmount {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GatewayBillingContext {
     pub tenant_id: i64,
+    /// 计费归属组织：个人计费时为 key 自身组织（通常 0），团队计费时为
+    /// 团队组织 id。钱包定位、定价计划回溯与 usage 归因均使用该维度。
     pub organization_id: i64,
+    /// 实际发起请求的用户（个人与团队计费都保留，审计维度）。
     pub user_id: i64,
     pub request_id: String,
     pub pricing_plan_code: String,
+    /// 计费主体类型：决定钱包 owner_type（USER/ORGANIZATION）与
+    /// usage 归因列的取值。
+    pub billing_owner: BillingOwnerKind,
+}
+
+impl GatewayBillingContext {
+    /// 团队计费时的钱包属主 id（owner_id = 团队组织 id，与 acct_account
+    /// 的组织钱包唯一键约定一致）。
+    pub fn wallet_owner_user_id(&self) -> String {
+        match self.billing_owner {
+            BillingOwnerKind::Organization => self.organization_id.to_string(),
+            BillingOwnerKind::Personal => self.user_id.to_string(),
+        }
+    }
+
+    /// 钱包 owner_type（sdkwork-account acct_account.owner_type）。
+    pub fn wallet_owner_type(&self) -> &'static str {
+        match self.billing_owner {
+            BillingOwnerKind::Organization => "ORGANIZATION",
+            BillingOwnerKind::Personal => "USER",
+        }
+    }
 }
 
 pub trait GatewayBillingStore: Send + Sync {

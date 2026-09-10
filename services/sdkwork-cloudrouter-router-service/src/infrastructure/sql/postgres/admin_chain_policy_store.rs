@@ -50,7 +50,7 @@ impl AdminChainPolicyStore for PostgresAdminChainPolicyStore {
         .await
         .ok()
         .flatten()?;
-        Some(item_from_row(&row))
+        item_from_row(&row)
     }
 
     async fn upsert_chain_policy(
@@ -290,18 +290,20 @@ async fn load_chain_policy_by_id(
             "database operation failed"
         ))
     })?;
-    Ok(row.map(|row| item_from_row(&row)))
+    Ok(row.and_then(|row| item_from_row(&row)))
 }
 
-fn item_from_row(row: &sqlx::postgres::PgRow) -> AdminChainPolicyItem {
-    AdminChainPolicyItem {
-        id: row.get("id"),
-        scope_type: row.get("scope_type"),
-        scope_id: row.get("scope_id"),
-        policy_name: row.get("policy_name"),
-        payload: row.get("payload"),
-        updated_at: row.get("updated_at"),
-    }
+/// Fallible row mapping: a decode failure yields `None` (policy absent)
+/// instead of panicking the request path on unexpected column shapes.
+fn item_from_row(row: &sqlx::postgres::PgRow) -> Option<AdminChainPolicyItem> {
+    Some(AdminChainPolicyItem {
+        id: row.try_get("id").ok()?,
+        scope_type: row.try_get("scope_type").ok()?,
+        scope_id: row.try_get("scope_id").ok()?,
+        policy_name: row.try_get("policy_name").ok()?,
+        payload: row.try_get("payload").ok()?,
+        updated_at: row.try_get("updated_at").ok()?,
+    })
 }
 
 fn digest_hex(payload: &str) -> String {

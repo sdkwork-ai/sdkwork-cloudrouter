@@ -5,6 +5,9 @@ use std::time::Duration;
 use prometheus::{IntCounterVec, IntGauge};
 use sdkwork_cloudrouter_security::redact_error_message;
 
+#[cfg(test)]
+use crate::domain::BillingOwnerKind;
+
 use crate::domain::{DomainError, DomainResult};
 use crate::ports::{
     now_epoch_millis, GatewayAccountingRecordContext, GatewayAccountingRetryDelivery,
@@ -960,6 +963,8 @@ mod tests {
             tenant_id: 100_001,
             organization_id: 0,
             user_id: 30,
+            billing_owner: BillingOwnerKind::Personal,
+            billing_owner_name: None,
             api_key_id: 101,
             api_key_name_snapshot: "Accounting Retry Test Key".to_owned(),
             account_group_id: 10,
@@ -997,6 +1002,8 @@ mod tests {
             tenant_id: 100_001,
             organization_id: 0,
             user_id: 30,
+            billing_owner: BillingOwnerKind::Personal,
+            billing_owner_name: None,
             api_key_id: 101,
             api_key_name_snapshot: "Accounting Retry Test Key".to_owned(),
             account_group_id: 10,

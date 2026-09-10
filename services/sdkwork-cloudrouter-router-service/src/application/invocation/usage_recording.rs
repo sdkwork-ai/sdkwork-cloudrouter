@@ -7,7 +7,7 @@ use super::{
     Invocation, InvocationError, InvocationErrorKind, InvocationFuture, InvocationInterceptor,
     InvocationShape,
 };
-use crate::domain::{provider_native_model_id, BillingMeter};
+use crate::domain::{provider_native_model_id, BillingMeter, BillingOwnerKind};
 use crate::ports::{GatewayRequestTraceCommand, GatewayUsageQuantity, GatewayUsageRecorder};
 
 #[derive(Clone)]
@@ -222,8 +222,14 @@ fn trace_command_from_invocation(
         request_id: invocation.request.request_id.clone(),
         trace_id: invocation.request.trace_id.clone(),
         tenant_id: invocation.subject.tenant_id,
-        organization_id: invocation.subject.organization_id,
+        // usage 归因 organization_id = 计费主体组织（与钱包扣费一致）。
+        organization_id: match invocation.subject.billing_owner {
+            BillingOwnerKind::Organization => invocation.subject.billing_organization_id,
+            BillingOwnerKind::Personal => invocation.subject.organization_id,
+        },
         user_id: invocation.subject.user_id,
+        billing_owner: invocation.subject.billing_owner,
+        billing_owner_name: None,
         api_key_id: invocation.subject.api_key_id.unwrap_or_default(),
         api_key_name_snapshot: invocation
             .subject

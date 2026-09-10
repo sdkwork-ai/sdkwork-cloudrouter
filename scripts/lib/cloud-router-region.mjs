@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export const REPO_ROOT = path.resolve(__dirname, '..', '..');
-export const REGION_SPEC_PATH = path.join(REPO_ROOT, 'specs/region.spec.json');
+export const REGION_SPEC_PATH = path.join(REPO_ROOT, 'etc/region.spec.json');
 export const REGION_REGISTRY_PATH = path.join(REPO_ROOT, 'etc/region.registry.json');
 
 export const REGION_CODE_ENV = 'SDKWORK_CLOUDROUTER_ROUTER_REGION_CODE';
@@ -18,7 +18,7 @@ let registryCache = null;
 
 /**
  * Loads the region registry (etc/region.registry.json) and validates it
- * against the local region spec (specs/region.spec.json).
+ * against the local region spec (etc/region.spec.json).
  */
 export function loadRegionRegistry() {
   if (registryCache) {

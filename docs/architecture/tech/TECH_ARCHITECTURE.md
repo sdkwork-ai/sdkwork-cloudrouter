@@ -243,6 +243,21 @@ Data ownership and future transfer requirements are
 recorded in
 [ADR-20260730](../decisions/ADR-20260730-own-chat-runtime-postgres-authority.md).
 
+### MCP Runtime Persistence
+
+The admin MCP management surface persists to four PostgreSQL-only tenant-scoped
+tables that are part of the materialized baseline:
+`ai_mcp_server` (server registry, transport, visibility, health),
+`ai_mcp_server_revision` (immutable draft/published configuration revisions),
+`ai_mcp_tool` (discovered tool schemas and execution policy), and
+`ai_mcp_binding` (owner-scoped allow/deny bindings with a bounded snapshot).
+Revision creation and publication update the server pointer and the revision
+lifecycle inside one transaction, and scoped unique indexes
+(`(tenant_id, organization_id, server_key)` and the per-server revision tuple)
+are the final collision guard. The schema authority is
+`docs/schema-registry/tables/ai-mcp-runtime.yaml`; both the baseline DDL and
+`generated/schema/postgres/schema.sql` are materialized from it.
+
 ## 4. Upstream Supplier Data Model
 
 The canonical aggregate tables are:
@@ -330,6 +345,21 @@ budgets remain deployment/SRE gates and are not inferred from per-record limits.
 The desktop-only in-memory adapter additionally rejects a 1025th queued entry;
 all non-desktop deployments require Redis at startup and never fall back to an
 in-memory or SQLite accounting queue.
+
+Payment intent and refund facts are runtime-written through the payment
+runtime store and materialized by the Cloud Router-owned `payment-runtime`
+database module (fresh installs receive the runtime shape directly; shared
+payment tables self-heal against federated baselines). Refund creation is
+atomically idempotent (`ON CONFLICT` on the `(tenant_id, idempotency_key)`
+arbiter) and carries a cumulative refund-cap reservation in the same
+transaction: the guard row-locks the intent, re-reads the active refund sum,
+and rolls back the full refund write when `sum(active refunds) + this refund`
+would exceed the intent amount — failed/canceled refunds release their
+reservation by leaving the active-status sum. Payment intents are durably
+inserted before the provider call and transition to `requires_action` or
+`failed` through a recorded provider-dispatch outcome, so a provider error can
+never leave an intent silently pending or a live provider order without a
+local fact.
 
 ## 6. API, SDK, And Data Ownership
 
@@ -458,6 +488,10 @@ negative authorization evidence.
 - Request and response bodies, retry batches, query pages, and worker batches
   require explicit bounds. Streaming paths must apply backpressure and terminal
   cleanup rather than buffering complete responses.
+- Outbound payment provider dispatch (Stripe, Alipay, WeChat Pay, PayPal) runs
+  through one shared bounded HTTP client: 10-second connect budget, 60-second
+  total request deadline, and a hard 4 MiB response-body ceiling
+  (`application/payment_provider_http.rs`).
 - Database pools, timeouts, and transaction isolation are explicit. Financial
   and idempotent writes use PostgreSQL transaction and locking semantics.
 
@@ -480,12 +514,12 @@ negative authorization evidence.
 - Kubernetes injects Pod name and UID for diagnostics. Static
   `SDKWORK_CLOUDROUTER_SNOWFLAKE_NODE_ID` values are rejected outside single-process
   desktop development and are never a cluster identity authority.
-- The current platform allocator still runs idempotent registry DDL from its
-  allocation path. PostgreSQL requires schema `CREATE` even for `CREATE TABLE
-  IF NOT EXISTS` when the table already exists, which conflicts with the
-  `DATABASE_SPEC` least-privilege runtime role. Production approval remains
-  blocked until `sdkwork-database` provides migrator-owned registry
-  provisioning and a runtime verify/allocate path that needs only table DML.
+- The runtime allocation path is DML-only on hardened deployments: the
+  allocator probes `to_regclass` before any DDL, so a least-privilege runtime
+  role never needs schema `CREATE`. The `sdkwork_node_registry` table is
+  provisioned by the release lifecycle through migration `0039` (and is
+  declared in the schema registry under `ops-runtime`), which resolves the
+  least-privilege conflict previously blocking production approval.
 
 ### Observability
 
@@ -514,7 +548,14 @@ become Prometheus labels. Usage settlement exports fixed-outcome run, item,
 duration, and error metrics. Circuit breakers export only fixed backend,
 state-transition, rejection-reason, coordination-operation, and fallback-mode
 labels. Redis coordination errors are observable, and an unknown distributed
-circuit state rejects the permit instead of silently degrading to closed.
+circuit state rejects the permit instead of silently degrading to closed. The
+`cloudrouter_rate_limit_redis_degraded` gauge is alerted on
+(`CloudRouterRateLimitRedisDegraded`) and its fallback divisor is pinned to
+the deployment replica count via
+`SDKWORK_CLOUDROUTER_PROVIDER_RATE_LIMIT_ESTIMATED_INSTANCE_COUNT` in the
+shipped manifests. Redis deployed from the checked-in manifests runs
+`maxmemory-policy noeviction` because it holds quota counters, idempotency
+keys, circuit state, and accounting retry facts that must never be evicted.
 
 `GET /metrics` combines the canonical framework exposition with native
 readiness, tenant-isolation, runtime-ID, and invocation metrics registered in

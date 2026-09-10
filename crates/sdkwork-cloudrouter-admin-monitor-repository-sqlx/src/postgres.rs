@@ -82,8 +82,8 @@ async fn list_monitor_nodes(
                 ORDER BY latest.heartbeat_at DESC NULLS LAST, latest.id DESC
                 LIMIT 1
             ) h ON true
-            WHERE (i.tenant_id = $1 OR i.tenant_id = 0 OR i.tenant_id IS NULL)
-              AND (i.organization_id = $2 OR i.organization_id = 0 OR i.organization_id = '0')
+            WHERE (i.tenant_id = $1 OR i.tenant_id = 0)
+              AND (i.organization_id = $2 OR i.organization_id = 0)
               AND i.status = 1
               AND i.deleted_at IS NULL
               AND (
@@ -149,8 +149,8 @@ async fn list_monitor_alerts(
                 resolved_at::text AS resolved_at,
                 COALESCE(source, '') AS source
             FROM ops_alert_event
-            WHERE (tenant_id = $1 OR tenant_id = 0 OR tenant_id IS NULL)
-              AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
+            WHERE (tenant_id = $1 OR tenant_id = 0)
+              AND (organization_id = $2 OR organization_id = 0)
               AND status = 1
               AND (
                   $3::text IS NULL
@@ -207,8 +207,8 @@ async fn list_monitor_performance(
                 MAX(CASE WHEN metric_name IN ('memory', 'memory_percent', 'system.memory') THEN metric_value END)::text AS memory,
                 MAX(CASE WHEN metric_name IN ('network', 'network_mbps', 'network_traffic', 'system.network') THEN metric_value END)::text AS network
             FROM ops_metric_snapshot
-            WHERE (tenant_id = $1 OR tenant_id = 0 OR tenant_id IS NULL)
-              AND (organization_id = $2 OR organization_id = 0 OR organization_id = '0')
+            WHERE (tenant_id = $1 OR tenant_id = 0)
+              AND (organization_id = $2 OR organization_id = 0)
               AND status = 1
               AND metric_name IN ('cpu', 'cpu_percent', 'system.cpu', 'memory', 'memory_percent', 'system.memory', 'network', 'network_mbps', 'network_traffic', 'system.network')
               AND period_start >= now() - interval '90 days'

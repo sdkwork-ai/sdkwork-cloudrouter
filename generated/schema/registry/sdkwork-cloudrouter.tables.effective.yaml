@@ -1377,6 +1377,275 @@ tables:
     - deleted_at
     - id
   imported: false
+- table: ai_mcp_binding
+  domain: ai
+  profile: tenant_entity
+  soft_delete_policy: full_lifecycle_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - backend
+  columns:
+    server_id:
+      type: int64
+      constraints: NOT NULL
+    server_revision_id: int64
+    tool_id: int64
+    owner_type:
+      type: string(64)
+      constraints: NOT NULL
+    owner_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    allowed_tools: json
+    denied_tools: json
+    policy_json: json
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+    enabled:
+      type: bool
+      constraints: NOT NULL DEFAULT true
+    snapshot_json:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+  required_columns:
+  - server_id
+  - owner_type
+  unique_constraints:
+  - name: uk_ai_mcp_binding_uuid
+    columns:
+    - uuid
+  check_constraints:
+  - name: ck_ai_mcp_binding_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND server_id > 0
+  - name: ck_ai_mcp_binding_values
+    expression: length(owner_type) > 0 AND priority >= 0
+  indexes:
+  - name: idx_ai_mcp_binding_scope_priority
+    columns:
+    - tenant_id
+    - organization_id
+    - server_id
+    - priority
+    - id
+  imported: false
+- table: ai_mcp_server
+  domain: ai
+  profile: tenant_entity
+  soft_delete_policy: full_lifecycle_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - backend
+  columns:
+    server_key:
+      type: string(128)
+      constraints: NOT NULL
+    name:
+      type: string(255)
+      constraints: NOT NULL
+    description: string(4000)
+    category_id: int64
+    category_code: string(128)
+    transport:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'http'
+    visibility:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'organization'
+    owner_user_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    latest_revision_id: int64
+    published_revision_id: int64
+    health_status:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'unchecked'
+    last_checked_at: instant
+    last_error_masked: string(1024)
+    tags:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
+    published_at: instant
+    deprecated_at: instant
+  required_columns:
+  - server_key
+  - name
+  unique_constraints:
+  - name: uk_ai_mcp_server_uuid
+    columns:
+    - uuid
+  - name: uk_ai_mcp_server_scope_key
+    columns:
+    - tenant_id
+    - organization_id
+    - server_key
+  check_constraints:
+  - name: ck_ai_mcp_server_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0
+  - name: ck_ai_mcp_server_values
+    expression: length(server_key) > 0 AND length(name) > 0 AND length(transport)
+      > 0 AND length(visibility) > 0 AND length(health_status) > 0
+  indexes:
+  - name: idx_ai_mcp_server_scope_updated
+    columns:
+    - tenant_id
+    - organization_id
+    - updated_at
+    - id
+  - name: idx_ai_mcp_server_scope_category
+    columns:
+    - tenant_id
+    - organization_id
+    - category_id
+  imported: false
+- table: ai_mcp_server_revision
+  domain: ai
+  profile: tenant_entity
+  soft_delete_policy: full_lifecycle_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - backend
+  columns:
+    server_id:
+      type: int64
+      constraints: NOT NULL
+    revision_no:
+      type: string(128)
+      constraints: NOT NULL
+    transport:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'http'
+    endpoint_url: string(1024)
+    command: string(1024)
+    args_json:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
+    env_schema:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    auth_type:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'none'
+    secret_ref: string(512)
+    timeout_ms:
+      type: int32
+      constraints: NOT NULL DEFAULT 30000
+    retry_policy:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    config_hash: string(128)
+    lifecycle_status:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'draft'
+    created_by: int64
+    published_at: instant
+    deprecated_at: instant
+  required_columns:
+  - server_id
+  - revision_no
+  unique_constraints:
+  - name: uk_ai_mcp_server_revision_uuid
+    columns:
+    - uuid
+  - name: uk_ai_mcp_server_revision_scope_no
+    columns:
+    - tenant_id
+    - organization_id
+    - server_id
+    - revision_no
+  check_constraints:
+  - name: ck_ai_mcp_server_revision_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND server_id > 0
+  - name: ck_ai_mcp_server_revision_values
+    expression: length(revision_no) > 0 AND length(transport) > 0 AND length(lifecycle_status)
+      > 0 AND timeout_ms > 0
+  indexes:
+  - name: idx_ai_mcp_server_revision_scope_created
+    columns:
+    - tenant_id
+    - organization_id
+    - server_id
+    - created_at
+    - id
+  imported: false
+- table: ai_mcp_tool
+  domain: ai
+  profile: tenant_entity
+  soft_delete_policy: full_lifecycle_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - backend
+  columns:
+    server_id:
+      type: int64
+      constraints: NOT NULL
+    server_revision_id: int64
+    tool_key:
+      type: string(128)
+      constraints: NOT NULL
+    name:
+      type: string(255)
+      constraints: NOT NULL
+    description: string(4000)
+    input_schema: json
+    output_schema: json
+    risk_level:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'low'
+    requires_approval:
+      type: bool
+      constraints: NOT NULL DEFAULT false
+    enabled:
+      type: bool
+      constraints: NOT NULL DEFAULT true
+    rate_limit_policy: json
+    schema_hash: string(128)
+    discovered_at: instant
+    last_invoked_at: instant
+    sort_weight:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+  required_columns:
+  - server_id
+  - tool_key
+  - name
+  unique_constraints:
+  - name: uk_ai_mcp_tool_uuid
+    columns:
+    - uuid
+  - name: uk_ai_mcp_tool_scope_key
+    columns:
+    - tenant_id
+    - organization_id
+    - server_id
+    - tool_key
+  check_constraints:
+  - name: ck_ai_mcp_tool_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND server_id > 0
+  - name: ck_ai_mcp_tool_values
+    expression: length(tool_key) > 0 AND length(name) > 0 AND length(risk_level) >
+      0 AND sort_weight >= 0
+  indexes:
+  - name: idx_ai_mcp_tool_scope_sort
+    columns:
+    - tenant_id
+    - organization_id
+    - server_id
+    - sort_weight
+    - id
+  imported: false
 - table: ai_metering_request_trace
   domain: ai
   profile: event_log
@@ -1627,6 +1896,12 @@ tables:
     occurred_at: instant
     settlement_status: int32
     settlement_id: int64
+    settled_at: instant
+    failure_code: string(64)
+    failure_message: string(1024)
+    debit_points: int64
+    original_currency_amount: decimal
+    original_currency_code: string(10)
   required_columns:
   - request_id
   - idempotency_key
@@ -1670,6 +1945,16 @@ tables:
   - name: ck_ai_metering_usage_currency
     expression: length(trim(currency)) BETWEEN 3 AND 10
   indexes:
+  - name: idx_ai_metering_usage_settlement_claim
+    columns:
+    - settlement_status
+    - occurred_at
+    - id
+  - name: idx_ai_metering_usage_tenant_occurred
+    columns:
+    - tenant_id
+    - occurred_at
+    - id
   - name: idx_ai_metering_usage_tenant_owner_occurred
     columns:
     - tenant_id
@@ -3293,6 +3578,9 @@ tables:
   columns:
     resource_code: string(192)
     resource_type: string(64)
+    route_kind:
+      type: string(16)
+      constraints: NOT NULL DEFAULT 'api'
     display_name: string(128)
     vendor_id: int64
     vendor_code: string(64)
@@ -3309,6 +3597,9 @@ tables:
     metadata_schema: json
     description: string(512)
     sort_order: int32
+  check_constraints:
+  - name: ck_ai_resource_route_kind
+    expression: route_kind IN ('model', 'api')
   indexes:
   - name: idx_ai_resource_status_sort
     columns:
@@ -3322,6 +3613,13 @@ tables:
     - tenant_id
     - organization_id
     - resource_type
+    - status
+    - id
+  - name: idx_ai_resource_route_kind_status
+    columns:
+    - tenant_id
+    - organization_id
+    - route_kind
     - status
     - id
   - name: idx_ai_resource_vendor_model
@@ -6210,6 +6508,9 @@ tables:
       constraints: NOT NULL
     settlement_id: int64
     settled_at: instant
+    debit_points: int64
+    original_currency_amount: decimal
+    original_currency_code: string(10)
   unique_constraints:
   - name: uk_cloudrouter_charge_line_scope_id
     columns:
@@ -7160,6 +7461,30 @@ tables:
     - scope_type
     - scope_id
     - status
+  imported: false
+- table: iam_gateway_membership
+  domain: iam_gateway
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: gateway-iam-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - worker
+  columns:
+    user_id: int64
+    organization_name_snapshot: string(200)
+    is_primary: int32
+    member_no: string(64)
+    joined_at: instant
+  indexes:
+  - name: idx_iam_gateway_membership_tenant_user_status
+    columns:
+    - tenant_id
+    - user_id
+    - status
+    - deleted_at
+    - organization_id
   imported: false
 - table: iam_gateway_risk_rule
   domain: iam_gateway
@@ -8606,6 +8931,90 @@ tables:
     - created_at
     - id
   imported: false
+- table: pricing_default_region
+  domain: commerce
+  profile: tenant_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: pricing-service
+  common_columns: tenant_entity
+  columns:
+    vendor_code:
+      type: string(64)
+      constraints: NOT NULL
+    provider_code:
+      type: string(64)
+      constraints: NOT NULL DEFAULT ''
+    product_code:
+      type: string(160)
+      constraints: NOT NULL
+    resource_code:
+      type: string(256)
+      constraints: NOT NULL DEFAULT ''
+    catalog_key:
+      type: string(256)
+      constraints: NOT NULL
+    resource_key:
+      type: string(64)
+      constraints: NOT NULL DEFAULT ''
+    default_region_code:
+      type: string(64)
+      constraints: NOT NULL
+    currency_code:
+      type: string(3)
+      constraints: NOT NULL
+    description: string(1024)
+    effective_from:
+      type: instant
+      constraints: NOT NULL
+    effective_to: instant
+  unique_constraints:
+  - name: uk_pricing_default_region_uuid
+    columns:
+    - uuid
+  - name: uk_pricing_default_region_scope_id
+    columns:
+    - tenant_id
+    - organization_id
+    - id
+  - name: uk_pricing_default_region_resource_key
+    columns:
+    - tenant_id
+    - organization_id
+    - resource_key
+    where: deleted_at IS NULL AND BTRIM(resource_key) <> ''
+  check_constraints:
+  - name: ck_pricing_default_region_currency
+    expression: currency_code ~ '^[A-Z]{3}$'
+  - name: ck_pricing_default_region_region_not_blank
+    expression: BTRIM(default_region_code) <> ''
+  - name: ck_pricing_default_region_interval
+    expression: effective_to IS NULL OR effective_to > effective_from
+  - name: ck_pricing_default_region_resource_key_blank
+    expression: BTRIM(resource_key) <> ''
+  indexes:
+  - name: uq_pricing_default_region_scope_reference
+    columns:
+    - tenant_id
+    - organization_id
+    - id
+    unique: true
+  - name: idx_pricing_default_region_catalog_key
+    columns:
+    - tenant_id
+    - organization_id
+    - vendor_code
+    - catalog_key
+    - default_region_code
+    - id
+  - name: idx_pricing_default_region_resource_key
+    columns:
+    - tenant_id
+    - organization_id
+    - resource_key
+    - default_region_code
+    - id
+  imported: false
 - table: pricing_import_run
   domain: commerce
   profile: event_log
@@ -9088,4 +9497,31 @@ tables:
     - priority
     - effective_from
     - id
+  imported: false
+- table: sdkwork_node_registry
+  domain: ops
+  profile: runtime_infrastructure
+  compliance_level: L2
+  system_of_record: true
+  write_owner: sdkwork-database-id
+  api_surfaces:
+  - worker
+  columns:
+    node_id: int32
+    service_name: string(256)
+    instance_identity: string(256)
+    hostname: string(256)
+    pid: int64
+    lease_token: string(64)
+    lease_version: int64
+    started_at_ms: int64
+    last_heartbeat_at_ms: int64
+    expires_at_ms: int64
+  indexes:
+  - name: idx_sdkwork_node_registry_service_expiry
+    columns:
+    - service_name
+    - expires_at_ms
+  lifecycle:
+    storage_strategy: live_state
   imported: false

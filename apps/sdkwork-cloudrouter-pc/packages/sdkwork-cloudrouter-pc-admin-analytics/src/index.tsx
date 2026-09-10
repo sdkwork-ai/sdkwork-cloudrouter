@@ -17,7 +17,7 @@ import {
 } from 'recharts';
 import { useTranslation } from 'react-i18next';
 import { BusinessStatePanel, BusinessStateTableRow } from '@sdkwork/cloudroutes-pc-commons/components/BusinessState';
-import { formatTokenBankPoints, microPointsToDecimalString } from '@sdkwork/cloudroutes-pc-commons';
+import { formatTokenBankPoints, microPointsToDecimalString } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { formatMoney } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
 import {
   decimalNumber,
@@ -694,7 +694,7 @@ function AnalyticsTooltip({
             </span>
             <span className="font-mono font-semibold text-slate-900 dark:text-white">
               {String(entry.name ?? '') === 'points'
-                ? formatTokenBankPoints(readTooltipExactValue(entry), locale)
+                ? formatTokenBankPoints(String(readTooltipExactValue(entry)), locale)
                 : formatDecimal(readTooltipExactValue(entry), locale)}
             </span>
           </div>

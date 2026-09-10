@@ -9,6 +9,7 @@ pub mod provider_secret_map;
 pub mod redis;
 pub mod request_limits;
 pub mod runtime;
+pub mod security_startup_guard;
 pub mod startup_install;
 pub mod trusted_subject;
 pub mod upstream_credential;
@@ -44,6 +45,9 @@ pub use runtime::{
     ProviderSecretMapSectionConfig, RedisSectionConfig, RequestLimitsSectionConfig, RuntimeConfig,
     RuntimeSectionConfig, RuntimeTomlConfig, SecuritySectionConfig, ServerSectionConfig,
     ServiceBindSectionConfig, ServicesSectionConfig, UsageSettlementSectionConfig,
+};
+pub use security_startup_guard::{
+    ensure_no_known_default_secret_material, KNOWN_DEFAULT_SECRET_FRAGMENTS,
 };
 pub use startup_install::{
     ensure_production_startup_install_policy, is_production_like_runtime_environment,

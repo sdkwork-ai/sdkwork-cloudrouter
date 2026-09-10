@@ -66,13 +66,18 @@ impl PostgresGatewayBillingStore {
         &self,
         context: &GatewayBillingContext,
     ) -> Result<sdkwork_account_service::WalletAccountItem, DomainError> {
-        let query = WalletAccountListQuery::new(
+        // 计费主体决定钱包定位：个人 → (org=key org, USER, user_id)；
+        // 团队 → (org=团队 org, ORGANIZATION, owner=团队 org id)。
+        // owner_type 是 acct_account 唯一键的组成部分，钱包服务会按该
+        // 组合懒建户（首次预扣/入账自动初始化团队钱包）。
+        let mut query = WalletAccountListQuery::new(
             &context.tenant_id.to_string(),
             Some(&context.organization_id.to_string()),
-            &context.user_id.to_string(),
+            &context.wallet_owner_user_id(),
             Some(CommerceAccountAssetType::TokenBank),
         )
         .map_err(|error| DomainError::new(error.message().to_owned()))?;
+        query.owner_type = Some(context.wallet_owner_type().to_owned());
         self.account_store
             .retrieve_wallet_account_for_asset(query, CommerceAccountAssetType::TokenBank)
             .await
@@ -107,7 +112,8 @@ impl PostgresGatewayBillingStore {
             &context.tenant_id.to_string(),
             Some(&context.organization_id.to_string()),
             &account.id,
-            &context.user_id.to_string(),
+            // 台账属主 = 钱包属主（团队计费为组织 id，个人为用户 id）。
+            &context.wallet_owner_user_id(),
             CommerceAccountAssetType::TokenBank,
             // Token Bank is an account asset, not a fiat pricing currency.
             // Pricing may be expressed in USD or another display currency,
@@ -121,7 +127,8 @@ impl PostgresGatewayBillingStore {
             &context.request_id,
             &idempotency_key,
         )
-        .map_err(|error| DomainError::new(error.message().to_owned()))?;
+        .map_err(|error| DomainError::new(error.message().to_owned()))?
+        .with_account_subject(context.wallet_owner_type(), "GENERAL");
         // The account service treats an idempotency key with a different
         // request hash as payload drift. Hash the complete immutable ledger
         // command, not only the transaction number; pricing/config changes
@@ -177,7 +184,9 @@ impl PostgresGatewayBillingStore {
             &context.tenant_id.to_string(),
             Some(&context.organization_id.to_string()),
             &account.id,
-            &context.user_id.to_string(),
+            // 预扣属主 = 钱包属主（团队计费为组织 id）；source_id 保持
+            // 实际发起成员的 user id（数值型，审计溯源）。
+            &context.wallet_owner_user_id(),
             CommerceAccountAssetType::TokenBank,
             money,
             BUSINESS_TYPE,
@@ -194,7 +203,8 @@ impl PostgresGatewayBillingStore {
             &idempotency_key,
             Some(expires_at.as_str()),
         )
-        .map_err(|error| DomainError::new(error.message().to_owned()))?;
+        .map_err(|error| DomainError::new(error.message().to_owned()))?
+        .with_account_subject(context.wallet_owner_type(), "GENERAL");
         let request_hash_payload = format!(
             "{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}",
             command.tenant_id,
@@ -628,19 +638,21 @@ mod tests {
     /// the exact `CreateAccountHoldCommand` construction used by `create_hold`.
     #[test]
     fn precharge_hold_source_id_is_numeric_user_id() {
+        use sdkwork_cloudrouter_router_service::domain::BillingOwnerKind;
         let context = GatewayBillingContext {
             tenant_id: 100_001,
             organization_id: 0,
             user_id: 42,
             request_id: "fe6bec23-7be1-47f0-a9b1-8f335f9ed036".to_owned(),
             pricing_plan_code: "standard".to_owned(),
+            billing_owner: BillingOwnerKind::Personal,
         };
         let business_no = format!("cloudrouter:{}:precharge", context.request_id);
         let command = CreateAccountHoldCommand::new(
             &context.tenant_id.to_string(),
             Some(&context.organization_id.to_string()),
             "acct-1",
-            &context.user_id.to_string(),
+            &context.wallet_owner_user_id(),
             CommerceAccountAssetType::TokenBank,
             CommerceMoney::new("100").expect("valid money"),
             "gateway_invocation_billing",
@@ -653,8 +665,51 @@ mod tests {
             &business_no,
             Some("2099-01-01T00:00:00Z"),
         )
-        .expect("valid hold command");
+        .expect("valid hold command")
+        .with_account_subject(context.wallet_owner_type(), "GENERAL");
         assert_eq!("42", command.source_id);
         assert!(command.source_id.parse::<i64>().is_ok());
+        // 个人主体：钱包属主 = 用户 id，owner_type = USER。
+        assert_eq!("42", command.owner_user_id);
+        assert_eq!("USER", command.owner_type.as_deref().unwrap_or("USER"));
+    }
+
+    /// 团队计费主体：钱包属主切换为组织（owner_type=ORGANIZATION，
+    /// owner_user_id=组织 id），source_id 仍为实际成员 user id。
+    #[test]
+    fn precharge_hold_wallet_owner_switches_to_organization_for_team_billing() {
+        use sdkwork_cloudrouter_router_service::domain::BillingOwnerKind;
+        let context = GatewayBillingContext {
+            tenant_id: 100_001,
+            organization_id: 3001,
+            user_id: 42,
+            request_id: "fe6bec23-7be1-47f0-a9b1-8f335f9ed037".to_owned(),
+            pricing_plan_code: "standard".to_owned(),
+            billing_owner: BillingOwnerKind::Organization,
+        };
+        assert_eq!("3001", context.wallet_owner_user_id());
+        assert_eq!("ORGANIZATION", context.wallet_owner_type());
+        let business_no = format!("cloudrouter:{}:precharge", context.request_id);
+        let command = CreateAccountHoldCommand::new(
+            &context.tenant_id.to_string(),
+            Some(&context.organization_id.to_string()),
+            "acct-team",
+            &context.wallet_owner_user_id(),
+            CommerceAccountAssetType::TokenBank,
+            CommerceMoney::new("100").expect("valid money"),
+            "gateway_invocation_billing",
+            &business_no,
+            "gateway",
+            &context.user_id.to_string(),
+            &business_no,
+            &business_no,
+            Some("2099-01-01T00:00:00Z"),
+        )
+        .expect("valid hold command")
+        .with_account_subject(context.wallet_owner_type(), "GENERAL");
+        assert_eq!("3001", command.owner_user_id);
+        assert_eq!(Some("ORGANIZATION".to_owned()), command.owner_type);
+        // source_id 保留实际成员，审计可追溯到人。
+        assert_eq!("42", command.source_id);
     }
 }

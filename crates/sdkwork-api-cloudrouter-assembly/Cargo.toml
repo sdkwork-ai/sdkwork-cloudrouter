@@ -1,6 +1,7 @@
 [package]
 name = "sdkwork-api-cloudrouter-assembly"
 edition.workspace = true
+rust-version.workspace = true
 version.workspace = true
 description = "Generated API assembly for sdkwork-cloudrouter application HTTP plane."
 
@@ -43,3 +44,6 @@ sdkwork-routes-image-open-api.workspace = true
 sdkwork-routes-paas-open-api.workspace = true
 sdkwork-routes-payment-open-api.workspace = true
 sdkwork-routes-video-open-api.workspace = true
+
+[lints]
+workspace = true

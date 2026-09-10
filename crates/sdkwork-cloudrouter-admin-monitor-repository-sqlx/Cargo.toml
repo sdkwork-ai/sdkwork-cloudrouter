@@ -2,10 +2,12 @@
 name = "sdkwork-cloudrouter-admin-monitor-repository-sqlx"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license-file.workspace = true
 description = "SDKWork Cloud Router admin monitor read-model SQLx repository"
 
 [lib]
+name = "sdkwork_cloudrouter_admin_monitor_repository_sqlx"
 path = "src/lib.rs"
 
 [dependencies]
@@ -13,3 +15,6 @@ serde = { workspace = true, features = ["derive"] }
 sqlx = { workspace = true }
 sdkwork-database-sqlx.workspace = true
 sdkwork-cloudrouter-router-service.workspace = true
+
+[lints]
+workspace = true

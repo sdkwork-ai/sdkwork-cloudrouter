@@ -3,14 +3,9 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use bytes::Bytes;
-use http_body_util::{BodyExt, Full};
+use http_body_util::Full;
 use hyper::header::{AUTHORIZATION, CONTENT_TYPE};
 use hyper::{Method, Request, Uri};
-use hyper_rustls::HttpsConnector;
-use hyper_util::client::legacy::connect::HttpConnector;
-use hyper_util::client::legacy::Client;
-use hyper_util::rt::TokioExecutor;
-use sdkwork_cloudrouter_http::ensure_rustls_crypto_provider;
 use serde_json::{json, Value};
 
 use super::{
@@ -24,10 +19,12 @@ use super::{
     PaymentStatementParseOutcome, PaymentVerifyWebhookRequest, PaymentWebhookVerificationOutcome,
 };
 use crate::application::payment_adapter::STANDARD_PAYMENT_ADAPTER_OPERATIONS;
+use crate::application::payment_provider_http::{
+    build_payment_provider_http_client, send_bounded, PaymentProviderHttpClient,
+    PaymentProviderHttpError,
+};
 
-type WeChatPayRequestBody = Full<Bytes>;
-type WeChatPayConnector = HttpsConnector<HttpConnector>;
-type WeChatPayHttpClient = Client<WeChatPayConnector, WeChatPayRequestBody>;
+type WeChatPayHttpClient = PaymentProviderHttpClient;
 
 const WECHAT_PAY_PROVIDER_CODE: &str = "wechat_pay";
 const WECHAT_PAY_API_BASE_URL: &str = "https://api.mch.weixin.qq.com";
@@ -648,32 +645,12 @@ impl WeChatPayHyperApiClient {
                     format!("WeChat Pay request could not be built: {error}"),
                 )
             })?;
-        let response = self.client.request(request).await.map_err(|error| {
-            provider_failed(
-                PaymentAdapterOperation::InvokeNativeOperation,
-                format!("WeChat Pay request failed: {error}"),
-                true,
-            )
-        })?;
-        let status_code = response.status().as_u16();
-        let mut headers = Vec::new();
-        for (name, value) in response.headers() {
-            if let Ok(value) = value.to_str() {
-                headers.push((name.as_str().to_owned(), value.to_owned()));
-            }
-        }
-        let bytes = response
-            .into_body()
-            .collect()
+        let response = send_bounded(&self.client, request)
             .await
-            .map_err(|error| {
-                provider_failed(
-                    PaymentAdapterOperation::InvokeNativeOperation,
-                    format!("WeChat Pay response body failed: {error}"),
-                    true,
-                )
-            })?
-            .to_bytes();
+            .map_err(wechat_pay_http_error)?;
+        let status_code = response.status.as_u16();
+        let headers = response.headers;
+        let bytes = response.body;
         if !(200..300).contains(&status_code) {
             return Err(provider_failed(
                 PaymentAdapterOperation::InvokeNativeOperation,
@@ -1109,11 +1086,19 @@ fn invalid_response(
 }
 
 fn build_wechat_pay_http_client() -> WeChatPayHttpClient {
-    ensure_rustls_crypto_provider();
-    let connector = hyper_rustls::HttpsConnectorBuilder::new()
-        .with_webpki_roots()
-        .https_or_http()
-        .enable_http1()
-        .build();
-    Client::builder(TokioExecutor::new()).build(connector)
+    build_payment_provider_http_client()
+}
+
+fn wechat_pay_http_error(error: PaymentProviderHttpError) -> PaymentProviderRegistryError {
+    match error {
+        PaymentProviderHttpError::ResponseTooLarge { limit_bytes } => invalid_response(
+            PaymentAdapterOperation::InvokeNativeOperation,
+            format!("WeChat Pay response body exceeded the {limit_bytes} byte bound"),
+        ),
+        PaymentProviderHttpError::Transport(message) => provider_failed(
+            PaymentAdapterOperation::InvokeNativeOperation,
+            format!("WeChat Pay request failed: {message}"),
+            true,
+        ),
+    }
 }

@@ -495,6 +495,8 @@ function ServiceNodeDialog({
       ? {
         ...current,
         deploymentProfile: 'cloud',
+        // base-url-check: exempt (editable deployment-form preset default in
+        // an admin service-node tool; not a browser resolution point, §6.3)
         baseUrl: 'https://api.sdkwork.com/v1',
         domainsText: 'api.sdkwork.com',
         ip: '',

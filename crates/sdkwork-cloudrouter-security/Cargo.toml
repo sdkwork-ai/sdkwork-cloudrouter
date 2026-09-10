@@ -2,7 +2,10 @@
 name = "sdkwork-cloudrouter-security"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license-file.workspace = true
+[lib]
+name = "sdkwork_cloudrouter_security"
 
 [dependencies]
 # Workspace dependencies
@@ -25,3 +28,6 @@ sdkwork-utils-rust.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true
+
+[lints]
+workspace = true

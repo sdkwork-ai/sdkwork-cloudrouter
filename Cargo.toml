@@ -28,14 +28,14 @@ members = [
     "crates/sdkwork-routes-paas-open-api",
     "crates/sdkwork-routes-cloudrouter-app-api",
     "crates/sdkwork-routes-cloudrouter-backend-api",
-    "crates/provider-adapters/tencent-cloud",
-    "crates/provider-adapters/alicloud",
+    "crates/provider-adapters/sdkwork-provider-adapter-tencent-cloud",
+    "crates/provider-adapters/sdkwork-provider-adapter-alicloud",
     "crates/sdkwork-cloudrouter-edge-runtime",
     "services/sdkwork-cloudrouter-admin-gateway",
     "services/sdkwork-cloudrouter-standalone-gateway",
     "services/sdkwork-cloudrouter-router-service",
     "services/sdkwork-cloudrouter-installer",
-    "services/sdkwork-cloudrouter-provider-adapter",
+    "services/sdkwork-cloudrouter-provider-adapter-host",
     "crates/sdkwork-cloudrouter-database-host",
     "crates/sdkwork-cloudrouter-admin-monitor-repository-sqlx",
     "crates/sdkwork-cloudrouter-admin-dashboard-repository-sqlx",
@@ -68,14 +68,14 @@ default-members = [
     "crates/sdkwork-routes-paas-open-api",
     "crates/sdkwork-routes-cloudrouter-app-api",
     "crates/sdkwork-routes-cloudrouter-backend-api",
-    "crates/provider-adapters/tencent-cloud",
-    "crates/provider-adapters/alicloud",
+    "crates/provider-adapters/sdkwork-provider-adapter-tencent-cloud",
+    "crates/provider-adapters/sdkwork-provider-adapter-alicloud",
     "crates/sdkwork-cloudrouter-edge-runtime",
     "services/sdkwork-cloudrouter-admin-gateway",
     "services/sdkwork-cloudrouter-standalone-gateway",
     "services/sdkwork-cloudrouter-router-service",
     "services/sdkwork-cloudrouter-installer",
-    "services/sdkwork-cloudrouter-provider-adapter",
+    "services/sdkwork-cloudrouter-provider-adapter-host",
     "crates/sdkwork-cloudrouter-database-host",
 ]
 resolver = "2"
@@ -95,15 +95,39 @@ debug = 1
 # Release binaries ship inside the container image and native installers:
 # strip debug symbols and favor size so image/installer payloads stay small
 # enough for commercial distribution (registry pulls, offline packages).
+# RUST_CODE_SPEC.md section 13: release builds keep integer overflow checks on
+# so arithmetic faults surface as process failures, never as silent ledger or
+# quota corruption.
 [profile.release]
 strip = true
 lto = "thin"
 codegen-units = 1
+overflow-checks = true
 
 [workspace.package]
 edition = "2021"
-version = "0.3.0"
+# MSRV floor matching the `stable` channel used by CI (rust-toolchain.toml,
+# dtolnay/rust-toolchain@stable). Raise only with MIGRATION_SPEC.md evidence.
+rust-version = "1.85"
+version = "0.4.1"
 license-file = "LICENSE"
+
+# RUST_CODE_SPEC.md section 13 workspace lint baseline. Members inherit via
+# `[lints] workspace = true`. CI runs `cargo clippy --all-targets -- -D
+# warnings`, so only baseline entries that are provably clean across the
+# current tree are declared; the remaining recommended entries (pedantic
+# family, unwrap/expect/panic denies, missing_docs, unsafe_code forbid) are
+# promoted per crate as the cleanup lands, with local allow narrowing plus a
+# reason comment where FFI or test helpers still need them.
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+dbg_macro = "deny"
+todo = "deny"
+unimplemented = "deny"
+exit = "deny"
 
 [workspace.dependencies]
 sdkwork-api-cloudrouter-assembly = { path = "crates/sdkwork-api-cloudrouter-assembly" }
@@ -190,9 +214,9 @@ sdkwork-cloudrouter-provider-adapter-contract = { path = "crates/sdkwork-cloudro
 sdkwork-cloudrouter-provider-adapter = { path = "crates/sdkwork-cloudrouter-provider-adapter" }
 sdkwork-cloudrouter-provider-adapter-http = { path = "crates/sdkwork-cloudrouter-provider-adapter-http" }
 sdkwork-cloudrouter-provider-adapter-registry = { path = "crates/sdkwork-cloudrouter-provider-adapter-registry" }
-sdkwork-cloudrouter-provider-adapter-host = { path = "services/sdkwork-cloudrouter-provider-adapter" }
-sdkwork-provider-adapter-alicloud = { path = "crates/provider-adapters/alicloud" }
-sdkwork-provider-adapter-tencent-cloud = { path = "crates/provider-adapters/tencent-cloud" }
+sdkwork-cloudrouter-provider-adapter-host = { path = "services/sdkwork-cloudrouter-provider-adapter-host" }
+sdkwork-provider-adapter-alicloud = { path = "crates/provider-adapters/sdkwork-provider-adapter-alicloud" }
+sdkwork-provider-adapter-tencent-cloud = { path = "crates/provider-adapters/sdkwork-provider-adapter-tencent-cloud" }
 sdkwork-models = { path = "../sdkwork-models/sdks/sdkwork-models-sdk/sdkwork-models-sdk-rust" }
 sdkwork_models_contract_service = { package = "sdkwork-models-contract-service", path = "../sdkwork-models/crates/sdkwork-models-contract-service" }
 sdkwork-models-database-host = { path = "../sdkwork-models/crates/sdkwork-models-database-host" }

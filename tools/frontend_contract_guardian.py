@@ -311,6 +311,15 @@ class FrontendContractGuardian:
     SDK_CLIENT_BOUNDARY_FILES = frozenset(
         {
             "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts",
+            # Committed compiled twin of sdk-clients.ts; Vite resolves this
+            # artifact at runtime, so the boundary applies to it identically.
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/sdk-clients.js",
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/sdk-clients.d.ts",
+            # Base-URL derivation is part of the SDK client boundary surface
+            # (compiled twins included; Vite resolves the .js at runtime).
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/sdk-base-url.ts",
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/sdk-base-url.js",
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/sdk-base-url.d.ts",
             "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/runtime.ts",
         }
     )
@@ -391,6 +400,9 @@ class FrontendContractGuardian:
         {
             "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-core/src/index.ts",
             "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/quick-import/quickImport.ts",
+            # Compiled twin of quickImport.ts (Vite resolves the .js artifact).
+            "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/quick-import/quickImport.js",
+            "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/playgroundSender.ts",
             "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/modelKitIntegration.ts",
             "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/apiReferenceSchemaTabs.ts",
             "sdkwork-documents/apps/sdkwork-documents-pc/packages/sdkwork-documents-pc-api-reference/src/codeSnippetClient.ts",

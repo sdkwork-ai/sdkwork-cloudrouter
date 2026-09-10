@@ -341,7 +341,7 @@ async fn stripe_verify_webhook_accepts_valid_signature_and_rejects_invalid_signa
     )
     .unwrap();
     let body = br#"{"id":"evt_123","type":"payment_intent.succeeded"}"#.to_vec();
-    let timestamp = 1_717_171_717;
+    let timestamp = stripe_now_unix_seconds();
     let signature = stripe_signature("whsec_test_123", timestamp, &body);
 
     let valid = adapter
@@ -360,7 +360,7 @@ async fn stripe_verify_webhook_accepts_valid_signature_and_rejects_invalid_signa
         .verify_webhook(PaymentVerifyWebhookRequest {
             headers: vec![(
                 "Stripe-Signature".to_owned(),
-                "t=1717171717,v1=bad".to_owned(),
+                format!("t={timestamp},v1=bad"),
             )],
             body,
             metadata: json!({}),
@@ -370,6 +370,87 @@ async fn stripe_verify_webhook_accepts_valid_signature_and_rejects_invalid_signa
 
     assert!(!invalid.verified);
     assert_eq!(None, invalid.provider_event_id);
+}
+
+#[tokio::test]
+async fn stripe_verify_webhook_rejects_stale_timestamp_outside_replay_window() {
+    let adapter = StripePaymentProviderAdapter::new(
+        StripePaymentProviderConfig {
+            secret_key: "sk_test_123".to_owned(),
+            webhook_secret: Some("whsec_test_123".to_owned()),
+        },
+        Arc::new(RecordingStripeHttpClient::new(json!({}))),
+    )
+    .unwrap();
+    let body = br#"{"id":"evt_stale","type":"payment_intent.succeeded"}"#.to_vec();
+    let stale_timestamp = stripe_now_unix_seconds() - 301;
+    let signature = stripe_signature("whsec_test_123", stale_timestamp, &body);
+
+    let outcome = adapter
+        .verify_webhook(PaymentVerifyWebhookRequest {
+            headers: vec![("Stripe-Signature".to_owned(), signature)],
+            body,
+            metadata: json!({}),
+        })
+        .await
+        .unwrap();
+
+    assert!(!outcome.verified);
+    assert_eq!(None, outcome.provider_event_id);
+}
+
+#[tokio::test]
+async fn stripe_verify_webhook_rejects_future_timestamp_outside_skew_window() {
+    let adapter = StripePaymentProviderAdapter::new(
+        StripePaymentProviderConfig {
+            secret_key: "sk_test_123".to_owned(),
+            webhook_secret: Some("whsec_test_123".to_owned()),
+        },
+        Arc::new(RecordingStripeHttpClient::new(json!({}))),
+    )
+    .unwrap();
+    let body = br#"{"id":"evt_future","type":"payment_intent.succeeded"}"#.to_vec();
+    let future_timestamp = stripe_now_unix_seconds() + 301;
+    let signature = stripe_signature("whsec_test_123", future_timestamp, &body);
+
+    let outcome = adapter
+        .verify_webhook(PaymentVerifyWebhookRequest {
+            headers: vec![("Stripe-Signature".to_owned(), signature)],
+            body,
+            metadata: json!({}),
+        })
+        .await
+        .unwrap();
+
+    assert!(!outcome.verified);
+    assert_eq!(None, outcome.provider_event_id);
+}
+
+#[tokio::test]
+async fn stripe_verify_webhook_rejects_non_numeric_timestamp() {
+    let adapter = StripePaymentProviderAdapter::new(
+        StripePaymentProviderConfig {
+            secret_key: "sk_test_123".to_owned(),
+            webhook_secret: Some("whsec_test_123".to_owned()),
+        },
+        Arc::new(RecordingStripeHttpClient::new(json!({}))),
+    )
+    .unwrap();
+    let body = br#"{"id":"evt_nan","type":"payment_intent.succeeded"}"#.to_vec();
+    let signature = stripe_signature("whsec_test_123", 1_717_171_717, &body)
+        .replace("t=1717171717", "t=not-a-number");
+
+    let outcome = adapter
+        .verify_webhook(PaymentVerifyWebhookRequest {
+            headers: vec![("Stripe-Signature".to_owned(), signature)],
+            body,
+            metadata: json!({}),
+        })
+        .await
+        .unwrap();
+
+    assert!(!outcome.verified);
+    assert_eq!(None, outcome.provider_event_id);
 }
 
 #[tokio::test]
@@ -522,6 +603,13 @@ fn stripe_adapter(http_client: RecordingStripeHttpClient) -> StripePaymentProvid
         Arc::new(http_client),
     )
     .unwrap()
+}
+
+fn stripe_now_unix_seconds() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_secs() as i64)
+        .unwrap_or(0)
 }
 
 fn stripe_signature(secret: &str, timestamp: i64, body: &[u8]) -> String {

@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.5.0.
--- Registry SHA-256: 6b994396308e8480d180d9ad76a67c4051170bead55285ad15b34bf490f3da0d.
+-- Registry SHA-256: 49368459d8224063b687875b137a8beb3f7f92405504f41c5ec72dbd857e550c.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -154,6 +154,29 @@ CREATE TABLE IF NOT EXISTS iam_gateway_chain_policy (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_chain_policy_scope ON iam_gateway_chain_policy (tenant_id, organization_id, scope_type, scope_id, status) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_iam_gateway_chain_policy_scope_status ON iam_gateway_chain_policy (tenant_id, organization_id, scope_type, scope_id, status);
+
+CREATE TABLE IF NOT EXISTS iam_gateway_membership (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    user_id BIGINT,
+    organization_name_snapshot VARCHAR(200),
+    is_primary INTEGER,
+    member_no VARCHAR(64),
+    joined_at TIMESTAMPTZ,
+    CONSTRAINT ck_iam_gateway_membership_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
+);
+
+CREATE INDEX IF NOT EXISTS idx_iam_gateway_membership_tenant_user_status ON iam_gateway_membership (tenant_id, user_id, status, deleted_at, organization_id);
 
 CREATE TABLE IF NOT EXISTS iam_gateway_risk_rule (
     id BIGINT NOT NULL PRIMARY KEY,

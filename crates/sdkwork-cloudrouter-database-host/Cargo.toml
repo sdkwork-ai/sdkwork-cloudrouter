@@ -2,6 +2,7 @@
 name = "sdkwork-cloudrouter-database-host"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license-file.workspace = true
 description = "SDKWork Cloud Router database lifecycle bootstrap."
 
@@ -27,3 +28,6 @@ path = "examples/repair_pricing_migration_history.rs"
 [dev-dependencies]
 sqlx.workspace = true
 tokio.workspace = true
+
+[lints]
+workspace = true

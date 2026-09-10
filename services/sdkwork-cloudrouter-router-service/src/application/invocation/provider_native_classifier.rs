@@ -367,9 +367,15 @@ mod tests {
     #[test]
     fn unknown_anthropic_path_still_falls_back_fail_closed() {
         let classification = classify_post("/v1/totally-unknown", "anthropic");
-        assert_eq!("anthropic.totally.unknown", classification.resource.route_key);
+        assert_eq!(
+            "anthropic.totally.unknown",
+            classification.resource.route_key
+        );
         assert_eq!(None, classification.billing.meter);
-        assert_eq!(RoutingCapability::Network, classification.resource.capability);
+        assert_eq!(
+            RoutingCapability::Network,
+            classification.resource.capability
+        );
         assert_eq!(
             AiRouteStrategy::StatelessFailClosed,
             classification.routing.strategy
@@ -388,8 +394,10 @@ mod tests {
 
     #[test]
     fn gemini_stream_generate_content_route_is_unchanged() {
-        let classification =
-            classify_post("/v1beta/models/gemini-2.5-pro:streamGenerateContent", "google");
+        let classification = classify_post(
+            "/v1beta/models/gemini-2.5-pro:streamGenerateContent",
+            "google",
+        );
         assert_eq!(
             "gemini.stream_generate_content",
             classification.resource.route_key

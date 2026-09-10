@@ -219,7 +219,8 @@ pub(crate) async fn sync_official_pricing_catalog(
         .bind(sync_advisory_lock_key())
         .execute(&mut *transaction)
         .await?;
-    let (import_id, import_run_staged) = stage_import_run(&mut transaction, catalog, &projection).await?;
+    let (import_id, import_run_staged) =
+        stage_import_run(&mut transaction, catalog, &projection).await?;
 
     let mut price_book_ids = BTreeMap::new();
     for (price_book_key, price_book) in &projection.price_books {
@@ -1349,13 +1350,10 @@ mod tests {
         // republishing prices, so assertions must hold for any snapshot and
         // must not require a specific sample (e.g. an explicitly "unknown"
         // billability) to exist.
-        assert!(projection
-            .rates
-            .iter()
-            .all(|rate| matches!(
-                rate.billability.as_str(),
-                "chargeable" | "free" | "not_applicable" | "unknown"
-            )));
+        assert!(projection.rates.iter().all(|rate| matches!(
+            rate.billability.as_str(),
+            "chargeable" | "free" | "not_applicable" | "unknown"
+        )));
         assert!(projection
             .rates
             .iter()

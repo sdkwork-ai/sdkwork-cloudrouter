@@ -4,11 +4,15 @@ use std::sync::Arc;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use sdkwork_cloudrouter_router_service::ports::{
-    AdminBillingRecordItem, AdminFinanceCollection, AdminFinanceReadFuture, AdminFinanceStore,
-    AdminTransactionRecordItem, ListAdminBillingRecordsQuery, ListAdminTransactionsQuery,
+    AdminBillingRecordItem, AdminFinanceCollection, AdminFinanceCursor, AdminFinanceReadFuture,
+    AdminFinanceStore, AdminTransactionRecordItem, ListAdminBillingRecordsQuery,
+    ListAdminTransactionsQuery,
 };
 use serde_json::Value;
 use tower::ServiceExt;
+
+/// Deterministic opaque token for `{"occurred_at_micros":1744000000000000,"id":42}`.
+const VALID_LEDGER_CURSOR: &str = "eyJvY2N1cnJlZF9hdF9taWNyb3MiOjE3NDQwMDAwMDAwMDAwMDAsImlkIjo0Mn0";
 
 #[tokio::test]
 async fn admin_finance_route_lists_transactions_and_billing_records() {
@@ -36,6 +40,11 @@ async fn admin_finance_route_lists_transactions_and_billing_records() {
         transactions["data"]["items"][0]["description"]
     );
     assert_eq!("success", transactions["data"]["items"][0]["status"]);
+    assert_eq!("cursor", transactions["data"]["pageInfo"]["mode"]);
+    assert_eq!(20, transactions["data"]["pageInfo"]["pageSize"]);
+    assert_eq!(false, transactions["data"]["pageInfo"]["hasMore"]);
+    assert!(transactions["data"]["pageInfo"]["nextCursor"].is_null());
+    assert!(transactions["data"]["pageInfo"]["totalItems"].is_null());
 
     let billing = request_json(
         router,
@@ -53,6 +62,80 @@ async fn admin_finance_route_lists_transactions_and_billing_records() {
         "2026-05-10 00:00:00",
         billing["data"]["items"][0]["dueDate"]
     );
+    assert_eq!("cursor", billing["data"]["pageInfo"]["mode"]);
+}
+
+#[tokio::test]
+async fn admin_finance_route_continues_with_opaque_cursor() {
+    let router = sdkwork_cloudrouter_router_service::api::admin_finance_router_with_store(
+        Arc::new(TestAdminFinanceStore),
+    );
+
+    let transactions = request_json(
+        router,
+        signed_request(
+            "GET",
+            &format!(
+                "/backend/v3/api/billing/finance/ledger?cursor={VALID_LEDGER_CURSOR}&page_size=1"
+            ),
+        ),
+    )
+    .await;
+    assert_eq!(0, transactions["code"].as_i64().unwrap());
+    assert_eq!("cursor", transactions["data"]["pageInfo"]["mode"]);
+    assert_eq!(true, transactions["data"]["pageInfo"]["hasMore"]);
+    assert_eq!(
+        VALID_LEDGER_CURSOR,
+        transactions["data"]["pageInfo"]["nextCursor"]
+    );
+}
+
+#[tokio::test]
+async fn admin_finance_route_rejects_invalid_cursor() {
+    let router = sdkwork_cloudrouter_router_service::api::admin_finance_router_with_store(
+        Arc::new(TestAdminFinanceStore),
+    );
+
+    let response = router
+        .oneshot(signed_request(
+            "GET",
+            "/backend/v3/api/billing/finance/ledger?cursor=not-a-cursor",
+        ))
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::BAD_REQUEST, response.status());
+}
+
+#[tokio::test]
+async fn admin_finance_route_rejects_offset_page_alias() {
+    let router = sdkwork_cloudrouter_router_service::api::admin_finance_router_with_store(
+        Arc::new(TestAdminFinanceStore),
+    );
+
+    let response = router
+        .oneshot(signed_request(
+            "GET",
+            "/backend/v3/api/billing/finance/ledger?page=2",
+        ))
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::BAD_REQUEST, response.status());
+}
+
+#[tokio::test]
+async fn admin_finance_route_rejects_out_of_range_page_size() {
+    let router = sdkwork_cloudrouter_router_service::api::admin_finance_router_with_store(
+        Arc::new(TestAdminFinanceStore),
+    );
+
+    let response = router
+        .oneshot(signed_request(
+            "GET",
+            "/backend/v3/api/billing/finance/ledger?page_size=201",
+        ))
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::BAD_REQUEST, response.status());
 }
 
 #[tokio::test]
@@ -75,6 +158,22 @@ async fn admin_finance_route_rejects_missing_trusted_subject() {
     assert_eq!(StatusCode::UNAUTHORIZED, response.status());
     let payload = json_payload(response).await;
     assert_eq!(40101, payload["code"].as_i64().unwrap());
+}
+
+#[tokio::test]
+async fn admin_finance_route_rejects_invalid_time_window() {
+    let router = sdkwork_cloudrouter_router_service::api::admin_finance_router_with_store(
+        Arc::new(TestAdminFinanceStore),
+    );
+
+    let response = router
+        .oneshot(signed_request(
+            "GET",
+            "/backend/v3/api/billing/finance/ledger?start_time=not-a-time",
+        ))
+        .await
+        .unwrap();
+    assert_eq!(StatusCode::BAD_REQUEST, response.status());
 }
 
 fn signed_request(method: &str, path: &str) -> Request<Body> {
@@ -125,7 +224,12 @@ impl AdminFinanceStore for TestAdminFinanceStore {
                 description: "Payment success".to_owned(),
                 status: "success".to_owned(),
             }];
-            Ok(finance_page(items, query.page_no, query.page_size))
+            Ok(finance_page(
+                items,
+                query.page_size,
+                // Echo the cursor so continuation is observable end to end.
+                query.cursor,
+            ))
         })
     }
 
@@ -144,23 +248,22 @@ impl AdminFinanceStore for TestAdminFinanceStore {
                 status: "unpaid".to_owned(),
                 due_date: "2026-05-10 00:00:00".to_owned(),
             }];
-            Ok(finance_page(items, query.page_no, query.page_size))
+            Ok(finance_page(items, query.page_size, query.cursor))
         })
     }
 }
 
-fn finance_page<T>(items: Vec<T>, page_no: i64, page_size: i64) -> AdminFinanceCollection<T> {
-    let total = items.len() as i64;
-    let offset = page_no.saturating_sub(1).saturating_mul(page_size).max(0) as usize;
-    let items = items
-        .into_iter()
-        .skip(offset)
-        .take(page_size.max(0) as usize)
-        .collect();
+fn finance_page<T>(
+    items: Vec<T>,
+    page_size: i64,
+    cursor: Option<AdminFinanceCursor>,
+) -> AdminFinanceCollection<T> {
     AdminFinanceCollection {
         items,
-        total,
-        page_no,
+        // Echo the incoming cursor: hasMore/nextCursor are only true when a
+        // continuation cursor was supplied, so the first page reports the end.
+        next_cursor: cursor,
+        has_more: cursor.is_some(),
         page_size,
     }
 }

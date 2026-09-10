@@ -2,6 +2,7 @@
 name = "sdkwork-provider-adapter-alicloud"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license-file.workspace = true
 [lib]
 name = "sdkwork_provider_adapter_alicloud"
@@ -14,3 +15,6 @@ hmac.workspace = true
 hyper.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
+
+[lints]
+workspace = true

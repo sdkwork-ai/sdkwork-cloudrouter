@@ -2,23 +2,29 @@ use std::sync::Arc;
 
 use crate::api::app_sql_subject::{map_optional_app_sql_subject, ResolvedAppSqlScopedSubject};
 use crate::api::response::{
-    json_success_list_response, normalize_list_search_query, offset_page_info,
-    parse_offset_list_query, problem_from_wire_code_for_context, validation_problem_for_context,
+    json_success_list_response, normalize_list_search_query, problem_from_wire_code_for_context,
+    validation_problem_for_context,
 };
 use crate::ports::{
-    UsageLogsPage, UsageLogsQuery, UsageLogsReadFuture, UsageLogsReadStore, UsageLogsStatus,
-    UsageLogsSubject,
+    UsageLogsCursor, UsageLogsPage, UsageLogsQuery, UsageLogsReadFuture, UsageLogsReadStore,
+    UsageLogsStatus, UsageLogsSubject,
 };
 use axum::extract::{Extension, Query, State};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::Router;
 use sdkwork_cloudrouter_http::RequestLocale;
+use sdkwork_utils_rust::http_api::cursor_window_page_info;
+use sdkwork_utils_rust::{base64url_decode, base64url_encode};
 use sdkwork_web_core::WebRequestContext;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 const MAX_USAGE_LOGS_KEYWORD_LEN: usize = 128;
 const MAX_USAGE_LOGS_RANGE_DAYS: i64 = 1096;
+const DEFAULT_USAGE_LOGS_PAGE_SIZE: i64 = 20;
+const MAX_USAGE_LOGS_PAGE_SIZE: i64 = 200;
+const MAX_USAGE_LOGS_CURSOR_LEN: usize = 512;
+const MAX_USAGE_LOGS_CURSOR_EPOCH_MICROS: i64 = 4_102_444_800_000_000; // 2100-01-01
 const SECONDS_PER_DAY: i64 = 86_400;
 const NANOS_PER_SECOND: i128 = 1_000_000_000;
 const USAGE_LOGS_START_TIME_INVALID_MESSAGE: &str =
@@ -36,12 +42,20 @@ struct AppUsageLogsState {
 
 #[derive(Debug, Deserialize)]
 struct AppUsageLogsQuery {
-    page: Option<i64>,
+    cursor: Option<String>,
     page_size: Option<i64>,
     q: Option<String>,
     status: Option<String>,
     start_time: Option<String>,
     end_time: Option<String>,
+}
+
+/// Opaque base64url cursor payload (PAGINATION_SPEC §3: clients never parse
+/// or construct cursor values).
+#[derive(Debug, Deserialize, Serialize)]
+struct UsageLogsCursorPayload {
+    started_at_micros: i64,
+    id: i64,
 }
 
 struct ValidatedUsageLogsQuery {
@@ -77,17 +91,11 @@ struct EmptyUsageLogsReadStore;
 impl UsageLogsReadStore for EmptyUsageLogsReadStore {
     fn load_usage_logs<'a>(
         &'a self,
-        query: UsageLogsQuery,
+        _query: UsageLogsQuery,
         _subject: Option<UsageLogsSubject>,
         _locale: Option<&'a str>,
     ) -> UsageLogsReadFuture<'a> {
-        Box::pin(async move {
-            Ok(UsageLogsPage {
-                page_no: query.page_no,
-                page_size: query.page_size,
-                ..UsageLogsPage::default()
-            })
-        })
+        Box::pin(async move { Ok(UsageLogsPage::default()) })
     }
 }
 
@@ -143,16 +151,31 @@ async fn fetch_usage_logs(
         .map(str::to_owned)
         .or_else(|| locale_extension.map(|extension| extension.0.effective().to_owned()));
 
+    let page_size = validated_query.query.page_size;
     match state
         .read_store
         .load_usage_logs(validated_query.query, subject, locale.as_deref())
         .await
     {
-        Ok(page) => json_success_list_response(
-            ctx.as_ref(),
-            page.logs,
-            offset_page_info(page.page_no, page.page_size, page.total),
-        ),
+        Ok(page) => {
+            let next_cursor = match page.next_cursor.as_ref().map(encode_usage_logs_cursor) {
+                Some(Ok(cursor)) => Some(cursor),
+                Some(Err(message)) => {
+                    return problem_from_wire_code_for_context(
+                        ctx.as_ref(),
+                        "5000",
+                        format!("usage logs read model is unavailable: {message}"),
+                    )
+                    .into_response();
+                }
+                None => None,
+            };
+            json_success_list_response(
+                ctx.as_ref(),
+                page.logs,
+                cursor_window_page_info(Some(page_size as usize), next_cursor, page.has_more),
+            )
+        }
         Err(error) => problem_from_wire_code_for_context(
             ctx.as_ref(),
             "5000",
@@ -165,15 +188,18 @@ async fn fetch_usage_logs(
 fn validate_usage_logs_query(
     query: AppUsageLogsQuery,
 ) -> Result<ValidatedUsageLogsQuery, UsageLogsQueryValidationError> {
-    let pagination = parse_offset_list_query(query.page, query.page_size).map_err(|message| {
-        UsageLogsQueryValidationError::new(
-            if message.starts_with("page ") || message.starts_with("page_size ") {
-                format!("usage logs {message}")
-            } else {
-                message
-            },
-        )
-    })?;
+    let page_size = query.page_size.unwrap_or(DEFAULT_USAGE_LOGS_PAGE_SIZE);
+    if !(1..=MAX_USAGE_LOGS_PAGE_SIZE).contains(&page_size) {
+        return Err(UsageLogsQueryValidationError::new(format!(
+            "usage logs page_size must be between 1 and {MAX_USAGE_LOGS_PAGE_SIZE}"
+        )));
+    }
+    let cursor = query
+        .cursor
+        .as_deref()
+        .map(decode_usage_logs_cursor)
+        .transpose()
+        .map_err(UsageLogsQueryValidationError::new)?;
 
     let keyword = normalize_usage_logs_query_string(
         normalize_list_search_query(query.q, "q").map_err(UsageLogsQueryValidationError::new)?,
@@ -214,9 +240,8 @@ fn validate_usage_logs_query(
 
     Ok(ValidatedUsageLogsQuery {
         query: UsageLogsQuery {
-            page_no: pagination.page_no,
-            page_size: pagination.page_size,
-            offset: pagination.offset,
+            cursor,
+            page_size,
             keyword,
             status,
             start_time: parsed_start
@@ -226,6 +251,35 @@ fn validate_usage_logs_query(
                 .as_ref()
                 .map(format_usage_logs_timestamp_for_query),
         },
+    })
+}
+
+fn encode_usage_logs_cursor(cursor: &UsageLogsCursor) -> Result<String, String> {
+    let payload = UsageLogsCursorPayload {
+        started_at_micros: cursor.started_at_micros,
+        id: cursor.id,
+    };
+    serde_json::to_vec(&payload)
+        .map(|value| base64url_encode(&value))
+        .map_err(|_| "usage logs cursor serialization failed".to_owned())
+}
+
+fn decode_usage_logs_cursor(value: &str) -> Result<UsageLogsCursor, String> {
+    if value.is_empty() || value.len() > MAX_USAGE_LOGS_CURSOR_LEN || value.trim() != value {
+        return Err("usage logs cursor is invalid".to_owned());
+    }
+    let decoded =
+        base64url_decode(value).ok_or_else(|| "usage logs cursor is invalid".to_owned())?;
+    let payload = serde_json::from_slice::<UsageLogsCursorPayload>(&decoded)
+        .map_err(|_| "usage logs cursor is invalid".to_owned())?;
+    if payload.id <= 0
+        || !(0..=MAX_USAGE_LOGS_CURSOR_EPOCH_MICROS).contains(&payload.started_at_micros)
+    {
+        return Err("usage logs cursor is invalid".to_owned());
+    }
+    Ok(UsageLogsCursor {
+        started_at_micros: payload.started_at_micros,
+        id: payload.id,
     })
 }
 

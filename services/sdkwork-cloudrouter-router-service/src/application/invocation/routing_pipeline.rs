@@ -18,6 +18,8 @@ use std::sync::Arc;
 
 use super::{Invocation, InvocationError, InvocationResource, InvocationSurface};
 use crate::application::AuthenticatedApiKeyContext;
+#[cfg(test)]
+use crate::domain::BillingOwnerKind;
 use crate::ports::UpstreamAccountRouteCatalog;
 
 /// 资源路由类型：模型类（按模型解析 vendor）或 API 资源类（按资源直接路由）。
@@ -192,6 +194,8 @@ mod tests {
                 tenant_id: 10,
                 organization_id: 20,
                 user_id: 30,
+                billing_organization_id: 0,
+                billing_owner: BillingOwnerKind::Personal,
                 account_group_id: Some(1),
                 account_group_code: Some("group-1".to_owned()),
                 pricing_plan_code: None,

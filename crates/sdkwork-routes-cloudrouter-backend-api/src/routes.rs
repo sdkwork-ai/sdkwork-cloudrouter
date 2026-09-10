@@ -787,7 +787,7 @@ pub async fn router_with_postgres_shared_runtime(
         config,
         pool,
         database_pool,
-        trust_forwarded_headers,
+        trust_forwarded_headers: _,
         commerce_pool,
         catalog,
         api_key_security_config,
@@ -1417,8 +1417,25 @@ fn merge_admin_router_with_subject_boundary(
             config.clone(),
             admin_router,
         )),
-        None => router.merge(admin_router),
+        // Fail closed: a composition without a subject boundary and access
+        // checker is a misconfiguration, never a license to mount the admin
+        // API unauthenticated. The routes exist (so the misconfiguration is
+        // visible) but every request is denied with 503 until the deployment
+        // configures the boundary.
+        None => router.merge(admin_router.layer(axum::middleware::from_fn(
+            admin_boundary_required_deny_all,
+        ))),
     }
+}
+
+async fn admin_boundary_required_deny_all(_request: Request<Body>, _next: Next) -> Response {
+    use axum::http::StatusCode;
+    use axum::response::IntoResponse;
+    (
+        StatusCode::SERVICE_UNAVAILABLE,
+        "admin subject boundary is not configured; admin routes are disabled",
+    )
+        .into_response()
 }
 
 fn layer_with_admin_subject_boundary(config: AdminSubjectBoundaryConfig, router: Router) -> Router {

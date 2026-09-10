@@ -63,7 +63,7 @@ import {
 import {
   createClient as createPromptsAppSdkClient,
   type SdkworkAppConfig as SdkworkPromptsAppConfig,
-  type SdkworkPromptsAppClient as PromptsAppClient,
+  type SdkworkAppClient as PromptsAppClient,
 } from '@sdkwork/prompts-app-sdk';
 import {
   createClient as createSkillsAppSdkClient,
@@ -156,6 +156,7 @@ import {
 } from '@sdkwork/auth-runtime-pc-react/handleSdkworkSessionAuthUnauthorizedError';
 import { isSdkworkSdkSessionAuthError } from '@sdkwork/auth-runtime-pc-react/sdkSessionAuthError';
 import { readCloudRouterRuntimeEnv } from './utils/env.ts';
+import { resolveSharedDependencySurfaceBaseUrl } from './sdk-base-url.ts';
 import {
   prepareCredentialEntryTokens,
   readBootstrapAccessTokenFromProcessEnv,
@@ -236,6 +237,7 @@ export type CloudRouterGeneratedSdkType =
   | 'backend'
   | 'ai'
   | 'drive'
+  | 'feeds'
   | 'memory'
   | 'agent'
   | 'payment'
@@ -622,7 +624,7 @@ export type CloudRouterAiSdkClient = SdkworkAiClient;
 export type CloudRouterDriveOpenSdkClient = SdkworkDriveOpenClient;
 export type CloudRouterFeedsOpenSdkClient = SdkworkFeedsOpenClient;
 export type CloudRouterFeedsOpenSdkClientOptions = {
-  baseUrl?: string;
+  feedsBaseUrl?: string;
   platform?: string;
   timeout?: number;
 };
@@ -906,7 +908,7 @@ export function createSdkworkFeedsOpenSdkClient(
 export function getSdkworkFeedsOpenSdkClient(
   options: CloudRouterFeedsOpenSdkClientOptions = {},
 ): SdkworkFeedsOpenClient {
-  if (options.baseUrl || options.platform || options.timeout !== undefined) {
+  if (options.feedsBaseUrl || options.platform || options.timeout !== undefined) {
     return createSdkworkFeedsOpenSdkClient(options);
   }
   if (!feedsOpenClient) {
@@ -915,6 +917,13 @@ export function getSdkworkFeedsOpenSdkClient(
   return feedsOpenClient;
 }
 
+
+export type { SdkworkAppClient };
+export type {
+  AppApiKeyListResponse,
+  CreateApiKeyRequest,
+  UpdateApiKeyRequest,
+} from '@sdkwork/cloudrouter-app-sdk';
 
 export function getCloudRouterAppSdkClient(options: CloudRouterAppSdkClientOptions = {}): CloudRouterAppSdkClient {
   if (hasRuntimeOverrides(options)) {
@@ -1277,6 +1286,7 @@ export function createSdkworkDriveAdminStorageSdkClient(
       ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_DRIVE_ADMIN_STORAGE_API_BASE_URL')
       ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL')
       ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_BACKEND_API_BASE_URL')
+      ?? resolveSharedDependencySurfaceBaseUrl(BACKEND_API_PREFIX)
       ?? BACKEND_API_PREFIX,
     BACKEND_API_PREFIX,
   );
@@ -1777,6 +1787,7 @@ export function resolveRequiredAppbaseAppBaseUrl(options: SdkworkAppbaseAppSdkCl
   return options.appBaseUrl
     ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_APPBASE_APP_API_BASE_URL')
     ?? deriveDependencySurfaceBaseUrl('PORTAL_PUBLIC_SDK_BASE_URL', APP_API_PREFIX)
+    ?? resolveSharedDependencySurfaceBaseUrl(APP_API_PREFIX)
     ?? APP_API_PREFIX;
 }
 
@@ -1795,7 +1806,8 @@ function buildMessagingAppConfig(options: SdkworkMessagingAppSdkClientOptions): 
 export function resolveRequiredMessagingAppBaseUrl(options: SdkworkMessagingAppSdkClientOptions): string {
   const configured = options.appBaseUrl
     ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_MESSAGING_APP_API_BASE_URL')
-    ?? deriveDependencySurfaceBaseUrl('PORTAL_PUBLIC_SDK_BASE_URL', APP_API_PREFIX);
+    ?? deriveDependencySurfaceBaseUrl('PORTAL_PUBLIC_SDK_BASE_URL', APP_API_PREFIX)
+    ?? resolveSharedDependencySurfaceBaseUrl(APP_API_PREFIX);
   return configured || APP_API_PREFIX;
 }
 
@@ -1815,6 +1827,7 @@ export function resolveRequiredAppbaseBackendBaseUrl(options: SdkworkAppbaseBack
   return options.backendBaseUrl
     ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL')
     ?? deriveDependencySurfaceBaseUrl('PORTAL_PUBLIC_SDK_BASE_URL', BACKEND_API_PREFIX)
+    ?? resolveSharedDependencySurfaceBaseUrl(BACKEND_API_PREFIX)
     ?? BACKEND_API_PREFIX;
 }
 
@@ -1825,6 +1838,7 @@ function buildGenerationsAppConfig(options: SdkworkGenerationsAppSdkClientOption
       ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_GENERATIONS_APP_API_BASE_URL')
       ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_GENERATIONS_PC_APP_API_BASE_URL')
       ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_APP_API_BASE_URL')
+      ?? resolveSharedDependencySurfaceBaseUrl(APP_API_PREFIX)
       ?? APP_API_PREFIX,
       APP_API_PREFIX,
     ),
@@ -1928,6 +1942,7 @@ export function resolveCloudRouterDependencyBackendBaseUrl(
       ?? readCloudRouterRuntimeEnv(baseUrlEnvName)
       ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_BACKEND_API_BASE_URL')
       ?? deriveDependencySurfaceBaseUrl('PORTAL_PUBLIC_SDK_BASE_URL', BACKEND_API_PREFIX)
+      ?? resolveSharedDependencySurfaceBaseUrl(BACKEND_API_PREFIX)
       ?? BACKEND_API_PREFIX,
     BACKEND_API_PREFIX,
   );
@@ -1969,6 +1984,7 @@ function resolveDependencyAppSurfaceBaseUrl(
     ?? readCloudRouterRuntimeEnv(baseUrlEnvName)
     ?? readCloudRouterRuntimeEnv('VITE_CLOUDROUTER_APP_API_BASE_URL')
     ?? deriveDependencySurfaceBaseUrl('PORTAL_PUBLIC_SDK_BASE_URL', APP_API_PREFIX)
+    ?? resolveSharedDependencySurfaceBaseUrl(APP_API_PREFIX)
     ?? APP_API_PREFIX;
 }
 
@@ -2023,7 +2039,7 @@ function buildDriveOpenConfig(options: CloudRouterDriveOpenSdkClientOptions): Sd
 function buildFeedsOpenConfig(options: CloudRouterFeedsOpenSdkClientOptions): SdkworkFeedsOpenConfig {
   return {
     baseUrl: normalizeGeneratedSdkBaseUrl(
-      options.baseUrl
+      options.feedsBaseUrl
         ?? readCloudRouterRuntimeEnv('VITE_SDKWORK_FEEDS_OPEN_API_BASE_URL')
         ?? FEEDS_OPEN_API_PREFIX,
       FEEDS_OPEN_API_PREFIX,

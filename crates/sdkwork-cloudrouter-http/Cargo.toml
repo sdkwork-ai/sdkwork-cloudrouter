@@ -2,7 +2,10 @@
 name = "sdkwork-cloudrouter-http"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license-file.workspace = true
+[lib]
+name = "sdkwork_cloudrouter_http"
 
 [dependencies]
 async-trait.workspace = true
@@ -37,3 +40,6 @@ url.workspace = true
 
 [dev-dependencies]
 tokio.workspace = true
+
+[lints]
+workspace = true

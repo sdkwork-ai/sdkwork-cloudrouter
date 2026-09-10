@@ -17,11 +17,9 @@ use sdkwork_cloudrouter_router_service::application::{
     PricingPreflightInterceptor, PricingSettlementInterceptor, ResourceType,
     UsageExtractionInterceptor,
 };
-use sdkwork_cloudrouter_router_service::domain::{
-    AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
+use sdkwork_cloudrouter_router_service::domain::{AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
     ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, ProviderAuthProfile,
-    UpstreamAccountGroup, UpstreamAccountRoute,
-};
+    UpstreamAccountGroup, UpstreamAccountRoute,};
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use serde_json::json;
 use std::sync::Arc;

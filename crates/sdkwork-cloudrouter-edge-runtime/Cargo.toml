@@ -2,7 +2,10 @@
 name = "sdkwork-cloudrouter-edge-runtime"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license-file.workspace = true
+[lib]
+name = "sdkwork_cloudrouter_edge_runtime"
 
 [[bin]]
 name = "sdkwork-cloudrouter-edge-runtime"
@@ -81,3 +84,6 @@ serde_json.workspace = true
 sdkwork-cloudrouter-test-support.workspace = true
 sdkwork-test.workspace = true
 sdkwork-web-core.workspace = true
+
+[lints]
+workspace = true

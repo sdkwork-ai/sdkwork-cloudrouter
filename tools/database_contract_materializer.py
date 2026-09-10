@@ -133,6 +133,24 @@ AUXILIARY_MODULES = (
     ),
 )
 
+# Hand-authored modules: baseline DDL is maintained by hand (self-healing
+# ALTER blocks, constraint drops, and idempotency arbiters the registry
+# compiler cannot express). They are still registered into the root module
+# manifest so database-host applies them; the materializer never rewrites
+# their baselines or contracts.
+HAND_AUTHORED_MODULES = (
+    DatabaseModuleSpec(
+        module_id="payment-runtime",
+        service_code="CLOUD_ROUTER_PAYMENT_RUNTIME",
+        display_name="Cloud Router Payment Runtime Database",
+        owner="cloud-router-platform",
+        table_prefix="commerce_",
+        baseline_anchor_table="commerce_payment_intent",
+        baseline_file="0001_payment_runtime_baseline.sql",
+        relative_root="database/modules/payment-runtime",
+    ),
+)
+
 
 @dataclass(frozen=True)
 class MaterializedDatabaseContract:
@@ -351,9 +369,10 @@ class DatabaseContractMaterializer:
     def _available_auxiliary_module_ids(self) -> list[str]:
         if self.module_spec != ROOT_MODULE:
             return []
+        candidates = (*AUXILIARY_MODULES, *HAND_AUTHORED_MODULES)
         return [
             module_spec.module_id
-            for module_spec in AUXILIARY_MODULES
+            for module_spec in candidates
             if (self.root / module_spec.relative_root / "database.manifest.json").is_file()
         ]
 

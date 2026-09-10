@@ -317,13 +317,6 @@ pub(crate) fn next_cloud_runtime_id(context: &str) -> DomainResult<i64> {
     next_runtime_id(state.as_ref(), context)
 }
 
-/// Generates a globally unique user ID using the Cloud runtime Snowflake generator.
-/// Replaces `MAX(id) + 1` patterns in admin/user stores per DATABASE_SPEC section 6.1.
-pub(crate) fn next_user_id(context: &str) -> DomainResult<i64> {
-    let state = runtime_id_state()?;
-    next_runtime_id(state.as_ref(), context)
-}
-
 /// Validates deployment-mode policy before database bootstrap.
 ///
 /// Server and container modes acquire their node ID from PostgreSQL after the pool is ready.

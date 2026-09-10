@@ -111,12 +111,17 @@ fn dependency_mounts() -> Vec<RouteManifestMount> {
 }
 
 fn compose_backend_route_manifest() -> HttpRouteManifest {
+    compose_backend_route_manifest_from(http_route_manifest())
+}
+
+/// Composes on top of an explicit generated base manifest so the host
+/// bootstrap names the generated [`http_route_manifest`] entrypoint.
+fn compose_backend_route_manifest_from(base: HttpRouteManifest) -> HttpRouteManifest {
     let mounts = dependency_mounts();
-    let composed =
-        HttpRouteManifest::try_merge_mounts("sdkwork-cloudrouter", http_route_manifest(), &mounts)
-            .unwrap_or_else(|error| {
-                panic!("cloud router backend-api manifest composition failed: {error}");
-            });
+    let composed = HttpRouteManifest::try_merge_mounts("sdkwork-cloudrouter", base, &mounts)
+        .unwrap_or_else(|error| {
+            panic!("cloud router backend-api manifest composition failed: {error}");
+        });
     composed
         .validate_includes_dependency_manifests(&mounts)
         .unwrap_or_else(|error| {
@@ -133,13 +138,14 @@ pub fn cloud_router_backend_composed_route_manifest() -> HttpRouteManifest {
 
 /// Validates and returns the composed backend manifest for Web Framework binding.
 pub fn cloud_router_backend_prepared_route_manifest(
+    base: HttpRouteManifest,
     public_path_prefixes: &[String],
 ) -> HttpRouteManifest {
     let mounts = dependency_mounts();
     let profile = WebRequestContextProfile::default();
     sdkwork_web_bootstrap::finalize_host_route_manifest(
         "sdkwork-cloudrouter",
-        compose_backend_route_manifest(),
+        compose_backend_route_manifest_from(base),
         &mounts,
         &profile,
         public_path_prefixes,
@@ -157,6 +163,7 @@ mod tests {
         cloud_router_backend_composed_route_manifest, cloud_router_backend_prepared_route_manifest,
         MOUNTED_BACKEND_CAPABILITIES,
     };
+    use crate::http_route_manifest::http_route_manifest;
 
     #[test]
     fn mounted_backend_capability_registry_covers_runtime_modules() {
@@ -224,7 +231,8 @@ mod tests {
     #[test]
     fn prepared_backend_manifest_validates_without_double_merge() {
         let prefixes = vec!["/healthz".to_owned(), "/readyz".to_owned()];
-        let manifest = cloud_router_backend_prepared_route_manifest(&prefixes);
+        let manifest =
+            cloud_router_backend_prepared_route_manifest(http_route_manifest(), &prefixes);
         let route = manifest
             .match_route("POST", "/backend/v3/api/iam/applications/register")
             .expect("IAM backend bootstrap route must stay registered");

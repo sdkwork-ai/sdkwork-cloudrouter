@@ -2,9 +2,11 @@
 name = "sdkwork-routes-cloudrouter-app-api"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license-file.workspace = true
 
 [lib]
+name = "sdkwork_routes_cloudrouter_app_api"
 path = "src/lib.rs"
 
 [dependencies]
@@ -61,3 +63,6 @@ serde_json.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
 tracing.workspace = true
+
+[lints]
+workspace = true

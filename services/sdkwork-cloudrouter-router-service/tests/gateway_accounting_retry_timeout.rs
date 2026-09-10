@@ -6,6 +6,7 @@ use sdkwork_cloudrouter_router_service::application::{
     GatewayAccountingRetryHealth, GatewayAccountingRetryRecorderConfig,
     RetryingGatewayUsageRecorder,
 };
+use sdkwork_cloudrouter_router_service::domain::BillingOwnerKind;
 use sdkwork_cloudrouter_router_service::domain::DomainError;
 use sdkwork_cloudrouter_router_service::ports::{
     GatewayAccountingRetryDelivery, GatewayAccountingRetryEnvelope, GatewayAccountingRetryQueue,
@@ -118,6 +119,8 @@ fn trace_command() -> GatewayRequestTraceCommand {
         tenant_id: 1,
         organization_id: 0,
         user_id: 2,
+        billing_owner: BillingOwnerKind::Personal,
+        billing_owner_name: None,
         api_key_id: 3,
         api_key_name_snapshot: "timeout-test-key".to_owned(),
         account_group_id: 4,

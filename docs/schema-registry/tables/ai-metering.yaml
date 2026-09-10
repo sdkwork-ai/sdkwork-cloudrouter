@@ -78,6 +78,12 @@ tables:
     occurred_at: instant
     settlement_status: int32
     settlement_id: int64
+    settled_at: instant
+    failure_code: string(64)
+    failure_message: string(1024)
+    debit_points: int64
+    original_currency_amount: decimal
+    original_currency_code: string(10)
   required_columns:
   - request_id
   - idempotency_key
@@ -126,6 +132,16 @@ tables:
   - name: ck_ai_metering_usage_currency
     expression: length(trim(currency)) BETWEEN 3 AND 10
   indexes:
+  - name: idx_ai_metering_usage_settlement_claim
+    columns:
+    - settlement_status
+    - occurred_at
+    - id
+  - name: idx_ai_metering_usage_tenant_occurred
+    columns:
+    - tenant_id
+    - occurred_at
+    - id
   - name: idx_ai_metering_usage_tenant_owner_occurred
     columns:
     - tenant_id

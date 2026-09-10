@@ -168,12 +168,20 @@ fn mounts_for_cloud_assembly() -> Vec<RouteManifestMount> {
 }
 
 fn compose_app_route_manifest(include_platform_gateway_mounted: bool) -> HttpRouteManifest {
+    compose_app_route_manifest_from(http_route_manifest(), include_platform_gateway_mounted)
+}
+
+/// Composes on top of an explicit generated base manifest so every host
+/// bootstrap names the generated [`http_route_manifest`] entrypoint.
+fn compose_app_route_manifest_from(
+    base: HttpRouteManifest,
+    include_platform_gateway_mounted: bool,
+) -> HttpRouteManifest {
     let mounts = mounts_for_standalone_host(include_platform_gateway_mounted);
-    let composed =
-        HttpRouteManifest::try_merge_mounts("sdkwork-cloudrouter", http_route_manifest(), &mounts)
-            .unwrap_or_else(|error| {
-                panic!("cloud router app-api manifest composition failed: {error}");
-            });
+    let composed = HttpRouteManifest::try_merge_mounts("sdkwork-cloudrouter", base, &mounts)
+        .unwrap_or_else(|error| {
+            panic!("cloud router app-api manifest composition failed: {error}");
+        });
     composed
         .validate_includes_dependency_manifests(&mounts)
         .unwrap_or_else(|error| {
@@ -209,6 +217,7 @@ pub fn cloud_router_app_composed_route_manifest_for_platform_gateway() -> HttpRo
 
 /// Validates and returns the composed app manifest for Web Framework binding.
 pub fn cloud_router_app_prepared_route_manifest(
+    base: HttpRouteManifest,
     public_path_prefixes: &[String],
     include_platform_gateway_mounted: bool,
 ) -> HttpRouteManifest {
@@ -216,7 +225,7 @@ pub fn cloud_router_app_prepared_route_manifest(
     let profile = WebRequestContextProfile::default();
     sdkwork_web_bootstrap::finalize_host_route_manifest(
         "sdkwork-cloudrouter",
-        compose_app_route_manifest(include_platform_gateway_mounted),
+        compose_app_route_manifest_from(base, include_platform_gateway_mounted),
         &mounts,
         &profile,
         public_path_prefixes,
@@ -234,6 +243,7 @@ mod tests {
         cloud_router_app_composed_route_manifest, cloud_router_app_prepared_route_manifest,
         MOUNTED_APP_CAPABILITIES,
     };
+    use crate::http_route_manifest::cloud_router_app_http_route_manifest;
 
     #[test]
     fn mounted_capability_registry_covers_federated_runtime_modules() {
@@ -433,7 +443,11 @@ mod tests {
     #[test]
     fn prepared_manifest_validates_without_double_merge() {
         let prefixes = vec!["/healthz".to_owned(), "/readyz".to_owned()];
-        let manifest = cloud_router_app_prepared_route_manifest(&prefixes, true);
+        let manifest = cloud_router_app_prepared_route_manifest(
+            cloud_router_app_http_route_manifest(),
+            &prefixes,
+            true,
+        );
         let route = manifest
             .match_route("GET", "/app/v3/api/system/iam/runtime")
             .expect("IAM runtime must stay registered in prepared manifest");

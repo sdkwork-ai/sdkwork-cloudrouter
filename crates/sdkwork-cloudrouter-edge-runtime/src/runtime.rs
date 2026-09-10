@@ -8,11 +8,11 @@ use crate::iam_auth_token_cache::resolve_auth_token_cache;
 use axum::Router;
 use sdkwork_account_repository_sqlx::PostgresCommerceAccountStore;
 use sdkwork_cloudrouter_config::{
-    ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig, DatabaseEngine, DeploymentMode,
-    DeploymentRuntime, InternalGatewaySecurityConfig, ProviderAdapterConfig,
-    ProviderAdapterManifestDiscoveryConfig, ProviderRelayConfig, ProviderSecretMapConfig,
-    RedisConfig, RequestLimitsConfig, RuntimeConfigProfile, RuntimeTomlConfig, StartupInstallMode,
-    TrustedSubjectConfig, UpstreamCredentialSecurityConfig,
+    ensure_no_known_default_secret_material, ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig,
+    DatabaseEngine, DeploymentMode, DeploymentRuntime, InternalGatewaySecurityConfig,
+    ProviderAdapterConfig, ProviderAdapterManifestDiscoveryConfig, ProviderRelayConfig,
+    ProviderSecretMapConfig, RedisConfig, RequestLimitsConfig, RuntimeConfigProfile,
+    RuntimeTomlConfig, StartupInstallMode, TrustedSubjectConfig, UpstreamCredentialSecurityConfig,
 };
 use sdkwork_cloudrouter_database_host::bootstrap_cloud_router_database;
 use sdkwork_cloudrouter_http::QueryStringApiKeyPolicy;
@@ -47,8 +47,8 @@ use sdkwork_cloudrouter_router_service::infrastructure::provider::{
     AdapterAwareEmbeddingsRelay, AdapterAwareResponsesRelay, OpenAiCompatibleChatCompletionRelay,
     OpenAiCompatibleChatCompletionStreamRelay, OpenAiCompatibleEmbeddingsRelay,
     OpenAiCompatibleResponsesRelay, OpenAiCompatibleResponsesStreamRelay,
-    ProviderRelayHttpPoolConfig, ProviderResponseMemoryBudget, RefreshableProviderSecretMapResolver,
-    SecretRefOpenAiCompatibleChatCompletionRelay,
+    ProviderRelayHttpPoolConfig, ProviderResponseMemoryBudget,
+    RefreshableProviderSecretMapResolver, SecretRefOpenAiCompatibleChatCompletionRelay,
     SecretRefOpenAiCompatibleChatCompletionStreamRelay, SecretRefOpenAiCompatibleEmbeddingsRelay,
     SecretRefOpenAiCompatibleResponsesRelay, SecretRefOpenAiCompatibleResponsesStreamRelay,
     UpstreamProviderEndpoint, DEFAULT_PROVIDER_RESPONSE_MAX_BYTES,
@@ -197,6 +197,8 @@ struct InvocationRuntimeRoutesInput<'a, C> {
     billing_store: Option<
         Arc<dyn sdkwork_cloudrouter_router_service::ports::GatewayBillingStore + Send + Sync>,
     >,
+    billing_subject_resolver:
+        Option<Arc<dyn sdkwork_cloudrouter_router_service::ports::BillingSubjectResolver>>,
 }
 
 fn router_with_invocation_runtime_routes<C>(
@@ -228,6 +230,7 @@ where
         auth_token_authenticator,
         call_chain,
         billing_store,
+        billing_subject_resolver,
     } = input;
     let secret_resolver = provider_secret_resolver.map(|resolver| {
         let resolver: Arc<dyn ProviderSecretResolver + Send + Sync> = resolver;
@@ -270,6 +273,7 @@ where
                 auth_token_authenticator,
                 call_chain,
                 billing_store,
+                billing_subject_resolver,
                 ..crate::invocation_router::InvocationRouterOptions::default()
             },
         ),
@@ -368,6 +372,8 @@ struct DatabaseRuntimeRoutesInput<'a, C> {
     /// Resolves non-API-key bearer credentials (auth tokens) into an account
     /// route context for the open-api chat completions route.
     auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator + Send + Sync>>,
+    billing_subject_resolver:
+        Option<Arc<dyn sdkwork_cloudrouter_router_service::ports::BillingSubjectResolver>>,
 }
 
 fn router_with_database_runtime_routes<C>(
@@ -394,6 +400,7 @@ where
         gateway_balance_store,
         billing_store,
         auth_token_authenticator,
+        billing_subject_resolver,
     } = input;
     let internal_gateway_verifier = build_internal_gateway_request_verifier(runtime_toml)?;
     let dispatcher_response_max_bytes =
@@ -428,6 +435,7 @@ where
             auth_token_authenticator: auth_token_authenticator.clone(),
             call_chain: call_chain.clone(),
             billing_store: Some(billing_store.clone()),
+            billing_subject_resolver: billing_subject_resolver.clone(),
         })?
     } else {
         tracing::warn!(
@@ -461,6 +469,7 @@ where
             region_settings_store: None,
             include_openai_models_router: false,
             auth_token_authenticator: auth_token_authenticator.clone(),
+            billing_subject_resolver: billing_subject_resolver.clone(),
         });
         router_with_invocation_runtime_routes(InvocationRuntimeRoutesInput {
             base_router: router,
@@ -485,6 +494,7 @@ where
             internal_gateway_verifier: Arc::clone(&internal_gateway_verifier),
             call_chain,
             billing_store: Some(billing_store),
+            billing_subject_resolver,
         })?
     };
     // The balance endpoint must stay reachable on every surface that serves
@@ -791,6 +801,9 @@ struct OpenAiRuntimeRoutesInput<C> {
     /// Resolves non-API-key bearer credentials (auth tokens) into an account
     /// route context for the chat completions route.
     auth_token_authenticator: Option<Arc<dyn OpenAiAuthTokenAuthenticator + Send + Sync>>,
+    /// 计费主体解析器（团队计费）；`None` 保持个人主体既有行为。
+    billing_subject_resolver:
+        Option<Arc<dyn sdkwork_cloudrouter_router_service::ports::BillingSubjectResolver>>,
 }
 
 pub fn router_with_product_catalog_and_api_key_hasher<C>(
@@ -813,6 +826,7 @@ where
         region_settings_store: None,
         include_openai_models_router: true,
         auth_token_authenticator: None,
+        billing_subject_resolver: None,
     })
 }
 
@@ -843,6 +857,7 @@ where
         region_settings_store: None,
         include_openai_models_router: true,
         auth_token_authenticator: None,
+        billing_subject_resolver: None,
     })
 }
 
@@ -873,6 +888,7 @@ where
         region_settings_store: None,
         include_openai_models_router: true,
         auth_token_authenticator: None,
+        billing_subject_resolver: None,
     })
 }
 
@@ -903,6 +919,7 @@ where
         region_settings_store: None,
         include_openai_models_router: true,
         auth_token_authenticator: None,
+        billing_subject_resolver: None,
     })
 }
 
@@ -950,6 +967,7 @@ where
         region_settings_store: None,
         include_openai_models_router: true,
         auth_token_authenticator: None,
+        billing_subject_resolver: None,
     })
 }
 
@@ -970,6 +988,7 @@ where
         region_settings_store,
         include_openai_models_router,
         auth_token_authenticator,
+        billing_subject_resolver,
     } = input;
     // The decision log is a built-in surface plugin for every OpenAI-compatible
     // endpoint; the routing algorithm never calls it directly.
@@ -993,6 +1012,7 @@ where
                     Some(usage_recorder),
                     invocation_plugins.clone(),
                     OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy)
+                        .with_billing_subject_resolver(billing_subject_resolver.clone())
                         .with_region_settings_store(region_settings_store.clone()),
                     auth_token_authenticator.clone(),
                     sdkwork_web_core::default_open_api_bearer_classifier(),
@@ -1005,7 +1025,8 @@ where
                     Some(stream_relay),
                     None,
                     invocation_plugins.clone(),
-                    OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy),
+                    OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy)
+                        .with_billing_subject_resolver(billing_subject_resolver.clone()),
                     auth_token_authenticator.clone(),
                     sdkwork_web_core::default_open_api_bearer_classifier(),
                 )
@@ -1021,6 +1042,7 @@ where
                     Some(usage_recorder),
                     invocation_plugins.clone(),
                     OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy)
+                        .with_billing_subject_resolver(billing_subject_resolver.clone())
                         .with_region_settings_store(region_settings_store.clone()),
                     auth_token_authenticator.clone(),
                     sdkwork_web_core::default_open_api_bearer_classifier(),
@@ -1033,7 +1055,8 @@ where
                     None,
                     None,
                     invocation_plugins.clone(),
-                    OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy),
+                    OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy)
+                        .with_billing_subject_resolver(billing_subject_resolver.clone()),
                     auth_token_authenticator.clone(),
                     sdkwork_web_core::default_open_api_bearer_classifier(),
                 )
@@ -1047,7 +1070,8 @@ where
                 Some(stream_relay),
                 None,
                 invocation_plugins.clone(),
-                OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy),
+                OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy)
+                        .with_billing_subject_resolver(billing_subject_resolver.clone()),
                 auth_token_authenticator.clone(),
                 sdkwork_web_core::default_open_api_bearer_classifier(),
             )
@@ -1060,7 +1084,8 @@ where
                 None,
                 None,
                 invocation_plugins.clone(),
-                OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy),
+                OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy)
+                        .with_billing_subject_resolver(billing_subject_resolver.clone()),
                 auth_token_authenticator.clone(),
                 sdkwork_web_core::default_open_api_bearer_classifier(),
             )
@@ -1108,6 +1133,7 @@ where
                     usage_recorder,
                     invocation_plugins.clone(),
                     OpenAiRuntimeRouteConfig::new(default_retry_policy.clone(), failure_strategy)
+                        .with_billing_subject_resolver(billing_subject_resolver.clone())
                         .with_region_settings_store(region_settings_store.clone()),
                 )
             } else {
@@ -1420,6 +1446,24 @@ async fn router_with_database_bootstrap(
         UpstreamCredentialSecurityConfig::from_env_or_runtime_toml(runtime_toml)
             .map_err(GatewayRouterError::Config)?,
     )?;
+    ensure_no_known_default_secret_material(
+        [
+            (
+                "SDKWORK_CLOUDROUTER_API_KEY_PEPPER",
+                Some(api_key_security_config.pepper_secret()),
+            ),
+            (
+                "SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING",
+                Some(upstream_credential_security_config.active_key()),
+            ),
+            (
+                "SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING",
+                Some(upstream_credential_security_config.fingerprint_key()),
+            ),
+        ],
+        deployment_mode.is_production_like(),
+    )
+    .map_err(GatewayRouterError::Config)?;
     let credential_secret_codec =
         credential_secret_codec_from_config(&upstream_credential_security_config)?;
     let request_limits_config = RequestLimitsConfig::from_env_or_runtime_toml(runtime_toml)
@@ -1544,6 +1588,12 @@ async fn router_with_database_bootstrap(
             account_store,
             settlement_worker_enabled,
         ));
+        // 团队计费：投影表缺失时自动降级为恒个人计费（fail-safe）。
+        let billing_subject_resolver =
+            sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::billing_subject_resolver::billing_subject_resolver_for_pool(
+                pool.clone(),
+            )
+            .await;
         router_with_database_runtime_routes(DatabaseRuntimeRoutesInput {
             base_router: router_with_database_status_and_passthrough_placeholder(
                 Some(&config),
@@ -1578,6 +1628,7 @@ async fn router_with_database_bootstrap(
                 IamAuthTokenAuthenticator::new(database_pool.clone(), catalog.clone())
                     .with_cache(resolve_auth_token_cache(runtime_toml).await),
             )),
+            billing_subject_resolver: Some(billing_subject_resolver),
         })
     }
 }
@@ -2028,6 +2079,32 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
                 AppSessionConfig::ENV_APP_SESSION_SECRET
             ))
         })?;
+    ensure_no_known_default_secret_material(
+        [
+            (
+                "SDKWORK_CLOUDROUTER_API_KEY_PEPPER",
+                Some(api_key_security_config.pepper_secret()),
+            ),
+            (
+                "SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING",
+                Some(upstream_credential_security_config.active_key()),
+            ),
+            (
+                "SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING",
+                Some(upstream_credential_security_config.fingerprint_key()),
+            ),
+            (
+                "SDKWORK_CLOUDROUTER_TRUSTED_SUBJECT_SECRET",
+                Some(trusted_subject_config.signing_secret()),
+            ),
+            (
+                "SDKWORK_CLOUDROUTER_APP_SESSION_SECRET",
+                Some(app_session_config.signing_secret()),
+            ),
+        ],
+        deployment_mode.is_production_like(),
+    )
+    .map_err(anyhow::Error::msg)?;
     let provider_relay_config = ProviderRelayConfig::from_env_or_runtime_toml(runtime_toml_ref)
         .map_err(anyhow::Error::msg)?;
     let provider_secret_map_config =
@@ -2293,6 +2370,12 @@ async fn build_gateway_router_from_all_in_one_context(
         Arc::clone(&account_store),
         context.usage_settlement_wakeup.is_some(),
     ));
+    // 团队计费：投影表缺失时自动降级为恒个人计费（fail-safe）。
+    let billing_subject_resolver =
+        sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::billing_subject_resolver::billing_subject_resolver_for_pool(
+            pool.clone(),
+        )
+        .await;
 
     router_with_database_runtime_routes(DatabaseRuntimeRoutesInput {
         base_router: router_with_database_status_and_passthrough_placeholder(
@@ -2327,6 +2410,7 @@ async fn build_gateway_router_from_all_in_one_context(
         call_chain,
         gateway_balance_store: Some(gateway_balance_store),
         billing_store,
+        billing_subject_resolver: Some(billing_subject_resolver),
         // Resolves non-API-key bearer credentials (SDKWork login auth tokens)
         // into the tenant default upstream account group so open-api chat
         // completions accept the agents turn executor's auth-token channel

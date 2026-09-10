@@ -10645,6 +10645,47 @@
       "api_method": "GET",
       "api_path": "/backend/v3/api/pricing/plans",
       "api_surface": "backend",
+      "description": "Export/selector aggregation over plans.list for rule-scope resolution: walks bounded pages of the same paginated operation (page_size capped at 200, hard page-count ceiling). Never exposed as a separate server operation and never used to populate standard paginated tables (PAGINATION_SPEC.md section 7 listAll rules).",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#fetchPricingPlanCatalog@/admin/pricing/plans",
+      "kind": "read",
+      "module": "pc-admin-pricing",
+      "openapi_exposed": false,
+      "operation": "fetchPricingPlanCatalog",
+      "operation_id": "plans.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "cloudrouter_pricing_plan"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AdminPricingPlanExportList",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminPricingPlanExportList",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/pricing/plans",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "pricing",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "tag": "pricing",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/pricing/plans",
+      "api_surface": "backend",
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
@@ -11063,6 +11104,48 @@
         }
       },
       "route": "/admin/pricing/rateCards",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "pricing",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "tag": "pricing",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/pricing/rules",
+      "api_surface": "backend",
+      "description": "Export/selector aggregation over rules.list: walks bounded pages of the same paginated operation (page_size capped at 200, hard page-count ceiling). Never exposed as a separate server operation and never used to populate standard paginated tables (PAGINATION_SPEC.md section 7 listAll rules).",
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#fetchPricingRuleCatalog@/admin/pricing/rules",
+      "kind": "read",
+      "module": "pc-admin-pricing",
+      "openapi_exposed": false,
+      "operation": "fetchPricingRuleCatalog",
+      "operation_id": "rules.list",
+      "path_params": [],
+      "query_parameters": [],
+      "query_parameters_declared": false,
+      "read_sources": [
+        "cloudrouter_pricing_rule",
+        "cloudrouter_pricing_plan"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "AdminPricingRuleExportList",
+        "schema": {
+          "additionalProperties": false,
+          "name": "AdminPricingRuleExportList",
+          "properties": {},
+          "type": "object"
+        }
+      },
+      "route": "/admin/pricing/rules",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
@@ -11717,7 +11800,7 @@
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#updatePricingDefaultRegion@/admin/pricing/default_regions/{defaultRegionId}",
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#updatePricingDefaultRegion@/admin/pricing/settings",
       "kind": "update",
       "module": "pc-admin-pricing",
       "openapi_exposed": true,
@@ -11888,7 +11971,7 @@
           "type": "object"
         }
       },
-      "route": "/admin/pricing/default_regions/{defaultRegionId}",
+      "route": "/admin/pricing/settings",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
@@ -24582,13 +24665,11 @@
       "query_parameters": [
         {
           "in": "query",
-          "name": "page",
+          "name": "cursor",
           "required": false,
           "schema": {
-            "default": 1,
-            "format": "int32",
-            "minimum": 1,
-            "type": "integer"
+            "maxLength": 512,
+            "type": "string"
           }
         },
         {
@@ -27457,83 +27538,6 @@
       "write_tables": [
         "ai_usage"
       ]
-    },
-    {
-      "api_method": "GET",
-      "api_path": "/app/v3/api/ai/models",
-      "api_surface": "app",
-      "file_targets": [],
-      "idempotency_required": false,
-      "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-pricing/src/services/compareService.ts#fetchCompareModels@/pricing",
-      "kind": "read",
-      "module": "pc-pricing",
-      "openapi_exposed": false,
-      "operation": "fetchCompareModels",
-      "operation_id": "models.list",
-      "path_params": [],
-      "query_parameters": [
-        {
-          "in": "query",
-          "name": "q",
-          "required": false,
-          "schema": {
-            "maxLength": 256,
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "vendor_codes",
-          "required": false,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "in": "query",
-          "name": "page_size",
-          "required": false,
-          "schema": {
-            "format": "int32",
-            "maximum": 200,
-            "minimum": 1,
-            "type": "integer"
-          }
-        }
-      ],
-      "query_parameters_declared": true,
-      "read_sources": [
-        "ai_model_vendor",
-        "ai_model",
-        "ai_model_capability",
-        "ai_model_pricing",
-        "ai_upstream_supplier",
-        "ai_upstream_account",
-        "ai_upstream_account_group",
-        "ai_upstream_account_group_member",
-        "ai_resource_binding"
-      ],
-      "request_body_required": null,
-      "request_id_header": false,
-      "response_schema": {
-        "name": "NoData",
-        "schema": {
-          "additionalProperties": false,
-          "name": "NoData",
-          "properties": {},
-          "type": "object"
-        }
-      },
-      "route": "/pricing",
-      "route_scope": "public",
-      "sdk_api_prefix": "/app/v3/api",
-      "sdk_client": "SdkworkAppClient",
-      "sdk_domain": "intelligence",
-      "sdk_family": "cloudrouter-app-sdk",
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-pricing/src/services/compareService.ts",
-      "tag": "ai",
-      "write_tables": []
     },
     {
       "api_method": "GET",
@@ -32355,24 +32359,24 @@
   "summary": {
     "api_method_counts": {
       "DELETE": 21,
-      "GET": 110,
+      "GET": 111,
       "PATCH": 20,
       "POST": 58,
       "PUT": 12
     },
     "api_surface_counts": {
-      "app": 75,
-      "backend": 146
+      "app": 74,
+      "backend": 148
     },
-    "operation_count": 221,
+    "operation_count": 222,
     "route_scope_counts": {
-      "admin": 146,
+      "admin": 148,
       "console": 31,
-      "public": 44
+      "public": 43
     },
     "sdk_client_counts": {
-      "SdkworkAppClient": 75,
-      "SdkworkBackendClient": 146
+      "SdkworkAppClient": 74,
+      "SdkworkBackendClient": 148
     }
   }
 }

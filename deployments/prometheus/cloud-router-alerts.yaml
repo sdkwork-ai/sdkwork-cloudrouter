@@ -328,6 +328,17 @@ groups:
           description: "At least one Redis-backed circuit breaker operation failed. Inspect the mode label before mitigation; fail-closed rejects provider calls while fail-open reduces protection."
           runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
+      - alert: CloudRouterRateLimitRedisDegraded
+        expr: max_over_time(cloudrouter_rate_limit_redis_degraded[5m]) == 1
+        for: 1m
+        labels:
+          severity: critical
+          category: provider-resilience
+        annotations:
+          summary: "Gateway rate limiter degraded to per-process enforcement"
+          description: "The distributed (Redis-backed) invocation rate limiter could not reach Redis and fell back to local buckets, so each replica now enforces the configured quota divided by SDKWORK_CLOUDROUTER_PROVIDER_RATE_LIMIT_ESTIMATED_INSTANCE_COUNT. Cluster-wide quota accuracy is reduced until Redis is restored; verify the estimated instance count matches the current replica count."
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/rate-limit-circuit-break.md"
+
       - alert: CloudRouterCircuitBreakerRejectionsHigh
         expr: sum(increase(cloudrouter_circuit_breaker_rejections_total[5m])) > 10
         for: 5m

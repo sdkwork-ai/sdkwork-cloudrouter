@@ -1,0 +1,277 @@
+tables:
+- table: ai_mcp_server
+  domain: ai
+  profile: tenant_entity
+  soft_delete_policy: full_lifecycle_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - backend
+  columns:
+    server_key:
+      type: string(128)
+      constraints: NOT NULL
+    name:
+      type: string(255)
+      constraints: NOT NULL
+    description: string(4000)
+    category_id: int64
+    category_code: string(128)
+    transport:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'http'
+    visibility:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'organization'
+    owner_user_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    latest_revision_id: int64
+    published_revision_id: int64
+    health_status:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'unchecked'
+    last_checked_at: instant
+    last_error_masked: string(1024)
+    tags:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
+    published_at: instant
+    deprecated_at: instant
+  required_columns:
+  - server_key
+  - name
+  unique_constraints:
+  - name: uk_ai_mcp_server_uuid
+    columns:
+    - uuid
+  - name: uk_ai_mcp_server_scope_key
+    columns:
+    - tenant_id
+    - organization_id
+    - server_key
+  check_constraints:
+  - name: ck_ai_mcp_server_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0
+  - name: ck_ai_mcp_server_values
+    expression: length(server_key) > 0
+      AND length(name) > 0
+      AND length(transport) > 0
+      AND length(visibility) > 0
+      AND length(health_status) > 0
+  indexes:
+  - name: idx_ai_mcp_server_scope_updated
+    columns:
+    - tenant_id
+    - organization_id
+    - updated_at
+    - id
+  - name: idx_ai_mcp_server_scope_category
+    columns:
+    - tenant_id
+    - organization_id
+    - category_id
+
+- table: ai_mcp_server_revision
+  domain: ai
+  profile: tenant_entity
+  soft_delete_policy: full_lifecycle_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - backend
+  columns:
+    server_id:
+      type: int64
+      constraints: NOT NULL
+    revision_no:
+      type: string(128)
+      constraints: NOT NULL
+    transport:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'http'
+    endpoint_url: string(1024)
+    command: string(1024)
+    args_json:
+      type: json
+      constraints: NOT NULL DEFAULT '[]'::jsonb
+    env_schema:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    auth_type:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'none'
+    secret_ref: string(512)
+    timeout_ms:
+      type: int32
+      constraints: NOT NULL DEFAULT 30000
+    retry_policy:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+    config_hash: string(128)
+    lifecycle_status:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'draft'
+    created_by: int64
+    published_at: instant
+    deprecated_at: instant
+  required_columns:
+  - server_id
+  - revision_no
+  unique_constraints:
+  - name: uk_ai_mcp_server_revision_uuid
+    columns:
+    - uuid
+  - name: uk_ai_mcp_server_revision_scope_no
+    columns:
+    - tenant_id
+    - organization_id
+    - server_id
+    - revision_no
+  check_constraints:
+  - name: ck_ai_mcp_server_revision_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND server_id > 0
+  - name: ck_ai_mcp_server_revision_values
+    expression: length(revision_no) > 0
+      AND length(transport) > 0
+      AND length(lifecycle_status) > 0
+      AND timeout_ms > 0
+  indexes:
+  - name: idx_ai_mcp_server_revision_scope_created
+    columns:
+    - tenant_id
+    - organization_id
+    - server_id
+    - created_at
+    - id
+
+- table: ai_mcp_tool
+  domain: ai
+  profile: tenant_entity
+  soft_delete_policy: full_lifecycle_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - backend
+  columns:
+    server_id:
+      type: int64
+      constraints: NOT NULL
+    server_revision_id: int64
+    tool_key:
+      type: string(128)
+      constraints: NOT NULL
+    name:
+      type: string(255)
+      constraints: NOT NULL
+    description: string(4000)
+    input_schema: json
+    output_schema: json
+    risk_level:
+      type: string(64)
+      constraints: NOT NULL DEFAULT 'low'
+    requires_approval:
+      type: bool
+      constraints: NOT NULL DEFAULT false
+    enabled:
+      type: bool
+      constraints: NOT NULL DEFAULT true
+    rate_limit_policy: json
+    schema_hash: string(128)
+    discovered_at: instant
+    last_invoked_at: instant
+    sort_weight:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+  required_columns:
+  - server_id
+  - tool_key
+  - name
+  unique_constraints:
+  - name: uk_ai_mcp_tool_uuid
+    columns:
+    - uuid
+  - name: uk_ai_mcp_tool_scope_key
+    columns:
+    - tenant_id
+    - organization_id
+    - server_id
+    - tool_key
+  check_constraints:
+  - name: ck_ai_mcp_tool_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND server_id > 0
+  - name: ck_ai_mcp_tool_values
+    expression: length(tool_key) > 0
+      AND length(name) > 0
+      AND length(risk_level) > 0
+      AND sort_weight >= 0
+  indexes:
+  - name: idx_ai_mcp_tool_scope_sort
+    columns:
+    - tenant_id
+    - organization_id
+    - server_id
+    - sort_weight
+    - id
+
+- table: ai_mcp_binding
+  domain: ai
+  profile: tenant_entity
+  soft_delete_policy: full_lifecycle_unique
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  common_columns: tenant_entity
+  api_surfaces:
+  - backend
+  columns:
+    server_id:
+      type: int64
+      constraints: NOT NULL
+    server_revision_id: int64
+    tool_id: int64
+    owner_type:
+      type: string(64)
+      constraints: NOT NULL
+    owner_id:
+      type: int64
+      constraints: NOT NULL DEFAULT 0
+    allowed_tools: json
+    denied_tools: json
+    policy_json: json
+    priority:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+    enabled:
+      type: bool
+      constraints: NOT NULL DEFAULT true
+    snapshot_json:
+      type: json
+      constraints: NOT NULL DEFAULT '{}'::jsonb
+  required_columns:
+  - server_id
+  - owner_type
+  unique_constraints:
+  - name: uk_ai_mcp_binding_uuid
+    columns:
+    - uuid
+  check_constraints:
+  - name: ck_ai_mcp_binding_subject_scope
+    expression: tenant_id > 0 AND organization_id >= 0 AND server_id > 0
+  - name: ck_ai_mcp_binding_values
+    expression: length(owner_type) > 0
+      AND priority >= 0
+  indexes:
+  - name: idx_ai_mcp_binding_scope_priority
+    columns:
+    - tenant_id
+    - organization_id
+    - server_id
+    - priority
+    - id

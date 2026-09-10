@@ -14,7 +14,7 @@
       "route": "/admin/request-log",
       "sdk_operations": [
         {
-          "operation_id": "log.requestLogs.detail",
+          "operation_id": "requestLogs.retrieve",
           "sdk_family": "sdkwork-log-backend-sdk"
         }
       ],
@@ -35,7 +35,7 @@
       "route": "/admin/request-log",
       "sdk_operations": [
         {
-          "operation_id": "log.requestLogs.list",
+          "operation_id": "requestLogs.list",
           "sdk_family": "sdkwork-log-backend-sdk"
         }
       ],
@@ -2768,6 +2768,25 @@
     },
     {
       "api_method": "POST",
+      "api_path": "/backend/v3/api/pricing/default_regions",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "createPricingDefaultRegion",
+      "operation_scope": null,
+      "read_sources": [
+        "pricing_default_region"
+      ],
+      "route": "/admin/pricing/settings",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": [
+        "pricing_default_region",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
       "api_path": "/backend/v3/api/pricing/plans",
       "api_surface": "backend",
       "file_targets": [],
@@ -2822,6 +2841,25 @@
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
       "write_tables": [
         "cloudrouter_pricing_rule",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "DELETE",
+      "api_path": "/backend/v3/api/pricing/default_regions/{defaultRegionId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "delete",
+      "operation": "deletePricingDefaultRegion",
+      "operation_scope": null,
+      "read_sources": [
+        "pricing_default_region"
+      ],
+      "route": "/admin/pricing/settings",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": [
+        "pricing_default_region",
         "ops_audit_log"
       ]
     },
@@ -2903,6 +2941,22 @@
     },
     {
       "api_method": "GET",
+      "api_path": "/backend/v3/api/pricing/default_regions",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchPricingDefaultRegions",
+      "operation_scope": null,
+      "read_sources": [
+        "pricing_default_region"
+      ],
+      "route": "/admin/pricing/settings",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
       "api_path": "/backend/v3/api/pricing/plans/{planId}",
       "api_surface": "backend",
       "file_targets": [],
@@ -2913,6 +2967,22 @@
         "cloudrouter_pricing_plan"
       ],
       "route": "/admin/pricing/plans/{planId}",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/pricing/plans",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "fetchPricingPlanCatalog",
+      "operation_scope": null,
+      "read_sources": [
+        "cloudrouter_pricing_plan"
+      ],
+      "route": "/admin/pricing/plans",
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
       "write_tables": []
@@ -2956,6 +3026,23 @@
       "api_surface": "backend",
       "file_targets": [],
       "kind": "read",
+      "operation": "fetchPricingRuleCatalog",
+      "operation_scope": null,
+      "read_sources": [
+        "cloudrouter_pricing_rule",
+        "cloudrouter_pricing_plan"
+      ],
+      "route": "/admin/pricing/rules",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/pricing/rules",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
       "operation": "fetchPricingRules",
       "operation_scope": null,
       "read_sources": [
@@ -2966,6 +3053,69 @@
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
       "write_tables": []
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/pricing/official_refresh",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "action",
+      "operation": "refreshAdminOfficialPricingRates",
+      "operation_scope": null,
+      "read_sources": [
+        "pricing_price_book",
+        "pricing_rate",
+        "pricing_import_run",
+        "cloudrouter_pricing_rule"
+      ],
+      "route": "/admin/pricing/settings",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": [
+        "pricing_price_book",
+        "pricing_rate",
+        "pricing_import_run",
+        "cloudrouter_pricing_rule",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/pricing/price_settings/resolve",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "resolvePriceSetting",
+      "operation_scope": null,
+      "read_sources": [
+        "pricing_rate",
+        "pricing_price_book",
+        "cloudrouter_pricing_plan",
+        "cloudrouter_pricing_rule"
+      ],
+      "route": "/admin/pricing/settings",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "PATCH",
+      "api_path": "/backend/v3/api/pricing/default_regions/{defaultRegionId}",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "update",
+      "operation": "updatePricingDefaultRegion",
+      "operation_scope": null,
+      "read_sources": [
+        "pricing_default_region"
+      ],
+      "route": "/admin/pricing/settings",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": [
+        "pricing_default_region",
+        "ops_audit_log"
+      ]
     },
     {
       "api_method": "PATCH",
@@ -3019,6 +3169,26 @@
         "cloudrouter_pricing_plan"
       ],
       "route": "/admin/pricing/rules/{ruleId}",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
+      "write_tables": [
+        "cloudrouter_pricing_rule",
+        "ops_audit_log"
+      ]
+    },
+    {
+      "api_method": "POST",
+      "api_path": "/backend/v3/api/pricing/price_settings/upsert",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "create",
+      "operation": "upsertPriceSetting",
+      "operation_scope": null,
+      "read_sources": [
+        "cloudrouter_pricing_rule",
+        "pricing_rate"
+      ],
+      "route": "/admin/pricing/settings",
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
       "write_tables": [
@@ -4980,35 +5150,6 @@
     },
     {
       "api_method": "GET",
-      "api_path": "/app/v3/api/ai/models",
-      "api_surface": "app",
-      "file_targets": [],
-      "kind": "read",
-      "operation": "fetchCompareModels",
-      "operation_scope": null,
-      "read_sources": [
-        "ai_model_vendor",
-        "ai_model",
-        "ai_model_capability",
-        "ai_model_pricing",
-        "ai_upstream_supplier",
-        "ai_upstream_account",
-        "ai_upstream_account_group",
-        "ai_upstream_account_group_member",
-        "ai_resource_binding"
-      ],
-      "route": "/pricing",
-      "sdk_operations": [
-        {
-          "operation_id": "models.list",
-          "sdk_family": "sdkwork-models-app-sdk"
-        }
-      ],
-      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-pricing/src/services/compareService.ts",
-      "write_tables": []
-    },
-    {
-      "api_method": "GET",
       "api_path": "/app/v3/api/ai/pricing/rates",
       "api_surface": "app",
       "file_targets": [],
@@ -5057,6 +5198,20 @@
       "route": "/rankings",
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-rankings/src/rankingService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "getCloudRouterTokenBankBalance",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/domain-service-providers.ts",
       "write_tables": []
     },
     {
@@ -5762,8 +5917,8 @@
     }
   ],
   "summary": {
-    "operation_count": 313,
+    "operation_count": 322,
     "source_file_count": 43,
-    "write_operation_count": 132
+    "write_operation_count": 137
   }
 }

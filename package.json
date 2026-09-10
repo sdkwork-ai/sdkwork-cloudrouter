@@ -1,6 +1,6 @@
 {
   "name": "sdkwork-cloudrouter-workspace",
-  "version": "0.3.0",
+  "version": "0.4.1",
   "private": true,
   "license": "AGPL-3.0-or-later",
   "type": "module",

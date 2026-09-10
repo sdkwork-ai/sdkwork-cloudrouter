@@ -2,7 +2,10 @@
 name = "sdkwork-cloudrouter-provider-adapter-http"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license-file.workspace = true
+[lib]
+name = "sdkwork_cloudrouter_provider_adapter_http"
 
 [dependencies]
 axum.workspace = true
@@ -19,3 +22,6 @@ sdkwork-cloudrouter-provider-adapter-registry.workspace = true
 sdkwork-cloudrouter-http.workspace = true
 sdkwork-cloudrouter-security.workspace = true
 tokio = { workspace = true, features = ["time"] }
+
+[lints]
+workspace = true

@@ -10,6 +10,8 @@ use super::{
     record_streaming_usage_body, BillingMode, BillingQuantitySource, Invocation,
     InvocationCancellationSignal, InvocationError, InvocationErrorKind, InvocationInterceptor,
 };
+#[cfg(test)]
+use crate::domain::BillingOwnerKind;
 
 #[derive(Clone, Default)]
 pub struct InvocationPipeline {
@@ -399,7 +401,10 @@ impl DeferredStreamInvocation {
                         )
                         .await
                 }
-                StreamTerminalOutcome::Cancelled { ttft_ms, partial_usage } => {
+                StreamTerminalOutcome::Cancelled {
+                    ttft_ms,
+                    partial_usage,
+                } => {
                     self.invocation.telemetry.ttft_ms = ttft_ms;
                     self.settle_partial_then_fail(
                         partial_usage,
@@ -407,7 +412,11 @@ impl DeferredStreamInvocation {
                     )
                     .await
                 }
-                StreamTerminalOutcome::TimedOut { stage, ttft_ms, partial_usage } => {
+                StreamTerminalOutcome::TimedOut {
+                    stage,
+                    ttft_ms,
+                    partial_usage,
+                } => {
                     self.invocation.telemetry.ttft_ms = ttft_ms;
                     self.settle_partial_then_fail(
                         partial_usage,
@@ -417,23 +426,25 @@ impl DeferredStreamInvocation {
                     )
                     .await
                 }
-                StreamTerminalOutcome::UpstreamError { message, ttft_ms, partial_usage } => {
+                StreamTerminalOutcome::UpstreamError {
+                    message,
+                    ttft_ms,
+                    partial_usage,
+                } => {
                     self.invocation.telemetry.ttft_ms = ttft_ms;
                     self.settle_partial_then_fail(
                         partial_usage,
-                        stream_lifecycle_error(format!(
-                            "provider stream failed: {message}"
-                        )),
+                        stream_lifecycle_error(format!("provider stream failed: {message}")),
                     )
                     .await
                 }
-                StreamTerminalOutcome::LeaseLost { ttft_ms, partial_usage } => {
+                StreamTerminalOutcome::LeaseLost {
+                    ttft_ms,
+                    partial_usage,
+                } => {
                     self.invocation.telemetry.ttft_ms = ttft_ms;
-                    self.settle_partial_then_fail(
-                        partial_usage,
-                        tenant_lease_loss_error(),
-                    )
-                    .await
+                    self.settle_partial_then_fail(partial_usage, tenant_lease_loss_error())
+                        .await
                 }
             }
         }
@@ -624,6 +635,8 @@ mod tests {
                 tenant_id: 10,
                 organization_id: 20,
                 user_id: 30,
+                billing_organization_id: 0,
+                billing_owner: BillingOwnerKind::Personal,
                 account_group_id: None,
                 account_group_code: None,
                 pricing_plan_code: None,

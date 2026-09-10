@@ -279,7 +279,7 @@ export function PriceSettingsAdmin() {
     const sequence = ++loadSequence.current;
     setLoading(true); setError(null);
     try {
-      const pricingPlanItems = await pricingService.plans.listAll({ pageSize: 200, status: 'active' });
+      const pricingPlanItems = await pricingService.plans.catalog({ pageSize: 200, status: 'active' });
       const pricingPlans = { items: pricingPlanItems };
       const resolvedPlanId = pricingPlanId || pricingPlans.items[0]?.id || '';
       const [pricingRules, officialPrices] = await Promise.all([
@@ -287,7 +287,7 @@ export function PriceSettingsAdmin() {
         // product catalog search also covers display names, vendors, and
         // catalog keys that the admin rule endpoint does not index. Resolve
         // the plan first so the initial load never fetches every plan's rules.
-        pricingService.rules.listAll({ pageSize: 200, pricingPlanId: resolvedPlanId || undefined }),
+        pricingService.rules.catalog({ pageSize: 200, pricingPlanId: resolvedPlanId || undefined }),
         pricingService.officialProducts.list({ category: resourceType, q: appliedSearch || undefined, vendorCodes: vendorCodes.length > 0 ? vendorCodes : undefined, regionCode: regionCode || undefined, page, pageSize }),
       ]);
       if (sequence !== loadSequence.current) return;

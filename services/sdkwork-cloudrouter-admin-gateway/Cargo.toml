@@ -2,7 +2,10 @@
 name = "sdkwork-cloudrouter-admin-gateway"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license-file.workspace = true
+[lib]
+name = "sdkwork_cloudrouter_admin_gateway"
 
 [[bin]]
 name = "sdkwork-cloudrouter-admin-gateway"
@@ -30,3 +33,6 @@ sdkwork-web-core.workspace = true
 serde_json.workspace = true
 sqlx.workspace = true
 tower.workspace = true
+
+[lints]
+workspace = true

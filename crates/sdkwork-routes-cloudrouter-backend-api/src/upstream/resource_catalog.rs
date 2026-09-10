@@ -34,6 +34,7 @@ struct ResourceCatalogItem {
     api_endpoint_code: Option<String>,
     capability: Option<String>,
     capabilities: Vec<String>,
+    #[serde(with = "sdkwork_utils_rust::serde_int64::option")]
     sort_order: Option<i64>,
 }
 
@@ -47,7 +48,9 @@ struct ResourceGroupCatalogItem {
     description: Option<String>,
     vendor_codes: Vec<String>,
     capabilities: Vec<String>,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     resource_count: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64::option")]
     sort_order: Option<i64>,
 }
 

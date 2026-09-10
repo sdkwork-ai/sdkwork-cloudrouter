@@ -15,10 +15,18 @@ pub struct AdminFinanceSubject {
     pub operator_type: i32,
 }
 
+/// Opaque keyset position for admin finance lists (`PAGINATION_SPEC.md` §6:
+/// fast-growing tables seek on the stable `(sort_time, id)` tuple).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AdminFinanceCursor {
+    pub occurred_at_micros: i64,
+    pub id: i64,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListAdminTransactionsQuery {
     pub subject: AdminFinanceSubject,
-    pub page_no: i64,
+    pub cursor: Option<AdminFinanceCursor>,
     pub page_size: i64,
     pub keyword: Option<String>,
     pub status: Option<String>,
@@ -29,7 +37,7 @@ pub struct ListAdminTransactionsQuery {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListAdminBillingRecordsQuery {
     pub subject: AdminFinanceSubject,
-    pub page_no: i64,
+    pub cursor: Option<AdminFinanceCursor>,
     pub page_size: i64,
     pub keyword: Option<String>,
     pub status: Option<String>,
@@ -63,11 +71,13 @@ pub struct AdminBillingRecordItem {
     pub due_date: String,
 }
 
+/// Bounded cursor page. `items` never exceeds `page_size`; `next_cursor` is
+/// `Some` only when `has_more` is true so clients can continue the seek.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AdminFinanceCollection<T> {
     pub items: Vec<T>,
-    pub total: i64,
-    pub page_no: i64,
+    pub next_cursor: Option<AdminFinanceCursor>,
+    pub has_more: bool,
     pub page_size: i64,
 }
 

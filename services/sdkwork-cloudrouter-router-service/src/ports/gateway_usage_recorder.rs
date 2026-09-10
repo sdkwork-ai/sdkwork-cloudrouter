@@ -6,7 +6,7 @@ use serde::de::IgnoredAny;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::domain::{BillingMeter, DecimalValue, DomainError, DomainResult};
+use crate::domain::{BillingMeter, BillingOwnerKind, DecimalValue, DomainError, DomainResult};
 use crate::ports::{token_points_for_charge, RechargeSettingsModel};
 
 pub type GatewayUsageRecordFuture<'a> = Pin<Box<dyn Future<Output = DomainResult<()>> + Send + 'a>>;
@@ -165,6 +165,11 @@ pub struct GatewayRequestTraceCommand {
     pub tenant_id: i64,
     pub organization_id: i64,
     pub user_id: i64,
+    /// 计费主体类型（usage 归因 owner_type 列：1=用户，2=组织）。
+    pub billing_owner: BillingOwnerKind,
+    /// 团队名称快照（组织主体时写入 owner_name_snapshot 列）。
+    #[serde(default)]
+    pub billing_owner_name: Option<String>,
     pub api_key_id: i64,
     pub api_key_name_snapshot: String,
     pub account_group_id: i64,
@@ -267,6 +272,11 @@ pub struct GatewayUsageRecordCommand {
     pub tenant_id: i64,
     pub organization_id: i64,
     pub user_id: i64,
+    /// 计费主体类型（usage 归因 owner_type 列：1=用户，2=组织）。
+    pub billing_owner: BillingOwnerKind,
+    /// 团队名称快照（组织主体时写入 owner_name_snapshot 列）。
+    #[serde(default)]
+    pub billing_owner_name: Option<String>,
     pub api_key_id: i64,
     pub api_key_name_snapshot: String,
     pub account_group_id: i64,
@@ -989,6 +999,8 @@ impl GatewayUsageRecordCommand {
             tenant_id: self.tenant_id,
             organization_id: self.organization_id,
             user_id: self.user_id,
+            billing_owner: self.billing_owner,
+            billing_owner_name: self.billing_owner_name.clone(),
             api_key_id: self.api_key_id,
             api_key_name_snapshot: self.api_key_name_snapshot.clone(),
             account_group_id: self.account_group_id,

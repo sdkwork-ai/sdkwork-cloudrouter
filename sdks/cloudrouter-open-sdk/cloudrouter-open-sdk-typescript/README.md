@@ -73,6 +73,7 @@ const client = new SdkworkAiClient({
 - `client.filesAnthropic` - files_anthropic API
 - `client.chatAnthropic` - chat_anthropic API
 - `client.batchesAnthropic` - batches_anthropic API
+- `client.audioElevenlabs` - audio_elevenlabs API
 - `client.responsesGoogle` - responses_google API
 - `client.filesGoogle` - files_google API
 - `client.embeddingsGoogle` - embeddings_google API
@@ -102,7 +103,6 @@ const client = new SdkworkAiClient({
 - `client.videosVidu` - videos_vidu API
 - `client.imagesVidu` - images_vidu API
 - `client.videosVolcengine` - videos_volcengine API
-- `client.audioElevenlabs` - audio_elevenlabs API
 
 ## Usage Examples
 
@@ -164,6 +164,23 @@ const params = {
   limit: 3,
 };
 const result = await client.batchesAnthropic.v1.messages.batches.list(params);
+```
+
+### audio_elevenlabs
+
+```typescript
+// Generate sound effect
+const body = {
+  duration_seconds: 1,
+  loop: true,
+  model_id: 'model_id',
+  prompt_influence: 1,
+  text: 'text',
+};
+const params = {
+  output_format: 'output_format',
+};
+const result = await client.audioElevenlabs.v1.soundGeneration.create(body, params);
 ```
 
 ### responses_google
@@ -630,23 +647,6 @@ const body = {
   model: 'model',
 };
 const result = await client.videosVolcengine.api.v3.contents.generations.tasks.create(body);
-```
-
-### audio_elevenlabs
-
-```typescript
-// Generate sound effect
-const body = {
-  model_id: 'model_id',
-  text: 'text',
-  duration_seconds: 1,
-  prompt_influence: 1,
-  loop: true,
-};
-const params = {
-  output_format: 'output_format',
-};
-const result = await client.audioElevenlabs.v1.soundGeneration.create(body, params);
 ```
 
 ## Error Handling

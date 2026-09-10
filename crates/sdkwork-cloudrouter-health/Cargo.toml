@@ -2,7 +2,10 @@
 name = "sdkwork-cloudrouter-health"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license-file.workspace = true
+[lib]
+name = "sdkwork_cloudrouter_health"
 
 [dependencies]
 sdkwork-cloudrouter-config.workspace = true
@@ -10,3 +13,6 @@ serde.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true
+
+[lints]
+workspace = true

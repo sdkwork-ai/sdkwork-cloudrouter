@@ -51,6 +51,28 @@ impl PaymentIntentRuntimeStore for PostgresPaymentIntentRuntimeStore {
         Box::pin(async move { insert_payment_intent(&pool, intent, route_decision).await })
     }
 
+    fn record_intent_provider_dispatch(
+        &self,
+        tenant_id: String,
+        intent_id: String,
+        status: PaymentIntentStatus,
+        next_action_json: Option<String>,
+        updated_at: String,
+    ) -> PaymentIntentRuntimeStoreFuture<'_, ()> {
+        let pool = self.pool.clone();
+        Box::pin(async move {
+            record_intent_provider_dispatch(
+                &pool,
+                &tenant_id,
+                &intent_id,
+                status,
+                next_action_json,
+                &updated_at,
+            )
+            .await
+        })
+    }
+
     fn insert_operation_attempt(
         &self,
         attempt: PaymentOperationAttemptRecord,
@@ -210,12 +232,17 @@ async fn insert_payment_intent(
         .begin()
         .await
         .map_err(|error| store_error("failed to begin payment intent transaction", error))?;
-    sqlx::query(
+    // ON CONFLICT DO NOTHING turns the (tenant_id, idempotency_key) arbiter
+    // into an atomic dedupe: a lost insert race is reported as a typed
+    // conflict so the caller can replay the winner's record instead of
+    // double-placing a provider order.
+    let inserted_rows = sqlx::query(
         r#"
         INSERT INTO commerce_payment_intent
             (id, tenant_id, organization_id, owner_user_id, order_id, merchant_order_no, subject, provider, supplier_code, payment_method, scene_code, amount, currency_code, status, request_no, idempotency_key, metadata_json, provider_native_json, next_action_json, captured_amount, refunded_amount, created_at, updated_at)
         VALUES
             ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NULL, NULL, $18, $19, $20, $21)
+        ON CONFLICT DO NOTHING
         "#,
     )
     .bind(&intent.id)
@@ -241,7 +268,13 @@ async fn insert_payment_intent(
     .bind(&intent.updated_at)
     .execute(&mut *tx)
     .await
-    .map_err(|error| store_error("failed to insert payment intent", error))?;
+    .map_err(|error| store_error("failed to insert payment intent", error))?
+    .rows_affected();
+    if inserted_rows == 0 {
+        return Err(DomainError::conflict(
+            "payment intent idempotency key already exists",
+        ));
+    }
     sqlx::query(
         r#"
         INSERT INTO commerce_payment_attempt
@@ -296,6 +329,39 @@ async fn insert_payment_intent(
         .await
         .map_err(|error| store_error("failed to commit payment intent transaction", error))?;
     Ok(intent)
+}
+
+/// Persists the provider dispatch outcome for an intent that was durably
+/// inserted before the provider call. Success records the terminal intent
+/// status plus the normalized next action payload; failure records `failed`
+/// so no intent row is left silently pending on a provider error.
+async fn record_intent_provider_dispatch(
+    pool: &PgPool,
+    tenant_id: &str,
+    intent_id: &str,
+    status: PaymentIntentStatus,
+    next_action_json: Option<String>,
+    updated_at: &str,
+) -> DomainResult<()> {
+    sqlx::query(
+        r#"
+        UPDATE commerce_payment_intent
+        SET status = $1,
+            next_action_json = $2,
+            updated_at = $3
+        WHERE tenant_id = $4
+          AND id = $5
+        "#,
+    )
+    .bind(status.as_str())
+    .bind(next_action_json.as_deref())
+    .bind(updated_at)
+    .bind(tenant_id)
+    .bind(intent_id)
+    .execute(pool)
+    .await
+    .map_err(|error| store_error("failed to record payment intent provider dispatch", error))?;
+    Ok(())
 }
 
 /// Standard `commerce_payment_intent.metadata_json` payload. The business
@@ -465,12 +531,16 @@ async fn insert_refund(
         .begin()
         .await
         .map_err(|error| store_error("failed to begin payment refund transaction", error))?;
-    sqlx::query(
+    // Atomic idempotency: the (tenant_id, idempotency_key) arbiter absorbs a
+    // lost insert race; a zero-row insert reports a typed conflict so the
+    // caller replays the winner's record instead of double-refunding.
+    let inserted_rows = sqlx::query(
         r#"
         INSERT INTO commerce_refund
             (id, tenant_id, organization_id, payment_intent_id, payment_attempt_id, refund_no, amount, currency_code, supplier_code, reason, status, request_no, idempotency_key, created_at, updated_at)
         VALUES
             ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        ON CONFLICT DO NOTHING
         "#,
     )
     .bind(&refund.id)
@@ -490,7 +560,52 @@ async fn insert_refund(
     .bind(&refund.updated_at)
     .execute(&mut *tx)
     .await
-    .map_err(|error| store_error("failed to insert payment refund", error))?;
+    .map_err(|error| store_error("failed to insert payment refund", error))?
+    .rows_affected();
+    if inserted_rows == 0 {
+        return Err(DomainError::conflict(
+            "payment refund idempotency key already exists",
+        ));
+    }
+    // Cumulative refund-cap reservation. The UPDATE row-locks the intent, so
+    // concurrent refunds of the same intent serialize here and each guard
+    // re-reads the committed refund sum: `sum(active refunds) + this refund`
+    // must never exceed the intent amount. A zero-row update rolls the whole
+    // transaction back, so no orphan refund row survives a rejected cap.
+    // Failed/canceled refunds are excluded from the sum, which releases their
+    // reservation without dedicated bookkeeping.
+    let reserved_rows = sqlx::query(
+        r#"
+        UPDATE commerce_payment_intent
+        SET version = version + 1,
+            updated_at = $4
+        WHERE tenant_id = $1
+          AND id = $2
+          AND deleted_at IS NULL
+          AND status NOT IN ('failed', 'canceled')
+          AND $3::numeric + COALESCE((
+                SELECT SUM(active.amount::numeric)
+                FROM commerce_refund active
+                WHERE active.tenant_id = $1
+                  AND active.payment_intent_id = $2
+                  AND active.deleted_at IS NULL
+                  AND active.status IN ('pending', 'processing', 'succeeded')
+              ), 0) <= amount::numeric
+        "#,
+    )
+    .bind(&refund.tenant_id)
+    .bind(&refund.payment_intent_id)
+    .bind(&refund.amount)
+    .bind(&refund.updated_at)
+    .execute(&mut *tx)
+    .await
+    .map_err(|error| store_error("failed to reserve payment refund amount", error))?
+    .rows_affected();
+    if reserved_rows == 0 {
+        return Err(DomainError::conflict(
+            "payment refund amount exceeds the remaining refundable amount of the payment intent",
+        ));
+    }
     sqlx::query(
         r#"
         INSERT INTO commerce_refund_attempt

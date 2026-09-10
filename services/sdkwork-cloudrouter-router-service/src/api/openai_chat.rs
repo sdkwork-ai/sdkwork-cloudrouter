@@ -31,9 +31,9 @@ use crate::api::openai_relay_execution::{
     OpenAiRelayExecution, OpenAiRouteRelayExecution,
 };
 use crate::api::openai_runtime::{
-    authenticate_api_key, provider_relay_attempt_retry_policy, resolve_openai_upstream_route_plan,
-    route_http_status_is_retryable, OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig,
-    ResolvedOpenAiUpstreamRoute,
+    authenticate_api_key, provider_relay_attempt_retry_policy, resolve_billing_subject_or_personal,
+    resolve_openai_upstream_route_plan, route_http_status_is_retryable,
+    OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig, ResolvedOpenAiUpstreamRoute,
 };
 use crate::api::openai_usage::{
     build_request_trace_command, build_usage_record_command_builder, chat_usage_billing_profile,
@@ -76,6 +76,8 @@ struct OpenAiChatState<C> {
     /// Classifies a single bearer credential into the API key or auth token
     /// channel (default: `sk-`/`sp-` prefixes).
     bearer_classifier: DynOpenApiBearerCredentialClassifier,
+    /// 计费主体解析器（团队计费）；`None` 保持个人主体既有行为。
+    billing_subject_resolver: Option<Arc<dyn crate::ports::BillingSubjectResolver>>,
 }
 
 impl<C> Clone for OpenAiChatState<C> {
@@ -93,6 +95,7 @@ impl<C> Clone for OpenAiChatState<C> {
             region_settings_store: self.region_settings_store.clone(),
             auth_token_authenticator: self.auth_token_authenticator.clone(),
             bearer_classifier: Arc::clone(&self.bearer_classifier),
+            billing_subject_resolver: self.billing_subject_resolver.clone(),
         }
     }
 }
@@ -501,6 +504,7 @@ where
             failure_strategy: runtime_config.failure_strategy,
             default_retry_policy: runtime_config.default_retry_policy,
             region_settings_store: runtime_config.region_settings_store.clone(),
+            billing_subject_resolver: runtime_config.billing_subject_resolver.clone(),
             auth_token_authenticator: None,
             bearer_classifier: default_open_api_bearer_classifier(),
         })
@@ -547,6 +551,7 @@ where
                 region_settings_store: runtime_config.region_settings_store.clone(),
                 auth_token_authenticator: None,
                 bearer_classifier: default_open_api_bearer_classifier(),
+                billing_subject_resolver: runtime_config.billing_subject_resolver.clone(),
             }
             .with_auth_extensions(auth_token_authenticator, bearer_classifier),
         )
@@ -626,6 +631,15 @@ where
             }
         }
     };
+    let billing_resolution = match resolve_billing_subject_or_personal(
+        state.billing_subject_resolver.as_ref(),
+        &context,
+    )
+    .await
+    {
+        Ok(resolved) => resolved,
+        Err(response) => return *response,
+    };
     let invocation_context = OpenAiInvocationContext::new(
         OpenAiInvocationEndpoint::ChatCompletions,
         context.clone(),
@@ -634,7 +648,8 @@ where
         request.request_body.clone(),
         &headers,
         &uri,
-    );
+    )
+    .with_billing(billing_resolution);
     if let Err(error) = notify_before_route_selection(&state.plugins, &invocation_context).await {
         record_request_trace(
             state.usage_recorder.as_ref(),

@@ -8,11 +8,19 @@ use crate::domain::DomainResult;
 pub type UsageLogsReadFuture<'a> =
     Pin<Box<dyn Future<Output = DomainResult<UsageLogsPage>> + Send + 'a>>;
 
+/// Opaque keyset continuation for the usage-logs read model: the
+/// `(started_at, id)` seek tuple of the last row returned on the previous
+/// page. Encoded/decoded to an opaque base64url token at the HTTP boundary.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct UsageLogsCursor {
+    pub started_at_micros: i64,
+    pub id: i64,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct UsageLogsQuery {
-    pub page_no: i64,
+    pub cursor: Option<UsageLogsCursor>,
     pub page_size: i64,
-    pub offset: i64,
     pub keyword: Option<String>,
     pub status: UsageLogsStatus,
     pub start_time: Option<String>,
@@ -38,10 +46,10 @@ pub struct UsageLogsSubject {
 #[serde(rename_all = "camelCase")]
 pub struct UsageLogsPage {
     pub logs: Vec<UsageLogItem>,
-    pub total: i64,
-    #[serde(rename = "page")]
-    pub page_no: i64,
-    pub page_size: i64,
+    /// Seek tuple of the last returned row; `None` when no further page
+    /// exists. Encoded to the opaque `nextCursor` token at the HTTP boundary.
+    pub next_cursor: Option<UsageLogsCursor>,
+    pub has_more: bool,
 }
 
 #[derive(Debug, Clone, Default, Serialize, PartialEq)]

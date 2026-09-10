@@ -17,6 +17,7 @@ use sdkwork_web_core::{
 };
 use sqlx::PgPool;
 
+use crate::http_route_manifest::http_route_manifest;
 use crate::manifest_composition::cloud_router_backend_prepared_route_manifest;
 
 pub fn cloud_router_backend_public_path_prefixes() -> Vec<String> {
@@ -61,8 +62,10 @@ impl DomainContextInjector for CloudRouterBackendDomainInjector {
 
 /// Host-level registration guarded by this surface's prepared route manifest.
 pub fn cloud_router_backend_domain_context_injector() -> Arc<dyn DomainContextInjector> {
-    let manifest =
-        cloud_router_backend_prepared_route_manifest(&cloud_router_backend_public_path_prefixes());
+    let manifest = cloud_router_backend_prepared_route_manifest(
+        http_route_manifest(),
+        &cloud_router_backend_public_path_prefixes(),
+    );
     Arc::new(CloudRouterBackendDomainInjector {
         owned_routes: Some(Arc::new(manifest)),
     })
@@ -73,7 +76,8 @@ fn build_cloud_router_backend_web_framework_layer(
     extra_domain_injectors: Vec<Arc<dyn DomainContextInjector>>,
 ) -> WebFrameworkLayer<IamWebRequestContextResolver> {
     let prefixes = cloud_router_backend_public_path_prefixes();
-    let route_manifest = cloud_router_backend_prepared_route_manifest(&prefixes);
+    let route_manifest =
+        cloud_router_backend_prepared_route_manifest(http_route_manifest(), &prefixes);
     let environment = resolve_cloud_web_environment_from_process_env();
     let security_policy = cloud_service_security_policy(&environment);
 
@@ -285,6 +289,7 @@ mod tests {
     #[test]
     fn host_level_injector_projects_owned_manifest_routes() {
         let manifest = crate::manifest_composition::cloud_router_backend_prepared_route_manifest(
+            crate::http_route_manifest::http_route_manifest(),
             &super::cloud_router_backend_public_path_prefixes(),
         );
         let route = manifest

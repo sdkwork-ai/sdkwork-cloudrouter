@@ -1,7 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::{Arc, Mutex};
 
 use serde_json::Value;
 
@@ -611,11 +610,17 @@ where
     }
 }
 
+// Test-only double: production workers use the Postgres reconciliation
+// store; this in-process store exists for worker unit tests.
+#[cfg(test)]
+use std::sync::{Arc, Mutex};
+#[cfg(test)]
 #[derive(Default, Clone)]
 pub struct InMemoryPaymentReconciliationRuntimeStore {
     state: Arc<Mutex<InMemoryPaymentReconciliationRuntimeState>>,
 }
 
+#[cfg(test)]
 #[derive(Default)]
 struct InMemoryPaymentReconciliationRuntimeState {
     statements: Vec<PaymentStatementRecord>,
@@ -625,26 +630,46 @@ struct InMemoryPaymentReconciliationRuntimeState {
     ledger_entries: Vec<RuntimeReconciliationLedgerEntry>,
 }
 
+#[cfg(test)]
 impl InMemoryPaymentReconciliationRuntimeStore {
     pub fn statements(&self) -> Vec<PaymentStatementRecord> {
-        self.state.lock().unwrap().statements.clone()
+        self.state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .statements
+            .clone()
     }
 
     pub fn statement_items(&self) -> Vec<PaymentStatementItemRecord> {
-        self.state.lock().unwrap().statement_items.clone()
+        self.state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .statement_items
+            .clone()
     }
 
     pub fn reconciliation_items(&self) -> Vec<PaymentReconciliationItemRecord> {
-        self.state.lock().unwrap().reconciliation_items.clone()
+        self.state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .reconciliation_items
+            .clone()
     }
 
     pub fn runs(&self) -> Vec<ReconciliationRunRecord> {
-        self.state.lock().unwrap().runs.clone()
+        self.state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .runs
+            .clone()
     }
 
     pub fn with_runs(self, runs: Vec<ReconciliationRunRecord>) -> Self {
         {
-            let mut state = self.state.lock().unwrap();
+            let mut state = self
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             state.runs.extend(runs);
         }
         self
@@ -652,7 +677,10 @@ impl InMemoryPaymentReconciliationRuntimeStore {
 
     pub fn with_ledger_entries(self, entries: Vec<RuntimeReconciliationLedgerEntry>) -> Self {
         {
-            let mut state = self.state.lock().unwrap();
+            let mut state = self
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             state.ledger_entries.extend(entries);
         }
         self
@@ -664,7 +692,10 @@ impl InMemoryPaymentReconciliationRuntimeStore {
         items: Vec<PaymentStatementItemRecord>,
     ) -> Self {
         {
-            let mut state = self.state.lock().unwrap();
+            let mut state = self
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             state.statements.push(statement);
             state.statement_items.extend(items);
         }
@@ -672,6 +703,7 @@ impl InMemoryPaymentReconciliationRuntimeStore {
     }
 }
 
+#[cfg(test)]
 impl PaymentReconciliationRuntimeStore for InMemoryPaymentReconciliationRuntimeStore {
     fn load_statement_by_idempotency(
         &self,
@@ -682,7 +714,7 @@ impl PaymentReconciliationRuntimeStore for InMemoryPaymentReconciliationRuntimeS
         Box::pin(async move {
             Ok(state
                 .lock()
-                .unwrap()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
                 .statements
                 .iter()
                 .find(|statement| {
@@ -701,7 +733,7 @@ impl PaymentReconciliationRuntimeStore for InMemoryPaymentReconciliationRuntimeS
         Box::pin(async move {
             Ok(state
                 .lock()
-                .unwrap()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
                 .statement_items
                 .iter()
                 .filter(|item| item.tenant_id == tenant_id && item.statement_id == statement_id)
@@ -717,7 +749,9 @@ impl PaymentReconciliationRuntimeStore for InMemoryPaymentReconciliationRuntimeS
     ) -> PaymentReconciliationRuntimeStoreFuture<'_, PaymentStatementRecord> {
         let state = self.state.clone();
         Box::pin(async move {
-            let mut state = state.lock().unwrap();
+            let mut state = state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             state.statement_items.extend(items);
             state.statements.push(statement.clone());
             Ok(statement)
@@ -732,7 +766,7 @@ impl PaymentReconciliationRuntimeStore for InMemoryPaymentReconciliationRuntimeS
         Box::pin(async move {
             state
                 .lock()
-                .unwrap()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
                 .reconciliation_items
                 .extend(items.clone());
             Ok(items)
@@ -745,7 +779,9 @@ impl PaymentReconciliationRuntimeStore for InMemoryPaymentReconciliationRuntimeS
     ) -> PaymentReconciliationRuntimeStoreFuture<'_, Vec<ReconciliationRunRecord>> {
         let state = self.state.clone();
         Box::pin(async move {
-            let mut state = state.lock().unwrap();
+            let mut state = state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             let mut claimed = Vec::new();
             for run in &mut state.runs {
                 if claimed.len() as i64 >= command.limit {
@@ -777,7 +813,7 @@ impl PaymentReconciliationRuntimeStore for InMemoryPaymentReconciliationRuntimeS
         Box::pin(async move {
             Ok(state
                 .lock()
-                .unwrap()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
                 .statements
                 .iter()
                 .find(|statement| {
@@ -799,7 +835,7 @@ impl PaymentReconciliationRuntimeStore for InMemoryPaymentReconciliationRuntimeS
         Box::pin(async move {
             Ok(state
                 .lock()
-                .unwrap()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
                 .ledger_entries
                 .iter()
                 .filter(|entry| {
@@ -818,7 +854,9 @@ impl PaymentReconciliationRuntimeStore for InMemoryPaymentReconciliationRuntimeS
     ) -> PaymentReconciliationRuntimeStoreFuture<'_, ()> {
         let state = self.state.clone();
         Box::pin(async move {
-            let mut state = state.lock().unwrap();
+            let mut state = state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             let Some(run) = state
                 .runs
                 .iter_mut()

@@ -45,7 +45,13 @@ data:
     save 300 10
     save 60 10000
     maxmemory 512mb
-    maxmemory-policy allkeys-lru
+    # noeviction is mandatory: Redis holds distributed rate-limit counters,
+    # circuit-breaker state, idempotency keys, and (in Redis retry mode) the
+    # gateway accounting retry/DLQ financial facts. LRU eviction would
+    # silently drop quota state and billing facts under memory pressure; size
+    # maxmemory from the accounting retry volume instead
+    # (deployments/runbooks/disaster-recovery-plan.md).
+    maxmemory-policy noeviction
     tcp-keepalive 300
     timeout 0
     loglevel notice

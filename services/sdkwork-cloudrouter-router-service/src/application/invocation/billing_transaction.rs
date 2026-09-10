@@ -4,7 +4,7 @@ use super::{
     AccountBillingMode, BillingMode, Invocation, InvocationError, InvocationErrorKind,
     InvocationFuture, InvocationInterceptor,
 };
-use crate::domain::{BillingMeter, DecimalValue};
+use crate::domain::{BillingMeter, BillingOwnerKind, DecimalValue};
 use crate::ports::{
     token_points_for_charge, CustomerChargeMode, GatewayBillingAmount, GatewayBillingContext,
     GatewayBillingStore, RechargeSettingsModel,
@@ -343,9 +343,21 @@ impl InvocationInterceptor for BillingSettlementInterceptor {
 }
 
 fn billing_context(invocation: &Invocation) -> GatewayBillingContext {
+    // 计费主体：团队计费时 organization_id/billing_owner 来自计费解析；
+    // 个人计费保持 key 自身上下文（既有行为）。
+    let (organization_id, billing_owner) = match invocation.subject.billing_owner {
+        BillingOwnerKind::Organization => (
+            invocation.subject.billing_organization_id,
+            BillingOwnerKind::Organization,
+        ),
+        BillingOwnerKind::Personal => (
+            invocation.subject.organization_id,
+            BillingOwnerKind::Personal,
+        ),
+    };
     GatewayBillingContext {
         tenant_id: invocation.subject.tenant_id,
-        organization_id: invocation.subject.organization_id,
+        organization_id,
         user_id: invocation.subject.user_id,
         request_id: invocation.request.request_id.clone(),
         pricing_plan_code: invocation
@@ -355,6 +367,7 @@ fn billing_context(invocation: &Invocation) -> GatewayBillingContext {
             .map(|quote| quote.pricing_plan_code.clone())
             .or_else(|| invocation.subject.pricing_plan_code.clone())
             .unwrap_or_default(),
+        billing_owner,
     }
 }
 

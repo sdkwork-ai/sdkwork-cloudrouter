@@ -1,6 +1,7 @@
+pub mod common;
+use common::payment_in_memory_stores::InMemoryPaymentReconciliationRuntimeStore;
 use sdkwork_cloudrouter_router_service::application::{
-    EntityUuidGenerator, InMemoryPaymentReconciliationRuntimeStore,
-    PaymentReconciliationDifferenceType, PaymentReconciliationRuntimeService,
+    EntityUuidGenerator, PaymentReconciliationDifferenceType, PaymentReconciliationRuntimeService,
     RuntimeGeneratePaymentReconciliationItemsCommand, RuntimeImportPaymentStatementCommand,
     RuntimeImportPaymentStatementItemCommand, RuntimeReconciliationLedgerEntry,
 };

@@ -218,6 +218,9 @@ mod tests {
                 tenant_id: 10,
                 organization_id: 20,
                 user_id: 30,
+                billing_organization_id: 0,
+                billing_owner:
+                    sdkwork_cloudrouter_router_service::domain::BillingOwnerKind::Personal,
                 account_group_id: None,
                 account_group_code: None,
                 pricing_plan_code: None,

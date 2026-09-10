@@ -61,6 +61,7 @@ struct AccountCreateRequest {
     quota_limit: Option<String>,
     upstream_balance_currency: Option<String>,
     contract_cost_multiplier: Option<String>,
+    #[serde(default, with = "sdkwork_utils_rust::serde_int64::option")]
     rpm_limit: Option<i64>,
     timeout_ms: Option<i32>,
     status: Option<i32>,
@@ -93,6 +94,7 @@ struct AccountUpdateRequest {
     quota_limit: Option<String>,
     upstream_balance_currency: Option<String>,
     contract_cost_multiplier: Option<String>,
+    #[serde(default, with = "sdkwork_utils_rust::serde_int64::option")]
     rpm_limit: Option<i64>,
     timeout_ms: Option<i32>,
     status: Option<i32>,
@@ -175,9 +177,6 @@ struct CredentialResponse {
     auth_method_code: String,
     credential_name: String,
     masked_label: Option<String>,
-    /// Plaintext credential secret for the authenticated admin editor.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    secret: Option<String>,
     credential_version: String,
     priority: i32,
     is_active: bool,
@@ -1006,7 +1005,6 @@ impl From<AdminUpstreamAccountCredentialItem> for CredentialResponse {
             auth_method_code: item.auth_method_code,
             credential_name: item.credential_name,
             masked_label: item.masked_label,
-            secret: item.secret,
             credential_version: item.credential_version.to_string(),
             priority: item.priority,
             is_active: item.is_active,
@@ -1104,7 +1102,6 @@ mod tests {
             auth_method_code: "api-key".to_owned(),
             credential_name: "primary".to_owned(),
             masked_label: Some("sk-****1234".to_owned()),
-            secret: None,
             credential_version: 1,
             priority: 100,
             is_active: true,

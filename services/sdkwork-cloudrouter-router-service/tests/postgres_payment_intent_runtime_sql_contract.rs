@@ -93,3 +93,34 @@ fn payment_refund_runtime_writes_refund_attempt_event_and_operation_contract() {
         assert_sql_contains(POSTGRES_PAYMENT_INTENT_RUNTIME_STORE, expected);
     }
 }
+
+#[test]
+fn payment_intent_and_refund_inserts_are_atomic_idempotent_and_cap_guarded() {
+    for expected in [
+        // Atomic idempotency arbiters: a lost insert race must surface as a
+        // typed conflict instead of a duplicate provider order/refund.
+        "ON CONFLICT DO NOTHING",
+        "if inserted_rows == 0",
+        // Cumulative refund-cap reservation: one transaction row-locks the
+        // intent, re-reads the active refund sum, and rolls back on reject.
+        "UPDATE commerce_payment_intent SET version = version + 1, updated_at = $4",
+        "AND status NOT IN ('failed', 'canceled')",
+        "SELECT SUM(active.amount::numeric) FROM commerce_refund active",
+        "AND active.status IN ('pending', 'processing', 'succeeded')",
+        "), 0) <= amount::numeric",
+        "if reserved_rows == 0",
+        "payment refund amount exceeds the remaining refundable amount",
+    ] {
+        assert_sql_contains(POSTGRES_PAYMENT_INTENT_RUNTIME_STORE, expected);
+    }
+}
+
+#[test]
+fn payment_intent_provider_dispatch_outcome_is_persisted() {
+    for expected in [
+        "fn record_intent_provider_dispatch",
+        "UPDATE commerce_payment_intent SET status = $1, next_action_json = $2, updated_at = $3",
+    ] {
+        assert_sql_contains(POSTGRES_PAYMENT_INTENT_RUNTIME_STORE, expected);
+    }
+}

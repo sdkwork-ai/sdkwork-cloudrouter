@@ -273,42 +273,6 @@ frontend_operations:
       - name: end_time
         schema: { type: string, maxLength: 64 }
   - route: /pricing
-    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-pricing/src/services/compareService.ts
-    operation: fetchCompareModels
-    operation_id: pricing.compare.models.get
-    kind: read
-    api_surface: app
-    api_method: GET
-    api_path: /app/v3/api/ai/models
-    sdk_domain: ai
-    sdk_operations:
-      - { sdk_family: sdkwork-models-app-sdk, operation_id: models.list }
-    query_parameters:
-      - name: q
-        schema: { type: string, maxLength: 256 }
-      - name: vendor_codes
-        schema: { type: string }
-      - name: page_size
-        schema: { type: integer, format: int32, minimum: 1, maximum: 200 }
-    openapi_exposed: false
-    read_sources:
-      - ai_model_vendor
-      - ai_model
-      - ai_model_capability
-      - ai_model_pricing
-      - ai_upstream_supplier
-      - ai_upstream_account
-      - ai_upstream_account_group
-      - ai_upstream_account_group_member
-      - ai_resource_binding
-    response_schema:
-      name: NoData
-      schema:
-        additionalProperties: false
-        name: NoData
-        properties: {}
-        type: object
-  - route: /pricing
     source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-pricing/src/services/pricingService.ts
     operation: fetchOfficialPricingRates
     operation_id: pricing.rates.list
@@ -1856,8 +1820,8 @@ frontend_operations:
         required: [items, pageInfo]
         type: object
     query_parameters:
-      - name: page
-        schema: { type: integer, format: int32, minimum: 1, default: 1 }
+      - name: cursor
+        schema: { type: string, maxLength: 512 }
       - name: page_size
         schema: { type: integer, format: int32, minimum: 1, maximum: 200, default: 20 }
       - name: q
@@ -10893,6 +10857,31 @@ frontend_operations:
       - ops_audit_log
   - route: /admin/pricing/plans
     source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
+    operation: fetchPricingPlanCatalog
+    operation_id: plans.list.export
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/pricing/plans
+    sdk_domain: pricing
+    description: >-
+      Export/selector aggregation over plans.list for rule-scope resolution:
+      walks bounded pages of the same paginated operation (page_size capped at
+      200, hard page-count ceiling). Never exposed as a separate server
+      operation and never used to populate standard paginated tables
+      (PAGINATION_SPEC.md section 7 listAll rules).
+    openapi_exposed: false
+    read_sources:
+      - cloudrouter_pricing_plan
+    response_schema:
+      name: AdminPricingPlanExportList
+      schema:
+        additionalProperties: false
+        name: AdminPricingPlanExportList
+        properties: {}
+        type: object
+  - route: /admin/pricing/plans
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
     operation: fetchPricingPlans
     operation_id: plans.list
     kind: read
@@ -11384,6 +11373,32 @@ frontend_operations:
       - ops_audit_log
   - route: /admin/pricing/rules
     source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
+    operation: fetchPricingRuleCatalog
+    operation_id: rules.list.export
+    kind: read
+    api_surface: backend
+    api_method: GET
+    api_path: /backend/v3/api/pricing/rules
+    sdk_domain: pricing
+    description: >-
+      Export/selector aggregation over rules.list: walks bounded pages of the
+      same paginated operation (page_size capped at 200, hard page-count
+      ceiling). Never exposed as a separate server operation and never used to
+      populate standard paginated tables (PAGINATION_SPEC.md section 7 listAll
+      rules).
+    openapi_exposed: false
+    read_sources:
+      - cloudrouter_pricing_rule
+      - cloudrouter_pricing_plan
+    response_schema:
+      name: AdminPricingRuleExportList
+      schema:
+        additionalProperties: false
+        name: AdminPricingRuleExportList
+        properties: {}
+        type: object
+  - route: /admin/pricing/rules
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
     operation: fetchPricingRules
     operation_id: rules.list
     kind: read
@@ -11833,7 +11848,7 @@ frontend_operations:
     write_tables:
       - pricing_default_region
       - ops_audit_log
-  - route: /admin/pricing/default_regions/{defaultRegionId}
+  - route: /admin/pricing/settings
     source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
     operation: updatePricingDefaultRegion
     operation_id: defaultRegions.update
@@ -12644,6 +12659,19 @@ routes:
     dependency_owned: true
     dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
     required_tables:
+    required_tables:
+      - cloudrouter_pricing_plan
+      - cloudrouter_pricing_rule
+      - pricing_default_region
+      - pricing_import_run
+      - pricing_price_book
+      - pricing_rate
+      - ops_audit_log
+  - route: /admin/pricing/settings
+    dependency_owned: true
+    dependency_sdk_family: sdkwork-cloudrouter-backend-sdk
+    required_tables:
+    required_tables:
       - cloudrouter_pricing_plan
       - cloudrouter_pricing_rule
       - pricing_default_region
@@ -12668,6 +12696,98 @@ routes:
     dependency_sdk_family: sdkwork-community-backend-sdk
     required_tables: []
 frontend_models:
+  - route: /console/settlements
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/settlementsService.ts
+    interface: SettlementBillSummary
+    fields:
+      - totalBills
+      - totalSpend
+      - totalTokens
+      - paidBills
+      - pendingBills
+      - closedBills
+      - paidSpend
+      - pendingSpend
+      - closedSpend
+    data_sources:
+      - cloudrouter_charge_line
+  - route: /console/settlements
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/settlementsService.ts
+    interface: SettlementChartPoint
+    fields:
+      - period
+      - cost
+    data_sources:
+      - cloudrouter_charge_line
+  - route: /console/settlements
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/settlementsService.ts
+    interface: SettlementBillRecord
+    fields:
+      - id
+      - period
+      - startDate
+      - endDate
+      - totalTokens
+      - totalCost
+      - status
+    data_sources:
+      - cloudrouter_charge_line
+  - route: /console/settlements
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/settlementsService.ts
+    interface: FetchSettlementsResult
+    fields:
+      - snapshot
+      - queriedYear
+      - snapshot.summary
+      - snapshot.bills
+      - snapshot.chart
+      - snapshot.summary.totalBills
+      - snapshot.summary.totalSpend
+      - snapshot.summary.totalTokens
+      - snapshot.summary.paidBills
+      - snapshot.summary.pendingBills
+      - snapshot.summary.closedBills
+      - snapshot.summary.paidSpend
+      - snapshot.summary.pendingSpend
+      - snapshot.summary.closedSpend
+      - snapshot.bills.id
+      - snapshot.bills.period
+      - snapshot.bills.startDate
+      - snapshot.bills.endDate
+      - snapshot.bills.totalTokens
+      - snapshot.bills.totalCost
+      - snapshot.bills.status
+      - snapshot.chart.period
+      - snapshot.chart.cost
+    data_sources:
+      - cloudrouter_charge_line
+  - route: /console/settlements
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/settlementsService.ts
+    interface: SettlementsSnapshot
+    fields:
+      - summary
+      - bills
+      - chart
+      - summary.totalBills
+      - summary.totalSpend
+      - summary.totalTokens
+      - summary.paidBills
+      - summary.pendingBills
+      - summary.closedBills
+      - summary.paidSpend
+      - summary.pendingSpend
+      - summary.closedSpend
+      - bills.id
+      - bills.period
+      - bills.startDate
+      - bills.endDate
+      - bills.totalTokens
+      - bills.totalCost
+      - bills.status
+      - chart.period
+      - chart.cost
+    data_sources:
+      - cloudrouter_charge_line
   - route: /pricing
     source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-pricing/src/services/compareService.ts
     interface: CompareModelReferencePrice
@@ -13935,10 +14055,16 @@ frontend_models:
       - cacheReadTokens
       - outputTokens
       - cost
+      - currency
+      - points
+      - originalCurrencyAmount
+      - originalCurrencyCode
       - multiplier
       - baseInputPrice
       - baseOutputPrice
       - cacheReadPrice
+      - unitSize
+      - pointsPerUnit
       - path
       - reasoningEffort
       - ip
@@ -14164,10 +14290,8 @@ frontend_models:
       - items
       - pageInfo
       - pageInfo.mode
-      - pageInfo.page
       - pageInfo.pageSize
-      - pageInfo.totalItems
-      - pageInfo.totalPages
+      - pageInfo.nextCursor
       - pageInfo.hasMore
     data_sources:
       - ai_request_trace
@@ -14800,6 +14924,60 @@ frontend_models:
       - currencyToCnyRates
     data_sources:
       - recharges
+  - route: /admin/pricing/settings
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
+    interface: AdminOfficialPricingRefreshResult
+    fields:
+      - changed
+      - catalogVersion
+      - modelCount
+      - priceCount
+      - priceBookCount
+      - rateCount
+      - deprecatedPriceSettingCount
+      - removedPriceSettingCount
+      - restoredPriceSettingCount
+    data_sources:
+      - pricing_price_book
+      - pricing_rate
+      - pricing_import_run
+  - route: /admin/pricing/settings
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
+    interface: AdminDefaultRegionItem
+    fields:
+      - id
+      - catalogKey
+      - vendorCode
+      - providerCode
+      - productCode
+      - resourceCode
+      - defaultRegionCode
+      - currencyCode
+      - description
+      - effectiveFrom
+      - effectiveTo
+      - status
+      - createdAt
+      - updatedAt
+      - version
+    data_sources:
+      - pricing_default_region
+  - route: /admin/pricing/settings
+    source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
+    interface: AdminDefaultRegionMutationInput
+    fields:
+      - catalogKey
+      - vendorCode
+      - providerCode
+      - productCode
+      - resourceCode
+      - defaultRegionCode
+      - currencyCode
+      - description
+      - effectiveFrom
+      - effectiveTo
+    data_sources:
+      - pricing_default_region
   - route: /admin/pricing/plans
     source: apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts
     interface: AdminPricingListParams

@@ -27,33 +27,6 @@ pub(crate) fn is_unique_constraint_error(error: &sqlx::Error) -> bool {
         || message.contains("unique constraint")
 }
 
-pub(crate) fn media_resource_stable_id(resource: &serde_json::Value) -> String {
-    let key = resource
-        .get("id")
-        .or_else(|| resource.get("publicUrl"))
-        .or_else(|| resource.get("url"))
-        .or_else(|| resource.get("uri"))
-        .or_else(|| resource.get("objectKey"))
-        .or_else(|| resource.get("objectBlobId"))
-        .and_then(serde_json::Value::as_str)
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .unwrap_or("inline-media-resource");
-    stable_product_center_id("media-resource", &[key])
-}
-
-pub(crate) fn media_resource_object_blob_id(resource: &Value) -> Option<i64> {
-    resource
-        .get("objectBlobId")
-        .or_else(|| resource.get("object_blob_id"))
-        .and_then(|value| match value {
-            Value::Number(number) => number.as_i64(),
-            Value::String(text) => text.trim().parse::<i64>().ok(),
-            _ => None,
-        })
-        .filter(|value| *value > 0)
-}
-
 /// Extracts canonical Drive URI from a MediaResource snapshot or drive-backed field.
 pub(crate) fn drive_uri_from_resource(resource: &Value) -> Option<String> {
     resource
@@ -66,6 +39,7 @@ pub(crate) fn drive_uri_from_resource(resource: &Value) -> Option<String> {
         .map(str::to_owned)
 }
 
+#[allow(dead_code)] // retained for the product-center asset projection contract
 pub(crate) fn provider_asset_media_resource(kind: &str, uri: &str) -> Value {
     json!({
         "kind": kind,

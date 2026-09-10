@@ -271,10 +271,31 @@ where
             created_at: command.requested_at.clone(),
             updated_at: command.requested_at.clone(),
         };
-        let refund = self
+        // The insert carries atomic idempotency (ON CONFLICT) plus the
+        // cumulative refund-cap reservation guard inside one transaction. A
+        // conflict means either a lost idempotency race (the concurrent
+        // winner's record is replayed) or a rejected cap (propagated).
+        let refund = match self
             .store
             .insert_refund(refund, refund_attempt, refund_items)
-            .await?;
+            .await
+        {
+            Ok(refund) => refund,
+            Err(error) if error.is_conflict() => {
+                let existing = self
+                    .store
+                    .load_refund_by_idempotency(
+                        command.tenant_id.clone(),
+                        command.idempotency_key.clone(),
+                    )
+                    .await?;
+                return match existing {
+                    Some(existing) => Ok(existing),
+                    None => Err(error),
+                };
+            }
+            Err(error) => return Err(error),
+        };
         let operation_attempt = self
             .store
             .insert_operation_attempt(self.operation_attempt(&refund, &command)?)

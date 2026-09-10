@@ -7074,15 +7074,13 @@
         "operationId": "usage.logs.list",
         "parameters": [
           {
-            "description": "Page query parameter.",
+            "description": "Cursor query parameter.",
             "in": "query",
-            "name": "page",
+            "name": "cursor",
             "required": false,
             "schema": {
-              "default": 1,
-              "format": "int32",
-              "minimum": 1,
-              "type": "integer"
+              "maxLength": 512,
+              "type": "string"
             }
           },
           {

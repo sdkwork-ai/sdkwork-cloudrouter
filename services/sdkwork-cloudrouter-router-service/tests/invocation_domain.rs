@@ -3,10 +3,8 @@ use sdkwork_cloudrouter_router_service::application::{
     AuthenticatedApiKeyContext, Invocation, InvocationBilling, InvocationBody, InvocationRequest,
     InvocationResource, InvocationSubject,
 };
-use sdkwork_cloudrouter_router_service::domain::{
-    AiRouteFailureStrategy, AiRouteModelRequirement, AiRouteStrategy, BillingMeter,
-    RoutingCapability,
-};
+use sdkwork_cloudrouter_router_service::domain::{AiRouteFailureStrategy, AiRouteModelRequirement, AiRouteStrategy, BillingMeter,
+    RoutingCapability,};
 use serde_json::json;
 
 fn test_subject() -> InvocationSubject {

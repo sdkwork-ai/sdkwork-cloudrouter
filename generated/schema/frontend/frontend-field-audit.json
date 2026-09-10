@@ -2237,6 +2237,75 @@
     },
     {
       "data_sources": [
+        "pricing_default_region"
+      ],
+      "fields": [
+        "id",
+        "catalogKey",
+        "vendorCode",
+        "providerCode",
+        "productCode",
+        "resourceCode",
+        "defaultRegionCode",
+        "currencyCode",
+        "description",
+        "effectiveFrom",
+        "effectiveTo",
+        "status",
+        "createdAt",
+        "updatedAt",
+        "version"
+      ],
+      "file_targets": [],
+      "interface": "AdminDefaultRegionItem",
+      "route": "/admin/pricing/settings",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts"
+    },
+    {
+      "data_sources": [
+        "pricing_default_region"
+      ],
+      "fields": [
+        "catalogKey",
+        "vendorCode",
+        "providerCode",
+        "productCode",
+        "resourceCode",
+        "defaultRegionCode",
+        "currencyCode",
+        "description",
+        "effectiveFrom",
+        "effectiveTo"
+      ],
+      "file_targets": [],
+      "interface": "AdminDefaultRegionMutationInput",
+      "route": "/admin/pricing/settings",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts"
+    },
+    {
+      "data_sources": [
+        "pricing_price_book",
+        "pricing_rate",
+        "pricing_import_run"
+      ],
+      "fields": [
+        "changed",
+        "catalogVersion",
+        "modelCount",
+        "priceCount",
+        "priceBookCount",
+        "rateCount",
+        "deprecatedPriceSettingCount",
+        "removedPriceSettingCount",
+        "restoredPriceSettingCount"
+      ],
+      "file_targets": [],
+      "interface": "AdminOfficialPricingRefreshResult",
+      "route": "/admin/pricing/settings",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts"
+    },
+    {
+      "data_sources": [
         "cloudrouter_pricing_rule"
       ],
       "fields": [
@@ -2728,10 +2797,16 @@
         "cacheReadTokens",
         "outputTokens",
         "cost",
+        "currency",
+        "points",
+        "originalCurrencyAmount",
+        "originalCurrencyCode",
         "multiplier",
         "baseInputPrice",
         "baseOutputPrice",
         "cacheReadPrice",
+        "unitSize",
+        "pointsPerUnit",
         "path",
         "reasoningEffort",
         "ip",
@@ -3056,6 +3131,123 @@
     },
     {
       "data_sources": [
+        "cloudrouter_charge_line"
+      ],
+      "fields": [
+        "snapshot",
+        "snapshot.summary",
+        "snapshot.summary.totalBills",
+        "snapshot.summary.totalSpend",
+        "snapshot.summary.totalTokens",
+        "snapshot.summary.paidBills",
+        "snapshot.summary.pendingBills",
+        "snapshot.summary.closedBills",
+        "snapshot.summary.paidSpend",
+        "snapshot.summary.pendingSpend",
+        "snapshot.summary.closedSpend",
+        "snapshot.bills",
+        "snapshot.bills.id",
+        "snapshot.bills.period",
+        "snapshot.bills.startDate",
+        "snapshot.bills.endDate",
+        "snapshot.bills.totalTokens",
+        "snapshot.bills.totalCost",
+        "snapshot.bills.status",
+        "snapshot.chart",
+        "snapshot.chart.period",
+        "snapshot.chart.cost",
+        "queriedYear"
+      ],
+      "file_targets": [],
+      "interface": "FetchSettlementsResult",
+      "route": "/console/settlements",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/settlementsService.ts"
+    },
+    {
+      "data_sources": [
+        "cloudrouter_charge_line"
+      ],
+      "fields": [
+        "id",
+        "period",
+        "startDate",
+        "endDate",
+        "totalTokens",
+        "totalCost",
+        "status"
+      ],
+      "file_targets": [],
+      "interface": "SettlementBillRecord",
+      "route": "/console/settlements",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/settlementsService.ts"
+    },
+    {
+      "data_sources": [
+        "cloudrouter_charge_line"
+      ],
+      "fields": [
+        "totalBills",
+        "totalSpend",
+        "totalTokens",
+        "paidBills",
+        "pendingBills",
+        "closedBills",
+        "paidSpend",
+        "pendingSpend",
+        "closedSpend"
+      ],
+      "file_targets": [],
+      "interface": "SettlementBillSummary",
+      "route": "/console/settlements",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/settlementsService.ts"
+    },
+    {
+      "data_sources": [
+        "cloudrouter_charge_line"
+      ],
+      "fields": [
+        "period",
+        "cost"
+      ],
+      "file_targets": [],
+      "interface": "SettlementChartPoint",
+      "route": "/console/settlements",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/settlementsService.ts"
+    },
+    {
+      "data_sources": [
+        "cloudrouter_charge_line"
+      ],
+      "fields": [
+        "summary",
+        "summary.totalBills",
+        "summary.totalSpend",
+        "summary.totalTokens",
+        "summary.paidBills",
+        "summary.pendingBills",
+        "summary.closedBills",
+        "summary.paidSpend",
+        "summary.pendingSpend",
+        "summary.closedSpend",
+        "bills",
+        "bills.id",
+        "bills.period",
+        "bills.startDate",
+        "bills.endDate",
+        "bills.totalTokens",
+        "bills.totalCost",
+        "bills.status",
+        "chart",
+        "chart.period",
+        "chart.cost"
+      ],
+      "file_targets": [],
+      "interface": "SettlementsSnapshot",
+      "route": "/console/settlements",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/settlementsService.ts"
+    },
+    {
+      "data_sources": [
         "iam_user_preference",
         "integration_webhook_endpoint",
         "ops_notification_delivery"
@@ -3085,10 +3277,8 @@
         "items",
         "pageInfo",
         "pageInfo.mode",
-        "pageInfo.page",
         "pageInfo.pageSize",
-        "pageInfo.totalItems",
-        "pageInfo.totalPages",
+        "pageInfo.nextCursor",
         "pageInfo.hasMore"
       ],
       "file_targets": [],
@@ -3604,7 +3794,7 @@
     }
   ],
   "summary": {
-    "interface_count": 157,
-    "source_file_count": 28
+    "interface_count": 165,
+    "source_file_count": 29
   }
 }

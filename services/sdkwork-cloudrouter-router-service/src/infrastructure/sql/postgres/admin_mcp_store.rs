@@ -252,13 +252,14 @@ async fn update_server(
     {
         return Ok(None);
     }
+    let mut tx = pool.begin().await.map_err(store_error)?;
     if let Some(server_key) = command.server_key {
         sqlx::query(update_server_sql("server_key = $1"))
             .bind(server_key)
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
             .bind(command.server_id)
-            .execute(pool)
+            .execute(&mut *tx)
             .await
             .map_err(|error| write_error("failed to update mcp server key", error))?;
     }
@@ -268,7 +269,7 @@ async fn update_server(
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
             .bind(command.server_id)
-            .execute(pool)
+            .execute(&mut *tx)
             .await
             .map_err(store_error)?;
     }
@@ -278,7 +279,7 @@ async fn update_server(
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
             .bind(command.server_id)
-            .execute(pool)
+            .execute(&mut *tx)
             .await
             .map_err(store_error)?;
     }
@@ -296,7 +297,7 @@ async fn update_server(
         .bind(command.subject.tenant_id)
         .bind(command.subject.organization_id)
         .bind(command.server_id)
-        .execute(pool)
+        .execute(&mut *tx)
         .await
         .map_err(store_error)?;
     }
@@ -306,7 +307,7 @@ async fn update_server(
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
             .bind(command.server_id)
-            .execute(pool)
+            .execute(&mut *tx)
             .await
             .map_err(store_error)?;
     }
@@ -316,7 +317,7 @@ async fn update_server(
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
             .bind(command.server_id)
-            .execute(pool)
+            .execute(&mut *tx)
             .await
             .map_err(store_error)?;
     }
@@ -326,7 +327,7 @@ async fn update_server(
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
             .bind(command.server_id)
-            .execute(pool)
+            .execute(&mut *tx)
             .await
             .map_err(store_error)?;
     }
@@ -339,10 +340,12 @@ async fn update_server(
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
             .bind(command.server_id)
-            .execute(pool)
+            .execute(&mut *tx)
             .await
             .map_err(store_error)?;
     }
+    tx.commit().await.map_err(store_error)?;
+
     load_server_optional(pool, command.subject, command.server_id).await
 }
 
@@ -415,6 +418,7 @@ async fn create_revision(
         &command.timeout_ms.to_string(),
         &json_text(&command.retry_policy),
     ]);
+    let mut tx = pool.begin().await.map_err(store_error)?;
     sqlx::query(
         r#"
         INSERT INTO ai_mcp_server_revision
@@ -450,7 +454,7 @@ async fn create_revision(
     .bind(&config_hash)
     .bind(command.subject.operator_id)
     .bind(id)
-    .execute(pool)
+    .execute(&mut *tx)
     .await
     .map_err(|error| write_error("failed to create mcp revision", error))?;
 
@@ -465,9 +469,11 @@ async fn create_revision(
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .bind(command.server_id)
-    .execute(pool)
+    .execute(&mut *tx)
     .await
     .map_err(store_error)?;
+
+    tx.commit().await.map_err(store_error)?;
 
     load_revision(pool, command.subject, id).await
 }
@@ -480,6 +486,7 @@ async fn publish_revision(
     else {
         return Ok(None);
     };
+    let mut tx = pool.begin().await.map_err(store_error)?;
     sqlx::query(
         r#"
         UPDATE ai_mcp_server_revision
@@ -492,7 +499,7 @@ async fn publish_revision(
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .bind(command.revision_id)
-    .execute(pool)
+    .execute(&mut *tx)
     .await
     .map_err(store_error)?;
 
@@ -510,9 +517,11 @@ async fn publish_revision(
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .bind(revision.server_id)
-    .execute(pool)
+    .execute(&mut *tx)
     .await
     .map_err(store_error)?;
+
+    tx.commit().await.map_err(store_error)?;
 
     load_revision_optional(pool, command.subject, command.revision_id).await
 }
@@ -660,13 +669,14 @@ async fn update_tool(
     {
         return Ok(None);
     }
+    let mut tx = pool.begin().await.map_err(store_error)?;
     if let Some(name) = command.name {
         sqlx::query(update_tool_sql("name = $1"))
             .bind(name)
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
             .bind(command.tool_id)
-            .execute(pool)
+            .execute(&mut *tx)
             .await
             .map_err(store_error)?;
     }
@@ -676,7 +686,7 @@ async fn update_tool(
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
             .bind(command.tool_id)
-            .execute(pool)
+            .execute(&mut *tx)
             .await
             .map_err(store_error)?;
     }
@@ -686,7 +696,7 @@ async fn update_tool(
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
             .bind(command.tool_id)
-            .execute(pool)
+            .execute(&mut *tx)
             .await
             .map_err(store_error)?;
     }
@@ -696,7 +706,7 @@ async fn update_tool(
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
             .bind(command.tool_id)
-            .execute(pool)
+            .execute(&mut *tx)
             .await
             .map_err(store_error)?;
     }
@@ -706,7 +716,7 @@ async fn update_tool(
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
             .bind(command.tool_id)
-            .execute(pool)
+            .execute(&mut *tx)
             .await
             .map_err(store_error)?;
     }
@@ -716,7 +726,7 @@ async fn update_tool(
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
             .bind(command.tool_id)
-            .execute(pool)
+            .execute(&mut *tx)
             .await
             .map_err(store_error)?;
     }
@@ -726,7 +736,7 @@ async fn update_tool(
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
             .bind(command.tool_id)
-            .execute(pool)
+            .execute(&mut *tx)
             .await
             .map_err(store_error)?;
     }
@@ -736,7 +746,7 @@ async fn update_tool(
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
             .bind(command.tool_id)
-            .execute(pool)
+            .execute(&mut *tx)
             .await
             .map_err(store_error)?;
     }
@@ -746,7 +756,7 @@ async fn update_tool(
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
             .bind(command.tool_id)
-            .execute(pool)
+            .execute(&mut *tx)
             .await
             .map_err(store_error)?;
     }
@@ -756,10 +766,12 @@ async fn update_tool(
             .bind(command.subject.tenant_id)
             .bind(command.subject.organization_id)
             .bind(command.tool_id)
-            .execute(pool)
+            .execute(&mut *tx)
             .await
             .map_err(store_error)?;
     }
+    tx.commit().await.map_err(store_error)?;
+
     load_tool_optional(pool, command.subject, command.tool_id).await
 }
 

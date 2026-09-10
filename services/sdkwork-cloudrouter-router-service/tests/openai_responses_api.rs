@@ -1038,7 +1038,10 @@ async fn openai_responses_streams_events_and_records_usage_from_completed_event(
         assert_eq!("gpt-4.1-mini", request.model);
         assert_eq!("openrouter", request.supplier_code);
         assert_eq!(3001, request.provider_account_id);
-        assert_eq!(Some(&serde_json::json!(true)), request.request_body.get("stream"));
+        assert_eq!(
+            Some(&serde_json::json!(true)),
+            request.request_body.get("stream")
+        );
     }
 
     let captured = usage_captured.lock().unwrap();

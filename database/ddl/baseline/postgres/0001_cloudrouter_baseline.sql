@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.5.0.
--- Registry SHA-256: 6b994396308e8480d180d9ad76a67c4051170bead55285ad15b34bf490f3da0d.
+-- Registry SHA-256: 49368459d8224063b687875b137a8beb3f7f92405504f41c5ec72dbd857e550c.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -354,6 +354,152 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_config_version_scope ON ai_config_versio
 CREATE INDEX IF NOT EXISTS idx_ai_config_version_scope_updated ON ai_config_version (tenant_id, organization_id, config_scope, updated_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_config_version_scope_status ON ai_config_version (config_scope, status, deleted_at, id);
 
+CREATE TABLE IF NOT EXISTS ai_mcp_binding (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    server_id BIGINT NOT NULL,
+    server_revision_id BIGINT,
+    tool_id BIGINT,
+    owner_type VARCHAR(64) NOT NULL,
+    owner_id BIGINT NOT NULL DEFAULT 0,
+    allowed_tools JSONB,
+    denied_tools JSONB,
+    policy_json JSONB,
+    priority INTEGER NOT NULL DEFAULT 0,
+    enabled BOOLEAN NOT NULL DEFAULT true,
+    snapshot_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+    CONSTRAINT ck_ai_mcp_binding_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_ai_mcp_binding_subject_scope CHECK (tenant_id > 0 AND organization_id >= 0 AND server_id > 0),
+    CONSTRAINT ck_ai_mcp_binding_values CHECK (length(owner_type) > 0 AND priority >= 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_mcp_binding_uuid ON ai_mcp_binding (uuid);
+CREATE INDEX IF NOT EXISTS idx_ai_mcp_binding_scope_priority ON ai_mcp_binding (tenant_id, organization_id, server_id, priority, id);
+
+CREATE TABLE IF NOT EXISTS ai_mcp_server (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    server_key VARCHAR(128) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description VARCHAR(4000),
+    category_id BIGINT,
+    category_code VARCHAR(128),
+    transport VARCHAR(64) NOT NULL DEFAULT 'http',
+    visibility VARCHAR(64) NOT NULL DEFAULT 'organization',
+    owner_user_id BIGINT NOT NULL DEFAULT 0,
+    latest_revision_id BIGINT,
+    published_revision_id BIGINT,
+    health_status VARCHAR(64) NOT NULL DEFAULT 'unchecked',
+    last_checked_at TIMESTAMPTZ,
+    last_error_masked VARCHAR(1024),
+    tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+    published_at TIMESTAMPTZ,
+    deprecated_at TIMESTAMPTZ,
+    CONSTRAINT ck_ai_mcp_server_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_ai_mcp_server_subject_scope CHECK (tenant_id > 0 AND organization_id >= 0),
+    CONSTRAINT ck_ai_mcp_server_values CHECK (length(server_key) > 0 AND length(name) > 0 AND length(transport) > 0 AND length(visibility) > 0 AND length(health_status) > 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_mcp_server_uuid ON ai_mcp_server (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_mcp_server_scope_key ON ai_mcp_server (tenant_id, organization_id, server_key);
+CREATE INDEX IF NOT EXISTS idx_ai_mcp_server_scope_updated ON ai_mcp_server (tenant_id, organization_id, updated_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_mcp_server_scope_category ON ai_mcp_server (tenant_id, organization_id, category_id);
+
+CREATE TABLE IF NOT EXISTS ai_mcp_server_revision (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    server_id BIGINT NOT NULL,
+    revision_no VARCHAR(128) NOT NULL,
+    transport VARCHAR(64) NOT NULL DEFAULT 'http',
+    endpoint_url VARCHAR(1024),
+    command VARCHAR(1024),
+    args_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+    env_schema JSONB NOT NULL DEFAULT '{}'::jsonb,
+    auth_type VARCHAR(64) NOT NULL DEFAULT 'none',
+    secret_ref VARCHAR(512),
+    timeout_ms INTEGER NOT NULL DEFAULT 30000,
+    retry_policy JSONB NOT NULL DEFAULT '{}'::jsonb,
+    config_hash VARCHAR(128),
+    lifecycle_status VARCHAR(64) NOT NULL DEFAULT 'draft',
+    created_by BIGINT,
+    published_at TIMESTAMPTZ,
+    deprecated_at TIMESTAMPTZ,
+    CONSTRAINT ck_ai_mcp_server_revision_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_ai_mcp_server_revision_subject_scope CHECK (tenant_id > 0 AND organization_id >= 0 AND server_id > 0),
+    CONSTRAINT ck_ai_mcp_server_revision_values CHECK (length(revision_no) > 0 AND length(transport) > 0 AND length(lifecycle_status) > 0 AND timeout_ms > 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_mcp_server_revision_uuid ON ai_mcp_server_revision (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_mcp_server_revision_scope_no ON ai_mcp_server_revision (tenant_id, organization_id, server_id, revision_no);
+CREATE INDEX IF NOT EXISTS idx_ai_mcp_server_revision_scope_created ON ai_mcp_server_revision (tenant_id, organization_id, server_id, created_at, id);
+
+CREATE TABLE IF NOT EXISTS ai_mcp_tool (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    server_id BIGINT NOT NULL,
+    server_revision_id BIGINT,
+    tool_key VARCHAR(128) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description VARCHAR(4000),
+    input_schema JSONB,
+    output_schema JSONB,
+    risk_level VARCHAR(64) NOT NULL DEFAULT 'low',
+    requires_approval BOOLEAN NOT NULL DEFAULT false,
+    enabled BOOLEAN NOT NULL DEFAULT true,
+    rate_limit_policy JSONB,
+    schema_hash VARCHAR(128),
+    discovered_at TIMESTAMPTZ,
+    last_invoked_at TIMESTAMPTZ,
+    sort_weight INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT ck_ai_mcp_tool_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
+    CONSTRAINT ck_ai_mcp_tool_subject_scope CHECK (tenant_id > 0 AND organization_id >= 0 AND server_id > 0),
+    CONSTRAINT ck_ai_mcp_tool_values CHECK (length(tool_key) > 0 AND length(name) > 0 AND length(risk_level) > 0 AND sort_weight >= 0)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_mcp_tool_uuid ON ai_mcp_tool (uuid);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_mcp_tool_scope_key ON ai_mcp_tool (tenant_id, organization_id, server_id, tool_key);
+CREATE INDEX IF NOT EXISTS idx_ai_mcp_tool_scope_sort ON ai_mcp_tool (tenant_id, organization_id, server_id, sort_weight, id);
+
 CREATE TABLE IF NOT EXISTS ai_metering_request_trace (
     id BIGINT NOT NULL PRIMARY KEY,
     uuid VARCHAR(64) NOT NULL,
@@ -499,6 +645,12 @@ CREATE TABLE IF NOT EXISTS ai_metering_usage (
     occurred_at TIMESTAMPTZ NOT NULL,
     settlement_status INTEGER NOT NULL,
     settlement_id BIGINT,
+    settled_at TIMESTAMPTZ,
+    failure_code VARCHAR(64),
+    failure_message VARCHAR(1024),
+    debit_points BIGINT,
+    original_currency_amount NUMERIC(38, 12),
+    original_currency_code VARCHAR(10),
     CONSTRAINT ck_ai_metering_usage_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
     CONSTRAINT ck_ai_metering_usage_non_negative_counts CHECK ((prompt_tokens IS NULL OR prompt_tokens >= 0) AND (completion_tokens IS NULL OR completion_tokens >= 0) AND (cached_tokens IS NULL OR cached_tokens >= 0) AND (total_tokens IS NULL OR total_tokens >= 0) AND (request_count IS NULL OR request_count >= 0) AND (result_count IS NULL OR result_count >= 0) AND (item_count IS NULL OR item_count >= 0) AND (character_count IS NULL OR character_count >= 0) AND (image_count IS NULL OR image_count >= 0)),
     CONSTRAINT ck_ai_metering_usage_non_negative_amounts CHECK (billable_quantity >= 0 AND (audio_seconds IS NULL OR audio_seconds >= 0) AND (video_seconds IS NULL OR video_seconds >= 0) AND (storage_byte_hours IS NULL OR storage_byte_hours >= 0) AND (official_reference_amount IS NULL OR official_reference_amount >= 0) AND (upstream_cost_amount IS NULL OR upstream_cost_amount >= 0) AND (customer_charge_amount IS NULL OR customer_charge_amount >= 0)),
@@ -508,6 +660,8 @@ CREATE TABLE IF NOT EXISTS ai_metering_usage (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_metering_usage_scope_id ON ai_metering_usage (tenant_id, organization_id, id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_metering_usage_idempotency ON ai_metering_usage (tenant_id, organization_id, idempotency_key);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_metering_usage_request ON ai_metering_usage (tenant_id, organization_id, request_id, usage_type);
+CREATE INDEX IF NOT EXISTS idx_ai_metering_usage_settlement_claim ON ai_metering_usage (settlement_status, occurred_at, id);
+CREATE INDEX IF NOT EXISTS idx_ai_metering_usage_tenant_occurred ON ai_metering_usage (tenant_id, occurred_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_metering_usage_tenant_owner_occurred ON ai_metering_usage (tenant_id, organization_id, owner_type, owner_id, occurred_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_metering_usage_api_key_occurred ON ai_metering_usage (tenant_id, organization_id, api_key_id, occurred_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_metering_usage_model_occurred ON ai_metering_usage (tenant_id, organization_id, catalog_key, occurred_at, id);
@@ -1827,6 +1981,9 @@ CREATE TABLE IF NOT EXISTS cloudrouter_charge_line (
     charged_at TIMESTAMPTZ NOT NULL,
     settlement_id BIGINT,
     settled_at TIMESTAMPTZ,
+    debit_points BIGINT,
+    original_currency_amount NUMERIC(38, 12),
+    original_currency_code VARCHAR(10),
     CONSTRAINT ck_cloudrouter_charge_line_tenant_scope CHECK (tenant_id > 0 AND organization_id >= 0),
     CONSTRAINT fk_cloudrouter_charge_line_decision FOREIGN KEY (tenant_id, organization_id, rating_decision_id) REFERENCES cloudrouter_rating_decision (tenant_id, organization_id, id),
     CONSTRAINT ck_cloudrouter_charge_line_amount CHECK (quantity > 0 AND reference_amount >= 0 AND cost_amount >= 0 AND amount > 0),
@@ -1991,6 +2148,29 @@ CREATE TABLE IF NOT EXISTS iam_gateway_chain_policy (
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_iam_gateway_chain_policy_scope ON iam_gateway_chain_policy (tenant_id, organization_id, scope_type, scope_id, status) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_iam_gateway_chain_policy_scope_status ON iam_gateway_chain_policy (tenant_id, organization_id, scope_type, scope_id, status);
+
+CREATE TABLE IF NOT EXISTS iam_gateway_membership (
+    id BIGINT NOT NULL PRIMARY KEY,
+    uuid VARCHAR(64) NOT NULL,
+    tenant_id BIGINT NOT NULL DEFAULT 0,
+    organization_id BIGINT NOT NULL DEFAULT 0,
+    data_scope INTEGER NOT NULL DEFAULT 0,
+    status INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    version BIGINT NOT NULL DEFAULT 0,
+    deleted_at TIMESTAMPTZ,
+    deleted_by BIGINT,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    user_id BIGINT,
+    organization_name_snapshot VARCHAR(200),
+    is_primary INTEGER,
+    member_no VARCHAR(64),
+    joined_at TIMESTAMPTZ,
+    CONSTRAINT ck_iam_gateway_membership_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0))
+);
+
+CREATE INDEX IF NOT EXISTS idx_iam_gateway_membership_tenant_user_status ON iam_gateway_membership (tenant_id, user_id, status, deleted_at, organization_id);
 
 CREATE TABLE IF NOT EXISTS iam_gateway_risk_rule (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -2535,3 +2715,18 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_pricing_default_region_resource_key ON pric
 CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_default_region_scope_reference ON pricing_default_region (tenant_id, organization_id, id);
 CREATE INDEX IF NOT EXISTS idx_pricing_default_region_catalog_key ON pricing_default_region (tenant_id, organization_id, vendor_code, catalog_key, default_region_code, id);
 CREATE INDEX IF NOT EXISTS idx_pricing_default_region_resource_key ON pricing_default_region (tenant_id, organization_id, resource_key, default_region_code, id);
+
+CREATE TABLE IF NOT EXISTS sdkwork_node_registry (
+    node_id INTEGER,
+    service_name VARCHAR(256),
+    instance_identity VARCHAR(256),
+    hostname VARCHAR(256),
+    pid BIGINT,
+    lease_token VARCHAR(64),
+    lease_version BIGINT,
+    started_at_ms BIGINT,
+    last_heartbeat_at_ms BIGINT,
+    expires_at_ms BIGINT
+);
+
+CREATE INDEX IF NOT EXISTS idx_sdkwork_node_registry_service_expiry ON sdkwork_node_registry (service_name, expires_at_ms);

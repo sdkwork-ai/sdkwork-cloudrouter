@@ -25,9 +25,9 @@ use sdkwork_cloudrouter_router_service::application::{
     UsageExtractionInterceptor, UsageRecordingInterceptor,
 };
 use sdkwork_cloudrouter_router_service::ports::{
-    GatewayBillingStore, GatewayUsageRecorder, InvocationDispatcher, ProviderAdapterRouteResolver,
-    ProviderSecretResolver, RoutingDecisionLogRecorder, StickyRouteStore,
-    UpstreamAccountRouteCatalog,
+    BillingSubjectResolver, GatewayBillingStore, GatewayUsageRecorder, InvocationDispatcher,
+    ProviderAdapterRouteResolver, ProviderSecretResolver, RoutingDecisionLogRecorder,
+    StickyRouteStore, UpstreamAccountRouteCatalog,
 };
 use sdkwork_cloudrouter_security::{InternalGatewayRequestVerifier, INTERNAL_GATEWAY_ROUTE_PREFIX};
 
@@ -51,6 +51,7 @@ where
     pub(crate) internal_gateway_verifier: Option<Arc<InternalGatewayRequestVerifier>>,
     pub(crate) auth_token_authenticator:
         Option<Arc<dyn OpenAiAuthTokenAuthenticator + Send + Sync>>,
+    pub(crate) billing_subject_resolver: Option<Arc<dyn BillingSubjectResolver>>,
 }
 
 impl<C> Clone for InvocationRouterState<C>
@@ -69,6 +70,7 @@ where
             query_string_api_key_policy: self.query_string_api_key_policy,
             internal_gateway_verifier: self.internal_gateway_verifier.clone(),
             auth_token_authenticator: self.auth_token_authenticator.clone(),
+            billing_subject_resolver: self.billing_subject_resolver.clone(),
         }
     }
 }
@@ -121,6 +123,8 @@ pub struct InvocationRouterOptions<'a> {
     /// tenant in-flight bound. `None` keeps the chain off entirely.
     pub call_chain: Option<CallChainInterceptor>,
     pub billing_store: Option<Arc<dyn GatewayBillingStore + Send + Sync>>,
+    /// 计费主体解析器（团队计费）。`None` 保持个人主体既有行为。
+    pub billing_subject_resolver: Option<Arc<dyn BillingSubjectResolver>>,
     /// Resolves non-API-key bearer credentials (SDKWork login auth tokens)
     /// into an account route context for chat completions. Mirrors the
     /// legacy openai router channel so the invocation pipeline accepts the
@@ -147,6 +151,7 @@ impl Default for InvocationRouterOptions<'_> {
             auth_token_authenticator: None,
             call_chain: None,
             billing_store: None,
+            billing_subject_resolver: None,
         }
     }
 }
@@ -177,6 +182,7 @@ where
         call_chain,
         billing_store,
         auth_token_authenticator,
+        billing_subject_resolver,
     } = options;
     let adapter_resolver = provider_adapter_config
         .and_then(InvocationProviderAdapterResolver::from_config)
@@ -206,6 +212,7 @@ where
         query_string_api_key_policy,
         internal_gateway_verifier,
         auth_token_authenticator,
+        billing_subject_resolver,
     })
 }
 

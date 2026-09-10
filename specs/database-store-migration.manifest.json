@@ -37,10 +37,10 @@
       "targetCrate": "crates/sdkwork-cloudrouter-app-routing-repository-sqlx",
       "storePaths": [
         "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/app_routing_read_store.rs",
-        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/app_routing_strategy_store.rs"
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/app_gateway_traces_read_store.rs"
       ],
       "tables": [
-        "ai_request_trace",
+        "ai_metering_request_trace",
         "ai_resource",
         "ai_resource_group",
         "ai_routing_decision_log",
@@ -51,7 +51,7 @@
         "ai_upstream_account_credential",
         "ai_resource_binding",
         "ai_upstream_supplier",
-        "ai_usage",
+        "ai_metering_usage",
         "iam_gateway_api_key",
         "ops_audit_log",
         "ops_config_snapshot"
@@ -128,7 +128,7 @@
         "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/usage_settlement_store.rs"
       ],
       "tables": [
-        "ai_usage",
+        "ai_metering_usage",
         "commerce_account",
         "commerce_account_ledger_entry",
         "commerce_settlement"
@@ -187,7 +187,7 @@
         "ops_audit_log"
       ],
       "priority": "CRITICAL",
-      "migrationOrder": 10,
+      "migrationOrder": 9,
       "ownerReviewRequired": true
     },
     {
@@ -206,24 +206,23 @@
         "commerce_statement"
       ],
       "priority": "CRITICAL",
-      "migrationOrder": 11,
+      "migrationOrder": 10,
       "ownerReviewRequired": true
     },
     {
       "capability": "usage-logs",
       "targetCrate": "crates/sdkwork-cloudrouter-usage-logs-repository-sqlx",
       "storePaths": [
-        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/app_gateway_traces_read_store.rs",
         "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/usage_logs_read_store.rs"
       ],
       "tables": [
-        "ai_request_trace",
+        "ai_metering_request_trace",
         "ai_routing_decision_log",
         "ai_upstream_account_group",
-        "ai_usage"
+        "ai_metering_usage"
       ],
       "priority": "HIGH",
-      "migrationOrder": 12
+      "migrationOrder": 11
     },
     {
       "capability": "admin-record",
@@ -232,13 +231,13 @@
         "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_record_store.rs"
       ],
       "tables": [
-        "ai_request_trace",
+        "ai_metering_request_trace",
         "ai_routing_decision_log",
-        "ai_usage",
+        "ai_metering_usage",
         "iam_user"
       ],
       "priority": "HIGH",
-      "migrationOrder": 13,
+      "migrationOrder": 12,
       "ownerReviewRequired": true
     },
     {
@@ -258,7 +257,7 @@
         "ai_runtime_usage_link"
       ],
       "priority": "HIGH",
-      "migrationOrder": 14
+      "migrationOrder": 13
     },
     {
       "capability": "app-runtime",
@@ -278,28 +277,7 @@
         "ai_runtime_invocation_event"
       ],
       "priority": "HIGH",
-      "migrationOrder": 15
-    },
-    {
-      "capability": "admin-user",
-      "targetCrate": "crates/sdkwork-cloudrouter-admin-user-repository-sqlx",
-      "storePaths": [
-        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_user_store.rs"
-      ],
-      "tables": [
-        "ai_upstream_account_group",
-        "cloudrouter_pricing_plan",
-        "commerce_account",
-        "commerce_account_ledger_entry",
-        "iam_gateway_api_key",
-        "iam_organization_membership",
-        "iam_user",
-        "iam_user_identity",
-        "ops_audit_log"
-      ],
-      "priority": "HIGH",
-      "migrationOrder": 16,
-      "ownerReviewRequired": true
+      "migrationOrder": 14
     },
     {
       "capability": "admin-marketing",
@@ -326,7 +304,7 @@
         "promotion_user_coupon"
       ],
       "priority": "HIGH",
-      "migrationOrder": 17,
+      "migrationOrder": 15,
       "ownerReviewRequired": true
     },
     {
@@ -349,28 +327,11 @@
         "commerce_product_spu_category"
       ],
       "priority": "HIGH",
-      "migrationOrder": 18,
-      "ownerReviewRequired": true
-    },
-    {
-      "capability": "admin-inventory",
-      "targetCrate": "crates/sdkwork-cloudrouter-admin-inventory-repository-sqlx",
-      "storePaths": [
-        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_inventory_store.rs"
-      ],
-      "tables": [
-        "commerce_inventory_movement",
-        "commerce_inventory_reservation",
-        "commerce_inventory_stock"
-      ],
-      "priority": "HIGH",
-      "migrationOrder": 19,
+      "migrationOrder": 16,
       "ownerReviewRequired": true
     },
     {
       "capability": "admin-storage",
-      "status": "decommissioned",
-      "note": "Storage provider/bucket management moved to sdkwork-drive (dr_drive_storage_provider). Governance tables stay in sdkwork-cloudrouter-router-service; the planned dedicated repository crate is no longer required.",
       "storePaths": [
         "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_storage_store.rs"
       ],
@@ -384,8 +345,9 @@
         "storage_usage_snapshot"
       ],
       "priority": "LOW",
-      "migrationOrder": 20,
-      "ownerReviewRequired": true
+      "migrationOrder": 17,
+      "ownerReviewRequired": true,
+      "targetCrate": "crates/sdkwork-cloudrouter-admin-storage-repository-sqlx"
     },
     {
       "capability": "admin-mcp",
@@ -400,7 +362,7 @@
         "ai_mcp_tool"
       ],
       "priority": "MEDIUM",
-      "migrationOrder": 21
+      "migrationOrder": 18
     },
     {
       "capability": "admin-announcement",
@@ -414,7 +376,7 @@
         "ops_notification_recipient"
       ],
       "priority": "MEDIUM",
-      "migrationOrder": 22
+      "migrationOrder": 19
     },
     {
       "capability": "app-notification",
@@ -429,7 +391,7 @@
         "ops_notification_recipient"
       ],
       "priority": "MEDIUM",
-      "migrationOrder": 23,
+      "migrationOrder": 20,
       "ownerReviewRequired": true
     },
     {
@@ -441,15 +403,15 @@
       "tables": [
         "ai_model",
         "ai_model_rank_snapshot",
-        "ai_request_trace",
-        "ai_usage",
+        "ai_metering_request_trace",
+        "ai_metering_usage",
         "ops_gateway_instance",
         "ops_metric_snapshot",
         "ops_notification_message",
         "ops_notification_recipient"
       ],
       "priority": "MEDIUM",
-      "migrationOrder": 24
+      "migrationOrder": 21
     },
     {
       "capability": "admin-service-node",
@@ -461,7 +423,7 @@
         "ops_gateway_instance"
       ],
       "priority": "MEDIUM",
-      "migrationOrder": 25
+      "migrationOrder": 22
     },
     {
       "capability": "admin-auth-settings",
@@ -474,7 +436,7 @@
         "ops_config_snapshot"
       ],
       "priority": "MEDIUM",
-      "migrationOrder": 26
+      "migrationOrder": 23
     },
     {
       "capability": "runtime-region-settings",
@@ -487,7 +449,7 @@
         "ops_config_snapshot"
       ],
       "priority": "MEDIUM",
-      "migrationOrder": 27
+      "migrationOrder": 24
     },
     {
       "capability": "site-settings",
@@ -500,7 +462,7 @@
         "ops_config_snapshot"
       ],
       "priority": "LOW",
-      "migrationOrder": 28
+      "migrationOrder": 25
     },
     {
       "capability": "settings",
@@ -513,15 +475,120 @@
         "integration_webhook_endpoint"
       ],
       "priority": "LOW",
-      "migrationOrder": 29,
-      "migration": "database/migrations/postgres/0018_user_settings_console.up.sql",
+      "migrationOrder": 26,
       "ownerReviewRequired": false
+    },
+    {
+      "capability": "admin-chain-policy",
+      "targetCrate": "crates/sdkwork-cloudrouter-admin-chain-policy-repository-sqlx",
+      "storePaths": [
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_chain_policy_store.rs"
+      ],
+      "tables": [
+        "iam_gateway_chain_policy",
+        "ops_audit_log",
+        "ops_config_snapshot"
+      ],
+      "priority": "HIGH",
+      "migrationOrder": 27
+    },
+    {
+      "capability": "admin-pricing",
+      "targetCrate": "crates/sdkwork-cloudrouter-admin-pricing-repository-sqlx",
+      "storePaths": [
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_pricing_store.rs"
+      ],
+      "tables": [
+        "cloudrouter_account_rate_card",
+        "cloudrouter_pricing_plan",
+        "cloudrouter_pricing_rule",
+        "ops_audit_log"
+      ],
+      "priority": "CRITICAL",
+      "migrationOrder": 28
+    },
+    {
+      "capability": "admin-referral",
+      "targetCrate": "crates/sdkwork-cloudrouter-admin-referral-repository-sqlx",
+      "storePaths": [
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_referral_store.rs"
+      ],
+      "tables": [
+        "ops_audit_log",
+        "ops_referral_relation",
+        "ops_referral_strategy"
+      ],
+      "priority": "MEDIUM",
+      "migrationOrder": 29
+    },
+    {
+      "capability": "app-invite",
+      "targetCrate": "crates/sdkwork-cloudrouter-app-invite-repository-sqlx",
+      "storePaths": [
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/app_invite_store.rs"
+      ],
+      "tables": [
+        "ops_referral_invite_code",
+        "ops_referral_relation"
+      ],
+      "priority": "MEDIUM",
+      "migrationOrder": 30
+    },
+    {
+      "capability": "gateway-chain-policy",
+      "targetCrate": "crates/sdkwork-cloudrouter-gateway-chain-policy-repository-sqlx",
+      "storePaths": [
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/gateway_chain_policy_store.rs"
+      ],
+      "tables": [
+        "iam_gateway_chain_policy"
+      ],
+      "priority": "HIGH",
+      "migrationOrder": 31
+    },
+    {
+      "capability": "official-pricing-catalog-read",
+      "targetCrate": "crates/sdkwork-cloudrouter-official-pricing-catalog-read-repository-sqlx",
+      "storePaths": [
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/official_pricing_catalog_read_store.rs"
+      ],
+      "tables": [
+        "ai_model"
+      ],
+      "priority": "MEDIUM",
+      "migrationOrder": 32
+    },
+    {
+      "capability": "upstream-credential-rotation",
+      "targetCrate": "crates/sdkwork-cloudrouter-upstream-credential-rotation-repository-sqlx",
+      "storePaths": [
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/upstream_credential_rotation_store.rs"
+      ],
+      "tables": [
+        "ai_upstream_account",
+        "ai_upstream_account_credential"
+      ],
+      "priority": "HIGH",
+      "migrationOrder": 33
+    },
+    {
+      "capability": "usage-retention",
+      "targetCrate": "crates/sdkwork-cloudrouter-usage-retention-repository-sqlx",
+      "storePaths": [
+        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/usage_retention_store.rs"
+      ],
+      "tables": [
+        "ai_metering_request_trace",
+        "ai_metering_usage"
+      ],
+      "priority": "MEDIUM",
+      "migrationOrder": 34
     }
   ],
   "inventoryStats": {
-    "activeStoreFiles": 32,
-    "coveredStoreFiles": 32,
-    "capabilityGroups": 29,
-    "logicalStores": 32
+    "activeStoreFiles": 36,
+    "coveredStoreFiles": 36,
+    "capabilityGroups": 34,
+    "logicalStores": 36
   }
 }

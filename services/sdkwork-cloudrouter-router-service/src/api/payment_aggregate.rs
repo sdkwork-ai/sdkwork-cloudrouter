@@ -13,15 +13,13 @@ use serde_json::Value;
 
 use crate::api::response::{json_created_response, problem_from_wire_code, success_envelope};
 use crate::application::{
-    resolve_payment_provider_registry_for_deployment, validate_payment_notify_url,
-    EntityUuidGenerator, InMemoryPaymentIntentRuntimeStore, PaymentAggregateRuntimeStore,
+    validate_payment_notify_url, EntityUuidGenerator, PaymentAggregateRuntimeStore,
     PaymentIntentRuntimeRecord, PaymentIntentRuntimeService, PaymentProviderOperationOutcome,
     PaymentProviderRegistry, PaymentRefundRuntimeRecord, PaymentRefundRuntimeService,
     RuntimeCancelPaymentIntentCommand, RuntimeCancelRefundCommand,
     RuntimeCapturePaymentIntentCommand, RuntimeConfirmPaymentIntentCommand,
     RuntimeCreatePaymentIntentCommand, RuntimeCreateRefundCommand, RuntimeCreateRefundItemCommand,
 };
-use crate::infrastructure::OsApiKeySecretGenerator;
 
 const IDEMPOTENCY_KEY_HEADER: &str = "Idempotency-Key";
 
@@ -205,25 +203,6 @@ struct PaymentRefundItemResponse {
 struct MoneyAmountResponse {
     currency: String,
     value: String,
-}
-
-pub fn payment_aggregate_router() -> Router {
-    payment_aggregate_router_with_runtime_store_and_registry(
-        Arc::new(InMemoryPaymentIntentRuntimeStore::default()),
-        Arc::new(OsApiKeySecretGenerator),
-        resolve_payment_provider_registry_for_deployment(),
-    )
-}
-
-pub fn payment_aggregate_router_with_runtime_store(
-    store: Arc<dyn PaymentAggregateRuntimeStore>,
-    entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
-) -> Router {
-    payment_aggregate_router_with_runtime_store_and_registry(
-        store,
-        entity_uuid_generator,
-        resolve_payment_provider_registry_for_deployment(),
-    )
 }
 
 pub fn payment_aggregate_router_with_runtime_store_and_registry(

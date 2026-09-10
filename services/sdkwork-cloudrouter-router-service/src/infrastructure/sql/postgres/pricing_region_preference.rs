@@ -108,14 +108,6 @@ impl PricingRegionPreferences {
             .map(String::as_str)
             .unwrap_or_default()
     }
-
-    pub fn len(&self) -> usize {
-        self.by_resource_key.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.by_resource_key.is_empty()
-    }
 }
 
 /// Resolves which region a resource row renders (see module docs for the

@@ -25,7 +25,15 @@ Default Postgres pool size is 16 connections per service process. In distributed
 
 ## Password login protection
 
-App password login is rate-limited per client IP and account (10 attempts / 15 minutes). Clients receive HTTP `429` with a generic message.
+App password login rate limiting is owned by the IAM product, not by Cloud
+Router. The IAM app API enforces per-identity windows with a
+PostgreSQL-backed, advisory-lock serialized counter (`iam_ephemeral_artifact`),
+so the limit is distributed-safe across IAM replicas. Limits are configured in
+the IAM runtime (`rate_limit_max_requests` / `rate_limit_window_seconds`;
+defaults are 10 attempts per 15 minutes per client IP and account bucket).
+Blocked clients receive HTTP `429` with a generic `iam_rate_limited` message.
+If the IAM ephemeral store is unavailable, login fails closed with HTTP `503`
+(`iam_ephemeral_unavailable`).
 
 ## Admin API authorization
 

@@ -6,8 +6,8 @@ use crate::infrastructure::sql::postgres::admin_marketing_store::load_recharge_s
 use crate::infrastructure::sql::postgres::billing_read_projection::with_billable_usage;
 use crate::ports::points_per_currency_unit_string;
 use crate::ports::{
-    AdminMarketingSubject, UsageLogItem, UsageLogsPage, UsageLogsQuery, UsageLogsReadFuture,
-    UsageLogsReadStore, UsageLogsStatus, UsageLogsSubject,
+    AdminMarketingSubject, UsageLogItem, UsageLogsCursor, UsageLogsPage, UsageLogsQuery,
+    UsageLogsReadFuture, UsageLogsReadStore, UsageLogsStatus, UsageLogsSubject,
 };
 
 const USAGE_SPEND_DECIMAL_DIGITS: u32 = 9;
@@ -67,12 +67,12 @@ usage_by_request AS (
     GROUP BY tenant_id, organization_id, request_id
 )
 SELECT
-    COUNT(*) OVER() AS total,
     CAST(t.id AS TEXT) AS id,
-    COALESCE(NULLIF(t.request_id, ''), CAST(t.id AS TEXT)) AS request_id,
+    CAST(TRUNC(EXTRACT(EPOCH FROM t.started_at) * 1000000) AS BIGINT) AS cursor_started_at_micros,
+    t.id AS cursor_id,    COALESCE(NULLIF(t.request_id, ''), CAST(t.id AS TEXT)) AS request_id,
     CAST(COALESCE(t.started_at, t.created_at) AS TEXT) AS started_at,
     COALESCE(NULLIF(t.api_key_name_snapshot, ''), '-') AS api_key_name_snapshot,
-    COALESCE(NULLIF(g.group_name_i18n->>$10, ''), NULLIF(g.group_name, ''), NULLIF(t.account_group_snapshot, ''), '-') AS upstream_account_group_display_name,
+    COALESCE(NULLIF(g.group_name_i18n->>$11, ''), NULLIF(g.group_name, ''), NULLIF(t.account_group_snapshot, ''), '-') AS upstream_account_group_display_name,
     COALESCE(
         u.modality,
         CASE
@@ -168,8 +168,16 @@ AND (
     OR ($7 = 1 AND NOT ((t.http_status IS NOT NULL AND t.http_status >= 400) OR NULLIF(NULLIF(CAST(t.error_type AS TEXT), ''), '0') IS NOT NULL OR NULLIF(t.provider_error_code, '') IS NOT NULL))
     OR ($7 = 2 AND ((t.http_status IS NOT NULL AND t.http_status >= 400) OR NULLIF(NULLIF(CAST(t.error_type AS TEXT), ''), '0') IS NOT NULL OR NULLIF(t.provider_error_code, '') IS NOT NULL))
 )
+AND (
+    $9::bigint IS NULL
+    OR t.started_at < TIMESTAMPTZ 'epoch' + ($9::bigint * INTERVAL '1 microsecond')
+    OR (
+        t.started_at = TIMESTAMPTZ 'epoch' + ($9::bigint * INTERVAL '1 microsecond')
+        AND t.id < $10::bigint
+    )
+)
 ORDER BY t.started_at DESC NULLS LAST, t.id DESC
-LIMIT $8 OFFSET $9
+LIMIT $8
 "#;
 
 pub struct PostgresUsageLogsReadStore {
@@ -193,6 +201,9 @@ impl UsageLogsReadStore for PostgresUsageLogsReadStore {
             let subject = subject.ok_or_else(|| {
                 DomainError::new("trusted request subject is required for usage logs")
             })?;
+            // Keyset seek: fetch page_size + 1 to detect a further page, then
+            // trim the overflow row; no OFFSET and no total-count window.
+            let fetch_limit = query.page_size.saturating_add(1);
             let rows = sqlx::query(with_billable_usage(LOAD_USAGE_LOGS))
                 .bind(subject.tenant_id)
                 .bind(subject.organization_id)
@@ -201,17 +212,31 @@ impl UsageLogsReadStore for PostgresUsageLogsReadStore {
                 .bind(query.end_time.as_deref())
                 .bind(keyword_like(query.keyword.as_deref()))
                 .bind(status_code(query.status))
-                .bind(query.page_size)
-                .bind(query.offset)
+                .bind(fetch_limit)
+                .bind(query.cursor.as_ref().map(|cursor| cursor.started_at_micros))
+                .bind(query.cursor.as_ref().map(|cursor| cursor.id))
                 .bind(locale)
                 .fetch_all(&self.pool)
                 .await
                 .map_err(sql_error)?;
 
-            let total = rows
-                .first()
-                .and_then(|row| optional_integer_cell(row, "total"))
-                .unwrap_or(0);
+            let has_more = rows.len() as i64 > query.page_size;
+            let rows = if has_more {
+                let mut rows = rows;
+                rows.truncate(query.page_size as usize);
+                rows
+            } else {
+                rows
+            };
+            let next_cursor = if has_more {
+                rows.last().and_then(|row| {
+                    let started_at_micros = row.try_get::<i64, _>("cursor_started_at_micros").ok()?;
+                    let id = row.try_get::<i64, _>("cursor_id").ok()?;
+                    Some(UsageLogsCursor { started_at_micros, id })
+                })
+            } else {
+                None
+            };
             let logs = rows
                 .into_iter()
                 .map(row_to_usage_log)
@@ -219,9 +244,8 @@ impl UsageLogsReadStore for PostgresUsageLogsReadStore {
             let logs = enrich_with_points_per_unit(&self.pool, subject, logs).await;
             Ok(UsageLogsPage {
                 logs,
-                total,
-                page_no: query.page_no,
-                page_size: query.page_size,
+                next_cursor,
+                has_more,
             })
         })
     }
@@ -566,14 +590,14 @@ mod tests {
         }
         assert!(
             LOAD_USAGE_LOGS.contains(
-                "COALESCE(NULLIF(g.group_name_i18n->>$10, ''), NULLIF(g.group_name, ''), NULLIF(t.account_group_snapshot, ''), '-') AS upstream_account_group_display_name"
+                "COALESCE(NULLIF(g.group_name_i18n->>$11, ''), NULLIF(g.group_name, ''), NULLIF(t.account_group_snapshot, ''), '-') AS upstream_account_group_display_name"
             ),
             "usage logs Postgres SQL must project the localized channel group name with maintained and snapshot fallbacks"
         );
     }
 
     #[test]
-    fn usage_logs_queries_apply_time_keyword_and_status_filters_and_total_window() {
+    fn usage_logs_queries_apply_time_keyword_and_status_filters_and_keyset_seek() {
         let page_sql = LOAD_USAGE_LOGS;
         for predicate in [
             "$4::text IS NULL OR t.started_at >=",
@@ -582,17 +606,37 @@ mod tests {
             "$7 = 0",
             "$7 = 1",
             "$7 = 2",
-            "COUNT(*) OVER() AS total",
         ] {
             assert!(
                 page_sql.contains(predicate),
                 "usage logs Postgres page SQL must include filter predicate {predicate}"
             );
         }
+        // Cursor mode (PAGINATION_SPEC §12): no OFFSET, no total-count
+        // window; the page is a bounded keyset seek on (started_at, id) that
+        // fetches page_size + 1 rows to detect the next page.
         assert!(
-            !page_sql.contains("OFFSET") || page_sql.contains("LIMIT"),
-            "usage logs Postgres page SQL must keep bounded LIMIT/OFFSET"
+            !page_sql.contains("OFFSET"),
+            "usage logs Postgres page SQL must not use OFFSET pagination"
         );
+        assert!(
+            !page_sql.contains("COUNT(*) OVER()"),
+            "usage logs Postgres page SQL must not run a total-count window"
+        );
+        for predicate in [
+            "$9::bigint IS NULL",
+            "t.started_at < TIMESTAMPTZ 'epoch' + ($9::bigint * INTERVAL '1 microsecond')",
+            "AND t.id < $10::bigint",
+            "ORDER BY t.started_at DESC NULLS LAST, t.id DESC",
+            "LIMIT $8",
+            "AS cursor_started_at_micros",
+            "t.id AS cursor_id",
+        ] {
+            assert!(
+                page_sql.contains(predicate),
+                "usage logs Postgres page SQL must include keyset predicate {predicate}"
+            );
+        }
     }
 
     #[test]

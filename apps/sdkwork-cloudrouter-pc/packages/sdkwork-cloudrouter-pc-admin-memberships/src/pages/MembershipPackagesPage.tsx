@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, Pencil, Plus, Trash2 } from 'lucide-react';
-import { BottomPagination, computeDiscountedAmount, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
+import { BottomPagination, resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
+import { computeDiscountedAmount } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { formatMoney } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
 import { MembershipAdminPageShell } from '../components/MembershipAdminPageShell';
 import { MembershipDialog } from '../components/MembershipDialog';

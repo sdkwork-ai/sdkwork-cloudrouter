@@ -11,8 +11,8 @@ use axum::Router;
 use sdkwork_cloudrouter_http::ApiKeyIdentity;
 use serde_json::Value;
 
-use crate::api::openai_contract::OpenAiResponsesRequest;
 use crate::api::openai_chat::StreamingUsageRecordingBody;
+use crate::api::openai_contract::OpenAiResponsesRequest;
 use crate::api::openai_error::openai_error;
 use crate::api::openai_invocation::{
     notify_after_relay_observers, notify_after_route_selection, notify_before_relay,
@@ -26,16 +26,15 @@ use crate::api::openai_relay_execution::{
     OpenAiRelayExecution, OpenAiRouteRelayExecution,
 };
 use crate::api::openai_runtime::{
-    authenticate_api_key, provider_relay_attempt_retry_policy, resolve_openai_upstream_route_plan,
-    route_http_status_is_retryable, OpenAiRouteError, OpenAiRuntimeFailureStrategy,
-    OpenAiRuntimeRouteConfig, ResolvedOpenAiUpstreamRoutePlan,
+    authenticate_api_key, provider_relay_attempt_retry_policy, resolve_billing_subject_or_personal,
+    resolve_openai_upstream_route_plan, route_http_status_is_retryable, OpenAiRouteError,
+    OpenAiRuntimeFailureStrategy, OpenAiRuntimeRouteConfig, ResolvedOpenAiUpstreamRoutePlan,
 };
 use crate::api::openai_usage::{
-    build_request_trace_command, build_usage_record_command_builder,
-    provider_error_code_from_body, provider_error_message_from_body,
-    provider_error_type_from_body, provider_usage_plugin_error_from_fault,
-    record_request_trace, responses_usage_billing_profile, responses_usage_from_stream_event,
-    OpenAiUsageRecorder,
+    build_request_trace_command, build_usage_record_command_builder, provider_error_code_from_body,
+    provider_error_message_from_body, provider_error_type_from_body,
+    provider_usage_plugin_error_from_fault, record_request_trace, responses_usage_billing_profile,
+    responses_usage_from_stream_event, OpenAiUsageRecorder,
 };
 use crate::application::{ApiKeySecretHasher, AuthenticatedApiKeyContext};
 use crate::domain::{BillingMeter, ProviderRetryPolicy, RoutingCapability};
@@ -56,6 +55,8 @@ struct OpenAiResponsesState<C> {
     failure_strategy: OpenAiRuntimeFailureStrategy,
     default_retry_policy: ProviderRetryPolicy,
     region_settings_store: Option<Arc<dyn RuntimeRegionSettingsStore + Send + Sync>>,
+    /// 计费主体解析器（团队计费）；`None` 保持个人主体既有行为。
+    billing_subject_resolver: Option<Arc<dyn crate::ports::BillingSubjectResolver>>,
 }
 
 impl<C> Clone for OpenAiResponsesState<C> {
@@ -71,6 +72,7 @@ impl<C> Clone for OpenAiResponsesState<C> {
             failure_strategy: self.failure_strategy,
             default_retry_policy: self.default_retry_policy.clone(),
             region_settings_store: self.region_settings_store.clone(),
+            billing_subject_resolver: self.billing_subject_resolver.clone(),
         }
     }
 }
@@ -325,6 +327,7 @@ where
             failure_strategy: responses_create_failure_strategy(runtime_config.failure_strategy),
             default_retry_policy: runtime_config.default_retry_policy,
             region_settings_store: runtime_config.region_settings_store.clone(),
+            billing_subject_resolver: runtime_config.billing_subject_resolver.clone(),
         })
 }
 
@@ -373,6 +376,15 @@ where
         Ok(context) => context,
         Err(response) => return *response,
     };
+    let billing_resolution = match resolve_billing_subject_or_personal(
+        state.billing_subject_resolver.as_ref(),
+        &context,
+    )
+    .await
+    {
+        Ok(resolved) => resolved,
+        Err(response) => return *response,
+    };
     let invocation_context = OpenAiInvocationContext::new(
         OpenAiInvocationEndpoint::Responses,
         context.clone(),
@@ -381,7 +393,8 @@ where
         request.request_body.clone(),
         &headers,
         &uri,
-    );
+    )
+    .with_billing(billing_resolution);
     if let Err(error) = notify_before_route_selection(&state.plugins, &invocation_context).await {
         record_request_trace(
             state.usage_recorder.as_ref(),
@@ -491,7 +504,9 @@ where
                     None,
                     Some("streaming_relay_not_configured".to_owned()),
                     Some("server_error".to_owned()),
-                    Some("streaming provider relay is not implemented for /v1/responses".to_owned()),
+                    Some(
+                        "streaming provider relay is not implemented for /v1/responses".to_owned(),
+                    ),
                 ),
             )
             .await;

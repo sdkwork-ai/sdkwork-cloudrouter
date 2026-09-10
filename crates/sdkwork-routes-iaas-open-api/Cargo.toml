@@ -2,11 +2,16 @@
 name = "sdkwork-routes-iaas-open-api"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license-file.workspace = true
 
 [lib]
+name = "sdkwork_routes_iaas_open_api"
 path = "src/lib.rs"
 
 [dependencies]
 axum.workspace = true
 sdkwork-cloudrouter-http.workspace = true
+
+[lints]
+workspace = true

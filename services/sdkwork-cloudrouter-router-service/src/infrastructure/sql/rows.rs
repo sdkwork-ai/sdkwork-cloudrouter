@@ -424,11 +424,6 @@ pub struct GatewayApiKeyRow {
 }
 
 impl GatewayApiKeyRow {
-    pub fn into_domain(self) -> GatewayApiKey {
-        self.try_into_domain()
-            .expect("gateway API key upstream account group bindings must be valid")
-    }
-
     pub fn try_into_domain(self) -> DomainResult<GatewayApiKey> {
         Ok(GatewayApiKey {
             id: self.id,

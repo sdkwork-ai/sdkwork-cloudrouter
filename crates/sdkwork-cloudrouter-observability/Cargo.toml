@@ -2,7 +2,10 @@
 name = "sdkwork-cloudrouter-observability"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license-file.workspace = true
+[lib]
+name = "sdkwork_cloudrouter_observability"
 
 [dependencies]
 sdkwork-cloudrouter-config.workspace = true
@@ -18,3 +21,6 @@ opentelemetry_sdk.workspace = true
 opentelemetry-otlp.workspace = true
 tracing-opentelemetry.workspace = true
 reqwest.workspace = true
+
+[lints]
+workspace = true

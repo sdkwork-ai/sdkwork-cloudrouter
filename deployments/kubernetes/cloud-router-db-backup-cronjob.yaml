@@ -1,0 +1,106 @@
+---
+# Scheduled logical backups of the authoritative PostgreSQL database.
+#
+# The gateway image ships the PostgreSQL client, so this Job reuses the
+# application image and runs pg_dump in custom format (compressed, verifiable
+# with pg_restore --list) against the same Secret the application consumes.
+# Backups land on a dedicated PVC; attach an off-cluster copy step (object
+# storage sync) before relying on them as the sole recovery path.
+#
+# Baseline posture: logical nightly backup with 7-day retention (RPO <= 24h
+# target). PITR/WAL archiving and a quarterly restore drill are still
+# unestablished (deployments/runbooks/disaster-recovery-plan.md).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: sdkwork-cloudrouter-db-backup
+  labels:
+    app: sdkwork-cloudrouter
+    component: db-backup
+spec:
+  # 02:30 UTC daily — off-peak for a multi-region gateway.
+  schedule: "30 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 3600
+      template:
+        metadata:
+          labels:
+            app: sdkwork-cloudrouter
+            component: db-backup
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: pg-backup
+              image: ghcr.io/sdkwork-cloudrouter/cloudrouter:0.4.1
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              env:
+                - name: PGHOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: sdkwork-cloudrouter-config
+                      key: db-host
+                - name: PGPORT
+                  valueFrom:
+                    secretKeyRef:
+                      name: sdkwork-cloudrouter-config
+                      key: db-port
+                - name: PGDATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      name: sdkwork-cloudrouter-config
+                      key: db-name
+                - name: PGUSER
+                  valueFrom:
+                    secretKeyRef:
+                      name: sdkwork-cloudrouter-config
+                      key: db-username
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: sdkwork-cloudrouter-config
+                      key: db-password
+              command:
+                - /bin/sh
+                - -ec
+                - |
+                  set -u
+                  STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+                  DIR="/var/backups/sdkwork-cloudrouter"
+                  FILE="${DIR}/cloudrouter-db-${STAMP}.dump"
+                  mkdir -p "${DIR}"
+                  echo "dumping to ${FILE}"
+                  pg_dump -Fc -f "${FILE}"
+                  # Verify the archive is restorable (catalog-level check).
+                  pg_restore --list "${FILE}" > /dev/null
+                  sha256sum "${FILE}" > "${FILE}.sha256"
+                  echo "backup ${FILE} verified"
+                  # Retention: keep the 7 most recent dumps.
+                  ls -1t "${DIR}"/cloudrouter-db-*.dump | tail -n +8 | xargs -r rm -f
+              volumeMounts:
+                - name: backups
+                  mountPath: /var/backups/sdkwork-cloudrouter
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: "1"
+                  memory: 1Gi
+          volumes:
+            - name: backups
+              persistentVolumeClaim:
+                claimName: sdkwork-cloudrouter-db-backups

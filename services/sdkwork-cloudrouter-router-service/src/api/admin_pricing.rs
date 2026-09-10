@@ -28,9 +28,9 @@ use crate::ports::{
     ListAdminDefaultRegionsQuery, ListAdminPriceBooksQuery, ListAdminPricingPlansQuery,
     ListAdminPricingRulesQuery, ListAdminRateCardsQuery, LoadAdminPriceBookQuery,
     LoadAdminPricingPlanQuery, OfficialPricingRefreshStore, PriceBookLifecycleCommand,
-    ResolveAdminPriceSettingQuery, SaveAdminDefaultRegionCommand, SaveAdminPriceSettingCommand, UpdateAdminDefaultRegionCommand,
-    UpdateAdminPriceBookCommand, UpdateAdminPriceBookRateCommand, UpdateAdminPricingPlanCommand,
-    UpdateAdminPricingRuleCommand, UpdateAdminRateCardCommand,
+    ResolveAdminPriceSettingQuery, SaveAdminDefaultRegionCommand, SaveAdminPriceSettingCommand,
+    UpdateAdminDefaultRegionCommand, UpdateAdminPriceBookCommand, UpdateAdminPriceBookRateCommand,
+    UpdateAdminPricingPlanCommand, UpdateAdminPricingRuleCommand, UpdateAdminRateCardCommand,
 };
 
 const MAX_CODE_LEN: usize = 96;

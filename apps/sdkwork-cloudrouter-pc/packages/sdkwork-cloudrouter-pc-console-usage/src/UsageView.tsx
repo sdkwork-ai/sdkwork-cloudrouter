@@ -14,7 +14,8 @@ import {
   Search,
   Zap,
 } from 'lucide-react';
-import { BusinessStatePanel, BusinessStateTableRow, formatTokenBankPoints, pointsForConvertedCashAmount, pointsPerUnitRate } from '@sdkwork/cloudroutes-pc-commons';
+import { BusinessStatePanel, BusinessStateTableRow } from '@sdkwork/cloudroutes-pc-commons';
+import { formatTokenBankPoints, pointsForConvertedCashAmount, pointsPerUnitRate } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { formatMoney } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
 import {
   formatLocalizedDecimalAmount,
@@ -33,7 +34,8 @@ const MAX_DISPLAY_DECIMAL_DIGITS = 6;
 type UsageLogStatus = 'all' | 'success' | 'error';
 
 type UsageLogQueryState = {
-  page: number;
+  /** Opaque keyset continuation; undefined means the first page. */
+  cursor?: string;
   pageSize: number;
   searchQuery: string;
   status: UsageLogStatus;
@@ -42,7 +44,6 @@ type UsageLogQueryState = {
 };
 
 const defaultUsageLogQuery: UsageLogQueryState = {
-  page: 1,
   pageSize: DEFAULT_PAGE_SIZE,
   searchQuery: '',
   status: 'all',
@@ -67,7 +68,7 @@ function getUsageLoadErrorMessage(error: unknown, fallback: string, t: Translati
 
 function buildUsageLogQuery(query: UsageLogQueryState): UsageLogListParams {
   const params: UsageLogListParams = {
-    page: query.page,
+    cursor: query.cursor,
     pageSize: query.pageSize,
   };
   const searchQuery = query.searchQuery.trim();
@@ -158,17 +159,17 @@ export function UsageView() {
   const { t, i18n } = useTranslation();
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const [usageLogs, setUsageLogs] = useState<UsageLog[]>([]);
-  const [totalLogs, setTotalLogs] = useState('0');
-  const [pageCount, setPageCount] = useState(1);
+  const [nextCursor, setNextCursor] = useState<string | undefined>(undefined);
+  const [cursorStack, setCursorStack] = useState<string[]>([]);
+  const [pageIndex, setPageIndex] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [query, setQuery] = useState<UsageLogQueryState>(defaultUsageLogQuery);
   const [draftQuery, setDraftQuery] = useState<UsageLogQueryState>(defaultUsageLogQuery);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const page = query.page;
   const pageSize = query.pageSize;
-  const visibleStart = usageLogs.length > 0 ? (page - 1) * pageSize + 1 : 0;
+  const visibleStart = usageLogs.length > 0 ? (pageIndex - 1) * pageSize + 1 : 0;
   const visibleEnd = usageLogs.length > 0 ? visibleStart + usageLogs.length - 1 : 0;
   const displayLocale = i18n.resolvedLanguage ?? i18n.language ?? 'en-US';
   const formatDisplayAmount = (value: string) =>
@@ -224,16 +225,16 @@ export function UsageView() {
       const data = await UsageService.fetchLogs(buildUsageLogQuery(query));
       if (isActive()) {
         setUsageLogs(data.items);
-        setTotalLogs(data.pageInfo.totalItems);
-        setPageCount(Math.max(1, data.pageInfo.totalPages));
+        setNextCursor(data.pageInfo.nextCursor);
         setHasMore(data.pageInfo.hasMore);
         setExpandedIds([]);
       }
     } catch (error) {
       if (isActive()) {
         setUsageLogs([]);
-        setTotalLogs('0');
-        setPageCount(1);
+        setNextCursor(undefined);
+        setCursorStack([]);
+        setPageIndex(1);
         setHasMore(false);
         setExpandedIds([]);
         setLoadError(getUsageLoadErrorMessage(error, t('console.usage.loadErrorFallback', '使用日志加载失败。'), t));
@@ -256,26 +257,42 @@ export function UsageView() {
   const applyFilters = useCallback(() => {
     const nextQuery = {
       ...draftQuery,
-      page: 1,
+      cursor: undefined,
     };
     setDraftQuery(nextQuery);
     setQuery(nextQuery);
+    setCursorStack([]);
+    setPageIndex(1);
   }, [draftQuery]);
 
   const resetFilters = useCallback(() => {
     setDraftQuery(defaultUsageLogQuery);
     setQuery(defaultUsageLogQuery);
+    setCursorStack([]);
+    setPageIndex(1);
   }, []);
 
-  const goToPage = useCallback((targetPage: number) => {
-    const nextPage = Math.min(Math.max(1, targetPage), pageCount);
-    const nextQuery = {
-      ...query,
-      page: nextPage,
-    };
-    setDraftQuery(nextQuery);
-    setQuery(nextQuery);
-  }, [pageCount, query]);
+  const goToNextPage = useCallback(() => {
+    if (!nextCursor) return;
+    setCursorStack((stack) => [...stack, query.cursor ?? '']);
+    setQuery({ ...query, cursor: nextCursor });
+    setPageIndex((index) => index + 1);
+  }, [nextCursor, query]);
+
+  const goToPrevPage = useCallback(() => {
+    if (cursorStack.length === 0) return;
+    const stack = [...cursorStack];
+    const previousCursor = stack.pop();
+    setCursorStack(stack);
+    setQuery({ ...query, cursor: previousCursor || undefined });
+    setPageIndex((index) => Math.max(1, index - 1));
+  }, [cursorStack, query]);
+
+  const goToFirstPage = useCallback(() => {
+    setCursorStack([]);
+    setQuery({ ...query, cursor: undefined });
+    setPageIndex(1);
+  }, [query]);
 
   const updateDraftQuery = useCallback(
     (patch: Partial<UsageLogQueryState>) => {
@@ -313,10 +330,10 @@ export function UsageView() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 w-full md:w-auto">
           <div className="flex flex-col px-3.5 py-2 rounded-lg bg-white dark:bg-[#252525] border border-slate-200 dark:border-white/5 shadow-sm">
             <span className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-medium">
-              {t('console.usage.stat.total', '总记录')}
+              {t('console.usage.stat.page', '本页记录')}
             </span>
             <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 font-mono">
-              {formatTokenCount(totalLogs)}
+              {formatTokenCount(String(usageLogs.length))}
             </span>
           </div>
           <div className="flex flex-col px-3.5 py-2 rounded-lg bg-white dark:bg-[#252525] border border-slate-200 dark:border-white/5 shadow-sm">
@@ -756,17 +773,16 @@ export function UsageView() {
         {/* 分页栏 */}
         <div className="shrink-0 px-4 py-3 border-t border-slate-200 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs bg-slate-50/80 dark:bg-[#1c1c1c]/60">
           <div className="text-slate-500 dark:text-slate-400">
-            {t('console.usage.pagination.showing', 'Showing {{start}} - {{end}} of {{total}}', {
+            {t('console.usage.pagination.showingWindow', 'Showing {{start}} - {{end}}', {
               start: visibleStart,
               end: visibleEnd,
-              total: totalLogs,
             })}
           </div>
           <div className="flex items-center gap-1.5">
             <button
               type="button"
-              disabled={page <= 1 || loading}
-              onClick={() => void goToPage(1)}
+              disabled={cursorStack.length === 0 || loading}
+              onClick={goToFirstPage}
               className="w-7 h-7 flex items-center justify-center rounded-md border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-lobster-500/20"
               aria-label={t('console.usage.pagination.first', '第一页')}
             >
@@ -774,33 +790,22 @@ export function UsageView() {
             </button>
             <button
               type="button"
-              disabled={page <= 1 || loading}
-              onClick={() => void goToPage(page - 1)}
+              disabled={cursorStack.length === 0 || loading}
+              onClick={goToPrevPage}
               className="w-7 h-7 flex items-center justify-center rounded-md border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-lobster-500/20"
               aria-label={t('console.usage.pagination.prev', '上一页')}
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
-            <span className="px-3 h-7 flex items-center rounded-md bg-lobster-500 text-white font-medium text-[11px] shadow-sm">{page}</span>
-            <span className="text-slate-400 dark:text-slate-500 px-1">/</span>
-            <span className="text-slate-600 dark:text-slate-300 font-medium px-1">{pageCount}</span>
+            <span className="px-3 h-7 flex items-center rounded-md bg-lobster-500 text-white font-medium text-[11px] shadow-sm">{pageIndex}</span>
             <button
               type="button"
               disabled={!hasMore || loading}
-              onClick={() => void goToPage(page + 1)}
+              onClick={goToNextPage}
               className="w-7 h-7 flex items-center justify-center rounded-md border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-lobster-500/20"
               aria-label={t('console.usage.pagination.next', '下一页')}
             >
               <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              disabled={page >= pageCount || loading}
-              onClick={() => void goToPage(pageCount)}
-              className="w-7 h-7 flex items-center justify-center rounded-md border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus:outline-none focus:ring-2 focus:ring-lobster-500/20"
-              aria-label={t('console.usage.pagination.last', '最后一页')}
-            >
-              <ChevronsRight className="w-3.5 h-3.5" />
             </button>
             <div className="relative ml-2">
               <select
@@ -809,11 +814,13 @@ export function UsageView() {
                   const nextPageSize = Number(event.target.value);
                   const nextQuery = {
                     ...draftQuery,
-                    page: 1,
+                    cursor: undefined,
                     pageSize: nextPageSize,
                   };
                   setDraftQuery(nextQuery);
                   setQuery(nextQuery);
+                  setCursorStack([]);
+                  setPageIndex(1);
                 }}
                 className="appearance-none bg-white dark:bg-[#1e1e1e] border border-slate-200 dark:border-white/10 rounded-md pl-2.5 pr-7 py-1 text-slate-700 dark:text-slate-300 focus:outline-none focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/15 cursor-pointer text-[11px]"
               >

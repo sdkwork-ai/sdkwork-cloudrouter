@@ -2,7 +2,10 @@
 name = "sdkwork-cloudrouter-router-service"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license-file.workspace = true
+[lib]
+name = "sdkwork_cloudrouter_router_service"
 
 [dependencies]
 async-trait.workspace = true
@@ -67,3 +70,6 @@ tower.workspace = true
 tracing-subscriber.workspace = true
 sdkwork-cloudrouter-test-support.workspace = true
 sdkwork_commerce_promotion_service.workspace = true
+
+[lints]
+workspace = true

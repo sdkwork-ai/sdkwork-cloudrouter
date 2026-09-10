@@ -13,7 +13,7 @@ use sdkwork_cloudrouter_router_service::application::{
     InvocationResourceClassifier, InvocationSubject, InvocationSurface, OpenAiResourceClassifier,
     ProviderNativeResourceClassifier, ResourceType,
 };
-use sdkwork_cloudrouter_router_service::ports::UpstreamAccountRouteCatalog;
+use sdkwork_cloudrouter_router_service::ports::{BillingSubjectError, UpstreamAccountRouteCatalog};
 use sdkwork_cloudrouter_security::{INTERNAL_GATEWAY_AUTH_HEADERS, INTERNAL_GATEWAY_ROUTE_PREFIX};
 use serde_json::{json, Value};
 
@@ -235,13 +235,37 @@ where
         client_ip,
     );
     let account_group_id = auth_context.group_id;
+    // 计费主体解析（团队计费）：key → 用户 → 成员关系投影 → 组织钱包。
+    // MembershipRequired（key 绑定组织但非成员）显式 403；其余解析失败
+    // 降级个人主体（fail-safe，保持既有行为）。
+    let billing_resolution = match state.billing_subject_resolver.as_ref() {
+        Some(resolver) => match resolver.resolve(&auth_context).await {
+            Ok(resolved) => Some(resolved),
+            Err(BillingSubjectError::MembershipRequired { organization_id }) => {
+                return forbidden_billing_subject_response(organization_id);
+            }
+            Err(BillingSubjectError::Transient(message)) => {
+                tracing::warn!(
+                    error = %message,
+                    tenant_id = auth_context.tenant_id,
+                    user_id = auth_context.user_id,
+                    "billing subject resolution failed; falling back to personal billing"
+                );
+                None
+            }
+        },
+        None => None,
+    };
     // 内部网关请求携带独立的 auth_type（InternalService），管道可据此
     // 对内部/外部调用应用差异化策略（限流、审计、决策日志等）。
-    let subject = if internal {
+    let mut subject = if internal {
         InvocationSubject::from_internal_api_key_context(auth_context)
     } else {
         InvocationSubject::from_api_key_context(auth_context)
     };
+    if let Some(resolved) = billing_resolution.as_ref() {
+        subject.apply_billing_resolution(resolved);
+    }
     let mut invocation = Invocation::new(request, subject, resource, billing);
     invocation.routing = routing;
     apply_gateway_dispatch_defaults(&mut invocation, state.catalog.as_ref(), account_group_id);
@@ -842,6 +866,29 @@ pub(crate) fn extract_client_ip_from_headers(
 /// HTTP error path matches the invocation pipeline's error body redaction.
 fn redact_sensitive_tokens(message: &str) -> String {
     sdkwork_cloudrouter_router_service::redaction::redact_sensitive_tokens(message)
+}
+
+/// key 绑定组织但用户已不是该组织成员：显式 403（对齐行业行为，
+/// 失效 key 不允许继续消耗团队余额）。
+fn forbidden_billing_subject_response(organization_id: i64) -> Response {
+    let body = json!({
+        "error": {
+            "message": format!(
+                "api key is bound to organization {organization_id} but the user is no longer an active member; billing subject resolution failed"
+            ),
+            "type": "invalid_request_error",
+            "param": null,
+            "code": "billing_subject_membership_required"
+        }
+    });
+    let body = serde_json::to_vec(&body).unwrap_or_else(|_| b"{}".to_vec());
+    let mut response = Response::new(Body::from(body));
+    *response.status_mut() = StatusCode::FORBIDDEN;
+    response.headers_mut().insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("application/json"),
+    );
+    response
 }
 
 pub(crate) fn response_from_policy_violation(

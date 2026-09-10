@@ -1,4 +1,5 @@
 mod ai_route_taxonomy;
+mod billing_subject_cache;
 mod ai_routing_cache_invalidation;
 mod alipay_payment_adapter;
 mod api_key_secret_codec;
@@ -13,11 +14,11 @@ mod gateway_pricing_decision;
 mod iam_runtime_context;
 mod invocation;
 mod password_hash;
-mod password_login_rate_limit;
 mod payment_adapter;
 mod payment_intent_runtime;
 mod payment_notify_url;
 mod payment_provider_account_resolver;
+mod payment_provider_http;
 mod payment_provider_registry;
 mod payment_provider_route_resolver;
 mod payment_provider_runtime_assembler;
@@ -115,7 +116,6 @@ pub use invocation::{
     TraceTelemetryInterceptor, UsageExtractionInterceptor, UsageRecordingInterceptor,
 };
 pub use password_hash::{PasswordHasher, Pbkdf2Sha256PasswordHasher};
-pub use password_login_rate_limit::{shared_password_login_rate_limiter, PasswordLoginRateLimiter};
 pub use payment_adapter::{
     PaymentAdapterFuture, PaymentAdapterOperation, PaymentCancelPaymentIntentRequest,
     PaymentCancelRefundRequest, PaymentCapturePaymentIntentRequest,
@@ -127,12 +127,12 @@ pub use payment_adapter::{
     PaymentVerifyWebhookRequest, PaymentWebhookVerificationOutcome,
 };
 pub use payment_intent_runtime::{
-    InMemoryPaymentIntentRuntimeStore, PaymentIntentCreationResult, PaymentIntentRuntimeRecord,
-    PaymentIntentRuntimeService, PaymentIntentRuntimeStore, PaymentIntentRuntimeStoreFuture,
-    PaymentIntentStatus, PaymentOperationAttemptRecord, PaymentRouteDecisionRecord,
-    RuntimeCancelPaymentIntentCommand, RuntimeCapturePaymentIntentCommand,
-    RuntimeConfirmPaymentIntentCommand, RuntimeCreatePaymentIntentCommand,
-    PAYMENT_NOTIFY_BUSINESS_ORDER, PAYMENT_NOTIFY_BUSINESS_TYPE_PAYLOAD_KEY,
+    PaymentIntentCreationResult, PaymentIntentRuntimeRecord, PaymentIntentRuntimeService,
+    PaymentIntentRuntimeStore, PaymentIntentRuntimeStoreFuture, PaymentIntentStatus,
+    PaymentOperationAttemptRecord, PaymentRouteDecisionRecord, RuntimeCancelPaymentIntentCommand,
+    RuntimeCapturePaymentIntentCommand, RuntimeConfirmPaymentIntentCommand,
+    RuntimeCreatePaymentIntentCommand, PAYMENT_NOTIFY_BUSINESS_ORDER,
+    PAYMENT_NOTIFY_BUSINESS_TYPE_PAYLOAD_KEY,
 };
 pub use payment_notify_url::{validate_payment_notify_url, MAX_PAYMENT_NOTIFY_URL_LEN};
 pub use payment_provider_account_resolver::{
@@ -166,15 +166,18 @@ pub use payment_reconciliation_config::{
     resolve_payment_reconciliation_worker_config_result,
 };
 pub use payment_reconciliation_runtime::{
-    FinishReconciliationRunCommand, InMemoryPaymentReconciliationRuntimeStore,
-    LoadReconciliationLedgerCommand, LoadReconciliationStatementCommand,
-    PaymentReconciliationDifferenceType, PaymentReconciliationItemRecord,
-    PaymentReconciliationRuntimeService, PaymentReconciliationRuntimeStore,
-    PaymentReconciliationRuntimeStoreFuture, PaymentStatementItemRecord, PaymentStatementRecord,
-    ReconciliationRunClaimCommand, ReconciliationRunRecord,
-    RuntimeGeneratePaymentReconciliationItemsCommand, RuntimeImportPaymentStatementCommand,
-    RuntimeImportPaymentStatementItemCommand, RuntimeReconciliationLedgerEntry,
+    FinishReconciliationRunCommand, LoadReconciliationLedgerCommand,
+    LoadReconciliationStatementCommand, PaymentReconciliationDifferenceType,
+    PaymentReconciliationItemRecord, PaymentReconciliationRuntimeService,
+    PaymentReconciliationRuntimeStore, PaymentReconciliationRuntimeStoreFuture,
+    PaymentStatementItemRecord, PaymentStatementRecord, ReconciliationRunClaimCommand,
+    ReconciliationRunRecord, RuntimeGeneratePaymentReconciliationItemsCommand,
+    RuntimeImportPaymentStatementCommand, RuntimeImportPaymentStatementItemCommand,
+    RuntimeReconciliationLedgerEntry,
 };
+
+#[cfg(test)]
+pub use payment_reconciliation_runtime::InMemoryPaymentReconciliationRuntimeStore;
 pub use payment_reconciliation_worker::{
     PaymentReconciliationRunOutcome, PaymentReconciliationWorker, PaymentReconciliationWorkerConfig,
 };
@@ -199,6 +202,7 @@ pub use route_strategy::{
     STRATEGY_QUALITY_FIRST, STRATEGY_ROUND_ROBIN, STRATEGY_STICKY, STRATEGY_WEIGHTED,
 };
 pub use runtime_stream_bus::{InMemoryRuntimeStreamBus, RuntimeStreamBus, RuntimeStreamBusFuture};
+pub use billing_subject_cache::{BillingSubjectCacheMetrics, CachedBillingSubjectResolver};
 pub use sdkwork_models_catalog_service::{
     ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
     BillingStrategyKind, BillingStrategyRegistry, BillingStructure, ListModelCatalogQuery,

@@ -821,6 +821,9 @@ class CloudRouterSdkGuardian:
         if not api_dir.is_dir():
             return
         for source_path in sorted(api_dir.glob("*.ts")):
+            if source_path.name.endswith(".d.ts"):
+                # Compiled declaration twin of the sibling source module.
+                continue
             if source_path.stem not in allowed_stems:
                 relative = source_path.relative_to(base).as_posix()
                 messages.append(f"{sdk_dir} must not contain unexported generated API artifact: {relative}")
@@ -836,6 +839,10 @@ class CloudRouterSdkGuardian:
             if source_path.name == "index.ts":
                 continue
             if source_path.name == "no-data.ts":
+                continue
+            if source_path.name.endswith(".d.ts"):
+                # Compiled declaration twin of the sibling source module, not
+                # a separately exported source surface.
                 continue
             source = self._read_text(source_path, messages)
             if source is None:
@@ -865,7 +872,8 @@ class CloudRouterSdkGuardian:
             self._check_common_type_exports(sdk_dir, common_source, messages)
 
         for source_path in sorted(types_dir.glob("*.ts")):
-            if source_path.name in {"index.ts", "common.ts"}:
+            if source_path.name in {"index.ts", "common.ts"} or source_path.name.endswith(".d.ts"):
+                # Skip compiled declaration twins; only sources are audited.
                 continue
             source = self._read_text(source_path, messages)
             if source is None:

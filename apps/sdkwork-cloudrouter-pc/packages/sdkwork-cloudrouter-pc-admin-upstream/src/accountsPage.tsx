@@ -676,10 +676,10 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
         if (account) {
           setSelection(toSelection(items.map(({ resourceCode, resourceGroupCode, grantType, priority, status }) => ({ resourceCode, resourceGroupCode, grantType, priority, status }))));
           const activeCredential = credentials.find((credential) => credential.isActive) ?? credentials[0] ?? null;
-          // 编辑模式回填完整明文 API Key（管理面解密返回），便于确认/修改；
-          // 无明文（旧版本/解密失败）时退回掩码。
+          // 凭据为只写（write-only）：后端从不下发明文或可解密密钥，
+          // 编辑模式统一回填掩码，仅在用户重新输入时覆盖。
           setApiKeyMasked(activeCredential?.maskedLabel ?? '');
-          setApiKeyInput(activeCredential?.secret ?? activeCredential?.maskedLabel ?? '');
+          setApiKeyInput(activeCredential?.maskedLabel ?? '');
         }
       })
       .catch((cause) => {
