@@ -31,7 +31,6 @@ bin/config.sh set --environment staging --key SDKWORK_DATABASE_PASSWORD --value 
 ## 4. Image drift (running image differs from the ledger)
 
 ```bash
-bash /opt/deploy/sdkwork-cloudrouter/bundle/release.sh status --environment staging
 ```
 
 - On drift warnings: `bin/docker-deploy.sh rollback --environment staging --to <ledger-version>`.

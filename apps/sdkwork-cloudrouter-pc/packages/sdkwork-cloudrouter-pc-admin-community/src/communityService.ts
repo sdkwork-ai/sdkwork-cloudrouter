@@ -12,8 +12,8 @@ import {
   getSdkworkCommunityBackendSdkClient,
 } from '@sdkwork/cloudroutes-pc-commons/sdk-clients';
 import {
-  readMediaResource,
-  readMediaResourceUrl,
+  readDriveMediaReference,
+  toDriveMediaReference,
   type CloudRouterMediaResource,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 
@@ -559,8 +559,8 @@ function normalizeAdminCategory(value: unknown): CommunityAdminCategoryItem {
     slug: requireRecordString(item, 'slug', 'Community category slug is required'),
     title: requireRecordString(item, 'title', 'Community category title is required'),
     description: description || undefined,
-    coverImage: readMediaResource(item['coverImage']),
-    avatar: readMediaResource(item['avatar']),
+    coverImage: readDriveMediaReference(item['coverImage']),
+    avatar: readDriveMediaReference(item['avatar']),
     ownerId: readString(item, 'ownerId').trim() || undefined,
     memberCount: readString(item, 'memberCount').trim() || '0',
     memberLimit: memberLimit || undefined,
@@ -678,8 +678,8 @@ function buildCircleMutationRequest(input: CommunityAdminCircleUpdateInput) {
   return {
     title: requiredCommunityText(input.title, 'title'),
     description: optionalBoundedText(input.description),
-    coverImage: readMediaResourceUrl(input.coverImage),
-    avatar: readMediaResourceUrl(input.avatar),
+    coverImage: toDriveMediaReference(input.coverImage),
+    avatar: toDriveMediaReference(input.avatar),
     isPaid: input.isPaid,
     memberLimit: optionalNonNegativeInt64String(input.memberLimit, 'memberLimit'),
     price: optionalMoneyNumber(input.price, 'price'),

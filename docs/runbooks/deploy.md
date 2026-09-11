@@ -22,7 +22,6 @@ bin/docker-deploy.sh upgrade --environment staging --image-tag <新版本>
 
 ```bash
 bin/docker-deploy.sh status --environment staging      # 容器与端口
-bash /opt/deploy/sdkwork-cloudrouter/bundle/release.sh status --environment staging
 ```
 
 ## 4. 回滚
@@ -42,7 +41,4 @@ bin/docker-deploy.sh stop    --environment staging               # 停止（保�
 bin/docker-deploy.sh start   --environment staging               # 启动已停止的栈（先起嵌入式依赖）
 bin/docker-deploy.sh restart --environment staging               # 只重启应用实例（依赖与网关不中断）
 bin/docker-deploy.sh down --environment staging --purge --yes
-bin/docker-deploy.sh stop    --environment staging               # 停止（保留容器与卷，不重打包）
-bin/docker-deploy.sh start   --environment staging               # 启动已停止的栈（先起嵌入式依赖）
-bin/docker-deploy.sh restart --environment staging               # 只重启应用实例（依赖与网关不中断）
 ```

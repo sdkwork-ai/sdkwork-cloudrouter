@@ -31,7 +31,6 @@ bin/config.sh set --environment staging --key SDKWORK_DATABASE_PASSWORD --value 
 ## 4. 镜像漂移（跑的不是台账版本）
 
 ```bash
-bash /opt/deploy/sdkwork-cloudrouter/bundle/release.sh status --environment staging
 ```
 
 - 出现 drift 告警：`bin/docker-deploy.sh rollback --environment staging --to <台账版本>`。

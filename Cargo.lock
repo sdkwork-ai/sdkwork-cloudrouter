@@ -3986,7 +3986,6 @@ dependencies = [
  "base64",
  "bytes",
  "encoding_rs",
- "futures-channel",
  "futures-core",
  "futures-util",
  "h2 0.4.19",
@@ -4737,7 +4736,6 @@ name = "sdkwork-agents-tool-cloudrouter"
 version = "0.1.0"
 dependencies = [
  "cloudrouter-open-sdk",
- "reqwest 0.13.4",
  "sdkwork-agent-kernel",
  "sdkwork-agent-provider-rig",
  "sdkwork-agents-tool-contract",

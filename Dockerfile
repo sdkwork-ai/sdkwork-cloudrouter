@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 # sdkwork-cloudrouter standalone container image.
 # runtimeTarget = "container", deploymentProfile = "standalone".
 # Build context: an unpacked install-package container directory containing

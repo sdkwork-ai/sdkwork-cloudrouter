@@ -1,6 +1,3 @@
-import {
-  readMediaResourceUrl,
-} from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -11,6 +8,10 @@ import {
   Trash2,
 } from 'lucide-react';
 import { resolveProblemMessage } from '@sdkwork/cloudroutes-pc-commons';
+import {
+  useResolvedMediaResourceUrl,
+  type CloudRouterMediaResource,
+} from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { CommunityAdminPageShell } from '../components/CommunityAdminPageShell';
 import {
   CommunityEmptyState,
@@ -37,8 +38,17 @@ import {
 } from '../communityService';
 import { formatCommunityCount, formatCommunityMoney } from '../communityFormat';
 
-function toMediaResourceUrl(value: unknown): string {
-  return typeof value === 'string' ? value : readMediaResourceUrl(value);
+/** 圈子头像：Drive 媒体引用需要异步换取下载地址，因此独立成组件使用 hook。 */
+function CircleAvatar({ avatar, title }: { avatar?: CloudRouterMediaResource; title: string }) {
+  const src = useResolvedMediaResourceUrl(avatar);
+  if (src) {
+    return <img alt="" className="h-8 w-8 rounded-full object-cover" src={src} />;
+  }
+  return (
+    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-lobster-100 text-xs font-semibold text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-300">
+      {title.slice(0, 1).toUpperCase()}
+    </span>
+  );
 }
 
 export function CommunityCirclesPage() {
@@ -183,13 +193,7 @@ export function CommunityCirclesPage() {
                 <tr key={circle.id} className="border-b border-slate-50 hover:bg-slate-50 dark:border-white/5 dark:hover:bg-white/5">
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-3">
-                      {circle.avatar ? (
-                        <img src={toMediaResourceUrl(circle.avatar)} alt="" className="h-8 w-8 rounded-full object-cover" />
-                      ) : (
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-lobster-100 text-xs font-semibold text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-300">
-                          {circle.title.slice(0, 1).toUpperCase()}
-                        </span>
-                      )}
+                      <CircleAvatar avatar={circle.avatar} title={circle.title} />
                       <div className="min-w-0">
                         <p className="truncate font-medium text-slate-900 dark:text-white">{circle.title}</p>
                         {circle.isRecommended ? (

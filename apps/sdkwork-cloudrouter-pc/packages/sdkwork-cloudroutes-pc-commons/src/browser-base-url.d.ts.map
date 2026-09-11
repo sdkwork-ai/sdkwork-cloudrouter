@@ -1,1 +1,1 @@
-{"version":3,"file":"browser-base-url.d.ts","sourceRoot":"","sources":["browser-base-url.ts"],"names":[],"mappings":"AAWA,6EAA6E;AAC7E,wBAAgB,8BAA8B,CAC5C,OAAO,EAAE,MAAM,EACf,QAAQ,GAAE,IAAI,CAAC,QAAQ,EAAE,UAAU,CAAC,GAAG,SAAuE,GAC7G,MAAM,CAoBR"}
+{"version":3,"file":"browser-base-url.d.ts","sourceRoot":"","sources":["browser-base-url.ts"],"names":[],"mappings":"AAWA;;;;;;GAMG;AACH,wBAAgB,8BAA8B,CAC5C,OAAO,EAAE,MAAM,EACf,QAAQ,GAAE,IAAI,CAAC,QAAQ,EAAE,UAAU,GAAG,UAAU,CAAC,GAAG,SAAuE,GAC1H,MAAM,CA4BR"}

@@ -100,8 +100,6 @@
     "check:portal-dist": "node scripts/check-portal-dist-consistency.mjs --check",
     "check:packaging": "pnpm check:package-content && pnpm check:portal-dist && pnpm build:container:check && pnpm install:packages:check && pnpm install:native:check",
     "check:iam-web-adapter-standard": "node ../sdkwork-specs/tools/check-iam-web-adapter-standard.mjs --root .",
-    "sdk:file:artifacts:check": "node scripts/materialize-file-sdk-artifacts.mjs --check",
-    "sdk:file:artifacts:write": "node scripts/materialize-file-sdk-artifacts.mjs --apply",
     "api:materialize:check": "node scripts/materialize-apis-contracts.mjs --check",
     "api:materialize:write": "node scripts/materialize-apis-contracts.mjs --apply",
     "api:standard-extensions:check": "node tools/sync-cloudrouter-api-standard-extensions.mjs --check",

@@ -1,9 +1,7 @@
-import {
-  readMediaResourceUrl,
-  toNullableExternalUrlMediaResource,
-} from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { CloudRouterMediaResource } from '@sdkwork/cloudroutes-pc-commons/runtime';
+import { CommunityMediaUploadField } from '../components/CommunityMediaUploadField';
 import {
   CommunityFormFrame,
   CommunitySelectField,
@@ -49,17 +47,17 @@ function splitTags(value: string): string[] {
     .filter((entry) => entry.length > 0);
 }
 
-function toMediaResourceUrl(value: unknown): string {
-  return typeof value === 'string' ? value : readMediaResourceUrl(value);
-}
-
 export function CircleDrawerForm({ mode, initialValue, onSubmit }: CircleDrawerFormProps) {
   const { t } = useTranslation();
   const [slug, setSlug] = useState(initialValue?.slug ?? '');
   const [title, setTitle] = useState(initialValue?.title ?? '');
   const [description, setDescription] = useState(initialValue?.description ?? '');
-  const [coverImage, setCoverImage] = useState(toMediaResourceUrl(initialValue?.coverImage));
-  const [avatar, setAvatar] = useState(toMediaResourceUrl(initialValue?.avatar));
+  const [coverImage, setCoverImage] = useState<CloudRouterMediaResource | undefined>(
+    initialValue?.coverImage,
+  );
+  const [avatar, setAvatar] = useState<CloudRouterMediaResource | undefined>(
+    initialValue?.avatar,
+  );
   const [priority, setPriority] = useState(initialValue ? String(initialValue.priority) : '0');
   const [enabled, setEnabled] = useState<'' | 'true' | 'false'>(
     initialValue == null ? 'true' : initialValue.enabled ? 'true' : 'false',
@@ -90,8 +88,8 @@ export function CircleDrawerForm({ mode, initialValue, onSubmit }: CircleDrawerF
       const circle: CommunityAdminCircleUpdateInput = {
         title: title.trim(),
         description: description.trim() || undefined,
-        coverImage: toNullableExternalUrlMediaResource(coverImage.trim()) ?? undefined,
-        avatar: toNullableExternalUrlMediaResource(avatar.trim()) ?? undefined,
+        coverImage,
+        avatar,
         isPaid: isPaid === '' ? undefined : isPaid === 'true',
         memberLimit: parseOptionalNonNegativeInt(memberLimit, undefined),
         price: parseOptionalMoney(price),
@@ -129,17 +127,22 @@ export function CircleDrawerForm({ mode, initialValue, onSubmit }: CircleDrawerF
         onChange={setDescription}
         placeholder={t('admin.community.circles.form.descriptionPlaceholder', 'Circle description')}
       />
-      <CommunityTextField
-        label={t('admin.community.circles.form.coverImage', 'Cover image URL')}
-        value={coverImage}
+      <CommunityMediaUploadField
+        hint={t('admin.community.circles.form.coverImageHint', '建议尺寸 16:9，最大 10MB')}
+        label={t('admin.community.circles.form.coverImage', '封面图')}
+        maxSizeBytes={10 * 1024 * 1024}
         onChange={setCoverImage}
-        type="url"
+        previewFit="object-cover"
+        slot="community-circle-cover"
+        value={coverImage}
       />
-      <CommunityTextField
-        label={t('admin.community.circles.form.avatar', 'Avatar URL')}
-        value={avatar}
+      <CommunityMediaUploadField
+        hint={t('admin.community.circles.form.avatarHint', '建议正方形，最大 5MB')}
+        label={t('admin.community.circles.form.avatar', '圈子头像')}
         onChange={setAvatar}
-        type="url"
+        shape="circle"
+        slot="community-circle-avatar"
+        value={avatar}
       />
       <div className="grid grid-cols-2 gap-4">
         <CommunityTextField

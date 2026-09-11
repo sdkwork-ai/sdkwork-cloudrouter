@@ -24,7 +24,6 @@ bin/docker-deploy.sh upgrade --environment staging --image-tag <new-version>
 
 ```bash
 bin/docker-deploy.sh status --environment staging
-bash /opt/deploy/sdkwork-cloudrouter/bundle/release.sh status --environment staging
 ```
 
 ## 4. Rollback
@@ -45,7 +44,4 @@ bin/docker-deploy.sh stop    --environment staging               # stop (keeps c
 bin/docker-deploy.sh start   --environment staging               # start a stopped stack (embedded deps first)
 bin/docker-deploy.sh restart --environment staging               # restart app instances only (deps and gateway stay up)
 bin/docker-deploy.sh down --environment staging --purge --yes
-bin/docker-deploy.sh stop    --environment staging               # stop (keeps containers and volumes; no repackage)
-bin/docker-deploy.sh start   --environment staging               # start a stopped stack (embedded deps first)
-bin/docker-deploy.sh restart --environment staging               # restart app instances only (deps and gateway stay up)
 ```

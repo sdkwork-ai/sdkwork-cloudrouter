@@ -6,16 +6,16 @@ import { getLoadErrorMessage } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { BusinessStatePanel } from '@sdkwork/cloudroutes-pc-commons';
 import {
   readMediaResourceUrl,
-  toExternalUrlMediaResource,
+  useCloudRouterUpload,
   useResolvedMediaResourceUrl,
   type CloudRouterMediaResource,
+  type CloudRouterUploadSlotCode,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import {
   DEFAULT_SITE_SETTINGS,
   SiteSettingsService,
   type SiteSettingsForm,
 } from './SiteSettingsService';
-import { uploadQrCodeImage } from './qrCodeUpload';
 
 export { DEFAULT_SITE_SETTINGS, SiteSettingsService, toSiteSettings } from './SiteSettingsService';
 export type { SiteSettingsForm } from './SiteSettingsService';
@@ -96,8 +96,11 @@ export function CloudRouterSiteSettingsPage() {
   const updateField = (field: keyof SiteSettingsForm, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
   };
-  const updateMediaField = (field: 'logo' | 'icon' | 'favicon', value: string) => {
-    setForm((current) => ({ ...current, [field]: toExternalUrlMediaResource(value, 'image') }));
+  const updateMediaField = (
+    field: 'logo' | 'icon' | 'favicon',
+    media: CloudRouterMediaResource | undefined,
+  ) => {
+    setForm((current) => ({ ...current, [field]: media }));
   };
   const updateQrCodeField = (
     field: 'officialAccountQrCode' | 'communityGroupQrCode',
@@ -106,8 +109,6 @@ export function CloudRouterSiteSettingsPage() {
     setForm((current) => ({ ...current, [field]: media }));
   };
   const logoSource = readMediaResourceUrl(form.logo);
-  const iconSource = readMediaResourceUrl(form.icon);
-  const faviconSource = readMediaResourceUrl(form.favicon);
 
   if (loading) {
     return (
@@ -180,9 +181,25 @@ export function CloudRouterSiteSettingsPage() {
         <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-white/10 dark:bg-[#1a1a1a]">
           <SectionHeader icon={<Image className="h-5 w-5 text-lobster-500" />} title={t('admin.siteSettings.sections.assets')} />
           <div className="mt-5 grid grid-cols-1 gap-4">
-            <TextField label={t('admin.siteSettings.fields.logo')} onChange={(value) => updateMediaField('logo', value)} value={logoSource} />
-            <TextField label={t('admin.siteSettings.fields.icon')} onChange={(value) => updateMediaField('icon', value)} value={iconSource} />
-            <TextField label={t('admin.siteSettings.fields.favicon')} onChange={(value) => updateMediaField('favicon', value)} value={faviconSource} />
+            <MediaUploadField
+              label={t('admin.siteSettings.fields.logo')}
+              onChange={(media) => updateMediaField('logo', media)}
+              slot="site-logo"
+              value={form.logo}
+            />
+            <MediaUploadField
+              label={t('admin.siteSettings.fields.icon')}
+              onChange={(media) => updateMediaField('icon', media)}
+              slot="site-icon"
+              value={form.icon}
+            />
+            <MediaUploadField
+              label={t('admin.siteSettings.fields.favicon')}
+              maxSizeBytes={1024 * 1024}
+              onChange={(media) => updateMediaField('favicon', media)}
+              slot="site-favicon"
+              value={form.favicon}
+            />
             <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 dark:bg-white">
                 {logoSource ? <img alt={form.siteName} className="h-7 w-7 object-contain" src={logoSource} /> : <Image className="h-5 w-5 text-white dark:text-slate-900" />}
@@ -262,47 +279,62 @@ function SectionDivider({ title }: { title: string }) {
   );
 }
 
-function QrCodeField({ label, value, onChange }: {
+/**
+ * 站点媒体字段：站点资源与二维码统一走 Drive uploader。
+ *
+ * 上传归类、体积与 MIME 准入、进度与错误处理全部由统一上传目录与
+ * `useCloudRouterUpload` 承担，本组件只负责渲染与状态映射。
+ */
+function MediaUploadField({
+  label,
+  slot,
+  value,
+  onChange,
+  accept = 'image/*',
+  maxSizeBytes = 2 * 1024 * 1024,
+  previewFit = 'object-contain',
+  previewIcon: PreviewIcon = Image,
+}: {
   label: string;
+  slot: CloudRouterUploadSlotCode;
   value: CloudRouterMediaResource | undefined;
   onChange: (media: CloudRouterMediaResource | undefined) => void;
+  accept?: string;
+  maxSizeBytes?: number;
+  previewFit?: string;
+  previewIcon?: React.ComponentType<{ className?: string }>;
 }) {
   const { t } = useTranslation();
   const previewUrl = useResolvedMediaResourceUrl(value);
   const [items, setItems] = useState<FileUploadItem[]>([]);
-  const [uploading, setUploading] = useState(false);
+
+  const uploader = useCloudRouterUpload({
+    slot,
+    onUploaded: (result) => onChange(result.media),
+  });
+
+  const markItem = (itemId: string, status: FileUploadItem['status'], progress?: number) => {
+    setItems((current) => current.map((item) =>
+      item.id === itemId ? { ...item, status, ...(progress === undefined ? {} : { progress }) } : item));
+  };
 
   const handleValueChange = (nextItems: FileUploadItem[]) => {
     setItems(nextItems);
     const nextFile = nextItems.find((item) => item.file);
-    if (!nextFile || uploading) {
+    if (!nextFile?.file || uploader.isUploading) {
       return;
     }
-    setUploading(true);
-    setItems((current) => current.map((item) =>
-      item.id === nextFile.id ? { ...item, status: 'uploading' as const, progress: 0 } : item));
-    uploadQrCodeImage(nextFile.file as File)
-      .then((media) => {
-        onChange(media);
-        setItems((current) => current.map((item) =>
-          item.id === nextFile.id ? { ...item, status: 'success' as const, progress: 100 } : item));
-      })
-      .catch((error) => {
-        setItems((current) => current.map((item) =>
-          item.id === nextFile.id
-            ? {
-                ...item,
-                status: 'error' as const,
-                error: getLoadErrorMessage(error, t('admin.siteSettings.errors.qrUploadFallback')),
-              }
-            : item));
-      })
-      .finally(() => setUploading(false));
+    const pendingId = nextFile.id;
+    markItem(pendingId, 'uploading', 0);
+    void uploader.upload(nextFile.file).then((result) => {
+      markItem(pendingId, result ? 'success' : 'error', result ? 100 : 0);
+    });
   };
 
   const clear = () => {
     onChange(undefined);
     setItems([]);
+    uploader.reset();
   };
 
   return (
@@ -323,26 +355,48 @@ function QrCodeField({ label, value, onChange }: {
       <div className="flex items-start gap-3">
         <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5">
           {previewUrl ? (
-            <img alt={label} className="h-full w-full object-cover" src={previewUrl} />
+            <img alt={label} className={`h-full w-full ${previewFit}`} src={previewUrl} />
           ) : (
-            <QrCode className="h-8 w-8 text-slate-300 dark:text-slate-600" />
+            <PreviewIcon className="h-8 w-8 text-slate-300 dark:text-slate-600" />
           )}
         </div>
         <div className="min-w-0 flex-1">
           <FileUpload
-            accept="image/*"
-            disabled={uploading}
+            accept={accept}
+            disabled={uploader.isUploading}
             maxFiles={1}
-            maxSize={10 * 1024 * 1024}
+            maxSize={maxSizeBytes}
             multiple={false}
             onValueChange={handleValueChange}
             replaceOnMax
             value={items}
             variant="image"
           />
+          {uploader.error ? (
+            <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{uploader.error}</p>
+          ) : null}
         </div>
       </div>
     </div>
+  );
+}
+
+function QrCodeField({ label, value, onChange }: {
+  label: string;
+  value: CloudRouterMediaResource | undefined;
+  onChange: (media: CloudRouterMediaResource | undefined) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <MediaUploadField
+      label={label}
+      maxSizeBytes={10 * 1024 * 1024}
+      onChange={onChange}
+      previewFit="object-cover"
+      previewIcon={QrCode}
+      slot="site-qr-code"
+      value={value}
+    />
   );
 }
 
