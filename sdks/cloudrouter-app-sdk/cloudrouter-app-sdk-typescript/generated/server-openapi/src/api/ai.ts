@@ -5,7 +5,7 @@ import type { AppRoutingAccountGroupListResponse, AppRoutingApiKeyListResponse, 
 
 
 export interface AiUsageLogsListParams {
-  page?: number;
+  cursor?: string;
   pageSize?: number;
   q?: string;
   status?: 'success' | 'error';
@@ -24,7 +24,7 @@ export class AiUsageLogsApi {
 /** List logs */
   async list(params?: AiUsageLogsListParams, requestOptions?: ApiRequestOptions): Promise<UsageLogsResponse> {
     const query = buildQueryString([
-      { name: 'page', value: params?.page, style: 'form', explode: true, allowReserved: false },
+      { name: 'cursor', value: params?.cursor, style: 'form', explode: true, allowReserved: false },
       { name: 'page_size', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'q', value: params?.q, style: 'form', explode: true, allowReserved: false },
       { name: 'status', value: params?.status, style: 'form', explode: true, allowReserved: false },

@@ -2,7 +2,9 @@
  * SDK transport locale propagation (`I18N_SPEC.md` §4/§10).
  *
  * Wraps the SDK HTTP boundary so every request carries the active runtime
- * locale through `Accept-Language` and the approved `X-SdkWork-Locale` header.
+ * locale through the standard `Accept-Language` request header. Locale
+ * negotiation is standard-header only: no SDKWork-specific locale header
+ * exists (`I18N_SPEC.md` §4).
  * The locale is resolved from the app i18n runtime mirror (explicit user
  * preference, then `document.documentElement.lang`, then the browser language)
  * at request time — language switches take effect on the next request without
@@ -70,7 +72,6 @@ function withLocaleHeaders(options: unknown): unknown {
     ...base,
     headers: {
       'Accept-Language': locale,
-      'X-SdkWork-Locale': locale,
       ...(base.headers ?? {}),
     },
   };

@@ -705,14 +705,35 @@ impl EdgeServerConfig {
         // Registered SDKWork desktop/mini-program client origins keep working
         // even when the deployment env files omit them from the allow-list.
         sdkwork_web_core::merge_registered_sdkwork_client_origins(&mut policy.allowed_origins);
-        // Keep the hand-written behavior contract: the SDK clients send these
-        // request headers and read x-request-id from responses.
+        // Public gateway / tracing request headers that are part of a documented
+        // external contract rather than an SDKWork-internal protocol field.
+        // `x-goog-api-key` is the Google-compatible gateway credential header and
+        // `x-request-id` the standard tracing correlation header; both are
+        // preserved for gateway-style and tracing callers.
+        //
+        // Locale is *not* listed here: `I18N_SPEC.md` §4 retires every custom
+        // locale request header and negotiates through the standard
+        // `Accept-Language`, which the framework default allowlist already
+        // carries. No SDKWork-specific header is ever added to this gate.
+        //
+        // The gate is enumerated explicitly and deliberately never widened to the
+        // development `*` marker: `CorsPolicy::apply_headers_from_origin` renders a
+        // wildcard allowlist as a literal `*` while also emitting
+        // `Access-Control-Allow-Credentials: true`, which browsers reject. Naming
+        // the headers keeps the same gate valid in every lifecycle environment.
         for header in ["x-goog-api-key", "x-request-id"] {
             if !policy.allowed_headers.iter().any(|value| value == header) {
                 policy.allowed_headers.push(header.to_owned());
             }
         }
-        policy.expose_headers = vec!["x-request-id".to_owned()];
+        // Merge the infrastructure response headers browser clients read back
+        // (`WEB_FRAMEWORK_SPEC.md` §12 requires `X-Request-Id` *and*
+        // `X-SDKWork-Trace-Id`); assigning here would drop the trace header.
+        for header in ["x-request-id", "x-sdkwork-trace-id"] {
+            if !policy.expose_headers.iter().any(|value| value == header) {
+                policy.expose_headers.push(header.to_owned());
+            }
+        }
         self.portal_cors_policy = policy;
     }
 

@@ -1,8 +1,9 @@
 //! Request locale negotiation and problem-detail localization.
 //!
 //! Aligned with `I18N_SPEC.md`:
-//! - §2 locale selection (SDK locale header > `Accept-Language` > default > fallback);
-//! - §4 locale headers (`X-SdkWork-Locale`, `Accept-Language`, `Content-Language`, `Vary`);
+//! - §2 locale selection (`Accept-Language` > default > fallback);
+//! - §4 locale headers (standard `Accept-Language`, `Content-Language`, `Vary` only;
+//!   no custom locale request header exists);
 //! - §8-§9 problem-detail localization (stable `code`/`traceId`/`status`/`type`/`i18nKey`
 //!   are never translated; `detail` is localized only for specific business/validation keys
 //!   where the message catalog owns a safe template).
@@ -34,17 +35,12 @@ pub const CLOUD_ROUTER_DEFAULT_LOCALE: &str = "en-US";
 /// Explicit final locale when a requested locale cannot be satisfied.
 pub const CLOUD_ROUTER_FALLBACK_LOCALE: &str = "en-US";
 
-/// Approved SDKWork locale override header, produced by the SDK runtime locale provider
-/// only (`I18N_SPEC.md` §4, §10). Feature code must not assemble it manually.
-pub const SDK_LOCALE_HEADER: &str = "x-sdkwork-locale";
-
 /// Largest problem+json body the localization middleware will read.
 const PROBLEM_LOCALIZATION_MAX_BYTES: usize = 64 * 1024;
 
 /// Where the effective locale came from (`I18N_SPEC.md` §3 `WebLocaleContext.source`).
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum LocaleSource {
-    SdkLocaleHeader,
     AcceptLanguage,
     Default,
 }
@@ -118,22 +114,10 @@ impl CloudRouterLocalePolicy {
 
     /// Resolves the effective request locale.
     ///
-    /// Priority (`I18N_SPEC.md` §2): SDK locale header > `Accept-Language` >
-    /// application `defaultLocale` > explicit `fallbackLocale`.
-    pub fn resolve(
-        &self,
-        sdk_locale: Option<&str>,
-        accept_language: Option<&str>,
-    ) -> RequestLocale {
-        if let Some(tag) = sdk_locale.and_then(normalize_locale_tag) {
-            if self.supports(&tag) {
-                return RequestLocale {
-                    effective: tag.clone(),
-                    requested: Some(tag),
-                    source: LocaleSource::SdkLocaleHeader,
-                };
-            }
-        }
+    /// Priority (`I18N_SPEC.md` §2): `Accept-Language` > application
+    /// `defaultLocale` > explicit `fallbackLocale`. Locale negotiation is
+    /// standard-header only; there is no custom SDKWork locale request header.
+    pub fn resolve(&self, accept_language: Option<&str>) -> RequestLocale {
         if let Some(best) = best_accept_language_match(accept_language, self) {
             return RequestLocale {
                 effective: best.clone(),
@@ -390,15 +374,11 @@ async fn request_locale_middleware(
     mut request: Request,
     next: Next,
 ) -> Response {
-    let sdk_locale = request
-        .headers()
-        .get(SDK_LOCALE_HEADER)
-        .and_then(|value| value.to_str().ok());
     let accept_language = request
         .headers()
         .get(header::ACCEPT_LANGUAGE)
         .and_then(|value| value.to_str().ok());
-    let locale = policy.resolve(sdk_locale, accept_language);
+    let locale = policy.resolve(accept_language);
     tracing::debug!(
         effective = %locale.effective,
         requested = ?locale.requested,
@@ -526,22 +506,22 @@ mod tests {
     }
 
     #[test]
-    fn resolve_prefers_sdk_locale_header() {
-        let resolved = policy().resolve(Some("zh-CN"), Some("en-US,en;q=0.9"));
+    fn resolve_uses_accept_language_highest_quality() {
+        let resolved = policy().resolve(Some("en-US;q=0.4, zh-CN;q=0.9"));
         assert_eq!("zh-CN", resolved.effective());
-        assert_eq!(LocaleSource::SdkLocaleHeader, resolved.source);
+        assert_eq!(LocaleSource::AcceptLanguage, resolved.source);
     }
 
     #[test]
-    fn resolve_uses_accept_language_when_sdk_header_absent() {
-        let resolved = policy().resolve(None, Some("ja-JP,en;q=0.9"));
+    fn resolve_uses_accept_language() {
+        let resolved = policy().resolve(Some("ja-JP,en;q=0.9"));
         assert_eq!("ja-JP", resolved.effective());
         assert_eq!(LocaleSource::AcceptLanguage, resolved.source);
     }
 
     #[test]
     fn resolve_falls_back_to_default_for_unsupported_locales() {
-        let resolved = policy().resolve(Some("xx-XX"), Some("xx;q=0.9"));
+        let resolved = policy().resolve(Some("xx;q=0.9"));
         assert_eq!(CLOUD_ROUTER_DEFAULT_LOCALE, resolved.effective());
         assert_eq!(LocaleSource::Default, resolved.source);
         assert_eq!(None, resolved.requested);
@@ -549,7 +529,7 @@ mod tests {
 
     #[test]
     fn resolve_skips_zero_quality_accept_language() {
-        let resolved = policy().resolve(None, Some("zh-CN;q=0"));
+        let resolved = policy().resolve(Some("zh-CN;q=0"));
         assert_eq!(CLOUD_ROUTER_DEFAULT_LOCALE, resolved.effective());
     }
 
@@ -684,6 +664,38 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn middleware_ignores_retired_custom_locale_header() {
+        use axum::extract::Extension;
+        use axum::routing::get;
+        use tower::ServiceExt;
+
+        async fn handler(Extension(locale): Extension<RequestLocale>) -> impl IntoResponse {
+            (StatusCode::OK, locale.effective().to_owned())
+        }
+
+        let router = with_request_locale(Router::new().route("/locale", get(handler)));
+        let response = router
+            .oneshot(
+                Request::builder()
+                    .uri("/locale")
+                    // The retired custom locale header must not influence negotiation.
+                    .header("x-sdkwork-locale", "zh-CN") // i18n-retired-locale-header-allow
+                    .header(header::ACCEPT_LANGUAGE, "ja-JP")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(StatusCode::OK, response.status());
+        assert_eq!(
+            "ja-JP",
+            axum::body::to_bytes(response.into_body(), 1024)
+                .await
+                .unwrap()
+        );
+    }
+
+    #[tokio::test]
     async fn middleware_localizes_problem_responses() {
         use axum::routing::get;
         use tower::ServiceExt;
@@ -713,7 +725,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri("/problem")
-                    .header(SDK_LOCALE_HEADER, "zh-CN")
+                    .header(header::ACCEPT_LANGUAGE, "zh-CN")
                     .body(Body::empty())
                     .unwrap(),
             )

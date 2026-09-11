@@ -54,23 +54,16 @@ impl AiRoutingCacheInvalidator {
         Ok(value.and_then(|value| value.as_i64()).unwrap_or(0))
     }
 
-    /// Atomically-ish bumps the routing config version (admin configuration change).
-    ///
-    /// NOTE: get+set is not a single Redis INCR; for low-frequency admin writes that
-    /// is acceptable. For higher concurrency, a Redis `INCR` primitive should be used.
-    /// The key point is that readers compare versions, so a stale snapshot generated
-    /// before this bump is rejected immediately without waiting for the namespace
-    /// sweep to complete.
+    /// Bumps the routing config version (admin configuration change) with a
+    /// single atomic backend `INCR`, so two admin writes racing on different
+    /// replicas can never stamp the same version.
     pub async fn bump_routing_config_version(&self) -> DomainResult<i64> {
-        let next = self.current_routing_config_version().await? + 1;
         self.manager
-            .set_json(
+            .increment_json(
                 ROUTING_CONFIG_VERSION_CACHE_NAMESPACE,
                 Self::CONFIG_VERSION_KEY,
-                serde_json::json!(next),
             )
-            .await?;
-        Ok(next)
+            .await
     }
 
     pub async fn invalidate_routing_facts(&self) -> DomainResult<()> {

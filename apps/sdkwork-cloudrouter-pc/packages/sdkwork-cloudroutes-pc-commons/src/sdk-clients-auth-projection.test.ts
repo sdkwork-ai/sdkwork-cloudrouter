@@ -68,13 +68,14 @@ test('sanitizeSdkHttpRequestOptions strips projection headers on every surface',
   }
 });
 
-test('sanitizeSdkHttpRequestOptions keeps approved locale headers and non-projection headers', () => {
+test('sanitizeSdkHttpRequestOptions keeps standard locale header and drops retired protocol headers', () => {
   assert.deepEqual(
     sanitizeSdkHttpRequestOptions(`${APP_API_PREFIX}/notification/notifications`, {
       method: 'GET',
       headers: {
         'Accept-Language': 'zh-CN',
-        'X-SdkWork-Locale': 'zh-CN',
+        // Retired by `I18N_SPEC.md` §4; stripped defensively.
+        'X-SdkWork-Locale': 'zh-CN', // i18n-retired-locale-header-allow
         'Idempotency-Key': 'req-1',
         Authorization: 'Bearer AU-456',
       },
@@ -83,7 +84,6 @@ test('sanitizeSdkHttpRequestOptions keeps approved locale headers and non-projec
       method: 'GET',
       headers: {
         'Accept-Language': 'zh-CN',
-        'X-SdkWork-Locale': 'zh-CN',
         'Idempotency-Key': 'req-1',
         Authorization: 'Bearer AU-456',
       },

@@ -163,7 +163,16 @@ sdks/**/generated/
 # Local build artifacts / workspace junk (auto-sync)
 
 # Compiled TypeScript output accidentally committed under PC package sources;
-# package exports point at src/*.ts, so these are build droppings.
+# package exports point at src/*.ts, so these are build droppings: never edit or
+# commit them, delete them. `.d.ts.map` is listed because it is emitted alongside
+# the declarations and has no other ignore rule to catch it.
 apps/sdkwork-cloudrouter-pc/packages/*/src/**/*.js
 apps/sdkwork-cloudrouter-pc/packages/*/src/**/*.js.map
 apps/sdkwork-cloudrouter-pc/packages/*/src/**/*.d.ts
+apps/sdkwork-cloudrouter-pc/packages/*/src/**/*.d.ts.map
+
+# Compiled facade droppings next to the composed SDK index (build output only).
+sdks/*/*-typescript/src/index.js
+sdks/*/*-typescript/src/index.js.map
+sdks/*/*-typescript/src/index.d.ts
+sdks/*/*-typescript/src/index.d.ts.map

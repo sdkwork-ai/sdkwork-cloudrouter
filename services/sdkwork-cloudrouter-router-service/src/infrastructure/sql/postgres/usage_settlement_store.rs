@@ -12,10 +12,10 @@ use sdkwork_utils_rust::sha256_hash;
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
 use crate::domain::DomainError;
-use crate::infrastructure::sql::postgres::admin_marketing_store::load_recharge_settings_model;
+use crate::infrastructure::sql::postgres::admin_marketing_store::load_recharge_settings_model_for_transaction;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
-    parse_recharge_settings_model, token_points_for_charge, AdminMarketingSubject,
+    parse_recharge_settings_model, token_points_for_charge,
     RechargeSettingsModel, UsageSettlementCommand, UsageSettlementFuture, UsageSettlementOutcome,
     UsageSettlementStore, MAX_PRICING_SNAPSHOT_BYTES,
 };
@@ -203,9 +203,16 @@ async fn settle_pending_usage_once(
     let groups = collect_settlement_groups(&mut tx, &command, usage_facts, &mut outcome).await?;
     for group in groups {
         let first = &group.candidates[0].usage_fact;
-        let settings =
-            load_group_settings(pool, first.tenant_id, first.organization_id, first.user_id)
-                .await?;
+        // Load group settings on the OPEN transaction connection: taking a
+        // second pool connection while row locks are held self-deadlocks the
+        // worker once concurrent claim batches saturate the pool.
+        let settings = load_group_settings(
+            &mut tx,
+            first.tenant_id,
+            first.organization_id,
+            first.user_id,
+        )
+        .await?;
         let group_outcome =
             settle_usage_group(&mut tx, &command, &group, &settings, account_store).await?;
         outcome.settled_count += group_outcome.settled_count;
@@ -381,25 +388,20 @@ async fn already_settled(
 }
 
 async fn load_group_settings(
-    pool: &PgPool,
+    tx: &mut Transaction<'_, Postgres>,
     tenant_id: i64,
     organization_id: i64,
     user_id: i64,
 ) -> SettlementResult<RechargeSettingsModel> {
     // Tenant-scoped cash→points rule first; falls back to the platform catalog
     // and finally to the model defaults (CNY base, 10 points/CNY, USD→CNY 7).
-    load_recharge_settings_model(
-        pool,
-        AdminMarketingSubject {
-            tenant_id,
-            organization_id,
-            operator_id: user_id,
-            operator_type: 1,
-        },
-    )
-    .await
-    .or_else(|_| parse_recharge_settings_model(None, None, None))
-    .map_err(Into::into)
+    // Runs on the claim transaction's own connection — never a second pool
+    // checkout while `FOR UPDATE` row locks are held.
+    let _ = user_id;
+    load_recharge_settings_model_for_transaction(tx, tenant_id, organization_id)
+        .await
+        .or_else(|_| parse_recharge_settings_model(None, None, None))
+        .map_err(Into::into)
 }
 
 async fn settle_usage_group(

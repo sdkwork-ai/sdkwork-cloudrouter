@@ -13,6 +13,7 @@
   "scripts": {
     "workflow:materialize-client-env": "node ../sdkwork-specs/tools/materialize-client-env.mjs --root .",
     "check:client-env": "node ../sdkwork-specs/tools/materialize-client-env.mjs --root . --check",
+    "check:cors-standard": "node ../sdkwork-specs/tools/check-cors-standard.mjs --root .",
     "install:deps:ensure": "node scripts/lib/ensure-cloud-router-node-deps.mjs",
     "dev": "pnpm dev:standalone",
     "stop": "pnpm exec sdkwork-app stop",
@@ -155,7 +156,7 @@
     "_sdkwork:build": "node scripts/build-cloud-router-production.mjs",
     "_sdkwork:test": "pnpm topology:validate && pnpm test:topology && node scripts/run-cloud-router-application.test.mjs",
     "_sdkwork:check": "pnpm check:application-env && pnpm check:gateway-request-identity && pnpm check:app-composition && pnpm check:vendor-workspace && pnpm check:commerce-debt && node scripts/run-cloud-router-application.mjs check",
-    "_sdkwork:verify": "node scripts/verify-cloud-router-application.mjs && pnpm run check:app-composition",
+    "_sdkwork:verify": "node scripts/verify-cloud-router-application.mjs && pnpm run check:app-composition && pnpm check:cors-standard",
     "_sdkwork:clean": "node scripts/clean-cloud-router-workspace.mjs",
     "dev:standalone": "pnpm exec sdkwork-app dev --deployment-profile standalone",
     "dev:cloud": "pnpm exec sdkwork-app dev --deployment-profile cloud",

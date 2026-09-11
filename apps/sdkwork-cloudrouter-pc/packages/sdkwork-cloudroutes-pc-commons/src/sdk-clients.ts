@@ -1622,8 +1622,8 @@ function attachCloudRouterSdkSessionAuthBoundary<TClient extends CloudRouterSdkC
     resolveCloudRouterSessionAuthHandlerOptions(),
   ) as unknown as TClient;
   // Locale propagation composes with the auth boundary on the same HTTP
-  // transport so every Cloud Router SDK request carries `Accept-Language`
-  // and `X-SdkWork-Locale` (`I18N_SPEC.md` §4/§10).
+  // transport so every Cloud Router SDK request carries the standard
+  // `Accept-Language` header (`I18N_SPEC.md` §4/§10).
   const withLocale = attachSdkworkSdkLocaleBoundary(
     withAuth as unknown as SdkworkSdkLocaleBoundaryClient,
   ) as unknown as TClient;

@@ -16,19 +16,24 @@ export function BatchCodesPage({ batchId }: { batchId: string }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [batch, setBatch] = useState<ApiRecord | null>(null);
+  const [batchError, setBatchError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
       try {
+        // Reference load bounded to one server page (PAGINATION_SPEC §8);
+        // the batch header falls back to the plain id when the batch is not
+        // on the first page.
         const page = await backendPromotionCodeBatchesList({ page: 1, pageSize: 200 });
+        if (cancelled) return;
         const matched = page.items.find((item) => String(item['id']) === batchId);
-        if (!cancelled) {
-          setBatch(matched ?? null);
-        }
-      } catch {
+        setBatch(matched ?? null);
+        setBatchError(null);
+      } catch (cause) {
         if (!cancelled) {
           setBatch(null);
+          setBatchError(cause instanceof Error ? cause.message : String(cause));
         }
       }
     })();
@@ -73,6 +78,11 @@ export function BatchCodesPage({ batchId }: { batchId: string }) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+      {batchError && (
+        <div className="shrink-0 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-300">
+          {t('admin.marketing.promotions.batchCodes.loadError', 'Batch header failed to load')}: {batchError}
+        </div>
+      )}
       <div className="flex shrink-0 items-center justify-between gap-3">
         <div>
           <button

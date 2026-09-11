@@ -2412,6 +2412,45 @@ async fn edge_server_handles_direct_portal_dev_cors_preflight() {
         .to_str()
         .unwrap()
         .contains("authorization"));
+    // The SDK transports negotiate locale through the standard `Accept-Language`
+    // header (`I18N_SPEC.md` §4); the browser-facing edge must allow it in the
+    // preflight header gate or every portal request dies as `net::ERR_FAILED`
+    // before it reaches the app API. The retired custom locale request header
+    // must never reappear in this gate: no compliant client is allowed to send
+    // it, and a stale entry silently re-approves dead protocol surface.
+    let allow_headers = allowed_response
+        .headers()
+        .get(header::ACCESS_CONTROL_ALLOW_HEADERS)
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_ascii_lowercase();
+    assert!(
+        allow_headers.contains("accept-language"),
+        "preflight header gate must allow Accept-Language, got: {allow_headers:?}"
+    );
+    assert!(
+        !allow_headers.contains("x-sdkwork-locale"), // i18n-retired-locale-header-allow
+        "the retired custom locale header must not be allowed, got: {allow_headers:?}"
+    );
+    assert!(
+        !allow_headers.contains('*'),
+        "the edge must enumerate approved headers instead of a wildcard, got: {allow_headers:?}"
+    );
+    // `WEB_FRAMEWORK_SPEC.md` §12: both infrastructure response headers must stay
+    // exposed to browser clients.
+    let expose_headers = allowed_response
+        .headers()
+        .get(header::ACCESS_CONTROL_EXPOSE_HEADERS)
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_ascii_lowercase();
+    assert!(expose_headers.contains("x-request-id"));
+    assert!(
+        expose_headers.contains("x-sdkwork-trace-id"),
+        "expose-headers must keep the trace header, got: {expose_headers:?}"
+    );
 
     let rejected_response = router
         .oneshot(

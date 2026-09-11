@@ -319,6 +319,11 @@ pub struct CacheBackendStats {
 
 pub trait CacheBackend: Send + Sync {
     fn get_json<'a>(&'a self, key: &'a str) -> CacheBackendFuture<'a, Option<Value>>;
+    /// Atomically increments an integer counter key (creating it at `1` when
+    /// absent or expired) and refreshes its TTL. Backed by Redis `INCR` or a
+    /// lock-protected local counter; required for cross-replica version
+    /// stamps where get+set would lose concurrent bumps.
+    fn increment<'a>(&'a self, key: &'a str, ttl: Duration) -> CacheBackendFuture<'a, i64>;
     fn set_json<'a>(
         &'a self,
         key: String,
@@ -398,6 +403,40 @@ impl CacheBackend for LocalCacheBackend {
                 return Ok(None);
             }
             Ok(Some(entry.value.clone()))
+        })
+    }
+
+    fn increment<'a>(&'a self, key: &'a str, ttl: Duration) -> CacheBackendFuture<'a, i64> {
+        Box::pin(async move {
+            let now = (self.now.as_ref())();
+            let expires_at = now
+                .checked_add(ttl)
+                .ok_or_else(|| DomainError::new("cache ttl overflowed"))?;
+            let mut entries = self.entries.write().await;
+            let next = match entries.get_mut(key) {
+                Some(entry) if entry.expires_at > now => {
+                    let current = entry.value.as_i64().unwrap_or(0);
+                    let next = current
+                        .checked_add(1)
+                        .ok_or_else(|| DomainError::new("cache counter overflowed"))?;
+                    entry.value = serde_json::json!(next);
+                    entry.inserted_at = now;
+                    entry.expires_at = expires_at;
+                    next
+                }
+                _ => {
+                    entries.insert(
+                        key.to_owned(),
+                        CacheValueEntry {
+                            value: serde_json::json!(1),
+                            inserted_at: now,
+                            expires_at,
+                        },
+                    );
+                    1
+                }
+            };
+            Ok(next)
         })
     }
 
@@ -641,6 +680,28 @@ impl CacheBackend for RedisCacheBackend {
                 "redis cache set",
             )
             .await
+        })
+    }
+
+    fn increment<'a>(&'a self, key: &'a str, ttl: Duration) -> CacheBackendFuture<'a, i64> {
+        Box::pin(async move {
+            let mut connection = self.connection().await?;
+            let next: i64 = self
+                .with_timeout(
+                    redis::cmd("INCR").arg(key).query_async(&mut connection),
+                    "redis cache increment",
+                )
+                .await?;
+            let _: i64 = self
+                .with_timeout(
+                    redis::cmd("PEXPIRE")
+                        .arg(key)
+                        .arg(ttl.as_millis().max(1) as i64)
+                        .query_async(&mut connection),
+                    "redis cache increment expire",
+                )
+                .await?;
+            Ok(next)
         })
     }
 
@@ -1261,6 +1322,52 @@ impl RuntimeCacheManager {
             instances,
             namespace_policies: self.runtime.namespace_policies.clone(),
         })
+    }
+
+    /// Atomically increments an integer counter under `namespace/key` and
+    /// refreshes its TTL. Mirrors [`Self::get_json`]/[`Self::set_json`]
+    /// plumbing; used for cross-replica version stamps.
+    pub async fn increment_json(&self, namespace: &str, key: &str) -> DomainResult<i64> {
+        let (instance, policy) = match self.resolve_namespace(namespace) {
+            Ok(resolved) => resolved,
+            Err(error) => {
+                self.metrics.record_system_error();
+                return Err(error);
+            }
+        };
+        if !policy.enabled {
+            // Disabled namespaces carry no observable version state; mirror
+            // get_json/set_json no-op behavior with a stable sentinel.
+            return Ok(1);
+        }
+        let metrics = self.metrics.instance(&instance.name).await;
+        let ttl = match policy_ttl_duration(policy, key) {
+            Ok(ttl) => ttl,
+            Err(error) => {
+                metrics.record_error();
+                return Err(error);
+            }
+        };
+        let backend = match self.backend(&instance.name) {
+            Ok(backend) => backend,
+            Err(error) => {
+                metrics.record_error();
+                return Err(error);
+            }
+        };
+        let full_key = match self.full_key(instance, namespace, key) {
+            Ok(full_key) => full_key,
+            Err(error) => {
+                metrics.record_error();
+                return Err(error);
+            }
+        };
+        let result = backend.increment(&full_key, ttl).await;
+        match &result {
+            Ok(_) => metrics.record_write(),
+            Err(_) => metrics.record_error(),
+        }
+        result
     }
 
     pub async fn get_json(&self, namespace: &str, key: &str) -> DomainResult<Option<Value>> {

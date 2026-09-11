@@ -535,7 +535,11 @@ export function ApiKeysView() {
         <div className="shrink-0 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-700 dark:text-rose-300 rounded-xl px-4 py-3 text-sm flex items-center gap-2">
           <AlertCircle className="w-4 h-4" />
           {error}
-          <button onClick={() => setError(null)} className="ml-auto text-rose-500 hover:text-rose-700">
+          <button
+            onClick={() => setError(null)}
+            aria-label="Dismiss error"
+            className="ml-auto text-rose-500 hover:text-rose-700"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>

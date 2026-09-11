@@ -999,7 +999,7 @@ async fn load_recharge_package_by_id(
         .transpose()
 }
 
-async fn load_recharge_settings_model_for_transaction(
+pub(crate) async fn load_recharge_settings_model_for_transaction(
     tx: &mut Transaction<'_, Postgres>,
     tenant_id: i64,
     organization_id: i64,

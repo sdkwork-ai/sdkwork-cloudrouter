@@ -89,6 +89,7 @@ Do not load all specs, generated SDKs, data catalogs, or source trees before the
 - TypeScript/Node code: `../sdkwork-specs/TYPESCRIPT_CODE_SPEC.md`.
 - Frontend/UI code: `../sdkwork-specs/FRONTEND_CODE_SPEC.md`, `../sdkwork-specs/FRONTEND_SPEC.md`, `../sdkwork-specs/UI_ARCHITECTURE_SPEC.md`, and exactly one detailed UI architecture spec.
 - API/SDK changes: `../sdkwork-specs/API_SPEC.md`, `../sdkwork-specs/WEB_FRAMEWORK_SPEC.md`, `../sdkwork-specs/WEB_BACKEND_SPEC.md`, `../sdkwork-specs/SDK_SPEC.md`, `../sdkwork-specs/SDK_WORKSPACE_GENERATION_SPEC.md`, and `../sdkwork-specs/TEST_SPEC.md`.
+- User-facing copy, locale negotiation, or i18n resources: `../sdkwork-specs/I18N_SPEC.md`, plus `../sdkwork-specs/FRONTEND_SPEC.md` for client copy, `../sdkwork-specs/API_SPEC.md` for problem-detail localization metadata, and `../sdkwork-specs/TEST_SPEC.md` with `../sdkwork-specs/tools/check-i18n-standard.mjs` for layout, duplicate-key, missing-key, fallback, and retired-header validation.
 - Runtime/deployment/release changes: `../sdkwork-specs/CONFIG_SPEC.md`, `../sdkwork-specs/ENVIRONMENT_SPEC.md`, `../sdkwork-specs/DEPLOYMENT_SPEC.md`, `../sdkwork-specs/RELEASE_SPEC.md`, `../sdkwork-specs/SUPPLY_CHAIN_SECURITY_SPEC.md`, and `../sdkwork-specs/GITHUB_WORKFLOW_SPEC.md`.
 - Security/auth changes: `../sdkwork-specs/IAM_SPEC.md`, `../sdkwork-specs/IAM_LOGIN_INTEGRATION_SPEC.md`, `../sdkwork-specs/SECURITY_SPEC.md`, and `../sdkwork-specs/PRIVACY_SPEC.md`.
 
@@ -108,6 +109,23 @@ Language-specific specs are on-demand; do not load Rust, Java, TypeScript, and f
   convert ids/snowflake ids/sequence ids to `number` for storage, comparison,
   or submission.
 - Verification: `node <sdkwork-specs>/tools/check-api-operation-patterns.mjs --workspace .`
+
+## HTTP Request Header Contract (I18N_SPEC §4, API_SPEC §10.2)
+
+- Request headers carry credentials (`Authorization`, `Access-Token`) plus standard
+  HTTP headers only. Do not add an SDKWork-invented request header, and do not widen a
+  CORS request-header allow-list for one: a custom header is invisible to the shared
+  framework default allow-list and turns every browser call into a preflight failure
+  (`net::ERR_FAILED`) before the route runs.
+- Locale negotiation is standard-header only. Clients send `Accept-Language`;
+  responses carry `Content-Language` and `Vary: Accept-Language`. A custom locale
+  request header (for example `X-SdkWork-Locale`) is retired: it `MUST NOT` be sent,
+  parsed, documented, added to an allow-list, or reintroduced by a transport wrapper.
+  Locale-selection preference lookup stays an in-process resolver extension point.
+- Identity projection headers (`x-sdkwork-tenant-id` and the legacy
+  `X-Tenant-Id`/`X-Platform`/`X-User-Id` family) `MUST NOT` appear on the wire
+  (40001 surface classification).
+- Verification: `node <sdkwork-specs>/tools/check-i18n-standard.mjs --root .`
 
 ## Code Style Rules
 

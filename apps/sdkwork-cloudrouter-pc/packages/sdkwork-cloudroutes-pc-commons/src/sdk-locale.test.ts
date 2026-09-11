@@ -26,7 +26,7 @@ function createFakeHttp(record: { headers?: Record<string, string> } = {}): Fake
   };
 }
 
-test('locale boundary injects Accept-Language and X-SdkWork-Locale', async () => {
+test('locale boundary injects Accept-Language only', async () => {
   (globalThis as Record<string, unknown>).localStorage = {
     getItem: () => 'zh-CN',
   } as unknown as Storage;
@@ -35,7 +35,9 @@ test('locale boundary injects Accept-Language and X-SdkWork-Locale', async () =>
   attachSdkworkSdkLocaleBoundary(client);
   await client.http!.request(`${APP_API_PREFIX}/ai/models`);
   assert.equal(record.headers?.['Accept-Language'], 'zh-CN');
-  assert.equal(record.headers?.['X-SdkWork-Locale'], 'zh-CN');
+  // The retired custom locale header must never be assembled by the transport
+  // (absence assertion only): i18n-retired-locale-header-allow.
+  assert.equal(record.headers?.['X-SdkWork-Locale'], undefined); // i18n-retired-locale-header-allow
   delete (globalThis as Record<string, unknown>).localStorage;
 });
 
@@ -52,7 +54,8 @@ test('locale boundary preserves caller headers with caller precedence', async ()
   assert.equal(record.headers?.['X-Tenant-Id'], '100001');
   // Caller-provided Accept-Language wins over the runtime locale.
   assert.equal(record.headers?.['Accept-Language'], 'de-DE');
-  assert.equal(record.headers?.['X-SdkWork-Locale'], 'en-US');
+  // The retired custom locale header must stay absent: i18n-retired-locale-header-allow.
+  assert.equal(record.headers?.['X-SdkWork-Locale'], undefined); // i18n-retired-locale-header-allow
   delete (globalThis as Record<string, unknown>).localStorage;
 });
 

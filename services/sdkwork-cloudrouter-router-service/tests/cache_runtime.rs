@@ -556,6 +556,10 @@ impl CacheBackend for FailingCacheBackend {
         Box::pin(async move { failing_backend_error() })
     }
 
+    fn increment<'a>(&'a self, _key: &'a str, _ttl: std::time::Duration) -> CacheBackendFuture<'a, i64> {
+        Box::pin(async move { failing_backend_error() })
+    }
+
     fn set_json<'a>(
         &'a self,
         _key: String,

@@ -94,6 +94,40 @@ mod tests {
     }
 
     #[test]
+    fn cors_header_gate_carries_no_retired_custom_locale_header() {
+        // Locale negotiation is standard-header only (`I18N_SPEC.md` §4): the
+        // retired custom locale request header must not survive anywhere in the
+        // CORS allow-list. Keeping a dead entry here would silently re-approve a
+        // header no compliant client is allowed to send.
+        for environment in [
+            WebEnvironment::Dev,
+            WebEnvironment::Test,
+            WebEnvironment::Prod,
+        ] {
+            let policy = cloud_service_security_policy(&environment);
+            assert!(
+                !policy
+                    .cors
+                    .allowed_headers
+                    .iter()
+                    // Absence assertion only.
+                    .any(|value| value.eq_ignore_ascii_case("x-sdkwork-locale")), // i18n-retired-locale-header-allow
+                "the retired custom locale header must not be allowed in {environment:?}"
+            );
+        }
+        // Production must never inherit the development wildcard marker.
+        let production = cloud_service_security_policy(&WebEnvironment::Prod);
+        assert!(
+            !production
+                .cors
+                .allowed_headers
+                .iter()
+                .any(|value| value == "*"),
+            "the production header gate must stay an explicit allow-list"
+        );
+    }
+
+    #[test]
     fn registered_client_origins_are_allowed_in_every_environment() {
         for environment in [
             WebEnvironment::Dev,

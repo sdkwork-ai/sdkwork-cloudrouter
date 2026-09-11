@@ -3,5 +3,7 @@
   "sdkType": "backend",
   "name": "cloudrouter-open-sdk",
   "packageName": "cloudrouter-open-sdk-generated-typescript",
-  "version": "0.1.0"
+  "version": "0.1.0",
+  "transportPackageName": "cloudrouter-open-sdk-generated-typescript",
+  "consumerPackageName": "@sdkwork/cloudrouter-open-sdk"
 }

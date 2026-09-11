@@ -23,8 +23,9 @@ const AUTH_PROJECTION_BODY_KEYS = AUTH_PROJECTION_QUERY_KEYS;
 // legacy `X-Tenant-Id`/`X-Platform`/`X-User-Id` family emitted by old
 // `@sdkwork/sdk-common` builds. Web Framework surface classification rejects
 // any of these on the wire with 40001; the dual-token credentials are the only
-// identity material a client may send. `x-sdkwork-locale` is the approved
-// locale header and is intentionally not in this list.
+// identity material a client may send. Locale is not identity: it travels
+// through the standard `Accept-Language` request header (`I18N_SPEC.md` §4) and
+// is intentionally not part of this projection-name set.
 const AUTH_PROJECTION_HEADER_NAMES = new Set([
   'x-sdkwork-tenant-id',
   'x-sdkwork-organization-id',
@@ -52,6 +53,13 @@ const AUTH_PROJECTION_HEADER_NAMES = new Set([
   'x-platform',
   'x-user-id',
 ]);
+
+// Retired SDKWork protocol request headers (`I18N_SPEC.md` §4). The custom
+// locale request header was replaced by the standard `Accept-Language`; the
+// transport drops it defensively so a stale caller can never re-introduce it
+// on the wire and make the browser take a CORS preflight dependency on a header
+// no compliant server is allowed to read.
+const RETIRED_PROTOCOL_HEADER_NAMES = new Set(['x-sdkwork-locale']); // i18n-retired-locale-header-allow
 
 export function omitAuthProjectionQuery(
   query?: Record<string, string | number | boolean | undefined>,
@@ -94,7 +102,11 @@ export function omitAuthProjectionHeaders(
   const next: Record<string, string> = {};
   let dropped = false;
   for (const [name, value] of Object.entries(headers)) {
-    if (AUTH_PROJECTION_HEADER_NAMES.has(name.toLowerCase())) {
+    const normalized = name.toLowerCase();
+    if (
+      AUTH_PROJECTION_HEADER_NAMES.has(normalized) ||
+      RETIRED_PROTOCOL_HEADER_NAMES.has(normalized)
+    ) {
       dropped = true;
       continue;
     }

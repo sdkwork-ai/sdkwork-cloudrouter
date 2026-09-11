@@ -51,7 +51,7 @@ pub use headers::{default_security_headers, redact_http_header};
 pub use locale::{
     embedded_message_catalog, interpolate_template, localize_problem_payload, normalize_locale_tag,
     parse_accept_language, with_request_locale, CloudRouterLocalePolicy, LocaleSource,
-    RequestLocale, SDK_LOCALE_HEADER,
+    RequestLocale,
 };
 pub use metrics::{
     configure_http_metrics_for_runtime, metrics, metrics_middleware, record_readiness_check,

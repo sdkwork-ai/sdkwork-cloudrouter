@@ -10,8 +10,8 @@ import path from 'node:path';
 import test from 'node:test';
 
 const appRoot = path.resolve('.');
-const deployScript = path.join(appRoot, 'deployments', 'docker', 'bundle', 'deploy.sh');
-const releaseScript = path.join(appRoot, 'deployments', 'docker', 'bundle', 'release.sh');
+const deployScript = path.join(appRoot, 'bin', 'docker-bundle-deploy.sh');
+const releaseScript = path.join(appRoot, 'bin', 'docker-bundle-release.sh');
 const composeScript = path.join(appRoot, 'deployments', 'docker', 'bundle', 'compose', 'docker-compose.bundle.yml');
 const environments = ['development', 'test', 'staging', 'demo', 'production'];
 
