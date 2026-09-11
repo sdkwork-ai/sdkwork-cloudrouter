@@ -162,7 +162,7 @@ export const QUICK_IMPORT_TARGETS: QuickImportTarget[] = [
     fallbackConfigPath: '~/.dsh/settings.yaml + ~/.dsh/.credentials.yaml',
     fileName: 'deepseek-harness-settings.yaml',
     scheme: 'dsh',
-    homepageUrl: 'https://github.com/sdkwork-ai/deepseek-harness-desktop/releases',
+    homepageUrl: 'https://github.com/sdkwork-ai/sdkwork-birdcoder2/releases',
     requiresAppSelection: false,
     requiresManualImport: true,
   },
