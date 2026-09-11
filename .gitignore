@@ -150,7 +150,6 @@ etc/**/*.local.*
 .workbuddy/
 scripts/_dbcheck/
 scripts/playground-alignment/
-/bin/
 
 sdks/**/*.js
 sdks/**/*.d.ts
