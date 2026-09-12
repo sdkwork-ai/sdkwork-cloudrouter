@@ -184,9 +184,9 @@ function viewportClassNames(source: string): string[] {
 test("console usage logs copy is routed through i18n without read-only caveats", () => {
   const source = readPortalFile("./packages/sdkwork-cloudrouter-pc-console-usage/src/UsageView.tsx");
 
-  assert.match(source, /t\('console\.usage\.table\.cost', 'Spend'\)/);
-  assert.match(source, /const DISPLAY_DECIMAL_DIGITS = 2;/);
-  assert.match(source, /formatDisplayAmount\(log\.cost\)/);
+  assert.match(source, /t\('console\.usage\.table\.cash', '现金花费'\)/);
+  assert.match(source, /t\('console\.usage\.table\.points', '积分花费'\)/);
+  assert.match(source, /formatCashAmount\(log\.cost, log\.currency, displayLocale\)/);
   assert.doesNotMatch(source, /t\('console\.usage\.loadedCost', 'Loaded cost'\)/);
   assert.doesNotMatch(source, /t\('console\.usage\.table\.cost', 'Cost'\)/);
   assert.match(source, /placeholder=\{t\('console\.usage\.startTimePlaceholder'/);
@@ -265,7 +265,8 @@ test("console usage logs do not expand the first record until the user clicks it
   const source = readPortalFile("./packages/sdkwork-cloudrouter-pc-console-usage/src/UsageView.tsx");
 
   assert.match(source, /setUsageLogs\(data\.items\);/);
-  assert.match(source, /setTotalLogs\(data\.pageInfo\.totalItems\);/);
+  assert.match(source, /setNextCursor\(data\.pageInfo\.nextCursor\);/);
+  assert.match(source, /setHasMore\(data\.pageInfo\.hasMore\);/);
   assert.match(source, /setExpandedIds\(\[\]\);/);
   assert.doesNotMatch(source, /setExpandedIds\(data\.logs\.length > 0 \? \[data\.logs\[0\]\.id\] : \[\]\)/);
   assert.match(source, /onClick=\{\(e\) => toggleExpand\(log\.id, e\)\}/);
@@ -274,7 +275,9 @@ test("console usage logs do not expand the first record until the user clicks it
 test("console usage service reads SdkWork list totals from pageInfo.totalItems", () => {
   const serviceSource = readPortalFile("./packages/sdkwork-cloudrouter-pc-console-usage/src/usageService.ts");
 
-  assert.match(serviceSource, /readRequiredUnsignedInt64String\(pageInfo, 'totalItems'/);
+  assert.match(serviceSource, /pageInfo\.mode !== 'cursor'/);
+  assert.match(serviceSource, /readRequiredBoolean\(pageInfo, 'hasMore'/);
+  assert.match(serviceSource, /pageInfo\.nextCursor/);
   assert.match(serviceSource, /Array\.isArray\(page\.items\)/);
 });
 
@@ -303,7 +306,7 @@ test("console usage table displays compact user agent device info with the full 
   assert.match(viewSource, /console\.usage\.table\.userAgent/);
   assert.match(viewSource, /title=\{log\.userAgent\}/);
   assert.match(viewSource, /formatUserAgentDeviceLabel\(log\.userAgent\)/);
-  assert.match(viewSource, /colSpan=\{13\}/);
+  assert.match(viewSource, /colSpan=\{14\}/);
 });
 
 test("console usage logs i18n resources include English and Chinese entries", () => {

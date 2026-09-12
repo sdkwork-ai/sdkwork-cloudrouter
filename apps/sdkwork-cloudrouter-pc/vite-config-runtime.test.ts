@@ -254,7 +254,7 @@ test("portal workspace packages resolve through pnpm workspace exports", async (
     resolvedGatewayEndpoint,
     path.resolve(
       import.meta.dirname,
-      "../../../sdkwork-utils/packages/sdkwork-utils-typescript/dist/gatewayEndpoint.js",
+      "../../../sdkwork-utils/packages/sdkwork-utils-typescript/src/gatewayEndpoint.ts",
     ),
   );
   assert.equal(

@@ -201,7 +201,7 @@ export function ApiKeysView() {
     }
     const target = resolveQuickImportTarget(targetId);
     if (target.requiresManualImport) {
-      // DeepSeek Harness does not accept the `v1/import` deep-link contract
+      // DeepSeek Harness does not accept the `v1/import` deep-link entrypoint
       // yet: show the manual import dialog directly (config content + install
       // banner) instead of probing its `dsh://` protocol.
       setQuickImportAppUnavailable(true);

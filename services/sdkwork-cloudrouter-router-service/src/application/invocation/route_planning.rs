@@ -622,9 +622,9 @@ where
         [catalog_key] => return Ok(catalog_key.clone()),
         [] => {}
         resolved_keys => {
-            if preset_catalog_key.is_some_and(|preset| {
-                resolved_keys.iter().any(|key| key == preset)
-            }) {
+            if preset_catalog_key
+                .is_some_and(|preset| resolved_keys.iter().any(|key| key == preset))
+            {
                 return Ok(preset_catalog_key.expect("preset checked above").to_owned());
             }
             return Err(route_error(format!(

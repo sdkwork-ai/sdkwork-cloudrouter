@@ -394,8 +394,7 @@ mod tests {
     fn optional_and_ignored_builtin_routes_stay_api_resource_class() {
         // media_task（Optional）与 account（Ignored）路由维持 API 资源类，
         // 即使请求体携带模型名也不参与模型路由。
-        let classification =
-            classify_post("/kling/v1/videos/text2video", "kling");
+        let classification = classify_post("/kling/v1/videos/text2video", "kling");
         assert_eq!("kling.text_to_video", classification.resource.route_key);
         assert_eq!(Some(RouteKind::Api), classification.resource.route_kind);
 
