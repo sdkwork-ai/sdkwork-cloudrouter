@@ -3,7 +3,7 @@ use std::sync::Arc;
 use super::{
     BillingMode, BillingQuantitySource, DispatchMode, Invocation, InvocationAccount,
     InvocationBody, InvocationError, InvocationErrorKind, InvocationFuture,
-    InvocationPreflightResolution, InvocationPricingQuote, InvocationUsageLine,
+    InvocationPreflightResolution, InvocationPricingQuote, InvocationUsageLine, RouteKind,
 };
 use crate::application::{
     InvocationInterceptor, PriceResolution, PriceResolutionStatus, PriceService, ResolvedModelPrice,
@@ -776,6 +776,13 @@ fn pricing_error(message: impl Into<String>) -> InvocationError {
 }
 
 fn should_price_by_route_key_only(invocation: &Invocation) -> bool {
+    // 路由类型是定价键平面的权威：API 资源类（provider-native media/回退
+    // 路径等）一律按 route key 计价，与路由规划的无模型账号预检
+    // （`ensure_account_route_is_priced`）保持同一资源键；即使请求携带
+    // 模型名，payload 提取预置的 `supplier/<model>` key 也不得劫持定价键。
+    if let Some(kind) = invocation.resource.route_kind {
+        return kind == RouteKind::Api;
+    }
     if invocation.resource.model_requirement == AiRouteModelRequirement::Ignored {
         return true;
     }

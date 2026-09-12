@@ -295,6 +295,18 @@ fn catalog_with_all_media_accounts(
         AiModel::new("veo-3.0-generate-001", "Veo 3", "google", vec!["video"])
             .with_catalog_key("google/veo-3.0-generate-001"),
     );
+    // gemini.image_generation 是 taxonomy 声明的 Required 模型类路由：
+    // 请求体/path 携带的模型名经目录解析为 catalog key，路由与定价都按
+    // 模型键进行（与 openai.images.generations 同一模型类管道）。
+    catalog.add_model(
+        AiModel::new(
+            "gemini-2.0-flash-preview-image-generation",
+            "Gemini 2.0 Flash preview image generation",
+            "google",
+            vec!["image"],
+        )
+        .with_catalog_key("google/gemini-2.0-flash-preview-image-generation"),
+    );
     // Provider-native media routes price on their route key (api_code) as the
     // catalog key, so each needs a model registered under that key.
     catalog.add_model(
@@ -413,6 +425,26 @@ fn catalog_with_all_media_accounts(
         .with_timeout_ms(30_000)
         .with_retry_policy(ProviderRetryPolicy::new(1, vec![], 0).unwrap()),
     );
+    let google_account = accounts
+        .iter()
+        .find(|account| account.supplier_code == "google")
+        .expect("google account");
+    catalog.add_model_upstream_route(
+        sdkwork_cloudrouter_router_service::domain::ModelUpstreamRoute::new_for_catalog_key(
+            "google/gemini-2.0-flash-preview-image-generation",
+            "gemini-2.0-flash-preview-image-generation",
+            "google",
+            4002,
+            "gemini-2.0-flash-preview-image-generation",
+        )
+        .with_api_code("gemini.image_generation")
+        .with_upstream_endpoint(
+            Some(&google_account.base_url),
+            Some(&google_account.secret_ref),
+        )
+        .with_timeout_ms(30_000)
+        .with_retry_policy(ProviderRetryPolicy::new(1, vec![], 0).unwrap()),
+    );
     add_price(
         &mut catalog,
         "openai/gpt-4o-mini",
@@ -456,6 +488,39 @@ fn catalog_with_all_media_accounts(
         BillingMeter::VideoResult,
         "0.020000",
         "0.012000",
+        "google",
+        4002,
+    );
+    // 模型类路由按解析出的 catalog key 计价：VideoResult/ImageResult 随
+    // 适配器用量行结算；FixedRequest 事实（ApiRequest）在定价预检要求
+    // 完整解析，同样挂在模型键下。
+    add_price_for_account(
+        &mut catalog,
+        "google/veo-3.0-generate-001",
+        "veo-3.0-generate-001",
+        BillingMeter::ApiRequest,
+        "0.010000",
+        "0.004000",
+        "google",
+        4002,
+    );
+    add_price_for_account(
+        &mut catalog,
+        "google/gemini-2.0-flash-preview-image-generation",
+        "gemini-2.0-flash-preview-image-generation",
+        BillingMeter::ImageResult,
+        "0.020000",
+        "0.012000",
+        "google",
+        4002,
+    );
+    add_price_for_account(
+        &mut catalog,
+        "google/gemini-2.0-flash-preview-image-generation",
+        "gemini-2.0-flash-preview-image-generation",
+        BillingMeter::ApiRequest,
+        "0.010000",
+        "0.004000",
         "google",
         4002,
     );

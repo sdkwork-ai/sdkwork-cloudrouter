@@ -945,7 +945,7 @@ test("playground markdown interop dependencies are served through dependency opt
 
   const source = readFileSync(new URL("./vite.config.ts", import.meta.url), "utf8");
   assert.match(source, /resolvePortalMarkdownOptimizeEntries/);
-  assert.match(source, /sdkwork-generations-pc-playground\/src\/react\.ts/);
+  assert.match(source, /sdkwork-agents-pc-playground\/src\/index\.ts/);
   assert.match(source, /sdkwork-agents-pc-commons\/src\/components\/MarkdownRendererImpl\.tsx/);
   assert.match(source, /scripts\/shims\/style-to-js\.ts/);
   assert.match(source, /cloudrouter-markdown-cjs-interop-shim/);

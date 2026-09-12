@@ -525,14 +525,12 @@ test("console auth unavailable copy stays product-focused without app-contract c
   assertNoImplementationCaveats(controllerSource);
 });
 
-test("playground unavailable states stay product-focused without implementation caveats", () => {
+test("playground empty states stay product-focused without implementation caveats", () => {
+  // The playground surfaces live in sdkwork-agents (AgentsWorkbench system);
+  // the creative tab's empty state is the canonical unavailable-state copy.
   const files = [
-    "../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/views/AudioView.tsx",
-    "../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/views/ImageView.tsx",
-    "../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/views/MusicView.tsx",
-    "../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/views/SfxView.tsx",
-    "../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/views/VideoView.tsx",
-    "../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/components/views/SharedHistoryView.tsx",
+    "../../../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-creative/src/components/CreativeEmptyState.tsx",
+    "../../../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-creative/src/CreativeView.tsx",
   ];
 
   for (const file of files) {

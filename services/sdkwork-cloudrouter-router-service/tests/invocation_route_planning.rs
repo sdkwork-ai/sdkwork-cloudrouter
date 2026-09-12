@@ -409,6 +409,173 @@ async fn plans_provider_native_account_route_even_when_request_contains_model_me
     );
 }
 
+/// anthropic.messages 是 taxonomy 声明的 Required 模型类路由：带模型名的
+/// 请求必须走模型类规划（按 catalog key + 模型找上游成本价），而不是被
+/// 硬编码进无模型账号路由后按 route_key 找价（price_not_found/50201）。
+#[tokio::test]
+async fn plans_provider_native_model_route_for_anthropic_messages() {
+    let mut catalog = base_catalog();
+    catalog.add_vendor(ModelVendorDefinition::new(
+        "anthropic",
+        ModelVendor::from_code("anthropic"),
+        "Anthropic",
+    ));
+    catalog.add_model(
+        AiModel::new(
+            "claude-sonnet-4-5",
+            "Claude Sonnet 4.5",
+            "anthropic",
+            vec!["chat"],
+        )
+        .with_catalog_key("anthropic/claude-sonnet-4-5"),
+    );
+    catalog.add_model_upstream_route(
+        ModelUpstreamRoute::new_for_catalog_key(
+            "anthropic/claude-sonnet-4-5",
+            "claude-sonnet-4-5",
+            "anthropic-main",
+            5001,
+            "claude-sonnet-4-5",
+        )
+        .with_api_code("anthropic.messages")
+        .with_upstream_endpoint(
+            Some("https://provider.example/anthropic-main".to_owned()),
+            Some("vault://providers/anthropic-main/main".to_owned()),
+        ),
+    );
+    add_account_route(&mut catalog, 5001, "anthropic-main");
+    for meter in [
+        BillingMeter::LlmInputToken,
+        BillingMeter::LlmOutputToken,
+        BillingMeter::LlmCacheReadToken,
+    ] {
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                "anthropic/claude-sonnet-4-5",
+                "claude-sonnet-4-5",
+                PriceSide::UpstreamCost,
+                meter,
+                Money::usd("0.100000").unwrap(),
+            )
+            .for_upstream_account("anthropic-main", 5001),
+        );
+    }
+    for meter in [BillingMeter::LlmInputToken, BillingMeter::LlmOutputToken] {
+        catalog.add_price(ModelPrice::new_for_catalog_key(
+            "anthropic/claude-sonnet-4-5",
+            "claude-sonnet-4-5",
+            PriceSide::OfficialReference,
+            meter,
+            Money::usd("0.150000").unwrap(),
+        ));
+    }
+    let catalog = Arc::new(catalog);
+
+    let mut invocation =
+        provider_native_invocation("anthropic", "/anthropic/v1/messages", RoutingCapability::Chat);
+    // payload 提取拦截器在本测试未运行；这里手工模拟其结果
+    // （provider-native 预置 catalog key = supplier/<model>）。
+    invocation.resource.requested_model = Some("claude-sonnet-4-5".to_owned());
+    invocation.resource.requested_model_catalog_key =
+        Some("anthropic/claude-sonnet-4-5".to_owned());
+
+    RoutePlanningInterceptor::new(catalog.clone())
+        .before(&mut invocation)
+        .await
+        .expect("model route planning");
+
+    let plan = invocation.routing.route_plan.as_ref().expect("route plan");
+    assert_eq!(1, plan.candidates.len());
+    assert_eq!(
+        Some("anthropic/claude-sonnet-4-5"),
+        invocation.resource.requested_model_catalog_key.as_deref()
+    );
+    assert_eq!(
+        "anthropic.messages",
+        plan.candidates[0].api_code,
+        "anthropic.messages 的模型类候选必须保留内建 api_code"
+    );
+}
+
+/// 跨协议/映射模型：anthropic 协议请求 DeepSeek 目录中的模型时，预置的
+/// provider-native key（`anthropic/deepseek-chat`）不在模型目录中；目录
+/// 名称解析必须优先于预置 key，否则定价预检按不存在的 key 找价失败。
+#[tokio::test]
+async fn provider_native_model_route_resolves_cross_vendor_model_by_catalog_name() {
+    let mut catalog = base_catalog();
+    catalog.add_vendor(ModelVendorDefinition::new(
+        "deepseek",
+        ModelVendor::from_code("deepseek"),
+        "DeepSeek",
+    ));
+    catalog.add_model(
+        AiModel::new("deepseek-chat", "DeepSeek Chat", "deepseek", vec!["chat"])
+            .with_catalog_key("deepseek/deepseek-chat"),
+    );
+    catalog.add_model_upstream_route(
+        ModelUpstreamRoute::new_for_catalog_key(
+            "deepseek/deepseek-chat",
+            "deepseek-chat",
+            "deepseek-main",
+            6001,
+            "deepseek-chat",
+        )
+        .with_api_code("anthropic.messages")
+        .with_upstream_endpoint(
+            Some("https://provider.example/deepseek-main".to_owned()),
+            Some("vault://providers/deepseek-main/main".to_owned()),
+        ),
+    );
+    add_account_route(&mut catalog, 6001, "deepseek-main");
+    for meter in [
+        BillingMeter::LlmInputToken,
+        BillingMeter::LlmOutputToken,
+        BillingMeter::LlmCacheReadToken,
+    ] {
+        catalog.add_price(
+            ModelPrice::new_for_catalog_key(
+                "deepseek/deepseek-chat",
+                "deepseek-chat",
+                PriceSide::UpstreamCost,
+                meter,
+                Money::usd("0.020000").unwrap(),
+            )
+            .for_upstream_account("deepseek-main", 6001),
+        );
+    }
+    for meter in [BillingMeter::LlmInputToken, BillingMeter::LlmOutputToken] {
+        catalog.add_price(ModelPrice::new_for_catalog_key(
+            "deepseek/deepseek-chat",
+            "deepseek-chat",
+            PriceSide::OfficialReference,
+            meter,
+            Money::usd("0.030000").unwrap(),
+        ));
+    }
+    let catalog = Arc::new(catalog);
+
+    let mut invocation =
+        provider_native_invocation("anthropic", "/anthropic/v1/messages", RoutingCapability::Chat);
+    invocation.resource.requested_model = Some("deepseek-chat".to_owned());
+    // payload 提取对 provider-native 请求预置 supplier/<model> key；
+    // 该 key 不在目录中，规划必须回退到目录名称解析结果。
+    invocation.resource.requested_model_catalog_key =
+        Some("anthropic/deepseek-chat".to_owned());
+
+    RoutePlanningInterceptor::new(catalog.clone())
+        .before(&mut invocation)
+        .await
+        .expect("model route planning");
+
+    let plan = invocation.routing.route_plan.as_ref().expect("route plan");
+    assert_eq!(1, plan.candidates.len());
+    assert_eq!(
+        Some("deepseek/deepseek-chat"),
+        invocation.resource.requested_model_catalog_key.as_deref(),
+        "目录名称解析结果必须覆盖不在目录中的预置 provider-native key"
+    );
+}
+
 #[tokio::test]
 async fn sticky_route_constraint_overrides_normal_route_selection() {
     let mut catalog = base_catalog();

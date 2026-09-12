@@ -1,7 +1,7 @@
 import {
-  AgentsWorkbench,
-  configureAgentsWorkbenchRuntime,
-} from '@sdkwork/agents-pc/workbench';
+  AgentsPlayground,
+  configureAgentsPlaygroundRuntime,
+} from '@sdkwork/agents-pc-playground';
 import {
   getSdkworkAgentAppSdkClient,
   getSdkworkAssetsAppSdkClient,
@@ -21,7 +21,11 @@ import {
 } from '@sdkwork/cloudroutes-pc-commons/domain-service-providers';
 import { createPlaygroundBalancePort } from '../playgroundBalancePort';
 
-configureAgentsWorkbenchRuntime({
+// Cloud Router is a host of the single Playground package
+// (`@sdkwork/agents-pc-playground`): the workbench shell, sidebar tabs, and
+// chat/creative surfaces are owned by sdkwork-agents; this adapter only
+// binds the host runtime — SDK clients, balance, token plan, login redirect.
+configureAgentsPlaygroundRuntime({
   getAgentsAppSdkClient: getSdkworkAgentAppSdkClient,
   getAssetsAppSdkClient: getSdkworkAssetsAppSdkClient,
   getCommunityAppSdkClient: getSdkworkCommunityAppSdkClient,
@@ -54,15 +58,8 @@ export function Playground({
       {/* The creative (生成) tab renders the dedicated generation page (bottom input,
           creative sidebar session list, and generation history) via @sdkwork/agents-pc-creative.
           It is kept visible and removed from hiddenTabs so that inspiration submit routes to
-          the creative generation page instead of the unified chat agent interface.
-          presentation stays a hidden local demo surface with no SDKWork API integration. */}
-      <AgentsWorkbench
-        hiddenTabs={['presentation']}
-        overlayTopInset={overlayTopInset}
-        showSidebarLogo={false}
-      />
+          the creative generation page instead of the unified chat agent interface. */}
+      <AgentsPlayground overlayTopInset={overlayTopInset} />
     </div>
   );
 }
-
-export type { Modality, GenerationModality } from '@sdkwork/generations-pc-playground/react';

@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@sdkwork/agents-pc": "workspace:*",
-    "@sdkwork/generations-pc-playground": "workspace:*",
+    "@sdkwork/agents-pc-playground": "workspace:*",
     "@sdkwork/generations-pc-workspace": "workspace:*",
     "@sdkwork/models-pc-picker": "workspace:*",
     "@sdkwork/cloudrouter-pc-console-api-keys": "workspace:*",

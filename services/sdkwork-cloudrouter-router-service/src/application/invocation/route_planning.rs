@@ -606,27 +606,38 @@ fn resolve_catalog_key<C>(
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
-    if let Some(catalog_key) = invocation
+    let preset_catalog_key = invocation
         .resource
         .requested_model_catalog_key
         .as_deref()
         .map(str::trim)
-        .filter(|value| !value.is_empty())
-    {
-        return Ok(catalog_key.to_owned());
-    }
-    // 目录级索引（快照加载时构建），O(1) 解析模型名 → catalog key，
-    // 避免每个请求线性扫描全部模型。
+        .filter(|value| !value.is_empty());
+    // 目录级索引（快照加载时构建）按模型名 O(1) 解析，避免每个请求线性
+    // 扫描全部模型。名称解析优先于 provider-native 预置 key
+    // （`supplier/<model>`）：跨协议/映射模型（如 anthropic 协议请求
+    // DeepSeek 目录中的模型）的预置 key 不在目录中，若短路会导致定价
+    // 预检按不存在的 key 找价失败。
     let keys = catalog.model_catalog_keys_by_name(requested_model);
     match keys.as_slice() {
-        [catalog_key] => Ok(catalog_key.clone()),
-        [] => Err(route_error(format!(
-            "model is not available for route planning: {requested_model}"
-        ))),
-        _ => Err(route_error(format!(
-            "model id is ambiguous for route planning: {requested_model}"
-        ))),
+        [catalog_key] => return Ok(catalog_key.clone()),
+        [] => {}
+        resolved_keys => {
+            if preset_catalog_key.is_some_and(|preset| {
+                resolved_keys.iter().any(|key| key == preset)
+            }) {
+                return Ok(preset_catalog_key.expect("preset checked above").to_owned());
+            }
+            return Err(route_error(format!(
+                "model id is ambiguous for route planning: {requested_model}"
+            )));
+        }
     }
+    if let Some(catalog_key) = preset_catalog_key {
+        return Ok(catalog_key.to_owned());
+    }
+    Err(route_error(format!(
+        "model is not available for route planning: {requested_model}"
+    )))
 }
 
 fn matching_upstream_account_route<C>(

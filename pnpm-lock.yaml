@@ -299,9 +299,6 @@ importers:
       '@sdkwork/order-service':
         specifier: workspace:*
         version: link:../../../sdkwork-order/apps/sdkwork-order-common/packages/sdkwork-order-service
-      '@sdkwork/sdk-common':
-        specifier: workspace:*
-        version: link:../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
       '@sdkwork/ui-pc-react':
         specifier: workspace:*
         version: link:../../../sdkwork-ui/sdkwork-ui-pc-react
@@ -657,6 +654,15 @@ importers:
       lucide-react:
         specifier: 'catalog:'
         version: 1.31.0(react@19.2.8)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+
+  ../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-playground:
+    dependencies:
+      '@sdkwork/agents-pc':
+        specifier: workspace:*
+        version: link:../..
       react:
         specifier: 'catalog:'
         version: 19.2.8
@@ -1067,6 +1073,9 @@ importers:
       '@sdkwork/sdk-common':
         specifier: workspace:*
         version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+      '@sdkwork/utils':
+        specifier: ^0.11.0
+        version: 0.11.0
 
   ../sdkwork-community/sdks/sdkwork-community-app-sdk/sdkwork-community-app-sdk-typescript:
     dependencies:
@@ -1352,67 +1361,6 @@ importers:
         version: 0.11.0
 
   ../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-asset-config: {}
-
-  ../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground:
-    dependencies:
-      '@sdkwork/assets-pc-assets':
-        specifier: workspace:*
-        version: link:../../../../../sdkwork-assets/apps/sdkwork-assets-pc/packages/sdkwork-assets-pc-assets
-      '@sdkwork/audio-pc-generation':
-        specifier: workspace:*
-        version: link:../../../../../sdkwork-audio/apps/sdkwork-audio-pc/packages/sdkwork-audio-pc-generation
-      '@sdkwork/generations-pc-workspace':
-        specifier: workspace:*
-        version: link:../sdkwork-generations-pc-workspace
-      '@sdkwork/image-pc-generation':
-        specifier: workspace:*
-        version: link:../../../../../sdkwork-image/apps/sdkwork-image-pc/packages/sdkwork-image-pc-generation
-      '@sdkwork/models-pc-picker':
-        specifier: workspace:*
-        version: link:../../../../../sdkwork-models/apps/sdkwork-models-pc/packages/sdkwork-models-pc-picker
-      '@sdkwork/music-pc-generation':
-        specifier: workspace:*
-        version: link:../../../../../sdkwork-music/apps/sdkwork-music-pc/packages/sdkwork-music-pc-generation
-      '@sdkwork/video-pc-generation':
-        specifier: workspace:*
-        version: link:../../../../../sdkwork-video/apps/sdkwork-video-pc/packages/sdkwork-video-pc-generation
-      hast-util-sanitize:
-        specifier: ^5.0.2
-        version: 5.0.2
-      lucide-react:
-        specifier: 'catalog:'
-        version: 1.31.0(react@19.2.8)
-      react:
-        specifier: 'catalog:'
-        version: 19.2.8
-      react-i18next:
-        specifier: 'catalog:'
-        version: 17.0.11(i18next@26.3.6(typescript@6.0.3))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@6.0.3)
-      react-markdown:
-        specifier: 10.1.0
-        version: 10.1.0(@types/react@19.2.14)(react@19.2.8)
-      react-router-dom:
-        specifier: 'catalog:'
-        version: 7.18.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-      rehype-sanitize:
-        specifier: 6.0.0
-        version: 6.0.0
-      remark-gfm:
-        specifier: 4.0.1
-        version: 4.0.1
-      style-to-js:
-        specifier: ^1.1.21
-        version: 1.1.21
-    devDependencies:
-      '@types/react':
-        specifier: ^19.0.0
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: ^19.0.0
-        version: 19.2.3(@types/react@19.2.14)
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
 
   ../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-studio:
     dependencies:
@@ -2086,8 +2034,8 @@ importers:
         specifier: workspace:*
         version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
       '@sdkwork/utils':
-        specifier: workspace:*
-        version: link:../../../../sdkwork-utils/packages/sdkwork-utils-typescript
+        specifier: ^0.11.0
+        version: 0.11.0
     devDependencies:
       typescript:
         specifier: ^5.8.2
@@ -3543,73 +3491,14 @@ importers:
         specifier: ^0.11.0
         version: 0.11.0
 
-  apps/sdkwork-cloudrouter-common/packages/sdkwork-file-api-contracts:
-    dependencies:
-      '@sdkwork/file-contracts':
-        specifier: workspace:*
-        version: link:../sdkwork-file-contracts
-
-  apps/sdkwork-cloudrouter-common/packages/sdkwork-file-contracts: {}
-
-  apps/sdkwork-cloudrouter-common/packages/sdkwork-file-schema:
-    dependencies:
-      '@sdkwork/file-contracts':
-        specifier: workspace:*
-        version: link:../sdkwork-file-contracts
-
-  apps/sdkwork-cloudrouter-common/packages/sdkwork-file-sdk-adapter:
-    dependencies:
-      '@sdkwork/drive-app-sdk':
-        specifier: workspace:*
-        version: link:../../../../../sdkwork-drive/sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript
-      '@sdkwork/file-api-contracts':
-        specifier: workspace:*
-        version: link:../sdkwork-file-api-contracts
-      '@sdkwork/file-contracts':
-        specifier: workspace:*
-        version: link:../sdkwork-file-contracts
-      '@sdkwork/file-sdk-ports':
-        specifier: workspace:*
-        version: link:../sdkwork-file-sdk-ports
-      '@sdkwork/file-service':
-        specifier: workspace:*
-        version: link:../sdkwork-file-service
-
-  apps/sdkwork-cloudrouter-common/packages/sdkwork-file-sdk-generation:
-    dependencies:
-      '@sdkwork/file-api-contracts':
-        specifier: workspace:*
-        version: link:../sdkwork-file-api-contracts
-      '@sdkwork/file-contracts':
-        specifier: workspace:*
-        version: link:../sdkwork-file-contracts
-
-  apps/sdkwork-cloudrouter-common/packages/sdkwork-file-sdk-ports:
-    dependencies:
-      '@sdkwork/file-contracts':
-        specifier: workspace:*
-        version: link:../sdkwork-file-contracts
-
-  apps/sdkwork-cloudrouter-common/packages/sdkwork-file-service:
-    dependencies:
-      '@sdkwork/file-contracts':
-        specifier: workspace:*
-        version: link:../sdkwork-file-contracts
-      '@sdkwork/file-sdk-ports':
-        specifier: workspace:*
-        version: link:../sdkwork-file-sdk-ports
-
-  apps/sdkwork-cloudrouter-common/packages/sdkwork-file-upload-client:
-    dependencies:
-      '@sdkwork/file-sdk-ports':
-        specifier: workspace:*
-        version: link:../sdkwork-file-sdk-ports
-
   apps/sdkwork-cloudrouter-h5:
     dependencies:
       '@sdkwork/sdk-common':
         specifier: workspace:*
         version: link:../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
+      '@tailwindcss/vite':
+        specifier: 'catalog:'
+        version: 4.3.3(vite@8.1.5(@types/node@25.9.4)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12))
       clsx:
         specifier: 'catalog:'
         version: 2.1.1
@@ -3625,10 +3514,10 @@ importers:
       react-router-dom:
         specifier: 'catalog:'
         version: 7.18.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-    devDependencies:
-      '@tailwindcss/vite':
+      tailwindcss:
         specifier: 'catalog:'
-        version: 4.3.3(vite@8.1.5(@types/node@25.9.4)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12))
+        version: 4.3.3
+    devDependencies:
       '@types/node':
         specifier: 'catalog:'
         version: 25.9.4
@@ -3641,9 +3530,6 @@ importers:
       '@vitejs/plugin-react':
         specifier: 'catalog:'
         version: 6.0.5(vite@8.1.5(@types/node@25.9.4)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.23.12))
-      tailwindcss:
-        specifier: 'catalog:'
-        version: 4.3.3
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -3851,9 +3737,6 @@ importers:
       '@sdkwork/generations-pc-asset-config':
         specifier: workspace:*
         version: link:../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-asset-config
-      '@sdkwork/generations-pc-playground':
-        specifier: workspace:*
-        version: link:../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground
       '@sdkwork/generations-pc-workspace':
         specifier: workspace:*
         version: link:../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-workspace
@@ -4244,6 +4127,9 @@ importers:
       '@sdkwork/cloudroutes-pc-commons':
         specifier: workspace:*
         version: link:../sdkwork-cloudroutes-pc-commons
+      '@sdkwork/ui-pc-react':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-ui/sdkwork-ui-pc-react
     devDependencies:
       vitest:
         specifier: ^4.1.10
@@ -4858,15 +4744,15 @@ importers:
       '@sdkwork/agents-pc':
         specifier: workspace:*
         version: link:../../../../../sdkwork-agents/apps/sdkwork-agents-pc
+      '@sdkwork/agents-pc-playground':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-playground
       '@sdkwork/cloudrouter-pc-console-api-keys':
         specifier: workspace:*
         version: link:../sdkwork-cloudrouter-pc-console-api-keys
       '@sdkwork/cloudroutes-pc-commons':
         specifier: workspace:*
         version: link:../sdkwork-cloudroutes-pc-commons
-      '@sdkwork/generations-pc-playground':
-        specifier: workspace:*
-        version: link:../../../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground
       '@sdkwork/generations-pc-workspace':
         specifier: workspace:*
         version: link:../../../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-workspace
@@ -5113,8 +4999,8 @@ importers:
         specifier: workspace:*
         version: link:../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
       '@sdkwork/utils':
-        specifier: workspace:*
-        version: link:../../../../sdkwork-utils/packages/sdkwork-utils-typescript
+        specifier: ^0.11.0
+        version: 0.11.0
     devDependencies:
       '@types/node':
         specifier: 20.19.39

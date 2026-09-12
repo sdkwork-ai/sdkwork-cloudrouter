@@ -1,93 +1,62 @@
-# Playground integration with sdkwork-generations
+# Playground integration
 
-Playground UI shell lives in `@sdkwork/generations-pc-playground` (`sdkwork-generations` repo). CloudRouter integrates it through a thin host adapter.
+The Playground UI shell is owned by **`@sdkwork/agents-pc-playground`** (the
+`sdkwork-agents` repo) — the single, canonical Playground composition built on
+the `AgentsWorkbench` system (sidebar: 聊天 / 灵感 / 生成 / 资产 / 画布 /
+智能体). CloudRouter integrates it through a thin host adapter. There is no
+second playground shell: the AgentsWorkbench creative (生成) tab plus the
+agents chat surface are the only playground surfaces.
 
 ## Architecture
 
 ```
 @sdkwork/cloudrouter-pc-playground (host adapter)
-  └─ Playground.tsx → PlaygroundPage + PlaygroundHostPort
-       └─ @sdkwork/generations-pc-playground/react
-            ├─ PlaygroundPage.tsx (routing, preview modal, history orchestration)
-            ├─ components/views/*View.tsx (modality adapters + empty states)
-            └─ PlaygroundHostPort (fetch history/models, run generation, clipboard)
-                 ↑ implemented by cloudrouter PlaygroundService + cloudroutes-pc-commons
-
-Generation workspace (domain-owned panels):
-  @sdkwork/generations-pc-workspace/generation-playground-workspace
-    ├─ DomainGenerationWorkspaceView (history + sidebar shell)
-    └─ DomainGenerationWorkspaceSidebar (modality accent classes)
-
-  @sdkwork/generations-pc-studio/react
-    ├─ SdkworkGenerationModePopupBase
-    ├─ SdkworkStudioGenerationBottomBar
-    └─ formatGenerationCreditPoints (@sdkwork/utils)
-
-  @sdkwork/{image|video|music|audio}-pc-generation/react
-    └─ *GenerationPanel (modality studio UI)
+  └─ Playground.tsx → AgentsPlayground (@sdkwork/agents-pc-playground)
+       └─ AgentsWorkbench (@sdkwork/agents-pc/workbench)
+            ├─ chat_session  → @sdkwork/agents-pc-chat (ChatView; tool-call
+            │                   cards with media placeholders/results)
+            ├─ inspiration   → @sdkwork/agents-pc-inspiration
+            ├─ creative      → @sdkwork/agents-pc-creative (generation page:
+            │                   bottom input, creative sidebar session list,
+            │                   generation history)
+            └─ assets / canvas / agents views
+                 ↑ runtime bindings implemented by this host adapter:
+                   configureAgentsPlaygroundRuntime({ 9 SDK clients,
+                   balance: createPlaygroundBalancePort(), tokenPlan,
+                   onLoginRequired })
 ```
 
-## Studio UI theming
-
-All generation modalities share a **borderless flat** studio design under `.theme-aware-dark-surface`:
-
-| CSS namespace | Used by |
-| --- | --- |
-| `--sdkwork-studio-*` | Canonical surface/text/control tokens (all modalities + chat composer) |
-| `sdkwork-image-generation-*` | Image panel class aliases (reference tabs, prompt, settings popup) |
-| `sdkwork-studio-*` | Video, music, audio panels + shared bottom bar |
-| `sdkwork-sfx-generation-*` | SFX panel (extends studio tokens) |
-| `sdkwork-segmented-*` | Reference/history tabs (dark + light via CSS vars) |
-| `sdkwork-playground-chat-*` | Chat page, composer, bubbles, markdown, code blocks, agent input, empty/error states |
-| `sdkwork-model-picker-*` | Shared model picker menu + trigger (`@sdkwork/models-pc-picker`) |
-| `sdkwork-generation-mode-*` | Image/video settings bar, popup, toggles, sliders |
-| `sdkwork-playground-preview-*` | Preview modal panel, text output, metadata sidebar, filter bar |
-| `sdkwork-playground-workspace-sidebar--{image,video,music,audio,sfx}` | Per-modality accent on sidebar |
-
-Theme tokens are defined in `apps/sdkwork-cloudrouter-pc/src/index.css` on `.theme-aware-dark-surface` with `html:not(.dark)` overrides.
-
-## Shared components (DRY)
-
-| Component | Package | Consumers |
-| --- | --- | --- |
-| `SdkworkGenerationModePopupBase` | `@sdkwork/generations-pc-studio` | Image + video settings bar |
-| `SdkworkStudioGenerationBottomBar` | `@sdkwork/generations-pc-studio` | Music, audio, SFX bottom bars |
-| `formatGenerationCreditPoints` | `@sdkwork/generations-pc-studio` (`@sdkwork/utils`) | All credit displays |
-| `buildMusicGenerationPrompt` | `@sdkwork/music-pc-generation` | Suno-style style tags + instrumental prefix |
-| `PlaygroundModalityEmptyState` | `@sdkwork/generations-pc-playground` | All modality history empty states |
-| `DomainGenerationWorkspaceView` | `@sdkwork/generations-pc-workspace` | All modality views |
-| Generation asset config | `@sdkwork/generations-pc-asset-config` | Workspace + all `*-pc-generation` packages (re-export only) |
-
-## Ownership
+## Ownership rules
 
 | Layer | Package | Repo |
 | --- | --- | --- |
-| Playground UI shell | `@sdkwork/generations-pc-playground` | sdkwork-generations |
-| Generation studio UI | `@sdkwork/generations-pc-studio` | sdkwork-generations |
-| Generation history/types | `@sdkwork/generations-pc-workspace` | sdkwork-generations |
-| Modality generation panels | `@sdkwork/{image,video,music,audio}-pc-generation` | respective domain repos |
-| Model picker | `@sdkwork/models-pc-picker` | sdkwork-models |
+| Playground shell + sidebar + all surfaces | `@sdkwork/agents-pc-playground` (+ workbench) | sdkwork-agents |
 | CloudRouter runtime adapter | `@sdkwork/cloudrouter-pc-playground` | sdkwork-cloudrouter |
-| Theme CSS (studio tokens) | `apps/sdkwork-cloudrouter-pc/src/index.css` | sdkwork-cloudrouter |
-| Chat (theme-aware CSS vars) | `cloudrouter-pc-playground/components/chat/*` + `@sdkwork/generations-pc-playground` markdown/preview + `index.css` | cloudrouter + sdkwork-generations |
+| Theme CSS (portal chrome) | `apps/sdkwork-cloudrouter-pc/src/index.css` | sdkwork-cloudrouter |
 
-Chat and preview markdown use the same flat, borderless token model as generation studio (`sdkwork-playground-chat-*` and `sdkwork-playground-preview-*` classes). Submit actions reuse `--sdkwork-studio-accent` for visual consistency with generation panels.
+Rules:
+
+- Playground shell, sidebar tabs, and every playground surface live in
+  `sdkwork-agents`. New playground capabilities land in the workbench system
+  and surface through `@sdkwork/agents-pc-playground`.
+- The host (Cloud Router) owns only the runtime binding adapter in this
+  package: SDK client providers, the balance port, token plan / recharge
+  services, and the portal login redirect.
+- Hosts must not wrap alternative playground shells (generation-only shells,
+  bespoke chat pages). If a capability is missing, extend the workbench.
 
 ## Verification
-
-```bash
-python -m unittest tests.test_playground_runtime_standard.PlaygroundRuntimeStandardTest.test_playground_ui_shell_is_owned_by_generations_pc_playground -v
-python -m unittest tests.test_playground_runtime_standard.PlaygroundRuntimeStandardTest.test_playground_media_generation_uses_fixed_bottom_credit_action_bar -v
-python -m unittest tests.test_playground_runtime_standard.PlaygroundRuntimeStandardTest.test_shared_model_picker_migration_is_complete -v
-python -m unittest tests.test_playground_runtime_standard.PlaygroundRuntimeStandardTest.test_playground_chat_controls_are_stable_and_polished -v
-```
 
 From `apps/sdkwork-cloudrouter-pc`:
 
 ```bash
+pnpm --filter @sdkwork/cloudrouter-pc-playground typecheck
 node playground-generation-studio-alignment.test.mjs
-pnpm exec vitest run playground-chat-runtime.test.ts --config vite.config.ts --pool vmThreads
-pnpm --filter @sdkwork/generations-pc-studio test
-pnpm --filter @sdkwork/music-pc-generation test
 node --import tsx --test commons-runtime.test.ts
+```
+
+From `sdkwork-agents` (playground package + workbench system):
+
+```bash
+pnpm --filter @sdkwork/agents-pc-playground typecheck
 ```

@@ -386,13 +386,7 @@ test("portal shell offsets embedded documents routes below the fixed navbar", ()
 
 test("portal shell offsets playground routes below the fixed navbar", () => {
   const shellSource = readPortalSource("./packages/sdkwork-cloudrouter-pc-shell/src/AppShellLayout.tsx");
-  const pageSource = readFileSync(
-    new URL(
-      "../../../sdkwork-generations/apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/pages/PlaygroundPage.tsx",
-      import.meta.url,
-    ),
-    "utf8",
-  );
+  const pageSource = readPortalSource("./packages/sdkwork-cloudrouter-pc-playground/src/pages/Playground.tsx");
   const indexCssSource = readPortalSource("./src/index.css");
 
   assert.match(shellSource, /sdkwork-cloudrouter-playground-host-offset flex-1/);
@@ -410,7 +404,7 @@ test("portal shell offsets playground routes below the fixed navbar", () => {
   assert.match(indexCssSource, /--sdkwork-image-generation-bg: var\(--sdkwork-studio-bg\)/);
   assert.match(indexCssSource, /\.sdkwork-playground-chat-composer__submit/);
   assert.match(indexCssSource, /\.sdkwork-playground-chat-message-bubble--user/);
-  assert.match(pageSource, /flex h-full min-h-0 w-full flex-1 flex-row overflow-hidden/);
+  assert.match(pageSource, /flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden/);
   assert.doesNotMatch(pageSource, /pt-\[58px\]/);
   assert.doesNotMatch(pageSource, /h-\[100dvh\]/);
 });

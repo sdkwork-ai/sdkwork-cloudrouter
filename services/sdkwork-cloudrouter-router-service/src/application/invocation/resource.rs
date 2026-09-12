@@ -56,8 +56,9 @@ pub struct InvocationResource {
     pub capability: RoutingCapability,
     pub model_requirement: AiRouteModelRequirement,
     /// 资源配置的路由类型：`model`（模型类）或 `api`（API 资源类）。
-    /// 由资源管理（`ai_resource.route_kind`）显式标记；未配置时为空，
-    /// 运行时按"是否携带模型 + 表面"推导（见 [`RouteKind::of`]）。
+    /// 由资源管理（`ai_resource.route_kind`）或内建路由 taxonomy 显式标记；
+    /// 未配置时为空，运行时按"模型要求 + 是否携带模型名"统一推导
+    /// （见 [`RouteKind::of`]）。
     pub route_kind: Option<RouteKind>,
     pub requested_model: Option<String>,
     pub requested_model_catalog_key: Option<String>,

@@ -672,13 +672,12 @@ function parsePackageSpecifier(specifier: string): { packageName: string; subpat
 
 function resolvePortalMarkdownOptimizeEntries(
   configDir: string,
-  sdkworkGenerationsRoot: string,
   sdkworkAgentsRoot: string,
 ): string[] {
   return [
     path.resolve(
-      sdkworkGenerationsRoot,
-      'apps/sdkwork-generations-pc/packages/sdkwork-generations-pc-playground/src/react.ts',
+      sdkworkAgentsRoot,
+      'apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-playground/src/index.ts',
     ),
     path.resolve(configDir, 'packages/sdkwork-cloudrouter-pc-playground/src/pages/Playground.tsx'),
     path.resolve(
@@ -982,7 +981,7 @@ export default defineConfig(({mode}) => {
     },
     optimizeDeps: {
       exclude: PORTAL_SOURCE_OPTIMIZE_EXCLUDE,
-      entries: resolvePortalMarkdownOptimizeEntries(configDir, sdkworkGenerationsRoot, sdkworkAgentsRoot),
+      entries: resolvePortalMarkdownOptimizeEntries(configDir, sdkworkAgentsRoot),
       include: [
         'react',
         'react/jsx-runtime',

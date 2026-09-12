@@ -44,7 +44,7 @@ impl InvocationResourceClassifier for ProviderNativeResourceClassifier {
             parent_resource_id: None,
             capability: request.capability.unwrap_or(spec.capability),
             model_requirement: spec.model_requirement,
-            route_kind: Some(RouteKind::Api),
+            route_kind: spec.route_kind,
             requested_model: spec.requested_model.clone(),
             requested_model_catalog_key: spec.requested_model_catalog_key.clone(),
             resolved_vendor_codes: Vec::new(),
@@ -71,6 +71,22 @@ struct ProviderNativeRouteSpec {
     requested_model: Option<String>,
     requested_model_catalog_key: Option<String>,
     provider_native_model: Option<String>,
+    /// 内建路由的类型标记由 taxonomy 的 `model_requirement` 推导：
+    /// `Required`（anthropic.messages / gemini.* 等模型类路由）保持 `None`，
+    /// 交由统一推导（`RouteKind::of`，在模型提取后执行）与资源管理持久化
+    /// 标记决定；`Optional`/`Ignored` 及未知回退路径维持 API 资源类。
+    route_kind: Option<RouteKind>,
+}
+
+fn route_kind_for_model_requirement(
+    model_requirement: AiRouteModelRequirement,
+) -> Option<RouteKind> {
+    match model_requirement {
+        AiRouteModelRequirement::Required => None,
+        AiRouteModelRequirement::Optional | AiRouteModelRequirement::Ignored => {
+            Some(RouteKind::Api)
+        }
+    }
 }
 
 fn classify_provider_native_spec(
@@ -101,6 +117,7 @@ fn classify_provider_native_spec(
                     .as_ref()
                     .map(|model| canonical_provider_native_catalog_key(supplier_code, model)),
                 provider_native_model,
+                route_kind: route_kind_for_model_requirement(route.model_requirement),
             };
         }
     }
@@ -140,6 +157,8 @@ fn classify_provider_native_spec(
         requested_model: None,
         requested_model_catalog_key: None,
         provider_native_model: None,
+        // 未知回退路径 fail-closed：保持 API 资源类直通，不参与模型路由。
+        route_kind: Some(RouteKind::Api),
     }
 }
 
@@ -349,6 +368,49 @@ mod tests {
         assert_eq!(
             AiRouteFailureStrategy::Failover,
             classification.routing.failure_strategy
+        );
+    }
+
+    #[test]
+    fn model_required_builtin_routes_leave_route_kind_to_unified_derivation() {
+        // taxonomy 声明 Required 的模型类路由（anthropic.messages）不得再被
+        // 分类器硬编码为 API 资源类——历史行为会把请求推进无模型账号路由，
+        // 定价预检按 route_key 找价导致 price_not_found(50201)。
+        let classification = classify_post("/anthropic/v1/messages", "anthropic");
+        assert_eq!(
+            None, classification.resource.route_kind,
+            "Required 模型类路由必须交由 RouteKind::of 统一推导"
+        );
+
+        let classification = classify_post(
+            "/google/v1beta/models/gemini-2.5-pro:generateContent",
+            "google",
+        );
+        assert_eq!("gemini.generate_content", classification.resource.route_key);
+        assert_eq!(None, classification.resource.route_kind);
+    }
+
+    #[test]
+    fn optional_and_ignored_builtin_routes_stay_api_resource_class() {
+        // media_task（Optional）与 account（Ignored）路由维持 API 资源类，
+        // 即使请求体携带模型名也不参与模型路由。
+        let classification =
+            classify_post("/kling/v1/videos/text2video", "kling");
+        assert_eq!("kling.text_to_video", classification.resource.route_key);
+        assert_eq!(Some(RouteKind::Api), classification.resource.route_kind);
+
+        let classification = classify_post("/kling/v1/tasks/task_123", "kling");
+        assert_eq!("kling.task_query", classification.resource.route_key);
+        assert_eq!(Some(RouteKind::Api), classification.resource.route_kind);
+    }
+
+    #[test]
+    fn unknown_fallback_route_keeps_explicit_api_route_kind() {
+        let classification = classify_post("/v1/totally-unknown", "anthropic");
+        assert_eq!(
+            Some(RouteKind::Api),
+            classification.resource.route_kind,
+            "未知回退路径 fail-closed：显式 API 资源类，不参与模型路由"
         );
     }
 

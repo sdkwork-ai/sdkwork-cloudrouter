@@ -16,7 +16,7 @@
 
 use std::sync::Arc;
 
-use super::{Invocation, InvocationError, InvocationResource, InvocationSurface};
+use super::{Invocation, InvocationError, InvocationResource};
 use crate::application::AuthenticatedApiKeyContext;
 #[cfg(test)]
 use crate::domain::BillingOwnerKind;
@@ -32,16 +32,17 @@ pub enum RouteKind {
 impl RouteKind {
     /// 从请求资源解析路由类型。
     ///
-    /// 优先读取资源管理显式标记的 `route_kind`（对应 `ai_resource.route_kind`）；
-    /// 未显式标记时按"表面 + 是否携带模型名"推导：
-    /// - ProviderNative 表面不解析模型 → API 类；
-    /// - OpenAI 兼容表面仅当资源要求模型且请求携带模型名时 → 模型类。
+    /// 优先读取显式 `route_kind`：资源管理持久化标记（`ai_resource.route_kind`）
+    /// 或分类器按内建路由 taxonomy 推导的标记（provider-native 的
+    /// `Optional`/`Ignored`/未知回退路径显式标记 API 类）。未标记时按
+    /// "模型要求 + 是否携带模型名" 统一推导——模型提取拦截器先于路由规划
+    /// 执行，provider-native 请求体中的 model 在此之前已就位：
+    /// - 要求为 `Required`（anthropic.messages / gemini.* 等模型类路由）
+    ///   且请求携带模型名 → 模型类；
+    /// - 其余 → API 资源类。
     pub fn of(resource: &InvocationResource) -> Self {
         if let Some(kind) = resource.route_kind {
             return kind;
-        }
-        if resource.surface == InvocationSurface::ProviderNative {
-            return Self::Api;
         }
         if resource.model_requirement.routes_model_when_present()
             && resource
@@ -132,6 +133,7 @@ mod tests {
     use super::*;
     use crate::application::invocation::{
         Invocation, InvocationBilling, InvocationRequest, InvocationResource, InvocationSubject,
+        InvocationSurface,
     };
     use crate::domain::{AiRouteModelRequirement, RoutingCapability};
 
@@ -169,6 +171,28 @@ mod tests {
         .with_requested_model("gpt-4o-mini");
         resource.surface = InvocationSurface::ProviderNative;
         assert_eq!(RouteKind::Model, RouteKind::of(&resource));
+    }
+
+    #[test]
+    fn provider_native_required_route_derives_model_after_model_extraction() {
+        // provider-native 的 Required 模型类路由（如 anthropic.messages）在
+        // 模型提取拦截器就位后由统一推导判定为模型类；表面不再一票否决，
+        // 否则请求会掉进无模型账号路由并被定价预检按 route_key 找价失败。
+        let mut resource = InvocationResource::api_resource(
+            "anthropic.messages",
+            "anthropic.messages",
+            RoutingCapability::Chat,
+        );
+        resource.surface = InvocationSurface::ProviderNative;
+        resource.model_requirement = AiRouteModelRequirement::Required;
+        resource.route_kind = None;
+        resource.requested_model = Some("claude-sonnet-4-5".to_owned());
+        assert_eq!(RouteKind::Model, RouteKind::of(&resource));
+
+        // 模型缺失时推导为 API 资源类（Required 缺模型的请求会在更早的
+        // payload 校验阶段被拒绝，这里只锁定推导语义本身）。
+        resource.requested_model = None;
+        assert_eq!(RouteKind::Api, RouteKind::of(&resource));
     }
 
     #[test]
