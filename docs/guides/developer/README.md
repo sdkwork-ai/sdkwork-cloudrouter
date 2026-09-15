@@ -10,8 +10,66 @@ Specs: `../../sdkwork-specs/DOCUMENTATION_SPEC.md` section 2, `../../sdkwork-spe
 
 - Node.js 22+ (LTS)
 - pnpm 10.33.0 (`corepack enable && corepack prepare pnpm@10.33.0 --activate`)
+- Git with `git-lfs` on `PATH` (`.gitattributes` keeps `data/skills/**` JSON behind LFS; without it a checkout keeps pointer files)
 - Rust stable toolchain with `rustfmt` and `clippy`
 - PostgreSQL 16 for the standalone product server; SQLite is reserved for the client-local `dev:desktop:sqlite` variant
+
+#### Windows native toolchain
+
+`pnpm dev` builds the Rust services through `scripts/dev/start-workspace.mjs`, which runs
+`cargo build -p ...` **without `--target`**, so the host toolchain is the one that has to
+link. `rust-toolchain.toml` pins `channel = "stable"`, and rustup resolves that against its
+default host — `x86_64-pc-windows-msvc` on a standard Windows rustup install. A Windows
+machine therefore needs the MSVC toolchain, not MinGW.
+
+Two components must **both** be present: the MSVC toolset (`cl.exe`, `link.exe`, `lib\x64`)
+and the Windows SDK (`Lib\<version>\um\x64`, `Lib\<version>\ucrt\x64`). rustc resolves them
+as a single unit, so a machine with a complete MSVC toolset but no Windows SDK is reported as
+`error: linker link.exe not found` — the SDK never gets mentioned. That message is therefore
+ambiguous, and both halves have to be verified before concluding MSVC is missing. rustc
+derives the MSVC lib directory and the SDK lib directories itself; no `LIB`/`INCLUDE`
+environment setup is required.
+
+1. **MSVC toolset and Windows SDK.** Either add `Microsoft.VisualStudio.Workload.VCTools`
+   ("Desktop development with C++") to an existing Visual Studio, or install the standalone
+   Windows SDK, which is independent of the Visual Studio Installer:
+
+   ```powershell
+   # Keep the SDK off the system drive by pre-setting KitsRoot10 (the standalone installer
+   # honours it and logs the resolved root as KITSROOT="D:\Windows Kits\10\"):
+   New-ItemProperty 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows Kits\Installed Roots' `
+     -Name KitsRoot10 -Value 'D:\Windows Kits\10' -PropertyType String -Force
+   # https://go.microsoft.com/fwlink/?linkid=2327008 -> winsdksetup.exe
+   & .\winsdksetup.exe /features OptionId.DesktopCPPx64 /quiet /norestart
+   ```
+
+   When driving the Visual Studio Installer from the command line, two switches bite:
+
+   - `setup.exe ... modify` **rejects `--wait`** and exits with code `87`.
+   - `--norestart` is accepted **only together with `--quiet` or `--passive`**; on its own it
+     is rejected with code `87` as well. `--passive` shows a progress bar, `--quiet` is fully
+     silent.
+
+   A VS install that only carries the IDE/MSBuild/dotnet components has no `VC\` directory,
+   and then every build script dies at the link step — surfacing as a burst of
+   `could not compile <crate> (build script) due to 1 previous error` for `proc-macro2`,
+   `serde`, `quote`, `getrandom`, `parking_lot_core`, `libm`, `num-traits` and friends. The
+   shared `1 previous error` is the misleading part: the real message
+   (`error: linker link.exe not found`) is printed once, further up the log.
+
+2. **CMake and NASM** on `PATH`. `aws-lc-sys` — reached through
+   `rustls <- aws-smithy-http-client <- aws-smithy-runtime <- aws-config <- sdkwork-drive-storage-s3`
+   — compiles from source on `windows-msvc` and needs both; `aws-lc-rs` does not enable
+   `aws-lc-sys/prebuilt-nasm`, so NASM is mandatory rather than optional.
+
+3. **Keep Git Bash's coreutils `link` off `PATH`** when building from a Bash shell. `link` in
+   `usr/bin` is the coreutils hard-link utility, and on a machine where rustc falls back to
+   the bare name `link.exe` that shadowing produces `link: extra operand '...rcgu.o'` instead
+   of a clear diagnostic. PowerShell/cmd sessions are unaffected.
+
+A previously verified combination is recorded in
+[`../../audit/CORS-HEADER-GATE-SDK-LOCALE-2026-09-11.md`](../../audit/CORS-HEADER-GATE-SDK-LOCALE-2026-09-11.md)
+(MSVC toolset `14.44.35207` `bin\HostX64\x64` plus Windows Kits `10.0.26100`).
 
 ### Install and Start
 
@@ -19,6 +77,14 @@ Specs: `../../sdkwork-specs/DOCUMENTATION_SPEC.md` section 2, `../../sdkwork-spe
 pnpm.cmd install
 pnpm.cmd dev
 ```
+
+`pnpm.cmd install` is optional on a fresh clone or right after a pull that moved
+`pnpm-lock.yaml`: the root entrypoints invoke
+`node scripts/lib/ensure-cloud-router-node-deps.mjs` before `pnpm exec sdkwork-app`,
+and it completes the workspace install whenever `node_modules` is missing,
+half-linked (an interrupted install leaves `node_modules/.pnpm` without `.bin`), or
+older than the lockfile. Run `pnpm check:dev-bootstrap` if you add a new entrypoint
+and want to confirm it bootstraps; that check sits in `pnpm check`.
 
 `pnpm dev` starts the default topology profile `standalone.development`. The integrated Rust edge listens on `http://127.0.0.1:3900`; the portal Vite dev server runs on `http://127.0.0.1:3901`.
 

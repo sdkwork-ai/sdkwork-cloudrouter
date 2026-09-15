@@ -42,6 +42,11 @@
 @source "../../../../sdkwork-agents/apps/sdkwork-agents-pc/packages";
 @source "../../../../sdkwork-agents/apps/sdkwork-agents-pc/src";
 @source "../../../../sdkwork-partner/apps/sdkwork-partner-pc/packages/*/src/**";
+/* Storage Center reuses the drive-owned object browser
+   (`StorageObjectBrowser` from `sdkwork-drive-pc-admin-storage-providers`), so
+   that module's Tailwind utilities must be generated for this app as well.
+   Tailwind v4 does not scan outside the project root on its own. */
+@source "../../../../sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-admin-storage-providers/src";
 
 @custom-variant dark (&:is(.dark *));
 

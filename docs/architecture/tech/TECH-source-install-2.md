@@ -32,16 +32,18 @@ git clone https://github.com/sdkwork-ai/sdkwork-cloudrouter.git
 cd sdkwork-cloudrouter
 ```
 
-安装 portal workspace 依赖：
+安装工作区依赖（含 portal，`apps/sdkwork-cloudrouter-pc` 是根工作区成员，不需要单独安装）：
 
 ```powershell
-pnpm --dir apps\sdkwork-cloudrouter-pc install
+pnpm install
 ```
 
-也可以直接使用根命令，它会在需要时安装 portal 依赖：
+根命令会自动完成这一步：首次执行 `pnpm dev`（以及 `pnpm build` / `pnpm test` / `pnpm check` /
+`pnpm verify` 等）时，入口先运行 `node scripts/lib/ensure-cloud-router-node-deps.mjs`，在
+`node_modules` 缺失、不完整或落后于 `pnpm-lock.yaml` 时自动补跑 `pnpm install`。因此 clone 之后可以直接：
 
 ```powershell
-pnpm dev -- --install
+pnpm dev
 ```
 
 ## 3. 源码开发模式
@@ -145,7 +147,7 @@ $env:SDKWORK_DATABASE_URL="postgresql://sdkwork_ai_prod:<password>@db.example.co
 pnpm start -- --deployment-mode server
 ```
 
-首次执行 `pnpm dev -- --install`、`pnpm start` 或 installer `ensure` 时，会按需初始化 bootstrap admin 登录。请保存 installer JSON 中的 `bootstrapAdmin.initialPassword`，或启动日志中的 `initial_password`，首次登录后立即轮换。管理员登录链路完整后，后续初始化不会再输出或重置密码。
+首次执行 `pnpm dev`、`pnpm start` 或 installer `ensure` 时，会按需初始化 bootstrap admin 登录。请保存 installer JSON 中的 `bootstrapAdmin.initialPassword`，或启动日志中的 `initial_password`，首次登录后立即轮换。管理员登录链路完整后，后续初始化不会再输出或重置密码。
 
 ## 6. 从源码构建 release 安装包
 

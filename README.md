@@ -79,8 +79,17 @@ workspace, building production artifacts, or producing private release packages:
 Quick source start:
 
 ```powershell
-pnpm dev -- --install
+pnpm dev
 ```
+
+No separate install step is required. Every public entrypoint that invokes the
+`sdkwork-app` facade first runs `node scripts/lib/ensure-cloud-router-node-deps.mjs`,
+which completes the root `pnpm install` whenever `node_modules` is missing,
+half-linked (an interrupted install leaves `node_modules/.pnpm` behind without
+`.bin`), or older than `pnpm-lock.yaml`. The check sits in front of the facade on
+purpose: `pnpm exec sdkwork-app` resolves its bin from the root
+`node_modules/.bin`, so a check placed behind it can never repair a fresh clone.
+`pnpm check:dev-bootstrap` enforces that ordering for every future entrypoint.
 
 Quick Ubuntu/Debian service install from a release asset:
 

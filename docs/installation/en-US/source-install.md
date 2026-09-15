@@ -9,6 +9,7 @@ Install:
 - Git
 - Node.js 22 or compatible
 - pnpm `10.33.0`
+- Git with `git-lfs` on `PATH` (`.gitattributes` keeps `data/skills/**` JSON behind LFS; without it a checkout keeps pointer files)
 - Rust toolchain and Cargo
 - Python 3
 - Optional: Docker Desktop for PostgreSQL integration tests
@@ -18,6 +19,7 @@ Quick check:
 
 ```bash
 git --version
+git lfs version
 node --version
 pnpm --version
 cargo --version
@@ -31,17 +33,27 @@ git clone https://github.com/sdkwork-ai/sdkwork-cloudrouter.git
 cd sdkwork-cloudrouter
 ```
 
-Install portal workspace dependencies:
+Install the workspace dependencies (this includes the portal — `apps/sdkwork-cloudrouter-pc`
+is a root workspace member, so it needs no separate install):
 
 ```bash
-pnpm --dir apps/sdkwork-cloudrouter-pc install
+pnpm install
 ```
 
-Or let the root launcher install them when needed:
+The root launcher performs this step on its own: the first `pnpm dev` (and
+`pnpm build` / `pnpm test` / `pnpm check` / `pnpm verify`) runs
+`node scripts/lib/ensure-cloud-router-node-deps.mjs` first, which re-runs `pnpm install`
+whenever `node_modules` is missing, incomplete, or older than `pnpm-lock.yaml`. So a
+fresh clone can go straight to:
 
 ```bash
-pnpm dev -- --install
+pnpm dev
 ```
+
+> `pnpm install` must resolve sibling repositories such as `../sdkwork-app-topology`
+> from disk: `pnpm-workspace.yaml` references them through `workspace:*`. An isolated
+> clone fails with a missing-sibling error — materialize the `../sdkwork-*` layout per
+> `../sdkwork-specs/PNPM_WORKSPACE_DEPENDENCY_SPEC.md` sections 1 and 2.
 
 ## 3. Development Runtime
 
@@ -157,7 +169,7 @@ ssl_mode = "require"
 max_connections = 16
 ```
 
-The first `pnpm dev -- --install`, `pnpm start`, or installer `ensure` run initializes the bootstrap admin login when needed. Save `bootstrapAdmin.initialPassword` from installer JSON or `initial_password` from startup logs, then rotate it after first login. Re-running initialization does not print or reset the password once the admin login is complete.
+The first `pnpm dev`, `pnpm start`, or installer `ensure` run initializes the bootstrap admin login when needed. Save `bootstrapAdmin.initialPassword` from installer JSON or `initial_password` from startup logs, then rotate it after first login. Re-running initialization does not print or reset the password once the admin login is complete.
 
 ## 6. Build Release Packages From Source
 

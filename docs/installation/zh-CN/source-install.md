@@ -9,6 +9,7 @@
 - Git
 - Node.js 22 或兼容版本
 - pnpm `10.33.0`
+- Git，且 `git-lfs` 在 PATH 中（`.gitattributes` 把 `data/skills/**` 的 JSON 交给 LFS，缺少时 checkout 得到的是指针文件）
 - Rust toolchain 和 Cargo
 - Python 3
 - 可选：Docker Desktop，用于 PostgreSQL 集成测试
@@ -18,6 +19,7 @@
 
 ```powershell
 git --version
+git lfs version
 node --version
 pnpm --version
 cargo --version
@@ -31,17 +33,23 @@ git clone https://github.com/sdkwork-ai/sdkwork-cloudrouter.git
 cd sdkwork-cloudrouter
 ```
 
-安装 portal workspace 依赖：
+安装工作区依赖（含 portal，`apps/sdkwork-cloudrouter-pc` 是根工作区成员，不需要单独安装）：
 
 ```powershell
-pnpm --dir apps\sdkwork-cloudrouter-pc install
+pnpm install
 ```
 
-也可以直接使用根命令，它会在需要时安装 portal 依赖：
+根命令会自动完成这一步：首次执行 `pnpm dev`（以及 `pnpm build` / `pnpm test` / `pnpm check` /
+`pnpm verify` 等）时，入口先运行 `node scripts/lib/ensure-cloud-router-node-deps.mjs`，在
+`node_modules` 缺失、不完整或落后于 `pnpm-lock.yaml` 时自动补跑 `pnpm install`。因此 clone 之后可以直接：
 
 ```powershell
-pnpm dev -- --install
+pnpm dev
 ```
+
+> `pnpm install` 必须能在仓库内解析 `../sdkwork-app-topology` 等兄弟仓库：`pnpm-workspace.yaml` 用
+> `workspace:*` 引用它们。单独 clone 本仓库会报缺兄弟仓库，请按
+> `../sdkwork-specs/PNPM_WORKSPACE_DEPENDENCY_SPEC.md` 第 1、2 节补全 `../sdkwork-*` 布局。
 
 ## 3. 源码开发模式
 
@@ -144,7 +152,7 @@ $env:SDKWORK_DATABASE_URL="postgresql://sdkwork_ai_prod:<password>@db.example.co
 pnpm start -- --deployment-mode server
 ```
 
-首次执行 `pnpm dev -- --install`、`pnpm start` 或 installer `ensure` 时，会按需初始化 bootstrap admin 登录。请保存 installer JSON 中的 `bootstrapAdmin.initialPassword`，或启动日志中的 `initial_password`，首次登录后立即轮换。管理员登录链路完整后，后续初始化不会再输出或重置密码。
+首次执行 `pnpm dev`、`pnpm start` 或 installer `ensure` 时，会按需初始化 bootstrap admin 登录。请保存 installer JSON 中的 `bootstrapAdmin.initialPassword`，或启动日志中的 `initial_password`，首次登录后立即轮换。管理员登录链路完整后，后续初始化不会再输出或重置密码。
 
 ## 6. 从源码构建 release 安装包
 

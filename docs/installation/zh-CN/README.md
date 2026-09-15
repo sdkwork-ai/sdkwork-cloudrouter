@@ -71,8 +71,12 @@ node scripts\plan-cloud-router-install-packages.mjs --json
 源码开发：
 
 ```powershell
-pnpm dev -- --install
+pnpm dev
 ```
+
+首次执行会自动补全工作区依赖：根入口在调用 `sdkwork-app` facade 之前先运行
+`node scripts/lib/ensure-cloud-router-node-deps.mjs`，当 `node_modules` 缺失、不完整（安装被中断后
+只剩 `node_modules/.pnpm`）或落后于 `pnpm-lock.yaml` 时自动执行 `pnpm install`。无需单独执行安装步骤。
 
 生产构建：
 

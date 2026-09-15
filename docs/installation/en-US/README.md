@@ -72,8 +72,14 @@ node scripts/plan-cloud-router-install-packages.mjs --json
 Source development:
 
 ```bash
-pnpm dev -- --install
+pnpm dev
 ```
+
+The first run completes the workspace install on its own: the root entrypoint runs
+`node scripts/lib/ensure-cloud-router-node-deps.mjs` before invoking the `sdkwork-app`
+facade, and that helper runs `pnpm install` whenever `node_modules` is missing,
+half-linked (an interrupted install leaves `node_modules/.pnpm` behind), or older
+than `pnpm-lock.yaml`. No separate install step is needed.
 
 Production build:
 
