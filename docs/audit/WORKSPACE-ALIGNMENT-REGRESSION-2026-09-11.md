@@ -1,6 +1,6 @@
 # 全工作区对齐回归报告（2026-09-11）
 
-> 范围：`E:\sdkwork-space` 下全部 **100 个受治理仓**（`sdkwork-` 前缀 + 含 `AGENTS.md`，见
+> 范围：`<workspace-root>` 下全部 **100 个受治理仓**（`sdkwork-` 前缀 + 含 `AGENTS.md`，见
 > `sdkwork-specs/tools/lib/workspace-check-runner.mjs#listWorkspaceRepositoryRoots`）。
 > 方法：16 条根门禁全量回归 + 逐门禁根因归因 + 官方 `align:*` 修复器 + 门禁层缺陷修复。
 > 关联：`CORS-HEADER-GATE-SDK-LOCALE-2026-09-11.md`（locale 头退役主线）。
@@ -331,7 +331,7 @@ Locale 主线（退役 `X-Sdkwork-Locale` → 标准 `Accept-Language`）**已�
 
 ```
 Error: ENOENT: no such file or directory, stat
-'E:\sdkwork-space\sdkwork-mcp\apps\sdkwork-mcp-pc\packages\sdkwork-mcp-pc-admin\node_modules.stale.20260902\react-router-dom'
+'<workspace-root>/sdkwork-mcp\apps\sdkwork-mcp-pc\packages\sdkwork-mcp-pc-admin\node_modules.stale.20260902\react-router-dom'
     at Object.statSync (node:fs:1746:25)
     at walk (check-identity-naming.mjs:50:21)
 ```
@@ -396,7 +396,7 @@ Error: ENOENT: no such file or directory, stat
    → 需决定 fork 是否适用 SDKWork 布局标准、是否给单独 `repository-kind` 与门禁豁免。
    **注意**：`agentstudio` 的 `align:packages-layout` 含 `remove legacy duplicate source`
    这类**删除性动作**，未确认前**不可执行**。
-3. **根 checkout 的 `FORBIDDEN_UMBRELLA_WORKSPACE`** —— ✅ 本轮已执行：`E:\sdkwork-space/pnpm-workspace.yaml`
+3. **根 checkout 的 `FORBIDDEN_UMBRELLA_WORKSPACE`** —— ✅ 本轮已执行：`<workspace-root>/pnpm-workspace.yaml`
    的 22 条跨仓 `packages:` 路径已改为 `packages: []`（并确认根无 `--filter` 依赖、无 `node_modules`）。
 4. **`check:modes` / `check:workflow`** —— ✅ 本轮已转绿（官方 `align-workflow-dependencies.mjs`
    新建 1 + 更新 10 个 `sdkwork.workflow.json`）。`UNPUBLISHED_INTERNAL_PACKAGE` /
@@ -484,7 +484,7 @@ Error: ENOENT: no such file or directory, stat
 ## 4. 复现与验证
 
 ```bash
-cd /e/sdkwork-space
+cd <workspace-root>
 
 # 16 条根门禁逐条独立回归（不要用 check:all —— 它用 && 串联，首个失败即短路）
 node sdkwork-specs/tools/run-gate-matrix.mjs --workspace .            # ✅ 已产品化：契约 + 基线全矩阵
@@ -1020,7 +1020,7 @@ schema enum 三处都没有）；`client-application`（`messaging`）同样是�
 | 复验项 | 方法 | 结果 |
 | --- | --- | --- |
 | 舰队接线 | `check-locale-gate-wiring.mjs --workspace` | 审计 100 仓：**reachable 71 / UNWIRED 0** / 无聚合 16（warning）/ 非 npm 13 |
-| 门禁是否真的在契约层 | 读根 `E:/sdkwork-space/package.json` 的 `check:all` | 27 段中含 `check:i18n-standard`、`test:i18n`、`check:locale-gate-wiring`（**带 `--enforce`**）、`test:locale-gate-wiring` |
+| 门禁是否真的在契约层 | 读根 `<workspace-root>/package.json` 的 `check:all` | 27 段中含 `check:i18n-standard`、`test:i18n`、`check:locale-gate-wiring`（**带 `--enforce`**）、`test:locale-gate-wiring` |
 | 文档是否有残留"处方" | 全 specs 扫 `x-sdkwork-locale` 的 `.md` | 仅 **2 个文件**命中，且**均为禁止性/历史记录**，无一处仍规定发送该 header |
 | `Accept-Language` 是否落到规范 | `grep -c -i accept-language I18N_SPEC.md` | 9 处；`I18N_SPEC.md` §3 的 `source` 枚举已删除 `sdk-header`/`SdkHeader` |
 
@@ -1028,7 +1028,7 @@ schema enum 三处都没有）；`client-application`（`messaging`）同样是�
 `sdkwork-specs/gates.manifest.json` 里找 locale 门禁，**两处都没有**，一度判定
 "locale 门禁本身零接线"。这是**假警报**，根因是查错了清单：
 
-- 契约层的真源是**工作区根** `E:/sdkwork-space/package.json` 的 `check:all`（27 段），
+- 契约层的真源是**工作区根** `<workspace-root>/package.json` 的 `check:all`（27 段），
   locale 门禁定义在**那里**，不在 specs 仓；
 - `gates.manifest.json` 只登记**尚未进入 `check:all`** 的门禁，locale 门禁已在契约层，
   **因此不应出现在 manifest 里**——这由 `tools/run-gate-matrix.test.mjs` 的
@@ -1041,7 +1041,7 @@ guardrail 层看 `gates.manifest.json`，两层互斥且由测试守护。
 
 ### 9.1 矩阵结果
 
-`node sdkwork-specs/tools/run-gate-matrix.mjs --workspace E:/sdkwork-space`（耗时 20m34s）：
+`node sdkwork-specs/tools/run-gate-matrix.mjs --workspace <workspace-root>`（耗时 20m34s）：
 
 | 层 | 结果 |
 | --- | --- |

@@ -15,7 +15,7 @@ documentation changes.
 
 ## Repository Entry Points
 
-- Workspace root: `e:\sdkwork-space\sdkwork-cloudrouter`
+- Workspace root: `<workspace-root>/sdkwork-cloudrouter`
 - Workspace specs: `../sdkwork-specs/`
 - Application manifest: `sdkwork.app.config.json`
 - Repository agent rules: `AGENTS.md`

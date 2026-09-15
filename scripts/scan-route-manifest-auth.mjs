@@ -2,8 +2,10 @@
 //   manifest public routes whose OpenAPI contract requires credentials (40001 risk)
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const space = 'E:/sdkwork-space';
+// The checkout root: this script lives at `<workspace-root>/sdkwork-cloudrouter/scripts/`.
+const space = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 const ROUTE_CRATES = [
   ['sdkwork-account', 'sdkwork-routes-account-app-api'],

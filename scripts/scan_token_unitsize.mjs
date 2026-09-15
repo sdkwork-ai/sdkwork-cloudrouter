@@ -1,7 +1,10 @@
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const modelsRoot = 'e:/sdkwork-space/sdkwork-models/models';
+// `sdkwork-models` is a sibling repository resolved through the checkout root,
+// never by absolute location (DEPENDENCY_MANAGEMENT_SPEC.md section 1).
+const modelsRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'sdkwork-models', 'models');
 const metersPath = join(modelsRoot, 'meters.json');
 
 // Load meters to classify "token" type meters

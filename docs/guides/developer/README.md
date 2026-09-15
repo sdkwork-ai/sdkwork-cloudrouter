@@ -26,9 +26,32 @@ Two components must **both** be present: the MSVC toolset (`cl.exe`, `link.exe`,
 and the Windows SDK (`Lib\<version>\um\x64`, `Lib\<version>\ucrt\x64`). rustc resolves them
 as a single unit, so a machine with a complete MSVC toolset but no Windows SDK is reported as
 `error: linker link.exe not found` — the SDK never gets mentioned. That message is therefore
-ambiguous, and both halves have to be verified before concluding MSVC is missing. rustc
-derives the MSVC lib directory and the SDK lib directories itself; no `LIB`/`INCLUDE`
-environment setup is required.
+ambiguous, and both halves have to be verified before concluding MSVC is missing.
+
+**`LIB` must be set — rustc does not discover the SDK lib directories by itself.** Measured
+2026-09-15 against toolset `14.44.35207` + Windows Kits `10.0.26100.0`, from an otherwise
+clean environment with only `…\bin\Hostx64\x64` prepended to `PATH`: `link.exe` resolved to
+the MSVC linker, and the build still failed with
+`LINK : fatal error LNK1181: cannot open input file 'kernel32.lib'`. Adding `LIB` — the MSVC
+`lib\x64` **together with** the SDK `ucrt\x64` and `um\x64` — was required to link. An
+earlier revision of this guide claimed no `LIB`/`INCLUDE` setup was needed; that was wrong and
+the audit note linked below already contradicted it.
+
+Take the environment from `vcvars64.bat` instead of hand-listing directories, then persist it
+at user scope so plain `pnpm.cmd dev` in a new terminal inherits it:
+
+```powershell
+# Inspect what the installed toolset actually exports:
+cmd /c "`"$env:VSINSTALLDIR\VC\Auxiliary\Build\vcvars64.bat`" >nul 2>&1 && set" |
+  Select-String '^(INCLUDE|LIB)='
+```
+
+A Build Tools install outside the default `C:\Program Files (x86)\Microsoft Visual Studio`
+root (as on this machine, where the toolset lives in `D:\programs\vs-buildtools` and the SDK
+in `D:\Windows Kits\10`) is invisible to `vswhere` and to any registry-based MSVC
+auto-detection, so nothing derives these paths on its own — set them explicitly.
+Environment variables only reach processes started **after** the change, so restart terminals
+(and the IDE, and any long-running agent host) before re-running `pnpm dev`.
 
 1. **MSVC toolset and Windows SDK.** Either add `Microsoft.VisualStudio.Workload.VCTools`
    ("Desktop development with C++") to an existing Visual Studio, or install the standalone
@@ -67,6 +90,15 @@ environment setup is required.
    the bare name `link.exe` that shadowing produces `link: extra operand '...rcgu.o'` instead
    of a clear diagnostic. PowerShell/cmd sessions are unaffected.
 
+   Bash needs more than a persisted `PATH`, because MSYS always puts its own `/usr/bin` ahead
+   of every Windows entry — `command -v link.exe` returns `/usr/bin/link.exe` even after the
+   MSVC directory is persisted at user scope. Prepend the toolset directory for that shell:
+
+   ```bash
+   export PATH="/d/programs/vs-buildtools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64:$PATH"
+   command -v link.exe   # expected: the Hostx64/x64 path, not /usr/bin/link.exe
+   ```
+
 A previously verified combination is recorded in
 [`../../audit/CORS-HEADER-GATE-SDK-LOCALE-2026-09-11.md`](../../audit/CORS-HEADER-GATE-SDK-LOCALE-2026-09-11.md)
 (MSVC toolset `14.44.35207` `bin\HostX64\x64` plus Windows Kits `10.0.26100`).
@@ -87,6 +119,11 @@ older than the lockfile. Run `pnpm check:dev-bootstrap` if you add a new entrypo
 and want to confirm it bootstraps; that check sits in `pnpm check`.
 
 `pnpm dev` starts the default topology profile `standalone.development`. The integrated Rust edge listens on `http://127.0.0.1:3900`; the portal Vite dev server runs on `http://127.0.0.1:3901`.
+
+The first `pnpm dev` after a clone is dominated by a **blocking cold Rust build**
+(`rust-prebuild`: `cargo build -p sdkwork-cloudrouter-installer -p sdkwork-api-cloudrouter-standalone-gateway`
+into `target/dev-workspace`). `pnpm dev` cannot reach the two dev servers until that step
+exits zero, so a machine without the Windows toolchain above fails before either port opens.
 
 For SQLite development (no PostgreSQL required):
 

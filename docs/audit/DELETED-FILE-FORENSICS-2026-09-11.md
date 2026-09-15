@@ -1,6 +1,6 @@
 # 误删文件取证与恢复报告（2026-09-11）
 
-**范围**：工作区根 `E:\sdkwork-space`（106 个 git 仓）  
+**范围**：工作区根 `<workspace-root>`（106 个 git 仓）  
 **触发**：怀疑前序执行（`git rm -r` 被 SIGTERM 中断）造成文件被应用误删  
 **结论**：**事故窗口内非预期缺失 = 0**；4 个 gitignored 本地文件已按原始内容恢复。
 
@@ -32,7 +32,7 @@
 ## 3. 全仓未提交删除扫描结果
 
 ```
-workspace : E:/sdkwork-space
+workspace : <workspace-root>
 repos     : 106
 no deletions : 105
 with deletions: 0
@@ -123,7 +123,7 @@ STILL MISSING: 0
 SKILL=~/.workbuddy/skills/windows-recycle-bin-forensics/scripts
 
 # 1) 全仓未提交删除扫描（约 1.5 分钟 / 106 仓）→ 期望 with deletions: 0
-node "$SKILL/git-deletion-sweep.mjs" "E:/sdkwork-space"
+node "$SKILL/git-deletion-sweep.mjs" "<workspace-root>"
 
 # 2) 事故窗口取证（路径含 $，用单引号传参）→ 期望 STILL MISSING: 0
 node "$SKILL/recycle-forensics.mjs" 'E:\$Recycle.Bin' sdkwork-cloudrouter \
@@ -147,7 +147,7 @@ node "$SKILL/restore-from-recycle.mjs" 'E:\$Recycle.Bin\S-1-5-21-<sid>' jobs.jso
 ```
 
 注意事项：
-- Node 原生工具不认 MSYS 路径，一律传 `E:/...`。
+- Node 原生工具不认 MSYS 路径，一律传 `<path>`。
 - shell 中 `$Recycle.Bin` 的 `$` 会被吞掉，需用单引号、`execFileSync` 数组传参或转义。
 - `FILETIME → epoch ms` 为 UTC，转本地需 +8h；本机 `current_time` 头部字段标注的时区
   与实际不符，一律以 `date` 为准。

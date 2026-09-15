@@ -269,7 +269,7 @@ CARGO_INCREMENTAL=0 cargo test -j 2 -p sdkwork-cloudrouter-edge-runtime --test e
 排查本议题时发现 `../sdkwork-specs` 的门禁自测普遍把被测工具写成
 `path.resolve('tools/<x>.mjs')` —— 这是**相对调用者 cwd** 的。而工作区根正是这样聚合它们的：
 `node --test sdkwork-specs/tools/<x>.test.mjs`（cwd = 工作区根）→ 解析成
-`E:\sdkwork-space\tools\<x>.mjs` → 全部 `Cannot find module`，**在断言任何东西之前就死掉**，
+`<workspace-root>/tools\<x>.mjs` → 全部 `Cannot find module`，**在断言任何东西之前就死掉**，
 却只在把门禁接进根聚合时才暴露。
 
 已修 9 个（改为 `path.resolve(path.dirname(fileURLToPath(import.meta.url)), '<x>.mjs')`）：

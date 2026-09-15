@@ -1,5 +1,9 @@
-import { pathToFileURL } from 'node:url';
-const { chromium } = await import(pathToFileURL('E:/sdkwork-space/sdkwork-cloudrouter/node_modules/.pnpm/playwright@1.61.1/node_modules/playwright/index.mjs').href);
+// Resolved through the package-manager coordinate, not a hardcoded store path:
+// the `.pnpm/<pkg>@<version>/` directory name embeds the resolved version and
+// moving the workspace invalidates any absolute reference to it. `@playwright/test`
+// is the declared devDependency of this package and re-exports `chromium`; the
+// bare `playwright` runtime package is not declared anywhere.
+const { chromium } = await import('@playwright/test');
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage();
 const responses = [];

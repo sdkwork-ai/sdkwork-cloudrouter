@@ -1,5 +1,11 @@
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// `sdkwork-models` is a sibling repository resolved through the checkout root,
+// never by absolute location (DEPENDENCY_MANAGEMENT_SPEC.md section 1).
+const MODELS_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "sdkwork-models");
 
 function rateHash(pricing, price) {
   const payload = JSON.stringify({
@@ -31,8 +37,8 @@ function rateHash(pricing, price) {
 }
 
 const files = [
-  "e:/sdkwork-space/sdkwork-models/models/alibaba/cn/pricing/text-embedding-v3.json",
-  "e:/sdkwork-space/sdkwork-models/models/alibaba/cn/pricing/text-embedding-v4.json",
+  resolve(MODELS_ROOT, "models/alibaba/cn/pricing/text-embedding-v3.json"),
+  resolve(MODELS_ROOT, "models/alibaba/cn/pricing/text-embedding-v4.json"),
 ];
 
 for (const file of files) {

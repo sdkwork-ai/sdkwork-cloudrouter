@@ -29,7 +29,7 @@ duplicate Rust Axum method route POST /app/v3/api/courses/applications/videos: s
 duplicate Rust Axum method route POST /app/v3/api/oauth/authorization_urls: services/sdkwork-cloudrouter-product/src/api/app_auth.rs:487, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:82
 duplicate Rust Axum method route POST /app/v3/api/oauth/sessions: services/sdkwork-cloudrouter-product/src/api/app_auth.rs:491, ../sdkwork-appbase/crates/sdkwork-routes-iam-app-api/src/handlers.rs:114
 duplicate Rust Axum method route POST /backend/v3/api/iam/api_keys: services/sdkwork-cloudrouter-product/src/api/admin_user.rs:138, services/sdkwork-cloudrouter-product/src/api/admin_user.rs:160
-api contract manifest is stale: E:\sdkwork-space\sdkwork-cloudrouter\generated\api\api-contract-manifest.json
+api contract manifest is stale: <workspace-root>/sdkwork-cloudrouter\generated\api\api-contract-manifest.json
 app GET /app/v3/api/iam/users/current result schema UsersCurrentRetrieveResult.data references missing component schema IamUserResponse
 app components.schemas.UsersCurrentRetrieveResult.properties.data.allOf[0] references missing component schema IamUserResponse
 backend inventory.ledgerEntries.list SDK query serialization must include OpenAPI query parameter sku_id
@@ -47,7 +47,7 @@ backend memberships.plans.delete SDK types index must export MembershipsPlansDel
 backend memberships.plans.delete SDK method must return Promise<MembershipsPlansDeleteResult>
 backend memberships.plans.delete SDK client call must use MembershipsPlansDeleteResult
 app users.current.retrieve response schema component is missing: IamUserResponse
-java legacy contract audit is missing: E:\sdkwork-space\sdkwork-cloudrouter\generated\schema\legacy\java-legacy-contract-audit.json
+java legacy contract audit is missing: <workspace-root>/sdkwork-cloudrouter\generated\schema\legacy\java-legacy-contract-audit.json
 frontend route missing from schema manifest: /admin/oauth/login-platforms
 frontend route missing from schema manifest: /admin/oauth/mini-programs
 frontend route missing from schema manifest: /admin/oauth/official-accounts
