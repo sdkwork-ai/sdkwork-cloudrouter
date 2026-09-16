@@ -642,3 +642,141 @@ TypeScript：生成包 build → exit 0
 
 N-1 ~ N-3 是**仓库自带门禁在 main 上就红**，属独立议题；N-5、N-7 让两条验证通道失效，
 会让人误判「门禁全绿」。三项都需要单独定方向，未在本轮改动。
+
+---
+
+## 10. 第 5 轮：修复验证通道并落地 OpenAPI 3.1.2 open-api 契约（2026-09-16 晚）
+
+提交：`sdkwork-cloudrouter` `cb757b54`（14 文件，+81/−58）、
+`sdkwork-models` `eb55b6a`（1 文件，+298）。
+
+### 10.1 N-7：verify 首步就挂，后面所有门禁压根没跑
+
+`scripts/lib/ensure-models-catalog-deps.mjs` 硬编码要求
+`../sdkwork-utils/packages/sdkwork-utils-typescript/dist/crypto.js`。但该包的 `exports` **整体指向
+`./src/*.ts`**（Node 22.18+ 通过原生 type stripping 直接加载），`tsconfig.json` 虽写着
+`outDir: "dist"`，实际 `dist/` 从未生成过；`src/` 里散落的 `.js`/`.d.ts` 是被
+`.gitignore:87 **/src/**/*.js` 挡住的零散产物。
+
+实证：建好 junction 后 `await import('@sdkwork/utils/crypto')` → `sha256Hash = function`，
+`tools/catalog-lib.mjs`（`import { sha256Hash } from "@sdkwork/utils/crypto"`）加载成功。
+⇒ 这条检查**已过时**。
+
+**修法**：不再猜目录，改为读包 `package.json` 的 `exports['./crypto']`（依次取
+`import` / `default` / `types`），校验解析出的真实入口存在。
+
+**连锁价值**：`verify` 是 fail-fast 的（`runStep` 非零即 reject，`main()` 抛出后
+`process.exit(1)`），首步一挂 ⇒ 后续**全部**不跑。修掉这一处后才暴露出下一层真红：
+`release-catalog.mjs --check` 报 `releases/2026.09.06.1.json is missing` ——
+`models/index.json` 等 6 个声明文件早已升到 `2026.09.06.1`，唯独 release 快照没生成。
+用 `node tools/release-catalog.mjs` 补出后 `models:check` exit 0（已单独提交到 models 仓）。
+
+### 10.2 N-5：verify 与测试都在指向一个已被删除的模块
+
+`tests/test_frontend_source_hygiene_standard.py`（2269 行）在 `23559fcc`
+（2026-06-29 一次近 10 万文件的巨型 sync，同批删掉 14 个 `tests/*.py`）中被移除。
+它引用的是**旧仓名** `apps/sdkwork-clawrouter-pc` 与 `sdkwork-appbase` 旧布局，
+职责（portal 源码卫生 + 媒体资源契约）在 `e8041647`（clawrouter → cloudrouter 改名）
+之后已由本仓 commercial contract guardians 里的
+`frontend_static_source_manifest` / `frontend_contract_guardian` /
+`frontend_operation_audit` / `frontend_field_audit` 承担。
+
+但**引用没跟着清理**：`verify-cloud-router-application.mjs` 三个 plan（fast / precommit / 主）
+各有一处该步骤，`run-cloud-router-application.test.mjs` 有 5 处断言（3 个 plan 的
+label/commandLine 精确 `deepEqual` + 2 处位置约束 `hygieneIndex < typecheckIndex/buildIndex`，
+其中 `:8217` 还硬编码了那条命令字符串）。
+
+**修法**：删掉 3 处死步骤；断言改为指向**真实存在**的接管门禁
+（新增 `verification plan runs frontend hygiene guardians before portal build`，
+断言 4 个 guardians label 存在且都早于 portal typecheck / production build）。
+
+> ⚠️ 本轮踩坑记录：第一次只删步骤、未同步断言 ⇒ `run-cloud-router-application.test.mjs`
+> 从 20 条 not ok 涨到 23 条（我引入 3 条回归）。**判据靠 baseline 对比**：
+> `git checkout HEAD -- <verify 脚本>` 跑一遍得 baseline，再还原自己的版本跑一遍，`diff` 逐条比。
+
+### 10.3 N-1：open-api 的 OpenAPI 版本与另两份 surface 不一致
+
+| surface | 修复前 | `nullable` 数 | `jsonSchemaDialect` | 权威来源 |
+| --- | --- | --- | --- | --- |
+| open-api | **3.0.3** | 48 | **无** | `tools/cloudrouter_gateway_openapi_generator.py` |
+| app-api | 3.1.2 | 86 | `.../draft/2020-12/schema` | `scripts/materialize-apis-contracts.mjs` ← Rust 导出 |
+| backend-api | 3.1.2 | 215 | 同上 | 同上 |
+
+关键澄清：**`nullable` 在 3.1.2 里合法与否不是本仓的判据** —— 另两份已经「声明 3.1.2 +
+保留 `nullable` + 声明 `jsonSchemaDialect`」，本仓既定做法如此
+（`tools/cloudrouter_sdk_runtime_standardizer.py` 的 `_dynamic_json_boundary_schema`
+也在 3.1.2 契约里产出 `nullable: True`）。且 `tests/test_cloudrouter_openapi_contract_audit.py`
+的负例 `test_rejects_openapi_30_contracts` 明确断言 auditor 会拒绝 3.0.3。
+⇒ open-api 是**唯一掉队的**，对齐即可，**不需要**做 `nullable` → `type: [T, "null"]` 迁移。
+
+**修法**：生成器改 `3.1.2` + 加 `jsonSchemaDialect`，然后**传播到每一个消费者**：
+
+| 消费者 | 位置 |
+| --- | --- |
+| Rust http 路由测试 | `crates/sdkwork-cloudrouter-http/tests/service_router.rs:131` |
+| Rust edge 测试 | `crates/sdkwork-cloudrouter-edge-runtime/tests/edge_server.rs:1390` |
+| edge dev smoke **运行时校验** | `scripts/smoke-edge-dev-server.mjs:331` |
+| 工具契约测试（3 处） | `run-cloud-router-application.test.mjs:7077/7092/7106` |
+| 生成器单测 | `tests/test_cloudrouter_gateway_openapi_generator.py:29` |
+| SDK standardizer **占位符契约** | `tools/cloudrouter_sdk_runtime_standardizer.py:1043` |
+
+> `_render_placeholder_openapi` 那处是**埋雷**：源不可用时它会产出 3.0.3 占位契约，
+> 而 auditor 要求 3.1.2 ⇒ 一旦触发降级就自相矛盾。无测试锁定，已一并改为 3.1.2 + dialect。
+
+**传播链**（本仓唯一完整链）：`_render_placeholder` / 生成器 →
+`apps/sdkwork-cloudrouter-pc/public/openapi.json` →
+`tools/cloudrouter_sdk_runtime_standardizer.py --sdk-dir cloudrouter-open-sdk --openapi-only`
+→ `sdks/cloudrouter-open-sdk/openapi/*.json` →
+`scripts/materialize-apis-contracts.mjs --apply` → `apis/open-api/...` → `apis/manifest.json`
+→ `tools/sync-cloudrouter-api-standard-extensions.mjs --apply`（盖 `x-sdkwork-*`，`stamped=0` 幂等）。
+
+另外 `crates/sdkwork-cloudrouter-http/build.rs` 会把
+`sdks/cloudrouter-open-sdk/openapi/cloudrouter-open-sdk.openapi.json` 拷成
+`out/gateway-openapi.json`，所以**Rust 侧 payload 直接跟着这个文件变** —— 那两处 Rust
+断言不是「顺手改」，而是**必须同步**，否则 `cargo test` 红。
+
+**不需要**重跑 9 语言 SDK 生成：`grep -rl "3\.0\.3" sdks/` 在改动前后均为空 ⇒
+生成的 SDK 不内嵌 openapi 版本字符串。
+
+### 10.4 本轮实证的验收矩阵
+
+| 验收项 | 结果 |
+| --- | --- |
+| `pnpm models:check`（原首步失败点） | exit 0 |
+| `tests.test_api_contract_directory_standard`（原 main 红） | 3 passed |
+| `tests.test_cloudrouter_gateway_openapi_generator` | 62 passed |
+| `tests.test_cloudrouter_sdk_runtime_standardizer` | 25 passed |
+| `tools.cloudrouter_gateway_openapi_generator --check` | current |
+| `pnpm api:materialize:check` | passed |
+| `pnpm api:standard-extensions:check` | passed（`stamped=0`，幂等） |
+| `tools.cloudrouter_openapi_precision_audit` | passed |
+| `tools.cloudrouter_payload_sdk_audit` | passed |
+| `run-cloud-router-application.test.mjs` | 20 条 not ok，**与 HEAD baseline 逐条无差异** |
+| `cargo test -p sdkwork-cloudrouter-http --test service_router` | 18 passed |
+| `cargo test -p sdkwork-cloudrouter-edge-runtime --test edge_server` | 43 passed |
+
+### 10.5 口径更正：那 20 条 not ok 与 `package.json` 无关
+
+第 9.8 节曾记「20 项 not ok 多数由别会话正在改的 `package.json` 引起」。本轮实测**证伪**：
+
+```bash
+cp package.json /tmp/keep.json
+git show HEAD:package.json > package.json
+node scripts/run-cloud-router-application.test.mjs 2>&1 | grep -c "^not ok"   # 仍是 20
+cp /tmp/keep.json package.json
+```
+两种 `package.json` 下**逐条完全相同** ⇒ 这 20 条是 **HEAD 自带的既存红**，
+与工作树里别会话的改动无关。（工作树 `package.json` 的 diff 其实只有 2 处：
+新增 `check:rust-dependency-singularity` 脚本 + 在 `_sdkwork:check` 里引用它。）
+
+### 10.6 新发现的既存缺陷（未修）
+
+| # | 位置 | 事实 |
+| --- | --- | --- |
+| **N-8** | `tools.cloudrouter_sdk_guardian` | 报 `sdks/cloudrouter-backend-sdk/openapi/*.json` 与 `generated/openapi/cloudrouter-backend-openapi.json` 不同步：`x-sdkwork-api-authority` 值漂移（`sdkwork-cloudrouter.backend` vs `sdkwork-cloudrouter-backend-api`）且缺 `x-sdkwork-permission`。设计文件不在本轮改动清单，属独立议题 |
+| **N-9** | `tools.frontend_static_source_manifest --check` | 快照 schema/version 不符（`...-frontend-static-source-snapshots` / version 1），该 guardian 在 verify 里直接 exit 1 |
+| N-2 / N-3 | `run-cloud-router-application.test.mjs` | 仍未修（`0.1.0.zip` 版本口径、未跟踪的 `app-sdk/.../api/ai.ts`） |
+
+> 本轮**未**改动 `docs/guides/developer/README.md`：它仍把 `frontend source hygiene`
+> 列为验证步骤，但该文件正被另一会话编辑（`00:57:46` 批次）⇒ 文档同步留给该会话或后续轮次。
+
