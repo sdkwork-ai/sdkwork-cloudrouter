@@ -6,6 +6,7 @@ public class SdkworkAiClient {
     public let filesAnthropic: FilesAnthropicApi
     public let chatAnthropic: ChatAnthropicApi
     public let batchesAnthropic: BatchesAnthropicApi
+    public let audioElevenlabs: AudioElevenlabsApi
     public let responsesGoogle: ResponsesGoogleApi
     public let filesGoogle: FilesGoogleApi
     public let embeddingsGoogle: EmbeddingsGoogleApi
@@ -13,6 +14,7 @@ public class SdkworkAiClient {
     public let videosKling: VideosKlingApi
     public let imagesMidjourney: ImagesMidjourneyApi
     public let imagesNanoBanana: ImagesNanoBananaApi
+    public let audioMinimax: AudioMinimaxApi
     public let audioSuno: AudioSunoApi
     public let assistants: AssistantsApi
     public let audio: AudioApi
@@ -34,6 +36,7 @@ public class SdkworkAiClient {
     public let video: VideoApi
     public let videosVidu: VideosViduApi
     public let imagesVidu: ImagesViduApi
+    public let audioVolcengine: AudioVolcengineApi
     public let videosVolcengine: VideosVolcengineApi
 
     public init(baseURL: String) {
@@ -41,6 +44,7 @@ public class SdkworkAiClient {
         self.filesAnthropic = FilesAnthropicApi(client: httpClient)
         self.chatAnthropic = ChatAnthropicApi(client: httpClient)
         self.batchesAnthropic = BatchesAnthropicApi(client: httpClient)
+        self.audioElevenlabs = AudioElevenlabsApi(client: httpClient)
         self.responsesGoogle = ResponsesGoogleApi(client: httpClient)
         self.filesGoogle = FilesGoogleApi(client: httpClient)
         self.embeddingsGoogle = EmbeddingsGoogleApi(client: httpClient)
@@ -48,6 +52,7 @@ public class SdkworkAiClient {
         self.videosKling = VideosKlingApi(client: httpClient)
         self.imagesMidjourney = ImagesMidjourneyApi(client: httpClient)
         self.imagesNanoBanana = ImagesNanoBananaApi(client: httpClient)
+        self.audioMinimax = AudioMinimaxApi(client: httpClient)
         self.audioSuno = AudioSunoApi(client: httpClient)
         self.assistants = AssistantsApi(client: httpClient)
         self.audio = AudioApi(client: httpClient)
@@ -69,6 +74,7 @@ public class SdkworkAiClient {
         self.video = VideoApi(client: httpClient)
         self.videosVidu = VideosViduApi(client: httpClient)
         self.imagesVidu = ImagesViduApi(client: httpClient)
+        self.audioVolcengine = AudioVolcengineApi(client: httpClient)
         self.videosVolcengine = VideosVolcengineApi(client: httpClient)
     }
 
@@ -77,6 +83,7 @@ public class SdkworkAiClient {
         self.filesAnthropic = FilesAnthropicApi(client: httpClient)
         self.chatAnthropic = ChatAnthropicApi(client: httpClient)
         self.batchesAnthropic = BatchesAnthropicApi(client: httpClient)
+        self.audioElevenlabs = AudioElevenlabsApi(client: httpClient)
         self.responsesGoogle = ResponsesGoogleApi(client: httpClient)
         self.filesGoogle = FilesGoogleApi(client: httpClient)
         self.embeddingsGoogle = EmbeddingsGoogleApi(client: httpClient)
@@ -84,6 +91,7 @@ public class SdkworkAiClient {
         self.videosKling = VideosKlingApi(client: httpClient)
         self.imagesMidjourney = ImagesMidjourneyApi(client: httpClient)
         self.imagesNanoBanana = ImagesNanoBananaApi(client: httpClient)
+        self.audioMinimax = AudioMinimaxApi(client: httpClient)
         self.audioSuno = AudioSunoApi(client: httpClient)
         self.assistants = AssistantsApi(client: httpClient)
         self.audio = AudioApi(client: httpClient)
@@ -105,6 +113,7 @@ public class SdkworkAiClient {
         self.video = VideoApi(client: httpClient)
         self.videosVidu = VideosViduApi(client: httpClient)
         self.imagesVidu = ImagesViduApi(client: httpClient)
+        self.audioVolcengine = AudioVolcengineApi(client: httpClient)
         self.videosVolcengine = VideosVolcengineApi(client: httpClient)
     }
 

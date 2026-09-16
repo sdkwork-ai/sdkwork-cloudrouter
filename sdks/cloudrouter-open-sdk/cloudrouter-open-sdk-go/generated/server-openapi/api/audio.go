@@ -18,13 +18,8 @@ func NewAudioApi(client *sdkhttp.Client) *AudioApi {
 }
 
 // Create speech
-func (a *AudioApi) CreateSpeech(body sdktypes.OpenAiSpeechCreateRequest) (string, error) {
-    raw, err := a.client.Post(AiApiPath("/audio/speech"), body, nil, nil, "application/json")
-    if err != nil {
-        var zero string
-        return zero, err
-    }
-    return decodeResult[string](raw)
+func (a *AudioApi) CreateSpeech(body sdktypes.OpenAiSpeechCreateRequest) ([]byte, error) {
+    return a.client.RequestBytes("POST", AiApiPath("/audio/speech"), body, nil, nil, "application/json", false, false)
 }
 
 // Create transcription

@@ -1,7 +1,7 @@
 import { aiApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
-import type { ViduImageToVideoRequest, ViduReferenceToVideoRequest, ViduStartEndToVideoRequest, ViduTaskCreationsResponse, ViduTextToVideoRequest, ViduVideoGenerationTask } from '../types';
+import type { ViduImageToVideoRequest, ViduReferenceToVideoRequest, ViduStartEndToVideoRequest, ViduTaskCreationsResponse, ViduTemplateRequest, ViduTextToVideoRequest, ViduVideoGenerationTask } from '../types';
 
 
 export class VideosViduEntV2Text2videoApi {
@@ -15,6 +15,20 @@ export class VideosViduEntV2Text2videoApi {
 /** Vidu text to video */
   async create(body: ViduTextToVideoRequest, requestOptions?: ApiRequestOptions): Promise<ViduVideoGenerationTask> {
     return this.client.request<ViduVideoGenerationTask>(aiApiPath(`/vidu/ent/v2/text2video`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+  }
+}
+
+export class VideosViduEntV2TemplateApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Vidu create template video */
+  async create(body: ViduTemplateRequest, requestOptions?: ApiRequestOptions): Promise<ViduVideoGenerationTask> {
+    return this.client.request<ViduVideoGenerationTask>(aiApiPath(`/vidu/ent/v2/template`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -88,6 +102,7 @@ export class VideosViduEntV2Api {
   public readonly reference2video: VideosViduEntV2Reference2videoApi;
   public readonly startEnd2video: VideosViduEntV2StartEnd2videoApi;
   public readonly tasks: VideosViduEntV2TasksApi;
+  public readonly template: VideosViduEntV2TemplateApi;
   public readonly text2video: VideosViduEntV2Text2videoApi;
 
   constructor(client: HttpClient) {
@@ -95,6 +110,7 @@ export class VideosViduEntV2Api {
     this.reference2video = new VideosViduEntV2Reference2videoApi(client);
     this.startEnd2video = new VideosViduEntV2StartEnd2videoApi(client);
     this.tasks = new VideosViduEntV2TasksApi(client);
+    this.template = new VideosViduEntV2TemplateApi(client);
     this.text2video = new VideosViduEntV2Text2videoApi(client);
   }
 

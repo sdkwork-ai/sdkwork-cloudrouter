@@ -16,6 +16,26 @@ func NewVideosKlingApi(client *sdkhttp.Client) *VideosKlingApi {
     return &VideosKlingApi{client: client}
 }
 
+// Kling create avatar video
+func (a *VideosKlingApi) CreateV1VideosAvatar(body sdktypes.KlingAvatarCreateRequest) (sdktypes.KlingVideoGenerationTask, error) {
+    raw, err := a.client.Post(AiApiPath("/kling/v1/videos/avatar"), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.KlingVideoGenerationTask
+        return zero, err
+    }
+    return decodeResult[sdktypes.KlingVideoGenerationTask](raw)
+}
+
+// Kling create motion control video
+func (a *VideosKlingApi) CreateV1VideosMotionControl(body sdktypes.KlingMotionControlRequest) (sdktypes.KlingVideoGenerationTask, error) {
+    raw, err := a.client.Post(AiApiPath("/kling/v1/videos/motion-control"), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.KlingVideoGenerationTask
+        return zero, err
+    }
+    return decodeResult[sdktypes.KlingVideoGenerationTask](raw)
+}
+
 // Kling video generation
 func (a *VideosKlingApi) CreateV1VideosGeneration(body sdktypes.KlingVideoGenerationRequest) (sdktypes.KlingVideoGenerationTask, error) {
     raw, err := a.client.Post(AiApiPath("/kling/v1/videos/generations"), body, nil, nil, "application/json")

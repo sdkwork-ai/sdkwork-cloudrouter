@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from ..http_client import HttpClient
-from ..models import KlingVideoGenerationRequest, KlingVideoGenerationTask
+from ..models import KlingAvatarCreateRequest, KlingMotionControlRequest, KlingVideoGenerationRequest, KlingVideoGenerationTask
 
 def _append_query_string(path: str, raw_query_string: str) -> str:
     query = raw_query_string.lstrip('?')
@@ -80,6 +80,14 @@ class VideosKlingApi:
 
     def __init__(self, client: HttpClient):
         self._client = client
+
+    def create_v1_videos_avatar(self, body: KlingAvatarCreateRequest) -> KlingVideoGenerationTask:
+        """Kling create avatar video"""
+        return self._client.post(f"/v1/kling/v1/videos/avatar", json=body)
+
+    def create_v1_videos_motion_control(self, body: KlingMotionControlRequest) -> KlingVideoGenerationTask:
+        """Kling create motion control video"""
+        return self._client.post(f"/v1/kling/v1/videos/motion-control", json=body)
 
     def create_v1_videos_generation(self, body: KlingVideoGenerationRequest) -> KlingVideoGenerationTask:
         """Kling video generation"""

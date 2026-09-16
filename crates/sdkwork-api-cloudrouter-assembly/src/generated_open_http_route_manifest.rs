@@ -162,6 +162,18 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
+        "/kling/v1/videos/avatar",
+        "Videos/kling",
+        "klingCreateAvatar",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/kling/v1/videos/motion-control",
+        "Videos/kling",
+        "klingCreateMotionControl",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
         "/kling/v1/videos/generations",
         "Videos/kling",
         "klingCreateVideoGeneration",
@@ -195,6 +207,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/nano-banana/v1/images/generations/{task_id}",
         "Images/nano-banana",
         "nanoBananaRetrieveImageGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/minimax/v1/music_generation",
+        "Audio/minimax",
+        "minimaxCreateMusicGeneration",
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
@@ -905,9 +923,21 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
+        "/vidu/ent/v2/template",
+        "Videos/vidu",
+        "viduCreateTemplate",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
         "/vidu/ent/v2/text2video",
         "Videos/vidu",
         "viduCreateTextToVideo",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/volcengine/api/v3/audio/speech",
+        "Audio/volcengine",
+        "volcengineCreateSpeech",
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,

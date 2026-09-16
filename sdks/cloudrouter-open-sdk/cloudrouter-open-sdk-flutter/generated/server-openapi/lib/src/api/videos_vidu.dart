@@ -49,6 +49,16 @@ class VideosViduApi {
     })();
   }
 
+  /// Vidu create template video
+  Future<ViduVideoGenerationTask?> createEntV2Template(ViduTemplateRequest body) async {
+    final payload = body.toJson();
+    final response = await _client.post(ApiPaths.aiPath('/vidu/ent/v2/template'), body: payload, contentType: 'application/json');
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : ViduVideoGenerationTask.fromJson(map);
+    })();
+  }
+
   /// Vidu text to video
   Future<ViduVideoGenerationTask?> createEntV2Text2video(ViduTextToVideoRequest body) async {
     final payload = body.toJson();

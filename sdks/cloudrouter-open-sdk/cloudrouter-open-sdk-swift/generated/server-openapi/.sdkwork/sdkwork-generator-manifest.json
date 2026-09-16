@@ -12,7 +12,7 @@
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
+      "sha256": "a47e95119bf3eafcbcb2102f7024c147f967924e4e3f343d1a29effb4b6765df"
     },
     {
       "path": "bin/publish.ps1",
@@ -36,15 +36,15 @@
     },
     {
       "path": "README.md",
-      "sha256": "ad420d3b515d33f9e5695c1a8c89d31e44f2b25e33049b4f0d2735377862acda"
+      "sha256": "06bc72e899ab7126e125d1b6a0bfbc84d34f92e1686481d0446fee17d8310bed"
     },
     {
       "path": "sdkwork-sdk.json",
-      "sha256": "488d0e6ce3e959d9b999d3951e550c4a30f01a141e61b86f60e592a0cf3323d3"
+      "sha256": "936dd8fcd96dee59ab2589450c720d13de7b961b33a9ad8fc6a2b1e0894c9fa2"
     },
     {
       "path": "Sources/API/API.swift",
-      "sha256": "f9f0d995f48e38f50cb66f150f3ddab31cad25e581668b74c836930aa0606f16"
+      "sha256": "d4ab04c5b206e9ff32a40884a80abc26ce0cb1badc2e8bbc0a99ff579e068f8c"
     },
     {
       "path": "Sources/API/ApiPaths.swift",
@@ -59,8 +59,20 @@
       "sha256": "fe732a1cbddfd6437fab60ab8b37b4ef90d3371e616c7718e880c8a04754f56f"
     },
     {
+      "path": "Sources/API/AudioElevenlabsApi.swift",
+      "sha256": "70a75b79cabd20601f0227ac2261d36642db0c49f4e3ea9002a146e9e70e35be"
+    },
+    {
+      "path": "Sources/API/AudioMinimaxApi.swift",
+      "sha256": "373acee90f1b2cd485683f5b3467b7489d5b8f66658baa42048baa06d9df7841"
+    },
+    {
       "path": "Sources/API/AudioSunoApi.swift",
       "sha256": "590ad3385f805f9b92949c260197649b01a82f386ee33c75729810070bbf8039"
+    },
+    {
+      "path": "Sources/API/AudioVolcengineApi.swift",
+      "sha256": "893c73e0d625ea3869ab64e1fb788bca697cdedb78ab656f8dfd25675383bbf3"
     },
     {
       "path": "Sources/API/BatchesAnthropicApi.swift",
@@ -168,11 +180,11 @@
     },
     {
       "path": "Sources/API/VideosKlingApi.swift",
-      "sha256": "54313b2888667123100f24de0c31be1570fcf9c6717bcb6efa8fa9386062f46b"
+      "sha256": "51cbfcb213b209eddc0094e6c9f7a8313aa4398eec35f09d8ed7ee61f6581a23"
     },
     {
       "path": "Sources/API/VideosViduApi.swift",
-      "sha256": "6ccc3b97c82250c9aae1b415e708217da62a6e3c9b0a27836c004ccb86268e1f"
+      "sha256": "f790cb61c1576be51e562cdd3e183d33e86791c602429c513dc8f7f91865ea52"
     },
     {
       "path": "Sources/API/VideosVolcengineApi.swift",
@@ -180,15 +192,15 @@
     },
     {
       "path": "Sources/HTTP/HttpClient.swift",
-      "sha256": "0a5476a0de8ae546ac1976e8e74638c4a8f48b158ebab7c235b47b94a9ccaea7"
+      "sha256": "93712c405e64bd24fa1922f4e6ffe7cd7d06b578c5fb0a666742c9103f209549"
     },
     {
       "path": "Sources/Models.swift",
-      "sha256": "d2b2efc36dec24fa9f520f3e26db529c08ab0d8be9412f87bdf042d0c29db856"
+      "sha256": "cfbff29cfa6e61aa9156a94a8a02d888e3437fc92928a50e9f83c374a178afa2"
     },
     {
       "path": "Sources/SdkworkAiClient.swift",
-      "sha256": "579de280bcf2e4c174d876da3e95990e54db9b666bcbee5f1ce008a52f8c7098"
+      "sha256": "398abfd8fdb8cdec819e475dbdd5fe1f67754fc7f11d39edb891afb54ebe63c0"
     }
   ],
   "scaffoldFiles": [

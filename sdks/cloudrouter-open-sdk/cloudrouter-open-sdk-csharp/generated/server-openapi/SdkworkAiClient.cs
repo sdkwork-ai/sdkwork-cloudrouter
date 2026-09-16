@@ -12,6 +12,7 @@ namespace Sdkwork.CloudRouter.Open
         public FilesAnthropicApi FilesAnthropic { get; }
         public ChatAnthropicApi ChatAnthropic { get; }
         public BatchesAnthropicApi BatchesAnthropic { get; }
+        public AudioElevenlabsApi AudioElevenlabs { get; }
         public ResponsesGoogleApi ResponsesGoogle { get; }
         public FilesGoogleApi FilesGoogle { get; }
         public EmbeddingsGoogleApi EmbeddingsGoogle { get; }
@@ -19,6 +20,7 @@ namespace Sdkwork.CloudRouter.Open
         public VideosKlingApi VideosKling { get; }
         public ImagesMidjourneyApi ImagesMidjourney { get; }
         public ImagesNanoBananaApi ImagesNanoBanana { get; }
+        public AudioMinimaxApi AudioMinimax { get; }
         public AudioSunoApi AudioSuno { get; }
         public AssistantsApi Assistants { get; }
         public AudioApi Audio { get; }
@@ -40,6 +42,7 @@ namespace Sdkwork.CloudRouter.Open
         public VideoApi Video { get; }
         public VideosViduApi VideosVidu { get; }
         public ImagesViduApi ImagesVidu { get; }
+        public AudioVolcengineApi AudioVolcengine { get; }
         public VideosVolcengineApi VideosVolcengine { get; }
 
         public SdkworkAiClient(string baseUrl)
@@ -48,6 +51,7 @@ namespace Sdkwork.CloudRouter.Open
             FilesAnthropic = new FilesAnthropicApi(_httpClient);
             ChatAnthropic = new ChatAnthropicApi(_httpClient);
             BatchesAnthropic = new BatchesAnthropicApi(_httpClient);
+            AudioElevenlabs = new AudioElevenlabsApi(_httpClient);
             ResponsesGoogle = new ResponsesGoogleApi(_httpClient);
             FilesGoogle = new FilesGoogleApi(_httpClient);
             EmbeddingsGoogle = new EmbeddingsGoogleApi(_httpClient);
@@ -55,6 +59,7 @@ namespace Sdkwork.CloudRouter.Open
             VideosKling = new VideosKlingApi(_httpClient);
             ImagesMidjourney = new ImagesMidjourneyApi(_httpClient);
             ImagesNanoBanana = new ImagesNanoBananaApi(_httpClient);
+            AudioMinimax = new AudioMinimaxApi(_httpClient);
             AudioSuno = new AudioSunoApi(_httpClient);
             Assistants = new AssistantsApi(_httpClient);
             Audio = new AudioApi(_httpClient);
@@ -76,6 +81,7 @@ namespace Sdkwork.CloudRouter.Open
             Video = new VideoApi(_httpClient);
             VideosVidu = new VideosViduApi(_httpClient);
             ImagesVidu = new ImagesViduApi(_httpClient);
+            AudioVolcengine = new AudioVolcengineApi(_httpClient);
             VideosVolcengine = new VideosVolcengineApi(_httpClient);
         }
 
@@ -85,6 +91,7 @@ namespace Sdkwork.CloudRouter.Open
             FilesAnthropic = new FilesAnthropicApi(_httpClient);
             ChatAnthropic = new ChatAnthropicApi(_httpClient);
             BatchesAnthropic = new BatchesAnthropicApi(_httpClient);
+            AudioElevenlabs = new AudioElevenlabsApi(_httpClient);
             ResponsesGoogle = new ResponsesGoogleApi(_httpClient);
             FilesGoogle = new FilesGoogleApi(_httpClient);
             EmbeddingsGoogle = new EmbeddingsGoogleApi(_httpClient);
@@ -92,6 +99,7 @@ namespace Sdkwork.CloudRouter.Open
             VideosKling = new VideosKlingApi(_httpClient);
             ImagesMidjourney = new ImagesMidjourneyApi(_httpClient);
             ImagesNanoBanana = new ImagesNanoBananaApi(_httpClient);
+            AudioMinimax = new AudioMinimaxApi(_httpClient);
             AudioSuno = new AudioSunoApi(_httpClient);
             Assistants = new AssistantsApi(_httpClient);
             Audio = new AudioApi(_httpClient);
@@ -113,6 +121,7 @@ namespace Sdkwork.CloudRouter.Open
             Video = new VideoApi(_httpClient);
             VideosVidu = new VideosViduApi(_httpClient);
             ImagesVidu = new ImagesViduApi(_httpClient);
+            AudioVolcengine = new AudioVolcengineApi(_httpClient);
             VideosVolcengine = new VideosVolcengineApi(_httpClient);
         }
 

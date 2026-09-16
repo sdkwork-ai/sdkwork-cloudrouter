@@ -67,6 +67,14 @@ fn builtin_route_taxonomy_classifies_standard_ai_api_routes() {
         "minimax.music_generation",
         "vidu.reference_to_image",
         "vidu.start_end_to_video",
+        "vidu.motion_sync",
+        "kling.avatar",
+        "kling.motion_control",
+        "volcengine.speech",
+        "elevenlabs.text_to_speech",
+        "elevenlabs.sound_generation",
+        "suno.music_generation",
+        "suno.music_task_query",
     ] {
         assert!(
             route_keys.contains(expected),

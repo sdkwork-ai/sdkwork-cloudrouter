@@ -53,13 +53,8 @@ func (a *FilesAnthropicApi) DeleteV1Files(fileId string) (sdktypes.AnthropicDele
 }
 
 // Anthropic retrieve file content
-func (a *FilesAnthropicApi) ListV1FilesContent(fileId string) (string, error) {
-    raw, err := a.client.Get(AiApiPath(fmt.Sprintf("/anthropic/v1/files/%s/content", SerializePathParameter(fileId, PathParameterSpec{Name: "file_id", Style: "simple", Explode: false}))), nil, nil)
-    if err != nil {
-        var zero string
-        return zero, err
-    }
-    return decodeResult[string](raw)
+func (a *FilesAnthropicApi) ListV1FilesContent(fileId string) ([]byte, error) {
+    return a.client.RequestBytes("GET", AiApiPath(fmt.Sprintf("/anthropic/v1/files/%s/content", SerializePathParameter(fileId, PathParameterSpec{Name: "file_id", Style: "simple", Explode: false}))), nil, nil, nil, "", false, false)
 }
 
 type PathParameterSpec struct {

@@ -213,6 +213,6 @@ class FilesApi:
         """Retrieve file"""
         return self._client.get(f"/v1/files/{serialize_path_parameter(file_id, {'name': 'file_id', 'style': 'simple', 'explode': False})}")
 
-    def content(self, file_id: str) -> str:
+    def content(self, file_id: str) -> bytes:
         """Retrieve file content"""
-        return self._client.get(f"/v1/files/{serialize_path_parameter(file_id, {'name': 'file_id', 'style': 'simple', 'explode': False})}/content")
+        return self._client.request_bytes('GET', f"/v1/files/{serialize_path_parameter(file_id, {'name': 'file_id', 'style': 'simple', 'explode': False})}/content")

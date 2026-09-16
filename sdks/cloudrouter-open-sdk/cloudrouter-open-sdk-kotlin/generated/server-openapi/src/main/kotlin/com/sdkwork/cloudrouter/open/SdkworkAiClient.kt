@@ -5,6 +5,7 @@ import com.sdkwork.cloudrouter.open.http.HttpClient
 import com.sdkwork.cloudrouter.open.api.FilesAnthropicApi
 import com.sdkwork.cloudrouter.open.api.ChatAnthropicApi
 import com.sdkwork.cloudrouter.open.api.BatchesAnthropicApi
+import com.sdkwork.cloudrouter.open.api.AudioElevenlabsApi
 import com.sdkwork.cloudrouter.open.api.ResponsesGoogleApi
 import com.sdkwork.cloudrouter.open.api.FilesGoogleApi
 import com.sdkwork.cloudrouter.open.api.EmbeddingsGoogleApi
@@ -12,6 +13,7 @@ import com.sdkwork.cloudrouter.open.api.ChatGoogleApi
 import com.sdkwork.cloudrouter.open.api.VideosKlingApi
 import com.sdkwork.cloudrouter.open.api.ImagesMidjourneyApi
 import com.sdkwork.cloudrouter.open.api.ImagesNanoBananaApi
+import com.sdkwork.cloudrouter.open.api.AudioMinimaxApi
 import com.sdkwork.cloudrouter.open.api.AudioSunoApi
 import com.sdkwork.cloudrouter.open.api.AssistantsApi
 import com.sdkwork.cloudrouter.open.api.AudioApi
@@ -33,6 +35,7 @@ import com.sdkwork.cloudrouter.open.api.VectorStoresApi
 import com.sdkwork.cloudrouter.open.api.VideoApi
 import com.sdkwork.cloudrouter.open.api.VideosViduApi
 import com.sdkwork.cloudrouter.open.api.ImagesViduApi
+import com.sdkwork.cloudrouter.open.api.AudioVolcengineApi
 import com.sdkwork.cloudrouter.open.api.VideosVolcengineApi
 
 open class SdkworkAiClient {
@@ -41,6 +44,7 @@ open class SdkworkAiClient {
     lateinit var filesAnthropic: FilesAnthropicApi
     lateinit var chatAnthropic: ChatAnthropicApi
     lateinit var batchesAnthropic: BatchesAnthropicApi
+    lateinit var audioElevenlabs: AudioElevenlabsApi
     lateinit var responsesGoogle: ResponsesGoogleApi
     lateinit var filesGoogle: FilesGoogleApi
     lateinit var embeddingsGoogle: EmbeddingsGoogleApi
@@ -48,6 +52,7 @@ open class SdkworkAiClient {
     lateinit var videosKling: VideosKlingApi
     lateinit var imagesMidjourney: ImagesMidjourneyApi
     lateinit var imagesNanoBanana: ImagesNanoBananaApi
+    lateinit var audioMinimax: AudioMinimaxApi
     lateinit var audioSuno: AudioSunoApi
     lateinit var assistants: AssistantsApi
     lateinit var audio: AudioApi
@@ -69,6 +74,7 @@ open class SdkworkAiClient {
     lateinit var video: VideoApi
     lateinit var videosVidu: VideosViduApi
     lateinit var imagesVidu: ImagesViduApi
+    lateinit var audioVolcengine: AudioVolcengineApi
     lateinit var videosVolcengine: VideosVolcengineApi
 
     constructor(baseUrl: String) {
@@ -76,6 +82,7 @@ open class SdkworkAiClient {
         filesAnthropic = FilesAnthropicApi(httpClient)
         chatAnthropic = ChatAnthropicApi(httpClient)
         batchesAnthropic = BatchesAnthropicApi(httpClient)
+        audioElevenlabs = AudioElevenlabsApi(httpClient)
         responsesGoogle = ResponsesGoogleApi(httpClient)
         filesGoogle = FilesGoogleApi(httpClient)
         embeddingsGoogle = EmbeddingsGoogleApi(httpClient)
@@ -83,6 +90,7 @@ open class SdkworkAiClient {
         videosKling = VideosKlingApi(httpClient)
         imagesMidjourney = ImagesMidjourneyApi(httpClient)
         imagesNanoBanana = ImagesNanoBananaApi(httpClient)
+        audioMinimax = AudioMinimaxApi(httpClient)
         audioSuno = AudioSunoApi(httpClient)
         assistants = AssistantsApi(httpClient)
         audio = AudioApi(httpClient)
@@ -104,6 +112,7 @@ open class SdkworkAiClient {
         video = VideoApi(httpClient)
         videosVidu = VideosViduApi(httpClient)
         imagesVidu = ImagesViduApi(httpClient)
+        audioVolcengine = AudioVolcengineApi(httpClient)
         videosVolcengine = VideosVolcengineApi(httpClient)
     }
 
@@ -112,6 +121,7 @@ open class SdkworkAiClient {
         filesAnthropic = FilesAnthropicApi(httpClient)
         chatAnthropic = ChatAnthropicApi(httpClient)
         batchesAnthropic = BatchesAnthropicApi(httpClient)
+        audioElevenlabs = AudioElevenlabsApi(httpClient)
         responsesGoogle = ResponsesGoogleApi(httpClient)
         filesGoogle = FilesGoogleApi(httpClient)
         embeddingsGoogle = EmbeddingsGoogleApi(httpClient)
@@ -119,6 +129,7 @@ open class SdkworkAiClient {
         videosKling = VideosKlingApi(httpClient)
         imagesMidjourney = ImagesMidjourneyApi(httpClient)
         imagesNanoBanana = ImagesNanoBananaApi(httpClient)
+        audioMinimax = AudioMinimaxApi(httpClient)
         audioSuno = AudioSunoApi(httpClient)
         assistants = AssistantsApi(httpClient)
         audio = AudioApi(httpClient)
@@ -140,6 +151,7 @@ open class SdkworkAiClient {
         video = VideoApi(httpClient)
         videosVidu = VideosViduApi(httpClient)
         imagesVidu = ImagesViduApi(httpClient)
+        audioVolcengine = AudioVolcengineApi(httpClient)
         videosVolcengine = VideosVolcengineApi(httpClient)
     }
 

@@ -2,15 +2,15 @@ package com.sdkwork.cloudrouter.open.model;
 
 
 public class OpenAiImageVariationMultipartRequest {
-    private String image;
+    private byte[] image;
     private String model;
     private String size;
 
-    public String getImage() {
+    public byte[] getImage() {
         return this.image;
     }
 
-    public void setImage(String image) {
+    public void setImage(byte[] image) {
         this.image = image;
     }
 

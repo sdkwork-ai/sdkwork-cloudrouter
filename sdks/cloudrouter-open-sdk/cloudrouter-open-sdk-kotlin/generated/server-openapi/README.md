@@ -74,6 +74,7 @@ val client = SdkworkAiClient(config)
 - `client.filesAnthropic` - files_anthropic API
 - `client.chatAnthropic` - chat_anthropic API
 - `client.batchesAnthropic` - batches_anthropic API
+- `client.audioElevenlabs` - audio_elevenlabs API
 - `client.responsesGoogle` - responses_google API
 - `client.filesGoogle` - files_google API
 - `client.embeddingsGoogle` - embeddings_google API
@@ -81,6 +82,7 @@ val client = SdkworkAiClient(config)
 - `client.videosKling` - videos_kling API
 - `client.imagesMidjourney` - images_midjourney API
 - `client.imagesNanoBanana` - images_nano_banana API
+- `client.audioMinimax` - audio_minimax API
 - `client.audioSuno` - audio_suno API
 - `client.assistants` - assistant API
 - `client.audio` - audio API
@@ -102,6 +104,7 @@ val client = SdkworkAiClient(config)
 - `client.video` - video API
 - `client.videosVidu` - videos_vidu API
 - `client.imagesVidu` - images_vidu API
+- `client.audioVolcengine` - audio_volcengine API
 - `client.videosVolcengine` - videos_volcengine API
 
 ## Usage Examples
@@ -160,6 +163,24 @@ val params = linkedMapOf<String, Any>(
     "limit" to 3
 )
 val result = client.batchesAnthropic.getListV1MessagesBatches(params)
+println(result)
+```
+
+### audio_elevenlabs
+
+```kotlin
+// Generate sound effect
+val body = ElevenLabsSoundGenerationRequest(
+    durationSeconds = 1,
+    loop = false,
+    modelId = "1",
+    promptInfluence = 4,
+    text = "text"
+)
+val params = linkedMapOf<String, Any>(
+    "output_format" to "output-format"
+)
+val result = client.audioElevenlabs.createV1SoundGeneration(body, params)
 println(result)
 ```
 
@@ -255,20 +276,19 @@ println(result)
 ### videos_kling
 
 ```kotlin
-// Kling video generation
-val body = KlingVideoGenerationRequest(
-    aspectRatio = "aspect-ratio",
-    callbackUrl = "callback-url",
-    cfgScale = 3,
-    duration = 4,
-    image = "image",
-    imageTail = "image-tail",
-    mode = "mode",
-    model = "model",
-    negativePrompt = "negative-prompt",
-    prompt = "prompt"
+// Kling create avatar video
+val body = KlingAvatarCreateRequest(
+    modelName = "name",
+    humanImage = "human-image",
+    prompt = "prompt",
+    voiceMode = "voice-mode",
+    audioUrl = "audio-url",
+    text = "text",
+    voiceId = "1",
+    voiceLanguage = "voice-language",
+    callbackUrl = "callback-url"
 )
-val result = client.videosKling.createV1VideosGeneration(body)
+val result = client.videosKling.createV1VideosAvatar(body)
 println(result)
 ```
 
@@ -302,6 +322,24 @@ val body = NanoBananaImageGenerationRequest(
     size = "size"
 )
 val result = client.imagesNanoBanana.createGeneration(body)
+println(result)
+```
+
+### audio_minimax
+
+```kotlin
+// Minimax create music generation
+val body = MiniMaxMusicGenerationRequest(
+    model = "model",
+    prompt = "prompt",
+    lyrics = "lyrics",
+    stream = false,
+    outputFormat = "output-format",
+    isInstrumental = false,
+    lyricsOptimizer = true,
+    audioSetting = MiniMaxMusicAudioSetting()
+)
+val result = client.audioMinimax.createV1MusicGeneration(body)
 println(result)
 ```
 
@@ -673,6 +711,24 @@ val body = ViduReferenceToImageRequest(
     style = "style"
 )
 val result = client.imagesVidu.createEntV2Reference2image(body)
+println(result)
+```
+
+### audio_volcengine
+
+```kotlin
+// Volcengine create speech
+val body = OpenAiSpeechCreateRequest(
+    input = "input",
+    metadata = linkedMapOf<String, Any>(
+    "value" to "value"
+),
+    model = "model",
+    responseFormat = "response-format",
+    speed = 5,
+    voice = "voice"
+)
+val result = client.audioVolcengine.createApiV3AudioSpeech(body)
 println(result)
 ```
 

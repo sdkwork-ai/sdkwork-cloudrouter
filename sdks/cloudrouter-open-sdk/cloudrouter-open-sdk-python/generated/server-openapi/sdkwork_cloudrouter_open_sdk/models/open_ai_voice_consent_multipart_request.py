@@ -6,6 +6,6 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 @dataclass
 class OpenAiVoiceConsentMultipartRequest:
     """OpenAI-compatible open ai voice consent multipart request schema exposed by Cloud Router."""
-    file: str
+    file: bytes
     metadata: Optional[Dict[str, str]] = None
     name: Optional[str] = None

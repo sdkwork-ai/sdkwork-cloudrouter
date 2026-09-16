@@ -82,6 +82,7 @@ client.getHttpClient().setHeader("X-Custom-Header", "value");
 - `client.getFilesAnthropic()` - files_anthropic API
 - `client.getChatAnthropic()` - chat_anthropic API
 - `client.getBatchesAnthropic()` - batches_anthropic API
+- `client.getAudioElevenlabs()` - audio_elevenlabs API
 - `client.getResponsesGoogle()` - responses_google API
 - `client.getFilesGoogle()` - files_google API
 - `client.getEmbeddingsGoogle()` - embeddings_google API
@@ -89,6 +90,7 @@ client.getHttpClient().setHeader("X-Custom-Header", "value");
 - `client.getVideosKling()` - videos_kling API
 - `client.getImagesMidjourney()` - images_midjourney API
 - `client.getImagesNanoBanana()` - images_nano_banana API
+- `client.getAudioMinimax()` - audio_minimax API
 - `client.getAudioSuno()` - audio_suno API
 - `client.getAssistants()` - assistant API
 - `client.getAudio()` - audio API
@@ -110,6 +112,7 @@ client.getHttpClient().setHeader("X-Custom-Header", "value");
 - `client.getVideo()` - video API
 - `client.getVideosVidu()` - videos_vidu API
 - `client.getImagesVidu()` - images_vidu API
+- `client.getAudioVolcengine()` - audio_volcengine API
 - `client.getVideosVolcengine()` - videos_volcengine API
 
 ## Usage Examples
@@ -157,6 +160,22 @@ params.put("before_id", "1");
 params.put("after_id", "1");
 params.put("limit", 3);
 AnthropicMessageBatchListResponse result = client.getBatchesAnthropic().getListV1MessagesBatches(params);
+System.out.println(result);
+```
+
+### audio_elevenlabs
+
+```java
+// Generate sound effect
+ElevenLabsSoundGenerationRequest body = new ElevenLabsSoundGenerationRequest();
+body.setDurationSeconds(1);
+body.setLoop(false);
+body.setModelId("1");
+body.setPromptInfluence(4);
+body.setText("text");
+Map<String, Object> params = new LinkedHashMap<>();
+params.put("output_format", "output-format");
+ElevenLabsSoundGenerationResponse result = client.getAudioElevenlabs().createV1SoundGeneration(body, params);
 System.out.println(result);
 ```
 
@@ -208,19 +227,18 @@ System.out.println(result);
 ### videos_kling
 
 ```java
-// Kling video generation
-KlingVideoGenerationRequest body = new KlingVideoGenerationRequest();
-body.setAspectRatio("aspect-ratio");
-body.setCallbackUrl("callback-url");
-body.setCfgScale(3);
-body.setDuration(4);
-body.setImage("image");
-body.setImageTail("image-tail");
-body.setMode("mode");
-body.setModel("model");
-body.setNegativePrompt("negative-prompt");
+// Kling create avatar video
+KlingAvatarCreateRequest body = new KlingAvatarCreateRequest();
+body.setModelName("name");
+body.setHumanImage("human-image");
 body.setPrompt("prompt");
-KlingVideoGenerationTask result = client.getVideosKling().createV1VideosGeneration(body);
+body.setVoiceMode("voice-mode");
+body.setAudioUrl("audio-url");
+body.setText("text");
+body.setVoiceId("1");
+body.setVoiceLanguage("voice-language");
+body.setCallbackUrl("callback-url");
+KlingVideoGenerationTask result = client.getVideosKling().createV1VideosAvatar(body);
 System.out.println(result);
 ```
 
@@ -252,6 +270,23 @@ body.setPrompt("prompt");
 body.setSeed(6);
 body.setSize("size");
 NanoBananaImageGenerationTask result = client.getImagesNanoBanana().createGeneration(body);
+System.out.println(result);
+```
+
+### audio_minimax
+
+```java
+// Minimax create music generation
+MiniMaxMusicGenerationRequest body = new MiniMaxMusicGenerationRequest();
+body.setModel("model");
+body.setPrompt("prompt");
+body.setLyrics("lyrics");
+body.setStream(false);
+body.setOutputFormat("output-format");
+body.setIsInstrumental(false);
+body.setLyricsOptimizer(true);
+body.setAudioSetting(new MiniMaxMusicAudioSetting());
+MiniMaxMusicGenerationResponse result = client.getAudioMinimax().createV1MusicGeneration(body);
 System.out.println(result);
 ```
 
@@ -566,6 +601,21 @@ body.setPrompt("prompt");
 body.setSeed(7);
 body.setStyle("style");
 ViduImageGenerationTask result = client.getImagesVidu().createEntV2Reference2image(body);
+System.out.println(result);
+```
+
+### audio_volcengine
+
+```java
+// Volcengine create speech
+OpenAiSpeechCreateRequest body = new OpenAiSpeechCreateRequest();
+body.setInput("input");
+body.setMetadata(new LinkedHashMap<>());
+body.setModel("model");
+body.setResponseFormat("response-format");
+body.setSpeed(5);
+body.setVoice("voice");
+byte[] result = client.getAudioVolcengine().createApiV3AudioSpeech(body);
 System.out.println(result);
 ```
 

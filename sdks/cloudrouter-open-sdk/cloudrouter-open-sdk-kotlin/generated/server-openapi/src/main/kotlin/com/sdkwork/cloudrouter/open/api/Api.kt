@@ -9,6 +9,7 @@ class Api(private val client: HttpClient) {
     val filesAnthropic: FilesAnthropicApi = FilesAnthropicApi(client)
     val chatAnthropic: ChatAnthropicApi = ChatAnthropicApi(client)
     val batchesAnthropic: BatchesAnthropicApi = BatchesAnthropicApi(client)
+    val audioElevenlabs: AudioElevenlabsApi = AudioElevenlabsApi(client)
     val responsesGoogle: ResponsesGoogleApi = ResponsesGoogleApi(client)
     val filesGoogle: FilesGoogleApi = FilesGoogleApi(client)
     val embeddingsGoogle: EmbeddingsGoogleApi = EmbeddingsGoogleApi(client)
@@ -16,6 +17,7 @@ class Api(private val client: HttpClient) {
     val videosKling: VideosKlingApi = VideosKlingApi(client)
     val imagesMidjourney: ImagesMidjourneyApi = ImagesMidjourneyApi(client)
     val imagesNanoBanana: ImagesNanoBananaApi = ImagesNanoBananaApi(client)
+    val audioMinimax: AudioMinimaxApi = AudioMinimaxApi(client)
     val audioSuno: AudioSunoApi = AudioSunoApi(client)
     val assistants: AssistantsApi = AssistantsApi(client)
     val audio: AudioApi = AudioApi(client)
@@ -37,5 +39,6 @@ class Api(private val client: HttpClient) {
     val video: VideoApi = VideoApi(client)
     val videosVidu: VideosViduApi = VideosViduApi(client)
     val imagesVidu: ImagesViduApi = ImagesViduApi(client)
+    val audioVolcengine: AudioVolcengineApi = AudioVolcengineApi(client)
     val videosVolcengine: VideosVolcengineApi = VideosVolcengineApi(client)
 }

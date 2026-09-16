@@ -2,6 +2,7 @@ export 'paths.dart';
 export 'files_anthropic.dart' hide QueryParameterSpec, buildQueryString, appendSerializedParameter, appendArrayParameter, appendObjectParameter, appendDeepObjectParameter, encodeQueryValue, urlEncode, PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;
 export 'chat_anthropic.dart';
 export 'batches_anthropic.dart' hide QueryParameterSpec, buildQueryString, appendSerializedParameter, appendArrayParameter, appendObjectParameter, appendDeepObjectParameter, encodeQueryValue, urlEncode, PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;
+export 'audio_elevenlabs.dart' hide QueryParameterSpec, buildQueryString, appendSerializedParameter, appendArrayParameter, appendObjectParameter, appendDeepObjectParameter, encodeQueryValue, urlEncode, PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;
 export 'responses_google.dart' hide QueryParameterSpec, buildQueryString, appendSerializedParameter, appendArrayParameter, appendObjectParameter, appendDeepObjectParameter, encodeQueryValue, urlEncode, PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;
 export 'files_google.dart' hide QueryParameterSpec, buildQueryString, appendSerializedParameter, appendArrayParameter, appendObjectParameter, appendDeepObjectParameter, encodeQueryValue, urlEncode, PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;
 export 'embeddings_google.dart' hide PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;
@@ -9,6 +10,7 @@ export 'chat_google.dart' hide PathParameterSpec, serializePathParameter, serial
 export 'videos_kling.dart' hide PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;
 export 'images_midjourney.dart' hide PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;
 export 'images_nano_banana.dart' hide PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;
+export 'audio_minimax.dart';
 export 'audio_suno.dart' hide PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;
 export 'assistants.dart' hide QueryParameterSpec, buildQueryString, appendSerializedParameter, appendArrayParameter, appendObjectParameter, appendDeepObjectParameter, encodeQueryValue, urlEncode, PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;
 export 'audio.dart' hide QueryParameterSpec, buildQueryString, appendSerializedParameter, appendArrayParameter, appendObjectParameter, appendDeepObjectParameter, encodeQueryValue, urlEncode, PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;
@@ -30,4 +32,5 @@ export 'vector_stores.dart' hide QueryParameterSpec, buildQueryString, appendSer
 export 'video.dart' hide QueryParameterSpec, buildQueryString, appendSerializedParameter, appendArrayParameter, appendObjectParameter, appendDeepObjectParameter, encodeQueryValue, urlEncode, PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;
 export 'videos_vidu.dart' hide PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;
 export 'images_vidu.dart';
+export 'audio_volcengine.dart';
 export 'videos_volcengine.dart' hide PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;

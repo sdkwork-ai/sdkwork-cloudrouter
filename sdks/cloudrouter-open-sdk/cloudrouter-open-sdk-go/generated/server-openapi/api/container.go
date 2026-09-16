@@ -100,13 +100,8 @@ func (a *ContainerApi) DeleteFiles(containerId string, fileId string) (sdktypes.
 }
 
 // Retrieve container file content
-func (a *ContainerApi) ListFilesContent(containerId string, fileId string) (string, error) {
-    raw, err := a.client.Get(AiApiPath(fmt.Sprintf("/containers/%s/files/%s/content", SerializePathParameter(containerId, PathParameterSpec{Name: "container_id", Style: "simple", Explode: false}), SerializePathParameter(fileId, PathParameterSpec{Name: "file_id", Style: "simple", Explode: false}))), nil, nil)
-    if err != nil {
-        var zero string
-        return zero, err
-    }
-    return decodeResult[string](raw)
+func (a *ContainerApi) ListFilesContent(containerId string, fileId string) ([]byte, error) {
+    return a.client.RequestBytes("GET", AiApiPath(fmt.Sprintf("/containers/%s/files/%s/content", SerializePathParameter(containerId, PathParameterSpec{Name: "container_id", Style: "simple", Explode: false}), SerializePathParameter(fileId, PathParameterSpec{Name: "file_id", Style: "simple", Explode: false}))), nil, nil, nil, "", false, false)
 }
 
 type PathParameterSpec struct {

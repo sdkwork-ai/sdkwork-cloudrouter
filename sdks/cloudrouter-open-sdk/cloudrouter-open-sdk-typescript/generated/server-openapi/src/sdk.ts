@@ -5,6 +5,7 @@ import type { AuthTokenManager } from '@sdkwork/sdk-common';
 import { FilesAnthropicApi, createFilesAnthropicApi } from './api/files-anthropic';
 import { ChatAnthropicApi, createChatAnthropicApi } from './api/chat-anthropic';
 import { BatchesAnthropicApi, createBatchesAnthropicApi } from './api/batches-anthropic';
+import { AudioElevenlabsApi, createAudioElevenlabsApi } from './api/audio-elevenlabs';
 import { ResponsesGoogleApi, createResponsesGoogleApi } from './api/responses-google';
 import { FilesGoogleApi, createFilesGoogleApi } from './api/files-google';
 import { EmbeddingsGoogleApi, createEmbeddingsGoogleApi } from './api/embeddings-google';
@@ -12,6 +13,7 @@ import { ChatGoogleApi, createChatGoogleApi } from './api/chat-google';
 import { VideosKlingApi, createVideosKlingApi } from './api/videos-kling';
 import { ImagesMidjourneyApi, createImagesMidjourneyApi } from './api/images-midjourney';
 import { ImagesNanoBananaApi, createImagesNanoBananaApi } from './api/images-nano-banana';
+import { AudioMinimaxApi, createAudioMinimaxApi } from './api/audio-minimax';
 import { AudioSunoApi, createAudioSunoApi } from './api/audio-suno';
 import { AssistantsApi, createAssistantsApi } from './api/assistants';
 import { AudioApi, createAudioApi } from './api/audio';
@@ -33,8 +35,8 @@ import { VectorStoresApi, createVectorStoresApi } from './api/vector-stores';
 import { VideoApi, createVideoApi } from './api/video';
 import { VideosViduApi, createVideosViduApi } from './api/videos-vidu';
 import { ImagesViduApi, createImagesViduApi } from './api/images-vidu';
+import { AudioVolcengineApi, createAudioVolcengineApi } from './api/audio-volcengine';
 import { VideosVolcengineApi, createVideosVolcengineApi } from './api/videos-volcengine';
-import { AudioElevenlabsApi, createAudioElevenlabsApi } from './api/audio-elevenlabs';
 
 export class SdkworkAiClient {
   private httpClient: HttpClient;
@@ -42,6 +44,7 @@ export class SdkworkAiClient {
   public readonly filesAnthropic: FilesAnthropicApi;
   public readonly chatAnthropic: ChatAnthropicApi;
   public readonly batchesAnthropic: BatchesAnthropicApi;
+  public readonly audioElevenlabs: AudioElevenlabsApi;
   public readonly responsesGoogle: ResponsesGoogleApi;
   public readonly filesGoogle: FilesGoogleApi;
   public readonly embeddingsGoogle: EmbeddingsGoogleApi;
@@ -49,6 +52,7 @@ export class SdkworkAiClient {
   public readonly videosKling: VideosKlingApi;
   public readonly imagesMidjourney: ImagesMidjourneyApi;
   public readonly imagesNanoBanana: ImagesNanoBananaApi;
+  public readonly audioMinimax: AudioMinimaxApi;
   public readonly audioSuno: AudioSunoApi;
   public readonly assistants: AssistantsApi;
   public readonly audio: AudioApi;
@@ -70,8 +74,8 @@ export class SdkworkAiClient {
   public readonly video: VideoApi;
   public readonly videosVidu: VideosViduApi;
   public readonly imagesVidu: ImagesViduApi;
+  public readonly audioVolcengine: AudioVolcengineApi;
   public readonly videosVolcengine: VideosVolcengineApi;
-  public readonly audioElevenlabs: AudioElevenlabsApi;
 
   constructor(config: SdkworkAiConfig) {
     this.httpClient = createHttpClient(config);
@@ -80,6 +84,8 @@ export class SdkworkAiClient {
     this.chatAnthropic = createChatAnthropicApi(this.httpClient);
 
     this.batchesAnthropic = createBatchesAnthropicApi(this.httpClient);
+
+    this.audioElevenlabs = createAudioElevenlabsApi(this.httpClient);
 
     this.responsesGoogle = createResponsesGoogleApi(this.httpClient);
 
@@ -94,6 +100,8 @@ export class SdkworkAiClient {
     this.imagesMidjourney = createImagesMidjourneyApi(this.httpClient);
 
     this.imagesNanoBanana = createImagesNanoBananaApi(this.httpClient);
+
+    this.audioMinimax = createAudioMinimaxApi(this.httpClient);
 
     this.audioSuno = createAudioSunoApi(this.httpClient);
 
@@ -137,9 +145,9 @@ export class SdkworkAiClient {
 
     this.imagesVidu = createImagesViduApi(this.httpClient);
 
-    this.videosVolcengine = createVideosVolcengineApi(this.httpClient);
+    this.audioVolcengine = createAudioVolcengineApi(this.httpClient);
 
-    this.audioElevenlabs = createAudioElevenlabsApi(this.httpClient);
+    this.videosVolcengine = createVideosVolcengineApi(this.httpClient);
   }
 
   setApiKey(apiKey: string): this {

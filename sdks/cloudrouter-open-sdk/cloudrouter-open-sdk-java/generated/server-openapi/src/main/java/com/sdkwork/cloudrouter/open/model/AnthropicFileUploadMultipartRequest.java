@@ -2,13 +2,13 @@ package com.sdkwork.cloudrouter.open.model;
 
 
 public class AnthropicFileUploadMultipartRequest {
-    private String file;
+    private byte[] file;
 
-    public String getFile() {
+    public byte[] getFile() {
         return this.file;
     }
 
-    public void setFile(String file) {
+    public void setFile(byte[] file) {
         this.file = file;
     }
 }

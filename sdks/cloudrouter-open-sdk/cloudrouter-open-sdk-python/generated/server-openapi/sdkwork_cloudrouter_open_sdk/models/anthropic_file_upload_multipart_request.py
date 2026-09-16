@@ -6,4 +6,4 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 @dataclass
 class AnthropicFileUploadMultipartRequest:
     """Anthropic Claude anthropic file upload multipart request schema exposed by Cloud Router vendor routing."""
-    file: str
+    file: bytes

@@ -21,7 +21,6 @@ export class HttpClient extends BaseHttpClient {
   private static readonly ACCESS_TOKEN_HEADER: string = 'Access-Token';
   private static readonly API_KEY_USE_BEARER = true;
   private static readonly SDKWORK_V3_UNWRAP = false;
-  private static readonly SDKWORK_V3_REQUEST_FINGERPRINTS = false;
   private static readonly REQUIRES_SDKWORK_ACCESS_TOKEN = false;
 
   constructor(config: SdkworkAiConfig) {
@@ -79,6 +78,11 @@ export class HttpClient extends BaseHttpClient {
     headers: Record<string, string>,
     preserveAccessToken: boolean,
   ): void {
+    // Identity projection headers forbidden by the Web Framework server guard
+    // (sdkwork-web-core::constants::FORBIDDEN_CLIENT_IDENTITY_HEADERS,
+    // API_SPEC §10.2 / SECURITY_SPEC §5.1 / spec B9). The server rejects any
+    // request carrying them with 400/40001 (surface classification), so
+    // generated clients strip them defensively on top of BaseHttpClient.
     [
       ...(preserveAccessToken ? [] : [HttpClient.ACCESS_TOKEN_HEADER, 'Access-Token']),
       'Authorization',

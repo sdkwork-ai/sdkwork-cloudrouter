@@ -8,6 +8,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         public static FilesAnthropicApi? FilesAnthropic { get; set; }
         public static ChatAnthropicApi? ChatAnthropic { get; set; }
         public static BatchesAnthropicApi? BatchesAnthropic { get; set; }
+        public static AudioElevenlabsApi? AudioElevenlabs { get; set; }
         public static ResponsesGoogleApi? ResponsesGoogle { get; set; }
         public static FilesGoogleApi? FilesGoogle { get; set; }
         public static EmbeddingsGoogleApi? EmbeddingsGoogle { get; set; }
@@ -15,6 +16,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         public static VideosKlingApi? VideosKling { get; set; }
         public static ImagesMidjourneyApi? ImagesMidjourney { get; set; }
         public static ImagesNanoBananaApi? ImagesNanoBanana { get; set; }
+        public static AudioMinimaxApi? AudioMinimax { get; set; }
         public static AudioSunoApi? AudioSuno { get; set; }
         public static AssistantsApi? Assistants { get; set; }
         public static AudioApi? Audio { get; set; }
@@ -36,6 +38,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         public static VideoApi? Video { get; set; }
         public static VideosViduApi? VideosVidu { get; set; }
         public static ImagesViduApi? ImagesVidu { get; set; }
+        public static AudioVolcengineApi? AudioVolcengine { get; set; }
         public static VideosVolcengineApi? VideosVolcengine { get; set; }
     }
 }

@@ -212,7 +212,7 @@ const VENDOR_MODALITY_MAPPING: [(&str, &str); 5] = [
 /// Curated binding from vendor code to the resource group granted to that
 /// vendor's default account groups. Every vendor declared in the bundled
 /// resources must have a binding (validated at seed load time).
-const VENDOR_RESOURCE_GROUP_BINDINGS: [(&str, &str); 9] = [
+const VENDOR_RESOURCE_GROUP_BINDINGS: [(&str, &str); 11] = [
     ("openai", "official.openai.full"),
     ("openai_compatible", "api.openai_compatible.all"),
     ("anthropic", "official.anthropic.claude_code"),
@@ -222,10 +222,12 @@ const VENDOR_RESOURCE_GROUP_BINDINGS: [(&str, &str); 9] = [
     ("minimax", "official.minimax.music"),
     ("vidu", "official.vidu.full"),
     ("volcengine", "official.volcengine.full"),
+    ("suno", "official.suno.full"),
+    ("elevenlabs", "official.elevenlabs.full"),
 ];
 
 /// Localized vendor display names: (vendor_code, en-US, zh-CN).
-const VENDOR_LOCALIZED_NAMES: [(&str, &str, &str); 9] = [
+const VENDOR_LOCALIZED_NAMES: [(&str, &str, &str); 11] = [
     ("openai", "OpenAI", "OpenAI"),
     ("openai_compatible", "OpenAI Compatible", "OpenAI 兼容"),
     ("anthropic", "Anthropic", "Anthropic"),
@@ -235,6 +237,8 @@ const VENDOR_LOCALIZED_NAMES: [(&str, &str, &str); 9] = [
     ("minimax", "MiniMax", "MiniMax"),
     ("vidu", "Vidu", "Vidu"),
     ("volcengine", "Volcengine", "火山引擎"),
+    ("suno", "Suno", "Suno"),
+    ("elevenlabs", "ElevenLabs", "ElevenLabs"),
 ];
 
 /// Localized modality display names: (modality_code, en-US, zh-CN).
@@ -2431,6 +2435,9 @@ mod tests {
             "volcengine.video",
             "minimax.music",
             "minimax.audio",
+            "suno.music",
+            "suno.audio",
+            "elevenlabs.audio",
         ];
         assert_eq!(
             codes.len(),

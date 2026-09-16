@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 @dataclass
 class OpenAiAudioTranscriptionMultipartRequest:
     """OpenAI-compatible open ai audio transcription multipart request schema exposed by Cloud Router."""
-    file: str
+    file: bytes
     model: str
     language: Optional[str] = None
     prompt: Optional[str] = None

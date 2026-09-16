@@ -56,6 +56,16 @@ func (a *VideosViduApi) ListEntV2TasksCreations(taskId string) (sdktypes.ViduTas
     return decodeResult[sdktypes.ViduTaskCreationsResponse](raw)
 }
 
+// Vidu create template video
+func (a *VideosViduApi) CreateEntV2Template(body sdktypes.ViduTemplateRequest) (sdktypes.ViduVideoGenerationTask, error) {
+    raw, err := a.client.Post(AiApiPath("/vidu/ent/v2/template"), body, nil, nil, "application/json")
+    if err != nil {
+        var zero sdktypes.ViduVideoGenerationTask
+        return zero, err
+    }
+    return decodeResult[sdktypes.ViduVideoGenerationTask](raw)
+}
+
 // Vidu text to video
 func (a *VideosViduApi) CreateEntV2Text2video(body sdktypes.ViduTextToVideoRequest) (sdktypes.ViduVideoGenerationTask, error) {
     raw, err := a.client.Post(AiApiPath("/vidu/ent/v2/text2video"), body, nil, nil, "application/json")

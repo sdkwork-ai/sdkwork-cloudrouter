@@ -70,6 +70,7 @@ client.set_header("X-Custom-Header", "value");
 - `client.videos_kling()` - videos_kling API
 - `client.images_midjourney()` - images_midjourney API
 - `client.images_nano_banana()` - images_nano_banana API
+- `client.audio_minimax()` - audio_minimax API
 - `client.audio_suno()` - audio_suno API
 - `client.assistants()` - assistant API
 - `client.audio()` - audio API
@@ -91,6 +92,7 @@ client.set_header("X-Custom-Header", "value");
 - `client.video()` - video API
 - `client.videos_vidu()` - videos_vidu API
 - `client.images_vidu()` - images_vidu API
+- `client.audio_volcengine()` - audio_volcengine API
 - `client.videos_volcengine()` - videos_volcengine API
 
 ## Usage Examples
@@ -223,21 +225,20 @@ println!("{result:?}");
 
 ```rust
 use cloudrouter_open_sdk::*;
-// Kling video generation
-let body = KlingVideoGenerationRequest {
-    aspect_ratio: Some("aspect-ratio".to_string()),
+// Kling create avatar video
+let body = KlingAvatarCreateRequest {
+    model_name: Some("name".to_string()),
+    human_image: "human-image".to_string(),
+    prompt: Some("prompt".to_string()),
+    voice_mode: Some("voice-mode".to_string()),
+    audio_url: Some("audio-url".to_string()),
+    text: Some("text".to_string()),
+    voice_id: Some("1".to_string()),
+    voice_language: Some("voice-language".to_string()),
     callback_url: Some("callback-url".to_string()),
-    cfg_scale: Some(3.0_f64),
-    duration: Some(4_i64),
-    image: Some("image".to_string()),
-    image_tail: Some("image-tail".to_string()),
-    mode: Some("mode".to_string()),
-    model: Some("model".to_string()),
-    negative_prompt: Some("negative-prompt".to_string()),
-    prompt: "prompt".to_string(),
     ..Default::default()
 };
-let result = client.videos_kling().create_v1_videos_generation(&body).await?;
+let result = client.videos_kling().create_v1_videos_avatar(&body).await?;
 println!("{result:?}");
 ```
 
@@ -275,6 +276,26 @@ let body = NanoBananaImageGenerationRequest {
     ..Default::default()
 };
 let result = client.images_nano_banana().create_generations(&body).await?;
+println!("{result:?}");
+```
+
+### audio_minimax
+
+```rust
+use cloudrouter_open_sdk::*;
+// Minimax create music generation
+let body = MiniMaxMusicGenerationRequest {
+    model: "model".to_string(),
+    prompt: Some("prompt".to_string()),
+    lyrics: Some("lyrics".to_string()),
+    stream: Some(false),
+    output_format: Some("output-format".to_string()),
+    is_instrumental: Some(false),
+    lyrics_optimizer: Some(true),
+    audio_setting: Some(MiniMaxMusicAudioSetting::default()),
+    ..Default::default()
+};
+let result = client.audio_minimax().create_v1_music_generation(&body).await?;
 println!("{result:?}");
 ```
 
@@ -631,6 +652,24 @@ let body = ViduReferenceToImageRequest {
     ..Default::default()
 };
 let result = client.images_vidu().create_ent_v2_reference2image(&body).await?;
+println!("{result:?}");
+```
+
+### audio_volcengine
+
+```rust
+use cloudrouter_open_sdk::*;
+// Volcengine create speech
+let body = OpenAiSpeechCreateRequest {
+    input: "input".to_string(),
+    metadata: Some(serde_json::json!({"value":"value"})),
+    model: "model".to_string(),
+    response_format: Some("response-format".to_string()),
+    speed: Some(5.0_f64),
+    voice: "voice".to_string(),
+    ..Default::default()
+};
+let result = client.audio_volcengine().create_api_v3_audio_speech(&body).await?;
 println!("{result:?}");
 ```
 

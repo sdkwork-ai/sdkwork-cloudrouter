@@ -71,6 +71,7 @@ client.SetHeader("X-Custom-Header", "value");
 - `client.FilesAnthropic` - files_anthropic API
 - `client.ChatAnthropic` - chat_anthropic API
 - `client.BatchesAnthropic` - batches_anthropic API
+- `client.AudioElevenlabs` - audio_elevenlabs API
 - `client.ResponsesGoogle` - responses_google API
 - `client.FilesGoogle` - files_google API
 - `client.EmbeddingsGoogle` - embeddings_google API
@@ -78,6 +79,7 @@ client.SetHeader("X-Custom-Header", "value");
 - `client.VideosKling` - videos_kling API
 - `client.ImagesMidjourney` - images_midjourney API
 - `client.ImagesNanoBanana` - images_nano_banana API
+- `client.AudioMinimax` - audio_minimax API
 - `client.AudioSuno` - audio_suno API
 - `client.Assistants` - assistant API
 - `client.Audio` - audio API
@@ -99,6 +101,7 @@ client.SetHeader("X-Custom-Header", "value");
 - `client.Video` - video API
 - `client.VideosVidu` - videos_vidu API
 - `client.ImagesVidu` - images_vidu API
+- `client.AudioVolcengine` - audio_volcengine API
 - `client.VideosVolcengine` - videos_volcengine API
 
 ## Usage Examples
@@ -152,6 +155,26 @@ var query = new Dictionary<string, object>
     ["limit"] = 3,
 };
 var result = await client.BatchesAnthropic.GetListV1MessagesBatchesAsync(query);
+Console.WriteLine(result);
+```
+
+### audio_elevenlabs
+
+```csharp
+// Generate sound effect
+var body = new ElevenLabsSoundGenerationRequest
+{
+    DurationSeconds = 1,
+    Loop = false,
+    ModelId = "1",
+    PromptInfluence = 4,
+    Text = "text",
+};
+var query = new Dictionary<string, object>
+{
+    ["output_format"] = "output-format",
+};
+var result = await client.AudioElevenlabs.CreateV1SoundGenerationAsync(body, query);
 Console.WriteLine(result);
 ```
 
@@ -211,21 +234,20 @@ Console.WriteLine(result);
 ### videos_kling
 
 ```csharp
-// Kling video generation
-var body = new KlingVideoGenerationRequest
+// Kling create avatar video
+var body = new KlingAvatarCreateRequest
 {
-    AspectRatio = "aspect-ratio",
-    CallbackUrl = "callback-url",
-    CfgScale = 3,
-    Duration = 4,
-    Image = "image",
-    ImageTail = "image-tail",
-    Mode = "mode",
-    Model = "model",
-    NegativePrompt = "negative-prompt",
+    ModelName = "name",
+    HumanImage = "human-image",
     Prompt = "prompt",
+    VoiceMode = "voice-mode",
+    AudioUrl = "audio-url",
+    Text = "text",
+    VoiceId = "1",
+    VoiceLanguage = "voice-language",
+    CallbackUrl = "callback-url",
 };
-var result = await client.VideosKling.CreateV1VideosGenerationAsync(body);
+var result = await client.VideosKling.CreateV1VideosAvatarAsync(body);
 Console.WriteLine(result);
 ```
 
@@ -261,6 +283,25 @@ var body = new NanoBananaImageGenerationRequest
     Size = "size",
 };
 var result = await client.ImagesNanoBanana.CreateGenerationAsync(body);
+Console.WriteLine(result);
+```
+
+### audio_minimax
+
+```csharp
+// Minimax create music generation
+var body = new MiniMaxMusicGenerationRequest
+{
+    Model = "model",
+    Prompt = "prompt",
+    Lyrics = "lyrics",
+    Stream = false,
+    OutputFormat = "output-format",
+    IsInstrumental = false,
+    LyricsOptimizer = true,
+    AudioSetting = new MiniMaxMusicAudioSetting(),
+};
+var result = await client.AudioMinimax.CreateV1MusicGenerationAsync(body);
 Console.WriteLine(result);
 ```
 
@@ -615,6 +656,23 @@ var body = new ViduReferenceToImageRequest
     Style = "style",
 };
 var result = await client.ImagesVidu.CreateEntV2Reference2imageAsync(body);
+Console.WriteLine(result);
+```
+
+### audio_volcengine
+
+```csharp
+// Volcengine create speech
+var body = new OpenAiSpeechCreateRequest
+{
+    Input = "input",
+    Metadata = new Dictionary<string, object>(),
+    Model = "model",
+    ResponseFormat = "response-format",
+    Speed = 5,
+    Voice = "voice",
+};
+var result = await client.AudioVolcengine.CreateApiV3AudioSpeechAsync(body);
 Console.WriteLine(result);
 ```
 

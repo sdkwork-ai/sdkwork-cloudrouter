@@ -745,6 +745,62 @@
     },
     {
       "method": "POST",
+      "path": "/kling/v1/videos/avatar",
+      "operationId": "klingCreateAvatar",
+      "tags": [
+        "Videos/kling"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "kling-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter.ai"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/kling/v1/videos/motion-control",
+      "operationId": "klingCreateMotionControl",
+      "tags": [
+        "Videos/kling"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "kling-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter.ai"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
       "path": "/kling/v1/videos/generations",
       "operationId": "klingCreateVideoGeneration",
       "tags": [
@@ -892,6 +948,34 @@
       ],
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "nano-banana-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter.ai"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/minimax/v1/music_generation",
+      "operationId": "minimaxCreateMusicGeneration",
+      "tags": [
+        "Audio/minimax"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "cloudrouter-vendor-relay",
       "auth": {
         "mode": "api-key-or-dual-token",
         "required": true
@@ -4469,6 +4553,34 @@
     },
     {
       "method": "POST",
+      "path": "/vidu/ent/v2/template",
+      "operationId": "viduCreateTemplate",
+      "tags": [
+        "Videos/vidu"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "vidu-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter.ai"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
       "path": "/vidu/ent/v2/text2video",
       "operationId": "viduCreateTextToVideo",
       "tags": [
@@ -4476,6 +4588,34 @@
       ],
       "x-sdkwork-wire-protocol": "external",
       "x-sdkwork-external-protocol-id": "vidu-v1",
+      "auth": {
+        "mode": "api-key-or-dual-token",
+        "required": true
+      },
+      "handler": {
+        "module": "crate::routes",
+        "name": null
+      },
+      "ownership": {
+        "owner": "sdkwork-cloudrouter",
+        "apiAuthority": "sdkwork-cloudrouter.ai"
+      },
+      "source": {
+        "routeCrate": "sdkwork-routes-cloudrouter-open-api",
+        "openApiAuthority": "apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json"
+      },
+      "requestContext": "WebRequestContext",
+      "apiSurface": "open-api"
+    },
+    {
+      "method": "POST",
+      "path": "/volcengine/api/v3/audio/speech",
+      "operationId": "volcengineCreateSpeech",
+      "tags": [
+        "Audio/volcengine"
+      ],
+      "x-sdkwork-wire-protocol": "external",
+      "x-sdkwork-external-protocol-id": "volcengine-v1",
       "auth": {
         "mode": "api-key-or-dual-token",
         "required": true

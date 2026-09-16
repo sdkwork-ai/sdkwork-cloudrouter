@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "cloudrouter_open_sdk"
   },
-  "changeFingerprint": "a5cef7510c128b077c7466429d10a50443203a9fce3cc118f88672dbd3199009",
+  "changeFingerprint": "b108b391ba60fac49d03d2bd83d404391e36e16acf49d85184a45fab6a10dd81",
   "changes": {
     "createdGeneratedFiles": [
       "bin/publish-core.mjs",
@@ -20,7 +20,10 @@
       "lib/cloudrouter_open_sdk.dart",
       "lib/src/api/api.dart",
       "lib/src/api/assistants.dart",
+      "lib/src/api/audio_elevenlabs.dart",
+      "lib/src/api/audio_minimax.dart",
       "lib/src/api/audio_suno.dart",
+      "lib/src/api/audio_volcengine.dart",
       "lib/src/api/audio.dart",
       "lib/src/api/batches_anthropic.dart",
       "lib/src/api/batches.dart",
@@ -89,7 +92,10 @@
           "lib/ai_client.dart",
           "lib/src/api/api.dart",
           "lib/src/api/assistants.dart",
+          "lib/src/api/audio_elevenlabs.dart",
+          "lib/src/api/audio_minimax.dart",
           "lib/src/api/audio_suno.dart",
+          "lib/src/api/audio_volcengine.dart",
           "lib/src/api/audio.dart",
           "lib/src/api/batches_anthropic.dart",
           "lib/src/api/batches.dart",
@@ -189,7 +195,7 @@
         "title": "Unified package check",
         "required": true,
         "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-open-sdk\\cloudrouter-open-sdk-flutter\\generated\\server-openapi",
+        "workingDirectory": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-open-sdk\\cloudrouter-open-sdk-flutter\\generated\\server-openapi",
         "command": "node",
         "args": [
           "./bin/publish-core.mjs",

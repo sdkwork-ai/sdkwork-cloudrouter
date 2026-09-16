@@ -1,7 +1,7 @@
 import { aiApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
-import type { KlingVideoGenerationRequest, KlingVideoGenerationTask } from '../types';
+import type { KlingAvatarCreateRequest, KlingMotionControlRequest, KlingVideoGenerationRequest, KlingVideoGenerationTask } from '../types';
 
 
 export class VideosKlingV1VideosGenerationsApi {
@@ -23,10 +23,42 @@ export class VideosKlingV1VideosGenerationsApi {
   }
 }
 
+export class VideosKlingV1VideosMotionControlApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Kling create motion control video */
+  async create(body: KlingMotionControlRequest, requestOptions?: ApiRequestOptions): Promise<KlingVideoGenerationTask> {
+    return this.client.request<KlingVideoGenerationTask>(aiApiPath(`/kling/v1/videos/motion-control`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+  }
+}
+
+export class VideosKlingV1VideosAvatarApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Kling create avatar video */
+  async create(body: KlingAvatarCreateRequest, requestOptions?: ApiRequestOptions): Promise<KlingVideoGenerationTask> {
+    return this.client.request<KlingVideoGenerationTask>(aiApiPath(`/kling/v1/videos/avatar`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+  }
+}
+
 export class VideosKlingV1VideosApi {
+  public readonly avatar: VideosKlingV1VideosAvatarApi;
+  public readonly motionControl: VideosKlingV1VideosMotionControlApi;
   public readonly generations: VideosKlingV1VideosGenerationsApi;
 
   constructor(client: HttpClient) {
+    this.avatar = new VideosKlingV1VideosAvatarApi(client);
+    this.motionControl = new VideosKlingV1VideosMotionControlApi(client);
     this.generations = new VideosKlingV1VideosGenerationsApi(client);
   }
 

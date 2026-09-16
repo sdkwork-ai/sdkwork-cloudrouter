@@ -44,9 +44,8 @@ public class FilesApi {
     }
 
     /** Retrieve file content */
-    public String content(String fileId) throws Exception {
-        Object raw = client.get(ApiPaths.aiPath("/files/" + serializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false)) + "/content"));
-        return client.convertValue(raw, new TypeReference<String>() {});
+    public byte[] content(String fileId) throws Exception {
+        return client.requestBytes("GET", ApiPaths.aiPath("/files/" + serializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false)) + "/content"), null, null, null, null, false, false);
     }
 
     private record PathParameterSpec(String name, String style, boolean explode) {}

@@ -44,7 +44,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "549a83ba11a72615c84434efa73f6f17975d727897ed495b41a99bc9899f1d4a"
+      "sha256": "2304f53a8f80ef680d9d798435a53c1dba8961f8571017a13893ee23ef934429"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -59,8 +59,16 @@
       "sha256": "2fba037d62d3d8b378ab87ea7c6d9bd0ad3a9c345121b5cb0b2d88b0220805d9"
     },
     {
+      "path": "src/api/audio-minimax.ts",
+      "sha256": "3a7f08c339e153e6ac4503f98c6fe60db73f48c7da5ff9ef0d18489c94e15ffe"
+    },
+    {
       "path": "src/api/audio-suno.ts",
       "sha256": "934bcbe5f185396466ae571616abf59a1cde15e29397a7c739cfecc0b81e5088"
+    },
+    {
+      "path": "src/api/audio-volcengine.ts",
+      "sha256": "3ea10aefc0691b6a9a8fd48d506df994a0b4e1123e33d18eb858412ef1ddd213"
     },
     {
       "path": "src/api/audio.ts",
@@ -140,7 +148,7 @@
     },
     {
       "path": "src/api/index.ts",
-      "sha256": "1dad9652fe67690bfc6447b24f4beeb16f0da20946829eefad8b440cd0d5814a"
+      "sha256": "b5257ba32c04f3dbab4e43e0e454c64956d1b429bb845463445346ab1ddbf6b0"
     },
     {
       "path": "src/api/models.ts",
@@ -184,11 +192,11 @@
     },
     {
       "path": "src/api/videos-kling.ts",
-      "sha256": "ac797fdc3c930045fcd3f2ee934948ecdc7b71f2be6266c93442c45075fe95f6"
+      "sha256": "c9740341f01356168ebe6ad5df77d3ffc9e532f70b36e41a2bec9d33760bd9c1"
     },
     {
       "path": "src/api/videos-vidu.ts",
-      "sha256": "1504fdffc04427312e4739512db4b345fdac07e28bbb65b2a34a2eb2968dcc92"
+      "sha256": "2051cb74cc938d43c7e49d55bef3212af3a1abcbbea9314add287bc401518a99"
     },
     {
       "path": "src/api/videos-volcengine.ts",
@@ -200,7 +208,7 @@
     },
     {
       "path": "src/http/client.ts",
-      "sha256": "a2ef3924d8f2dba609d58a1b9d800a91c956ae0dc176eb2693426e7448ebf575"
+      "sha256": "f3947002596115c659b56ea54c36164e1b4431d669915d985ee6b447019d220a"
     },
     {
       "path": "src/http/index.ts",
@@ -212,7 +220,7 @@
     },
     {
       "path": "src/sdk.ts",
-      "sha256": "e7e8cc33f32076f1fee958dacb13b4ba4aa9c9c8c4318fe5974e881e512ea9c4"
+      "sha256": "0f1f42b6bf3f9a72cf3089c04e27beb6add05cfc541791c76bb76868c849ebe0"
     },
     {
       "path": "src/types/anthropic-content-block-param.ts",
@@ -320,19 +328,19 @@
     },
     {
       "path": "src/types/eleven-labs-sound-generation-request.ts",
-      "sha256": "b8a2e1a2239a2fc11e88671bbc357864ea905272573446d29bb64d8452800890"
+      "sha256": "b297a5ae599eea91233b3bdb0e50707b2922172d323b2cb18fc6a0a71a1d3abd"
     },
     {
       "path": "src/types/eleven-labs-sound-generation-response.ts",
-      "sha256": "83f39c2a2f38deeb39abfdb682d01034ed1762cd01ae5b1135c75606d00d4aa5"
+      "sha256": "e9619a4040b70f9d4d1144f055133f655aec5bc29480f2a298ee0deeba20251d"
     },
     {
       "path": "src/types/eleven-labs-text-to-speech-request.ts",
-      "sha256": "fd632e4eb6c81906b4303e3841f7c31b90676558e3230250d5b4e4d59c7cf4fa"
+      "sha256": "c16ab5a3bffe0bbf6e2ca27a5a744f925f849ff84567de1ddf3a2fb5acdfbc50"
     },
     {
       "path": "src/types/eleven-labs-text-to-speech-response.ts",
-      "sha256": "46d0901e79d0f633529574d20aadb9a248b40663306a2b9a5efb751b04f98b24"
+      "sha256": "d77b6c31c3c56790cafde0c047a2948b8d0cefef35d678f451abb84e2375fb9c"
     },
     {
       "path": "src/types/google-batch-embed-contents-request.ts",
@@ -508,7 +516,15 @@
     },
     {
       "path": "src/types/index.ts",
-      "sha256": "7455738df62bc7103e21c2259385fa69adb20b2d8282168faa095a6d4057b644"
+      "sha256": "f8ea07e7920e0e6cfd4394e0954d9d1e2e3e081df034c892e8376a36eb06f524"
+    },
+    {
+      "path": "src/types/kling-avatar-create-request.ts",
+      "sha256": "45798dc68ada1907afdbd686fd5c9e2ecfa6e04c412c3629f251350db222105f"
+    },
+    {
+      "path": "src/types/kling-motion-control-request.ts",
+      "sha256": "c3bb97b2bf99beba3e7f9309ddeb758c4f2474b2d78598e88f1459262416fe85"
     },
     {
       "path": "src/types/kling-video-generation-request.ts",
@@ -525,6 +541,30 @@
     {
       "path": "src/types/midjourney-image-generation-task.ts",
       "sha256": "1e150f049cfee2403e671851be43f509830ac6b503efc9b96a68ebd831cb8f1e"
+    },
+    {
+      "path": "src/types/mini-max-music-audio-setting.ts",
+      "sha256": "4e741d1248e5487d919dea1ef4d4a9d79ffe2c3ed94265f9c8e87309ed86873d"
+    },
+    {
+      "path": "src/types/mini-max-music-base-resp.ts",
+      "sha256": "bdb555dc60ed0bdd0a59007d1a55d6dc62206dc80d1579f5d45037d3840c079f"
+    },
+    {
+      "path": "src/types/mini-max-music-data.ts",
+      "sha256": "27098dd33ad80474926d2058adbff4b02a04ee0e2ffc1d827231d8d4bd0c8311"
+    },
+    {
+      "path": "src/types/mini-max-music-extra-info.ts",
+      "sha256": "78e8191ef0f97c6c7bc2e558b5baaef1271c61637c6a3902589cfdb161a1924e"
+    },
+    {
+      "path": "src/types/mini-max-music-generation-request.ts",
+      "sha256": "cc13b68f3a24fea12bd226dfbf86e4af43f9e49120a13f73bb9e018e3d18f102"
+    },
+    {
+      "path": "src/types/mini-max-music-generation-response.ts",
+      "sha256": "469e10bfad9f48633d3323ee687bf0cb084f1be1755fa49b336a4034b5565ca1"
     },
     {
       "path": "src/types/nano-banana-image-generation-request.ts",
@@ -1325,6 +1365,10 @@
     {
       "path": "src/types/vidu-task-creations-response.ts",
       "sha256": "97ad16824e6dedf02bc565cdfdfdd80990807f7a783b8ac1ad94327c2c62ad94"
+    },
+    {
+      "path": "src/types/vidu-template-request.ts",
+      "sha256": "569f38131a45dba4c39d63b6a8a8880bbce337f31dbec8faca10c30a1a0f4de5"
     },
     {
       "path": "src/types/vidu-text-to-video-request.ts",

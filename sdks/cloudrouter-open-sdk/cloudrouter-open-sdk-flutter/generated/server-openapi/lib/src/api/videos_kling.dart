@@ -10,6 +10,26 @@ class VideosKlingApi {
 
   VideosKlingApi(this._client);
 
+  /// Kling create avatar video
+  Future<KlingVideoGenerationTask?> createV1VideosAvatar(KlingAvatarCreateRequest body) async {
+    final payload = body.toJson();
+    final response = await _client.post(ApiPaths.aiPath('/kling/v1/videos/avatar'), body: payload, contentType: 'application/json');
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : KlingVideoGenerationTask.fromJson(map);
+    })();
+  }
+
+  /// Kling create motion control video
+  Future<KlingVideoGenerationTask?> createV1VideosMotionControl(KlingMotionControlRequest body) async {
+    final payload = body.toJson();
+    final response = await _client.post(ApiPaths.aiPath('/kling/v1/videos/motion-control'), body: payload, contentType: 'application/json');
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : KlingVideoGenerationTask.fromJson(map);
+    })();
+  }
+
   /// Kling video generation
   Future<KlingVideoGenerationTask?> createV1VideosGeneration(KlingVideoGenerationRequest body) async {
     final payload = body.toJson();

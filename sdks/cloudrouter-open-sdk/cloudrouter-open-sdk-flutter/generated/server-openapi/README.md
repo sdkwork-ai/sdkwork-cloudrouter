@@ -63,6 +63,7 @@ client.setHeader('X-Custom-Header', 'value');
 - `client.filesAnthropic` - files_anthropic API
 - `client.chatAnthropic` - chat_anthropic API
 - `client.batchesAnthropic` - batches_anthropic API
+- `client.audioElevenlabs` - audio_elevenlabs API
 - `client.responsesGoogle` - responses_google API
 - `client.filesGoogle` - files_google API
 - `client.embeddingsGoogle` - embeddings_google API
@@ -70,6 +71,7 @@ client.setHeader('X-Custom-Header', 'value');
 - `client.videosKling` - videos_kling API
 - `client.imagesMidjourney` - images_midjourney API
 - `client.imagesNanoBanana` - images_nano_banana API
+- `client.audioMinimax` - audio_minimax API
 - `client.audioSuno` - audio_suno API
 - `client.assistants` - assistant API
 - `client.audio` - audio API
@@ -91,6 +93,7 @@ client.setHeader('X-Custom-Header', 'value');
 - `client.video` - video API
 - `client.videosVidu` - videos_vidu API
 - `client.imagesVidu` - images_vidu API
+- `client.audioVolcengine` - audio_volcengine API
 - `client.videosVolcengine` - videos_volcengine API
 
 ## Usage Examples
@@ -141,6 +144,23 @@ final result = await client.batchesAnthropic.getListV1MessagesBatches(params);
 print(result);
 ```
 
+### audio_elevenlabs
+```dart
+// Generate sound effect
+final body = ElevenLabsSoundGenerationRequest(
+  durationSeconds: 1.0,
+  loop: false,
+  modelId: '1',
+  promptInfluence: 4.0,
+  text: 'text',
+);
+final params = <String, dynamic>{
+  'output_format': 'output-format',
+};
+final result = await client.audioElevenlabs.createV1SoundGeneration(body, params);
+print(result);
+```
+
 ### responses_google
 ```dart
 // Google Gemini list cached contents
@@ -188,20 +208,19 @@ print(result);
 
 ### videos_kling
 ```dart
-// Kling video generation
-final body = KlingVideoGenerationRequest(
-  aspectRatio: 'aspect-ratio',
-  callbackUrl: 'callback-url',
-  cfgScale: 3.0,
-  duration: 4,
-  image: 'image',
-  imageTail: 'image-tail',
-  mode: 'mode',
-  model: 'model',
-  negativePrompt: 'negative-prompt',
+// Kling create avatar video
+final body = KlingAvatarCreateRequest(
+  modelName: 'name',
+  humanImage: 'human-image',
   prompt: 'prompt',
+  voiceMode: 'voice-mode',
+  audioUrl: 'audio-url',
+  text: 'text',
+  voiceId: '1',
+  voiceLanguage: 'voice-language',
+  callbackUrl: 'callback-url',
 );
-final result = await client.videosKling.createV1VideosGeneration(body);
+final result = await client.videosKling.createV1VideosAvatar(body);
 print(result);
 ```
 
@@ -233,6 +252,23 @@ final body = NanoBananaImageGenerationRequest(
   size: 'size',
 );
 final result = await client.imagesNanoBanana.createGeneration(body);
+print(result);
+```
+
+### audio_minimax
+```dart
+// Minimax create music generation
+final body = MiniMaxMusicGenerationRequest(
+  model: 'model',
+  prompt: 'prompt',
+  lyrics: 'lyrics',
+  stream: false,
+  outputFormat: 'output-format',
+  isInstrumental: false,
+  lyricsOptimizer: true,
+  audioSetting: MiniMaxMusicAudioSetting(),
+);
+final result = await client.audioMinimax.createV1MusicGeneration(body);
 print(result);
 ```
 
@@ -546,6 +582,21 @@ final body = ViduReferenceToImageRequest(
   style: 'style',
 );
 final result = await client.imagesVidu.createEntV2Reference2image(body);
+print(result);
+```
+
+### audio_volcengine
+```dart
+// Volcengine create speech
+final body = OpenAiSpeechCreateRequest(
+  input: 'input',
+  metadata: { 'value': 'value' },
+  model: 'model',
+  responseFormat: 'response-format',
+  speed: 5.0,
+  voice: 'voice',
+);
+final result = await client.audioVolcengine.createApiV3AudioSpeech(body);
 print(result);
 ```
 

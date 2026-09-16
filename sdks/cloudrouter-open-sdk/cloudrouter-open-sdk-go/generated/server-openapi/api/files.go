@@ -64,13 +64,8 @@ func (a *FilesApi) Retrieve(fileId string) (sdktypes.OpenAiFile, error) {
 }
 
 // Retrieve file content
-func (a *FilesApi) Content(fileId string) (string, error) {
-    raw, err := a.client.Get(AiApiPath(fmt.Sprintf("/files/%s/content", SerializePathParameter(fileId, PathParameterSpec{Name: "file_id", Style: "simple", Explode: false}))), nil, nil)
-    if err != nil {
-        var zero string
-        return zero, err
-    }
-    return decodeResult[string](raw)
+func (a *FilesApi) Content(fileId string) ([]byte, error) {
+    return a.client.RequestBytes("GET", AiApiPath(fmt.Sprintf("/files/%s/content", SerializePathParameter(fileId, PathParameterSpec{Name: "file_id", Style: "simple", Explode: false}))), nil, nil, nil, "", false, false)
 }
 
 type PathParameterSpec struct {

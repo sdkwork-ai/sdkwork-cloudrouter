@@ -76,6 +76,7 @@ client.SetHeader("X-Custom-Header", "value")
 - `client.FilesAnthropic` - files_anthropic API
 - `client.ChatAnthropic` - chat_anthropic API
 - `client.BatchesAnthropic` - batches_anthropic API
+- `client.AudioElevenlabs` - audio_elevenlabs API
 - `client.ResponsesGoogle` - responses_google API
 - `client.FilesGoogle` - files_google API
 - `client.EmbeddingsGoogle` - embeddings_google API
@@ -83,6 +84,7 @@ client.SetHeader("X-Custom-Header", "value")
 - `client.VideosKling` - videos_kling API
 - `client.ImagesMidjourney` - images_midjourney API
 - `client.ImagesNanoBanana` - images_nano_banana API
+- `client.AudioMinimax` - audio_minimax API
 - `client.AudioSuno` - audio_suno API
 - `client.Assistants` - assistant API
 - `client.Audio` - audio API
@@ -104,6 +106,7 @@ client.SetHeader("X-Custom-Header", "value")
 - `client.Video` - video API
 - `client.VideosVidu` - videos_vidu API
 - `client.ImagesVidu` - images_vidu API
+- `client.AudioVolcengine` - audio_volcengine API
 - `client.VideosVolcengine` - videos_volcengine API
 
 ## Usage Examples
@@ -195,6 +198,27 @@ params := map[string]interface{}{
     "limit": 3,
 }
 result, err := client.BatchesAnthropic.GetListV1MessagesBatches(params)
+if err != nil {
+    panic(err)
+}
+fmt.Println(result)
+```
+
+### audio_elevenlabs
+
+```go
+// Generate sound effect
+body := sdktypes.ElevenLabsSoundGenerationRequest{
+    DurationSeconds: 1,
+    Loop: false,
+    ModelId: "model_id",
+    PromptInfluence: 4,
+    Text: "text",
+}
+params := map[string]interface{}{
+    "output_format": "output_format",
+}
+result, err := client.AudioElevenlabs.CreateV1SoundGeneration(body, params)
 if err != nil {
     panic(err)
 }
@@ -521,20 +545,19 @@ fmt.Println(result)
 ### videos_kling
 
 ```go
-// Kling video generation
-body := sdktypes.KlingVideoGenerationRequest{
-    AspectRatio: "aspect_ratio",
-    CallbackUrl: "callback_url",
-    CfgScale: 3,
-    Duration: 4,
-    Image: "image",
-    ImageTail: "image_tail",
-    Mode: "mode",
-    Model: "model",
-    NegativePrompt: "negative_prompt",
+// Kling create avatar video
+body := sdktypes.KlingAvatarCreateRequest{
+    ModelName: "model_name",
+    HumanImage: "human_image",
     Prompt: "prompt",
+    VoiceMode: "voice_mode",
+    AudioUrl: "audio_url",
+    Text: "text",
+    VoiceId: "voice_id",
+    VoiceLanguage: "voice_language",
+    CallbackUrl: "callback_url",
 }
-result, err := client.VideosKling.CreateV1VideosGeneration(body)
+result, err := client.VideosKling.CreateV1VideosAvatar(body)
 if err != nil {
     panic(err)
 }
@@ -576,6 +599,31 @@ body := sdktypes.NanoBananaImageGenerationRequest{
     Size: "size",
 }
 result, err := client.ImagesNanoBanana.CreateGeneration(body)
+if err != nil {
+    panic(err)
+}
+fmt.Println(result)
+```
+
+### audio_minimax
+
+```go
+// Minimax create music generation
+body := sdktypes.MiniMaxMusicGenerationRequest{
+    Model: "model",
+    Prompt: "prompt",
+    Lyrics: "lyrics",
+    Stream: false,
+    OutputFormat: "output_format",
+    IsInstrumental: false,
+    LyricsOptimizer: true,
+    AudioSetting: sdktypes.MiniMaxMusicAudioSetting{
+    SampleRate: 1,
+    Bitrate: 2,
+    Format: "format",
+},
+}
+result, err := client.AudioMinimax.CreateV1MusicGeneration(body)
 if err != nil {
     panic(err)
 }
@@ -1055,6 +1103,27 @@ body := sdktypes.ViduReferenceToImageRequest{
     Style: "style",
 }
 result, err := client.ImagesVidu.CreateEntV2Reference2image(body)
+if err != nil {
+    panic(err)
+}
+fmt.Println(result)
+```
+
+### audio_volcengine
+
+```go
+// Volcengine create speech
+body := sdktypes.OpenAiSpeechCreateRequest{
+    Input: "input",
+    Metadata: map[string]sdktypes.ProviderJsonValue{
+    "value": "value",
+},
+    Model: "model",
+    ResponseFormat: "response_format",
+    Speed: 5,
+    Voice: "voice",
+}
+result, err := client.AudioVolcengine.CreateApiV3AudioSpeech(body)
 if err != nil {
     panic(err)
 }

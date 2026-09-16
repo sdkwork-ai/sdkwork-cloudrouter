@@ -188,7 +188,7 @@
       "groupName": "Official Kling Full API",
       "groupType": "api_group",
       "selectionMode": "all",
-      "description": "Kling official account resources including text-to-video, image-to-video, image generation, and task query.",
+      "description": "Kling official account resources including text-to-video, image-to-video, image generation, avatar, motion control, and task query.",
       "sortOrder": 130,
       "items": [
         {
@@ -206,6 +206,14 @@
         {
           "itemType": "resource",
           "resourceCode": "api.kling.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.avatar"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.kling.motion_control"
         },
         {
           "itemType": "resource",
@@ -244,7 +252,7 @@
       "groupName": "Official Volcengine Full API",
       "groupType": "api_group",
       "selectionMode": "all",
-      "description": "Volcengine official account resources including image generation, video generation, and task query.",
+      "description": "Volcengine official account resources including image generation, video generation, speech synthesis, and task query.",
       "sortOrder": 150,
       "items": [
         {
@@ -258,6 +266,10 @@
         {
           "itemType": "resource",
           "resourceCode": "api.volcengine.video_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.volcengine.speech"
         },
         {
           "itemType": "resource",
@@ -288,7 +300,7 @@
       "groupName": "Official Vidu Full API",
       "groupType": "api_group",
       "selectionMode": "all",
-      "description": "Vidu official account resources including image and start-end video generation.",
+      "description": "Vidu official account resources including reference image, start-end video generation, and motion sync template.",
       "sortOrder": 160,
       "items": [
         {
@@ -302,6 +314,54 @@
         {
           "itemType": "resource",
           "resourceCode": "api.vidu.start_end_to_video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.vidu.motion_sync"
+        }
+      ]
+    },
+    {
+      "groupCode": "official.suno.full",
+      "groupName": "Official Suno Full API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Suno official account resources including music generation and music task query.",
+      "sortOrder": 165,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.suno"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.suno.music_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.suno.music_task_query"
+        }
+      ]
+    },
+    {
+      "groupCode": "official.elevenlabs.full",
+      "groupName": "Official ElevenLabs Full API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "ElevenLabs official account resources including text-to-speech and sound effect generation.",
+      "sortOrder": 170,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.elevenlabs"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.elevenlabs.text_to_speech"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.elevenlabs.sound_generation"
         }
       ]
     }

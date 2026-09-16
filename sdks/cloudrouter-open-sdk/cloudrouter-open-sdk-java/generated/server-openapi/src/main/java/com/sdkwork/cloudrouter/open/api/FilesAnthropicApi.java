@@ -37,9 +37,8 @@ public class FilesAnthropicApi {
     }
 
     /** Anthropic retrieve file content */
-    public String listV1FilesContent(String fileId) throws Exception {
-        Object raw = client.get(ApiPaths.aiPath("/anthropic/v1/files/" + serializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false)) + "/content"));
-        return client.convertValue(raw, new TypeReference<String>() {});
+    public byte[] listV1FilesContent(String fileId) throws Exception {
+        return client.requestBytes("GET", ApiPaths.aiPath("/anthropic/v1/files/" + serializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false)) + "/content"), null, null, null, null, false, false);
     }
 
     private record PathParameterSpec(String name, String style, boolean explode) {}

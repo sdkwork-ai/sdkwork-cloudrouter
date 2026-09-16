@@ -7,6 +7,6 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 class OpenAiVoiceCreateMultipartRequest:
     """OpenAI-compatible multipart request to create a voice."""
     description: Optional[str] = None
-    file: Optional[str] = None
+    file: Optional[bytes] = None
     metadata: Optional[str] = None
     name: Optional[str] = None

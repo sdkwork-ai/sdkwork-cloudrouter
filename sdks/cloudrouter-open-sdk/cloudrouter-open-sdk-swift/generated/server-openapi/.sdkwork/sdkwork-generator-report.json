@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "1cf89cd013caf5396e677043f9c78f03f10fe0dd3cf64d6c94466e95fd58bc85",
+  "changeFingerprint": "c282a1934f0521d5526e0444d5dfa72b007efa49928d2b56e843f0c32edb394b",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -33,7 +33,10 @@
           "Sources/API/ApiPaths.swift",
           "Sources/API/AssistantsApi.swift",
           "Sources/API/AudioApi.swift",
+          "Sources/API/AudioElevenlabsApi.swift",
+          "Sources/API/AudioMinimaxApi.swift",
           "Sources/API/AudioSunoApi.swift",
+          "Sources/API/AudioVolcengineApi.swift",
           "Sources/API/BatchesAnthropicApi.swift",
           "Sources/API/BatchesApi.swift",
           "Sources/API/ChatAnthropicApi.swift",
@@ -140,7 +143,7 @@
         "title": "Unified package check",
         "required": true,
         "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-open-sdk\\cloudrouter-open-sdk-swift\\generated\\server-openapi",
+        "workingDirectory": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-open-sdk\\cloudrouter-open-sdk-swift\\generated\\server-openapi",
         "command": "node",
         "args": [
           "./bin/publish-core.mjs",
@@ -165,7 +168,7 @@
         "title": "Unified package check",
         "required": true,
         "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-open-sdk\\cloudrouter-open-sdk-swift\\generated\\server-openapi",
+        "workingDirectory": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-open-sdk\\cloudrouter-open-sdk-swift\\generated\\server-openapi",
         "command": "node",
         "args": [
           "./bin/publish-core.mjs",
@@ -186,7 +189,7 @@
     "language": "swift",
     "sdkType": "ai",
     "protocol": "http",
-    "outputPath": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-open-sdk\\cloudrouter-open-sdk-swift\\generated\\server-openapi",
+    "outputPath": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-open-sdk\\cloudrouter-open-sdk-swift\\generated\\server-openapi",
     "packageName": "CloudRouterOpenSdk"
   },
   "versioning": {
@@ -194,21 +197,21 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 46,
-    "models": 269,
-    "apis": 32,
+    "totalFiles": 49,
+    "models": 282,
+    "apis": 35,
     "types": 0
   },
   "warnings": [],
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 46,
+    "writtenFiles": 49,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "1cf89cd013caf5396e677043f9c78f03f10fe0dd3cf64d6c94466e95fd58bc85",
+    "changeFingerprint": "c282a1934f0521d5526e0444d5dfa72b007efa49928d2b56e843f0c32edb394b",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -223,7 +226,10 @@
         "Sources/API/ApiPaths.swift",
         "Sources/API/AssistantsApi.swift",
         "Sources/API/AudioApi.swift",
+        "Sources/API/AudioElevenlabsApi.swift",
+        "Sources/API/AudioMinimaxApi.swift",
         "Sources/API/AudioSunoApi.swift",
+        "Sources/API/AudioVolcengineApi.swift",
         "Sources/API/BatchesAnthropicApi.swift",
         "Sources/API/BatchesApi.swift",
         "Sources/API/ChatAnthropicApi.swift",
@@ -286,7 +292,10 @@
             "Sources/API/ApiPaths.swift",
             "Sources/API/AssistantsApi.swift",
             "Sources/API/AudioApi.swift",
+            "Sources/API/AudioElevenlabsApi.swift",
+            "Sources/API/AudioMinimaxApi.swift",
             "Sources/API/AudioSunoApi.swift",
+            "Sources/API/AudioVolcengineApi.swift",
             "Sources/API/BatchesAnthropicApi.swift",
             "Sources/API/BatchesApi.swift",
             "Sources/API/ChatAnthropicApi.swift",
@@ -380,7 +389,7 @@
           "title": "Unified package check",
           "required": true,
           "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-          "workingDirectory": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-open-sdk\\cloudrouter-open-sdk-swift\\generated\\server-openapi",
+          "workingDirectory": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-open-sdk\\cloudrouter-open-sdk-swift\\generated\\server-openapi",
           "command": "node",
           "args": [
             "./bin/publish-core.mjs",

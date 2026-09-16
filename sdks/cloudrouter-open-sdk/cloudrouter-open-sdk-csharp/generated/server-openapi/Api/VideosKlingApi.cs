@@ -16,6 +16,22 @@ namespace Sdkwork.CloudRouter.Open.Api
         }
 
         /// <summary>
+        /// Kling create avatar video
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Open.Models.KlingVideoGenerationTask?> CreateV1VideosAvatarAsync(Sdkwork.CloudRouter.Open.Models.KlingAvatarCreateRequest body)
+        {
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.KlingVideoGenerationTask>(ApiPaths.AiPath("/kling/v1/videos/avatar"), body, null, null, "application/json");
+        }
+
+        /// <summary>
+        /// Kling create motion control video
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Open.Models.KlingVideoGenerationTask?> CreateV1VideosMotionControlAsync(Sdkwork.CloudRouter.Open.Models.KlingMotionControlRequest body)
+        {
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.KlingVideoGenerationTask>(ApiPaths.AiPath("/kling/v1/videos/motion-control"), body, null, null, "application/json");
+        }
+
+        /// <summary>
         /// Kling video generation
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.KlingVideoGenerationTask?> CreateV1VideosGenerationAsync(Sdkwork.CloudRouter.Open.Models.KlingVideoGenerationRequest body)

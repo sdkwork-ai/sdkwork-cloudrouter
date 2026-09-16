@@ -231,6 +231,6 @@ class ContainerApi:
         """Delete container file"""
         return self._client.delete(f"/v1/containers/{serialize_path_parameter(container_id, {'name': 'container_id', 'style': 'simple', 'explode': False})}/files/{serialize_path_parameter(file_id, {'name': 'file_id', 'style': 'simple', 'explode': False})}")
 
-    def list_files_content(self, container_id: str, file_id: str) -> str:
+    def list_files_content(self, container_id: str, file_id: str) -> bytes:
         """Retrieve container file content"""
-        return self._client.get(f"/v1/containers/{serialize_path_parameter(container_id, {'name': 'container_id', 'style': 'simple', 'explode': False})}/files/{serialize_path_parameter(file_id, {'name': 'file_id', 'style': 'simple', 'explode': False})}/content")
+        return self._client.request_bytes('GET', f"/v1/containers/{serialize_path_parameter(container_id, {'name': 'container_id', 'style': 'simple', 'explode': False})}/files/{serialize_path_parameter(file_id, {'name': 'file_id', 'style': 'simple', 'explode': False})}/content")

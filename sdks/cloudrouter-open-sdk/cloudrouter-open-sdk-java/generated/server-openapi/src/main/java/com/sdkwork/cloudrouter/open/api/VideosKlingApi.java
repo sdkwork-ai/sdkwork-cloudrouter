@@ -13,6 +13,18 @@ public class VideosKlingApi {
         this.client = client;
     }
 
+    /** Kling create avatar video */
+    public KlingVideoGenerationTask createV1VideosAvatar(KlingAvatarCreateRequest body) throws Exception {
+        Object raw = client.post(ApiPaths.aiPath("/kling/v1/videos/avatar"), body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<KlingVideoGenerationTask>() {});
+    }
+
+    /** Kling create motion control video */
+    public KlingVideoGenerationTask createV1VideosMotionControl(KlingMotionControlRequest body) throws Exception {
+        Object raw = client.post(ApiPaths.aiPath("/kling/v1/videos/motion-control"), body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<KlingVideoGenerationTask>() {});
+    }
+
     /** Kling video generation */
     public KlingVideoGenerationTask createV1VideosGeneration(KlingVideoGenerationRequest body) throws Exception {
         Object raw = client.post(ApiPaths.aiPath("/kling/v1/videos/generations"), body, null, null, "application/json");

@@ -229,9 +229,9 @@ class VideoApi:
         """Retrieve video"""
         return self._client.get(f"/v1/videos/{serialize_path_parameter(video_id, {'name': 'video_id', 'style': 'simple', 'explode': False})}")
 
-    def content(self, video_id: str) -> str:
+    def content(self, video_id: str) -> bytes:
         """Retrieve video content"""
-        return self._client.get(f"/v1/videos/{serialize_path_parameter(video_id, {'name': 'video_id', 'style': 'simple', 'explode': False})}/content")
+        return self._client.request_bytes('GET', f"/v1/videos/{serialize_path_parameter(video_id, {'name': 'video_id', 'style': 'simple', 'explode': False})}/content")
 
     def create_remix(self, video_id: str, body: OpenAiVideoRemixRequest) -> OpenAiVideo:
         """Remix video"""

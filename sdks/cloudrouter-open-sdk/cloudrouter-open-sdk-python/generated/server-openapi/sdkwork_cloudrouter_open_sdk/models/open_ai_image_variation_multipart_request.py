@@ -6,6 +6,6 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 @dataclass
 class OpenAiImageVariationMultipartRequest:
     """OpenAI-compatible open ai image variation multipart request schema exposed by Cloud Router."""
-    image: str
+    image: bytes
     model: str
     size: Optional[str] = None

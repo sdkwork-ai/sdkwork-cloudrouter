@@ -191,9 +191,9 @@ class AudioApi:
     def __init__(self, client: HttpClient):
         self._client = client
 
-    def create_speech(self, body: OpenAiSpeechCreateRequest) -> str:
+    def create_speech(self, body: OpenAiSpeechCreateRequest) -> bytes:
         """Create speech"""
-        return self._client.post(f"/v1/audio/speech", json=body)
+        return self._client.request_bytes('POST', f"/v1/audio/speech", json=body)
 
     def create_transcription(self, body: OpenAiAudioTranscriptionRequest) -> OpenAiAudioTranscription:
         """Create transcription"""

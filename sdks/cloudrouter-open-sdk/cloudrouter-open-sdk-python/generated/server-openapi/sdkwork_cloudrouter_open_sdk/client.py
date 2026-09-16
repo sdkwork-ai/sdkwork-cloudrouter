@@ -2,6 +2,7 @@ from .http_client import HttpClient, SdkConfig
 from .api.files_anthropic import FilesAnthropicApi
 from .api.chat_anthropic import ChatAnthropicApi
 from .api.batches_anthropic import BatchesAnthropicApi
+from .api.audio_elevenlabs import AudioElevenlabsApi
 from .api.responses_google import ResponsesGoogleApi
 from .api.files_google import FilesGoogleApi
 from .api.embeddings_google import EmbeddingsGoogleApi
@@ -9,6 +10,7 @@ from .api.chat_google import ChatGoogleApi
 from .api.videos_kling import VideosKlingApi
 from .api.images_midjourney import ImagesMidjourneyApi
 from .api.images_nano_banana import ImagesNanoBananaApi
+from .api.audio_minimax import AudioMinimaxApi
 from .api.audio_suno import AudioSunoApi
 from .api.assistants import AssistantsApi
 from .api.audio import AudioApi
@@ -30,6 +32,7 @@ from .api.vector_stores import VectorStoresApi
 from .api.video import VideoApi
 from .api.videos_vidu import VideosViduApi
 from .api.images_vidu import ImagesViduApi
+from .api.audio_volcengine import AudioVolcengineApi
 from .api.videos_volcengine import VideosVolcengineApi
 
 
@@ -41,6 +44,7 @@ class SdkworkAiClient:
         self.files_anthropic: FilesAnthropicApi
         self.chat_anthropic: ChatAnthropicApi
         self.batches_anthropic: BatchesAnthropicApi
+        self.audio_elevenlabs: AudioElevenlabsApi
         self.responses_google: ResponsesGoogleApi
         self.files_google: FilesGoogleApi
         self.embeddings_google: EmbeddingsGoogleApi
@@ -48,6 +52,7 @@ class SdkworkAiClient:
         self.videos_kling: VideosKlingApi
         self.images_midjourney: ImagesMidjourneyApi
         self.images_nano_banana: ImagesNanoBananaApi
+        self.audio_minimax: AudioMinimaxApi
         self.audio_suno: AudioSunoApi
         self.assistants: AssistantsApi
         self.audio: AudioApi
@@ -69,12 +74,14 @@ class SdkworkAiClient:
         self.video: VideoApi
         self.videos_vidu: VideosViduApi
         self.images_vidu: ImagesViduApi
+        self.audio_volcengine: AudioVolcengineApi
         self.videos_volcengine: VideosVolcengineApi
 
         # Initialize API modules
         self.files_anthropic = FilesAnthropicApi(self._client)
         self.chat_anthropic = ChatAnthropicApi(self._client)
         self.batches_anthropic = BatchesAnthropicApi(self._client)
+        self.audio_elevenlabs = AudioElevenlabsApi(self._client)
         self.responses_google = ResponsesGoogleApi(self._client)
         self.files_google = FilesGoogleApi(self._client)
         self.embeddings_google = EmbeddingsGoogleApi(self._client)
@@ -82,6 +89,7 @@ class SdkworkAiClient:
         self.videos_kling = VideosKlingApi(self._client)
         self.images_midjourney = ImagesMidjourneyApi(self._client)
         self.images_nano_banana = ImagesNanoBananaApi(self._client)
+        self.audio_minimax = AudioMinimaxApi(self._client)
         self.audio_suno = AudioSunoApi(self._client)
         self.assistants = AssistantsApi(self._client)
         self.audio = AudioApi(self._client)
@@ -103,6 +111,7 @@ class SdkworkAiClient:
         self.video = VideoApi(self._client)
         self.videos_vidu = VideosViduApi(self._client)
         self.images_vidu = ImagesViduApi(self._client)
+        self.audio_volcengine = AudioVolcengineApi(self._client)
         self.videos_volcengine = VideosVolcengineApi(self._client)
 
     def set_api_key(self, api_key: str) -> 'SdkworkAiClient':

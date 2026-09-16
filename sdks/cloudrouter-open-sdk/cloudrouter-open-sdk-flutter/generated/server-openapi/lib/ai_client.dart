@@ -3,6 +3,7 @@ import 'src/http/client.dart';
 import 'src/api/files_anthropic.dart';
 import 'src/api/chat_anthropic.dart';
 import 'src/api/batches_anthropic.dart';
+import 'src/api/audio_elevenlabs.dart';
 import 'src/api/responses_google.dart';
 import 'src/api/files_google.dart';
 import 'src/api/embeddings_google.dart';
@@ -10,6 +11,7 @@ import 'src/api/chat_google.dart';
 import 'src/api/videos_kling.dart';
 import 'src/api/images_midjourney.dart';
 import 'src/api/images_nano_banana.dart';
+import 'src/api/audio_minimax.dart';
 import 'src/api/audio_suno.dart';
 import 'src/api/assistants.dart';
 import 'src/api/audio.dart';
@@ -31,6 +33,7 @@ import 'src/api/vector_stores.dart';
 import 'src/api/video.dart';
 import 'src/api/videos_vidu.dart';
 import 'src/api/images_vidu.dart';
+import 'src/api/audio_volcengine.dart';
 import 'src/api/videos_volcengine.dart';
 
 class SdkworkAiClient {
@@ -39,6 +42,7 @@ class SdkworkAiClient {
   late final FilesAnthropicApi filesAnthropic;
   late final ChatAnthropicApi chatAnthropic;
   late final BatchesAnthropicApi batchesAnthropic;
+  late final AudioElevenlabsApi audioElevenlabs;
   late final ResponsesGoogleApi responsesGoogle;
   late final FilesGoogleApi filesGoogle;
   late final EmbeddingsGoogleApi embeddingsGoogle;
@@ -46,6 +50,7 @@ class SdkworkAiClient {
   late final VideosKlingApi videosKling;
   late final ImagesMidjourneyApi imagesMidjourney;
   late final ImagesNanoBananaApi imagesNanoBanana;
+  late final AudioMinimaxApi audioMinimax;
   late final AudioSunoApi audioSuno;
   late final AssistantsApi assistants;
   late final AudioApi audio;
@@ -67,6 +72,7 @@ class SdkworkAiClient {
   late final VideoApi video;
   late final VideosViduApi videosVidu;
   late final ImagesViduApi imagesVidu;
+  late final AudioVolcengineApi audioVolcengine;
   late final VideosVolcengineApi videosVolcengine;
 
   SdkworkAiClient({
@@ -75,6 +81,7 @@ class SdkworkAiClient {
     filesAnthropic = FilesAnthropicApi(_httpClient);
     chatAnthropic = ChatAnthropicApi(_httpClient);
     batchesAnthropic = BatchesAnthropicApi(_httpClient);
+    audioElevenlabs = AudioElevenlabsApi(_httpClient);
     responsesGoogle = ResponsesGoogleApi(_httpClient);
     filesGoogle = FilesGoogleApi(_httpClient);
     embeddingsGoogle = EmbeddingsGoogleApi(_httpClient);
@@ -82,6 +89,7 @@ class SdkworkAiClient {
     videosKling = VideosKlingApi(_httpClient);
     imagesMidjourney = ImagesMidjourneyApi(_httpClient);
     imagesNanoBanana = ImagesNanoBananaApi(_httpClient);
+    audioMinimax = AudioMinimaxApi(_httpClient);
     audioSuno = AudioSunoApi(_httpClient);
     assistants = AssistantsApi(_httpClient);
     audio = AudioApi(_httpClient);
@@ -103,6 +111,7 @@ class SdkworkAiClient {
     video = VideoApi(_httpClient);
     videosVidu = VideosViduApi(_httpClient);
     imagesVidu = ImagesViduApi(_httpClient);
+    audioVolcengine = AudioVolcengineApi(_httpClient);
     videosVolcengine = VideosVolcengineApi(_httpClient);
   }
 

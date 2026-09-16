@@ -37,6 +37,12 @@ public class VideosViduApi {
         return client.convertValue(raw, new TypeReference<ViduTaskCreationsResponse>() {});
     }
 
+    /** Vidu create template video */
+    public ViduVideoGenerationTask createEntV2Template(ViduTemplateRequest body) throws Exception {
+        Object raw = client.post(ApiPaths.aiPath("/vidu/ent/v2/template"), body, null, null, "application/json");
+        return client.convertValue(raw, new TypeReference<ViduVideoGenerationTask>() {});
+    }
+
     /** Vidu text to video */
     public ViduVideoGenerationTask createEntV2Text2video(ViduTextToVideoRequest body) throws Exception {
         Object raw = client.post(ApiPaths.aiPath("/vidu/ent/v2/text2video"), body, null, null, "application/json");

@@ -3,8 +3,8 @@ package com.sdkwork.cloudrouter.open.model;
 
 public class OpenAiVideoCharacterMultipartRequest {
     private String description;
-    private String file;
-    private String image;
+    private byte[] file;
+    private byte[] image;
     private String metadata;
     private String name;
 
@@ -16,19 +16,19 @@ public class OpenAiVideoCharacterMultipartRequest {
         this.description = description;
     }
 
-    public String getFile() {
+    public byte[] getFile() {
         return this.file;
     }
 
-    public void setFile(String file) {
+    public void setFile(byte[] file) {
         this.file = file;
     }
 
-    public String getImage() {
+    public byte[] getImage() {
         return this.image;
     }
 
-    public void setImage(String image) {
+    public void setImage(byte[] image) {
         this.image = image;
     }
 

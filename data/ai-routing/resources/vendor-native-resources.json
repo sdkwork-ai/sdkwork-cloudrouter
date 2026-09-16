@@ -193,6 +193,37 @@
       "sortOrder": 490
     },
     {
+      "resourceCode": "api.kling.avatar",
+      "resourceType": "api_endpoint",
+      "displayName": "Kling Avatar",
+      "vendorCode": "kling",
+      "modalityCode": "video",
+      "apiCode": "kling.avatar",
+      "method": "POST",
+      "pathTemplate": "/v1/videos/avatar",
+      "capability": "video",
+      "capabilities": [
+        "video",
+        "audio"
+      ],
+      "sortOrder": 492
+    },
+    {
+      "resourceCode": "api.kling.motion_control",
+      "resourceType": "api_endpoint",
+      "displayName": "Kling Motion Control",
+      "vendorCode": "kling",
+      "modalityCode": "video",
+      "apiCode": "kling.motion_control",
+      "method": "POST",
+      "pathTemplate": "/v1/videos/motion-control",
+      "capability": "video",
+      "capabilities": [
+        "video"
+      ],
+      "sortOrder": 494
+    },
+    {
       "resourceCode": "api.kling.task_query",
       "resourceType": "api_endpoint",
       "displayName": "Kling Task Query",
@@ -301,6 +332,22 @@
       "sortOrder": 560
     },
     {
+      "resourceCode": "api.volcengine.speech",
+      "resourceType": "api_endpoint",
+      "displayName": "Volcengine Speech",
+      "vendorCode": "volcengine",
+      "modalityCode": "audio",
+      "apiCode": "volcengine.speech",
+      "method": "POST",
+      "pathTemplate": "/api/v3/audio/speech",
+      "capability": "audio",
+      "capabilities": [
+        "audio",
+        "speech"
+      ],
+      "sortOrder": 565
+    },
+    {
       "resourceCode": "api.minimax.music_generation",
       "resourceType": "api_endpoint",
       "displayName": "MiniMax Music Generation",
@@ -317,6 +364,70 @@
       "sortOrder": 570
     },
     {
+      "resourceCode": "api.suno.music_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "Suno Music Generation",
+      "vendorCode": "suno",
+      "modalityCode": "music",
+      "apiCode": "suno.music_generation",
+      "method": "POST",
+      "pathTemplate": "/v1/music/generations",
+      "capability": "music",
+      "capabilities": [
+        "audio",
+        "music"
+      ],
+      "sortOrder": 572
+    },
+    {
+      "resourceCode": "api.suno.music_task_query",
+      "resourceType": "api_endpoint",
+      "displayName": "Suno Music Task Query",
+      "vendorCode": "suno",
+      "modalityCode": "network",
+      "apiCode": "suno.music_task_query",
+      "method": "GET",
+      "pathTemplate": "/v1/music/generations/{taskId}",
+      "capability": "network",
+      "capabilities": [
+        "network",
+        "http"
+      ],
+      "sortOrder": 574
+    },
+    {
+      "resourceCode": "api.elevenlabs.text_to_speech",
+      "resourceType": "api_endpoint",
+      "displayName": "ElevenLabs Text To Speech",
+      "vendorCode": "elevenlabs",
+      "modalityCode": "audio",
+      "apiCode": "elevenlabs.text_to_speech",
+      "method": "POST",
+      "pathTemplate": "/v1/text-to-speech/{voice_id}",
+      "capability": "audio",
+      "capabilities": [
+        "audio",
+        "speech"
+      ],
+      "sortOrder": 576
+    },
+    {
+      "resourceCode": "api.elevenlabs.sound_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "ElevenLabs Sound Generation",
+      "vendorCode": "elevenlabs",
+      "modalityCode": "audio",
+      "apiCode": "elevenlabs.sound_generation",
+      "method": "POST",
+      "pathTemplate": "/v1/sound-generation",
+      "capability": "audio",
+      "capabilities": [
+        "audio",
+        "sound_effect"
+      ],
+      "sortOrder": 578
+    },
+    {
       "resourceCode": "api.vidu.reference_to_image",
       "resourceType": "api_endpoint",
       "displayName": "Vidu Reference To Image",
@@ -324,7 +435,7 @@
       "modalityCode": "image",
       "apiCode": "vidu.reference_to_image",
       "method": "POST",
-      "pathTemplate": "/v1/images/reference",
+      "pathTemplate": "/ent/v2/reference2image",
       "capability": "image",
       "capabilities": [
         "image"
@@ -339,12 +450,27 @@
       "modalityCode": "video",
       "apiCode": "vidu.start_end_to_video",
       "method": "POST",
-      "pathTemplate": "/v1/videos/end2end",
+      "pathTemplate": "/ent/v2/start-end2video",
       "capability": "video",
       "capabilities": [
         "video"
       ],
       "sortOrder": 590
+    },
+    {
+      "resourceCode": "api.vidu.motion_sync",
+      "resourceType": "api_endpoint",
+      "displayName": "Vidu Motion Sync",
+      "vendorCode": "vidu",
+      "modalityCode": "video",
+      "apiCode": "vidu.motion_sync",
+      "method": "POST",
+      "pathTemplate": "/ent/v2/template",
+      "capability": "video",
+      "capabilities": [
+        "video"
+      ],
+      "sortOrder": 595
     }
   ]
 }

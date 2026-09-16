@@ -7,6 +7,16 @@ public class VideosKlingApi {
         self.client = client
     }
 
+    /// Kling create avatar video
+    public func createV1VideosAvatar(body: KlingAvatarCreateRequest) async throws -> KlingVideoGenerationTask? {
+        return try await client.post(ApiPaths.aiPath("/kling/v1/videos/avatar"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: KlingVideoGenerationTask.self)
+    }
+
+    /// Kling create motion control video
+    public func createV1VideosMotionControl(body: KlingMotionControlRequest) async throws -> KlingVideoGenerationTask? {
+        return try await client.post(ApiPaths.aiPath("/kling/v1/videos/motion-control"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: KlingVideoGenerationTask.self)
+    }
+
     /// Kling video generation
     public func createV1VideosGeneration(body: KlingVideoGenerationRequest) async throws -> KlingVideoGenerationTask? {
         return try await client.post(ApiPaths.aiPath("/kling/v1/videos/generations"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: KlingVideoGenerationTask.self)

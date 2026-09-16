@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::api::paths::ai_path;
 use crate::http::{SdkworkError, SdkworkHttpClient};
-use crate::models::{KlingVideoGenerationRequest, KlingVideoGenerationTask};
+use crate::models::{KlingAvatarCreateRequest, KlingMotionControlRequest, KlingVideoGenerationRequest, KlingVideoGenerationTask};
 
 #[derive(Clone)]
 pub struct VideosKlingApi {
@@ -14,15 +14,27 @@ impl VideosKlingApi {
         Self { client }
     }
 
+    /// Kling create avatar video
+    pub async fn create_v1_videos_avatar(&self, body: &KlingAvatarCreateRequest) -> Result<KlingVideoGenerationTask, SdkworkError> {
+        let path = ai_path(&"/kling/v1/videos/avatar".to_string());
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    }
+
+    /// Kling create motion control video
+    pub async fn create_v1_videos_motion_control(&self, body: &KlingMotionControlRequest) -> Result<KlingVideoGenerationTask, SdkworkError> {
+        let path = ai_path(&"/kling/v1/videos/motion-control".to_string());
+        self.client.post(&path, Some(body), None, None, Some("application/json")).await
+    }
+
     /// Kling video generation
     pub async fn create_v1_videos_generation(&self, body: &KlingVideoGenerationRequest) -> Result<KlingVideoGenerationTask, SdkworkError> {
-        let path = "/kling/v1/videos/generations".to_string();
+        let path = ai_path(&"/kling/v1/videos/generations".to_string());
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Kling retrieve video generation
     pub async fn list_v1_videos_generations(&self, task_id: &str) -> Result<KlingVideoGenerationTask, SdkworkError> {
-        let path = format!("/kling/v1/videos/generations/{}", serialize_path_parameter(task_id, PathParameterSpec::new("task_id", "simple", false)));
+        let path = ai_path(&format!("/kling/v1/videos/generations/{}", serialize_path_parameter(task_id, PathParameterSpec::new("task_id", "simple", false))));
         self.client.get(&path, None, None).await
     }
 

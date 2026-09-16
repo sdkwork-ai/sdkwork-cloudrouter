@@ -73,6 +73,7 @@ const client = new SdkworkAiClient({
 - `client.filesAnthropic` - files_anthropic API
 - `client.chatAnthropic` - chat_anthropic API
 - `client.batchesAnthropic` - batches_anthropic API
+- `client.audioElevenlabs` - audio_elevenlabs API
 - `client.responsesGoogle` - responses_google API
 - `client.filesGoogle` - files_google API
 - `client.embeddingsGoogle` - embeddings_google API
@@ -80,6 +81,7 @@ const client = new SdkworkAiClient({
 - `client.videosKling` - videos_kling API
 - `client.imagesMidjourney` - images_midjourney API
 - `client.imagesNanoBanana` - images_nano_banana API
+- `client.audioMinimax` - audio_minimax API
 - `client.audioSuno` - audio_suno API
 - `client.assistants` - assistant API
 - `client.audio` - audio API
@@ -101,8 +103,8 @@ const client = new SdkworkAiClient({
 - `client.video` - video API
 - `client.videosVidu` - videos_vidu API
 - `client.imagesVidu` - images_vidu API
+- `client.audioVolcengine` - audio_volcengine API
 - `client.videosVolcengine` - videos_volcengine API
-- `client.audioElevenlabs` - audio_elevenlabs API
 
 ## Usage Examples
 
@@ -166,6 +168,23 @@ const params = {
 const result = await client.batchesAnthropic.v1.messages.batches.list(params);
 ```
 
+### audio_elevenlabs
+
+```typescript
+// Generate sound effect
+const body = {
+  duration_seconds: 1,
+  loop: true,
+  model_id: 'model_id',
+  prompt_influence: 1,
+  text: 'text',
+};
+const params = {
+  output_format: 'output_format',
+};
+const result = await client.audioElevenlabs.v1.soundGeneration.create(body, params);
+```
+
 ### responses_google
 
 ```typescript
@@ -226,20 +245,19 @@ const result = await client.chatGoogle.v1beta.models.modelCountTokens.create(mod
 ### videos_kling
 
 ```typescript
-// Kling video generation
+// Kling create avatar video
 const body = {
-  aspect_ratio: 'aspect_ratio',
-  callback_url: 'callback_url',
-  cfg_scale: 1,
-  duration: 1,
-  image: 'image',
-  image_tail: 'image_tail',
-  mode: 'mode',
-  model: 'model',
-  negative_prompt: 'negative_prompt',
+  model_name: 'model_name',
+  human_image: 'human_image',
   prompt: 'prompt',
+  voice_mode: 'voice_mode',
+  audio_url: 'audio_url',
+  text: 'text',
+  voice_id: 'voice_id',
+  voice_language: 'voice_language',
+  callback_url: 'callback_url',
 };
-const result = await client.videosKling.v1.videos.generations.create(body);
+const result = await client.videosKling.v1.videos.avatar.create(body);
 ```
 
 ### images_midjourney
@@ -273,6 +291,27 @@ const body = {
   size: 'size',
 };
 const result = await client.imagesNanoBanana.v1.images.generations.create(body);
+```
+
+### audio_minimax
+
+```typescript
+// Minimax create music generation
+const body = {
+  model: 'model',
+  prompt: 'prompt',
+  lyrics: 'lyrics',
+  stream: true,
+  output_format: 'output_format',
+  is_instrumental: true,
+  lyrics_optimizer: true,
+  audio_setting: {
+    sample_rate: 1,
+    bitrate: 1,
+    format: 'format',
+  },
+};
+const result = await client.audioMinimax.v1.musicGeneration.create(body);
 ```
 
 ### audio_suno
@@ -615,6 +654,23 @@ const body = {
 const result = await client.imagesVidu.ent.v2.reference2image.create(body);
 ```
 
+### audio_volcengine
+
+```typescript
+// Volcengine create speech
+const body = {
+  input: 'input',
+  metadata: {
+    value: 'value',
+  },
+  model: 'model',
+  response_format: 'response_format',
+  speed: 1,
+  voice: 'voice',
+};
+const result = await client.audioVolcengine.api.v3.audio.speech.create(body);
+```
+
 ### videos_volcengine
 
 ```typescript
@@ -630,23 +686,6 @@ const body = {
   model: 'model',
 };
 const result = await client.videosVolcengine.api.v3.contents.generations.tasks.create(body);
-```
-
-### audio_elevenlabs
-
-```typescript
-// Generate sound effect
-const body = {
-  model_id: 'model_id',
-  text: 'text',
-  duration_seconds: 1,
-  prompt_influence: 1,
-  loop: true,
-};
-const params = {
-  output_format: 'output_format',
-};
-const result = await client.audioElevenlabs.v1.soundGeneration.create(body, params);
 ```
 
 ## Error Handling

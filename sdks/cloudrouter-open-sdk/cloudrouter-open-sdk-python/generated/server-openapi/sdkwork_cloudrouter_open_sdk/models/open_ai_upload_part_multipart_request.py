@@ -6,4 +6,4 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 @dataclass
 class OpenAiUploadPartMultipartRequest:
     """OpenAI-compatible open ai upload part multipart request schema exposed by Cloud Router."""
-    data: str
+    data: bytes

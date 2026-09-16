@@ -5,6 +5,7 @@ public struct API {
     public static let filesAnthropic = FilesAnthropicApi.self
     public static let chatAnthropic = ChatAnthropicApi.self
     public static let batchesAnthropic = BatchesAnthropicApi.self
+    public static let audioElevenlabs = AudioElevenlabsApi.self
     public static let responsesGoogle = ResponsesGoogleApi.self
     public static let filesGoogle = FilesGoogleApi.self
     public static let embeddingsGoogle = EmbeddingsGoogleApi.self
@@ -12,6 +13,7 @@ public struct API {
     public static let videosKling = VideosKlingApi.self
     public static let imagesMidjourney = ImagesMidjourneyApi.self
     public static let imagesNanoBanana = ImagesNanoBananaApi.self
+    public static let audioMinimax = AudioMinimaxApi.self
     public static let audioSuno = AudioSunoApi.self
     public static let assistants = AssistantsApi.self
     public static let audio = AudioApi.self
@@ -33,5 +35,6 @@ public struct API {
     public static let video = VideoApi.self
     public static let videosVidu = VideosViduApi.self
     public static let imagesVidu = ImagesViduApi.self
+    public static let audioVolcengine = AudioVolcengineApi.self
     public static let videosVolcengine = VideosVolcengineApi.self
 }

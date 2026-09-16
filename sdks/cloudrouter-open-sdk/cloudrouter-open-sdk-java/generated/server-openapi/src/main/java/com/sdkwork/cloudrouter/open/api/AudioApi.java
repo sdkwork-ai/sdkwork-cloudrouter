@@ -14,9 +14,8 @@ public class AudioApi {
     }
 
     /** Create speech */
-    public String createSpeech(OpenAiSpeechCreateRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/audio/speech"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<String>() {});
+    public byte[] createSpeech(OpenAiSpeechCreateRequest body) throws Exception {
+        return client.requestBytes("POST", ApiPaths.aiPath("/audio/speech"), body, null, null, "application/json", false, false);
     }
 
     /** Create transcription */

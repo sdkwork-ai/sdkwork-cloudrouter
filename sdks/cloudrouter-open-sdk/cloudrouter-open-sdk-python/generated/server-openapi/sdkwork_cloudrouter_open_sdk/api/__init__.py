@@ -1,6 +1,7 @@
 from .files_anthropic import FilesAnthropicApi
 from .chat_anthropic import ChatAnthropicApi
 from .batches_anthropic import BatchesAnthropicApi
+from .audio_elevenlabs import AudioElevenlabsApi
 from .responses_google import ResponsesGoogleApi
 from .files_google import FilesGoogleApi
 from .embeddings_google import EmbeddingsGoogleApi
@@ -8,6 +9,7 @@ from .chat_google import ChatGoogleApi
 from .videos_kling import VideosKlingApi
 from .images_midjourney import ImagesMidjourneyApi
 from .images_nano_banana import ImagesNanoBananaApi
+from .audio_minimax import AudioMinimaxApi
 from .audio_suno import AudioSunoApi
 from .assistants import AssistantsApi
 from .audio import AudioApi
@@ -29,6 +31,7 @@ from .vector_stores import VectorStoresApi
 from .video import VideoApi
 from .videos_vidu import VideosViduApi
 from .images_vidu import ImagesViduApi
+from .audio_volcengine import AudioVolcengineApi
 from .videos_volcengine import VideosVolcengineApi
 
-__all__ = ['FilesAnthropicApi', 'ChatAnthropicApi', 'BatchesAnthropicApi', 'ResponsesGoogleApi', 'FilesGoogleApi', 'EmbeddingsGoogleApi', 'ChatGoogleApi', 'VideosKlingApi', 'ImagesMidjourneyApi', 'ImagesNanoBananaApi', 'AudioSunoApi', 'AssistantsApi', 'AudioApi', 'BatchesApi', 'ChatApi', 'CompletionApi', 'ContainerApi', 'ConversationApi', 'EmbeddingsApi', 'FilesApi', 'ImagesApi', 'ModelsApi', 'ModerationsApi', 'RealtimeApi', 'ResponsesApi', 'ThreadsApi', 'UploadsApi', 'VectorStoresApi', 'VideoApi', 'VideosViduApi', 'ImagesViduApi', 'VideosVolcengineApi']
+__all__ = ['FilesAnthropicApi', 'ChatAnthropicApi', 'BatchesAnthropicApi', 'AudioElevenlabsApi', 'ResponsesGoogleApi', 'FilesGoogleApi', 'EmbeddingsGoogleApi', 'ChatGoogleApi', 'VideosKlingApi', 'ImagesMidjourneyApi', 'ImagesNanoBananaApi', 'AudioMinimaxApi', 'AudioSunoApi', 'AssistantsApi', 'AudioApi', 'BatchesApi', 'ChatApi', 'CompletionApi', 'ContainerApi', 'ConversationApi', 'EmbeddingsApi', 'FilesApi', 'ImagesApi', 'ModelsApi', 'ModerationsApi', 'RealtimeApi', 'ResponsesApi', 'ThreadsApi', 'UploadsApi', 'VectorStoresApi', 'VideoApi', 'VideosViduApi', 'ImagesViduApi', 'AudioVolcengineApi', 'VideosVolcengineApi']

@@ -12,7 +12,7 @@
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
+      "sha256": "a47e95119bf3eafcbcb2102f7024c147f967924e4e3f343d1a29effb4b6765df"
     },
     {
       "path": "bin/publish.ps1",
@@ -32,1235 +32,1299 @@
     },
     {
       "path": "pom.xml",
-      "sha256": "59c7a1a525e11eb6ec05d0ee8eed68d77ae0e6193418851a9a14e1488465c9ed"
+      "sha256": "59b7f379b1a4bfd8415042356d7751ad9bb0c846420cf4e9e98cdd9967b21a3e"
     },
     {
       "path": "README.md",
-      "sha256": "700d90a6732d3882b71dbee90cd69a0278c922f09a3bf858b5160598a09a1381"
+      "sha256": "323ee2e19cf52e0eb6567560928b591cfd66ac6d162bdfb27a81c9028a9822ad"
     },
     {
       "path": "sdkwork-sdk.json",
-      "sha256": "c761b95811ba81652219485db5bb9b1d2824e190b7775ae71a9332ebe8b3767b"
+      "sha256": "6c9bfed155b82f5a3a730555e5a863dda703749556a23757465e969f974ea1ba"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/ApiPaths.java",
-      "sha256": "4c81a78760428cd5a8a13127cd9f3563666a8209bb32bbbe8130753376392cb1"
+      "sha256": "0563318eb36c230f60c35b47ca0e8a8d98d67825d357131e881e467da61e0920"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/AssistantsApi.java",
-      "sha256": "99e3cf57f8cd8ebf442240c0bfed38db84848e573de6e466d09696427089d7a3"
+      "sha256": "44719452d756c3a96e3bb596658cf44670fc6efdd5c6f2e2b4a126d7d27b3f85"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/AudioApi.java",
-      "sha256": "fb55a670ce06c39c746ba3279a73b06cd4d4a4c9cfec9d772774a8c806e679a0"
+      "sha256": "5242fe41c702698300334fb7ab224505e9e83ad77c809d994ccc82e025893544"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/open/api/AudioElevenlabsApi.java",
+      "sha256": "ece787091b49a3b27363844d0122af9d2556d009315ae1dbf30056b6b8f1caa5"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/open/api/AudioMinimaxApi.java",
+      "sha256": "53a29841297f79e7ae04f566367629b44596222c004a5a2bbae901109dc7283a"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/AudioSunoApi.java",
-      "sha256": "9d4cc9e7f34323d276ea0388fedda8afe4001aa25a1bb0f6eda58b9e76c6a821"
+      "sha256": "8a02bd7bb8b3465ec67aa5d308211091cba37fe433b203824433d73759d46a01"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/open/api/AudioVolcengineApi.java",
+      "sha256": "3d08af6255f51ea094aef5cc9240a6772d02da5a1cd4be8799c5e37f5f0e3313"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/BatchesAnthropicApi.java",
-      "sha256": "dc223b0d333b0376f50985b759e7e15c4d588a00926bdf4ffb72e7aa05c6b4da"
+      "sha256": "60b14ab32343814df49ac445ba11bb04bc2e2c3a46b74827bd0b22ce1ad17478"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/BatchesApi.java",
-      "sha256": "031741d24ba7951f263f2fd3dc5befe7c0716dcc645b9cdf09d8ce0c742b6d87"
+      "sha256": "e1eef4284ae47822bfa5badfff1b81518715baa75ea17fee05876c922417f75b"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/ChatAnthropicApi.java",
-      "sha256": "c08acad60e175e07a9c6d4993b135e0a191ec01193da5e114844b94ff6395bd3"
+      "sha256": "7f7b58b888d5c8bfa01ff150f1740209f482c18c7a9cfa25b134118544e5e0ca"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/ChatApi.java",
-      "sha256": "f346d5331e39bbc487362f0b62d15ff5f0f81a0fc546294d224099758db57aa7"
+      "sha256": "a3fef77ba85a70254901a626adb10e26b91d4d92bc53f2d1b7818bf819614924"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/ChatGoogleApi.java",
-      "sha256": "5f4a87742368f261adfa6a79024dd2c1bbf16adcee826df3b6366651bbcd2f77"
+      "sha256": "510b29c110b4a1600f9fcb23dbb1e3f1378514df35ab6fbb34c8a411318bb70c"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/CompletionApi.java",
-      "sha256": "5b36f2c6d4ff1b13a5f8d46d9ef02847c75ba2c03f5d6a2164e53d9787881a80"
+      "sha256": "2e047ab08f142262c12085e6c18f245d136ff842c44372547392929c1cffd386"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/ContainerApi.java",
-      "sha256": "21315b25df5387a86686e7dbd13ac90475726f85d15809b8233876d91e772397"
+      "sha256": "464e6c90689adb639f977f3910448966702d57ace3e66dedc171c49c84373311"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/ConversationApi.java",
-      "sha256": "62e5ef10285e18739da0075892a08f93cd12a67aafaec2608d02e61af1f969da"
+      "sha256": "0d449ca4bee55e374ca247a434e734314c27e415555971f2b71b3c58a786fdb8"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/EmbeddingsApi.java",
-      "sha256": "c22d5420a313239ebed66cdd7109a90243708dc28dad7d304aa36dabaac7f48d"
+      "sha256": "bf42ad9e22b2edf37a5e08a2a5681778b72bad762ca28c60c977739a92fd8cfb"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/EmbeddingsGoogleApi.java",
-      "sha256": "faa626116046717e8346530890af80cd6682a01194f097416d6c8af176062639"
+      "sha256": "2ebd4adf486712e6af1b9a87baeb1ea08a8bf697b7cbb98bdbea46b33bf4cb61"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/FilesAnthropicApi.java",
-      "sha256": "7e84572d51d4b0d2bca18c1aa4a37c718206cbfcebe1a20ce1b42e2d1b7f8428"
+      "sha256": "b4c078af74e0cd6860d6c548eac90713766cee3d2082d12293a5c6e7e22662ca"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/FilesApi.java",
-      "sha256": "0fea82ce9f5af46149acab41a737de2486e78954f75ef25ac6571da14ea34d17"
+      "sha256": "7d728fc695a2cee66c691b27355d2bb204b5da1441f703ac54792ee62985627b"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/FilesGoogleApi.java",
-      "sha256": "18943714c34e6de0368c20f0047ca631867d15e7041ec6e80470eeb93c6f0134"
+      "sha256": "6b82532d3d3a41e113417f0581ab0c942fdbfb455885504097c172f876be6f3b"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/ImagesApi.java",
-      "sha256": "b9ddd00e77af4d480298919fbd0634f15f00d27086c58723cf008ee874ec8331"
+      "sha256": "2feedb8d9f5095cd3d5001d25ec2fcd39dadfbe042bf34211e6c63a72d33f8b6"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/ImagesMidjourneyApi.java",
-      "sha256": "476d4192f90ea47e723645055dc28863975711104f8048571e894608440b801a"
+      "sha256": "08212a1266b44170a11e96a75eee4a638af6d5141b4b38ba3b86adaeaff57790"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/ImagesNanoBananaApi.java",
-      "sha256": "602b653339fae3ccdf87ec5cd79dc91ee5285f5fc373f5f4c8553f7a6b8112dc"
+      "sha256": "ea1fcc8b45269f70f6759b0c253296e32c5f848cfb46953431a0830f8f3fee2a"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/ImagesViduApi.java",
-      "sha256": "9f7be1386191c7312eadf04060bf317678c35a6bd8beb0c5447dbe18c326a155"
+      "sha256": "d7f7b3b577e1c54a20319df54ee201269198ac67afa58e0d34032c572a7dfbc9"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/ModelsApi.java",
-      "sha256": "ab3cc4cb48188733a0f30a225b15bbcb39cbf1c637e307971116815f7d87a7d8"
+      "sha256": "c75186d17e6c92a4cd67033b10f72ccb77a8457b139ae0b0096df8dea2047bdd"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/ModerationsApi.java",
-      "sha256": "4cd2f01f74c8311cc47e084dcefd74b140db3cb22128180ed2f97b59a3d859fd"
+      "sha256": "289cc9844534f44e5100847940ddc892bb174fdfe2da0b99d793a981bb4c9a96"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/package-info.java",
-      "sha256": "a6326225f43b084b88fa3e1ea79657b072f754fdbfc39d7e1ba15a33a6c2fc67"
+      "sha256": "cfa442bc77f05dd0946926d5e30376b373ef46a703d6f6117cff11bc75301088"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/RealtimeApi.java",
-      "sha256": "136c4ba0728819e1f6b8abfaa771477d15ccfa06feb6887f298b8643d6337175"
+      "sha256": "8a72bb495414fc8bbcb7f33b55878cd0ca92de9d57c0cb28de915e7a39f3f33d"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/ResponsesApi.java",
-      "sha256": "4709198962733edb0b8ed8e2e77dfdac26ccc3a1640c9e6c8a4e691edb427684"
+      "sha256": "0045bd4f490099e962dfae286d98cb3ae2a4e0cdc17c9348f99f6fcb4c437bdf"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/ResponsesGoogleApi.java",
-      "sha256": "a95b1288a98ff02083cb173b44c90836f060e7417e1137bf9af17092ff89db55"
+      "sha256": "fb680f3a46db404709a64678787a740f4a0096bbd300ac8c383529fed6570330"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/ThreadsApi.java",
-      "sha256": "1333219ecef7e5b83afaed4261afee632916f94abaf14b5f3d53642bf84a6765"
+      "sha256": "12ddae0cb96202dabb125ac319312dec6098734d370e5084149402ffa2bff7b1"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/UploadsApi.java",
-      "sha256": "fe69b778af900eeea6e756c27096d73a831a2ad94944336c8df587208bfe9380"
+      "sha256": "1ef5fd7cc398d29759e7eb1830b8933ea8a6d2aff1513fe749a713433063feba"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/VectorStoresApi.java",
-      "sha256": "2ad1644d092e2fed5259df2278a8a331b508a5186616297e49009e56c9ab6f01"
+      "sha256": "b8fb97c2f9ee044037b45eca0862b16823ed5280b617383ca4fe238a672e9957"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/VideoApi.java",
-      "sha256": "7bf5ac2d59f6c196a256dbf891c4d34c3658ae4d364944ddb55ebc4472c2282c"
+      "sha256": "da24b11a55ce0e36725d0ef480a15ba55b0c24363a0074135035213150c1a23d"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/VideosKlingApi.java",
-      "sha256": "fb8e0ed28b3a8f7c87348bea4f9436fdbcbabac2e6093639b2c01f2c21708c9f"
+      "sha256": "bed6052d0c45b35c5f329756628173655bbabbb5c1fd4521c45746d14653f90e"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/VideosViduApi.java",
-      "sha256": "1b83f72e30c83d3136a6953311a29906ffa07466f944290ac87709cc8146433d"
+      "sha256": "b814bee684bb9fec88ffd3baadf8314827296013eb9f5e15ab0b7df6ee77884c"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/api/VideosVolcengineApi.java",
-      "sha256": "c79ff6a23ffb94597fc1e2d31513e74e7b9de77978cadd3bc5d219da6b8096fa"
+      "sha256": "1acbdaefc783beaa2a58366bb47f26c6843f66e81d4ae3c2f5a32010bd59fbc7"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/http/HttpClient.java",
-      "sha256": "bc7af0621cd20ad43f2eb302cd840671757efc278659376283c8ba14e36cc81b"
+      "sha256": "43e3630d38147ae075d2cf08bcb59d37e73274388a1a9527f5c0f167a6405cf2"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/AnthropicContentBlock.java",
-      "sha256": "a1078b6215c645e5704e8b0d2c4b051cf3bae4d2dbb3b435e78574a337bd77f3"
+      "sha256": "2fb3a8a1ee3261bb1f94f1e37aca8f8eb70199c3e8a54b9f12053e6c98fd7550"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/AnthropicContentBlockParam.java",
-      "sha256": "d1658df46460910d7d45c30326253a82312094616920c9ec6095acd3b5a13524"
+      "sha256": "1dc5f6cd55328692a45219270fc18e608847b1a51dc67620518dac32140567d2"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/AnthropicContentSource.java",
-      "sha256": "e685e8291dcbd1a483de4177b6e7ca52e40eec984ea2190358496c428f853682"
+      "sha256": "ee647050b21e57609db1adfbf2023f8bee5cd32b7abfb786fdaf3dd5d05b372f"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/AnthropicCountMessageTokensRequest.java",
-      "sha256": "097168facefff17aaa583ed424139cdf3892e6260321fcc4124b26bb1b88608f"
+      "sha256": "f0646bdce3601d4f2e03de925dea539a670410403f01a97c23761de8f926f67f"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/AnthropicCountMessageTokensResponse.java",
-      "sha256": "099e757db2d75a7f736d667fb3716ab938eeac661e3e67d2a5813581ecab84f3"
+      "sha256": "745943093ec62f1711ef5fd32d4e3dff4fa34b142d5cf313baa868c1b1047dbd"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/AnthropicDeleteResponse.java",
-      "sha256": "ab5a207e807066adeb1eafdcbc3c0673a7157aaf47682b76daaf68731264ebff"
+      "sha256": "a6ebbabf88a6b61f5407c789332d24cedeb0e9580a88fd9e748146587499459a"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/AnthropicFile.java",
-      "sha256": "79ddba2ec3180af220d62c4a6c385d678537dfe6ccca0385784844e4f7f4ff5b"
+      "sha256": "8b1ed3e5aad7b4b96ef0305c19b4e2d0589af707463401474f6fdd9e4429e554"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/AnthropicFileListResponse.java",
-      "sha256": "a63c575e39e6864935cf128c7714b6473b6020c59436f968fa9cc979cc161e46"
+      "sha256": "85a39037f8a24f8b33897c33bc33cc38598709aded52cd0fb1a6752cd23f070b"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/AnthropicFileUploadMultipartRequest.java",
-      "sha256": "f85b2106d94e895f1ef15496360a45f5b9314554ad11731aafb4dfa026726e3e"
+      "sha256": "a53d3523e5d709848c481d145c948d25f4947fa1756204aa385f412b48ab617e"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/AnthropicMessage.java",
-      "sha256": "53c05a55d1e520382dbfdacbf24c667eb3ac6b0a63b469d951e19387f12f2b76"
+      "sha256": "e88a4d47b93bfa635a1f466ceed19106096736a1082e6d3df5e3030a8f2c23f1"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/AnthropicMessageBatch.java",
-      "sha256": "5e5b445e7361f2609ac0ad17936d0032e24ff7d87ef52eb01f1683828abfce71"
+      "sha256": "c6e211e552b8743f72bff455498d3a61d49e97c63e3b2150b999fa8d017befde"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/AnthropicMessageBatchCreateRequest.java",
-      "sha256": "c1894ea33fe6006bc1d2c78a593c3e26974ab46db87bed89abc4436805909923"
+      "sha256": "8f4d556e8b32fa85a72196d38a5c41460e295feb31c62ea2af2995e05c5cff56"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/AnthropicMessageBatchListResponse.java",
-      "sha256": "8be625f28a2ec9ebdc86d6f04afbd27df49d219f2a6d26ef389f606dfebdcb33"
+      "sha256": "85ce00545e7212eb1e2735af433c4c9d931fb6c142ce21f08dcc0377d3432966"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/AnthropicMessageBatchRequest.java",
-      "sha256": "b34dabde5d48f3192044426651a159e9713f8ed8949e07159dd60849bb7fae3e"
+      "sha256": "e3185022f857d785491678e4b8e0552208187721e3d9b3efc95a14aeb6f9ab43"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/AnthropicMessageBatchRequestCounts.java",
-      "sha256": "d83e313468beaf76760f91ef4029e38d9e5f70fe6fe8674883e0a760d7d9e81f"
+      "sha256": "fa23653177e05c21725f2c81812f0a970db3ea5700ab948ee0dbd30b2edf3c86"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/AnthropicMessageCreateRequest.java",
-      "sha256": "7347220e3f5f7339fdfe625249c6eee21ef133ed126c4970a2eb2961da03ca4b"
+      "sha256": "64b865e4aed8c8d6d99fd3eadf270e4770fd0173d1ef6b613adef4d4b031016c"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/AnthropicMessageParam.java",
-      "sha256": "da7855eb321f230ae9555b0f7e767d87cc484338596b28e86c1b54f6b2b35be0"
+      "sha256": "b2e017bbdc60473641460641f0f030a9e01487710d7fb7ba73e4ec75c4c43dbe"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/AnthropicThinkingConfig.java",
-      "sha256": "a849a666bf6e6ebbdf23a82babe6b3084b6e3f81c473fa269a232a4549200082"
+      "sha256": "8d205f5d3fee37dd5a09cfcf012a356526205c4a8cc5165ff91ab386f7c6c138"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/AnthropicTool.java",
-      "sha256": "44965df870a9c57b6e6073c64809a35bad7b362447673dba741cb07ce68dfce8"
+      "sha256": "5844ccc7375eedc79810bda1d57bd6fbdd2d6cd4a615b72df7663a353715800e"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/AnthropicToolChoice.java",
-      "sha256": "c65891acce02b72f6317683701510314db652bd5233871fce5144af5e5bd911d"
+      "sha256": "308faa91000bfa99ae8add2cfcd7030127e32f68e41e727f5da965e1e5b13bc5"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/AnthropicUsage.java",
-      "sha256": "8684627e9d7d8ac9e7fe118f89bf17034b0a6eb965424a2525a658d48274990b"
+      "sha256": "43ff893f4cca72496db7694471b0cfa8609accae356c62bdfc6399f6dba5998f"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/CreateCompletionChoice.java",
-      "sha256": "d81b6eef208d50be8100d5571bfdf1660364a268dbd6954ff42de20b23c912d7"
+      "sha256": "91bf316a83fff8c485c4cc459e8d5d1a1f38fc811b5e294b766a945a125f1272"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/CreateCompletionLogprobs.java",
-      "sha256": "88fa0bfc8449aa29d29daa567480ffc99fe9a6d652d73ce403257a3adf2e87e2"
+      "sha256": "355494aed68c2033ef9d8d6eb93cf878947bb9f4f8380d06d42f07a167d0b86f"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/DeleteResult.java",
-      "sha256": "7ac6106151b97d923ff612cc8a39caee65ce62f0daa724c71757f88cad97d1ce"
+      "sha256": "59bd9df3bbaeb668822ce937014d69272f827af705622156286eeffada249ba5"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/open/model/ElevenLabsSoundGenerationRequest.java",
+      "sha256": "5ac63784ec5cb3480180c2acee0dcb658f5a0495b47e7ca85b77cdb38a7199da"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/open/model/ElevenLabsSoundGenerationResponse.java",
+      "sha256": "2729e473e789fb0ecb0597d923fb68a7ee9d483d10cd028d5947e3a8f07fadef"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/open/model/ElevenLabsTextToSpeechRequest.java",
+      "sha256": "db9bf181906789ba25bc5b2a385bfbc9536574490f29e83b0ea89ff52fe79202"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/open/model/ElevenLabsTextToSpeechResponse.java",
+      "sha256": "63bf9279995428bf9b0647c76194881322be5c24b081b95c41b3913a5f2409ca"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleBatchEmbedContentsRequest.java",
-      "sha256": "5f342fc7c2d883808ff429be7e5b869d7fb44c1d3aed33f3059975447e9c8ee9"
+      "sha256": "9412d757e7da970c16b79281baf4de032ba1492f17a7ce20e561414a9608e745"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleBatchEmbedContentsResponse.java",
-      "sha256": "1c32a398d65dae9536dacfe7c0169263ff568896d945d9df91dd97641d4f1850"
+      "sha256": "0d86538737f50b827a2e1c36d77d0232c5f5ec485bfcdf2d54db4df1995d8d45"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleBlob.java",
-      "sha256": "723d1008adfa8b4f17c4c8be6363ffa0202f9e48e1d6ba62d04dfc088d4026b8"
+      "sha256": "e9ec8ea55a3bf90d50c215c21b372c5ab073dffb756e32b59fbcdd30eb311951"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleCachedContent.java",
-      "sha256": "bc9a7501dbfaf6f772e18436fd78d67c141574308c973ca4ffa4c6881705c204"
+      "sha256": "6e4fec6d934f68d199e990e92230758d2b35dd1c95ff7762c8042cb542cacd4d"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleCachedContentCreateRequest.java",
-      "sha256": "71a5aa61164521a77648875542b410113e13f2f0c9bf5f5debdf65ed5240afd0"
+      "sha256": "15a0c88f900ab3d968084624cff3079b86b8f9be608547f69caae3f189ed404b"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleCachedContentListResponse.java",
-      "sha256": "8e78f433999a64c7cbb551cf889413ce127cbaa549f46860948cd684e7b27086"
+      "sha256": "482cd5dea7b7b24d6fb474e3d192e85c1014c031f68ae16a1b33119fab0ca511"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleCachedContentUsageMetadata.java",
-      "sha256": "26ba9be5939f6cd8cf9beb77aa1478f039873b3fb688ca64abd275db092ed483"
+      "sha256": "a2eb2d9ca994cc42fb0dabb9c178b198daa7c9631f106518865c6397c6b71fd8"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleCandidate.java",
-      "sha256": "c32619e3e2e74da91e4dee3796830f8e9c04f3856ac153f6376066aa0a570b95"
+      "sha256": "b511b1510c40842d0fe98bb339d7fc701a12e1dd244a490a0e604b8a4140cd29"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleCitationMetadata.java",
-      "sha256": "2be9123085ae7d627ec91758013e7e13434e99ee81ffe729ce919c99cb8e85d4"
+      "sha256": "1fac1810152f30c705a079b367b9709ef2d6d23f7fe1117ff8fc34a7948fd9f1"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleCitationSource.java",
-      "sha256": "caac0b13a901e06884cfb6ce67c436b9f259d8ea4c81ecf5b76ceb90be82f282"
+      "sha256": "2d6e97c88a417ed367dd2edc7efd7420b491026b466efd0a6fbf397c9160ac60"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleCodeExecutionResult.java",
-      "sha256": "ce1c8204573e65d6b2972aac58d1dc310d2ccdeea89463dfd7d876c8027ea095"
+      "sha256": "6b39dc63e4e821de90cfd26fa6034831c713def8998185b874c39445b7e5fc64"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleCodeExecutionTool.java",
-      "sha256": "7d689905951ba144bba7ff650f5dbd9f2023712454d5001a64c1eba19c818e37"
+      "sha256": "50c2c6bed0c985ffeff80e37f2aaf4a41796cc1f6d8f5fa277710f86a329c0be"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleContent.java",
-      "sha256": "c9553ea9c1c7eda4d7147ca78292974a6e454c90bb9df11de0609b651984597e"
+      "sha256": "a5a11240f0899669c84a86bb558c3e6156669ed3f1e707b3501850dfff532d23"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleContentEmbedding.java",
-      "sha256": "cf4cc699dd2b660e08331cb43c305b01d4e57a6733cd7b24ab13ba2ebef0501f"
+      "sha256": "527eb337b765d60be75918baaac0f849e5df2c10ec97fb06ecf4b6af6946f9de"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleCountTokensRequest.java",
-      "sha256": "d8d9bd7838ff26c1ea2ed68e337fcca099112a1144c2c36d79b65f317d2aea4a"
+      "sha256": "5b1709f2a994a60c6f71b1d8db60c943da0510a34e91a691d8f877b411f847bc"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleCountTokensResponse.java",
-      "sha256": "0afb3ddd7503381c57f9e7813b90500d418c12524aa4a56db9da3023bf760eaa"
+      "sha256": "292ee652861ec10ff109b727359a84633d335202d8bcd4b128e5d80dc119f0fa"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleDynamicRetrievalConfig.java",
-      "sha256": "5dd52b92fb8f8229ec4bfb9047e63f4e0d00fddf77af3a8f192d601356c67e55"
+      "sha256": "dfa15a4582eb8572b3286e00d78b7459f3b60bada976689002128762a44851d8"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleEmbedContentRequest.java",
-      "sha256": "6ed48507994a51780aac8913d9b59d265dd5046a6cbd70b34e97ac3537e58b32"
+      "sha256": "24b0b1dea483b4c18838809880ab089d24b79da52bd9b16d67584df9720ff88d"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleEmbedContentResponse.java",
-      "sha256": "a7b239c6fd84ab73056973ecbcbc5eeaa2ecb586726eca4ca4556acdcb296821"
+      "sha256": "aa5e121fdbed0d7e317cf001fc90793dd15a93b70c51d74fcf657c565647430a"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleEmptyResponse.java",
-      "sha256": "92768dfd25995df32d58e83e8894c3f9109f1a8338436ac82241027c6d794cc1"
+      "sha256": "cb997d0ed0478c77fe101feaf72cd92e63cbf5595436677cf3aff3c7168979f5"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleExecutableCode.java",
-      "sha256": "9777d0f6dc5ca3337e23cba5f13fe6f5edc8d8438e93f7ff2a7858a39324182f"
+      "sha256": "c488b2ed96d30add24018299a85c434872484d4808e590849b2ef384b99b98ee"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleFile.java",
-      "sha256": "9098c02d183abfefc7bf2bfe01494a4dc64e2ed4cf00ce64cee5899fdb80de96"
+      "sha256": "336539105f80c158b4b2f039ff068b4dd55769807f13d9db0bff41a202aabfbd"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleFileData.java",
-      "sha256": "53574044dfa7231cdc00cd81b5aa56e8d153fb319cf0e508a134d56ad187181b"
+      "sha256": "8253eb9d10a9d942fd672b7ddb62dc079bbfb127b62133921e672ea4a0038b54"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleFileListResponse.java",
-      "sha256": "bf92a49148108fa452816ccd95aa5db46da850b0ffc6baf2b54c7933e30408fd"
+      "sha256": "e217accf3779533f398c03ebbefa70b9157a5beb00b741e78ea403ddcff50d25"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleFileUploadMultipartRequest.java",
-      "sha256": "2b991267995e15d1bc4edc00ae665a9feb68f8451cd98e58130960b7d365099a"
+      "sha256": "2339acfbccc15dac886cad6cdc9eab9e59a5112dff85f37d1a7ab0323e5566be"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleFunctionCall.java",
-      "sha256": "ed5856db1f5df8975b355fd6adc68968f57178c12c738f2dbad747f6edfd33f4"
+      "sha256": "d3317674221cd5f41de2e91fd157c987184cc91813c13fb491b6e3a19bec763c"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleFunctionCallingConfig.java",
-      "sha256": "ecb08b6952c6bfee7c9178c675117f5031a278107bf196f6e1ea6217a7d50d98"
+      "sha256": "bdb2db563fa6c4b088eba8245533e657c794ee34b3753a760c83fbdf0319fee1"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleFunctionDeclaration.java",
-      "sha256": "ad9527c2f5d8720bb8c0f919f5d44acb819abafdde667c527e9aee062756862d"
+      "sha256": "87abf980161842e9df55d4abc718d637e86a90dba3499cbe88f51778a8c62ec5"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleFunctionResponse.java",
-      "sha256": "e9ad488dd3c4fd5f40d937343ddfbe18b3ce35ec755a432a6daf82ec9910669f"
+      "sha256": "299c85b45fb50a0caa78326ef0319ac577944839e2c1678fc7e2f614128288a9"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleGenerateContentRequest.java",
-      "sha256": "25d2ac8695c1872703fd45b8e4501355698e6bd97ca30e62bdd263ff7586ab37"
+      "sha256": "bf89284647307ec32b082427d05e45ba78b88089f815e4abd543dd6cdcb5121d"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleGenerateContentResponse.java",
-      "sha256": "3ca06301119e06c98ddb55f838cf1ad23f34e7baadab2fde18aac9ed80fdb6c9"
+      "sha256": "ba3e265ccd9725791586cc3f3dfe8304551aa632f22cdf053b0b16f04c8b8ccf"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleGenerationConfig.java",
-      "sha256": "0dbff44a8a7fcd26d1a418c98a36729c6f92b2d703eed490b8878d6c9f5325b8"
+      "sha256": "ce700e2127b6c97a64717de0b51cb180a4602b6486f59493065503362ce0e621"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GooglePart.java",
-      "sha256": "0fe2ee7c6ab6e2d0719570617d06c126cd971d58e1b54a328f17e852afed2e8f"
+      "sha256": "6470e9e7b112334a462034aa60f10302be7aded8efdf392c27f15eb6aef76b37"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GooglePromptFeedback.java",
-      "sha256": "db644ece6adf172dcae0d6511c6ac30e6f4e600ce221542908b332a51efcf75b"
+      "sha256": "c070d4fede9514a7423da9b6e853af84bd2bdc70c9cc56c924e94fc67e3ab468"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleSafetyRating.java",
-      "sha256": "42183923200e71e577d081ba7825634cf0d51a45fdb42cb3dcd8a94be75140f6"
+      "sha256": "a213e260da884de26166f99b7bbc9e9dc9c739e304662ba6bde8327528f9e3bc"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleSafetySetting.java",
-      "sha256": "ce63f7f811ca6a4ad4137cbf0dcb21c06f5c279ae10e9f7e6f75a4642d66631a"
+      "sha256": "ba2c541e556a08dad27d701d82a947b51af25de4a4ba2c4a11593f0ec7ccf6a6"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleSchema.java",
-      "sha256": "b1d0498d43885112997192028e473dada3b28f515bf79327f9fbacb8438d192f"
+      "sha256": "33b992f2898f1acc6c48ed97350b20106f50b9f19716d81bde81a3b8456dbac8"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleSearchTool.java",
-      "sha256": "7d94488b9c54d4c03150e432785b78170ea4a3ef517c8284b37004078ae7ac79"
+      "sha256": "284b3d4a053da90b422d620df10c6903369897478c3b0ec5f304e788785db055"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleThinkingConfig.java",
-      "sha256": "5115eef01baf340bcf04772f463dc1af645e4f9bbb1dc30d37d1d6b9ac0572fe"
+      "sha256": "5d638c5a7998f42efb64cdbea4bf394281fd0e3723f11077e6d6c1a96d1367ef"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleTool.java",
-      "sha256": "a4c9ad8554bc33cc7644f31239f1cc3a6eb9de6d921531b193769e5d5f72d8b5"
+      "sha256": "62186da02079ffaf581826766f5e9229569862393bbdab318621ce755babb918"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleToolConfig.java",
-      "sha256": "2ed1fbece36dd6c74198dfea076e55eb39be6316a3f68ee97db8c653e8a25129"
+      "sha256": "59ea91388b9a79b4b29933d3e2521eaa1fdfa58b5dfe2238435ec1839496a823"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleUrlContextTool.java",
-      "sha256": "204668860db7edcf6a881cfa3d60d1999838a47df79cc1ea382917cc0d654a41"
+      "sha256": "6da688244e45a9095d09303f047cd7499587f15bcff6ac5a7c75dc73715c8cf1"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/GoogleUsageMetadata.java",
-      "sha256": "48b831ca64be84e3acb21ff2aef2ce1a256148bc26444e54426d1e209ab01c29"
+      "sha256": "cc37d510f1dfcbd570156333cd42070a40e31a599ba6ba271e6e0b0e438bcbd6"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/open/model/KlingAvatarCreateRequest.java",
+      "sha256": "d6321a5678b51b0b226adb77ab70280a535cf3eeedcaf5b335ec2ce87c262c9c"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/open/model/KlingMotionControlRequest.java",
+      "sha256": "aadbc6c1319d9677906c01f68c58ae0f2b7202a1a1ddd6271c11c80701047d0c"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/KlingVideoGenerationRequest.java",
-      "sha256": "86124f2d523109d68d6d96eaa52c7bd655fdfc2799346e178117233bdb7fceb2"
+      "sha256": "d4f03c1d38c937d803efed163f5d1cfa24ec67042490b02fc3d36f8a8af7f216"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/KlingVideoGenerationTask.java",
-      "sha256": "178757d52766c74637b3636ea6719a05213ab8dc32c6e3d60aad5c0d5c1f3995"
+      "sha256": "b10d8aed16e9562f839d5401691b6ddf92581e00c6c1654ac222e7dea796e9b6"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/MidjourneyImageGenerationRequest.java",
-      "sha256": "67f82123eaac946f281795c1f8b03ddb7583b15bc06ae7e115da124eab8d5316"
+      "sha256": "bc39d2fada8477d903bba342c32d6d55ee758a740b35a0781ff7cef00371b229"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/MidjourneyImageGenerationTask.java",
-      "sha256": "ae0204c4255aeb1f0b0f997577970fce2d5c043598e3ec38ed7aaaeec8e9bc4d"
+      "sha256": "2a57f9a7a6b1abae99260e5523a748f371b728d25e91a9573e2be964ff90d226"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/open/model/MiniMaxMusicAudioSetting.java",
+      "sha256": "d3bc0d131a66a0208243ecc74f365399191607a5b2c85d540d1ab9f4e9294a14"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/open/model/MiniMaxMusicBaseResp.java",
+      "sha256": "9966314cdb9628f020c4866396f272947743ada5eb63155a398cfeb535a7c7fd"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/open/model/MiniMaxMusicData.java",
+      "sha256": "4f58f018eb68a816093db1aa3ffa225ab7dfe88780a65e5e834e97de182b3378"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/open/model/MiniMaxMusicExtraInfo.java",
+      "sha256": "442ba8ad07e0b1b34f8cc3bf782137c32ac8de50ced01824b46dbafa63bcc02a"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/open/model/MiniMaxMusicGenerationRequest.java",
+      "sha256": "b6c06b74a02f2d00cb1d3ffb1543df22c83ed999d2dacccbb0e75b7d90cb8691"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/open/model/MiniMaxMusicGenerationResponse.java",
+      "sha256": "245169f33f505a8a1834db578fef8dacf2223faa275ea82f5c6c054a1d1710d5"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/NanoBananaImageGenerationRequest.java",
-      "sha256": "ec2aab0e251f06308c1a61f6363a1f9cefa347bf6685f8436965c349d21307c5"
+      "sha256": "6da136ba220f06298a3f659093f54d8db907283d8471fb80de6101301501e930"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/NanoBananaImageGenerationTask.java",
-      "sha256": "a3fc83c43dee0f09e4f5fa61ea043945f861679f87427245212d658a88336507"
+      "sha256": "96fdbfeb9dd4f7c17d14a173ca7c723ddf2688915766a44a04334a78203ef3ab"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiAnnotation.java",
-      "sha256": "f5d7d7b8a7dfd5df2c5319427522efff1ea44872ebe843190d481557bfe21e38"
+      "sha256": "f8a37fb642a8f6f84bb05a0a7d4c7075911572b22848f82baf0a1af3ad6460a2"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiAssistant.java",
-      "sha256": "33b982529ffee2215885b32f26ece81fae89977702a4fb88700fe82cf2b2fa7e"
+      "sha256": "f44c91769cc2b8d2660836763f3e7273f91477071fdab00a41d5da20e0464476"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiAssistantCreateRequest.java",
-      "sha256": "0792454505c62417b883884ed9e78afd0acbce2b6f3323c9d755e221bb416d70"
+      "sha256": "c280a1a00d7c979af682016cdebb9cd634aa064e00e280011f6fa812aab886c0"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiAssistantList.java",
-      "sha256": "77ebf0810cf0977277d271c377db35f86807c46e1d85721c1881faebdea46e37"
+      "sha256": "9fe4187b3d12f5e49f7c0467ba478f505a3e3166e273553d0654c15ec99d0c63"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiAssistantUpdateRequest.java",
-      "sha256": "916fda0d94aa959081fa035686ee7980cda099061a9093029302c3558a4d1340"
+      "sha256": "26a918ba6ac58b39500fc4e1a928844816864b361ac7eca775b6e703740eed55"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiAudioTranscription.java",
-      "sha256": "67b3642cddef7955e5f17c2ceb9331d42a3d1095ebfde3e51edbed4073ca99f4"
+      "sha256": "83546cac3861a4ce352dbf8fba07d126e88a06517f2d8770b01a39f4f3b51df1"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiAudioTranscriptionMultipartRequest.java",
-      "sha256": "7a4ab5fcf4683819ff5b1416d4a5ffecada55c616fba39d7314c1d940d5992f2"
+      "sha256": "8812814c5499fc21f2456ccd2636344cb2e802c37ae23853ba94df04cee2d344"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiAudioTranscriptionRequest.java",
-      "sha256": "880adff39b268e986a3d9bdc540692d6524fb4170be7e2b15d47ab16016fee57"
+      "sha256": "81691b9861bb0d93bccc12aa334e49d2da1f57584f658dd9f329aeb786cb82e7"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiAudioTranslation.java",
-      "sha256": "3952501f5ffa2a35492a9fc72211889a404e4f0eb5f1e63e88abb04cdb825b01"
+      "sha256": "550aa570c311a8c68cfdec93457513978dcea8a3ef13edaffe6439c138919abf"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiAudioTranslationMultipartRequest.java",
-      "sha256": "44c1c4dcabf7843ab953bef49584d73ccb7ae55dc7fd1e1e624911cb6449d3a2"
+      "sha256": "f101aee17a481a16abf625fffb9a2afdc67cd4cf1a4b9d51a30109cbf5fe452c"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiAudioTranslationRequest.java",
-      "sha256": "d4907148ed6dc3b7fff91d694a486f791a3e550b8fa87f1b33f50123e9359563"
+      "sha256": "d521b4e4fa16faf1b20cc95c68bacee67c66aca82b3c62d9b61cee81a8716cda"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiBatch.java",
-      "sha256": "2d8513461d180c37350c9e5407c05f93669379f7a4ea3fb7bb0e34c164c68ec3"
+      "sha256": "91e560e057fd7085b364dc69d42dd2ff974a39bbf744d6459acff372cb270f91"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiBatchCreateRequest.java",
-      "sha256": "60acf22f757aa589bff6347e3b7afb1c756f6424bb03f8dd47b34c6fed7c8b48"
+      "sha256": "bf3b4fb0b1343d56ec389f56eacc3c6218a42b364d0f5e2cdef6fa9ddcc84320"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiBatchList.java",
-      "sha256": "4e8dde62dea93c1ee7dcb695ca2ffd005fd71c3e38453d8122fa42a3bb950f0c"
+      "sha256": "219d209b0aa5d66aba2ef49350f82755e602c8e024d1b45ee542c2ccc7b11c18"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiBatchRequestCounts.java",
-      "sha256": "2110302d45bd56a6f44e5c178a2c21b5f745ac736347c8109ac805b6dba3a74e"
+      "sha256": "1ae50d10cb58f733aa164b67d310a620e7541ca196c4679939b6373335ee4614"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiChatAudioConfig.java",
-      "sha256": "189099f548ca9c8f064b04ec3e8e8f8741c6db26892765e55c5a683c67ffe622"
+      "sha256": "4e00ac31e6f4b0a62a8042310e5ea611b7afdf7f12fe9c718d836837ab93814f"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiChatCompletion.java",
-      "sha256": "255cca46da1c735e64cb458d5844abc15e62cc3c8fdaa796c1a31e4a6ac00361"
+      "sha256": "de47e54efa146d9c0d7c0fc7d2ab8c1cfec82b05b6781490a0e70552b75de751"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiChatCompletionChoice.java",
-      "sha256": "81f1e31d8500d0cdaedf9f4f8b04d172def3032db2ddbe37b397a637c84f7bbc"
+      "sha256": "4135a16f14a9c8521021cf30ee9de75ff0c83f77937a51e0f43e95a82d05fc91"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiChatCompletionList.java",
-      "sha256": "723e9f6aff966ccc76ed3cad5bfe67e2a8958ab27c278f664fa82de018c0a20c"
+      "sha256": "7b59c48f5a4cd6b93e6fca56644afb6a190a0033bf75383c5336d5e8b89dfc71"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiChatCompletionMessageList.java",
-      "sha256": "ec8850c8cc3f3125daa8435eb9393015a9128e53326919dcc9c7238acf22e89e"
+      "sha256": "0bd71aa724e64af70a68d3c2d8da15540fd2b42b0b9525ba6c3591727108ad34"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiChatCompletionRequest.java",
-      "sha256": "6ca2b37aa21db283d453b74ebbf44ea6b3760471cfbc1e15a17e8f85cb6d9a28"
+      "sha256": "633223ffffdabb07efd758ce5612e139318248f8621ba9968bf61bff0f69488c"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiChatCompletionUpdateRequest.java",
-      "sha256": "13865f7ee6d89f453477d9306ca3b89c82b0cefb46f1d70cb769b3c1f878186d"
+      "sha256": "4635270bd2605f40dd665faba0cf81dca73fe265cbc99d8d954242a3b0d95a62"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiChatContentPart.java",
-      "sha256": "0a901d01724eceafb88928d06fe17cb8950df09070bbc9bec24a5754d701f3f1"
+      "sha256": "c18a0af836e7760e11c53104efa4931ac97182e79c02003c35ce93d5cf2fbe42"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiChatFile.java",
-      "sha256": "bed588190652ba351094e99e7a92c9ceb914c0a7804312bf1d96f030374c744a"
+      "sha256": "e793a1e3c90b641294587d2f97b28419021e17fa5b8b60444b6d35a1dfaec0ec"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiChatImageUrl.java",
-      "sha256": "7df1581bff31d2bde1084f518f49f76b2407f28882496941e5bcf09709b8f7dc"
+      "sha256": "9818785140f7deb59e579210886e348006dd77b6811d800e8e0041c197ca56f4"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiChatInputAudio.java",
-      "sha256": "f05876942e7f27874dd9bc424a1716f2aafea58a10d468f8f8369847a78dd61d"
+      "sha256": "c5962d4b3fa097b4859955f7489974abde9dda83c14908d1cf5f17b2d3118539"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiChatMessage.java",
-      "sha256": "ed7f889fded2e22a2bfadc43cd3f3e926d3ef48c781a93b8517fb703c4fdb709"
+      "sha256": "0d253f78c439c39a50ff907c5abcbd0a26af03c67a8550f9b286d101e3222520"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiChoiceLogprobs.java",
-      "sha256": "269ed306f70898e62b34e2482bd08b06c4aec0de2bd34cdea77b7fcd5f4a5c35"
+      "sha256": "1430f59c17c38ff56c02904c0990743ae3895eb4f10057b1f5ac382ab145715f"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiCompletion.java",
-      "sha256": "454458dee67a6dbffef826610e656ce39f94a585409e843273b863d56dc74eb3"
+      "sha256": "7a021b71aa51b1280dab08fcc86533ce86ca157ae2ed877a5ffcd4ae0af32a39"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiCompletionCreateRequest.java",
-      "sha256": "150f519f9d76b6779f6f851911c9f5b873bd6e8c93f46396b17e166f21dfe681"
+      "sha256": "5b541615b1f6f291a97f146b16b17e7a2b92a314e7beea23bc6c87861444829d"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiCompletionTokensDetails.java",
-      "sha256": "0bd05f4c5b47c0c76327c84db265e2d3fd30e0deb8b945c70130b5ac5a10c2f2"
+      "sha256": "db8c3c0c5c8799573fa06d67885ae278c58e8d5ca8e90478592ede09d82322a7"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiContainer.java",
-      "sha256": "6c1dfee7b81e6baf4523f13288065a91e4a9b8d9439a82414a70c377a02d11ab"
+      "sha256": "5bf4f6d5116aad1fae12f516eb5be04e9fc1f92e52c8d183368021fea65c75cc"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiContainerCreateRequest.java",
-      "sha256": "fc3d6f83ba37530888eac061640f3aa3962c69824d3f795648a91fa6dd10588d"
+      "sha256": "63aa51e90e4f30848e8bb040dc90d18d34558fd3adf8eb3063fd28fb84c45cea"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiContainerFile.java",
-      "sha256": "cd3da32aecc7ddc4de93d62bf6e05a2333bd20d628d5b77e4c2b97363511f0dc"
+      "sha256": "af8be1803d4de8c34560052df8d09e16cff34b73f194776a71c385b052490cd9"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiContainerFileCreateMultipartRequest.java",
-      "sha256": "9e90368afc671cbb348d65ffb2ed637da79ae3ea81bf5b3a924b5bea6e811c28"
+      "sha256": "b27d9b528a56f10710ed811764b30baecc6fe5635256309dabc3e23683313c25"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiContainerFileList.java",
-      "sha256": "ca826ec87d24242cc042bdea102359771894c4579921a1dbeed5187fc00ba0e2"
+      "sha256": "8363bb8d0d80b9b14bd1c546b715ff1881940b6ebd11858043e0de271d70ab7e"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiContainerList.java",
-      "sha256": "32140f2df38831889045eaf48fd63837153cedefb6cd63ef968627672c2095f9"
+      "sha256": "da9520f8c9e03a52a34b5c3e73c823a35d3119b6d1257a886b503f6e78959842"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiConversation.java",
-      "sha256": "a0ce99c0e322a8705e9403c536cbbf0f30efabcdcdebf9c88263572c3966d150"
+      "sha256": "159f7f1d58691dea9442e0c38d3576258a35e09ad06b9be2c1aea50f3d9d197e"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiConversationContentPart.java",
-      "sha256": "2b5d4f84de23b3e9016db7939d82c5998a4899bab1e269ce39e9b935951dc55b"
+      "sha256": "c1cb19548ef233dadc57f08194b77ccedf0da55ecf27cb3fda808d74e1bc4657"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiConversationCreateRequest.java",
-      "sha256": "2c088682bd738c62b9ca4d37f1e030186dcd76f76204071b6936c7d800021110"
+      "sha256": "c84df87dd9be02223572fed6d40baecc079f929084ecb0fbb0d8347ce0b04ef3"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiConversationItem.java",
-      "sha256": "a19f39e4d299184ffba6174bcbf57d77273569e17ebfad02a7cca3e3725abcac"
+      "sha256": "c84d7e6fb539bb9490868b7e6040c3d08b19be9cfc9bf9b57f59abb8025eae6d"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiConversationItemCreateRequest.java",
-      "sha256": "8930a52eb63ad90c9fdaf541f32db366cf0e743f8df059d1e0f3ff310c703256"
+      "sha256": "aaba26b9775feb342f731be139e11e4cbc2abc601a4d668accbfa04975e0e57c"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiConversationItemList.java",
-      "sha256": "bcafb5f8103353907799231d3bd472d098eb8ab7cd54a3e36d8fc56084352690"
+      "sha256": "264cb322bf2a29822f2913014acafa2e92e40077228fc84f47650331939dcfdc"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiConversationList.java",
-      "sha256": "48b6a3082c9105af3c67fd2997ccfc3a0f0a457a940fb4a46391d43c5f606393"
+      "sha256": "f993ffa1dee4e2bc5b4e9a5ef80b629de91f2a435dddf80f126e3d1722aa24d3"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiConversationReference.java",
-      "sha256": "8efd68c4abdd45c672939f7a1a5a11c19dffe3b2e944e08baae466b53369386f"
+      "sha256": "0ce4e345348ac1a0458ef9706be83c2fc203cc07872166af513cbad27310370f"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiConversationUpdateRequest.java",
-      "sha256": "cf411f3a7a755f4a748a52dd091ba0afc7257ee8cf82de498185effe4344882d"
+      "sha256": "3dfac4ea3da6213ba3d1ca607a6d3daa863d080bca051b0e6159ee8ae5ac9e59"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiEmbedding.java",
-      "sha256": "194393919fb451843db791f6ba1061c5f077508ecefb15457d1e453beac4f43b"
+      "sha256": "06d98f39868a60428eb88962fb202c3dfde0299aafb4c2db7a0c483debde72df"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiEmbeddingList.java",
-      "sha256": "9ebc6da4118e21e9583fbc52069d25bcc1ccd367835f346c8f13e5390ca7fa35"
+      "sha256": "8e92fadfb0c4040b41613026d12e5d9f21f2cc23038b0953f8900f65279584d3"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiEmbeddingsRequest.java",
-      "sha256": "fae666e3c27bce45c6385de760d7befcd2dee18d88c95735eed63ea19ed03aa7"
+      "sha256": "a56fd9280a27cee1d1185336d258a67dc0fa9a603ed091425106eb4f1a91c26c"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiEmbeddingUsage.java",
-      "sha256": "93f29065790cb5c86f58a5e7a5742be99c98433995c5b0d8cd3ede1861b5811f"
+      "sha256": "b0c8345267031243b9221d772cbffb46f2c132bf87440c52f7fcb8e4c707e868"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiError.java",
-      "sha256": "dd6b2dc70e6ab5083fbc8f0e868bd86323d0420ff10804ca47cf8385a2665c58"
+      "sha256": "cdf58f5c8cac6365f24ae4ab1da89407dda07c9b11ccc03cb10a2a48fa68262f"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiErrorEnvelope.java",
-      "sha256": "91ed3dd04fcf6547b22f93fea4e14fb31270b4a19ed884b12024f32a3476e0e3"
+      "sha256": "3ac03320f796e6640e4992a85ba778f350f39c6461b706ba1b058a5643d1e8ed"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiFile.java",
-      "sha256": "4c4147a69bd45e5c5877aba5060baa031f05aa72a9413a46b96cd3c7af8223fe"
+      "sha256": "993ab72783f791b758d9299d6d569dfa0c117d8cc572c6a1c56cbe2756dcd913"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiFileList.java",
-      "sha256": "07a3639e796183383afc8c6c00c9499bf38b2595b6901957ccda2622cb3ecfa8"
+      "sha256": "e9867e45ef2945226ca3127601737be4b0847a9b4f1711456cdc6c879152a99f"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiFileReferenceInput.java",
-      "sha256": "a1fceb99cd9dc6055e820dc937c7c57a84c855ad65a3add79ec567e259c328c9"
+      "sha256": "83d813c43d969d8608e01137f55b97602255514b147616d00303a31d58b03fd9"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiFileReferenceObject.java",
-      "sha256": "5398295da60e061625bce28b1ce2e395740cdfb352a2e353bd65bc40ee2c10c4"
+      "sha256": "849a8cc45a3c92b80f61930f0e263fbdd7f97ef2f3f448f4368f443479415403"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiFileUploadRequest.java",
-      "sha256": "19db985882cd9b2112201b4862f329bf54526203d4ce1e31fb95916314a500a5"
+      "sha256": "f2859ffdd9239242b1788ea98988918de9e6947976eeaa4ecf646c371864ed09"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiFunctionCall.java",
-      "sha256": "09da0b57cae919c4ac2d324648188c7ef037837b08fb21d7cd0d803020cdddf6"
+      "sha256": "ee9c24cfdd1044799633fcc66790e1df5e244886852125bb681716185328300f"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiFunctionCallChoice.java",
-      "sha256": "5f7a5e879e341cff5df350a30ca6b9bba9bef429abfb478ddca0d64f7f645723"
+      "sha256": "db71c24c12e74a68a4ad4cb21ff93361e62e91b54ca05b65f34c3893bc8b0c33"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiFunctionDefinition.java",
-      "sha256": "64a3d4d618f5320a54ad68b35ffd88e85bbb3ac54df20f30c163a95f1d2cb743"
+      "sha256": "c630c0a0e4503fef31920db86196b7415970b448ff3c6e7d167942a00bc82619"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiImage.java",
-      "sha256": "3df009048370fa5161704caff88d9fd258ed70caebdc1a9e8f6164d21f74cf8e"
+      "sha256": "f833aa17286039e7c36e0376da5f4cea3f46ce242d0dfe3d5d5fa5840701034b"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiImageEditMultipartRequest.java",
-      "sha256": "95fecc7d714025a338fb3737a01f98c4b5ce819766cfbbe96696cd1090ef5692"
+      "sha256": "d0cb0a3434208e7b84fd8faeb7bddc3c6c7e597e49822ac850fefe58ac48304f"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiImageEditRequest.java",
-      "sha256": "1f38449be2ed038bc4e000a99e43f6deaaeb2c5fe51057f25baa92d045d41c59"
+      "sha256": "e15d09cce90e94284861ed0fdcf8f01eb19043d5d35971b06a61374eb670c4a2"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiImageGenerationRequest.java",
-      "sha256": "ee5fd3a97acc191b4db6ee2a0322ba63a527c19c88e69ccb0be06978cd6c3c2b"
+      "sha256": "9772089d11bfe251b06d0b012bff97449e624401435ffe8fdcf30ec0db772e03"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiImageList.java",
-      "sha256": "9292978ec6d93befbad093102add4f5f3ad00d4738ea34c4661c9606bf79418e"
+      "sha256": "3dc0f49e714c8ef422f648d989c6e611f6dc3710f9e5022d5bb20ced66ea2c7d"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiImageReferenceInput.java",
-      "sha256": "7dc32068f172b3de0f2d8d88a7fc56bc6a629cf52c7af6020755a6c282e2d01b"
+      "sha256": "f6483495238c652edef62a5c45e2f0ff5aef58a44ae532866904ae087ec580b2"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiImageReferenceInputList.java",
-      "sha256": "900ef5a48bd82bf6442ed79611a186d66e6e7221ab0ac9243bd89a2e8b273582"
+      "sha256": "0072343834be92843e5414abcc55cff49958bbdd0af065ccb40da142edb41a53"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiImageReferenceObject.java",
-      "sha256": "4b02faa187b27bad970e860cae78038860ae5a79decafd2978564f0e90e7eaa7"
+      "sha256": "3dcb921c87c01088dd3c7dd6607dcef08612aad54339b6b837cd77dae8a8d25c"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiImageVariationMultipartRequest.java",
-      "sha256": "dc10cbadca8f4342f8ed74c14bf831540ddf9c84c5df64c903d982e024650ab6"
+      "sha256": "33965edca84f7fa5137740f95abf0f578f07fd1c757957d56f29c50e6acfe901"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiImageVariationRequest.java",
-      "sha256": "3fe0589e089dad617ee046b5fdd7c5db203cc9582bc60680062e65dd077d22d4"
+      "sha256": "84a86c1ddd7d5e3c5347d8cfeb04268ab338b020d02bdb5b29f0e87b7a966c84"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiIncompleteDetails.java",
-      "sha256": "d1fbc3f805ea8ac7fcde13cb422d9a1a0fd4aab8878b8b13af53e59705cc7ed7"
+      "sha256": "3fe685017a7031c330910915aca7e916cfaf03225f74965fc421f0803be26c41"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiJsonSchema.java",
-      "sha256": "b8077ad3a51ea16b93f4a2336051374f8740a7b1c5320d93ca14ba2226da4ac2"
+      "sha256": "d761da0208172baee3fb40c6ac7f40ab55523df28528019c6f8daa5ce031cc6d"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiJsonSchemaFormat.java",
-      "sha256": "00c0a9f897ffae3dace37e3689313df4ff2937c0f848b749d7e46eb3d6c41e0c"
+      "sha256": "a1935a85436b7b38271113495d5bd3ebadaab6e10c273d9f23f0e95ccf7b5410"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiModel.java",
-      "sha256": "3dd085f723488c821cb877fe932de84f11ec8633d7c294eb10ff974aec2684a2"
+      "sha256": "998ca4fff716ffc8c135952682eb6c46e18812d4347c5905b1a8a65d0d35216b"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiModelList.java",
-      "sha256": "f09d08091679496850e32df641b7cbcc743587f8d4cc4bdf46a7cc481171c634"
+      "sha256": "6c76a60ae7917155a39f8a0fcdb08f6a7cea1751b1efdcf0e70d07ebb55d1c5f"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiModeration.java",
-      "sha256": "fa42875af9eb0aebe1fe4cd7e7e39f336726673736d9c4bd868e84d1152875c7"
+      "sha256": "d93100cd90772ebd775e5271aada62b33c75c10cc5851ec577a865db4a216c45"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiModerationCreateRequest.java",
-      "sha256": "c26027db12033819a79d76b0127476856becc2d516f2b8025a2840366e1a1763"
+      "sha256": "ade42bed466a11afb45a89f4a696a328ff17a4c9aa5b41b61a6f4a48b1bb6a23"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiModerationResult.java",
-      "sha256": "27e54eb9d5ee0ee2062a8b99bb738604fe4114aede4c806d6dfac17b882372ec"
+      "sha256": "4f32a8f98f4e10cd95b3543eb1cde8b2bb88bb697e751d4c6a131271ef258122"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiNamedFunctionChoice.java",
-      "sha256": "e84a726974700318c3bc5a9c2f3cb4d177333904397e0de532b84c41f0593b5c"
+      "sha256": "b5b9c8b8b32267d5fb919be89f54cc757faeb1890af6ef82b299cbedb7bcfa9a"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiNamedToolChoice.java",
-      "sha256": "b581446baffb1e39670868a0681eab7ce22264d30ef77186b2fd2ce5bc9e4eea"
+      "sha256": "215a553f92d4093d8d2e938e4f47021759f5d24e9ce20aaf795ab812e900018d"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiNamedToolChoiceFunction.java",
-      "sha256": "9112d0f9a43077004c64dc35d627cd59f6d96015485d1a23235467e1b0927644"
+      "sha256": "c278093a38217e75f6f2bc2e37cd21683fdf1cff5e8715546f374b1c22e898a6"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiPredictionConfig.java",
-      "sha256": "674662757539be8e338865fd7d0d8681448f99d7cd0cd381a272e371ecfcbb08"
+      "sha256": "c054edffd736b3edcca4072d940ba79a5262487143ae2dc0b952b7bbdf478161"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiPromptReference.java",
-      "sha256": "8441d6e995a4abc00a3225c38e350c6e5995641856e34de667bf2014d9cec5d8"
+      "sha256": "6284819dad6221fe5bfb2515ffd39a004338400cacf94662a083c482d473097c"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiPromptTokensDetails.java",
-      "sha256": "5a6d40f6a446a91aa040dc9db4527c45bf74ab423778632aa6e49dec0d6f3746"
+      "sha256": "42f132fd021b0878ba1ff29b427c43fbaa85a915f44006b65945c7a1d01412a0"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiRealtimeCall.java",
-      "sha256": "f6ae8947ab0cf60a13448b249c3b5c95708fca57272e3124104b6c6f791e8a53"
+      "sha256": "71fb740362083a10a10b05d1a917aaa7aaae79311563f6176f916121ca9bc3d4"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiRealtimeCallActionRequest.java",
-      "sha256": "2cc659df72d0c78fdd66488aca7fa7ea22652f5c0a4771da4b4649823759a7dc"
+      "sha256": "85e2f55a9e626fa3ff3091418e00eaec3385ade79ea858810d6149bc70ef8f47"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiRealtimeCallCreateRequest.java",
-      "sha256": "606ab30adf31b5d9ce47216a3f36eb5d7dfe7612a3529def0f5207f80f70e511"
+      "sha256": "a7ef56191e9254601a1fa89ab07e5cc5bd2d197d915df7d21c1ccb7cd17c1fb7"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiRealtimeCallMultipartRequest.java",
-      "sha256": "fb835230f5a173c7fb1b78c7de0b14abf454d8e1c0fa7fd4c2e2e9f1521bca9b"
+      "sha256": "26d35c04a2239e61684410685d996cb1aca20c14ea99bac5f79f225117650a91"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiRealtimeCallReferRequest.java",
-      "sha256": "a157f6d1dc88efed1e2a4d607948f589ebcc8c19ffc3affe26669fccb11f6309"
+      "sha256": "5b3c3526368db9aad80361067ed0679554d49f32da1b9a15efd18aa6812ad72d"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiRealtimeClientSecret.java",
-      "sha256": "c01b6e5e4ddb47f2469ee8825da496a0f99611776ba3b72981beab0561c97953"
+      "sha256": "63db221ee8a9f8eb6fb7929ce06d97d3ca6b488347fb2a64e451c591e768e8f9"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiRealtimeClientSecretCreateRequest.java",
-      "sha256": "1db397a659260f52b8620f6b7e1147b756182809540d9019f46fae09bc802a4c"
+      "sha256": "d45e816b0e59015414789066c3a67b23cdbbb3342e860a949fc31d86250955da"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiRealtimeClientSecretValue.java",
-      "sha256": "28130e3c0a81bbb44136260e8b6463a586f965ca09c3ad32c32c6a32b9ef244b"
+      "sha256": "3dbc6030eac43d0846e86ec77d59b7234c7febf981caadab31e073f048146509"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiRealtimeSession.java",
-      "sha256": "9ea59e9381ebc8d4324372438b704bf59c0b74921acf6712c84b694a8ed3e92e"
+      "sha256": "a0c2ef852f4a4464fd336c6337a5afe92964aab251c8d60f477dc4df6810d5bf"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiRealtimeSessionCreateRequest.java",
-      "sha256": "e0fef74f420c4e97fd7a636542b47da140d56c0a03efb60d20395f89ff1bc10c"
+      "sha256": "72822aee1ddca15c35772ef8c96c2a8cf6a574601b5a5d00872540d91613189a"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiRealtimeTranscriptionSession.java",
-      "sha256": "e9ffc0cacf022b6794f289a7cda09f84c9d860bb2914efb28c6f71db1c23cecb"
+      "sha256": "0fa5af52be8a80e2253ee0e82a6e646e466a8336c2329c2bb40625728e58ec05"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiRealtimeTranscriptionSessionCreateRequest.java",
-      "sha256": "071693ea51facc8de272ce234b7d59464df3986325b933a19c94fe253a40608b"
+      "sha256": "d3d14683ac08e65abc5e016989199c40554d4c2bed572e6d216d34a2562d1f21"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiRealtimeTranslationSession.java",
-      "sha256": "b3330d76756a5ed20cc2aa0020e32b9471fe746814dab7fbbae12be68fa3cbc2"
+      "sha256": "a609a7461db47c26359bd41ff8a36659f4351a2225913b4481e1a6c9eb5fd8ae"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiRealtimeTranslationSessionCreateRequest.java",
-      "sha256": "6275bf4b28d87d0685e497466e8ea621aef2ceb1b813171d1002b70e5259fdc0"
+      "sha256": "8ba3da3717f6c95be15f8e33945e0e4aa1e5b36516a3029a7660654d2e073813"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiReasoningConfig.java",
-      "sha256": "d6c52baca7ebd9c4ead073b445aafbd1243b3b76102484db8820c4980e1adf07"
+      "sha256": "8438d6fa5428fa23b6ad63517b9dd844242279001bbd8141c0f52ff3ac9bb433"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiResponse.java",
-      "sha256": "a5d4743818d1920dc393d17f8a6f08ab9aea9999f4363322a59ed6cbbe06b752"
+      "sha256": "c20c76c69c51386d5aa8421848af50753710c68b5d4a30098acade7449118294"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiResponseCompactRequest.java",
-      "sha256": "3b6985c7dc9740901a97fce3327f76187cdd7c3ead64460f0d4b743672f42578"
+      "sha256": "e08d1493ad7bdca092f97b1445864d74fe025e957b94061a0ba708c798a6b3bb"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiResponseError.java",
-      "sha256": "9a6cbe50b699d93d010b32c6e37bbbe1d04465765b005eb40bc8857c0cb4a0b7"
+      "sha256": "adcf089d89f4109a3ebae9e3df58d50dcd28fcea93ca3959c1945e7d618c7fe0"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiResponseFormat.java",
-      "sha256": "63de649a8594834ae54a06b196114d980151b77706c22bc0c249639e67281cbd"
+      "sha256": "ee78c35dc400cf870e74dc30226a9bcd5a0b40e03bda8ea4098380838f318c34"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiResponseInputContentPart.java",
-      "sha256": "a7ff0c3d7cbbcf0213ccfcecd1d78dcf36a1309b9f90376db53ab59bed1d55c6"
+      "sha256": "94739b4a41a334af7e7b4e65fcefec2a0d64d551ccab12ef165c36d2ef2f98e7"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiResponseInputItem.java",
-      "sha256": "afde21c48038155c4a54c0549009a9d5f604ac87780835aa0b66700ddf79a953"
+      "sha256": "b0c89416c11347085c802e30c86616c36a243d4e9bfe9905fb4ac6590bf6bb89"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiResponseInputItemList.java",
-      "sha256": "ef8c559d5f824ea2a1fbf1dacef5cc66fa93d7e44ec4f9a241bcca0f34a61acd"
+      "sha256": "20f2511b6678f965387d8013dc07363aad3894e2c55f7e953c85631a2906960f"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiResponseInputTokenCount.java",
-      "sha256": "82abf3462224eab8e1fea1bf817a7ead497c3629fab271fc2a6c01acb6b59174"
+      "sha256": "9f3044d4788633ef80bbd91588d77e4b9f216105fd63c8572e386538483e1a40"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiResponseInputTokenCountRequest.java",
-      "sha256": "a22673baedeba1c9c02e74121342176b9b49d942ebc7a276d20b5af9c44c72f5"
+      "sha256": "778ec8ef97616a56598d358b9d207a13a12885a6826acd1afc5daa7e591de7e7"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiResponseInputTokensDetails.java",
-      "sha256": "6d4c800d4bc8190c56853e793abd4569b9f5f612fbebc5f13a3697fd8ad703c7"
+      "sha256": "ca42db5507a79ed3aec3e95f676b48b13c683dc73cbc8f9c54024678a72ad402"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiResponseOutputContent.java",
-      "sha256": "cd40ba335c29d007f406919459c93535bb8f33d21597acc7674210aca7170d1e"
+      "sha256": "abf61c78153c838fe7adc6ed4c1e46ce68ecab93320e9b5a2ece48982744aa96"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiResponseOutputItem.java",
-      "sha256": "80cb0d13cf592c4a04f24e3ce88669383de76338b3dbc55f47698a45f4c9d4f9"
+      "sha256": "b9ac367d7c51cb3a2eef5fcdfc2cdbab6a9970f3e9f19ad31b553ff90da01fa8"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiResponseOutputTokensDetails.java",
-      "sha256": "43637b190a7463fbfc69825dbcba6e9216e6845968a4d9ca952b9be64de0a1d3"
+      "sha256": "35798e2fb8e5eadf7551ca00f70b42c3180f7c81fe1c3ffc1a4f7bc6b60d92ad"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiResponsesRequest.java",
-      "sha256": "0f560c5efa46d2e8be29c739d0e087696a6cae23c85bd493aa4cf3a5a4a1de66"
+      "sha256": "ef5aa06781e550f4a2a7ce312a189d93204c000e5759f1a6883a60f96078041f"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiResponseUsage.java",
-      "sha256": "4d1117c6210d0ee54bc762d68c8a74abf8b042a335f36db89f73d1228d6f317a"
+      "sha256": "dd8eb92498eb6e3f3b4a1d2b7b954160a467ea9593e27da2fc8e9e3f59f3b451"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiRun.java",
-      "sha256": "6928ea76a91c857b87b6adfd29beb6daf1a3513625cd3dc0fb1c87c2f9190c5f"
+      "sha256": "da7cce362b600bbc26c035f867eb3d691b31e2c7616cd186ccf288d7c1ed81ac"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiRunCreateRequest.java",
-      "sha256": "f4b87999ccf1310b0dc882c488a3298d2b201d1ebb0e1a9ac43e819031dbc1be"
+      "sha256": "d3f24990301d3789a58b45e7d3bbca4eb89be7ebe26be1b95cf6e2f1c086d126"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiRunList.java",
-      "sha256": "17d8ca9094c73ca083f64d87b0ad02c1c3971d86adb843dac717a56c80e119ea"
+      "sha256": "0eadd694dd2dc851ee05d71df5c7dd76a4bb6e53087bacea6466ac43169e3111"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiRunStep.java",
-      "sha256": "f8210c5544e8a4ecb371843ace33cbf55146ac831fd5a78a7eb5763c8fc01070"
+      "sha256": "f567b864c9cc394ca9722879020d8341dbc4ee0f678ccbc2e8c65f0167d9525b"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiRunStepList.java",
-      "sha256": "e8bde8e77e8479e2d7d05c632c647060de482fcb1956a79219e4f017bf0560bd"
+      "sha256": "939472dd1d7c0ffb476bd76c3970b86de5e6722096ac8a2a8a7fbdec2b5ebb7a"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiRunSubmitToolOutputsRequest.java",
-      "sha256": "9713ae8f5e06d40c897670782b5c5e3dafb9d77dc522bb7baf481cdbc98997a6"
+      "sha256": "3266e4d158e9370ceddfd38e290bb5662da603e043e0005d48c59b96e8568f50"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiRunUpdateRequest.java",
-      "sha256": "e0da0c1c6f48a898abe6ffe2df407ded84e081ad27b33f201638c9320fccfa6c"
+      "sha256": "ea6ee34054eef1c79322815558723378158197cf45eff55e053dc213e4c4b98f"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiSpeechCreateRequest.java",
-      "sha256": "7a0f400900c3cf42e4a15752e4ad2b9cbd029eefb03db785938f86474d8e8a26"
+      "sha256": "8e09265da050282a7a46e48dcf9b2959a0f01b93936b2047eaef82e41f822f43"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiStreamOptions.java",
-      "sha256": "dbcb34ef5fe24bf226fbc5887bdcafa6f97a540be47303bc1105f4577245dca1"
+      "sha256": "2e5b14d562b3aa2ce05dd3e639f99e25891f80e147ac25d7affa83023f3e5661"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiTextConfig.java",
-      "sha256": "f1cb6966cdb06de2bf75e4d8d87e82f6198d75d3fc81d053f52688ccc77191c8"
+      "sha256": "e251dddeeabb6c2d47f59d88db3a2875cfc7a52d7046b7e5f064d56abf8e033b"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiThread.java",
-      "sha256": "aa930dd2db6c5b07fd2dc23315960824b01148fefcef064f513e414bfda09ec8"
+      "sha256": "ab733f5a30dfe078d9f6ccb1a7f0503f95bc86aac31af1213dff15fd0d249634"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiThreadAndRunCreateRequest.java",
-      "sha256": "226900ba99c0d5412d2986572dc5b4ecf388e1743934ce2a86f930c8536723fd"
+      "sha256": "a12345523ecb1504ae98b7dfed9435e9667387906ecee85bb0e2da70892f4f33"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiThreadCreateRequest.java",
-      "sha256": "e55227b7fe4b53d72cb04d89fc48234540cf7b46e969f52c39655540339fd8f4"
+      "sha256": "44d78fda15985ec8962c9ebf4c23f108fbaee6ecb98a0515d381bb012e7dccf5"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiThreadMessage.java",
-      "sha256": "8349702f8b4cf8edac67387da5489d7f5b30e9c6527b3de8cef3881046b11606"
+      "sha256": "2cfa9e49c3842951846b28587e86f8ddb3760ede47f5fc5c3e414603e83c9fca"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiThreadMessageCreateRequest.java",
-      "sha256": "151702fec1aab15f7d65e0c62c3b1cfda64b2e26b321100e76fe40502a0a5704"
+      "sha256": "ded1684de8c50b18c1fcbd926a2ddba5a80b59673d27bcd0eef863d0dead4491"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiThreadMessageList.java",
-      "sha256": "9535301a2a29679513fa76b9fea92393a638fab9fc5b5cfbc9136803494b2bd3"
+      "sha256": "3f2b92f5dadf516dfee1cf0cf9833c8297b62a051f9ded6d4934cf5e101d6011"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiThreadMessageUpdateRequest.java",
-      "sha256": "aee2e2a0519df9886996602111dfe7aa14b8404e1db0b4b6060043e95c7c2b9d"
+      "sha256": "222d42beea59e6b6c2c950116c92cfc0c3f9a39c606bb2213a1ee844d037862b"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiThreadUpdateRequest.java",
-      "sha256": "7917304ca49dc63a497e677c7515ce43c9a1ed7f64bbcb78a28f606b97da6f29"
+      "sha256": "8474a4fd89af9f6cc19bcbb3fa1df52f4c7816f13bc36fdebb40fe0298c65e85"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiTokenLogprob.java",
-      "sha256": "c431dec2f8b43d1ee29f6c40ab94bee00a083b61688351d0a8a011bcba564c0d"
+      "sha256": "527d281c57bec325051ba01bff9ea4b8e6d9d26960a94f2689b93d8546090e19"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiTokenUsage.java",
-      "sha256": "06406ce36317336efa80cc1b43eb392d63c8baa124a09d113d90db09d3865994"
+      "sha256": "3fcd85e6e0cc8ca668ba9bb0890dbda75eccd960de9371d892913eb2d8a16435"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiTool.java",
-      "sha256": "712ec871454767192648d7c2b896dcab198c0c45a3ca1201b59736cbff978ab5"
+      "sha256": "217eb3d3e78102ae66ea40cc22de1337e4ef732b7cc4ad994b1a749818f8931a"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiToolCall.java",
-      "sha256": "2140f673c61d84b3f5a3d1a40409e910e3662efc665339577eaace63b96a3506"
+      "sha256": "98c9c0a1f6ba969a2ae007d241fc546b9fd2efd5e5544f3798be56cb5bbda5b5"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiToolChoice.java",
-      "sha256": "c0b58ad27e2011ba20b51d3df165de09e78cbb09c357eac7a99254eeaa486762"
+      "sha256": "d9da7bab9dc9a88cd8330d98be91c952743b408010f278780f8510b5c1b41830"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiTopLogprob.java",
-      "sha256": "a8f088c2a9a4eb962a98ab5c5535bec1490f073fa6742e3d49a49cd5564bade4"
+      "sha256": "2199e75747ae802f8a37b38f7eaac1120e55adb3ca4f44690008a9c5560d513d"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiUpload.java",
-      "sha256": "13f197558ce8f977ecc5835fa41410b3212c8673368c381536b3eb687e14604e"
+      "sha256": "34b9a0a48eba3adbd93fdc7b40683e16cc8631b4922998a0212567aba7a8a26e"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiUploadCompleteRequest.java",
-      "sha256": "bd64c1ecc31c3c49a178f077e25ee9d5db531d591fe10e8b78b70c355ffc7416"
+      "sha256": "4f56a94da3afdcdc9195347a9575321e2c855c66943513ea66d323a37fd34457"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiUploadCreateRequest.java",
-      "sha256": "938348fa8479833dc8ee427cb49092c81bf570f7bcda3b2d1f77f5c6c93a8738"
+      "sha256": "9eb989dcf22826043ca9a6baf20d5b41aec28f232b17996200562281e350320d"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiUploadPart.java",
-      "sha256": "2f8883c93c037f778d9cfcc4f67de5e6c55d609a9e9ed4ee0d4600cc5fb65ea7"
+      "sha256": "f956e5f1e47dc0c382c2f88fef106cfc4384002e5ee708c65d37987d8da315c5"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiUploadPartMultipartRequest.java",
-      "sha256": "15d5022c435b91d2d4b9b1126efdddec1dc9ffa433436e71894d7ab52ff71abd"
+      "sha256": "5f0f7e9976248f0d4f11647e21330fddf13f702aa39838a5193eebc5c334c3e5"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVectorStore.java",
-      "sha256": "31fb3e3b85df0961bfc2a50a4a9e9444150c60e973c098fba2b5134260601acc"
+      "sha256": "83bebb451267dd11bbd29561d05568e5bf6f9b8935cecc3d8e0277eb9d484fd9"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVectorStoreCreateRequest.java",
-      "sha256": "f5d0470bb11479874e9583ec1321f6e59a22ca0dce7c852599cf5e11d276e169"
+      "sha256": "6c03f80416cd84c2cadb3d7ff79029a5649896066000ac64dbd44a09ec941e1a"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVectorStoreFile.java",
-      "sha256": "7490dd3c55b840906e5d03ad913c3710c0b4b601c47f0cda43c36c71e72d4a17"
+      "sha256": "db99115494d14d615ef27fad23cd2ab1b54ac9a1509ce4610bfb8f192f6fc4f1"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVectorStoreFileBatch.java",
-      "sha256": "d8f990e98765be1095c6ec84bac0f619d9682e3fa00fce1b7d97f861f0969593"
+      "sha256": "41f236eb988f63b3c8a110a54ce14b60cbf79387bbf4f9778aee1aca2d8ce786"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVectorStoreFileBatchCreateRequest.java",
-      "sha256": "a4ce78438e093f2c30248b5a0d024b10ed8f0b86bbb0bcb2f60248cc3456c963"
+      "sha256": "8c1b1348193ca7e9beeb5d1f8e329006aed0693db474633cf8650f3d7aad2ea6"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVectorStoreFileCounts.java",
-      "sha256": "8d2379f5ee2b4778bee1d37c7a5c77af8783c3d707e7ef06ec6f1d58b7ea1764"
+      "sha256": "3d3d6204b0040708656c5d1ff57effd7e9a437ca5c0581ce4941c1fbe9c3b030"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVectorStoreFileCreateRequest.java",
-      "sha256": "5b1d742a74eaebe76931bb14810dc67c99629e2381f0d84b0e333f89baadf7a5"
+      "sha256": "54cdbcd09f5970f2b2f4e941f58f1d3da682137d8381d2ad31d84d3b22597d53"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVectorStoreFileList.java",
-      "sha256": "640ec6cd635a1de6e2d293230cb1733580f3172e8a73fa11e8f6532a8e95eee5"
+      "sha256": "1e58d4765992bf3ba4cf136baa1afccc1305f1b7f4f22099682cb2b8719e3c8b"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVectorStoreFileUpdateRequest.java",
-      "sha256": "a4d774f7cd7efa93e202004fbd842a03778aeea375c5c613ef3aa223d31910c7"
+      "sha256": "8fea3aef17a5aeb244574221a6ea52e0015573ad29d08d1bbf8fb452dbfc9525"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVectorStoreList.java",
-      "sha256": "21715896e644d07750d1cbac1c4f1fb678e4400142129229161c940b897c2dc4"
+      "sha256": "988702f73420d54e46bf27f61de8c5b24f5a32b5db7453088ba4e65fa28f6aac"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVectorStoreSearchRequest.java",
-      "sha256": "cbfff4c923f0e1ee6e74ec286998edc2eaf6b3f7dd52f7a61da3b6e5e30881e4"
+      "sha256": "6f52548264612d5103c65dfad544ec7dbde9c10d1f5e3bc2155fcc41150896e3"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVectorStoreSearchResponse.java",
-      "sha256": "a71eb7240bfb2ac221b226b38d3d6996a0d34958dc7e9bb0b4220efbe7203522"
+      "sha256": "41eca8ee5d84dc16a46d507e1bdc9ff32513ab15af216a975d4dca918ca02b52"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVectorStoreSearchResult.java",
-      "sha256": "27ab3c6a279045648cfc2eb30096f5f3a8d2e6ee44714a1c42d8122a92d4468b"
+      "sha256": "2f4742fc1e3ab4ef9ddd5c89a0bc01cc0e355d166c5b500402da1e238d0beb9d"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVectorStoreUpdateRequest.java",
-      "sha256": "0c5359629e4612e313718c6c019a43e1b5f6284f93b43c2e09de391136f3a94e"
+      "sha256": "8c91a443fa4c70bf93b66682cb42b6c524904e573f3cb93710b7e8575adb0a60"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVideo.java",
-      "sha256": "565f6363d22f2ca57e6e2cefe1fd0ce24002dd408e9563d6036b80c63251c90c"
+      "sha256": "25519c35168ff10229d68763a1fb7c0674dab94d66b9ad550842dd924bdfaf4b"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVideoCharacter.java",
-      "sha256": "bbddaf8c965261ae4cc5d045dcbae9c27c9afde62a3309c0729702c4d45783c0"
+      "sha256": "9797d69c208647b9239d52af50b82d98fa1568a7159dd7d002e9ac2a9f570cb1"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVideoCharacterCreateRequest.java",
-      "sha256": "acbc4e35453647584c4bd93afe2fc83578c839a10b59bd29d38cacb0c19c10b3"
+      "sha256": "5fcdb98dd20fdfd47762a1cb55d8a5f5fe3f87f53018e8a6eecc751f6c60579e"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVideoCharacterMultipartRequest.java",
-      "sha256": "8fe88fff8c6050165f452a5a0ab26298896615f429b8b3efd98477d7c9f55cc5"
+      "sha256": "be751dde781bdd4dbda8763552329f7c39847cc92ed9094dac10dd4a58fc6691"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVideoCreateRequest.java",
-      "sha256": "a259770108c3b2e644a3c2877d1955fabfd200596f61765f66e32bc7ab866860"
+      "sha256": "12d7161e479986803a80fff0e83ce20f2431a7445f2b4337eb9b9bff42578b28"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVideoEditRequest.java",
-      "sha256": "3b2415fb2d255c402617ac017a73f40b867ebe18cabf8bcecc36b1d1da67f83b"
+      "sha256": "922b812daffb41e9cd0bb0854995375aed58077dcefdf7bb80d22347bd8df1a0"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVideoExtendRequest.java",
-      "sha256": "6a6577a83fa45b4f21c12c281ba897af08ec7a4454c53636af0023a11979dad8"
+      "sha256": "4b97266703f0c69ea7e7465e448a274070d744e8f2f6a3cf416425f0b64d82ef"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVideoList.java",
-      "sha256": "e0edad27efb73134741e1d782be2f698b85a63c11334a0c6bf735ba6ab1f6c1d"
+      "sha256": "b1148dc15b4fa28b0fdc62b848d83882f0ded6feab8186acb96854b52c2027b2"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVideoRemixRequest.java",
-      "sha256": "ece2ef61626a2bf02bdabe4fdd10b7229c45e04e45786e3c1e6d9be05bfbb7c3"
+      "sha256": "f9596c6fc5e496004690213834ab50bcb69476080daede9f8dbc3646a466c23c"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVoice.java",
-      "sha256": "fc2e83a510da98c2cdda363f4cb9d80e2991fdde200713c8796f0d5d4184eb6e"
+      "sha256": "2359d12f03b8eddec13c144904f74cfc29dbd636376499b867552e58fc640ce8"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVoiceConsent.java",
-      "sha256": "e37d30a08417d878361847d74f4658b79eed6eb7bae485cfc37fbc7c83b975cf"
+      "sha256": "3c459b68e0001baacc9b3886fffd07c832b78bbedc08fba5e2afd3c01116fb0d"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVoiceConsentCreateRequest.java",
-      "sha256": "ef771f334558a14523a8c95e56e2ccfe36a7e30e20669847a9a274bd453c7e35"
+      "sha256": "cd19e6ae15bcbdf91cbf44db8cbe13d653dca525b961cea025bf6476662b90fd"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVoiceConsentList.java",
-      "sha256": "90930e9e215ee08fbf09024efc246679194a837b3a9123659d40fa6bb48154b4"
+      "sha256": "2fdd0cfc2c9d12d8b64c3903dd053e97dfdd09e79457bbda90f08ce1208f1399"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVoiceConsentMultipartRequest.java",
-      "sha256": "b5d9b248a873ba7a13589912bc92c7c5bab09ba76c0cb5e20602b0a433f33f18"
+      "sha256": "2d618ec9d4e180db1bd17bfb7c5a732c2e436dec56f90ec628e73ab22f72234f"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVoiceConsentUpdateRequest.java",
-      "sha256": "2f78fc1343a2f59298a0f54a10de57ade7547f7079f86557e2e1e65959e51d93"
+      "sha256": "920b11e63787bf5716cd0ca313d28d6edccad79564c77bfd1e0abc899391faa9"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVoiceCreateMultipartRequest.java",
-      "sha256": "495e3a732399ccf189ee21041cfce25e8dedcf05a1be7bd70f56178c545af6d0"
+      "sha256": "7aa2d1bae97108f340f9e2b612daf266c1dd8c2f1db5f0ec7ec7f789da04ac1f"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVoiceCreateRequest.java",
-      "sha256": "2a2718818bb21878158c838cac9de108f8aaea02a5b284ffd8a9cdbe852b690d"
+      "sha256": "006bab2d3c5982f6f2a7262b2dd01b2c440e0b29f22a973de9b68035b335dc83"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/OpenAiVoiceList.java",
-      "sha256": "f77123a1b796f0d7fc31054d8c4ba5929c9e2a6ae4bd6b8cc49af15752b17929"
+      "sha256": "3d131d4506f340ff3a1165efb614a7ce3a439919f875547e1a228ab676621872"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/ProviderGeneratedMedia.java",
-      "sha256": "1cb0344a9053f4f64dbdc9ea5a1926ba2e99348c94ead150e0b96affc5cd2fe2"
+      "sha256": "a2e0c6f58a08fcb7d01983323209e69ec09c0a8902006365ed228a0c9f04f7cb"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/ProviderJsonSchema.java",
-      "sha256": "314f69b875313907913985bbc37345d5d0f3df583797748fed76b712de3c9ebe"
+      "sha256": "0e74bdc2976ea3f0380fb5b76da8d337ddb8cc15a643a87c4412d66a346580f1"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/ProviderTaskError.java",
-      "sha256": "ce58275c91dae92423128f836e3c465e089b2081af7927408cb88eebc5527b1c"
+      "sha256": "c44b6d81c64d6119c3baea3873e161874d03965ef027f5a7f5dfeebcc700fb42"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/ProviderTaskResult.java",
-      "sha256": "8d5461fa331d6fb9c89a52791ba2b7109876e398694fc7550efaeffb2c51e26a"
+      "sha256": "11fd228e2c0199e036819eb2ba02b9aa10b1b46eb5d07bcefe1deed4d17c2f7f"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/SunoMusicGenerationRequest.java",
-      "sha256": "019279812ae90a30e0d7add735e32159ff794b4602db46c2a1bff8c8d2899bd4"
+      "sha256": "4d37574074708ee0e61bc295e125b4e134264053d33df00a106f64d9731523d9"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/SunoMusicGenerationResponse.java",
-      "sha256": "d09753e2a58c809204394adcf8db43a813c80f38da9d534796e63df1f58d99a8"
+      "sha256": "b5221ab871f6ef21641a26c35ed116dba7c31d8f6d9dfa4685abb964e480f5d5"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/SunoMusicGenerationTaskResponse.java",
-      "sha256": "f4dd638fd599e4ee1407c0d735c233c749065c01f6abf31e4be91818e3c07740"
+      "sha256": "263117c9aec67fa03354a4eace8278a99dc0252a13e2b5cf595ea9129c2226f0"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/SunoMusicTrack.java",
-      "sha256": "38443db2c27af8cc4fb3c20af3897d9739de66fb359ab8e391f1b8846969fa72"
+      "sha256": "3121d3486cd0512a9f94546826bee0e59d4557bf7fbf20186cc9418c85896793"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/ViduCreation.java",
-      "sha256": "33c008cee1e3c01431eefbf8514141aecdb691bc741682d3a52a3a2d9b8f3fbf"
+      "sha256": "05342a26ce627b2ff96e538b327893896fb881a329b52d9d34ad0af6e92d96a0"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/ViduImageGenerationTask.java",
-      "sha256": "51f6e9bfdd7599d85867740e79344ef39167c08e8c3714fbd404407b63058bdf"
+      "sha256": "4831ca61b82f324f95abe2dc05ec16d84a7e01c5dbd57b95eec3b1dada36acf6"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/ViduImageToVideoRequest.java",
-      "sha256": "bfbe93ee9baa1c12fe4dd295bfa754582d659a74203a915deb5ff539b44186c8"
+      "sha256": "fb7d952fd26bdc5df2e154ee2962dc1c59192cf1da416637af9c6a8dc1741cec"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/ViduReferenceToImageRequest.java",
-      "sha256": "727097d750943cb5aeef824ad3a2e53e75c2165e34a02f40716818ee1731c061"
+      "sha256": "883aae66227a12d74ddf5bccfc2f9406851976d4d81bee4784e6c51f306dfe99"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/ViduReferenceToVideoRequest.java",
-      "sha256": "069f5ab815deed0e960d9da2d2b2d2b9f606570c562b68aab24e09af578ab183"
+      "sha256": "479c79f262867eb607c9d99772fb909ad8ddef0fcf481d38d77cf8be1d866ff5"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/ViduStartEndToVideoRequest.java",
-      "sha256": "b5ed126b7c61ab06d0f1bb2c515a7c13eed455e1173d226ea26e21c7ad18c0a2"
+      "sha256": "59e103239220fb3a8102c2c8a7810b963e72123f2f6774970c651e05932f52f1"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/ViduTaskCreationsResponse.java",
-      "sha256": "664acf9b84334868dcca70aa8561f5ed8a798ddc9e11ce88e81c7869713df102"
+      "sha256": "54b4622dffac6699db8fabacf4d4df651a1e26785b29f37a3f6dc8ec2cf56850"
+    },
+    {
+      "path": "src/main/java/com/sdkwork/cloudrouter/open/model/ViduTemplateRequest.java",
+      "sha256": "731f3dbf8637f7f1135468b1118ed67d6f4a59faa158c9eea8c947bbbe2eb741"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/ViduTextToVideoRequest.java",
-      "sha256": "ef628c6b8a026ef4c0a167e4b2ed0e7d2edf722b87e319ae98a0e29d4b98e9ff"
+      "sha256": "4dd5ae53e30fa0e1e7497e728e50c7be98a66dda3f8af9e35a4df9bb67d3a449"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/ViduVideoGenerationTask.java",
-      "sha256": "2be22974f4d032ecd8eb3cc94833f3fef1655273f2ac8670ee0b72114d23ae77"
+      "sha256": "5a5309294e9856f6d69edc269a8900234e082defcdff69304bdf2a2c8140ae6a"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/VolcengineContentGenerationTask.java",
-      "sha256": "e0bd557a21736b3779b7ddaf50adb2037b2d77a62fe287e7dfc5476c0e591bc1"
+      "sha256": "08552e2ea15ec4ed42ca2af95b4d4db3b4b56f32706f8136654d77579a3b1e5c"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/VolcengineContentGenerationTaskCreateRequest.java",
-      "sha256": "b60d4875388af87c6105b2fcb343a60677edf172fb27f7eb92b9d1dbb5c3b2b8"
+      "sha256": "f02c49c0436d536964b779f81d1193a99ea8e266630cd119ba850a9667d39e78"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/VolcengineContentGenerationTaskCreateResponse.java",
-      "sha256": "6679bf79164bc6fc065af39d9516071396ed1dc098053036349b1f33c4ceec17"
+      "sha256": "07fe9f68ac6f621722c4f371d743df56b484919f11d90b946ca680e8a81895c9"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/model/VolcengineContentPart.java",
-      "sha256": "8702ae700e3edd6fb7a0d655813e7ff48f185891643de1ca0fec49a7f2ed174c"
+      "sha256": "81938f54dca2f7677274620ed43077a46e5cd6505ca70dec1483ccfbf99e4b2e"
     },
     {
       "path": "src/main/java/com/sdkwork/cloudrouter/open/SdkworkAiClient.java",
-      "sha256": "95ec39671d594e26cc9bb1cffad1caebdd5839f1c55b798b914a7c82fa08c2ac"
+      "sha256": "d425a88fd3b707fef8233e14d010434ebaf371ccfe2167fb35bab936479a21b8"
     }
   ],
   "scaffoldFiles": [

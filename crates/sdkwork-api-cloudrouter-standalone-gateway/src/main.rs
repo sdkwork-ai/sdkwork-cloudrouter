@@ -15,6 +15,14 @@ use sdkwork_web_bootstrap::{
 use sdkwork_web_core::{WebEnvironment, WebRequestContextProfile};
 
 const APPLICATION_ID: &str = "sdkwork-cloudrouter";
+// Every vendor prefix that carries a provider-native open-api route. A
+// prefix missing here makes `classify_api_surface` return `Unknown`, which the
+// web framework rejects with `missing_credentials` (401) *before* routing, so
+// the route is unreachable no matter what the manifest declares. Keep this list
+// a superset of the top-level segments in
+// `sdkwork-api-cloudrouter-assembly::generated_open_http_route_manifest`; the
+// `standalone_gateway_open_api_prefixes_cover_every_open_route` test in
+// `sdkwork-api-cloudrouter-assembly/src/bootstrap.rs` enforces it.
 const OPEN_API_PREFIXES: &[&str] = &[
     "/v1",
     "/anthropic/v1",
@@ -22,8 +30,11 @@ const OPEN_API_PREFIXES: &[&str] = &[
     "/google/v1beta",
     "/kling/v1",
     "/midjourney/v1",
+    "/minimax/v1",
     "/nano-banana/v1",
     "/suno/v1",
+    "/vidu",
+    "/volcengine",
     "/feeds/v3/api",
 ];
 

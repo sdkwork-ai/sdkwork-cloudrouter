@@ -514,7 +514,7 @@ class AnthropicMessage {
   final String id;
   final String model;
   final String role;
-  final String stopReason;
+  final String? stopReason;
   final String? stopSequence;
   final String type;
   final AnthropicUsage usage;
@@ -567,11 +567,20 @@ class AnthropicMessage {
         return value;
       })(),
       stopReason: (() {
-        final value = json['stop_reason']?.toString();
+        if (!json.containsKey('stop_reason')) {
+          throw FormatException('AnthropicMessage.stop_reason is required');
+        }
+        final _sdkworkRequiredValue = json['stop_reason'];
+        if (_sdkworkRequiredValue == null) {
+          return null;
+        }
+        return (() {
+        final value = _sdkworkRequiredValue?.toString();
         if (value == null) {
           throw FormatException('AnthropicMessage.stop_reason is required');
         }
         return value;
+      })();
       })(),
       stopSequence: json['stop_sequence']?.toString(),
       type: (() {
@@ -1285,6 +1294,162 @@ class DeleteResult {
       'deleted': deleted,
       'id': id,
       'object': object,
+    };
+  }
+}
+
+class ElevenLabsSoundGenerationRequest {
+  final double? durationSeconds;
+  final bool? loop;
+  final String modelId;
+  final double? promptInfluence;
+  final String text;
+
+  ElevenLabsSoundGenerationRequest({
+    this.durationSeconds,
+    this.loop,
+    required this.modelId,
+    this.promptInfluence,
+    required this.text
+  });
+
+  factory ElevenLabsSoundGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return ElevenLabsSoundGenerationRequest(
+      durationSeconds: json['duration_seconds'] is num ? json['duration_seconds'].toDouble() : null,
+      loop: json['loop'] is bool ? json['loop'] : null,
+      modelId: (() {
+        final value = json['model_id']?.toString();
+        if (value == null) {
+          throw FormatException('ElevenLabsSoundGenerationRequest.model_id is required');
+        }
+        return value;
+      })(),
+      promptInfluence: json['prompt_influence'] is num ? json['prompt_influence'].toDouble() : null,
+      text: (() {
+        final value = json['text']?.toString();
+        if (value == null) {
+          throw FormatException('ElevenLabsSoundGenerationRequest.text is required');
+        }
+        return value;
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'duration_seconds': durationSeconds,
+      'loop': loop,
+      'model_id': modelId,
+      'prompt_influence': promptInfluence,
+      'text': text,
+    };
+  }
+}
+
+class ElevenLabsSoundGenerationResponse {
+  final Map<String, dynamic>? audio;
+  final String? audioUrl;
+  final String? id;
+  final String? status;
+  final String? url;
+
+  ElevenLabsSoundGenerationResponse({
+    this.audio,
+    this.audioUrl,
+    this.id,
+    this.status,
+    this.url
+  });
+
+  factory ElevenLabsSoundGenerationResponse.fromJson(Map<String, dynamic> json) {
+    return ElevenLabsSoundGenerationResponse(
+      audio: _sdkworkAsMap(json['audio']),
+      audioUrl: json['audio_url']?.toString(),
+      id: json['id']?.toString(),
+      status: json['status']?.toString(),
+      url: json['url']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'audio': audio,
+      'audio_url': audioUrl,
+      'id': id,
+      'status': status,
+      'url': url,
+    };
+  }
+}
+
+class ElevenLabsTextToSpeechRequest {
+  final String modelId;
+  final String text;
+  final Map<String, dynamic>? voiceSettings;
+
+  ElevenLabsTextToSpeechRequest({
+    required this.modelId,
+    required this.text,
+    this.voiceSettings
+  });
+
+  factory ElevenLabsTextToSpeechRequest.fromJson(Map<String, dynamic> json) {
+    return ElevenLabsTextToSpeechRequest(
+      modelId: (() {
+        final value = json['model_id']?.toString();
+        if (value == null) {
+          throw FormatException('ElevenLabsTextToSpeechRequest.model_id is required');
+        }
+        return value;
+      })(),
+      text: (() {
+        final value = json['text']?.toString();
+        if (value == null) {
+          throw FormatException('ElevenLabsTextToSpeechRequest.text is required');
+        }
+        return value;
+      })(),
+      voiceSettings: _sdkworkAsMap(json['voice_settings'])
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'model_id': modelId,
+      'text': text,
+      'voice_settings': voiceSettings,
+    };
+  }
+}
+
+class ElevenLabsTextToSpeechResponse {
+  final String? audioUrl;
+  final String? id;
+  final String? status;
+  final String? url;
+
+  ElevenLabsTextToSpeechResponse({
+    this.audioUrl,
+    this.id,
+    this.status,
+    this.url
+  });
+
+  factory ElevenLabsTextToSpeechResponse.fromJson(Map<String, dynamic> json) {
+    return ElevenLabsTextToSpeechResponse(
+      audioUrl: json['audio_url']?.toString(),
+      id: json['id']?.toString(),
+      status: json['status']?.toString(),
+      url: json['url']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'audio_url': audioUrl,
+      'id': id,
+      'status': status,
+      'url': url,
     };
   }
 }
@@ -10173,11 +10338,20 @@ class OpenAiThreadMessageCreateRequest {
             .toList();
       })(),
       content: (() {
-        final value = json['content']?.toString();
+        if (!json.containsKey('content')) {
+          throw FormatException('OpenAiThreadMessageCreateRequest.content is required');
+        }
+        final _sdkworkRequiredValue = json['content'];
+        if (_sdkworkRequiredValue == null) {
+          return null;
+        }
+        return (() {
+        final value = _sdkworkRequiredValue?.toString();
         if (value == null) {
           throw FormatException('OpenAiThreadMessageCreateRequest.content is required');
         }
         return value;
+      })();
       })(),
       metadata: (() {
         final map = _sdkworkAsMap(json['metadata']);
@@ -13904,6 +14078,382 @@ class VolcengineContentPart {
       'text': text,
       'type': type,
       'video_url': videoUrl,
+    };
+  }
+}
+
+class MiniMaxMusicAudioSetting {
+  final int? sampleRate;
+  final int? bitrate;
+  final String? format;
+
+  MiniMaxMusicAudioSetting({
+    this.sampleRate,
+    this.bitrate,
+    this.format
+  });
+
+  factory MiniMaxMusicAudioSetting.fromJson(Map<String, dynamic> json) {
+    return MiniMaxMusicAudioSetting(
+      sampleRate: json['sample_rate'] is int ? json['sample_rate'] : null,
+      bitrate: json['bitrate'] is int ? json['bitrate'] : null,
+      format: json['format']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'sample_rate': sampleRate,
+      'bitrate': bitrate,
+      'format': format,
+    };
+  }
+}
+
+class MiniMaxMusicGenerationRequest {
+  final String model;
+  final String? prompt;
+  final String? lyrics;
+  final bool? stream;
+  final String? outputFormat;
+  final bool? isInstrumental;
+  final bool? lyricsOptimizer;
+  final MiniMaxMusicAudioSetting? audioSetting;
+
+  MiniMaxMusicGenerationRequest({
+    required this.model,
+    this.prompt,
+    this.lyrics,
+    this.stream,
+    this.outputFormat,
+    this.isInstrumental,
+    this.lyricsOptimizer,
+    this.audioSetting
+  });
+
+  factory MiniMaxMusicGenerationRequest.fromJson(Map<String, dynamic> json) {
+    return MiniMaxMusicGenerationRequest(
+      model: (() {
+        final value = json['model']?.toString();
+        if (value == null) {
+          throw FormatException('MiniMaxMusicGenerationRequest.model is required');
+        }
+        return value;
+      })(),
+      prompt: json['prompt']?.toString(),
+      lyrics: json['lyrics']?.toString(),
+      stream: json['stream'] is bool ? json['stream'] : null,
+      outputFormat: json['output_format']?.toString(),
+      isInstrumental: json['is_instrumental'] is bool ? json['is_instrumental'] : null,
+      lyricsOptimizer: json['lyrics_optimizer'] is bool ? json['lyrics_optimizer'] : null,
+      audioSetting: (() {
+        final map = _sdkworkAsMap(json['audio_setting']);
+        return map == null ? null : MiniMaxMusicAudioSetting.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'model': model,
+      'prompt': prompt,
+      'lyrics': lyrics,
+      'stream': stream,
+      'output_format': outputFormat,
+      'is_instrumental': isInstrumental,
+      'lyrics_optimizer': lyricsOptimizer,
+      'audio_setting': audioSetting?.toJson(),
+    };
+  }
+}
+
+class MiniMaxMusicBaseResp {
+  final int? statusCode;
+  final String? statusMsg;
+
+  MiniMaxMusicBaseResp({
+    this.statusCode,
+    this.statusMsg
+  });
+
+  factory MiniMaxMusicBaseResp.fromJson(Map<String, dynamic> json) {
+    return MiniMaxMusicBaseResp(
+      statusCode: json['status_code'] is int ? json['status_code'] : null,
+      statusMsg: json['status_msg']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'status_code': statusCode,
+      'status_msg': statusMsg,
+    };
+  }
+}
+
+class MiniMaxMusicExtraInfo {
+  final double? musicDuration;
+  final int? musicSampleRate;
+  final int? musicChannel;
+  final int? bitrate;
+  final int? musicSize;
+
+  MiniMaxMusicExtraInfo({
+    this.musicDuration,
+    this.musicSampleRate,
+    this.musicChannel,
+    this.bitrate,
+    this.musicSize
+  });
+
+  factory MiniMaxMusicExtraInfo.fromJson(Map<String, dynamic> json) {
+    return MiniMaxMusicExtraInfo(
+      musicDuration: json['music_duration'] is num ? json['music_duration'].toDouble() : null,
+      musicSampleRate: json['music_sample_rate'] is int ? json['music_sample_rate'] : null,
+      musicChannel: json['music_channel'] is int ? json['music_channel'] : null,
+      bitrate: json['bitrate'] is int ? json['bitrate'] : null,
+      musicSize: json['music_size'] is int ? json['music_size'] : null
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'music_duration': musicDuration,
+      'music_sample_rate': musicSampleRate,
+      'music_channel': musicChannel,
+      'bitrate': bitrate,
+      'music_size': musicSize,
+    };
+  }
+}
+
+class MiniMaxMusicData {
+  final int? status;
+  final String? audio;
+  final MiniMaxMusicExtraInfo? extraInfo;
+
+  MiniMaxMusicData({
+    this.status,
+    this.audio,
+    this.extraInfo
+  });
+
+  factory MiniMaxMusicData.fromJson(Map<String, dynamic> json) {
+    return MiniMaxMusicData(
+      status: json['status'] is int ? json['status'] : null,
+      audio: json['audio']?.toString(),
+      extraInfo: (() {
+        final map = _sdkworkAsMap(json['extra_info']);
+        return map == null ? null : MiniMaxMusicExtraInfo.fromJson(map);
+      })()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'status': status,
+      'audio': audio,
+      'extra_info': extraInfo?.toJson(),
+    };
+  }
+}
+
+class MiniMaxMusicGenerationResponse {
+  final MiniMaxMusicBaseResp? baseResp;
+  final MiniMaxMusicData? data;
+  final String? traceId;
+
+  MiniMaxMusicGenerationResponse({
+    this.baseResp,
+    this.data,
+    this.traceId
+  });
+
+  factory MiniMaxMusicGenerationResponse.fromJson(Map<String, dynamic> json) {
+    return MiniMaxMusicGenerationResponse(
+      baseResp: (() {
+        final map = _sdkworkAsMap(json['base_resp']);
+        return map == null ? null : MiniMaxMusicBaseResp.fromJson(map);
+      })(),
+      data: (() {
+        final map = _sdkworkAsMap(json['data']);
+        return map == null ? null : MiniMaxMusicData.fromJson(map);
+      })(),
+      traceId: json['trace_id']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'base_resp': baseResp?.toJson(),
+      'data': data?.toJson(),
+      'trace_id': traceId,
+    };
+  }
+}
+
+class KlingAvatarCreateRequest {
+  final String? modelName;
+  final String humanImage;
+  final String? prompt;
+  final String? voiceMode;
+  final String? audioUrl;
+  final String? text;
+  final String? voiceId;
+  final String? voiceLanguage;
+  final String? callbackUrl;
+
+  KlingAvatarCreateRequest({
+    this.modelName,
+    required this.humanImage,
+    this.prompt,
+    this.voiceMode,
+    this.audioUrl,
+    this.text,
+    this.voiceId,
+    this.voiceLanguage,
+    this.callbackUrl
+  });
+
+  factory KlingAvatarCreateRequest.fromJson(Map<String, dynamic> json) {
+    return KlingAvatarCreateRequest(
+      modelName: json['model_name']?.toString(),
+      humanImage: (() {
+        final value = json['human_image']?.toString();
+        if (value == null) {
+          throw FormatException('KlingAvatarCreateRequest.human_image is required');
+        }
+        return value;
+      })(),
+      prompt: json['prompt']?.toString(),
+      voiceMode: json['voice_mode']?.toString(),
+      audioUrl: json['audio_url']?.toString(),
+      text: json['text']?.toString(),
+      voiceId: json['voice_id']?.toString(),
+      voiceLanguage: json['voice_language']?.toString(),
+      callbackUrl: json['callback_url']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'model_name': modelName,
+      'human_image': humanImage,
+      'prompt': prompt,
+      'voice_mode': voiceMode,
+      'audio_url': audioUrl,
+      'text': text,
+      'voice_id': voiceId,
+      'voice_language': voiceLanguage,
+      'callback_url': callbackUrl,
+    };
+  }
+}
+
+class KlingMotionControlRequest {
+  final String? modelName;
+  final String? prompt;
+  final String image;
+  final String video;
+  final String? callbackUrl;
+
+  KlingMotionControlRequest({
+    this.modelName,
+    this.prompt,
+    required this.image,
+    required this.video,
+    this.callbackUrl
+  });
+
+  factory KlingMotionControlRequest.fromJson(Map<String, dynamic> json) {
+    return KlingMotionControlRequest(
+      modelName: json['model_name']?.toString(),
+      prompt: json['prompt']?.toString(),
+      image: (() {
+        final value = json['image']?.toString();
+        if (value == null) {
+          throw FormatException('KlingMotionControlRequest.image is required');
+        }
+        return value;
+      })(),
+      video: (() {
+        final value = json['video']?.toString();
+        if (value == null) {
+          throw FormatException('KlingMotionControlRequest.video is required');
+        }
+        return value;
+      })(),
+      callbackUrl: json['callback_url']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'model_name': modelName,
+      'prompt': prompt,
+      'image': image,
+      'video': video,
+      'callback_url': callbackUrl,
+    };
+  }
+}
+
+class ViduTemplateRequest {
+  final String template;
+  final List<String> images;
+  final List<String> videoUrls;
+  final String? payload;
+  final String? callbackUrl;
+
+  ViduTemplateRequest({
+    required this.template,
+    required this.images,
+    required this.videoUrls,
+    this.payload,
+    this.callbackUrl
+  });
+
+  factory ViduTemplateRequest.fromJson(Map<String, dynamic> json) {
+    return ViduTemplateRequest(
+      template: (() {
+        final value = json['template']?.toString();
+        if (value == null) {
+          throw FormatException('ViduTemplateRequest.template is required');
+        }
+        return value;
+      })(),
+      images: (() {
+        final list = _sdkworkAsList(json['images']);
+        if (list == null) {
+          throw FormatException('ViduTemplateRequest.images is required');
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })(),
+      videoUrls: (() {
+        final list = _sdkworkAsList(json['video_urls']);
+        if (list == null) {
+          throw FormatException('ViduTemplateRequest.video_urls is required');
+        }
+        return list
+            .map((item) => item?.toString())
+            .whereType<String>()
+            .toList();
+      })(),
+      payload: json['payload']?.toString(),
+      callbackUrl: json['callback_url']?.toString()
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'template': template,
+      'images': images.map((item) => item).toList(),
+      'video_urls': videoUrls.map((item) => item).toList(),
+      'payload': payload,
+      'callback_url': callbackUrl,
     };
   }
 }

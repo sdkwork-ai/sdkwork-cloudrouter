@@ -93,9 +93,9 @@ namespace Sdkwork.CloudRouter.Open.Http
 
         public void SetAccessToken(string token)
         {
-            // Dual-token mode keeps the `Authorization` bearer set by
+            // Dual-token mode keeps the 'Authorization' bearer set by
             // SetAuthToken; only a stale API key header (when the API key
-            // header is not `Authorization`) is cleared here.
+            // header is not 'Authorization') is cleared here.
             if (!ApiKeyHeader.Equals("Authorization", StringComparison.OrdinalIgnoreCase)
                 && _client.DefaultRequestHeaders.Contains(ApiKeyHeader))
             {
@@ -151,11 +151,30 @@ namespace Sdkwork.CloudRouter.Open.Http
             return request;
         }
 
-        private async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, bool skipAuth = false)
+        private async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            bool skipAuth = false,
+            bool accessTokenOnly = false)
         {
-            if (!skipAuth)
+            if (!skipAuth && !accessTokenOnly)
             {
                 return await _client.SendAsync(request);
+            }
+
+            StripCredentialHeaders(request);
+            if (accessTokenOnly)
+            {
+                var accessToken = _client.DefaultRequestHeaders
+                    .FirstOrDefault(header => string.Equals(header.Key, "Access-Token", StringComparison.OrdinalIgnoreCase))
+                    .Value?
+                    .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?
+                    .Trim();
+                if (string.IsNullOrWhiteSpace(accessToken))
+                {
+                    throw new InvalidOperationException(
+                        "access-token-only request requires Access-Token before request dispatch");
+                }
+                request.Headers.TryAddWithoutValidation("Access-Token", accessToken);
             }
 
             using var anonymousClient = new System.Net.Http.HttpClient
@@ -163,6 +182,31 @@ namespace Sdkwork.CloudRouter.Open.Http
                 Timeout = _client.Timeout
             };
             return await anonymousClient.SendAsync(request);
+        }
+
+        private static void StripCredentialHeaders(HttpRequestMessage request)
+        {
+            // Identity projection headers forbidden by the Web Framework server
+            // guard (sdkwork-web-core::constants::FORBIDDEN_CLIENT_IDENTITY_HEADERS,
+            // API_SPEC §10.2 / SECURITY_SPEC §5.1 / spec B9). The server rejects
+            // any request carrying them with 400/40001 (surface classification).
+            foreach (var header in new[]
+            {
+                "Authorization", "Access-Token", "X-API-Key", "X-Tenant-Id",
+                "X-App-Id", "X-Organization-Id", "X-Platform", "X-User-Id",
+                "X-Sdkwork-Tenant-Id", "X-Sdkwork-App-Id", "X-Sdkwork-User-Id",
+                "X-Sdkwork-Organization-Id", "X-Sdkwork-Actor-Id", "X-Sdkwork-Actor-Kind",
+                "X-Sdkwork-Session-Id", "X-Sdkwork-Environment", "X-Sdkwork-Deployment-Profile",
+                "X-Sdkwork-Deployment-Mode", "X-Sdkwork-Runtime-Target", "X-Sdkwork-Auth-Level",
+                "X-Sdkwork-Data-Scope", "X-Sdkwork-Permission-Scope", "X-Sdkwork-Device-Id",
+                "X-Sdkwork-Context-Signature", "X-Sdkwork-Operation-Id",
+                "X-Sdkwork-Subject-Tenant-Id", "X-Sdkwork-Subject-Organization-Id",
+                "X-Sdkwork-Subject-User-Id", "X-Sdkwork-Subject-Timestamp",
+                "X-Sdkwork-Subject-Signature"
+            })
+            {
+                request.Headers.Remove(header);
+            }
         }
 
         private static HttpContent CreateMultipartContent(object? body)
@@ -343,11 +387,12 @@ namespace Sdkwork.CloudRouter.Open.Http
             Dictionary<string, object>? parameters = null,
             Dictionary<string, string>? requestHeaders = null,
             string? contentType = null,
-            bool skipAuth = false)
+            bool skipAuth = false,
+            bool accessTokenOnly = false)
         {
             using var content = CreateContent(body, contentType);
             using var request = BuildRequest(new System.Net.Http.HttpMethod(method), path, parameters, requestHeaders, content);
-            var response = await SendAsync(request, skipAuth);
+            var response = await SendAsync(request, skipAuth, accessTokenOnly);
             return await ReadResponseAsync<T>(response);
         }
 
@@ -357,11 +402,12 @@ namespace Sdkwork.CloudRouter.Open.Http
             Dictionary<string, object>? parameters = null,
             Dictionary<string, string>? requestHeaders = null,
             string? contentType = null,
-            bool skipAuth = false)
+            bool skipAuth = false,
+            bool accessTokenOnly = false)
         {
             using var content = CreateContent(body, contentType);
             using var request = BuildRequest(System.Net.Http.HttpMethod.Post, path, parameters, requestHeaders, content);
-            var response = await SendAsync(request, skipAuth);
+            var response = await SendAsync(request, skipAuth, accessTokenOnly);
             return await ReadResponseAsync<T>(response);
         }
 
@@ -372,15 +418,35 @@ namespace Sdkwork.CloudRouter.Open.Http
             Dictionary<string, object>? parameters = null,
             Dictionary<string, string>? requestHeaders = null,
             string? contentType = null,
-            bool skipAuth = false)
+            bool skipAuth = false,
+            bool accessTokenOnly = false)
         {
             using var content = CreateContent(body, contentType);
             using var request = BuildRequest(new System.Net.Http.HttpMethod(method), path, parameters, requestHeaders, content);
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
-            using var anonymousClient = skipAuth
+            var suppressStoredCredentials = skipAuth || accessTokenOnly;
+            if (suppressStoredCredentials)
+            {
+                StripCredentialHeaders(request);
+            }
+            if (accessTokenOnly)
+            {
+                var accessToken = _client.DefaultRequestHeaders
+                    .FirstOrDefault(header => string.Equals(header.Key, "Access-Token", StringComparison.OrdinalIgnoreCase))
+                    .Value?
+                    .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))?
+                    .Trim();
+                if (string.IsNullOrWhiteSpace(accessToken))
+                {
+                    throw new InvalidOperationException(
+                        "access-token-only request requires Access-Token before request dispatch");
+                }
+                request.Headers.TryAddWithoutValidation("Access-Token", accessToken);
+            }
+            using var anonymousClient = suppressStoredCredentials
                 ? new System.Net.Http.HttpClient { Timeout = _client.Timeout }
                 : null;
-            using var response = skipAuth
+            using var response = suppressStoredCredentials
                 ? await anonymousClient!.SendAsync(request, HttpCompletionOption.ResponseHeadersRead)
                 : await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
             response.EnsureSuccessStatusCode();

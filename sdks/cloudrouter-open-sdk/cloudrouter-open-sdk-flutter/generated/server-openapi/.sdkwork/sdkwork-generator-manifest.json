@@ -12,7 +12,7 @@
   "generatedFiles": [
     {
       "path": "bin/publish-core.mjs",
-      "sha256": "98ad0918a78bfbe22bf8f12fec709b0bed545b9e01edd40f5e4abf31a23378a5"
+      "sha256": "a47e95119bf3eafcbcb2102f7024c147f967924e4e3f343d1a29effb4b6765df"
     },
     {
       "path": "bin/publish.ps1",
@@ -28,7 +28,7 @@
     },
     {
       "path": "lib/ai_client.dart",
-      "sha256": "0df39559fc90efc151c3411e2f636bb0e9c0205092ce59c1e81b0c59ccae48d6"
+      "sha256": "e9c9d575a10851c92e09f9dc8afc28f5629b77e2eeba00cc469623fd6305f740"
     },
     {
       "path": "lib/cloudrouter_open_sdk.dart",
@@ -36,15 +36,27 @@
     },
     {
       "path": "lib/src/api/api.dart",
-      "sha256": "3c91f63fd0c918b045f1bf8cd9c10397a1f08b70a834f1740249cd01abdd2c2e"
+      "sha256": "f808c088cd2801f16af99ac340c656640891b24050b5e577a3d97fffbcc58eab"
     },
     {
       "path": "lib/src/api/assistants.dart",
       "sha256": "776f38cfc5a7d4cbf03ef80b595b87bd147b744f92508d04d0adae98f2432e30"
     },
     {
+      "path": "lib/src/api/audio_elevenlabs.dart",
+      "sha256": "42895969a44eee492a95c824f17773b954d01ff8ba88ff743d59e4ce128980a6"
+    },
+    {
+      "path": "lib/src/api/audio_minimax.dart",
+      "sha256": "316cc460c23c22e7787a34379233d6b27da39270b755bfb29c3904aea6732bea"
+    },
+    {
       "path": "lib/src/api/audio_suno.dart",
       "sha256": "77d8bb0e3eb241b0bb16c659b578e917a3004a63b6fa1eab127687b13cc9bab1"
+    },
+    {
+      "path": "lib/src/api/audio_volcengine.dart",
+      "sha256": "21f5e3be3bbd03335fc09bee3480822538c6f316a5a47eae538a022b26025c16"
     },
     {
       "path": "lib/src/api/audio.dart",
@@ -164,11 +176,11 @@
     },
     {
       "path": "lib/src/api/videos_kling.dart",
-      "sha256": "08cd96726e6110f71f40179197813f13e48d1a2cd2951030b15f0b3cbaabc3ac"
+      "sha256": "6a725ccd0e77a54be58bca78529d7b5c8a7e5e728167274e4e8da75e8ce3fd01"
     },
     {
       "path": "lib/src/api/videos_vidu.dart",
-      "sha256": "c42fd9cd33e518f16b596990152e8c0abd0f330c39bbfb05bd8e6fb68a893a39"
+      "sha256": "2971fead762620f619ed63ed2ec5da5dbb79319ad5be0b899903a146c2bd6ade"
     },
     {
       "path": "lib/src/api/videos_volcengine.dart",
@@ -176,11 +188,11 @@
     },
     {
       "path": "lib/src/http/client.dart",
-      "sha256": "c28278decf2c7456a2332dd12d708c8fc4f2bcf2b5843631d983d0dca581fcf9"
+      "sha256": "ea2b776af28f97c0efbdac5f943217b7fb3884c595f805a91e1629a6784ee721"
     },
     {
       "path": "lib/src/models.dart",
-      "sha256": "bcdfc75de190be455c3532b8e5bafcce404c6487236a91929ee65eeab4760fb6"
+      "sha256": "7600e0d023f65dc2fef2d1b24f828a8bc3eafa8d72c962270ee599723d43ba4e"
     },
     {
       "path": "LICENSE",
@@ -192,15 +204,15 @@
     },
     {
       "path": "pubspec.yaml",
-      "sha256": "3e4e0a8bc4696a58b02c8c8256e5aeace27485ee42d46d00e7cef3f40b9fd279"
+      "sha256": "62cac330b32845951c903846e13d44fe7f4407d49a32997e16a56af080a63a47"
     },
     {
       "path": "README.md",
-      "sha256": "da22b25b958fe691722cee98b93e7b4f89486924969524f13ea3f77d81fd55aa"
+      "sha256": "d44b5d06e2b773a86f625d94628a9e8ae9770c3cd165fd06a27ced0adc9b3a24"
     },
     {
       "path": "sdkwork-sdk.json",
-      "sha256": "fd9c37257c621dc55c3b200fdba7f111e386c23974a2ee1ff02f83530e022372"
+      "sha256": "c0f644b5c4426eefad2a8db2276763cd20c8b8449b613d9cd18e967d8372157d"
     }
   ],
   "scaffoldFiles": [

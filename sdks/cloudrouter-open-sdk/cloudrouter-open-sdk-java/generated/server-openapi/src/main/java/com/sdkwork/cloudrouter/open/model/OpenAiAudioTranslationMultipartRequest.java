@@ -2,16 +2,16 @@ package com.sdkwork.cloudrouter.open.model;
 
 
 public class OpenAiAudioTranslationMultipartRequest {
-    private String file;
+    private byte[] file;
     private String model;
     private String prompt;
     private String responseFormat;
 
-    public String getFile() {
+    public byte[] getFile() {
         return this.file;
     }
 
-    public void setFile(String file) {
+    public void setFile(byte[] file) {
         this.file = file;
     }
 

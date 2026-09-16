@@ -3,15 +3,15 @@ package com.sdkwork.cloudrouter.open.model;
 import java.util.Map;
 
 public class OpenAiVoiceConsentMultipartRequest {
-    private String file;
+    private byte[] file;
     private Map<String, String> metadata;
     private String name;
 
-    public String getFile() {
+    public byte[] getFile() {
         return this.file;
     }
 
-    public void setFile(String file) {
+    public void setFile(byte[] file) {
         this.file = file;
     }
 

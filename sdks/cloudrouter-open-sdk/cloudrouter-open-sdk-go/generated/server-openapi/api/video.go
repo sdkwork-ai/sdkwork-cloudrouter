@@ -104,13 +104,8 @@ func (a *VideoApi) Retrieve(videoId string) (sdktypes.OpenAiVideo, error) {
 }
 
 // Retrieve video content
-func (a *VideoApi) Content(videoId string) (string, error) {
-    raw, err := a.client.Get(AiApiPath(fmt.Sprintf("/videos/%s/content", SerializePathParameter(videoId, PathParameterSpec{Name: "video_id", Style: "simple", Explode: false}))), nil, nil)
-    if err != nil {
-        var zero string
-        return zero, err
-    }
-    return decodeResult[string](raw)
+func (a *VideoApi) Content(videoId string) ([]byte, error) {
+    return a.client.RequestBytes("GET", AiApiPath(fmt.Sprintf("/videos/%s/content", SerializePathParameter(videoId, PathParameterSpec{Name: "video_id", Style: "simple", Explode: false}))), nil, nil, nil, "", false, false)
 }
 
 // Remix video

@@ -83,6 +83,24 @@
       "sortOrder": 90
     },
     {
+      "resourceCode": "vendor.suno",
+      "resourceType": "vendor",
+      "displayName": "Suno",
+      "vendorCode": "suno",
+      "capability": "audio",
+      "capabilities": ["audio", "music", "network"],
+      "sortOrder": 92
+    },
+    {
+      "resourceCode": "vendor.elevenlabs",
+      "resourceType": "vendor",
+      "displayName": "ElevenLabs",
+      "vendorCode": "elevenlabs",
+      "capability": "audio",
+      "capabilities": ["audio", "network"],
+      "sortOrder": 94
+    },
+    {
       "resourceCode": "modality.llm",
       "resourceType": "modality",
       "displayName": "LLM",

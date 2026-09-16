@@ -10,6 +10,7 @@ type SdkworkAiClient struct {
     FilesAnthropic *api.FilesAnthropicApi
     ChatAnthropic *api.ChatAnthropicApi
     BatchesAnthropic *api.BatchesAnthropicApi
+    AudioElevenlabs *api.AudioElevenlabsApi
     ResponsesGoogle *api.ResponsesGoogleApi
     FilesGoogle *api.FilesGoogleApi
     EmbeddingsGoogle *api.EmbeddingsGoogleApi
@@ -17,6 +18,7 @@ type SdkworkAiClient struct {
     VideosKling *api.VideosKlingApi
     ImagesMidjourney *api.ImagesMidjourneyApi
     ImagesNanoBanana *api.ImagesNanoBananaApi
+    AudioMinimax *api.AudioMinimaxApi
     AudioSuno *api.AudioSunoApi
     Assistants *api.AssistantsApi
     Audio *api.AudioApi
@@ -38,6 +40,7 @@ type SdkworkAiClient struct {
     Video *api.VideoApi
     VideosVidu *api.VideosViduApi
     ImagesVidu *api.ImagesViduApi
+    AudioVolcengine *api.AudioVolcengineApi
     VideosVolcengine *api.VideosVolcengineApi
 }
 
@@ -53,6 +56,7 @@ func NewSdkworkAiClientWithConfig(config sdkhttp.Config) *SdkworkAiClient {
         FilesAnthropic: api.NewFilesAnthropicApi(client),
         ChatAnthropic: api.NewChatAnthropicApi(client),
         BatchesAnthropic: api.NewBatchesAnthropicApi(client),
+        AudioElevenlabs: api.NewAudioElevenlabsApi(client),
         ResponsesGoogle: api.NewResponsesGoogleApi(client),
         FilesGoogle: api.NewFilesGoogleApi(client),
         EmbeddingsGoogle: api.NewEmbeddingsGoogleApi(client),
@@ -60,6 +64,7 @@ func NewSdkworkAiClientWithConfig(config sdkhttp.Config) *SdkworkAiClient {
         VideosKling: api.NewVideosKlingApi(client),
         ImagesMidjourney: api.NewImagesMidjourneyApi(client),
         ImagesNanoBanana: api.NewImagesNanoBananaApi(client),
+        AudioMinimax: api.NewAudioMinimaxApi(client),
         AudioSuno: api.NewAudioSunoApi(client),
         Assistants: api.NewAssistantsApi(client),
         Audio: api.NewAudioApi(client),
@@ -81,6 +86,7 @@ func NewSdkworkAiClientWithConfig(config sdkhttp.Config) *SdkworkAiClient {
         Video: api.NewVideoApi(client),
         VideosVidu: api.NewVideosViduApi(client),
         ImagesVidu: api.NewImagesViduApi(client),
+        AudioVolcengine: api.NewAudioVolcengineApi(client),
         VideosVolcengine: api.NewVideosVolcengineApi(client),
     }
 }

@@ -68,9 +68,8 @@ public class ContainerApi {
     }
 
     /** Retrieve container file content */
-    public String listFilesContent(String containerId, String fileId) throws Exception {
-        Object raw = client.get(ApiPaths.aiPath("/containers/" + serializePathParameter(containerId, new PathParameterSpec("container_id", "simple", false)) + "/files/" + serializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false)) + "/content"));
-        return client.convertValue(raw, new TypeReference<String>() {});
+    public byte[] listFilesContent(String containerId, String fileId) throws Exception {
+        return client.requestBytes("GET", ApiPaths.aiPath("/containers/" + serializePathParameter(containerId, new PathParameterSpec("container_id", "simple", false)) + "/files/" + serializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false)) + "/content"), null, null, null, null, false, false);
     }
 
     private record PathParameterSpec(String name, String style, boolean explode) {}

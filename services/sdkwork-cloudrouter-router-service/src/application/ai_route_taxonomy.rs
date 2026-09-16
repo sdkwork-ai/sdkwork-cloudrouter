@@ -527,6 +527,58 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         BillingMeter::VideoResult,
         "video_task",
     ),
+    account(
+        "elevenlabs.text_to_speech",
+        "elevenlabs.text_to_speech",
+        RoutingCapability::Audio,
+        BillingMeter::TtsInputCharacter,
+    ),
+    account(
+        "elevenlabs.sound_generation",
+        "elevenlabs.sound_generation",
+        RoutingCapability::Audio,
+        BillingMeter::ApiRequest,
+    ),
+    account(
+        "volcengine.speech",
+        "volcengine.speech",
+        RoutingCapability::Audio,
+        BillingMeter::TtsInputCharacter,
+    ),
+    media_task(
+        "suno.music_generation",
+        "suno.music_generation",
+        RoutingCapability::Music,
+        BillingMeter::MusicOutputSecond,
+        "music_task",
+    ),
+    media_task(
+        "kling.avatar",
+        "kling.avatar",
+        RoutingCapability::Video,
+        BillingMeter::VideoResult,
+        "video_task",
+    ),
+    media_task(
+        "kling.motion_control",
+        "kling.motion_control",
+        RoutingCapability::Video,
+        BillingMeter::VideoResult,
+        "video_task",
+    ),
+    media_task(
+        "vidu.motion_sync",
+        "vidu.motion_sync",
+        RoutingCapability::Video,
+        BillingMeter::VideoResult,
+        "video_task",
+    ),
+    account(
+        "suno.music_task_query",
+        "suno.music_task_query",
+        RoutingCapability::Network,
+        BillingMeter::ApiRequest,
+    ),
 ];
 
 const fn model(

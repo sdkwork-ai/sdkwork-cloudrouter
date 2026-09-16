@@ -2,24 +2,24 @@ package com.sdkwork.cloudrouter.open.model;
 
 
 public class OpenAiImageEditMultipartRequest {
-    private String image;
-    private String mask;
+    private byte[] image;
+    private byte[] mask;
     private String model;
     private String prompt;
 
-    public String getImage() {
+    public byte[] getImage() {
         return this.image;
     }
 
-    public void setImage(String image) {
+    public void setImage(byte[] image) {
         this.image = image;
     }
 
-    public String getMask() {
+    public byte[] getMask() {
         return this.mask;
     }
 
-    public void setMask(String mask) {
+    public void setMask(byte[] mask) {
         this.mask = mask;
     }
 

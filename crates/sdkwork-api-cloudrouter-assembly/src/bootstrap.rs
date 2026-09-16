@@ -1071,8 +1071,11 @@ mod tests {
             "/google/v1beta",
             "/kling/v1",
             "/midjourney/v1",
+            "/minimax/v1",
             "/nano-banana/v1",
             "/suno/v1",
+            "/vidu",
+            "/volcengine",
             "/feeds/v3/api",
         ]
         .iter()
@@ -1094,19 +1097,30 @@ mod tests {
             ..sdkwork_web_core::WebRequestContextProfile::default()
         };
 
-        for path in [
-            "/v1/assistants",
-            "/v1/chat/completions",
-            "/anthropic/v1/messages",
-            "/elevenlabs/v1/sound-generation",
-            "/elevenlabs/v1/text-to-speech/{voice_id}",
-        ] {
-            assert_eq!(
-                classify_api_surface(path, &profile),
-                WebApiSurface::OpenApi,
-                "{path} must classify as open-api for the standalone gateway"
-            );
+        // Do not hand-maintain the sample paths here: a prefix missing from the
+        // list above silently classifies every route under it as `Unknown`,
+        // and `classify_api_surface` + the framework interceptor then answer
+        // 401 `missing_credentials` before routing ever runs. Assert coverage
+        // over the real generated open-api manifest instead, so adding a vendor
+        // prefix to the contract without adding it to `OPEN_API_PREFIXES` fails
+        // this test rather than failing in production as an unreachable route.
+        let mut missing_prefixes: Vec<&str> = Vec::new();
+        for route in open_manifest.routes() {
+            let path: &str = route.path;
+            if classify_api_surface(path, &profile) == WebApiSurface::OpenApi {
+                continue;
+            }
+            let top_level = path.trim_matches('/').split('/').next().unwrap_or_default();
+            if !missing_prefixes.contains(&top_level) {
+                missing_prefixes.push(top_level);
+            }
         }
+        assert!(
+            missing_prefixes.is_empty(),
+            "these open-api vendor prefixes are missing from OPEN_API_PREFIXES \
+             (sdkwork-api-cloudrouter-standalone-gateway::main, mirrored in this test): {missing_prefixes:?}; \
+             every route under them would be rejected with 401 `missing_credentials` before routing"
+        );
         manifest
             .validate_route_auth_for_surfaces(&profile)
             .expect("standalone gateway route manifest must satisfy surface auth validation");

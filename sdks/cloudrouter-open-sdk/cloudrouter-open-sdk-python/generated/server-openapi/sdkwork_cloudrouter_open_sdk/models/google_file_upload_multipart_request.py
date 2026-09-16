@@ -6,5 +6,5 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 @dataclass
 class GoogleFileUploadMultipartRequest:
     """Google Gemini google file upload multipart request schema exposed by Cloud Router vendor routing."""
-    file: str
+    file: bytes
     metadata: Optional[str] = None

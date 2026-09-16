@@ -68,9 +68,8 @@ public class VideoApi {
     }
 
     /** Retrieve video content */
-    public String content(String videoId) throws Exception {
-        Object raw = client.get(ApiPaths.aiPath("/videos/" + serializePathParameter(videoId, new PathParameterSpec("video_id", "simple", false)) + "/content"));
-        return client.convertValue(raw, new TypeReference<String>() {});
+    public byte[] content(String videoId) throws Exception {
+        return client.requestBytes("GET", ApiPaths.aiPath("/videos/" + serializePathParameter(videoId, new PathParameterSpec("video_id", "simple", false)) + "/content"), null, null, null, null, false, false);
     }
 
     /** Remix video */

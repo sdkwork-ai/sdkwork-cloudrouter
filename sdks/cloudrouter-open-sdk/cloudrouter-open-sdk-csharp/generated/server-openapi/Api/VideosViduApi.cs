@@ -48,6 +48,14 @@ namespace Sdkwork.CloudRouter.Open.Api
         }
 
         /// <summary>
+        /// Vidu create template video
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Open.Models.ViduVideoGenerationTask?> CreateEntV2TemplateAsync(Sdkwork.CloudRouter.Open.Models.ViduTemplateRequest body)
+        {
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.ViduVideoGenerationTask>(ApiPaths.AiPath("/vidu/ent/v2/template"), body, null, null, "application/json");
+        }
+
+        /// <summary>
         /// Vidu text to video
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.ViduVideoGenerationTask?> CreateEntV2Text2videoAsync(Sdkwork.CloudRouter.Open.Models.ViduTextToVideoRequest body)

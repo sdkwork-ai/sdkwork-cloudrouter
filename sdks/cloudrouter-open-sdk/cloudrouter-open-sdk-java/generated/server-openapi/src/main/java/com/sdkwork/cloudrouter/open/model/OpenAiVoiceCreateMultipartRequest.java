@@ -3,7 +3,7 @@ package com.sdkwork.cloudrouter.open.model;
 
 public class OpenAiVoiceCreateMultipartRequest {
     private String description;
-    private String file;
+    private byte[] file;
     private String metadata;
     private String name;
 
@@ -15,11 +15,11 @@ public class OpenAiVoiceCreateMultipartRequest {
         this.description = description;
     }
 
-    public String getFile() {
+    public byte[] getFile() {
         return this.file;
     }
 
-    public void setFile(String file) {
+    public void setFile(byte[] file) {
         this.file = file;
     }
 

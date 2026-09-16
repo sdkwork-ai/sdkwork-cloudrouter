@@ -69,6 +69,7 @@ client.setHeader("X-Custom-Header", value: "value")
 - `client.filesAnthropic` - files_anthropic API
 - `client.chatAnthropic` - chat_anthropic API
 - `client.batchesAnthropic` - batches_anthropic API
+- `client.audioElevenlabs` - audio_elevenlabs API
 - `client.responsesGoogle` - responses_google API
 - `client.filesGoogle` - files_google API
 - `client.embeddingsGoogle` - embeddings_google API
@@ -76,6 +77,7 @@ client.setHeader("X-Custom-Header", value: "value")
 - `client.videosKling` - videos_kling API
 - `client.imagesMidjourney` - images_midjourney API
 - `client.imagesNanoBanana` - images_nano_banana API
+- `client.audioMinimax` - audio_minimax API
 - `client.audioSuno` - audio_suno API
 - `client.assistants` - assistant API
 - `client.audio` - audio API
@@ -97,6 +99,7 @@ client.setHeader("X-Custom-Header", value: "value")
 - `client.video` - video API
 - `client.videosVidu` - videos_vidu API
 - `client.imagesVidu` - images_vidu API
+- `client.audioVolcengine` - audio_volcengine API
 - `client.videosVolcengine` - videos_volcengine API
 
 ## Usage Examples
@@ -150,6 +153,24 @@ let result = try await client.batchesAnthropic.getListV1MessagesBatches(params: 
 print(result)
 ```
 
+### audio_elevenlabs
+
+```swift
+// Generate sound effect
+let body = ElevenLabsSoundGenerationRequest(
+    durationSeconds: 1.0,
+    loop: false,
+    modelId: "1",
+    promptInfluence: 4.0,
+    text: "text"
+)
+let params: [String: Any] = [
+    "output_format": "output-format"
+]
+let result = try await client.audioElevenlabs.createV1SoundGeneration(body: body, params: params)
+print(result)
+```
+
 ### responses_google
 
 ```swift
@@ -200,20 +221,19 @@ print(result)
 ### videos_kling
 
 ```swift
-// Kling video generation
-let body = KlingVideoGenerationRequest(
-    aspectRatio: "aspect-ratio",
-    callbackUrl: "callback-url",
-    cfgScale: 3.0,
-    duration: 4,
-    image: "image",
-    imageTail: "image-tail",
-    mode: "mode",
-    model: "model",
-    negativePrompt: "negative-prompt",
-    prompt: "prompt"
+// Kling create avatar video
+let body = KlingAvatarCreateRequest(
+    modelName: "name",
+    humanImage: "human-image",
+    prompt: "prompt",
+    voiceMode: "voice-mode",
+    audioUrl: "audio-url",
+    text: "text",
+    voiceId: "1",
+    voiceLanguage: "voice-language",
+    callbackUrl: "callback-url"
 )
-let result = try await client.videosKling.createV1VideosGeneration(body: body)
+let result = try await client.videosKling.createV1VideosAvatar(body: body)
 print(result)
 ```
 
@@ -247,6 +267,24 @@ let body = NanoBananaImageGenerationRequest(
     size: "size"
 )
 let result = try await client.imagesNanoBanana.createGeneration(body: body)
+print(result)
+```
+
+### audio_minimax
+
+```swift
+// Minimax create music generation
+let body = MiniMaxMusicGenerationRequest(
+    model: "model",
+    prompt: "prompt",
+    lyrics: "lyrics",
+    stream: false,
+    outputFormat: "output-format",
+    isInstrumental: false,
+    lyricsOptimizer: true,
+    audioSetting: MiniMaxMusicAudioSetting()
+)
+let result = try await client.audioMinimax.createV1MusicGeneration(body: body)
 print(result)
 ```
 
@@ -581,6 +619,22 @@ let body = ViduReferenceToImageRequest(
     style: "style"
 )
 let result = try await client.imagesVidu.createEntV2Reference2image(body: body)
+print(result)
+```
+
+### audio_volcengine
+
+```swift
+// Volcengine create speech
+let body = OpenAiSpeechCreateRequest(
+    input: "input",
+    metadata: [:],
+    model: "model",
+    responseFormat: "response-format",
+    speed: 5.0,
+    voice: "voice"
+)
+let result = try await client.audioVolcengine.createApiV3AudioSpeech(body: body)
 print(result)
 ```
 

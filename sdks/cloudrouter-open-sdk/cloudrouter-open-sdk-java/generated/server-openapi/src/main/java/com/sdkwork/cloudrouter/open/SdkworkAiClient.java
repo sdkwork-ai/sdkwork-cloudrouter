@@ -5,6 +5,7 @@ import com.sdkwork.cloudrouter.open.http.HttpClient;
 import com.sdkwork.cloudrouter.open.api.FilesAnthropicApi;
 import com.sdkwork.cloudrouter.open.api.ChatAnthropicApi;
 import com.sdkwork.cloudrouter.open.api.BatchesAnthropicApi;
+import com.sdkwork.cloudrouter.open.api.AudioElevenlabsApi;
 import com.sdkwork.cloudrouter.open.api.ResponsesGoogleApi;
 import com.sdkwork.cloudrouter.open.api.FilesGoogleApi;
 import com.sdkwork.cloudrouter.open.api.EmbeddingsGoogleApi;
@@ -12,6 +13,7 @@ import com.sdkwork.cloudrouter.open.api.ChatGoogleApi;
 import com.sdkwork.cloudrouter.open.api.VideosKlingApi;
 import com.sdkwork.cloudrouter.open.api.ImagesMidjourneyApi;
 import com.sdkwork.cloudrouter.open.api.ImagesNanoBananaApi;
+import com.sdkwork.cloudrouter.open.api.AudioMinimaxApi;
 import com.sdkwork.cloudrouter.open.api.AudioSunoApi;
 import com.sdkwork.cloudrouter.open.api.AssistantsApi;
 import com.sdkwork.cloudrouter.open.api.AudioApi;
@@ -33,6 +35,7 @@ import com.sdkwork.cloudrouter.open.api.VectorStoresApi;
 import com.sdkwork.cloudrouter.open.api.VideoApi;
 import com.sdkwork.cloudrouter.open.api.VideosViduApi;
 import com.sdkwork.cloudrouter.open.api.ImagesViduApi;
+import com.sdkwork.cloudrouter.open.api.AudioVolcengineApi;
 import com.sdkwork.cloudrouter.open.api.VideosVolcengineApi;
 
 public class SdkworkAiClient {
@@ -40,6 +43,7 @@ public class SdkworkAiClient {
     private FilesAnthropicApi filesAnthropic;
     private ChatAnthropicApi chatAnthropic;
     private BatchesAnthropicApi batchesAnthropic;
+    private AudioElevenlabsApi audioElevenlabs;
     private ResponsesGoogleApi responsesGoogle;
     private FilesGoogleApi filesGoogle;
     private EmbeddingsGoogleApi embeddingsGoogle;
@@ -47,6 +51,7 @@ public class SdkworkAiClient {
     private VideosKlingApi videosKling;
     private ImagesMidjourneyApi imagesMidjourney;
     private ImagesNanoBananaApi imagesNanoBanana;
+    private AudioMinimaxApi audioMinimax;
     private AudioSunoApi audioSuno;
     private AssistantsApi assistants;
     private AudioApi audio;
@@ -68,6 +73,7 @@ public class SdkworkAiClient {
     private VideoApi video;
     private VideosViduApi videosVidu;
     private ImagesViduApi imagesVidu;
+    private AudioVolcengineApi audioVolcengine;
     private VideosVolcengineApi videosVolcengine;
 
     public SdkworkAiClient(String baseUrl) {
@@ -75,6 +81,7 @@ public class SdkworkAiClient {
         this.filesAnthropic = new FilesAnthropicApi(httpClient);
         this.chatAnthropic = new ChatAnthropicApi(httpClient);
         this.batchesAnthropic = new BatchesAnthropicApi(httpClient);
+        this.audioElevenlabs = new AudioElevenlabsApi(httpClient);
         this.responsesGoogle = new ResponsesGoogleApi(httpClient);
         this.filesGoogle = new FilesGoogleApi(httpClient);
         this.embeddingsGoogle = new EmbeddingsGoogleApi(httpClient);
@@ -82,6 +89,7 @@ public class SdkworkAiClient {
         this.videosKling = new VideosKlingApi(httpClient);
         this.imagesMidjourney = new ImagesMidjourneyApi(httpClient);
         this.imagesNanoBanana = new ImagesNanoBananaApi(httpClient);
+        this.audioMinimax = new AudioMinimaxApi(httpClient);
         this.audioSuno = new AudioSunoApi(httpClient);
         this.assistants = new AssistantsApi(httpClient);
         this.audio = new AudioApi(httpClient);
@@ -103,6 +111,7 @@ public class SdkworkAiClient {
         this.video = new VideoApi(httpClient);
         this.videosVidu = new VideosViduApi(httpClient);
         this.imagesVidu = new ImagesViduApi(httpClient);
+        this.audioVolcengine = new AudioVolcengineApi(httpClient);
         this.videosVolcengine = new VideosVolcengineApi(httpClient);
     }
 
@@ -111,6 +120,7 @@ public class SdkworkAiClient {
         this.filesAnthropic = new FilesAnthropicApi(httpClient);
         this.chatAnthropic = new ChatAnthropicApi(httpClient);
         this.batchesAnthropic = new BatchesAnthropicApi(httpClient);
+        this.audioElevenlabs = new AudioElevenlabsApi(httpClient);
         this.responsesGoogle = new ResponsesGoogleApi(httpClient);
         this.filesGoogle = new FilesGoogleApi(httpClient);
         this.embeddingsGoogle = new EmbeddingsGoogleApi(httpClient);
@@ -118,6 +128,7 @@ public class SdkworkAiClient {
         this.videosKling = new VideosKlingApi(httpClient);
         this.imagesMidjourney = new ImagesMidjourneyApi(httpClient);
         this.imagesNanoBanana = new ImagesNanoBananaApi(httpClient);
+        this.audioMinimax = new AudioMinimaxApi(httpClient);
         this.audioSuno = new AudioSunoApi(httpClient);
         this.assistants = new AssistantsApi(httpClient);
         this.audio = new AudioApi(httpClient);
@@ -139,6 +150,7 @@ public class SdkworkAiClient {
         this.video = new VideoApi(httpClient);
         this.videosVidu = new VideosViduApi(httpClient);
         this.imagesVidu = new ImagesViduApi(httpClient);
+        this.audioVolcengine = new AudioVolcengineApi(httpClient);
         this.videosVolcengine = new VideosVolcengineApi(httpClient);
     }
 
@@ -152,6 +164,10 @@ public class SdkworkAiClient {
 
     public BatchesAnthropicApi getBatchesAnthropic() {
         return this.batchesAnthropic;
+    }
+
+    public AudioElevenlabsApi getAudioElevenlabs() {
+        return this.audioElevenlabs;
     }
 
     public ResponsesGoogleApi getResponsesGoogle() {
@@ -180,6 +196,10 @@ public class SdkworkAiClient {
 
     public ImagesNanoBananaApi getImagesNanoBanana() {
         return this.imagesNanoBanana;
+    }
+
+    public AudioMinimaxApi getAudioMinimax() {
+        return this.audioMinimax;
     }
 
     public AudioSunoApi getAudioSuno() {
@@ -264,6 +284,10 @@ public class SdkworkAiClient {
 
     public ImagesViduApi getImagesVidu() {
         return this.imagesVidu;
+    }
+
+    public AudioVolcengineApi getAudioVolcengine() {
+        return this.audioVolcengine;
     }
 
     public VideosVolcengineApi getVideosVolcengine() {

@@ -69,6 +69,7 @@ client.set_header('X-Custom-Header', 'value')
 - `client.files_anthropic` - files_anthropic API
 - `client.chat_anthropic` - chat_anthropic API
 - `client.batches_anthropic` - batches_anthropic API
+- `client.audio_elevenlabs` - audio_elevenlabs API
 - `client.responses_google` - responses_google API
 - `client.files_google` - files_google API
 - `client.embeddings_google` - embeddings_google API
@@ -76,6 +77,7 @@ client.set_header('X-Custom-Header', 'value')
 - `client.videos_kling` - videos_kling API
 - `client.images_midjourney` - images_midjourney API
 - `client.images_nano_banana` - images_nano_banana API
+- `client.audio_minimax` - audio_minimax API
 - `client.audio_suno` - audio_suno API
 - `client.assistants` - assistant API
 - `client.audio` - audio API
@@ -97,6 +99,7 @@ client.set_header('X-Custom-Header', 'value')
 - `client.video` - video API
 - `client.videos_vidu` - videos_vidu API
 - `client.images_vidu` - images_vidu API
+- `client.audio_volcengine` - audio_volcengine API
 - `client.videos_volcengine` - videos_volcengine API
 
 ## Usage Examples
@@ -164,6 +167,24 @@ result = client.batches_anthropic.get_list_v1_messages_batches(params)
 print(result)
 ```
 
+### audio_elevenlabs
+
+```python
+# Generate sound effect
+body = {
+    'duration_seconds': 1,
+    'loop': True,
+    'model_id': 'model_id',
+    'prompt_influence': 1,
+    'text': 'text',
+}
+params = {
+    'output_format': 'output_format',
+}
+result = client.audio_elevenlabs.create_v1_sound_generation(body, params)
+print(result)
+```
+
 ### responses_google
 
 ```python
@@ -228,20 +249,19 @@ print(result)
 ### videos_kling
 
 ```python
-# Kling video generation
+# Kling create avatar video
 body = {
-    'aspect_ratio': 'aspect_ratio',
-    'callback_url': 'callback_url',
-    'cfg_scale': 1,
-    'duration': 1,
-    'image': 'image',
-    'image_tail': 'image_tail',
-    'mode': 'mode',
-    'model': 'model',
-    'negative_prompt': 'negative_prompt',
+    'model_name': 'model_name',
+    'human_image': 'human_image',
     'prompt': 'prompt',
+    'voice_mode': 'voice_mode',
+    'audio_url': 'audio_url',
+    'text': 'text',
+    'voice_id': 'voice_id',
+    'voice_language': 'voice_language',
+    'callback_url': 'callback_url',
 }
-result = client.videos_kling.create_v1_videos_generation(body)
+result = client.videos_kling.create_v1_videos_avatar(body)
 print(result)
 ```
 
@@ -277,6 +297,28 @@ body = {
     'size': 'size',
 }
 result = client.images_nano_banana.create_generations(body)
+print(result)
+```
+
+### audio_minimax
+
+```python
+# Minimax create music generation
+body = {
+    'model': 'model',
+    'prompt': 'prompt',
+    'lyrics': 'lyrics',
+    'stream': True,
+    'output_format': 'output_format',
+    'is_instrumental': True,
+    'lyrics_optimizer': True,
+    'audio_setting': {
+        'sample_rate': 1,
+        'bitrate': 1,
+        'format': 'format',
+    },
+}
+result = client.audio_minimax.create_v1_music_generation(body)
 print(result)
 ```
 
@@ -638,6 +680,24 @@ body = {
     'style': 'style',
 }
 result = client.images_vidu.create_ent_v2_reference2image(body)
+print(result)
+```
+
+### audio_volcengine
+
+```python
+# Volcengine create speech
+body = {
+    'input': 'input',
+    'metadata': {
+        'value': 'value',
+    },
+    'model': 'model',
+    'response_format': 'response_format',
+    'speed': 1,
+    'voice': 'voice',
+}
+result = client.audio_volcengine.create_api_v3_audio_speech(body)
 print(result)
 ```
 
