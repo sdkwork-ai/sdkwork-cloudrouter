@@ -1040,7 +1040,8 @@ class SdkRuntimeStandardizer:
 
     def _render_placeholder_openapi(self, sdk_family: str) -> str:
         payload = {
-            "openapi": "3.0.3",
+            "openapi": "3.1.2",
+            "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
             "info": {
                 "title": SDK_DESCRIPTIONS[sdk_family],
                 "version": "0.1.0",

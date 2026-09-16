@@ -1387,7 +1387,7 @@ async fn edge_server_can_serve_portal_dist_without_node_server() {
     assert_eq!("backend-api", schema_tabs[12]["id"]);
     assert_eq!(130, schema_tabs[12]["order"]);
     let openapi_payload = json_request(router.clone(), Method::GET, "/openapi.json", "").await;
-    assert_eq!("3.0.3", openapi_payload["openapi"]);
+    assert_eq!("3.1.2", openapi_payload["openapi"]);
     assert_eq!("Cloud Router Open API", openapi_payload["info"]["title"]);
     assert!(openapi_payload["paths"]
         .get("/v1/chat/completions")

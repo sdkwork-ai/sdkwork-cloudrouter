@@ -128,7 +128,7 @@ async fn service_router_exposes_gateway_openapi_document() {
         .await
         .unwrap();
     let payload: serde_json::Value = serde_json::from_slice(&body).unwrap();
-    assert_eq!("3.0.3", payload["openapi"]);
+    assert_eq!("3.1.2", payload["openapi"]);
     assert_eq!("Cloud Router Open API", payload["info"]["title"]);
     assert!(payload.get("x-provider-passthrough").is_none());
     let payload_text = serde_json::to_string(&payload)

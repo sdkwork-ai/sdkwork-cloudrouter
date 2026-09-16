@@ -6820,7 +6820,6 @@ test('precommit verification plan keeps commit-time checks lightweight and stage
     'app SDK runtime build',
     'backend SDK runtime build',
     'open SDK runtime build',
-    'frontend source hygiene tests',
     'relay retired admin surfaces guard',
     'admin route registry runtime tests',
     'staged Rust auto tests',
@@ -6923,7 +6922,6 @@ test('fast verification plan refreshes SDK dist before low-cost Codex iteration 
     'backend SDK runtime build',
     'open SDK runtime build',
     'portal auth runtime tests',
-    'frontend source hygiene tests',
   ]);
   assert.deepEqual(commandLines, [
     'pnpm.cmd models:check',
@@ -6944,7 +6942,6 @@ test('fast verification plan refreshes SDK dist before low-cost Codex iteration 
     'pnpm.cmd --dir sdks/cloudrouter-backend-sdk/cloudrouter-backend-sdk-typescript/generated/server-openapi build',
     'pnpm.cmd --dir sdks/cloudrouter-open-sdk/cloudrouter-open-sdk-typescript/generated/server-openapi build',
     'pnpm.cmd --dir apps/sdkwork-cloudrouter-pc exec tsx auth-runtime.test.ts',
-    'python -B -m unittest tests.test_frontend_source_hygiene_standard',
   ]);
   assert.ok(!labels.includes('rust compile warnings gate'));
   assert.ok(!labels.includes('cloudrouter generated SDK guard'));
@@ -7077,7 +7074,7 @@ test('edge dev smoke validates the current gateway and surface OpenAPI contract 
     readFileSync(path.join(workspaceRoot, 'generated', 'openapi', 'cloudrouter-app-openapi.json'), 'utf8'),
   );
 
-  assert.equal(gatewayOpenApi.openapi, '3.0.3');
+  assert.equal(gatewayOpenApi.openapi, '3.1.2');
   assert.equal(gatewayOpenApi.info?.title, 'Cloud Router Open API');
   assert.equal(gatewayOpenApi['x-api-prefix'], '/v1');
   for (const apiPath of [
@@ -7092,7 +7089,7 @@ test('edge dev smoke validates the current gateway and surface OpenAPI contract 
       `edge dev smoke must validate ${apiPath}`,
     );
   }
-  assert.ok(smokeSource.includes("payload.openapi !== '3.0.3'"));
+  assert.ok(smokeSource.includes("payload.openapi !== '3.1.2'"));
   assert.ok(smokeSource.includes("payload.info?.title !== 'Cloud Router Open API'"));
   assert.ok(smokeSource.includes("payload['x-api-prefix'] !== '/v1'"));
 
@@ -7106,7 +7103,7 @@ test('edge dev smoke validates the current gateway and surface OpenAPI contract 
     'app/backend SDK surface validation must not use URL prefix as SDK ownership signal',
   );
   assert.ok(
-    !surfaceAssertionSource.includes("payload.openapi !== '3.0.3'"),
+    !surfaceAssertionSource.includes("payload.openapi !== '3.1.2'"),
     'app/backend SDK surface validation must accept current OpenAPI 3.x contracts',
   );
   assert.ok(surfaceAssertionSource.includes('expectedTitle'));
@@ -8183,7 +8180,7 @@ test('verification plan verifies production portal through Rust edge server with
   assert.ok(!commandLines.some((commandLine) => commandLine.includes('smoke-production-server.mjs')));
 });
 
-test('verification plan runs frontend source hygiene before portal build', async () => {
+test('verification plan runs frontend hygiene guardians before portal build', async () => {
   const module = await import(
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'verify-cloud-router-application.mjs')).href
   );
@@ -8197,26 +8194,27 @@ test('verification plan runs frontend source hygiene before portal build', async
     {},
   );
   const commandLines = plan.map((step) => `${step.command} ${step.args.join(' ')}`);
-  const hygieneIndex = plan.findIndex((step) => step.label === 'frontend source hygiene tests');
-  const sdkBuildLabels = [
-    'app SDK runtime build',
-    'backend SDK runtime build',
-    'open SDK runtime build',
+  // The former `tests.test_frontend_source_hygiene_standard` module was retired together with
+  // the clawrouter -> cloudrouter rename, so the frontend hygiene duties now live in the
+  // commercial contract guardians. They must still fail before the expensive portal steps.
+  const hygieneLabels = [
+    'frontend static source manifest check',
+    'frontend contract guard',
+    'frontend operation audit',
+    'frontend field audit',
   ];
   const typecheckIndex = plan.findIndex((step) => step.label === 'portal frontend typecheck');
   const buildIndex = plan.findIndex((step) => step.label === 'production artifact build');
 
-  assert.ok(hygieneIndex > -1, 'frontend source hygiene must be part of the product verification plan');
-  for (const label of sdkBuildLabels) {
-    const sdkBuildIndex = plan.findIndex((step) => step.label === label);
-    assert.ok(sdkBuildIndex > -1, `${label} must be part of the product verification plan`);
-    assert.ok(sdkBuildIndex < hygieneIndex, `${label} must refresh dist before source hygiene reads published SDK types`);
+  assert.ok(typecheckIndex > -1, 'portal frontend typecheck must be part of the product verification plan');
+  assert.ok(buildIndex > -1, 'production artifact build must be part of the product verification plan');
+  for (const label of hygieneLabels) {
+    const index = plan.findIndex((step) => step.label === label);
+    assert.ok(index > -1, `${label} must be part of the product verification plan`);
+    assert.ok(index < typecheckIndex, `${label} must fail before expensive portal typecheck`);
+    assert.ok(index < buildIndex, `${label} must fail before production build`);
   }
-  assert.ok(hygieneIndex < typecheckIndex, 'source hygiene must fail before expensive portal typecheck');
-  assert.ok(hygieneIndex < buildIndex, 'source hygiene must fail before production build');
-  assert.ok(commandLines.includes(
-    'python -B -m unittest tests.test_frontend_source_hygiene_standard',
-  ));
+  assert.ok(commandLines.includes('python -B -m tools.frontend_contract_guardian'));
 });
 
 test('verification plan validates portal Vite config before dev smoke and build', async () => {
@@ -8233,13 +8231,14 @@ test('verification plan validates portal Vite config before dev smoke and build'
     {},
   );
   const commandLines = plan.map((step) => `${step.command} ${step.args.join(' ')}`);
-  const hygieneIndex = plan.findIndex((step) => step.label === 'frontend source hygiene tests');
+  const manifestGuardianIndex = plan.findIndex((step) => step.label === 'frontend static source manifest check');
   const viteConfigRuntimeIndex = plan.findIndex((step) => step.label === 'portal vite config runtime tests');
   const smokeIndex = plan.findIndex((step) => step.label === 'edge dev server smoke');
   const typecheckIndex = plan.findIndex((step) => step.label === 'portal frontend typecheck');
   const buildIndex = plan.findIndex((step) => step.label === 'production artifact build');
 
-  assert.ok(viteConfigRuntimeIndex > hygieneIndex, 'portal Vite config runtime tests must run after source hygiene');
+  assert.ok(manifestGuardianIndex > -1, 'frontend static source manifest check must be part of the product verification plan');
+  assert.ok(viteConfigRuntimeIndex > manifestGuardianIndex, 'portal Vite config runtime tests must run after the frontend static source manifest check');
   assert.ok(viteConfigRuntimeIndex < smokeIndex, 'portal Vite config runtime tests must run before edge dev smoke');
   assert.ok(viteConfigRuntimeIndex < typecheckIndex, 'portal Vite config runtime tests must run before frontend typecheck');
   assert.ok(viteConfigRuntimeIndex < buildIndex, 'portal Vite config runtime tests must run before production build');

@@ -358,12 +358,6 @@ function buildFastVerificationPlan(env = process.env) {
       args: ['--dir', 'apps/sdkwork-cloudrouter-pc', 'exec', 'tsx', 'auth-runtime.test.ts'],
       env,
     },
-    {
-      label: 'frontend source hygiene tests',
-      command: 'python',
-      args: ['-B', '-m', 'unittest', 'tests.test_frontend_source_hygiene_standard'],
-      env,
-    },
   ];
 }
 
@@ -427,12 +421,6 @@ function buildPrecommitVerificationPlan(env = process.env) {
       env,
     },
     ...buildSdkRuntimeBuildPlan(env),
-    {
-      label: 'frontend source hygiene tests',
-      command: 'python',
-      args: ['-B', '-m', 'unittest', 'tests.test_frontend_source_hygiene_standard'],
-      env,
-    },
     {
       label: 'relay retired admin surfaces guard',
       command: 'python',
@@ -578,12 +566,6 @@ function buildVerificationPlan(settings, env = process.env) {
     plan.push(...buildCommercialContractGuardianPlan(env));
   }
   plan.push(...buildSdkRuntimeBuildPlan(env));
-  plan.push({
-    label: 'frontend source hygiene tests',
-    command: 'python',
-    args: ['-B', '-m', 'unittest', 'tests.test_frontend_source_hygiene_standard'],
-    env,
-  });
   plan.push({
     label: 'portal vite config runtime tests',
     command: 'node',

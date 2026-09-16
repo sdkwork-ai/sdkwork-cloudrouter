@@ -26,7 +26,11 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
             root = Path(tmp)
             spec = CloudRouterGatewayOpenApiGenerator(root=root).generate()
 
-            self.assertEqual("3.0.3", spec["openapi"])
+            self.assertEqual("3.1.2", spec["openapi"])
+            self.assertEqual(
+                "https://json-schema.org/draft/2020-12/schema",
+                spec["jsonSchemaDialect"],
+            )
             self.assertEqual("Cloud Router Open API", spec["info"]["title"])
             self.assertEqual("/v1", spec["x-api-prefix"])
             self.assertNotIn("x-provider-passthrough", spec)

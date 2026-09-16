@@ -11,7 +11,7 @@
       "source": "sdks/cloudrouter-open-sdk/openapi/cloudrouter-open-sdk.openapi.json",
       "apiAuthority": "sdkwork-cloudrouter-open-api",
       "sdkFamily": "cloudrouter-open-sdk",
-      "sha256": "50828e76ccb767d374389df7821818897d95e1aae863336c23f7b94d8c96b06c"
+      "sha256": "02bdf34ea4e2e525a1aaaeb4b32fd038ae177d0e748e644406f6c2c078e36cc4"
     },
     {
       "surface": "app-api",

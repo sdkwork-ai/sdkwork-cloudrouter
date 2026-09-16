@@ -12606,7 +12606,8 @@
     "x-sdkwork-wire-protocol": "external",
     "x-sdkwork-external-protocol-id": "cloudrouter-vendor-gateway"
   },
-  "openapi": "3.0.3",
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "openapi": "3.1.2",
   "paths": {
     "/anthropic/v1/files": {
       "get": {

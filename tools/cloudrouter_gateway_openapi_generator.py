@@ -622,7 +622,8 @@ class CloudRouterGatewayOpenApiGenerator:
         self._normalize_component_schema_descriptions(components)
         paths = self._paths()
         spec = {
-            "openapi": "3.0.3",
+            "openapi": "3.1.2",
+            "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
             "info": {
                 "title": "Cloud Router Open API",
                 "version": "1.0.0",

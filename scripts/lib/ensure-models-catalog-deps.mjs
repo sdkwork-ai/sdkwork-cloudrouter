@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, symlinkSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, symlinkSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
@@ -24,6 +24,36 @@ function ensureDirectorySymlink(targetPath, sourcePath) {
   symlinkSync(sourcePath, targetPath, process.platform === 'win32' ? 'junction' : 'dir');
 }
 
+/**
+ * Resolve the on-disk entry that "@sdkwork/utils/crypto" actually loads.
+ *
+ * The package publishes TypeScript sources through its "exports" map (Node loads
+ * them through native type stripping), so a hard-coded "dist" path would report
+ * the package as unbuilt even when it is perfectly consumable.
+ */
+function resolveUtilsCryptoEntry(utilsPackageRoot) {
+  const manifestPath = path.join(utilsPackageRoot, 'package.json');
+  let manifest;
+  try {
+    manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  } catch (error) {
+    throw new Error(`Unable to read the @sdkwork/utils manifest at ${manifestPath}: ${error.message}`);
+  }
+
+  const entry = manifest.exports?.['./crypto'];
+  const relativeEntry = typeof entry === 'string'
+    ? entry
+    : entry?.import ?? entry?.default ?? entry?.types;
+  if (!relativeEntry) {
+    throw new Error(
+      `@sdkwork/utils exposes no "./crypto" entry in ${manifestPath}, `
+      + 'but the sdkwork-models catalog tooling imports "@sdkwork/utils/crypto".',
+    );
+  }
+
+  return path.resolve(utilsPackageRoot, relativeEntry);
+}
+
 export function ensureModelsCatalogDeps({
   repoRoot = REPO_ROOT,
   modelsRoot = MODELS_ROOT,
@@ -38,13 +68,14 @@ export function ensureModelsCatalogDeps({
   if (!existsSync(path.join(utilsPackageRoot, 'package.json'))) {
     throw new Error(
       `Missing @sdkwork/utils package at ${utilsPackageRoot}. `
-      + 'Clone sdkwork-utils next to sdkwork-cloudrouter and build the TypeScript package.',
+      + 'Clone sdkwork-utils next to sdkwork-cloudrouter.',
     );
   }
-  if (!existsSync(path.join(utilsPackageRoot, 'dist', 'crypto.js'))) {
+  const utilsCryptoEntry = resolveUtilsCryptoEntry(utilsPackageRoot);
+  if (!existsSync(utilsCryptoEntry)) {
     throw new Error(
-      `@sdkwork/utils is not built at ${utilsPackageRoot}. `
-      + 'Run "pnpm --dir ../sdkwork-utils/packages/sdkwork-utils-typescript build".',
+      `@sdkwork/utils resolves "./crypto" to ${utilsCryptoEntry}, which does not exist. `
+      + 'Ensure the sibling sdkwork-utils checkout is complete.',
     );
   }
 
@@ -54,6 +85,7 @@ export function ensureModelsCatalogDeps({
     repoRoot,
     modelsRoot,
     utilsPackageRoot,
+    utilsCryptoEntry,
     utilsLinkPath: linkPath,
   };
 }

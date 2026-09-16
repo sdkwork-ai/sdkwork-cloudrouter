@@ -328,7 +328,7 @@ function assertGatewayOpenApi({ response, body }, label) {
   assertStatus(response, label);
   const payload = parseJson(body, label);
   if (
-    payload.openapi !== '3.0.3'
+    payload.openapi !== '3.1.2'
     || payload.info?.title !== 'Cloud Router Open API'
     || payload['x-api-prefix'] !== '/v1'
     || !payload.paths?.['/v1/models']

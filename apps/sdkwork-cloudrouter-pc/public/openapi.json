@@ -12571,7 +12571,8 @@
     "title": "Cloud Router Open API",
     "version": "1.0.0"
   },
-  "openapi": "3.0.3",
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "openapi": "3.1.2",
   "paths": {
     "/anthropic/v1/files": {
       "get": {
