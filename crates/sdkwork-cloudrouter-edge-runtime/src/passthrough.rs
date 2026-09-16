@@ -1829,6 +1829,7 @@ fn provider_native_api_code_from_standard_path(
     let path = normalize_provider_api_path(provider.as_str(), standard_path);
     let api_code = match provider.as_str() {
         "anthropic" if path == "/v1/claude-code/sessions" => "anthropic.claude_code",
+        "anthropic" if path == "/v1/messages" => "anthropic.messages",
         "google" | "gemini" if path == "/v1beta/live/sessions" => "gemini.live",
         "google" | "gemini" if gemini_model_action_matches(path.as_str(), "generatecontent") => {
             "gemini.generate_content"
@@ -1852,6 +1853,8 @@ fn provider_native_api_code_from_standard_path(
             "gemini.video_generation"
         }
         "kling" if path == "/v1/videos/text2video" => "kling.text_to_video",
+        "kling" if path == "/v1/videos/avatar" => "kling.avatar",
+        "kling" if path == "/v1/videos/motion-control" => "kling.motion_control",
         "kling" if path == "/v1/videos/image2video" => "kling.image_to_video",
         "kling" if path == "/v1/images/generations" => "kling.image_generation",
         "kling" if task_query_path_matches(path.as_str()) => "kling.task_query",
@@ -1860,11 +1863,18 @@ fn provider_native_api_code_from_standard_path(
         "jimeng" if task_query_path_matches(path.as_str()) => "jimeng.task_query",
         "volcengine" if path == "/v1/images/generations" => "volcengine.image_generation",
         "volcengine" if path == "/v1/videos/generations" => "volcengine.video_generation",
+        "volcengine" if path == "/api/v3/audio/speech" => "volcengine.speech",
         "volcengine" if task_query_path_matches(path.as_str()) => "volcengine.task_query",
+        "elevenlabs" if path == "/v1/text-to-speech/{voice_id}" => "elevenlabs.text_to_speech",
+        "elevenlabs" if path.starts_with("/v1/text-to-speech/") => "elevenlabs.text_to_speech",
+        "elevenlabs" if path == "/v1/sound-generation" => "elevenlabs.sound_generation",
         "minimax" if path == "/v1/music_generation" => "minimax.music_generation",
         "minimax" if path == "/v1/music/generations" => "minimax.music_generation",
         "minimax" if path == "/v1/music/generation" => "minimax.music_generation",
+        "suno" if path == "/v1/music/generations" => "suno.music_generation",
+        "suno" if music_task_query_path_matches(path.as_str()) => "suno.music_task_query",
         "vidu" if path == "/ent/v2/reference2image" => "vidu.reference_to_image",
+        "vidu" if path == "/ent/v2/template" => "vidu.motion_sync",
         "vidu" if path == "/ent/v2/start-end2video" => "vidu.start_end_to_video",
         "tencent.cloud" if path == "/vidu/ent/v2/reference2image" => "vidu.reference_to_image",
         "tencent.cloud" if path == "/vidu/ent/v2/start-end2video" => "vidu.start_end_to_video",
@@ -1912,6 +1922,13 @@ fn canonical_provider_native_catalog_key(
 
 fn gemini_model_action_matches(path: &str, action: &str) -> bool {
     path.starts_with("/v1beta/models/") && path.ends_with(&format!(":{action}"))
+}
+
+fn music_task_query_path_matches(path: &str) -> bool {
+    path == "/v1/music/generations/{task_id}"
+        || path
+            .strip_prefix("/v1/music/generations/")
+            .is_some_and(|task_id| !task_id.trim().is_empty())
 }
 
 fn task_query_path_matches(path: &str) -> bool {
