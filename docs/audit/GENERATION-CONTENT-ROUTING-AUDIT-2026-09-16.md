@@ -170,6 +170,8 @@
 | P2-6 | `...-commons/src/components/CreativeInputBox.tsx:55-81` `MOTION_TEMPLATES`、`staticCreativeModelCatalog.ts:68-80` | 动作模仿模板与数字人封面用 unsplash 外链假图；`mockSessions.ts` 为无引用孤儿文件 |
 | P2-7 | `staticCreativeModelCatalog.ts:119-128` | `digital_human: []`、`action: []` 的远程模态查询恒为空，注释自陈「模型目录暂无对应 facet」 |
 | P2-8 | `sdkwork-generations/.../gateway.rs:44-55` | `GENERATIONS_MEDIA_GATEWAY_*` 在 `sdkwork-generations/etc/topology/*.env` **零配置**（仅代码内有默认值），与网关端口耦合靠隐式约定而非显式配置 |
+| P2-9 | `crates/sdkwork-api-cloudrouter-assembly/Cargo.toml` vs `src/feeds_open_runtime.rs:91-108` | 该 crate 的 `sdkwork-web-bootstrap` 依赖未启用 `redis` feature，而 `feeds_open_runtime.rs` 调用了被 `#[cfg(feature = "redis")]` 门控的三个 `shared_*_store` → 现 HEAD 上 `cargo check -p sdkwork-api-cloudrouter-assembly`（**不带 `--test`**）就 exit 101（E0425）。连带使 `bootstrap.rs` 的入站前缀覆盖断言在本机默认 features 下够不着 |
+| P2-10 | `data/ai-routing/resources/vendor-native-resources.json` vs `passthrough.rs` / `provider_native_classifier.rs` | seed 的 `pathTemplate` 与实际接收入口漂移 2 处：`anthropic.claude_code` 登记 `/v1/claude/code`（arm 实际接受 `/v1/claude-code/sessions`）、`gemini.live` 登记 `/v1beta/models/{model}:liveGenerateContent`（arm 实际接受 `/v1beta/live/sessions`）。`pathTemplate` 不参与路由匹配（`ai_routing_seed.rs` 只要求它以 `/` 开头，随后 upsert 进 `api_endpoint` 表），但它是**资源目录对外展示的入口描述** → 登记了一个不存在的入口 |
 
 ---
 
@@ -240,13 +242,20 @@ grep -n "model: String::new()" \
 
 ## 7. 未覆盖 / 待运行期验证
 
-本审计全部结论来自静态代码与契约核对，**未执行真实厂商调用**。以下需运行期确认：
+本审计的缺陷结论来自静态代码与契约核对。**仍未执行真实厂商调用**（打真实 `api.elevenlabs.io`
+之类的外部端点），以下需运行期确认：
 
 - P0-5 的定价 fail-closed 是否在真实部署中拒绝（取决于该环境是否已由管理员配置对应 rate card）。
 - 各厂商 passthrough 的 `base_url` 与凭证是否已在目标环境为 `kling` / `vidu` / `suno` / `elevenlabs` 配好路由账户。
-- `media_routing_e2e.rs`、`audio_vendor_routing_e2e.rs`、`avatar_motion_routing_e2e.rs` 三个测试的实际通过情况
-  （本次未构建；`target/` 体积大、构建耗时）。
 - 生成服务异步任务的端到端时延与超时行为。
+
+**已由第三轮补齐**：三个 e2e 测试（`media_routing_e2e.rs`、`audio_vendor_routing_e2e.rs`、
+`avatar_motion_routing_e2e.rs`）已在真实工具链下编译并执行，共 **14 passed / 0 failed**。
+它们走的是真实链路——Bearer API-key 鉴权 → 账户组池 → 路由策略/规则 → 路由账户
+（`base_url` + `secret_ref`）→ 密钥解析 → **真实 HTTP 调用打到本地 mock 上游** → 响应透传，
+并逐条断言转发路径与 `Authorization` 头。因此「从入站面到第三方 API 的最后一跳」在
+**除厂商主机名之外的全部环节**已被实证；未覆盖的只剩「真实厂商不接受我们的凭证/请求形态」这一类
+外部事实。详见第 8.1 节。
 
 ---
 
@@ -269,10 +278,20 @@ grep -n "model: String::new()" \
 | P1-5 非默认 vendor 轮询 404 | ✅ 已修 | `sdkwork-generations` `a4b32b5`：`resolve_polling_provider` 先精确匹配 `(modality, vendor)`、再退回该模态的聚合适配器（与派发侧 `resolve_provider` 同形）。同时修掉同函数「空轮询 / 持久化失败返回 `None`」——`get_generation` 把它变成 404，即**刚创建成功的任务在下次读取时被报成不存在**，只有仓储真的查不到才是 404 |
 | P1-7 三份路径→api_code 映射 | ⚠️ 部分 | 漂移已修、门禁已加：`passthrough.rs` 补回缺失的 `anthropic.messages`（改前实测两份拷贝 29 vs 28 条，其余 28 条逐字一致 —— 属真实漂移，非格式差异）；新增 `tools/check-cloudrouter-ai-routing-consistency.mjs`（`pnpm api:ai-routing-consistency:check`，已挂入 `_sdkwork:check`）。**三份拷贝本身仍未合并**：门禁拦得住漂移，消除不了重复 |
 | P1-8 无轮询调度器 / webhook | ❌ 未修 | 超出本次范围 |
-| P2-1 面校验对未知前缀静默放行 | ⚠️ 部分 | 云路由侧已由 `bootstrap.rs` 断言兜住；`sdkwork-web-framework` 的 `route_manifest.rs:200` `Unknown => {}` 未动 |
-| P2-2 两个 e2e 测试无 seed 覆盖 | ❌ 未修 | `audio_vendor_routing_e2e.rs` / `avatar_motion_routing_e2e.rs` 仍未跟踪、仍自建内存 catalog |
+| P2-1 面校验对未知前缀静默放行 | ⚠️ 云路由侧已实证，框架侧未动 | `bootstrap.rs` 的那条前缀断言只覆盖 open-api manifest；本轮在其同测试内补上**对整个合并 manifest（app-api + backend-api + open-api）的全量断言**：任何一条路由分类为 `Unknown` 即报错并逐条点名。真实执行通过 → 云路由的路由清单**没有**未分类路由。`sdkwork-web-framework` 的 `route_manifest.rs:200` `Unknown => {}` 本身仍未动（改动它会波及所有服务的启动校验，风险超出本次范围） |
+| P2-2 两个 e2e 测试无 seed 覆盖 | ⚠️ 部分：e2e 已真跑，seed 仍未接入 | 仍自建内存 catalog（未接 `data/ai-routing`），但**已在本机真实编译并执行**：见 8.1。seed 与 arm 的两端一致性改由第 4 类门禁覆盖 |
 | P2-3 … P2-8 | ❌ 未修 | 死代码、TODO 端点、unsplash 假图、空模型 facet、隐式网关约定 |
-| P2-9 **（本轮新发现）** assembly 默认 features 编译不过 | ❌ 未修 | `sdkwork-api-cloudrouter-assembly/src/feeds_open_runtime.rs:91-102` 用了 `sdkwork-web-bootstrap` 里 `#[cfg(feature = "redis")]` 门控的 `shared_rate_limit_store` / `shared_idempotency_store` / `shared_concurrent_admission_store`，而 assembly 的 `Cargo.toml` 没有 `[features]` 段启用 redis → `cargo check -p sdkwork-api-cloudrouter-assembly` 在现 HEAD 上 exit 101（E0425）。与本次改动无关，但会让该 crate 的任何测试（含 8.2 里那条前缀断言）在本机默认 features 下够不着 |
+| P2-9 **（本轮新修）** assembly 默认 features 编译不过 | ✅ 已修 | `crates/sdkwork-api-cloudrouter-assembly/Cargo.toml`：把 `sdkwork-web-bootstrap.workspace = true` 改为显式 opt-in `{ workspace = true, features = ["redis"] }`，与 `sdkwork-api-cloudrouter-standalone-gateway` 的写法对齐（后者一直这么写，只有 assembly 漏了）。`cargo check -p sdkwork-api-cloudrouter-assembly` → **exit 0**（1m01s）；`cargo test -p sdkwork-api-cloudrouter-assembly` → **11 passed / 0 failed**，其中 `merged_route_manifest_passes_standalone_gateway_surface_auth_validation` 正是此前够不着的那条 |
+| P2-10 **（本轮新发现并已修）** seed `pathTemplate` 与接收入口漂移 | ✅ 已修 | `vendor-native-resources.json` 两处对齐到 arm 实际接受的路径（`/v1/claude-code/sessions`、`/v1beta/live/sessions`）；并给 `check-cloudrouter-ai-routing-consistency.mjs` 加**第 4 类检查**：每条 literal arm 的 `api_code` 必须在 seed 有 `api_endpoint` 声明，且其 `pathTemplate` 必须与至少一个该 code 的 arm 路径相容（相等 / arm 带厂商前缀时后缀相等 / `{voice_id}` 与 `{voiceId}` 视为同形）。`minimax.music_generation` 有三个别名 arm、seed 只需登记其一，故按「组级」判定而非逐 arm |
+
+第三轮提交（cloudrouter，均已 push）：
+
+| commit | 内容 |
+| --- | --- |
+| `0f860d2b` | `fix(cloudrouter-assembly)`：P2-9 的 redis feature + P2-1 的合并 manifest 全量分类断言 |
+| `6058f590` | `test(edge-runtime)`：audio / avatar-motion 两个 e2e 套件入库，`media_routing_e2e` 补 volcengine speech 能力 |
+| `a9f7a454` | `fix(ai-routing)`：两处 `pathTemplate` 对齐 + 一致性门禁第 4 类检查 |
+| （本文件） | `docs(audit)`：第三轮状态 |
 
 ### 8.1 本轮可复核的验证证据
 
@@ -319,7 +338,60 @@ cargo test -p sdkwork-intelligence-generations-service   # 6 passed; 0 failed
 cargo test -p sdkwork-cloudrouter-router-service --test ai_route_taxonomy   # 2 passed; 0 failed
 ```
 
-### 8.2 工具链缺口已解除；assembly 的那条断言改由门禁等价覆盖
+第三轮（P2-9 / P2-1 全量断言 / P2-2 真跑 / P2-10，同日再晚）：
+
+```bash
+# 全部命令前置：
+export PATH="/d/programs/mingw64/bin:$PATH"
+export RUSTUP_TOOLCHAIN=stable-x86_64-pc-windows-gnu
+
+# --- P2-9：assembly 修复前 exit 101(E0425)，修复后 ---
+cargo check -p sdkwork-api-cloudrouter-assembly          # exit 0, 1m01s
+cargo test  -p sdkwork-api-cloudrouter-assembly          # 11 passed; 0 failed
+#   其中 merged_route_manifest_passes_standalone_gateway_surface_auth_validation
+#   内含本轮新增的「整个合并 manifest 无 Unknown 路由」断言（P2-1）
+
+# --- P2-2 / 第 7 节：三个 e2e 首次真实编译并执行 ---
+cargo test -p sdkwork-cloudrouter-edge-runtime \
+  --test media_routing_e2e --test audio_vendor_routing_e2e --test avatar_motion_routing_e2e
+#   audio_vendor_routing_e2e   4 passed; 0 failed
+#     elevenlabs text-to-speech / volcengine speech / suno music / minimax music
+#   avatar_motion_routing_e2e  3 passed; 0 failed
+#     kling avatar / kling motion-control / vidu motion sync
+#   media_routing_e2e          7 passed; 0 failed
+#     gemini veo / openai image2 / openai video / seedance(volcengine) / vidu video /
+#     gemini image / kling video
+#   合计 14 passed / 0 failed（编译 11m04s）
+#   链路：Bearer API-key → 账户组池 → 路由策略/规则 → 路由账户(base_url+secret_ref)
+#         → 密钥解析 → 真实 HTTP 打到本地 mock 上游 → 响应透传；
+#         逐条断言转发路径与 Authorization 头，例如
+#         /elevenlabs/v1/text-to-speech/{voice} → 上游 /v1/text-to-speech/{voice}
+#         与 seed 的 elevenlabs.text_to_speech pathTemplate 逐字一致
+
+# --- P2-10：第 4 类门禁 ---
+node tools/check-cloudrouter-ai-routing-consistency.mjs --root .   # passed
+#   passthrough: 24 literal arms over 20 api codes, 5 predicate arms not comparable
+#   classifier:  24 literal arms over 20 api codes, 5 predicate arms not comparable
+# 反例 A（seed 侧改坏）：把 kling.avatar 的 pathTemplate 改成 /v1/videos/avatars-typo
+#   → exit 1，两份拷贝各点名一条，两侧值都列出：
+#     "kling.avatar: arms accept /v1/videos/avatar; data/ai-routing/resources declares /v1/videos/avatars-typo"
+# 反例 B（arm 侧无 seed 声明）：把 seed 的 kling.avatar 改名为 kling.avatar_typo
+#   → exit 1，两处独立报红：
+#     "api codes the path map can return but no seeded api_endpoint declares: kling.avatar"
+#     "seeded but absent from ai_route_taxonomy.rs: kling.avatar_typo"
+# 两次反例均按字节还原并校验（sha256 比对一致）
+
+# 同批其余门禁未受影响
+node tools/generate-cloudrouter-http-route-manifest-rs.mjs --check   # 31/120/167 ok
+node tools/sync-cloudrouter-api-standard-extensions.mjs --check      # stamped=0 ok
+```
+
+**修正 P2-10 的第一版结论**：初次用脚本核对时把 `minimax.music_generation` 也报成了漂移，
+但它的三条 arm（`/v1/music_generation`、`/v1/music/generations`、`/v1/music/generation`）
+是**别名集**，seed 登记的 `/v1/music/generations` 就在其中 → 实际只有 `anthropic.claude_code`
+与 `gemini.live` 两处是真漂移。门禁因此按「api_code 组级」判定，而非逐 arm。
+
+### 8.2 工具链缺口已解除；assembly 的那条断言已真实执行
 
 上一版这里写着「cloudrouter 的 `cargo test` 跑不了」。**该结论已作废**：本机 `rustup` 同时装着
 `stable-x86_64-pc-windows-msvc`（`rust-toolchain.toml` 的 `channel = "stable"` 在本仓解析到它，
@@ -346,11 +418,20 @@ cargo test  -p sdkwork-cloudrouter-router-service --test ai_route_taxonomy    # 
 E0425 exit 101 —— 该 crate 在本机默认 features 下本来就编译不过，`bootstrap.rs` 里那条前缀覆盖
 断言因此够不着。已记入第 3 节清单末尾的 P2-9。
 
-它并没有失去覆盖：本轮的 `tools/check-cloudrouter-ai-routing-consistency.mjs` 在 Node 侧对
-**同一批来源**做了等价断言，而且更强 —— 除了 122 条契约路径的前缀覆盖，还额外校验
+> **更正（第三轮）**：上面这段描述的缺口**已经修掉**。assembly 的 `Cargo.toml` 现在与
+> `sdkwork-api-cloudrouter-standalone-gateway` 一致地写成
+> `sdkwork-web-bootstrap = { workspace = true, features = ["redis"] }`（后者一直这么写，
+> 只有 assembly 漏了）。`cargo check` exit 0、`cargo test` 11 passed / 0 failed，
+> `bootstrap.rs` 那条前缀覆盖断言**已在本机真实执行**，不再是「Node 侧等价替代」。
+> 本轮又在同一测试里补了一条更强的断言：整个合并 manifest（app-api + backend-api + open-api）
+> 中任何一条路由分类为 `Unknown` 即报错（P2-1 的云路由侧闭环）。
+
+它并没有失去覆盖：`tools/check-cloudrouter-ai-routing-consistency.mjs` 在 Node 侧对
+**同一批来源**做等价断言，而且更强 —— 除了 122 条契约路径的前缀覆盖，还额外校验
 `OPEN_API_PREFIXES` 与 `bootstrap.rs` 镜像逐项一致（12 vs 12），这是 Rust 那条断言没做的部分。
 
-**仍未执行**：真实厂商调用（从入站面到第三方 API 的最后一跳），见第 7 节。
+**仍未执行**：真实厂商调用（打真实外部端点）。链路本身——含真实 HTTP 派发到 mock 上游——已由
+三个 e2e 测试实证（14 passed），见第 7 节与 8.1。
 
 ### 8.3 提交后仍未跟踪/未提交的旁支
 
@@ -363,17 +444,27 @@ E0425 exit 101 —— 该 crate 在本机默认 features 下本来就编译不�
 > 调用的 9 个 gateway 方法在当时的 HEAD 上并不存在。两者均已随本轮提交
 > （`dedcb9b7` / `a4b32b5`）。
 
+> **更正（第三轮）**：上一版把 `crates/sdkwork-cloudrouter-edge-runtime/tests/media_routing_e2e.rs`
+> 的改动和未跟踪的 `tests/audio_vendor_routing_e2e.rs` / `tests/avatar_motion_routing_e2e.rs`
+> 也列为「真正无关的旁支」，**同样是错的**，而且是同类误判的第二次。这三个测试覆盖的正是
+> 本专题修复的那批厂商原生路径（elevenlabs / volcengine / suno / minimax 音频，
+> kling avatar / motion-control、vidu motion sync）；把它们留在工作树里，意味着本轮的修复
+> **没有任何回归测试**——P0-5 的 passthrough 映射与 provider-adapter 派发可以再次漂移而全绿。
+> 第三轮已把三者一并提交（`0855dc04`，amend 后为 `6058f590`），并在本机真实跑通 14 passed。
+
 以下才是真正无关的旁支，仍未提交：
 
 - `sdkwork-cloudrouter`：`Cargo.toml` / `Cargo.lock`、`apis/manifest.json`、
   `crates/sdkwork-cloudrouter-config/src/database.rs`、
   `crates/sdkwork-cloudrouter-observability/src/tracing_setup.rs`、
-  `crates/sdkwork-cloudrouter-edge-runtime/tests/media_routing_e2e.rs`、
   `scripts/plan-cloud-router-install-packages.mjs`、`scripts/start-cloud-router-production.mjs`、
   `docs/guides/developer/README.md`、`docs/audit/DELETED-FILE-FORENSICS-2026-09-11.md`、
   `data/skills/cloudhub/...`、`sdks/cloudrouter-open-sdk/.../package.json` 的 `workspace:*` 改写；
-  `package.json` 里 `check:rust-dependency-singularity` 那一行（配套脚本仍未跟踪，所以本轮
-  `package.json` 是逐行暂存的，只提交了 `api:ai-routing-consistency:check` 那两处）；
-  未跟踪：`tests/audio_vendor_routing_e2e.rs`、`tests/avatar_motion_routing_e2e.rs`、
-  `scripts/check-rust-dependency-singularity.mjs`、`scripts/rust-dependency-singularity.baseline.json`。
+  `package.json` 里 `check:rust-dependency-singularity` 那一行（配套脚本仍未跟踪，所以
+  `package.json` 一直是逐行暂存的，只提交过 `api:ai-routing-consistency:check` 那两处）；
+  未跟踪：`scripts/check-rust-dependency-singularity.mjs`、`scripts/rust-dependency-singularity.baseline.json`。
+  `Cargo.lock` 的 233+/687- 是这一摊的（h2 / hyper / rustls 多版本去重）；assembly 启用
+  `redis` feature **不需要**动 lock —— 该 crate 的 lock 条目只列 `sdkwork-web-bootstrap`，
+  且 `redis` / `sdkwork-web-store-redis` 早已因 standalone gateway 而在 lock 里，
+  `cargo metadata --locked` exit 0 佐证。
 - `sdkwork-generations`：`Cargo.lock`。
