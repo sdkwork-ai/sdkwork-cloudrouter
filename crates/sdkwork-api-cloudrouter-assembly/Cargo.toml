@@ -12,7 +12,12 @@ path = "src/lib.rs"
 [dependencies]
 axum.workspace = true
 tokio.workspace = true
-sdkwork-web-bootstrap.workspace = true
+# `feeds_open_runtime.rs` wires the shared rate-limit / idempotency /
+# concurrent-admission stores, which `sdkwork-web-bootstrap` gates behind its
+# `redis` feature. The standalone gateway already enables it; without the same
+# opt-in here this crate fails to compile under its own default feature set
+# (E0425), which also keeps the bootstrap route-prefix assertion unreachable.
+sdkwork-web-bootstrap = { workspace = true, features = ["redis"] }
 sdkwork-web-core.workspace = true
 anyhow.workspace = true
 sdkwork-cloudrouter-http.workspace = true

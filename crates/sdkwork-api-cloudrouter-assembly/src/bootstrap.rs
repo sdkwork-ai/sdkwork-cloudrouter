@@ -1125,6 +1125,27 @@ mod tests {
             .validate_route_auth_for_surfaces(&profile)
             .expect("standalone gateway route manifest must satisfy surface auth validation");
 
+        // P2-1: the framework's `validate_route_auth_for_surfaces` ends with
+        // `WebApiSurface::Unknown => {}`, so a manifest route matching none of
+        // the configured surfaces is silently accepted and — because the
+        // request-context interceptor classifies it the same way at runtime —
+        // is served with no surface auth contract at all. The open-api slice is
+        // already covered by the prefix assertion above; this closes the gap for
+        // the *whole* composed manifest (app-api + backend-api + open-api), so a
+        // new route that forgets to live under a known surface fails here rather
+        // than reaching production as an unvalidated "unknown" surface.
+        let unclassified: Vec<String> = manifest
+            .routes()
+            .iter()
+            .filter(|route| classify_api_surface(route.path, &profile) == WebApiSurface::Unknown)
+            .map(|route| format!("{:?} {}", route.method, route.path))
+            .collect();
+        assert!(
+            unclassified.is_empty(),
+            "these composed manifest routes match no configured API surface and would fall \
+             through the framework's `Unknown => {{}}` arm unvalidated: {unclassified:?}"
+        );
+
         for path in [
             "/app/v3/api/promotions/offers",
             "/app/v3/api/promotions/offers/demo-offer",
