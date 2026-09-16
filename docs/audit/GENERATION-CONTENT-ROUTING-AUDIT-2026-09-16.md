@@ -468,3 +468,177 @@ E0425 exit 101 —— 该 crate 在本机默认 features 下本来就编译不�
   且 `redis` / `sdkwork-web-store-redis` 早已因 standalone gateway 而在 lock 里，
   `cargo metadata --locked` exit 0 佐证。
 - `sdkwork-generations`：`Cargo.lock`。
+
+---
+
+## 9. 第四轮：厂商原生路径被 SDK 重复前置 `/v1`（P1-11）
+
+### 9.1 现象（探针实证，非推断）
+
+在 `crates/sdkwork-cloudrouter-edge-runtime/tests/avatar_motion_routing_e2e.rs` 里临时加了一个
+探针测试，把同一条链路打两遍，只换请求路径：
+
+```text
+POST /kling/v1/videos/avatar        → 200，命中 kling 路由账户，上游收到请求
+POST /v1/kling/v1/videos/avatar     → 404
+  body: {"error":{"message":"Not found","type":"invalid_request_error","code":"not_found"}}
+  kling_calls = 0                      ← 连路由账户都没走到
+```
+
+**这是七类内容生成里最致命的一种失败**：契约、SDK、seed、路由账户、价格全都对，
+但 SDK 客户端发出去的路径多了一层前缀，请求在入站分类阶段就被归成 OpenAI 兼容请求，
+厂商原生分支永远不可达。探针已按纪律回退，没有留下。
+
+### 9.2 根因链
+
+1. `crates/sdkwork-cloudrouter-edge-runtime/src/.../invocation_http.rs:572` 的无条件分支：
+   任何 `path == "/v1" || path.starts_with("/v1/")` 都交给 `OpenAiResourceClassifier`。
+   于是 `/v1/kling/...` 永远不会落到 `provider_native_api_code_from_standard_path` 的 arm 上。
+2. 九语言 SDK 的路径 helper（`API_PREFIX = "/v1"`）会把**不以 `/v1` 开头**的路径前置 `/v1`。
+   对 OpenAI 兼容契约路径（`/v1/models`）是恒等变换，对厂商原生路径（`/kling/v1/videos/avatar`）
+   就变成 `/v1/kling/v1/videos/avatar`。
+3. `sdkwork-sdk-generator` **九个语言都实现了**这条豁免
+   （`pathUsesPrefixHelper = !this.vendorPathPrefixes.includes(firstPathSegment)`），
+   输入取自 spec 的 `x-sdkwork-vendor-path-prefixes`。
+4. **但 cloudrouter 的 open-api 契约从来没有声明这个字段**（4 处契约产物 `grep -c` 全为 0）。
+   历史提交 `4055fcbf`（2026-09-04）曾经**手工把该字段写进生成物**，随后被某次重新生成抹掉 ——
+   这正是「手改产物、不改生产者」的必然结果。
+
+### 9.3 同一根因下的第二个缺陷：契约生成器已过期
+
+用**未改动**的生成器重新生成，比检出的 `apps/sdkwork-cloudrouter-pc/public/openapi.json`
+**小 23,541 字节**，少 9 个 schema 和 5 条路径：
+
+```text
+/kling/v1/videos/avatar            /kling/v1/videos/motion-control
+/minimax/v1/music_generation       /vidu/ent/v2/template
+/volcengine/api/v3/audio/speech
+```
+
+它们是 `c035da4b`（"land the vendor-native content-generation route chain"）**直接编辑契约产物**
+加进去的 —— 该提交改的 39 个 `.py` 全是生成的 Python SDK，**没有碰任何生产者脚本**。
+
+后果：`python -B -m tools.cloudrouter_gateway_openapi_generator --check` 在 **main 上就是红的**。
+本轮的 SDK 前缀缺陷，与契约漂移是同一个洞的两面。
+
+### 9.4 第三个缺陷：厂商标识清单四处漂移
+
+「这个路径属于哪个厂商」这件事被四份清单分别回答，缺一份就是**静默误分类**：
+
+| 清单 | 缺谁 | 后果 |
+| --- | --- | --- |
+| `VENDOR_PROVIDER_PREFIXES`（网关契约生成器） | `minimax` | 自己的 vendor schema quality audit 会漏审 |
+| `inferExternalProtocolId`（标准扩展 sync） | `minimax` | 回落 `cloudrouter-vendor-relay` |
+| `isExternalWireProtocolRoute`（标准扩展 sync） | `minimax` | 被当成 SDKWork 信封业务流量 |
+| `infer_external_protocol_id`（SDK 运行时标准化器） | `minimax`、`elevenlabs` | `/elevenlabs/v1/sound-generation` 在 `sdks/**` 里被标成 `cloudrouter-vendor-relay` |
+
+### 9.5 修复
+
+**生产者侧（让声明成为产物，而不是手改）**
+
+- `tools/cloudrouter_gateway_openapi_generator.py`：补齐上述 5 条厂商原生路径与 9 个 schema
+  （`KlingAvatarCreateRequest` / `KlingMotionControlRequest` / `ViduTemplateRequest` /
+  `MiniMaxMusic*` 共 6 个）；新增 `OPEN_API_PREFIX` 与
+  `vendor_path_prefixes_from_paths()`，**从自己服务的路径反推** `x-sdkwork-vendor-path-prefixes`；
+  补 `minimax` 进 `VENDOR_PROVIDER_PREFIXES` 与 tags（新增 `Audio/minimax`）。
+- `tools/sync-cloudrouter-api-standard-extensions.mjs`：两张清单补 `minimax`；
+  `stampOpenApiExtensions` 把该声明一并盖到 **`apis/**`（下游真正读的那份契约）**上。
+- `tools/cloudrouter_sdk_runtime_standardizer.py`：`infer_external_protocol_id` 补 `minimax`
+  与 `elevenlabs`。
+
+**消费侧（跨仓：`sdkwork-sdk-generator`）**
+
+契约声明生效后，厂商原生模块不再调用 prefix helper，于是**三个生成器的无条件导入变成了未使用导入**：
+
+| 语言 | 未使用导入 | 严重性 |
+| --- | --- | --- |
+| Rust | `use crate::api::paths::ai_path;` ×17 | **硬失败**：本仓 `rust compile warnings gate` 用 `RUSTFLAGS=-D warnings` |
+| TypeScript | `import { aiApiPath } from './paths';` ×17 | 卫生（`noUnusedLocals` 未开，构建通过） |
+| Dart | `import 'paths.dart';` ×4 | 卫生（无门禁覆盖） |
+
+三处均按「该文件是否真的会调用 helper」决定导入：Rust / TypeScript 复用逐操作的厂商前缀判定，
+Dart 直接看渲染出的方法体里有没有 `ApiPaths.`。
+
+**顺带修正的措辞（被仓库既有护栏拦下）**：仓库断言公开契约不得出现 `native` / `passthrough`
+字样（`test_public_vendor_operations_do_not_expose_passthrough_contracts`、
+`..._schema_quality_for_reference_rendering`）。我从 HEAD 契约逐字移植的
+`ViduTemplateRequest.payload` 描述含 "passthrough"，自己新写的 5 条描述含 "vendor-native" ——
+两者都改成与同族一致的 `using the configured ... provider account` 句式。
+
+### 9.6 门禁：两条新检查 + 负向验证
+
+`tools/check-cloudrouter-ai-routing-consistency.mjs`：
+
+- **检查 5 增强**：在原有「四份厂商标识清单与契约一致」之上，增加
+  「契约服务的厂商命名空间集合 ⟺ `x-sdkwork-vendor-path-prefixes` 声明集合」双向比对
+  （多声明=phantom 也报错）。命名空间从契约派生，所以这条检查自身不会漂移。
+- **检查 6 新增**：扫描 `sdks/cloudrouter-open-sdk/**` 九语言源码（2367 个文件，跳过
+  `node_modules` / `.sdkwork` / `dist` / `build`），命中 `/<prefix>/<vendor>/` 即失败并点名文件。
+
+**负向验证（两次都做，且都按字节还原）**
+
+```text
+# 删掉 sync 里 minimax 那一行
+→ exit 1: "inferExternalProtocolId does not know 1 namespace(s)... /minimax/..."
+
+# 往生成好的 Rust 模块注入 "/v1/kling/v1/videos/avatar"
+→ exit 1: "1 generated call site(s) mount a vendor-native path under "/v1""
+          "  sdks/cloudrouter-open-sdk/.../src/api/videos_kling.rs: /v1/kling/"
+```
+
+### 9.7 验证矩阵
+
+```text
+python -B -m unittest tests.test_cloudrouter_gateway_openapi_generator
+  → 62 passed（root_schema_names 期望值 47 → 57，因为契约真的多了 9 个 schema）
+
+python -B -m tools.cloudrouter_gateway_openapi_generator --check   → exit 0
+node tools/sync-cloudrouter-api-standard-extensions.mjs --check    → exit 0（stamped=0）
+node scripts/materialize-apis-contracts.mjs --check                → passed
+node tools/check-cloudrouter-ai-routing-consistency.mjs --root .   → passed
+  generated SDKs: 2367 source files scanned, 0 prepend "/v1" to a vendor-native path
+
+九语言生成物逐条核对：/kling/v1/videos/avatar 全部为裸路径（csharp/flutter/go/java/
+  kotlin/python/rust/swift/typescript 各 1 处），"/v1/kling/" 残留 0 条
+
+Rust：cargo check --all-targets + RUSTFLAGS=-D warnings → exit 0（17 个警告清零）
+TypeScript：生成包 build → exit 0
+```
+
+**注意 `publish-core.mjs --action check` 在本机跑不了**：它内部 `cargo check` 用 MSVC 工具链，
+而 Git Bash 的 `/usr/bin/link.exe`（coreutils）抢在 PATH 前面，报
+`link: extra operand`。改用 GNU 工具链 + `D:/programs/mingw64/bin` 前置即可编译
+（本机装着 `stable-x86_64-pc-windows-gnu`，与第 8.2 节的结论一致）。
+
+### 9.8 提交
+
+- `sdkwork-sdk-generator`：`24d5a88` — 三个生成器的条件导入（+23/-6）。
+- `sdkwork-cloudrouter`：`4c1c1b64` — 生产者补齐 + 门禁 + 契约与九语言生成物（280 文件，+4910/-4123）。
+
+刻意排除（均属其它会话，与本次无关）：`Cargo.toml` / `Cargo.lock`、
+`crates/sdkwork-cloudrouter-config/src/database.rs`、
+`crates/sdkwork-cloudrouter-observability/src/tracing_setup.rs`、
+`data/skills/cloudhub/...`、`docs/guides/developer/README.md`、
+`docs/audit/DELETED-FILE-FORENSICS-2026-09-11.md`、`package.json`（别会话正在给每条 script
+加 `node scripts/lib/ensure-cloud-router-node-deps.mjs &&` 前缀）、
+`scripts/plan-cloud-router-install-packages.mjs`、`scripts/start-cloud-router-production.mjs`、
+`sdks/cloudrouter-open-sdk/cloudrouter-open-sdk-typescript/package.json`（`workspace:*` 改写）、
+未跟踪的 `scripts/check-rust-dependency-singularity.mjs` 与 `*.baseline.json`。
+
+> `apis/manifest.json` 本轮**纳入提交**：它的 3 行 sha256 变化是 `materialize --apply` 的确定性产物，
+> 且 `materialize --check` 通过。第 8.3 节把它列为旁支是上一轮的口径，当时没有跑 materialize。
+
+### 9.9 本轮顺带找到、但**未修**的既存缺陷
+
+| # | 位置 | 事实 | 影响 |
+| --- | --- | --- | --- |
+| N-1 | `tests/test_api_contract_directory_standard.py:22` | 对三个 `apis/**` 契约统一断言 `openapi == "3.1.2"`，但 `apis/open-api/...openapi.json` 在 **HEAD 上就是 `3.0.3`**（网关生成器固守 3.0，且有单测断言 3.0.3） | **main 上该测试就是红的**；3.0.3 → 3.1.2 不是换版本号就行（`nullable`、`$defs` 语义不同），需先定方向 |
+| N-2 | `scripts/run-cloud-router-application.test.mjs:5943` | `production SDK archiver` 硬编码期望 `...-0.1.0.zip`，而 `sdks/*/*-typescript/package.json` 在 **HEAD 上就是** 0.1.5 / 0.1.6 | main 上就红 |
+| N-3 | 同上 `:6056` | 读 `sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/src/api/ai.ts`，该目录只跟踪着 `index.ts`，`api/ai.ts` **从未被跟踪** | 必然 `ENOENT`；app-sdk 生成物缺失（迁盘遗留类型） |
+| N-4 | `sdks/*/.../generated/server-openapi/Cargo.lock` | 三个 SDK 的 Rust 生成包都不跟踪该文件，`.gitignore` 也**不忽略**它 | `cargo check` 会留下一个未跟踪文件（本轮已清理） |
+| N-5 | `scripts/verify-cloud-router-application.mjs` 的 `frontend source hygiene tests` | 命令是 `python -B -m unittest tests.test_frontend_source_hygiene_standard`，**该模块不存在** | 该步永远 error |
+| N-6 | 环境 | managed Python 3.13.12 **没有 PyYAML** → `unittest discover tests` 报 43 个 `No module named 'yaml'` error；TEMP 为 8.3 短名 `CHARLE~1` 时 `test_writes_and_checks_gateway_openapi_spec` 路径断言假红 | 已建隔离 venv（`envs/default`，pyyaml 6.0.3）并用长名 TEMP 解决；**这不是代码缺陷，但会让「跑全量测试」变成噪声** |
+| N-7 | `scripts/verify-cloud-router-application.mjs` 首步 | `sdkwork-models catalog check` 依赖 `../sdkwork-utils/packages/sdkwork-utils-typescript` 的 `dist`，本机未构建 | verify 在这里就 exit 1，后面的门禁压根没跑（跨仓前置，迁盘遗留类型） |
+
+N-1 ~ N-3 是**仓库自带门禁在 main 上就红**，属独立议题；N-5、N-7 让两条验证通道失效，
+会让人误判「门禁全绿」。三项都需要单独定方向，未在本轮改动。
