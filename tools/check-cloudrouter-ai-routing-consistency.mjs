@@ -2,7 +2,7 @@
 /**
  * Consistency gate for the vendor-native AI routing chain.
  *
- * Three separate declarations have to agree before a vendor-native request can
+ * Four separate declarations have to agree before a vendor-native request can
  * reach its route account and its price. Each one fails silently on its own, so
  * every check below reports the concrete drift instead of a bare "failed".
  *
@@ -27,6 +27,14 @@
  *    request reaches routing. `bootstrap.rs` mirrors that list and asserts the
  *    same thing from inside the Rust test suite; this re-runs the check on the
  *    Node side, where it is runnable without a C toolchain.
+ *
+ * 4. Every arm of the `path -> api_code` map has to be described by a seeded
+ *    `api_endpoint`. The router matches the arms above, but `pathTemplate` is
+ *    what the resource catalogue persists and displays, so a template naming a
+ *    path no arm can produce advertises an entry point that does not exist.
+ *    This is the check that caught `anthropic.claude_code` seeded as
+ *    `/v1/claude/code` and `gemini.live` as
+ *    `/v1beta/models/{model}:liveGenerateContent`.
  *
  * Usage:
  *   node tools/check-cloudrouter-ai-routing-consistency.mjs [--root <dir>]
@@ -102,6 +110,44 @@ function reportSetDifference(label, left, right) {
   for (const entry of missing) failures.push(`    ${entry}`);
 }
 
+/**
+ * Extract the `path == "<literal>"` arms as structured triples. Predicate arms
+ * (`task_query_path_matches`, `gemini_model_action_matches`, ...) match a family
+ * of paths rather than one literal, so they cannot be compared textually and are
+ * counted separately.
+ */
+function literalPathArms(source, relativePath) {
+  const functionBody = source.match(
+    /fn provider_native_api_code_from_standard_path[\s\S]*?\n\}\n/,
+  );
+  if (!functionBody) return { arms: [], predicateCount: 0 };
+  const arms = [];
+  const pattern =
+    /((?:"[a-z0-9_.]+")(?:\s*\|\s*"[a-z0-9_.]+")*)\s*if\s+path\s*==\s*"([^"]+)"\s*=>\s*"([a-z0-9_.]+)"/g;
+  let match;
+  while ((match = pattern.exec(functionBody[0])) !== null) {
+    const providers = [...match[1].matchAll(/"([a-z0-9_.]+)"/g)].map(
+      (entry) => entry[1],
+    );
+    arms.push({ providers, path: match[2], apiCode: match[3] });
+  }
+  const allArms = functionBody[0].match(/=>\s*"[a-z0-9_.]+"/g) ?? [];
+  return { arms, predicateCount: allArms.length - arms.length };
+}
+
+/**
+ * Whether a seeded `pathTemplate` describes the same upstream path an arm
+ * matches. Arms carrying a provider prefix (`/vidu/ent/v2/template`) are
+ * accepted when they end with the seeded template, and `{voice_id}` /
+ * `{voiceId}` are treated as the same placeholder.
+ */
+function pathTemplateCompatible(armPath, template) {
+  if (!template) return false;
+  if (armPath === template || armPath.endsWith(template)) return true;
+  const collapse = (value) => value.replace(/\{[^}]*\}/g, "{}");
+  return collapse(armPath) === collapse(template);
+}
+
 // ---------------------------------------------------------------------------
 // 1. The two copies of the path -> api_code map must stay identical.
 // ---------------------------------------------------------------------------
@@ -131,6 +177,7 @@ if (classifierArms.size > 0 && passthroughArms.size > 0) {
 
 const seedDirectory = join(root, SEED_DIR);
 const seededApiCodes = new Set();
+const seededEndpoints = [];
 if (!existsSync(seedDirectory)) {
   failures.push(`${SEED_DIR}: directory is missing`);
 } else {
@@ -149,6 +196,15 @@ if (!existsSync(seedDirectory)) {
     for (const item of document.items ?? []) {
       if (typeof item.apiCode === "string" && item.apiCode.length > 0) {
         seededApiCodes.add(item.apiCode);
+      }
+      if (item.resourceType === "api_endpoint") {
+        seededEndpoints.push({
+          apiCode: item.apiCode,
+          vendorCode: item.vendorCode,
+          pathTemplate: item.pathTemplate,
+          method: item.method,
+          resourceCode: item.resourceCode,
+        });
       }
     }
   }
@@ -246,6 +302,78 @@ if (openApiPrefixes && openApiPrefixes.length > 0) {
   }
 } else {
   failures.push(`${STANDALONE_MAIN}: cannot find OPEN_API_PREFIXES`);
+}
+
+// ---------------------------------------------------------------------------
+// 4. Every literal arm must be described by a seeded api_endpoint.
+// ---------------------------------------------------------------------------
+
+// `pathTemplate` does not drive routing — the arms above do — but it is what the
+// resource catalogue stores and shows: `ai_routing_seed.rs` upserts it into the
+// api_endpoint table and only requires it to start with `/`. A template naming a
+// path no arm can produce therefore advertises an entry point that does not
+// exist, and that template is what an operator reads when wiring a route
+// account. The two have already drifted: `anthropic.claude_code` was seeded as
+// `/v1/claude/code` while the arms accept `/v1/claude-code/sessions`, and
+// `gemini.live` was seeded as `/v1beta/models/{model}:liveGenerateContent` while
+// the arms accept `/v1beta/live/sessions`.
+//
+// An api code passes when at least one of its arms is described by one of its
+// templates: `minimax.music_generation` is reached through three aliases and the
+// catalogue only needs to name one of them.
+
+if (seededEndpoints.length > 0) {
+  for (const [label, relativePath] of [
+    ["passthrough", PASSTHROUGH],
+    ["classifier", CLASSIFIER],
+  ]) {
+    const { arms, predicateCount } = literalPathArms(read(relativePath), relativePath);
+    const byApiCode = new Map();
+    for (const arm of arms) {
+      if (!byApiCode.has(arm.apiCode)) byApiCode.set(arm.apiCode, []);
+      byApiCode.get(arm.apiCode).push(arm);
+    }
+    const undescribed = [];
+    const unseeded = [];
+    for (const [apiCode, apiArms] of byApiCode) {
+      const endpoints = seededEndpoints.filter(
+        (endpoint) => endpoint.apiCode === apiCode,
+      );
+      if (endpoints.length === 0) {
+        unseeded.push(apiCode);
+        continue;
+      }
+      const described = apiArms.some((arm) =>
+        endpoints.some((endpoint) =>
+          pathTemplateCompatible(arm.path, endpoint.pathTemplate),
+        ),
+      );
+      if (!described) {
+        undescribed.push(
+          `${apiCode}: arms accept ${apiArms
+            .map((arm) => arm.path)
+            .join(" / ")}; ${SEED_DIR} declares ${endpoints
+            .map((endpoint) => endpoint.pathTemplate)
+            .join(" / ")}`,
+        );
+      }
+    }
+    notes.push(
+      `${label}: ${arms.length} literal arms over ${byApiCode.size} api codes, ${predicateCount} predicate arms not comparable`,
+    );
+    if (unseeded.length > 0) {
+      failures.push(
+        `${label}: api codes the path map can return but no seeded api_endpoint declares (${unseeded.length})`,
+      );
+      for (const entry of unseeded.sort()) failures.push(`    ${entry}`);
+    }
+    if (undescribed.length > 0) {
+      failures.push(
+        `${label}: seeded pathTemplate describes a path these arms cannot produce (${undescribed.length}); the catalogue advertises an entry point that does not exist`,
+      );
+      for (const entry of undescribed.sort()) failures.push(`    ${entry}`);
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------

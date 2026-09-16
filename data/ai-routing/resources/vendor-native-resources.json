@@ -9,7 +9,7 @@
       "modalityCode": "llm",
       "apiCode": "anthropic.claude_code",
       "method": "POST",
-      "pathTemplate": "/v1/claude/code",
+      "pathTemplate": "/v1/claude-code/sessions",
       "capability": "llm",
       "capabilities": [
         "llm",
@@ -93,7 +93,7 @@
       "modalityCode": "audio",
       "apiCode": "gemini.live",
       "method": "POST",
-      "pathTemplate": "/v1beta/models/{model}:liveGenerateContent",
+      "pathTemplate": "/v1beta/live/sessions",
       "capability": "audio",
       "capabilities": [
         "audio",
