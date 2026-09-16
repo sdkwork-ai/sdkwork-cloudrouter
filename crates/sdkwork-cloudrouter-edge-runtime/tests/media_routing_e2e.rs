@@ -363,6 +363,15 @@ fn catalog_with_all_media_accounts(
         )
         .with_catalog_key("volcengine.video_generation"),
     );
+    catalog.add_model(
+        AiModel::new(
+            "speech",
+            "Volcengine Ark speech synthesis",
+            "volcengine",
+            vec!["audio"],
+        )
+        .with_catalog_key("volcengine.speech"),
+    );
 
     // Base chat model for the fallback chat route used by `_gateway` internal
     // requests.
@@ -646,6 +655,16 @@ fn catalog_with_all_media_accounts(
         "volcengine",
         4005,
     );
+    add_price_for_account(
+        &mut catalog,
+        "volcengine.speech",
+        "speech",
+        BillingMeter::ApiRequest,
+        "0.010000",
+        "0.004000",
+        "volcengine",
+        4005,
+    );
 
     catalog.add_plan(PricingPlan::new(
         "standard",
@@ -826,8 +845,8 @@ fn media_accounts(
             secret_ref: "vault://providers/volcengine/account/main".to_owned(),
             secret_value: "sk-volcengine-media-secret".to_owned(),
             priority: 50,
-            api_scope: &["volcengine.video_generation"],
-            capabilities: &["video"],
+            api_scope: &["volcengine.video_generation", "volcengine.speech"],
+            capabilities: &["video", "audio"],
         },
     ]
 }
