@@ -15,7 +15,7 @@ public class AudioMinimaxApi {
 
     /** Minimax create music generation */
     public MiniMaxMusicGenerationResponse createV1MusicGeneration(MiniMaxMusicGenerationRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/minimax/v1/music_generation"), body, null, null, "application/json");
+        Object raw = client.post("/minimax/v1/music_generation", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<MiniMaxMusicGenerationResponse>() {});
     }
 

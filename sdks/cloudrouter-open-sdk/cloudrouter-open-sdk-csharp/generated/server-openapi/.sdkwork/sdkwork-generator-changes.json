@@ -9,7 +9,7 @@
     "protocol": "http",
     "packageName": "Sdkwork.CloudRouter.Open.Sdk"
   },
-  "changeFingerprint": "5507adbc595d5084468f0e8dce1d377f8081c968a3dfac6df4ea58423f9d3775",
+  "changeFingerprint": "371f85be42063b7f33d74d7adca5217ce2fc6eac9f2234a5f52935a5026d9dc3",
   "changes": {
     "createdGeneratedFiles": [
       "Api/Api.cs",

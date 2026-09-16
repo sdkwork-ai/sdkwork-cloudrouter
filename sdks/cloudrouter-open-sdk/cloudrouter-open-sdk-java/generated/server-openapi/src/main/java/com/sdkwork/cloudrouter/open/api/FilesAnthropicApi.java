@@ -20,25 +20,25 @@ public class FilesAnthropicApi {
             new QueryParameterSpec("after_id", afterId, "form", true, false, null),
             new QueryParameterSpec("limit", limit, "form", true, false, null)
         ));
-        Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/anthropic/v1/files"), query));
+        Object raw = client.get(ApiPaths.appendQueryString("/anthropic/v1/files", query));
         return client.convertValue(raw, new TypeReference<AnthropicFileListResponse>() {});
     }
 
     /** Anthropic upload file */
     public AnthropicFile createV1File(AnthropicFileUploadMultipartRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/anthropic/v1/files"), body, null, null, "multipart/form-data");
+        Object raw = client.post("/anthropic/v1/files", body, null, null, "multipart/form-data");
         return client.convertValue(raw, new TypeReference<AnthropicFile>() {});
     }
 
     /** Anthropic delete file */
     public AnthropicDeleteResponse deleteV1Files(String fileId) throws Exception {
-        Object raw = client.delete(ApiPaths.aiPath("/anthropic/v1/files/" + serializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false)) + ""));
+        Object raw = client.delete("/anthropic/v1/files/" + serializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false)) + "");
         return client.convertValue(raw, new TypeReference<AnthropicDeleteResponse>() {});
     }
 
     /** Anthropic retrieve file content */
     public byte[] listV1FilesContent(String fileId) throws Exception {
-        return client.requestBytes("GET", ApiPaths.aiPath("/anthropic/v1/files/" + serializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false)) + "/content"), null, null, null, null, false, false);
+        return client.requestBytes("GET", "/anthropic/v1/files/" + serializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false)) + "/content", null, null, null, null, false, false);
     }
 
     private record PathParameterSpec(String name, String style, boolean explode) {}

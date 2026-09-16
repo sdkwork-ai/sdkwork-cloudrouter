@@ -24,7 +24,7 @@ namespace Sdkwork.CloudRouter.Open.Api
             {
                 new QueryParameterSpec("output_format", outputFormat, "form", true, false, null),
             });
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.ElevenLabsSoundGenerationResponse>(ApiPaths.AppendQueryString(ApiPaths.AiPath("/elevenlabs/v1/sound-generation"), queryString), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.ElevenLabsSoundGenerationResponse>(ApiPaths.AppendQueryString("/elevenlabs/v1/sound-generation", queryString), body, null, null, "application/json");
         }
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace Sdkwork.CloudRouter.Open.Api
             {
                 new QueryParameterSpec("output_format", outputFormat, "form", true, false, null),
             });
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.ElevenLabsTextToSpeechResponse>(ApiPaths.AppendQueryString(ApiPaths.AiPath($"/elevenlabs/v1/text-to-speech/{SerializePathParameter(voiceId, new PathParameterSpec("voice_id", "simple", false))}"), queryString), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.ElevenLabsTextToSpeechResponse>(ApiPaths.AppendQueryString($"/elevenlabs/v1/text-to-speech/{SerializePathParameter(voiceId, new PathParameterSpec("voice_id", "simple", false))}", queryString), body, null, null, "application/json");
         }
 
         private sealed record PathParameterSpec(string Name, string Style, bool Explode);

@@ -1,7 +1,6 @@
 import '../http/client.dart';
 import '../models.dart';
 
-import 'paths.dart';
 import 'response_helpers.dart';
 
 
@@ -13,7 +12,7 @@ class ImagesMidjourneyApi {
   /// Midjourney image generation
   Future<MidjourneyImageGenerationTask?> createV1ImagesGeneration(MidjourneyImageGenerationRequest body) async {
     final payload = body.toJson();
-    final response = await _client.post(ApiPaths.aiPath('/midjourney/v1/images/generations'), body: payload, contentType: 'application/json');
+    final response = await _client.post('/midjourney/v1/images/generations', body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : MidjourneyImageGenerationTask.fromJson(map);
@@ -22,7 +21,7 @@ class ImagesMidjourneyApi {
 
   /// Midjourney retrieve image generation
   Future<MidjourneyImageGenerationTask?> listV1ImagesGenerations(String taskId) async {
-    final response = await _client.get(ApiPaths.aiPath('/midjourney/v1/images/generations/${serializePathParameter(taskId, const PathParameterSpec('task_id', 'simple', false))}'));
+    final response = await _client.get('/midjourney/v1/images/generations/${serializePathParameter(taskId, const PathParameterSpec('task_id', 'simple', false))}');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : MidjourneyImageGenerationTask.fromJson(map);

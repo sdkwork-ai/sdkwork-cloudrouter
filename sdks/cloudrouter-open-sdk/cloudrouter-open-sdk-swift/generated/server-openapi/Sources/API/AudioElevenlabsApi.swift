@@ -12,7 +12,7 @@ public class AudioElevenlabsApi {
         let query = buildQueryString([
             QueryParameterSpec(name: "output_format", value: outputFormat, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
-        return try await client.post(ApiPaths.appendQueryString(ApiPaths.aiPath("/elevenlabs/v1/sound-generation"), query), body: body, params: nil, headers: nil, contentType: "application/json", responseType: ElevenLabsSoundGenerationResponse.self)
+        return try await client.post(ApiPaths.appendQueryString("/elevenlabs/v1/sound-generation", query), body: body, params: nil, headers: nil, contentType: "application/json", responseType: ElevenLabsSoundGenerationResponse.self)
     }
 
     /// Synthesize speech
@@ -20,7 +20,7 @@ public class AudioElevenlabsApi {
         let query = buildQueryString([
             QueryParameterSpec(name: "output_format", value: outputFormat, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
-        return try await client.post(ApiPaths.appendQueryString(ApiPaths.aiPath("/elevenlabs/v1/text-to-speech/\(serializePathParameter(voiceId, PathParameterSpec(name: "voice_id", style: "simple", explode: false)))"), query), body: body, params: nil, headers: nil, contentType: "application/json", responseType: ElevenLabsTextToSpeechResponse.self)
+        return try await client.post(ApiPaths.appendQueryString("/elevenlabs/v1/text-to-speech/\(serializePathParameter(voiceId, PathParameterSpec(name: "voice_id", style: "simple", explode: false)))", query), body: body, params: nil, headers: nil, contentType: "application/json", responseType: ElevenLabsTextToSpeechResponse.self)
     }
 
     private struct PathParameterSpec {

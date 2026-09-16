@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class MiniMaxMusicData:
-    """MiniMax music generation data payload."""
-    status: Optional[int] = None
+    """Mini max music data schema exposed by Cloud Router."""
     audio: Optional[str] = None
     extra_info: Optional[MiniMaxMusicExtraInfo] = None
+    status: Optional[int] = None

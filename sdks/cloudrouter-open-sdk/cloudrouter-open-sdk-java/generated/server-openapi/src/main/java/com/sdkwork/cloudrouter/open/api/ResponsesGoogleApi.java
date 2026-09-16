@@ -19,19 +19,19 @@ public class ResponsesGoogleApi {
             new QueryParameterSpec("pageSize", pageSize, "form", true, false, null),
             new QueryParameterSpec("pageToken", pageToken, "form", true, false, null)
         ));
-        Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/google/v1beta/cachedContents"), query));
+        Object raw = client.get(ApiPaths.appendQueryString("/google/v1beta/cachedContents", query));
         return client.convertValue(raw, new TypeReference<GoogleCachedContentListResponse>() {});
     }
 
     /** Google Gemini create cached content */
     public GoogleCachedContent createV1betaCachedContent(GoogleCachedContentCreateRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/google/v1beta/cachedContents"), body, null, null, "application/json");
+        Object raw = client.post("/google/v1beta/cachedContents", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<GoogleCachedContent>() {});
     }
 
     /** Google Gemini cached content */
     public GoogleEmptyResponse deleteV1betaCachedContents(String cachedContentId) throws Exception {
-        Object raw = client.delete(ApiPaths.aiPath("/google/v1beta/cachedContents/" + serializePathParameter(cachedContentId, new PathParameterSpec("cached_content_id", "simple", false)) + ""));
+        Object raw = client.delete("/google/v1beta/cachedContents/" + serializePathParameter(cachedContentId, new PathParameterSpec("cached_content_id", "simple", false)) + "");
         return client.convertValue(raw, new TypeReference<GoogleEmptyResponse>() {});
     }
 

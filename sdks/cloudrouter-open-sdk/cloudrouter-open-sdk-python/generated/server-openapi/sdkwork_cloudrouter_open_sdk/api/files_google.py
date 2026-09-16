@@ -197,12 +197,12 @@ class FilesGoogleApi:
             {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
-        return self._client.get(_append_query_string(f"/v1/google/v1beta/files", query))
+        return self._client.get(_append_query_string(f"/google/v1beta/files", query))
 
     def create_v1beta_file(self, body: GoogleFileUploadMultipartRequest) -> GoogleFile:
         """Google Gemini upload file"""
-        return self._client.post(f"/v1/google/v1beta/files", data=body)
+        return self._client.post(f"/google/v1beta/files", data=body)
 
     def delete_v1beta_files(self, file_id: str) -> GoogleEmptyResponse:
         """Google Gemini delete file"""
-        return self._client.delete(f"/v1/google/v1beta/files/{serialize_path_parameter(file_id, {'name': 'file_id', 'style': 'simple', 'explode': False})}")
+        return self._client.delete(f"/google/v1beta/files/{serialize_path_parameter(file_id, {'name': 'file_id', 'style': 'simple', 'explode': False})}")

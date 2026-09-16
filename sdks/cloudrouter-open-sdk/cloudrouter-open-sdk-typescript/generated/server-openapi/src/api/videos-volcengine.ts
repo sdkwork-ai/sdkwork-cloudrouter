@@ -1,4 +1,3 @@
-import { aiApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { VolcengineContentGenerationTask, VolcengineContentGenerationTaskCreateRequest, VolcengineContentGenerationTaskCreateResponse } from '../types';
@@ -14,12 +13,12 @@ export class VideosVolcengineApiV3ContentsGenerationsTasksApi {
 
 /** Volcengine Ark content generation task */
   async create(body: VolcengineContentGenerationTaskCreateRequest, requestOptions?: ApiRequestOptions): Promise<VolcengineContentGenerationTaskCreateResponse> {
-    return this.client.request<VolcengineContentGenerationTaskCreateResponse>(aiApiPath(`/volcengine/api/v3/contents/generations/tasks`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<VolcengineContentGenerationTaskCreateResponse>(`/volcengine/api/v3/contents/generations/tasks`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Volcengine Ark retrieve content generation task */
   async retrieve(taskId: string, requestOptions?: ApiRequestOptions): Promise<VolcengineContentGenerationTask> {
-    return this.client.request<VolcengineContentGenerationTask>(aiApiPath(`/volcengine/api/v3/contents/generations/tasks/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
+    return this.client.request<VolcengineContentGenerationTask>(`/volcengine/api/v3/contents/generations/tasks/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 

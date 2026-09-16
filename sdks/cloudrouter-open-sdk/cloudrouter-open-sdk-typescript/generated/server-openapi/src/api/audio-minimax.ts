@@ -1,4 +1,3 @@
-import { aiApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { MiniMaxMusicGenerationRequest, MiniMaxMusicGenerationResponse } from '../types';
@@ -14,7 +13,7 @@ export class AudioMinimaxV1MusicGenerationApi {
 
 /** Minimax create music generation */
   async create(body: MiniMaxMusicGenerationRequest, requestOptions?: ApiRequestOptions): Promise<MiniMaxMusicGenerationResponse> {
-    return this.client.request<MiniMaxMusicGenerationResponse>(aiApiPath(`/minimax/v1/music_generation`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<MiniMaxMusicGenerationResponse>(`/minimax/v1/music_generation`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 

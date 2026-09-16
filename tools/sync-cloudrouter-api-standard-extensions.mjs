@@ -95,6 +95,9 @@ function inferExternalProtocolId(routePath) {
   if (normalized.startsWith("/midjourney/")) {
     return "midjourney-v1";
   }
+  if (normalized.startsWith("/minimax/")) {
+    return "minimax-v1";
+  }
   if (normalized.startsWith("/nano-banana/")) {
     return "nano-banana-v1";
   }
@@ -126,6 +129,7 @@ function isExternalWireProtocolRoute(routePath) {
     normalized.startsWith("/google/") ||
     normalized.startsWith("/kling/") ||
     normalized.startsWith("/midjourney/") ||
+    normalized.startsWith("/minimax/") ||
     normalized.startsWith("/nano-banana/") ||
     normalized.startsWith("/suno/") ||
     normalized.startsWith("/vidu/") ||
@@ -213,6 +217,26 @@ function inferSdkworkPermission(operation, routePath) {
   return `cloudrouter.${resource.replaceAll('.', '_')}.${permissionAction}`;
 }
 
+/// Top-level path segments served outside the OpenAI-compatible prefix.
+///
+/// `x-api-prefix` names the OpenAI-compatible family, not the mount point of
+/// the surface: provider-native routes are registered verbatim on the same
+/// origin (`/kling/v1/videos/avatar`). An SDK generator that applies
+/// `x-api-prefix` to every path emits `/v1/kling/v1/videos/avatar`, which the
+/// gateway answers with 404 because `invocation_http` classifies every
+/// `/v1/...` path as an OpenAI-compatible resource. Derived from the paths, so
+/// the declaration cannot drift from what it describes.
+function vendorPathPrefixes(document) {
+  const apiPrefix = String(document["x-api-prefix"] ?? "").replace(/^\/+|\/+$/g, "");
+  const found = new Set();
+  for (const routePath of Object.keys(document.paths ?? {})) {
+    const first = String(routePath).split("/").filter(Boolean)[0];
+    if (!first || first === apiPrefix) continue;
+    found.add(first);
+  }
+  return [...found].sort();
+}
+
 function stampOpenApiExtensions(document, target) {
   let changed = 0;
   if (target.apiSurface === "open-api") {
@@ -223,6 +247,14 @@ function stampOpenApiExtensions(document, target) {
     }
     if (document.info["x-sdkwork-external-protocol-id"] !== "cloudrouter-vendor-gateway") {
       document.info["x-sdkwork-external-protocol-id"] = "cloudrouter-vendor-gateway";
+      changed += 1;
+    }
+    const vendorPrefixes = vendorPathPrefixes(document);
+    if (
+      !Array.isArray(document["x-sdkwork-vendor-path-prefixes"]) ||
+      document["x-sdkwork-vendor-path-prefixes"].join("\u0000") !== vendorPrefixes.join("\u0000")
+    ) {
+      document["x-sdkwork-vendor-path-prefixes"] = vendorPrefixes;
       changed += 1;
     }
   }

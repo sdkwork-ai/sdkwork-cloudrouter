@@ -18,7 +18,7 @@ class BatchesAnthropicApi {
       QueryParameterSpec('after_id', afterId, 'form', true, false, null),
       QueryParameterSpec('limit', limit, 'form', true, false, null)
     ]);
-    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.aiPath('/anthropic/v1/messages/batches'), query));
+    final response = await _client.get(ApiPaths.appendQueryString('/anthropic/v1/messages/batches', query));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : AnthropicMessageBatchListResponse.fromJson(map);
@@ -28,7 +28,7 @@ class BatchesAnthropicApi {
   /// Anthropic create message batch
   Future<AnthropicMessageBatch?> createV1MessagesBatch(AnthropicMessageBatchCreateRequest body) async {
     final payload = body.toJson();
-    final response = await _client.post(ApiPaths.aiPath('/anthropic/v1/messages/batches'), body: payload, contentType: 'application/json');
+    final response = await _client.post('/anthropic/v1/messages/batches', body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : AnthropicMessageBatch.fromJson(map);
@@ -37,7 +37,7 @@ class BatchesAnthropicApi {
 
   /// Anthropic cancel message batch
   Future<AnthropicMessageBatch?> createV1MessagesBatchesCancel(String batchId) async {
-    final response = await _client.post(ApiPaths.aiPath('/anthropic/v1/messages/batches/${serializePathParameter(batchId, const PathParameterSpec('batch_id', 'simple', false))}/cancel'));
+    final response = await _client.post('/anthropic/v1/messages/batches/${serializePathParameter(batchId, const PathParameterSpec('batch_id', 'simple', false))}/cancel');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : AnthropicMessageBatch.fromJson(map);

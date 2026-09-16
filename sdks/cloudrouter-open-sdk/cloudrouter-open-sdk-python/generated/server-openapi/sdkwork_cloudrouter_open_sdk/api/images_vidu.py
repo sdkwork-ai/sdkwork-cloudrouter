@@ -22,4 +22,4 @@ class ImagesViduApi:
 
     def create_ent_v2_reference2image(self, body: ViduReferenceToImageRequest) -> ViduImageGenerationTask:
         """Vidu reference to image"""
-        return self._client.post(f"/v1/vidu/ent/v2/reference2image", json=body)
+        return self._client.post(f"/vidu/ent/v2/reference2image", json=body)

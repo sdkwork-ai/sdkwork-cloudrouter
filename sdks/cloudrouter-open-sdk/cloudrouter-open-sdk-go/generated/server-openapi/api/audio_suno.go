@@ -18,7 +18,7 @@ func NewAudioSunoApi(client *sdkhttp.Client) *AudioSunoApi {
 
 // Suno music generation
 func (a *AudioSunoApi) CreateV1MusicGeneration(body sdktypes.SunoMusicGenerationRequest) (sdktypes.SunoMusicGenerationResponse, error) {
-    raw, err := a.client.Post(AiApiPath("/suno/v1/music/generations"), body, nil, nil, "application/json")
+    raw, err := a.client.Post("/suno/v1/music/generations", body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.SunoMusicGenerationResponse
         return zero, err
@@ -28,7 +28,7 @@ func (a *AudioSunoApi) CreateV1MusicGeneration(body sdktypes.SunoMusicGeneration
 
 // Suno retrieve music generation
 func (a *AudioSunoApi) ListV1MusicGenerations(taskId string) (sdktypes.SunoMusicGenerationTaskResponse, error) {
-    raw, err := a.client.Get(AiApiPath(fmt.Sprintf("/suno/v1/music/generations/%s", SerializePathParameter(taskId, PathParameterSpec{Name: "task_id", Style: "simple", Explode: false}))), nil, nil)
+    raw, err := a.client.Get(fmt.Sprintf("/suno/v1/music/generations/%s", SerializePathParameter(taskId, PathParameterSpec{Name: "task_id", Style: "simple", Explode: false})), nil, nil)
     if err != nil {
         var zero sdktypes.SunoMusicGenerationTaskResponse
         return zero, err

@@ -15,7 +15,7 @@ public class ImagesViduApi {
 
     /** Vidu reference to image */
     public ViduImageGenerationTask createEntV2Reference2image(ViduReferenceToImageRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/vidu/ent/v2/reference2image"), body, null, null, "application/json");
+        Object raw = client.post("/vidu/ent/v2/reference2image", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<ViduImageGenerationTask>() {});
     }
 

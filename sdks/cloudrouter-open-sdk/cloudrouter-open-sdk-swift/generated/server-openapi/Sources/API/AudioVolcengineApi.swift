@@ -9,7 +9,7 @@ public class AudioVolcengineApi {
 
     /// Volcengine create speech
     public func createApiV3AudioSpeech(body: OpenAiSpeechCreateRequest) async throws -> String? {
-        return try await client.post(ApiPaths.aiPath("/volcengine/api/v3/audio/speech"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: String.self)
+        return try await client.post("/volcengine/api/v3/audio/speech", body: body, params: nil, headers: nil, contentType: "application/json", responseType: String.self)
     }
 
 

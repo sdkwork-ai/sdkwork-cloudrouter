@@ -1039,6 +1039,48 @@ public struct GoogleUsageMetadata: Codable {
     }
 }
 
+public struct KlingAvatarCreateRequest: Codable {
+    public let audioUrl: String?
+    public let callbackUrl: String?
+    public let humanImage: String?
+    public let modelName: String?
+    public let prompt: String?
+    public let text: String?
+    public let voiceId: String?
+    public let voiceLanguage: String?
+    public let voiceMode: String?
+
+
+    public init(audioUrl: String? = nil, callbackUrl: String? = nil, humanImage: String? = nil, modelName: String? = nil, prompt: String? = nil, text: String? = nil, voiceId: String? = nil, voiceLanguage: String? = nil, voiceMode: String? = nil) {
+        self.audioUrl = audioUrl
+        self.callbackUrl = callbackUrl
+        self.humanImage = humanImage
+        self.modelName = modelName
+        self.prompt = prompt
+        self.text = text
+        self.voiceId = voiceId
+        self.voiceLanguage = voiceLanguage
+        self.voiceMode = voiceMode
+    }
+}
+
+public struct KlingMotionControlRequest: Codable {
+    public let callbackUrl: String?
+    public let image: String?
+    public let modelName: String?
+    public let prompt: String?
+    public let video: String?
+
+
+    public init(callbackUrl: String? = nil, image: String? = nil, modelName: String? = nil, prompt: String? = nil, video: String? = nil) {
+        self.callbackUrl = callbackUrl
+        self.image = image
+        self.modelName = modelName
+        self.prompt = prompt
+        self.video = video
+    }
+}
+
 public struct KlingVideoGenerationRequest: Codable {
     public let aspectRatio: String?
     public let callbackUrl: String?
@@ -1136,6 +1178,96 @@ public struct MidjourneyImageGenerationTask: Codable {
         self.status = status
         self.taskId = taskId
         self.updatedAt = updatedAt
+    }
+}
+
+public struct MiniMaxMusicAudioSetting: Codable {
+    public let bitrate: Int?
+    public let format: String?
+    public let sampleRate: Int?
+
+
+    public init(bitrate: Int? = nil, format: String? = nil, sampleRate: Int? = nil) {
+        self.bitrate = bitrate
+        self.format = format
+        self.sampleRate = sampleRate
+    }
+}
+
+public struct MiniMaxMusicBaseResp: Codable {
+    public let statusCode: Int?
+    public let statusMsg: String?
+
+
+    public init(statusCode: Int? = nil, statusMsg: String? = nil) {
+        self.statusCode = statusCode
+        self.statusMsg = statusMsg
+    }
+}
+
+public struct MiniMaxMusicData: Codable {
+    public let audio: String?
+    public let extraInfo: MiniMaxMusicExtraInfo?
+    public let status: Int?
+
+
+    public init(audio: String? = nil, extraInfo: MiniMaxMusicExtraInfo? = nil, status: Int? = nil) {
+        self.audio = audio
+        self.extraInfo = extraInfo
+        self.status = status
+    }
+}
+
+public struct MiniMaxMusicExtraInfo: Codable {
+    public let bitrate: Int?
+    public let musicChannel: Int?
+    public let musicDuration: Double?
+    public let musicSampleRate: Int?
+    public let musicSize: Int?
+
+
+    public init(bitrate: Int? = nil, musicChannel: Int? = nil, musicDuration: Double? = nil, musicSampleRate: Int? = nil, musicSize: Int? = nil) {
+        self.bitrate = bitrate
+        self.musicChannel = musicChannel
+        self.musicDuration = musicDuration
+        self.musicSampleRate = musicSampleRate
+        self.musicSize = musicSize
+    }
+}
+
+public struct MiniMaxMusicGenerationRequest: Codable {
+    public let audioSetting: MiniMaxMusicAudioSetting?
+    public let isInstrumental: Bool?
+    public let lyrics: String?
+    public let lyricsOptimizer: Bool?
+    public let model: String?
+    public let outputFormat: String?
+    public let prompt: String?
+    public let stream: Bool?
+
+
+    public init(audioSetting: MiniMaxMusicAudioSetting? = nil, isInstrumental: Bool? = nil, lyrics: String? = nil, lyricsOptimizer: Bool? = nil, model: String? = nil, outputFormat: String? = nil, prompt: String? = nil, stream: Bool? = nil) {
+        self.audioSetting = audioSetting
+        self.isInstrumental = isInstrumental
+        self.lyrics = lyrics
+        self.lyricsOptimizer = lyricsOptimizer
+        self.model = model
+        self.outputFormat = outputFormat
+        self.prompt = prompt
+        self.stream = stream
+    }
+}
+
+public struct MiniMaxMusicGenerationResponse: Codable {
+    public let baseResp: MiniMaxMusicBaseResp?
+    public let data: MiniMaxMusicData?
+    public let traceId: String?
+
+
+    public init(baseResp: MiniMaxMusicBaseResp? = nil, data: MiniMaxMusicData? = nil, traceId: String? = nil) {
+        self.baseResp = baseResp
+        self.data = data
+        self.traceId = traceId
     }
 }
 
@@ -4425,6 +4557,23 @@ public struct ViduTaskCreationsResponse: Codable {
     }
 }
 
+public struct ViduTemplateRequest: Codable {
+    public let callbackUrl: String?
+    public let images: [String]?
+    public let payload: String?
+    public let template: String?
+    public let videoUrls: [String]?
+
+
+    public init(callbackUrl: String? = nil, images: [String]? = nil, payload: String? = nil, template: String? = nil, videoUrls: [String]? = nil) {
+        self.callbackUrl = callbackUrl
+        self.images = images
+        self.payload = payload
+        self.template = template
+        self.videoUrls = videoUrls
+    }
+}
+
 public struct ViduTextToVideoRequest: Codable {
     public let aspectRatio: String?
     public let callbackUrl: String?
@@ -4542,154 +4691,5 @@ public struct VolcengineContentPart: Codable {
         self.text = text
         self.type = type
         self.videoUrl = videoUrl
-    }
-}
-
-public struct MiniMaxMusicAudioSetting: Codable {
-    public let sampleRate: Int?
-    public let bitrate: Int?
-    public let format: String?
-
-
-    public init(sampleRate: Int? = nil, bitrate: Int? = nil, format: String? = nil) {
-        self.sampleRate = sampleRate
-        self.bitrate = bitrate
-        self.format = format
-    }
-}
-
-public struct MiniMaxMusicGenerationRequest: Codable {
-    public let model: String?
-    public let prompt: String?
-    public let lyrics: String?
-    public let stream: Bool?
-    public let outputFormat: String?
-    public let isInstrumental: Bool?
-    public let lyricsOptimizer: Bool?
-    public let audioSetting: MiniMaxMusicAudioSetting?
-
-
-    public init(model: String? = nil, prompt: String? = nil, lyrics: String? = nil, stream: Bool? = nil, outputFormat: String? = nil, isInstrumental: Bool? = nil, lyricsOptimizer: Bool? = nil, audioSetting: MiniMaxMusicAudioSetting? = nil) {
-        self.model = model
-        self.prompt = prompt
-        self.lyrics = lyrics
-        self.stream = stream
-        self.outputFormat = outputFormat
-        self.isInstrumental = isInstrumental
-        self.lyricsOptimizer = lyricsOptimizer
-        self.audioSetting = audioSetting
-    }
-}
-
-public struct MiniMaxMusicBaseResp: Codable {
-    public let statusCode: Int?
-    public let statusMsg: String?
-
-
-    public init(statusCode: Int? = nil, statusMsg: String? = nil) {
-        self.statusCode = statusCode
-        self.statusMsg = statusMsg
-    }
-}
-
-public struct MiniMaxMusicExtraInfo: Codable {
-    public let musicDuration: Double?
-    public let musicSampleRate: Int?
-    public let musicChannel: Int?
-    public let bitrate: Int?
-    public let musicSize: Int?
-
-
-    public init(musicDuration: Double? = nil, musicSampleRate: Int? = nil, musicChannel: Int? = nil, bitrate: Int? = nil, musicSize: Int? = nil) {
-        self.musicDuration = musicDuration
-        self.musicSampleRate = musicSampleRate
-        self.musicChannel = musicChannel
-        self.bitrate = bitrate
-        self.musicSize = musicSize
-    }
-}
-
-public struct MiniMaxMusicData: Codable {
-    public let status: Int?
-    public let audio: String?
-    public let extraInfo: MiniMaxMusicExtraInfo?
-
-
-    public init(status: Int? = nil, audio: String? = nil, extraInfo: MiniMaxMusicExtraInfo? = nil) {
-        self.status = status
-        self.audio = audio
-        self.extraInfo = extraInfo
-    }
-}
-
-public struct MiniMaxMusicGenerationResponse: Codable {
-    public let baseResp: MiniMaxMusicBaseResp?
-    public let data: MiniMaxMusicData?
-    public let traceId: String?
-
-
-    public init(baseResp: MiniMaxMusicBaseResp? = nil, data: MiniMaxMusicData? = nil, traceId: String? = nil) {
-        self.baseResp = baseResp
-        self.data = data
-        self.traceId = traceId
-    }
-}
-
-public struct KlingAvatarCreateRequest: Codable {
-    public let modelName: String?
-    public let humanImage: String?
-    public let prompt: String?
-    public let voiceMode: String?
-    public let audioUrl: String?
-    public let text: String?
-    public let voiceId: String?
-    public let voiceLanguage: String?
-    public let callbackUrl: String?
-
-
-    public init(modelName: String? = nil, humanImage: String? = nil, prompt: String? = nil, voiceMode: String? = nil, audioUrl: String? = nil, text: String? = nil, voiceId: String? = nil, voiceLanguage: String? = nil, callbackUrl: String? = nil) {
-        self.modelName = modelName
-        self.humanImage = humanImage
-        self.prompt = prompt
-        self.voiceMode = voiceMode
-        self.audioUrl = audioUrl
-        self.text = text
-        self.voiceId = voiceId
-        self.voiceLanguage = voiceLanguage
-        self.callbackUrl = callbackUrl
-    }
-}
-
-public struct KlingMotionControlRequest: Codable {
-    public let modelName: String?
-    public let prompt: String?
-    public let image: String?
-    public let video: String?
-    public let callbackUrl: String?
-
-
-    public init(modelName: String? = nil, prompt: String? = nil, image: String? = nil, video: String? = nil, callbackUrl: String? = nil) {
-        self.modelName = modelName
-        self.prompt = prompt
-        self.image = image
-        self.video = video
-        self.callbackUrl = callbackUrl
-    }
-}
-
-public struct ViduTemplateRequest: Codable {
-    public let template: String?
-    public let images: [String]?
-    public let videoUrls: [String]?
-    public let payload: String?
-    public let callbackUrl: String?
-
-
-    public init(template: String? = nil, images: [String]? = nil, videoUrls: [String]? = nil, payload: String? = nil, callbackUrl: String? = nil) {
-        self.template = template
-        self.images = images
-        self.videoUrls = videoUrls
-        self.payload = payload
-        self.callbackUrl = callbackUrl
     }
 }

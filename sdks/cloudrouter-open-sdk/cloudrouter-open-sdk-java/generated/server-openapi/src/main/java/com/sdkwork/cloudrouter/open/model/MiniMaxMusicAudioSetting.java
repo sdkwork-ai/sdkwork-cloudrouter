@@ -2,17 +2,9 @@ package com.sdkwork.cloudrouter.open.model;
 
 
 public class MiniMaxMusicAudioSetting {
-    private Integer sampleRate;
     private Integer bitrate;
     private String format;
-
-    public Integer getSampleRate() {
-        return this.sampleRate;
-    }
-
-    public void setSampleRate(Integer sampleRate) {
-        this.sampleRate = sampleRate;
-    }
+    private Integer sampleRate;
 
     public Integer getBitrate() {
         return this.bitrate;
@@ -28,5 +20,13 @@ public class MiniMaxMusicAudioSetting {
 
     public void setFormat(String format) {
         this.format = format;
+    }
+
+    public Integer getSampleRate() {
+        return this.sampleRate;
+    }
+
+    public void setSampleRate(Integer sampleRate) {
+        this.sampleRate = sampleRate;
     }
 }

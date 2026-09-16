@@ -76,8 +76,8 @@ client.setHeader("X-Custom-Header", value: "value")
 - `client.chatGoogle` - chat_google API
 - `client.videosKling` - videos_kling API
 - `client.imagesMidjourney` - images_midjourney API
-- `client.imagesNanoBanana` - images_nano_banana API
 - `client.audioMinimax` - audio_minimax API
+- `client.imagesNanoBanana` - images_nano_banana API
 - `client.audioSuno` - audio_suno API
 - `client.assistants` - assistant API
 - `client.audio` - audio API
@@ -223,15 +223,15 @@ print(result)
 ```swift
 // Kling create avatar video
 let body = KlingAvatarCreateRequest(
-    modelName: "name",
-    humanImage: "human-image",
-    prompt: "prompt",
-    voiceMode: "voice-mode",
     audioUrl: "audio-url",
+    callbackUrl: "callback-url",
+    humanImage: "human-image",
+    modelName: "name",
+    prompt: "prompt",
     text: "text",
     voiceId: "1",
     voiceLanguage: "voice-language",
-    callbackUrl: "callback-url"
+    voiceMode: "voice-mode"
 )
 let result = try await client.videosKling.createV1VideosAvatar(body: body)
 print(result)
@@ -253,6 +253,24 @@ let result = try await client.imagesMidjourney.createV1ImagesGeneration(body: bo
 print(result)
 ```
 
+### audio_minimax
+
+```swift
+// Minimax create music generation
+let body = MiniMaxMusicGenerationRequest(
+    audioSetting: [:],
+    isInstrumental: false,
+    lyrics: "lyrics",
+    lyricsOptimizer: false,
+    model: "model",
+    outputFormat: "output-format",
+    prompt: "prompt",
+    stream: false
+)
+let result = try await client.audioMinimax.createV1MusicGeneration(body: body)
+print(result)
+```
+
 ### images_nano_banana
 
 ```swift
@@ -267,24 +285,6 @@ let body = NanoBananaImageGenerationRequest(
     size: "size"
 )
 let result = try await client.imagesNanoBanana.createGeneration(body: body)
-print(result)
-```
-
-### audio_minimax
-
-```swift
-// Minimax create music generation
-let body = MiniMaxMusicGenerationRequest(
-    model: "model",
-    prompt: "prompt",
-    lyrics: "lyrics",
-    stream: false,
-    outputFormat: "output-format",
-    isInstrumental: false,
-    lyricsOptimizer: true,
-    audioSetting: MiniMaxMusicAudioSetting()
-)
-let result = try await client.audioMinimax.createV1MusicGeneration(body: body)
 print(result)
 ```
 

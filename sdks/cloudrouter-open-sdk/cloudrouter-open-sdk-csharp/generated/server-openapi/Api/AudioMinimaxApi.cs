@@ -20,7 +20,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.MiniMaxMusicGenerationResponse?> CreateV1MusicGenerationAsync(Sdkwork.CloudRouter.Open.Models.MiniMaxMusicGenerationRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.MiniMaxMusicGenerationResponse>(ApiPaths.AiPath("/minimax/v1/music_generation"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.MiniMaxMusicGenerationResponse>("/minimax/v1/music_generation", body, null, null, "application/json");
         }
 
 

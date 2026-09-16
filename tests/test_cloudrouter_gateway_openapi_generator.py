@@ -1171,7 +1171,7 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
             audit = audit_vendor_schema_quality(spec, provider_prefixes=self._provider_prefixes())
 
             self.assertEqual([], audit.unregistered_vendor_paths)
-            self.assertEqual(47, len(audit.root_schema_names))
+            self.assertEqual(57, len(audit.root_schema_names))
             self.assertIn("ProviderJsonNull", audit.reachable_schema_names)
             self.assertEqual([], audit.unresolved_refs)
             self.assertEqual([], audit.non_component_payload_schemas)

@@ -1,4 +1,3 @@
-import { aiApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { GoogleCountTokensRequest, GoogleCountTokensResponse, GoogleGenerateContentRequest, GoogleGenerateContentResponse } from '../types';
@@ -14,7 +13,7 @@ export class ChatGoogleV1betaModelsModelStreamGenerateContentApi {
 
 /** Google Gemini stream generate content */
   async create(model: string, body: GoogleGenerateContentRequest, requestOptions?: ApiRequestOptions): Promise<GoogleGenerateContentResponse> {
-    return this.client.request<GoogleGenerateContentResponse>(aiApiPath(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:streamGenerateContent`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<GoogleGenerateContentResponse>(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:streamGenerateContent`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -28,7 +27,7 @@ export class ChatGoogleV1betaModelsModelGenerateContentApi {
 
 /** Google Gemini generate content */
   async create(model: string, body: GoogleGenerateContentRequest, requestOptions?: ApiRequestOptions): Promise<GoogleGenerateContentResponse> {
-    return this.client.request<GoogleGenerateContentResponse>(aiApiPath(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:generateContent`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<GoogleGenerateContentResponse>(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:generateContent`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -42,7 +41,7 @@ export class ChatGoogleV1betaModelsModelCountTokensApi {
 
 /** Google Gemini count tokens */
   async create(model: string, body: GoogleCountTokensRequest, requestOptions?: ApiRequestOptions): Promise<GoogleCountTokensResponse> {
-    return this.client.request<GoogleCountTokensResponse>(aiApiPath(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:countTokens`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<GoogleCountTokensResponse>(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:countTokens`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 

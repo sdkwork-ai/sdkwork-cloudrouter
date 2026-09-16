@@ -15,25 +15,25 @@ public class VideosKlingApi {
 
     /** Kling create avatar video */
     public KlingVideoGenerationTask createV1VideosAvatar(KlingAvatarCreateRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/kling/v1/videos/avatar"), body, null, null, "application/json");
-        return client.convertValue(raw, new TypeReference<KlingVideoGenerationTask>() {});
-    }
-
-    /** Kling create motion control video */
-    public KlingVideoGenerationTask createV1VideosMotionControl(KlingMotionControlRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/kling/v1/videos/motion-control"), body, null, null, "application/json");
+        Object raw = client.post("/kling/v1/videos/avatar", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<KlingVideoGenerationTask>() {});
     }
 
     /** Kling video generation */
     public KlingVideoGenerationTask createV1VideosGeneration(KlingVideoGenerationRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/kling/v1/videos/generations"), body, null, null, "application/json");
+        Object raw = client.post("/kling/v1/videos/generations", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<KlingVideoGenerationTask>() {});
     }
 
     /** Kling retrieve video generation */
     public KlingVideoGenerationTask listV1VideosGenerations(String taskId) throws Exception {
-        Object raw = client.get(ApiPaths.aiPath("/kling/v1/videos/generations/" + serializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false)) + ""));
+        Object raw = client.get("/kling/v1/videos/generations/" + serializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false)) + "");
+        return client.convertValue(raw, new TypeReference<KlingVideoGenerationTask>() {});
+    }
+
+    /** Kling create motion control video */
+    public KlingVideoGenerationTask createV1VideosMotionControl(KlingMotionControlRequest body) throws Exception {
+        Object raw = client.post("/kling/v1/videos/motion-control", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<KlingVideoGenerationTask>() {});
     }
 

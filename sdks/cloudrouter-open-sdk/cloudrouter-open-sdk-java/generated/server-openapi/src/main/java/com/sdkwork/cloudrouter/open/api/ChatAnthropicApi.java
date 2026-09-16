@@ -15,13 +15,13 @@ public class ChatAnthropicApi {
 
     /** Anthropic Claude message */
     public AnthropicMessage createV1Message(AnthropicMessageCreateRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/anthropic/v1/messages"), body, null, null, "application/json");
+        Object raw = client.post("/anthropic/v1/messages", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<AnthropicMessage>() {});
     }
 
     /** Anthropic count message tokens */
     public AnthropicCountMessageTokensResponse createV1MessagesCountToken(AnthropicCountMessageTokensRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/anthropic/v1/messages/count_tokens"), body, null, null, "application/json");
+        Object raw = client.post("/anthropic/v1/messages/count_tokens", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<AnthropicCountMessageTokensResponse>() {});
     }
 

@@ -18,7 +18,7 @@ func NewVideosViduApi(client *sdkhttp.Client) *VideosViduApi {
 
 // Vidu image to video
 func (a *VideosViduApi) CreateEntV2Img2video(body sdktypes.ViduImageToVideoRequest) (sdktypes.ViduVideoGenerationTask, error) {
-    raw, err := a.client.Post(AiApiPath("/vidu/ent/v2/img2video"), body, nil, nil, "application/json")
+    raw, err := a.client.Post("/vidu/ent/v2/img2video", body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.ViduVideoGenerationTask
         return zero, err
@@ -28,7 +28,7 @@ func (a *VideosViduApi) CreateEntV2Img2video(body sdktypes.ViduImageToVideoReque
 
 // Vidu reference to video
 func (a *VideosViduApi) CreateEntV2Reference2video(body sdktypes.ViduReferenceToVideoRequest) (sdktypes.ViduVideoGenerationTask, error) {
-    raw, err := a.client.Post(AiApiPath("/vidu/ent/v2/reference2video"), body, nil, nil, "application/json")
+    raw, err := a.client.Post("/vidu/ent/v2/reference2video", body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.ViduVideoGenerationTask
         return zero, err
@@ -38,7 +38,7 @@ func (a *VideosViduApi) CreateEntV2Reference2video(body sdktypes.ViduReferenceTo
 
 // Vidu start-end to video
 func (a *VideosViduApi) CreateEntV2StartEnd2video(body sdktypes.ViduStartEndToVideoRequest) (sdktypes.ViduVideoGenerationTask, error) {
-    raw, err := a.client.Post(AiApiPath("/vidu/ent/v2/start-end2video"), body, nil, nil, "application/json")
+    raw, err := a.client.Post("/vidu/ent/v2/start-end2video", body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.ViduVideoGenerationTask
         return zero, err
@@ -48,7 +48,7 @@ func (a *VideosViduApi) CreateEntV2StartEnd2video(body sdktypes.ViduStartEndToVi
 
 // Vidu get task creations
 func (a *VideosViduApi) ListEntV2TasksCreations(taskId string) (sdktypes.ViduTaskCreationsResponse, error) {
-    raw, err := a.client.Get(AiApiPath(fmt.Sprintf("/vidu/ent/v2/tasks/%s/creations", SerializePathParameter(taskId, PathParameterSpec{Name: "task_id", Style: "simple", Explode: false}))), nil, nil)
+    raw, err := a.client.Get(fmt.Sprintf("/vidu/ent/v2/tasks/%s/creations", SerializePathParameter(taskId, PathParameterSpec{Name: "task_id", Style: "simple", Explode: false})), nil, nil)
     if err != nil {
         var zero sdktypes.ViduTaskCreationsResponse
         return zero, err
@@ -58,7 +58,7 @@ func (a *VideosViduApi) ListEntV2TasksCreations(taskId string) (sdktypes.ViduTas
 
 // Vidu create template video
 func (a *VideosViduApi) CreateEntV2Template(body sdktypes.ViduTemplateRequest) (sdktypes.ViduVideoGenerationTask, error) {
-    raw, err := a.client.Post(AiApiPath("/vidu/ent/v2/template"), body, nil, nil, "application/json")
+    raw, err := a.client.Post("/vidu/ent/v2/template", body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.ViduVideoGenerationTask
         return zero, err
@@ -68,7 +68,7 @@ func (a *VideosViduApi) CreateEntV2Template(body sdktypes.ViduTemplateRequest) (
 
 // Vidu text to video
 func (a *VideosViduApi) CreateEntV2Text2video(body sdktypes.ViduTextToVideoRequest) (sdktypes.ViduVideoGenerationTask, error) {
-    raw, err := a.client.Post(AiApiPath("/vidu/ent/v2/text2video"), body, nil, nil, "application/json")
+    raw, err := a.client.Post("/vidu/ent/v2/text2video", body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.ViduVideoGenerationTask
         return zero, err

@@ -6,8 +6,8 @@ namespace Sdkwork.CloudRouter.Open.Models
 {
     public class MiniMaxMusicAudioSetting
     {
-        public int? SampleRate { get; set; }
         public int? Bitrate { get; set; }
         public string? Format { get; set; }
+        public int? SampleRate { get; set; }
     }
 }

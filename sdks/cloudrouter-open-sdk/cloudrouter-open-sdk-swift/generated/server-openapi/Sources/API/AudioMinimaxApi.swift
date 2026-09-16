@@ -9,7 +9,7 @@ public class AudioMinimaxApi {
 
     /// Minimax create music generation
     public func createV1MusicGeneration(body: MiniMaxMusicGenerationRequest) async throws -> MiniMaxMusicGenerationResponse? {
-        return try await client.post(ApiPaths.aiPath("/minimax/v1/music_generation"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: MiniMaxMusicGenerationResponse.self)
+        return try await client.post("/minimax/v1/music_generation", body: body, params: nil, headers: nil, contentType: "application/json", responseType: MiniMaxMusicGenerationResponse.self)
     }
 
 

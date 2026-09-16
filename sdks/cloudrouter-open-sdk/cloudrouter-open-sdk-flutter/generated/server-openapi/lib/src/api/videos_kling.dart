@@ -1,7 +1,6 @@
 import '../http/client.dart';
 import '../models.dart';
 
-import 'paths.dart';
 import 'response_helpers.dart';
 
 
@@ -13,17 +12,7 @@ class VideosKlingApi {
   /// Kling create avatar video
   Future<KlingVideoGenerationTask?> createV1VideosAvatar(KlingAvatarCreateRequest body) async {
     final payload = body.toJson();
-    final response = await _client.post(ApiPaths.aiPath('/kling/v1/videos/avatar'), body: payload, contentType: 'application/json');
-    return (() {
-      final map = sdkworkResponseAsMap(response);
-      return map == null ? null : KlingVideoGenerationTask.fromJson(map);
-    })();
-  }
-
-  /// Kling create motion control video
-  Future<KlingVideoGenerationTask?> createV1VideosMotionControl(KlingMotionControlRequest body) async {
-    final payload = body.toJson();
-    final response = await _client.post(ApiPaths.aiPath('/kling/v1/videos/motion-control'), body: payload, contentType: 'application/json');
+    final response = await _client.post('/kling/v1/videos/avatar', body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : KlingVideoGenerationTask.fromJson(map);
@@ -33,7 +22,7 @@ class VideosKlingApi {
   /// Kling video generation
   Future<KlingVideoGenerationTask?> createV1VideosGeneration(KlingVideoGenerationRequest body) async {
     final payload = body.toJson();
-    final response = await _client.post(ApiPaths.aiPath('/kling/v1/videos/generations'), body: payload, contentType: 'application/json');
+    final response = await _client.post('/kling/v1/videos/generations', body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : KlingVideoGenerationTask.fromJson(map);
@@ -42,7 +31,17 @@ class VideosKlingApi {
 
   /// Kling retrieve video generation
   Future<KlingVideoGenerationTask?> listV1VideosGenerations(String taskId) async {
-    final response = await _client.get(ApiPaths.aiPath('/kling/v1/videos/generations/${serializePathParameter(taskId, const PathParameterSpec('task_id', 'simple', false))}'));
+    final response = await _client.get('/kling/v1/videos/generations/${serializePathParameter(taskId, const PathParameterSpec('task_id', 'simple', false))}');
+    return (() {
+      final map = sdkworkResponseAsMap(response);
+      return map == null ? null : KlingVideoGenerationTask.fromJson(map);
+    })();
+  }
+
+  /// Kling create motion control video
+  Future<KlingVideoGenerationTask?> createV1VideosMotionControl(KlingMotionControlRequest body) async {
+    final payload = body.toJson();
+    final response = await _client.post('/kling/v1/videos/motion-control', body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : KlingVideoGenerationTask.fromJson(map);

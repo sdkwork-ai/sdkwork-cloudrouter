@@ -83,24 +83,24 @@ class VideosViduApi:
 
     def create_ent_v2_img2video(self, body: ViduImageToVideoRequest) -> ViduVideoGenerationTask:
         """Vidu image to video"""
-        return self._client.post(f"/v1/vidu/ent/v2/img2video", json=body)
+        return self._client.post(f"/vidu/ent/v2/img2video", json=body)
 
     def create_ent_v2_reference2video(self, body: ViduReferenceToVideoRequest) -> ViduVideoGenerationTask:
         """Vidu reference to video"""
-        return self._client.post(f"/v1/vidu/ent/v2/reference2video", json=body)
+        return self._client.post(f"/vidu/ent/v2/reference2video", json=body)
 
     def create_ent_v2_start_end2video(self, body: ViduStartEndToVideoRequest) -> ViduVideoGenerationTask:
         """Vidu start-end to video"""
-        return self._client.post(f"/v1/vidu/ent/v2/start-end2video", json=body)
+        return self._client.post(f"/vidu/ent/v2/start-end2video", json=body)
 
     def list_ent_v2_tasks_creations(self, task_id: str) -> ViduTaskCreationsResponse:
         """Vidu get task creations"""
-        return self._client.get(f"/v1/vidu/ent/v2/tasks/{serialize_path_parameter(task_id, {'name': 'task_id', 'style': 'simple', 'explode': False})}/creations")
+        return self._client.get(f"/vidu/ent/v2/tasks/{serialize_path_parameter(task_id, {'name': 'task_id', 'style': 'simple', 'explode': False})}/creations")
 
     def create_ent_v2_template(self, body: ViduTemplateRequest) -> ViduVideoGenerationTask:
         """Vidu create template video"""
-        return self._client.post(f"/v1/vidu/ent/v2/template", json=body)
+        return self._client.post(f"/vidu/ent/v2/template", json=body)
 
     def create_ent_v2_text2video(self, body: ViduTextToVideoRequest) -> ViduVideoGenerationTask:
         """Vidu text to video"""
-        return self._client.post(f"/v1/vidu/ent/v2/text2video", json=body)
+        return self._client.post(f"/vidu/ent/v2/text2video", json=body)

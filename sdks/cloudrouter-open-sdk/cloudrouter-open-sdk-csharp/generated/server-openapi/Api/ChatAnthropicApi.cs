@@ -20,7 +20,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.AnthropicMessage?> CreateV1MessageAsync(Sdkwork.CloudRouter.Open.Models.AnthropicMessageCreateRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.AnthropicMessage>(ApiPaths.AiPath("/anthropic/v1/messages"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.AnthropicMessage>("/anthropic/v1/messages", body, null, null, "application/json");
         }
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.AnthropicCountMessageTokensResponse?> CreateV1MessagesCountTokenAsync(Sdkwork.CloudRouter.Open.Models.AnthropicCountMessageTokensRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.AnthropicCountMessageTokensResponse>(ApiPaths.AiPath("/anthropic/v1/messages/count_tokens"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.AnthropicCountMessageTokensResponse>("/anthropic/v1/messages/count_tokens", body, null, null, "application/json");
         }
 
 

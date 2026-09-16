@@ -9,12 +9,12 @@ public class EmbeddingsGoogleApi {
 
     /// Google Gemini batch embed contents
     public func createV1betaModelsModelBatchEmbedContent(model: String, body: GoogleBatchEmbedContentsRequest) async throws -> GoogleBatchEmbedContentsResponse? {
-        return try await client.post(ApiPaths.aiPath("/google/v1beta/models/\(serializePathParameter(model, PathParameterSpec(name: "model", style: "simple", explode: false))):batchEmbedContents"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: GoogleBatchEmbedContentsResponse.self)
+        return try await client.post("/google/v1beta/models/\(serializePathParameter(model, PathParameterSpec(name: "model", style: "simple", explode: false))):batchEmbedContents", body: body, params: nil, headers: nil, contentType: "application/json", responseType: GoogleBatchEmbedContentsResponse.self)
     }
 
     /// Google Gemini embed content
     public func createV1betaModelsModelEmbedContent(model: String, body: GoogleEmbedContentRequest) async throws -> GoogleEmbedContentResponse? {
-        return try await client.post(ApiPaths.aiPath("/google/v1beta/models/\(serializePathParameter(model, PathParameterSpec(name: "model", style: "simple", explode: false))):embedContent"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: GoogleEmbedContentResponse.self)
+        return try await client.post("/google/v1beta/models/\(serializePathParameter(model, PathParameterSpec(name: "model", style: "simple", explode: false))):embedContent", body: body, params: nil, headers: nil, contentType: "application/json", responseType: GoogleEmbedContentResponse.self)
     }
 
     private struct PathParameterSpec {

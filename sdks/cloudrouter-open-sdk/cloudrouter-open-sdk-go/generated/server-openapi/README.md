@@ -83,8 +83,8 @@ client.SetHeader("X-Custom-Header", "value")
 - `client.ChatGoogle` - chat_google API
 - `client.VideosKling` - videos_kling API
 - `client.ImagesMidjourney` - images_midjourney API
-- `client.ImagesNanoBanana` - images_nano_banana API
 - `client.AudioMinimax` - audio_minimax API
+- `client.ImagesNanoBanana` - images_nano_banana API
 - `client.AudioSuno` - audio_suno API
 - `client.Assistants` - assistant API
 - `client.Audio` - audio API
@@ -547,15 +547,15 @@ fmt.Println(result)
 ```go
 // Kling create avatar video
 body := sdktypes.KlingAvatarCreateRequest{
-    ModelName: "model_name",
-    HumanImage: "human_image",
-    Prompt: "prompt",
-    VoiceMode: "voice_mode",
     AudioUrl: "audio_url",
+    CallbackUrl: "callback_url",
+    HumanImage: "human_image",
+    ModelName: "model_name",
+    Prompt: "prompt",
     Text: "text",
     VoiceId: "voice_id",
     VoiceLanguage: "voice_language",
-    CallbackUrl: "callback_url",
+    VoiceMode: "voice_mode",
 }
 result, err := client.VideosKling.CreateV1VideosAvatar(body)
 if err != nil {
@@ -583,6 +583,31 @@ if err != nil {
 fmt.Println(result)
 ```
 
+### audio_minimax
+
+```go
+// Minimax create music generation
+body := sdktypes.MiniMaxMusicGenerationRequest{
+    AudioSetting: map[string]sdktypes.ProviderJsonValue{
+    "bitrate": 1,
+    "format": "format",
+    "sample_rate": 3,
+},
+    IsInstrumental: false,
+    Lyrics: "lyrics",
+    LyricsOptimizer: false,
+    Model: "model",
+    OutputFormat: "output_format",
+    Prompt: "prompt",
+    Stream: false,
+}
+result, err := client.AudioMinimax.CreateV1MusicGeneration(body)
+if err != nil {
+    panic(err)
+}
+fmt.Println(result)
+```
+
 ### images_nano_banana
 
 ```go
@@ -599,31 +624,6 @@ body := sdktypes.NanoBananaImageGenerationRequest{
     Size: "size",
 }
 result, err := client.ImagesNanoBanana.CreateGeneration(body)
-if err != nil {
-    panic(err)
-}
-fmt.Println(result)
-```
-
-### audio_minimax
-
-```go
-// Minimax create music generation
-body := sdktypes.MiniMaxMusicGenerationRequest{
-    Model: "model",
-    Prompt: "prompt",
-    Lyrics: "lyrics",
-    Stream: false,
-    OutputFormat: "output_format",
-    IsInstrumental: false,
-    LyricsOptimizer: true,
-    AudioSetting: sdktypes.MiniMaxMusicAudioSetting{
-    SampleRate: 1,
-    Bitrate: 2,
-    Format: "format",
-},
-}
-result, err := client.AudioMinimax.CreateV1MusicGeneration(body)
 if err != nil {
     panic(err)
 }

@@ -76,8 +76,8 @@ client.set_header('X-Custom-Header', 'value')
 - `client.chat_google` - chat_google API
 - `client.videos_kling` - videos_kling API
 - `client.images_midjourney` - images_midjourney API
-- `client.images_nano_banana` - images_nano_banana API
 - `client.audio_minimax` - audio_minimax API
+- `client.images_nano_banana` - images_nano_banana API
 - `client.audio_suno` - audio_suno API
 - `client.assistants` - assistant API
 - `client.audio` - audio API
@@ -251,15 +251,15 @@ print(result)
 ```python
 # Kling create avatar video
 body = {
-    'model_name': 'model_name',
-    'human_image': 'human_image',
-    'prompt': 'prompt',
-    'voice_mode': 'voice_mode',
     'audio_url': 'audio_url',
+    'callback_url': 'callback_url',
+    'human_image': 'human_image',
+    'model_name': 'model_name',
+    'prompt': 'prompt',
     'text': 'text',
     'voice_id': 'voice_id',
     'voice_language': 'voice_language',
-    'callback_url': 'callback_url',
+    'voice_mode': 'voice_mode',
 }
 result = client.videos_kling.create_v1_videos_avatar(body)
 print(result)
@@ -281,6 +281,28 @@ result = client.images_midjourney.create_v1_images_generation(body)
 print(result)
 ```
 
+### audio_minimax
+
+```python
+# Minimax create music generation
+body = {
+    'audio_setting': {
+        'bitrate': 1,
+        'format': 'format',
+        'sample_rate': 1,
+    },
+    'is_instrumental': True,
+    'lyrics': 'lyrics',
+    'lyrics_optimizer': True,
+    'model': 'model',
+    'output_format': 'output_format',
+    'prompt': 'prompt',
+    'stream': True,
+}
+result = client.audio_minimax.create_v1_music_generation(body)
+print(result)
+```
+
 ### images_nano_banana
 
 ```python
@@ -297,28 +319,6 @@ body = {
     'size': 'size',
 }
 result = client.images_nano_banana.create_generations(body)
-print(result)
-```
-
-### audio_minimax
-
-```python
-# Minimax create music generation
-body = {
-    'model': 'model',
-    'prompt': 'prompt',
-    'lyrics': 'lyrics',
-    'stream': True,
-    'output_format': 'output_format',
-    'is_instrumental': True,
-    'lyrics_optimizer': True,
-    'audio_setting': {
-        'sample_rate': 1,
-        'bitrate': 1,
-        'format': 'format',
-    },
-}
-result = client.audio_minimax.create_v1_music_generation(body)
 print(result)
 ```
 

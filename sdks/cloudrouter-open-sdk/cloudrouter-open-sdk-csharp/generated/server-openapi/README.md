@@ -78,8 +78,8 @@ client.SetHeader("X-Custom-Header", "value");
 - `client.ChatGoogle` - chat_google API
 - `client.VideosKling` - videos_kling API
 - `client.ImagesMidjourney` - images_midjourney API
-- `client.ImagesNanoBanana` - images_nano_banana API
 - `client.AudioMinimax` - audio_minimax API
+- `client.ImagesNanoBanana` - images_nano_banana API
 - `client.AudioSuno` - audio_suno API
 - `client.Assistants` - assistant API
 - `client.Audio` - audio API
@@ -237,15 +237,15 @@ Console.WriteLine(result);
 // Kling create avatar video
 var body = new KlingAvatarCreateRequest
 {
-    ModelName = "name",
-    HumanImage = "human-image",
-    Prompt = "prompt",
-    VoiceMode = "voice-mode",
     AudioUrl = "audio-url",
+    CallbackUrl = "callback-url",
+    HumanImage = "human-image",
+    ModelName = "name",
+    Prompt = "prompt",
     Text = "text",
     VoiceId = "1",
     VoiceLanguage = "voice-language",
-    CallbackUrl = "callback-url",
+    VoiceMode = "voice-mode",
 };
 var result = await client.VideosKling.CreateV1VideosAvatarAsync(body);
 Console.WriteLine(result);
@@ -268,6 +268,25 @@ var result = await client.ImagesMidjourney.CreateV1ImagesGenerationAsync(body);
 Console.WriteLine(result);
 ```
 
+### audio_minimax
+
+```csharp
+// Minimax create music generation
+var body = new MiniMaxMusicGenerationRequest
+{
+    AudioSetting = new Dictionary<string, object>(),
+    IsInstrumental = false,
+    Lyrics = "lyrics",
+    LyricsOptimizer = false,
+    Model = "model",
+    OutputFormat = "output-format",
+    Prompt = "prompt",
+    Stream = false,
+};
+var result = await client.AudioMinimax.CreateV1MusicGenerationAsync(body);
+Console.WriteLine(result);
+```
+
 ### images_nano_banana
 
 ```csharp
@@ -283,25 +302,6 @@ var body = new NanoBananaImageGenerationRequest
     Size = "size",
 };
 var result = await client.ImagesNanoBanana.CreateGenerationAsync(body);
-Console.WriteLine(result);
-```
-
-### audio_minimax
-
-```csharp
-// Minimax create music generation
-var body = new MiniMaxMusicGenerationRequest
-{
-    Model = "model",
-    Prompt = "prompt",
-    Lyrics = "lyrics",
-    Stream = false,
-    OutputFormat = "output-format",
-    IsInstrumental = false,
-    LyricsOptimizer = true,
-    AudioSetting = new MiniMaxMusicAudioSetting(),
-};
-var result = await client.AudioMinimax.CreateV1MusicGenerationAsync(body);
 Console.WriteLine(result);
 ```
 

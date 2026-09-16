@@ -1,6 +1,6 @@
 package types
 
-// MiniMax music generation response exposed by Cloud Router.
+// Mini max music generation response schema exposed by Cloud Router.
 type MiniMaxMusicGenerationResponse struct {
 	BaseResp MiniMaxMusicBaseResp `json:"base_resp"`
 	Data MiniMaxMusicData `json:"data"`

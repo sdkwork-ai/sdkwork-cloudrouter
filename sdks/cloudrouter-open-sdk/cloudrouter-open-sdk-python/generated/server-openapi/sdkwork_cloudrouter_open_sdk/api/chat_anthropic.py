@@ -22,8 +22,8 @@ class ChatAnthropicApi:
 
     def create_v1_message(self, body: AnthropicMessageCreateRequest) -> AnthropicMessage:
         """Anthropic Claude message"""
-        return self._client.post(f"/v1/anthropic/v1/messages", json=body)
+        return self._client.post(f"/anthropic/v1/messages", json=body)
 
     def create_v1_messages_count_token(self, body: AnthropicCountMessageTokensRequest) -> AnthropicCountMessageTokensResponse:
         """Anthropic count message tokens"""
-        return self._client.post(f"/v1/anthropic/v1/messages/count_tokens", json=body)
+        return self._client.post(f"/anthropic/v1/messages/count_tokens", json=body)

@@ -10,13 +10,13 @@ class EmbeddingsGoogleApi(private val client: HttpClient) {
 
     /** Google Gemini batch embed contents */
     suspend fun createV1betaModelsModelBatchEmbedContent(model: String, body: GoogleBatchEmbedContentsRequest): GoogleBatchEmbedContentsResponse? {
-        val raw = client.post(ApiPaths.aiPath("/google/v1beta/models/${serializePathParameter(model, PathParameterSpec("model", "simple", false))}:batchEmbedContents"), body, null, null, "application/json")
+        val raw = client.post("/google/v1beta/models/${serializePathParameter(model, PathParameterSpec("model", "simple", false))}:batchEmbedContents", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<GoogleBatchEmbedContentsResponse>() {})
     }
 
     /** Google Gemini embed content */
     suspend fun createV1betaModelsModelEmbedContent(model: String, body: GoogleEmbedContentRequest): GoogleEmbedContentResponse? {
-        val raw = client.post(ApiPaths.aiPath("/google/v1beta/models/${serializePathParameter(model, PathParameterSpec("model", "simple", false))}:embedContent"), body, null, null, "application/json")
+        val raw = client.post("/google/v1beta/models/${serializePathParameter(model, PathParameterSpec("model", "simple", false))}:embedContent", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<GoogleEmbedContentResponse>() {})
     }
 

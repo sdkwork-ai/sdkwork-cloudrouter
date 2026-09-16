@@ -9,12 +9,12 @@ public class AudioSunoApi {
 
     /// Suno music generation
     public func createV1MusicGeneration(body: SunoMusicGenerationRequest) async throws -> SunoMusicGenerationResponse? {
-        return try await client.post(ApiPaths.aiPath("/suno/v1/music/generations"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: SunoMusicGenerationResponse.self)
+        return try await client.post("/suno/v1/music/generations", body: body, params: nil, headers: nil, contentType: "application/json", responseType: SunoMusicGenerationResponse.self)
     }
 
     /// Suno retrieve music generation
     public func listV1MusicGenerations(taskId: String) async throws -> SunoMusicGenerationTaskResponse? {
-        return try await client.get(ApiPaths.aiPath("/suno/v1/music/generations/\(serializePathParameter(taskId, PathParameterSpec(name: "task_id", style: "simple", explode: false)))"), responseType: SunoMusicGenerationTaskResponse.self)
+        return try await client.get("/suno/v1/music/generations/\(serializePathParameter(taskId, PathParameterSpec(name: "task_id", style: "simple", explode: false)))", responseType: SunoMusicGenerationTaskResponse.self)
     }
 
     private struct PathParameterSpec {

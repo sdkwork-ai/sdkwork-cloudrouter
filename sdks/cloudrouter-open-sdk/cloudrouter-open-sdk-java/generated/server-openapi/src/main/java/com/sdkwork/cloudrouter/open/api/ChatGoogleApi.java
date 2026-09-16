@@ -15,19 +15,19 @@ public class ChatGoogleApi {
 
     /** Google Gemini count tokens */
     public GoogleCountTokensResponse createV1betaModelsModelCountToken(String model, GoogleCountTokensRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/google/v1beta/models/" + serializePathParameter(model, new PathParameterSpec("model", "simple", false)) + ":countTokens"), body, null, null, "application/json");
+        Object raw = client.post("/google/v1beta/models/" + serializePathParameter(model, new PathParameterSpec("model", "simple", false)) + ":countTokens", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<GoogleCountTokensResponse>() {});
     }
 
     /** Google Gemini generate content */
     public GoogleGenerateContentResponse createV1betaModelsModelGenerateContent(String model, GoogleGenerateContentRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/google/v1beta/models/" + serializePathParameter(model, new PathParameterSpec("model", "simple", false)) + ":generateContent"), body, null, null, "application/json");
+        Object raw = client.post("/google/v1beta/models/" + serializePathParameter(model, new PathParameterSpec("model", "simple", false)) + ":generateContent", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<GoogleGenerateContentResponse>() {});
     }
 
     /** Google Gemini stream generate content */
     public GoogleGenerateContentResponse createV1betaModelsModelStreamGenerateContent(String model, GoogleGenerateContentRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/google/v1beta/models/" + serializePathParameter(model, new PathParameterSpec("model", "simple", false)) + ":streamGenerateContent"), body, null, null, "application/json");
+        Object raw = client.post("/google/v1beta/models/" + serializePathParameter(model, new PathParameterSpec("model", "simple", false)) + ":streamGenerateContent", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<GoogleGenerateContentResponse>() {});
     }
 

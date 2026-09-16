@@ -1,7 +1,6 @@
 import '../http/client.dart';
 import '../models.dart';
 
-import 'paths.dart';
 import 'response_helpers.dart';
 
 
@@ -13,7 +12,7 @@ class AudioSunoApi {
   /// Suno music generation
   Future<SunoMusicGenerationResponse?> createV1MusicGeneration(SunoMusicGenerationRequest body) async {
     final payload = body.toJson();
-    final response = await _client.post(ApiPaths.aiPath('/suno/v1/music/generations'), body: payload, contentType: 'application/json');
+    final response = await _client.post('/suno/v1/music/generations', body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : SunoMusicGenerationResponse.fromJson(map);
@@ -22,7 +21,7 @@ class AudioSunoApi {
 
   /// Suno retrieve music generation
   Future<SunoMusicGenerationTaskResponse?> listV1MusicGenerations(String taskId) async {
-    final response = await _client.get(ApiPaths.aiPath('/suno/v1/music/generations/${serializePathParameter(taskId, const PathParameterSpec('task_id', 'simple', false))}'));
+    final response = await _client.get('/suno/v1/music/generations/${serializePathParameter(taskId, const PathParameterSpec('task_id', 'simple', false))}');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : SunoMusicGenerationTaskResponse.fromJson(map);

@@ -9,8 +9,8 @@ from .api.embeddings_google import EmbeddingsGoogleApi
 from .api.chat_google import ChatGoogleApi
 from .api.videos_kling import VideosKlingApi
 from .api.images_midjourney import ImagesMidjourneyApi
-from .api.images_nano_banana import ImagesNanoBananaApi
 from .api.audio_minimax import AudioMinimaxApi
+from .api.images_nano_banana import ImagesNanoBananaApi
 from .api.audio_suno import AudioSunoApi
 from .api.assistants import AssistantsApi
 from .api.audio import AudioApi
@@ -51,8 +51,8 @@ class SdkworkAiClient:
         self.chat_google: ChatGoogleApi
         self.videos_kling: VideosKlingApi
         self.images_midjourney: ImagesMidjourneyApi
-        self.images_nano_banana: ImagesNanoBananaApi
         self.audio_minimax: AudioMinimaxApi
+        self.images_nano_banana: ImagesNanoBananaApi
         self.audio_suno: AudioSunoApi
         self.assistants: AssistantsApi
         self.audio: AudioApi
@@ -88,8 +88,8 @@ class SdkworkAiClient:
         self.chat_google = ChatGoogleApi(self._client)
         self.videos_kling = VideosKlingApi(self._client)
         self.images_midjourney = ImagesMidjourneyApi(self._client)
-        self.images_nano_banana = ImagesNanoBananaApi(self._client)
         self.audio_minimax = AudioMinimaxApi(self._client)
+        self.images_nano_banana = ImagesNanoBananaApi(self._client)
         self.audio_suno = AudioSunoApi(self._client)
         self.assistants = AssistantsApi(self._client)
         self.audio = AudioApi(self._client)

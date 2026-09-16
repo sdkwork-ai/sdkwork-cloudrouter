@@ -20,7 +20,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.VolcengineContentGenerationTaskCreateResponse?> CreateApiV3ContentsGenerationsTaskAsync(Sdkwork.CloudRouter.Open.Models.VolcengineContentGenerationTaskCreateRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.VolcengineContentGenerationTaskCreateResponse>(ApiPaths.AiPath("/volcengine/api/v3/contents/generations/tasks"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.VolcengineContentGenerationTaskCreateResponse>("/volcengine/api/v3/contents/generations/tasks", body, null, null, "application/json");
         }
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.VolcengineContentGenerationTask?> ListApiV3ContentsGenerationsTasksAsync(string taskId)
         {
-            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.VolcengineContentGenerationTask>(ApiPaths.AiPath($"/volcengine/api/v3/contents/generations/tasks/{SerializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false))}"));
+            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.VolcengineContentGenerationTask>($"/volcengine/api/v3/contents/generations/tasks/{SerializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false))}");
         }
 
         private sealed record PathParameterSpec(string Name, string Style, bool Explode);

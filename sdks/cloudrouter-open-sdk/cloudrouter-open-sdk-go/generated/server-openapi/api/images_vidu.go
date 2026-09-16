@@ -15,7 +15,7 @@ func NewImagesViduApi(client *sdkhttp.Client) *ImagesViduApi {
 
 // Vidu reference to image
 func (a *ImagesViduApi) CreateEntV2Reference2image(body sdktypes.ViduReferenceToImageRequest) (sdktypes.ViduImageGenerationTask, error) {
-    raw, err := a.client.Post(AiApiPath("/vidu/ent/v2/reference2image"), body, nil, nil, "application/json")
+    raw, err := a.client.Post("/vidu/ent/v2/reference2image", body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.ViduImageGenerationTask
         return zero, err

@@ -83,12 +83,12 @@ class ChatGoogleApi:
 
     def create_v1beta_models_model_count_token(self, model: str, body: GoogleCountTokensRequest) -> GoogleCountTokensResponse:
         """Google Gemini count tokens"""
-        return self._client.post(f"/v1/google/v1beta/models/{serialize_path_parameter(model, {'name': 'model', 'style': 'simple', 'explode': False})}:countTokens", json=body)
+        return self._client.post(f"/google/v1beta/models/{serialize_path_parameter(model, {'name': 'model', 'style': 'simple', 'explode': False})}:countTokens", json=body)
 
     def create_v1beta_models_model_generate_content(self, model: str, body: GoogleGenerateContentRequest) -> GoogleGenerateContentResponse:
         """Google Gemini generate content"""
-        return self._client.post(f"/v1/google/v1beta/models/{serialize_path_parameter(model, {'name': 'model', 'style': 'simple', 'explode': False})}:generateContent", json=body)
+        return self._client.post(f"/google/v1beta/models/{serialize_path_parameter(model, {'name': 'model', 'style': 'simple', 'explode': False})}:generateContent", json=body)
 
     def create_v1beta_models_model_stream_generate_content(self, model: str, body: GoogleGenerateContentRequest) -> GoogleGenerateContentResponse:
         """Google Gemini stream generate content"""
-        return self._client.post(f"/v1/google/v1beta/models/{serialize_path_parameter(model, {'name': 'model', 'style': 'simple', 'explode': False})}:streamGenerateContent", json=body)
+        return self._client.post(f"/google/v1beta/models/{serialize_path_parameter(model, {'name': 'model', 'style': 'simple', 'explode': False})}:streamGenerateContent", json=body)

@@ -18,7 +18,7 @@ func NewEmbeddingsGoogleApi(client *sdkhttp.Client) *EmbeddingsGoogleApi {
 
 // Google Gemini batch embed contents
 func (a *EmbeddingsGoogleApi) CreateV1betaModelsModelBatchEmbedContent(model string, body sdktypes.GoogleBatchEmbedContentsRequest) (sdktypes.GoogleBatchEmbedContentsResponse, error) {
-    raw, err := a.client.Post(AiApiPath(fmt.Sprintf("/google/v1beta/models/%s:batchEmbedContents", SerializePathParameter(model, PathParameterSpec{Name: "model", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+    raw, err := a.client.Post(fmt.Sprintf("/google/v1beta/models/%s:batchEmbedContents", SerializePathParameter(model, PathParameterSpec{Name: "model", Style: "simple", Explode: false})), body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.GoogleBatchEmbedContentsResponse
         return zero, err
@@ -28,7 +28,7 @@ func (a *EmbeddingsGoogleApi) CreateV1betaModelsModelBatchEmbedContent(model str
 
 // Google Gemini embed content
 func (a *EmbeddingsGoogleApi) CreateV1betaModelsModelEmbedContent(model string, body sdktypes.GoogleEmbedContentRequest) (sdktypes.GoogleEmbedContentResponse, error) {
-    raw, err := a.client.Post(AiApiPath(fmt.Sprintf("/google/v1beta/models/%s:embedContent", SerializePathParameter(model, PathParameterSpec{Name: "model", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+    raw, err := a.client.Post(fmt.Sprintf("/google/v1beta/models/%s:embedContent", SerializePathParameter(model, PathParameterSpec{Name: "model", Style: "simple", Explode: false})), body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.GoogleEmbedContentResponse
         return zero, err

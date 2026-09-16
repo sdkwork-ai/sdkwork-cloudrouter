@@ -18,7 +18,7 @@ func NewChatGoogleApi(client *sdkhttp.Client) *ChatGoogleApi {
 
 // Google Gemini count tokens
 func (a *ChatGoogleApi) CreateV1betaModelsModelCountToken(model string, body sdktypes.GoogleCountTokensRequest) (sdktypes.GoogleCountTokensResponse, error) {
-    raw, err := a.client.Post(AiApiPath(fmt.Sprintf("/google/v1beta/models/%s:countTokens", SerializePathParameter(model, PathParameterSpec{Name: "model", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+    raw, err := a.client.Post(fmt.Sprintf("/google/v1beta/models/%s:countTokens", SerializePathParameter(model, PathParameterSpec{Name: "model", Style: "simple", Explode: false})), body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.GoogleCountTokensResponse
         return zero, err
@@ -28,7 +28,7 @@ func (a *ChatGoogleApi) CreateV1betaModelsModelCountToken(model string, body sdk
 
 // Google Gemini generate content
 func (a *ChatGoogleApi) CreateV1betaModelsModelGenerateContent(model string, body sdktypes.GoogleGenerateContentRequest) (sdktypes.GoogleGenerateContentResponse, error) {
-    raw, err := a.client.Post(AiApiPath(fmt.Sprintf("/google/v1beta/models/%s:generateContent", SerializePathParameter(model, PathParameterSpec{Name: "model", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+    raw, err := a.client.Post(fmt.Sprintf("/google/v1beta/models/%s:generateContent", SerializePathParameter(model, PathParameterSpec{Name: "model", Style: "simple", Explode: false})), body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.GoogleGenerateContentResponse
         return zero, err
@@ -38,7 +38,7 @@ func (a *ChatGoogleApi) CreateV1betaModelsModelGenerateContent(model string, bod
 
 // Google Gemini stream generate content
 func (a *ChatGoogleApi) CreateV1betaModelsModelStreamGenerateContent(model string, body sdktypes.GoogleGenerateContentRequest) (sdktypes.GoogleGenerateContentResponse, error) {
-    raw, err := a.client.Post(AiApiPath(fmt.Sprintf("/google/v1beta/models/%s:streamGenerateContent", SerializePathParameter(model, PathParameterSpec{Name: "model", Style: "simple", Explode: false}))), body, nil, nil, "application/json")
+    raw, err := a.client.Post(fmt.Sprintf("/google/v1beta/models/%s:streamGenerateContent", SerializePathParameter(model, PathParameterSpec{Name: "model", Style: "simple", Explode: false})), body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.GoogleGenerateContentResponse
         return zero, err

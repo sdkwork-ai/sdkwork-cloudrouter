@@ -28,7 +28,7 @@
     },
     {
       "path": "lib/ai_client.dart",
-      "sha256": "e9c9d575a10851c92e09f9dc8afc28f5629b77e2eeba00cc469623fd6305f740"
+      "sha256": "9deaa55d28baedb3a7287e412fa10083c734b74ee97b2aebe40adc2dd3a20565"
     },
     {
       "path": "lib/cloudrouter_open_sdk.dart",
@@ -36,7 +36,7 @@
     },
     {
       "path": "lib/src/api/api.dart",
-      "sha256": "f808c088cd2801f16af99ac340c656640891b24050b5e577a3d97fffbcc58eab"
+      "sha256": "3feaf563c009dc93a8b2d37de8353353ed4785e8005963109329efe49dac47ba"
     },
     {
       "path": "lib/src/api/assistants.dart",
@@ -44,19 +44,19 @@
     },
     {
       "path": "lib/src/api/audio_elevenlabs.dart",
-      "sha256": "42895969a44eee492a95c824f17773b954d01ff8ba88ff743d59e4ce128980a6"
+      "sha256": "999101b64167229f43ecd2fb825cf66b147af8179741be26d918ccb9c6a2964d"
     },
     {
       "path": "lib/src/api/audio_minimax.dart",
-      "sha256": "316cc460c23c22e7787a34379233d6b27da39270b755bfb29c3904aea6732bea"
+      "sha256": "4caa3798276e0a003791db4c57362d52aab4e7c55b15c6abaecde2cd9712c9cf"
     },
     {
       "path": "lib/src/api/audio_suno.dart",
-      "sha256": "77d8bb0e3eb241b0bb16c659b578e917a3004a63b6fa1eab127687b13cc9bab1"
+      "sha256": "72646d5bcb724053ebac04fc4f361ee2f7a33916fec3d7012d5aa910adcc0a06"
     },
     {
       "path": "lib/src/api/audio_volcengine.dart",
-      "sha256": "21f5e3be3bbd03335fc09bee3480822538c6f316a5a47eae538a022b26025c16"
+      "sha256": "e95a120a011af52ed599cbf56103c7b681c199aadb4bace26c12d2b96e914e3a"
     },
     {
       "path": "lib/src/api/audio.dart",
@@ -64,7 +64,7 @@
     },
     {
       "path": "lib/src/api/batches_anthropic.dart",
-      "sha256": "93b8e2f410f9fd043f8220a761b1db12c34382f1501327ff4c698a511575acc5"
+      "sha256": "72ff8aec3a27bf18a173620e3aab8f9f6aa5a51ded227aa092ee9bec133746e7"
     },
     {
       "path": "lib/src/api/batches.dart",
@@ -72,11 +72,11 @@
     },
     {
       "path": "lib/src/api/chat_anthropic.dart",
-      "sha256": "aba05888bc06dde15812d27c46a6bed46fdf69a854bff6318d4ff2f8dcbe5039"
+      "sha256": "fc2433a1a1d48912287501b91dc24725967f2e768c20be3e303b8d796312b69a"
     },
     {
       "path": "lib/src/api/chat_google.dart",
-      "sha256": "da38c55b647fcf0edfa0c38f60b190e154f9c0e873d1068d08d7bfb481c9de6f"
+      "sha256": "acf3ecbf9b723db19df8a6b2c3551f54c3346fd41224703fa90a4bbb26145e54"
     },
     {
       "path": "lib/src/api/chat.dart",
@@ -96,7 +96,7 @@
     },
     {
       "path": "lib/src/api/embeddings_google.dart",
-      "sha256": "dab20b17af9041af4624228937e17f9bef21420cd1dd4711744c588789fc0f29"
+      "sha256": "e2c9e4059af12339b847d8441a31fde75b0c8f4f5830ae927149e134c888ee4f"
     },
     {
       "path": "lib/src/api/embeddings.dart",
@@ -104,11 +104,11 @@
     },
     {
       "path": "lib/src/api/files_anthropic.dart",
-      "sha256": "2d7305ab3d9752bb5d67f68132114b70c1c9eed76190ac58088c134021cb9013"
+      "sha256": "746dc1876fbb5ca1319f465489f1bb64563fff34bea0e6030cadb50f518d8adf"
     },
     {
       "path": "lib/src/api/files_google.dart",
-      "sha256": "80824009543ce8df82ab486d4ca014f31a99889ffd5f9e66711a78ab7c20bfab"
+      "sha256": "37a85b3ea623dcb1b48370aa52c2a84db10ab10dfcb202af37f97e2c22f38d54"
     },
     {
       "path": "lib/src/api/files.dart",
@@ -116,15 +116,15 @@
     },
     {
       "path": "lib/src/api/images_midjourney.dart",
-      "sha256": "adf3f535b43ee613db3246f35a09150df0442fd91bd3e40fc9c8870c1696b059"
+      "sha256": "e3c3cab43f8f91337f7b61b079dfdae0d7954775f17d358bb724c50927755d64"
     },
     {
       "path": "lib/src/api/images_nano_banana.dart",
-      "sha256": "12cc9327c921ffb0d38bb38aee6578bc7273e1c4e168f2fd76227f8f42428a39"
+      "sha256": "b54200897e7b5b9c41c54d3effd61f41e07676acf311fa2306691ace4aa64ea5"
     },
     {
       "path": "lib/src/api/images_vidu.dart",
-      "sha256": "9a9336f9c680c3ed236b59c8eb02512f3ec592c7305def1ade6afbbab4a25ea8"
+      "sha256": "e8589867495c6f9667fa26a92e45f592b95ca5c9b74269708af93b87d7997c54"
     },
     {
       "path": "lib/src/api/images.dart",
@@ -152,7 +152,7 @@
     },
     {
       "path": "lib/src/api/responses_google.dart",
-      "sha256": "8d7b76e4f559f18c4435d439b85c0950c783c8753248e0d5ec40f8ffcc24c7d6"
+      "sha256": "921b0bcc47405d03b6ec0ca540dd3c4cb84d2e14e1e48911061707198808e1f1"
     },
     {
       "path": "lib/src/api/responses.dart",
@@ -176,15 +176,15 @@
     },
     {
       "path": "lib/src/api/videos_kling.dart",
-      "sha256": "6a725ccd0e77a54be58bca78529d7b5c8a7e5e728167274e4e8da75e8ce3fd01"
+      "sha256": "d3226657eae279c0c3e0d32f6aa9927f6df275737c98c996aae0cf33bcde33f9"
     },
     {
       "path": "lib/src/api/videos_vidu.dart",
-      "sha256": "2971fead762620f619ed63ed2ec5da5dbb79319ad5be0b899903a146c2bd6ade"
+      "sha256": "f5b9596f73f675b5c2dda5c75f808ce7745bfb116016486a13ebc8afe5aa7210"
     },
     {
       "path": "lib/src/api/videos_volcengine.dart",
-      "sha256": "f5d33cbb126452d6dc8042838e44d4fb30dee6b269c87edbe640a7f56ab75bff"
+      "sha256": "487a82d818ac5e2d787d8b23ef4f05009b1535dac15d74ba99b4a0c6e03451b3"
     },
     {
       "path": "lib/src/http/client.dart",
@@ -192,7 +192,7 @@
     },
     {
       "path": "lib/src/models.dart",
-      "sha256": "7600e0d023f65dc2fef2d1b24f828a8bc3eafa8d72c962270ee599723d43ba4e"
+      "sha256": "47d6a2d5fe2c73b9b3a57bcaee34faea5fe9eb9665e052a33edfcbb2033e69fa"
     },
     {
       "path": "LICENSE",
@@ -208,7 +208,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "d44b5d06e2b773a86f625d94628a9e8ae9770c3cd165fd06a27ced0adc9b3a24"
+      "sha256": "af138f6ada95384cbd053f257a08165f55a2471de76a8cee5843e8cc92bdb4d4"
     },
     {
       "path": "sdkwork-sdk.json",

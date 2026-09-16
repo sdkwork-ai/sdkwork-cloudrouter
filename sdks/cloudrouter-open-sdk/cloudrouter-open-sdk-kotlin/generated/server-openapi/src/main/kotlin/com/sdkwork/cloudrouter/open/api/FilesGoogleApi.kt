@@ -14,19 +14,19 @@ class FilesGoogleApi(private val client: HttpClient) {
             QueryParameterSpec("pageSize", pageSize, "form", true, false, null),
             QueryParameterSpec("pageToken", pageToken, "form", true, false, null)
         ))
-        val raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/google/v1beta/files"), query))
+        val raw = client.get(ApiPaths.appendQueryString("/google/v1beta/files", query))
         return client.convertValue(raw, object : TypeReference<GoogleFileListResponse>() {})
     }
 
     /** Google Gemini upload file */
     suspend fun createV1betaFile(body: GoogleFileUploadMultipartRequest): GoogleFile? {
-        val raw = client.post(ApiPaths.aiPath("/google/v1beta/files"), body, null, null, "multipart/form-data")
+        val raw = client.post("/google/v1beta/files", body, null, null, "multipart/form-data")
         return client.convertValue(raw, object : TypeReference<GoogleFile>() {})
     }
 
     /** Google Gemini delete file */
     suspend fun deleteV1betaFiles(fileId: String): GoogleEmptyResponse? {
-        val raw = client.delete(ApiPaths.aiPath("/google/v1beta/files/${serializePathParameter(fileId, PathParameterSpec("file_id", "simple", false))}"))
+        val raw = client.delete("/google/v1beta/files/${serializePathParameter(fileId, PathParameterSpec("file_id", "simple", false))}")
         return client.convertValue(raw, object : TypeReference<GoogleEmptyResponse>() {})
     }
 

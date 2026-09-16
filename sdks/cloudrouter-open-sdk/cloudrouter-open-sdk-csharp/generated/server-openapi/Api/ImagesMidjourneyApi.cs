@@ -20,7 +20,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.MidjourneyImageGenerationTask?> CreateV1ImagesGenerationAsync(Sdkwork.CloudRouter.Open.Models.MidjourneyImageGenerationRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.MidjourneyImageGenerationTask>(ApiPaths.AiPath("/midjourney/v1/images/generations"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.MidjourneyImageGenerationTask>("/midjourney/v1/images/generations", body, null, null, "application/json");
         }
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.MidjourneyImageGenerationTask?> ListV1ImagesGenerationsAsync(string taskId)
         {
-            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.MidjourneyImageGenerationTask>(ApiPaths.AiPath($"/midjourney/v1/images/generations/{SerializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false))}"));
+            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.MidjourneyImageGenerationTask>($"/midjourney/v1/images/generations/{SerializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false))}");
         }
 
         private sealed record PathParameterSpec(string Name, string Style, bool Explode);

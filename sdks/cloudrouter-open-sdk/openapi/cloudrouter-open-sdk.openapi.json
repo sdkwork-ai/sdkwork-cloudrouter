@@ -2617,6 +2617,97 @@
         },
         "type": "object"
       },
+      "KlingAvatarCreateRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional kling avatar create request values using the provider json value module."
+        },
+        "description": "Kling-compatible kling avatar create request schema exposed by Cloud Router vendor routing.",
+        "properties": {
+          "audio_url": {
+            "description": "Driving audio URL used when voice_mode is audio.",
+            "type": "string"
+          },
+          "callback_url": {
+            "description": "Optional callback URL.",
+            "type": "string"
+          },
+          "human_image": {
+            "description": "Character image URL driving the digital human.",
+            "type": "string"
+          },
+          "model_name": {
+            "description": "Kling avatar model id, for example kling-ai-avatar-v2.",
+            "type": "string"
+          },
+          "prompt": {
+            "description": "Optional expression or performance description for the avatar.",
+            "type": "string"
+          },
+          "text": {
+            "description": "Driving speech text used when voice_mode is tts.",
+            "type": "string"
+          },
+          "voice_id": {
+            "description": "Optional voice id for the tts mode.",
+            "type": "string"
+          },
+          "voice_language": {
+            "description": "Optional speech language for the tts mode.",
+            "type": "string"
+          },
+          "voice_mode": {
+            "description": "Voice input mode, for example audio or tts.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "human_image"
+        ],
+        "type": "object"
+      },
+      "KlingMotionControlRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional kling motion control request values using the provider json value module."
+        },
+        "description": "Kling-compatible kling motion control request schema exposed by Cloud Router vendor routing.",
+        "properties": {
+          "callback_url": {
+            "description": "Optional callback URL.",
+            "type": "string"
+          },
+          "image": {
+            "description": "Character image URL whose person performs the motion.",
+            "type": "string"
+          },
+          "model_name": {
+            "description": "Kling model id, for example kling-v2-6 or kling-v3.",
+            "type": "string"
+          },
+          "prompt": {
+            "description": "Optional text prompt for global or local motion control.",
+            "type": "string"
+          },
+          "video": {
+            "description": "Motion reference video URL (single-person performance, 3-30 seconds).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "image",
+          "video"
+        ],
+        "type": "object"
+      },
       "KlingVideoGenerationRequest": {
         "additionalProperties": {
           "allOf": [
@@ -2833,6 +2924,205 @@
           },
           "updated_at": {
             "description": "Task update timestamp.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "MiniMaxMusicAudioSetting": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional mini max music audio setting values using the provider json value module."
+        },
+        "description": "Mini max music audio setting schema exposed by Cloud Router.",
+        "properties": {
+          "bitrate": {
+            "description": "Output bitrate: 32000, 64000, 128000, or 256000.",
+            "type": "integer"
+          },
+          "format": {
+            "description": "Output container: mp3, wav, or pcm.",
+            "type": "string"
+          },
+          "sample_rate": {
+            "description": "Output sample rate: 16000, 24000, 32000, or 44100.",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "MiniMaxMusicBaseResp": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional mini max music base resp values using the provider json value module."
+        },
+        "description": "Mini max music base resp schema exposed by Cloud Router.",
+        "properties": {
+          "status_code": {
+            "description": "MiniMax status code; 0 means success.",
+            "type": "integer"
+          },
+          "status_msg": {
+            "description": "MiniMax status message.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "MiniMaxMusicData": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional mini max music data values using the provider json value module."
+        },
+        "description": "Mini max music data schema exposed by Cloud Router.",
+        "properties": {
+          "audio": {
+            "description": "Generated audio URL when output_format is url, otherwise hex-encoded audio.",
+            "type": "string"
+          },
+          "extra_info": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MiniMaxMusicExtraInfo"
+              }
+            ],
+            "description": "Extra info field on the mini max music data, using the mini max music extra info module."
+          },
+          "status": {
+            "description": "MiniMax task status: 1 means in progress, 2 means finished.",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "MiniMaxMusicExtraInfo": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional mini max music extra info values using the provider json value module."
+        },
+        "description": "Mini max music extra info schema exposed by Cloud Router.",
+        "properties": {
+          "bitrate": {
+            "description": "Generated audio bitrate.",
+            "type": "integer"
+          },
+          "music_channel": {
+            "description": "Generated audio channel count.",
+            "type": "integer"
+          },
+          "music_duration": {
+            "description": "Generated music duration in seconds.",
+            "type": "number"
+          },
+          "music_sample_rate": {
+            "description": "Generated audio sample rate.",
+            "type": "integer"
+          },
+          "music_size": {
+            "description": "Generated audio size in bytes.",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "MiniMaxMusicGenerationRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional mini max music generation request values using the provider json value module."
+        },
+        "description": "Mini max music generation request schema exposed by Cloud Router.",
+        "properties": {
+          "audio_setting": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MiniMaxMusicAudioSetting"
+              }
+            ],
+            "description": "Audio setting field on the mini max music generation request, using the mini max music audio setting module."
+          },
+          "is_instrumental": {
+            "description": "Generate instrumental music without vocals.",
+            "type": "boolean"
+          },
+          "lyrics": {
+            "description": "Lyrics with structure tags such as [Verse] and [Chorus].",
+            "type": "string"
+          },
+          "lyrics_optimizer": {
+            "description": "Let the model generate lyrics from the prompt when lyrics are empty.",
+            "type": "boolean"
+          },
+          "model": {
+            "description": "MiniMax music model id, for example music-3.0 or music-2.6.",
+            "type": "string"
+          },
+          "output_format": {
+            "description": "Audio delivery format: url or hex.",
+            "type": "string"
+          },
+          "prompt": {
+            "description": "Style, mood, or scene description for the generated music.",
+            "type": "string"
+          },
+          "stream": {
+            "description": "Stream the generated audio back instead of returning one payload.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "model"
+        ],
+        "type": "object"
+      },
+      "MiniMaxMusicGenerationResponse": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional mini max music generation response values using the provider json value module."
+        },
+        "description": "Mini max music generation response schema exposed by Cloud Router.",
+        "properties": {
+          "base_resp": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MiniMaxMusicBaseResp"
+              }
+            ],
+            "description": "Base resp field on the mini max music generation response, using the mini max music base resp module."
+          },
+          "data": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MiniMaxMusicData"
+              }
+            ],
+            "description": "Data field on the mini max music generation response, using the mini max music data module."
+          },
+          "trace_id": {
+            "description": "MiniMax trace identifier.",
             "type": "string"
           }
         },
@@ -11944,6 +12234,53 @@
         },
         "type": "object"
       },
+      "ViduTemplateRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional vidu template request values using the provider json value module."
+        },
+        "description": "Vidu vidu template request schema exposed by Cloud Router vendor routing.",
+        "properties": {
+          "callback_url": {
+            "description": "Optional callback URL.",
+            "type": "string"
+          },
+          "images": {
+            "description": "Character image URLs (single front-facing person).",
+            "items": {
+              "description": "String variant used as images items.",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "payload": {
+            "description": "Opaque request parameter echoed back by task queries.",
+            "type": "string"
+          },
+          "template": {
+            "description": "Template id, for example motion_control_2 or motion_control_2.5.",
+            "type": "string"
+          },
+          "video_urls": {
+            "description": "Motion reference video URLs (single front-facing person, 3-30 seconds).",
+            "items": {
+              "description": "String variant used as video urls items.",
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "template",
+          "images",
+          "video_urls"
+        ],
+        "type": "object"
+      },
       "ViduTextToVideoRequest": {
         "additionalProperties": {
           "allOf": [
@@ -12219,276 +12556,6 @@
           "type"
         ],
         "type": "object"
-      },
-      "MiniMaxMusicAudioSetting": {
-        "type": "object",
-        "description": "MiniMax music generation audio setting.",
-        "properties": {
-          "sample_rate": {
-            "type": "integer",
-            "description": "Output sample rate: 16000, 24000, 32000, or 44100."
-          },
-          "bitrate": {
-            "type": "integer",
-            "description": "Output bitrate: 32000, 64000, 128000, or 256000."
-          },
-          "format": {
-            "type": "string",
-            "description": "Output container: mp3, wav, or pcm."
-          }
-        },
-        "additionalProperties": true
-      },
-      "MiniMaxMusicGenerationRequest": {
-        "type": "object",
-        "description": "MiniMax music generation request payload.",
-        "required": [
-          "model"
-        ],
-        "properties": {
-          "model": {
-            "type": "string",
-            "description": "MiniMax music model id, for example music-3.0 or music-2.6."
-          },
-          "prompt": {
-            "type": "string",
-            "description": "Style, mood, or scene description for the generated music."
-          },
-          "lyrics": {
-            "type": "string",
-            "description": "Lyrics with structure tags such as [Verse] and [Chorus]."
-          },
-          "stream": {
-            "type": "boolean",
-            "description": "Stream the generated audio back instead of returning one payload."
-          },
-          "output_format": {
-            "type": "string",
-            "description": "Audio delivery format: url or hex."
-          },
-          "is_instrumental": {
-            "type": "boolean",
-            "description": "Generate instrumental music without vocals."
-          },
-          "lyrics_optimizer": {
-            "type": "boolean",
-            "description": "Let the model generate lyrics from the prompt when lyrics are empty."
-          },
-          "audio_setting": {
-            "$ref": "#/components/schemas/MiniMaxMusicAudioSetting"
-          }
-        },
-        "additionalProperties": true
-      },
-      "MiniMaxMusicBaseResp": {
-        "type": "object",
-        "description": "MiniMax base response status envelope.",
-        "properties": {
-          "status_code": {
-            "type": "integer",
-            "description": "MiniMax status code; 0 means success."
-          },
-          "status_msg": {
-            "type": "string",
-            "description": "MiniMax status message."
-          }
-        },
-        "additionalProperties": true
-      },
-      "MiniMaxMusicExtraInfo": {
-        "type": "object",
-        "description": "MiniMax music generation extra metadata.",
-        "properties": {
-          "music_duration": {
-            "type": "number",
-            "description": "Generated music duration in seconds."
-          },
-          "music_sample_rate": {
-            "type": "integer",
-            "description": "Generated audio sample rate."
-          },
-          "music_channel": {
-            "type": "integer",
-            "description": "Generated audio channel count."
-          },
-          "bitrate": {
-            "type": "integer",
-            "description": "Generated audio bitrate."
-          },
-          "music_size": {
-            "type": "integer",
-            "description": "Generated audio size in bytes."
-          }
-        },
-        "additionalProperties": true
-      },
-      "MiniMaxMusicData": {
-        "type": "object",
-        "description": "MiniMax music generation data payload.",
-        "properties": {
-          "status": {
-            "type": "integer",
-            "description": "MiniMax task status: 1 means in progress, 2 means finished."
-          },
-          "audio": {
-            "type": "string",
-            "description": "Generated audio URL when output_format is url, otherwise hex-encoded audio."
-          },
-          "extra_info": {
-            "$ref": "#/components/schemas/MiniMaxMusicExtraInfo"
-          }
-        },
-        "additionalProperties": true
-      },
-      "MiniMaxMusicGenerationResponse": {
-        "type": "object",
-        "description": "MiniMax music generation response exposed by Cloud Router.",
-        "properties": {
-          "base_resp": {
-            "$ref": "#/components/schemas/MiniMaxMusicBaseResp"
-          },
-          "data": {
-            "$ref": "#/components/schemas/MiniMaxMusicData"
-          },
-          "trace_id": {
-            "type": "string",
-            "description": "MiniMax trace identifier."
-          }
-        },
-        "additionalProperties": true
-      },
-      "KlingAvatarCreateRequest": {
-        "description": "Kling avatar (digital human) video generation request schema exposed by Cloud Router vendor routing.",
-        "properties": {
-          "model_name": {
-            "type": "string",
-            "description": "Kling avatar model id, for example kling-ai-avatar-v2."
-          },
-          "human_image": {
-            "type": "string",
-            "description": "Character image URL driving the digital human."
-          },
-          "prompt": {
-            "type": "string",
-            "description": "Optional expression or performance description for the avatar."
-          },
-          "voice_mode": {
-            "type": "string",
-            "description": "Voice input mode, for example audio or tts."
-          },
-          "audio_url": {
-            "type": "string",
-            "description": "Driving audio URL used when voice_mode is audio."
-          },
-          "text": {
-            "type": "string",
-            "description": "Driving speech text used when voice_mode is tts."
-          },
-          "voice_id": {
-            "type": "string",
-            "description": "Optional voice id for the tts mode."
-          },
-          "voice_language": {
-            "type": "string",
-            "description": "Optional speech language for the tts mode."
-          },
-          "callback_url": {
-            "type": "string",
-            "description": "Optional callback URL."
-          }
-        },
-        "required": [
-          "human_image"
-        ],
-        "additionalProperties": {
-          "allOf": [
-            {
-              "$ref": "#/components/schemas/ProviderJsonValue"
-            }
-          ],
-          "description": "Additional provider json values using the provider json value module."
-        }
-      },
-      "KlingMotionControlRequest": {
-        "description": "Kling motion control (motion mimicry) video generation request schema exposed by Cloud Router vendor routing.",
-        "properties": {
-          "model_name": {
-            "type": "string",
-            "description": "Kling model id, for example kling-v2-6 or kling-v3."
-          },
-          "prompt": {
-            "type": "string",
-            "description": "Optional text prompt for global or local motion control."
-          },
-          "image": {
-            "type": "string",
-            "description": "Character image URL whose person performs the motion."
-          },
-          "video": {
-            "type": "string",
-            "description": "Motion reference video URL (single-person performance, 3-30 seconds)."
-          },
-          "callback_url": {
-            "type": "string",
-            "description": "Optional callback URL."
-          }
-        },
-        "required": [
-          "image",
-          "video"
-        ],
-        "additionalProperties": {
-          "allOf": [
-            {
-              "$ref": "#/components/schemas/ProviderJsonValue"
-            }
-          ],
-          "description": "Additional provider json values using the provider json value module."
-        }
-      },
-      "ViduTemplateRequest": {
-        "description": "Vidu template video request schema (motion sync templates such as motion_control_2) exposed by Cloud Router vendor routing.",
-        "properties": {
-          "template": {
-            "type": "string",
-            "description": "Template id, for example motion_control_2 or motion_control_2.5."
-          },
-          "images": {
-            "description": "Character image URLs (single front-facing person).",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "video_urls": {
-            "description": "Motion reference video URLs (single front-facing person, 3-30 seconds).",
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "payload": {
-            "type": "string",
-            "description": "Opaque passthrough parameter echoed by task queries."
-          },
-          "callback_url": {
-            "type": "string",
-            "description": "Optional callback URL."
-          }
-        },
-        "required": [
-          "template",
-          "images",
-          "video_urls"
-        ],
-        "additionalProperties": {
-          "allOf": [
-            {
-              "$ref": "#/components/schemas/ProviderJsonValue"
-            }
-          ],
-          "description": "Additional provider json values using the provider json value module."
-        }
       }
     },
     "securitySchemes": {
@@ -13659,7 +13726,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "cloudrouter-vendor-relay"
+        "x-sdkwork-external-protocol-id": "elevenlabs-v1"
       }
     },
     "/elevenlabs/v1/text-to-speech/{voice_id}": {
@@ -13771,7 +13838,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "cloudrouter-vendor-relay"
+        "x-sdkwork-external-protocol-id": "elevenlabs-v1"
       }
     },
     "/google/v1beta/cachedContents": {
@@ -15043,7 +15110,7 @@
     },
     "/kling/v1/videos/avatar": {
       "post": {
-        "description": "Kling create avatar video through the vendor-native surface using the configured provider account.",
+        "description": "Creates a Kling avatar video using the configured Kling provider account.",
         "operationId": "klingCreateAvatar",
         "parameters": [],
         "requestBody": {
@@ -15054,7 +15121,7 @@
               }
             }
           },
-          "description": "Typed request payload for the klingCreateAvatar operation.",
+          "description": "Typed request payload for the kling create avatar operation.",
           "required": true
         },
         "responses": {
@@ -15075,7 +15142,8 @@
                   "$ref": "#/components/schemas/OpenAiErrorEnvelope"
                 }
               }
-            }
+            },
+            "description": "Invalid request."
           },
           "401": {
             "content": {
@@ -15084,7 +15152,8 @@
                   "$ref": "#/components/schemas/OpenAiErrorEnvelope"
                 }
               }
-            }
+            },
+            "description": "Authentication failed."
           },
           "404": {
             "content": {
@@ -15093,7 +15162,8 @@
                   "$ref": "#/components/schemas/OpenAiErrorEnvelope"
                 }
               }
-            }
+            },
+            "description": "Resource or route target not found."
           },
           "501": {
             "content": {
@@ -15102,7 +15172,8 @@
                   "$ref": "#/components/schemas/OpenAiErrorEnvelope"
                 }
               }
-            }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
           },
           "502": {
             "content": {
@@ -15111,7 +15182,8 @@
                   "$ref": "#/components/schemas/OpenAiErrorEnvelope"
                 }
               }
-            }
+            },
+            "description": "Upstream provider relay failed."
           }
         },
         "security": [
@@ -15126,105 +15198,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "kling-v1",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "gateway-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
-        "x-sdkwork-auth-mode": "api-key-or-dual-token",
-        "x-sdkwork-required-surface": "organizationMember"
-      }
-    },
-    "/kling/v1/videos/motion-control": {
-      "post": {
-        "description": "Kling create motion control video through the vendor-native surface using the configured provider account.",
-        "operationId": "klingCreateMotionControl",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/KlingMotionControlRequest"
-              }
-            }
-          },
-          "description": "Typed request payload for the klingCreateMotionControl operation.",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/KlingVideoGenerationTask"
-                }
-              }
-            },
-            "description": "Successful response from Cloud Router or the selected upstream provider."
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
-                }
-              }
-            }
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
-                }
-              }
-            }
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
-                }
-              }
-            }
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
-                }
-              }
-            }
-          },
-          "502": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Kling create motion control video",
-        "tags": [
-          "Videos/kling"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "kling-v1",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "gateway-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
-        "x-sdkwork-auth-mode": "api-key-or-dual-token",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-external-protocol-id": "kling-v1"
       }
     },
     "/kling/v1/videos/generations": {
@@ -15403,6 +15377,99 @@
           }
         ],
         "summary": "Kling retrieve video generation",
+        "tags": [
+          "Videos/kling"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "kling-v1"
+      }
+    },
+    "/kling/v1/videos/motion-control": {
+      "post": {
+        "description": "Creates a Kling motion-control video using the configured Kling provider account.",
+        "operationId": "klingCreateMotionControl",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KlingMotionControlRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for the kling create motion control operation.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KlingVideoGenerationTask"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Kling create motion control video",
         "tags": [
           "Videos/kling"
         ],
@@ -15597,6 +15664,99 @@
         "x-sdkwork-external-protocol-id": "midjourney-v1"
       }
     },
+    "/minimax/v1/music_generation": {
+      "post": {
+        "description": "Generates music through the MiniMax-compatible music generation surface using the configured MiniMax provider account.",
+        "operationId": "minimaxCreateMusicGeneration",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MiniMaxMusicGenerationRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for the minimax create music generation operation.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiniMaxMusicGenerationResponse"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Minimax create music generation",
+        "tags": [
+          "Audio/minimax"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "minimax-v1"
+      }
+    },
     "/nano-banana/v1/images/generations": {
       "post": {
         "description": "Creates a Nano Banana compatible image generation using the configured Nano Banana provider account.",
@@ -15780,99 +15940,6 @@
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
         "x-sdkwork-external-protocol-id": "nano-banana-v1"
-      }
-    },
-    "/minimax/v1/music_generation": {
-      "post": {
-        "description": "Generates music through the MiniMax-compatible music generation surface using the configured MiniMax provider account.",
-        "operationId": "minimaxCreateMusicGeneration",
-        "parameters": [],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MiniMaxMusicGenerationRequest"
-              }
-            }
-          },
-          "description": "Typed request payload for the minimax create music generation operation.",
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MiniMaxMusicGenerationResponse"
-                }
-              }
-            },
-            "description": "Successful response from Cloud Router or the selected upstream provider."
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
-                }
-              }
-            }
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
-                }
-              }
-            }
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
-                }
-              }
-            }
-          },
-          "501": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
-                }
-              }
-            }
-          },
-          "502": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Minimax create music generation",
-        "tags": [
-          "Audio/minimax"
-        ],
-        "x-sdkwork-owner": "sdkwork-cloudrouter",
-        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
-        "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "cloudrouter-vendor-relay",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "gateway-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
-        "x-sdkwork-auth-mode": "api-key-or-dual-token",
-        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/suno/v1/music/generations": {
@@ -28760,7 +28827,7 @@
     },
     "/vidu/ent/v2/template": {
       "post": {
-        "description": "Vidu create template video through the vendor-native surface using the configured provider account.",
+        "description": "Creates a Vidu template video using the configured Vidu provider account.",
         "operationId": "viduCreateTemplate",
         "parameters": [],
         "requestBody": {
@@ -28771,7 +28838,7 @@
               }
             }
           },
-          "description": "Typed request payload for the viduCreateTemplate operation.",
+          "description": "Typed request payload for the vidu create template operation.",
           "required": true
         },
         "responses": {
@@ -28792,7 +28859,8 @@
                   "$ref": "#/components/schemas/OpenAiErrorEnvelope"
                 }
               }
-            }
+            },
+            "description": "Invalid request."
           },
           "401": {
             "content": {
@@ -28801,7 +28869,8 @@
                   "$ref": "#/components/schemas/OpenAiErrorEnvelope"
                 }
               }
-            }
+            },
+            "description": "Authentication failed."
           },
           "404": {
             "content": {
@@ -28810,7 +28879,8 @@
                   "$ref": "#/components/schemas/OpenAiErrorEnvelope"
                 }
               }
-            }
+            },
+            "description": "Resource or route target not found."
           },
           "501": {
             "content": {
@@ -28819,7 +28889,8 @@
                   "$ref": "#/components/schemas/OpenAiErrorEnvelope"
                 }
               }
-            }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
           },
           "502": {
             "content": {
@@ -28828,7 +28899,8 @@
                   "$ref": "#/components/schemas/OpenAiErrorEnvelope"
                 }
               }
-            }
+            },
+            "description": "Upstream provider relay failed."
           }
         },
         "security": [
@@ -28843,12 +28915,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "vidu-v1",
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-api-surface": "gateway-api",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
-        "x-sdkwork-auth-mode": "api-key-or-dual-token",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-sdkwork-external-protocol-id": "vidu-v1"
       }
     },
     "/vidu/ent/v2/text2video": {
@@ -28957,7 +29024,7 @@
               }
             }
           },
-          "description": "Typed request payload for the create speech operation.",
+          "description": "Typed request payload for the volcengine create speech operation.",
           "required": true
         },
         "responses": {
@@ -29032,10 +29099,10 @@
         "tags": [
           "Audio/volcengine"
         ],
-        "x-sdkwork-external-protocol-id": "volcengine-v1",
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
-        "x-sdkwork-wire-protocol": "external"
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "volcengine-v1"
       }
     },
     "/volcengine/api/v3/contents/generations/tasks": {
@@ -29333,6 +29400,14 @@
       "name": "Audio/suno"
     },
     {
+      "description": "MiniMax-compatible music APIs exposed through Cloud Router vendor routing.",
+      "name": "Audio/minimax"
+    },
+    {
+      "description": "Volcengine Ark speech APIs exposed through Cloud Router vendor routing.",
+      "name": "Audio/volcengine"
+    },
+    {
       "description": "ElevenLabs-compatible audio APIs exposed through Cloud Router vendor routing.",
       "name": "Audio/elevenlabs"
     },
@@ -29372,6 +29447,18 @@
   "x-api-prefix": "/v1",
   "x-router-product": "sdkwork-cloudrouter",
   "x-sdkwork-int64-openai-compat": true,
+  "x-sdkwork-vendor-path-prefixes": [
+    "anthropic",
+    "elevenlabs",
+    "google",
+    "kling",
+    "midjourney",
+    "minimax",
+    "nano-banana",
+    "suno",
+    "vidu",
+    "volcengine"
+  ],
   "x-sdkwork-owner": "sdkwork-cloudrouter",
   "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai"
 }

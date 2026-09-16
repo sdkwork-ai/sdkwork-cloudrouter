@@ -12,8 +12,8 @@ public struct API {
     public static let chatGoogle = ChatGoogleApi.self
     public static let videosKling = VideosKlingApi.self
     public static let imagesMidjourney = ImagesMidjourneyApi.self
-    public static let imagesNanoBanana = ImagesNanoBananaApi.self
     public static let audioMinimax = AudioMinimaxApi.self
+    public static let imagesNanoBanana = ImagesNanoBananaApi.self
     public static let audioSuno = AudioSunoApi.self
     public static let assistants = AssistantsApi.self
     public static let audio = AudioApi.self

@@ -14,22 +14,22 @@ public class FilesAnthropicApi {
             QueryParameterSpec(name: "after_id", value: afterId, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
-        return try await client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/anthropic/v1/files"), query), responseType: AnthropicFileListResponse.self)
+        return try await client.get(ApiPaths.appendQueryString("/anthropic/v1/files", query), responseType: AnthropicFileListResponse.self)
     }
 
     /// Anthropic upload file
     public func createV1File(body: AnthropicFileUploadMultipartRequest) async throws -> AnthropicFile? {
-        return try await client.post(ApiPaths.aiPath("/anthropic/v1/files"), body: body, params: nil, headers: nil, contentType: "multipart/form-data", responseType: AnthropicFile.self)
+        return try await client.post("/anthropic/v1/files", body: body, params: nil, headers: nil, contentType: "multipart/form-data", responseType: AnthropicFile.self)
     }
 
     /// Anthropic delete file
     public func deleteV1Files(fileId: String) async throws -> AnthropicDeleteResponse? {
-        return try await client.delete(ApiPaths.aiPath("/anthropic/v1/files/\(serializePathParameter(fileId, PathParameterSpec(name: "file_id", style: "simple", explode: false)))"), responseType: AnthropicDeleteResponse.self)
+        return try await client.delete("/anthropic/v1/files/\(serializePathParameter(fileId, PathParameterSpec(name: "file_id", style: "simple", explode: false)))", responseType: AnthropicDeleteResponse.self)
     }
 
     /// Anthropic retrieve file content
     public func listV1FilesContent(fileId: String) async throws -> String? {
-        return try await client.get(ApiPaths.aiPath("/anthropic/v1/files/\(serializePathParameter(fileId, PathParameterSpec(name: "file_id", style: "simple", explode: false)))/content"), responseType: String.self)
+        return try await client.get("/anthropic/v1/files/\(serializePathParameter(fileId, PathParameterSpec(name: "file_id", style: "simple", explode: false)))/content", responseType: String.self)
     }
 
     private struct PathParameterSpec {

@@ -18,7 +18,7 @@ func NewVideosVolcengineApi(client *sdkhttp.Client) *VideosVolcengineApi {
 
 // Volcengine Ark content generation task
 func (a *VideosVolcengineApi) CreateApiV3ContentsGenerationsTask(body sdktypes.VolcengineContentGenerationTaskCreateRequest) (sdktypes.VolcengineContentGenerationTaskCreateResponse, error) {
-    raw, err := a.client.Post(AiApiPath("/volcengine/api/v3/contents/generations/tasks"), body, nil, nil, "application/json")
+    raw, err := a.client.Post("/volcengine/api/v3/contents/generations/tasks", body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.VolcengineContentGenerationTaskCreateResponse
         return zero, err
@@ -28,7 +28,7 @@ func (a *VideosVolcengineApi) CreateApiV3ContentsGenerationsTask(body sdktypes.V
 
 // Volcengine Ark retrieve content generation task
 func (a *VideosVolcengineApi) ListApiV3ContentsGenerationsTasks(taskId string) (sdktypes.VolcengineContentGenerationTask, error) {
-    raw, err := a.client.Get(AiApiPath(fmt.Sprintf("/volcengine/api/v3/contents/generations/tasks/%s", SerializePathParameter(taskId, PathParameterSpec{Name: "task_id", Style: "simple", Explode: false}))), nil, nil)
+    raw, err := a.client.Get(fmt.Sprintf("/volcengine/api/v3/contents/generations/tasks/%s", SerializePathParameter(taskId, PathParameterSpec{Name: "task_id", Style: "simple", Explode: false})), nil, nil)
     if err != nil {
         var zero sdktypes.VolcengineContentGenerationTask
         return zero, err

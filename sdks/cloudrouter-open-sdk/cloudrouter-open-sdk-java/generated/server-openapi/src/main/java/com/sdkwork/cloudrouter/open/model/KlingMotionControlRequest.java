@@ -2,11 +2,27 @@ package com.sdkwork.cloudrouter.open.model;
 
 
 public class KlingMotionControlRequest {
+    private String callbackUrl;
+    private String image;
     private String modelName;
     private String prompt;
-    private String image;
     private String video;
-    private String callbackUrl;
+
+    public String getCallbackUrl() {
+        return this.callbackUrl;
+    }
+
+    public void setCallbackUrl(String callbackUrl) {
+        this.callbackUrl = callbackUrl;
+    }
+
+    public String getImage() {
+        return this.image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
 
     public String getModelName() {
         return this.modelName;
@@ -24,27 +40,11 @@ public class KlingMotionControlRequest {
         this.prompt = prompt;
     }
 
-    public String getImage() {
-        return this.image;
-    }
-
-    public void setImage(String image) {
-        this.image = image;
-    }
-
     public String getVideo() {
         return this.video;
     }
 
     public void setVideo(String video) {
         this.video = video;
-    }
-
-    public String getCallbackUrl() {
-        return this.callbackUrl;
-    }
-
-    public void setCallbackUrl(String callbackUrl) {
-        this.callbackUrl = callbackUrl;
     }
 }

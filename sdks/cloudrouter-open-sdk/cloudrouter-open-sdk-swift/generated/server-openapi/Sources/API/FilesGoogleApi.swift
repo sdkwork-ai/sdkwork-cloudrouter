@@ -13,17 +13,17 @@ public class FilesGoogleApi {
             QueryParameterSpec(name: "pageSize", value: pageSize, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "pageToken", value: pageToken, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
-        return try await client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/google/v1beta/files"), query), responseType: GoogleFileListResponse.self)
+        return try await client.get(ApiPaths.appendQueryString("/google/v1beta/files", query), responseType: GoogleFileListResponse.self)
     }
 
     /// Google Gemini upload file
     public func createV1betaFile(body: GoogleFileUploadMultipartRequest) async throws -> GoogleFile? {
-        return try await client.post(ApiPaths.aiPath("/google/v1beta/files"), body: body, params: nil, headers: nil, contentType: "multipart/form-data", responseType: GoogleFile.self)
+        return try await client.post("/google/v1beta/files", body: body, params: nil, headers: nil, contentType: "multipart/form-data", responseType: GoogleFile.self)
     }
 
     /// Google Gemini delete file
     public func deleteV1betaFiles(fileId: String) async throws -> GoogleEmptyResponse? {
-        return try await client.delete(ApiPaths.aiPath("/google/v1beta/files/\(serializePathParameter(fileId, PathParameterSpec(name: "file_id", style: "simple", explode: false)))"), responseType: GoogleEmptyResponse.self)
+        return try await client.delete("/google/v1beta/files/\(serializePathParameter(fileId, PathParameterSpec(name: "file_id", style: "simple", explode: false)))", responseType: GoogleEmptyResponse.self)
     }
 
     private struct PathParameterSpec {

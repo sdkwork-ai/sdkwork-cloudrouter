@@ -15,8 +15,8 @@ namespace Sdkwork.CloudRouter.Open.Api
         public static ChatGoogleApi? ChatGoogle { get; set; }
         public static VideosKlingApi? VideosKling { get; set; }
         public static ImagesMidjourneyApi? ImagesMidjourney { get; set; }
-        public static ImagesNanoBananaApi? ImagesNanoBanana { get; set; }
         public static AudioMinimaxApi? AudioMinimax { get; set; }
+        public static ImagesNanoBananaApi? ImagesNanoBanana { get; set; }
         public static AudioSunoApi? AudioSuno { get; set; }
         public static AssistantsApi? Assistants { get; set; }
         public static AudioApi? Audio { get; set; }

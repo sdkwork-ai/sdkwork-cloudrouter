@@ -83,8 +83,8 @@ class ImagesNanoBananaApi:
 
     def create_generations(self, body: NanoBananaImageGenerationRequest) -> NanoBananaImageGenerationTask:
         """Nano Banana image generation"""
-        return self._client.post(f"/v1/nano-banana/v1/images/generations", json=body)
+        return self._client.post(f"/nano-banana/v1/images/generations", json=body)
 
     def retrieve_generations(self, task_id: str) -> NanoBananaImageGenerationTask:
         """Nano Banana retrieve image generation"""
-        return self._client.get(f"/v1/nano-banana/v1/images/generations/{serialize_path_parameter(task_id, {'name': 'task_id', 'style': 'simple', 'explode': False})}")
+        return self._client.get(f"/nano-banana/v1/images/generations/{serialize_path_parameter(task_id, {'name': 'task_id', 'style': 'simple', 'explode': False})}")

@@ -13,17 +13,17 @@ public class ResponsesGoogleApi {
             QueryParameterSpec(name: "pageSize", value: pageSize, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "pageToken", value: pageToken, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
-        return try await client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/google/v1beta/cachedContents"), query), responseType: GoogleCachedContentListResponse.self)
+        return try await client.get(ApiPaths.appendQueryString("/google/v1beta/cachedContents", query), responseType: GoogleCachedContentListResponse.self)
     }
 
     /// Google Gemini create cached content
     public func createV1betaCachedContent(body: GoogleCachedContentCreateRequest) async throws -> GoogleCachedContent? {
-        return try await client.post(ApiPaths.aiPath("/google/v1beta/cachedContents"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: GoogleCachedContent.self)
+        return try await client.post("/google/v1beta/cachedContents", body: body, params: nil, headers: nil, contentType: "application/json", responseType: GoogleCachedContent.self)
     }
 
     /// Google Gemini cached content
     public func deleteV1betaCachedContents(cachedContentId: String) async throws -> GoogleEmptyResponse? {
-        return try await client.delete(ApiPaths.aiPath("/google/v1beta/cachedContents/\(serializePathParameter(cachedContentId, PathParameterSpec(name: "cached_content_id", style: "simple", explode: false)))"), responseType: GoogleEmptyResponse.self)
+        return try await client.delete("/google/v1beta/cachedContents/\(serializePathParameter(cachedContentId, PathParameterSpec(name: "cached_content_id", style: "simple", explode: false)))", responseType: GoogleEmptyResponse.self)
     }
 
     private struct PathParameterSpec {

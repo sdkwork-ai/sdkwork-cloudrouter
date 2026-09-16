@@ -36,7 +36,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "71be9381d8cbb64c7f0c29100c2d33ce9a166fc5567d67b54d00c53496313c4c"
+      "sha256": "1dd3d56e1016fdfc2a3841d71edf0fc77228c4886174dc6cf5fbb55c1b6da713"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -48,19 +48,19 @@
     },
     {
       "path": "src/api/audio_elevenlabs.rs",
-      "sha256": "63e58f5fb6c9a987fa32e32bc23ea66e2f9285847b7d02f948decd2a1e6ebf6d"
+      "sha256": "939bd326efb54ebcb7c1ab3f621e03114a2cb3b9e6b04a5aea3e9a921367fcd8"
     },
     {
       "path": "src/api/audio_minimax.rs",
-      "sha256": "b2b8bad6c11a936ba628b37b555ee80d2e15929411c6c9b5adcec52a40fcc566"
+      "sha256": "6f3a5ab4c9d4893f31069586d1897587b63e2453a3007bb7ce110169c31f8a1a"
     },
     {
       "path": "src/api/audio_suno.rs",
-      "sha256": "1706ecf843439d7f80f1f767c1d1854b875d806a3287f0df3888e5f357be96fc"
+      "sha256": "c425d6f4e6ae5a049b6c8c512c97f97be5909f92376bfa4a598e372c066e9f7a"
     },
     {
       "path": "src/api/audio_volcengine.rs",
-      "sha256": "c98ca4c7b86607bb0077c06bc3cf9382c454fccefd0f765337d1ffad41df17ec"
+      "sha256": "9259b757ea7c7b7db834034563f028e0f38180b6b20c17337d7151aba09471ed"
     },
     {
       "path": "src/api/audio.rs",
@@ -72,7 +72,7 @@
     },
     {
       "path": "src/api/batches_anthropic.rs",
-      "sha256": "7b7769143e2a739a4e0f6e9ab667934137720c0e1208d48a696002d7f891d975"
+      "sha256": "b97fc2edfa1bf74258950e5cfddb1a219179f15d60330cbbad10700b394e2391"
     },
     {
       "path": "src/api/batches.rs",
@@ -80,11 +80,11 @@
     },
     {
       "path": "src/api/chat_anthropic.rs",
-      "sha256": "6e069934d745e62ce58e73d1f62a377d1e32b1693ec1499c0bf3a0c162c3f6a8"
+      "sha256": "f0a9f2fc884aea56d2dda356865f440986b8e7b7897283d9453ce178f37db14b"
     },
     {
       "path": "src/api/chat_google.rs",
-      "sha256": "a2bbb4991616abb8b171e165707a2f7457aaa236d052730ad98d3c55f818405a"
+      "sha256": "e5d9108e65b8bb41d83b2c4c84b835cc2c7f008651354a69893af255003a313c"
     },
     {
       "path": "src/api/chat.rs",
@@ -104,7 +104,7 @@
     },
     {
       "path": "src/api/embeddings_google.rs",
-      "sha256": "f1166788e65fedeca70af3c7ed81dd4e89e48f35bd626680360f19e7c360a764"
+      "sha256": "0ecc2d0a1a9811c20ab43f15cfe4221c161f059c5344b9fae7d9fe029eb9bbb1"
     },
     {
       "path": "src/api/embeddings.rs",
@@ -112,11 +112,11 @@
     },
     {
       "path": "src/api/files_anthropic.rs",
-      "sha256": "20636f7edf981a78021c8e9dd6042f9f7a29b69eb1544e59d1b6daf7444f9089"
+      "sha256": "fe9e4710a5372b67df4c1b300707877ce0f401a1bd7bfe11a75f604cc06a9b4b"
     },
     {
       "path": "src/api/files_google.rs",
-      "sha256": "248a5fb844cf2a3d1c835f84f9863f0ae465b620436abf56b580ee33df45c082"
+      "sha256": "1b81d54d75c07dea2e51958c4e42159062df3edc9d263e7e995513caa2352546"
     },
     {
       "path": "src/api/files.rs",
@@ -124,15 +124,15 @@
     },
     {
       "path": "src/api/images_midjourney.rs",
-      "sha256": "fa8c4a7773e427e1452f811d1c6e177395bd8238cc8247b57741a398397396d8"
+      "sha256": "83b14fbcd42f6347924cceba816543f2935325a0ecf16dc3ede72ecfb428625b"
     },
     {
       "path": "src/api/images_nano_banana.rs",
-      "sha256": "a861870b56c00cd9c79c0a508dc04fae0fca810a8c6d92412b26b777bcc42b0a"
+      "sha256": "65ea1251b3a2d2e33d020467fddc3aef0dcb7335844141de2d94d7b00b2b14ff"
     },
     {
       "path": "src/api/images_vidu.rs",
-      "sha256": "a96af527b95d4e4d0b24fc180d6bfbccf53553b50c2866326437a5d5ae3bef36"
+      "sha256": "5fbaa5e59dc7992f59ef549d8cba33fae799c6224e1c7112a43a7cba3505df96"
     },
     {
       "path": "src/api/images.rs",
@@ -140,7 +140,7 @@
     },
     {
       "path": "src/api/mod.rs",
-      "sha256": "663f3cdc824b4ebd8d3fb7f14700bfbb235174c20256df3ee1293ffc0e78dc1d"
+      "sha256": "afbda1aac5ec865f0fe7f8392c28ccba057abd751a6d5c5a4b65cafd2ee43583"
     },
     {
       "path": "src/api/models.rs",
@@ -160,7 +160,7 @@
     },
     {
       "path": "src/api/responses_google.rs",
-      "sha256": "81f1512fa663c32da5a9c12d61751989ed15921c93baa7c8295f0a65de96bbd3"
+      "sha256": "a5afd67773d9497e8d742e71eb973431485b5fcc7d09cf1f3a69148c1384f282"
     },
     {
       "path": "src/api/responses.rs",
@@ -184,19 +184,19 @@
     },
     {
       "path": "src/api/videos_kling.rs",
-      "sha256": "2987f9fb34d4381a981769d3d1012c1ad8e6f1f86a6a231062f44b4b37ee74c6"
+      "sha256": "80854b58437fce2c590459fa051dc719c814be69905a6cf378059eb64920ac67"
     },
     {
       "path": "src/api/videos_vidu.rs",
-      "sha256": "6a50d808471eb56deaac0676125d752760ac4fd18b26d4647e1eec302fe71c16"
+      "sha256": "1ca93677a8d8dccd71ab4cf97946d7d0a24ef8ee2c813a01bfb0e50d7a0c083f"
     },
     {
       "path": "src/api/videos_volcengine.rs",
-      "sha256": "bf4d7d7d11fc780e05fcceae6c16b02e08dda32e0ca7fa61077ffbe6123ce97a"
+      "sha256": "8f594f10b018bfad18c15d9c7aae4afbf70f07900daab6916b658ffaa52f4dd4"
     },
     {
       "path": "src/client.rs",
-      "sha256": "d71eeae9054fcb931d093dd3a26cf472eec903cef81102d5b586d189bab95d93"
+      "sha256": "ae97a9344b06f61932ed0a39595f892e8793f67a5a96d9373ecd5ab7181f4087"
     },
     {
       "path": "src/http/client.rs",
@@ -500,11 +500,11 @@
     },
     {
       "path": "src/models/kling_avatar_create_request.rs",
-      "sha256": "b05c56e45a6fcb642229d34b47072ce3e201e0583bdabb92229b7ab34bca39c0"
+      "sha256": "0dd43eba53a222985a4a41b0c04cf537077f5c15521d34ec22a13ba36c852cdd"
     },
     {
       "path": "src/models/kling_motion_control_request.rs",
-      "sha256": "ca0c5883a657f02102d3be847c5c3010a8676e62e58d6e30416243c8eb9a282b"
+      "sha256": "e782c314f4d78c46c21eb766c1d170d956493b03e8e2c52a02a64637a573e92f"
     },
     {
       "path": "src/models/kling_video_generation_request.rs",
@@ -524,31 +524,31 @@
     },
     {
       "path": "src/models/mini_max_music_audio_setting.rs",
-      "sha256": "e024e31be3d1ece267312ccdf996c5d8b568ea34f8a9bba4d33f66766757103e"
+      "sha256": "155748f1fc6b8d46685e05df1499b64b42260825b7f8e5a040a7feefc533a446"
     },
     {
       "path": "src/models/mini_max_music_base_resp.rs",
-      "sha256": "f124e0ced22d5c5496d2aaa2e1f10ef9a737fcc52ec30137ed5e7687c8899a5a"
+      "sha256": "f834fa7c33e560a1fc65fc9a13343756a265f5e092e2aa925595b059cf1dadc0"
     },
     {
       "path": "src/models/mini_max_music_data.rs",
-      "sha256": "9a8024cfbfc7160e2813bd569ec29fa87e19f777c49814f915389bbbf289d9ba"
+      "sha256": "39e95c3367b646520091a65ae41e36fb0742982791b1964416d5cdaa846e329e"
     },
     {
       "path": "src/models/mini_max_music_extra_info.rs",
-      "sha256": "77d282a81bbd9aa42182a73c12bc12b5839efd9364c8b69f0a2fcee833ce299e"
+      "sha256": "6dea6b1933bdefe3f7780da7d75078f3d4073b54cf35bb9ca4d14d65a7253b87"
     },
     {
       "path": "src/models/mini_max_music_generation_request.rs",
-      "sha256": "7d68edfafac54bde9d7c5fad9b50d897aca6f19292c9fe3aefad8af535d451d3"
+      "sha256": "044f9807498bb34d346f23634695631443774e7168729ddc7708dd614318b61b"
     },
     {
       "path": "src/models/mini_max_music_generation_response.rs",
-      "sha256": "f6ff41c23a2a840a4711fcbc31e422b9136f46b5f73d9d6969b95e02defd52c5"
+      "sha256": "7b42d229ee395e4949e45c07f1c89a6cf8625f32923b88917a01124754a32c1d"
     },
     {
       "path": "src/models/mod.rs",
-      "sha256": "ca6568788181e8cf63ba83aa31ec9bcdcc5c54691e1dcd39feb15da695a2070f"
+      "sha256": "c187db83ff7ab43d7debd1e615c31972ab88699d9bac1f69d96937ee4a7b4808"
     },
     {
       "path": "src/models/nano_banana_image_generation_request.rs",
@@ -1320,7 +1320,7 @@
     },
     {
       "path": "src/models/vidu_template_request.rs",
-      "sha256": "c18032e58241bb22775f8a0047509307b083a587cb678243f032dcd23b60f118"
+      "sha256": "097a04f7be55d72ccd1b0234a277a6345c47b617ef06a6b1698699eed987f687"
     },
     {
       "path": "src/models/vidu_text_to_video_request.rs",

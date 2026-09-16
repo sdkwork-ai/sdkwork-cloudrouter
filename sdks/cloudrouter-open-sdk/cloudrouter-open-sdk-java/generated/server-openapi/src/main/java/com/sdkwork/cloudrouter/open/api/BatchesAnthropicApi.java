@@ -20,19 +20,19 @@ public class BatchesAnthropicApi {
             new QueryParameterSpec("after_id", afterId, "form", true, false, null),
             new QueryParameterSpec("limit", limit, "form", true, false, null)
         ));
-        Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/anthropic/v1/messages/batches"), query));
+        Object raw = client.get(ApiPaths.appendQueryString("/anthropic/v1/messages/batches", query));
         return client.convertValue(raw, new TypeReference<AnthropicMessageBatchListResponse>() {});
     }
 
     /** Anthropic create message batch */
     public AnthropicMessageBatch createV1MessagesBatch(AnthropicMessageBatchCreateRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/anthropic/v1/messages/batches"), body, null, null, "application/json");
+        Object raw = client.post("/anthropic/v1/messages/batches", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<AnthropicMessageBatch>() {});
     }
 
     /** Anthropic cancel message batch */
     public AnthropicMessageBatch createV1MessagesBatchesCancel(String batchId) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/anthropic/v1/messages/batches/" + serializePathParameter(batchId, new PathParameterSpec("batch_id", "simple", false)) + "/cancel"), null);
+        Object raw = client.post("/anthropic/v1/messages/batches/" + serializePathParameter(batchId, new PathParameterSpec("batch_id", "simple", false)) + "/cancel", null);
         return client.convertValue(raw, new TypeReference<AnthropicMessageBatch>() {});
     }
 

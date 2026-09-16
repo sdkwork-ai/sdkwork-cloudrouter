@@ -83,16 +83,16 @@ class VideosKlingApi:
 
     def create_v1_videos_avatar(self, body: KlingAvatarCreateRequest) -> KlingVideoGenerationTask:
         """Kling create avatar video"""
-        return self._client.post(f"/v1/kling/v1/videos/avatar", json=body)
-
-    def create_v1_videos_motion_control(self, body: KlingMotionControlRequest) -> KlingVideoGenerationTask:
-        """Kling create motion control video"""
-        return self._client.post(f"/v1/kling/v1/videos/motion-control", json=body)
+        return self._client.post(f"/kling/v1/videos/avatar", json=body)
 
     def create_v1_videos_generation(self, body: KlingVideoGenerationRequest) -> KlingVideoGenerationTask:
         """Kling video generation"""
-        return self._client.post(f"/v1/kling/v1/videos/generations", json=body)
+        return self._client.post(f"/kling/v1/videos/generations", json=body)
 
     def list_v1_videos_generations(self, task_id: str) -> KlingVideoGenerationTask:
         """Kling retrieve video generation"""
-        return self._client.get(f"/v1/kling/v1/videos/generations/{serialize_path_parameter(task_id, {'name': 'task_id', 'style': 'simple', 'explode': False})}")
+        return self._client.get(f"/kling/v1/videos/generations/{serialize_path_parameter(task_id, {'name': 'task_id', 'style': 'simple', 'explode': False})}")
+
+    def create_v1_videos_motion_control(self, body: KlingMotionControlRequest) -> KlingVideoGenerationTask:
+        """Kling create motion control video"""
+        return self._client.post(f"/kling/v1/videos/motion-control", json=body)

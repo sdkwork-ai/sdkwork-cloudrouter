@@ -1,4 +1,3 @@
-import { aiApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { MidjourneyImageGenerationRequest, MidjourneyImageGenerationTask } from '../types';
@@ -14,12 +13,12 @@ export class ImagesMidjourneyV1ImagesGenerationsApi {
 
 /** Midjourney image generation */
   async create(body: MidjourneyImageGenerationRequest, requestOptions?: ApiRequestOptions): Promise<MidjourneyImageGenerationTask> {
-    return this.client.request<MidjourneyImageGenerationTask>(aiApiPath(`/midjourney/v1/images/generations`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<MidjourneyImageGenerationTask>(`/midjourney/v1/images/generations`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Midjourney retrieve image generation */
   async retrieve(taskId: string, requestOptions?: ApiRequestOptions): Promise<MidjourneyImageGenerationTask> {
-    return this.client.request<MidjourneyImageGenerationTask>(aiApiPath(`/midjourney/v1/images/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
+    return this.client.request<MidjourneyImageGenerationTask>(`/midjourney/v1/images/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 

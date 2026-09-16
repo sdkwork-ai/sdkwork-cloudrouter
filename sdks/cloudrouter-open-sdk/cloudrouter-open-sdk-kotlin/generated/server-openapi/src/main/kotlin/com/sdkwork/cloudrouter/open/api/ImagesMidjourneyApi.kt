@@ -10,13 +10,13 @@ class ImagesMidjourneyApi(private val client: HttpClient) {
 
     /** Midjourney image generation */
     suspend fun createV1ImagesGeneration(body: MidjourneyImageGenerationRequest): MidjourneyImageGenerationTask? {
-        val raw = client.post(ApiPaths.aiPath("/midjourney/v1/images/generations"), body, null, null, "application/json")
+        val raw = client.post("/midjourney/v1/images/generations", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<MidjourneyImageGenerationTask>() {})
     }
 
     /** Midjourney retrieve image generation */
     suspend fun listV1ImagesGenerations(taskId: String): MidjourneyImageGenerationTask? {
-        val raw = client.get(ApiPaths.aiPath("/midjourney/v1/images/generations/${serializePathParameter(taskId, PathParameterSpec("task_id", "simple", false))}"))
+        val raw = client.get("/midjourney/v1/images/generations/${serializePathParameter(taskId, PathParameterSpec("task_id", "simple", false))}")
         return client.convertValue(raw, object : TypeReference<MidjourneyImageGenerationTask>() {})
     }
 

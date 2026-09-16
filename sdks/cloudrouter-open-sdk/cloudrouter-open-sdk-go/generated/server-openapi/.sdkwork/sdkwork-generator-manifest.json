@@ -16,19 +16,19 @@
     },
     {
       "path": "api/audio_elevenlabs.go",
-      "sha256": "1024c3e713b1e552e3867674b684c8edd534e3bf9ecb9094259d89c7ce36a60f"
+      "sha256": "d9370757dc9a31f84851508479e156b9546fdd47de9213e1fa391758a9819007"
     },
     {
       "path": "api/audio_minimax.go",
-      "sha256": "05543df8e4d5ece91b29ddeb5840d4ee96fe8acb502d4c5ab9a57e20e2e54332"
+      "sha256": "a906800a3101cfe71f09d66bcfd79087b7a6c3131336fae95388e887191fc46a"
     },
     {
       "path": "api/audio_suno.go",
-      "sha256": "effd2fced696754af27d4bf7049acd3e0ee941026b6788ae4ea0b4c16194c473"
+      "sha256": "3d1b3c4e7dfa0cc9ada445878240720523fa307052929c3b371864e281338107"
     },
     {
       "path": "api/audio_volcengine.go",
-      "sha256": "73a1993b984b566e2a5ada4ff9719eaa0acbc2f92a280d042a3a825ac6790239"
+      "sha256": "ee2b24620bf922665587cdc74a6b589b2d282363d374fdfbcbcb018ec6030b52"
     },
     {
       "path": "api/audio.go",
@@ -40,7 +40,7 @@
     },
     {
       "path": "api/batches_anthropic.go",
-      "sha256": "ff16e71a15b87b91e94a2f6da104f2326330188afee6154de54d5de25b6f2243"
+      "sha256": "b9a981135014bc38935652e1f93dcac00e8d653a2781c7837f24634ca303687d"
     },
     {
       "path": "api/batches.go",
@@ -48,11 +48,11 @@
     },
     {
       "path": "api/chat_anthropic.go",
-      "sha256": "f65a861d42ec74298a0ac2e4c4fc2c0d6ad375cf4e481caa10ccf303b3c9fa44"
+      "sha256": "1e98e240a0708991e137266258e2fd8d6e2b71d3efb392768fc9e7c7bdbed0f4"
     },
     {
       "path": "api/chat_google.go",
-      "sha256": "a6020bf1beada41e8deab14ffced5631728dcf3ddeb23a7198ce472f623d1d29"
+      "sha256": "d0e1e8fd7b19809e4c58ee2a1483a759205eb03a29f116738d758023e0718f08"
     },
     {
       "path": "api/chat.go",
@@ -76,7 +76,7 @@
     },
     {
       "path": "api/embeddings_google.go",
-      "sha256": "34d010830ede3fa30a4612ba83939fe5b825ab173f57a0eebccb0d2a2a0433d8"
+      "sha256": "6850048db6738bdbccd2382daba952a6da13d51a0ed348c79ef4e5997354c657"
     },
     {
       "path": "api/embeddings.go",
@@ -84,11 +84,11 @@
     },
     {
       "path": "api/files_anthropic.go",
-      "sha256": "0aeb5c588afd6b76d3a86b9e01babe5ba2c7c4d14409a2f843d7fd15cd1da19c"
+      "sha256": "3feca3e7f2843631ebccbeb7ea66578035ef8d574e0383337cae8750a5d81132"
     },
     {
       "path": "api/files_google.go",
-      "sha256": "8872ae04e168563090c5804bfa5eb83aa1cbae4cfae18a259247f0f809b29079"
+      "sha256": "9bbd971ea6b411560122b6ea3ae39e357e043ae638e21b07145142291cdd7afc"
     },
     {
       "path": "api/files.go",
@@ -96,15 +96,15 @@
     },
     {
       "path": "api/images_midjourney.go",
-      "sha256": "270589b6e1bf09a1c618935eb36ab976a8f98ad9dde06fa9df17eaa18279406d"
+      "sha256": "47ef714d968a1963ddfc2f022f7d19206af229a785613cd72e14bcd73becfabe"
     },
     {
       "path": "api/images_nano_banana.go",
-      "sha256": "87e9f8ff5ac9c54890cafeed76f3d1664af92f48c687397dc321c6d8927786c4"
+      "sha256": "945f5d413fce9cca368578f8f9d6c9561327d6ad822e12162515ec3dda94edf3"
     },
     {
       "path": "api/images_vidu.go",
-      "sha256": "1a4ff69fc4c87485214e4f0aee406ade6814768bc29a62569590b11ff9292011"
+      "sha256": "c31cf002e6716c82ff0305079e34c4293539472983c485c003762bb5fafbac41"
     },
     {
       "path": "api/images.go",
@@ -128,7 +128,7 @@
     },
     {
       "path": "api/responses_google.go",
-      "sha256": "fb75c7f4db4a4725c320bb9feb546db9a574f53fca810d5cccad6a31b4b850db"
+      "sha256": "495ad69c98d4ea740fa5c2ea4bb71744496259c008c1edd2c782b4d9791cd525"
     },
     {
       "path": "api/responses.go",
@@ -152,15 +152,15 @@
     },
     {
       "path": "api/videos_kling.go",
-      "sha256": "4a6ff52a589b9c64b1d40693a38413919caa0c1c8804c3653aab72e77e5efab9"
+      "sha256": "b3745c94f48e5ed0880d96e8cf723b2a7ae40eb80e2605a6ef4c6fdb89bfddb0"
     },
     {
       "path": "api/videos_vidu.go",
-      "sha256": "844547ea92bd65ed65687acb156c2f7e957f56083a91c23a3f647d28f32f88f0"
+      "sha256": "aacaf22b33c1afa805c97dc754a403168818cbc4a3792fa3615a338f2a43ea33"
     },
     {
       "path": "api/videos_volcengine.go",
-      "sha256": "59acf3ba52e94aceaab1505035303ae9b663ba29add65d0e13a11be66aba352f"
+      "sha256": "defe417226e69622fa1ee9ee5a1aa60851d745b3fa4a26f48d76e1978aa83522"
     },
     {
       "path": "bin/publish-core.mjs",
@@ -200,11 +200,11 @@
     },
     {
       "path": "README.md",
-      "sha256": "4e6fb45f0e0f944d045cd101f8a6e65926f47d9a8c1eaaf2c29875fb9b00911d"
+      "sha256": "3fd38c8a9377e24849918ffbe94de7183d6f8383a12fd5986a4c2fd98cab25f1"
     },
     {
       "path": "sdk.go",
-      "sha256": "1e46f20c73dc921ad3a5418f5c9f10f75387de66a51cbf733fab89aaf8fddbf8"
+      "sha256": "1a22fefc84f431fecdb5ee47de6f73d444086db96bd28378274b9db5f9812c39"
     },
     {
       "path": "sdkwork-sdk.json",
@@ -508,11 +508,11 @@
     },
     {
       "path": "types/kling_avatar_create_request.go",
-      "sha256": "bb09ce9c8b30561e0dd6a66ec63725744376e43c620c331c70bd92aa07498ac1"
+      "sha256": "78a19a8ad91faa718a9da3fdb610903ebbb75808b7b4d43ab3b3fd43cd0a20aa"
     },
     {
       "path": "types/kling_motion_control_request.go",
-      "sha256": "592e8019313f0668a728bc665a969a8a8643eff79d1307fe42dd8a295f378b28"
+      "sha256": "be5f35a17c5974356253a6a67d0427a79b5ffb757152586a0c3e350a15e3cb89"
     },
     {
       "path": "types/kling_video_generation_request.go",
@@ -532,27 +532,27 @@
     },
     {
       "path": "types/mini_max_music_audio_setting.go",
-      "sha256": "ccf5d5a71c9f5defcaccc37582ea425a37e5405a7e78db2f07a25b957f811966"
+      "sha256": "e9b86763ce1098b739d664374bbac286df9d17ff306e9d5f82b29de10e6fa27a"
     },
     {
       "path": "types/mini_max_music_base_resp.go",
-      "sha256": "7e77c1ef8f441e53cc95020bbd23319fa2f7cd50d48b74e4870e5c86e2d28d85"
+      "sha256": "fb7b497b0e6f5fe621e8ba1ff5c7641a9aae81b8ace7728f65d084ace6196319"
     },
     {
       "path": "types/mini_max_music_data.go",
-      "sha256": "1770dbb8ec5ab8d83447e76bd5d7cebdf8e8f454708eb611f8d989ce60852ad3"
+      "sha256": "78a7c3a47ecccd48e085e2fff3a3f9201dfe281de09a4ad25926df6cb2987d6d"
     },
     {
       "path": "types/mini_max_music_extra_info.go",
-      "sha256": "ce0a52221fbdea6c113b08e9593283d8c43802dc5638086776919b79bdeca86e"
+      "sha256": "84b795e4b486a01b813cb22a7e0f56610fd0fc38d95a36bb723564c6b0444245"
     },
     {
       "path": "types/mini_max_music_generation_request.go",
-      "sha256": "d3d0f7e64301e6d0822a94f8c401264c0d2460cf14907cce37d073e36ff1ce94"
+      "sha256": "c4f1f277f43c842ba58887d4ec5bd8d096452b8d433e20df3c7ae73b376281b9"
     },
     {
       "path": "types/mini_max_music_generation_response.go",
-      "sha256": "5d6022e058c32440b10b502bca1785c8fd412763137f54764f7bb6edf17dfd12"
+      "sha256": "c7ca45f480d336d3dee44150be94e5529dbc51c231b59e11e4f09e886e0c6f7a"
     },
     {
       "path": "types/nano_banana_image_generation_request.go",
@@ -1356,7 +1356,7 @@
     },
     {
       "path": "types/vidu_template_request.go",
-      "sha256": "d45e6e07982ac112c671126fdd11bc4efaeedddb1e4305ea80a0fbeba068c6cc"
+      "sha256": "cd0b56a005a1429eecc36f2fb2e21c62d311420ef952a74272523845283af63e"
     },
     {
       "path": "types/vidu_text_to_video_request.go",

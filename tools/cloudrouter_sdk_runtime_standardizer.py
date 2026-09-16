@@ -141,12 +141,16 @@ def infer_external_protocol_id(route_path: str) -> str:
         return "openai-v1"
     if normalized.startswith("/anthropic/"):
         return "anthropic-messages"
+    if normalized.startswith("/elevenlabs/"):
+        return "elevenlabs-v1"
     if normalized.startswith("/google/"):
         return "google-gemini-v1beta"
     if normalized.startswith("/kling/"):
         return "kling-v1"
     if normalized.startswith("/midjourney/"):
         return "midjourney-v1"
+    if normalized.startswith("/minimax/"):
+        return "minimax-v1"
     if normalized.startswith("/nano-banana/"):
         return "nano-banana-v1"
     if normalized.startswith("/suno/"):

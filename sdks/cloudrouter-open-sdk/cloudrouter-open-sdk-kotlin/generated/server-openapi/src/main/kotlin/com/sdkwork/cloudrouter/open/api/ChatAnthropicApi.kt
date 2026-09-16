@@ -10,13 +10,13 @@ class ChatAnthropicApi(private val client: HttpClient) {
 
     /** Anthropic Claude message */
     suspend fun createV1Message(body: AnthropicMessageCreateRequest): AnthropicMessage? {
-        val raw = client.post(ApiPaths.aiPath("/anthropic/v1/messages"), body, null, null, "application/json")
+        val raw = client.post("/anthropic/v1/messages", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<AnthropicMessage>() {})
     }
 
     /** Anthropic count message tokens */
     suspend fun createV1MessagesCountToken(body: AnthropicCountMessageTokensRequest): AnthropicCountMessageTokensResponse? {
-        val raw = client.post(ApiPaths.aiPath("/anthropic/v1/messages/count_tokens"), body, null, null, "application/json")
+        val raw = client.post("/anthropic/v1/messages/count_tokens", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<AnthropicCountMessageTokensResponse>() {})
     }
 

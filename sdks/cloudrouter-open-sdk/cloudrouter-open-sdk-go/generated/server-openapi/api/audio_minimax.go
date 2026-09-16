@@ -15,7 +15,7 @@ func NewAudioMinimaxApi(client *sdkhttp.Client) *AudioMinimaxApi {
 
 // Minimax create music generation
 func (a *AudioMinimaxApi) CreateV1MusicGeneration(body sdktypes.MiniMaxMusicGenerationRequest) (sdktypes.MiniMaxMusicGenerationResponse, error) {
-    raw, err := a.client.Post(AiApiPath("/minimax/v1/music_generation"), body, nil, nil, "application/json")
+    raw, err := a.client.Post("/minimax/v1/music_generation", body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.MiniMaxMusicGenerationResponse
         return zero, err

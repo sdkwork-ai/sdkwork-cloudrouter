@@ -9,17 +9,17 @@ public class ChatGoogleApi {
 
     /// Google Gemini count tokens
     public func createV1betaModelsModelCountToken(model: String, body: GoogleCountTokensRequest) async throws -> GoogleCountTokensResponse? {
-        return try await client.post(ApiPaths.aiPath("/google/v1beta/models/\(serializePathParameter(model, PathParameterSpec(name: "model", style: "simple", explode: false))):countTokens"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: GoogleCountTokensResponse.self)
+        return try await client.post("/google/v1beta/models/\(serializePathParameter(model, PathParameterSpec(name: "model", style: "simple", explode: false))):countTokens", body: body, params: nil, headers: nil, contentType: "application/json", responseType: GoogleCountTokensResponse.self)
     }
 
     /// Google Gemini generate content
     public func createV1betaModelsModelGenerateContent(model: String, body: GoogleGenerateContentRequest) async throws -> GoogleGenerateContentResponse? {
-        return try await client.post(ApiPaths.aiPath("/google/v1beta/models/\(serializePathParameter(model, PathParameterSpec(name: "model", style: "simple", explode: false))):generateContent"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: GoogleGenerateContentResponse.self)
+        return try await client.post("/google/v1beta/models/\(serializePathParameter(model, PathParameterSpec(name: "model", style: "simple", explode: false))):generateContent", body: body, params: nil, headers: nil, contentType: "application/json", responseType: GoogleGenerateContentResponse.self)
     }
 
     /// Google Gemini stream generate content
     public func createV1betaModelsModelStreamGenerateContent(model: String, body: GoogleGenerateContentRequest) async throws -> GoogleGenerateContentResponse? {
-        return try await client.post(ApiPaths.aiPath("/google/v1beta/models/\(serializePathParameter(model, PathParameterSpec(name: "model", style: "simple", explode: false))):streamGenerateContent"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: GoogleGenerateContentResponse.self)
+        return try await client.post("/google/v1beta/models/\(serializePathParameter(model, PathParameterSpec(name: "model", style: "simple", explode: false))):streamGenerateContent", body: body, params: nil, headers: nil, contentType: "application/json", responseType: GoogleGenerateContentResponse.self)
     }
 
     private struct PathParameterSpec {

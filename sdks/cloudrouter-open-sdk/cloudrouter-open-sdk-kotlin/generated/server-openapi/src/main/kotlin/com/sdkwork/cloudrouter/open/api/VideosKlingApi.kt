@@ -10,25 +10,25 @@ class VideosKlingApi(private val client: HttpClient) {
 
     /** Kling create avatar video */
     suspend fun createV1VideosAvatar(body: KlingAvatarCreateRequest): KlingVideoGenerationTask? {
-        val raw = client.post(ApiPaths.aiPath("/kling/v1/videos/avatar"), body, null, null, "application/json")
-        return client.convertValue(raw, object : TypeReference<KlingVideoGenerationTask>() {})
-    }
-
-    /** Kling create motion control video */
-    suspend fun createV1VideosMotionControl(body: KlingMotionControlRequest): KlingVideoGenerationTask? {
-        val raw = client.post(ApiPaths.aiPath("/kling/v1/videos/motion-control"), body, null, null, "application/json")
+        val raw = client.post("/kling/v1/videos/avatar", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<KlingVideoGenerationTask>() {})
     }
 
     /** Kling video generation */
     suspend fun createV1VideosGeneration(body: KlingVideoGenerationRequest): KlingVideoGenerationTask? {
-        val raw = client.post(ApiPaths.aiPath("/kling/v1/videos/generations"), body, null, null, "application/json")
+        val raw = client.post("/kling/v1/videos/generations", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<KlingVideoGenerationTask>() {})
     }
 
     /** Kling retrieve video generation */
     suspend fun listV1VideosGenerations(taskId: String): KlingVideoGenerationTask? {
-        val raw = client.get(ApiPaths.aiPath("/kling/v1/videos/generations/${serializePathParameter(taskId, PathParameterSpec("task_id", "simple", false))}"))
+        val raw = client.get("/kling/v1/videos/generations/${serializePathParameter(taskId, PathParameterSpec("task_id", "simple", false))}")
+        return client.convertValue(raw, object : TypeReference<KlingVideoGenerationTask>() {})
+    }
+
+    /** Kling create motion control video */
+    suspend fun createV1VideosMotionControl(body: KlingMotionControlRequest): KlingVideoGenerationTask? {
+        val raw = client.post("/kling/v1/videos/motion-control", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<KlingVideoGenerationTask>() {})
     }
 

@@ -1,4 +1,3 @@
-import { aiApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { AnthropicMessageBatch, AnthropicMessageBatchCreateRequest, AnthropicMessageBatchListResponse } from '../types';
@@ -25,22 +24,22 @@ export class BatchesAnthropicV1MessagesBatchesApi {
       { name: 'after_id', value: params?.afterId, style: 'form', explode: true, allowReserved: false },
       { name: 'limit', value: params?.limit, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<AnthropicMessageBatchListResponse>(appendQueryString(aiApiPath(`/anthropic/v1/messages/batches`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
+    return this.client.request<AnthropicMessageBatchListResponse>(appendQueryString(`/anthropic/v1/messages/batches`, query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Anthropic create message batch */
   async create(body: AnthropicMessageBatchCreateRequest, requestOptions?: ApiRequestOptions): Promise<AnthropicMessageBatch> {
-    return this.client.request<AnthropicMessageBatch>(aiApiPath(`/anthropic/v1/messages/batches`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<AnthropicMessageBatch>(`/anthropic/v1/messages/batches`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Anthropic retrieve message batch */
   async retrieve(batchId: string, requestOptions?: ApiRequestOptions): Promise<AnthropicMessageBatch> {
-    return this.client.request<AnthropicMessageBatch>(aiApiPath(`/anthropic/v1/messages/batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
+    return this.client.request<AnthropicMessageBatch>(`/anthropic/v1/messages/batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Anthropic cancel message batch */
   async cancel(batchId: string, requestOptions?: ApiRequestOptions): Promise<AnthropicMessageBatch> {
-    return this.client.request<AnthropicMessageBatch>(aiApiPath(`/anthropic/v1/messages/batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}/cancel`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any });
+    return this.client.request<AnthropicMessageBatch>(`/anthropic/v1/messages/batches/${serializePathParameter(batchId, { name: 'batch_id', style: 'simple', explode: false })}/cancel`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any });
   }
 }
 

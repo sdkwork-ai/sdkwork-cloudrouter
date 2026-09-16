@@ -15,19 +15,19 @@ class BatchesAnthropicApi(private val client: HttpClient) {
             QueryParameterSpec("after_id", afterId, "form", true, false, null),
             QueryParameterSpec("limit", limit, "form", true, false, null)
         ))
-        val raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/anthropic/v1/messages/batches"), query))
+        val raw = client.get(ApiPaths.appendQueryString("/anthropic/v1/messages/batches", query))
         return client.convertValue(raw, object : TypeReference<AnthropicMessageBatchListResponse>() {})
     }
 
     /** Anthropic create message batch */
     suspend fun createV1MessagesBatch(body: AnthropicMessageBatchCreateRequest): AnthropicMessageBatch? {
-        val raw = client.post(ApiPaths.aiPath("/anthropic/v1/messages/batches"), body, null, null, "application/json")
+        val raw = client.post("/anthropic/v1/messages/batches", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<AnthropicMessageBatch>() {})
     }
 
     /** Anthropic cancel message batch */
     suspend fun createV1MessagesBatchesCancel(batchId: String): AnthropicMessageBatch? {
-        val raw = client.post(ApiPaths.aiPath("/anthropic/v1/messages/batches/${serializePathParameter(batchId, PathParameterSpec("batch_id", "simple", false))}/cancel"), null)
+        val raw = client.post("/anthropic/v1/messages/batches/${serializePathParameter(batchId, PathParameterSpec("batch_id", "simple", false))}/cancel", null)
         return client.convertValue(raw, object : TypeReference<AnthropicMessageBatch>() {})
     }
 

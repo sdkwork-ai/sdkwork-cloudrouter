@@ -9,12 +9,12 @@ public class ImagesNanoBananaApi {
 
     /// Nano Banana image generation
     public func createGeneration(body: NanoBananaImageGenerationRequest) async throws -> NanoBananaImageGenerationTask? {
-        return try await client.post(ApiPaths.aiPath("/nano-banana/v1/images/generations"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: NanoBananaImageGenerationTask.self)
+        return try await client.post("/nano-banana/v1/images/generations", body: body, params: nil, headers: nil, contentType: "application/json", responseType: NanoBananaImageGenerationTask.self)
     }
 
     /// Nano Banana retrieve image generation
     public func retrieveGeneration(taskId: String) async throws -> NanoBananaImageGenerationTask? {
-        return try await client.get(ApiPaths.aiPath("/nano-banana/v1/images/generations/\(serializePathParameter(taskId, PathParameterSpec(name: "task_id", style: "simple", explode: false)))"), responseType: NanoBananaImageGenerationTask.self)
+        return try await client.get("/nano-banana/v1/images/generations/\(serializePathParameter(taskId, PathParameterSpec(name: "task_id", style: "simple", explode: false)))", responseType: NanoBananaImageGenerationTask.self)
     }
 
     private struct PathParameterSpec {

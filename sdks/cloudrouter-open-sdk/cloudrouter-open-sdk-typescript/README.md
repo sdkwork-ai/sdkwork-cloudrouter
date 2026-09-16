@@ -80,8 +80,8 @@ const client = new SdkworkAiClient({
 - `client.chatGoogle` - chat_google API
 - `client.videosKling` - videos_kling API
 - `client.imagesMidjourney` - images_midjourney API
-- `client.imagesNanoBanana` - images_nano_banana API
 - `client.audioMinimax` - audio_minimax API
+- `client.imagesNanoBanana` - images_nano_banana API
 - `client.audioSuno` - audio_suno API
 - `client.assistants` - assistant API
 - `client.audio` - audio API
@@ -247,15 +247,15 @@ const result = await client.chatGoogle.v1beta.models.modelCountTokens.create(mod
 ```typescript
 // Kling create avatar video
 const body = {
-  model_name: 'model_name',
-  human_image: 'human_image',
-  prompt: 'prompt',
-  voice_mode: 'voice_mode',
   audio_url: 'audio_url',
+  callback_url: 'callback_url',
+  human_image: 'human_image',
+  model_name: 'model_name',
+  prompt: 'prompt',
   text: 'text',
   voice_id: 'voice_id',
   voice_language: 'voice_language',
-  callback_url: 'callback_url',
+  voice_mode: 'voice_mode',
 };
 const result = await client.videosKling.v1.videos.avatar.create(body);
 ```
@@ -275,6 +275,27 @@ const body = {
 const result = await client.imagesMidjourney.v1.images.generations.create(body);
 ```
 
+### audio_minimax
+
+```typescript
+// Minimax create music generation
+const body = {
+  audio_setting: {
+    bitrate: 1,
+    format: 'format',
+    sample_rate: 1,
+  },
+  is_instrumental: true,
+  lyrics: 'lyrics',
+  lyrics_optimizer: true,
+  model: 'model',
+  output_format: 'output_format',
+  prompt: 'prompt',
+  stream: true,
+};
+const result = await client.audioMinimax.v1.musicGeneration.create(body);
+```
+
 ### images_nano_banana
 
 ```typescript
@@ -291,27 +312,6 @@ const body = {
   size: 'size',
 };
 const result = await client.imagesNanoBanana.v1.images.generations.create(body);
-```
-
-### audio_minimax
-
-```typescript
-// Minimax create music generation
-const body = {
-  model: 'model',
-  prompt: 'prompt',
-  lyrics: 'lyrics',
-  stream: true,
-  output_format: 'output_format',
-  is_instrumental: true,
-  lyrics_optimizer: true,
-  audio_setting: {
-    sample_rate: 1,
-    bitrate: 1,
-    format: 'format',
-  },
-};
-const result = await client.audioMinimax.v1.musicGeneration.create(body);
 ```
 
 ### audio_suno

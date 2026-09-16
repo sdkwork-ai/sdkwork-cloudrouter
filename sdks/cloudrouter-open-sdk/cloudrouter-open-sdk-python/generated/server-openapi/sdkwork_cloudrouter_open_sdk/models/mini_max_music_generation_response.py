@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class MiniMaxMusicGenerationResponse:
-    """MiniMax music generation response exposed by Cloud Router."""
+    """Mini max music generation response schema exposed by Cloud Router."""
     base_resp: Optional[MiniMaxMusicBaseResp] = None
     data: Optional[MiniMaxMusicData] = None
     trace_id: Optional[str] = None

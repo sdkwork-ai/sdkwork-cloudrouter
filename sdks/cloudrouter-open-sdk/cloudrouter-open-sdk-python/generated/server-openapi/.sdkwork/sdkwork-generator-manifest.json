@@ -40,7 +40,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "559adfd6f7681ab1fb08711a9a9752058084d642b5151b5c72ac2c1c4b8adc87"
+      "sha256": "3b32adab2af9eec1bff4a004013e528c6294b44116bc4b184ff62a892bce9e33"
     },
     {
       "path": "requirements.txt",
@@ -52,7 +52,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/__init__.py",
-      "sha256": "c088aa6b61bc87751d7940147ffbc53276ae21014a54fcb0715c759d32dc9918"
+      "sha256": "e0fb08896e564d821a982c54fa9235ec2b2c1214142defd7e6d592acc2577cf4"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/assistants.py",
@@ -60,19 +60,19 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/audio_elevenlabs.py",
-      "sha256": "aab262eacbd27d37296a1519330c9114f0b1feca61ae91b0815206bf4e92012d"
+      "sha256": "377df03c4f110afd55688ccb9380cd672a71329d62369b139460b528e0d471cf"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/audio_minimax.py",
-      "sha256": "b1febaf668edfd9edb600aec39a7f042e8784124636b254cd1b2487f38ad2b59"
+      "sha256": "0474bb63a57746bd38df8afb531435f86298b09a3fe80fd7be06a9a1c0c8feb9"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/audio_suno.py",
-      "sha256": "3cc43af6445fd9d579dcab01500e4caf6b7eca084520d220b214e10989d19ab9"
+      "sha256": "52cf5fc205c3795e7fbd7ce93bf242e7c63122d1b3307dd5f7aadb109ad0aea9"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/audio_volcengine.py",
-      "sha256": "2562a4c954db8031c00d3e24b577099749342e2608dd495b6e2267ac7027190f"
+      "sha256": "890baeb9a744a6b43a3120fdfd305d8710c765210b580d96b9c55293a257af57"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/audio.py",
@@ -80,7 +80,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/batches_anthropic.py",
-      "sha256": "32336eba1329a0c049fb4b0867248538704747b49cefe1ac7f74934457f063fe"
+      "sha256": "3756f44f5c1a615b383b8d47917f36b6373988891a3cde6559f8ff32af1cfefa"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/batches.py",
@@ -88,11 +88,11 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/chat_anthropic.py",
-      "sha256": "cdbe3224614e8353d015400694f599b1f6d2cbdf58cb92a922e3b40fb5ecb44d"
+      "sha256": "061db1d99fdac52f560622113f28b7c28ad92ff883bc7e2682ec5bff3cf3a145"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/chat_google.py",
-      "sha256": "07a098504635af11d481fdd2c0a0f6eee342208c4a7f318c78ce5a4badd776e5"
+      "sha256": "770d082f501a0c65b8a668d37d1a8d13e61558434a3fa528e87388dc7c6a2385"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/chat.py",
@@ -112,7 +112,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/embeddings_google.py",
-      "sha256": "e4ec908e71fb21adadde27adf5eb78ced91a19451054b05a8aaac240a1e13625"
+      "sha256": "7eb550d47e4a12e028735f0debc5207c10aa8a1b5d8ec58185a2d35ec913b90a"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/embeddings.py",
@@ -120,11 +120,11 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/files_anthropic.py",
-      "sha256": "a899663d328a06e7913b8ef34e17c5e3d6749d32e60b912265aeedecb28e827e"
+      "sha256": "fac566d0a6201589357c4c1c03d3f73b0fc7f3b30b2d9b2ebd2e5c6ca255435f"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/files_google.py",
-      "sha256": "e21ed7f5c41a84979686ce7f474f73b586d2528aaa9916a9343c295fd25edf91"
+      "sha256": "bff06eab657d46d68ff4067aea4f1c6225f6e9d6bf3efae6c480e43519cfbe8b"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/files.py",
@@ -132,15 +132,15 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/images_midjourney.py",
-      "sha256": "cb9db55b7354beb7740342174368f8905cf6ef54805bab8cf2b841f9cec59ef5"
+      "sha256": "f74983be710baceecf01587d70b84d158bf6d140b950180b19ae59c145f0b3ad"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/images_nano_banana.py",
-      "sha256": "3c986717bcd736983c7c76a0339b519a21e0506d5aac30e20a642ba8950c38fe"
+      "sha256": "684b704adb56d71e665c4f62a932bcd6c67d0425d43efe9d40230abc53bb9eb5"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/images_vidu.py",
-      "sha256": "49f72640c7c87ccea980b3b78e36122d318ef5a0e391de13ab15d39930b6aa8f"
+      "sha256": "d23c725513d0ab97b0cde378b755c5cbc4a9d38d4d4be82aabb1c9b96463eb52"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/images.py",
@@ -160,7 +160,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/responses_google.py",
-      "sha256": "b5943ab1beb298d8cd0d294a16e0321c366220c4abc8950b24a7291a4b45521d"
+      "sha256": "9d68b6b8d4e001d849aa4c04b795be33a0e995ddf83e91cff5f1f8680146b31f"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/responses.py",
@@ -184,19 +184,19 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/videos_kling.py",
-      "sha256": "0bc561d4159d4c4588bdde2565ab0443bea2e650d029a559a15a08cf0f16bb1d"
+      "sha256": "b5c5be62210b059816223cf084917944b8f74761980fc250c29ed01b01dc847a"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/videos_vidu.py",
-      "sha256": "5113eae68ef0ec353517a5575745239f451f831fc8c02153d82a3a3392c245c9"
+      "sha256": "5a625ed93705c60053111c4745e3d533486e6c89bd87b35279c7d91ecd7bc8ba"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/api/videos_volcengine.py",
-      "sha256": "253f6f10360593f22053e4359570c10d742fd57f5d15130392113559044ea00e"
+      "sha256": "3519f9a020237b2a6fa852834c89cff9e5c7034e0dfbf1047725c59a7928c1e4"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/client.py",
-      "sha256": "bf83b56be29eeb973f53fe1f3ff300e9f8828b64ce3b064fef4aebf89fee52da"
+      "sha256": "27b9f5701cb0a10cfcec262ef1dd868b0f0edbac54c5ea88bf6d5e32778b9dd9"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/http_client.py",
@@ -204,7 +204,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/__init__.py",
-      "sha256": "0faf26e6f8c5df544f2b993fba053cafdca7d069c333bdc850b0d89b809f5628"
+      "sha256": "c12375067914160d640f673027accf9bf55938d8112546f187314a1b9c97a4fa"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/anthropic_content_block_param.py",
@@ -492,11 +492,11 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/kling_avatar_create_request.py",
-      "sha256": "9182a163ca17b51eee96685579d990a1f86cb5413589582339f7d3ec240ffca1"
+      "sha256": "e3da80d5d6982b3842997252bddea7d4153e3a82d182c68579e08b7444791567"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/kling_motion_control_request.py",
-      "sha256": "da612ab74e3176c48b4563d7c8f43353031dc4d92266f1e38569b846f82e968d"
+      "sha256": "96b900f6637295cd1902cd3b4681d9b71e7d64ce6846ea1009aaccfa4348339c"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/kling_video_generation_request.py",
@@ -516,27 +516,27 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/mini_max_music_audio_setting.py",
-      "sha256": "648f1b5cb1faffa8222ed8365adf6a81a25e1c3aa69e07c0e54c7770b773e5d8"
+      "sha256": "973c8280f3b36847a29aa884f83663b5e6ed5c4e01f7288edd5777bdb7c746a5"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/mini_max_music_base_resp.py",
-      "sha256": "793a760f039166cb5befe8ae4bafb37c2abfd163f3b9821a15d3a16473a54c28"
+      "sha256": "415a178e54489a960db165f7a2af17d3fafff6d279e960abe91d7aa2c9d4aac9"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/mini_max_music_data.py",
-      "sha256": "1885223befeccf01ede637ad93879ea49028a28d61b4d270779a12857a5e5d0a"
+      "sha256": "839cefdc041eb5ecfd00fb7e5c64ad530f7e46c3cabd84e396c7a6464a2c219b"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/mini_max_music_extra_info.py",
-      "sha256": "86f41d47c08cd224cf82e66903b89e2f5c45fc32d6cd76598effe23657439e96"
+      "sha256": "ad08164cf5439a6d67aa4665713d9c8c0dd7b01fcf492f47a134b171e51425d0"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/mini_max_music_generation_request.py",
-      "sha256": "f6ffaf485cf1d9e43cb70e189d9bc7127ed7453e82c4c37d84fe5ad61c9717a8"
+      "sha256": "88e714fa6a778f556ac0ef2977d7837a0533979c7463ac1f6d856dba86587484"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/mini_max_music_generation_response.py",
-      "sha256": "b3287b0736c74873c544b9d3911a79a020b4aeedbe9469d261f97bbff27d6a4d"
+      "sha256": "6a5ac05d20ac409013d226cf6ba6af70bfaee0cc30451aa2c9fbc010d0f92eb9"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/nano_banana_image_generation_request.py",
@@ -1308,7 +1308,7 @@
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/vidu_template_request.py",
-      "sha256": "fe0aee9758581abe87e4a9d4832bdfc0d33634331e6c6d649e5095ad372ec520"
+      "sha256": "e147f0d0bbf16818fe0e5fbdd519d1b3ebeec632d78b8bb7f2e9a5f89e9ef336"
     },
     {
       "path": "sdkwork_cloudrouter_open_sdk/models/vidu_text_to_video_request.py",

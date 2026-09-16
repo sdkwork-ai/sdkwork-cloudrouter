@@ -1,4 +1,3 @@
-import { aiApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { NanoBananaImageGenerationRequest, NanoBananaImageGenerationTask } from '../types';
@@ -14,12 +13,12 @@ export class ImagesNanoBananaV1ImagesGenerationsApi {
 
 /** Nano Banana image generation */
   async create(body: NanoBananaImageGenerationRequest, requestOptions?: ApiRequestOptions): Promise<NanoBananaImageGenerationTask> {
-    return this.client.request<NanoBananaImageGenerationTask>(aiApiPath(`/nano-banana/v1/images/generations`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<NanoBananaImageGenerationTask>(`/nano-banana/v1/images/generations`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Nano Banana retrieve image generation */
   async retrieve(taskId: string, requestOptions?: ApiRequestOptions): Promise<NanoBananaImageGenerationTask> {
-    return this.client.request<NanoBananaImageGenerationTask>(aiApiPath(`/nano-banana/v1/images/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
+    return this.client.request<NanoBananaImageGenerationTask>(`/nano-banana/v1/images/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 

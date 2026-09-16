@@ -1,4 +1,3 @@
-import { aiApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { GoogleBatchEmbedContentsRequest, GoogleBatchEmbedContentsResponse, GoogleEmbedContentRequest, GoogleEmbedContentResponse } from '../types';
@@ -14,7 +13,7 @@ export class EmbeddingsGoogleV1betaModelsModelEmbedContentApi {
 
 /** Google Gemini embed content */
   async create(model: string, body: GoogleEmbedContentRequest, requestOptions?: ApiRequestOptions): Promise<GoogleEmbedContentResponse> {
-    return this.client.request<GoogleEmbedContentResponse>(aiApiPath(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:embedContent`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<GoogleEmbedContentResponse>(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:embedContent`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -28,7 +27,7 @@ export class EmbeddingsGoogleV1betaModelsModelBatchEmbedContentsApi {
 
 /** Google Gemini batch embed contents */
   async create(model: string, body: GoogleBatchEmbedContentsRequest, requestOptions?: ApiRequestOptions): Promise<GoogleBatchEmbedContentsResponse> {
-    return this.client.request<GoogleBatchEmbedContentsResponse>(aiApiPath(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:batchEmbedContents`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<GoogleBatchEmbedContentsResponse>(`/google/v1beta/models/${serializePathParameter(model, { name: 'model', style: 'simple', explode: false })}:batchEmbedContents`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 

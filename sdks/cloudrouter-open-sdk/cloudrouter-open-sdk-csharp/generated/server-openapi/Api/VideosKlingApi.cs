@@ -20,15 +20,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.KlingVideoGenerationTask?> CreateV1VideosAvatarAsync(Sdkwork.CloudRouter.Open.Models.KlingAvatarCreateRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.KlingVideoGenerationTask>(ApiPaths.AiPath("/kling/v1/videos/avatar"), body, null, null, "application/json");
-        }
-
-        /// <summary>
-        /// Kling create motion control video
-        /// </summary>
-        public async Task<Sdkwork.CloudRouter.Open.Models.KlingVideoGenerationTask?> CreateV1VideosMotionControlAsync(Sdkwork.CloudRouter.Open.Models.KlingMotionControlRequest body)
-        {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.KlingVideoGenerationTask>(ApiPaths.AiPath("/kling/v1/videos/motion-control"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.KlingVideoGenerationTask>("/kling/v1/videos/avatar", body, null, null, "application/json");
         }
 
         /// <summary>
@@ -36,7 +28,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.KlingVideoGenerationTask?> CreateV1VideosGenerationAsync(Sdkwork.CloudRouter.Open.Models.KlingVideoGenerationRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.KlingVideoGenerationTask>(ApiPaths.AiPath("/kling/v1/videos/generations"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.KlingVideoGenerationTask>("/kling/v1/videos/generations", body, null, null, "application/json");
         }
 
         /// <summary>
@@ -44,7 +36,15 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.KlingVideoGenerationTask?> ListV1VideosGenerationsAsync(string taskId)
         {
-            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.KlingVideoGenerationTask>(ApiPaths.AiPath($"/kling/v1/videos/generations/{SerializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false))}"));
+            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.KlingVideoGenerationTask>($"/kling/v1/videos/generations/{SerializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false))}");
+        }
+
+        /// <summary>
+        /// Kling create motion control video
+        /// </summary>
+        public async Task<Sdkwork.CloudRouter.Open.Models.KlingVideoGenerationTask?> CreateV1VideosMotionControlAsync(Sdkwork.CloudRouter.Open.Models.KlingMotionControlRequest body)
+        {
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.KlingVideoGenerationTask>("/kling/v1/videos/motion-control", body, null, null, "application/json");
         }
 
         private sealed record PathParameterSpec(string Name, string Style, bool Explode);

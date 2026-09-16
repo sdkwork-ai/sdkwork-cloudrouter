@@ -9,32 +9,32 @@ public class VideosViduApi {
 
     /// Vidu image to video
     public func createEntV2Img2video(body: ViduImageToVideoRequest) async throws -> ViduVideoGenerationTask? {
-        return try await client.post(ApiPaths.aiPath("/vidu/ent/v2/img2video"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: ViduVideoGenerationTask.self)
+        return try await client.post("/vidu/ent/v2/img2video", body: body, params: nil, headers: nil, contentType: "application/json", responseType: ViduVideoGenerationTask.self)
     }
 
     /// Vidu reference to video
     public func createEntV2Reference2video(body: ViduReferenceToVideoRequest) async throws -> ViduVideoGenerationTask? {
-        return try await client.post(ApiPaths.aiPath("/vidu/ent/v2/reference2video"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: ViduVideoGenerationTask.self)
+        return try await client.post("/vidu/ent/v2/reference2video", body: body, params: nil, headers: nil, contentType: "application/json", responseType: ViduVideoGenerationTask.self)
     }
 
     /// Vidu start-end to video
     public func createEntV2StartEnd2video(body: ViduStartEndToVideoRequest) async throws -> ViduVideoGenerationTask? {
-        return try await client.post(ApiPaths.aiPath("/vidu/ent/v2/start-end2video"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: ViduVideoGenerationTask.self)
+        return try await client.post("/vidu/ent/v2/start-end2video", body: body, params: nil, headers: nil, contentType: "application/json", responseType: ViduVideoGenerationTask.self)
     }
 
     /// Vidu get task creations
     public func listEntV2TasksCreations(taskId: String) async throws -> ViduTaskCreationsResponse? {
-        return try await client.get(ApiPaths.aiPath("/vidu/ent/v2/tasks/\(serializePathParameter(taskId, PathParameterSpec(name: "task_id", style: "simple", explode: false)))/creations"), responseType: ViduTaskCreationsResponse.self)
+        return try await client.get("/vidu/ent/v2/tasks/\(serializePathParameter(taskId, PathParameterSpec(name: "task_id", style: "simple", explode: false)))/creations", responseType: ViduTaskCreationsResponse.self)
     }
 
     /// Vidu create template video
     public func createEntV2Template(body: ViduTemplateRequest) async throws -> ViduVideoGenerationTask? {
-        return try await client.post(ApiPaths.aiPath("/vidu/ent/v2/template"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: ViduVideoGenerationTask.self)
+        return try await client.post("/vidu/ent/v2/template", body: body, params: nil, headers: nil, contentType: "application/json", responseType: ViduVideoGenerationTask.self)
     }
 
     /// Vidu text to video
     public func createEntV2Text2video(body: ViduTextToVideoRequest) async throws -> ViduVideoGenerationTask? {
-        return try await client.post(ApiPaths.aiPath("/vidu/ent/v2/text2video"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: ViduVideoGenerationTask.self)
+        return try await client.post("/vidu/ent/v2/text2video", body: body, params: nil, headers: nil, contentType: "application/json", responseType: ViduVideoGenerationTask.self)
     }
 
     private struct PathParameterSpec {

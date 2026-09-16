@@ -1,7 +1,6 @@
 import '../http/client.dart';
 import '../models.dart';
 
-import 'paths.dart';
 import 'response_helpers.dart';
 
 
@@ -13,7 +12,7 @@ class VideosVolcengineApi {
   /// Volcengine Ark content generation task
   Future<VolcengineContentGenerationTaskCreateResponse?> createApiV3ContentsGenerationsTask(VolcengineContentGenerationTaskCreateRequest body) async {
     final payload = body.toJson();
-    final response = await _client.post(ApiPaths.aiPath('/volcengine/api/v3/contents/generations/tasks'), body: payload, contentType: 'application/json');
+    final response = await _client.post('/volcengine/api/v3/contents/generations/tasks', body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : VolcengineContentGenerationTaskCreateResponse.fromJson(map);
@@ -22,7 +21,7 @@ class VideosVolcengineApi {
 
   /// Volcengine Ark retrieve content generation task
   Future<VolcengineContentGenerationTask?> listApiV3ContentsGenerationsTasks(String taskId) async {
-    final response = await _client.get(ApiPaths.aiPath('/volcengine/api/v3/contents/generations/tasks/${serializePathParameter(taskId, const PathParameterSpec('task_id', 'simple', false))}'));
+    final response = await _client.get('/volcengine/api/v3/contents/generations/tasks/${serializePathParameter(taskId, const PathParameterSpec('task_id', 'simple', false))}');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : VolcengineContentGenerationTask.fromJson(map);

@@ -20,7 +20,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.ViduVideoGenerationTask?> CreateEntV2Img2videoAsync(Sdkwork.CloudRouter.Open.Models.ViduImageToVideoRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.ViduVideoGenerationTask>(ApiPaths.AiPath("/vidu/ent/v2/img2video"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.ViduVideoGenerationTask>("/vidu/ent/v2/img2video", body, null, null, "application/json");
         }
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.ViduVideoGenerationTask?> CreateEntV2Reference2videoAsync(Sdkwork.CloudRouter.Open.Models.ViduReferenceToVideoRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.ViduVideoGenerationTask>(ApiPaths.AiPath("/vidu/ent/v2/reference2video"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.ViduVideoGenerationTask>("/vidu/ent/v2/reference2video", body, null, null, "application/json");
         }
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.ViduVideoGenerationTask?> CreateEntV2StartEnd2videoAsync(Sdkwork.CloudRouter.Open.Models.ViduStartEndToVideoRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.ViduVideoGenerationTask>(ApiPaths.AiPath("/vidu/ent/v2/start-end2video"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.ViduVideoGenerationTask>("/vidu/ent/v2/start-end2video", body, null, null, "application/json");
         }
 
         /// <summary>
@@ -44,7 +44,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.ViduTaskCreationsResponse?> ListEntV2TasksCreationsAsync(string taskId)
         {
-            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.ViduTaskCreationsResponse>(ApiPaths.AiPath($"/vidu/ent/v2/tasks/{SerializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false))}/creations"));
+            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.ViduTaskCreationsResponse>($"/vidu/ent/v2/tasks/{SerializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false))}/creations");
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.ViduVideoGenerationTask?> CreateEntV2TemplateAsync(Sdkwork.CloudRouter.Open.Models.ViduTemplateRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.ViduVideoGenerationTask>(ApiPaths.AiPath("/vidu/ent/v2/template"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.ViduVideoGenerationTask>("/vidu/ent/v2/template", body, null, null, "application/json");
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.ViduVideoGenerationTask?> CreateEntV2Text2videoAsync(Sdkwork.CloudRouter.Open.Models.ViduTextToVideoRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.ViduVideoGenerationTask>(ApiPaths.AiPath("/vidu/ent/v2/text2video"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.ViduVideoGenerationTask>("/vidu/ent/v2/text2video", body, null, null, "application/json");
         }
 
         private sealed record PathParameterSpec(string Name, string Style, bool Explode);

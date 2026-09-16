@@ -13,7 +13,7 @@ class AudioElevenlabsApi(private val client: HttpClient) {
         val query = buildQueryString(listOf(
             QueryParameterSpec("output_format", outputFormat, "form", true, false, null)
         ))
-        val raw = client.post(ApiPaths.appendQueryString(ApiPaths.aiPath("/elevenlabs/v1/sound-generation"), query), body, null, null, "application/json")
+        val raw = client.post(ApiPaths.appendQueryString("/elevenlabs/v1/sound-generation", query), body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<ElevenLabsSoundGenerationResponse>() {})
     }
 
@@ -22,7 +22,7 @@ class AudioElevenlabsApi(private val client: HttpClient) {
         val query = buildQueryString(listOf(
             QueryParameterSpec("output_format", outputFormat, "form", true, false, null)
         ))
-        val raw = client.post(ApiPaths.appendQueryString(ApiPaths.aiPath("/elevenlabs/v1/text-to-speech/${serializePathParameter(voiceId, PathParameterSpec("voice_id", "simple", false))}"), query), body, null, null, "application/json")
+        val raw = client.post(ApiPaths.appendQueryString("/elevenlabs/v1/text-to-speech/${serializePathParameter(voiceId, PathParameterSpec("voice_id", "simple", false))}", query), body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<ElevenLabsTextToSpeechResponse>() {})
     }
 

@@ -17,7 +17,7 @@ class AudioElevenlabsApi {
       QueryParameterSpec('output_format', outputFormat, 'form', true, false, null)
     ]);
     final payload = body.toJson();
-    final response = await _client.post(ApiPaths.appendQueryString(ApiPaths.aiPath('/elevenlabs/v1/sound-generation'), query), body: payload, contentType: 'application/json');
+    final response = await _client.post(ApiPaths.appendQueryString('/elevenlabs/v1/sound-generation', query), body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ElevenLabsSoundGenerationResponse.fromJson(map);
@@ -30,7 +30,7 @@ class AudioElevenlabsApi {
       QueryParameterSpec('output_format', outputFormat, 'form', true, false, null)
     ]);
     final payload = body.toJson();
-    final response = await _client.post(ApiPaths.appendQueryString(ApiPaths.aiPath('/elevenlabs/v1/text-to-speech/${serializePathParameter(voiceId, const PathParameterSpec('voice_id', 'simple', false))}'), query), body: payload, contentType: 'application/json');
+    final response = await _client.post(ApiPaths.appendQueryString('/elevenlabs/v1/text-to-speech/${serializePathParameter(voiceId, const PathParameterSpec('voice_id', 'simple', false))}', query), body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ElevenLabsTextToSpeechResponse.fromJson(map);

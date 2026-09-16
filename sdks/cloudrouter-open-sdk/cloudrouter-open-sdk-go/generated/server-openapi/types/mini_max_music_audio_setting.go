@@ -1,8 +1,8 @@
 package types
 
-// MiniMax music generation audio setting.
+// Mini max music audio setting schema exposed by Cloud Router.
 type MiniMaxMusicAudioSetting struct {
-	SampleRate int `json:"sample_rate"`
 	Bitrate int `json:"bitrate"`
 	Format string `json:"format"`
+	SampleRate int `json:"sample_rate"`
 }

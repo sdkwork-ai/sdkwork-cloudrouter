@@ -12,8 +12,8 @@ import com.sdkwork.cloudrouter.open.api.EmbeddingsGoogleApi
 import com.sdkwork.cloudrouter.open.api.ChatGoogleApi
 import com.sdkwork.cloudrouter.open.api.VideosKlingApi
 import com.sdkwork.cloudrouter.open.api.ImagesMidjourneyApi
-import com.sdkwork.cloudrouter.open.api.ImagesNanoBananaApi
 import com.sdkwork.cloudrouter.open.api.AudioMinimaxApi
+import com.sdkwork.cloudrouter.open.api.ImagesNanoBananaApi
 import com.sdkwork.cloudrouter.open.api.AudioSunoApi
 import com.sdkwork.cloudrouter.open.api.AssistantsApi
 import com.sdkwork.cloudrouter.open.api.AudioApi
@@ -51,8 +51,8 @@ open class SdkworkAiClient {
     lateinit var chatGoogle: ChatGoogleApi
     lateinit var videosKling: VideosKlingApi
     lateinit var imagesMidjourney: ImagesMidjourneyApi
-    lateinit var imagesNanoBanana: ImagesNanoBananaApi
     lateinit var audioMinimax: AudioMinimaxApi
+    lateinit var imagesNanoBanana: ImagesNanoBananaApi
     lateinit var audioSuno: AudioSunoApi
     lateinit var assistants: AssistantsApi
     lateinit var audio: AudioApi
@@ -89,8 +89,8 @@ open class SdkworkAiClient {
         chatGoogle = ChatGoogleApi(httpClient)
         videosKling = VideosKlingApi(httpClient)
         imagesMidjourney = ImagesMidjourneyApi(httpClient)
-        imagesNanoBanana = ImagesNanoBananaApi(httpClient)
         audioMinimax = AudioMinimaxApi(httpClient)
+        imagesNanoBanana = ImagesNanoBananaApi(httpClient)
         audioSuno = AudioSunoApi(httpClient)
         assistants = AssistantsApi(httpClient)
         audio = AudioApi(httpClient)
@@ -128,8 +128,8 @@ open class SdkworkAiClient {
         chatGoogle = ChatGoogleApi(httpClient)
         videosKling = VideosKlingApi(httpClient)
         imagesMidjourney = ImagesMidjourneyApi(httpClient)
-        imagesNanoBanana = ImagesNanoBananaApi(httpClient)
         audioMinimax = AudioMinimaxApi(httpClient)
+        imagesNanoBanana = ImagesNanoBananaApi(httpClient)
         audioSuno = AudioSunoApi(httpClient)
         assistants = AssistantsApi(httpClient)
         audio = AudioApi(httpClient)

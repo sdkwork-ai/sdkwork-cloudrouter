@@ -15,37 +15,37 @@ public class VideosViduApi {
 
     /** Vidu image to video */
     public ViduVideoGenerationTask createEntV2Img2video(ViduImageToVideoRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/vidu/ent/v2/img2video"), body, null, null, "application/json");
+        Object raw = client.post("/vidu/ent/v2/img2video", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<ViduVideoGenerationTask>() {});
     }
 
     /** Vidu reference to video */
     public ViduVideoGenerationTask createEntV2Reference2video(ViduReferenceToVideoRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/vidu/ent/v2/reference2video"), body, null, null, "application/json");
+        Object raw = client.post("/vidu/ent/v2/reference2video", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<ViduVideoGenerationTask>() {});
     }
 
     /** Vidu start-end to video */
     public ViduVideoGenerationTask createEntV2StartEnd2video(ViduStartEndToVideoRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/vidu/ent/v2/start-end2video"), body, null, null, "application/json");
+        Object raw = client.post("/vidu/ent/v2/start-end2video", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<ViduVideoGenerationTask>() {});
     }
 
     /** Vidu get task creations */
     public ViduTaskCreationsResponse listEntV2TasksCreations(String taskId) throws Exception {
-        Object raw = client.get(ApiPaths.aiPath("/vidu/ent/v2/tasks/" + serializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false)) + "/creations"));
+        Object raw = client.get("/vidu/ent/v2/tasks/" + serializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false)) + "/creations");
         return client.convertValue(raw, new TypeReference<ViduTaskCreationsResponse>() {});
     }
 
     /** Vidu create template video */
     public ViduVideoGenerationTask createEntV2Template(ViduTemplateRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/vidu/ent/v2/template"), body, null, null, "application/json");
+        Object raw = client.post("/vidu/ent/v2/template", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<ViduVideoGenerationTask>() {});
     }
 
     /** Vidu text to video */
     public ViduVideoGenerationTask createEntV2Text2video(ViduTextToVideoRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/vidu/ent/v2/text2video"), body, null, null, "application/json");
+        Object raw = client.post("/vidu/ent/v2/text2video", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<ViduVideoGenerationTask>() {});
     }
 

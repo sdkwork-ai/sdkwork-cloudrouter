@@ -20,7 +20,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.GoogleCountTokensResponse?> CreateV1betaModelsModelCountTokenAsync(string model, Sdkwork.CloudRouter.Open.Models.GoogleCountTokensRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.GoogleCountTokensResponse>(ApiPaths.AiPath($"/google/v1beta/models/{SerializePathParameter(model, new PathParameterSpec("model", "simple", false))}:countTokens"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.GoogleCountTokensResponse>($"/google/v1beta/models/{SerializePathParameter(model, new PathParameterSpec("model", "simple", false))}:countTokens", body, null, null, "application/json");
         }
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.GoogleGenerateContentResponse?> CreateV1betaModelsModelGenerateContentAsync(string model, Sdkwork.CloudRouter.Open.Models.GoogleGenerateContentRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.GoogleGenerateContentResponse>(ApiPaths.AiPath($"/google/v1beta/models/{SerializePathParameter(model, new PathParameterSpec("model", "simple", false))}:generateContent"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.GoogleGenerateContentResponse>($"/google/v1beta/models/{SerializePathParameter(model, new PathParameterSpec("model", "simple", false))}:generateContent", body, null, null, "application/json");
         }
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.GoogleGenerateContentResponse?> CreateV1betaModelsModelStreamGenerateContentAsync(string model, Sdkwork.CloudRouter.Open.Models.GoogleGenerateContentRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.GoogleGenerateContentResponse>(ApiPaths.AiPath($"/google/v1beta/models/{SerializePathParameter(model, new PathParameterSpec("model", "simple", false))}:streamGenerateContent"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.GoogleGenerateContentResponse>($"/google/v1beta/models/{SerializePathParameter(model, new PathParameterSpec("model", "simple", false))}:streamGenerateContent", body, null, null, "application/json");
         }
 
         private sealed record PathParameterSpec(string Name, string Style, bool Explode);

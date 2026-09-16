@@ -83,8 +83,8 @@ class EmbeddingsGoogleApi:
 
     def create_v1beta_models_model_batch_embed_content(self, model: str, body: GoogleBatchEmbedContentsRequest) -> GoogleBatchEmbedContentsResponse:
         """Google Gemini batch embed contents"""
-        return self._client.post(f"/v1/google/v1beta/models/{serialize_path_parameter(model, {'name': 'model', 'style': 'simple', 'explode': False})}:batchEmbedContents", json=body)
+        return self._client.post(f"/google/v1beta/models/{serialize_path_parameter(model, {'name': 'model', 'style': 'simple', 'explode': False})}:batchEmbedContents", json=body)
 
     def create_v1beta_models_model_embed_content(self, model: str, body: GoogleEmbedContentRequest) -> GoogleEmbedContentResponse:
         """Google Gemini embed content"""
-        return self._client.post(f"/v1/google/v1beta/models/{serialize_path_parameter(model, {'name': 'model', 'style': 'simple', 'explode': False})}:embedContent", json=body)
+        return self._client.post(f"/google/v1beta/models/{serialize_path_parameter(model, {'name': 'model', 'style': 'simple', 'explode': False})}:embedContent", json=body)

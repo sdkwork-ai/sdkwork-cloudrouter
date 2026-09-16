@@ -22,7 +22,7 @@ func (a *AudioElevenlabsApi) CreateV1SoundGeneration(body sdktypes.ElevenLabsSou
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "output_format", Value: func() interface{} { if outputFormat == nil { return nil }; return *outputFormat }(), Style: "form", Explode: true, AllowReserved: false},
     })
-    raw, err := a.client.Post(AppendQueryString(AiApiPath("/elevenlabs/v1/sound-generation"), query), body, nil, nil, "application/json")
+    raw, err := a.client.Post(AppendQueryString("/elevenlabs/v1/sound-generation", query), body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.ElevenLabsSoundGenerationResponse
         return zero, err
@@ -35,7 +35,7 @@ func (a *AudioElevenlabsApi) CreateV1TextToSpeech(voiceId string, body sdktypes.
     query := BuildQueryString([]QueryParameterSpec{
         {Name: "output_format", Value: func() interface{} { if outputFormat == nil { return nil }; return *outputFormat }(), Style: "form", Explode: true, AllowReserved: false},
     })
-    raw, err := a.client.Post(AppendQueryString(AiApiPath(fmt.Sprintf("/elevenlabs/v1/text-to-speech/%s", SerializePathParameter(voiceId, PathParameterSpec{Name: "voice_id", Style: "simple", Explode: false}))), query), body, nil, nil, "application/json")
+    raw, err := a.client.Post(AppendQueryString(fmt.Sprintf("/elevenlabs/v1/text-to-speech/%s", SerializePathParameter(voiceId, PathParameterSpec{Name: "voice_id", Style: "simple", Explode: false})), query), body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.ElevenLabsTextToSpeechResponse
         return zero, err

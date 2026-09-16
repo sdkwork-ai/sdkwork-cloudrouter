@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::api::{FilesAnthropicApi, ChatAnthropicApi, BatchesAnthropicApi, AudioElevenlabsApi, ResponsesGoogleApi, FilesGoogleApi, EmbeddingsGoogleApi, ChatGoogleApi, VideosKlingApi, ImagesMidjourneyApi, ImagesNanoBananaApi, AudioMinimaxApi, AudioSunoApi, AssistantsApi, AudioApi, BatchesApi, ChatApi, CompletionApi, ContainerApi, ConversationApi, EmbeddingsApi, FilesApi, ImagesApi, ModelsApi, ModerationsApi, RealtimeApi, ResponsesApi, ThreadsApi, UploadsApi, VectorStoresApi, VideoApi, VideosViduApi, ImagesViduApi, AudioVolcengineApi, VideosVolcengineApi};
+use crate::api::{FilesAnthropicApi, ChatAnthropicApi, BatchesAnthropicApi, AudioElevenlabsApi, ResponsesGoogleApi, FilesGoogleApi, EmbeddingsGoogleApi, ChatGoogleApi, VideosKlingApi, ImagesMidjourneyApi, AudioMinimaxApi, ImagesNanoBananaApi, AudioSunoApi, AssistantsApi, AudioApi, BatchesApi, ChatApi, CompletionApi, ContainerApi, ConversationApi, EmbeddingsApi, FilesApi, ImagesApi, ModelsApi, ModerationsApi, RealtimeApi, ResponsesApi, ThreadsApi, UploadsApi, VectorStoresApi, VideoApi, VideosViduApi, ImagesViduApi, AudioVolcengineApi, VideosVolcengineApi};
 use crate::http::{SdkworkConfig, SdkworkError, SdkworkHttpClient};
 
 #[derive(Clone)]
@@ -84,12 +84,12 @@ impl SdkworkAiClient {
             ImagesMidjourneyApi::new(Arc::clone(&self.http))
         }
 
-    pub fn images_nano_banana(&self) -> ImagesNanoBananaApi {
-            ImagesNanoBananaApi::new(Arc::clone(&self.http))
-        }
-
     pub fn audio_minimax(&self) -> AudioMinimaxApi {
             AudioMinimaxApi::new(Arc::clone(&self.http))
+        }
+
+    pub fn images_nano_banana(&self) -> ImagesNanoBananaApi {
+            ImagesNanoBananaApi::new(Arc::clone(&self.http))
         }
 
     pub fn audio_suno(&self) -> AudioSunoApi {

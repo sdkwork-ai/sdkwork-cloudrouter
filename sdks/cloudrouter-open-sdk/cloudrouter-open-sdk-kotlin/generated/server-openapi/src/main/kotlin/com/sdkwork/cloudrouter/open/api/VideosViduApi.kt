@@ -10,37 +10,37 @@ class VideosViduApi(private val client: HttpClient) {
 
     /** Vidu image to video */
     suspend fun createEntV2Img2video(body: ViduImageToVideoRequest): ViduVideoGenerationTask? {
-        val raw = client.post(ApiPaths.aiPath("/vidu/ent/v2/img2video"), body, null, null, "application/json")
+        val raw = client.post("/vidu/ent/v2/img2video", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<ViduVideoGenerationTask>() {})
     }
 
     /** Vidu reference to video */
     suspend fun createEntV2Reference2video(body: ViduReferenceToVideoRequest): ViduVideoGenerationTask? {
-        val raw = client.post(ApiPaths.aiPath("/vidu/ent/v2/reference2video"), body, null, null, "application/json")
+        val raw = client.post("/vidu/ent/v2/reference2video", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<ViduVideoGenerationTask>() {})
     }
 
     /** Vidu start-end to video */
     suspend fun createEntV2StartEnd2video(body: ViduStartEndToVideoRequest): ViduVideoGenerationTask? {
-        val raw = client.post(ApiPaths.aiPath("/vidu/ent/v2/start-end2video"), body, null, null, "application/json")
+        val raw = client.post("/vidu/ent/v2/start-end2video", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<ViduVideoGenerationTask>() {})
     }
 
     /** Vidu get task creations */
     suspend fun listEntV2TasksCreations(taskId: String): ViduTaskCreationsResponse? {
-        val raw = client.get(ApiPaths.aiPath("/vidu/ent/v2/tasks/${serializePathParameter(taskId, PathParameterSpec("task_id", "simple", false))}/creations"))
+        val raw = client.get("/vidu/ent/v2/tasks/${serializePathParameter(taskId, PathParameterSpec("task_id", "simple", false))}/creations")
         return client.convertValue(raw, object : TypeReference<ViduTaskCreationsResponse>() {})
     }
 
     /** Vidu create template video */
     suspend fun createEntV2Template(body: ViduTemplateRequest): ViduVideoGenerationTask? {
-        val raw = client.post(ApiPaths.aiPath("/vidu/ent/v2/template"), body, null, null, "application/json")
+        val raw = client.post("/vidu/ent/v2/template", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<ViduVideoGenerationTask>() {})
     }
 
     /** Vidu text to video */
     suspend fun createEntV2Text2video(body: ViduTextToVideoRequest): ViduVideoGenerationTask? {
-        val raw = client.post(ApiPaths.aiPath("/vidu/ent/v2/text2video"), body, null, null, "application/json")
+        val raw = client.post("/vidu/ent/v2/text2video", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<ViduVideoGenerationTask>() {})
     }
 

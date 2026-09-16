@@ -1,8 +1,8 @@
 package types
 
-// MiniMax music generation data payload.
+// Mini max music data schema exposed by Cloud Router.
 type MiniMaxMusicData struct {
-	Status int `json:"status"`
 	Audio string `json:"audio"`
 	ExtraInfo MiniMaxMusicExtraInfo `json:"extra_info"`
+	Status int `json:"status"`
 }

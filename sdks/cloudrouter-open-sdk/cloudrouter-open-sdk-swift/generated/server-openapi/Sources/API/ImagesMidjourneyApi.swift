@@ -9,12 +9,12 @@ public class ImagesMidjourneyApi {
 
     /// Midjourney image generation
     public func createV1ImagesGeneration(body: MidjourneyImageGenerationRequest) async throws -> MidjourneyImageGenerationTask? {
-        return try await client.post(ApiPaths.aiPath("/midjourney/v1/images/generations"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: MidjourneyImageGenerationTask.self)
+        return try await client.post("/midjourney/v1/images/generations", body: body, params: nil, headers: nil, contentType: "application/json", responseType: MidjourneyImageGenerationTask.self)
     }
 
     /// Midjourney retrieve image generation
     public func listV1ImagesGenerations(taskId: String) async throws -> MidjourneyImageGenerationTask? {
-        return try await client.get(ApiPaths.aiPath("/midjourney/v1/images/generations/\(serializePathParameter(taskId, PathParameterSpec(name: "task_id", style: "simple", explode: false)))"), responseType: MidjourneyImageGenerationTask.self)
+        return try await client.get("/midjourney/v1/images/generations/\(serializePathParameter(taskId, PathParameterSpec(name: "task_id", style: "simple", explode: false)))", responseType: MidjourneyImageGenerationTask.self)
     }
 
     private struct PathParameterSpec {

@@ -10,7 +10,7 @@ class AudioVolcengineApi(private val client: HttpClient) {
 
     /** Volcengine create speech */
     suspend fun createApiV3AudioSpeech(body: OpenAiSpeechCreateRequest): String? {
-        val raw = client.post(ApiPaths.aiPath("/volcengine/api/v3/audio/speech"), body, null, null, "application/json")
+        val raw = client.post("/volcengine/api/v3/audio/speech", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<String>() {})
     }
 

@@ -15,13 +15,13 @@ public class ImagesNanoBananaApi {
 
     /** Nano Banana image generation */
     public NanoBananaImageGenerationTask createGeneration(NanoBananaImageGenerationRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/nano-banana/v1/images/generations"), body, null, null, "application/json");
+        Object raw = client.post("/nano-banana/v1/images/generations", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<NanoBananaImageGenerationTask>() {});
     }
 
     /** Nano Banana retrieve image generation */
     public NanoBananaImageGenerationTask retrieveGeneration(String taskId) throws Exception {
-        Object raw = client.get(ApiPaths.aiPath("/nano-banana/v1/images/generations/" + serializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false)) + ""));
+        Object raw = client.get("/nano-banana/v1/images/generations/" + serializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false)) + "");
         return client.convertValue(raw, new TypeReference<NanoBananaImageGenerationTask>() {});
     }
 

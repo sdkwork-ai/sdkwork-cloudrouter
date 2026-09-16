@@ -15,13 +15,13 @@ public class AudioSunoApi {
 
     /** Suno music generation */
     public SunoMusicGenerationResponse createV1MusicGeneration(SunoMusicGenerationRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/suno/v1/music/generations"), body, null, null, "application/json");
+        Object raw = client.post("/suno/v1/music/generations", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<SunoMusicGenerationResponse>() {});
     }
 
     /** Suno retrieve music generation */
     public SunoMusicGenerationTaskResponse listV1MusicGenerations(String taskId) throws Exception {
-        Object raw = client.get(ApiPaths.aiPath("/suno/v1/music/generations/" + serializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false)) + ""));
+        Object raw = client.get("/suno/v1/music/generations/" + serializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false)) + "");
         return client.convertValue(raw, new TypeReference<SunoMusicGenerationTaskResponse>() {});
     }
 

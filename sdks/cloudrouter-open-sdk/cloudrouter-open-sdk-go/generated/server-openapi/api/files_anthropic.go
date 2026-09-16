@@ -24,7 +24,7 @@ func (a *FilesAnthropicApi) ListV1Files(beforeId *string, afterId *string, limit
         {Name: "after_id", Value: func() interface{} { if afterId == nil { return nil }; return *afterId }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
     })
-    raw, err := a.client.Get(AppendQueryString(AiApiPath("/anthropic/v1/files"), query), nil, nil)
+    raw, err := a.client.Get(AppendQueryString("/anthropic/v1/files", query), nil, nil)
     if err != nil {
         var zero sdktypes.AnthropicFileListResponse
         return zero, err
@@ -34,7 +34,7 @@ func (a *FilesAnthropicApi) ListV1Files(beforeId *string, afterId *string, limit
 
 // Anthropic upload file
 func (a *FilesAnthropicApi) CreateV1File(body sdktypes.AnthropicFileUploadMultipartRequest) (sdktypes.AnthropicFile, error) {
-    raw, err := a.client.Post(AiApiPath("/anthropic/v1/files"), body, nil, nil, "multipart/form-data")
+    raw, err := a.client.Post("/anthropic/v1/files", body, nil, nil, "multipart/form-data")
     if err != nil {
         var zero sdktypes.AnthropicFile
         return zero, err
@@ -44,7 +44,7 @@ func (a *FilesAnthropicApi) CreateV1File(body sdktypes.AnthropicFileUploadMultip
 
 // Anthropic delete file
 func (a *FilesAnthropicApi) DeleteV1Files(fileId string) (sdktypes.AnthropicDeleteResponse, error) {
-    raw, err := a.client.Delete(AiApiPath(fmt.Sprintf("/anthropic/v1/files/%s", SerializePathParameter(fileId, PathParameterSpec{Name: "file_id", Style: "simple", Explode: false}))), nil, nil)
+    raw, err := a.client.Delete(fmt.Sprintf("/anthropic/v1/files/%s", SerializePathParameter(fileId, PathParameterSpec{Name: "file_id", Style: "simple", Explode: false})), nil, nil)
     if err != nil {
         var zero sdktypes.AnthropicDeleteResponse
         return zero, err
@@ -54,7 +54,7 @@ func (a *FilesAnthropicApi) DeleteV1Files(fileId string) (sdktypes.AnthropicDele
 
 // Anthropic retrieve file content
 func (a *FilesAnthropicApi) ListV1FilesContent(fileId string) ([]byte, error) {
-    return a.client.RequestBytes("GET", AiApiPath(fmt.Sprintf("/anthropic/v1/files/%s/content", SerializePathParameter(fileId, PathParameterSpec{Name: "file_id", Style: "simple", Explode: false}))), nil, nil, nil, "", false, false)
+    return a.client.RequestBytes("GET", fmt.Sprintf("/anthropic/v1/files/%s/content", SerializePathParameter(fileId, PathParameterSpec{Name: "file_id", Style: "simple", Explode: false})), nil, nil, nil, "", false, false)
 }
 
 type PathParameterSpec struct {

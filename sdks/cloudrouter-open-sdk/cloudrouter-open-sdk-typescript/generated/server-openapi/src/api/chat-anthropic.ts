@@ -1,4 +1,3 @@
-import { aiApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { AnthropicCountMessageTokensRequest, AnthropicCountMessageTokensResponse, AnthropicMessage, AnthropicMessageCreateRequest } from '../types';
@@ -14,7 +13,7 @@ export class ChatAnthropicV1MessagesCountTokensApi {
 
 /** Anthropic count message tokens */
   async create(body: AnthropicCountMessageTokensRequest, requestOptions?: ApiRequestOptions): Promise<AnthropicCountMessageTokensResponse> {
-    return this.client.request<AnthropicCountMessageTokensResponse>(aiApiPath(`/anthropic/v1/messages/count_tokens`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<AnthropicCountMessageTokensResponse>(`/anthropic/v1/messages/count_tokens`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -30,7 +29,7 @@ export class ChatAnthropicV1MessagesApi {
 
 /** Anthropic Claude message */
   async create(body: AnthropicMessageCreateRequest, requestOptions?: ApiRequestOptions): Promise<AnthropicMessage> {
-    return this.client.request<AnthropicMessage>(aiApiPath(`/anthropic/v1/messages`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<AnthropicMessage>(`/anthropic/v1/messages`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 

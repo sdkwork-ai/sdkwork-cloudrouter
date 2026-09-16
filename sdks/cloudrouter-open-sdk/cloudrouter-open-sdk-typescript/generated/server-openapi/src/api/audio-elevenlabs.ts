@@ -1,4 +1,3 @@
-import { aiApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { ElevenLabsSoundGenerationRequest, ElevenLabsSoundGenerationResponse, ElevenLabsTextToSpeechRequest, ElevenLabsTextToSpeechResponse } from '../types';
@@ -21,7 +20,7 @@ export class AudioElevenlabsV1TextToSpeechApi {
     const query = buildQueryString([
       { name: 'output_format', value: params?.outputFormat, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<ElevenLabsTextToSpeechResponse>(appendQueryString(aiApiPath(`/elevenlabs/v1/text-to-speech/${serializePathParameter(voiceId, { name: 'voice_id', style: 'simple', explode: false })}`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<ElevenLabsTextToSpeechResponse>(appendQueryString(`/elevenlabs/v1/text-to-speech/${serializePathParameter(voiceId, { name: 'voice_id', style: 'simple', explode: false })}`, query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
@@ -42,7 +41,7 @@ export class AudioElevenlabsV1SoundGenerationApi {
     const query = buildQueryString([
       { name: 'output_format', value: params?.outputFormat, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<ElevenLabsSoundGenerationResponse>(appendQueryString(aiApiPath(`/elevenlabs/v1/sound-generation`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<ElevenLabsSoundGenerationResponse>(appendQueryString(`/elevenlabs/v1/sound-generation`, query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 

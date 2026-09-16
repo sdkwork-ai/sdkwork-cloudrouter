@@ -2,22 +2,30 @@ package com.sdkwork.cloudrouter.open.model;
 
 
 public class KlingAvatarCreateRequest {
-    private String modelName;
-    private String humanImage;
-    private String prompt;
-    private String voiceMode;
     private String audioUrl;
+    private String callbackUrl;
+    private String humanImage;
+    private String modelName;
+    private String prompt;
     private String text;
     private String voiceId;
     private String voiceLanguage;
-    private String callbackUrl;
+    private String voiceMode;
 
-    public String getModelName() {
-        return this.modelName;
+    public String getAudioUrl() {
+        return this.audioUrl;
     }
 
-    public void setModelName(String modelName) {
-        this.modelName = modelName;
+    public void setAudioUrl(String audioUrl) {
+        this.audioUrl = audioUrl;
+    }
+
+    public String getCallbackUrl() {
+        return this.callbackUrl;
+    }
+
+    public void setCallbackUrl(String callbackUrl) {
+        this.callbackUrl = callbackUrl;
     }
 
     public String getHumanImage() {
@@ -28,28 +36,20 @@ public class KlingAvatarCreateRequest {
         this.humanImage = humanImage;
     }
 
+    public String getModelName() {
+        return this.modelName;
+    }
+
+    public void setModelName(String modelName) {
+        this.modelName = modelName;
+    }
+
     public String getPrompt() {
         return this.prompt;
     }
 
     public void setPrompt(String prompt) {
         this.prompt = prompt;
-    }
-
-    public String getVoiceMode() {
-        return this.voiceMode;
-    }
-
-    public void setVoiceMode(String voiceMode) {
-        this.voiceMode = voiceMode;
-    }
-
-    public String getAudioUrl() {
-        return this.audioUrl;
-    }
-
-    public void setAudioUrl(String audioUrl) {
-        this.audioUrl = audioUrl;
     }
 
     public String getText() {
@@ -76,11 +76,11 @@ public class KlingAvatarCreateRequest {
         this.voiceLanguage = voiceLanguage;
     }
 
-    public String getCallbackUrl() {
-        return this.callbackUrl;
+    public String getVoiceMode() {
+        return this.voiceMode;
     }
 
-    public void setCallbackUrl(String callbackUrl) {
-        this.callbackUrl = callbackUrl;
+    public void setVoiceMode(String voiceMode) {
+        this.voiceMode = voiceMode;
     }
 }

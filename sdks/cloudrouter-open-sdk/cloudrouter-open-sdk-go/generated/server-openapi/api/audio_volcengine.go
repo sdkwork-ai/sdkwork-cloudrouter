@@ -15,5 +15,5 @@ func NewAudioVolcengineApi(client *sdkhttp.Client) *AudioVolcengineApi {
 
 // Volcengine create speech
 func (a *AudioVolcengineApi) CreateApiV3AudioSpeech(body sdktypes.OpenAiSpeechCreateRequest) ([]byte, error) {
-    return a.client.RequestBytes("POST", AiApiPath("/volcengine/api/v3/audio/speech"), body, nil, nil, "application/json", false, false)
+    return a.client.RequestBytes("POST", "/volcengine/api/v3/audio/speech", body, nil, nil, "application/json", false, false)
 }

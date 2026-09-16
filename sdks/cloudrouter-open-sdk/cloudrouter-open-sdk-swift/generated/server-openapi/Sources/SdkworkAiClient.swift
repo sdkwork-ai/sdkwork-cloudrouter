@@ -13,8 +13,8 @@ public class SdkworkAiClient {
     public let chatGoogle: ChatGoogleApi
     public let videosKling: VideosKlingApi
     public let imagesMidjourney: ImagesMidjourneyApi
-    public let imagesNanoBanana: ImagesNanoBananaApi
     public let audioMinimax: AudioMinimaxApi
+    public let imagesNanoBanana: ImagesNanoBananaApi
     public let audioSuno: AudioSunoApi
     public let assistants: AssistantsApi
     public let audio: AudioApi
@@ -51,8 +51,8 @@ public class SdkworkAiClient {
         self.chatGoogle = ChatGoogleApi(client: httpClient)
         self.videosKling = VideosKlingApi(client: httpClient)
         self.imagesMidjourney = ImagesMidjourneyApi(client: httpClient)
-        self.imagesNanoBanana = ImagesNanoBananaApi(client: httpClient)
         self.audioMinimax = AudioMinimaxApi(client: httpClient)
+        self.imagesNanoBanana = ImagesNanoBananaApi(client: httpClient)
         self.audioSuno = AudioSunoApi(client: httpClient)
         self.assistants = AssistantsApi(client: httpClient)
         self.audio = AudioApi(client: httpClient)
@@ -90,8 +90,8 @@ public class SdkworkAiClient {
         self.chatGoogle = ChatGoogleApi(client: httpClient)
         self.videosKling = VideosKlingApi(client: httpClient)
         self.imagesMidjourney = ImagesMidjourneyApi(client: httpClient)
-        self.imagesNanoBanana = ImagesNanoBananaApi(client: httpClient)
         self.audioMinimax = AudioMinimaxApi(client: httpClient)
+        self.imagesNanoBanana = ImagesNanoBananaApi(client: httpClient)
         self.audioSuno = AudioSunoApi(client: httpClient)
         self.assistants = AssistantsApi(client: httpClient)
         self.audio = AudioApi(client: httpClient)

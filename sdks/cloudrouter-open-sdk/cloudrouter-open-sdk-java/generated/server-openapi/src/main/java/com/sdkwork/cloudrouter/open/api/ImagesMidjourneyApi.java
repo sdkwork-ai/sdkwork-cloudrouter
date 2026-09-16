@@ -15,13 +15,13 @@ public class ImagesMidjourneyApi {
 
     /** Midjourney image generation */
     public MidjourneyImageGenerationTask createV1ImagesGeneration(MidjourneyImageGenerationRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/midjourney/v1/images/generations"), body, null, null, "application/json");
+        Object raw = client.post("/midjourney/v1/images/generations", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<MidjourneyImageGenerationTask>() {});
     }
 
     /** Midjourney retrieve image generation */
     public MidjourneyImageGenerationTask listV1ImagesGenerations(String taskId) throws Exception {
-        Object raw = client.get(ApiPaths.aiPath("/midjourney/v1/images/generations/" + serializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false)) + ""));
+        Object raw = client.get("/midjourney/v1/images/generations/" + serializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false)) + "");
         return client.convertValue(raw, new TypeReference<MidjourneyImageGenerationTask>() {});
     }
 

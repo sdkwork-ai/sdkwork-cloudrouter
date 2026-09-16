@@ -20,7 +20,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<string?> CreateApiV3AudioSpeechAsync(Sdkwork.CloudRouter.Open.Models.OpenAiSpeechCreateRequest body)
         {
-            return await _client.PostAsync<string>(ApiPaths.AiPath("/volcengine/api/v3/audio/speech"), body, null, null, "application/json");
+            return await _client.PostAsync<string>("/volcengine/api/v3/audio/speech", body, null, null, "application/json");
         }
 
 

@@ -1,7 +1,6 @@
 import '../http/client.dart';
 import '../models.dart';
 
-import 'paths.dart';
 import 'response_helpers.dart';
 
 
@@ -13,7 +12,7 @@ class VideosViduApi {
   /// Vidu image to video
   Future<ViduVideoGenerationTask?> createEntV2Img2video(ViduImageToVideoRequest body) async {
     final payload = body.toJson();
-    final response = await _client.post(ApiPaths.aiPath('/vidu/ent/v2/img2video'), body: payload, contentType: 'application/json');
+    final response = await _client.post('/vidu/ent/v2/img2video', body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ViduVideoGenerationTask.fromJson(map);
@@ -23,7 +22,7 @@ class VideosViduApi {
   /// Vidu reference to video
   Future<ViduVideoGenerationTask?> createEntV2Reference2video(ViduReferenceToVideoRequest body) async {
     final payload = body.toJson();
-    final response = await _client.post(ApiPaths.aiPath('/vidu/ent/v2/reference2video'), body: payload, contentType: 'application/json');
+    final response = await _client.post('/vidu/ent/v2/reference2video', body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ViduVideoGenerationTask.fromJson(map);
@@ -33,7 +32,7 @@ class VideosViduApi {
   /// Vidu start-end to video
   Future<ViduVideoGenerationTask?> createEntV2StartEnd2video(ViduStartEndToVideoRequest body) async {
     final payload = body.toJson();
-    final response = await _client.post(ApiPaths.aiPath('/vidu/ent/v2/start-end2video'), body: payload, contentType: 'application/json');
+    final response = await _client.post('/vidu/ent/v2/start-end2video', body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ViduVideoGenerationTask.fromJson(map);
@@ -42,7 +41,7 @@ class VideosViduApi {
 
   /// Vidu get task creations
   Future<ViduTaskCreationsResponse?> listEntV2TasksCreations(String taskId) async {
-    final response = await _client.get(ApiPaths.aiPath('/vidu/ent/v2/tasks/${serializePathParameter(taskId, const PathParameterSpec('task_id', 'simple', false))}/creations'));
+    final response = await _client.get('/vidu/ent/v2/tasks/${serializePathParameter(taskId, const PathParameterSpec('task_id', 'simple', false))}/creations');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ViduTaskCreationsResponse.fromJson(map);
@@ -52,7 +51,7 @@ class VideosViduApi {
   /// Vidu create template video
   Future<ViduVideoGenerationTask?> createEntV2Template(ViduTemplateRequest body) async {
     final payload = body.toJson();
-    final response = await _client.post(ApiPaths.aiPath('/vidu/ent/v2/template'), body: payload, contentType: 'application/json');
+    final response = await _client.post('/vidu/ent/v2/template', body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ViduVideoGenerationTask.fromJson(map);
@@ -62,7 +61,7 @@ class VideosViduApi {
   /// Vidu text to video
   Future<ViduVideoGenerationTask?> createEntV2Text2video(ViduTextToVideoRequest body) async {
     final payload = body.toJson();
-    final response = await _client.post(ApiPaths.aiPath('/vidu/ent/v2/text2video'), body: payload, contentType: 'application/json');
+    final response = await _client.post('/vidu/ent/v2/text2video', body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : ViduVideoGenerationTask.fromJson(map);

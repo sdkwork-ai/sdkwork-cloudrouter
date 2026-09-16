@@ -9,22 +9,22 @@ public class VideosKlingApi {
 
     /// Kling create avatar video
     public func createV1VideosAvatar(body: KlingAvatarCreateRequest) async throws -> KlingVideoGenerationTask? {
-        return try await client.post(ApiPaths.aiPath("/kling/v1/videos/avatar"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: KlingVideoGenerationTask.self)
-    }
-
-    /// Kling create motion control video
-    public func createV1VideosMotionControl(body: KlingMotionControlRequest) async throws -> KlingVideoGenerationTask? {
-        return try await client.post(ApiPaths.aiPath("/kling/v1/videos/motion-control"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: KlingVideoGenerationTask.self)
+        return try await client.post("/kling/v1/videos/avatar", body: body, params: nil, headers: nil, contentType: "application/json", responseType: KlingVideoGenerationTask.self)
     }
 
     /// Kling video generation
     public func createV1VideosGeneration(body: KlingVideoGenerationRequest) async throws -> KlingVideoGenerationTask? {
-        return try await client.post(ApiPaths.aiPath("/kling/v1/videos/generations"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: KlingVideoGenerationTask.self)
+        return try await client.post("/kling/v1/videos/generations", body: body, params: nil, headers: nil, contentType: "application/json", responseType: KlingVideoGenerationTask.self)
     }
 
     /// Kling retrieve video generation
     public func listV1VideosGenerations(taskId: String) async throws -> KlingVideoGenerationTask? {
-        return try await client.get(ApiPaths.aiPath("/kling/v1/videos/generations/\(serializePathParameter(taskId, PathParameterSpec(name: "task_id", style: "simple", explode: false)))"), responseType: KlingVideoGenerationTask.self)
+        return try await client.get("/kling/v1/videos/generations/\(serializePathParameter(taskId, PathParameterSpec(name: "task_id", style: "simple", explode: false)))", responseType: KlingVideoGenerationTask.self)
+    }
+
+    /// Kling create motion control video
+    public func createV1VideosMotionControl(body: KlingMotionControlRequest) async throws -> KlingVideoGenerationTask? {
+        return try await client.post("/kling/v1/videos/motion-control", body: body, params: nil, headers: nil, contentType: "application/json", responseType: KlingVideoGenerationTask.self)
     }
 
     private struct PathParameterSpec {

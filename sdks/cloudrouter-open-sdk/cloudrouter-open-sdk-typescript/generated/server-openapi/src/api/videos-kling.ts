@@ -1,27 +1,7 @@
-import { aiApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { KlingAvatarCreateRequest, KlingMotionControlRequest, KlingVideoGenerationRequest, KlingVideoGenerationTask } from '../types';
 
-
-export class VideosKlingV1VideosGenerationsApi {
-  private client: HttpClient;
-
-  constructor(client: HttpClient) {
-    this.client = client;
-  }
-
-
-/** Kling video generation */
-  async create(body: KlingVideoGenerationRequest, requestOptions?: ApiRequestOptions): Promise<KlingVideoGenerationTask> {
-    return this.client.request<KlingVideoGenerationTask>(aiApiPath(`/kling/v1/videos/generations`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
-  }
-
-/** Kling retrieve video generation */
-  async retrieve(taskId: string, requestOptions?: ApiRequestOptions): Promise<KlingVideoGenerationTask> {
-    return this.client.request<KlingVideoGenerationTask>(aiApiPath(`/kling/v1/videos/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
-  }
-}
 
 export class VideosKlingV1VideosMotionControlApi {
   private client: HttpClient;
@@ -33,7 +13,26 @@ export class VideosKlingV1VideosMotionControlApi {
 
 /** Kling create motion control video */
   async create(body: KlingMotionControlRequest, requestOptions?: ApiRequestOptions): Promise<KlingVideoGenerationTask> {
-    return this.client.request<KlingVideoGenerationTask>(aiApiPath(`/kling/v1/videos/motion-control`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<KlingVideoGenerationTask>(`/kling/v1/videos/motion-control`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+  }
+}
+
+export class VideosKlingV1VideosGenerationsApi {
+  private client: HttpClient;
+
+  constructor(client: HttpClient) {
+    this.client = client;
+  }
+
+
+/** Kling video generation */
+  async create(body: KlingVideoGenerationRequest, requestOptions?: ApiRequestOptions): Promise<KlingVideoGenerationTask> {
+    return this.client.request<KlingVideoGenerationTask>(`/kling/v1/videos/generations`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+  }
+
+/** Kling retrieve video generation */
+  async retrieve(taskId: string, requestOptions?: ApiRequestOptions): Promise<KlingVideoGenerationTask> {
+    return this.client.request<KlingVideoGenerationTask>(`/kling/v1/videos/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 
@@ -47,19 +46,19 @@ export class VideosKlingV1VideosAvatarApi {
 
 /** Kling create avatar video */
   async create(body: KlingAvatarCreateRequest, requestOptions?: ApiRequestOptions): Promise<KlingVideoGenerationTask> {
-    return this.client.request<KlingVideoGenerationTask>(aiApiPath(`/kling/v1/videos/avatar`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<KlingVideoGenerationTask>(`/kling/v1/videos/avatar`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 
 export class VideosKlingV1VideosApi {
   public readonly avatar: VideosKlingV1VideosAvatarApi;
-  public readonly motionControl: VideosKlingV1VideosMotionControlApi;
   public readonly generations: VideosKlingV1VideosGenerationsApi;
+  public readonly motionControl: VideosKlingV1VideosMotionControlApi;
 
   constructor(client: HttpClient) {
     this.avatar = new VideosKlingV1VideosAvatarApi(client);
-    this.motionControl = new VideosKlingV1VideosMotionControlApi(client);
     this.generations = new VideosKlingV1VideosGenerationsApi(client);
+    this.motionControl = new VideosKlingV1VideosMotionControlApi(client);
   }
 
 }

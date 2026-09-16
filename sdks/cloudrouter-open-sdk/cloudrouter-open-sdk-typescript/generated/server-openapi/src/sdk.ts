@@ -12,8 +12,8 @@ import { EmbeddingsGoogleApi, createEmbeddingsGoogleApi } from './api/embeddings
 import { ChatGoogleApi, createChatGoogleApi } from './api/chat-google';
 import { VideosKlingApi, createVideosKlingApi } from './api/videos-kling';
 import { ImagesMidjourneyApi, createImagesMidjourneyApi } from './api/images-midjourney';
-import { ImagesNanoBananaApi, createImagesNanoBananaApi } from './api/images-nano-banana';
 import { AudioMinimaxApi, createAudioMinimaxApi } from './api/audio-minimax';
+import { ImagesNanoBananaApi, createImagesNanoBananaApi } from './api/images-nano-banana';
 import { AudioSunoApi, createAudioSunoApi } from './api/audio-suno';
 import { AssistantsApi, createAssistantsApi } from './api/assistants';
 import { AudioApi, createAudioApi } from './api/audio';
@@ -51,8 +51,8 @@ export class SdkworkAiClient {
   public readonly chatGoogle: ChatGoogleApi;
   public readonly videosKling: VideosKlingApi;
   public readonly imagesMidjourney: ImagesMidjourneyApi;
-  public readonly imagesNanoBanana: ImagesNanoBananaApi;
   public readonly audioMinimax: AudioMinimaxApi;
+  public readonly imagesNanoBanana: ImagesNanoBananaApi;
   public readonly audioSuno: AudioSunoApi;
   public readonly assistants: AssistantsApi;
   public readonly audio: AudioApi;
@@ -99,9 +99,9 @@ export class SdkworkAiClient {
 
     this.imagesMidjourney = createImagesMidjourneyApi(this.httpClient);
 
-    this.imagesNanoBanana = createImagesNanoBananaApi(this.httpClient);
-
     this.audioMinimax = createAudioMinimaxApi(this.httpClient);
+
+    this.imagesNanoBanana = createImagesNanoBananaApi(this.httpClient);
 
     this.audioSuno = createAudioSunoApi(this.httpClient);
 

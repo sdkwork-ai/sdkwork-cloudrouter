@@ -15,7 +15,7 @@ public class AudioVolcengineApi {
 
     /** Volcengine create speech */
     public byte[] createApiV3AudioSpeech(OpenAiSpeechCreateRequest body) throws Exception {
-        return client.requestBytes("POST", ApiPaths.aiPath("/volcengine/api/v3/audio/speech"), body, null, null, "application/json", false, false);
+        return client.requestBytes("POST", "/volcengine/api/v3/audio/speech", body, null, null, "application/json", false, false);
     }
 
 

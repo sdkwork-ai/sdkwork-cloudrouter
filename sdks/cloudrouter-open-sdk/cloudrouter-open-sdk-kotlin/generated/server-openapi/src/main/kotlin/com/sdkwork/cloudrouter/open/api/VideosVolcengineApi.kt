@@ -10,13 +10,13 @@ class VideosVolcengineApi(private val client: HttpClient) {
 
     /** Volcengine Ark content generation task */
     suspend fun createApiV3ContentsGenerationsTask(body: VolcengineContentGenerationTaskCreateRequest): VolcengineContentGenerationTaskCreateResponse? {
-        val raw = client.post(ApiPaths.aiPath("/volcengine/api/v3/contents/generations/tasks"), body, null, null, "application/json")
+        val raw = client.post("/volcengine/api/v3/contents/generations/tasks", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<VolcengineContentGenerationTaskCreateResponse>() {})
     }
 
     /** Volcengine Ark retrieve content generation task */
     suspend fun listApiV3ContentsGenerationsTasks(taskId: String): VolcengineContentGenerationTask? {
-        val raw = client.get(ApiPaths.aiPath("/volcengine/api/v3/contents/generations/tasks/${serializePathParameter(taskId, PathParameterSpec("task_id", "simple", false))}"))
+        val raw = client.get("/volcengine/api/v3/contents/generations/tasks/${serializePathParameter(taskId, PathParameterSpec("task_id", "simple", false))}")
         return client.convertValue(raw, object : TypeReference<VolcengineContentGenerationTask>() {})
     }
 

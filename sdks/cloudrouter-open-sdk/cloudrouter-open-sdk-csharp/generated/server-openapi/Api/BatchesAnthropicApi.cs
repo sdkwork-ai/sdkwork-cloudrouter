@@ -26,7 +26,7 @@ namespace Sdkwork.CloudRouter.Open.Api
                 new QueryParameterSpec("after_id", afterId, "form", true, false, null),
                 new QueryParameterSpec("limit", limit, "form", true, false, null),
             });
-            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.AnthropicMessageBatchListResponse>(ApiPaths.AppendQueryString(ApiPaths.AiPath("/anthropic/v1/messages/batches"), queryString));
+            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.AnthropicMessageBatchListResponse>(ApiPaths.AppendQueryString("/anthropic/v1/messages/batches", queryString));
         }
 
         /// <summary>
@@ -34,7 +34,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.AnthropicMessageBatch?> CreateV1MessagesBatchAsync(Sdkwork.CloudRouter.Open.Models.AnthropicMessageBatchCreateRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.AnthropicMessageBatch>(ApiPaths.AiPath("/anthropic/v1/messages/batches"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.AnthropicMessageBatch>("/anthropic/v1/messages/batches", body, null, null, "application/json");
         }
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.AnthropicMessageBatch?> CreateV1MessagesBatchesCancelAsync(string batchId)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.AnthropicMessageBatch>(ApiPaths.AiPath($"/anthropic/v1/messages/batches/{SerializePathParameter(batchId, new PathParameterSpec("batch_id", "simple", false))}/cancel"), null);
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.AnthropicMessageBatch>($"/anthropic/v1/messages/batches/{SerializePathParameter(batchId, new PathParameterSpec("batch_id", "simple", false))}/cancel", null);
         }
 
         private sealed record PathParameterSpec(string Name, string Style, bool Explode);

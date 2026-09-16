@@ -22,4 +22,4 @@ class AudioMinimaxApi:
 
     def create_v1_music_generation(self, body: MiniMaxMusicGenerationRequest) -> MiniMaxMusicGenerationResponse:
         """Minimax create music generation"""
-        return self._client.post(f"/v1/minimax/v1/music_generation", json=body)
+        return self._client.post(f"/minimax/v1/music_generation", json=body)

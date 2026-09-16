@@ -69,8 +69,8 @@ client.set_header("X-Custom-Header", "value");
 - `client.chat_google()` - chat_google API
 - `client.videos_kling()` - videos_kling API
 - `client.images_midjourney()` - images_midjourney API
-- `client.images_nano_banana()` - images_nano_banana API
 - `client.audio_minimax()` - audio_minimax API
+- `client.images_nano_banana()` - images_nano_banana API
 - `client.audio_suno()` - audio_suno API
 - `client.assistants()` - assistant API
 - `client.audio()` - audio API
@@ -227,15 +227,15 @@ println!("{result:?}");
 use cloudrouter_open_sdk::*;
 // Kling create avatar video
 let body = KlingAvatarCreateRequest {
-    model_name: Some("name".to_string()),
-    human_image: "human-image".to_string(),
-    prompt: Some("prompt".to_string()),
-    voice_mode: Some("voice-mode".to_string()),
     audio_url: Some("audio-url".to_string()),
+    callback_url: Some("callback-url".to_string()),
+    human_image: "human-image".to_string(),
+    model_name: Some("name".to_string()),
+    prompt: Some("prompt".to_string()),
     text: Some("text".to_string()),
     voice_id: Some("1".to_string()),
     voice_language: Some("voice-language".to_string()),
-    callback_url: Some("callback-url".to_string()),
+    voice_mode: Some("voice-mode".to_string()),
     ..Default::default()
 };
 let result = client.videos_kling().create_v1_videos_avatar(&body).await?;
@@ -260,6 +260,26 @@ let result = client.images_midjourney().create_v1_images_generation(&body).await
 println!("{result:?}");
 ```
 
+### audio_minimax
+
+```rust
+use cloudrouter_open_sdk::*;
+// Minimax create music generation
+let body = MiniMaxMusicGenerationRequest {
+    audio_setting: Some(serde_json::json!({"bitrate":"bitrate","format":"format","sample_rate":"sample-rate"})),
+    is_instrumental: Some(false),
+    lyrics: Some("lyrics".to_string()),
+    lyrics_optimizer: Some(false),
+    model: "model".to_string(),
+    output_format: Some("output-format".to_string()),
+    prompt: Some("prompt".to_string()),
+    stream: Some(false),
+    ..Default::default()
+};
+let result = client.audio_minimax().create_v1_music_generation(&body).await?;
+println!("{result:?}");
+```
+
 ### images_nano_banana
 
 ```rust
@@ -276,26 +296,6 @@ let body = NanoBananaImageGenerationRequest {
     ..Default::default()
 };
 let result = client.images_nano_banana().create_generations(&body).await?;
-println!("{result:?}");
-```
-
-### audio_minimax
-
-```rust
-use cloudrouter_open_sdk::*;
-// Minimax create music generation
-let body = MiniMaxMusicGenerationRequest {
-    model: "model".to_string(),
-    prompt: Some("prompt".to_string()),
-    lyrics: Some("lyrics".to_string()),
-    stream: Some(false),
-    output_format: Some("output-format".to_string()),
-    is_instrumental: Some(false),
-    lyrics_optimizer: Some(true),
-    audio_setting: Some(MiniMaxMusicAudioSetting::default()),
-    ..Default::default()
-};
-let result = client.audio_minimax().create_v1_music_generation(&body).await?;
 println!("{result:?}");
 ```
 

@@ -2,53 +2,21 @@ package com.sdkwork.cloudrouter.open.model;
 
 
 public class MiniMaxMusicGenerationRequest {
-    private String model;
-    private String prompt;
-    private String lyrics;
-    private Boolean stream;
-    private String outputFormat;
-    private Boolean isInstrumental;
-    private Boolean lyricsOptimizer;
     private MiniMaxMusicAudioSetting audioSetting;
+    private Boolean isInstrumental;
+    private String lyrics;
+    private Boolean lyricsOptimizer;
+    private String model;
+    private String outputFormat;
+    private String prompt;
+    private Boolean stream;
 
-    public String getModel() {
-        return this.model;
+    public MiniMaxMusicAudioSetting getAudioSetting() {
+        return this.audioSetting;
     }
 
-    public void setModel(String model) {
-        this.model = model;
-    }
-
-    public String getPrompt() {
-        return this.prompt;
-    }
-
-    public void setPrompt(String prompt) {
-        this.prompt = prompt;
-    }
-
-    public String getLyrics() {
-        return this.lyrics;
-    }
-
-    public void setLyrics(String lyrics) {
-        this.lyrics = lyrics;
-    }
-
-    public Boolean getStream() {
-        return this.stream;
-    }
-
-    public void setStream(Boolean stream) {
-        this.stream = stream;
-    }
-
-    public String getOutputFormat() {
-        return this.outputFormat;
-    }
-
-    public void setOutputFormat(String outputFormat) {
-        this.outputFormat = outputFormat;
+    public void setAudioSetting(MiniMaxMusicAudioSetting audioSetting) {
+        this.audioSetting = audioSetting;
     }
 
     public Boolean getIsInstrumental() {
@@ -59,6 +27,14 @@ public class MiniMaxMusicGenerationRequest {
         this.isInstrumental = isInstrumental;
     }
 
+    public String getLyrics() {
+        return this.lyrics;
+    }
+
+    public void setLyrics(String lyrics) {
+        this.lyrics = lyrics;
+    }
+
     public Boolean getLyricsOptimizer() {
         return this.lyricsOptimizer;
     }
@@ -67,11 +43,35 @@ public class MiniMaxMusicGenerationRequest {
         this.lyricsOptimizer = lyricsOptimizer;
     }
 
-    public MiniMaxMusicAudioSetting getAudioSetting() {
-        return this.audioSetting;
+    public String getModel() {
+        return this.model;
     }
 
-    public void setAudioSetting(MiniMaxMusicAudioSetting audioSetting) {
-        this.audioSetting = audioSetting;
+    public void setModel(String model) {
+        this.model = model;
+    }
+
+    public String getOutputFormat() {
+        return this.outputFormat;
+    }
+
+    public void setOutputFormat(String outputFormat) {
+        this.outputFormat = outputFormat;
+    }
+
+    public String getPrompt() {
+        return this.prompt;
+    }
+
+    public void setPrompt(String prompt) {
+        this.prompt = prompt;
+    }
+
+    public Boolean getStream() {
+        return this.stream;
+    }
+
+    public void setStream(Boolean stream) {
+        this.stream = stream;
     }
 }

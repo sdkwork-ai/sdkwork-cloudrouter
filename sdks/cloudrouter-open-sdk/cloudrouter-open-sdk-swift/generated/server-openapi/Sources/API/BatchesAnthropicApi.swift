@@ -14,17 +14,17 @@ public class BatchesAnthropicApi {
             QueryParameterSpec(name: "after_id", value: afterId, style: "form", explode: true, allowReserved: false, contentType: nil),
             QueryParameterSpec(name: "limit", value: limit, style: "form", explode: true, allowReserved: false, contentType: nil)
         ])
-        return try await client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/anthropic/v1/messages/batches"), query), responseType: AnthropicMessageBatchListResponse.self)
+        return try await client.get(ApiPaths.appendQueryString("/anthropic/v1/messages/batches", query), responseType: AnthropicMessageBatchListResponse.self)
     }
 
     /// Anthropic create message batch
     public func createV1MessagesBatch(body: AnthropicMessageBatchCreateRequest) async throws -> AnthropicMessageBatch? {
-        return try await client.post(ApiPaths.aiPath("/anthropic/v1/messages/batches"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: AnthropicMessageBatch.self)
+        return try await client.post("/anthropic/v1/messages/batches", body: body, params: nil, headers: nil, contentType: "application/json", responseType: AnthropicMessageBatch.self)
     }
 
     /// Anthropic cancel message batch
     public func createV1MessagesBatchesCancel(batchId: String) async throws -> AnthropicMessageBatch? {
-        return try await client.post(ApiPaths.aiPath("/anthropic/v1/messages/batches/\(serializePathParameter(batchId, PathParameterSpec(name: "batch_id", style: "simple", explode: false)))/cancel"), body: nil, responseType: AnthropicMessageBatch.self)
+        return try await client.post("/anthropic/v1/messages/batches/\(serializePathParameter(batchId, PathParameterSpec(name: "batch_id", style: "simple", explode: false)))/cancel", body: nil, responseType: AnthropicMessageBatch.self)
     }
 
     private struct PathParameterSpec {

@@ -81,8 +81,8 @@ val client = SdkworkAiClient(config)
 - `client.chatGoogle` - chat_google API
 - `client.videosKling` - videos_kling API
 - `client.imagesMidjourney` - images_midjourney API
-- `client.imagesNanoBanana` - images_nano_banana API
 - `client.audioMinimax` - audio_minimax API
+- `client.imagesNanoBanana` - images_nano_banana API
 - `client.audioSuno` - audio_suno API
 - `client.assistants` - assistant API
 - `client.audio` - audio API
@@ -278,15 +278,15 @@ println(result)
 ```kotlin
 // Kling create avatar video
 val body = KlingAvatarCreateRequest(
-    modelName = "name",
-    humanImage = "human-image",
-    prompt = "prompt",
-    voiceMode = "voice-mode",
     audioUrl = "audio-url",
+    callbackUrl = "callback-url",
+    humanImage = "human-image",
+    modelName = "name",
+    prompt = "prompt",
     text = "text",
     voiceId = "1",
     voiceLanguage = "voice-language",
-    callbackUrl = "callback-url"
+    voiceMode = "voice-mode"
 )
 val result = client.videosKling.createV1VideosAvatar(body)
 println(result)
@@ -308,6 +308,28 @@ val result = client.imagesMidjourney.createV1ImagesGeneration(body)
 println(result)
 ```
 
+### audio_minimax
+
+```kotlin
+// Minimax create music generation
+val body = MiniMaxMusicGenerationRequest(
+    audioSetting = linkedMapOf<String, Any>(
+    "bitrate" to 1,
+    "format" to "format",
+    "sample_rate" to 3
+),
+    isInstrumental = false,
+    lyrics = "lyrics",
+    lyricsOptimizer = false,
+    model = "model",
+    outputFormat = "output-format",
+    prompt = "prompt",
+    stream = false
+)
+val result = client.audioMinimax.createV1MusicGeneration(body)
+println(result)
+```
+
 ### images_nano_banana
 
 ```kotlin
@@ -322,24 +344,6 @@ val body = NanoBananaImageGenerationRequest(
     size = "size"
 )
 val result = client.imagesNanoBanana.createGeneration(body)
-println(result)
-```
-
-### audio_minimax
-
-```kotlin
-// Minimax create music generation
-val body = MiniMaxMusicGenerationRequest(
-    model = "model",
-    prompt = "prompt",
-    lyrics = "lyrics",
-    stream = false,
-    outputFormat = "output-format",
-    isInstrumental = false,
-    lyricsOptimizer = true,
-    audioSetting = MiniMaxMusicAudioSetting()
-)
-val result = client.audioMinimax.createV1MusicGeneration(body)
 println(result)
 ```
 

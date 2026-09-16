@@ -17,8 +17,8 @@ type SdkworkAiClient struct {
     ChatGoogle *api.ChatGoogleApi
     VideosKling *api.VideosKlingApi
     ImagesMidjourney *api.ImagesMidjourneyApi
-    ImagesNanoBanana *api.ImagesNanoBananaApi
     AudioMinimax *api.AudioMinimaxApi
+    ImagesNanoBanana *api.ImagesNanoBananaApi
     AudioSuno *api.AudioSunoApi
     Assistants *api.AssistantsApi
     Audio *api.AudioApi
@@ -63,8 +63,8 @@ func NewSdkworkAiClientWithConfig(config sdkhttp.Config) *SdkworkAiClient {
         ChatGoogle: api.NewChatGoogleApi(client),
         VideosKling: api.NewVideosKlingApi(client),
         ImagesMidjourney: api.NewImagesMidjourneyApi(client),
-        ImagesNanoBanana: api.NewImagesNanoBananaApi(client),
         AudioMinimax: api.NewAudioMinimaxApi(client),
+        ImagesNanoBanana: api.NewImagesNanoBananaApi(client),
         AudioSuno: api.NewAudioSunoApi(client),
         Assistants: api.NewAssistantsApi(client),
         Audio: api.NewAudioApi(client),

@@ -17,7 +17,7 @@ class ResponsesGoogleApi {
       QueryParameterSpec('pageSize', pageSize, 'form', true, false, null),
       QueryParameterSpec('pageToken', pageToken, 'form', true, false, null)
     ]);
-    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.aiPath('/google/v1beta/cachedContents'), query));
+    final response = await _client.get(ApiPaths.appendQueryString('/google/v1beta/cachedContents', query));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : GoogleCachedContentListResponse.fromJson(map);
@@ -27,7 +27,7 @@ class ResponsesGoogleApi {
   /// Google Gemini create cached content
   Future<GoogleCachedContent?> createV1betaCachedContent(GoogleCachedContentCreateRequest body) async {
     final payload = body.toJson();
-    final response = await _client.post(ApiPaths.aiPath('/google/v1beta/cachedContents'), body: payload, contentType: 'application/json');
+    final response = await _client.post('/google/v1beta/cachedContents', body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : GoogleCachedContent.fromJson(map);
@@ -36,7 +36,7 @@ class ResponsesGoogleApi {
 
   /// Google Gemini cached content
   Future<GoogleEmptyResponse?> deleteV1betaCachedContents(String cachedContentId) async {
-    final response = await _client.delete(ApiPaths.aiPath('/google/v1beta/cachedContents/${serializePathParameter(cachedContentId, const PathParameterSpec('cached_content_id', 'simple', false))}'));
+    final response = await _client.delete('/google/v1beta/cachedContents/${serializePathParameter(cachedContentId, const PathParameterSpec('cached_content_id', 'simple', false))}');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : GoogleEmptyResponse.fromJson(map);

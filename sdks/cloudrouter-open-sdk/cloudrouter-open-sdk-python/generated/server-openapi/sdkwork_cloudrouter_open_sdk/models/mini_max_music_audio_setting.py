@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
 @dataclass
 class MiniMaxMusicAudioSetting:
-    """MiniMax music generation audio setting."""
-    sample_rate: Optional[int] = None
+    """Mini max music audio setting schema exposed by Cloud Router."""
     bitrate: Optional[int] = None
     format: Optional[str] = None
+    sample_rate: Optional[int] = None

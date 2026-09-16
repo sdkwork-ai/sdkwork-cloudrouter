@@ -1,4 +1,3 @@
-import { aiApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { SunoMusicGenerationRequest, SunoMusicGenerationResponse, SunoMusicGenerationTaskResponse } from '../types';
@@ -14,12 +13,12 @@ export class AudioSunoV1MusicGenerationsApi {
 
 /** Suno music generation */
   async create(body: SunoMusicGenerationRequest, requestOptions?: ApiRequestOptions): Promise<SunoMusicGenerationResponse> {
-    return this.client.request<SunoMusicGenerationResponse>(aiApiPath(`/suno/v1/music/generations`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<SunoMusicGenerationResponse>(`/suno/v1/music/generations`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 
 /** Suno retrieve music generation */
   async retrieve(taskId: string, requestOptions?: ApiRequestOptions): Promise<SunoMusicGenerationTaskResponse> {
-    return this.client.request<SunoMusicGenerationTaskResponse>(aiApiPath(`/suno/v1/music/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
+    return this.client.request<SunoMusicGenerationTaskResponse>(`/suno/v1/music/generations/${serializePathParameter(taskId, { name: 'task_id', style: 'simple', explode: false })}`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 

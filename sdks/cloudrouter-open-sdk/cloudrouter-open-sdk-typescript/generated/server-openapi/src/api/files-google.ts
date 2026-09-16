@@ -1,4 +1,3 @@
-import { aiApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { GoogleEmptyResponse, GoogleFile, GoogleFileListResponse, GoogleFileUploadMultipartRequest } from '../types';
@@ -23,22 +22,22 @@ export class FilesGoogleV1betaFilesApi {
       { name: 'pageSize', value: params?.pageSize, style: 'form', explode: true, allowReserved: false },
       { name: 'pageToken', value: params?.pageToken, style: 'form', explode: true, allowReserved: false },
     ]);
-    return this.client.request<GoogleFileListResponse>(appendQueryString(aiApiPath(`/google/v1beta/files`), query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
+    return this.client.request<GoogleFileListResponse>(appendQueryString(`/google/v1beta/files`, query), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 
 /** Google Gemini upload file */
   async create(body: GoogleFileUploadMultipartRequest, requestOptions?: ApiRequestOptions): Promise<GoogleFile> {
-    return this.client.request<GoogleFile>(aiApiPath(`/google/v1beta/files`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'multipart/form-data' });
+    return this.client.request<GoogleFile>(`/google/v1beta/files`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'multipart/form-data' });
   }
 
 /** Google Gemini delete file */
   async delete(fileId: string, requestOptions?: ApiRequestOptions): Promise<GoogleEmptyResponse> {
-    return this.client.request<GoogleEmptyResponse>(aiApiPath(`/google/v1beta/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
+    return this.client.request<GoogleEmptyResponse>(`/google/v1beta/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'DELETE' as any });
   }
 
 /** Google Gemini retrieve file */
   async retrieve(fileId: string, requestOptions?: ApiRequestOptions): Promise<GoogleFile> {
-    return this.client.request<GoogleFile>(aiApiPath(`/google/v1beta/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
+    return this.client.request<GoogleFile>(`/google/v1beta/files/${serializePathParameter(fileId, { name: 'file_id', style: 'simple', explode: false })}`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any });
   }
 }
 

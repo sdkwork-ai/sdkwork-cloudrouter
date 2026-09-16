@@ -15,13 +15,13 @@ public class VideosVolcengineApi {
 
     /** Volcengine Ark content generation task */
     public VolcengineContentGenerationTaskCreateResponse createApiV3ContentsGenerationsTask(VolcengineContentGenerationTaskCreateRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/volcengine/api/v3/contents/generations/tasks"), body, null, null, "application/json");
+        Object raw = client.post("/volcengine/api/v3/contents/generations/tasks", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<VolcengineContentGenerationTaskCreateResponse>() {});
     }
 
     /** Volcengine Ark retrieve content generation task */
     public VolcengineContentGenerationTask listApiV3ContentsGenerationsTasks(String taskId) throws Exception {
-        Object raw = client.get(ApiPaths.aiPath("/volcengine/api/v3/contents/generations/tasks/" + serializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false)) + ""));
+        Object raw = client.get("/volcengine/api/v3/contents/generations/tasks/" + serializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false)) + "");
         return client.convertValue(raw, new TypeReference<VolcengineContentGenerationTask>() {});
     }
 

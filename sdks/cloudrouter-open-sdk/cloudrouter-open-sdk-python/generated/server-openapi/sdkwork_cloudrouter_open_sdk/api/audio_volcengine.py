@@ -22,4 +22,4 @@ class AudioVolcengineApi:
 
     def create_api_v3_audio_speech(self, body: OpenAiSpeechCreateRequest) -> bytes:
         """Volcengine create speech"""
-        return self._client.request_bytes('POST', f"/v1/volcengine/api/v3/audio/speech", json=body)
+        return self._client.request_bytes('POST', f"/volcengine/api/v3/audio/speech", json=body)

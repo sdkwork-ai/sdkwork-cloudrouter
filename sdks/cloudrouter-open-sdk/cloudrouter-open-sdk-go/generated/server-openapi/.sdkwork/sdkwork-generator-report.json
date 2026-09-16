@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "5c3b927bb863d3a2b1d6d1130be08bd20985832098da3d7ab8763d80eda9f8c1",
+  "changeFingerprint": "68f041635e28d89268850e672f6f68f72797429e435694bffc2d03740adabcf3",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -507,7 +507,7 @@
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "5c3b927bb863d3a2b1d6d1130be08bd20985832098da3d7ab8763d80eda9f8c1",
+    "changeFingerprint": "68f041635e28d89268850e672f6f68f72797429e435694bffc2d03740adabcf3",
     "changes": {
       "createdGeneratedFiles": [
         "api/assistants.go",

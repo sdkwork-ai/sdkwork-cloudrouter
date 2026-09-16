@@ -198,12 +198,12 @@ class BatchesAnthropicApi:
             {'name': 'after_id', 'value': after_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
-        return self._client.get(_append_query_string(f"/v1/anthropic/v1/messages/batches", query))
+        return self._client.get(_append_query_string(f"/anthropic/v1/messages/batches", query))
 
     def create_v1_messages_batch(self, body: AnthropicMessageBatchCreateRequest) -> AnthropicMessageBatch:
         """Anthropic create message batch"""
-        return self._client.post(f"/v1/anthropic/v1/messages/batches", json=body)
+        return self._client.post(f"/anthropic/v1/messages/batches", json=body)
 
     def create_v1_messages_batches_cancel(self, batch_id: str) -> AnthropicMessageBatch:
         """Anthropic cancel message batch"""
-        return self._client.post(f"/v1/anthropic/v1/messages/batches/{serialize_path_parameter(batch_id, {'name': 'batch_id', 'style': 'simple', 'explode': False})}/cancel")
+        return self._client.post(f"/anthropic/v1/messages/batches/{serialize_path_parameter(batch_id, {'name': 'batch_id', 'style': 'simple', 'explode': False})}/cancel")

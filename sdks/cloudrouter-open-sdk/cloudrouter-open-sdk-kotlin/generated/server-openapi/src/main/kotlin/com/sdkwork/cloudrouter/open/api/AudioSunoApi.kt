@@ -10,13 +10,13 @@ class AudioSunoApi(private val client: HttpClient) {
 
     /** Suno music generation */
     suspend fun createV1MusicGeneration(body: SunoMusicGenerationRequest): SunoMusicGenerationResponse? {
-        val raw = client.post(ApiPaths.aiPath("/suno/v1/music/generations"), body, null, null, "application/json")
+        val raw = client.post("/suno/v1/music/generations", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<SunoMusicGenerationResponse>() {})
     }
 
     /** Suno retrieve music generation */
     suspend fun listV1MusicGenerations(taskId: String): SunoMusicGenerationTaskResponse? {
-        val raw = client.get(ApiPaths.aiPath("/suno/v1/music/generations/${serializePathParameter(taskId, PathParameterSpec("task_id", "simple", false))}"))
+        val raw = client.get("/suno/v1/music/generations/${serializePathParameter(taskId, PathParameterSpec("task_id", "simple", false))}")
         return client.convertValue(raw, object : TypeReference<SunoMusicGenerationTaskResponse>() {})
     }
 

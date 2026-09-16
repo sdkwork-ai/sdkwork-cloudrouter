@@ -15,7 +15,7 @@ func NewChatAnthropicApi(client *sdkhttp.Client) *ChatAnthropicApi {
 
 // Anthropic Claude message
 func (a *ChatAnthropicApi) CreateV1Message(body sdktypes.AnthropicMessageCreateRequest) (sdktypes.AnthropicMessage, error) {
-    raw, err := a.client.Post(AiApiPath("/anthropic/v1/messages"), body, nil, nil, "application/json")
+    raw, err := a.client.Post("/anthropic/v1/messages", body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.AnthropicMessage
         return zero, err
@@ -25,7 +25,7 @@ func (a *ChatAnthropicApi) CreateV1Message(body sdktypes.AnthropicMessageCreateR
 
 // Anthropic count message tokens
 func (a *ChatAnthropicApi) CreateV1MessagesCountToken(body sdktypes.AnthropicCountMessageTokensRequest) (sdktypes.AnthropicCountMessageTokensResponse, error) {
-    raw, err := a.client.Post(AiApiPath("/anthropic/v1/messages/count_tokens"), body, nil, nil, "application/json")
+    raw, err := a.client.Post("/anthropic/v1/messages/count_tokens", body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.AnthropicCountMessageTokensResponse
         return zero, err

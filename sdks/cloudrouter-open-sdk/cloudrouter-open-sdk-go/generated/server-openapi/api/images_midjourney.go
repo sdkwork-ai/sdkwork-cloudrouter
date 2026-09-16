@@ -18,7 +18,7 @@ func NewImagesMidjourneyApi(client *sdkhttp.Client) *ImagesMidjourneyApi {
 
 // Midjourney image generation
 func (a *ImagesMidjourneyApi) CreateV1ImagesGeneration(body sdktypes.MidjourneyImageGenerationRequest) (sdktypes.MidjourneyImageGenerationTask, error) {
-    raw, err := a.client.Post(AiApiPath("/midjourney/v1/images/generations"), body, nil, nil, "application/json")
+    raw, err := a.client.Post("/midjourney/v1/images/generations", body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.MidjourneyImageGenerationTask
         return zero, err
@@ -28,7 +28,7 @@ func (a *ImagesMidjourneyApi) CreateV1ImagesGeneration(body sdktypes.MidjourneyI
 
 // Midjourney retrieve image generation
 func (a *ImagesMidjourneyApi) ListV1ImagesGenerations(taskId string) (sdktypes.MidjourneyImageGenerationTask, error) {
-    raw, err := a.client.Get(AiApiPath(fmt.Sprintf("/midjourney/v1/images/generations/%s", SerializePathParameter(taskId, PathParameterSpec{Name: "task_id", Style: "simple", Explode: false}))), nil, nil)
+    raw, err := a.client.Get(fmt.Sprintf("/midjourney/v1/images/generations/%s", SerializePathParameter(taskId, PathParameterSpec{Name: "task_id", Style: "simple", Explode: false})), nil, nil)
     if err != nil {
         var zero sdktypes.MidjourneyImageGenerationTask
         return zero, err

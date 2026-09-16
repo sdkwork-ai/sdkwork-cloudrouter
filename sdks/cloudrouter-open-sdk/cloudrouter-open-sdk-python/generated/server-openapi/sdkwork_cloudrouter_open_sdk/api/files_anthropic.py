@@ -198,16 +198,16 @@ class FilesAnthropicApi:
             {'name': 'after_id', 'value': after_id, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'limit', 'value': limit, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
-        return self._client.get(_append_query_string(f"/v1/anthropic/v1/files", query))
+        return self._client.get(_append_query_string(f"/anthropic/v1/files", query))
 
     def create_v1_file(self, body: AnthropicFileUploadMultipartRequest) -> AnthropicFile:
         """Anthropic upload file"""
-        return self._client.post(f"/v1/anthropic/v1/files", data=body)
+        return self._client.post(f"/anthropic/v1/files", data=body)
 
     def delete_v1_files(self, file_id: str) -> AnthropicDeleteResponse:
         """Anthropic delete file"""
-        return self._client.delete(f"/v1/anthropic/v1/files/{serialize_path_parameter(file_id, {'name': 'file_id', 'style': 'simple', 'explode': False})}")
+        return self._client.delete(f"/anthropic/v1/files/{serialize_path_parameter(file_id, {'name': 'file_id', 'style': 'simple', 'explode': False})}")
 
     def list_v1_files_content(self, file_id: str) -> bytes:
         """Anthropic retrieve file content"""
-        return self._client.request_bytes('GET', f"/v1/anthropic/v1/files/{serialize_path_parameter(file_id, {'name': 'file_id', 'style': 'simple', 'explode': False})}/content")
+        return self._client.request_bytes('GET', f"/anthropic/v1/files/{serialize_path_parameter(file_id, {'name': 'file_id', 'style': 'simple', 'explode': False})}/content")

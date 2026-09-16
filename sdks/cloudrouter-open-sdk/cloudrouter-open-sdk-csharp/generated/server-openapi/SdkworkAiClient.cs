@@ -19,8 +19,8 @@ namespace Sdkwork.CloudRouter.Open
         public ChatGoogleApi ChatGoogle { get; }
         public VideosKlingApi VideosKling { get; }
         public ImagesMidjourneyApi ImagesMidjourney { get; }
-        public ImagesNanoBananaApi ImagesNanoBanana { get; }
         public AudioMinimaxApi AudioMinimax { get; }
+        public ImagesNanoBananaApi ImagesNanoBanana { get; }
         public AudioSunoApi AudioSuno { get; }
         public AssistantsApi Assistants { get; }
         public AudioApi Audio { get; }
@@ -58,8 +58,8 @@ namespace Sdkwork.CloudRouter.Open
             ChatGoogle = new ChatGoogleApi(_httpClient);
             VideosKling = new VideosKlingApi(_httpClient);
             ImagesMidjourney = new ImagesMidjourneyApi(_httpClient);
-            ImagesNanoBanana = new ImagesNanoBananaApi(_httpClient);
             AudioMinimax = new AudioMinimaxApi(_httpClient);
+            ImagesNanoBanana = new ImagesNanoBananaApi(_httpClient);
             AudioSuno = new AudioSunoApi(_httpClient);
             Assistants = new AssistantsApi(_httpClient);
             Audio = new AudioApi(_httpClient);
@@ -98,8 +98,8 @@ namespace Sdkwork.CloudRouter.Open
             ChatGoogle = new ChatGoogleApi(_httpClient);
             VideosKling = new VideosKlingApi(_httpClient);
             ImagesMidjourney = new ImagesMidjourneyApi(_httpClient);
-            ImagesNanoBanana = new ImagesNanoBananaApi(_httpClient);
             AudioMinimax = new AudioMinimaxApi(_httpClient);
+            ImagesNanoBanana = new ImagesNanoBananaApi(_httpClient);
             AudioSuno = new AudioSunoApi(_httpClient);
             Assistants = new AssistantsApi(_httpClient);
             Audio = new AudioApi(_httpClient);

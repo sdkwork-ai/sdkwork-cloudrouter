@@ -1,7 +1,6 @@
 import '../http/client.dart';
 import '../models.dart';
 
-import 'paths.dart';
 import 'response_helpers.dart';
 
 
@@ -13,7 +12,7 @@ class EmbeddingsGoogleApi {
   /// Google Gemini batch embed contents
   Future<GoogleBatchEmbedContentsResponse?> createV1betaModelsModelBatchEmbedContent(String model, GoogleBatchEmbedContentsRequest body) async {
     final payload = body.toJson();
-    final response = await _client.post(ApiPaths.aiPath('/google/v1beta/models/${serializePathParameter(model, const PathParameterSpec('model', 'simple', false))}:batchEmbedContents'), body: payload, contentType: 'application/json');
+    final response = await _client.post('/google/v1beta/models/${serializePathParameter(model, const PathParameterSpec('model', 'simple', false))}:batchEmbedContents', body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : GoogleBatchEmbedContentsResponse.fromJson(map);
@@ -23,7 +22,7 @@ class EmbeddingsGoogleApi {
   /// Google Gemini embed content
   Future<GoogleEmbedContentResponse?> createV1betaModelsModelEmbedContent(String model, GoogleEmbedContentRequest body) async {
     final payload = body.toJson();
-    final response = await _client.post(ApiPaths.aiPath('/google/v1beta/models/${serializePathParameter(model, const PathParameterSpec('model', 'simple', false))}:embedContent'), body: payload, contentType: 'application/json');
+    final response = await _client.post('/google/v1beta/models/${serializePathParameter(model, const PathParameterSpec('model', 'simple', false))}:embedContent', body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : GoogleEmbedContentResponse.fromJson(map);

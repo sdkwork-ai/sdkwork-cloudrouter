@@ -15,13 +15,13 @@ public class EmbeddingsGoogleApi {
 
     /** Google Gemini batch embed contents */
     public GoogleBatchEmbedContentsResponse createV1betaModelsModelBatchEmbedContent(String model, GoogleBatchEmbedContentsRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/google/v1beta/models/" + serializePathParameter(model, new PathParameterSpec("model", "simple", false)) + ":batchEmbedContents"), body, null, null, "application/json");
+        Object raw = client.post("/google/v1beta/models/" + serializePathParameter(model, new PathParameterSpec("model", "simple", false)) + ":batchEmbedContents", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<GoogleBatchEmbedContentsResponse>() {});
     }
 
     /** Google Gemini embed content */
     public GoogleEmbedContentResponse createV1betaModelsModelEmbedContent(String model, GoogleEmbedContentRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/google/v1beta/models/" + serializePathParameter(model, new PathParameterSpec("model", "simple", false)) + ":embedContent"), body, null, null, "application/json");
+        Object raw = client.post("/google/v1beta/models/" + serializePathParameter(model, new PathParameterSpec("model", "simple", false)) + ":embedContent", body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<GoogleEmbedContentResponse>() {});
     }
 

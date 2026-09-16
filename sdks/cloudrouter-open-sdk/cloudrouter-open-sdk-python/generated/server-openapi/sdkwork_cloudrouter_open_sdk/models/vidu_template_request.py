@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
 @dataclass
 class ViduTemplateRequest:
-    """Vidu template video request schema (motion sync templates such as motion_control_2) exposed by Cloud Router vendor routing."""
-    template: str
+    """Vidu vidu template request schema exposed by Cloud Router vendor routing."""
     images: List[str]
+    template: str
     video_urls: List[str]
-    payload: Optional[str] = None
     callback_url: Optional[str] = None
+    payload: Optional[str] = None

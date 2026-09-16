@@ -20,7 +20,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.NanoBananaImageGenerationTask?> CreateGenerationAsync(Sdkwork.CloudRouter.Open.Models.NanoBananaImageGenerationRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.NanoBananaImageGenerationTask>(ApiPaths.AiPath("/nano-banana/v1/images/generations"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.NanoBananaImageGenerationTask>("/nano-banana/v1/images/generations", body, null, null, "application/json");
         }
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.NanoBananaImageGenerationTask?> RetrieveGenerationAsync(string taskId)
         {
-            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.NanoBananaImageGenerationTask>(ApiPaths.AiPath($"/nano-banana/v1/images/generations/{SerializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false))}"));
+            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.NanoBananaImageGenerationTask>($"/nano-banana/v1/images/generations/{SerializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false))}");
         }
 
         private sealed record PathParameterSpec(string Name, string Style, bool Explode);

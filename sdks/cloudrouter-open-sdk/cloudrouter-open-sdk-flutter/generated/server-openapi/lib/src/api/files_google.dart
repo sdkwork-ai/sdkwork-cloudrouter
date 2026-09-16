@@ -17,7 +17,7 @@ class FilesGoogleApi {
       QueryParameterSpec('pageSize', pageSize, 'form', true, false, null),
       QueryParameterSpec('pageToken', pageToken, 'form', true, false, null)
     ]);
-    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.aiPath('/google/v1beta/files'), query));
+    final response = await _client.get(ApiPaths.appendQueryString('/google/v1beta/files', query));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : GoogleFileListResponse.fromJson(map);
@@ -27,7 +27,7 @@ class FilesGoogleApi {
   /// Google Gemini upload file
   Future<GoogleFile?> createV1betaFile(GoogleFileUploadMultipartRequest body) async {
     final payload = body.toJson();
-    final response = await _client.post(ApiPaths.aiPath('/google/v1beta/files'), body: payload, contentType: 'multipart/form-data');
+    final response = await _client.post('/google/v1beta/files', body: payload, contentType: 'multipart/form-data');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : GoogleFile.fromJson(map);
@@ -36,7 +36,7 @@ class FilesGoogleApi {
 
   /// Google Gemini delete file
   Future<GoogleEmptyResponse?> deleteV1betaFiles(String fileId) async {
-    final response = await _client.delete(ApiPaths.aiPath('/google/v1beta/files/${serializePathParameter(fileId, const PathParameterSpec('file_id', 'simple', false))}'));
+    final response = await _client.delete('/google/v1beta/files/${serializePathParameter(fileId, const PathParameterSpec('file_id', 'simple', false))}');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : GoogleEmptyResponse.fromJson(map);

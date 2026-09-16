@@ -25,7 +25,7 @@ namespace Sdkwork.CloudRouter.Open.Api
                 new QueryParameterSpec("pageSize", pageSize, "form", true, false, null),
                 new QueryParameterSpec("pageToken", pageToken, "form", true, false, null),
             });
-            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.GoogleCachedContentListResponse>(ApiPaths.AppendQueryString(ApiPaths.AiPath("/google/v1beta/cachedContents"), queryString));
+            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.GoogleCachedContentListResponse>(ApiPaths.AppendQueryString("/google/v1beta/cachedContents", queryString));
         }
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.GoogleCachedContent?> CreateV1betaCachedContentAsync(Sdkwork.CloudRouter.Open.Models.GoogleCachedContentCreateRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.GoogleCachedContent>(ApiPaths.AiPath("/google/v1beta/cachedContents"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.GoogleCachedContent>("/google/v1beta/cachedContents", body, null, null, "application/json");
         }
 
         /// <summary>
@@ -41,7 +41,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.GoogleEmptyResponse?> DeleteV1betaCachedContentsAsync(string cachedContentId)
         {
-            return await _client.DeleteAsync<Sdkwork.CloudRouter.Open.Models.GoogleEmptyResponse>(ApiPaths.AiPath($"/google/v1beta/cachedContents/{SerializePathParameter(cachedContentId, new PathParameterSpec("cached_content_id", "simple", false))}"));
+            return await _client.DeleteAsync<Sdkwork.CloudRouter.Open.Models.GoogleEmptyResponse>($"/google/v1beta/cachedContents/{SerializePathParameter(cachedContentId, new PathParameterSpec("cached_content_id", "simple", false))}");
         }
 
         private sealed record PathParameterSpec(string Name, string Style, bool Explode);

@@ -20,7 +20,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.ViduImageGenerationTask?> CreateEntV2Reference2imageAsync(Sdkwork.CloudRouter.Open.Models.ViduReferenceToImageRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.ViduImageGenerationTask>(ApiPaths.AiPath("/vidu/ent/v2/reference2image"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.ViduImageGenerationTask>("/vidu/ent/v2/reference2image", body, null, null, "application/json");
         }
 
 

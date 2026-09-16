@@ -70,8 +70,8 @@ client.setHeader('X-Custom-Header', 'value');
 - `client.chatGoogle` - chat_google API
 - `client.videosKling` - videos_kling API
 - `client.imagesMidjourney` - images_midjourney API
-- `client.imagesNanoBanana` - images_nano_banana API
 - `client.audioMinimax` - audio_minimax API
+- `client.imagesNanoBanana` - images_nano_banana API
 - `client.audioSuno` - audio_suno API
 - `client.assistants` - assistant API
 - `client.audio` - audio API
@@ -210,15 +210,15 @@ print(result);
 ```dart
 // Kling create avatar video
 final body = KlingAvatarCreateRequest(
-  modelName: 'name',
-  humanImage: 'human-image',
-  prompt: 'prompt',
-  voiceMode: 'voice-mode',
   audioUrl: 'audio-url',
+  callbackUrl: 'callback-url',
+  humanImage: 'human-image',
+  modelName: 'name',
+  prompt: 'prompt',
   text: 'text',
   voiceId: '1',
   voiceLanguage: 'voice-language',
-  callbackUrl: 'callback-url',
+  voiceMode: 'voice-mode',
 );
 final result = await client.videosKling.createV1VideosAvatar(body);
 print(result);
@@ -239,6 +239,23 @@ final result = await client.imagesMidjourney.createV1ImagesGeneration(body);
 print(result);
 ```
 
+### audio_minimax
+```dart
+// Minimax create music generation
+final body = MiniMaxMusicGenerationRequest(
+  audioSetting: { 'bitrate': 1, 'format': 'format', 'sample_rate': 3 },
+  isInstrumental: false,
+  lyrics: 'lyrics',
+  lyricsOptimizer: false,
+  model: 'model',
+  outputFormat: 'output-format',
+  prompt: 'prompt',
+  stream: false,
+);
+final result = await client.audioMinimax.createV1MusicGeneration(body);
+print(result);
+```
+
 ### images_nano_banana
 ```dart
 // Nano Banana image generation
@@ -252,23 +269,6 @@ final body = NanoBananaImageGenerationRequest(
   size: 'size',
 );
 final result = await client.imagesNanoBanana.createGeneration(body);
-print(result);
-```
-
-### audio_minimax
-```dart
-// Minimax create music generation
-final body = MiniMaxMusicGenerationRequest(
-  model: 'model',
-  prompt: 'prompt',
-  lyrics: 'lyrics',
-  stream: false,
-  outputFormat: 'output-format',
-  isInstrumental: false,
-  lyricsOptimizer: true,
-  audioSetting: MiniMaxMusicAudioSetting(),
-);
-final result = await client.audioMinimax.createV1MusicGeneration(body);
 print(result);
 ```
 

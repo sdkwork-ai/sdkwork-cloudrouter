@@ -18,7 +18,7 @@ public class AudioElevenlabsApi {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("output_format", outputFormat, "form", true, false, null)
         ));
-        Object raw = client.post(ApiPaths.appendQueryString(ApiPaths.aiPath("/elevenlabs/v1/sound-generation"), query), body, null, null, "application/json");
+        Object raw = client.post(ApiPaths.appendQueryString("/elevenlabs/v1/sound-generation", query), body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<ElevenLabsSoundGenerationResponse>() {});
     }
 
@@ -27,7 +27,7 @@ public class AudioElevenlabsApi {
         String query = buildQueryString(List.of(
             new QueryParameterSpec("output_format", outputFormat, "form", true, false, null)
         ));
-        Object raw = client.post(ApiPaths.appendQueryString(ApiPaths.aiPath("/elevenlabs/v1/text-to-speech/" + serializePathParameter(voiceId, new PathParameterSpec("voice_id", "simple", false)) + ""), query), body, null, null, "application/json");
+        Object raw = client.post(ApiPaths.appendQueryString("/elevenlabs/v1/text-to-speech/" + serializePathParameter(voiceId, new PathParameterSpec("voice_id", "simple", false)) + "", query), body, null, null, "application/json");
         return client.convertValue(raw, new TypeReference<ElevenLabsTextToSpeechResponse>() {});
     }
 

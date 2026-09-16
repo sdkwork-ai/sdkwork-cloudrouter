@@ -8,12 +8,12 @@ if TYPE_CHECKING:
 
 @dataclass
 class MiniMaxMusicGenerationRequest:
-    """MiniMax music generation request payload."""
+    """Mini max music generation request schema exposed by Cloud Router."""
     model: str
-    prompt: Optional[str] = None
-    lyrics: Optional[str] = None
-    stream: Optional[bool] = None
-    output_format: Optional[str] = None
-    is_instrumental: Optional[bool] = None
-    lyrics_optimizer: Optional[bool] = None
     audio_setting: Optional[MiniMaxMusicAudioSetting] = None
+    is_instrumental: Optional[bool] = None
+    lyrics: Optional[str] = None
+    lyrics_optimizer: Optional[bool] = None
+    output_format: Optional[str] = None
+    prompt: Optional[str] = None
+    stream: Optional[bool] = None

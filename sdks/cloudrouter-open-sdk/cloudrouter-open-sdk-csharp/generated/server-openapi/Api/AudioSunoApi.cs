@@ -20,7 +20,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.SunoMusicGenerationResponse?> CreateV1MusicGenerationAsync(Sdkwork.CloudRouter.Open.Models.SunoMusicGenerationRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.SunoMusicGenerationResponse>(ApiPaths.AiPath("/suno/v1/music/generations"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.SunoMusicGenerationResponse>("/suno/v1/music/generations", body, null, null, "application/json");
         }
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.SunoMusicGenerationTaskResponse?> ListV1MusicGenerationsAsync(string taskId)
         {
-            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.SunoMusicGenerationTaskResponse>(ApiPaths.AiPath($"/suno/v1/music/generations/{SerializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false))}"));
+            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.SunoMusicGenerationTaskResponse>($"/suno/v1/music/generations/{SerializePathParameter(taskId, new PathParameterSpec("task_id", "simple", false))}");
         }
 
         private sealed record PathParameterSpec(string Name, string Style, bool Explode);

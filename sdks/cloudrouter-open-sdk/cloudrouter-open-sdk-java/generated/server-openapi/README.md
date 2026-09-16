@@ -89,8 +89,8 @@ client.getHttpClient().setHeader("X-Custom-Header", "value");
 - `client.getChatGoogle()` - chat_google API
 - `client.getVideosKling()` - videos_kling API
 - `client.getImagesMidjourney()` - images_midjourney API
-- `client.getImagesNanoBanana()` - images_nano_banana API
 - `client.getAudioMinimax()` - audio_minimax API
+- `client.getImagesNanoBanana()` - images_nano_banana API
 - `client.getAudioSuno()` - audio_suno API
 - `client.getAssistants()` - assistant API
 - `client.getAudio()` - audio API
@@ -229,15 +229,15 @@ System.out.println(result);
 ```java
 // Kling create avatar video
 KlingAvatarCreateRequest body = new KlingAvatarCreateRequest();
-body.setModelName("name");
-body.setHumanImage("human-image");
-body.setPrompt("prompt");
-body.setVoiceMode("voice-mode");
 body.setAudioUrl("audio-url");
+body.setCallbackUrl("callback-url");
+body.setHumanImage("human-image");
+body.setModelName("name");
+body.setPrompt("prompt");
 body.setText("text");
 body.setVoiceId("1");
 body.setVoiceLanguage("voice-language");
-body.setCallbackUrl("callback-url");
+body.setVoiceMode("voice-mode");
 KlingVideoGenerationTask result = client.getVideosKling().createV1VideosAvatar(body);
 System.out.println(result);
 ```
@@ -257,6 +257,23 @@ MidjourneyImageGenerationTask result = client.getImagesMidjourney().createV1Imag
 System.out.println(result);
 ```
 
+### audio_minimax
+
+```java
+// Minimax create music generation
+MiniMaxMusicGenerationRequest body = new MiniMaxMusicGenerationRequest();
+body.setAudioSetting(new LinkedHashMap<>());
+body.setIsInstrumental(false);
+body.setLyrics("lyrics");
+body.setLyricsOptimizer(false);
+body.setModel("model");
+body.setOutputFormat("output-format");
+body.setPrompt("prompt");
+body.setStream(false);
+MiniMaxMusicGenerationResponse result = client.getAudioMinimax().createV1MusicGeneration(body);
+System.out.println(result);
+```
+
 ### images_nano_banana
 
 ```java
@@ -270,23 +287,6 @@ body.setPrompt("prompt");
 body.setSeed(6);
 body.setSize("size");
 NanoBananaImageGenerationTask result = client.getImagesNanoBanana().createGeneration(body);
-System.out.println(result);
-```
-
-### audio_minimax
-
-```java
-// Minimax create music generation
-MiniMaxMusicGenerationRequest body = new MiniMaxMusicGenerationRequest();
-body.setModel("model");
-body.setPrompt("prompt");
-body.setLyrics("lyrics");
-body.setStream(false);
-body.setOutputFormat("output-format");
-body.setIsInstrumental(false);
-body.setLyricsOptimizer(true);
-body.setAudioSetting(new MiniMaxMusicAudioSetting());
-MiniMaxMusicGenerationResponse result = client.getAudioMinimax().createV1MusicGeneration(body);
 System.out.println(result);
 ```
 

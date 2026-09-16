@@ -1,7 +1,6 @@
 import '../http/client.dart';
 import '../models.dart';
 
-import 'paths.dart';
 import 'response_helpers.dart';
 
 
@@ -13,7 +12,7 @@ class ChatGoogleApi {
   /// Google Gemini count tokens
   Future<GoogleCountTokensResponse?> createV1betaModelsModelCountToken(String model, GoogleCountTokensRequest body) async {
     final payload = body.toJson();
-    final response = await _client.post(ApiPaths.aiPath('/google/v1beta/models/${serializePathParameter(model, const PathParameterSpec('model', 'simple', false))}:countTokens'), body: payload, contentType: 'application/json');
+    final response = await _client.post('/google/v1beta/models/${serializePathParameter(model, const PathParameterSpec('model', 'simple', false))}:countTokens', body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : GoogleCountTokensResponse.fromJson(map);
@@ -23,7 +22,7 @@ class ChatGoogleApi {
   /// Google Gemini generate content
   Future<GoogleGenerateContentResponse?> createV1betaModelsModelGenerateContent(String model, GoogleGenerateContentRequest body) async {
     final payload = body.toJson();
-    final response = await _client.post(ApiPaths.aiPath('/google/v1beta/models/${serializePathParameter(model, const PathParameterSpec('model', 'simple', false))}:generateContent'), body: payload, contentType: 'application/json');
+    final response = await _client.post('/google/v1beta/models/${serializePathParameter(model, const PathParameterSpec('model', 'simple', false))}:generateContent', body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : GoogleGenerateContentResponse.fromJson(map);
@@ -33,7 +32,7 @@ class ChatGoogleApi {
   /// Google Gemini stream generate content
   Future<GoogleGenerateContentResponse?> createV1betaModelsModelStreamGenerateContent(String model, GoogleGenerateContentRequest body) async {
     final payload = body.toJson();
-    final response = await _client.post(ApiPaths.aiPath('/google/v1beta/models/${serializePathParameter(model, const PathParameterSpec('model', 'simple', false))}:streamGenerateContent'), body: payload, contentType: 'application/json');
+    final response = await _client.post('/google/v1beta/models/${serializePathParameter(model, const PathParameterSpec('model', 'simple', false))}:streamGenerateContent', body: payload, contentType: 'application/json');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : GoogleGenerateContentResponse.fromJson(map);

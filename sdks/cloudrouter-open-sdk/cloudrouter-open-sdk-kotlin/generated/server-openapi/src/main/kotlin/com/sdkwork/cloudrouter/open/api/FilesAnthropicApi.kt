@@ -15,25 +15,25 @@ class FilesAnthropicApi(private val client: HttpClient) {
             QueryParameterSpec("after_id", afterId, "form", true, false, null),
             QueryParameterSpec("limit", limit, "form", true, false, null)
         ))
-        val raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/anthropic/v1/files"), query))
+        val raw = client.get(ApiPaths.appendQueryString("/anthropic/v1/files", query))
         return client.convertValue(raw, object : TypeReference<AnthropicFileListResponse>() {})
     }
 
     /** Anthropic upload file */
     suspend fun createV1File(body: AnthropicFileUploadMultipartRequest): AnthropicFile? {
-        val raw = client.post(ApiPaths.aiPath("/anthropic/v1/files"), body, null, null, "multipart/form-data")
+        val raw = client.post("/anthropic/v1/files", body, null, null, "multipart/form-data")
         return client.convertValue(raw, object : TypeReference<AnthropicFile>() {})
     }
 
     /** Anthropic delete file */
     suspend fun deleteV1Files(fileId: String): AnthropicDeleteResponse? {
-        val raw = client.delete(ApiPaths.aiPath("/anthropic/v1/files/${serializePathParameter(fileId, PathParameterSpec("file_id", "simple", false))}"))
+        val raw = client.delete("/anthropic/v1/files/${serializePathParameter(fileId, PathParameterSpec("file_id", "simple", false))}")
         return client.convertValue(raw, object : TypeReference<AnthropicDeleteResponse>() {})
     }
 
     /** Anthropic retrieve file content */
     suspend fun listV1FilesContent(fileId: String): String? {
-        val raw = client.get(ApiPaths.aiPath("/anthropic/v1/files/${serializePathParameter(fileId, PathParameterSpec("file_id", "simple", false))}/content"))
+        val raw = client.get("/anthropic/v1/files/${serializePathParameter(fileId, PathParameterSpec("file_id", "simple", false))}/content")
         return client.convertValue(raw, object : TypeReference<String>() {})
     }
 

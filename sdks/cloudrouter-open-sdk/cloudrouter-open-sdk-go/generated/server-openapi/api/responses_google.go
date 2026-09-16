@@ -23,7 +23,7 @@ func (a *ResponsesGoogleApi) ListV1betaCachedContents(pageSize *int, pageToken *
         {Name: "pageSize", Value: func() interface{} { if pageSize == nil { return nil }; return *pageSize }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "pageToken", Value: func() interface{} { if pageToken == nil { return nil }; return *pageToken }(), Style: "form", Explode: true, AllowReserved: false},
     })
-    raw, err := a.client.Get(AppendQueryString(AiApiPath("/google/v1beta/cachedContents"), query), nil, nil)
+    raw, err := a.client.Get(AppendQueryString("/google/v1beta/cachedContents", query), nil, nil)
     if err != nil {
         var zero sdktypes.GoogleCachedContentListResponse
         return zero, err
@@ -33,7 +33,7 @@ func (a *ResponsesGoogleApi) ListV1betaCachedContents(pageSize *int, pageToken *
 
 // Google Gemini create cached content
 func (a *ResponsesGoogleApi) CreateV1betaCachedContent(body sdktypes.GoogleCachedContentCreateRequest) (sdktypes.GoogleCachedContent, error) {
-    raw, err := a.client.Post(AiApiPath("/google/v1beta/cachedContents"), body, nil, nil, "application/json")
+    raw, err := a.client.Post("/google/v1beta/cachedContents", body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.GoogleCachedContent
         return zero, err
@@ -43,7 +43,7 @@ func (a *ResponsesGoogleApi) CreateV1betaCachedContent(body sdktypes.GoogleCache
 
 // Google Gemini cached content
 func (a *ResponsesGoogleApi) DeleteV1betaCachedContents(cachedContentId string) (sdktypes.GoogleEmptyResponse, error) {
-    raw, err := a.client.Delete(AiApiPath(fmt.Sprintf("/google/v1beta/cachedContents/%s", SerializePathParameter(cachedContentId, PathParameterSpec{Name: "cached_content_id", Style: "simple", Explode: false}))), nil, nil)
+    raw, err := a.client.Delete(fmt.Sprintf("/google/v1beta/cachedContents/%s", SerializePathParameter(cachedContentId, PathParameterSpec{Name: "cached_content_id", Style: "simple", Explode: false})), nil, nil)
     if err != nil {
         var zero sdktypes.GoogleEmptyResponse
         return zero, err

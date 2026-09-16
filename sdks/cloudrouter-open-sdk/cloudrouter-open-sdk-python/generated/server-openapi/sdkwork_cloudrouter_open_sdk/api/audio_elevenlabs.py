@@ -196,11 +196,11 @@ class AudioElevenlabsApi:
         query = build_query_string([
             {'name': 'output_format', 'value': output_format, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
-        return self._client.post(_append_query_string(f"/v1/elevenlabs/v1/sound-generation", query), json=body)
+        return self._client.post(_append_query_string(f"/elevenlabs/v1/sound-generation", query), json=body)
 
     def create_v1_text_to_speech(self, voice_id: str, body: ElevenLabsTextToSpeechRequest, output_format: Optional[str] = None) -> ElevenLabsTextToSpeechResponse:
         """Synthesize speech"""
         query = build_query_string([
             {'name': 'output_format', 'value': output_format, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
-        return self._client.post(_append_query_string(f"/v1/elevenlabs/v1/text-to-speech/{serialize_path_parameter(voice_id, {'name': 'voice_id', 'style': 'simple', 'explode': False})}", query), json=body)
+        return self._client.post(_append_query_string(f"/elevenlabs/v1/text-to-speech/{serialize_path_parameter(voice_id, {'name': 'voice_id', 'style': 'simple', 'explode': False})}", query), json=body)

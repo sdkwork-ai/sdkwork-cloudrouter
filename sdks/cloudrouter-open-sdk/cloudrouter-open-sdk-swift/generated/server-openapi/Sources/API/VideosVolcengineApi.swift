@@ -9,12 +9,12 @@ public class VideosVolcengineApi {
 
     /// Volcengine Ark content generation task
     public func createApiV3ContentsGenerationsTask(body: VolcengineContentGenerationTaskCreateRequest) async throws -> VolcengineContentGenerationTaskCreateResponse? {
-        return try await client.post(ApiPaths.aiPath("/volcengine/api/v3/contents/generations/tasks"), body: body, params: nil, headers: nil, contentType: "application/json", responseType: VolcengineContentGenerationTaskCreateResponse.self)
+        return try await client.post("/volcengine/api/v3/contents/generations/tasks", body: body, params: nil, headers: nil, contentType: "application/json", responseType: VolcengineContentGenerationTaskCreateResponse.self)
     }
 
     /// Volcengine Ark retrieve content generation task
     public func listApiV3ContentsGenerationsTasks(taskId: String) async throws -> VolcengineContentGenerationTask? {
-        return try await client.get(ApiPaths.aiPath("/volcengine/api/v3/contents/generations/tasks/\(serializePathParameter(taskId, PathParameterSpec(name: "task_id", style: "simple", explode: false)))"), responseType: VolcengineContentGenerationTask.self)
+        return try await client.get("/volcengine/api/v3/contents/generations/tasks/\(serializePathParameter(taskId, PathParameterSpec(name: "task_id", style: "simple", explode: false)))", responseType: VolcengineContentGenerationTask.self)
     }
 
     private struct PathParameterSpec {

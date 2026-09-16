@@ -10,19 +10,19 @@ class ChatGoogleApi(private val client: HttpClient) {
 
     /** Google Gemini count tokens */
     suspend fun createV1betaModelsModelCountToken(model: String, body: GoogleCountTokensRequest): GoogleCountTokensResponse? {
-        val raw = client.post(ApiPaths.aiPath("/google/v1beta/models/${serializePathParameter(model, PathParameterSpec("model", "simple", false))}:countTokens"), body, null, null, "application/json")
+        val raw = client.post("/google/v1beta/models/${serializePathParameter(model, PathParameterSpec("model", "simple", false))}:countTokens", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<GoogleCountTokensResponse>() {})
     }
 
     /** Google Gemini generate content */
     suspend fun createV1betaModelsModelGenerateContent(model: String, body: GoogleGenerateContentRequest): GoogleGenerateContentResponse? {
-        val raw = client.post(ApiPaths.aiPath("/google/v1beta/models/${serializePathParameter(model, PathParameterSpec("model", "simple", false))}:generateContent"), body, null, null, "application/json")
+        val raw = client.post("/google/v1beta/models/${serializePathParameter(model, PathParameterSpec("model", "simple", false))}:generateContent", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<GoogleGenerateContentResponse>() {})
     }
 
     /** Google Gemini stream generate content */
     suspend fun createV1betaModelsModelStreamGenerateContent(model: String, body: GoogleGenerateContentRequest): GoogleGenerateContentResponse? {
-        val raw = client.post(ApiPaths.aiPath("/google/v1beta/models/${serializePathParameter(model, PathParameterSpec("model", "simple", false))}:streamGenerateContent"), body, null, null, "application/json")
+        val raw = client.post("/google/v1beta/models/${serializePathParameter(model, PathParameterSpec("model", "simple", false))}:streamGenerateContent", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<GoogleGenerateContentResponse>() {})
     }
 

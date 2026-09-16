@@ -18,7 +18,7 @@ func NewImagesNanoBananaApi(client *sdkhttp.Client) *ImagesNanoBananaApi {
 
 // Nano Banana image generation
 func (a *ImagesNanoBananaApi) CreateGeneration(body sdktypes.NanoBananaImageGenerationRequest) (sdktypes.NanoBananaImageGenerationTask, error) {
-    raw, err := a.client.Post(AiApiPath("/nano-banana/v1/images/generations"), body, nil, nil, "application/json")
+    raw, err := a.client.Post("/nano-banana/v1/images/generations", body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.NanoBananaImageGenerationTask
         return zero, err
@@ -28,7 +28,7 @@ func (a *ImagesNanoBananaApi) CreateGeneration(body sdktypes.NanoBananaImageGene
 
 // Nano Banana retrieve image generation
 func (a *ImagesNanoBananaApi) RetrieveGeneration(taskId string) (sdktypes.NanoBananaImageGenerationTask, error) {
-    raw, err := a.client.Get(AiApiPath(fmt.Sprintf("/nano-banana/v1/images/generations/%s", SerializePathParameter(taskId, PathParameterSpec{Name: "task_id", Style: "simple", Explode: false}))), nil, nil)
+    raw, err := a.client.Get(fmt.Sprintf("/nano-banana/v1/images/generations/%s", SerializePathParameter(taskId, PathParameterSpec{Name: "task_id", Style: "simple", Explode: false})), nil, nil)
     if err != nil {
         var zero sdktypes.NanoBananaImageGenerationTask
         return zero, err

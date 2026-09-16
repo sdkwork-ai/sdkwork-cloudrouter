@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use crate::api::paths::ai_path;
 use crate::http::{SdkworkError, SdkworkHttpClient};
 use crate::models::{MidjourneyImageGenerationRequest, MidjourneyImageGenerationTask};
 
@@ -16,13 +15,13 @@ impl ImagesMidjourneyApi {
 
     /// Midjourney image generation
     pub async fn create_v1_images_generation(&self, body: &MidjourneyImageGenerationRequest) -> Result<MidjourneyImageGenerationTask, SdkworkError> {
-        let path = ai_path(&"/midjourney/v1/images/generations".to_string());
+        let path = "/midjourney/v1/images/generations".to_string();
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Midjourney retrieve image generation
     pub async fn list_v1_images_generations(&self, task_id: &str) -> Result<MidjourneyImageGenerationTask, SdkworkError> {
-        let path = ai_path(&format!("/midjourney/v1/images/generations/{}", serialize_path_parameter(task_id, PathParameterSpec::new("task_id", "simple", false))));
+        let path = format!("/midjourney/v1/images/generations/{}", serialize_path_parameter(task_id, PathParameterSpec::new("task_id", "simple", false)));
         self.client.get(&path, None, None).await
     }
 

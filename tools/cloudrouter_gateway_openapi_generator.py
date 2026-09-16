@@ -68,9 +68,39 @@ VENDOR_PROVIDER_PREFIXES = {
     "midjourney",
     "kling",
     "vidu",
+    "minimax",
     "nano-banana",
     "elevenlabs",
 }
+
+# The OpenAI-compatible surface. `x-api-prefix` names it, but provider-native
+# routes are registered verbatim on the same origin (`/kling/v1/videos/avatar`).
+OPEN_API_PREFIX = "/v1"
+
+
+def vendor_path_prefixes_from_paths(
+    paths: dict[str, Any],
+    api_prefix: str = OPEN_API_PREFIX,
+) -> list[str]:
+    """Top-level namespaces served *outside* the OpenAI-compatible prefix.
+
+    `x-api-prefix` describes one family of the open-api surface, not the mount
+    point of the surface. SDK generators apply that prefix to every path unless
+    they are told which top-level segments are registered verbatim, so a
+    provider-native path used to be emitted as `/v1/kling/v1/videos/avatar`.
+    The gateway answers 404 for that: `invocation_http::classify_request`
+    classifies any `/v1/...` path as an OpenAI-compatible resource, so the
+    provider-native route is never reached. Derived from the contract itself so
+    the declaration cannot drift from the paths it describes.
+    """
+    prefix_segment = api_prefix.strip("/")
+    prefixes: set[str] = set()
+    for raw_path in paths:
+        segments = [segment for segment in str(raw_path).split("/") if segment]
+        if not segments or segments[0] == prefix_segment:
+            continue
+        prefixes.add(segments[0])
+    return sorted(prefixes)
 
 
 def audit_vendor_schema_quality(
@@ -590,6 +620,7 @@ class CloudRouterGatewayOpenApiGenerator:
     def generate(self) -> dict[str, Any]:
         components = self._components()
         self._normalize_component_schema_descriptions(components)
+        paths = self._paths()
         spec = {
             "openapi": "3.0.3",
             "info": {
@@ -608,9 +639,12 @@ class CloudRouterGatewayOpenApiGenerator:
             ],
             "security": [{"bearerAuth": []}],
             "tags": self._tags(),
-            "paths": self._paths(),
+            "paths": paths,
             "components": components,
-            "x-api-prefix": "/v1",
+            "x-api-prefix": OPEN_API_PREFIX,
+            # Paths under these segments are registered verbatim and must be
+            # emitted by SDK generators without the `x-api-prefix` prefix.
+            "x-sdkwork-vendor-path-prefixes": vendor_path_prefixes_from_paths(paths),
             "x-router-product": "sdkwork-cloudrouter",
             # OpenAI/Anthropic compatible gateway mirror: protocol-required JSON
             # numbers for timestamps/bytes/seeds (all < 2^53) are exempt from the
@@ -3193,6 +3227,8 @@ class CloudRouterGatewayOpenApiGenerator:
             {"name": "Images/nano-banana", "description": "Nano Banana compatible image APIs exposed through Cloud Router vendor routing."},
             {"name": "Videos/kling", "description": "Kling-compatible video APIs exposed through Cloud Router vendor routing."},
             {"name": "Audio/suno", "description": "Suno-compatible music APIs exposed through Cloud Router vendor routing."},
+            {"name": "Audio/minimax", "description": "MiniMax-compatible music APIs exposed through Cloud Router vendor routing."},
+            {"name": "Audio/volcengine", "description": "Volcengine Ark speech APIs exposed through Cloud Router vendor routing."},
             {"name": "Audio/elevenlabs", "description": "ElevenLabs-compatible audio APIs exposed through Cloud Router vendor routing."},
             {"name": "Chat/google", "description": "Google Gemini content generation APIs exposed through Cloud Router vendor routing."},
             {"name": "Responses/google", "description": "Google Gemini cached content APIs exposed through Cloud Router vendor routing."},
@@ -3393,20 +3429,25 @@ class CloudRouterGatewayOpenApiGenerator:
             "/anthropic/v1/files/{file_id}/content": {"get": self._operation("Files/anthropic", "anthropicRetrieveFileContent", "Anthropic retrieve file content", "Retrieves Anthropic file content using the configured Anthropic provider account.", None, "BinaryResponse", parameters=[self._path_param("file_id", "Anthropic file identifier.")], provider="anthropic")},
             "/volcengine/api/v3/contents/generations/tasks": {"post": self._operation("Videos/volcengine", "volcengineCreateContentGenerationTask", "Volcengine Ark content generation task", "Creates a Volcengine Ark image, video, or content generation task using the configured Volcengine provider account.", "VolcengineContentGenerationTaskCreateRequest", "VolcengineContentGenerationTaskCreateResponse", provider="volcengine")},
             "/volcengine/api/v3/contents/generations/tasks/{task_id}": {"get": self._operation("Videos/volcengine", "volcengineRetrieveContentGenerationTask", "Volcengine Ark retrieve content generation task", "Retrieves a Volcengine Ark task using the configured Volcengine provider account.", None, "VolcengineContentGenerationTask", parameters=[self._path_param("task_id", "Volcengine content generation task identifier.")], provider="volcengine")},
+            "/volcengine/api/v3/audio/speech": {"post": self._operation("Audio/volcengine", "volcengineCreateSpeech", "Volcengine create speech", "Synthesizes speech through the Volcengine Ark audio speech surface using the configured Volcengine provider account.", "OpenAiSpeechCreateRequest", "BinaryResponse", provider="volcengine")},
             "/suno/v1/music/generations": {"post": self._operation("Audio/suno", "sunoCreateMusicGeneration", "Suno music generation", "Creates a Suno-compatible music generation using the configured Suno provider account.", "SunoMusicGenerationRequest", "SunoMusicGenerationResponse", provider="suno")},
             "/suno/v1/music/generations/{task_id}": {"get": self._operation("Audio/suno", "sunoRetrieveMusicGeneration", "Suno retrieve music generation", "Retrieves a Suno-compatible music generation task using the configured Suno provider account.", None, "SunoMusicGenerationTaskResponse", parameters=[self._path_param("task_id", "Suno task identifier.")], provider="suno")},
             "/elevenlabs/v1/sound-generation": {"post": self._operation("Audio/elevenlabs", "elevenlabsCreateSoundGeneration", "Generate sound effect", "Generates a sound effect from a text description through the ElevenLabs-compatible sound generation surface.", "ElevenLabsSoundGenerationRequest", "ElevenLabsSoundGenerationResponse", parameters=[self._query_param("output_format", "Requested output audio format, for example mp3_44100_128.")], provider="elevenlabs")},
             "/elevenlabs/v1/text-to-speech/{voice_id}": {"post": self._operation("Audio/elevenlabs", "elevenlabsCreateTextToSpeech", "Synthesize speech", "Synthesizes speech for the given voice through the ElevenLabs-compatible text-to-speech surface.", "ElevenLabsTextToSpeechRequest", "ElevenLabsTextToSpeechResponse", parameters=[self._path_param("voice_id", "ElevenLabs voice identifier."), self._query_param("output_format", "Requested output audio format, for example mp3_44100_128.")], provider="elevenlabs")},
             "/midjourney/v1/images/generations": {"post": self._operation("Images/midjourney", "midjourneyCreateImageGeneration", "Midjourney image generation", "Creates a Midjourney-compatible image generation using the configured Midjourney provider account.", "MidjourneyImageGenerationRequest", "MidjourneyImageGenerationTask", provider="midjourney")},
             "/midjourney/v1/images/generations/{task_id}": {"get": self._operation("Images/midjourney", "midjourneyRetrieveImageGeneration", "Midjourney retrieve image generation", "Retrieves a Midjourney-compatible image generation task using the configured Midjourney provider account.", None, "MidjourneyImageGenerationTask", parameters=[self._path_param("task_id", "Midjourney task identifier.")], provider="midjourney")},
+            "/minimax/v1/music_generation": {"post": self._operation("Audio/minimax", "minimaxCreateMusicGeneration", "Minimax create music generation", "Generates music through the MiniMax-compatible music generation surface using the configured MiniMax provider account.", "MiniMaxMusicGenerationRequest", "MiniMaxMusicGenerationResponse", provider="minimax")},
             "/kling/v1/videos/generations": {"post": self._operation("Videos/kling", "klingCreateVideoGeneration", "Kling video generation", "Creates a Kling-compatible video generation using the configured Kling provider account.", "KlingVideoGenerationRequest", "KlingVideoGenerationTask", provider="kling")},
             "/kling/v1/videos/generations/{task_id}": {"get": self._operation("Videos/kling", "klingRetrieveVideoGeneration", "Kling retrieve video generation", "Retrieves a Kling-compatible video generation task using the configured Kling provider account.", None, "KlingVideoGenerationTask", parameters=[self._path_param("task_id", "Kling task identifier.")], provider="kling")},
+            "/kling/v1/videos/avatar": {"post": self._operation("Videos/kling", "klingCreateAvatar", "Kling create avatar video", "Creates a Kling avatar video using the configured Kling provider account.", "KlingAvatarCreateRequest", "KlingVideoGenerationTask", provider="kling")},
+            "/kling/v1/videos/motion-control": {"post": self._operation("Videos/kling", "klingCreateMotionControl", "Kling create motion control video", "Creates a Kling motion-control video using the configured Kling provider account.", "KlingMotionControlRequest", "KlingVideoGenerationTask", provider="kling")},
             "/vidu/ent/v2/text2video": {"post": self._operation("Videos/vidu", "viduCreateTextToVideo", "Vidu text to video", "Creates a Vidu text-to-video task using the configured Vidu provider account.", "ViduTextToVideoRequest", "ViduVideoGenerationTask", provider="vidu")},
             "/vidu/ent/v2/img2video": {"post": self._operation("Videos/vidu", "viduCreateImageToVideo", "Vidu image to video", "Creates a Vidu image-to-video task using the configured Vidu provider account.", "ViduImageToVideoRequest", "ViduVideoGenerationTask", provider="vidu")},
             "/vidu/ent/v2/reference2video": {"post": self._operation("Videos/vidu", "viduCreateReferenceToVideo", "Vidu reference to video", "Creates a Vidu reference-to-video task using the configured Vidu provider account.", "ViduReferenceToVideoRequest", "ViduVideoGenerationTask", provider="vidu")},
             "/vidu/ent/v2/start-end2video": {"post": self._operation("Videos/vidu", "viduCreateStartEndToVideo", "Vidu start-end to video", "Creates a Vidu start-end-frame video task using the configured Vidu provider account.", "ViduStartEndToVideoRequest", "ViduVideoGenerationTask", provider="vidu")},
             "/vidu/ent/v2/reference2image": {"post": self._operation("Images/vidu", "viduCreateReferenceToImage", "Vidu reference to image", "Creates Vidu reference-to-image outputs using the configured Vidu provider account.", "ViduReferenceToImageRequest", "ViduImageGenerationTask", provider="vidu")},
             "/vidu/ent/v2/tasks/{task_id}/creations": {"get": self._operation("Videos/vidu", "viduGetTaskCreations", "Vidu get task creations", "Retrieves Vidu task creations using the configured Vidu provider account.", None, "ViduTaskCreationsResponse", parameters=[self._path_param("task_id", "Vidu task identifier.")], provider="vidu")},
+            "/vidu/ent/v2/template": {"post": self._operation("Videos/vidu", "viduCreateTemplate", "Vidu create template video", "Creates a Vidu template video using the configured Vidu provider account.", "ViduTemplateRequest", "ViduVideoGenerationTask", provider="vidu")},
             "/nano-banana/v1/images/generations": {"post": self._operation("Images/nano-banana", "nanoBananaCreateImageGeneration", "Nano Banana image generation", "Creates a Nano Banana compatible image generation using the configured Nano Banana provider account.", "NanoBananaImageGenerationRequest", "NanoBananaImageGenerationTask", provider="nano-banana")},
             "/nano-banana/v1/images/generations/{task_id}": {"get": self._operation("Images/nano-banana", "nanoBananaRetrieveImageGeneration", "Nano Banana retrieve image generation", "Retrieves a Nano Banana compatible image generation task using the configured Nano Banana provider account.", None, "NanoBananaImageGenerationTask", parameters=[self._path_param("task_id", "Nano Banana task identifier.")], provider="nano-banana")},
         }
@@ -4299,6 +4340,18 @@ class CloudRouterGatewayOpenApiGenerator:
                 "ViduVideoGenerationTask": {"type": "object", "additionalProperties": True, "properties": self._vidu_task_properties("video")},
                 "ViduImageGenerationTask": {"type": "object", "additionalProperties": True, "properties": self._vidu_task_properties("image")},
                 "ViduTaskCreationsResponse": {"type": "object", "additionalProperties": True, "properties": {**self._vidu_task_properties("creation"), "creations": {"type": "array", "items": {"$ref": "#/components/schemas/ViduCreation"}, "description": "Vidu creation records for the task."}}},
+                "ViduTemplateRequest": {
+                    "type": "object",
+                    "additionalProperties": True,
+                    "required": ["template", "images", "video_urls"],
+                    "properties": {
+                        "template": {"type": "string", "description": "Template id, for example motion_control_2 or motion_control_2.5."},
+                        "images": {"type": "array", "items": {"type": "string"}, "description": "Character image URLs (single front-facing person)."},
+                        "video_urls": {"type": "array", "items": {"type": "string"}, "description": "Motion reference video URLs (single front-facing person, 3-30 seconds)."},
+                        "payload": {"type": "string", "description": "Opaque request parameter echoed back by task queries."},
+                        "callback_url": {"type": "string", "description": "Optional callback URL."},
+                    },
+                },
                 **self._provider_shared_schemas(),
                 **self._google_provider_schemas(),
                 **self._anthropic_provider_schemas(),
@@ -5297,6 +5350,95 @@ class CloudRouterGatewayOpenApiGenerator:
                 "type": "object",
                 "additionalProperties": True,
                 "properties": video_task_properties,
+            },
+            "KlingAvatarCreateRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["human_image"],
+                "properties": {
+                    "model_name": {"type": "string", "description": "Kling avatar model id, for example kling-ai-avatar-v2."},
+                    "human_image": {"type": "string", "description": "Character image URL driving the digital human."},
+                    "prompt": {"type": "string", "description": "Optional expression or performance description for the avatar."},
+                    "voice_mode": {"type": "string", "description": "Voice input mode, for example audio or tts."},
+                    "audio_url": {"type": "string", "description": "Driving audio URL used when voice_mode is audio."},
+                    "text": {"type": "string", "description": "Driving speech text used when voice_mode is tts."},
+                    "voice_id": {"type": "string", "description": "Optional voice id for the tts mode."},
+                    "voice_language": {"type": "string", "description": "Optional speech language for the tts mode."},
+                    "callback_url": {"type": "string", "description": "Optional callback URL."},
+                },
+            },
+            "KlingMotionControlRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["image", "video"],
+                "properties": {
+                    "model_name": {"type": "string", "description": "Kling model id, for example kling-v2-6 or kling-v3."},
+                    "prompt": {"type": "string", "description": "Optional text prompt for global or local motion control."},
+                    "image": {"type": "string", "description": "Character image URL whose person performs the motion."},
+                    "video": {"type": "string", "description": "Motion reference video URL (single-person performance, 3-30 seconds)."},
+                    "callback_url": {"type": "string", "description": "Optional callback URL."},
+                },
+            },
+            "MiniMaxMusicGenerationRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["model"],
+                "properties": {
+                    "model": {"type": "string", "description": "MiniMax music model id, for example music-3.0 or music-2.6."},
+                    "prompt": {"type": "string", "description": "Style, mood, or scene description for the generated music."},
+                    "lyrics": {"type": "string", "description": "Lyrics with structure tags such as [Verse] and [Chorus]."},
+                    "stream": {"type": "boolean", "description": "Stream the generated audio back instead of returning one payload."},
+                    "output_format": {"type": "string", "description": "Audio delivery format: url or hex."},
+                    "is_instrumental": {"type": "boolean", "description": "Generate instrumental music without vocals."},
+                    "lyrics_optimizer": {"type": "boolean", "description": "Let the model generate lyrics from the prompt when lyrics are empty."},
+                    "audio_setting": {"$ref": "#/components/schemas/MiniMaxMusicAudioSetting"},
+                },
+            },
+            "MiniMaxMusicAudioSetting": {
+                "type": "object",
+                "additionalProperties": True,
+                "properties": {
+                    "sample_rate": {"type": "integer", "description": "Output sample rate: 16000, 24000, 32000, or 44100."},
+                    "bitrate": {"type": "integer", "description": "Output bitrate: 32000, 64000, 128000, or 256000."},
+                    "format": {"type": "string", "description": "Output container: mp3, wav, or pcm."},
+                },
+            },
+            "MiniMaxMusicGenerationResponse": {
+                "type": "object",
+                "additionalProperties": True,
+                "properties": {
+                    "base_resp": {"$ref": "#/components/schemas/MiniMaxMusicBaseResp"},
+                    "data": {"$ref": "#/components/schemas/MiniMaxMusicData"},
+                    "trace_id": {"type": "string", "description": "MiniMax trace identifier."},
+                },
+            },
+            "MiniMaxMusicBaseResp": {
+                "type": "object",
+                "additionalProperties": True,
+                "properties": {
+                    "status_code": {"type": "integer", "description": "MiniMax status code; 0 means success."},
+                    "status_msg": {"type": "string", "description": "MiniMax status message."},
+                },
+            },
+            "MiniMaxMusicData": {
+                "type": "object",
+                "additionalProperties": True,
+                "properties": {
+                    "status": {"type": "integer", "description": "MiniMax task status: 1 means in progress, 2 means finished."},
+                    "audio": {"type": "string", "description": "Generated audio URL when output_format is url, otherwise hex-encoded audio."},
+                    "extra_info": {"$ref": "#/components/schemas/MiniMaxMusicExtraInfo"},
+                },
+            },
+            "MiniMaxMusicExtraInfo": {
+                "type": "object",
+                "additionalProperties": True,
+                "properties": {
+                    "music_duration": {"type": "number", "description": "Generated music duration in seconds."},
+                    "music_sample_rate": {"type": "integer", "description": "Generated audio sample rate."},
+                    "music_channel": {"type": "integer", "description": "Generated audio channel count."},
+                    "bitrate": {"type": "integer", "description": "Generated audio bitrate."},
+                    "music_size": {"type": "integer", "description": "Generated audio size in bytes."},
+                },
             },
             "NanoBananaImageGenerationRequest": {
                 "type": "object",

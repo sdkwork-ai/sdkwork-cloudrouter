@@ -18,7 +18,7 @@ class FilesAnthropicApi {
       QueryParameterSpec('after_id', afterId, 'form', true, false, null),
       QueryParameterSpec('limit', limit, 'form', true, false, null)
     ]);
-    final response = await _client.get(ApiPaths.appendQueryString(ApiPaths.aiPath('/anthropic/v1/files'), query));
+    final response = await _client.get(ApiPaths.appendQueryString('/anthropic/v1/files', query));
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : AnthropicFileListResponse.fromJson(map);
@@ -28,7 +28,7 @@ class FilesAnthropicApi {
   /// Anthropic upload file
   Future<AnthropicFile?> createV1File(AnthropicFileUploadMultipartRequest body) async {
     final payload = body.toJson();
-    final response = await _client.post(ApiPaths.aiPath('/anthropic/v1/files'), body: payload, contentType: 'multipart/form-data');
+    final response = await _client.post('/anthropic/v1/files', body: payload, contentType: 'multipart/form-data');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : AnthropicFile.fromJson(map);
@@ -37,7 +37,7 @@ class FilesAnthropicApi {
 
   /// Anthropic delete file
   Future<AnthropicDeleteResponse?> deleteV1Files(String fileId) async {
-    final response = await _client.delete(ApiPaths.aiPath('/anthropic/v1/files/${serializePathParameter(fileId, const PathParameterSpec('file_id', 'simple', false))}'));
+    final response = await _client.delete('/anthropic/v1/files/${serializePathParameter(fileId, const PathParameterSpec('file_id', 'simple', false))}');
     return (() {
       final map = sdkworkResponseAsMap(response);
       return map == null ? null : AnthropicDeleteResponse.fromJson(map);
@@ -46,7 +46,7 @@ class FilesAnthropicApi {
 
   /// Anthropic retrieve file content
   Future<String?> listV1FilesContent(String fileId) async {
-    final response = await _client.get(ApiPaths.aiPath('/anthropic/v1/files/${serializePathParameter(fileId, const PathParameterSpec('file_id', 'simple', false))}/content'));
+    final response = await _client.get('/anthropic/v1/files/${serializePathParameter(fileId, const PathParameterSpec('file_id', 'simple', false))}/content');
     return response;
   }
 }

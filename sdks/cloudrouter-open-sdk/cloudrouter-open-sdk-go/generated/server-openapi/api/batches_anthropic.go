@@ -24,7 +24,7 @@ func (a *BatchesAnthropicApi) ListV1MessagesBatches(beforeId *string, afterId *s
         {Name: "after_id", Value: func() interface{} { if afterId == nil { return nil }; return *afterId }(), Style: "form", Explode: true, AllowReserved: false},
         {Name: "limit", Value: func() interface{} { if limit == nil { return nil }; return *limit }(), Style: "form", Explode: true, AllowReserved: false},
     })
-    raw, err := a.client.Get(AppendQueryString(AiApiPath("/anthropic/v1/messages/batches"), query), nil, nil)
+    raw, err := a.client.Get(AppendQueryString("/anthropic/v1/messages/batches", query), nil, nil)
     if err != nil {
         var zero sdktypes.AnthropicMessageBatchListResponse
         return zero, err
@@ -34,7 +34,7 @@ func (a *BatchesAnthropicApi) ListV1MessagesBatches(beforeId *string, afterId *s
 
 // Anthropic create message batch
 func (a *BatchesAnthropicApi) CreateV1MessagesBatch(body sdktypes.AnthropicMessageBatchCreateRequest) (sdktypes.AnthropicMessageBatch, error) {
-    raw, err := a.client.Post(AiApiPath("/anthropic/v1/messages/batches"), body, nil, nil, "application/json")
+    raw, err := a.client.Post("/anthropic/v1/messages/batches", body, nil, nil, "application/json")
     if err != nil {
         var zero sdktypes.AnthropicMessageBatch
         return zero, err
@@ -44,7 +44,7 @@ func (a *BatchesAnthropicApi) CreateV1MessagesBatch(body sdktypes.AnthropicMessa
 
 // Anthropic cancel message batch
 func (a *BatchesAnthropicApi) CreateV1MessagesBatchesCancel(batchId string) (sdktypes.AnthropicMessageBatch, error) {
-    raw, err := a.client.Post(AiApiPath(fmt.Sprintf("/anthropic/v1/messages/batches/%s/cancel", SerializePathParameter(batchId, PathParameterSpec{Name: "batch_id", Style: "simple", Explode: false}))), nil, nil, nil, "")
+    raw, err := a.client.Post(fmt.Sprintf("/anthropic/v1/messages/batches/%s/cancel", SerializePathParameter(batchId, PathParameterSpec{Name: "batch_id", Style: "simple", Explode: false})), nil, nil, nil, "")
     if err != nil {
         var zero sdktypes.AnthropicMessageBatch
         return zero, err

@@ -20,7 +20,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.GoogleBatchEmbedContentsResponse?> CreateV1betaModelsModelBatchEmbedContentAsync(string model, Sdkwork.CloudRouter.Open.Models.GoogleBatchEmbedContentsRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.GoogleBatchEmbedContentsResponse>(ApiPaths.AiPath($"/google/v1beta/models/{SerializePathParameter(model, new PathParameterSpec("model", "simple", false))}:batchEmbedContents"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.GoogleBatchEmbedContentsResponse>($"/google/v1beta/models/{SerializePathParameter(model, new PathParameterSpec("model", "simple", false))}:batchEmbedContents", body, null, null, "application/json");
         }
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.GoogleEmbedContentResponse?> CreateV1betaModelsModelEmbedContentAsync(string model, Sdkwork.CloudRouter.Open.Models.GoogleEmbedContentRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.GoogleEmbedContentResponse>(ApiPaths.AiPath($"/google/v1beta/models/{SerializePathParameter(model, new PathParameterSpec("model", "simple", false))}:embedContent"), body, null, null, "application/json");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.GoogleEmbedContentResponse>($"/google/v1beta/models/{SerializePathParameter(model, new PathParameterSpec("model", "simple", false))}:embedContent", body, null, null, "application/json");
         }
 
         private sealed record PathParameterSpec(string Name, string Style, bool Explode);

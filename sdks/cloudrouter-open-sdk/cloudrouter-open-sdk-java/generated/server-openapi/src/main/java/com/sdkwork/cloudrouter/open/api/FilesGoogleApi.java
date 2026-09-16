@@ -19,19 +19,19 @@ public class FilesGoogleApi {
             new QueryParameterSpec("pageSize", pageSize, "form", true, false, null),
             new QueryParameterSpec("pageToken", pageToken, "form", true, false, null)
         ));
-        Object raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/google/v1beta/files"), query));
+        Object raw = client.get(ApiPaths.appendQueryString("/google/v1beta/files", query));
         return client.convertValue(raw, new TypeReference<GoogleFileListResponse>() {});
     }
 
     /** Google Gemini upload file */
     public GoogleFile createV1betaFile(GoogleFileUploadMultipartRequest body) throws Exception {
-        Object raw = client.post(ApiPaths.aiPath("/google/v1beta/files"), body, null, null, "multipart/form-data");
+        Object raw = client.post("/google/v1beta/files", body, null, null, "multipart/form-data");
         return client.convertValue(raw, new TypeReference<GoogleFile>() {});
     }
 
     /** Google Gemini delete file */
     public GoogleEmptyResponse deleteV1betaFiles(String fileId) throws Exception {
-        Object raw = client.delete(ApiPaths.aiPath("/google/v1beta/files/" + serializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false)) + ""));
+        Object raw = client.delete("/google/v1beta/files/" + serializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false)) + "");
         return client.convertValue(raw, new TypeReference<GoogleEmptyResponse>() {});
     }
 

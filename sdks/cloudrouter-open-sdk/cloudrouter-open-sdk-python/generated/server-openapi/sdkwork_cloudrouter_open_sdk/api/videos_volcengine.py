@@ -83,8 +83,8 @@ class VideosVolcengineApi:
 
     def create_api_v3_contents_generations_task(self, body: VolcengineContentGenerationTaskCreateRequest) -> VolcengineContentGenerationTaskCreateResponse:
         """Volcengine Ark content generation task"""
-        return self._client.post(f"/v1/volcengine/api/v3/contents/generations/tasks", json=body)
+        return self._client.post(f"/volcengine/api/v3/contents/generations/tasks", json=body)
 
     def list_api_v3_contents_generations_tasks(self, task_id: str) -> VolcengineContentGenerationTask:
         """Volcengine Ark retrieve content generation task"""
-        return self._client.get(f"/v1/volcengine/api/v3/contents/generations/tasks/{serialize_path_parameter(task_id, {'name': 'task_id', 'style': 'simple', 'explode': False})}")
+        return self._client.get(f"/volcengine/api/v3/contents/generations/tasks/{serialize_path_parameter(task_id, {'name': 'task_id', 'style': 'simple', 'explode': False})}")

@@ -12,8 +12,8 @@ import com.sdkwork.cloudrouter.open.api.EmbeddingsGoogleApi;
 import com.sdkwork.cloudrouter.open.api.ChatGoogleApi;
 import com.sdkwork.cloudrouter.open.api.VideosKlingApi;
 import com.sdkwork.cloudrouter.open.api.ImagesMidjourneyApi;
-import com.sdkwork.cloudrouter.open.api.ImagesNanoBananaApi;
 import com.sdkwork.cloudrouter.open.api.AudioMinimaxApi;
+import com.sdkwork.cloudrouter.open.api.ImagesNanoBananaApi;
 import com.sdkwork.cloudrouter.open.api.AudioSunoApi;
 import com.sdkwork.cloudrouter.open.api.AssistantsApi;
 import com.sdkwork.cloudrouter.open.api.AudioApi;
@@ -50,8 +50,8 @@ public class SdkworkAiClient {
     private ChatGoogleApi chatGoogle;
     private VideosKlingApi videosKling;
     private ImagesMidjourneyApi imagesMidjourney;
-    private ImagesNanoBananaApi imagesNanoBanana;
     private AudioMinimaxApi audioMinimax;
+    private ImagesNanoBananaApi imagesNanoBanana;
     private AudioSunoApi audioSuno;
     private AssistantsApi assistants;
     private AudioApi audio;
@@ -88,8 +88,8 @@ public class SdkworkAiClient {
         this.chatGoogle = new ChatGoogleApi(httpClient);
         this.videosKling = new VideosKlingApi(httpClient);
         this.imagesMidjourney = new ImagesMidjourneyApi(httpClient);
-        this.imagesNanoBanana = new ImagesNanoBananaApi(httpClient);
         this.audioMinimax = new AudioMinimaxApi(httpClient);
+        this.imagesNanoBanana = new ImagesNanoBananaApi(httpClient);
         this.audioSuno = new AudioSunoApi(httpClient);
         this.assistants = new AssistantsApi(httpClient);
         this.audio = new AudioApi(httpClient);
@@ -127,8 +127,8 @@ public class SdkworkAiClient {
         this.chatGoogle = new ChatGoogleApi(httpClient);
         this.videosKling = new VideosKlingApi(httpClient);
         this.imagesMidjourney = new ImagesMidjourneyApi(httpClient);
-        this.imagesNanoBanana = new ImagesNanoBananaApi(httpClient);
         this.audioMinimax = new AudioMinimaxApi(httpClient);
+        this.imagesNanoBanana = new ImagesNanoBananaApi(httpClient);
         this.audioSuno = new AudioSunoApi(httpClient);
         this.assistants = new AssistantsApi(httpClient);
         this.audio = new AudioApi(httpClient);
@@ -194,12 +194,12 @@ public class SdkworkAiClient {
         return this.imagesMidjourney;
     }
 
-    public ImagesNanoBananaApi getImagesNanoBanana() {
-        return this.imagesNanoBanana;
-    }
-
     public AudioMinimaxApi getAudioMinimax() {
         return this.audioMinimax;
+    }
+
+    public ImagesNanoBananaApi getImagesNanoBanana() {
+        return this.imagesNanoBanana;
     }
 
     public AudioSunoApi getAudioSuno() {

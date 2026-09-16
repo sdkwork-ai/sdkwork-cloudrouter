@@ -83,8 +83,8 @@ class AudioSunoApi:
 
     def create_v1_music_generation(self, body: SunoMusicGenerationRequest) -> SunoMusicGenerationResponse:
         """Suno music generation"""
-        return self._client.post(f"/v1/suno/v1/music/generations", json=body)
+        return self._client.post(f"/suno/v1/music/generations", json=body)
 
     def list_v1_music_generations(self, task_id: str) -> SunoMusicGenerationTaskResponse:
         """Suno retrieve music generation"""
-        return self._client.get(f"/v1/suno/v1/music/generations/{serialize_path_parameter(task_id, {'name': 'task_id', 'style': 'simple', 'explode': False})}")
+        return self._client.get(f"/suno/v1/music/generations/{serialize_path_parameter(task_id, {'name': 'task_id', 'style': 'simple', 'explode': False})}")

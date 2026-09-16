@@ -26,7 +26,7 @@ namespace Sdkwork.CloudRouter.Open.Api
                 new QueryParameterSpec("after_id", afterId, "form", true, false, null),
                 new QueryParameterSpec("limit", limit, "form", true, false, null),
             });
-            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.AnthropicFileListResponse>(ApiPaths.AppendQueryString(ApiPaths.AiPath("/anthropic/v1/files"), queryString));
+            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.AnthropicFileListResponse>(ApiPaths.AppendQueryString("/anthropic/v1/files", queryString));
         }
 
         /// <summary>
@@ -34,7 +34,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.AnthropicFile?> CreateV1FileAsync(Sdkwork.CloudRouter.Open.Models.AnthropicFileUploadMultipartRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.AnthropicFile>(ApiPaths.AiPath("/anthropic/v1/files"), body, null, null, "multipart/form-data");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.AnthropicFile>("/anthropic/v1/files", body, null, null, "multipart/form-data");
         }
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.AnthropicDeleteResponse?> DeleteV1FilesAsync(string fileId)
         {
-            return await _client.DeleteAsync<Sdkwork.CloudRouter.Open.Models.AnthropicDeleteResponse>(ApiPaths.AiPath($"/anthropic/v1/files/{SerializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false))}"));
+            return await _client.DeleteAsync<Sdkwork.CloudRouter.Open.Models.AnthropicDeleteResponse>($"/anthropic/v1/files/{SerializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false))}");
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<string?> ListV1FilesContentAsync(string fileId)
         {
-            return await _client.GetAsync<string>(ApiPaths.AiPath($"/anthropic/v1/files/{SerializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false))}/content"));
+            return await _client.GetAsync<string>($"/anthropic/v1/files/{SerializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false))}/content");
         }
 
         private sealed record PathParameterSpec(string Name, string Style, bool Explode);

@@ -1,4 +1,3 @@
-import { aiApiPath } from './paths';
 import type { ApiRequestOptions, HttpClient } from '../http/client';
 
 import type { ViduImageGenerationTask, ViduReferenceToImageRequest } from '../types';
@@ -14,7 +13,7 @@ export class ImagesViduEntV2Reference2imageApi {
 
 /** Vidu reference to image */
   async create(body: ViduReferenceToImageRequest, requestOptions?: ApiRequestOptions): Promise<ViduImageGenerationTask> {
-    return this.client.request<ViduImageGenerationTask>(aiApiPath(`/vidu/ent/v2/reference2image`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
+    return this.client.request<ViduImageGenerationTask>(`/vidu/ent/v2/reference2image`, { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'POST' as any, body, contentType: 'application/json' });
   }
 }
 

@@ -9,8 +9,8 @@ export 'embeddings_google.dart' hide PathParameterSpec, serializePathParameter, 
 export 'chat_google.dart' hide PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;
 export 'videos_kling.dart' hide PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;
 export 'images_midjourney.dart' hide PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;
-export 'images_nano_banana.dart' hide PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;
 export 'audio_minimax.dart';
+export 'images_nano_banana.dart' hide PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;
 export 'audio_suno.dart' hide PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;
 export 'assistants.dart' hide QueryParameterSpec, buildQueryString, appendSerializedParameter, appendArrayParameter, appendObjectParameter, appendDeepObjectParameter, encodeQueryValue, urlEncode, PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;
 export 'audio.dart' hide QueryParameterSpec, buildQueryString, appendSerializedParameter, appendArrayParameter, appendObjectParameter, appendDeepObjectParameter, encodeQueryValue, urlEncode, PathParameterSpec, serializePathParameter, serializePathArray, serializePathObject, pathPrefix, pathPrimitivePrefix;

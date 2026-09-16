@@ -10,13 +10,13 @@ class ImagesNanoBananaApi(private val client: HttpClient) {
 
     /** Nano Banana image generation */
     suspend fun createGeneration(body: NanoBananaImageGenerationRequest): NanoBananaImageGenerationTask? {
-        val raw = client.post(ApiPaths.aiPath("/nano-banana/v1/images/generations"), body, null, null, "application/json")
+        val raw = client.post("/nano-banana/v1/images/generations", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<NanoBananaImageGenerationTask>() {})
     }
 
     /** Nano Banana retrieve image generation */
     suspend fun retrieveGeneration(taskId: String): NanoBananaImageGenerationTask? {
-        val raw = client.get(ApiPaths.aiPath("/nano-banana/v1/images/generations/${serializePathParameter(taskId, PathParameterSpec("task_id", "simple", false))}"))
+        val raw = client.get("/nano-banana/v1/images/generations/${serializePathParameter(taskId, PathParameterSpec("task_id", "simple", false))}")
         return client.convertValue(raw, object : TypeReference<NanoBananaImageGenerationTask>() {})
     }
 

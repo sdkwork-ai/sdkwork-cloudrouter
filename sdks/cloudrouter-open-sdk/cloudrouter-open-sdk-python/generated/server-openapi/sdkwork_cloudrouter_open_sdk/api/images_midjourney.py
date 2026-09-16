@@ -83,8 +83,8 @@ class ImagesMidjourneyApi:
 
     def create_v1_images_generation(self, body: MidjourneyImageGenerationRequest) -> MidjourneyImageGenerationTask:
         """Midjourney image generation"""
-        return self._client.post(f"/v1/midjourney/v1/images/generations", json=body)
+        return self._client.post(f"/midjourney/v1/images/generations", json=body)
 
     def list_v1_images_generations(self, task_id: str) -> MidjourneyImageGenerationTask:
         """Midjourney retrieve image generation"""
-        return self._client.get(f"/v1/midjourney/v1/images/generations/{serialize_path_parameter(task_id, {'name': 'task_id', 'style': 'simple', 'explode': False})}")
+        return self._client.get(f"/midjourney/v1/images/generations/{serialize_path_parameter(task_id, {'name': 'task_id', 'style': 'simple', 'explode': False})}")

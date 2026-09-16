@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-/// MiniMax base response status envelope.
+/// Mini max music base resp schema exposed by Cloud Router.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct MiniMaxMusicBaseResp {
     /// MiniMax status code; 0 means success.

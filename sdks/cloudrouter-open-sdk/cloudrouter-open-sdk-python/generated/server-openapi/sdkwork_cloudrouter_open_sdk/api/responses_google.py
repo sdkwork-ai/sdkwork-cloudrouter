@@ -197,12 +197,12 @@ class ResponsesGoogleApi:
             {'name': 'pageSize', 'value': page_size, 'style': 'form', 'explode': True, 'allow_reserved': False},
             {'name': 'pageToken', 'value': page_token, 'style': 'form', 'explode': True, 'allow_reserved': False},
         ])
-        return self._client.get(_append_query_string(f"/v1/google/v1beta/cachedContents", query))
+        return self._client.get(_append_query_string(f"/google/v1beta/cachedContents", query))
 
     def create_v1beta_cached_content(self, body: GoogleCachedContentCreateRequest) -> GoogleCachedContent:
         """Google Gemini create cached content"""
-        return self._client.post(f"/v1/google/v1beta/cachedContents", json=body)
+        return self._client.post(f"/google/v1beta/cachedContents", json=body)
 
     def delete_v1beta_cached_contents(self, cached_content_id: str) -> GoogleEmptyResponse:
         """Google Gemini cached content"""
-        return self._client.delete(f"/v1/google/v1beta/cachedContents/{serialize_path_parameter(cached_content_id, {'name': 'cached_content_id', 'style': 'simple', 'explode': False})}")
+        return self._client.delete(f"/google/v1beta/cachedContents/{serialize_path_parameter(cached_content_id, {'name': 'cached_content_id', 'style': 'simple', 'explode': False})}")

@@ -25,7 +25,7 @@ namespace Sdkwork.CloudRouter.Open.Api
                 new QueryParameterSpec("pageSize", pageSize, "form", true, false, null),
                 new QueryParameterSpec("pageToken", pageToken, "form", true, false, null),
             });
-            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.GoogleFileListResponse>(ApiPaths.AppendQueryString(ApiPaths.AiPath("/google/v1beta/files"), queryString));
+            return await _client.GetAsync<Sdkwork.CloudRouter.Open.Models.GoogleFileListResponse>(ApiPaths.AppendQueryString("/google/v1beta/files", queryString));
         }
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.GoogleFile?> CreateV1betaFileAsync(Sdkwork.CloudRouter.Open.Models.GoogleFileUploadMultipartRequest body)
         {
-            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.GoogleFile>(ApiPaths.AiPath("/google/v1beta/files"), body, null, null, "multipart/form-data");
+            return await _client.PostAsync<Sdkwork.CloudRouter.Open.Models.GoogleFile>("/google/v1beta/files", body, null, null, "multipart/form-data");
         }
 
         /// <summary>
@@ -41,7 +41,7 @@ namespace Sdkwork.CloudRouter.Open.Api
         /// </summary>
         public async Task<Sdkwork.CloudRouter.Open.Models.GoogleEmptyResponse?> DeleteV1betaFilesAsync(string fileId)
         {
-            return await _client.DeleteAsync<Sdkwork.CloudRouter.Open.Models.GoogleEmptyResponse>(ApiPaths.AiPath($"/google/v1beta/files/{SerializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false))}"));
+            return await _client.DeleteAsync<Sdkwork.CloudRouter.Open.Models.GoogleEmptyResponse>($"/google/v1beta/files/{SerializePathParameter(fileId, new PathParameterSpec("file_id", "simple", false))}");
         }
 
         private sealed record PathParameterSpec(string Name, string Style, bool Explode);

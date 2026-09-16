@@ -14,19 +14,19 @@ class ResponsesGoogleApi(private val client: HttpClient) {
             QueryParameterSpec("pageSize", pageSize, "form", true, false, null),
             QueryParameterSpec("pageToken", pageToken, "form", true, false, null)
         ))
-        val raw = client.get(ApiPaths.appendQueryString(ApiPaths.aiPath("/google/v1beta/cachedContents"), query))
+        val raw = client.get(ApiPaths.appendQueryString("/google/v1beta/cachedContents", query))
         return client.convertValue(raw, object : TypeReference<GoogleCachedContentListResponse>() {})
     }
 
     /** Google Gemini create cached content */
     suspend fun createV1betaCachedContent(body: GoogleCachedContentCreateRequest): GoogleCachedContent? {
-        val raw = client.post(ApiPaths.aiPath("/google/v1beta/cachedContents"), body, null, null, "application/json")
+        val raw = client.post("/google/v1beta/cachedContents", body, null, null, "application/json")
         return client.convertValue(raw, object : TypeReference<GoogleCachedContent>() {})
     }
 
     /** Google Gemini cached content */
     suspend fun deleteV1betaCachedContents(cachedContentId: String): GoogleEmptyResponse? {
-        val raw = client.delete(ApiPaths.aiPath("/google/v1beta/cachedContents/${serializePathParameter(cachedContentId, PathParameterSpec("cached_content_id", "simple", false))}"))
+        val raw = client.delete("/google/v1beta/cachedContents/${serializePathParameter(cachedContentId, PathParameterSpec("cached_content_id", "simple", false))}")
         return client.convertValue(raw, object : TypeReference<GoogleEmptyResponse>() {})
     }
 

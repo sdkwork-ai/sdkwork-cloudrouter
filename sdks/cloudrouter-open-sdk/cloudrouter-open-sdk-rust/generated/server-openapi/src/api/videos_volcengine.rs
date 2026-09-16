@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use crate::api::paths::ai_path;
 use crate::http::{SdkworkError, SdkworkHttpClient};
 use crate::models::{VolcengineContentGenerationTask, VolcengineContentGenerationTaskCreateRequest, VolcengineContentGenerationTaskCreateResponse};
 
@@ -16,13 +15,13 @@ impl VideosVolcengineApi {
 
     /// Volcengine Ark content generation task
     pub async fn create_api_v3_contents_generations_task(&self, body: &VolcengineContentGenerationTaskCreateRequest) -> Result<VolcengineContentGenerationTaskCreateResponse, SdkworkError> {
-        let path = ai_path(&"/volcengine/api/v3/contents/generations/tasks".to_string());
+        let path = "/volcengine/api/v3/contents/generations/tasks".to_string();
         self.client.post(&path, Some(body), None, None, Some("application/json")).await
     }
 
     /// Volcengine Ark retrieve content generation task
     pub async fn list_api_v3_contents_generations_tasks(&self, task_id: &str) -> Result<VolcengineContentGenerationTask, SdkworkError> {
-        let path = ai_path(&format!("/volcengine/api/v3/contents/generations/tasks/{}", serialize_path_parameter(task_id, PathParameterSpec::new("task_id", "simple", false))));
+        let path = format!("/volcengine/api/v3/contents/generations/tasks/{}", serialize_path_parameter(task_id, PathParameterSpec::new("task_id", "simple", false)));
         self.client.get(&path, None, None).await
     }
 

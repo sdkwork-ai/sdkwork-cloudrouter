@@ -1,13 +1,13 @@
 package types
 
-// MiniMax music generation request payload.
+// Mini max music generation request schema exposed by Cloud Router.
 type MiniMaxMusicGenerationRequest struct {
-	Model string `json:"model"`
-	Prompt string `json:"prompt"`
-	Lyrics string `json:"lyrics"`
-	Stream bool `json:"stream"`
-	OutputFormat string `json:"output_format"`
-	IsInstrumental bool `json:"is_instrumental"`
-	LyricsOptimizer bool `json:"lyrics_optimizer"`
 	AudioSetting MiniMaxMusicAudioSetting `json:"audio_setting"`
+	IsInstrumental bool `json:"is_instrumental"`
+	Lyrics string `json:"lyrics"`
+	LyricsOptimizer bool `json:"lyrics_optimizer"`
+	Model string `json:"model"`
+	OutputFormat string `json:"output_format"`
+	Prompt string `json:"prompt"`
+	Stream bool `json:"stream"`
 }
