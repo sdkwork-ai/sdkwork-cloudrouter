@@ -247,3 +247,76 @@ grep -n "model: String::new()" \
 - `media_routing_e2e.rs`、`audio_vendor_routing_e2e.rs`、`avatar_motion_routing_e2e.rs` 三个测试的实际通过情况
   （本次未构建；`target/` 体积大、构建耗时）。
 - 生成服务异步任务的端到端时延与超时行为。
+
+---
+
+## 8. 修复落地状态（2026-09-16 同日）
+
+本节记录第 3 节缺陷清单的处置结果。**第 5 节里「当前红」的门禁已转绿**，以本节为准。
+
+| # | 状态 | 落点 |
+| --- | --- | --- |
+| P0-1 mode 塌缩 | ✅ 已修 | `sdkwork-agents` `be0a8c4`：`CreativeService.generateContent` 去掉 `mode === 'video' ? 'video' : 'image'`，改走共享查表；`AgentsGenerationsService.create` 的 4 路 if/else（含 `images.textToImage` 兜底）换成 13 个操作各一个 sender |
+| P0-2 入口不一致 / 缺音效 | ✅ 已修 | 同上：`creationTypes.ts` 成为唯一创作类型枚举，灵感卡片由它派生；补 `sfx`（含模型目录 `sound_effects` 模态与输入框分支） |
+| P0-3 契约缺失→404 | ✅ 已修 | `sdkwork-generations` `29a1b84`：补齐 `/videos/avatar`、`/videos/motion_mimicry`；新增 `tools/check_generations_route_contract.mjs` 双向门禁并挂入 `_sdkwork:check` |
+| P0-4 入站前缀 401 | ✅ 已修 | `sdkwork-cloudrouter` `c035da4b`：`OPEN_API_PREFIXES` 补 `/volcengine` `/vidu` `/minimax`；`bootstrap.rs` 的手写样例路径断言改为**对生成清单的全量覆盖断言** |
+| P0-5 seed 资源缺失→定价 fail-closed 拒派发 | ✅ 已修 | 同上：补 `vendor.suno` / `vendor.elevenlabs`、8 条厂商原生 api_endpoint、厂商组与绑定、本地化名 |
+| P1-1 `model` 恒空 | ✅ 已修 | `sdkwork-generations` `7898d3c`：`from_command(command, &selection)` 必填 selection，`model` 取剥前缀后的值 |
+| P1-2 `video_extend` 字段错映射 | ✅ 已修 | 同上：改为要求真实源视频，缺失时 `InvalidInput` |
+| P1-3 vidu 尾帧被丢弃 | ✅ 已修 | 同上：改发显式 `[start, end]` 对 |
+| P1-4 灵感页丢 `settings` | ✅ 已修 | `sdkwork-agents` `be0a8c4`：两侧统一走 commons 的 `writeCreativeHandoff` / `consumeCreativeHandoff` |
+| P1-6 标准扩展门禁红 | ✅ 已修 | `c035da4b`：重跑 stamper（app-api/backend-api 两份契约此前整体丢失 `x-sdkwork-*` 扩展），`--check` 现 exit 0 |
+| P1-5 非默认 vendor 轮询 404 | ❌ **未修** | `generations_service.rs:680-681` 仍以 `record.source_provider`（= 适配器默认 vendor，见同文件 `:134` `provider.vendor()`）去匹配 `resolve_provider_by_vendor` |
+| P1-7 三份路径→api_code 映射 | ❌ **未修** | `passthrough.rs` / `provider_native_classifier.rs` / `ai_route_taxonomy.rs` 三份拷贝仍在；本次只把「前缀缺漏」这一类加进了门禁 |
+| P1-8 无轮询调度器 / webhook | ❌ 未修 | 超出本次范围 |
+| P2-1 面校验对未知前缀静默放行 | ⚠️ 部分 | 云路由侧已由 `bootstrap.rs` 断言兜住；`sdkwork-web-framework` 的 `route_manifest.rs:200` `Unknown => {}` 未动 |
+| P2-2 两个 e2e 测试无 seed 覆盖 | ❌ 未修 | `audio_vendor_routing_e2e.rs` / `avatar_motion_routing_e2e.rs` 仍未跟踪、仍自建内存 catalog |
+| P2-3 … P2-8 | ❌ 未修 | 死代码、TODO 端点、unsplash 假图、空模型 facet、隐式网关约定 |
+
+### 8.1 本轮可复核的验证证据
+
+```bash
+# cloudrouter（c035da4b）
+node tools/sync-cloudrouter-api-standard-extensions.mjs --check      # exit 0（修复前 exit 1，6 文件 drift）
+node tools/generate-cloudrouter-http-route-manifest-rs.mjs --check   # 31/120/167 ok
+node scripts/materialize-apis-contracts.mjs --check                  # passed
+
+# open-api 契约 122 条路径全部落入 OPEN_API_PREFIXES（0 条会 401）
+#   复刻 bootstrap.rs 断言的 startsWith 前缀语义 → 未覆盖 = 无
+
+# 本轮 8 条新增 api_code 在 taxonomy / 资源 / 厂商组 三处齐备（脚本逐项核对）
+#   vidu.motion_sync  kling.avatar  kling.motion_control  volcengine.speech
+#   elevenlabs.text_to_speech  elevenlabs.sound_generation
+#   suno.music_generation  suno.music_task_query
+
+# generations（29a1b84 / 7898d3c）
+node tools/check_generations_route_contract.mjs --root .   # ok (21 = 21)，反例 exit 1
+node ../sdkwork-specs/tools/validate-api-assembly.mjs --root .  # passed (2 route crates)
+cargo test -p sdkwork-generations-provider-adapter          # 39 passed; 0 failed
+
+# agents（be0a8c4）
+npx tsc --noEmit   # 27 errors → 27 errors，零新增；余下 27 条为跨仓工作区包缺失
+```
+
+### 8.2 本轮**未能**执行的两项验证（不要当作已通过）
+
+1. **`sdkwork-cloudrouter` 的 `cargo test`**：`rust-toolchain.toml` 钉 `x86_64-pc-windows-msvc`，
+   而本机 Windows SDK 只有 Catalogs/Redist、缺 Include/Lib，`cl.exe` 用不了，C 构建脚本
+   （`aws-lc-sys`）直接失败。`ai_route_taxonomy` 与 `bootstrap` 两处 Rust 断言改为在 Node 侧
+   对同一批源文件复刻（见 8.1），**属于等价核对而非等价执行**，仍需在可用工具链的机器上补跑。
+2. **真实厂商调用**：从入站面到第三方 API 的最后一跳本就没有跑过，见第 7 节。
+
+### 8.3 提交后仍未跟踪/未提交的旁支
+
+本次按仓库分组提交了内容生成链路，**以下既有未提交内容不属于本次改动，未纳入提交**：
+
+- `sdkwork-cloudrouter`：`Cargo.toml` / `Cargo.lock`、`crates/sdkwork-cloudrouter-config/src/database.rs`、
+  `crates/sdkwork-cloudrouter-observability/src/tracing_setup.rs`、
+  `crates/sdkwork-cloudrouter-edge-runtime/src/passthrough.rs` 与 `tests/media_routing_e2e.rs`、
+  `scripts/plan-cloud-router-install-packages.mjs`、`scripts/start-cloud-router-production.mjs`、
+  `package.json`、`docs/guides/developer/README.md`、`docs/audit/DELETED-FILE-FORENSICS-2026-09-11.md`、
+  `data/skills/cloudhub/...`、SDK 内 TS `package.json` 的 `workspace:*` 改写；
+  未跟踪：`tests/audio_vendor_routing_e2e.rs`、`tests/avatar_motion_routing_e2e.rs`、
+  `scripts/check-rust-dependency-singularity.mjs`、`scripts/rust-dependency-singularity.baseline.json`。
+- `sdkwork-generations`：`Cargo.lock`、`crates/sdkwork-generations-provider-adapter/src/gateway.rs`、
+  `crates/sdkwork-intelligence-generations-service/src/service/{generations_service,handlers}.rs`。
