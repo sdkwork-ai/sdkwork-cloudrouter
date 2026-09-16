@@ -266,12 +266,13 @@ grep -n "model: String::new()" \
 | P1-3 vidu 尾帧被丢弃 | ✅ 已修 | 同上：改发显式 `[start, end]` 对 |
 | P1-4 灵感页丢 `settings` | ✅ 已修 | `sdkwork-agents` `be0a8c4`：两侧统一走 commons 的 `writeCreativeHandoff` / `consumeCreativeHandoff` |
 | P1-6 标准扩展门禁红 | ✅ 已修 | `c035da4b`：重跑 stamper（app-api/backend-api 两份契约此前整体丢失 `x-sdkwork-*` 扩展），`--check` 现 exit 0 |
-| P1-5 非默认 vendor 轮询 404 | ❌ **未修** | `generations_service.rs:680-681` 仍以 `record.source_provider`（= 适配器默认 vendor，见同文件 `:134` `provider.vendor()`）去匹配 `resolve_provider_by_vendor` |
-| P1-7 三份路径→api_code 映射 | ❌ **未修** | `passthrough.rs` / `provider_native_classifier.rs` / `ai_route_taxonomy.rs` 三份拷贝仍在；本次只把「前缀缺漏」这一类加进了门禁 |
+| P1-5 非默认 vendor 轮询 404 | ✅ 已修 | `sdkwork-generations` `a4b32b5`：`resolve_polling_provider` 先精确匹配 `(modality, vendor)`、再退回该模态的聚合适配器（与派发侧 `resolve_provider` 同形）。同时修掉同函数「空轮询 / 持久化失败返回 `None`」——`get_generation` 把它变成 404，即**刚创建成功的任务在下次读取时被报成不存在**，只有仓储真的查不到才是 404 |
+| P1-7 三份路径→api_code 映射 | ⚠️ 部分 | 漂移已修、门禁已加：`passthrough.rs` 补回缺失的 `anthropic.messages`（改前实测两份拷贝 29 vs 28 条，其余 28 条逐字一致 —— 属真实漂移，非格式差异）；新增 `tools/check-cloudrouter-ai-routing-consistency.mjs`（`pnpm api:ai-routing-consistency:check`，已挂入 `_sdkwork:check`）。**三份拷贝本身仍未合并**：门禁拦得住漂移，消除不了重复 |
 | P1-8 无轮询调度器 / webhook | ❌ 未修 | 超出本次范围 |
 | P2-1 面校验对未知前缀静默放行 | ⚠️ 部分 | 云路由侧已由 `bootstrap.rs` 断言兜住；`sdkwork-web-framework` 的 `route_manifest.rs:200` `Unknown => {}` 未动 |
 | P2-2 两个 e2e 测试无 seed 覆盖 | ❌ 未修 | `audio_vendor_routing_e2e.rs` / `avatar_motion_routing_e2e.rs` 仍未跟踪、仍自建内存 catalog |
 | P2-3 … P2-8 | ❌ 未修 | 死代码、TODO 端点、unsplash 假图、空模型 facet、隐式网关约定 |
+| P2-9 **（本轮新发现）** assembly 默认 features 编译不过 | ❌ 未修 | `sdkwork-api-cloudrouter-assembly/src/feeds_open_runtime.rs:91-102` 用了 `sdkwork-web-bootstrap` 里 `#[cfg(feature = "redis")]` 门控的 `shared_rate_limit_store` / `shared_idempotency_store` / `shared_concurrent_admission_store`，而 assembly 的 `Cargo.toml` 没有 `[features]` 段启用 redis → `cargo check -p sdkwork-api-cloudrouter-assembly` 在现 HEAD 上 exit 101（E0425）。与本次改动无关，但会让该 crate 的任何测试（含 8.2 里那条前缀断言）在本机默认 features 下够不着 |
 
 ### 8.1 本轮可复核的验证证据
 
@@ -298,25 +299,81 @@ cargo test -p sdkwork-generations-provider-adapter          # 39 passed; 0 faile
 npx tsc --noEmit   # 27 errors → 27 errors，零新增；余下 27 条为跨仓工作区包缺失
 ```
 
-### 8.2 本轮**未能**执行的两项验证（不要当作已通过）
+第二轮（P1-5 / P1-7，同日更晚）：
 
-1. **`sdkwork-cloudrouter` 的 `cargo test`**：`rust-toolchain.toml` 钉 `x86_64-pc-windows-msvc`，
-   而本机 Windows SDK 只有 Catalogs/Redist、缺 Include/Lib，`cl.exe` 用不了，C 构建脚本
-   （`aws-lc-sys`）直接失败。`ai_route_taxonomy` 与 `bootstrap` 两处 Rust 断言改为在 Node 侧
-   对同一批源文件复刻（见 8.1），**属于等价核对而非等价执行**，仍需在可用工具链的机器上补跑。
-2. **真实厂商调用**：从入站面到第三方 API 的最后一跳本就没有跑过，见第 7 节。
+```bash
+# cloudrouter（dedcb9b7）
+node tools/check-cloudrouter-ai-routing-consistency.mjs --root .   # passed
+#   path -> api_code map: classifier 29 arms, passthrough 29 arms
+#   seeded api codes: 56 across data/ai-routing/resources, 0 unknown to the taxonomy
+#   open-api contract: 122 paths, 0 outside OPEN_API_PREFIXES
+#   OPEN_API_PREFIXES: standalone gateway 12, bootstrap mirror 12
+# 反例（必须会红）：删掉 /v1/messages 那条 arm + 往 seed 注入一个 bogus apiCode
+#   → exit 1，两类漂移都被点名到具体条目
+
+# generations（a4b32b5）
+cargo test -p sdkwork-intelligence-generations-service   # 6 passed; 0 failed
+
+# Rust 断言已真实执行（不再是 Node 侧复刻，见 8.2）
+# RUSTUP_TOOLCHAIN=stable-x86_64-pc-windows-gnu + PATH 含 D:/programs/mingw64/bin
+cargo test -p sdkwork-cloudrouter-router-service --test ai_route_taxonomy   # 2 passed; 0 failed
+```
+
+### 8.2 工具链缺口已解除；assembly 的那条断言改由门禁等价覆盖
+
+上一版这里写着「cloudrouter 的 `cargo test` 跑不了」。**该结论已作废**：本机 `rustup` 同时装着
+`stable-x86_64-pc-windows-msvc`（`rust-toolchain.toml` 的 `channel = "stable"` 在本仓解析到它，
+而它的 Windows SDK 缺 Include/Lib）与 `stable-x86_64-pc-windows-gnu`；MinGW 在
+`D:/programs/mingw64`，只是不在 PATH。补上 PATH 并显式选 GNU 工具链即可真正编译与执行：
+
+```bash
+export PATH="/d/programs/mingw64/bin:$PATH"
+export RUSTUP_TOOLCHAIN=stable-x86_64-pc-windows-gnu
+
+cargo check -p sdkwork-cloudrouter-edge-runtime                               # exit 0
+cargo test  -p sdkwork-cloudrouter-router-service --test ai_route_taxonomy    # 2 passed; 0 failed
+```
+
+于是 P0-4 / P0-5 的 `ai_route_taxonomy` 断言从「Node 侧等价核对」变成了**真实执行**。
+
+**仍然跑不了的只剩 `sdkwork-api-cloudrouter-assembly`，而且原因与工具链无关**：
+`crates/sdkwork-api-cloudrouter-assembly/src/feeds_open_runtime.rs:91-102` 调用了
+`sdkwork_web_bootstrap::shared_rate_limit_store` / `shared_idempotency_store` /
+`shared_concurrent_admission_store`，而这三个函数在 `sdkwork-web-bootstrap` 里被
+`#[cfg(feature = "redis")]` 门控，assembly 的 `Cargo.toml` 又没有 `[features]` 段去启用它。
+这不是本次引入的：`feeds_open_runtime.rs` 处于 HEAD 版本（工作树无改动），且
+`cargo check -p sdkwork-api-cloudrouter-assembly`（**不带 `--test`**）在默认 features 下同样以
+E0425 exit 101 —— 该 crate 在本机默认 features 下本来就编译不过，`bootstrap.rs` 里那条前缀覆盖
+断言因此够不着。已记入第 3 节清单末尾的 P2-9。
+
+它并没有失去覆盖：本轮的 `tools/check-cloudrouter-ai-routing-consistency.mjs` 在 Node 侧对
+**同一批来源**做了等价断言，而且更强 —— 除了 122 条契约路径的前缀覆盖，还额外校验
+`OPEN_API_PREFIXES` 与 `bootstrap.rs` 镜像逐项一致（12 vs 12），这是 Rust 那条断言没做的部分。
+
+**仍未执行**：真实厂商调用（从入站面到第三方 API 的最后一跳），见第 7 节。
 
 ### 8.3 提交后仍未跟踪/未提交的旁支
 
-本次按仓库分组提交了内容生成链路，**以下既有未提交内容不属于本次改动，未纳入提交**：
+> **更正（第二轮）**：上一版把 `crates/sdkwork-cloudrouter-edge-runtime/src/passthrough.rs`
+> 和 `sdkwork-generations` 的 `gateway.rs` / `generations_service.rs` / `handlers.rs` 列为
+> 「不属于本次改动，未纳入提交」，**这个判断是错的**。它们未提交的内容正是本链路自己缺的那一半：
+> `passthrough.rs` 的 8 条厂商映射是 P0-5 在 edge 侧的配套，generations 那三个文件是
+> avatar / motion_mimicry 的网关与 handler 实现。只提交契约不提交实现，会让 HEAD 连自己带的门禁
+> 都过不了 —— `check_generations_route_contract.mjs` 断言 21 个操作都要有 handler，而 adapter
+> 调用的 9 个 gateway 方法在当时的 HEAD 上并不存在。两者均已随本轮提交
+> （`dedcb9b7` / `a4b32b5`）。
 
-- `sdkwork-cloudrouter`：`Cargo.toml` / `Cargo.lock`、`crates/sdkwork-cloudrouter-config/src/database.rs`、
+以下才是真正无关的旁支，仍未提交：
+
+- `sdkwork-cloudrouter`：`Cargo.toml` / `Cargo.lock`、`apis/manifest.json`、
+  `crates/sdkwork-cloudrouter-config/src/database.rs`、
   `crates/sdkwork-cloudrouter-observability/src/tracing_setup.rs`、
-  `crates/sdkwork-cloudrouter-edge-runtime/src/passthrough.rs` 与 `tests/media_routing_e2e.rs`、
+  `crates/sdkwork-cloudrouter-edge-runtime/tests/media_routing_e2e.rs`、
   `scripts/plan-cloud-router-install-packages.mjs`、`scripts/start-cloud-router-production.mjs`、
-  `package.json`、`docs/guides/developer/README.md`、`docs/audit/DELETED-FILE-FORENSICS-2026-09-11.md`、
-  `data/skills/cloudhub/...`、SDK 内 TS `package.json` 的 `workspace:*` 改写；
+  `docs/guides/developer/README.md`、`docs/audit/DELETED-FILE-FORENSICS-2026-09-11.md`、
+  `data/skills/cloudhub/...`、`sdks/cloudrouter-open-sdk/.../package.json` 的 `workspace:*` 改写；
+  `package.json` 里 `check:rust-dependency-singularity` 那一行（配套脚本仍未跟踪，所以本轮
+  `package.json` 是逐行暂存的，只提交了 `api:ai-routing-consistency:check` 那两处）；
   未跟踪：`tests/audio_vendor_routing_e2e.rs`、`tests/avatar_motion_routing_e2e.rs`、
   `scripts/check-rust-dependency-singularity.mjs`、`scripts/rust-dependency-singularity.baseline.json`。
-- `sdkwork-generations`：`Cargo.lock`、`crates/sdkwork-generations-provider-adapter/src/gateway.rs`、
-  `crates/sdkwork-intelligence-generations-service/src/service/{generations_service,handlers}.rs`。
+- `sdkwork-generations`：`Cargo.lock`。
