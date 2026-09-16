@@ -24,6 +24,24 @@ class CloudRouterSdkGuardianResult:
     messages: list[str]
 
 
+# `index.ts` is the only *source* file a composed facade may declare. TypeScript
+# compiles that very file in place when the facade package is built, so the
+# sibling `index.js` / `index.d.ts` (and their source maps) are expected build
+# output rather than transport copied into the facade. They are git-ignored --
+# see the "Compiled facade droppings" block in .gitignore -- which means a clean
+# checkout never contains them but any already-built workstation does. Treating
+# them as violations would make this guardian fail on every local build and turn
+# `pnpm verify` into a gate that cannot be run twice in a row.
+COMPOSED_FACADE_BUILD_OUTPUTS = frozenset(
+    {
+        "index.js",
+        "index.js.map",
+        "index.d.ts",
+        "index.d.ts.map",
+    }
+)
+
+
 @dataclass(frozen=True)
 class ExpectedSdk:
     family_directory: str
@@ -230,7 +248,15 @@ class CloudRouterSdkGuardian:
     def _check_composed_facade(self, sdk_dir: str, base: Path, messages: list[str]) -> None:
         source_root = base / "src"
         source_files = (
-            sorted(path.relative_to(source_root).as_posix() for path in source_root.rglob("*") if path.is_file())
+            sorted(
+                relative
+                for relative in (
+                    path.relative_to(source_root).as_posix()
+                    for path in source_root.rglob("*")
+                    if path.is_file()
+                )
+                if relative not in COMPOSED_FACADE_BUILD_OUTPUTS
+            )
             if source_root.is_dir()
             else []
         )

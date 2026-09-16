@@ -956,6 +956,68 @@ class CloudRouterSdkGuardianTest(unittest.TestCase):
                 result.messages,
             )
 
+    def test_allows_composed_facade_typescript_build_outputs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_sdk(
+                root,
+                "cloudrouter-app-sdk",
+                "@sdkwork/cloudrouter-app-sdk",
+                "app",
+                "SdkworkAppClient",
+                "/app/v3/api",
+            )
+            self.write_sdk(
+                root,
+                "cloudrouter-backend-sdk",
+                "@sdkwork/cloudrouter-backend-sdk",
+                "backend",
+                "SdkworkBackendClient",
+                "/backend/v3/api",
+            )
+            app_root = root / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript"
+            for artifact in ("index.js", "index.js.map", "index.d.ts", "index.d.ts.map"):
+                (app_root / "src" / artifact).write_text(
+                    f"{COMPOSED_INDEX}",
+                    encoding="utf-8",
+                )
+            self.write_portal_sdk_boundary(root)
+
+            result = CloudRouterSdkGuardian(root=root).run()
+
+            self.assertTrue(result.ok, result.messages)
+
+    def test_reports_non_index_artifact_in_composed_facade(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.write_sdk(
+                root,
+                "cloudrouter-app-sdk",
+                "@sdkwork/cloudrouter-app-sdk",
+                "app",
+                "SdkworkAppClient",
+                "/app/v3/api",
+            )
+            self.write_sdk(
+                root,
+                "cloudrouter-backend-sdk",
+                "@sdkwork/cloudrouter-backend-sdk",
+                "backend",
+                "SdkworkBackendClient",
+                "/backend/v3/api",
+            )
+            app_root = root / "sdks" / "cloudrouter-app-sdk" / "cloudrouter-app-sdk-typescript"
+            (app_root / "src" / "index.cjs").write_text("module.exports = {};\n", encoding="utf-8")
+            self.write_portal_sdk_boundary(root)
+
+            result = CloudRouterSdkGuardian(root=root).run()
+
+            self.assertFalse(result.ok)
+            self.assertIn(
+                "cloudrouter-app-sdk-typescript composed src must contain only index.ts; generated transport belongs under generated/server-openapi",
+                result.messages,
+            )
+
     def test_reports_unexported_generated_api_artifact(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
