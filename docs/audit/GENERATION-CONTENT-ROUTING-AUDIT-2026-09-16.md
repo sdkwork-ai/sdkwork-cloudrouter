@@ -780,3 +780,128 @@ cp /tmp/keep.json package.json
 > 本轮**未**改动 `docs/guides/developer/README.md`：它仍把 `frontend source hygiene`
 > 列为验证步骤，但该文件正被另一会话编辑（`00:57:46` 批次）⇒ 文档同步留给该会话或后续轮次。
 
+## 11. 第 6 轮：把 16 个商业契约守门人从 3 红推到 1 红（2026-09-16 深夜）
+
+提交 **`731d5c21`**（8 文件 +1657/−309）。三项修复同属一种形状：**契约声明了期望，仓库实物已漂移**。
+
+### 11.1 N-8 定性更正：不是「值漂移」，是 **family 快照整份缺盖章**
+
+§10.6 把 N-8 记成 `x-sdkwork-api-authority` 值差异 —— **不准确，此处更正**。
+实测那 6 条 guardian 报错里，**4 条**的真因是 family 快照缺失全部 `x-sdkwork-*` 印章：
+
+| 文件 | path 数 | 已盖章 operation 数（修复前） |
+| --- | --- | --- |
+| `generated/openapi/cloudrouter-app-openapi.json` | 25 | **31** |
+| `sdks/cloudrouter-app-sdk/openapi/cloudrouter-app-sdk.openapi.json` | 25 | **0** |
+| `generated/openapi/cloudrouter-backend-openapi.json` | 76 | **120** |
+| `sdks/cloudrouter-backend-sdk/openapi/cloudrouter-backend-sdk.openapi.json` | 76 | **0** |
+
+**根因链**（第 5 轮的操作不全）：family 快照的唯一生产者是
+`standardizer._sync_sdk_family_openapi_snapshots()`，它从 `SDK_GENERATED_OPENAPI_PATHS[fam]`
+（= `generated/openapi/*`，**已被 sync 盖章**）派生。第 5 轮只跑了
+`--sdk-dir cloudrouter-open-sdk --openapi-only` ⇒ **只刷新 open-sdk**，app/backend 停在盖章前。
+
+**修复**：不带 `--sdk-dir` 跑 `--openapi-only`（全量三 family），只改 4 个文件。
+
+> open-sdk 为何不报错：它的 source 是 portal 契约（**本身不盖章**），期望值本就是 0 印章 ——
+> 不是它更干净。这正是「报错集中在 app/backend」的原因。
+>
+> SDK 生成器**不消费**这 4 个扩展（`grep x-sdkwork-{permission,request-context,required-surface}`
+> 在 `sdkwork-sdk-generator/src/` 与全部生成物里均 0 命中）⇒ **无需重跑九语言生成**。
+
+### 11.2 守门人对**自身构建产物**误报（R2 类；`pnpm verify` 曾无法连跑两次）
+
+`_check_composed_facade` 用 `rglob("*")` 收 `src/` 下**全部**文件，`!= ["index.ts"]` 即报错。
+但 `tsc` 会**就地**把 `src/index.ts` 编译成 `index.js` / `index.d.ts` / 两个 `.map`，
+其内容恰是 `export * from '../generated/server-openapi/src/index';`
+—— **正是检查器要求的**那份薄 re-export；而 `.gitignore:172` 的官方注释
+`# Compiled facade droppings ... (build output only)` 就是声明这 4 个。
+
+| 取证 | 结果 |
+| --- | --- |
+| 移走那 4 个文件后跑 guardian | **`CloudRouter generated SDKs passed`（全绿）** |
+| `.gitignore` 规则来源 | `e32cdfd2`（2026-09-11） |
+| 产物 mtime | 2026-09-15（迁盘当天）⇒ 历史遗留 + 规则过时 |
+| `pnpm --dir <composed> build` 是否产出它们 | **不产出**（落 `dist/`，见 `COMPOSED_BUILD_SCRIPT`） |
+
+**后果（比误报更严重）**：guardian 排在 verify 计划的 build **之前**
+（`COMMERCIAL_CONTRACT_GUARDIANS` 于 `verify-cloud-router-application.mjs:566`，
+`buildSdkRuntimeBuildPlan` 于 `:568`）⇒ 第一次 verify 绿、**第二次必红**。
+
+**修复**：`COMPOSED_FACADE_BUILD_OUTPUTS` **精确文件名**豁免（非后缀通配），
+补正/负两个单测。负向实证：`src/sdk.ts` 与 `src/index.cjs` **仍被报** ⇒ 护栏未削弱。
+
+### 11.3 N-9：**第二次**撞见 `23559fcc` 的悬空引用（与 N-5 同源）
+
+| 项 | 事实 |
+| --- | --- |
+| 被删物 | `docs/schema-registry/frontend-static-source-snapshots.yaml`（58 行） |
+| 删除者 | `23559fcc`（2026-06-29，那次删 **97998** 个文件的巨型 sync） |
+| 谁还在引用 | `tools.frontend_static_source_manifest --check` ⇒ 在 verify 里直接 exit 1 |
+| 关键反转 | **被跟踪的 `generated/schema/frontend/frontend-static-source-manifest.json` 早已是新仓名版本**（新 schema + 新路径）⇒ 有人重命名生成过 manifest，只是 yaml 从未补回 |
+| 路由仍在否 | 6 条静态路由（`/`、`/docs`、`/models`、`/product-docs`、`/rankings`、`/sdk-reference`）**全部仍在** `frontend-route-classification.yaml` |
+
+**修复**：按 manifest 的权威值重建 yaml（新 schema 名 + 新 `source_ref` + 以 manifest 为准的
+`schema_tables`）。重建后 validate 通过，与已跟踪 manifest 的**唯一差异是 `source_hash`**
+（源文件本身在迁移后改过）⇒ 重跑生成器即恒绿。3 个单测全绿。
+
+> ⚠️ 别照抄 `23559fcc^` 那版 yaml：它带**旧仓名 `clawrouter`**，且 `/rankings` 的
+> `schema_tables` 是过时的 `ai_usage_fact`（manifest 为 `ai_usage`）⇒ **manifest 比它新**。
+
+### 11.4 守门人全景（16 个）
+
+| 结果 | 守门人 |
+| --- | --- |
+| ✅ **15 绿** | sdk_guardian · skill_guardian · architecture · rust_backend_architecture · gateway_openapi `--check` · precision_audit · payload_sdk_audit · **frontend_static_source_manifest `--check`** · frontend_contract · schema · flyway · frontend_operation · frontend_field · java_legacy · repository_delivery |
+| ❌ **1 红** | `sdkwork_standard_alignment_guardian --strict` —— 唯一条 FAIL 见 §11.5 |
+
+### 11.5 唯一剩下的红：`standalone.production` topology profile 缺失（**交 owner 定**）
+
+| 取证 | 结果 |
+| --- | --- |
+| 报错 | `standalone production topology profile is missing or is not repository-owned` |
+| authority (`specs/topology.spec.json`) 声明 | **10 个** profile |
+| `etc/topology/` 实物 | **8 个** ⇒ 缺 `standalone.production.env` + `cloud.production.env`（检查器只覆盖前者） |
+| `git log -- <缺失路径>` | **空** ⇒ 从未存在，不是被删 |
+| 本仓 production 的其它部分 | `apps/sdkwork-cloudrouter-pc/etc/browser/runtime-env.{standalone,cloud}.production.json` 与 `sdkwork.deployment.config.json` 的 `materialization.profiles` **均已声明** 8 个 profile |
+| 兄弟仓 | 几乎**全有**这 10 个（`sdkwork-api-cloud-gateway` 等）；staging→production 已实测为机械替换：环境标识 + CORS 去 `-staging`（且 **production 仅保留 https**） |
+
+**处置：未擅自创建。** 依据是本仓 owner 自己对同类 CORS 问题的处理口径
+（`docs/audit/WORKSPACE-ALIGNMENT-REGRESSION-2026-09-11.md` §9.3：
+「修复器存在，但……**另需 owner 确认域族登记**，故**未擅自动**」）。
+生产域名/CORS 域族登记属 owner 决策，故仅报告。
+
+### 11.6 本轮新实证的既存红（A/B 证明非本轮引入）
+
+| 测试 | 条数 | 归因 |
+| --- | --- | --- |
+| `test_frontend_route_classification_standard` | **106**（75 FAIL + 31 ERROR） | 全在 `test_sdk_backed_routes_have_frontend_operation_contract_and_expected_sdk_surface`；回退到 HEAD 后跑出**同样 106** |
+| `test_workspace_delivery_standard` | 2 | `CHECK_RESULT.md` 里查不到 `config/config.toml.example`；HEAD 版同样 2 |
+
+### 11.7 验收矩阵（第 6 轮）
+
+| 项 | 结果 |
+| --- | --- |
+| 16 个商业契约守门人 | **15 绿 / 1 红**（§11.5） |
+| `cloudrouter_sdk_guardian` | ✅ `CloudRouter generated SDKs passed` |
+| `frontend_static_source_manifest --check` | ✅ `Frontend static source manifest is current` |
+| SDK guardian 单测 | ✅ 34（含新增正/负 2 条） |
+| SDK standardizer 单测 | ✅ 25 |
+| `test_frontend_static_source_manifest` | ✅ 3 |
+| tooling 契约测试 | 20 条 `not ok`，与 HEAD baseline **逐条相同**（零回归） |
+| 负向验证（guardian 护栏） | ✅ `src/sdk.ts` / `src/index.cjs` 仍被报 |
+
+### 11.8 仍未修（承接 §10.6）
+
+| # | 项 | 状态 |
+| --- | --- | --- |
+| N-2 | `run-cloud-router-application.test.mjs` 硬编码 `...-0.1.0.zip`（实际 0.1.5/0.1.6） | 未修 |
+| N-3 | 同文件读 `sdks/.../typescript/src/<生成文件>.ts`，composed facade 现只有 `index.ts` | 未修 |
+| N-11 | tooling 契约测试 20 条 `not ok`（HEAD 自带） | 未修，已确认与 `package.json` / 本轮改动均无关 |
+| N-12 | `standalone.production` / `cloud.production` topology profile | **待 owner 决策**（§11.5） |
+| N-13 | `test_frontend_route_classification_standard` 106 条 | 未修 |
+| N-14 | `test_workspace_delivery_standard` 2 条 | 未修 |
+| P1-8 | 无轮询调度器 / webhook | 未修（承接 §7） |
+| 真实厂商调用 | 需真实凭证与网络 | 仍未实证（最后一跳唯一未验证环节） |
+
+
