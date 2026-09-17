@@ -3,8 +3,27 @@
 //! Resolves a single bearer credential that is not an API key (non `sk-`/`sp-`
 //! prefixed) into the upstream account route context: the credential is
 //! validated against the IAM database as an SDKWork login auth token, then the
-//! tenant's default upstream account group (`code = "default"`) is selected so
-//! the existing account-pool routing pipeline applies unchanged.
+//! tenant's default upstream account group is selected so the existing
+//! account-pool routing pipeline applies unchanged.
+//!
+//! # Account group selection
+//!
+//! A signed-in session names no group, so the group is resolved *semantically*:
+//! the group the tenant marked `is_default` wins, the installer's
+//! `default-group` code convention is the fallback, and a subject with exactly
+//! one group in scope uses it. The rule and its scope predicate live in
+//! `sdkwork_cloudrouter_router_service::domain::upstream_account_group_selection`
+//! so this channel and the API-key channel cannot drift apart.
+//!
+//! The chosen group is not cosmetic. The account-route selector requires an
+//! exact `account_group_binding.account_group_id == group_id` match, and the
+//! group's resource grants cap which vendor resources its accounts may serve
+//! (`matched_resource_scope` = group grant ∩ vendor resource). Resolving to a
+//! group that only grants the OpenAI resources — which is what a hard-coded
+//! `default-group` name lookup does on a deployment whose default group was
+//! renamed, or whose default group simply is not the OpenAI-shaped one —
+//! silently removes every other capability (video / image / music / voice /
+//! sound effects / digital human / motion mimicry) from every signed-in user.
 
 use std::sync::Arc;
 
@@ -16,6 +35,7 @@ use sdkwork_cloudrouter_router_service::api::{
     OpenAiAuthTokenAuthenticator, OpenAiAuthTokenError, AUTH_TOKEN_SESSION_NAME_SNAPSHOT,
 };
 use sdkwork_cloudrouter_router_service::application::AuthenticatedApiKeyContext;
+use sdkwork_cloudrouter_router_service::domain::select_default_account_group_for_subject;
 use sdkwork_cloudrouter_router_service::ports::UpstreamAccountRouteCatalog;
 use sdkwork_database_sqlx::DatabasePool;
 use sdkwork_iam_web_adapter::{
@@ -23,10 +43,6 @@ use sdkwork_iam_web_adapter::{
 };
 
 use crate::iam_auth_token_cache::{AuthTokenCache, CachedAuthTokenIdentity};
-
-/// Default upstream account group code selected for auth-token sessions
-/// (mirrors the gateway API key default group convention).
-pub const DEFAULT_ACCOUNT_GROUP_CODE: &str = "default-group";
 
 /// Error body for the auth-token channel (OpenAI-compatible error envelope).
 fn auth_token_error(code: &str, message: &str) -> OpenAiAuthTokenError {
@@ -193,26 +209,23 @@ where
             }
         };
 
-        let group = self
-            .catalog
-            .list_upstream_account_groups()
-            .into_iter()
-            .find(|group| group.tenant_id == tenant_id && group.code == DEFAULT_ACCOUNT_GROUP_CODE)
-            // Seeded tenants mark their default group with `is_default`
-            // (code `default-group`); the fallback keeps legacy or
-            // custom-named default groups routable for auth-token sessions.
-            .or_else(|| {
-                self.catalog
-                    .list_upstream_account_groups()
-                    .into_iter()
-                    .find(|group| group.tenant_id == tenant_id && group.is_default)
-            })
-            .ok_or_else(|| {
-                auth_token_error(
-                    "account_group_unavailable",
-                    "tenant default account group is not available",
-                )
-            })?;
+        // A session carries no group, so resolve one semantically out of the
+        // fresh catalog listing: `is_default` first (the tenant's own
+        // declaration), then the `default-group` code convention, then "the
+        // only group in scope". A single listing call feeds all three steps —
+        // the previous shape called `list_upstream_account_groups()` once per
+        // step, which additionally let a catalog refresh between the two calls
+        // resolve the name and the flag against different snapshots.
+        let groups = self.catalog.list_upstream_account_groups();
+        let Some(selection) =
+            select_default_account_group_for_subject(&groups, tenant_id, organization_id)
+        else {
+            return Err(auth_token_error(
+                "account_group_unavailable",
+                "tenant default account group is not available",
+            ));
+        };
+        let group = selection.group;
 
         Ok(AuthenticatedApiKeyContext {
             // No gateway API key backs an auth-token session; 0 marks the

@@ -6,12 +6,14 @@
   "type": "module",
   "main": "src/index.tsx",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "node ../../node_modules/typescript/bin/tsc --noEmit",
+    "test": "node ../../node_modules/vitest/vitest.mjs run --config vitest.config.ts"
   },
   "dependencies": {
     "@sdkwork/cloudroutes-pc-commons": "workspace:*",
     "sdkwork-drive-pc-admin-storage-providers": "workspace:*",
     "sdkwork-drive-pc-admin-core": "workspace:*",
+    "sdkwork-drive-pc-commons": "workspace:*",
     "sdkwork-drive-pc-core": "workspace:*"
   }
 }

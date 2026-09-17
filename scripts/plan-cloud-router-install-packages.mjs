@@ -28,6 +28,10 @@ const LINUX_SHARED_DOC_ROOT = '/usr/share/doc/sdkwork/router';
 const MACOS_SHARED_ROOT = '/usr/local/share/sdkwork/router';
 const MACOS_SHARED_DOC_ROOT = '/usr/local/share/doc/sdkwork/router';
 const WINDOWS_INSTALL_ROOT = '%ProgramFiles%/sdkwork/router';
+// A Windows container image always boots with `C:` as its system drive, so this
+// is the image's own layout rather than this machine's. WORKSPACE-PATH:allow
+// A Windows container image always boots with `C:` as its system drive, so this
+// is the image's own layout rather than this machine's. WORKSPACE-PATH:allow
 const WINDOWS_CONTAINER_INSTALL_ROOT = 'C:/sdkwork/router';
 const WINDOWS_SYSTEM_ROOT = '%ProgramData%/sdkwork/router';
 const WINDOWS_USER_ROOT = '%USERPROFILE%/.sdkwork/router';

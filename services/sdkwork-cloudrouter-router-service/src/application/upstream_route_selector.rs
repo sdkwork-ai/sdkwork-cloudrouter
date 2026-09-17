@@ -9,9 +9,9 @@ use std::fmt::{Display, Formatter};
 
 use crate::domain::{
     has_text, parse_model_catalog_identity, provider_native_model_id, BillingMeter, DomainError,
-    DomainResult, GatewayApiKeyAccountGroupBinding, ModelUpstreamRoute, ResourceDefinition,
-    RouteCandidate, RoutingCapability, UpstreamAccountGroup, UpstreamAccountGroupBinding,
-    UpstreamAccountRoute, UpstreamAccountRoutingStrategy,
+    DomainResult, GatewayApiKeyAccountGroupBinding, ModelUpstreamRoute, PricingDimensionContext,
+    ResourceDefinition, RouteCandidate, RoutingCapability, UpstreamAccountGroup,
+    UpstreamAccountGroupBinding, UpstreamAccountRoute, UpstreamAccountRoutingStrategy,
 };
 use crate::ports::{
     AccountGroupModelAccess, UpstreamAccountRouteCatalog, UpstreamRouteGateDiagnosis,
@@ -77,6 +77,26 @@ pub struct SelectUpstreamAccountRouteQuery {
     pub route_key: String,
     pub api_code: String,
     pub capability: RoutingCapability,
+    /// 调用定价身份解析出的定价资源键。厂商原生媒体路由的 `route_key` 是
+    /// api code（如 `kling.text_to_video`），而 sdkwork-models 目录对这些
+    /// 能力计价的对象是模型（`kuaishou/kling-v3`）；拿 api code 去目录查价
+    /// 必然 `model not found`。由 `pricing_identity` 统一解析后传入，使预检
+    /// 与调用层结算读同一个键。
+    pub pricing_catalog_key: Option<String>,
+    /// 该定价资源要核价的计量单位集合（路由声明 ∩ 目录定义，或目录定义）。
+    /// `None` 表示调用方未解析身份，退化为按 api-request 单档核价。
+    pub pricing_meters: Option<Vec<BillingMeter>>,
+    /// 请求携带的原始模型名，供费率条件（`model` 维度）匹配。
+    pub requested_model: Option<String>,
+    /// 请求携带的原始分辨率（`/resolution`、`/size`、`/output/size`），供预检
+    /// 从目录声明里挑视频计价档位。
+    ///
+    /// 这里传**原始请求值**而不是解析好的档位：档位要按计量单位分别解析，而
+    /// 预检是对 `pricing_meters` 逐个计量单位核价的。同一个模型的不同计量单位
+    /// 挂在不同的档位维度上（`video_output_second` 按分辨率档、`video_result`
+    /// 按时长档），一个解析结果覆盖全部计量单位会把其中一支的费率全部过滤掉。
+    /// `None` = 请求没给分辨率，由目录的默认档位声明决定。
+    pub pricing_resolution: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -477,9 +497,17 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         );
         let routes = self.group_scoped_account_routes(&account_routes, &account_group_bindings);
         if routes.is_empty() {
-            return Err(UpstreamRouteSelectionError::upstream_route_unavailable(
-                "upstream route is not available for configured upstream account route: no upstream account routes are configured",
-            ));
+            // Name the group the request actually resolved to. This is the
+            // symptom operators hit hardest: a session whose group grants only
+            // some vendors gets here for every other vendor's api scope, and
+            // without the group identity the message reads as if no account
+            // existed at all. The group is resolved semantically (see
+            // `domain::select_default_account_group_for_subject`), so the code
+            // is what tells an operator which rule step picked the pool.
+            return Err(UpstreamRouteSelectionError::upstream_route_unavailable(format!(
+                "upstream route is not available for configured upstream account route: no upstream account routes are configured for account group {} (id {}) on api scope {}",
+                query.context.group_code, query.context.group_id, query.api_code,
+            )));
         }
 
         // Account-resource gate: the selected account group must contain at
@@ -949,41 +977,135 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         CandidateUpstreamAccountRouteEvaluation::NoCallableCandidate
     }
 
-    /// Verifies the api-request price exists for the account route on the
-    /// model-less (api-request-metered) path.
+    /// Verifies the account route is priceable **for customer billing**.
+    ///
+    /// Two decisions were needed here, and both are now anchored on the
+    /// sdkwork-models pricing contract rather than on assumptions:
+    ///
+    /// 1. **Which resource and meters.** The preflight must mirror the resource
+    ///    identity the invocation pipeline will price with, otherwise a route
+    ///    can pass here and still fail pricing after dispatch. For API-resource
+    ///    class routes the `route_key` is an api code, so the caller supplies
+    ///    the catalog-backed pricing key and meter set resolved by
+    ///    `pricing_identity`; a raw api code can never be a model catalog key.
+    ///    Meters come from the catalog too: the taxonomy's declared meter is
+    ///    only a default, and the catalog is the authority on what a model is
+    ///    priced per (`openai/gpt-image-2` is billed per image *token*, not per
+    ///    image result; `kuaishou/kling-v3` per output second, not per video
+    ///    result).
+    /// 2. **What "priced" means.** This gate used to require a *procurement
+    ///    cost* (an upstream-cost price for the exact supplier+account). The
+    ///    sdkwork-models pricing domain states the opposite contract:
+    ///    `PricingResolver` downgrades a missing upstream cost to "no
+    ///    procurement cost" and explicitly must never fail customer billing
+    ///    (`price_service_tests::missing_upstream_route_hint_does_not_fail_the_resolution`).
+    ///    Requiring it made every direct-official account unrouteable whenever
+    ///    the catalog shipped only the `official` price side — which is exactly
+    ///    what `sdkwork-models` ships today (1245 `official` + 13 `reference`
+    ///    prices, zero `upstream`). The gate now asks the real question: does
+    ///    the catalog publish a rate for this resource and meter, so the
+    ///    customer charge can be derived? Procurement cost is still reported on
+    ///    the resolution (and still drives gross margin) whenever it exists.
     fn ensure_account_route_is_priced(
         &self,
         query: &SelectUpstreamAccountRouteQuery,
         route: &UpstreamAccountRoute,
     ) -> DomainResult<()> {
+        let pricing_catalog_key = query
+            .pricing_catalog_key
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .unwrap_or_else(|| query.route_key.trim());
+        // 调用方未解析身份时退化为 api-request 单档（模型无关的 API 资源），
+        // 与历史行为一致。
+        let meters = query
+            .pricing_meters
+            .clone()
+            .filter(|meters| !meters.is_empty())
+            .unwrap_or_else(|| vec![BillingMeter::ApiRequest]);
         let configured_default_region = self.catalog.default_billing_region(
             query.context.tenant_id,
             query.context.organization_id,
-            &query.route_key,
+            pricing_catalog_key,
         );
-        let mut resource =
-            ResourceDefinition::new(&query.route_key, BillingMeter::ApiRequest, Utc::now())
+        let mut last_failure = None;
+        for meter in meters {
+            // 档位按计量单位分别解析：目录把它声明在 `ai_model_video_profile`
+            // 里，把它的报价写在 `pricing_rate` 的 `tier_code` 条件里，两者
+            // 取交集才是可用档位。缺这一维度时解析器会把带条件的候选全部过滤
+            // 干净，报"有模型无价格"——而价格其实在库里。
+            let tier_decision = self.catalog.video_pricing_tier(
+                pricing_catalog_key,
+                &query.api_code,
+                &meter,
+                query.pricing_resolution.as_deref(),
+            );
+            let mut resource = ResourceDefinition::new(pricing_catalog_key, meter, Utc::now())
                 .with_pricing_subject(query.context.api_key_id, Some(query.context.group_id))
                 .with_provider(&route.supplier_code, Some(route.account_id))
                 .with_region_code(&route.region_code)
-                .with_default_billing_region(configured_default_region)
-                .with_model(&query.route_key)
+                .with_default_billing_region(configured_default_region.clone())
                 .with_api_code(&query.api_code);
-        if let Some(identity) = parse_model_catalog_identity(&query.route_key) {
-            resource = resource.with_vendor_code(identity.vendor_code);
+            if let Some(tier_code) = tier_decision.tier_code() {
+                resource = resource.with_dimensions(
+                    PricingDimensionContext::new()
+                        .with_value("tier_code", serde_json::json!(tier_code)),
+                );
+            }
+            if let Some(requested_model) = query
+                .requested_model
+                .as_deref()
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+            {
+                resource = resource.with_model(requested_model);
+            }
+            if let Some(identity) = parse_model_catalog_identity(pricing_catalog_key) {
+                resource = resource.with_vendor_code(identity.vendor_code);
+            }
+            let resolution = PriceService::new().resolve(self.catalog, resource)?;
+            if resource_is_priced_for_billing(&resolution) {
+                return Ok(());
+            }
+            last_failure = Some((
+                format!(
+                    "meter {}: {}{}",
+                    resolution
+                        .audit_snapshot
+                        .resource
+                        .meter
+                        .code(),
+                    resolution
+                        .failure
+                        .as_ref()
+                        .map(|failure| failure.message.as_str())
+                        .unwrap_or("no quoted rate"),
+                    resolution
+                        .failure
+                        .as_ref()
+                        .map(|failure| format!(" ({})", failure.code.code()))
+                        .unwrap_or_default()
+                ),
+                tier_decision.gap_description(),
+            ));
         }
-        let resolution = PriceService::new().resolve(self.catalog, resource)?;
-        if !has_quoted_procurement_cost(&resolution) {
-            return Err(DomainError::new(format!(
-                "upstream cost price not found for route {}, supplier {}, account {}, and region {}{}",
-                query.route_key,
-                route.supplier_code,
-                route.account_id,
-                route.region_code,
-                price_resolution_failure_suffix(&resolution)
-            )));
-        }
-        Ok(())
+        let (failure_detail, tier_gap) =
+            last_failure.unwrap_or_else(|| ("no meters to price".to_owned(), None));
+        Err(DomainError::new(format!(
+            "no price is published for route {}, pricing resource {}, supplier {}, account {}, and region {}: {}{}{}",
+            query.route_key,
+            pricing_catalog_key,
+            route.supplier_code,
+            route.account_id,
+            route.region_code,
+            failure_detail,
+            tier_gap
+                .filter(|_| failure_detail.contains("price_not_found"))
+                .map(|gap| format!("; {gap}"))
+                .unwrap_or_default(),
+            direct_official_cost_gap_hint(&route.supplier_code),
+        )))
     }
 
     fn select_group_bound_account_route(
@@ -1125,6 +1247,10 @@ where
     let configured_default_region =
         catalog.default_billing_region(probe.tenant_id, probe.organization_id, probe.catalog_key);
     for meter in meters {
+        // 同一档位解析也用在 sticky 路径上：目录对视频模型的条件费率同样需要
+        // `tier_code`，两条核价路径的身份必须一致。这里同样按计量单位分别解析。
+        let tier_decision =
+            catalog.video_pricing_tier(probe.catalog_key, probe.api_code, &meter, None);
         let mut resource = ResourceDefinition::new(probe.catalog_key, meter.clone(), Utc::now())
             .with_pricing_subject(probe.api_key_id, Some(probe.account_group_id))
             .with_provider(probe.supplier_code, Some(probe.account_id))
@@ -1132,21 +1258,29 @@ where
             .with_default_billing_region(configured_default_region.clone())
             .with_model(probe.requested_model)
             .with_api_code(probe.api_code);
+        if let Some(tier_code) = tier_decision.tier_code() {
+            resource = resource.with_dimensions(
+                PricingDimensionContext::new().with_value("tier_code", serde_json::json!(tier_code)),
+            );
+        }
         if let Some(identity) = parse_model_catalog_identity(probe.catalog_key) {
             resource = resource.with_vendor_code(identity.vendor_code);
         }
         let resolution = PriceService::new().resolve(catalog, resource);
         match resolution {
-            Ok(resolution) if has_quoted_procurement_cost(&resolution) => {}
-            Ok(_) if meter == BillingMeter::LlmCacheReadToken => {}
+            Ok(resolution) if resource_is_priced_for_billing(&resolution) => {}
+            Ok(resolution) if meter == BillingMeter::LlmCacheReadToken => {
+                let _ = resolution;
+            }
             Ok(resolution) => {
                 return Err(DomainError::new(format!(
-                    "upstream cost price not found for model {}, supplier {}, account {}, and region {}{}",
+                    "no price is published for model {}, supplier {}, account {}, and region {}{}{}",
                     probe.catalog_key,
                     probe.supplier_code,
                     probe.account_id,
                     probe.region_code,
-                    price_resolution_failure_suffix(&resolution)
+                    price_resolution_failure_suffix(&resolution),
+                    direct_official_cost_gap_hint(probe.supplier_code),
                 )));
             }
             Err(_) if meter == BillingMeter::LlmCacheReadToken => {}
@@ -1156,13 +1290,50 @@ where
     Ok(())
 }
 
-fn has_quoted_procurement_cost(resolution: &PriceResolution) -> bool {
-    resolution.status == PriceResolutionStatus::Quoted
-        && resolution
-            .resolved_price
-            .as_ref()
-            .and_then(|price| price.procurement_cost.as_ref())
-            .is_some()
+/// Whether the resolved resource is priced for **customer billing**.
+///
+/// `Quoted` (chargeable rate, no measured quantity yet) and `Rated` both carry
+/// a resolved price, and `NonChargeable` is a legitimate zero price (the
+/// catalog marked the rate `free` / `not_applicable`). Only `Unrated` — no rate
+/// at all, or an unusable one — is a routing-time pricing gap.
+///
+/// This deliberately does **not** require a procurement (upstream cost) price.
+/// See `ensure_account_route_is_priced` for why: the sdkwork-models pricing
+/// contract states a missing upstream cost must degrade to "no procurement
+/// cost" and never block customer billing, and the shipped catalog has no
+/// `upstream` price side at all.
+fn resource_is_priced_for_billing(resolution: &PriceResolution) -> bool {
+    match resolution.status {
+        PriceResolutionStatus::Quoted | PriceResolutionStatus::Rated => {
+            resolution.resolved_price.is_some()
+        }
+        PriceResolutionStatus::NonChargeable => true,
+        PriceResolutionStatus::Unrated => false,
+    }
+}
+
+/// Operator hint appended when a *direct official* account cannot be priced.
+///
+/// A direct official account's procurement cost is the vendor's own published
+/// price, so the only reason it can be unpriced is a catalog gap: the vendor's
+/// models for that capability are not routable/priced in sdkwork-models (this
+/// is the live state of `suno/*`: `status = 0`, `routing_state = 0`,
+/// `shelf_state = hidden`, `release_stage = deprecated`), or the request
+/// omitted the model and no catalog default exists.
+///
+/// 视频类资源的"缺档位"提示不在这里，而在
+/// `VideoPricingTierDecision::gap_description`：档位缺口有四种互不相同的形态
+/// （api code 不对应生成模式 / 该模式没有 profile / 该计量单位没有档位条件费率 /
+/// 声明档位与报价档位不相交），只有目录两侧数据都拿到才说得准。这段提示只负责
+/// "供应商自持资源是否整体不可路由"这一层。
+fn direct_official_cost_gap_hint(supplier_code: &str) -> String {
+    if supplier_code.trim().is_empty() {
+        return String::new();
+    }
+    format!(
+        "; if supplier {} is a direct official account, check that sdkwork-models publishes a routable model with a price for this capability (catalog-only / hidden / deprecated models carry no routable price)",
+        supplier_code.trim()
+    )
 }
 
 fn price_resolution_failure_suffix(resolution: &PriceResolution) -> String {

@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "sdkwork_cloudrouter_flutter_mobile_console_usage",
+    "displayName": "sdkwork_cloudrouter_flutter_mobile_console_usage",
+    "version": "0.1.0",
+    "type": "dart-package",
+    "root": "apps/sdkwork-cloudrouter-flutter-mobile/packages/sdkwork_cloudrouter_flutter_mobile_console_usage",
+    "domain": "cloudrouter",
+    "capability": "usage",
+    "surface": "app",
+    "languages": [
+      "dart"
+    ],
+    "generated": false,
+    "manifests": [
+      "pubspec.yaml",
+      "specs/component.spec.json"
+    ]
+  },
+  "canonicalSpecs": [
+    {
+      "file": "FLUTTER_APP_MOBILE_ARCHITECTURE_SPEC.md",
+      "path": "../../../../../sdkwork-specs/FLUTTER_APP_MOBILE_ARCHITECTURE_SPEC.md",
+      "purpose": "Flutter mobile application root architecture."
+    },
+    {
+      "file": "APP_CLIENT_ARCHITECTURE_ALIGNMENT_SPEC.md",
+      "path": "../../../../../sdkwork-specs/APP_CLIENT_ARCHITECTURE_ALIGNMENT_SPEC.md",
+      "purpose": "Cross-client package taxonomy and dependency direction."
+    },
+    {
+      "file": "APP_FLUTTER_UI_SPEC.md",
+      "path": "../../../../../sdkwork-specs/APP_FLUTTER_UI_SPEC.md",
+      "purpose": "Flutter UI package rules."
+    },
+    {
+      "file": "PAGINATION_SPEC.md",
+      "path": "../../../../../sdkwork-specs/PAGINATION_SPEC.md",
+      "purpose": "Interactive list pagination."
+    },
+    {
+      "file": "I18N_SPEC.md",
+      "path": "../../../../../sdkwork-specs/I18N_SPEC.md",
+      "purpose": "Runtime locale configuration and message catalog rules."
+    }
+  ],
+  "contracts": {
+    "layerRole": "frontend-feature",
+    "publicExports": [
+      "."
+    ],
+    "sdkClients": [],
+    "sdkDependencies": [],
+    "providedPorts": [
+      {
+        "name": "console_usageScreens",
+        "export": "."
+      },
+      {
+        "name": "console_usageRoutes",
+        "export": "."
+      }
+    ],
+    "requiredPorts": [
+      {
+        "name": "cloudRouterConsolePorts",
+        "package": "sdkwork_cloudrouter_flutter_mobile_core",
+        "export": "."
+      },
+      {
+        "name": "cloudRouterFlutterCommons",
+        "package": "sdkwork_cloudrouter_flutter_mobile_commons",
+        "export": "."
+      }
+    ]
+  },
+  "verification": {
+    "commands": [
+      "flutter analyze packages/sdkwork_cloudrouter_flutter_mobile_console_usage"
+    ]
+  }
+}

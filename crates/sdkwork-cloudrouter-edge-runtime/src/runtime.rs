@@ -1502,6 +1502,7 @@ async fn router_with_database_bootstrap(
         if startup_install_mode.should_ensure() {
             DatabaseInstaller::for_postgres(pool.clone())
                 .with_admin_model_store(Arc::new(PostgresModelCatalogAdminStore::new(pool.clone())))
+                .with_credential_secret_codec(credential_secret_codec.clone())
                 .with_env_options()?
                 .ensure_bootstrap_data()
                 .await?;
@@ -2196,6 +2197,7 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
         let database_installer = Arc::new(
             DatabaseInstaller::for_postgres(pool.clone())
                 .with_admin_model_store(Arc::new(PostgresModelCatalogAdminStore::new(pool.clone())))
+                .with_credential_secret_codec(credential_secret_codec.clone())
                 .with_env_options()
                 .map_err(anyhow::Error::new)?,
         );

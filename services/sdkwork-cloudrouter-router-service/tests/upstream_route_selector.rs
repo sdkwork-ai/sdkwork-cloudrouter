@@ -201,6 +201,10 @@ fn account_route_query(group_id: i64) -> SelectUpstreamAccountRouteQuery {
         route_key: RESOURCE_ROUTE_KEY.to_owned(),
         api_code: RESOURCE_API_CODE.to_owned(),
         capability: RoutingCapability::Network,
+        pricing_catalog_key: None,
+        pricing_meters: None,
+        requested_model: None,
+        pricing_resolution: None,
     }
 }
 
@@ -960,7 +964,11 @@ fn route_key_requests_use_the_same_group_strategy() {
             route_key: RESOURCE_ROUTE_KEY.to_owned(),
             api_code: "openai.files".to_owned(),
             capability: RoutingCapability::Network,
-        })
+            pricing_catalog_key: None,
+            pricing_meters: None,
+            requested_model: None,
+            pricing_resolution: None,
+            })
         .unwrap();
 
     assert_eq!(3002, selected.route.account_id);
@@ -1047,7 +1055,11 @@ fn account_route_api_resource_entitlement_must_match_the_request() {
         route_key: RESOURCE_ROUTE_KEY.to_owned(),
         api_code: "openai.files".to_owned(),
         capability: RoutingCapability::Network,
-    };
+        pricing_catalog_key: None,
+        pricing_meters: None,
+        requested_model: None,
+        pricing_resolution: None,
+        };
     let selected = UpstreamRouteSelector::new(&catalog)
         .select_account_route(query)
         .unwrap();
@@ -1078,7 +1090,11 @@ fn account_route_denies_api_resource_not_covered_by_entitlements() {
         route_key: RESOURCE_ROUTE_KEY.to_owned(),
         api_code: "openai.files".to_owned(),
         capability: RoutingCapability::Network,
-    };
+        pricing_catalog_key: None,
+        pricing_meters: None,
+        requested_model: None,
+        pricing_resolution: None,
+        };
     let error = UpstreamRouteSelector::new(&catalog)
         .select_account_route(query)
         .unwrap_err();
@@ -1115,7 +1131,11 @@ fn account_route_model_scoped_entitlement_fails_closed_on_model_less_request() {
         route_key: RESOURCE_ROUTE_KEY.to_owned(),
         api_code: "openai.files".to_owned(),
         capability: RoutingCapability::Network,
-    };
+        pricing_catalog_key: None,
+        pricing_meters: None,
+        requested_model: None,
+        pricing_resolution: None,
+        };
     let error = UpstreamRouteSelector::new(&catalog)
         .select_account_route(query)
         .unwrap_err();
@@ -1240,7 +1260,11 @@ fn account_route_without_api_request_price_reports_pricing_unavailable() {
         route_key: RESOURCE_ROUTE_KEY.to_owned(),
         api_code: RESOURCE_API_CODE.to_owned(),
         capability: RoutingCapability::Network,
-    };
+        pricing_catalog_key: None,
+        pricing_meters: None,
+        requested_model: None,
+        pricing_resolution: None,
+        };
     let error = UpstreamRouteSelector::new(&catalog)
         .select_account_route(query)
         .unwrap_err();

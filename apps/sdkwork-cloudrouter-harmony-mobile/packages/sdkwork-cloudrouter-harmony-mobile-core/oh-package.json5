@@ -1,0 +1,9 @@
+{
+  "name": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-core",
+  "version": "0.1.0",
+  "description": "SDKWork Cloud Router HarmonyOS mobile core: runtime config, SDK port, session store, route/module registry, and host adapter contracts.",
+  "main": "src/main/ets/Index.ets",
+  "author": "SDKWork",
+  "license": "Apache-2.0",
+  "dependencies": {}
+}

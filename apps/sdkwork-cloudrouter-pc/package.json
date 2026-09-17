@@ -101,7 +101,7 @@
     "check:size": "size-limit",
     "test:e2e": "playwright test",
     "test:commerce": "node --import tsx --test commerce-debt-runtime.test.ts commerce-business-runtime.test.ts sdk-composition-standard.test.mjs",
-    "test:portal-alignment": "node --test vite-config-runtime.test.ts sdk-composition-standard.test.mjs scripts/portal-workspace-package-resolver.test.mjs scripts/typecheck-owned-sources.test.mjs",
+    "test:portal-alignment": "node --test vite-config-runtime.test.ts sdk-composition-standard.test.mjs scripts/portal-workspace-package-resolver.test.mjs scripts/storage-i18n-coverage.test.mjs scripts/typecheck-owned-sources.test.mjs",
     "test:admin": "pnpm --filter @sdkwork/cloudrouter-pc-admin-dashboard test && pnpm --filter @sdkwork/cloudrouter-pc-admin-site test && pnpm --filter @sdkwork/cloudrouter-pc-admin-upstream typecheck && pnpm --filter @sdkwork/cloudrouter-pc-admin-runtime-region test && pnpm --filter @sdkwork/cloudrouter-pc-admin-cache test && node --import tsx --test admin-sidebar-runtime.test.ts trade-center-admin-runtime.test.ts && pnpm vitest run trade-i18n-runtime.test.ts trade-host-route-runtime.test.ts --config vite.config.ts --configLoader native --pool vmThreads",
     "typecheck": "node scripts/typecheck-owned-sources.mjs",
     "dev:standalone": "pnpm exec sdkwork-app dev --root ../.. --deployment-profile standalone",

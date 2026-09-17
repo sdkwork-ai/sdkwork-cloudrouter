@@ -201,16 +201,15 @@ struct OtlpRuntime {
         tracing_subscriber::Registry,
         opentelemetry_sdk::trace::Tracer,
     >,
-    provider: opentelemetry_sdk::trace::TracerProvider,
+    provider: opentelemetry_sdk::trace::SdkTracerProvider,
 }
 
 fn build_otlp_runtime(config: &OtlpConfig) -> Result<OtlpRuntime, String> {
     use opentelemetry::trace::TracerProvider as _;
     use opentelemetry::KeyValue;
     use opentelemetry_otlp::{WithExportConfig, WithHttpConfig};
-    use opentelemetry_sdk::runtime::Tokio;
     use opentelemetry_sdk::trace::{
-        BatchConfigBuilder, BatchSpanProcessor, Sampler, TracerProvider as SdkTracerProvider,
+        BatchConfigBuilder, BatchSpanProcessor, Sampler, SdkTracerProvider,
     };
     use opentelemetry_sdk::Resource;
 
@@ -231,12 +230,25 @@ fn build_otlp_runtime(config: &OtlpConfig) -> Result<OtlpRuntime, String> {
         .build()
         .map_err(|error| format!("OTLP span exporter build failed: {error}"))?;
 
+    // `opentelemetry_sdk` 0.30 moved `BatchConfigBuilder::with_max_export_timeout`
+    // behind `experimental_trace_batch_span_processor_with_async_runtime`, and
+    // `BatchConfig`'s fields are `pub(crate)`. The only supported channel left is
+    // the spec-defined `OTEL_BSP_EXPORT_TIMEOUT` environment variable that
+    // `BatchConfigBuilder::default()` reads at construction time. Bridge
+    // `OTEL_EXPORTER_TIMEOUT_SECS` onto it when the operator has not set the
+    // batch-specific override, so the previous behaviour is preserved instead of
+    // silently falling back to the SDK's 30s default.
+    if std::env::var_os("OTEL_BSP_EXPORT_TIMEOUT").is_none() {
+        std::env::set_var(
+            "OTEL_BSP_EXPORT_TIMEOUT",
+            config.export_timeout_secs.to_string(),
+        );
+    }
     let batch_config = BatchConfigBuilder::default()
         .with_max_queue_size(OTLP_MAX_QUEUED_SPANS)
         .with_max_export_batch_size(OTLP_MAX_EXPORT_BATCH_SIZE)
-        .with_max_export_timeout(timeout)
         .build();
-    let span_processor = BatchSpanProcessor::builder(exporter, Tokio)
+    let span_processor = BatchSpanProcessor::builder(exporter)
         .with_batch_config(batch_config)
         .build();
     let provider = SdkTracerProvider::builder()
@@ -244,10 +256,11 @@ fn build_otlp_runtime(config: &OtlpConfig) -> Result<OtlpRuntime, String> {
         .with_sampler(Sampler::ParentBased(Box::new(Sampler::TraceIdRatioBased(
             config.sampling_rate,
         ))))
-        .with_resource(Resource::new(vec![KeyValue::new(
-            "service.name",
-            config.service_name.clone(),
-        )]))
+        .with_resource(
+            Resource::builder()
+                .with_attribute(KeyValue::new("service.name", config.service_name.clone()))
+                .build(),
+        )
         .build();
 
     // Get the SDK tracer BEFORE moving the provider into the global slot.

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@monaco-editor/react": "catalog:",
+    "@sdkwork/cloudrouter-app-sdk": "workspace:*",
     "@sdkwork/cloudrouter-pc-console-core": "workspace:*",
     "@sdkwork/cloudroutes-pc-commons": "workspace:*",
     "@sdkwork/models-app-sdk": "workspace:*",

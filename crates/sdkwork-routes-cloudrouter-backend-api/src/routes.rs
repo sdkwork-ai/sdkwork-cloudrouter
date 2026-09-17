@@ -1096,6 +1096,7 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
     let database_installer = Arc::new(
         DatabaseInstaller::for_postgres(pool.clone())
             .with_admin_model_store(Arc::new(PostgresModelCatalogAdminStore::new(pool.clone())))
+            .with_credential_secret_codec(credential_secret_codec.clone())
             .with_env_options()?,
     );
     if startup_install_mode.should_ensure() {

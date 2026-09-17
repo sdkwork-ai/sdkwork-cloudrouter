@@ -31,10 +31,21 @@
  * 4. Every arm of the `path -> api_code` map has to be described by a seeded
  *    `api_endpoint`. The router matches the arms above, but `pathTemplate` is
  *    what the resource catalogue persists and displays, so a template naming a
- *    path no arm can produce advertises an entry point that does not exist.
+ *    path no arm can answer advertises an entry point that does not exist.
  *    This is the check that caught `anthropic.claude_code` seeded as
  *    `/v1/claude/code` and `gemini.live` as
  *    `/v1beta/models/{model}:liveGenerateContent`.
+ *
+ *    Every arm is *evaluated* here, predicate arms included. Comparing the
+ *    literal arms only — and reporting the rest as "not comparable" — is what
+ *    let the same defect survive three more times: `gemini.image_generation` and
+ *    `gemini.nano_banana.image_generation` both advertised
+ *    `/v1beta/models/{model}:predict` and `kling.task_query` advertised
+ *    `/v1/videos/{taskId}`, while the arms answer `:generateImages` (the
+ *    nano-banana branch additionally needing the `/nano-banana:` model segment)
+ *    and `/v1/videos/generations/{task_id}`. All three are now red when
+ *    reintroduced. An arm shape this gate cannot model is a hard failure, so it
+ *    can never go back to silently skipping.
  *
  * 5. Every vendor-native namespace the gateway contract serves has to be known
  *    to every registry that classifies it — the contract generator's
@@ -53,6 +64,32 @@
  *    prefix. Check 5 guards the declaration the generators read; this one reads
  *    what they actually emitted, across all nine languages, because a stale
  *    declaration produces a silently wrong path rather than a build error.
+ *
+ * 7. Every vendor-native operation the open-api contract publishes has to be
+ *    routable: an arm for the path, a taxonomy route for the api code, and a
+ *    seeded `api_endpoint` for it. The contract is the published ingress, so a
+ *    caller driving the generated SDK sends exactly these paths, and a path
+ *    that any link in that chain cannot name fails closed with `50201 no
+ *    upstream account routes are configured` — a message that names neither the
+ *    path nor the missing link. Checks 1-6 all passed while 30 of the 47
+ *    published vendor-native operations were in that state.
+ *
+ *    A namespace may legitimately be declared ahead of its routing support, so
+ *    the check carries an exact unrouted ledger: an operation that is published
+ *    but unroutable has to be declared with a reason, an operation that becomes
+ *    routable has to leave the ledger, and a ledger entry the contract no longer
+ *    publishes has to be deleted. The ledger therefore cannot grow silently or
+ *    rot into a permanent excuse.
+ *
+ * 8. Every vendor- or modality-scoped resource group has to grant exactly the
+ *    seeded `api_endpoint` resources its own name claims. Groups are the last
+ *    link of the chain — routing resolves an api code, but an account only
+ *    reaches it if a group it belongs to grants the resource. `api.kling.all`
+ *    ("All Kling API resources") granted 4 of Kling's 6 seeded endpoints, and
+ *    the two it omitted are the ones the digital-human and motion-control
+ *    features are driven by, so an admin-API account got `50201 no upstream
+ *    account routes are configured` for capabilities the group name promised.
+ *    The expected set is derived from the seeds, so the check cannot drift.
  *
  * Usage:
  *   node tools/check-cloudrouter-ai-routing-consistency.mjs [--root <dir>]
@@ -139,25 +176,6 @@ function reportSetDifference(label, left, right) {
  * of paths rather than one literal, so they cannot be compared textually and are
  * counted separately.
  */
-function literalPathArms(source, relativePath) {
-  const functionBody = source.match(
-    /fn provider_native_api_code_from_standard_path[\s\S]*?\n\}\n/,
-  );
-  if (!functionBody) return { arms: [], predicateCount: 0 };
-  const arms = [];
-  const pattern =
-    /((?:"[a-z0-9_.]+")(?:\s*\|\s*"[a-z0-9_.]+")*)\s*if\s+path\s*==\s*"([^"]+)"\s*=>\s*"([a-z0-9_.]+)"/g;
-  let match;
-  while ((match = pattern.exec(functionBody[0])) !== null) {
-    const providers = [...match[1].matchAll(/"([a-z0-9_.]+)"/g)].map(
-      (entry) => entry[1],
-    );
-    arms.push({ providers, path: match[2], apiCode: match[3] });
-  }
-  const allArms = functionBody[0].match(/=>\s*"[a-z0-9_.]+"/g) ?? [];
-  return { arms, predicateCount: allArms.length - arms.length };
-}
-
 /**
  * Whether a seeded `pathTemplate` describes the same upstream path an arm
  * matches. Arms carrying a provider prefix (`/vidu/ent/v2/template`) are
@@ -170,6 +188,285 @@ function pathTemplateCompatible(armPath, template) {
   const collapse = (value) => value.replace(/\{[^}]*\}/g, "{}");
   return collapse(armPath) === collapse(template);
 }
+
+// ---------------------------------------------------------------------------
+// The `path -> api_code` map, as a model the gate can *evaluate*
+// ---------------------------------------------------------------------------
+//
+// Checks 4 and 7 need to answer "which api code does the gateway resolve for
+// this path", not "which literal strings appear in the source". Comparing only
+// the literal arms is what let three seeded `pathTemplate`s drift: with the
+// predicate arms dismissed as "not comparable", nothing noticed that
+// `gemini.image_generation` and `gemini.nano_banana.image_generation` both
+// advertised `/v1beta/models/{model}:predict` and `kling.task_query` advertised
+// `/v1/videos/{taskId}` — no arm can produce any of those three paths.
+//
+// So every arm is parsed into a shape, and a shape the gate cannot model is a
+// hard failure rather than a silent skip: an arm nobody can read is an arm
+// whose drift nobody notices.
+
+const GEMINI_MODELS_PREFIX = "/v1beta/models/";
+const NANO_BANANA_MARKER = "/nano-banana:";
+
+/** The poll helpers, and the family each one pins. */
+const POLL_HELPERS = {
+  task_query_path_matches: "v1/tasks",
+  music_task_query_path_matches: "v1/music/generations",
+};
+
+function parsePathArms(source, relativePath) {
+  const label = `${relativePath}: provider_native_api_code_from_standard_path`;
+  const functionBody = source.match(
+    /fn provider_native_api_code_from_standard_path[\s\S]*?\n\}\n/,
+  );
+  if (!functionBody) {
+    failures.push(`${label}: function not found`);
+    return null;
+  }
+  const block = functionBody[0].match(
+    /let api_code = match provider\.as_str\(\) \{([\s\S]*?)\n {4}\};/,
+  );
+  if (!block) {
+    failures.push(`${label}: cannot isolate the api_code match block`);
+    return null;
+  }
+  // rustfmt puts every arm at the same indent and the catch-all at `        _`,
+  // so a lookahead split yields exactly one chunk per arm — including the
+  // block-bodied ones, whose continuation lines sit deeper.
+  const chunks = block[1]
+    .split(/\n(?= {8}["_])/)
+    .map((chunk) => chunk.replace(/\s+/g, " ").trim())
+    .filter((chunk) => chunk.length > 0)
+    .filter((chunk) => !chunk.startsWith("_ "));
+
+  const arms = [];
+  const unknown = [];
+  for (const chunk of chunks) {
+    const providerPart = chunk.match(
+      /^((?:"[^"]+")(?:\s*\|\s*"[^"]+")*)\s*if\s+([\s\S]*)$/,
+    );
+    if (!providerPart) {
+      unknown.push(chunk);
+      continue;
+    }
+    const providers = [...providerPart[1].matchAll(/"([^"]+)"/g)].map(
+      (entry) => entry[1],
+    );
+    // rustfmt wraps a long body in a block and every arm carries a trailing
+    // comma; normalise both away so one shape pattern covers both spellings.
+    const condition = providerPart[2]
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/,$/, "")
+      .replace(/=> \{ "([^"]+)" \}$/, '=> "$1"');
+
+    let shape = condition.match(/^path == "([^"]+)" => "([^"]+)"$/);
+    if (shape) {
+      arms.push({
+        providers,
+        kind: "literal",
+        path: shape[1],
+        apiCode: shape[2],
+      });
+      continue;
+    }
+
+    shape = condition.match(/^path\.starts_with\("([^"]+)"\) => "([^"]+)"$/);
+    if (shape) {
+      arms.push({
+        providers,
+        kind: "pathPrefix",
+        prefix: shape[1],
+        apiCode: shape[2],
+      });
+      continue;
+    }
+
+    shape = condition.match(
+      /^gemini_model_action_matches\(path\.as_str\(\), "([^"]+)"\) => "([^"]+)"$/,
+    );
+    if (shape) {
+      arms.push({
+        providers,
+        kind: "geminiAction",
+        action: shape[1],
+        apiCode: shape[2],
+      });
+      continue;
+    }
+
+    shape = condition.match(
+      /^gemini_model_action_matches\(path\.as_str\(\), "([^"]+)"\) => \{ if path\.contains\("([^"]+)"\) \{ "([^"]+)" \} else \{ "([^"]+)" \} \}$/,
+    );
+    if (shape) {
+      arms.push({
+        providers,
+        kind: "geminiAction",
+        action: shape[1],
+        branch: { contains: shape[2], apiCode: shape[3] },
+        apiCode: shape[4],
+      });
+      continue;
+    }
+
+    shape = condition.match(
+      /^task_poll_path_matches\(path\.as_str\(\), "([^"]+)"\) => "([^"]+)"$/,
+    );
+    if (shape) {
+      arms.push({
+        providers,
+        kind: "poll",
+        family: shape[1],
+        apiCode: shape[2],
+      });
+      continue;
+    }
+
+    shape = condition.match(
+      /^([A-Za-z_][A-Za-z0-9_]*)\(path\.as_str\(\)\) => "([^"]+)"$/,
+    );
+    if (shape && POLL_HELPERS[shape[1]]) {
+      arms.push({
+        providers,
+        kind: "poll",
+        family: POLL_HELPERS[shape[1]],
+        apiCode: shape[2],
+      });
+      continue;
+    }
+
+    unknown.push(chunk);
+  }
+
+  if (unknown.length > 0) {
+    failures.push(
+      `${label}: ${unknown.length} arm(s) this gate cannot model; extend the gate instead of leaving them unchecked`,
+    );
+    for (const chunk of unknown) failures.push(`    ${chunk}`);
+    return null;
+  }
+  return arms;
+}
+
+function normalizeProviderMatchKey(value) {
+  return String(value)
+    .trim()
+    .replace(/^\/+|\/+$/g, "")
+    .toLowerCase()
+    .replace(/[/:-]/g, ".")
+    .replace(/^\.+|\.+$/g, "");
+}
+
+function normalizeProviderApiPath(supplierCode, matchKey, standardPath) {
+  const raw = String(standardPath).trim();
+  const path = (raw.startsWith("/") ? raw : `/${raw}`).toLowerCase();
+  const supplierPrefix = `/${String(supplierCode)
+    .trim()
+    .replace(/^\/+|\/+$/g, "")
+    .toLowerCase()}/`;
+  if (path.startsWith(supplierPrefix)) return `/${path.slice(supplierPrefix.length)}`;
+  const keyPrefix = `/${matchKey}/`;
+  if (path.startsWith(keyPrefix)) return `/${path.slice(keyPrefix.length)}`;
+  return path;
+}
+
+/** The single path an arm's `path == "<literal>"` / poll / action shape pins, for template comparison. */
+function armPinnedPaths(arm) {
+  switch (arm.kind) {
+    case "literal":
+      return [arm.path];
+    case "pathPrefix":
+      return [`${arm.prefix}{value}`];
+    case "geminiAction":
+      return arm.branch
+        ? [
+            `${GEMINI_MODELS_PREFIX}{model}:${arm.action}`,
+            `${GEMINI_MODELS_PREFIX}nano-banana:${arm.action}`,
+          ]
+        : [`${GEMINI_MODELS_PREFIX}{model}:${arm.action}`];
+    case "poll":
+      return [`/${arm.family}/{task_id}`, `/${arm.family}/task_abc123`];
+    default:
+      return [];
+  }
+}
+
+/**
+ * Whether `template` names a path this arm answers *for this api code*.
+ * Evaluated, not text-matched, and branch-aware: the `:generateImages` arm is one
+ * arm with two api codes, and only its `/nano-banana:` branch answers
+ * `gemini.nano_banana.image_generation` — so a template naming the nano-banana
+ * model must not pass for the plain `gemini.image_generation` entry, which is
+ * how the two used to share the unreachable `/v1beta/models/{model}:predict`.
+ */
+function armAnswersTemplate(arm, template, apiCode) {
+  if (!template) return false;
+  const collapse = (value) => value.replace(/\{[^}]*\}/g, "{}");
+  switch (arm.kind) {
+    case "literal":
+      return pathTemplateCompatible(arm.path, template);
+    case "pathPrefix":
+      return template.startsWith(arm.prefix);
+    case "poll": {
+      const prefix = `/${arm.family}/`;
+      if (!template.toLowerCase().startsWith(prefix)) return false;
+      const tail = template.slice(prefix.length);
+      return tail.length > 0 && !tail.includes("/");
+    }
+    case "geminiAction": {
+      const lower = template.toLowerCase();
+      if (!lower.startsWith(GEMINI_MODELS_PREFIX)) return false;
+      if (!lower.endsWith(`:${arm.action}`)) return false;
+      const nanoModel =
+        lower.includes(NANO_BANANA_MARKER) ||
+        lower.startsWith(`${GEMINI_MODELS_PREFIX}nano-banana:`);
+      if (arm.branch) {
+        return apiCode === arm.branch.apiCode ? nanoModel : !nanoModel;
+      }
+      return !nanoModel;
+    }
+    default:
+      return collapse("") === collapse(template);
+  }
+}
+
+/** Mirror of the Rust `match`: first arm whose provider and condition both match. */
+function resolveApiCode(arms, supplierCode, standardPath) {
+  const matchKey = normalizeProviderMatchKey(supplierCode);
+  const path = normalizeProviderApiPath(supplierCode, matchKey, standardPath);
+  for (const arm of arms) {
+    if (!arm.providers.includes(matchKey)) continue;
+    let hit = false;
+    switch (arm.kind) {
+      case "literal":
+        hit = path === arm.path;
+        break;
+      case "pathPrefix":
+        hit = path.startsWith(arm.prefix);
+        break;
+      case "geminiAction":
+        hit =
+          path.startsWith(GEMINI_MODELS_PREFIX) &&
+          path.endsWith(`:${arm.action}`);
+        break;
+      case "poll": {
+        const prefix = `/${arm.family}/`;
+        hit =
+          path === `/${arm.family}/{task_id}` ||
+          (path.startsWith(prefix) &&
+            path.slice(prefix.length).trim().length > 0);
+        break;
+      }
+      default:
+        hit = false;
+    }
+    if (!hit) continue;
+    if (arm.branch && path.includes(arm.branch.contains)) return arm.branch.apiCode;
+    return arm.apiCode;
+  }
+  return null;
+}
+
 
 // ---------------------------------------------------------------------------
 // 1. The two copies of the path -> api_code map must stay identical.
@@ -224,6 +521,7 @@ if (!existsSync(seedDirectory)) {
         seededEndpoints.push({
           apiCode: item.apiCode,
           vendorCode: item.vendorCode,
+          modalityCode: item.modalityCode,
           pathTemplate: item.pathTemplate,
           method: item.method,
           resourceCode: item.resourceCode,
@@ -328,9 +626,9 @@ if (openApiPrefixes && openApiPrefixes.length > 0) {
 }
 
 // ---------------------------------------------------------------------------
-// 4. Every literal arm must be described by a seeded api_endpoint.
+// 4. Every arm must be described by a seeded api_endpoint.
 // ---------------------------------------------------------------------------
-
+//
 // `pathTemplate` does not drive routing — the arms above do — but it is what the
 // resource catalogue stores and shows: `ai_routing_seed.rs` upserts it into the
 // api_endpoint table and only requires it to start with `/`. A template naming a
@@ -341,20 +639,35 @@ if (openApiPrefixes && openApiPrefixes.length > 0) {
 // `gemini.live` was seeded as `/v1beta/models/{model}:liveGenerateContent` while
 // the arms accept `/v1beta/live/sessions`.
 //
+// Literal arms only used to be compared, and the predicate arms were reported as
+// "not comparable" — which is where the same defect survived three more times:
+// `gemini.image_generation` and `gemini.nano_banana.image_generation` both
+// advertised `/v1beta/models/{model}:predict` (the image arm answers
+// `:generateImages`, and the nano-banana branch additionally needs the model
+// segment `/nano-banana:`), and `kling.task_query` advertised
+// `/v1/videos/{taskId}` while the poll arms answer `/v1/tasks/{taskId}` and
+// `/v1/videos/generations/{task_id}`. Every arm is now evaluated.
+//
 // An api code passes when at least one of its arms is described by one of its
 // templates: `minimax.music_generation` is reached through three aliases and the
 // catalogue only needs to name one of them.
+
+const parsedArmsByCopy = new Map();
 
 if (seededEndpoints.length > 0) {
   for (const [label, relativePath] of [
     ["passthrough", PASSTHROUGH],
     ["classifier", CLASSIFIER],
   ]) {
-    const { arms, predicateCount } = literalPathArms(read(relativePath), relativePath);
+    const arms = parsePathArms(read(relativePath), relativePath);
+    if (!arms) continue;
+    parsedArmsByCopy.set(label, arms);
     const byApiCode = new Map();
     for (const arm of arms) {
-      if (!byApiCode.has(arm.apiCode)) byApiCode.set(arm.apiCode, []);
-      byApiCode.get(arm.apiCode).push(arm);
+      for (const apiCode of [arm.apiCode, arm.branch?.apiCode].filter(Boolean)) {
+        if (!byApiCode.has(apiCode)) byApiCode.set(apiCode, []);
+        byApiCode.get(apiCode).push(arm);
+      }
     }
     const undescribed = [];
     const unseeded = [];
@@ -368,13 +681,13 @@ if (seededEndpoints.length > 0) {
       }
       const described = apiArms.some((arm) =>
         endpoints.some((endpoint) =>
-          pathTemplateCompatible(arm.path, endpoint.pathTemplate),
+          armAnswersTemplate(arm, endpoint.pathTemplate, apiCode),
         ),
       );
       if (!described) {
         undescribed.push(
-          `${apiCode}: arms accept ${apiArms
-            .map((arm) => arm.path)
+          `${apiCode}: arms answer ${apiArms
+            .flatMap((arm) => armPinnedPaths(arm))
             .join(" / ")}; ${SEED_DIR} declares ${endpoints
             .map((endpoint) => endpoint.pathTemplate)
             .join(" / ")}`,
@@ -382,7 +695,7 @@ if (seededEndpoints.length > 0) {
       }
     }
     notes.push(
-      `${label}: ${arms.length} literal arms over ${byApiCode.size} api codes, ${predicateCount} predicate arms not comparable`,
+      `${label}: ${arms.length} arms over ${byApiCode.size} api codes, all evaluated`,
     );
     if (unseeded.length > 0) {
       failures.push(
@@ -392,10 +705,174 @@ if (seededEndpoints.length > 0) {
     }
     if (undescribed.length > 0) {
       failures.push(
-        `${label}: seeded pathTemplate describes a path these arms cannot produce (${undescribed.length}); the catalogue advertises an entry point that does not exist`,
+        `${label}: seeded pathTemplate describes a path these arms cannot answer (${undescribed.length}); the catalogue advertises an entry point that does not exist`,
       );
       for (const entry of undescribed.sort()) failures.push(`    ${entry}`);
     }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 7. Every vendor-native operation the open-api contract publishes has to be
+//    routable.
+// ---------------------------------------------------------------------------
+//
+// The contract is the gateway's published ingress: a caller that drives the
+// generated SDK sends exactly these paths. The chain that turns an ingress path
+// into an upstream call is one arm (path -> api_code) plus one taxonomy route
+// plus one seeded api_endpoint plus one account-group grant. A path that any of
+// those cannot name fails closed with `50201 no upstream account routes are
+// configured` — an error that names neither the path nor the missing link, so
+// nothing surfaces it until a caller hits it in production.
+//
+// This is not hypothetical. The image adapter of `sdkwork-generations`
+// (`sdkwork-generations-provider-adapter/src/gateway.rs`) drives the generated
+// open SDK, so it sends `/nano-banana/v1/images/generations`,
+// `/vidu/ent/v2/text2video`, `/vidu/ent/v2/img2video`,
+// `/vidu/ent/v2/tasks/{task_id}/creations` and
+// `/volcengine/api/v3/contents/generations/tasks` — every one of them published
+// by the contract and, before this check existed, every one of them nameable by
+// no arm.
+//
+// Unrouted operations cannot be silently accepted either: a namespace may be
+// declared ahead of its routing support, but then it has to be *declared here*
+// with a reason, and the ledger is exact — an allowlisted operation that
+// becomes routable fails the check until it is removed, so the ledger cannot
+// rot into a permanent excuse.
+
+/** `"<METHOD> <path>"` -> why the gateway cannot route it yet. */
+const DECLARED_UNROUTED_OPERATIONS = new Map();
+
+function declareUnrouted(operations, reason) {
+  for (const operation of operations) {
+    DECLARED_UNROUTED_OPERATIONS.set(operation, reason);
+  }
+}
+
+// Anthropic's and Google's utility surfaces. None of these has a taxonomy route,
+// an api_endpoint seed, an account-group resource grant or a price, and none is
+// billed on the per-generation meters: `count_tokens` / `countTokens` are free at
+// the vendor and files / batches / cachedContents are storage and job control.
+// Wiring them is a pricing and product decision, so they are declared rather
+// than invented.
+declareUnrouted(
+  [
+    "GET /anthropic/v1/files",
+    "POST /anthropic/v1/files",
+    "GET /anthropic/v1/files/{file_id}",
+    "DELETE /anthropic/v1/files/{file_id}",
+    "GET /anthropic/v1/files/{file_id}/content",
+    "POST /anthropic/v1/messages/batches",
+    "GET /anthropic/v1/messages/batches",
+    "GET /anthropic/v1/messages/batches/{batch_id}",
+    "POST /anthropic/v1/messages/batches/{batch_id}/cancel",
+    "POST /anthropic/v1/messages/count_tokens",
+    "GET /google/v1beta/cachedContents",
+    "POST /google/v1beta/cachedContents",
+    "GET /google/v1beta/cachedContents/{cached_content_id}",
+    "DELETE /google/v1beta/cachedContents/{cached_content_id}",
+    "GET /google/v1beta/files",
+    "POST /google/v1beta/files",
+    "GET /google/v1beta/files/{file_id}",
+    "DELETE /google/v1beta/files/{file_id}",
+    "POST /google/v1beta/models/{model}:batchEmbedContents",
+    "POST /google/v1beta/models/{model}:countTokens",
+  ],
+  "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price",
+);
+
+// `midjourney` and `nano-banana` publish a namespace but have no
+// `ai_upstream_supplier`, no `ai_model_vendor` and no bundled account, so no
+// routing support can exist yet.
+declareUnrouted(
+  [
+    "POST /midjourney/v1/images/generations",
+    "GET /midjourney/v1/images/generations/{task_id}",
+  ],
+  "no supplier/vendor/account: generations dispatches the midjourney slug through the OpenAI-compatible image surface instead",
+);
+declareUnrouted(
+  [
+    "POST /nano-banana/v1/images/generations",
+    "GET /nano-banana/v1/images/generations/{task_id}",
+  ],
+  "no supplier/vendor/account, and the wired nano-banana ingress is the Gemini-native /google/v1beta/models/nano-banana:generateImages — but `dispatch_nano_banana` in sdkwork-generations drives THIS path, so it is a live cross-repo breakage (API authority ambiguity), not something an arm can paper over",
+);
+
+// Vidu: the published paths are Vidu's own (`https://api.vidu.cn/ent/v2/...`) and
+// the generation adapter calls three of them, but the taxonomy only names
+// `vidu.reference_to_image`, `vidu.start_end_to_video` and `vidu.motion_sync`, so
+// the video verbs have no route to resolve to. Unlike the volcengine case there
+// is no existing api code to reuse: each needs a taxonomy route, a seed, a
+// resource grant and a price.
+declareUnrouted(
+  [
+    "POST /vidu/ent/v2/text2video",
+    "POST /vidu/ent/v2/img2video",
+    "POST /vidu/ent/v2/reference2video",
+    "GET /vidu/ent/v2/tasks/{task_id}/creations",
+  ],
+  "published and called by sdkwork-generations, but the taxonomy names no vidu video route",
+);
+
+const openApiContractSource = read(OPEN_API_CONTRACT);
+if (openApiContractSource.length > 0 && parsedArmsByCopy.has("classifier")) {
+  let openApiContract;
+  try {
+    openApiContract = JSON.parse(openApiContractSource);
+  } catch (error) {
+    failures.push(`${OPEN_API_CONTRACT}: invalid JSON (${error.message})`);
+  }
+  if (openApiContract) {
+    const prefixes = Array.isArray(
+      openApiContract["x-sdkwork-vendor-path-prefixes"],
+    )
+      ? openApiContract["x-sdkwork-vendor-path-prefixes"]
+      : [];
+    const arms = parsedArmsByCopy.get("classifier");
+    const unrouted = [];
+    const routable = [];
+    const seen = new Set();
+    for (const [path, operations] of Object.entries(openApiContract.paths ?? {})) {
+      const namespace = path.split("/").filter(Boolean)[0];
+      if (!prefixes.includes(namespace)) continue;
+      const standardPath = `/${path.split("/").filter(Boolean).slice(1).join("/")}`;
+      for (const method of Object.keys(operations)) {
+        const operation = `${method.toUpperCase()} ${path}`;
+        seen.add(operation);
+        const apiCode = resolveApiCode(arms, namespace, standardPath);
+        const knownToTaxonomy =
+          apiCode !== null && taxonomySource.includes(`"${apiCode}"`);
+        const seeded =
+          apiCode !== null &&
+          seededEndpoints.some((endpoint) => endpoint.apiCode === apiCode);
+        if (apiCode !== null && knownToTaxonomy && seeded) {
+          routable.push(`${operation} -> ${apiCode}`);
+          if (DECLARED_UNROUTED_OPERATIONS.has(operation)) {
+            failures.push(
+              `${operation} is now routable (${apiCode}) but is still declared unrouted in this check; delete its entry`,
+            );
+          }
+          continue;
+        }
+        unrouted.push(operation);
+        if (!DECLARED_UNROUTED_OPERATIONS.has(operation)) {
+          failures.push(
+            `${operation} is published by the contract but the gateway cannot route it (${apiCode ?? "no arm matches"}${knownToTaxonomy ? "" : ", no taxonomy route"}${seeded ? "" : ", no seeded api_endpoint"}); wire it or declare it in this check's unrouted ledger`,
+          );
+        }
+      }
+    }
+    for (const declared of DECLARED_UNROUTED_OPERATIONS.keys()) {
+      if (!seen.has(declared)) {
+        failures.push(
+          `${declared} is declared unrouted in this check but the contract does not publish it; delete the stale entry`,
+        );
+      }
+    }
+    notes.push(
+      `open-api vendor-native surface: ${routable.length} operation(s) routed, ${unrouted.length} declared unrouted`,
+    );
   }
 }
 
@@ -655,6 +1132,95 @@ if (gatewayContractSource.length > 0) {
       }
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// 8. A resource group's name has to describe its contents.
+// ---------------------------------------------------------------------------
+//
+// Resource groups are how an operator grants a whole vendor — or a whole
+// modality of one vendor — to an account group, and each account family is
+// granted through its own set: `official.*.full` for official provider
+// accounts, `api.<vendor>.all` / `api.<vendor>.<modality>` for admin-API
+// accounts, `relay.*` for relay accounts.
+//
+// Nothing checked that a group's items matched its own name, and they had
+// drifted: `api.kling.all` ("All Kling API resources") granted 4 of Kling's 6
+// seeded `api_endpoint` resources — omitting `api.kling.avatar` and
+// `api.kling.motion_control` — and `api.kling.video` omitted the same two,
+// while `api.vidu.video` omitted `api.vidu.motion_sync`. An admin-API account
+// was therefore granted every Kling video API except the digital-human and
+// motion-control endpoints the product is driven by, and the refusal names
+// neither the group nor the resource: routing answers
+// `50201 no upstream account routes are configured`.
+//
+// The invariant is derived from the seeds rather than declared here, so this
+// check cannot itself drift: `<family>.<vendor>.all` / `<family>.<vendor>.full`
+// must grant every seeded `api_endpoint` of that vendor, and
+// `<family>.<vendor>.<modality>` must grant every seeded `api_endpoint` of that
+// vendor whose `modalityCode` is that modality. A three-segment group whose
+// scope segment names neither a seeded vendor nor a seeded modality is not
+// vendor- or modality-scoped — it is a curated list such as
+// `relay.openai_compatible.media` — so it is counted as skipped instead of
+// being guessed at.
+
+const GROUP_DIR = "data/ai-routing/resource-groups";
+const groupDirectory = join(root, GROUP_DIR);
+if (!existsSync(groupDirectory)) {
+  failures.push(`${GROUP_DIR}: directory is missing`);
+} else {
+  const groupFiles = readdirSync(groupDirectory)
+    .filter((name) => name.endsWith(".json"))
+    .sort();
+  let checkedGroups = 0;
+  let skippedGroups = 0;
+  for (const name of groupFiles) {
+    const relativePath = `${GROUP_DIR}/${name}`;
+    let document;
+    try {
+      document = JSON.parse(readFileSync(join(groupDirectory, name), "utf8"));
+    } catch (error) {
+      failures.push(`${relativePath}: invalid JSON (${error.message})`);
+      continue;
+    }
+    for (const group of document.items ?? []) {
+      const groupCode = String(group.groupCode ?? "");
+      const segments = groupCode.split(".");
+      if (segments.length !== 3) continue;
+      const [, vendorCode, scope] = segments;
+      const vendorScoped = scope === "all" || scope === "full";
+      const expected = seededEndpoints.filter(
+        (endpoint) =>
+          endpoint.vendorCode === vendorCode &&
+          (vendorScoped || endpoint.modalityCode === scope),
+      );
+      if (expected.length === 0) {
+        skippedGroups += 1;
+        continue;
+      }
+      checkedGroups += 1;
+      const granted = new Set(
+        (group.items ?? [])
+          .filter((item) => item.itemType === "resource")
+          .map((item) => item.resourceCode),
+      );
+      const missing = [...new Set(expected.map((endpoint) => endpoint.resourceCode))]
+        .filter((resourceCode) => !granted.has(resourceCode))
+        .sort();
+      if (missing.length === 0) continue;
+      failures.push(
+        `${relativePath}: ${groupCode} must grant ${
+          vendorScoped
+            ? `every seeded "${vendorCode}" api_endpoint`
+            : `every seeded "${vendorCode}" api_endpoint with modalityCode "${scope}"`
+        } but omits ${missing.length} of them; an account in this group cannot reach them and routing answers 50201`,
+      );
+      for (const resourceCode of missing) failures.push(`    ${resourceCode}`);
+    }
+  }
+  notes.push(
+    `resource groups: ${checkedGroups} vendor/modality-scoped group(s) compared against the seeds, ${skippedGroups} not vendor- or modality-scoped`,
+  );
 }
 
 // ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
 use arc_swap::ArcSwap;
@@ -14,20 +14,23 @@ use crate::infrastructure::in_memory_pricing_catalog::resolve_model_mapping_from
 use crate::infrastructure::sql::rows::{
     AccountRateCardRow, AiModelRow, GatewayAccessPolicyRow, GatewayApiKeyRow, GatewayRiskRuleRow,
     ModelMappingRuleRow, ModelPriceRow, ModelUpstreamRouteRow, ModelVendorRow,
-    PricingDefaultRegionRow, PricingPlanRow, PricingRuleRow, QuotaPolicyRow,
+    ModelVideoProfileRow, PricingDefaultRegionRow, PricingPlanRow, PricingRuleRow, QuotaPolicyRow,
     UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow, UpstreamAccountModelAccessRow,
     UpstreamAccountRouteRow, UpstreamSupplierModelAccessRow,
 };
 use crate::ports::{
     AccountBaseUrlConfig, AccountGroupModelAccess, AccountModelAccess, AdminLlmProtocolConfig,
     PricingCatalog, PricingDefaultRegionProvider, SupplierModelAccess, UpstreamAccountRouteCatalog,
-    UpstreamRouteGateDiagnosis, VendorModelListEntry,
+    UpstreamRouteGateDiagnosis, VendorModelListEntry, VideoPricingTierDecision, VideoPricingTierGap,
 };
 
 #[derive(Default)]
 pub struct PricingCatalogRows {
     pub vendors: Vec<ModelVendorRow>,
     pub models: Vec<AiModelRow>,
+    /// 目录声明的视频计价档位（`ai_model_video_profile`）。空 = 未加载或目录未声明；
+    /// 后者会让条件费率无法计价，因此加载失败是硬错误而非降级。
+    pub model_video_profiles: Vec<ModelVideoProfileRow>,
     pub model_upstream_routes: Vec<ModelUpstreamRouteRow>,
     pub upstream_account_routes: Vec<UpstreamAccountRouteRow>,
     pub model_mappings: Vec<ModelMappingRuleRow>,
@@ -149,11 +152,296 @@ pub struct SqlPricingCatalogSnapshot {
     prices_by_key: HashMap<String, Vec<ScopedModelPrice>>,
     /// Default billing region per (tenant, organization, catalog_key).
     default_regions_by_key: HashMap<(i64, i64, String), String>,
+    /// 目录声明的视频计价档位，按模型 catalog key 索引。每个键下按
+    /// (sort_order, 声明分辨率, 生成模式) 稳定排序，默认档位优先于其它档位。
+    video_pricing_tiers_by_model: HashMap<String, Vec<VideoPricingTier>>,
+    /// 目录**实际报价**的视频档位：`(catalog_key, meter_code)` → 费率里
+    /// `tier_code` 条件的取值集合（均已小写化）。与声明侧取交集才得到可用的档位。
+    priced_video_tier_codes_by_model_meter: HashMap<(String, String), BTreeSet<String>>,
+}
+
+/// 目录为某个视频模型声明的计价档位（`ai_model_video_profile` 的一行）。
+#[derive(Debug, Clone)]
+struct VideoPricingTier {
+    generation_mode: Option<String>,
+    resolution: Option<String>,
+    /// 该 profile 声明的全部档位码，**主档位在前**：`resolutionTierCode`
+    /// 优先，回落 `durationTierCode`，再并入 `pricingTierCodes` /
+    /// `durationTierCodes`。目录里一个 profile 只声明一个主档位，但确实有把
+    /// 附加档位写进 `pricingTierCodes` 的模型（`vidu/viduq3-pro`
+    /// 的 `["dur_5s"]`），丢掉这些声明会让那些模型连"声明过的档位"都选不出来。
+    tier_codes: Vec<String>,
+    is_default: bool,
+}
+
+impl VideoPricingTier {
+    /// 请求给出的分辨率是否命中本档位声明。目录里的 `resolution` 是
+    /// `1080p` 这类短标签，请求可能给 `1080p` 或 `1920x1080`，因此同时接受
+    /// 精确相等与出现在请求值中的形式。
+    fn matches_resolution(&self, requested: &str) -> bool {
+        let requested = requested.trim().to_ascii_lowercase();
+        if requested.is_empty() {
+            return false;
+        }
+        self.resolution.as_deref().is_some_and(|declared| {
+            let declared = declared.trim().to_ascii_lowercase();
+            !declared.is_empty() && (declared == requested || requested.contains(&declared))
+        })
+    }
+}
+
+/// 把厂商原生 api code 映射到目录的 `generationMode` 词汇表。
+///
+/// `kling.text_to_video` → `text_to_video`、`kling.image_to_video` →
+/// `image_to_video`：厂商原生资源声明 api code，`ai_model_video_profile` 声明
+/// 生成模式，两者对目录建模的这四种模式用的是同一套名字，因此按 api code 的
+/// 最后一段对齐即可，不需要另建映射表。目录未建模的端点（如 `kling.avatar`、
+/// `kling.motion_control`）返回 `None`，调用方据此报
+/// `ApiCodeIsNotAGenerationMode` 缺口。
+fn video_generation_mode_for_api_code(api_code: &str) -> Option<&'static str> {
+    const MODES: &[&str] = &[
+        "text_to_video",
+        "image_to_video",
+        "reference_to_video",
+        "multi_shot",
+    ];
+    let suffix = api_code.rsplit('.').next()?.trim();
+    MODES.iter().copied().find(|mode| *mode == suffix)
+}
+
+/// 把 `ai_model_video_profile` 行折叠成"模型 → 档位列表"的索引。
+///
+/// 没有声明任何档位码的行不产生候选——没有 `tier_code` 就没有可用的计价维度。
+///
+/// 一个 profile 的候选档位按**权威性递降**排列：`pricing_tier_codes`（目录显式
+/// 指定的费率档位码）→ `resolution_tier_code` → 时长档位码。裁决时取首个"同时
+/// 出现在费率表里"的候选，所以顺序即优先级；显式声明永远压过按形状推断。
+fn index_video_pricing_tiers(
+    rows: Vec<ModelVideoProfileRow>,
+) -> HashMap<String, Vec<VideoPricingTier>> {
+    let mut index: HashMap<String, Vec<VideoPricingTier>> = HashMap::new();
+    for row in rows {
+        let mut tier_codes = Vec::new();
+        let mut push = |value: Option<&str>| {
+            let Some(value) = value.map(str::trim).filter(|value| !value.is_empty()) else {
+                return;
+            };
+            if !tier_codes.iter().any(|existing| existing == value) {
+                tier_codes.push(value.to_owned());
+            }
+        };
+        // `pricingTierCodes` 排在最前：目录用它显式写下"这个档位在费率表里叫
+        // 什么"，`tools/seed-video-profiles.mjs` 正是从该模型定价文件的 `tierCode`
+        // 集合里取的值。它一旦被填上，就是目录给出的权威答案，必须盖过下面按
+        // 形状推断出来的规范档位——例如 1080p 的费率在费率表里叫 `audio_res_1080p`
+        // 时，只有它能命中。
+        for code in row.pricing_tier_codes.iter() {
+            push(Some(code.as_str()));
+        }
+        // 规范档位：分辨率优先，回落时长——目录里确有只声明时长档位、由时长条件
+        // 定价的模型（`luma_ai/ray-3`），丢掉这一支会让那些模型同样"明明有价
+        // 却说无价"。
+        push(row.resolution_tier_code.as_deref());
+        push(row.duration_tier_code.as_deref());
+        for code in row.duration_tier_codes.iter() {
+            push(Some(code.as_str()));
+        }
+        if tier_codes.is_empty() {
+            continue;
+        }
+        let key = row.model_catalog_key.trim();
+        if key.is_empty() {
+            continue;
+        }
+        index.entry(key.to_owned()).or_default().push(VideoPricingTier {
+            generation_mode: row.generation_mode,
+            resolution: row.resolution,
+            tier_codes,
+            is_default: row.is_default,
+        });
+    }
+    // 默认档位排在最前，其次分辨率更具体的档位，最后按主档位码稳定排序：调用方
+    // 只需取首个满足条件的档位，结果与加载顺序无关。
+    for tiers in index.values_mut() {
+        tiers.sort_by(|left, right| {
+            right
+                .is_default
+                .cmp(&left.is_default)
+                .then_with(|| right.resolution.is_some().cmp(&left.resolution.is_some()))
+                .then_with(|| left.tier_codes.cmp(&right.tier_codes))
+        });
+    }
+    index
+}
+
+/// 目录**实际报价**的视频档位：`(catalog_key, meter_code)` → 费率里
+/// `tier_code` 条件的取值集合。
+///
+/// 只取条件维度为 `tier_code` 的费率，且只取 `eq` 之外的比较符也一起收进来
+/// （目录目前全是 `eq`）：这个索引的用途是"目录在这个计量单位上到底按哪些档位
+/// 报价"，不是"某个请求会命中哪条费率"，所以条件操作符不影响取值集合。
+fn index_priced_video_tier_codes(
+    prices: &[ScopedModelPrice],
+) -> HashMap<(String, String), BTreeSet<String>> {
+    let mut index: HashMap<(String, String), BTreeSet<String>> = HashMap::new();
+    for price in prices {
+        let Some(metadata) = price.value.rate_metadata.as_ref() else {
+            continue;
+        };
+        for condition in metadata.conditions.iter() {
+            if !condition.dimension_code.eq_ignore_ascii_case("tier_code") {
+                continue;
+            }
+            // 条件值以 JSON 承载（`PricingRateCondition.value`），档位是其中的
+            // 字符串标量；非字符串取值不是档位，跳过而不是转成字面量。
+            let Some(value) = condition.value.as_str() else {
+                continue;
+            };
+            let value = value.trim();
+            if value.is_empty() {
+                continue;
+            }
+            index
+                .entry((
+                    price.value.catalog_key.trim().to_ascii_lowercase(),
+                    price.value.billing_meter.code().trim().to_ascii_lowercase(),
+                ))
+                .or_default()
+                .insert(value.to_owned());
+        }
+    }
+    index
+}
+
+/// 档位裁决的纯核心：输入声明侧候选、报价侧集合与请求事实，输出判决。
+///
+/// 抽成自由函数是为了让"两处目录数据取交集"这条规则可以被直接单测，而不必
+/// 先搭一个完整快照。语义与 `SqlPricingCatalogSnapshot::resolve_video_pricing_tier`
+/// 的文档一致，这里只重复两处判序原因：
+///
+/// * **报价侧为空先行判定**：该计量单位在这个模型下没有任何档位条件费率，此时
+///   无论声明侧怎么写都无价可查，原因与声明无关；
+/// * **声明侧命中后取首个「同在报价侧」的档位码**：`tier_codes` 已按
+///   `is_default` → 有分辨率 → 档位码排序，因此结果与加载顺序无关。
+fn decide_video_pricing_tier(
+    api_code: &str,
+    meter_code: &str,
+    resolution: Option<&str>,
+    tiers: Option<&Vec<VideoPricingTier>>,
+    priced: &BTreeSet<String>,
+) -> VideoPricingTierDecision {
+    let mut decision = VideoPricingTierDecision {
+        priced_tier_codes: priced.iter().cloned().collect(),
+        ..VideoPricingTierDecision::default()
+    };
+
+    if priced.is_empty() {
+        decision.gap = Some(VideoPricingTierGap::MeterHasNoTierConditionedRate {
+            meter: meter_code.to_owned(),
+        });
+        return decision;
+    }
+
+    let Some(expected_mode) = video_generation_mode_for_api_code(api_code) else {
+        decision.gap = Some(VideoPricingTierGap::ApiCodeIsNotAGenerationMode {
+            api_code: api_code.trim().to_owned(),
+        });
+        return decision;
+    };
+    let mode_tiers = tiers
+        .map(|tiers| {
+            tiers
+                .iter()
+                .filter(|tier| tier.generation_mode.as_deref() == Some(expected_mode))
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+    if mode_tiers.is_empty() {
+        decision.gap = Some(VideoPricingTierGap::NoProfileForGenerationMode {
+            generation_mode: expected_mode.to_owned(),
+        });
+        return decision;
+    }
+
+    // 请求声明了分辨率时只认目录为该分辨率声明的档位：借另一个分辨率的价格
+    // 等于凭空捏造费率。未给分辨率时按目录的排序取默认档位优先者。
+    let requested = resolution.map(str::trim).filter(|value| !value.is_empty());
+    let ordered = match requested {
+        Some(requested) => mode_tiers
+            .into_iter()
+            .filter(|tier| tier.matches_resolution(requested))
+            .collect::<Vec<_>>(),
+        None => mode_tiers,
+    };
+    decision.declared_tier_codes = ordered
+        .iter()
+        .flat_map(|tier| tier.tier_codes.iter().cloned())
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect();
+    for tier in &ordered {
+        if let Some(code) = tier
+            .tier_codes
+            .iter()
+            .find(|code| priced.contains(*code))
+        {
+            decision.tier_code = Some(code.clone());
+            return decision;
+        }
+    }
+    decision.gap = Some(VideoPricingTierGap::DeclaredTierNotPriced {
+        declared: decision.declared_tier_codes.clone(),
+        priced: decision.priced_tier_codes.clone(),
+    });
+    decision
 }
 
 impl SqlPricingCatalogSnapshot {
     pub fn from_rows(rows: PricingCatalogRows) -> DomainResult<Self> {
         Self::from_rows_and_managed_provider_secrets(rows, BTreeMap::new())
+    }
+
+    /// 目录对「这个模型的这个计量单位」的视频计价档位裁决。共享给两个 trait 实现，
+    /// 使进程内快照与可刷新包装器不可能给出不同答案。
+    ///
+    /// 判决完全由目录两处数据取交集得到，不做任何命名猜测：
+    ///
+    /// * **声明侧**（`ai_model_video_profile`）：api code 的最后一段必须是目录的
+    ///   `generationMode` 词汇（`kling.text_to_video` → `text_to_video`），
+    ///   在该模式下按请求分辨率挑 profile（未给分辨率则取 `isDefault`，
+    ///   再退回首个），取它声明的全部档位码；
+    /// * **报价侧**（`pricing_rate` 的 `tier_code` 条件）：该
+    ///   `(catalog_key, meter)` 实际报价的档位码集合。
+    ///
+    /// 只有**同时出现在两侧**的档位码才会成为 `tier_code`。两侧不相交时返回
+    /// 带具体原因的缺口，绝不回退到"该模型的某个 profile"：`kling.avatar` /
+    /// `kling.motion_control` 由 `audio_res_*`/`motion_res_*` 档位定价，而没有任何
+    /// profile 声明它们，按普通视频档位兜底会把它们按更低的单价计费。全库还有 41
+    /// 个模型存在同类不相交（profile 声明 `res_1080p`、费率只报
+    /// `audio_res_1080p` 之类），档位价差可达 50%，因此"报缺口"是唯一正确结果：
+    /// 按错误的档位收费比有诊断的缺口更糟。
+    pub(crate) fn resolve_video_pricing_tier(
+        &self,
+        catalog_key: &str,
+        api_code: &str,
+        meter: &BillingMeter,
+        resolution: Option<&str>,
+    ) -> VideoPricingTierDecision {
+        let priced = self
+            .priced_video_tier_codes_by_model_meter
+            .get(&(
+                catalog_key.trim().to_ascii_lowercase(),
+                meter.code().to_ascii_lowercase(),
+            ))
+            .cloned()
+            .unwrap_or_default();
+        decide_video_pricing_tier(
+            api_code,
+            meter.code(),
+            resolution,
+            self.video_pricing_tiers_by_model.get(catalog_key.trim()),
+            &priced,
+        )
     }
 
     pub fn from_rows_and_managed_provider_secrets(
@@ -268,6 +556,10 @@ impl SqlPricingCatalogSnapshot {
                 ))
             })
             .collect::<HashMap<_, _>>();
+        let video_pricing_tiers_by_model = index_video_pricing_tiers(rows.model_video_profiles);
+        // 报价侧与声明侧在同一个快照里取交集：两者必须来自同一次加载，否则
+        // 刷新期间会拿旧声明配新费率。
+        let priced_video_tier_codes_by_model_meter = index_priced_video_tier_codes(&prices);
         let mut snapshot = Self {
             vendors: map_rows(rows.vendors, ModelVendorRow::try_into_domain)?,
             models: map_rows(rows.models, AiModelRow::try_into_domain)?,
@@ -329,6 +621,8 @@ impl SqlPricingCatalogSnapshot {
             model_upstream_routes_by_key: HashMap::new(),
             prices_by_key: HashMap::new(),
             default_regions_by_key,
+            video_pricing_tiers_by_model,
+            priced_video_tier_codes_by_model_meter,
         };
         snapshot.build_indexes();
         Ok(snapshot)
@@ -547,6 +841,17 @@ impl RefreshableSqlPricingCatalog {
 impl UpstreamAccountRouteCatalog for RefreshableSqlPricingCatalog {
     fn shared_upstream_account_routes(&self) -> Arc<[UpstreamAccountRoute]> {
         Arc::clone(&self.current_snapshot().upstream_account_routes)
+    }
+
+    fn video_pricing_tier(
+        &self,
+        catalog_key: &str,
+        api_code: &str,
+        meter: &BillingMeter,
+        resolution: Option<&str>,
+    ) -> VideoPricingTierDecision {
+        self.current_snapshot()
+            .resolve_video_pricing_tier(catalog_key, api_code, meter, resolution)
     }
 
     fn upstream_route_gate_diagnosis(&self) -> Option<UpstreamRouteGateDiagnosis> {
@@ -1073,6 +1378,16 @@ impl UpstreamAccountRouteCatalog for SqlPricingCatalogSnapshot {
         Arc::clone(&self.upstream_account_routes)
     }
 
+    fn video_pricing_tier(
+        &self,
+        catalog_key: &str,
+        api_code: &str,
+        meter: &BillingMeter,
+        resolution: Option<&str>,
+    ) -> VideoPricingTierDecision {
+        self.resolve_video_pricing_tier(catalog_key, api_code, meter, resolution)
+    }
+
     fn upstream_route_gate_diagnosis(&self) -> Option<UpstreamRouteGateDiagnosis> {
         self.upstream_route_gate_diagnosis
     }
@@ -1299,5 +1614,229 @@ fn option_matches(actual: Option<&str>, expected: Option<&str>) -> bool {
     match expected {
         Some(expected) => actual == Some(expected),
         None => actual.is_none(),
+    }
+}
+
+#[cfg(test)]
+mod video_pricing_tier_tests {
+    use super::{decide_video_pricing_tier, index_video_pricing_tiers, VideoPricingTier};
+    use crate::infrastructure::sql::rows::ModelVideoProfileRow;
+    use crate::ports::{VideoPricingTierDecision, VideoPricingTierGap};
+    use std::collections::BTreeSet;
+
+    fn tier(
+        mode: &str,
+        resolution: Option<&str>,
+        codes: &[&str],
+        is_default: bool,
+    ) -> VideoPricingTier {
+        VideoPricingTier {
+            generation_mode: Some(mode.to_owned()),
+            resolution: resolution.map(str::to_owned),
+            tier_codes: codes.iter().map(|code| (*code).to_owned()).collect(),
+            is_default,
+        }
+    }
+
+    fn priced(codes: &[&str]) -> BTreeSet<String> {
+        codes.iter().map(|code| (*code).to_owned()).collect()
+    }
+
+    #[test]
+    fn declared_tier_that_is_also_priced_is_selected() {
+        // 实况 `kuaishou/kling-v3`：profile 声明 `res_1080p`，费率确实报了
+        // `res_1080p`（0.112/秒）与其它档位。这是唯一可以放心计价的形态。
+        let tiers = vec![tier("text_to_video", Some("1080p"), &["res_1080p"], true)];
+        let decision = decide_video_pricing_tier(
+            "kling.text_to_video",
+            "video_output_second",
+            Some("1080p"),
+            Some(&tiers),
+            &priced(&["res_720p", "res_1080p", "res_4k", "audio_res_1080p"]),
+        );
+        assert_eq!(decision.tier_code(), Some("res_1080p"));
+        assert!(decision.gap.is_none());
+    }
+
+    #[test]
+    fn declared_tier_absent_from_the_rates_reports_a_gap_instead_of_guessing() {
+        // 实况 `kuaishou/kling-3.0-turbo`：profile 声明 `res_1080p`，费率却只报
+        // `audio_res_1080p` / `audio_res_720p`。此处绝不能挑 `audio_res_1080p`
+        // 顶上——它正好是更贵的档位（0.168 vs 0.112），猜错就是按错误价收费。
+        let tiers = vec![tier("text_to_video", Some("1080p"), &["res_1080p"], true)];
+        let decision = decide_video_pricing_tier(
+            "kling.text_to_video",
+            "video_output_second",
+            Some("1080p"),
+            Some(&tiers),
+            &priced(&["audio_res_720p", "audio_res_1080p"]),
+        );
+        assert_eq!(decision.tier_code(), None);
+        assert_eq!(
+            decision.gap,
+            Some(VideoPricingTierGap::DeclaredTierNotPriced {
+                declared: vec!["res_1080p".to_owned()],
+                priced: vec!["audio_res_1080p".to_owned(), "audio_res_720p".to_owned()],
+            })
+        );
+        let description = decision.gap_description().expect("gap description");
+        assert!(description.contains("res_1080p"), "{description}");
+        assert!(description.contains("audio_res_1080p"), "{description}");
+    }
+
+    #[test]
+    fn api_code_that_is_not_a_generation_mode_reports_that_specific_gap() {
+        // 实况 `kling.avatar` / `kling.motion_control`：目录为它们发布了
+        // `audio_res_*` / `motion_res_*` 费率，却没有声明对应生成模式。缺口是
+        // "目录没有这个模式"，不是"没有 profile 文件"——说清楚才能定位。
+        let tiers = vec![tier("text_to_video", Some("1080p"), &["res_1080p"], true)];
+        let decision = decide_video_pricing_tier(
+            "kling.avatar",
+            "video_output_second",
+            None,
+            Some(&tiers),
+            &priced(&["audio_res_720p", "audio_res_1080p"]),
+        );
+        assert_eq!(decision.tier_code(), None);
+        assert_eq!(
+            decision.gap,
+            Some(VideoPricingTierGap::ApiCodeIsNotAGenerationMode {
+                api_code: "kling.avatar".to_owned(),
+            })
+        );
+    }
+
+    #[test]
+    fn meter_without_any_tier_conditioned_rate_reports_the_meter_gap_first() {
+        // `video_result` 之类只在部分模型上按档位报价的计量单位：报价侧为空时
+        // 原因与声明侧无关，先报计量单位这一条，避免把运维引向"改 profile"。
+        let tiers = vec![tier("text_to_video", Some("1080p"), &["res_1080p"], true)];
+        let decision = decide_video_pricing_tier(
+            "kling.text_to_video",
+            "video_result",
+            None,
+            Some(&tiers),
+            &BTreeSet::new(),
+        );
+        assert_eq!(
+            decision.gap,
+            Some(VideoPricingTierGap::MeterHasNoTierConditionedRate {
+                meter: "video_result".to_owned(),
+            })
+        );
+    }
+
+    #[test]
+    fn extra_declared_tier_codes_are_considered_in_order() {
+        // 实况 `vidu/viduq3-pro`：同一个计量单位既按分辨率档也按时长档报价，
+        // profile 把时长档写进 `pricingTierCodes`。主档位对不上报价时，附加
+        // 声明必须能被选中，否则这份目录声明等于被丢掉。
+        let tiers = vec![VideoPricingTier {
+            generation_mode: Some("text_to_video".to_owned()),
+            resolution: Some("720p".to_owned()),
+            tier_codes: vec![
+                "res_720p".to_owned(),
+                "dur_5s".to_owned(),
+                "dur_10s".to_owned(),
+            ],
+            is_default: true,
+        }];
+        let decision = decide_video_pricing_tier(
+            "kling.text_to_video",
+            "video_result",
+            Some("720p"),
+            Some(&tiers),
+            &priced(&["dur_5s", "dur_10s"]),
+        );
+        assert_eq!(decision.tier_code(), Some("dur_5s"));
+        assert!(decision.gap.is_none());
+    }
+
+    #[test]
+    fn resolution_filter_keeps_the_gap_when_no_profile_matches_the_requested_resolution() {
+        // 请求 4k 而目录只声明 1080p 档位：既不能借 1080p 的价，也不能凭空报
+        // 一个 4k 档位——两者都会把便宜档位的价格套到贵档位上。
+        let tiers = vec![tier("text_to_video", Some("1080p"), &["res_1080p"], true)];
+        let decision = decide_video_pricing_tier(
+            "kling.text_to_video",
+            "video_output_second",
+            Some("4k"),
+            Some(&tiers),
+            &priced(&["res_1080p", "res_4k"]),
+        );
+        assert_eq!(decision.tier_code(), None);
+        assert_eq!(
+            decision.gap,
+            Some(VideoPricingTierGap::DeclaredTierNotPriced {
+                declared: Vec::new(),
+                priced: vec!["res_1080p".to_owned(), "res_4k".to_owned()],
+            })
+        );
+    }
+
+    #[test]
+    fn missing_profile_for_generation_mode_is_reported_separately() {
+        // api code 对得上是生成模式，但该模型在这个模式下没有 profile。
+        let tiers = vec![tier("image_to_video", Some("1080p"), &["res_1080p"], true)];
+        let decision = decide_video_pricing_tier(
+            "kling.text_to_video",
+            "video_output_second",
+            None,
+            Some(&tiers),
+            &priced(&["res_1080p"]),
+        );
+        assert_eq!(
+            decision.gap,
+            Some(VideoPricingTierGap::NoProfileForGenerationMode {
+                generation_mode: "text_to_video".to_owned(),
+            })
+        );
+    }
+
+    #[test]
+    fn unknown_catalog_entries_never_yield_a_tier() {
+        // 内存目录默认实现（无档位表、无费率表）必须保持"未知"，而不是回退成
+        // 某个可计价的档位。
+        let decision: VideoPricingTierDecision = decide_video_pricing_tier(
+            "kling.text_to_video",
+            "video_output_second",
+            None,
+            None,
+            &BTreeSet::new(),
+        );
+        assert_eq!(decision.tier_code(), None);
+        assert!(decision.gap.is_some());
+    }
+
+    #[test]
+    fn explicit_pricing_tier_codes_outrank_the_canonical_resolution_tier() {
+        // `pricingTierCodes` 是目录从该模型定价文件的 `tierCode` 集合里取值的
+        // 显式声明，必须排在按形状推断出来的 `resolutionTierCode` 之前。实况
+        // `vidu/viduq3-pro`：profile 同时写了 `res_720p` 与 `pricingTierCodes:
+        // ["dur_5s"]`，而 `video_result` 这个计量单位只按 `dur_5s`/`dur_10s` 报价。
+        let row = ModelVideoProfileRow {
+            model_catalog_key: "vidu/viduq3-pro".to_owned(),
+            generation_mode: Some("text_to_video".to_owned()),
+            resolution: Some("720p".to_owned()),
+            resolution_tier_code: Some("res_720p".to_owned()),
+            duration_tier_code: None,
+            duration_tier_codes: Vec::new(),
+            pricing_tier_codes: vec!["dur_5s".to_owned()],
+            is_default: true,
+            sort_order: 10,
+        };
+        let index = index_video_pricing_tiers(vec![row]);
+        let tiers = index.get("vidu/viduq3-pro").expect("indexed");
+        assert_eq!(tiers[0].tier_codes, vec!["dur_5s", "res_720p"]);
+
+        let decision = decide_video_pricing_tier(
+            "vidu.text_to_video",
+            "video_result",
+            None,
+            Some(tiers),
+            &priced(&["dur_5s", "dur_10s"]),
+        );
+        assert_eq!(decision.tier_code(), Some("dur_5s"));
+        assert!(decision.gap.is_none());
     }
 }

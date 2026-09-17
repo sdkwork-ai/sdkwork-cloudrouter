@@ -1,0 +1,38 @@
+name: sdkwork_cloudrouter_flutter_mobile
+description: SDKWork CloudRouter Flutter Mobile Application
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  sdkwork_cloudrouter_flutter_mobile_core:
+    path: packages/sdkwork_cloudrouter_flutter_mobile_core
+  sdkwork_cloudrouter_flutter_mobile_commons:
+    path: packages/sdkwork_cloudrouter_flutter_mobile_commons
+  sdkwork_cloudrouter_flutter_mobile_shell:
+    path: packages/sdkwork_cloudrouter_flutter_mobile_shell
+  sdkwork_cloudrouter_flutter_mobile_console_dashboard:
+    path: packages/sdkwork_cloudrouter_flutter_mobile_console_dashboard
+  sdkwork_cloudrouter_flutter_mobile_console_usage:
+    path: packages/sdkwork_cloudrouter_flutter_mobile_console_usage
+  sdkwork_cloudrouter_flutter_mobile_console_api_keys:
+    path: packages/sdkwork_cloudrouter_flutter_mobile_console_api_keys
+  sdkwork_cloudrouter_flutter_mobile_console_catalog:
+    path: packages/sdkwork_cloudrouter_flutter_mobile_console_catalog
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+dependency_overrides:
+  sdkwork_common_flutter:
+    path: ../../../sdkwork-sdk-commons/sdkwork-sdk-common-flutter
+
+flutter:
+  uses-material-design: true

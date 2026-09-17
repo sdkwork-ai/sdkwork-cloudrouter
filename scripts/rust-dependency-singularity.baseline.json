@@ -1,0 +1,177 @@
+{
+  "$comment": "Duplicate crate names that are accepted because an upstream crate pins a different major. Regenerate with `node scripts/check-rust-dependency-singularity.mjs --update-baseline`. Adding an entry here is a deliberate review decision, never a way to silence a regression.",
+  "generatedBy": "scripts/check-rust-dependency-singularity.mjs",
+  "lockfile": "Cargo.lock",
+  "duplicates": {
+    "block-buffer": [
+      "0.10.4",
+      "0.12.1"
+    ],
+    "const-oid": [
+      "0.10.2",
+      "0.9.6"
+    ],
+    "core-foundation": [
+      "0.10.1",
+      "0.9.4"
+    ],
+    "cpufeatures": [
+      "0.2.17",
+      "0.3.1"
+    ],
+    "crypto-common": [
+      "0.1.7",
+      "0.2.2"
+    ],
+    "digest": [
+      "0.10.7",
+      "0.11.3"
+    ],
+    "getrandom": [
+      "0.2.17",
+      "0.3.4",
+      "0.4.3"
+    ],
+    "hashbrown": [
+      "0.14.5",
+      "0.16.1",
+      "0.17.1"
+    ],
+    "hkdf": [
+      "0.12.4",
+      "0.13.0"
+    ],
+    "hmac": [
+      "0.12.1",
+      "0.13.0"
+    ],
+    "http": [
+      "0.2.12",
+      "1.5.0"
+    ],
+    "http-body": [
+      "0.4.6",
+      "1.1.0"
+    ],
+    "io-lifetimes": [
+      "2.0.4",
+      "3.0.1"
+    ],
+    "r-efi": [
+      "5.3.0",
+      "6.0.0"
+    ],
+    "rand": [
+      "0.10.2",
+      "0.8.8",
+      "0.9.5"
+    ],
+    "rand_chacha": [
+      "0.3.1",
+      "0.9.0"
+    ],
+    "rand_core": [
+      "0.10.1",
+      "0.6.4",
+      "0.9.5"
+    ],
+    "reqwest": [
+      "0.12.28",
+      "0.13.4"
+    ],
+    "sha1": [
+      "0.10.7",
+      "0.11.0"
+    ],
+    "sha2": [
+      "0.10.9",
+      "0.11.0"
+    ],
+    "socket2": [
+      "0.5.10",
+      "0.6.5"
+    ],
+    "spin": [
+      "0.10.1",
+      "0.9.9"
+    ],
+    "syn": [
+      "2.0.119",
+      "3.0.4"
+    ],
+    "thiserror": [
+      "1.0.69",
+      "2.0.20"
+    ],
+    "thiserror-impl": [
+      "1.0.69",
+      "2.0.20"
+    ],
+    "tokio-tungstenite": [
+      "0.28.0",
+      "0.29.0"
+    ],
+    "tower-http": [
+      "0.6.11",
+      "0.7.0"
+    ],
+    "tungstenite": [
+      "0.27.0",
+      "0.29.0"
+    ],
+    "wasm-streams": [
+      "0.4.2",
+      "0.5.0"
+    ],
+    "webpki-roots": [
+      "0.26.11",
+      "1.0.9"
+    ],
+    "windows-sys": [
+      "0.52.0",
+      "0.59.0",
+      "0.60.2",
+      "0.61.2"
+    ],
+    "windows-targets": [
+      "0.52.6",
+      "0.53.5"
+    ],
+    "windows_aarch64_gnullvm": [
+      "0.52.6",
+      "0.53.1"
+    ],
+    "windows_aarch64_msvc": [
+      "0.52.6",
+      "0.53.1"
+    ],
+    "windows_i686_gnu": [
+      "0.52.6",
+      "0.53.1"
+    ],
+    "windows_i686_gnullvm": [
+      "0.52.6",
+      "0.53.1"
+    ],
+    "windows_i686_msvc": [
+      "0.52.6",
+      "0.53.1"
+    ],
+    "windows_x86_64_gnu": [
+      "0.52.6",
+      "0.53.1"
+    ],
+    "windows_x86_64_gnullvm": [
+      "0.52.6",
+      "0.53.1"
+    ],
+    "windows_x86_64_msvc": [
+      "0.52.6",
+      "0.53.1"
+    ],
+    "winnow": [
+      "0.6.26",
+      "1.0.4"
+    ]
+  }
+}

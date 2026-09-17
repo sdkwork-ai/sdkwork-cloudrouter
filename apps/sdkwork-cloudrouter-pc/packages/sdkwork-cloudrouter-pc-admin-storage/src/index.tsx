@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type InputHTMLAttributes } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type InputHTMLAttributes, type ReactNode } from 'react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { getLoadErrorMessage } from '@sdkwork/cloudroutes-pc-commons/runtime';
@@ -6,13 +6,11 @@ import {
   Activity,
   BarChart3,
   CheckCircle2,
-  ChevronDown,
   CloudCog,
   DatabaseZap,
   Eye,
   FolderOpen,
   Gauge,
-  KeyRound,
   Pencil,
   Plus,
   Power,
@@ -22,7 +20,12 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { StorageObjectBrowser } from 'sdkwork-drive-pc-admin-storage-providers';
+import {
+  StorageObjectBrowser,
+  StorageProviderEditor,
+  type StorageProviderView,
+} from 'sdkwork-drive-pc-admin-storage-providers';
+import { LanguageProvider } from 'sdkwork-drive-pc-commons';
 import {
   AdminResourceCenter,
   type AdminResourceRecord,
@@ -33,10 +36,13 @@ import {
   backendStorageDefaultBucketsList,
   backendStorageGarbageCollectionJobCreate,
   backendStorageGarbageCollectionJobsList,
+  backendStorageProviderAccountCreate,
+  backendStorageProviderAccountsList,
   backendStorageProviderCreate,
   backendStorageProviderDelete,
   backendStorageProviderHealthCheck,
   backendStorageProvidersList,
+  backendStorageProviderRotateCredential,
   backendStorageProviderUpdate,
   backendStorageQuotaCreate,
   backendStorageQuotasList,
@@ -46,7 +52,6 @@ import {
   getStorageProviderAdminService,
   type StorageDefaultBucketUpdateInput,
   type StorageGarbageCollectionCreateInput,
-  type StorageProviderCreateInput,
   type StorageProviderRecord,
   type StorageProviderUpdateInput,
   type StorageQuotaCreateInput,
@@ -61,7 +66,15 @@ type StorageAdminSectionId =
   | 'reconciliation'
   | 'garbageCollection';
 
-type StorageDialogKind = Exclude<StorageAdminSectionId, 'usage'>;
+/**
+ * 通用配置对话框覆盖的区段。
+ *
+ * `providers` 被排除在外：存储服务商不再走这个手写的通用表单，而是复用
+ * drive 属主的 `StorageProviderEditor`（见 `providerEditorOpen`）。把它排除在
+ * 联合类型之外，任何「再用通用表单渲染服务商」的尝试都会变成编译错误，
+ * 而不是悄悄分叉出第二套凭据 UI。
+ */
+type StorageDialogKind = Exclude<StorageAdminSectionId, 'usage' | 'providers'>;
 
 type StorageAdminProps = {
   sectionId?: string;
@@ -81,31 +94,19 @@ const TOAST_SUCCESS_DURATION_MS = 4000;
 /** 错误提示展示时长（毫秒），略长于成功，便于阅读后端详情。 */
 const TOAST_ERROR_DURATION_MS = 6500;
 
-/** 快速设置凭证对话框的表单状态：凭证方式 + 密钥/引用字段（明文密钥不回显）。 */
-type ProviderCredentialForm = {
-  credentialMode: 'plain' | 'reference';
-  accessKeyId: string;
-  secretAccessKey: string;
-  sessionToken: string;
-  credentialRef: string;
-};
-
+/**
+ * 通用配置对话框的表单状态。
+ *
+ * 这里只保留 cloudrouter 自己属主的那几类治理记录（默认桶 / 配额 / 对账 / GC）
+ * 的字段。存储服务商不在其中：它的连接信息与凭据由 drive 的
+ * `StorageProviderEditor` 用自己的状态维护，cloudrouter 只负责把入参透传给
+ * 共享服务，因此这里没有服务商连接信息与凭据的影子字段。
+ */
 type StorageFormState = {
-  providerName: string;  providerType: StorageProviderCreateInput['providerKind'];
-  endpointUrl: string;
-  region: string;
-  bucketName: string;
-  credentialRef: string;
-  credentialMode: 'plain' | 'reference';
-  accessKeyId: string;
-  secretAccessKey: string;
-  sessionToken: string;
-  pathStyleEnabled: boolean;
-  strictTlsEnabled: boolean;
-  providerStatus: string;
-  providerId: string;
   logicalScope: StorageQuotaCreateInput['scopeType'] | 'tenant_private';
   bucketId: string;
+  /** 对账运行的目标服务商（`reconciliation` 区段的下拉选择，非服务商表单字段）。 */
+  providerId: string;
   reason: string;
   scopeType: StorageQuotaCreateInput['scopeType'];
   scopeId: string;
@@ -122,22 +123,9 @@ type StorageFormState = {
 };
 
 const DEFAULT_FORM_STATE: StorageFormState = {
-  providerName: '',
-  providerType: 's3_compatible',
-  endpointUrl: '',
-  region: '',
-  bucketName: '',
-  credentialRef: '',
-  credentialMode: 'plain',
-  accessKeyId: '',
-  secretAccessKey: '',
-  sessionToken: '',
-  pathStyleEnabled: false,
-  strictTlsEnabled: true,
-  providerStatus: 'active',
-  providerId: '',
   logicalScope: 'tenant_private',
   bucketId: '',
+  providerId: '',
   reason: '',
   scopeType: 'tenant',
   scopeId: '',
@@ -163,6 +151,49 @@ const SECTION_IDS: readonly StorageAdminSectionId[] = [
 ];
 
 export function StorageAdmin({ sectionId }: StorageAdminProps = {}) {
+  return (
+    <DriveLanguageBridge>
+      <StorageAdminSections sectionId={sectionId} />
+    </DriveLanguageBridge>
+  );
+}
+
+/**
+ * Drive's storage components resolve their labels through drive's own language
+ * context (`sdkwork-drive-pc-commons`), which cloudrouter never provided: the
+ * object browser was already rendered from that package, so every one of its
+ * labels fell back to its raw i18n key instead of showing text.
+ *
+ * The bridge lives here — in the package that consumes drive's components —
+ * rather than in the admin host, so the requirement stays next to the dependency
+ * that creates it and travels with the package if it is ever mounted elsewhere.
+ * `resolveHostLanguage` is read once on mount and `subscribeHostLanguage` keeps
+ * it current, so switching the console language re-renders these components too.
+ */
+function DriveLanguageBridge({ children }: { children: ReactNode }) {
+  const { i18n } = useTranslation();
+  const resolveHostLanguage = useCallback(
+    () => i18n.resolvedLanguage ?? i18n.language ?? 'en-US',
+    [i18n],
+  );
+  const subscribeHostLanguage = useCallback(
+    (listener: (language: string) => void) => {
+      const handler = (language: string) => listener(language);
+      i18n.on('languageChanged', handler);
+      return () => {
+        i18n.off('languageChanged', handler);
+      };
+    },
+    [i18n],
+  );
+  return (
+    <LanguageProvider resolveHostLanguage={resolveHostLanguage} subscribeHostLanguage={subscribeHostLanguage}>
+      {children}
+    </LanguageProvider>
+  );
+}
+
+function StorageAdminSections({ sectionId }: StorageAdminProps = {}) {
   const { t } = useTranslation();
   const activeSectionId = resolveStorageSectionId(sectionId);
   const [dialogKind, setDialogKind] = useState<StorageDialogKind | null>(null);
@@ -174,14 +205,12 @@ export function StorageAdmin({ sectionId }: StorageAdminProps = {}) {
   const [explorerProvider, setExplorerProvider] = useState<StorageProviderRecord | null>(null);
   const [viewingProvider, setViewingProvider] = useState<AdminResourceRecord | null>(null);
   const [editingProvider, setEditingProvider] = useState<AdminResourceRecord | null>(null);
-  const [credentialEditor, setCredentialEditor] = useState<AdminResourceRecord | null>(null);
-  const [credentialForm, setCredentialForm] = useState<ProviderCredentialForm>({
-    credentialMode: 'reference',
-    accessKeyId: '',
-    secretAccessKey: '',
-    sessionToken: '',
-    credentialRef: '',
-  });
+  const [providerEditorOpen, setProviderEditorOpen] = useState(false);
+  /**
+   * 最近一次列出的服务商 ID。共享编辑器用它避免生成重复 ID；
+   * 数据由 providers 区段的 `load` 顺手记下，省掉一次额外请求。
+   */
+  const knownProviderIdsRef = useRef<readonly string[]>([]);
   const [deletingProvider, setDeletingProvider] = useState<{ id: string; name: string; providerCode: string } | null>(null);
 
   /** 推送一条 Toast 提示，超时后自动移除（错误比成功展示更久）；最多同时保留 5 条防堆积。 */
@@ -204,18 +233,13 @@ export function StorageAdmin({ sectionId }: StorageAdminProps = {}) {
       description: t('admin.storage.providers.desc', 'S3-compatible provider endpoints and capability profiles. Credentials are represented only by managed secret references.'),
       icon: <CloudCog className="h-4 w-4" />,
       group: t('admin.menu.storage.configuration', 'Storage Configuration'),
-      load: () => backendStorageProvidersList(),
-      action: createAction(t('admin.storage.providers.add', 'Add provider'), () => openDialog('providers')),
+      load: () => loadProviderResourceRecords(knownProviderIdsRef),
+      action: createAction(t('admin.storage.providers.add', 'Add provider'), () => openProviderCreate()),
       rowActions: [
         {
           label: t('admin.storage.providers.detail', 'Details'),
           icon: <Eye className="h-3.5 w-3.5" />,
           onClick: (record) => openProviderDetail(record),
-        },
-        {
-          label: t('admin.storage.providers.credential', 'Credentials'),
-          icon: <KeyRound className="h-3.5 w-3.5" />,
-          onClick: (record) => openProviderCredentialEditor(record),
         },
         {
           label: t('admin.storage.providers.disable', 'Disable'),
@@ -230,6 +254,10 @@ export function StorageAdmin({ sectionId }: StorageAdminProps = {}) {
           onClick: (record) => void toggleProviderStatus(record),
         },
         {
+          /**
+           * 编辑即包含凭据：链接信息与凭据来源（复用账号 / 手工引用）在共享编辑器
+           * 的同一个表单里，所以这里不再单列一个「凭据」动作——那正是分叉的来源。
+           */
           label: t('admin.storage.providers.edit', 'Edit'),
           icon: <Pencil className="h-3.5 w-3.5" />,
           onClick: (record) => openProviderEditor(record),
@@ -256,7 +284,7 @@ export function StorageAdmin({ sectionId }: StorageAdminProps = {}) {
           const name = typeof value === 'string' && value ? value : '';
           return name || '-';
         } },
-        { key: 'providerType', label: t('admin.storage.col.type', 'Type'), format: (value) => translateStorageValue(t, 'providerType', value) },
+        { key: 'providerType', label: t('admin.storage.col.type', 'Type'), format: (value) => formatProviderType(t, value) },
         { key: 'bucket', label: t('admin.storage.col.bucket', 'Bucket') },
         { key: 'endpointUrl', label: t('admin.storage.col.endpoint', 'Endpoint') },
         { key: 'region', label: t('admin.storage.col.region', 'Region') },
@@ -380,81 +408,29 @@ export function StorageAdmin({ sectionId }: StorageAdminProps = {}) {
     setViewingProvider(record);
   }
 
-  function openProviderEditor(record: AdminResourceRecord) {
-    const providerType = typeof record.providerType === 'string' && record.providerType in PROVIDER_PRESETS
-      ? record.providerType as StorageFormState['providerType']
-      : 's3_compatible';
-    // 凭证回显策略：托管引用（vault:/kms:/secret: 等）原样回显可编辑；
-    // 明文凭证（plain:...）只回显「访问密钥」模式，密钥内容永不回显（安全），
-    // 编辑时留空表示保持现有凭证。
-    const currentCredentialRef = typeof record.credentialRef === 'string' ? record.credentialRef : '';
-    const isPlainCredential = currentCredentialRef.startsWith('plain:');
-    setForm({
-      ...DEFAULT_FORM_STATE,
-      // 非敏感配置回填；明文凭证永不回显，编辑时留空表示保持不变。
-      providerName: typeof record.displayName === 'string' ? record.displayName
-        : typeof record.name === 'string' ? record.name : '',
-      providerType,
-      endpointUrl: typeof record.endpointUrl === 'string' ? record.endpointUrl : '',
-      region: typeof record.region === 'string' ? record.region : '',
-      bucketName: typeof record.bucket === 'string' ? record.bucket : '',
-      pathStyleEnabled: record.pathStyle === true,
-      credentialMode: isPlainCredential ? 'plain' : 'reference',
-      credentialRef: isPlainCredential ? '' : currentCredentialRef,
-      providerStatus: typeof record.status === 'string' ? record.status : 'active',
-        });
-    setEditingProvider(record);
-    setDialogKind('providers');
+  /** 新建服务商：交给共享编辑器，cloudrouter 不再预填一套自己的表单状态。 */
+  function openProviderCreate() {
+    setEditingProvider(null);
+    setProviderEditorOpen(true);
   }
 
-  function openProviderCredentialEditor(record: AdminResourceRecord) {
+  function openProviderEditor(record: AdminResourceRecord) {
     if (!readRecordId(record)) {
       pushToast('error', t('admin.storage.error.missingProviderId', 'Provider ID is missing.'));
       return;
     }
-    // drive 管理面不回显凭证内容（仅 credentialConfigured 布尔）；
-    // 快速设置对话框始终从空白开始，填写后整体轮换凭证。
-    setCredentialForm({
-      credentialMode: 'plain',
-      accessKeyId: '',
-      secretAccessKey: '',
-      sessionToken: '',
-        credentialRef: '',
-    });
-    setCredentialEditor(record);
+    setEditingProvider(record);
+    setProviderEditorOpen(true);
   }
 
-  async function submitProviderCredential() {
-    if (!credentialEditor) return;
-    const providerId = readRecordId(credentialEditor);
-    if (!providerId) {
-      pushToast('error', t('admin.storage.error.missingProviderId', 'Provider ID is missing.'));
-      return;
-    }
-    setSaving(true);
-    try {
-      const body: StorageProviderUpdateInput = {};
-      if (credentialForm.credentialMode === 'plain') {
-        // 访问密钥：双密钥都填写才提交（防止空值覆盖现有凭证）。
-        if (credentialForm.accessKeyId.trim() && credentialForm.secretAccessKey.trim()) {
-          body.credentialRef = buildPlainCredentialRef(
-            credentialForm.accessKeyId,
-            credentialForm.secretAccessKey,
-            credentialForm.sessionToken,
-          );
-        }
-      } else if (credentialForm.credentialRef.trim()) {
-        body.credentialRef = credentialForm.credentialRef.trim();
-      }
-      await backendStorageProviderUpdate(providerId, body);
-      setCredentialEditor(null);
-      setRefreshKey((value) => value + 1);
-      pushToast('success', t('admin.storage.providers.credentialSuccess', 'Provider credentials updated successfully.'));
-    } catch (error) {
-      pushToast('error', readError(error, t('admin.storage.providers.credentialError', 'Provider credentials could not be updated.'), t));
-    } finally {
-      setSaving(false);
-    }
+  /**
+   * 关闭共享编辑器。保存中的拦截由编辑器自己做（它在提交期间忽略关闭请求），
+   * 这里只负责把 cloudrouter 自己的两个状态复位——包括清掉 `editingProvider`，
+   * 否则下一次「新建」会带着上一个被编辑的服务商打开。
+   */
+  function closeProviderEditor() {
+    setProviderEditorOpen(false);
+    setEditingProvider(null);
   }
 
   function openProviderDelete(record: AdminResourceRecord) {
@@ -542,15 +518,11 @@ export function StorageAdmin({ sectionId }: StorageAdminProps = {}) {
         return;
       }
     }
-    const wasEditingProvider = editingProvider !== null;
     try {
-      await submitStorageForm(dialogKind, form, editingProvider);
+      await submitStorageForm(dialogKind, form);
       setDialogKind(null);
-      setEditingProvider(null);
       setRefreshKey((value) => value + 1);
-      pushToast('success', wasEditingProvider
-        ? t('admin.storage.providers.editSuccess', 'Provider configuration saved successfully.')
-        : t('admin.storage.saveSuccess', 'Storage configuration saved successfully.'));
+      pushToast('success', t('admin.storage.saveSuccess', 'Storage configuration saved successfully.'));
     } catch (error) {
       pushToast('error', readError(error, t('admin.storage.saveError', 'Storage configuration could not be saved.'), t));
     } finally {
@@ -582,13 +554,9 @@ export function StorageAdmin({ sectionId }: StorageAdminProps = {}) {
           form={form}
           kind={dialogKind}
           onChange={setForm}
-          onClose={() => !saving && (setDialogKind(null), setEditingProvider(null))}
+          onClose={() => !saving && setDialogKind(null)}
           onSubmit={submitDialog}
           saving={saving}
-          titleOverride={editingProvider
-            ? t('admin.storage.providers.editTitle', 'Edit provider')
-            : undefined}
-          editingProvider={editingProvider !== null}
         />
       ) : null}
       {viewingProvider ? (
@@ -605,14 +573,23 @@ export function StorageAdmin({ sectionId }: StorageAdminProps = {}) {
           }}
         />
       ) : null}
-      {credentialEditor ? (
-        <ProviderCredentialDialog
-          form={credentialForm}
-          onChange={setCredentialForm}
-          onClose={() => !saving && setCredentialEditor(null)}
-          onSubmit={() => void submitProviderCredential()}
-          provider={credentialEditor}
-          saving={saving}
+      {providerEditorOpen ? (
+        /**
+         * 服务商表单由 drive 属主的编辑器提供：链接信息、凭据来源（复用账号中心
+         * 账号 / 手工凭据）与轮换都在同一处，cloudrouter 只注入自己的服务门面。
+         * 账号中心的两个回调一旦注入，编辑器就会启用可复用账号的下拉与新建入口，
+         * 于是「一个账号复用到多个资源」在存储这条链路上是可点选的，而不是靠约定。
+         */
+        <StorageProviderEditor
+          existingProviderIds={knownProviderIdsRef.current}
+          onClose={closeProviderEditor}
+          onCreateProvider={(input) => backendStorageProviderCreate(input)}
+          onListProviderAccounts={(input) => backendStorageProviderAccountsList(input)}
+          onCreateProviderAccount={(input) => backendStorageProviderAccountCreate(input)}
+          onProviderSaved={() => setRefreshKey((value) => value + 1)}
+          onRotateCredential={(providerId, credentialRef) => backendStorageProviderRotateCredential(providerId, credentialRef)}
+          onUpdateProvider={(providerId, input) => backendStorageProviderUpdate(providerId, input)}
+          provider={editingProvider ? asStorageProviderView(editingProvider) : undefined}
         />
       ) : null}
       {deletingProvider ? (
@@ -772,100 +749,6 @@ function ProviderDetailDialog({
   );
 }
 
-/** 快速设置凭证对话框：凭证方式选择 + 密钥/引用输入，明文密钥不回显。 */
-function ProviderCredentialDialog({
-  form,
-  onChange,
-  onClose,
-  onSubmit,
-  provider,
-  saving,
-}: {
-  form: ProviderCredentialForm;
-  onChange: (value: ProviderCredentialForm) => void;
-  onClose: () => void;
-  onSubmit: () => void;
-  provider: AdminResourceRecord;
-  saving: boolean;
-}) {
-  useDialogEscape(onClose);
-  const { t } = useTranslation();
-  const providerType = typeof provider.providerType === 'string' ? provider.providerType : 's3_compatible';
-  const credentialFields = PROVIDER_CREDENTIAL_FIELD_KEYS[providerType] ?? PROVIDER_CREDENTIAL_FIELD_KEYS.s3_compatible;
-  const credentialLabel = (fieldKey: string) => (
-    t(`admin.storage.form.credential.${providerType}.${fieldKey}`,
-      t(`admin.storage.form.credential.${fieldKey}`, fieldKey))
-  );
-  const set = <K extends keyof ProviderCredentialForm,>(key: K, value: ProviderCredentialForm[K]) => onChange({ ...form, [key]: value });
-  const displayName = typeof provider.displayName === 'string' && provider.displayName
-    ? provider.displayName
-    : typeof provider.name === 'string' && provider.name
-      ? provider.name
-      : typeof provider.providerCode === 'string' ? provider.providerCode : readRecordId(provider);
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
-      role="presentation"
-      onPointerDown={(event) => {
-        if (event.target === event.currentTarget) {
-          onClose();
-        }
-      }}
-    >
-      <div
-        aria-labelledby="provider-credential-dialog-title"
-        aria-modal="true"
-        className="flex w-full max-w-lg flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#181818]"
-        role="dialog"
-      >
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 dark:border-white/10">
-          <div>
-            <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900 dark:text-white" id="provider-credential-dialog-title">
-              <KeyRound className="h-4 w-4 text-slate-400" />
-              {t('admin.storage.providers.credentialTitle', 'Set provider credentials')}
-            </h2>
-            <p className="mt-1 truncate text-sm text-slate-500 dark:text-slate-400">{displayName}</p>
-          </div>
-          <button aria-label={t('admin.storage.dialog.close', 'Close')} className="grid h-9 w-9 place-items-center rounded-md text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10" onClick={onClose} type="button"><X className="h-4 w-4" /></button>
-        </div>
-        <div className="flex flex-col gap-4 p-5">
-          {credentialFields === null ? (
-            <div className="rounded-md border border-slate-200 px-3 py-2.5 text-sm text-slate-600 dark:border-white/10 dark:text-slate-300">
-              {t('admin.storage.form.localDevHint', 'Local development providers do not require access credentials.')}
-            </div>
-          ) : (
-            <>
-              <SelectField label={t('admin.storage.form.credentialMode', 'Credential mode')} value={form.credentialMode} onChange={(value) => set('credentialMode', value as ProviderCredentialForm['credentialMode'])} options={[
-                { value: 'plain', label: t('admin.storage.form.credentialModePlain', 'Access keys') },
-                { value: 'reference', label: t('admin.storage.form.credentialModeReference', 'Managed reference') },
-              ]} />
-              {form.credentialMode === 'plain' ? (
-                <>
-                  <TextField autoComplete="new-password" label={credentialLabel(credentialFields.accessKey)} required type="password" value={form.accessKeyId} onChange={(value) => set('accessKeyId', value)} />
-                  <TextField autoComplete="new-password" label={credentialLabel(credentialFields.secretKey)} required type="password" value={form.secretAccessKey} onChange={(value) => set('secretAccessKey', value)} />
-                  {credentialFields.sessionToken ? (
-                    <TextField autoComplete="new-password" label={credentialLabel(credentialFields.sessionToken)} type="password" value={form.sessionToken} onChange={(value) => set('sessionToken', value)} />
-                  ) : null}
-                  <div className="text-xs text-slate-500 dark:text-slate-400">
-                    {t('admin.storage.form.plainCredentialEditDesc', 'Field names follow the provider console. Leave all key fields empty to keep the current credentials; filling them replaces the stored credentials. Credentials are never rendered back.')}
-                  </div>
-                </>
-              ) : (
-                <TextField description={t('admin.storage.form.credentialRefDesc', 'Use a vault/KMS/secret reference such as vault:<ref>, kms:<ref>, secret:<ref>, or env:<ref>.')} label={t('admin.storage.form.credentialRef', 'Credential reference')} value={form.credentialRef} onChange={(value) => set('credentialRef', value)} />
-              )}
-            </>
-          )}
-          <div className="flex justify-end gap-3 border-t border-slate-200 pt-4 dark:border-white/10">
-            <button className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5" disabled={saving} onClick={onClose} type="button">{t('admin.storage.dialog.cancel', 'Cancel')}</button>
-            <button className="inline-flex items-center gap-2 rounded-md bg-lobster-500 px-4 py-2 text-sm font-medium text-white hover:bg-lobster-600 disabled:opacity-60" disabled={saving || (credentialFields !== null && form.credentialMode === 'plain' && (!form.accessKeyId.trim() || !form.secretAccessKey.trim()))} onClick={onSubmit} type="button"><KeyRound className="h-4 w-4" />{saving ? t('admin.storage.dialog.saving', 'Saving...') : t('admin.storage.dialog.save', 'Save')}</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function ProviderDeleteDialog({
   provider,
   onClose,
@@ -993,8 +876,6 @@ function StorageDialog({
   onSubmit,
   saving,
   closeOnClickOutside = true,
-  titleOverride,
-  editingProvider,
 }: {
   form: StorageFormState;
   kind: StorageDialogKind;
@@ -1004,16 +885,11 @@ function StorageDialog({
   saving: boolean;
   /** 点击遮罩（弹窗外）时是否关闭；默认 true */
   closeOnClickOutside?: boolean;
-  /** 标题覆盖（编辑场景复用同一对话框时使用） */
-  titleOverride?: string;
-  /** 服务商编辑模式：凭证可选更新、附带状态与变更说明 */
-  editingProvider?: boolean;
 }) {
   useDialogEscape(onClose);
   const { t } = useTranslation();
-  const title = titleOverride ?? dialogTitle(kind, t);
+  const title = dialogTitle(kind, t);
   const set = <K extends keyof StorageFormState,>(key: K, value: StorageFormState[K]) => onChange({ ...form, [key]: value });
-  const patch = (values: Partial<StorageFormState>) => onChange({ ...form, ...values });
 
   return (
     <div
@@ -1039,7 +915,6 @@ function StorageDialog({
             {' '}{t('admin.storage.form.requiredLegend', 'Required fields are marked with an asterisk.')}
           </div>
           <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto p-5 md:grid-cols-2">
-            {kind === 'providers' ? <ProviderFields editing={editingProvider} form={form} patch={patch} set={set} /> : null}
             {kind === 'defaultBuckets' ? <DefaultBucketFields form={form} set={set} /> : null}
             {kind === 'quotas' ? <QuotaFields form={form} set={set} /> : null}
             {kind === 'reconciliation' ? <ReconciliationFields form={form} set={set} /> : null}
@@ -1065,152 +940,6 @@ function storageSelectOptions(t: TFunction, group: string, values: readonly stri
     value,
     label: t(`admin.storage.value.${group}.${value}`, value),
   }));
-}
-
-type ProviderCredentialFieldKeys = {
-  readonly accessKey: string;
-  readonly secretKey: string;
-  /** 会话令牌字段（部分服务商无 STS/临时凭证概念，如 Cloudflare R2）。 */
-  readonly sessionToken?: string;
-};
-
-/**
- * 各服务商访问凭证字段的官方命名（对齐服务商控制台/文档），
- * 映射到统一的 accessKeyId/secretAccessKey/sessionToken/accountId 状态位。
- * 枚举与 drive 存储管理面（DriveStorageProviderKind）一致。
- */
-const PROVIDER_CREDENTIAL_FIELD_KEYS: Readonly<Record<string, ProviderCredentialFieldKeys | null>> = {
-  s3_compatible: { accessKey: 'accessKeyId', secretKey: 'secretAccessKey', sessionToken: 'sessionToken' },
-  aliyun_oss: { accessKey: 'accessKeyId', secretKey: 'accessKeySecret', sessionToken: 'securityToken' },
-  tencent_cos: { accessKey: 'secretId', secretKey: 'secretKey', sessionToken: 'token' },
-  huawei_obs: { accessKey: 'accessKeyId', secretKey: 'secretAccessKey' },
-  volcengine_tos: { accessKey: 'accessKeyId', secretKey: 'secretAccessKey', sessionToken: 'sessionToken' },
-  google_cloud_storage: { accessKey: 'accessKeyId', secretKey: 'secretAccessKey' },
-};
-
-/** 明文访问凭证组装为 drive 兼容的 plain:<accessKeyId>:<secretAccessKey>[:<sessionToken>] 格式。 */
-function buildPlainCredentialRef(accessKeyId: string, secretAccessKey: string, sessionToken: string): string {
-  const accessKey = accessKeyId.trim();
-  const secretKey = secretAccessKey.trim();
-  const token = sessionToken.trim();
-  return token
-    ? `plain:${accessKey}:${secretKey}:${token}`
-    : `plain:${accessKey}:${secretKey}`;
-}
-
-type ProviderPresetOption = {
-  readonly value: string;
-  /** 显示文案 i18n key；缺省时直接显示 value。 */
-  readonly labelKey?: string;
-  /** 该预设端点对应的区域（选择端点时同步区域）。 */
-  readonly region?: string;
-};
-
-type ProviderPreset = {
-  readonly endpointOptions: readonly ProviderPresetOption[];
-  readonly regionOptions: readonly ProviderPresetOption[];
-  readonly defaultEndpoint?: string;
-  readonly defaultRegion: string;
-  /** region → 官方端点模板；存在时区域变化自动联动端点（端点处于自动态时）。 */
-  readonly endpointTemplate?: (region: string) => string;
-  readonly pathStyleEnabled: boolean;
-  /** 端点输入提示 i18n key（可选）。 */
-  readonly endpointHintKey?: string;
-};
-
-const region = (value: string, labelKey?: string): ProviderPresetOption => ({ value, labelKey });
-const endpoint = (value: string, labelKey?: string, endpointRegion?: string): ProviderPresetOption => ({ value, labelKey, region: endpointRegion });
-
-/** 各服务商官方 region → 端点模板（腾讯 COS / 阿里 OSS / 华为 OBS 等）。 */
-const OSS_ENDPOINT = (regionCode: string) => `https://oss-${regionCode}.aliyuncs.com`;
-const COS_ENDPOINT = (regionCode: string) => `https://cos.${regionCode}.myqcloud.com`;
-const OBS_ENDPOINT = (regionCode: string) => `https://obs.${regionCode}.myhuaweicloud.com`;
-const TOS_ENDPOINT = (regionCode: string) => `https://tos-${regionCode}.volces.com`;
-
-/** 各服务商预设配置：切换服务商类型时自动填充端点/区域与能力默认值，降低录入错误。 */
-const PROVIDER_PRESETS: Readonly<Record<string, ProviderPreset>> = {
-  s3_compatible: {
-    endpointOptions: [
-      endpoint('http://localhost:9000', 'admin.storage.preset.endpoint.localhost'),
-      endpoint('https://s3.us-east-1.amazonaws.com', 'admin.storage.preset.endpoint.aws'),
-    ],
-    endpointHintKey: 'admin.storage.form.endpointHintS3',
-    regionOptions: [
-      region('us-east-1'), region('us-east-2'), region('us-west-1'), region('us-west-2'),
-      region('ap-northeast-1'), region('ap-southeast-1'), region('ap-southeast-2'), region('ap-south-1'),
-      region('eu-central-1'), region('eu-west-1'),
-    ],
-    defaultRegion: 'us-east-1',
-    pathStyleEnabled: false,
-  },
-  aliyun_oss: {
-    endpointOptions: [
-      endpoint(OSS_ENDPOINT('cn-hangzhou'), undefined, 'cn-hangzhou'),
-      endpoint(OSS_ENDPOINT('cn-shanghai'), undefined, 'cn-shanghai'),
-      endpoint(OSS_ENDPOINT('cn-beijing'), undefined, 'cn-beijing'),
-      endpoint(OSS_ENDPOINT('cn-shenzhen'), undefined, 'cn-shenzhen'),
-      endpoint(OSS_ENDPOINT('cn-hongkong'), undefined, 'cn-hongkong'),
-      endpoint(OSS_ENDPOINT('ap-southeast-1'), undefined, 'ap-southeast-1'),
-      endpoint(OSS_ENDPOINT('us-west-1'), undefined, 'us-west-1'),
-    ],
-    regionOptions: [
-      region('cn-hangzhou'), region('cn-shanghai'), region('cn-beijing'), region('cn-shenzhen'),
-      region('cn-hongkong'), region('ap-southeast-1'), region('us-west-1'),
-    ],
-    endpointTemplate: OSS_ENDPOINT,
-    defaultEndpoint: OSS_ENDPOINT('cn-hangzhou'),
-    defaultRegion: 'cn-hangzhou',
-    pathStyleEnabled: false,
-  },
-  tencent_cos: {
-    endpointOptions: [
-      endpoint(COS_ENDPOINT('ap-shanghai'), undefined, 'ap-shanghai'),
-      endpoint(COS_ENDPOINT('ap-guangzhou'), undefined, 'ap-guangzhou'),
-      endpoint(COS_ENDPOINT('ap-beijing'), undefined, 'ap-beijing'),
-      endpoint(COS_ENDPOINT('ap-hongkong'), undefined, 'ap-hongkong'),
-    ],
-    regionOptions: [
-      region('ap-shanghai'), region('ap-guangzhou'), region('ap-beijing'), region('ap-hongkong'),
-    ],
-    endpointTemplate: COS_ENDPOINT,
-    defaultEndpoint: COS_ENDPOINT('ap-shanghai'),
-    defaultRegion: 'ap-shanghai',
-    pathStyleEnabled: false,
-  },
-  huawei_obs: {
-    endpointOptions: [
-      endpoint(OBS_ENDPOINT('cn-north-4'), undefined, 'cn-north-4'),
-      endpoint(OBS_ENDPOINT('cn-east-3'), undefined, 'cn-east-3'),
-      endpoint(OBS_ENDPOINT('cn-south-1'), undefined, 'cn-south-1'),
-    ],
-    regionOptions: [
-      region('cn-north-4'), region('cn-east-3'), region('cn-south-1'),
-    ],
-    endpointTemplate: OBS_ENDPOINT,
-    defaultEndpoint: OBS_ENDPOINT('cn-north-4'),
-    defaultRegion: 'cn-north-4',
-    pathStyleEnabled: false,
-  },
-  volcengine_tos: {
-    endpointOptions: [
-      endpoint(TOS_ENDPOINT('cn-beijing'), undefined, 'cn-beijing'),
-      endpoint(TOS_ENDPOINT('cn-shanghai'), undefined, 'cn-shanghai'),
-    ],
-    regionOptions: [
-      region('cn-beijing'), region('cn-shanghai'),
-    ],
-    endpointTemplate: TOS_ENDPOINT,
-    defaultEndpoint: TOS_ENDPOINT('cn-beijing'),
-    defaultRegion: 'cn-beijing',
-    pathStyleEnabled: false,
-  },
-};
-
-/**
- * 预设选项文案：labelKey 优先走 i18n，缺省回退 value。
- */
-function presetOptionLabel(t: TFunction, option: ProviderPresetOption): string {
-  return option.labelKey ? t(option.labelKey, option.value) : option.value;
 }
 
 /**
@@ -1247,109 +976,6 @@ function useStorageSelectOptions<T>(
     return items.map(mapItem);
   }, [items, labels.empty, labels.error, labels.loading, mapItem, status]);
   return { items, options, status };
-}
-
-function ProviderFields({ editing = false, form, patch, set }: { editing?: boolean; form: StorageFormState; patch: (values: Partial<StorageFormState>) => void; set: FieldSetter }) {
-  const { t } = useTranslation();
-  const preset = PROVIDER_PRESETS[form.providerType] ?? PROVIDER_PRESETS.s3_compatible;
-  const credentialFields = PROVIDER_CREDENTIAL_FIELD_KEYS[form.providerType] ?? PROVIDER_CREDENTIAL_FIELD_KEYS.s3_compatible;
-  const credentialLabel = (fieldKey: string) => (
-    t(`admin.storage.form.credential.${form.providerType}.${fieldKey}`,
-      t(`admin.storage.form.credential.${fieldKey}`, fieldKey))
-  );
-  const endpointOptions = preset.endpointOptions.map((option) => ({
-    value: option.value,
-    label: presetOptionLabel(t, option),
-    ...(option.region ? { region: option.region } : {}),
-  }));
-  const regionOptions = preset.regionOptions.map((option) => ({
-    value: option.value,
-    label: presetOptionLabel(t, option),
-  }));
-  const applyProviderPreset = (providerType: StorageFormState['providerType']) => {
-    const next = PROVIDER_PRESETS[providerType] ?? PROVIDER_PRESETS.s3_compatible;
-    patch({
-      providerType,
-      endpointUrl: next.defaultEndpoint ?? '',
-      region: next.defaultRegion,
-      pathStyleEnabled: next.pathStyleEnabled,
-    });
-  };
-  /** 区域变化 → 端点联动：端点为空或仍为自动生成值时，按官方模板更新。 */
-  const handleRegionChange = (regionCode: string) => {
-    const template = preset.endpointTemplate;
-    const currentEndpoint = form.endpointUrl.trim();
-    const autoEndpoint = template ? template(form.region.trim()) : '';
-    const shouldSyncEndpoint = template !== undefined && (!currentEndpoint || currentEndpoint === autoEndpoint);
-    patch({
-      region: regionCode,
-      ...(shouldSyncEndpoint ? { endpointUrl: template(regionCode.trim()) } : {}),
-    });
-  };
-  /** 端点变化 → 区域联动：选择带区域标注的预设端点时同步区域。 */
-  const handleEndpointChange = (endpointUrl: string) => {
-    const syncedRegion = endpointOptions.find((option) => option.value === endpointUrl)?.region;
-    patch({
-      endpointUrl,
-      ...(syncedRegion ? { region: syncedRegion } : {}),
-    });
-  };
-  return <>
-    <TextField label={t('admin.storage.form.providerName', 'Provider name')} required value={form.providerName} onChange={(value) => set('providerName', value)} />
-    <SelectField label={t('admin.storage.form.providerType', 'Provider type')} value={form.providerType} onChange={(value) => applyProviderPreset(value as StorageFormState['providerType'])} options={storageSelectOptions(t, 'providerType', ['s3_compatible', 'aliyun_oss', 'tencent_cos', 'huawei_obs', 'volcengine_tos', 'google_cloud_storage'])} />
-    <PrefillSelectField
-      label={t('admin.storage.form.region', 'Region')}
-      options={regionOptions}
-      placeholder={t('admin.storage.form.regionPlaceholder', 'Select a preset region or type a custom region')}
-      value={form.region}
-      onChange={handleRegionChange}
-    />
-    <PrefillSelectField
-      description={preset.endpointHintKey
-        ? t(preset.endpointHintKey, '')
-        : preset.endpointTemplate
-          ? t('admin.storage.form.endpointHintLinked', 'The endpoint follows the region automatically. Override it manually if needed.')
-          : t('admin.storage.form.presetHint', 'Switching the provider type pre-fills the recommended endpoint, region, and capability defaults.')}
-      label={t('admin.storage.form.endpointUrl', 'Endpoint URL')}
-      options={endpointOptions}
-      placeholder={t('admin.storage.form.endpointPlaceholder', 'Select a preset or type a custom endpoint')}
-      type="url"
-      value={form.endpointUrl}
-      onChange={handleEndpointChange}
-    />
-    <TextField label={t('admin.storage.form.bucketName', 'Bucket name')} required value={form.bucketName} onChange={(value) => set('bucketName', value)} />
-    <SelectField label={t('admin.storage.form.credentialMode', 'Credential mode')} value={form.credentialMode} onChange={(value) => set('credentialMode', value as StorageFormState['credentialMode'])} options={[
-      { value: 'plain', label: t('admin.storage.form.credentialModePlain', 'Access keys') },
-      { value: 'reference', label: t('admin.storage.form.credentialModeReference', 'Managed reference') },
-    ]} />
-    {credentialFields === null ? (
-      <div className="md:col-span-2 rounded-md border border-slate-200 px-3 py-2.5 text-sm text-slate-600 dark:border-white/10 dark:text-slate-300">
-        {t('admin.storage.form.localDevHint', 'Local development providers do not require access credentials.')}
-      </div>
-    ) : form.credentialMode === 'plain' ? (
-      <>
-        <TextField autoComplete="new-password" label={credentialLabel(credentialFields.accessKey)} required={!editing} type="password" value={form.accessKeyId} onChange={(value) => set('accessKeyId', value)} />
-        <TextField autoComplete="new-password" label={credentialLabel(credentialFields.secretKey)} required={!editing} type="password" value={form.secretAccessKey} onChange={(value) => set('secretAccessKey', value)} />
-        {credentialFields.sessionToken ? (
-          <TextField autoComplete="new-password" label={credentialLabel(credentialFields.sessionToken)} type="password" value={form.sessionToken} onChange={(value) => set('sessionToken', value)} />
-        ) : null}
-        <div className="md:col-span-2 text-xs text-slate-500 dark:text-slate-400">
-          {editing
-            ? t('admin.storage.form.plainCredentialEditDesc', 'Field names follow the provider console. Leave all key fields empty to keep the current credentials; filling them replaces the stored credentials. Credentials are never rendered back.')
-            : t('admin.storage.form.plainCredentialDesc', 'Field names follow the provider console. Credentials are submitted as a plain:<accessKeyId>:<secretAccessKey>[:<sessionToken>] string and are never rendered back.')}
-        </div>
-      </>
-    ) : (
-      <div className="md:col-span-2"><TextField description={t('admin.storage.form.credentialRefDesc', 'Use a vault/KMS/secret reference such as vault:<ref>, kms:<ref>, secret:<ref>, or env:<ref>.')} label={t('admin.storage.form.credentialRef', 'Credential reference')} required={!editing} value={form.credentialRef} onChange={(value) => set('credentialRef', value)} /></div>
-    )}
-    {editing ? (
-      <>
-        <SelectField label={t('admin.storage.form.providerStatus', 'Status')} value={form.providerStatus} onChange={(value) => set('providerStatus', value)} options={storageSelectOptions(t, 'status', ['active', 'disabled'])} />
-      </>
-    ) : null}
-    <ToggleField checked={form.pathStyleEnabled} label={t('admin.storage.form.pathStyle', 'Path-style access')} onChange={(value) => set('pathStyleEnabled', value)} />
-    <ToggleField checked={form.strictTlsEnabled} label={t('admin.storage.form.strictTls', 'Strict TLS')} onChange={(value) => set('strictTlsEnabled', value)} />
-  </>;
 }
 
 function DefaultBucketFields({ form, set }: { form: StorageFormState; set: FieldSetter }) {
@@ -1443,118 +1069,6 @@ function TextField({ description, label, onChange, ...props }: { description?: s
   return <label className="block text-sm font-medium text-slate-700 dark:text-slate-200"><FieldLabel required={props.required}>{label}</FieldLabel><input {...props} className="mt-1.5 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-lobster-500 dark:border-white/10 dark:bg-white/5 dark:text-white" onChange={(event) => onChange(event.target.value)} />{description ? <span className="mt-1 block text-xs font-normal text-slate-500">{description}</span> : null}</label>;
 }
 
-/**
- * 可选可输入字段：文本框自由输入 + 显式下拉按钮展开预设选项
- * （可过滤、当前值高亮、暗色适配），选择预设或直接输入自定义值。
- */
-function PrefillSelectField({ description, label, onChange, options, placeholder, required = false, type = 'text', value }: {
-  description?: string;
-  label: string;
-  onChange: (value: string) => void;
-  options: readonly SelectOption[];
-  placeholder?: string;
-  required?: boolean;
-  type?: 'text' | 'url';
-  value: string;
-}) {
-  const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const dismiss = (event: PointerEvent) => {
-      if (!wrapperRef.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const dismissFromKeyboard = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('pointerdown', dismiss);
-    document.addEventListener('keydown', dismissFromKeyboard);
-    return () => {
-      document.removeEventListener('pointerdown', dismiss);
-      document.removeEventListener('keydown', dismissFromKeyboard);
-    };
-  }, [open]);
-
-  const normalizedQuery = query.trim().toLocaleLowerCase();
-  const filteredOptions = normalizedQuery
-    ? options.filter((option) =>
-      option.value.toLocaleLowerCase().includes(normalizedQuery)
-      || option.label.toLocaleLowerCase().includes(normalizedQuery))
-    : options;
-
-  return (
-    <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-      <FieldLabel required={required}>{label}</FieldLabel>
-      <div ref={wrapperRef} className="relative mt-1.5">
-        <input
-          ref={inputRef}
-          required={required}
-          type={type}
-          value={value}
-          placeholder={placeholder}
-          onChange={(event) => {
-            onChange(event.target.value);
-            setQuery(event.target.value);
-            setOpen(true);
-          }}
-          onFocus={() => setOpen(true)}
-          className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 pr-9 text-sm text-slate-900 outline-none focus:border-lobster-500 dark:border-white/10 dark:bg-white/5 dark:text-white"
-        />
-        <button
-          type="button"
-          aria-label={t('admin.storage.form.prefillToggle', 'Toggle preset options')}
-          className="absolute right-1 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-md text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-white/10"
-          onClick={() => setOpen((current) => !current)}
-        >
-          <ChevronDown size={15} className={`transition-transform${open ? ' rotate-180' : ''}`} />
-        </button>
-        {open ? (
-          <div className="absolute left-0 right-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-md border border-slate-200 bg-white py-1 shadow-xl dark:border-white/10 dark:bg-[#252525]">
-            {filteredOptions.length === 0 ? (
-              <div className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
-                {t('admin.storage.form.prefillNoMatch', 'No matching presets.')}
-              </div>
-            ) : filteredOptions.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                className={`block w-full px-3 py-1.5 text-left text-sm transition-colors hover:bg-slate-100 dark:hover:bg-white/10 ${option.value === value
-                  ? 'bg-lobster-50 text-lobster-700 dark:bg-lobster-500/10 dark:text-lobster-300'
-                  : 'text-slate-700 dark:text-slate-200'}`}
-                onClick={() => {
-                  onChange(option.value);
-                  setQuery('');
-                  setOpen(false);
-                }}
-              >
-                {option.label}
-              </button>
-            ))}
-            <div className="border-t border-slate-100 dark:border-white/5">
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-slate-500 transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/10"
-                onClick={() => {
-                  setOpen(false);
-                  inputRef.current?.focus();
-                }}
-              >
-                <Pencil size={13} />
-                {t('admin.storage.form.prefillCustom', 'Type a custom value')}
-              </button>
-            </div>
-          </div>
-        ) : null}
-      </div>
-      {description ? <span className="mt-1 block text-xs font-normal text-slate-500">{description}</span> : null}
-    </label>
-  );
-}
-
 function TextAreaField({ label, onChange, required = false, value }: { label: string; onChange: (value: string) => void; required?: boolean; value: string }) {
   return <label className="block text-sm font-medium text-slate-700 dark:text-slate-200"><FieldLabel required={required}>{label}</FieldLabel><textarea className="mt-1.5 min-h-24 w-full rounded-md border border-slate-200 bg-white px-3 py-2 font-mono text-sm text-slate-900 outline-none focus:border-lobster-500 dark:border-white/10 dark:bg-white/5 dark:text-white" onChange={(event) => onChange(event.target.value)} value={value} /></label>;
 }
@@ -1567,49 +1081,14 @@ function ToggleField({ checked, disabled = false, label, onChange }: { checked: 
   return <label className="flex min-h-10 items-center justify-between gap-3 rounded-md border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 dark:border-white/10 dark:text-slate-200"><span>{label}</span><input checked={checked} className="h-4 w-4 accent-lobster-500 disabled:cursor-not-allowed disabled:opacity-50" disabled={disabled} onChange={(event) => onChange(event.target.checked)} type="checkbox" /></label>;
 }
 
+/**
+ * 通用配置对话框的提交。服务商不在此列：它由 `StorageProviderEditor` 通过
+ * 共享服务直接落库，cloudrouter 这条路径上不再有第二套 provider 写入逻辑。
+ */
 async function submitStorageForm(
   kind: StorageDialogKind,
   form: StorageFormState,
-  editingProvider: AdminResourceRecord | null,
 ): Promise<unknown> {
-  if (kind === 'providers') {
-    const credentialRef = form.credentialMode === 'plain'
-      ? buildPlainCredentialRef(form.accessKeyId, form.secretAccessKey, form.sessionToken)
-      : form.credentialRef.trim();
-    if (editingProvider) {
-      const providerId = readRecordId(editingProvider);
-      const body: StorageProviderUpdateInput = {
-        status: form.providerStatus,
-        name: form.providerName.trim(),
-        endpointUrl: optionalText(form.endpointUrl),
-        region: optionalText(form.region),
-        bucket: optionalText(form.bucketName),
-        pathStyle: form.pathStyleEnabled,
-        strictTls: form.strictTlsEnabled,
-      };
-      // 凭证更新策略：访问密钥模式仅当 Access Key / Secret Key 都填写时才更换凭证
-      // （防止只填一项或全空时把现有凭证覆盖成坏值）；托管引用模式填写新引用则覆盖。
-      if (form.credentialMode === 'plain') {
-        if (form.accessKeyId.trim() && form.secretAccessKey.trim()) {
-          body.credentialRef = buildPlainCredentialRef(form.accessKeyId, form.secretAccessKey, form.sessionToken);
-        }
-      } else if (form.credentialRef.trim()) {
-        body.credentialRef = form.credentialRef.trim();
-      }
-      return backendStorageProviderUpdate(providerId, body);
-    }
-    return backendStorageProviderCreate({
-      id: generateProviderId(form.providerType),
-      providerKind: form.providerType,
-      name: form.providerName.trim(),
-      endpointUrl: form.endpointUrl.trim(),
-      region: optionalText(form.region),
-      bucket: form.bucketName.trim(),
-      pathStyle: form.pathStyleEnabled,
-      strictTls: form.strictTlsEnabled,
-      credentialRef,
-    });
-  }
   if (kind === 'defaultBuckets') {
     const body: StorageDefaultBucketUpdateInput = { bucketId: form.bucketId.trim(), reason: form.reason.trim() };
     return backendStorageDefaultBucketUpdate(form.logicalScope, body);
@@ -1634,15 +1113,6 @@ async function submitStorageForm(
   });
 }
 
-/** drive provider id 生成：kind 前缀 + 随机后缀（与 drive 管理端 providerId 工具同构）。 */
-function generateProviderId(providerKind: string): string {
-  const prefix = providerKind.startsWith('custom:')
-    ? providerKind.replace(/[^a-z0-9_-]/g, '').slice(0, 24)
-    : providerKind.replace(/[^a-z0-9_-]/g, '').slice(0, 24);
-  const random = Math.random().toString(36).slice(2, 10);
-  return `${prefix || 'provider'}-${random}-${Date.now().toString(36)}`;
-}
-
 function resolveStorageSectionId(value: string | undefined): StorageAdminSectionId {
   return SECTION_IDS.includes(value as StorageAdminSectionId) ? value as StorageAdminSectionId : 'providers';
 }
@@ -1653,11 +1123,36 @@ function createAction(label: string, onClick: () => void) {
 
 function dialogTitle(kind: StorageDialogKind, t: ReturnType<typeof useTranslation>['t']): string {
   const titles: Record<StorageDialogKind, string> = {
-    providers: t('admin.storage.providers.add', 'Add provider'),
     defaultBuckets: t('admin.storage.defaultBuckets.set', 'Set default bucket'), quotas: t('admin.storage.quotas.add', 'Add quota'),
     reconciliation: t('admin.storage.reconciliation.run', 'Start reconciliation'), garbageCollection: t('admin.storage.gc.add', 'Create garbage collection job'),
   };
   return titles[kind];
+}
+
+/**
+ * 服务商资源记录：drive 的共享视图用的是 `providerKind` / `displayName`，
+ * 而资源中心的列与搜索按 key 直接取值。这里补上两个别名，让「名称」「类型」
+ * 两列不再空白——别名只做展示，其余字段保持共享视图原样透传给编辑器。
+ */
+function toProviderResourceRecord(provider: StorageProviderView): AdminResourceRecord {
+  return { ...provider, name: provider.displayName, providerType: provider.providerKind };
+}
+
+/** 资源记录还原为共享视图：编辑器只认 drive 的契约类型。 */
+function asStorageProviderView(record: AdminResourceRecord): StorageProviderView {
+  return record as unknown as StorageProviderView;
+}
+
+/**
+ * providers 区段的数据源：顺手记下当前服务商 ID，供共享编辑器生成不冲突的新 ID，
+ * 省掉一次额外请求，也保证「新增」时看到的是与表格同一份快照。
+ */
+async function loadProviderResourceRecords(
+  knownProviderIds: { current: readonly string[] },
+): Promise<AdminResourceRecord[]> {
+  const providers = await backendStorageProvidersList();
+  knownProviderIds.current = providers.map((provider) => provider.id);
+  return providers.map(toProviderResourceRecord);
 }
 
 function readRecordId(record: AdminResourceRecord): string {
@@ -1668,6 +1163,25 @@ function readRecordId(record: AdminResourceRecord): string {
 function optionalText(value: string): string | undefined {
   const normalized = value.trim();
   return normalized || undefined;
+}
+
+/**
+ * 服务商类型渲染：drive 的类型枚举里 `custom:<slug>` 是参数化取值
+ * （DDL 约束 `^custom:[a-z0-9_-]{2,32}$`），i18n 表只能声明到 `custom` 一档。
+ * 单独把后缀拼出来，否则「类型」列会出现 `custom:minio` 这种裸 token ——
+ * 而这正是自建 MinIO / 私有 S3 端点的取值。
+ */
+function formatProviderType(t: TFunction, value: unknown): string {
+  const raw = value === null || value === undefined ? '' : String(value).trim();
+  if (!raw) return '-';
+  const separator = raw.indexOf(':');
+  if (separator <= 0) {
+    return t(`admin.storage.value.providerType.${raw}`, raw);
+  }
+  const base = raw.slice(0, separator);
+  const suffix = raw.slice(separator + 1);
+  const label = t(`admin.storage.value.providerType.${base}`, base);
+  return suffix ? `${label} (${suffix})` : label;
 }
 
 /**

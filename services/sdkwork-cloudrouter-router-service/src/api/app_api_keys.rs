@@ -20,8 +20,9 @@ use crate::api::response::{
 };
 use crate::application::{validate_chain_policy, ApiKeySecretGenerator, ApiKeySecretHasher};
 use crate::domain::{
-    DecimalValue, DomainError, GatewayAccessPolicy, GatewayApiKey, QuotaPolicy,
-    UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot,
+    select_default_account_group_for_subject, DecimalValue, DomainError, GatewayAccessPolicy,
+    GatewayApiKey, QuotaPolicy, UpstreamAccountGroup, UpstreamAccountGroupMetricSnapshot,
+    DEFAULT_ACCOUNT_GROUP_CODE,
 };
 use crate::ports::{
     AccountGroupBindingInput, AdminChainPolicyStore, AdminChainPolicySubject,
@@ -31,7 +32,10 @@ use crate::ports::{
     UpdateGatewayApiKeyCommand, UpsertChainPolicyCommand, ADMIN_CHAIN_POLICY_SCOPE_API_KEY,
 };
 
-const DEFAULT_ACCOUNT_GROUP: &str = "default-group";
+/// Seeded default account group code, sourced from the canonical selection
+/// module so the group created here is exactly the one auth-token sessions fall
+/// back to (`domain::select_default_account_group_for_subject`).
+const DEFAULT_ACCOUNT_GROUP: &str = DEFAULT_ACCOUNT_GROUP_CODE;
 
 #[derive(Debug, Default, Deserialize)]
 struct AppApiKeyListQueryRequest {
@@ -1037,10 +1041,20 @@ async fn resolve_group(
         ));
     }
 
-    if let Some(group) = snapshot
-        .single_upstream_account_group_for_subject(subject.tenant_id, subject.organization_id)
-    {
-        return Ok(group);
+    // No explicit group was requested: apply the same semantic rule the
+    // auth-token channel applies — the group the subject marked `is_default`
+    // first, the seeded `default-group` code convention second, "the only group
+    // in scope" third. A key created without a group must therefore land on the
+    // same account pool a signed-in session of the same subject routes to;
+    // two different rules would make the same tenant behave differently
+    // depending on which credential shape the client used. Only a subject that
+    // owns no group at all gets one created.
+    if let Some(selection) = select_default_account_group_for_subject(
+        &snapshot.upstream_account_groups,
+        subject.tenant_id,
+        subject.organization_id,
+    ) {
+        return Ok(selection.group);
     }
     ensure_default_group(snapshot, subject, state).await
 }

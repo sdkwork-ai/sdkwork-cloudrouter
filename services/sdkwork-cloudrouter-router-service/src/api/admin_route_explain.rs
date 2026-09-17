@@ -155,6 +155,12 @@ where
                 route_key: normalized.route_key.clone(),
                 api_code: normalized.api_code.clone(),
                 capability: normalized.capability,
+                // 路由解释接口按路由键本身核价：它没有请求体，无法解析出
+                // 目录模型键，因此保留 api-request 单档语义（`None` 即退化）。
+                pricing_catalog_key: None,
+                pricing_meters: None,
+                requested_model: None,
+                pricing_resolution: None,
             })
             .map(|selection| {
                 vec![to_upstream_account_candidate_response(

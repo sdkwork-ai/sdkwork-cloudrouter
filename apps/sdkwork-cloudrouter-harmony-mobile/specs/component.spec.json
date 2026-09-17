@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "sdkwork-cloudrouter-harmony-mobile",
+    "displayName": "SDKWork Cloud Router HarmonyOS Mobile",
+    "version": "0.1.0",
+    "type": "harmony-mobile-app-root",
+    "root": "apps/sdkwork-cloudrouter-harmony-mobile",
+    "domain": "platform",
+    "declaredDomain": null,
+    "capability": "router",
+    "status": "standardizing",
+    "surface": "console",
+    "languages": [
+      "arkts"
+    ],
+    "generated": false,
+    "private": true,
+    "manifests": [
+      "oh-package.json5",
+      "build-profile.json5",
+      "sdkwork.app.config.json"
+    ]
+  },
+  "canonicalSpecs": [
+    {
+      "file": "HARMONY_APP_MOBILE_ARCHITECTURE_SPEC.md",
+      "path": "../../../sdkwork-specs/HARMONY_APP_MOBILE_ARCHITECTURE_SPEC.md",
+      "purpose": "HarmonyOS native mobile application root architecture standard."
+    },
+    {
+      "file": "APP_HARMONY_NATIVE_UI_SPEC.md",
+      "path": "../../../sdkwork-specs/APP_HARMONY_NATIVE_UI_SPEC.md",
+      "purpose": "Harmony native ArkUI package rules."
+    },
+    {
+      "file": "APP_CLIENT_ARCHITECTURE_ALIGNMENT_SPEC.md",
+      "path": "../../../sdkwork-specs/APP_CLIENT_ARCHITECTURE_ALIGNMENT_SPEC.md",
+      "purpose": "Cross-client package taxonomy and dependency direction."
+    },
+    {
+      "file": "APP_COMPOSITION_SPEC.md",
+      "path": "../../../sdkwork-specs/APP_COMPOSITION_SPEC.md",
+      "purpose": "Native-authority application composition."
+    },
+    {
+      "file": "APP_SDK_INTEGRATION_SPEC.md",
+      "path": "../../../sdkwork-specs/APP_SDK_INTEGRATION_SPEC.md",
+      "purpose": "SDK integration and TokenManager wiring rules."
+    },
+    {
+      "file": "CODE_STYLE_SPEC.md",
+      "path": "../../../sdkwork-specs/CODE_STYLE_SPEC.md",
+      "purpose": "Authored source structure and generated code boundaries."
+    },
+    {
+      "file": "NAMING_SPEC.md",
+      "path": "../../../sdkwork-specs/NAMING_SPEC.md",
+      "purpose": "Canonical SDKWork naming rules."
+    }
+  ],
+  "contracts": {
+    "publicExports": [
+      "entry/src/main/ets/entryability/EntryAbility.ets",
+      "entry/src/main/ets/bootstrap/Runtime.ets"
+    ],
+    "runtimeEntrypoints": [],
+    "sdkClients": [
+      "SdkworkAppClient"
+    ],
+    "events": [],
+    "configKeys": [],
+    "routeManifest": null,
+    "sdkDependencies": [
+      {
+        "workspace": "cloudrouter-app-sdk",
+        "permissionModuleId": "cloudrouter",
+        "surface": "app-api",
+        "credentialMode": "authenticated-app-api",
+        "status": "active",
+        "runtimeAdaptation": "arkts-pending"
+      }
+    ],
+    "providedPorts": [
+      {
+        "name": "cloudrouter-harmony-bootstrap",
+        "export": "entry/src/main/ets/bootstrap/Runtime.ets"
+      }
+    ],
+    "requiredPorts": []
+  },
+  "integration": {
+    "authority": "Root SDKWork specs remain authoritative. Local specs may extend but must not contradict them.",
+    "dependencyPolicy": "Consumers integrate through public package exports, declared runtime entrypoints, generated SDK clients, or documented adapters only.",
+    "sdkPolicy": "Generated SDK clients are injected through service/runtime boundaries; reusable UI must not create raw HTTP clients or manual auth headers.",
+    "languagePolicy": "Language-specific packages follow their native manifest and build tools while preserving the same component contract."
+  },
+  "verification": {
+    "commands": [
+      "ohpm install",
+      "hvigor assembleHap",
+      "node --test tests/harmony-surface-contract.test.mjs"
+    ]
+  }
+}

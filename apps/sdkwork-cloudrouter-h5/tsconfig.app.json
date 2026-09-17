@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {},
+  "include": [
+    "src",
+    "packages/sdkwork-cloudrouter-h5-core/src",
+    "packages/sdkwork-cloudrouter-h5-commons/src",
+    "packages/sdkwork-cloudrouter-h5-shell/src",
+    "packages/sdkwork-cloudrouter-h5-i18n/src",
+    "packages/sdkwork-cloudrouter-h5-console-dashboard/src",
+    "packages/sdkwork-cloudrouter-h5-console-usage/src",
+    "packages/sdkwork-cloudrouter-h5-console-api-keys/src",
+    "packages/sdkwork-cloudrouter-h5-console-catalog/src"
+  ]
+}

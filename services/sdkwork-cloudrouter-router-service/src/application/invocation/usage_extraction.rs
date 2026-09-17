@@ -4,7 +4,7 @@ use super::{
     BillingMode, BillingQuantitySource, DispatchMode, Invocation, InvocationBody, InvocationError,
     InvocationErrorKind, InvocationFuture, InvocationInterceptor, InvocationUsageLine,
 };
-use crate::domain::BillingMeter;
+use crate::domain::{BillingMeter, DecimalValue};
 use crate::ports::GatewayUsageQuantity;
 
 #[derive(Debug, Clone, Default)]
@@ -637,16 +637,50 @@ fn token_line(meter: &BillingMeter, body: &Value) -> Result<InvocationUsageLine,
         .get("usage")
         .or_else(|| body.get("usageMetadata"))
         .unwrap_or(body);
-    let tokens = integer_field(
-        usage,
-        &[
+    // 计量单位决定读哪一侧的令牌计数。sdkwork-models 目录把多模态模型的
+    // 输入与产出分成两个计量单位（`openai/gpt-image-2` 同时定义
+    // `image_input_token` 与 `image_output_token`，`kling-v3` 的音频等）；
+    // 若一律读输入侧，产出侧计费就会按输入令牌计量。输入侧字段顺序保持
+    // 原样，历史行为不变。
+    let fields: &[&str] = match meter {
+        BillingMeter::LlmOutputToken
+        | BillingMeter::ImageOutputToken
+        | BillingMeter::AudioOutputToken
+        | BillingMeter::VideoOutputToken => &[
+            "output_tokens",
+            "completion_tokens",
+            "candidatesTokenCount",
+            "total_tokens",
+        ],
+        BillingMeter::LlmCacheReadToken => &[
+            "cache_read_input_tokens",
+            "cached_tokens",
+            "prompt_tokens",
+            "input_tokens",
+            "total_tokens",
+        ],
+        BillingMeter::LlmCacheWriteToken => &[
+            "cache_creation_input_tokens",
+            "cache_write_tokens",
+            "prompt_tokens",
+            "input_tokens",
+            "total_tokens",
+        ],
+        BillingMeter::LlmReasoningToken => &[
+            "reasoning_tokens",
+            "output_tokens",
+            "completion_tokens",
+            "total_tokens",
+        ],
+        _ => &[
             "prompt_tokens",
             "input_tokens",
             "promptTokenCount",
             "total_tokens",
         ],
-    )
-    .ok_or_else(|| usage_error("token response usage is missing token count"))?;
+    };
+    let tokens = integer_field(usage, fields)
+        .ok_or_else(|| usage_error("token response usage is missing token count"))?;
     Ok(InvocationUsageLine::new(
         meter.clone(),
         GatewayUsageQuantity::tokens(tokens).map_err(|error| usage_error(error.to_string()))?,
@@ -775,16 +809,43 @@ fn audio_line(
         .as_ref()
         .map(|body| body.get("usage").unwrap_or(body))
         .and_then(|usage| seconds_field(usage, AUDIO_SECOND_FIELDS));
-    match quantity {
-        Some(quantity) => measured_line(meter, quantity),
+    let quantity = match quantity {
+        Some(quantity) => duration_in_meter_unit(meter, quantity)?,
         None => {
             tracing::warn!(
                 meter = %meter.code(),
                 "audio-metered response reported no duration; falling back to a single second"
             );
-            measured_line(meter, "1".to_owned())
+            duration_in_meter_unit(meter, "1".to_owned())?
         }
+    };
+    measured_line(meter, quantity)
+}
+
+/// 把从供应商响应里抽出的**秒**换算成计量单位要求的数量。
+///
+/// 供应商的时长字段一律是秒，而 sdkwork-models 目录的时长类计量单位分秒与
+/// 分钟两档（`audio_output_minute` / `stt_audio_minute` 按分钟计价，
+/// `unit_size = 1` 即"每 1 分钟"）。若不换算，分钟档会按秒的数量乘以分钟单
+/// 价，实收 60 倍。计费域同样按"数量即计量单位本身的量"处理
+/// （`GatewayUsageQuantity::audio_minutes` 把分钟换算成秒另行存档）。
+fn duration_in_meter_unit(
+    meter: &BillingMeter,
+    seconds: String,
+) -> Result<String, InvocationError> {
+    if !matches!(
+        meter,
+        BillingMeter::AudioInputMinute
+            | BillingMeter::AudioOutputMinute
+            | BillingMeter::SttAudioMinute
+    ) {
+        return Ok(seconds);
     }
+    let seconds = DecimalValue::parse(&seconds).map_err(|error| usage_error(error.to_string()))?;
+    let minutes = seconds
+        .divide_i64(60)
+        .map_err(|error| usage_error(error.to_string()))?;
+    Ok(minutes.to_fixed_string(12))
 }
 
 fn video_line(

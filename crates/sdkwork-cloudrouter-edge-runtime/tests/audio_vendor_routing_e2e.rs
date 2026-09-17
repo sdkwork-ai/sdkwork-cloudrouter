@@ -95,6 +95,7 @@ impl GatewayUsageRecorder for RecordingUsageRecorder {
 struct CapturedUpstreamRequest {
     authorization: Option<String>,
     path: String,
+    query: Option<String>,
     body: Value,
 }
 
@@ -147,6 +148,7 @@ async fn media_handler(
     request: Request<Body>,
 ) -> (StatusCode, Json<Value>) {
     let path = request.uri().path().to_owned();
+    let query = request.uri().query().map(str::to_owned);
     let body_bytes = axum::body::to_bytes(
         request.into_body(),
         1024 * 1024,
@@ -165,6 +167,7 @@ async fn media_handler(
                 .and_then(|value| value.to_str().ok())
                 .map(str::to_owned),
             path,
+            query,
             body,
         });
     (
@@ -272,6 +275,15 @@ fn catalog_with_tts_accounts(
     );
     catalog.add_model(
         AiModel::new(
+            "sound_generation",
+            "ElevenLabs sound effect generation",
+            "elevenlabs",
+            vec!["audio"],
+        )
+        .with_catalog_key("elevenlabs.sound_generation"),
+    );
+    catalog.add_model(
+        AiModel::new(
             "speech",
             "Volcengine Ark speech synthesis",
             "volcengine",
@@ -301,6 +313,12 @@ fn catalog_with_tts_accounts(
         (
             "elevenlabs.text_to_speech",
             "text_to_speech",
+            "elevenlabs",
+            4101,
+        ),
+        (
+            "elevenlabs.sound_generation",
+            "sound_generation",
             "elevenlabs",
             4101,
         ),
@@ -459,6 +477,74 @@ async fn tts_routing_elevenlabs_text_to_speech_routes_to_elevenlabs_account() {
         "vendor path after the provider prefix must be forwarded verbatim"
     );
     assert_eq!("hello world", calls[0].body["text"]);
+    assert_eq!(0, volcengine.provider.calls());
+}
+
+#[tokio::test]
+async fn sfx_routing_elevenlabs_sound_generation_routes_to_elevenlabs_account() {
+    let elevenlabs = start_mock_upstream("elevenlabs").await;
+    let volcengine = start_mock_upstream("volcengine").await;
+    let unused = "http://127.0.0.1:9".to_owned();
+    let accounts = tts_accounts(
+        &elevenlabs.base_url,
+        &volcengine.base_url,
+        &unused,
+        &unused,
+    );
+    let hasher = hasher();
+    let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
+    let catalog = catalog_with_tts_accounts(&key_hash, accounts);
+    let router = build_router(
+        catalog,
+        collect_secrets(&tts_accounts(
+            &elevenlabs.base_url,
+            &volcengine.base_url,
+            &unused,
+            &unused,
+        )),
+    )
+    .await;
+
+    let (status, body) = send_request(
+        router,
+        "/elevenlabs/v1/sound-generation?output_format=wav_48000",
+        json!({
+            "model_id": "eleven_text_to_sound_v2",
+            "text": "cinematic whoosh transition",
+            "duration_seconds": 5,
+            "prompt_influence": 0.65,
+            "loop": true
+        }),
+    )
+    .await;
+    assert_eq!(StatusCode::OK, status, "unexpected body: {body}");
+
+    let calls = elevenlabs.provider.captured();
+    assert_eq!(
+        1,
+        calls.len(),
+        "ElevenLabs sound generation must hit the ElevenLabs account"
+    );
+    assert_eq!(
+        Some("Bearer sk-elevenlabs-tts-secret".to_owned()),
+        calls[0].authorization
+    );
+    assert_eq!(
+        "/v1/sound-generation",
+        calls[0].path,
+        "vendor path after the provider prefix must be forwarded verbatim"
+    );
+    assert_eq!(
+        Some("output_format=wav_48000".to_owned()),
+        calls[0].query,
+        "query parameters carry the requested audio format and must survive the relay"
+    );
+    assert_eq!(
+        "cinematic whoosh transition",
+        calls[0].body["text"],
+        "the SFX prompt must reach the vendor unchanged"
+    );
+    assert_eq!(0.65, calls[0].body["prompt_influence"]);
     assert_eq!(0, volcengine.provider.calls());
 }
 

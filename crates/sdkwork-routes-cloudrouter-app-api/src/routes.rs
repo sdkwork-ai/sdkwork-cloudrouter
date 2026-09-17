@@ -977,6 +977,7 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
     if startup_install_mode.should_ensure() {
         DatabaseInstaller::for_postgres(pool.clone())
             .with_admin_model_store(Arc::new(PostgresModelCatalogAdminStore::new(pool.clone())))
+            .with_credential_secret_codec(credential_secret_codec.clone())
             .with_env_options()?
             .ensure_bootstrap_data()
             .await?;

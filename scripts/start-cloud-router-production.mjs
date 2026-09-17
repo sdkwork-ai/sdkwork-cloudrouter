@@ -315,7 +315,7 @@ function runtimeConfigLocationForPlatform(
     }
     const userProfile = getEnv('USERPROFILE')
       || `${getEnv('HOMEDRIVE')}${getEnv('HOMEPATH')}`.trim()
-      || 'C:/Users/Default';
+      || `${getEnv('SystemDrive') ?? 'C:'}/Users/Default`;
     const root = joinRuntimePath(userProfile, '.sdkwork/router');
     const dataDirectory = joinRuntimePath(root, 'data');
     return {

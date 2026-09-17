@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.component.spec",
+  "component": {
+    "name": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-console-catalog",
+    "displayName": "SDKWork Cloud Router HarmonyOS Mobile console-catalog",
+    "version": "0.1.0",
+    "type": "arkts-package",
+    "root": "apps/sdkwork-cloudrouter-harmony-mobile/packages/sdkwork-cloudrouter-harmony-mobile-console-catalog",
+    "domain": "platform",
+    "declaredDomain": null,
+    "capability": "router",
+    "status": "standardizing",
+    "surface": "console",
+    "languages": [
+      "arkts"
+    ],
+    "generated": false,
+    "private": true,
+    "manifests": [
+      "oh-package.json5",
+      "specs/component.spec.json"
+    ]
+  },
+  "canonicalSpecs": [
+    {
+      "file": "HARMONY_APP_MOBILE_ARCHITECTURE_SPEC.md",
+      "path": "../../../../../sdkwork-specs/HARMONY_APP_MOBILE_ARCHITECTURE_SPEC.md",
+      "purpose": "HarmonyOS native mobile application root architecture standard."
+    },
+    {
+      "file": "APP_HARMONY_NATIVE_UI_SPEC.md",
+      "path": "../../../../../sdkwork-specs/APP_HARMONY_NATIVE_UI_SPEC.md",
+      "purpose": "Harmony native ArkUI package rules."
+    },
+    {
+      "file": "APP_CLIENT_ARCHITECTURE_ALIGNMENT_SPEC.md",
+      "path": "../../../../../sdkwork-specs/APP_CLIENT_ARCHITECTURE_ALIGNMENT_SPEC.md",
+      "purpose": "Cross-client package taxonomy and dependency direction."
+    },
+    {
+      "file": "FRONTEND_SPEC.md",
+      "path": "../../../../../sdkwork-specs/FRONTEND_SPEC.md",
+      "purpose": "UI, service, SDK, accessibility, and frontend runtime rules."
+    },
+    {
+      "file": "PAGINATION_SPEC.md",
+      "path": "../../../../../sdkwork-specs/PAGINATION_SPEC.md",
+      "purpose": "PAGINATION_SPEC.md rules."
+    },
+    {
+      "file": "I18N_SPEC.md",
+      "path": "../../../../../sdkwork-specs/I18N_SPEC.md",
+      "purpose": "User-facing language, locale, message catalog, and fallback rules."
+    },
+    {
+      "file": "CODE_STYLE_SPEC.md",
+      "path": "../../../../../sdkwork-specs/CODE_STYLE_SPEC.md",
+      "purpose": "Authored source structure and generated code boundaries."
+    },
+    {
+      "file": "NAMING_SPEC.md",
+      "path": "../../../../../sdkwork-specs/NAMING_SPEC.md",
+      "purpose": "Canonical SDKWork naming rules."
+    }
+  ],
+  "contracts": {
+    "publicExports": [
+      "Index.ets"
+    ],
+    "runtimeEntrypoints": [],
+    "sdkClients": [],
+    "events": [],
+    "configKeys": [],
+    "routeManifest": null,
+    "sdkDependencies": [],
+    "layerRole": "frontend-feature",
+    "providedPorts": [
+      {
+        "name": "cloudrouter-harmony-catalog-screen",
+        "export": "Index.ets"
+      }
+    ],
+    "requiredPorts": [
+      {
+        "name": "cloudrouter-harmony-app-sdk-client",
+        "export": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-core"
+      },
+      {
+        "name": "cloudrouter-harmony-ui-primitives",
+        "export": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-commons"
+      },
+      {
+        "name": "cloudrouter-harmony-route-stack",
+        "export": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-shell"
+      }
+    ]
+  },
+  "integration": {
+    "authority": "Root SDKWork specs remain authoritative. Local specs may extend but must not contradict them.",
+    "dependencyPolicy": "Consumers integrate through public package exports, declared runtime entrypoints, generated SDK clients, or documented adapters only.",
+    "sdkPolicy": "Generated SDK clients are injected through service/runtime boundaries; reusable UI must not create raw HTTP clients or manual auth headers.",
+    "languagePolicy": "Language-specific packages follow their native manifest and build tools while preserving the same component contract."
+  },
+  "verification": {
+    "commands": [
+      "node ../sdkwork-specs/tools/check-frontend-composition.mjs --root ."
+    ]
+  }
+}

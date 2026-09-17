@@ -135,10 +135,10 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
   route('community/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-community', ['sdkwork-community-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={CommunityAdmin} />),
   route('recharges/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-memberships', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={RechargeAdmin} />),
   route('pricing', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-pricing', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <Navigate to="/admin/pricing/settings" replace />),
-  route('pricing/settings', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-pricing', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <PriceSettingsAdmin />),
-  route('pricing/plans', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-pricing', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <PricePlansAdmin />),
-  route('pricing/rateCards', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-pricing', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <RateCardsAdmin />),
-  route('pricing/rules', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-pricing', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <PricingRulesAdmin />),
+  route('pricing/settings/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-pricing', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <PricingSectionRoute />),
+  route('pricing/plans', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-pricing', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <Navigate to="/admin/pricing/settings/plans" replace />),
+  route('pricing/rateCards', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-pricing', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <Navigate to="/admin/pricing/settings/rateCards" replace />),
+  route('pricing/rules', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-pricing', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <Navigate to="/admin/pricing/settings/rules" replace />),
   route('marketing/:sectionId?/:batchId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-marketing', ['sdkwork-promotion-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminMarketingRoute component={MarketingAdmin} />),
   route('partner/:sectionId?', 'sdkwork-partner', '@sdkwork/cloudrouter-pc-admin-partner', ['sdkwork-partner-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={PartnerAdmin} />),
   route('payments/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-payments', ['sdkwork-payment-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={PaymentsAdmin} />),
@@ -201,6 +201,28 @@ function AdminSectionRoute({ component: Component }: { component: ComponentType<
 function AdminMarketingRoute({ component: Component }: { component: ComponentType<{ sectionId?: string; batchId?: string }> }) {
   const { sectionId, batchId } = useParams<{ sectionId?: string; batchId?: string }>();
   return <Component sectionId={sectionId} batchId={batchId} />;
+}
+
+/**
+ * Pricing keeps a single sidebar entry (`/admin/pricing/settings`), so plan,
+ * rate-card and rule management are sections of that one surface: their routes
+ * live under the settings path, and the legacy `/admin/pricing/{plans,rateCards,rules}`
+ * links redirect into the matching section. An absent or unknown section falls
+ * back to the settings page, matching `AdminSectionRoute`'s behavior of letting
+ * the route resolve to its default view.
+ */
+const PRICING_SECTION_COMPONENTS: Record<string, LazyExoticComponent<ComponentType>> = {
+  plans: PricePlansAdmin,
+  rateCards: RateCardsAdmin,
+  rules: PricingRulesAdmin,
+};
+
+function PricingSectionRoute() {
+  const { sectionId } = useParams<{ sectionId?: string }>();
+  const Section: LazyExoticComponent<ComponentType> | undefined = sectionId
+    ? PRICING_SECTION_COMPONENTS[sectionId]
+    : undefined;
+  return Section ? <Section /> : <PriceSettingsAdmin />;
 }
 
 function route(

@@ -1,0 +1,10 @@
+{
+  "module": {
+    "name": "sdkwork_cloudrouter_harmony_mobile_console_catalog",
+    "type": "har",
+    "deviceTypes": [
+      "phone",
+      "tablet"
+    ]
+  }
+}

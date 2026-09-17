@@ -1,0 +1,13 @@
+{
+  "name": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-console-usage",
+  "version": "0.1.0",
+  "description": "SDKWork Cloud Router HarmonyOS mobile console-usage capability.",
+  "main": "src/main/ets/Index.ets",
+  "author": "SDKWork",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@sdkwork/sdkwork-cloudrouter-harmony-mobile-core": "file:../sdkwork-cloudrouter-harmony-mobile-core",
+    "@sdkwork/sdkwork-cloudrouter-harmony-mobile-commons": "file:../sdkwork-cloudrouter-harmony-mobile-commons",
+    "@sdkwork/sdkwork-cloudrouter-harmony-mobile-shell": "file:../sdkwork-cloudrouter-harmony-mobile-shell"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "pages": [
+    "pages/dashboard/index",
+    "pages/usage/index",
+    "pages/api-keys/index",
+    "pages/catalog/index"
+  ],
+  "window": {
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#0f172a",
+    "navigationBarTitleText": "CloudRouter",
+    "navigationBarTextStyle": "white"
+  },
+  "tabBar": {
+    "color": "#94a3b8",
+    "selectedColor": "#38bdf8",
+    "backgroundColor": "#0f172a",
+    "list": [
+      {
+        "pagePath": "pages/dashboard/index",
+        "text": "概览"
+      },
+      {
+        "pagePath": "pages/usage/index",
+        "text": "用量"
+      },
+      {
+        "pagePath": "pages/api-keys/index",
+        "text": "API Key"
+      },
+      {
+        "pagePath": "pages/catalog/index",
+        "text": "模型与定价"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

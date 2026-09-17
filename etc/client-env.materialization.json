@@ -4,9 +4,18 @@
   "application": "sdkwork-cloudrouter",
   "command": "pnpm workflow:materialize-client-env",
   "sourceIdentity": {
-    "deploymentProfileKeys": ["SDKWORK_DEPLOYMENT_PROFILE", "SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE"],
-    "environmentKeys": ["SDKWORK_ENVIRONMENT", "SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT"],
-    "profileIdKeys": ["SDKWORK_PROFILE_ID", "SDKWORK_CLOUDROUTER_ROUTER_PROFILE_ID"]
+    "deploymentProfileKeys": [
+      "SDKWORK_DEPLOYMENT_PROFILE",
+      "SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE"
+    ],
+    "environmentKeys": [
+      "SDKWORK_ENVIRONMENT",
+      "SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT"
+    ],
+    "profileIdKeys": [
+      "SDKWORK_PROFILE_ID",
+      "SDKWORK_CLOUDROUTER_ROUTER_PROFILE_ID"
+    ]
   },
   "surfaces": [
     {
@@ -14,29 +23,93 @@
       "root": "apps/sdkwork-cloudrouter-pc",
       "format": "vite",
       "runtimeTarget": "browser",
-      "identityPrefixes": ["VITE_SDKWORK_CLOUDROUTER_ROUTER"],
+      "identityPrefixes": [
+        "VITE_SDKWORK_CLOUDROUTER_ROUTER"
+      ],
       "bindings": {
-        "VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL": ["VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL", "SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL"],
-        "VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_BACKEND_HTTP_URL": ["VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_BACKEND_HTTP_URL", "SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_BACKEND_HTTP_URL"],
-        "VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_OPEN_HTTP_URL": ["VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_OPEN_HTTP_URL", "SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_OPEN_HTTP_URL"],
+        "VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL": [
+          "VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL",
+          "SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL"
+        ],
+        "VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_BACKEND_HTTP_URL": [
+          "VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_BACKEND_HTTP_URL",
+          "SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_BACKEND_HTTP_URL"
+        ],
+        "VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_OPEN_HTTP_URL": [
+          "VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_OPEN_HTTP_URL",
+          "SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_OPEN_HTTP_URL"
+        ],
         "VITE_SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL": {
-          "sources": ["VITE_SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL", "SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL"],
+          "sources": [
+            "VITE_SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL",
+            "SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL"
+          ],
           "required": false
         },
         "VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL": {
-          "sources": ["VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL", "SDKWORK_CLOUDROUTER_ROUTER_DRIVE_BACKEND_API_HTTP_URL"],
+          "sources": [
+            "VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL",
+            "SDKWORK_CLOUDROUTER_ROUTER_DRIVE_BACKEND_API_HTTP_URL"
+          ],
           "required": false
         },
         "VITE_CLOUDROUTER_APP_API_BASE_URL": {
-          "sources": ["VITE_CLOUDROUTER_APP_API_BASE_URL", "SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL"],
+          "sources": [
+            "VITE_CLOUDROUTER_APP_API_BASE_URL",
+            "SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL"
+          ],
           "required": false
         },
         "VITE_CLOUDROUTER_BACKEND_API_BASE_URL": {
-          "sources": ["VITE_CLOUDROUTER_BACKEND_API_BASE_URL", "SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL"],
+          "sources": [
+            "VITE_CLOUDROUTER_BACKEND_API_BASE_URL",
+            "SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL"
+          ],
           "required": false
         },
         "VITE_CLOUDROUTER_OPEN_API_BASE_URL": {
-          "sources": ["VITE_CLOUDROUTER_OPEN_API_BASE_URL", "SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL"],
+          "sources": [
+            "VITE_CLOUDROUTER_OPEN_API_BASE_URL",
+            "SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL"
+          ],
+          "required": false
+        }
+      }
+    },
+    {
+      "id": "sdkwork-cloudrouter-flutter-mobile",
+      "root": "apps/sdkwork-cloudrouter-flutter-mobile",
+      "format": "flutter",
+      "runtimeTarget": "flutter-android",
+      "identityPrefixes": [
+        "SDKWORK_CLOUDROUTER_ROUTER"
+      ],
+      "bindings": {
+        "SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL": "SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL",
+        "SDKWORK_CLOUDROUTER_ROUTER_APP_API_BASE_URL": {
+          "sources": [
+            "SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL",
+            "VITE_SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL"
+          ],
+          "required": false
+        }
+      }
+    },
+    {
+      "id": "sdkwork-cloudrouter-mini-program",
+      "root": "apps/sdkwork-cloudrouter-mini-program",
+      "format": "mini-program",
+      "runtimeTarget": "mini-program",
+      "identityPrefixes": [
+        "SDKWORK_CLOUDROUTER_ROUTER"
+      ],
+      "bindings": {
+        "SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL": "SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL",
+        "SDKWORK_CLOUDROUTER_ROUTER_APP_API_BASE_URL": {
+          "sources": [
+            "SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL",
+            "VITE_SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL"
+          ],
           "required": false
         }
       }

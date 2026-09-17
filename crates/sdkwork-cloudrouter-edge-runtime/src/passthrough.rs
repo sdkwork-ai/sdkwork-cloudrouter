@@ -1853,18 +1853,33 @@ fn provider_native_api_code_from_standard_path(
             "gemini.video_generation"
         }
         "kling" if path == "/v1/videos/text2video" => "kling.text_to_video",
+        "kling" if path == "/v1/videos/generations" => "kling.text_to_video",
         "kling" if path == "/v1/videos/avatar" => "kling.avatar",
         "kling" if path == "/v1/videos/motion-control" => "kling.motion_control",
         "kling" if path == "/v1/videos/image2video" => "kling.image_to_video",
         "kling" if path == "/v1/images/generations" => "kling.image_generation",
-        "kling" if task_query_path_matches(path.as_str()) => "kling.task_query",
+        "kling" if task_poll_path_matches(path.as_str(), "v1/tasks") => "kling.task_query",
+        "kling" if task_poll_path_matches(path.as_str(), "v1/videos/generations") => {
+            "kling.task_query"
+        }
         "jimeng" if path == "/v1/images/generations" => "jimeng.image_generation",
         "jimeng" if path == "/v1/videos/generations" => "jimeng.video_generation",
-        "jimeng" if task_query_path_matches(path.as_str()) => "jimeng.task_query",
+        "jimeng" if task_poll_path_matches(path.as_str(), "v1/tasks") => "jimeng.task_query",
         "volcengine" if path == "/v1/images/generations" => "volcengine.image_generation",
         "volcengine" if path == "/v1/videos/generations" => "volcengine.video_generation",
         "volcengine" if path == "/api/v3/audio/speech" => "volcengine.speech",
-        "volcengine" if task_query_path_matches(path.as_str()) => "volcengine.task_query",
+        "volcengine" if path == "/api/v3/images/generations" => "volcengine.image_generation",
+        "volcengine" if path == "/api/v3/contents/generations/tasks" => {
+            "volcengine.video_generation"
+        }
+        "volcengine" if task_poll_path_matches(path.as_str(), "v1/tasks") => {
+            "volcengine.task_query"
+        }
+        "volcengine"
+            if task_poll_path_matches(path.as_str(), "api/v3/contents/generations/tasks") =>
+        {
+            "volcengine.task_query"
+        }
         "elevenlabs" if path == "/v1/text-to-speech/{voice_id}" => "elevenlabs.text_to_speech",
         "elevenlabs" if path.starts_with("/v1/text-to-speech/") => "elevenlabs.text_to_speech",
         "elevenlabs" if path == "/v1/sound-generation" => "elevenlabs.sound_generation",
@@ -1872,7 +1887,9 @@ fn provider_native_api_code_from_standard_path(
         "minimax" if path == "/v1/music/generations" => "minimax.music_generation",
         "minimax" if path == "/v1/music/generation" => "minimax.music_generation",
         "suno" if path == "/v1/music/generations" => "suno.music_generation",
-        "suno" if music_task_query_path_matches(path.as_str()) => "suno.music_task_query",
+        "suno" if task_poll_path_matches(path.as_str(), "v1/music/generations") => {
+            "suno.music_task_query"
+        }
         "vidu" if path == "/ent/v2/reference2image" => "vidu.reference_to_image",
         "vidu" if path == "/ent/v2/template" => "vidu.motion_sync",
         "vidu" if path == "/ent/v2/start-end2video" => "vidu.start_end_to_video",
@@ -1924,17 +1941,23 @@ fn gemini_model_action_matches(path: &str, action: &str) -> bool {
     path.starts_with("/v1beta/models/") && path.ends_with(&format!(":{action}"))
 }
 
-fn music_task_query_path_matches(path: &str) -> bool {
-    path == "/v1/music/generations/{task_id}"
+/// Matches the task-polling path of a vendor family, for example
+/// `v1/music/generations`, `v1/videos/generations` or
+/// `api/v3/contents/generations/tasks`. The family carries its own prefix
+/// because the vendors disagree on it — the OpenAI-shaped families answer under
+/// `/v1/...` while Volcengine's Ark answers the generation task under
+/// `/api/v3/contents/generations/tasks`.
+///
+/// Kept byte-for-byte in step with the same helper in
+/// `sdkwork_cloudrouter_router_service::application::invocation::
+/// provider_native_classifier`; `tools/check-cloudrouter-ai-routing-consistency.mjs`
+/// compares the two path→api_code maps and fails when one side recognises a
+/// path the other does not.
+fn task_poll_path_matches(path: &str, family: &str) -> bool {
+    let prefix = format!("/{family}/");
+    path == format!("/{family}/{{task_id}}")
         || path
-            .strip_prefix("/v1/music/generations/")
-            .is_some_and(|task_id| !task_id.trim().is_empty())
-}
-
-fn task_query_path_matches(path: &str) -> bool {
-    path == "/v1/tasks/{task_id}"
-        || path
-            .strip_prefix("/v1/tasks/")
+            .strip_prefix(prefix.as_str())
             .is_some_and(|task_id| !task_id.trim().is_empty())
 }
 

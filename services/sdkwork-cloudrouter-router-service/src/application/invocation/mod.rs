@@ -18,6 +18,7 @@ mod openai_classifier;
 mod payload;
 mod pipeline;
 mod pricing;
+mod pricing_identity;
 mod provider_adapter_dispatch;
 mod provider_native_classifier;
 mod provider_request;
@@ -73,6 +74,10 @@ pub use pipeline::{
     InvocationPipelineExecution, StreamTerminalOutcome,
 };
 pub use pricing::{PricingFinalizationInterceptor, PricingPreflightInterceptor};
+// 只再导出调用链真正消费的两个入口：预检/结算用 `resolve_pricing_identity`
+// 取身份，流水线用 `apply_pricing_identity` 回写计量档。身份类型本身留在
+// `pricing_identity` 模块内，避免 `pub use` 未使用告警。
+pub use pricing_identity::{apply_pricing_identity, requested_resolution, resolve_pricing_identity};
 pub use provider_adapter_dispatch::ProviderAdapterDispatchInterceptor;
 pub use provider_native_classifier::ProviderNativeResourceClassifier;
 pub use request_transform::RequestTransformInterceptor;

@@ -1,0 +1,19 @@
+name: sdkwork_cloudrouter_flutter_mobile_core
+description: SDKWork CloudRouter Flutter mobile core package
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cloudrouter_app_sdk:
+    path: ../../../../sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-flutter/generated/server-openapi
+  sdkwork_common_flutter:
+    path: ../../../../../sdkwork-sdk-commons/sdkwork-sdk-common-flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

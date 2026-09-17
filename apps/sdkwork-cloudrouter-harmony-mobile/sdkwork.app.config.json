@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 3,
+  "kind": "sdkwork.app",
+  "app": {
+    "key": "cloudrouter-harmony-mobile",
+    "name": "SDKWork CloudRouter HarmonyOS Mobile",
+    "displayName": "SDKWork CloudRouter HarmonyOS Mobile",
+    "description": "SDKWork CloudRouter native HarmonyOS (ArkTS/ArkUI) mobile client application.",
+    "vendor": "SDKWork",
+    "officialWebsiteUrl": "https://sdkwork.com/apps/cloudrouter-harmony-mobile",
+    "supportUrl": "https://sdkwork.com/support",
+    "privacyPolicyUrl": "https://sdkwork.com/privacy",
+    "termsOfServiceUrl": "https://sdkwork.com/terms",
+    "appType": "APP_HARMONY",
+    "versionSource": "oh-package.json5",
+    "identifiers": {
+      "packageName": "com.sdkwork.cloudrouter.mobile",
+      "bundleId": "com.sdkwork.cloudrouter.mobile",
+      "desktopAppId": null,
+      "containerImage": "registry.sdkwork.com/apps/cloudrouter-harmony-mobile"
+    }
+  },
+  "backend": {
+    "profileKey": "backend-root-admin",
+    "ownerMode": "tenant",
+    "grantMode": "current",
+    "platform": "APP_HARMONY",
+    "appId": "sdkwork-cloudrouter",
+    "organizationId": "0",
+    "tenantId": "100001",
+    "accessTokenPermissionScope": [
+      "cloudrouter.console.access",
+      "cloudrouter.system.read",
+      "iam.users.read",
+      "iam.organizations.read",
+      "iam.roles.read",
+      "iam.permissions.read"
+    ]
+  },
+  "runtime": {
+    "family": "mobile",
+    "framework": "harmony-native",
+    "runtimes": [
+      "APP_HARMONY"
+    ],
+    "deliveryModes": [
+      "APP_GALLERY",
+      "DIRECT_DOWNLOAD"
+    ],
+    "defaultPlatform": "APP_HARMONY",
+    "defaultArchitecture": "harmony-native",
+    "supportedDeploymentProfiles": [
+      "standalone",
+      "cloud"
+    ],
+    "defaultDeploymentProfile": "standalone"
+  },
+  "media": {
+    "icons": {
+      "primary": {
+        "id": "cloudrouter-harmony-mobile-primary-icon",
+        "type": "ICON",
+        "purpose": "PRIMARY",
+        "platform": "APP",
+        "locale": "en-US",
+        "width": 1024,
+        "height": 1024,
+        "format": "PNG",
+        "enabled": true,
+        "metadata": {
+          "generatedPlaceholder": true
+        }
+      },
+      "platform": [],
+      "metadata": {
+        "generatedPlaceholder": true
+      }
+    },
+    "screenshots": [],
+    "previews": [],
+    "metadata": {
+      "assetVersion": "0.1.0",
+      "defaultLocale": "en-US"
+    }
+  },
+  "publish": {
+    "status": "DRAFT",
+    "installSkill": false,
+    "platforms": [
+      "APP_HARMONY"
+    ],
+    "installPlatforms": [
+      "APP_HARMONY"
+    ],
+    "config": {
+      "workspaceRoot": "apps/sdkwork-cloudrouter-harmony-mobile",
+      "framework": "harmony-native",
+      "managedBy": "sdkwork-cloudrouter-client-scaffold",
+      "distribution": {
+        "appGallery": {
+          "appIdPlaceholder": "<appgallery-app-id>",
+          "signingReference": "<deveco-signing-profile-name>"
+        },
+        "privateDistribution": {
+          "channelPlaceholder": "<private-distribution-channel>"
+        }
+      }
+    }
+  },
+  "artifacts": {
+    "installConfig": {
+      "packages": [],
+      "metadata": {
+        "workspaceRoot": "apps/sdkwork-cloudrouter-harmony-mobile",
+        "framework": "harmony-native",
+        "packageManager": "ohpm",
+        "deferred": true,
+        "deferredReason": "No HarmonyOS toolchain (DevEco Studio / HarmonyOS SDK / hvigor / ohpm) and no ArkTS app SDK target exist in this workspace, so `ohpm install` and `hvigor assembleHap` are declared as a pending integration step instead of an authored bundle."
+      }
+    }
+  },
+  "release": {
+    "currentVersion": "0.1.0",
+    "defaultChannel": "BETA",
+    "latest": {
+      "BETA": "0.1.0"
+    },
+    "notes": [
+      {
+        "version": "0.1.0",
+        "channel": "BETA",
+        "current": true,
+        "packageIds": []
+      }
+    ]
+  },
+  "security": {
+    "checksumRequired": true,
+    "signatureRequired": true,
+    "sbomRequired": true
+  },
+  "devApp": {
+    "build": {
+      "targets": []
+    },
+    "sourceRoot": "apps/sdkwork-cloudrouter-harmony-mobile"
+  },
+  "metadata": {
+    "standardOwner": "sdkwork-cloudrouter",
+    "architectureSpec": "HARMONY_APP_MOBILE_ARCHITECTURE_SPEC.md",
+    "runtimeTarget": "harmony-native",
+    "deploymentConfig": "etc/sdkwork.deployment.config.json",
+    "releaseAuthority": "../../sdkwork.workflow.json"
+  }
+}

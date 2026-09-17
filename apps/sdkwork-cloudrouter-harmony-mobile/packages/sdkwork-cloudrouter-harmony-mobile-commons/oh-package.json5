@@ -1,0 +1,9 @@
+{
+  "name": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-commons",
+  "version": "0.1.0",
+  "description": "SDKWork Cloud Router HarmonyOS mobile commons: domain-neutral ArkUI primitives, design tokens, and i18n helpers.",
+  "main": "src/main/ets/Index.ets",
+  "author": "SDKWork",
+  "license": "Apache-2.0",
+  "dependencies": {}
+}

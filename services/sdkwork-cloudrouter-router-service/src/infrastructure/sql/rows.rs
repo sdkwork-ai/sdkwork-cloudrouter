@@ -13,6 +13,37 @@ pub struct ModelVendorRow {
     pub display_name: String,
 }
 
+/// One `ai_model_video_profile` row, reduced to the fields that decide which
+/// pricing tier a video request is billed against.
+///
+/// The catalog conditions most video rates on the `tier_code` dimension
+/// (`res_1080p`, `audio_res_1080p`, ...). The profile table is the catalog's own
+/// declaration of how a requested resolution maps onto that tier, so it — and
+/// not a naming convention guessed at the call site — is the authority.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ModelVideoProfileRow {
+    /// Owning model's catalog key (`kuaishou/kling-v3`), the key rates are
+    /// published under. The table's own `catalog_key` is the *profile* key
+    /// (`kuaishou/kling-v3/t2v_range_1080p`), which no rate uses.
+    pub model_catalog_key: String,
+    /// 生成模式（`text_to_video` / `image_to_video` / `multi_shot` / ...）。
+    pub generation_mode: Option<String>,
+    /// 声明分辨率（`1080p`），与请求里的 `resolution` 对账。
+    pub resolution: Option<String>,
+    /// 目录为此档位命名的计价档位（`res_1080p`），即费率条件里的 `tier_code`。
+    pub resolution_tier_code: Option<String>,
+    /// 目录为此档位命名的时长档位，条件费率有时只用它。
+    pub duration_tier_code: Option<String>,
+    /// 目录在 `durationTierCodes` 里声明的附加时长档位（jsonb 字符串数组）。
+    pub duration_tier_codes: Vec<String>,
+    /// 目录在 `pricingTierCodes` 里声明的附加计价档位（jsonb 字符串数组）。
+    /// 目录确实用这个字段声明主档位之外的档位（`vidu/viduq3-pro` 的 `dur_5s`），
+    /// 丢掉它就等于丢掉目录已经给出的答案。
+    pub pricing_tier_codes: Vec<String>,
+    pub is_default: bool,
+    pub sort_order: i32,
+}
+
 impl ModelVendorRow {
     pub fn try_into_domain(self) -> DomainResult<ModelVendorDefinition> {
         Ok(ModelVendorDefinition {

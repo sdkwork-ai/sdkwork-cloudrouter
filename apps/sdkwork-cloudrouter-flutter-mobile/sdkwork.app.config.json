@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 3,
+  "kind": "sdkwork.app",
+  "app": {
+    "key": "cloudrouter-flutter-mobile",
+    "name": "SDKWork CloudRouter Flutter Mobile",
+    "displayName": "SDKWork CloudRouter Flutter Mobile",
+    "description": "SDKWork CloudRouter Flutter mobile client application root.",
+    "vendor": "SDKWork",
+    "officialWebsiteUrl": "https://sdkwork.com/apps/cloudrouter-flutter-mobile",
+    "supportUrl": "https://sdkwork.com/support",
+    "privacyPolicyUrl": "https://sdkwork.com/privacy",
+    "termsOfServiceUrl": "https://sdkwork.com/terms",
+    "appType": "APP_FLUTTER",
+    "versionSource": "package.json",
+    "identifiers": {
+      "packageName": "com.sdkwork.cloudrouter.mobile",
+      "bundleId": "com.sdkwork.cloudrouter.mobile",
+      "desktopAppId": null,
+      "containerImage": "registry.sdkwork.com/apps/cloudrouter-flutter-mobile"
+    }
+  },
+  "backend": {
+    "profileKey": "backend-root-admin",
+    "ownerMode": "tenant",
+    "grantMode": "current",
+    "platform": "APP",
+    "appId": "sdkwork-cloudrouter",
+    "organizationId": "0",
+    "tenantId": "100001",
+    "accessTokenPermissionScope": [
+      "iam.users.read",
+      "iam.organizations.read",
+      "iam.roles.read",
+      "iam.permissions.read"
+    ]
+  },
+  "runtime": {
+    "family": "mobile",
+    "framework": "flutter",
+    "runtimes": [
+      "APP",
+      "APP_ANDROID",
+      "APP_IOS"
+    ],
+    "deliveryModes": [
+      "DIRECT_DOWNLOAD"
+    ],
+    "defaultPlatform": "APP_ANDROID",
+    "defaultArchitecture": "universal",
+    "supportedDeploymentProfiles": [
+      "standalone",
+      "cloud"
+    ],
+    "defaultDeploymentProfile": "standalone"
+  },
+  "media": {
+    "icons": {
+      "primary": {
+        "id": "cloudrouter-flutter-mobile-primary-icon",
+        "type": "ICON",
+        "purpose": "PRIMARY",
+        "platform": "APP",
+        "locale": "en-US",
+        "width": 1024,
+        "height": 1024,
+        "format": "PNG",
+        "enabled": true,
+        "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/assets/icon-1024.png",
+        "metadata": {
+          "generatedPlaceholder": true
+        }
+      },
+      "platform": [],
+      "metadata": {
+        "generatedPlaceholder": true
+      }
+    },
+    "screenshots": [],
+    "previews": [],
+    "metadata": {
+      "assetVersion": "0.1.0",
+      "defaultLocale": "en-US"
+    }
+  },
+  "publish": {
+    "status": "DRAFT",
+    "installSkill": false,
+    "platforms": [
+      "APP",
+      "APP_ANDROID",
+      "APP_IOS"
+    ],
+    "installPlatforms": [
+      "APP",
+      "APP_ANDROID",
+      "APP_IOS"
+    ],
+    "config": {
+      "workspaceRoot": "apps/sdkwork-cloudrouter-flutter-mobile",
+      "framework": "flutter",
+      "managedBy": "sdkwork-cloudrouter-client-scaffold"
+    }
+  },
+  "artifacts": {
+    "installConfig": {
+      "packages": [],
+      "metadata": {
+        "workspaceRoot": "apps/sdkwork-cloudrouter-flutter-mobile",
+        "framework": "flutter",
+        "packageManager": "flutter",
+        "deferred": true,
+        "deferredReason": "No Flutter/Dart toolchain is installed in this workspace, so `flutter pub get`, `flutter analyze`, and the Android/iOS build are declared as a pending integration step instead of an authored bundle."
+      }
+    }
+  },
+  "release": {
+    "currentVersion": "0.1.0",
+    "defaultChannel": "BETA",
+    "latest": {
+      "BETA": "0.1.0"
+    },
+    "notes": [
+      {
+        "version": "0.1.0",
+        "channel": "BETA",
+        "current": true,
+        "packageIds": []
+      }
+    ]
+  },
+  "security": {
+    "checksumRequired": true,
+    "signatureRequired": false,
+    "sbomRequired": true
+  },
+  "devApp": {
+    "build": {
+      "targets": []
+    },
+    "sourceRoot": "apps/sdkwork-cloudrouter-flutter-mobile"
+  },
+  "metadata": {
+    "standardOwner": "sdkwork-cloudrouter",
+    "initializedAt": "2026-09-17T00:00:00.000Z",
+    "deploymentConfig": "etc/sdkwork.deployment.config.json",
+    "releaseAuthority": "../../sdkwork.workflow.json"
+  }
+}

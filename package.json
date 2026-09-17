@@ -137,6 +137,7 @@
     "check:gateway-request-identity": "node scripts/check-cloud-router-gateway-request-identity.mjs",
     "check:app-composition": "node ../sdkwork-specs/tools/verify-repo.mjs --root .",
     "check:vendor-workspace": "node scripts/check-vendor-workspace.mjs",
+    "check:rust-dependency-singularity": "node scripts/check-rust-dependency-singularity.mjs",
     "check:dev-bootstrap": "node scripts/check-dev-bootstrap-coverage.mjs",
     "check:commerce-debt": "node scripts/check-commerce-debt.mjs --report",
     "check:commerce-debt:strict": "node scripts/check-commerce-debt.mjs",
@@ -157,7 +158,7 @@
     "_sdkwork:dev:cloud": "node scripts/cloud-router-dev.mjs --deployment-profile cloud",
     "_sdkwork:build": "node scripts/build-cloud-router-production.mjs",
     "_sdkwork:test": "pnpm topology:validate && pnpm test:topology && node scripts/run-cloud-router-application.test.mjs",
-    "_sdkwork:check": "pnpm check:dev-bootstrap && pnpm check:application-env && pnpm check:gateway-request-identity && pnpm check:app-composition && pnpm check:vendor-workspace && pnpm api:ai-routing-consistency:check && pnpm check:commerce-debt && node scripts/run-cloud-router-application.mjs check",
+    "_sdkwork:check": "pnpm check:dev-bootstrap && pnpm check:application-env && pnpm check:gateway-request-identity && pnpm check:app-composition && pnpm check:vendor-workspace && pnpm check:rust-dependency-singularity && pnpm api:ai-routing-consistency:check && pnpm check:commerce-debt && node scripts/run-cloud-router-application.mjs check",
     "_sdkwork:verify": "node scripts/verify-cloud-router-application.mjs && pnpm run check:app-composition && pnpm check:cors-standard",
     "_sdkwork:clean": "node scripts/clean-cloud-router-workspace.mjs",
     "dev:standalone": "node scripts/lib/ensure-cloud-router-node-deps.mjs && pnpm exec sdkwork-app dev --deployment-profile standalone",
@@ -200,7 +201,8 @@
     "overrides": {
       "@types/react": "^19.0.0",
       "@types/react-dom": "^19.0.0",
-      "@sdkwork/sdk-common": "workspace:*"
+      "@sdkwork/sdk-common": "workspace:*",
+      "vitest@4>vite": "catalog:"
     },
     "packageExtensions": {
       "@sdkwork/models-pc-admin-catalog": {

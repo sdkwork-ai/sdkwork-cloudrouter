@@ -2,10 +2,10 @@ use std::sync::Arc;
 
 use super::routing::STICKY_SCOPE_SESSION;
 use super::{
-    AccountBillingMode, BillingMode, DispatchMode, Invocation, InvocationError,
-    InvocationErrorKind, InvocationFuture, InvocationInterceptor, InvocationRouteCandidate,
-    InvocationRouteCandidateKind, InvocationRoutePlan, ResourceType, RoutingPipeline,
-    StickyRouteConstraint,
+    resolve_pricing_identity, AccountBillingMode, BillingMode, DispatchMode, Invocation,
+    InvocationError, InvocationErrorKind, InvocationFuture, InvocationInterceptor,
+    InvocationRouteCandidate, InvocationRouteCandidateKind, InvocationRoutePlan, ResourceType,
+    RoutingPipeline, StickyRouteConstraint,
 };
 use crate::application::upstream_base_url::{
     protocol_code_from_api_code, resolve_upstream_base_url,
@@ -192,12 +192,27 @@ fn plan_upstream_account_route<C>(
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
+    // 定价身份与调用层结算必须同源：API 资源类路由的 route key 是 api code
+    // （`kling.text_to_video`），目录对这些能力计价的对象是模型
+    // （`kuaishou/kling-v3`），而 taxonomy 声明的 meter 常与目录定义不一致
+    // （`kling.text_to_video` 声明 `video_result`，目录按
+    // `video_output_second` 计价）。把身份解析结果传给预检，预检才不会拿
+    // 目录里不存在的键/计量单位去找价。
+    let identity = resolve_pricing_identity(catalog, invocation);
     let selection = UpstreamRouteSelector::new(catalog)
         .select_account_route(SelectUpstreamAccountRouteQuery {
             context,
             route_key: invocation.resource.route_key.clone(),
             api_code: invocation.resource.api_code.clone(),
             capability: invocation.resource.capability,
+            pricing_catalog_key: Some(identity.catalog_key.clone()),
+            pricing_meters: Some(identity.meters.clone()),
+            requested_model: invocation.resource.requested_model.clone(),
+            // 视频类费率条件化在 `tier_code` 上，档位按目录声明与目录报价取交集
+            // 解析；预检对每个计量单位分别解析，因此这里传请求的**原始分辨率**
+            // （而不是解析结果）。缺这一维度时解析器会把候选全部过滤掉，报
+            // "有模型无价格"。
+            pricing_resolution: super::requested_resolution(invocation),
         })
         .map_err(|error| route_error(error.to_string()))?;
 

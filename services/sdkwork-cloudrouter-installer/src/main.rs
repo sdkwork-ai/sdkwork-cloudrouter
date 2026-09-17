@@ -4,6 +4,8 @@ use sdkwork_cloudrouter_config::{
     DatabaseConfig, DatabaseEngine, DeploymentMode, RuntimeConfigProfile,
 };
 use sdkwork_cloudrouter_database_host::connect_cloud_router_database;
+use sdkwork_cloudrouter_router_service::application::UpstreamCredentialSecretCodec;
+use sdkwork_cloudrouter_router_service::infrastructure::crypto::RingAeadCredentialSecretCodec;
 use sdkwork_cloudrouter_router_service::infrastructure::sql::bootstrap_cloud_runtime_id_generator;
 use sdkwork_cloudrouter_router_service::infrastructure::sql::installer::{
     CatalogRefreshOptions, CatalogRefreshReport, DatabaseInstallError, DatabaseInstallOptions,
@@ -122,14 +124,38 @@ async fn run_postgres(config: DatabaseConfig, command: InstallerCommand) -> anyh
     if let InstallerCommand::IssueBootstrapToken(options) = &command {
         return run_issue_bootstrap_token_postgres(&pool, options).await;
     }
-    run_command(
-        DatabaseInstaller::for_postgres(pool.clone())
-            .with_admin_model_store(Arc::new(PostgresModelCatalogAdminStore::new(pool)))
-            .with_env_options()?,
-        command,
-        &config,
+    let installer = DatabaseInstaller::for_postgres(pool.clone())
+        .with_admin_model_store(Arc::new(PostgresModelCatalogAdminStore::new(pool)))
+        .with_env_options()?;
+    // Attach the upstream-credential secret codec when the key ring is
+    // configured, so `db:seed` can seal the bundled vendor default account
+    // credentials. Without a key ring the accounts still seed, but stay
+    // non-routable until an operator sets a credential.
+    let installer = match upstream_credential_secret_codec_from_env()? {
+        Some(codec) => installer.with_credential_secret_codec(codec),
+        None => installer,
+    };
+    run_command(installer, command, &config).await
+}
+
+/// Builds the upstream-credential secret codec from the configured key ring,
+/// mirroring the edge runtime's assembly. Returns `None` when no key ring is
+/// configured.
+fn upstream_credential_secret_codec_from_env(
+) -> anyhow::Result<Option<Arc<dyn UpstreamCredentialSecretCodec + Send + Sync>>> {
+    let Some(config) = sdkwork_cloudrouter_config::UpstreamCredentialSecurityConfig::from_env()
+        .map_err(anyhow::Error::msg)?
+    else {
+        return Ok(None);
+    };
+    let codec = RingAeadCredentialSecretCodec::with_key_ring(
+        config.active_key_id(),
+        config.active_key(),
+        config.fingerprint_key(),
+        config.decryption_keys().to_vec(),
     )
-    .await
+    .map_err(|error| anyhow::anyhow!("invalid upstream credential key ring: {error}"))?;
+    Ok(Some(Arc::new(codec)))
 }
 
 async fn connect_installer_database_pool(

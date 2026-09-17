@@ -173,6 +173,35 @@ fn external_usage_line_billing(meter: Option<BillingMeter>) -> InvocationBilling
     }
 }
 
+/// Maps a provider-native inbound path to its catalogued `api_code`.
+///
+/// Kling publishes two path families for the same abilities and the open-api
+/// contract declares both, so both must classify: the Kling-native names
+/// (`/v1/videos/text2video`, `/v1/videos/image2video`) that callers speaking
+/// Kling's own protocol use verbatim, and the RESTful names the gateway
+/// advertises in `generated_open_http_route_manifest`
+/// (`/v1/videos/generations`, `/v1/videos/generations/{task_id}`). Only the
+/// native names used to be recognised, so the published
+/// `POST /kling/v1/videos/generations` fell through to the catch-all `None`
+/// arm and failed closed with 50201 "no upstream account routes are
+/// configured" even though the account, credential, group membership and
+/// resource grant were all present.
+///
+/// Volcengine has the mirror-image problem: the contract publishes Ark's own
+/// paths (`/api/v3/contents/generations/tasks`, `/api/v3/images/generations`)
+/// — which are what the seeded account actually serves, its base URL being
+/// `https://ark.cn-beijing.volces.com` — while only the OpenAI-shaped
+/// `/v1/videos/generations` and `/v1/images/generations` were recognised. A
+/// vendor-native request is relayed verbatim (`provider_request`), so the
+/// OpenAI-shaped names reach Ark as 404 while the published Ark names never
+/// reach the classifier at all. Both families now classify: the Ark names
+/// because they are the correct ones, the OpenAI-shaped names because callers
+/// may already speak them.
+///
+/// Every arm shape here is modelled by
+/// `tools/check-cloudrouter-ai-routing-consistency.mjs`, which refuses to pass
+/// when it meets a shape it cannot evaluate — an arm the gate cannot read is an
+/// arm whose drift nobody notices.
 fn provider_native_api_code_from_standard_path(
     supplier_code: &str,
     standard_path: &str,
@@ -205,18 +234,33 @@ fn provider_native_api_code_from_standard_path(
             "gemini.video_generation"
         }
         "kling" if path == "/v1/videos/text2video" => "kling.text_to_video",
+        "kling" if path == "/v1/videos/generations" => "kling.text_to_video",
         "kling" if path == "/v1/videos/avatar" => "kling.avatar",
         "kling" if path == "/v1/videos/motion-control" => "kling.motion_control",
         "kling" if path == "/v1/videos/image2video" => "kling.image_to_video",
         "kling" if path == "/v1/images/generations" => "kling.image_generation",
-        "kling" if task_query_path_matches(path.as_str()) => "kling.task_query",
+        "kling" if task_poll_path_matches(path.as_str(), "v1/tasks") => "kling.task_query",
+        "kling" if task_poll_path_matches(path.as_str(), "v1/videos/generations") => {
+            "kling.task_query"
+        }
         "jimeng" if path == "/v1/images/generations" => "jimeng.image_generation",
         "jimeng" if path == "/v1/videos/generations" => "jimeng.video_generation",
-        "jimeng" if task_query_path_matches(path.as_str()) => "jimeng.task_query",
+        "jimeng" if task_poll_path_matches(path.as_str(), "v1/tasks") => "jimeng.task_query",
         "volcengine" if path == "/v1/images/generations" => "volcengine.image_generation",
         "volcengine" if path == "/v1/videos/generations" => "volcengine.video_generation",
         "volcengine" if path == "/api/v3/audio/speech" => "volcengine.speech",
-        "volcengine" if task_query_path_matches(path.as_str()) => "volcengine.task_query",
+        "volcengine" if path == "/api/v3/images/generations" => "volcengine.image_generation",
+        "volcengine" if path == "/api/v3/contents/generations/tasks" => {
+            "volcengine.video_generation"
+        }
+        "volcengine" if task_poll_path_matches(path.as_str(), "v1/tasks") => {
+            "volcengine.task_query"
+        }
+        "volcengine"
+            if task_poll_path_matches(path.as_str(), "api/v3/contents/generations/tasks") =>
+        {
+            "volcengine.task_query"
+        }
         "elevenlabs" if path == "/v1/text-to-speech/{voice_id}" => "elevenlabs.text_to_speech",
         "elevenlabs" if path.starts_with("/v1/text-to-speech/") => "elevenlabs.text_to_speech",
         "elevenlabs" if path == "/v1/sound-generation" => "elevenlabs.sound_generation",
@@ -224,7 +268,9 @@ fn provider_native_api_code_from_standard_path(
         "minimax" if path == "/v1/music/generations" => "minimax.music_generation",
         "minimax" if path == "/v1/music/generation" => "minimax.music_generation",
         "suno" if path == "/v1/music/generations" => "suno.music_generation",
-        "suno" if music_task_query_path_matches(path.as_str()) => "suno.music_task_query",
+        "suno" if task_poll_path_matches(path.as_str(), "v1/music/generations") => {
+            "suno.music_task_query"
+        }
         "vidu" if path == "/ent/v2/reference2image" => "vidu.reference_to_image",
         "vidu" if path == "/ent/v2/template" => "vidu.motion_sync",
         "vidu" if path == "/ent/v2/start-end2video" => "vidu.start_end_to_video",
@@ -239,17 +285,26 @@ fn gemini_model_action_matches(path: &str, action: &str) -> bool {
     path.starts_with("/v1beta/models/") && path.ends_with(&format!(":{action}"))
 }
 
-fn music_task_query_path_matches(path: &str) -> bool {
-    path == "/v1/music/generations/{task_id}"
+/// Matches the task-polling path of a vendor family, for example
+/// `v1/music/generations`, `v1/videos/generations` or
+/// `api/v3/contents/generations/tasks`.
+///
+/// The family carries its own prefix because the vendors disagree on it: the
+/// OpenAI-shaped families answer under `/v1/...` (Kling image tasks, Suno
+/// music) while Volcengine's Ark answers the generation task under
+/// `/api/v3/contents/generations/tasks`. Every call site passes the full family
+/// so there is exactly one poll predicate to reason about (and exactly one for
+/// the consistency gate to model — three near-identical helpers used to hide
+/// the arms behind names the gate could not resolve).
+///
+/// Both the literal template and a concrete id are accepted because the
+/// inbound path arrives either pre-substituted or templated depending on
+/// whether the router resolved a path parameter.
+fn task_poll_path_matches(path: &str, family: &str) -> bool {
+    let prefix = format!("/{family}/");
+    path == format!("/{family}/{{task_id}}")
         || path
-            .strip_prefix("/v1/music/generations/")
-            .is_some_and(|task_id| !task_id.trim().is_empty())
-}
-
-fn task_query_path_matches(path: &str) -> bool {
-    path == "/v1/tasks/{task_id}"
-        || path
-            .strip_prefix("/v1/tasks/")
+            .strip_prefix(prefix.as_str())
             .is_some_and(|task_id| !task_id.trim().is_empty())
 }
 
@@ -417,6 +472,76 @@ mod tests {
         let classification = classify_post("/kling/v1/tasks/task_123", "kling");
         assert_eq!("kling.task_query", classification.resource.route_key);
         assert_eq!(Some(RouteKind::Api), classification.resource.route_kind);
+    }
+
+    /// The open-api contract publishes `/kling/v1/videos/generations` and
+    /// `/kling/v1/videos/generations/{task_id}` alongside the Kling-native
+    /// `/v1/videos/text2video`. A path the gateway advertises but the
+    /// classifier cannot name fails closed with 50201
+    /// "no upstream account routes are configured", even when the account,
+    /// credential, group membership and resource grant all exist — so both
+    /// families must resolve to the same route keys.
+    #[test]
+    fn kling_restful_video_paths_classify_like_the_native_ones() {
+        let native = classify_post("/kling/v1/videos/text2video", "kling");
+        assert_eq!("kling.text_to_video", native.resource.route_key);
+
+        let restful = classify_post("/kling/v1/videos/generations", "kling");
+        assert_eq!("kling.text_to_video", restful.resource.route_key);
+        assert_eq!(Some(RouteKind::Api), restful.resource.route_kind);
+
+        for path in [
+            "/kling/v1/videos/generations/{task_id}",
+            "/kling/v1/videos/generations/task_abc123",
+        ] {
+            let request =
+                InvocationClassificationRequest::new(Method::GET, path).with_supplier_code("kling");
+            let poll = ProviderNativeResourceClassifier
+                .classify(&request)
+                .expect("kling task polling classification");
+            assert_eq!("kling.task_query", poll.resource.route_key, "for {path}");
+            assert_eq!(Some(RouteKind::Api), poll.resource.route_kind, "for {path}");
+        }
+    }
+
+    /// Ark — the account's real base URL is `https://ark.cn-beijing.volces.com`,
+    /// and a vendor-native request is relayed verbatim. The contract therefore
+    /// publishes Ark's own paths, and both the create call and the task poll
+    /// the generation adapter issues must classify; the OpenAI-shaped aliases
+    /// stay recognised for callers already speaking them.
+    #[test]
+    fn volcengine_ark_paths_classify_alongside_the_openai_shaped_aliases() {
+        for path in [
+            "/volcengine/api/v3/contents/generations/tasks",
+            "/volcengine/v1/videos/generations",
+        ] {
+            let classification = classify_post(path, "volcengine");
+            assert_eq!(
+                "volcengine.video_generation", classification.resource.route_key,
+                "for {path}"
+            );
+        }
+
+        let classification = classify_post("/volcengine/api/v3/images/generations", "volcengine");
+        assert_eq!(
+            "volcengine.image_generation",
+            classification.resource.route_key
+        );
+
+        for path in [
+            "/volcengine/api/v3/contents/generations/tasks/{task_id}",
+            "/volcengine/api/v3/contents/generations/tasks/task_abc123",
+        ] {
+            let request = InvocationClassificationRequest::new(Method::GET, path)
+                .with_supplier_code("volcengine");
+            let poll = ProviderNativeResourceClassifier
+                .classify(&request)
+                .expect("volcengine task polling classification");
+            assert_eq!(
+                "volcengine.task_query", poll.resource.route_key,
+                "for {path}"
+            );
+        }
     }
 
     #[test]

@@ -279,7 +279,12 @@ fn model_from_json_value(value: &Value, _path: &str) -> Result<Option<String>, I
 }
 
 fn top_level_model_from_json_value(value: &Value) -> Result<Option<String>, InvocationError> {
-    for field in ["model", "model_name", "modelName"] {
+    // 厂商原生命名差异：OpenAI/Anthropic 用 `model`，Kling 用 `model_name`，
+    // ElevenLabs / MiniMax 等音频族用 `model_id`。三者都要认，否则厂商原生媒体
+    // 请求会被当成"未携带模型"，定价键只能退化为 api code，而 sdkwork-models
+    // 目录对这些能力计价的对象是模型（`elevenlabs/eleven_multilingual_v2`），
+    // 于是拿 api code 去查价必然 `model not found`。
+    for field in ["model", "model_name", "modelName", "model_id", "modelId"] {
         let Some(model) = value.get(field) else {
             continue;
         };

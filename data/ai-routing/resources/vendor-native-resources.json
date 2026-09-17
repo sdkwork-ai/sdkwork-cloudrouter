@@ -109,7 +109,7 @@
       "modalityCode": "image",
       "apiCode": "gemini.image_generation",
       "method": "POST",
-      "pathTemplate": "/v1beta/models/{model}:predict",
+      "pathTemplate": "/v1beta/models/{model}:generateImages",
       "capability": "image",
       "capabilities": [
         "image"
@@ -124,7 +124,7 @@
       "modalityCode": "image",
       "apiCode": "gemini.nano_banana.image_generation",
       "method": "POST",
-      "pathTemplate": "/v1beta/models/{model}:predict",
+      "pathTemplate": "/v1beta/models/nano-banana:generateImages",
       "capability": "image",
       "capabilities": [
         "image"
@@ -231,7 +231,7 @@
       "modalityCode": "network",
       "apiCode": "kling.task_query",
       "method": "GET",
-      "pathTemplate": "/v1/videos/{taskId}",
+      "pathTemplate": "/v1/videos/generations/{taskId}",
       "capability": "network",
       "capabilities": [
         "network",
@@ -293,7 +293,7 @@
       "modalityCode": "image",
       "apiCode": "volcengine.image_generation",
       "method": "POST",
-      "pathTemplate": "/v1/images/generations",
+      "pathTemplate": "/api/v3/images/generations",
       "capability": "image",
       "capabilities": [
         "image"
@@ -308,7 +308,7 @@
       "modalityCode": "video",
       "apiCode": "volcengine.video_generation",
       "method": "POST",
-      "pathTemplate": "/v1/videos/generations",
+      "pathTemplate": "/api/v3/contents/generations/tasks",
       "capability": "video",
       "capabilities": [
         "video"
@@ -323,7 +323,7 @@
       "modalityCode": "network",
       "apiCode": "volcengine.task_query",
       "method": "GET",
-      "pathTemplate": "/v1/tasks/{taskId}",
+      "pathTemplate": "/api/v3/contents/generations/tasks/{taskId}",
       "capability": "network",
       "capabilities": [
         "network",

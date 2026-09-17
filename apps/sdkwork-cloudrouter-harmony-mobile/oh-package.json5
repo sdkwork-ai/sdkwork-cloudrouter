@@ -1,0 +1,22 @@
+{
+  "modelVersion": "5.0.0",
+  "name": "sdkwork-cloudrouter-harmony-mobile",
+  "version": "0.1.0",
+  "description": "SDKWork Cloud Router HarmonyOS native mobile application",
+  "main": "",
+  "author": "SDKWork",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@sdkwork/sdkwork-cloudrouter-harmony-mobile-core": "file:./packages/sdkwork-cloudrouter-harmony-mobile-core",
+    "@sdkwork/sdkwork-cloudrouter-harmony-mobile-commons": "file:./packages/sdkwork-cloudrouter-harmony-mobile-commons",
+    "@sdkwork/sdkwork-cloudrouter-harmony-mobile-shell": "file:./packages/sdkwork-cloudrouter-harmony-mobile-shell",
+    "@sdkwork/sdkwork-cloudrouter-harmony-mobile-host": "file:./packages/sdkwork-cloudrouter-harmony-mobile-host",
+    "@sdkwork/sdkwork-cloudrouter-harmony-mobile-console-dashboard": "file:./packages/sdkwork-cloudrouter-harmony-mobile-console-dashboard",
+    "@sdkwork/sdkwork-cloudrouter-harmony-mobile-console-usage": "file:./packages/sdkwork-cloudrouter-harmony-mobile-console-usage",
+    "@sdkwork/sdkwork-cloudrouter-harmony-mobile-console-api-keys": "file:./packages/sdkwork-cloudrouter-harmony-mobile-console-api-keys",
+    "@sdkwork/sdkwork-cloudrouter-harmony-mobile-console-catalog": "file:./packages/sdkwork-cloudrouter-harmony-mobile-console-catalog"
+  },
+  "devDependencies": {
+    "@ohos/hypium": "1.0.19"
+  }
+}

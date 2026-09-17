@@ -1,0 +1,14 @@
+<view class="cr-page">
+  <view wx:if="{{loading}}" class="cr-muted">{{labels.loading}}</view>
+  <view wx:elif="{{error}}" class="cr-card">
+    <text>{{error}}</text>
+    <button size="mini" bindtap="onReload">{{labels.reload}}</button>
+  </view>
+  <view wx:elif="{{rows.length === 0}}" class="cr-muted">{{labels.empty}}</view>
+  <block wx:else>
+    <view wx:for="{{rows}}" wx:key="id" class="cr-card cr-row">
+      <text>{{item[primaryField]}}</text>
+      <text class="cr-muted">{{item[secondaryField]}}</text>
+    </view>
+  </block>
+</view>

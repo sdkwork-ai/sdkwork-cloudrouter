@@ -389,6 +389,7 @@ pub use sticky_route_store::{
 pub use upstream_account_route_catalog::{
     AccountBaseUrlConfig, AccountGroupModelAccess, AccountModelAccess, SupplierModelAccess,
     UpstreamAccountRouteCatalog, UpstreamRouteGateDiagnosis, VendorModelListEntry,
+    VideoPricingTierDecision, VideoPricingTierGap,
 };
 pub use upstream_credential_rotation_store::{
     CredentialRotationAccount, CredentialRotationAction, CredentialRotationSweepCommand,

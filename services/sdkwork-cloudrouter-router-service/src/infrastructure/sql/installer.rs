@@ -7,6 +7,7 @@ use sdkwork_models::ModelCatalog;
 use sdkwork_utils_rust as sdkwork_utils;
 use sqlx::{PgPool, Row};
 
+use crate::application::UpstreamCredentialSecretCodec;
 use crate::domain::DomainError;
 use crate::infrastructure::sql::ai_routing_seed::{
     import_postgres_ai_routing_seed, postgres_ai_routing_seed_complete,
@@ -17,7 +18,10 @@ use crate::infrastructure::sql::model_catalog_import::{
     catalog_scope_vendor_codes, catalog_with_selected_vendors, load_catalog_root_with_pin,
     DEFAULT_CATALOG_REFRESH_SOURCE,
 };
-use crate::infrastructure::sql::official_pricing_sync::sync_official_pricing_catalog;
+use crate::infrastructure::sql::official_pricing_sync::{
+    price_book_drift, pricing_projection_is_stored, summarize_catalog_pricing,
+    sync_official_pricing_catalog,
+};
 use crate::ports::{
     AdminModelStore, AdminModelSubject, OfficialPricingRefreshFuture, OfficialPricingRefreshReport,
     OfficialPricingRefreshStore, SyncAdminModelCatalogCommand,
@@ -255,6 +259,10 @@ pub struct DatabaseInstaller {
     pool: PgPool,
     options: DatabaseInstallOptions,
     admin_model_store: Option<Arc<dyn AdminModelStore + Send + Sync>>,
+    /// Upstream-credential secret codec used to seal the placeholder
+    /// credentials of the bundled vendor default accounts. Absent means the
+    /// seed writes no credential (and those accounts stay non-routable).
+    credential_secret_codec: Option<Arc<dyn UpstreamCredentialSecretCodec + Send + Sync>>,
 }
 
 impl DatabaseInstaller {
@@ -263,11 +271,26 @@ impl DatabaseInstaller {
             pool,
             options: DatabaseInstallOptions::commercial(),
             admin_model_store: None,
+            credential_secret_codec: None,
         }
     }
 
     pub fn with_admin_model_store(mut self, store: Arc<dyn AdminModelStore + Send + Sync>) -> Self {
         self.admin_model_store = Some(store);
+        self
+    }
+
+    /// Supplies the upstream-credential secret codec so the seed can seal the
+    /// placeholder credentials of the bundled vendor default accounts.
+    ///
+    /// Callers that omit this still get the accounts, but without credentials —
+    /// which means the routing snapshot's credential gate keeps them out, and
+    /// the coverage probe reports the gap instead of silently routing nowhere.
+    pub fn with_credential_secret_codec(
+        mut self,
+        codec: Arc<dyn UpstreamCredentialSecretCodec + Send + Sync>,
+    ) -> Self {
+        self.credential_secret_codec = Some(codec);
         self
     }
 
@@ -330,6 +353,21 @@ impl DatabaseInstaller {
     pub async fn ensure_bootstrap_data(&self) -> Result<InstallationReport, DatabaseInstallError> {
         let before = self.bootstrap_status(&self.options).await?;
         if before == InstallationStatus::Installed {
+            // An installed database is not necessarily a *current* one.
+            // `catalog_complete` only asserts that every key the catalog
+            // publishes exists in the database — a subset check — so adding a
+            // model, repricing one, or deleting a price book changes nothing it
+            // can observe. Returning here unconditionally meant the official
+            // pricing projection was refreshed exactly once, at first install,
+            // and every later `sdkwork-models` revision was ignored until an
+            // operator ran `db:refresh-catalog` by hand.
+            //
+            // Re-project the catalog on disk and refresh only on real drift, so
+            // startup converges a dev/test database onto `sdkwork-models` while
+            // the second startup of an unchanged catalog stays a pure read.
+            if let Some(changed) = self.refresh_on_catalog_drift().await? {
+                return self.status_report_with_options(&self.options, changed).await;
+            }
             return self.status_report_with_options(&self.options, false).await;
         }
         self.require_application_schema().await?;
@@ -351,6 +389,86 @@ impl DatabaseInstaller {
         }
         self.status_report_with_options(&self.options, refresh.synced || service_node_changed)
             .await
+    }
+
+    /// Refreshes the catalog when the `sdkwork-models` revision on disk and the
+    /// pricing stored in the database disagree; returns whether anything
+    /// changed, or `None` when there is nothing to do.
+    ///
+    /// Two independent signals, because they fail differently:
+    ///
+    /// * **content** — the projection's `source_hash` is not in
+    ///   `pricing_import_run` yet, i.e. the catalog added, removed, or repriced
+    ///   a model. The hash covers every rate, so a single changed unit price is
+    ///   enough to detect it.
+    /// * **books** — the live price books and the projected ones are not the
+    ///   same set. Adding and deleting look identical to a subset check, which
+    ///   is why a deleted price book used to keep serving retired rates for
+    ///   ever; and a price book that was retired or soft-deleted while its
+    ///   `pricing_import_run` row survived satisfied every other signal, which
+    ///   is why a database could be missing a whole vendor's pricing while
+    ///   reporting itself up to date. Only a set comparison sees both.
+    ///
+    /// Returns `None` — never an error — when no admin model store is wired (the
+    /// catalog cannot be written without it) or when the catalog cannot be read
+    /// from disk. An external `SDKWORK_MODELS_CATALOG_ROOT` that has gone
+    /// missing must not turn a healthy startup into a failure; that is the same
+    /// tolerance `bootstrap_status` shows by reporting `CatalogUnavailable`.
+    async fn refresh_on_catalog_drift(&self) -> Result<Option<bool>, DatabaseInstallError> {
+        if self.admin_model_store.is_none() {
+            return Ok(None);
+        }
+        let catalog = match load_install_model_catalog(&self.options) {
+            Ok(catalog) => catalog,
+            Err(error) => {
+                tracing::debug!(
+                    target: "sdkwork_cloudrouter::database_install",
+                    stage = "catalog_drift",
+                    error = %error,
+                    "skipping startup catalog drift check: catalog is unreadable"
+                );
+                return Ok(None);
+            }
+        };
+        let summary = match summarize_catalog_pricing(&catalog) {
+            Ok(summary) => summary,
+            Err(error) => {
+                tracing::warn!(
+                    target: "sdkwork_cloudrouter::database_install",
+                    stage = "catalog_drift",
+                    error = %error,
+                    "skipping startup catalog drift check: catalog pricing projection is invalid"
+                );
+                return Ok(None);
+            }
+        };
+        let stored = pricing_projection_is_stored(&self.pool, &summary)
+            .await
+            .map_err(|error| DatabaseInstallError::InvalidState(error.to_string()))?;
+        let books = price_book_drift(&self.pool, &summary)
+            .await
+            .map_err(|error| DatabaseInstallError::InvalidState(error.to_string()))?;
+        if stored && books.is_clean() {
+            return Ok(None);
+        }
+        tracing::info!(
+            target: "sdkwork_cloudrouter::database_install",
+            stage = "catalog_drift",
+            catalog_version = %summary.catalog_version,
+            source_hash = %summary.source_hash,
+            projection_stored = stored,
+            missing_price_books = books.missing.len(),
+            orphan_price_books = books.orphan.len(),
+            price_book_sample = %books.sample(5),
+            "official pricing is behind sdkwork-models; refreshing the catalog"
+        );
+        let refresh = self
+            .refresh_catalog(CatalogRefreshOptions {
+                catalog_root: self.options.models_catalog_root.clone(),
+                ..CatalogRefreshOptions::default()
+            })
+            .await?;
+        Ok(Some(refresh.synced))
     }
 
     /// Compatibility alias for existing callers. It delegates to the single
@@ -421,7 +539,14 @@ impl DatabaseInstaller {
         }
 
         if item.synced {
-            import_postgres_ai_routing_seed(&self.pool).await?;
+            import_postgres_ai_routing_seed(
+                &self.pool,
+                Some(self.options.environment.as_str()),
+                self.credential_secret_codec
+                    .as_deref()
+                    .map(|codec| codec as &(dyn UpstreamCredentialSecretCodec + Send + Sync)),
+            )
+            .await?;
         }
 
         Ok(CatalogRefreshReport {

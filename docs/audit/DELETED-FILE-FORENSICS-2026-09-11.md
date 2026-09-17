@@ -19,7 +19,7 @@
 
 1. **全仓未提交删除扫描**：对工作区下全部 106 个含 `.git` 的仓执行
    `git status --porcelain --untracked-files=no`，统计 ` D` / `D ` 条目。
-2. **Windows 回收站解析**：解析 `E:\$Recycle.Bin\S-1-5-21-...\$I<id>` 元数据
+2. **Windows 回收站解析**：解析 `<drive>:\$Recycle.Bin\S-1-5-21-...\$I<id>` 元数据
    （`version` DWORD@0、`size` QWORD@8、`FILETIME` QWORD@16；v2 时 DWORD@24 为
    **字符数**、路径 UTF-16LE 起于 @28），共 71100 条记录。
 3. **存在性校验**：把事故窗口内条目按「预期删除白名单」分流，逐个 `existsSync` 校验。
@@ -126,11 +126,11 @@ SKILL=~/.workbuddy/skills/windows-recycle-bin-forensics/scripts
 node "$SKILL/git-deletion-sweep.mjs" "<workspace-root>"
 
 # 2) 事故窗口取证（路径含 $，用单引号传参）→ 期望 STILL MISSING: 0
-node "$SKILL/recycle-forensics.mjs" 'E:\$Recycle.Bin' sdkwork-cloudrouter \
+node "$SKILL/recycle-forensics.mjs" '<drive>:\$Recycle.Bin' sdkwork-cloudrouter \
   2026-09-10T16:35:00Z 2026-09-10T17:05:00Z intended.json
 
 # 3) 按原始字节恢复（先写 jobs.json，逐条确认后再跑）
-node "$SKILL/restore-from-recycle.mjs" 'E:\$Recycle.Bin\S-1-5-21-<sid>' jobs.json
+node "$SKILL/restore-from-recycle.mjs" '<drive>:\$Recycle.Bin\S-1-5-21-<sid>' jobs.json
 ```
 
 第 2 步的 `intended.json` 需列出**本次任务有意删除**的路径正则，否则这些项

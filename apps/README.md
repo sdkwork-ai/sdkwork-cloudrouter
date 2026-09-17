@@ -23,6 +23,11 @@ The repository root `sdkwork.app.config.json` governs the primary application ma
 
 | Directory | Surface role | Runnable | Purpose | Entry |
 | --- | --- | --- | --- | --- |
+| sdkwork-cloudrouter-common | common | no | SDKWork CloudRouter shared client contracts, SDK ports, and read-model service root. | [README](sdkwork-cloudrouter-common/README.md) |
+| sdkwork-cloudrouter-flutter-mobile | flutter-mobile | yes | SDKWork CloudRouter Flutter Mobile flutter-mobile application root. | [README](sdkwork-cloudrouter-flutter-mobile/README.md) |
+| sdkwork-cloudrouter-h5 | h5 | yes | SDKWork CloudRouter H5 h5 application root. | [README](sdkwork-cloudrouter-h5/README.md) |
+| sdkwork-cloudrouter-harmony-mobile | harmony-mobile | yes | SDKWork CloudRouter HarmonyOS Mobile harmony-mobile application root. | [README](sdkwork-cloudrouter-harmony-mobile/README.md) |
+| sdkwork-cloudrouter-mini-program | mini-program | yes | SDKWork CloudRouter Mini Program mini-program application root. | [README](sdkwork-cloudrouter-mini-program/README.md) |
 | sdkwork-cloudrouter-pc | pc | yes | SDKWork CloudRouter PC pc application root. | [README](sdkwork-cloudrouter-pc/README.md) |
 
 ## Allowed Content

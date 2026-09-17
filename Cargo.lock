@@ -123,7 +123,7 @@ version = "1.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "40c48f72fd53cd289104fc64099abca73db4166ad86ea0b4341abe65af83dadc"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -134,7 +134,7 @@ checksum = "291e6a250ff86cd4a820112fb8898808a366d8f9f58ce16d1f538353ad55747d"
 dependencies = [
  "anstyle",
  "once_cell_polyfill",
- "windows-sys 0.61.2",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -591,24 +591,18 @@ dependencies = [
  "aws-smithy-async",
  "aws-smithy-runtime-api",
  "aws-smithy-types",
- "h2 0.3.27",
- "h2 0.4.19",
- "http 0.2.12",
+ "h2",
  "http 1.5.0",
- "http-body 0.4.6",
- "hyper 0.14.32",
- "hyper 1.11.1",
- "hyper-rustls 0.24.2",
- "hyper-rustls 0.27.9",
+ "hyper",
+ "hyper-rustls",
  "hyper-util",
  "pin-project-lite",
- "rustls 0.21.12",
- "rustls 0.23.43",
+ "rustls",
  "rustls-native-certs",
  "rustls-pki-types",
  "tokio",
- "tokio-rustls 0.26.4",
- "tower 0.5.3",
+ "tokio-rustls",
+ "tower",
  "tracing",
 ]
 
@@ -766,38 +760,11 @@ dependencies = [
 
 [[package]]
 name = "axum"
-version = "0.7.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "edca88bc138befd0323b20752846e6587272d3b03b0343c8ea28a6f819e6e71f"
-dependencies = [
- "async-trait",
- "axum-core 0.4.5",
- "bytes",
- "futures-util",
- "http 1.5.0",
- "http-body 1.1.0",
- "http-body-util",
- "itoa",
- "matchit 0.7.3",
- "memchr",
- "mime",
- "percent-encoding",
- "pin-project-lite",
- "rustversion",
- "serde",
- "sync_wrapper",
- "tower 0.5.3",
- "tower-layer",
- "tower-service",
-]
-
-[[package]]
-name = "axum"
 version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "31b698c5f9a010f6573133b09e0de5408834d0c82f8d7475a89fc1867a71cd90"
 dependencies = [
- "axum-core 0.5.6",
+ "axum-core",
  "axum-macros",
  "base64",
  "bytes",
@@ -806,10 +773,10 @@ dependencies = [
  "http 1.5.0",
  "http-body 1.1.0",
  "http-body-util",
- "hyper 1.11.1",
+ "hyper",
  "hyper-util",
  "itoa",
- "matchit 0.8.4",
+ "matchit",
  "memchr",
  "mime",
  "multer",
@@ -823,30 +790,10 @@ dependencies = [
  "sync_wrapper",
  "tokio",
  "tokio-tungstenite 0.29.0",
- "tower 0.5.3",
+ "tower",
  "tower-layer",
  "tower-service",
  "tracing",
-]
-
-[[package]]
-name = "axum-core"
-version = "0.4.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09f2bd6146b97ae3359fa0cc6d6b376d9539582c7b4220f041a33ec24c226199"
-dependencies = [
- "async-trait",
- "bytes",
- "futures-util",
- "http 1.5.0",
- "http-body 1.1.0",
- "http-body-util",
- "mime",
- "pin-project-lite",
- "rustversion",
- "sync_wrapper",
- "tower-layer",
- "tower-service",
 ]
 
 [[package]]
@@ -1043,7 +990,7 @@ dependencies = [
  "maybe-owned",
  "rustix",
  "rustix-linux-procfs",
- "windows-sys 0.61.2",
+ "windows-sys 0.60.2",
  "winx",
 ]
 
@@ -1653,7 +1600,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -2034,25 +1981,6 @@ dependencies = [
 
 [[package]]
 name = "h2"
-version = "0.3.27"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0beca50380b1fc32983fc1cb4587bfa4bb9e78fc259aad4a0032d2080309222d"
-dependencies = [
- "bytes",
- "fnv",
- "futures-core",
- "futures-sink",
- "futures-util",
- "http 0.2.12",
- "indexmap 2.14.1",
- "slab",
- "tokio",
- "tokio-util",
- "tracing",
-]
-
-[[package]]
-name = "h2"
 version = "0.4.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ef8e5e5a340588f4452631496976cf8636d4a7ecf600239fdc27615d2530bc16"
@@ -2063,18 +1991,12 @@ dependencies = [
  "futures-core",
  "futures-sink",
  "http 1.5.0",
- "indexmap 2.14.1",
+ "indexmap",
  "slab",
  "tokio",
  "tokio-util",
  "tracing",
 ]
-
-[[package]]
-name = "hashbrown"
-version = "0.12.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
 
 [[package]]
 name = "hashbrown"
@@ -2263,30 +2185,6 @@ dependencies = [
 
 [[package]]
 name = "hyper"
-version = "0.14.32"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41dfc780fdec9373c01bae43289ea34c972e40ee3c9f6b3c8801a35f35586ce7"
-dependencies = [
- "bytes",
- "futures-channel",
- "futures-core",
- "futures-util",
- "h2 0.3.27",
- "http 0.2.12",
- "http-body 0.4.6",
- "httparse",
- "httpdate",
- "itoa",
- "pin-project-lite",
- "socket2 0.5.10",
- "tokio",
- "tower-service",
- "tracing",
- "want",
-]
-
-[[package]]
-name = "hyper"
 version = "1.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "27b501faa50e7a26c3d3560ca625132f4078a17771f4810baf70475ae48cbe43"
@@ -2295,7 +2193,7 @@ dependencies = [
  "bytes",
  "futures-channel",
  "futures-core",
- "h2 0.4.19",
+ "h2",
  "http 1.5.0",
  "http-body 1.1.0",
  "httparse",
@@ -2309,47 +2207,19 @@ dependencies = [
 
 [[package]]
 name = "hyper-rustls"
-version = "0.24.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec3efd23720e2049821a693cbc7e65ea87c72f1c58ff2f9522ff332b1491e590"
-dependencies = [
- "futures-util",
- "http 0.2.12",
- "hyper 0.14.32",
- "log",
- "rustls 0.21.12",
- "tokio",
- "tokio-rustls 0.24.1",
-]
-
-[[package]]
-name = "hyper-rustls"
 version = "0.27.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "33ca68d021ef39cf6463ab54c1d0f5daf03377b70561305bb89a8f83aab66e0f"
 dependencies = [
  "http 1.5.0",
- "hyper 1.11.1",
+ "hyper",
  "hyper-util",
- "rustls 0.23.43",
+ "rustls",
  "rustls-native-certs",
  "tokio",
- "tokio-rustls 0.26.4",
+ "tokio-rustls",
  "tower-service",
  "webpki-roots 1.0.9",
-]
-
-[[package]]
-name = "hyper-timeout"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b90d566bffbce6a75bd8b09a05aa8c2cb1fabb6cb348f8840c9e4c90a0d83b0"
-dependencies = [
- "hyper 1.11.1",
- "hyper-util",
- "pin-project-lite",
- "tokio",
- "tower-service",
 ]
 
 [[package]]
@@ -2360,7 +2230,7 @@ checksum = "70206fc6890eaca9fde8a0bf71caa2ddfc9fe045ac9e5c70df101a7dbde866e0"
 dependencies = [
  "bytes",
  "http-body-util",
- "hyper 1.11.1",
+ "hyper",
  "hyper-util",
  "native-tls",
  "tokio",
@@ -2380,12 +2250,12 @@ dependencies = [
  "futures-util",
  "http 1.5.0",
  "http-body 1.1.0",
- "hyper 1.11.1",
+ "hyper",
  "ipnet",
  "libc",
  "percent-encoding",
  "pin-project-lite",
- "socket2 0.6.5",
+ "socket2 0.5.10",
  "system-configuration",
  "tokio",
  "tower-service",
@@ -2529,16 +2399,6 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "1.9.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd070e393353796e801d209ad339e89596eb4c8d430d18ede6a1cced8fafbd99"
-dependencies = [
- "autocfg",
- "hashbrown 0.12.3",
-]
-
-[[package]]
-name = "indexmap"
 version = "2.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "07aa2048142242915a31d35844fb311e0e53fcca590c3a0a40dcf1b841fa09eb"
@@ -2590,15 +2450,6 @@ name = "is_terminal_polyfill"
 version = "1.70.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a6cb138bb79a146c1bd460005623e142ef0181e3d0219cb493e02f7d08a35695"
-
-[[package]]
-name = "itertools"
-version = "0.13.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
-dependencies = [
- "either",
-]
 
 [[package]]
 name = "itertools"
@@ -2719,7 +2570,7 @@ dependencies = [
  "referencing",
  "regex",
  "reqwest 0.13.4",
- "rustls 0.23.43",
+ "rustls",
  "serde",
  "serde_json",
  "strum",
@@ -2851,12 +2702,6 @@ dependencies = [
 
 [[package]]
 name = "matchit"
-version = "0.7.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e7465ac9959cc2b1404e8e2367b43684a6d13790fe23056cc8c6c5a6b7bcb94"
-
-[[package]]
-name = "matchit"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "47e1ffaa40ddd1f3ed91f717a33c8c0ee23fff369e3aa8772b9605cc1d22f4c3"
@@ -2982,7 +2827,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -3158,20 +3003,6 @@ dependencies = [
 
 [[package]]
 name = "opentelemetry"
-version = "0.27.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab70038c28ed37b97d8ed414b6429d343a8bbf44c9f79ec854f3a643029ba6d7"
-dependencies = [
- "futures-core",
- "futures-sink",
- "js-sys",
- "pin-project-lite",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "opentelemetry"
 version = "0.30.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aaf416e4cb72756655126f7dd7bb0af49c674f4c1b9903e80c009e0c37e552e6"
@@ -3186,19 +3017,6 @@ dependencies = [
 
 [[package]]
 name = "opentelemetry-http"
-version = "0.27.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "10a8a7f5f6ba7c1b286c2fbca0454eaba116f63bbe69ed250b642d36fbb04d80"
-dependencies = [
- "async-trait",
- "bytes",
- "http 1.5.0",
- "opentelemetry 0.27.1",
- "reqwest 0.12.28",
-]
-
-[[package]]
-name = "opentelemetry-http"
 version = "0.30.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "50f6639e842a97dbea8886e3439710ae463120091e2e064518ba8e716e6ac36d"
@@ -3206,29 +3024,8 @@ dependencies = [
  "async-trait",
  "bytes",
  "http 1.5.0",
- "opentelemetry 0.30.0",
+ "opentelemetry",
  "reqwest 0.12.28",
-]
-
-[[package]]
-name = "opentelemetry-otlp"
-version = "0.27.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91cf61a1868dacc576bf2b2a1c3e9ab150af7272909e80085c3173384fe11f76"
-dependencies = [
- "async-trait",
- "futures-core",
- "http 1.5.0",
- "opentelemetry 0.27.1",
- "opentelemetry-http 0.27.0",
- "opentelemetry-proto 0.27.0",
- "opentelemetry_sdk 0.27.1",
- "prost",
- "reqwest 0.12.28",
- "thiserror 1.0.69",
- "tokio",
- "tonic 0.12.3",
- "tracing",
 ]
 
 [[package]]
@@ -3238,10 +3035,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dbee664a43e07615731afc539ca60c6d9f1a9425e25ca09c57bc36c87c55852b"
 dependencies = [
  "http 1.5.0",
- "opentelemetry 0.30.0",
- "opentelemetry-http 0.30.0",
- "opentelemetry-proto 0.30.0",
- "opentelemetry_sdk 0.30.0",
+ "opentelemetry",
+ "opentelemetry-http",
+ "opentelemetry-proto",
+ "opentelemetry_sdk",
  "prost",
  "reqwest 0.12.28",
  "thiserror 2.0.20",
@@ -3250,47 +3047,14 @@ dependencies = [
 
 [[package]]
 name = "opentelemetry-proto"
-version = "0.27.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a6e05acbfada5ec79023c85368af14abd0b307c015e9064d249b2a950ef459a6"
-dependencies = [
- "opentelemetry 0.27.1",
- "opentelemetry_sdk 0.27.1",
- "prost",
- "tonic 0.12.3",
-]
-
-[[package]]
-name = "opentelemetry-proto"
 version = "0.30.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2e046fd7660710fe5a05e8748e70d9058dc15c94ba914e7c4faa7c728f0e8ddc"
 dependencies = [
- "opentelemetry 0.30.0",
- "opentelemetry_sdk 0.30.0",
+ "opentelemetry",
+ "opentelemetry_sdk",
  "prost",
- "tonic 0.13.1",
-]
-
-[[package]]
-name = "opentelemetry_sdk"
-version = "0.27.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "231e9d6ceef9b0b2546ddf52335785ce41252bc7474ee8ba05bfad277be13ab8"
-dependencies = [
- "async-trait",
- "futures-channel",
- "futures-executor",
- "futures-util",
- "glob",
- "opentelemetry 0.27.1",
- "percent-encoding",
- "rand 0.8.8",
- "serde_json",
- "thiserror 1.0.69",
- "tokio",
- "tokio-stream",
- "tracing",
+ "tonic",
 ]
 
 [[package]]
@@ -3302,7 +3066,7 @@ dependencies = [
  "futures-channel",
  "futures-executor",
  "futures-util",
- "opentelemetry 0.30.0",
+ "opentelemetry",
  "percent-encoding",
  "rand 0.9.5",
  "serde_json",
@@ -3632,7 +3396,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a56d757972c98b346a9b766e3f02746cde6dd1cd1d1d563472929fdd74bec4d"
 dependencies = [
  "anyhow",
- "itertools 0.14.0",
+ "itertools",
  "proc-macro2",
  "quote",
  "syn 2.0.119",
@@ -3665,8 +3429,8 @@ dependencies = [
  "quinn-proto",
  "quinn-udp",
  "rustc-hash",
- "rustls 0.23.43",
- "socket2 0.6.5",
+ "rustls",
+ "socket2 0.5.10",
  "thiserror 2.0.20",
  "tokio",
  "tracing",
@@ -3687,7 +3451,7 @@ dependencies = [
  "rand_pcg",
  "ring",
  "rustc-hash",
- "rustls 0.23.43",
+ "rustls",
  "rustls-pki-types",
  "slab",
  "thiserror 2.0.20",
@@ -3705,9 +3469,9 @@ dependencies = [
  "cfg_aliases",
  "libc",
  "once_cell",
- "socket2 0.6.5",
+ "socket2 0.5.10",
  "tracing",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -3814,55 +3578,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "caa0f4137e1c0a72f4c651489402276c8e8e1cf081f3b0ba156d2cbeef09e86a"
 dependencies = [
  "rand_core 0.10.1",
-]
-
-[[package]]
-name = "redis"
-version = "0.27.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09d8f99a4090c89cc489a94833c901ead69bfbf3877b4867d5482e321ee875bc"
-dependencies = [
- "arc-swap",
- "async-trait",
- "backon",
- "bytes",
- "combine",
- "futures",
- "futures-util",
- "itertools 0.13.0",
- "itoa",
- "num-bigint",
- "percent-encoding",
- "pin-project-lite",
- "ryu",
- "sha1_smol",
- "socket2 0.5.10",
- "tokio",
- "tokio-util",
- "url",
-]
-
-[[package]]
-name = "redis"
-version = "0.28.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e37ec3fd44bea2ec947ba6cc7634d7999a6590aca7c35827c250bc0de502bda6"
-dependencies = [
- "arc-swap",
- "backon",
- "bytes",
- "combine",
- "futures-channel",
- "futures-util",
- "itoa",
- "num-bigint",
- "percent-encoding",
- "pin-project-lite",
- "ryu",
- "sha1_smol",
- "tokio",
- "tokio-util",
- "url",
 ]
 
 [[package]]
@@ -3985,12 +3700,12 @@ dependencies = [
  "futures-channel",
  "futures-core",
  "futures-util",
- "h2 0.4.19",
+ "h2",
  "http 1.5.0",
  "http-body 1.1.0",
  "http-body-util",
- "hyper 1.11.1",
- "hyper-rustls 0.27.9",
+ "hyper",
+ "hyper-rustls",
  "hyper-tls",
  "hyper-util",
  "js-sys",
@@ -4001,7 +3716,7 @@ dependencies = [
  "percent-encoding",
  "pin-project-lite",
  "quinn",
- "rustls 0.23.43",
+ "rustls",
  "rustls-native-certs",
  "rustls-pki-types",
  "serde",
@@ -4010,9 +3725,9 @@ dependencies = [
  "sync_wrapper",
  "tokio",
  "tokio-native-tls",
- "tokio-rustls 0.26.4",
+ "tokio-rustls",
  "tokio-util",
- "tower 0.5.3",
+ "tower",
  "tower-http 0.6.11",
  "tower-service",
  "url",
@@ -4035,12 +3750,12 @@ dependencies = [
  "futures-channel",
  "futures-core",
  "futures-util",
- "h2 0.4.19",
+ "h2",
  "http 1.5.0",
  "http-body 1.1.0",
  "http-body-util",
- "hyper 1.11.1",
- "hyper-rustls 0.27.9",
+ "hyper",
+ "hyper-rustls",
  "hyper-util",
  "js-sys",
  "log",
@@ -4049,7 +3764,7 @@ dependencies = [
  "percent-encoding",
  "pin-project-lite",
  "quinn",
- "rustls 0.23.43",
+ "rustls",
  "rustls-pki-types",
  "rustls-platform-verifier",
  "serde",
@@ -4057,9 +3772,9 @@ dependencies = [
  "serde_urlencoded",
  "sync_wrapper",
  "tokio",
- "tokio-rustls 0.26.4",
+ "tokio-rustls",
  "tokio-util",
- "tower 0.5.3",
+ "tower",
  "tower-http 0.6.11",
  "tower-service",
  "url",
@@ -4095,7 +3810,7 @@ dependencies = [
  "futures-timer",
  "glob",
  "http 1.5.0",
- "indexmap 2.14.1",
+ "indexmap",
  "mime",
  "mime_guess",
  "ordered-float",
@@ -4233,7 +3948,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4248,18 +3963,6 @@ dependencies = [
 
 [[package]]
 name = "rustls"
-version = "0.21.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f56a14d1f48b391359b22f731fd4bd7e43c97f3c50eee276f3aa09c94784d3e"
-dependencies = [
- "log",
- "ring",
- "rustls-webpki 0.101.7",
- "sct",
-]
-
-[[package]]
-name = "rustls"
 version = "0.23.43"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0283386ce02abc0151e1761d08802dfe86c173b0b494af5cbc086574e453da06"
@@ -4269,7 +3972,7 @@ dependencies = [
  "once_cell",
  "ring",
  "rustls-pki-types",
- "rustls-webpki 0.103.15",
+ "rustls-webpki",
  "subtle",
  "zeroize",
 ]
@@ -4307,14 +4010,14 @@ dependencies = [
  "jni",
  "log",
  "once_cell",
- "rustls 0.23.43",
+ "rustls",
  "rustls-native-certs",
  "rustls-platform-verifier-android",
- "rustls-webpki 0.103.15",
+ "rustls-webpki",
  "security-framework",
  "security-framework-sys",
  "webpki-root-certs",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4322,16 +4025,6 @@ name = "rustls-platform-verifier-android"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f87165f0995f63a9fbeea62b64d10b4d9d8e78ec6d7d51fb2125fda7bb36788f"
-
-[[package]]
-name = "rustls-webpki"
-version = "0.101.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b6275d1ee7a1cd780b64aca7726599a1dbc893b1e64144529e55c3c2f745765"
-dependencies = [
- "ring",
- "untrusted",
-]
 
 [[package]]
 name = "rustls-webpki"
@@ -4406,16 +4099,6 @@ name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
-
-[[package]]
-name = "sct"
-version = "0.7.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da046153aa2352493d6cb7da4b6e5c0c057d8a1d0a9aa8560baffdd945acd414"
-dependencies = [
- "ring",
- "untrusted",
-]
 
 [[package]]
 name = "sdkwork-account-database-host"
@@ -4685,14 +4368,14 @@ version = "0.1.0"
 dependencies = [
  "aes-gcm",
  "anyhow",
- "axum 0.8.9",
+ "axum",
  "chrono",
  "futures",
  "jsonwebtoken",
- "opentelemetry 0.27.1",
- "opentelemetry-otlp 0.27.0",
- "opentelemetry_sdk 0.27.1",
- "redis 0.27.6",
+ "opentelemetry",
+ "opentelemetry-otlp",
+ "opentelemetry_sdk",
+ "redis",
  "sdkwork-agent-api-bridge",
  "sdkwork-agent-database",
  "sdkwork-agent-kernel",
@@ -4717,10 +4400,10 @@ dependencies = [
  "subtle",
  "tokio",
  "tokio-stream",
- "tower 0.5.3",
+ "tower",
  "tower-http 0.7.0",
  "tracing",
- "tracing-opentelemetry 0.28.0",
+ "tracing-opentelemetry",
  "tracing-subscriber",
  "ureq",
  "uuid",
@@ -4765,7 +4448,7 @@ name = "sdkwork-agents-kernel-bridge"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "axum 0.8.9",
+ "axum",
  "sdkwork-agent-kernel",
  "sdkwork-agent-server",
  "sdkwork-agents-contract",
@@ -4914,7 +4597,7 @@ dependencies = [
 name = "sdkwork-api-account-assembly"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-account-service-host",
  "sdkwork-database-sqlx",
  "sdkwork-routes-account-app-api",
@@ -4929,7 +4612,7 @@ name = "sdkwork-api-agents-assembly"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "axum 0.8.9",
+ "axum",
  "sdkwork-agent-server",
  "sdkwork-agents-database-host",
  "sdkwork-agents-kernel-bridge",
@@ -4959,7 +4642,7 @@ dependencies = [
 name = "sdkwork-api-assets-assembly"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-database-sqlx",
  "sdkwork-drive-http",
  "sdkwork-drive-workspace-service",
@@ -4977,7 +4660,7 @@ name = "sdkwork-api-cloudrouter-assembly"
 version = "0.4.1"
 dependencies = [
  "anyhow",
- "axum 0.8.9",
+ "axum",
  "sdkwork-account-repository-sqlx",
  "sdkwork-account-service-host",
  "sdkwork-api-feeds-assembly",
@@ -5008,7 +4691,7 @@ dependencies = [
  "sdkwork-web-core",
  "serde_json",
  "tokio",
- "tower 0.5.3",
+ "tower",
  "tracing",
 ]
 
@@ -5016,7 +4699,7 @@ dependencies = [
 name = "sdkwork-api-cloudrouter-standalone-gateway"
 version = "0.4.1"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-api-cloudrouter-assembly",
  "sdkwork-cloudrouter-config",
  "sdkwork-cloudrouter-http",
@@ -5027,7 +4710,7 @@ dependencies = [
  "sdkwork-web-core",
  "serde_json",
  "tokio",
- "tower 0.5.3",
+ "tower",
  "tracing",
 ]
 
@@ -5035,7 +4718,7 @@ dependencies = [
 name = "sdkwork-api-community-assembly"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-community-commerce-membership-embedded",
  "sdkwork-community-commerce-order-embedded",
  "sdkwork-community-service-host",
@@ -5053,7 +4736,7 @@ dependencies = [
 name = "sdkwork-api-drive-assembly"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-database-sqlx",
  "sdkwork-drive-config",
  "sdkwork-drive-http",
@@ -5076,7 +4759,7 @@ dependencies = [
 name = "sdkwork-api-feeds-assembly"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-content-feeds-service",
  "sdkwork-database-sqlx",
  "sdkwork-feeds-database-host",
@@ -5098,7 +4781,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
- "axum 0.8.9",
+ "axum",
  "chrono",
  "sdkwork-api-assets-assembly",
  "sdkwork-database-sqlx",
@@ -5126,7 +4809,7 @@ dependencies = [
 name = "sdkwork-api-iam-assembly"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-database-sqlx",
  "sdkwork-iam-database-host",
  "sdkwork-iam-embedded-application-bootstrap",
@@ -5147,7 +4830,7 @@ dependencies = [
 name = "sdkwork-api-inventory-assembly"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-database-sqlx",
  "sdkwork-inventory-service-host",
  "sdkwork-routes-inventory-app-api",
@@ -5161,7 +4844,7 @@ dependencies = [
 name = "sdkwork-api-invoice-assembly"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-database-sqlx",
  "sdkwork-invoice-service-host",
  "sdkwork-routes-invoice-app-api",
@@ -5174,7 +4857,7 @@ dependencies = [
 name = "sdkwork-api-log-assembly"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "http 1.5.0",
  "sdkwork-database-sqlx",
  "sdkwork-log-core",
@@ -5192,7 +4875,7 @@ dependencies = [
 name = "sdkwork-api-membership-assembly"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-database-sqlx",
  "sdkwork-membership-service-host",
  "sdkwork-routes-membership-app-api",
@@ -5206,7 +4889,7 @@ dependencies = [
 name = "sdkwork-api-messaging-assembly"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-database-sqlx",
  "sdkwork-messaging-database-host",
  "sdkwork-routes-messaging-backend-api",
@@ -5219,7 +4902,7 @@ dependencies = [
 name = "sdkwork-api-models-assembly"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-database-id",
  "sdkwork-database-sqlx",
  "sdkwork-models-catalog-repository-sqlx",
@@ -5238,7 +4921,7 @@ dependencies = [
 name = "sdkwork-api-order-assembly"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-database-spi",
  "sdkwork-database-sqlx",
  "sdkwork-order-database-host",
@@ -5256,7 +4939,7 @@ dependencies = [
 name = "sdkwork-api-partner-assembly"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-database-sqlx",
  "sdkwork-partner-service-host",
  "sdkwork-routes-partner-app-api",
@@ -5270,7 +4953,7 @@ dependencies = [
 name = "sdkwork-api-payment-assembly"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-database-sqlx",
  "sdkwork-payment-service-host",
  "sdkwork-routes-payment-app-api",
@@ -5284,7 +4967,7 @@ dependencies = [
 name = "sdkwork-api-promotion-assembly"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-database-sqlx",
  "sdkwork-promotion-service-host",
  "sdkwork-routes-promotion-app-api",
@@ -5299,7 +4982,7 @@ name = "sdkwork-api-rtc-assembly"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "axum 0.8.9",
+ "axum",
  "sdkwork-communication-rtc-repository-sqlx",
  "sdkwork-communication-rtc-service",
  "sdkwork-database-sqlx",
@@ -5317,7 +5000,7 @@ dependencies = [
 name = "sdkwork-api-skills-assembly"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-database-sqlx",
  "sdkwork-intelligence-skills-repository-sqlx",
  "sdkwork-intelligence-skills-service",
@@ -5416,7 +5099,7 @@ name = "sdkwork-cloudrouter-admin-gateway"
 version = "0.4.1"
 dependencies = [
  "anyhow",
- "axum 0.8.9",
+ "axum",
  "sdkwork-api-cloudrouter-assembly",
  "sdkwork-cloudrouter-config",
  "sdkwork-cloudrouter-http",
@@ -5431,7 +5114,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "tokio",
- "tower 0.5.3",
+ "tower",
 ]
 
 [[package]]
@@ -5453,7 +5136,7 @@ dependencies = [
  "sdkwork-database-config",
  "serde",
  "serde_json",
- "toml 1.1.4+spec-1.1.0",
+ "toml",
  "url",
 ]
 
@@ -5486,7 +5169,7 @@ version = "0.4.1"
 dependencies = [
  "anyhow",
  "async-trait",
- "axum 0.8.9",
+ "axum",
  "bytes",
  "chrono",
  "futures-core",
@@ -5495,11 +5178,11 @@ dependencies = [
  "hex",
  "http-body 1.1.0",
  "http-body-util",
- "hyper 1.11.1",
- "hyper-rustls 0.27.9",
+ "hyper",
+ "hyper-rustls",
  "hyper-util",
  "prometheus",
- "redis 1.6.0",
+ "redis",
  "sdkwork-account-repository-sqlx",
  "sdkwork-account-service",
  "sdkwork-account-service-host",
@@ -5550,7 +5233,7 @@ dependencies = [
  "sha2 0.10.9",
  "sqlx",
  "tokio",
- "tower 0.5.3",
+ "tower",
  "tracing",
 ]
 
@@ -5568,13 +5251,13 @@ name = "sdkwork-cloudrouter-http"
 version = "0.4.1"
 dependencies = [
  "async-trait",
- "axum 0.8.9",
+ "axum",
  "base64",
  "hex",
  "hmac 0.12.1",
  "hyper-util",
  "prometheus",
- "rustls 0.23.43",
+ "rustls",
  "sdkwork-cloudrouter-config",
  "sdkwork-cloudrouter-contract",
  "sdkwork-cloudrouter-health",
@@ -5592,7 +5275,7 @@ dependencies = [
  "sha2 0.10.9",
  "sqlx",
  "tokio",
- "tower 0.5.3",
+ "tower",
  "tower-http 0.6.11",
  "tracing",
  "url",
@@ -5646,9 +5329,9 @@ dependencies = [
 name = "sdkwork-cloudrouter-observability"
 version = "0.4.1"
 dependencies = [
- "opentelemetry 0.27.1",
- "opentelemetry-otlp 0.27.0",
- "opentelemetry_sdk 0.27.1",
+ "opentelemetry",
+ "opentelemetry-otlp",
+ "opentelemetry_sdk",
  "prometheus",
  "reqwest 0.12.28",
  "sdkwork-cloudrouter-config",
@@ -5656,7 +5339,7 @@ dependencies = [
  "serde_json",
  "tokio",
  "tracing",
- "tracing-opentelemetry 0.28.0",
+ "tracing-opentelemetry",
  "tracing-subscriber",
 ]
 
@@ -5691,7 +5374,7 @@ name = "sdkwork-cloudrouter-provider-adapter-host"
 version = "0.4.1"
 dependencies = [
  "anyhow",
- "axum 0.8.9",
+ "axum",
  "sdkwork-cloudrouter-config",
  "sdkwork-cloudrouter-provider-adapter",
  "sdkwork-cloudrouter-provider-adapter-contract",
@@ -5700,18 +5383,18 @@ dependencies = [
  "sdkwork-provider-adapter-tencent-cloud",
  "serde_json",
  "tokio",
- "tower 0.5.3",
+ "tower",
 ]
 
 [[package]]
 name = "sdkwork-cloudrouter-provider-adapter-http"
 version = "0.4.1"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "bytes",
  "http-body-util",
- "hyper 1.11.1",
- "hyper-rustls 0.27.9",
+ "hyper",
+ "hyper-rustls",
  "hyper-util",
  "sdkwork-cloudrouter-http",
  "sdkwork-cloudrouter-provider-adapter",
@@ -5738,7 +5421,7 @@ version = "0.4.1"
 dependencies = [
  "arc-swap",
  "async-trait",
- "axum 0.8.9",
+ "axum",
  "base64",
  "bytes",
  "chrono",
@@ -5749,12 +5432,12 @@ dependencies = [
  "hex",
  "hmac 0.12.1",
  "http-body-util",
- "hyper 1.11.1",
- "hyper-rustls 0.27.9",
+ "hyper",
+ "hyper-rustls",
  "hyper-util",
  "ipnet",
  "prometheus",
- "redis 1.6.0",
+ "redis",
  "ring",
  "sdkwork-account-service",
  "sdkwork-cloudrouter-config",
@@ -5791,7 +5474,7 @@ dependencies = [
  "sha2 0.10.9",
  "sqlx",
  "tokio",
- "tower 0.5.3",
+ "tower",
  "tracing",
  "tracing-subscriber",
  "url",
@@ -5833,7 +5516,7 @@ name = "sdkwork-cloudrouter-standalone-gateway"
 version = "0.4.1"
 dependencies = [
  "anyhow",
- "axum 0.8.9",
+ "axum",
  "base64",
  "hmac 0.12.1",
  "sdkwork-api-cloudrouter-assembly",
@@ -5857,7 +5540,7 @@ dependencies = [
  "sha2 0.10.9",
  "sqlx",
  "tokio",
- "tower 0.5.3",
+ "tower",
 ]
 
 [[package]]
@@ -5865,7 +5548,7 @@ name = "sdkwork-cloudrouter-test-support"
 version = "0.4.1"
 dependencies = [
  "anyhow",
- "axum 0.8.9",
+ "axum",
  "sdkwork-account-repository-sqlx",
  "sdkwork-account-service",
  "sdkwork-cloudrouter-config",
@@ -6035,7 +5718,7 @@ dependencies = [
 name = "sdkwork-content-documents-sdk-reference"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "base64",
  "sdkwork-sdk-generator-client",
  "sdkwork-utils-rust",
@@ -6086,7 +5769,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.20",
- "toml 1.1.4+spec-1.1.0",
+ "toml",
  "tracing",
  "url",
 ]
@@ -6209,7 +5892,7 @@ name = "sdkwork-drive-config"
 version = "0.1.0"
 dependencies = [
  "serde",
- "toml 0.8.23",
+ "toml",
 ]
 
 [[package]]
@@ -6238,9 +5921,9 @@ dependencies = [
 name = "sdkwork-drive-http"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "http 1.5.0",
- "redis 0.28.2",
+ "redis",
  "sdkwork-drive-config",
  "sdkwork-drive-observability",
  "sdkwork-drive-security",
@@ -6262,6 +5945,7 @@ dependencies = [
  "sdkwork-drive-storage-local",
  "sdkwork-drive-storage-s3",
  "sdkwork-drive-workspace-service",
+ "sdkwork-iam-provider-account-service",
  "sqlx",
  "tokio",
  "url",
@@ -6271,12 +5955,12 @@ dependencies = [
 name = "sdkwork-drive-observability"
 version = "0.1.0"
 dependencies = [
- "opentelemetry 0.30.0",
- "opentelemetry-otlp 0.30.0",
- "opentelemetry_sdk 0.30.0",
+ "opentelemetry",
+ "opentelemetry-otlp",
+ "opentelemetry_sdk",
  "sdkwork-drive-config",
  "tracing",
- "tracing-opentelemetry 0.31.0",
+ "tracing-opentelemetry",
  "tracing-subscriber",
 ]
 
@@ -6575,6 +6259,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdkwork-iam-provider-account-service"
+version = "0.1.0"
+dependencies = [
+ "aes-gcm",
+ "base64",
+ "chrono",
+ "rand_core 0.6.4",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "sqlx",
+ "uuid",
+]
+
+[[package]]
 name = "sdkwork-iam-web-adapter"
 version = "0.1.0"
 dependencies = [
@@ -6582,7 +6281,7 @@ dependencies = [
  "aes-gcm",
  "argon2",
  "async-trait",
- "axum 0.8.9",
+ "axum",
  "base64",
  "cbc",
  "chrono",
@@ -6620,7 +6319,7 @@ dependencies = [
 name = "sdkwork-intelligence-agents-service"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "chrono",
  "chrono-tz",
  "cloudrouter-open-sdk",
@@ -6658,7 +6357,7 @@ dependencies = [
  "time",
  "tokio",
  "tokio-stream",
- "tower 0.5.3",
+ "tower",
  "tracing",
 ]
 
@@ -6668,7 +6367,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
- "axum 0.8.9",
+ "axum",
  "chrono",
  "sdkwork-database-id",
  "sdkwork-database-sqlx",
@@ -6852,14 +6551,14 @@ dependencies = [
 name = "sdkwork-log-tower-adapter"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "bytes",
  "http 1.5.0",
  "http-body 1.1.0",
  "http-body-util",
  "sdkwork-log-core",
  "tokio",
- "tower 0.5.3",
+ "tower",
  "tracing",
 ]
 
@@ -7043,7 +6742,7 @@ dependencies = [
 name = "sdkwork-models-catalog-service"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "bytes",
  "chrono",
  "chrono-tz",
@@ -7375,7 +7074,7 @@ version = "0.4.1"
 dependencies = [
  "hex",
  "hmac 0.12.1",
- "hyper 1.11.1",
+ "hyper",
  "sdkwork-cloudrouter-provider-adapter",
  "sdkwork-cloudrouter-provider-adapter-contract",
  "serde_json",
@@ -7396,7 +7095,7 @@ dependencies = [
 name = "sdkwork-routes-account-app-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-account-repository-sqlx",
  "sdkwork-account-service",
  "sdkwork-account-service-host",
@@ -7417,7 +7116,7 @@ dependencies = [
 name = "sdkwork-routes-account-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-account-repository-sqlx",
  "sdkwork-account-service",
  "sdkwork-account-service-host",
@@ -7438,7 +7137,7 @@ dependencies = [
 name = "sdkwork-routes-agent-open-api"
 version = "0.4.1"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-cloudrouter-http",
 ]
 
@@ -7446,7 +7145,7 @@ dependencies = [
 name = "sdkwork-routes-agents-app-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-intelligence-agents-service",
  "sdkwork-routes-agents-http-shared",
  "tokio",
@@ -7456,7 +7155,7 @@ dependencies = [
 name = "sdkwork-routes-agents-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-intelligence-agents-service",
  "sdkwork-routes-agents-http-shared",
  "tokio",
@@ -7466,7 +7165,7 @@ dependencies = [
 name = "sdkwork-routes-agents-http-shared"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-iam-web-adapter",
  "sdkwork-intelligence-agents-service",
  "sdkwork-web-axum",
@@ -7482,7 +7181,7 @@ dependencies = [
 name = "sdkwork-routes-agents-open-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-intelligence-agents-service",
  "sdkwork-routes-agents-http-shared",
  "tokio",
@@ -7492,7 +7191,7 @@ dependencies = [
 name = "sdkwork-routes-assets-app-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "chrono",
  "sdkwork-drive-contract",
  "sdkwork-drive-http",
@@ -7503,14 +7202,14 @@ dependencies = [
  "serde",
  "serde_json",
  "sqlx",
- "tower 0.5.3",
+ "tower",
 ]
 
 [[package]]
 name = "sdkwork-routes-audio-open-api"
 version = "0.4.1"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-cloudrouter-http",
 ]
 
@@ -7518,7 +7217,7 @@ dependencies = [
 name = "sdkwork-routes-base-data-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-base-data-repository-sqlx",
  "sdkwork-base-data-service",
  "sdkwork-base-data-service-host",
@@ -7540,7 +7239,7 @@ version = "0.4.1"
 dependencies = [
  "anyhow",
  "async-trait",
- "axum 0.8.9",
+ "axum",
  "sdkwork-agents-database-host",
  "sdkwork-api-account-assembly",
  "sdkwork-api-agents-assembly",
@@ -7598,7 +7297,7 @@ name = "sdkwork-routes-cloudrouter-backend-api"
 version = "0.4.1"
 dependencies = [
  "anyhow",
- "axum 0.8.9",
+ "axum",
  "getrandom 0.3.4",
  "sdkwork-api-drive-assembly",
  "sdkwork-api-iam-assembly",
@@ -7647,7 +7346,7 @@ dependencies = [
 name = "sdkwork-routes-cloudrouter-drive-open-api"
 version = "0.4.1"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-cloudrouter-http",
 ]
 
@@ -7655,7 +7354,7 @@ dependencies = [
 name = "sdkwork-routes-cloudrouter-knowledgebase-open-api"
 version = "0.4.1"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-cloudrouter-http",
 ]
 
@@ -7663,7 +7362,7 @@ dependencies = [
 name = "sdkwork-routes-cloudrouter-llm-open-api"
 version = "0.4.1"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-cloudrouter-http",
 ]
 
@@ -7671,7 +7370,7 @@ dependencies = [
 name = "sdkwork-routes-cloudrouter-memory-open-api"
 version = "0.4.1"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-cloudrouter-http",
 ]
 
@@ -7679,7 +7378,7 @@ dependencies = [
 name = "sdkwork-routes-community-app-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-community-service",
  "sdkwork-community-service-host",
  "sdkwork-community-storage-sqlx-rust",
@@ -7693,7 +7392,7 @@ dependencies = [
 name = "sdkwork-routes-community-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-community-service",
  "sdkwork-community-service-host",
  "sdkwork-community-storage-sqlx-rust",
@@ -7707,7 +7406,7 @@ dependencies = [
 name = "sdkwork-routes-community-common"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-community-service",
  "sdkwork-iam-context-service",
  "sdkwork-iam-web-adapter",
@@ -7722,7 +7421,7 @@ dependencies = [
 name = "sdkwork-routes-community-open-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-community-service",
  "sdkwork-community-service-host",
  "sdkwork-community-storage-sqlx-rust",
@@ -7736,7 +7435,7 @@ name = "sdkwork-routes-drive-app-api"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "axum 0.8.9",
+ "axum",
  "chrono",
  "http 1.5.0",
  "sdkwork-drive-config",
@@ -7758,7 +7457,7 @@ dependencies = [
  "sqlx",
  "tempfile",
  "tokio",
- "tower 0.5.3",
+ "tower",
  "tracing",
  "tracing-subscriber",
  "zip",
@@ -7768,7 +7467,7 @@ dependencies = [
 name = "sdkwork-routes-drive-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "http 1.5.0",
  "sdkwork-drive-config",
  "sdkwork-drive-contract",
@@ -7784,7 +7483,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "tokio",
- "tower 0.5.3",
+ "tower",
  "tracing",
  "tracing-subscriber",
 ]
@@ -7793,7 +7492,7 @@ dependencies = [
 name = "sdkwork-routes-drive-internal-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "chrono",
  "futures-util",
  "http 1.5.0",
@@ -7809,7 +7508,7 @@ dependencies = [
  "serde",
  "sqlx",
  "tokio",
- "tower 0.5.3",
+ "tower",
  "tracing",
  "uuid",
 ]
@@ -7818,7 +7517,7 @@ dependencies = [
 name = "sdkwork-routes-drive-open-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "http 1.5.0",
  "sdkwork-drive-config",
  "sdkwork-drive-http",
@@ -7834,7 +7533,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "tokio",
- "tower 0.5.3",
+ "tower",
  "tracing",
  "tracing-subscriber",
 ]
@@ -7843,7 +7542,7 @@ dependencies = [
 name = "sdkwork-routes-edu-data-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-database-sqlx",
  "sdkwork-edu-data-repository-sqlx",
  "sdkwork-edu-data-service",
@@ -7863,7 +7562,7 @@ dependencies = [
 name = "sdkwork-routes-feeds-app-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-content-feeds-service",
  "sdkwork-feeds-service-host",
  "sdkwork-iam-context-service",
@@ -7876,7 +7575,7 @@ dependencies = [
 name = "sdkwork-routes-feeds-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-content-feeds-core-rust",
  "sdkwork-content-feeds-service",
  "sdkwork-feeds-service-host",
@@ -7891,7 +7590,7 @@ dependencies = [
 name = "sdkwork-routes-feeds-common"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-content-feeds-core-rust",
  "sdkwork-content-feeds-service",
  "sdkwork-iam-context-service",
@@ -7908,7 +7607,7 @@ dependencies = [
 name = "sdkwork-routes-feeds-open-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-content-feeds-service",
  "sdkwork-feeds-service-host",
  "sdkwork-routes-feeds-common",
@@ -7921,7 +7620,7 @@ dependencies = [
 name = "sdkwork-routes-generations-app-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-intelligence-generations-service",
  "sdkwork-routes-generations-http-shared",
  "sdkwork-web-bootstrap",
@@ -7936,7 +7635,7 @@ dependencies = [
 name = "sdkwork-routes-generations-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-intelligence-generations-service",
  "sdkwork-routes-generations-http-shared",
  "sdkwork-web-bootstrap",
@@ -7952,7 +7651,7 @@ dependencies = [
 name = "sdkwork-routes-generations-http-shared"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-iam-web-adapter",
  "sdkwork-intelligence-generations-service",
  "sdkwork-web-axum",
@@ -7969,7 +7668,7 @@ dependencies = [
 name = "sdkwork-routes-iaas-open-api"
 version = "0.4.1"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-cloudrouter-http",
 ]
 
@@ -7979,7 +7678,7 @@ version = "0.1.0"
 dependencies = [
  "argon2",
  "async-trait",
- "axum 0.8.9",
+ "axum",
  "base64",
  "chrono",
  "hmac 0.12.1",
@@ -8009,12 +7708,13 @@ dependencies = [
 name = "sdkwork-routes-iam-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "chrono",
  "sdkwork-database-sqlx",
  "sdkwork-iam-bootstrap",
  "sdkwork-iam-database-host",
  "sdkwork-iam-module-registry",
+ "sdkwork-iam-provider-account-service",
  "sdkwork-iam-web-adapter",
  "sdkwork-utils-rust",
  "sdkwork-web-contract",
@@ -8030,7 +7730,7 @@ dependencies = [
 name = "sdkwork-routes-iam-open-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "base64",
  "sdkwork-database-sqlx",
  "sdkwork-iam-web-adapter",
@@ -8045,7 +7745,7 @@ dependencies = [
 name = "sdkwork-routes-image-open-api"
 version = "0.4.1"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-cloudrouter-http",
 ]
 
@@ -8053,7 +7753,7 @@ dependencies = [
 name = "sdkwork-routes-inventory-app-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-contract-service",
  "sdkwork-database-sqlx",
  "sdkwork-iam-context-service",
@@ -8075,7 +7775,7 @@ dependencies = [
 name = "sdkwork-routes-inventory-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-contract-service",
  "sdkwork-database-sqlx",
  "sdkwork-iam-context-service",
@@ -8096,7 +7796,7 @@ dependencies = [
 name = "sdkwork-routes-invoice-app-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-contract-service",
  "sdkwork-database-sqlx",
  "sdkwork-iam-context-service",
@@ -8118,7 +7818,7 @@ dependencies = [
 name = "sdkwork-routes-log-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "http 1.5.0",
  "sdkwork-log-core",
  "sdkwork-utils-rust",
@@ -8134,7 +7834,7 @@ dependencies = [
 name = "sdkwork-routes-med-data-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-database-sqlx",
  "sdkwork-iam-web-adapter",
  "sdkwork-med-data-repository-sqlx",
@@ -8154,7 +7854,7 @@ dependencies = [
 name = "sdkwork-routes-membership-app-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-contract-service",
  "sdkwork-iam-web-adapter",
  "sdkwork-membership-repository-sqlx",
@@ -8174,7 +7874,7 @@ dependencies = [
 name = "sdkwork-routes-membership-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-contract-service",
  "sdkwork-iam-web-adapter",
  "sdkwork-membership-repository-sqlx",
@@ -8195,7 +7895,7 @@ name = "sdkwork-routes-messaging-backend-api"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "axum 0.8.9",
+ "axum",
  "chrono",
  "sdkwork-iam-web-adapter",
  "sdkwork-messaging-delivery-service",
@@ -8212,7 +7912,7 @@ dependencies = [
 name = "sdkwork-routes-models-catalog-app-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-iam-web-adapter",
  "sdkwork-models",
  "sdkwork-models-catalog-service",
@@ -8225,7 +7925,7 @@ dependencies = [
 name = "sdkwork-routes-models-catalog-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-iam-web-adapter",
  "sdkwork-models",
  "sdkwork-models-catalog-service",
@@ -8238,7 +7938,7 @@ dependencies = [
 name = "sdkwork-routes-order-app-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-contract-service",
  "sdkwork-database-sqlx",
  "sdkwork-iam-context-service",
@@ -8265,7 +7965,7 @@ dependencies = [
 name = "sdkwork-routes-order-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-contract-service",
  "sdkwork-database-sqlx",
  "sdkwork-iam-context-service",
@@ -8290,7 +7990,7 @@ dependencies = [
 name = "sdkwork-routes-paas-open-api"
 version = "0.4.1"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-cloudrouter-http",
 ]
 
@@ -8298,7 +7998,7 @@ dependencies = [
 name = "sdkwork-routes-partner-app-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-commerce-partner-service",
  "sdkwork-contract-service",
  "sdkwork-iam-context-service",
@@ -8317,7 +8017,7 @@ dependencies = [
 name = "sdkwork-routes-partner-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-commerce-partner-service",
  "sdkwork-contract-service",
  "sdkwork-iam-context-service",
@@ -8336,7 +8036,7 @@ dependencies = [
 name = "sdkwork-routes-payment-app-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-contract-service",
  "sdkwork-database-sqlx",
  "sdkwork-iam-context-service",
@@ -8359,7 +8059,7 @@ dependencies = [
 name = "sdkwork-routes-payment-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-contract-service",
  "sdkwork-database-sqlx",
  "sdkwork-iam-context-service",
@@ -8383,7 +8083,7 @@ dependencies = [
 name = "sdkwork-routes-payment-open-api"
 version = "0.4.1"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-cloudrouter-http",
 ]
 
@@ -8391,7 +8091,7 @@ dependencies = [
 name = "sdkwork-routes-promotion-app-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-commerce-promotion-repository-sqlx",
  "sdkwork-commerce-promotion-service",
  "sdkwork-contract-service",
@@ -8412,7 +8112,7 @@ dependencies = [
 name = "sdkwork-routes-promotion-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-commerce-promotion-service",
  "sdkwork-contract-service",
  "sdkwork-iam-context-service",
@@ -8431,7 +8131,7 @@ dependencies = [
 name = "sdkwork-routes-rtc-app-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-communication-rtc-service",
  "sdkwork-iam-web-adapter",
  "sdkwork-rtc-app-context",
@@ -8448,7 +8148,7 @@ dependencies = [
 name = "sdkwork-routes-rtc-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-communication-rtc-service",
  "sdkwork-iam-web-adapter",
  "sdkwork-rtc-app-context",
@@ -8466,7 +8166,7 @@ name = "sdkwork-routes-skills-app-api"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "axum 0.8.9",
+ "axum",
  "sdkwork-intelligence-skills-service",
  "sdkwork-routes-skills-common",
  "sdkwork-skills-contract",
@@ -8479,7 +8179,7 @@ dependencies = [
 name = "sdkwork-routes-skills-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-intelligence-skills-service",
  "sdkwork-routes-skills-common",
  "sdkwork-skills-contract",
@@ -8492,7 +8192,7 @@ dependencies = [
 name = "sdkwork-routes-skills-common"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-intelligence-skills-service",
  "sdkwork-skills-contract",
  "sdkwork-utils-rust",
@@ -8505,7 +8205,7 @@ dependencies = [
 name = "sdkwork-routes-storage-backend-api"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "http 1.5.0",
  "sdkwork-drive-config",
  "sdkwork-drive-contract",
@@ -8515,6 +8215,7 @@ dependencies = [
  "sdkwork-drive-storage-contract",
  "sdkwork-drive-storage-s3",
  "sdkwork-drive-workspace-service",
+ "sdkwork-iam-provider-account-service",
  "sdkwork-iam-web-adapter",
  "sdkwork-utils-rust",
  "sdkwork-web-axum",
@@ -8523,7 +8224,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "tokio",
- "tower 0.5.3",
+ "tower",
  "tracing",
  "tracing-subscriber",
 ]
@@ -8532,7 +8233,7 @@ dependencies = [
 name = "sdkwork-routes-video-open-api"
 version = "0.4.1"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "sdkwork-cloudrouter-http",
 ]
 
@@ -8594,7 +8295,7 @@ dependencies = [
 name = "sdkwork-rtc-app-context"
 version = "0.1.0"
 dependencies = [
- "axum 0.8.9",
+ "axum",
  "base64",
  "hmac 0.12.1",
  "sdkwork-web-core",
@@ -8727,7 +8428,7 @@ name = "sdkwork-test"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "axum 0.8.9",
+ "axum",
  "sdkwork-cloudrouter-config",
  "sdkwork-cloudrouter-edge-runtime",
  "sdkwork-cloudrouter-router-service",
@@ -8737,7 +8438,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "tokio",
- "tower 0.5.3",
+ "tower",
 ]
 
 [[package]]
@@ -8763,13 +8464,13 @@ name = "sdkwork-web-axum"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "axum 0.8.9",
+ "axum",
  "futures-util",
  "http 1.5.0",
  "sdkwork-web-core",
  "serde_json",
  "tokio",
- "tower 0.5.3",
+ "tower",
  "tower-http 0.7.0",
  "tracing",
 ]
@@ -8779,9 +8480,9 @@ name = "sdkwork-web-bootstrap"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "axum 0.8.9",
+ "axum",
  "http 1.5.0",
- "redis 0.27.6",
+ "redis",
  "sdkwork-database-sqlx",
  "sdkwork-web-axum",
  "sdkwork-web-contract",
@@ -8832,7 +8533,7 @@ name = "sdkwork-web-core"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "axum 0.8.9",
+ "axum",
  "getrandom 0.2.17",
  "hmac 0.12.1",
  "http 1.5.0",
@@ -8853,7 +8554,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "getrandom 0.2.17",
- "redis 0.27.6",
+ "redis",
  "sdkwork-web-core",
  "serde",
  "serde_json",
@@ -8984,7 +8685,7 @@ version = "1.0.151"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c841b55ecdae098c80dcae9cf767f6f8a0c2cdb3416bbef72181df4d0fe73f14"
 dependencies = [
- "indexmap 2.14.1",
+ "indexmap",
  "itoa",
  "memchr",
  "serde",
@@ -9001,15 +8702,6 @@ dependencies = [
  "itoa",
  "serde",
  "serde_core",
-]
-
-[[package]]
-name = "serde_spanned"
-version = "0.6.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf41e0cfaf7226dca15e8197172c295a782857fcb97fad1808a166870dee75a3"
-dependencies = [
- "serde",
 ]
 
 [[package]]
@@ -9039,7 +8731,7 @@ version = "0.9.34+deprecated"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a8b1a1a2ebf674015cc02edccce75287f1a0130d394307b36743c2f5d504b47"
 dependencies = [
- "indexmap 2.14.1",
+ "indexmap",
  "itoa",
  "ryu",
  "serde",
@@ -9203,7 +8895,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3d1e2c7f27f8d4cb10542a02c49005dbd6e93095799d6f3be745fae9f8fedd4"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -9265,11 +8957,11 @@ dependencies = [
  "futures-util",
  "hashbrown 0.16.1",
  "hashlink",
- "indexmap 2.14.1",
+ "indexmap",
  "log",
  "memchr",
  "percent-encoding",
- "rustls 0.23.43",
+ "rustls",
  "serde",
  "serde_json",
  "sha2 0.10.9",
@@ -9553,10 +9245,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.4.3",
+ "getrandom 0.3.4",
  "once_cell",
  "rustix",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -9703,21 +9395,11 @@ dependencies = [
 
 [[package]]
 name = "tokio-rustls"
-version = "0.24.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c28327cf380ac148141087fbfb9de9d7bd4e84ab5d2c28fbc911d753de8a7081"
-dependencies = [
- "rustls 0.21.12",
- "tokio",
-]
-
-[[package]]
-name = "tokio-rustls"
 version = "0.26.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1729aa945f29d91ba541258c8df89027d5792d85a8841fb65e8bf0f4ede4ef61"
 dependencies = [
- "rustls 0.23.43",
+ "rustls",
  "tokio",
 ]
 
@@ -9739,10 +9421,10 @@ source = "git+https://github.com/openai-oss-forks/tokio-tungstenite?rev=0e5b2d73
 dependencies = [
  "futures-util",
  "log",
- "rustls 0.23.43",
+ "rustls",
  "rustls-pki-types",
  "tokio",
- "tokio-rustls 0.26.4",
+ "tokio-rustls",
  "tungstenite 0.27.0",
  "webpki-roots 0.26.11",
 ]
@@ -9775,38 +9457,17 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "0.8.23"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc1beb996b9d83529a9e75c17a1686767d148d70663143c7854d8b4a09ced362"
-dependencies = [
- "serde",
- "serde_spanned 0.6.9",
- "toml_datetime 0.6.11",
- "toml_edit",
-]
-
-[[package]]
-name = "toml"
 version = "1.1.4+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3aace63f4bbcdfc2c965b059de67119c89c4017a70d633be6c104910f67056f5"
 dependencies = [
- "indexmap 2.14.1",
+ "indexmap",
  "serde_core",
- "serde_spanned 1.1.1",
- "toml_datetime 1.1.1+spec-1.1.0",
+ "serde_spanned",
+ "toml_datetime",
  "toml_parser",
  "toml_writer",
  "winnow 1.0.4",
-]
-
-[[package]]
-name = "toml_datetime"
-version = "0.6.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22cddaf88f4fbc13c51aebbf5f8eceb5c7c5a9da2ac40a13519eb5b0a0e8f11c"
-dependencies = [
- "serde",
 ]
 
 [[package]]
@@ -9819,20 +9480,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "toml_edit"
-version = "0.22.27"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41fe8c660ae4257887cf66394862d21dbca4a6ddd26f04a3560410406a2f819a"
-dependencies = [
- "indexmap 2.14.1",
- "serde",
- "serde_spanned 0.6.9",
- "toml_datetime 0.6.11",
- "toml_write",
- "winnow 0.7.15",
-]
-
-[[package]]
 name = "toml_parser"
 version = "1.1.3+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9842,46 +9489,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "toml_write"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d99f8c9a7727884afe522e9bd5edbfc91a3312b36a77b5fb8926e4c31a41801"
-
-[[package]]
 name = "toml_writer"
 version = "1.1.2+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d56353a2a665ad0f41a421187180aab746c8c325620617ad883a99a1cbe66d2"
-
-[[package]]
-name = "tonic"
-version = "0.12.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "877c5b330756d856ffcc4553ab34a5684481ade925ecc54bcd1bf02b1d0d4d52"
-dependencies = [
- "async-stream",
- "async-trait",
- "axum 0.7.9",
- "base64",
- "bytes",
- "h2 0.4.19",
- "http 1.5.0",
- "http-body 1.1.0",
- "http-body-util",
- "hyper 1.11.1",
- "hyper-timeout",
- "hyper-util",
- "percent-encoding",
- "pin-project",
- "prost",
- "socket2 0.5.10",
- "tokio",
- "tokio-stream",
- "tower 0.4.13",
- "tower-layer",
- "tower-service",
- "tracing",
-]
 
 [[package]]
 name = "tonic"
@@ -9899,26 +9510,6 @@ dependencies = [
  "pin-project",
  "prost",
  "tokio-stream",
- "tower-layer",
- "tower-service",
- "tracing",
-]
-
-[[package]]
-name = "tower"
-version = "0.4.13"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8fa9be0de6cf49e536ce1851f987bd21a43b771b09473c3549a6c853db37c1c"
-dependencies = [
- "futures-core",
- "futures-util",
- "indexmap 1.9.3",
- "pin-project",
- "pin-project-lite",
- "rand 0.8.8",
- "slab",
- "tokio",
- "tokio-util",
  "tower-layer",
  "tower-service",
  "tracing",
@@ -9952,7 +9543,7 @@ dependencies = [
  "http 1.5.0",
  "http-body 1.1.0",
  "pin-project-lite",
- "tower 0.5.3",
+ "tower",
  "tower-layer",
  "tower-service",
  "tracing",
@@ -10048,32 +9639,14 @@ dependencies = [
 
 [[package]]
 name = "tracing-opentelemetry"
-version = "0.28.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97a971f6058498b5c0f1affa23e7ea202057a7301dbff68e968b2d578bcbd053"
-dependencies = [
- "js-sys",
- "once_cell",
- "opentelemetry 0.27.1",
- "opentelemetry_sdk 0.27.1",
- "smallvec",
- "tracing",
- "tracing-core",
- "tracing-log",
- "tracing-subscriber",
- "web-time",
-]
-
-[[package]]
-name = "tracing-opentelemetry"
 version = "0.31.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ddcf5959f39507d0d04d6413119c04f33b623f4f951ebcbdddddfad2d0623a9c"
 dependencies = [
  "js-sys",
  "once_cell",
- "opentelemetry 0.30.0",
- "opentelemetry_sdk 0.30.0",
+ "opentelemetry",
+ "opentelemetry_sdk",
  "smallvec",
  "tracing",
  "tracing-core",
@@ -10131,7 +9704,7 @@ dependencies = [
  "httparse",
  "log",
  "rand 0.9.5",
- "rustls 0.23.43",
+ "rustls",
  "rustls-pki-types",
  "sha1 0.10.7",
  "thiserror 2.0.20",
@@ -10254,7 +9827,7 @@ dependencies = [
  "base64",
  "log",
  "once_cell",
- "rustls 0.23.43",
+ "rustls",
  "rustls-pki-types",
  "url",
  "webpki-roots 0.26.11",
@@ -10517,7 +10090,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -10766,15 +10339,6 @@ dependencies = [
 
 [[package]]
 name = "winnow"
-version = "0.7.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df79d97927682d2fd8adb29682d1140b343be4ac0f08fd68b7765d9c059d3945"
-dependencies = [
- "memchr",
-]
-
-[[package]]
-name = "winnow"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23b97319f7b8343df12cc98938e5c3eb436064524c8d2b4e30a1d3a36eecdf81"
@@ -10941,7 +10505,7 @@ checksum = "2d04a6b5381502aa6087c94c669499eb1602eb9c5e8198e534de571f7154809b"
 dependencies = [
  "crc32fast",
  "flate2",
- "indexmap 2.14.1",
+ "indexmap",
  "memchr",
  "typed-path",
 ]

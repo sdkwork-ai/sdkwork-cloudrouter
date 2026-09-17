@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
 use super::{
-    BillingMode, BillingQuantitySource, DispatchMode, Invocation, InvocationAccount,
-    InvocationBody, InvocationError, InvocationErrorKind, InvocationFuture,
-    InvocationPreflightResolution, InvocationPricingQuote, InvocationUsageLine, RouteKind,
+    requested_resolution, resolve_pricing_identity, BillingMode, BillingQuantitySource, DispatchMode,
+    Invocation, InvocationAccount, InvocationBody, InvocationError, InvocationErrorKind,
+    InvocationFuture, InvocationPreflightResolution, InvocationPricingQuote, InvocationUsageLine,
+    RouteKind,
 };
 use crate::application::{
     InvocationInterceptor, PriceResolution, PriceResolutionStatus, PriceService, ResolvedModelPrice,
@@ -12,7 +13,7 @@ use crate::domain::{
     AiRouteModelRequirement, BillingMeter, DecimalValue, PriceSide, PricingDimensionContext,
     ResourceDefinition,
 };
-use crate::ports::{PricingCatalog, PricingDefaultRegionProvider};
+use crate::ports::{PricingCatalog, PricingDefaultRegionProvider, UpstreamAccountRouteCatalog};
 
 #[derive(Clone)]
 pub struct PricingPreflightInterceptor<C>
@@ -50,7 +51,12 @@ where
 
 impl<C> InvocationInterceptor for PricingPreflightInterceptor<C>
 where
-    C: PricingCatalog + PricingDefaultRegionProvider + Send + Sync + 'static,
+    C: PricingCatalog
+        + PricingDefaultRegionProvider
+        + UpstreamAccountRouteCatalog
+        + Send
+        + Sync
+        + 'static,
 {
     fn name(&self) -> &str {
         "pricing_preflight"
@@ -67,7 +73,7 @@ where
             }
 
             let price_service = PriceService::new();
-            let meters = meters_for_pricing(invocation);
+            let meters = meters_for_pricing(self.catalog.as_ref(), invocation);
             for meter in meters {
                 let resolution = resolve_price(
                     &price_service,
@@ -159,7 +165,12 @@ where
 
 impl<C> InvocationInterceptor for PricingFinalizationInterceptor<C>
 where
-    C: PricingCatalog + PricingDefaultRegionProvider + Send + Sync + 'static,
+    C: PricingCatalog
+        + PricingDefaultRegionProvider
+        + UpstreamAccountRouteCatalog
+        + Send
+        + Sync
+        + 'static,
 {
     fn name(&self) -> &str {
         "pricing_finalization"
@@ -300,53 +311,16 @@ fn requires_complete_pricing(invocation: &Invocation, meter: &BillingMeter) -> b
     }
 }
 
-/// Returns billing meters that require pricing resolution based on the billing mode.
-fn meters_for_pricing(invocation: &Invocation) -> Vec<BillingMeter> {
-    let mut meters = Vec::new();
-    match invocation.billing.mode {
-        BillingMode::Free => {}
-        BillingMode::Composite => {
-            if let Some(meter) = invocation.billing.meter.clone() {
-                meters.push(meter);
-            }
-            meters.push(BillingMeter::LlmOutputToken);
-            meters.push(BillingMeter::LlmCacheReadToken);
-        }
-        BillingMode::ExternalUsageLine => match invocation.billing.quantity_source {
-            BillingQuantitySource::FixedRequest => {
-                meters.push(BillingMeter::ApiRequest);
-            }
-            BillingQuantitySource::AdapterUsageLines => {
-                meters.push(BillingMeter::ApiResult);
-                meters.push(BillingMeter::ApiItem);
-                meters.push(BillingMeter::ApiRequest);
-            }
-            _ => {
-                if let Some(meter) = invocation.billing.meter.clone() {
-                    meters.push(meter);
-                }
-                meters.push(BillingMeter::ApiResult);
-                meters.push(BillingMeter::ApiItem);
-                meters.push(BillingMeter::ApiRequest);
-            }
-        },
-        _ => {
-            if let Some(meter) = invocation.billing.meter.clone() {
-                meters.push(meter);
-            }
-        }
-    }
-    dedupe_meters(meters)
-}
-
-fn dedupe_meters(meters: Vec<BillingMeter>) -> Vec<BillingMeter> {
-    let mut deduped = Vec::new();
-    for meter in meters {
-        if !deduped.contains(&meter) {
-            deduped.push(meter);
-        }
-    }
-    deduped
+/// 需要计价解析的计量单位集合。
+///
+/// 身份由 `pricing_identity` 唯一决定：先取路由声明的计量档，再与
+/// sdkwork-models 目录为该资源键定义的官方费率计量单位对账；目录与声明完全
+/// 无交集时以目录为准。预检与结算都走这里，保证两侧算的是同一组口径。
+fn meters_for_pricing<C>(catalog: &C, invocation: &Invocation) -> Vec<BillingMeter>
+where
+    C: PricingCatalog,
+{
+    resolve_pricing_identity(catalog, invocation).meters
 }
 
 fn dedupe_quotes<'a>(
@@ -378,7 +352,12 @@ fn resolve_price<C>(
     usage_line: Option<&InvocationUsageLine>,
 ) -> Result<PriceResolution, InvocationError>
 where
-    C: PricingCatalog + PricingDefaultRegionProvider + Send + Sync + 'static,
+    C: PricingCatalog
+        + PricingDefaultRegionProvider
+        + UpstreamAccountRouteCatalog
+        + Send
+        + Sync
+        + 'static,
 {
     let account = invocation
         .account
@@ -388,8 +367,24 @@ where
         .subject
         .api_key_id
         .ok_or_else(|| pricing_error("pricing requires api key context"))?;
-    let catalog_key = priced_catalog_key(invocation, catalog_key_override)?;
-    let dimensions = pricing_dimensions(invocation, &meter, usage_line);
+    let catalog_key = priced_catalog_key(catalog, invocation, catalog_key_override)?;
+    // 与路由规划同一处权威：档位按目录声明与目录报价取交集解析，预检与结算必须
+    // 注入同一个 `tier_code`，否则预检通过的资源会在结算时因缺维度而"无价"。
+    // 按 `meter` 分别解析：同一个模型不同计量单位挂在不同的档位维度上
+    // （`video_output_second` 按分辨率档、`video_result` 按时长档），用同一个档位
+    // 覆盖全部计量单位会把其中一支全部过滤掉。
+    let pricing_tier_decision = catalog.video_pricing_tier(
+        &catalog_key,
+        &invocation.resource.api_code,
+        &meter,
+        requested_resolution(invocation).as_deref(),
+    );
+    let dimensions = pricing_dimensions(
+        invocation,
+        &meter,
+        usage_line,
+        pricing_tier_decision.tier_code(),
+    );
     // 账号未显式指定 region（空或 global）时，回退到该模型配置的默认计费
     // region，使多 region 模型仍按正确的地域价格计费；未配置默认 region 则
     // 保持账号原值，历史行为不变。默认 region 同时挂到资源上，作为价格解析
@@ -528,32 +523,31 @@ where
     regions.len() >= 2 && has_cn
 }
 
-fn priced_catalog_key(
+fn priced_catalog_key<C>(
+    catalog: &C,
     invocation: &Invocation,
     catalog_key_override: Option<&str>,
-) -> Result<String, InvocationError> {
+) -> Result<String, InvocationError>
+where
+    C: PricingCatalog,
+{
     if let Some(catalog_key) = catalog_key_override
         .map(str::trim)
         .filter(|value| !value.is_empty())
     {
         return Ok(catalog_key.to_owned());
     }
-    if should_price_by_route_key_only(invocation) {
-        return route_key_catalog_key(invocation);
+    // 定价键的唯一权威是 `pricing_identity`：它与计价预检、路由规划读到的是
+    // 同一个键，因此"预检放行的账号 ⇒ 结算必然能解析出同一资源"。历史上
+    // 这里对 API 资源类路由无条件取 route key，导致厂商原生媒体路由（route
+    // key 是 api code，如 `kling.text_to_video`）拿 api code 去目录查价，
+    // 直接 `model not found`。
+    let identity = resolve_pricing_identity(catalog, invocation);
+    let catalog_key = identity.catalog_key.trim();
+    if catalog_key.is_empty() {
+        return Err(pricing_error("pricing requires a resource catalog key"));
     }
-
-    [
-        invocation.resource.requested_model_catalog_key.as_deref(),
-        invocation.resource.requested_model.as_deref(),
-        Some(invocation.resource.route_key.as_str()),
-        Some(invocation.resource.api_code.as_str()),
-    ]
-    .into_iter()
-    .flatten()
-    .map(str::trim)
-    .find(|value| !value.is_empty())
-    .map(str::to_owned)
-    .ok_or_else(|| pricing_error("pricing requires a resource catalog key"))
+    Ok(catalog_key.to_owned())
 }
 
 pub(super) fn quote_from_resolution(
@@ -616,6 +610,7 @@ fn pricing_dimensions(
     invocation: &Invocation,
     meter: &BillingMeter,
     usage_line: Option<&InvocationUsageLine>,
+    pricing_tier_code: Option<&str>,
 ) -> PricingDimensionContext {
     let mut dimensions = PricingDimensionContext::new()
         .with_value(
@@ -629,7 +624,16 @@ fn pricing_dimensions(
     if let InvocationBody::Json(body) = &invocation.request.body {
         for (dimension_code, pointers) in [
             ("tier_code", &["/tier_code", "/service_tier", "/tier"][..]),
-            ("quality", &["/quality", "/output/quality"][..]),
+            // `quality` is the vendor's quality-mode knob. `mode` is Kling's spelling of that
+            // knob — the digital-human endpoint documents it as exactly a quality choice
+            // (`std`：标准模式，性价比高 / `pro`：专家模式（高品质）) and the official price table
+            // quotes the two levels separately, so the catalog conditions those rates on it.
+            // No rate in the whole catalog used `quality` before this pointer was added, so
+            // extending the list cannot re-price any request that already resolved.
+            (
+                "quality",
+                &["/quality", "/output/quality", "/mode"][..],
+            ),
             ("resolution", &["/resolution", "/size", "/output/size"][..]),
             (
                 "duration_seconds",
@@ -645,6 +649,11 @@ fn pricing_dimensions(
                 dimensions.insert(dimension_code, value.clone());
             }
         }
+    }
+    // 目录声明的计价档位优先于请求体里的 `tier_code`：请求体里的值由调用方
+    // 自行填写，目录声明才是计费依据；两者一致时无差别，不一致时以目录为准。
+    if let Some(tier_code) = pricing_tier_code.map(str::trim).filter(|v| !v.is_empty()) {
+        dimensions.insert("tier_code", serde_json::json!(tier_code));
     }
     add_meter_dimensions(&mut dimensions, meter, usage_line);
     if dimensions.get("context_tokens").is_none() {
@@ -794,19 +803,6 @@ fn should_price_by_route_key_only(invocation: &Invocation) -> bool {
             .map(str::trim)
             .filter(|value| !value.is_empty())
             .is_none()
-}
-
-fn route_key_catalog_key(invocation: &Invocation) -> Result<String, InvocationError> {
-    [
-        Some(invocation.resource.route_key.as_str()),
-        Some(invocation.resource.api_code.as_str()),
-    ]
-    .into_iter()
-    .flatten()
-    .map(str::trim)
-    .find(|value| !value.is_empty())
-    .map(str::to_owned)
-    .ok_or_else(|| pricing_error("pricing requires a resource catalog key"))
 }
 
 #[cfg(test)]
@@ -1001,5 +997,87 @@ mod tests {
 
     fn clear_region_env() {
         std::env::remove_var(sdkwork_cloudrouter_config::deployment::ENV_REGION_CODE);
+    }
+
+    /// The digital-human endpoint picks its price level with `mode` (`std`/`pro`) instead of a
+    /// resolution, so the catalog conditions those two rates on `quality` — the same dimension
+    /// the router already had a pointer list for, but which no rate used before. The router
+    /// only supplies a dimension it holds a pointer for, so with `quality` reading just
+    /// `/quality` and `/output/quality` the pro rate could never match and every pro request
+    /// would be refused as unpriced. This pins the pointer, not the price.
+    #[test]
+    fn kling_avatar_mode_reaches_the_quality_dimension() {
+        use crate::application::invocation::{
+            InvocationAuthType, InvocationBilling, InvocationRequest, InvocationResource,
+            InvocationSubject,
+        };
+        use crate::domain::{BillingOwnerKind, RoutingCapability};
+
+        fn invocation_with_body(body: serde_json::Value) -> Invocation {
+            Invocation::new(
+                InvocationRequest::new(
+                    axum::http::Method::POST,
+                    "/v1/videos/avatar/image2video",
+                )
+                .with_body(InvocationBody::Json(body)),
+                InvocationSubject {
+                    auth_type: InvocationAuthType::GatewayApiKey,
+                    api_key_id: Some(1),
+                    api_key_name_snapshot: None,
+                    tenant_id: 10,
+                    organization_id: 20,
+                    user_id: 30,
+                    billing_organization_id: 0,
+                    billing_owner: BillingOwnerKind::Personal,
+                    account_group_id: Some(1),
+                    account_group_code: Some("group-1".to_owned()),
+                    pricing_plan_code: None,
+                    roles: Vec::new(),
+                    scopes: Vec::new(),
+                },
+                InvocationResource::model_call(
+                    "kuaishou/kling-ai-avatar-v2",
+                    "kling.avatar",
+                    RoutingCapability::Video,
+                    AiRouteModelRequirement::Required,
+                )
+                .with_requested_model("kling-ai-avatar-v2"),
+                InvocationBilling::free(),
+            )
+        }
+
+        let pro = invocation_with_body(serde_json::json!({
+            "model_name": "kling-ai-avatar-v2",
+            "mode": "pro"
+        }));
+        let dimensions = pricing_dimensions(
+            &pro,
+            &BillingMeter::VideoOutputSecond,
+            None,
+            None,
+        );
+        assert_eq!(
+            Some(&serde_json::json!("pro")),
+            dimensions.get("quality"),
+            "`mode` must reach the `quality` dimension, otherwise the pro rate can never match"
+        );
+
+        // `mode` is optional at the vendor and defaults to `std`, which is why the catalog also
+        // publishes an unconditional rate at the default-mode price: leaving `quality` unset is
+        // what makes that rate the one that matches, and materialising a default here would
+        // instead make the request match nothing.
+        let without_mode = invocation_with_body(serde_json::json!({
+            "model_name": "kling-ai-avatar-v2"
+        }));
+        let dimensions = pricing_dimensions(
+            &without_mode,
+            &BillingMeter::VideoOutputSecond,
+            None,
+            None,
+        );
+        assert!(
+            dimensions.get("quality").is_none(),
+            "an omitted `mode` must leave `quality` unset so the default-mode rate matches"
+        );
     }
 }

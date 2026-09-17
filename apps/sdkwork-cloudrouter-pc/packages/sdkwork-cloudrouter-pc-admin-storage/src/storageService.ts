@@ -48,17 +48,21 @@ export function getStorageProviderAdminService(): StorageProviderAdminService {
 
 export type StorageProviderRecord = StorageProviderView;
 
-/** 服务商更新（drive 契约：未提供的字段保持不变）。 */
-export type StorageProviderUpdateInput = {
-  name?: string;
-  endpointUrl?: string;
-  region?: string;
-  bucket?: string;
-  pathStyle?: boolean;
-  strictTls?: boolean;
-  credentialRef?: string;
-  status?: string;
-};
+/**
+ * 服务商更新（drive 契约：未提供的字段保持不变）。
+ *
+ * 直接取自共享服务的签名，不再手抄一份子集：手抄的版本漏掉了
+ * `providerAccountId`，于是 cloudrouter 的存储服务商无法像 drive 那样
+ * 绑定一个可复用的账号中心账号——同一份契约只在一处声明，就不会再漏。
+ */
+export type StorageProviderUpdateInput = Parameters<StorageProviderAdminService['updateProvider']>[1];
+
+/** 账号中心：可复用服务商账号的查询入参。 */
+export type StorageProviderAccountsListInput = Parameters<StorageProviderAdminService['listProviderAccounts']>[0];
+/** 账号中心：登记一个可复用账号（含访问密钥对）的入参。 */
+export type StorageProviderAccountCreateInput = Parameters<StorageProviderAdminService['createProviderAccount']>[0];
+/** 账号中心：账号视图。 */
+export type StorageProviderAccountRecord = Awaited<ReturnType<StorageProviderAdminService['listProviderAccounts']>>[number];
 
 export async function backendStorageProvidersList() {
   return getStorageProviderAdminService().listProviders();
@@ -78,6 +82,26 @@ export async function backendStorageProviderDelete(providerId: string) {
 
 export async function backendStorageProviderHealthCheck(providerId: string) {
   return getStorageProviderAdminService().testProvider(providerId);
+}
+
+/** 凭证轮换：只替换 credentialRef，其余字段由 drive 契约保持不变。 */
+export async function backendStorageProviderRotateCredential(providerId: string, credentialRef: string) {
+  return getStorageProviderAdminService().rotateCredential(providerId, credentialRef);
+}
+
+/**
+ * 账号中心：列出可复用的服务商账号，供存储服务商绑定。
+ *
+ * 这是「一个账号应用到各业务」的入口：同一个阿里云账号既可以是存储服务商的
+ * 凭证来源，也可以是其它云能力资源的凭证来源，账号只在账号中心维护一份。
+ */
+export async function backendStorageProviderAccountsList(input?: StorageProviderAccountsListInput) {
+  return getStorageProviderAdminService().listProviderAccounts(input);
+}
+
+/** 账号中心：直接登记一个可复用账号 + 访问密钥对，省去先去账号中心建号的往返。 */
+export async function backendStorageProviderAccountCreate(input: StorageProviderAccountCreateInput) {
+  return getStorageProviderAdminService().createProviderAccount(input);
 }
 
 export type StorageProviderCreateInput = Parameters<StorageProviderAdminService['createProvider']>[0];

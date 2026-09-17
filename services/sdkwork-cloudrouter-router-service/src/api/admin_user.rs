@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{json_created_response, no_content_response, problem_from_wire_code};
 use crate::application::{ApiKeySecretGenerator, ApiKeySecretHasher};
-use crate::domain::{DecimalValue, DomainError, GatewayApiKey};
+use crate::domain::{DecimalValue, DomainError, GatewayApiKey, DEFAULT_ACCOUNT_GROUP_CODE};
 use crate::ports::{
     AccountGroupBindingInput, AdminUserApiKeyItem, AdminUserSubject, CreateGatewayApiKeyCommand,
     DeleteGatewayApiKeyForOrganizationCommand, EnsureDefaultUpstreamAccountGroupCommand,
@@ -23,7 +23,6 @@ const HASH_ALG_HMAC_SHA256: &str = "HMAC_SHA256";
 const SECRET_VERSION: i64 = 1;
 const IDEMPOTENCY_KEY_HEADER: &str = "Idempotency-Key";
 const MAX_API_KEY_NAME_LEN: usize = 128;
-const DEFAULT_ACCOUNT_GROUP_CODE: &str = "default-group";
 const DEFAULT_ACCOUNT_GROUP_NAME: &str = "Default";
 const DEFAULT_PRICING_PLAN_CODE: &str = "standard";
 

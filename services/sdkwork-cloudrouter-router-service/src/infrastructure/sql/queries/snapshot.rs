@@ -1557,6 +1557,37 @@ ORDER BY rate.priority ASC, rate.effective_from DESC, rate.id DESC
 "#
     }
 
+    /// Loads the catalog's declared video pricing tiers.
+    ///
+    /// `ai_model_video_profile` is where sdkwork-models names the tier a video
+    /// request is billed against (`resolutionTierCode = res_1080p`), and most
+    /// video rates in `pricing_rate` are conditional on exactly that
+    /// `tier_code`. Without this projection the gateway has no way to supply
+    /// the dimension, and every conditional video rate is filtered out as
+    /// "no price published" even though the price exists.
+    ///
+    /// `catalog_key` is the *profile* key (`kuaishou/kling-v3/t2v_range_1080p`);
+    /// rates are published under `model_catalog_key` (`kuaishou/kling-v3`), so
+    /// that is the join key returned here.
+    pub fn load_model_video_profiles() -> &'static str {
+        r#"
+SELECT
+    COALESCE(NULLIF(profile.model_catalog_key, ''), profile.catalog_key) AS model_catalog_key,
+    profile.generation_mode,
+    profile.resolution,
+    profile.resolution_tier_code,
+    profile.duration_tier_code,
+    COALESCE(profile.duration_tier_codes::text, '[]') AS duration_tier_codes_json,
+    COALESCE(profile.pricing_tier_codes::text, '[]') AS pricing_tier_codes_json,
+    profile.is_default,
+    profile.sort_order
+FROM ai_model_video_profile profile
+WHERE profile.status = 1
+  AND profile.deleted_at IS NULL
+ORDER BY profile.model_catalog_key ASC, profile.sort_order ASC, profile.id ASC
+"#
+    }
+
     /// Loads the configured default billing region per model, scoped by
     /// tenant/organization. Used by the billing engine to fall back to the
     /// default region when an account carries no explicit region for a

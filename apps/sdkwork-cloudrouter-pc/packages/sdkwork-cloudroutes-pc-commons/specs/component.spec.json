@@ -225,10 +225,9 @@
         "getter": "getSdkworkAppbaseBackendSdkClient",
         "dependencyApiSurface": "sdkwork-iam-backend-sdk",
         "runtimeIntegration": {
-          "mode": "same-origin-mounted",
-          "sameOriginAllowed": true,
-          "baseUrlEnv": "VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL",
-          "fallbackBaseUrlEnv": "VITE_CLOUDROUTER_BACKEND_API_BASE_URL",
+          "mode": "external-service",
+          "sameOriginAllowed": false,
+          "requiredBaseUrlEnv": "VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL",
           "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
           "tokenManager": "cloud-router-global"
         }
@@ -243,10 +242,9 @@
         "getter": "getSdkworkMessagingAppSdkClient",
         "dependencyApiSurface": "sdkwork-messaging-app-sdk",
         "runtimeIntegration": {
-          "mode": "same-origin-mounted",
-          "sameOriginAllowed": true,
-          "baseUrlEnv": "VITE_SDKWORK_MESSAGING_APP_API_BASE_URL",
-          "fallbackBaseUrlEnv": "VITE_CLOUDROUTER_APP_API_BASE_URL",
+          "mode": "external-service",
+          "sameOriginAllowed": false,
+          "requiredBaseUrlEnv": "VITE_SDKWORK_MESSAGING_APP_API_BASE_URL",
           "commonBaseUrlEnv": "PORTAL_PUBLIC_SDK_BASE_URL",
           "tokenManager": "cloud-router-global"
         }

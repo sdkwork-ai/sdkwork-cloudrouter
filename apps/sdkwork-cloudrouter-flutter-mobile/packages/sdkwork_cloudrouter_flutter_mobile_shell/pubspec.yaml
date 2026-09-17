@@ -1,0 +1,17 @@
+name: sdkwork_cloudrouter_flutter_mobile_shell
+description: SDKWork CloudRouter Flutter mobile shell package
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  sdkwork_cloudrouter_flutter_mobile_commons:
+    path: ../sdkwork_cloudrouter_flutter_mobile_commons
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter

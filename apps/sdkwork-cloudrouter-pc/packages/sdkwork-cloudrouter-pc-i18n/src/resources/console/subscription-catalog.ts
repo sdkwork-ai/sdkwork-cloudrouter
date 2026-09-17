@@ -33,7 +33,7 @@ export const consoleSubscriptionCatalogMessages = {
     "load_failed": "加载失败",
     "retry": "重试",
     "choose_suitable_plan": "选择合适你的套餐，或直接",
-    "buy_points": "购买算力积分",
+    "buy_points": "购买算力额度",
     "redeem_vip": "会员兑换",
     "unlock_infinite": "订阅特权，解锁无限创作可能",
     "coming_soon": "敬请期待",

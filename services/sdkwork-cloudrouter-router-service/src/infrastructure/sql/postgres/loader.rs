@@ -17,7 +17,7 @@ use crate::infrastructure::sql::model_catalog_import::{
 use crate::infrastructure::sql::postgres::error::PostgresCatalogLoadError;
 use crate::infrastructure::sql::postgres::row_mapping;
 use crate::infrastructure::sql::routing_config_change::AI_ROUTING_CONFIG_SCOPE;
-use crate::infrastructure::sql::rows::GatewayApiKeyRow;
+use crate::infrastructure::sql::rows::{GatewayApiKeyRow, ModelVideoProfileRow};
 use crate::infrastructure::sql::PricingCatalogSql;
 use crate::ports::{
     ApiKeyManagementReadFuture, GatewayApiKeyListPage, GatewayApiKeyManagementReadStore,
@@ -125,6 +125,7 @@ impl PostgresPricingCatalogLoader {
         let rows = PricingCatalogRows {
             vendors: database_rows.vendors,
             models: database_rows.models,
+            model_video_profiles: load_model_video_profiles(&mut *tx).await?,
             // Model routes are derived from the effective resource entitlements carried by
             // upstream account routes. Keeping a second SQL authority here would allow the two
             // snapshots to disagree and would reintroduce the retired channel tables.
@@ -365,11 +366,81 @@ fn default_circuit_breaker_recovery_window_seconds() -> i64 {
     i64::try_from(DEFAULT_PROVIDER_CIRCUIT_BREAKER_RECOVERY_WINDOW_SECONDS).unwrap_or(i64::MAX)
 }
 
+/// Loads the catalog's declared video pricing tiers inside the catalog load
+/// transaction.
+///
+/// Unlike the gate diagnosis this is not best-effort: a missing tier table
+/// would silently make every conditional video rate unpriceable, so a failure
+/// fails the snapshot load instead of degrading to an empty index.
+async fn load_model_video_profiles<'e, E>(
+    executor: E,
+) -> Result<Vec<ModelVideoProfileRow>, PostgresCatalogLoadError>
+where
+    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
+{
+    let rows = sqlx::query(PricingCatalogSql::load_model_video_profiles())
+        .fetch_all(executor)
+        .await
+        .map_err(PostgresCatalogLoadError::from)?;
+    use sqlx::Row;
+    rows.into_iter()
+        .map(|row| {
+            Ok(ModelVideoProfileRow {
+                model_catalog_key: row.try_get("model_catalog_key")?,
+                generation_mode: row.try_get("generation_mode")?,
+                resolution: row.try_get("resolution")?,
+                resolution_tier_code: row.try_get("resolution_tier_code")?,
+                duration_tier_code: row.try_get("duration_tier_code")?,
+                duration_tier_codes: parse_string_array(
+                    &row.try_get::<String, _>("duration_tier_codes_json")?,
+                    "ai_model_video_profile.duration_tier_codes",
+                )?,
+                pricing_tier_codes: parse_string_array(
+                    &row.try_get::<String, _>("pricing_tier_codes_json")?,
+                    "ai_model_video_profile.pricing_tier_codes",
+                )?,
+                is_default: row.try_get("is_default")?,
+                sort_order: row.try_get("sort_order")?,
+            })
+        })
+        .collect::<Result<Vec<_>, sqlx::Error>>()
+        .map_err(PostgresCatalogLoadError::from)
+}
+
+/// 解析 jsonb 字符串数组列。目录里的 `durationTierCodes` / `pricingTierCodes`
+/// 是可选字段，落库后为 `NULL` 或 `[]`；非数组或含非字符串元素视为目录数据损坏，
+/// 而不是静默丢档位——丢档位会让"有价却说无价"重新出现。
+fn parse_string_array(value: &str, field: &str) -> Result<Vec<String>, sqlx::Error> {
+    let decoded = serde_json::from_str::<serde_json::Value>(value).map_err(|error| {
+        sqlx::Error::Decode(
+            format!("{field} is not valid json: {error}").into(),
+        )
+    })?;
+    let serde_json::Value::Array(items) = decoded else {
+        return Err(sqlx::Error::Decode(
+            format!("{field} must be a json array").into(),
+        ));
+    };
+    items
+        .into_iter()
+        .map(|item| {
+            item.as_str()
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(str::to_owned)
+                .ok_or_else(|| {
+                    sqlx::Error::Decode(
+                        format!("{field} entries must be non-empty strings").into(),
+                    )
+                })
+        })
+        .collect()
+}
+
 /// Runs the per-gate account-pool diagnosis inside the catalog load
 /// transaction. The caller treats failures as best-effort (degrading to no
 /// diagnosis) so the snapshot refresh itself is never blocked by it.
-async fn diagnose_upstream_route_gates<'e, E>(
-    executor: E,
+async fn diagnose_upstream_route_gates<'e, E>(    executor: E,
 ) -> Result<UpstreamRouteGateDiagnosis, PostgresCatalogLoadError>
 where
     E: sqlx::Executor<'e, Database = sqlx::Postgres>,

@@ -16,7 +16,10 @@
 
 use std::sync::Arc;
 
-use super::{Invocation, InvocationError, InvocationResource};
+use super::{
+    apply_pricing_identity, resolve_pricing_identity, Invocation, InvocationError,
+    InvocationResource,
+};
 use crate::application::AuthenticatedApiKeyContext;
 #[cfg(test)]
 use crate::domain::BillingOwnerKind;
@@ -90,6 +93,7 @@ where
         context: AuthenticatedApiKeyContext,
     ) -> Result<(), InvocationError> {
         self.apply_persisted_route_kind(invocation);
+        self.apply_pricing_identity(invocation);
         match RouteKind::of(&invocation.resource) {
             RouteKind::Model => super::route_planning::plan_model_route_pipeline(
                 self.catalog.as_ref(),
@@ -102,6 +106,34 @@ where
                 context,
             ),
         }
+    }
+
+    /// 应用目录驱动的定价身份（定价资源键 + 计费计量单位）。
+    ///
+    /// 必须在派发之前落定：目录若改写了路由声明的计量单位，用量抽取与结算
+    /// 都要按目录口径计量，而它们读的都是 `invocation.billing`。放在这里
+    /// （路由类型落定之后、具体规划之前）可让预检、路由、用量、结算共享同一
+    /// 个身份，消除"预检按一种口径、结算按另一种口径"的双源。
+    fn apply_pricing_identity(&self, invocation: &mut Invocation) {
+        let identity = resolve_pricing_identity(self.catalog.as_ref(), invocation);
+        if identity.overrides_declared_meters() {
+            tracing::debug!(
+                stage = "routing_pipeline",
+                route_key = %invocation.resource.route_key,
+                api_code = %invocation.resource.api_code,
+                requested_model = %invocation.resource.requested_model.as_deref().unwrap_or(""),
+                catalog_key = %identity.catalog_key,
+                key_source = ?identity.key_source,
+                meter_source = ?identity.meter_source,
+                meters = ?identity
+                    .meters
+                    .iter()
+                    .map(|meter| meter.code())
+                    .collect::<Vec<_>>(),
+                "catalog redefined the billing meters for this route; rebasing pricing identity"
+            );
+        }
+        apply_pricing_identity(invocation, &identity);
     }
 
     /// 应用资源管理持久化的 `route_kind`（`ai_resource.route_kind`）。

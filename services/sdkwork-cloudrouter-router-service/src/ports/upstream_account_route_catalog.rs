@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::domain::UpstreamAccountRoute;
+use crate::domain::{BillingMeter, UpstreamAccountRoute};
 use crate::ports::AdminLlmProtocolConfig;
 
 use super::{PricingCatalog, PricingDefaultRegionProvider};
@@ -154,6 +154,88 @@ pub struct AccountModelAccess {
     pub whitelist: Vec<VendorModelListEntry>,
 }
 
+/// 目录对「某个模型的某个计量单位」的视频计价档位裁决结果。
+///
+/// 由 `UpstreamAccountRouteCatalog::video_pricing_tier` 返回。`tier_code` 非空
+/// 当且仅当目录的档位声明与费率报价**相交**；否则 `gap` 说明两处目录数据哪里
+/// 对不上，调用方据此报精确缺口，而不是猜一个档位。
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct VideoPricingTierDecision {
+    /// 目录声明且该计量单位确有费率的档位。`None` = 无法确定。
+    pub tier_code: Option<String>,
+    /// 该计量单位下目录实际报价的档位全集（已排序），仅供诊断。
+    pub priced_tier_codes: Vec<String>,
+    /// 该模型该生成模式下目录声明的档位全集（已排序），仅供诊断。
+    pub declared_tier_codes: Vec<String>,
+    /// 无法确定档位的原因。`tier_code` 为 `Some` 时必为 `None`。
+    pub gap: Option<VideoPricingTierGap>,
+}
+
+impl VideoPricingTierDecision {
+    /// 目录未携带档位/费率表时的"未知"结果（内存目录默认实现）。
+    pub fn unknown() -> Self {
+        Self::default()
+    }
+
+    pub fn tier_code(&self) -> Option<&str> {
+        self.tier_code.as_deref()
+    }
+
+    /// 面向调用失败信息的一句话缺口说明。已确定档位时返回 `None`。
+    pub fn gap_description(&self) -> Option<String> {
+        let gap = self.gap.as_ref()?;
+        let priced = join_tier_codes(&self.priced_tier_codes);
+        let declared = join_tier_codes(&self.declared_tier_codes);
+        Some(match gap {
+            VideoPricingTierGap::ApiCodeIsNotAGenerationMode { api_code } => format!(
+                "sdkwork-models models no generation mode for api code {api_code}, so no video pricing profile can match it"
+            ),
+            VideoPricingTierGap::NoProfileForGenerationMode { generation_mode } => format!(
+                "sdkwork-models declares no video pricing profile for generation mode {generation_mode} on this model"
+            ),
+            VideoPricingTierGap::MeterHasNoTierConditionedRate { meter } => format!(
+                "sdkwork-models publishes no tier_code-conditioned rate for meter {meter} on this model, so every declared tier ({declared}) is unpriceable"
+            ),
+            VideoPricingTierGap::DeclaredTierNotPriced { .. } => format!(
+                "sdkwork-models declares tier(s) {declared} for this generation mode but publishes rates only for tier(s) {priced}, so no declared tier can be selected"
+            ),
+        })
+    }
+}
+
+/// 目录两处档位数据对不上的具体形态。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum VideoPricingTierGap {
+    /// api code 的最后一段不是目录的 `generationMode` 词汇（例如
+    /// `kling.avatar`、`kling.motion_control`）。目录没有为这类端点建模档位。
+    ApiCodeIsNotAGenerationMode { api_code: String },
+    /// api code 对应上了生成模式，但该模型在这个模式下没有 profile。
+    NoProfileForGenerationMode { generation_mode: String },
+    /// 该计量单位在该模型下没有任何带 `tier_code` 条件的费率。
+    MeterHasNoTierConditionedRate { meter: String },
+    /// profile 声明的档位与费率报价的档位不相交。
+    DeclaredTierNotPriced { declared: Vec<String>, priced: Vec<String> },
+}
+
+/// `["a", "b"]`、`[]`、`["a", …+3]`：既给出可核对的前几项，又不让错误信息无界。
+fn join_tier_codes(codes: &[String]) -> String {
+    const SHOWN: usize = 6;
+    if codes.is_empty() {
+        return "[]".to_owned();
+    }
+    let head = codes
+        .iter()
+        .take(SHOWN)
+        .cloned()
+        .collect::<Vec<_>>()
+        .join(", ");
+    if codes.len() > SHOWN {
+        format!("[{head}, …+{}]", codes.len() - SHOWN)
+    } else {
+        format!("[{head}]")
+    }
+}
+
 pub trait UpstreamAccountRouteCatalog: PricingCatalog + PricingDefaultRegionProvider {
     fn shared_upstream_account_routes(&self) -> Arc<[UpstreamAccountRoute]>;
 
@@ -244,6 +326,44 @@ pub trait UpstreamAccountRouteCatalog: PricingCatalog + PricingDefaultRegionProv
             true
         });
         vendors
+    }
+
+    /// 解析资源在 sdkwork-models 目录里声明的**计价档位**（`tier_code`）。
+    ///
+    /// 目录把视频类费率条件化在 `tier_code` 维度上（实测目录内 520 条费率带该
+    /// 条件），例如 `kuaishou/kling-v3` 的 global 费率全部要求
+    /// `tier_code ∈ {res_720p, res_1080p, res_4k, ...}`。调用方若不提供该维度，
+    /// `select_rate` 会把全部候选过滤干净，最终报
+    /// `official reference price not found ... meter video_output_second`——明明
+    /// 有价却说无价。
+    ///
+    /// 档位不是一个可以猜的字符串：它同时由**两处目录数据**共同决定，缺一不可。
+    ///
+    /// * `ai_model_video_profile` 声明这个模型在这个生成模式下有哪些档位
+    ///   （`resolutionTierCode` / `durationTierCode` / `durationTierCodes` /
+    ///   `pricingTierCodes`）；
+    /// * `pricing_rate` 的 `tier_code` 条件值声明这个**计量单位**实际按哪些档位
+    ///   报价。
+    ///
+    /// 两处对不上时目录本身是坏的，而恰恰有大量模型对不上：全库有 41 个视频模型
+    /// 的 profile 声明档位与费率档位不相交（例如 `kuaishou/kling-3.0-turbo` 声明
+    /// `res_1080p`，费率却只报 `audio_res_1080p`/`audio_res_720p`）。此时**只能
+    /// 报缺口、不能选一个**——按错误的档位计价比"有诊断的缺口"更糟，何况档位之间
+    /// 单价差异很大（`res_1080p` 0.112/秒 vs `audio_res_1080p` 0.168/秒）。
+    ///
+    /// 因此返回值是 `VideoPricingTierDecision`：档位 + 双方集合 + 缺口原因。档位
+    /// 非空当且仅当「目录声明的档位确实被该计量单位报价」。
+    ///
+    /// 默认实现返回"未知"：内存目录（测试用）不携带档位表与费率表，行为与改动前
+    /// 一致。
+    fn video_pricing_tier(
+        &self,
+        _catalog_key: &str,
+        _api_code: &str,
+        _meter: &BillingMeter,
+        _resolution: Option<&str>,
+    ) -> VideoPricingTierDecision {
+        VideoPricingTierDecision::unknown()
     }
 
     /// 解析资源的**持久化路由类型**（`ai_resource.route_kind`）。

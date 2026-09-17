@@ -168,12 +168,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
-        "/kling/v1/videos/motion-control",
-        "Videos/kling",
-        "klingCreateMotionControl",
-    ),
-    HttpRoute::api_key_or_dual_token(
-        HttpMethod::Post,
         "/kling/v1/videos/generations",
         "Videos/kling",
         "klingCreateVideoGeneration",
@@ -183,6 +177,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/kling/v1/videos/generations/{task_id}",
         "Videos/kling",
         "klingRetrieveVideoGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/kling/v1/videos/motion-control",
+        "Videos/kling",
+        "klingCreateMotionControl",
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
@@ -198,6 +198,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
+        "/minimax/v1/music_generation",
+        "Audio/minimax",
+        "minimaxCreateMusicGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
         "/nano-banana/v1/images/generations",
         "Images/nano-banana",
         "nanoBananaCreateImageGeneration",
@@ -207,12 +213,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/nano-banana/v1/images/generations/{task_id}",
         "Images/nano-banana",
         "nanoBananaRetrieveImageGeneration",
-    ),
-    HttpRoute::api_key_or_dual_token(
-        HttpMethod::Post,
-        "/minimax/v1/music_generation",
-        "Audio/minimax",
-        "minimaxCreateMusicGeneration",
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,

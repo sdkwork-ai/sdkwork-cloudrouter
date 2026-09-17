@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "ES2022"
+    ],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "types": []
+  },
+  "include": [
+    "src",
+    "packages/sdkwork-cloudrouter-mp-core/src",
+    "packages/sdkwork-cloudrouter-mp-commons/src",
+    "packages/sdkwork-cloudrouter-mp-shell/src",
+    "packages/sdkwork-cloudrouter-mp-i18n/src",
+    "packages/sdkwork-cloudrouter-mp-console-dashboard/src",
+    "packages/sdkwork-cloudrouter-mp-console-usage/src",
+    "packages/sdkwork-cloudrouter-mp-console-api-keys/src",
+    "packages/sdkwork-cloudrouter-mp-console-catalog/src"
+  ]
+}

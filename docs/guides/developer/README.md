@@ -47,7 +47,7 @@ cmd /c "`"$env:VSINSTALLDIR\VC\Auxiliary\Build\vcvars64.bat`" >nul 2>&1 && set" 
 ```
 
 A Build Tools install outside the default `C:\Program Files (x86)\Microsoft Visual Studio`
-root (as on this machine, where the toolset lives in `D:\programs\vs-buildtools` and the SDK
+root (as on this machine, where the toolset lives in a `<drive>:\programs\vs-buildtools` directory and the SDK
 in `D:\Windows Kits\10`) is invisible to `vswhere` and to any registry-based MSVC
 auto-detection, so nothing derives these paths on its own — set them explicitly.
 Environment variables only reach processes started **after** the change, so restart terminals

@@ -11,6 +11,9 @@ use sdkwork_iam_bootstrap::{
     DEFAULT_IAM_TENANT_SQL_ID as DEFAULT_IAM_TENANT_ID,
 };
 
+use crate::application::{
+    UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext,
+};
 use crate::infrastructure::sql::account_rate_card::sync_legacy_account_group_rate_cards;
 
 const MANIFEST_JSON: &str = include_str!("../../../../../data/ai-routing/install-manifest.json");
@@ -35,7 +38,63 @@ const SYSTEM_DATA_SCOPE: i32 = 1;
 const DEFAULT_ADMIN_DATA_SCOPE: i32 = 1;
 const MAX_SEED_UUID_LENGTH: usize = 64;
 const DEFAULT_OPENAI_BASE_URL: &str = "https://api.openai.com/v1";
-const DEFAULT_ADMIN_ROUTING_TOPOLOGY_SEED_SOURCE: &str = "default-admin-routing-topology-seed.v5|openai-default|default-group|official.openai.full|openai|official|openai_compatible|https://api.openai.com/v1|vendor-modality-groups|i18n-zh-en|price_first|prepay";
+
+/// Account group code of the seeded default **mixed** account group.
+///
+/// The value is the canonical
+/// [`crate::domain::DEFAULT_ACCOUNT_GROUP_CODE`]; this alias only names the
+/// *role* the seed gives it, so a reader of the installer sees why the code
+/// exists. The code is a cross-crate contract, not a local label:
+///
+/// * the auth-token channel resolves every signed-in session through
+///   `domain::select_default_account_group_for_subject`, whose second step
+///   matches this code (the first step being the `is_default` flag this seed
+///   sets),
+/// * the account-route selector then requires an exact
+///   `binding.account_group_id == group_id` match.
+///
+/// A rename on any side silently de-routes the whole signed-in user base.
+const DEFAULT_MIXED_ACCOUNT_GROUP_CODE: &str = crate::domain::DEFAULT_ACCOUNT_GROUP_CODE;
+/// Fingerprint of the seeded routing topology. It feeds `source_hash`, which
+/// the installer compares to decide whether an already-installed environment
+/// needs its seed re-imported, so it must be bumped whenever the topology the
+/// seed writes changes.
+///
+/// `v8` adds `default-mixed-group-vendor-skeleton`: the default mixed group now
+/// grants every vendor's resource group and holds every vendor default account
+/// as a member, so auth-token (app-session) traffic can reach all seven
+/// content-generation capabilities instead of only the OpenAI-shaped ones.
+const DEFAULT_ADMIN_ROUTING_TOPOLOGY_SEED_SOURCE: &str = "default-admin-routing-topology-seed.v8|vendor-default-accounts|default-group|default-mixed-group-vendor-skeleton|official.openai.full|openai|official|openai_compatible|https://api.openai.com/v1|vendor-modality-groups|i18n-zh-en|price_first|prepay";
+
+/// Environment values for which the bundled vendor default accounts are seeded
+/// in the *enabled* state. Everywhere else (production and any unrecognised
+/// lifecycle) they are seeded disabled, so an operator must explicitly attach
+/// real credentials before billable vendor traffic can leave the gateway.
+const DEV_LIKE_INSTALL_ENVIRONMENTS: [&str; 3] = ["development", "test", "staging"];
+
+/// Placeholder credential value written for a bundled vendor default account.
+///
+/// The credential must be *present* for the account to survive the routing
+/// snapshot's credential gate, but it is deliberately not a usable vendor key:
+/// a real call made with it is rejected by the vendor, which is the expected
+/// residual until an operator replaces it through the admin surface.
+fn default_account_placeholder_secret(vendor_code: &str) -> String {
+    format!("sk-dev-{vendor_code}-placeholder")
+}
+
+/// Endpoint code used by every bundled vendor default account. One endpoint per
+/// vendor is enough: the vendor host is what the account resolves, and the
+/// vendor-native path is carried by the request, not by the endpoint.
+const DEFAULT_VENDOR_ENDPOINT_CODE: &str = "official-global";
+
+/// Auth method code shared by every bundled vendor default account.
+const DEFAULT_VENDOR_AUTH_METHOD_CODE: &str = "api_key";
+
+/// Routing priority and weight for bundled vendor default accounts. They match
+/// the OpenAI seed so seeded vendors compete on equal footing under the
+/// `price_first` strategy.
+const DEFAULT_VENDOR_ACCOUNT_PRIORITY: i32 = 100;
+const DEFAULT_VENDOR_ACCOUNT_ROUTING_WEIGHT: i32 = 100;
 
 #[derive(Debug)]
 pub(crate) enum AiRoutingSeedLoadError {
@@ -176,24 +235,183 @@ struct DefaultAdminUpstreamAccountGroupSeed {
     is_default: bool,
 }
 
-static DEFAULT_ADMIN_UPSTREAM_ACCOUNTS: [DefaultAdminUpstreamAccountSeed; 1] =
-    [DefaultAdminUpstreamAccountSeed {
-        supplier_code: "openai",
+/// Legacy admin-topology upstream account seed.
+///
+/// This path predates `DEFAULT_VENDOR_UPSTREAM_ACCOUNTS` and used to be the
+/// only account the seed created. It is now empty on purpose: OpenAI is a
+/// vendor like every other content-generation provider, so it is seeded by the
+/// vendor path below, which is environment-aware and issues a credential.
+///
+/// Keeping the former `openai-default` entry here would mean two seed paths
+/// writing the same account row on every run. The admin path runs first and
+/// always writes `status = DISABLED_STATUS`, so it would silently undo the
+/// vendor path's environment-based enablement, leaving the default OpenAI
+/// account permanently disabled while its group reported a member.
+///
+/// The array and its consumers are retained (rather than deleted) so a future
+/// admin-only account that is *not* a content-generation vendor still has a
+/// home, and so the topology-completeness check keeps its shape.
+static DEFAULT_ADMIN_UPSTREAM_ACCOUNTS: [DefaultAdminUpstreamAccountSeed; 0] = [];
+
+/// Per-vendor default upstream account for the vendor-modality account groups
+/// derived from the bundled resource catalog.
+///
+/// The seed derives one account group per (vendor, modality) pair, but a group
+/// with no member and no credential is an empty pool: it passes every static
+/// gate and still cannot route, because the routing snapshot requires a group
+/// member, an enabled account, a resolvable base URL and an active credential.
+/// Historically only OpenAI had an account, so every other content-generation
+/// modality (music / voice / sound effects / digital human / motion mimicry)
+/// resolved to "no upstream account routes are configured".
+///
+/// Each entry here closes that hole for one vendor: the seed upserts the
+/// supplier, an `official-global` endpoint pointing at the vendor's real host, a
+/// `api_key` auth method, the account itself, and a placeholder credential, then
+/// binds the account into every derived account group for that vendor. The
+/// credential is a placeholder on purpose (see
+/// `default_account_placeholder_secret`).
+struct DefaultVendorUpstreamAccountSeed {
+    vendor_code: &'static str,
+    supplier_name: &'static str,
+    supplier_display_name_i18n: &'static str,
+    adapter_code: &'static str,
+    protocol_code: &'static str,
+    base_url: &'static str,
+    account_code: &'static str,
+    account_name: &'static str,
+}
+
+/// Vendors that must ship a routable default account so that every bundled
+/// content-generation capability has a live route out of the box in a
+/// development-like environment.
+///
+/// Covers both the nine third-party vendors behind the non-OpenAI content
+/// modalities (image / video / music / voice) and the two OpenAI-shaped vendors
+/// whose own derived groups would otherwise stay empty pools. The existing
+/// `DEFAULT_ADMIN_UPSTREAM_ACCOUNTS` entry only wired the hardcoded
+/// `default-group`, so `openai.*` and `openai_compatible.*` had no member.
+///
+/// The set is validated against the bundled resource catalog at seed load time:
+/// a vendor listed here that the catalog does not declare, or a derived
+/// vendor-modality group with no account here, is a load error rather than a
+/// silent empty pool.
+const DEFAULT_VENDOR_UPSTREAM_ACCOUNTS: [DefaultVendorUpstreamAccountSeed; 11] = [
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "openai",
         supplier_name: "OpenAI",
-        supplier_type: "official",
+        supplier_display_name_i18n: "{\"en-US\":\"OpenAI\",\"zh-CN\":\"OpenAI\"}",
         adapter_code: "openai",
         protocol_code: "openai_compatible",
-        endpoint_code: "official-global",
-        endpoint_name: "OpenAI Official Global",
         base_url: DEFAULT_OPENAI_BASE_URL,
-        auth_method_code: "api_key",
         account_code: "openai-default",
         account_name: "OpenAI Default",
-        account_type: "standard",
-        supplier_display_name_i18n: "{\"en-US\":\"OpenAI\",\"zh-CN\":\"OpenAI\"}",
-        priority: 100,
-        routing_weight: 100,
-    }];
+    },
+    DefaultVendorUpstreamAccountSeed {
+        // OpenAI-compatible aggregators are reached through the same sealed
+        // credential the dedicated supplier carries, so the group is never an
+        // empty pool. `base_url` is the canonical OpenAI-compatible host: an
+        // operator repointing this account at a real aggregator only edits the
+        // endpoint row, not the seed.
+        vendor_code: "openai_compatible",
+        supplier_name: "OpenAI Compatible",
+        supplier_display_name_i18n: "{\"en-US\":\"OpenAI Compatible\",\"zh-CN\":\"OpenAI 兼容\"}",
+        adapter_code: "openai_compatible",
+        protocol_code: "openai_compatible",
+        base_url: DEFAULT_OPENAI_BASE_URL,
+        account_code: "openai-compatible-default",
+        account_name: "OpenAI Compatible Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "gemini",
+        supplier_name: "Gemini",
+        supplier_display_name_i18n: "{\"en-US\":\"Gemini\",\"zh-CN\":\"谷歌 Gemini\"}",
+        adapter_code: "gemini",
+        protocol_code: "gemini_native",
+        base_url: "https://generativelanguage.googleapis.com",
+        account_code: "gemini-default",
+        account_name: "Gemini Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "anthropic",
+        supplier_name: "Anthropic",
+        supplier_display_name_i18n: "{\"en-US\":\"Anthropic\",\"zh-CN\":\"Anthropic\"}",
+        adapter_code: "anthropic",
+        protocol_code: "anthropic_messages",
+        base_url: "https://api.anthropic.com",
+        account_code: "anthropic-default",
+        account_name: "Anthropic Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "kling",
+        supplier_name: "Kling",
+        supplier_display_name_i18n: "{\"en-US\":\"Kling\",\"zh-CN\":\"可灵\"}",
+        adapter_code: "kling",
+        protocol_code: "kling_native",
+        base_url: "https://api-beijing.klingai.com",
+        account_code: "kling-default",
+        account_name: "Kling Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "jimeng",
+        supplier_name: "Jimeng",
+        supplier_display_name_i18n: "{\"en-US\":\"Jimeng\",\"zh-CN\":\"即梦\"}",
+        adapter_code: "jimeng",
+        protocol_code: "jimeng_native",
+        base_url: "https://visual.volcengineapi.com",
+        account_code: "jimeng-default",
+        account_name: "Jimeng Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "volcengine",
+        supplier_name: "Volcengine",
+        supplier_display_name_i18n: "{\"en-US\":\"Volcengine\",\"zh-CN\":\"火山引擎\"}",
+        adapter_code: "volcengine",
+        protocol_code: "volcengine_ark",
+        base_url: "https://ark.cn-beijing.volces.com",
+        account_code: "volcengine-default",
+        account_name: "Volcengine Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "vidu",
+        supplier_name: "Vidu",
+        supplier_display_name_i18n: "{\"en-US\":\"Vidu\",\"zh-CN\":\"Vidu\"}",
+        adapter_code: "vidu",
+        protocol_code: "vidu_native",
+        base_url: "https://api.vidu.cn",
+        account_code: "vidu-default",
+        account_name: "Vidu Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "minimax",
+        supplier_name: "MiniMax",
+        supplier_display_name_i18n: "{\"en-US\":\"MiniMax\",\"zh-CN\":\"MiniMax\"}",
+        adapter_code: "minimax",
+        protocol_code: "minimax_native",
+        base_url: "https://api.minimax.chat",
+        account_code: "minimax-default",
+        account_name: "MiniMax Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "suno",
+        supplier_name: "Suno",
+        supplier_display_name_i18n: "{\"en-US\":\"Suno\",\"zh-CN\":\"Suno\"}",
+        adapter_code: "suno",
+        protocol_code: "suno_native",
+        base_url: "https://api.sunoapi.org",
+        account_code: "suno-default",
+        account_name: "Suno Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "elevenlabs",
+        supplier_name: "ElevenLabs",
+        supplier_display_name_i18n: "{\"en-US\":\"ElevenLabs\",\"zh-CN\":\"ElevenLabs\"}",
+        adapter_code: "elevenlabs",
+        protocol_code: "elevenlabs_native",
+        base_url: "https://api.elevenlabs.io",
+        account_code: "elevenlabs-default",
+        account_name: "ElevenLabs Default",
+    },
+];
 
 /// Modality whitelist for account groups, mirroring SUPPORTED_MODALITIES in the
 /// admin upstream account group route.
@@ -264,7 +482,7 @@ fn modality_group_type(modality: &str) -> &'static str {
 }
 
 /// Extra resource groups granted to the default mixed account group on top of
-/// its primary `resource_group_code`.
+/// its primary `resource_group_code` and the derived vendor skeleton.
 ///
 /// The group/supplier resource intersection (`matched_resource_scope`) drops
 /// every resource the group does not also grant. OpenAI-compatible vendors
@@ -276,7 +494,7 @@ const DEFAULT_GROUP_EXTRA_RESOURCE_GROUP_CODES: [&str; 1] = ["api.claude.code"];
 
 fn default_admin_upstream_account_group() -> DefaultAdminUpstreamAccountGroupSeed {
     DefaultAdminUpstreamAccountGroupSeed {
-        group_code: "default-group".to_owned(),
+        group_code: DEFAULT_MIXED_ACCOUNT_GROUP_CODE.to_owned(),
         group_name: "账号默认分组".to_owned(),
         group_name_i18n: "{\"en-US\":\"账号默认分组\",\"zh-CN\":\"账号默认分组\"}".to_owned(),
         group_type: "mixed",
@@ -293,13 +511,43 @@ fn default_admin_upstream_account_group() -> DefaultAdminUpstreamAccountGroupSee
 
 impl DefaultAdminUpstreamAccountGroupSeed {
     /// Resource groups granted to this account group: the primary grant, plus
-    /// curated extras for the default mixed group only.
+    /// curated extras and the full vendor skeleton for the default mixed group
+    /// only.
+    ///
+    /// The vendor skeleton is what makes the default group live up to its
+    /// `mixed` type. This seed marks the group `is_default`, which is exactly
+    /// the flag `domain::select_default_account_group_for_subject` consults
+    /// first, so **every** app-session (auth-token) request — i.e. every
+    /// signed-in end user driving the content-generation surfaces — resolves
+    /// onto this one group, and the account-route selector then requires an
+    /// exact `binding.account_group_id == group_id` match. So a default group
+    /// that grants only `official.openai.full` (plus the `api.claude.code`
+    /// patch) leaves the loader-visible apiScope of every non-OpenAI vendor
+    /// intersected away, and video / music / voice / sound effects / digital
+    /// human / motion mimicry all fail closed with 50201 "no upstream account
+    /// routes are configured" even though every account, credential and group
+    /// member is present and enabled.
+    ///
+    /// Deriving the skeleton from `VENDOR_RESOURCE_GROUP_BINDINGS` rather than
+    /// hand-listing it keeps a single source of truth: a new vendor (or a new
+    /// resource group for an existing vendor) is covered here automatically,
+    /// which is the "zero-patch per new vendor protocol" property the routing
+    /// design calls for.
     fn resource_group_codes(&self) -> Vec<&str> {
         if !self.is_default {
             return vec![self.resource_group_code.as_str()];
         }
         let mut codes = vec![self.resource_group_code.as_str()];
         codes.extend(DEFAULT_GROUP_EXTRA_RESOURCE_GROUP_CODES.iter().copied());
+        codes.extend(
+            VENDOR_RESOURCE_GROUP_BINDINGS
+                .iter()
+                .map(|(_, resource_group_code)| *resource_group_code),
+        );
+        // The primary grant is one of the vendor skeleton entries, so dedupe to
+        // keep the emitted binding list — and its fingerprint — stable.
+        let mut seen = std::collections::BTreeSet::new();
+        codes.retain(|code| seen.insert(*code));
         codes
     }
 }
@@ -373,7 +621,23 @@ impl AiRoutingSeedCatalog {
     }
 }
 
-pub(crate) async fn import_postgres_ai_routing_seed(pool: &PgPool) -> Result<(), sqlx::Error> {
+/// Imports the bundled AI routing seed.
+///
+/// `environment` selects whether the bundled *vendor default accounts* are
+/// seeded enabled: a development-like lifecycle (`development` / `test` /
+/// `staging`) gets routable defaults so every content-generation capability
+/// works out of the box, while `production` (and anything unrecognised) seeds
+/// them disabled and requires an operator to attach real credentials.
+///
+/// `credential_codec` is the upstream-credential secret codec the running
+/// gateway uses. When present, the seed seals a placeholder credential per
+/// vendor account; when absent, no credential is written (and the account is
+/// consequently not routable until an operator sets one).
+pub(crate) async fn import_postgres_ai_routing_seed(
+    pool: &PgPool,
+    environment: Option<&str>,
+    credential_codec: Option<&(dyn UpstreamCredentialSecretCodec + Send + Sync)>,
+) -> Result<(), sqlx::Error> {
     let catalog = AiRoutingSeedCatalog::load().map_err(json_decode_error)?;
     let mut tx = pool.begin().await?;
     import_postgres_api_endpoints(&mut tx, &catalog).await?;
@@ -383,6 +647,17 @@ pub(crate) async fn import_postgres_ai_routing_seed(pool: &PgPool) -> Result<(),
     import_postgres_resource_group_items(&mut tx, &catalog).await?;
     import_postgres_default_admin_upstream_topology(&mut tx, &catalog).await?;
     import_postgres_default_admin_routing_strategies(&mut tx).await?;
+
+    // Runs after the groups exist: it attaches the vendor default accounts to
+    // the derived vendor-modality groups.
+    import_postgres_default_vendor_upstream_accounts(
+        &mut tx,
+        &catalog,
+        seed_environment_enables_vendor_accounts(environment),
+        credential_codec,
+    )
+    .await?;
+
     let rate_card_effective_at = sqlx::query_scalar::<_, String>("SELECT CURRENT_TIMESTAMP::text")
         .fetch_one(&mut *tx)
         .await?;
@@ -391,6 +666,16 @@ pub(crate) async fn import_postgres_ai_routing_seed(pool: &PgPool) -> Result<(),
         .map_err(|error| sqlx::Error::Protocol(error.to_string()))?;
     tx.commit().await?;
     Ok(())
+}
+
+/// Whether the given install environment should seed the bundled vendor default
+/// accounts in the enabled state. `None` means the environment was not
+/// resolved, which is treated as production-like (disabled) so an unresolved
+/// install never ships live placeholder credentials.
+fn seed_environment_enables_vendor_accounts(environment: Option<&str>) -> bool {
+    environment
+        .map(|value| value.trim().to_ascii_lowercase())
+        .is_some_and(|value| DEV_LIKE_INSTALL_ENVIRONMENTS.contains(&value.as_str()))
 }
 
 pub(crate) async fn postgres_ai_routing_seed_complete(pool: &PgPool) -> Result<bool, sqlx::Error> {
@@ -1480,6 +1765,818 @@ async fn import_postgres_default_admin_upstream_topology(
     Ok(())
 }
 
+/// Seeds one routable upstream account per bundled vendor so that every derived
+/// vendor-modality account group becomes a non-empty pool.
+///
+/// Without this step the seed ships a complete taxonomy (resources, resource
+/// groups, account groups, endpoints) and exactly one account
+/// (`openai-default`), so any request classified onto a non-OpenAI vendor group
+/// fails closed with "no upstream account routes are configured" even though
+/// every static gate is green.
+///
+/// For each vendor the seed upserts, in dependency order:
+///
+/// 1. `ai_upstream_supplier` — the vendor itself.
+/// 2. `ai_upstream_supplier_endpoint` (`official-global`) — the vendor's real
+///    host, so the account resolves a base URL.
+/// 3. `ai_upstream_supplier_auth_method` (`api_key`, bearer transport).
+/// 4. `ai_upstream_account` — enabled only in a development-like environment.
+/// 5. `ai_upstream_account_credential` — a placeholder secret, sealed with the
+///    configured upstream-credential key ring so the runtime decoder accepts it.
+/// 6. `ai_resource_binding` (scope `supplier`) — grants the vendor's curated
+///    resource group to the supplier, mirroring the OpenAI entry.
+/// 7. `ai_upstream_account_group_member` — attaches the account to every derived
+///    account group for that vendor.
+///
+/// Idempotent: every statement upserts on the natural key, and an account that
+/// an operator has already re-configured is never rewritten (only revived).
+async fn import_postgres_default_vendor_upstream_accounts(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    catalog: &AiRoutingSeedCatalog,
+    enabled: bool,
+    credential_codec: Option<&(dyn UpstreamCredentialSecretCodec + Send + Sync)>,
+) -> Result<(), sqlx::Error> {
+    let vendor_modalities = vendor_account_group_modalities(catalog).map_err(json_decode_error)?;
+    let resource_group_codes: BTreeSet<&str> = catalog
+        .resource_groups
+        .iter()
+        .map(|group| group.group_code.as_str())
+        .collect();
+
+    for seed in DEFAULT_VENDOR_UPSTREAM_ACCOUNTS.iter() {
+        let modalities = vendor_modalities
+            .get(seed.vendor_code)
+            .ok_or_else(|| {
+                AiRoutingSeedLoadError::Validation(format!(
+                    "default vendor upstream account `{}` has no derivable account groups",
+                    seed.vendor_code
+                ))
+            })
+            .map_err(json_decode_error)?;
+        let resource_group_code = VENDOR_RESOURCE_GROUP_BINDINGS
+            .iter()
+            .find(|(code, _)| *code == seed.vendor_code)
+            .map(|(_, group_code)| *group_code)
+            .ok_or_else(|| {
+                AiRoutingSeedLoadError::Validation(format!(
+                    "default vendor upstream account `{}` has no resource group binding",
+                    seed.vendor_code
+                ))
+            })
+            .map_err(json_decode_error)?;
+        if !resource_group_codes.contains(resource_group_code) {
+            return Err(json_decode_error(AiRoutingSeedLoadError::Validation(
+                format!(
+                    "default vendor upstream account `{}` binds unknown resource group `{resource_group_code}`",
+                    seed.vendor_code
+                ),
+            )));
+        }
+        if modalities.is_empty() {
+            return Err(json_decode_error(AiRoutingSeedLoadError::Validation(
+                format!(
+                    "default vendor upstream account `{}` has an empty modality set",
+                    seed.vendor_code
+                ),
+            )));
+        }
+
+        let supplier_id = stable_seed_id(
+            "sdk-ai-upstream-supplier-id",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                seed.vendor_code,
+            ],
+        );
+        let metadata = seed_metadata(
+            catalog,
+            "default_vendor_upstream_supplier",
+            seed.vendor_code,
+            serde_json::json!({
+                "supplierCode": seed.vendor_code,
+                "accountCode": seed.account_code,
+                "initialAccountStatus": if enabled { "enabled" } else { "disabled" },
+                "seedPurpose": "content-generation-default-account",
+            }),
+        );
+        // The account row carries its own marker so the upsert below can tell a
+        // bundled vendor account (safe to converge to the environment's status)
+        // from an operator-configured one. It must differ from the admin path's
+        // `default_admin_upstream_supplier`, because openai is written by both
+        // paths and the admin path always runs first.
+        let account_metadata = seed_metadata(
+            catalog,
+            "default_vendor_upstream_account",
+            seed.account_code,
+            serde_json::json!({
+                "supplierCode": seed.vendor_code,
+                "accountCode": seed.account_code,
+                "initialAccountStatus": if enabled { "enabled" } else { "disabled" },
+                "seedPurpose": "content-generation-default-account",
+            }),
+        );
+
+        sqlx::query(
+            r#"
+            INSERT INTO ai_upstream_supplier (
+                id, uuid, tenant_id, organization_id, data_scope, status, metadata,
+                supplier_code, supplier_name, display_name, display_name_i18n, supplier_type,
+                adapter_code, protocol_code, environment, sort_order
+            ) VALUES (
+                $1, $2, $3, $4, $5, 1, $6::jsonb,
+                $7, $8, $8, $9::jsonb, 'official',
+                $10, $11, 1, $12
+            )
+            ON CONFLICT (tenant_id, organization_id, supplier_code) DO UPDATE SET
+                supplier_name = EXCLUDED.supplier_name,
+                display_name = EXCLUDED.display_name,
+                display_name_i18n = EXCLUDED.display_name_i18n,
+                adapter_code = EXCLUDED.adapter_code,
+                protocol_code = EXCLUDED.protocol_code,
+                environment = EXCLUDED.environment,
+                sort_order = EXCLUDED.sort_order,
+                status = EXCLUDED.status,
+                metadata = EXCLUDED.metadata,
+                deleted_at = NULL,
+                deleted_by = NULL
+            "#,
+        )
+        .bind(supplier_id)
+        .bind(stable_seed_uuid(
+            "sdk-ai-upstream-supplier",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                seed.vendor_code,
+            ],
+        ))
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(DEFAULT_ADMIN_DATA_SCOPE)
+        .bind(&metadata)
+        .bind(seed.vendor_code)
+        .bind(seed.supplier_name)
+        .bind(seed.supplier_display_name_i18n)
+        .bind(seed.adapter_code)
+        .bind(seed.protocol_code)
+        .bind(seeded_supplier_sort_order(seed.vendor_code))
+        .execute(&mut **tx)
+        .await?;
+
+        let supplier_id = sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT id
+            FROM ai_upstream_supplier
+            WHERE tenant_id = $1 AND organization_id = $2
+              AND supplier_code = $3 AND deleted_at IS NULL
+            "#,
+        )
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(seed.vendor_code)
+        .fetch_one(&mut **tx)
+        .await?;
+
+        let endpoint_id = stable_seed_id(
+            "sdk-ai-upstream-supplier-endpoint-id",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                seed.vendor_code,
+                DEFAULT_VENDOR_ENDPOINT_CODE,
+            ],
+        );
+        sqlx::query(
+            r#"
+            INSERT INTO ai_upstream_supplier_endpoint (
+                id, uuid, tenant_id, organization_id, data_scope, status, metadata,
+                supplier_id, supplier_code, endpoint_code, endpoint_name, base_url,
+                protocol_code, environment, priority, routing_weight
+            ) VALUES (
+                $1, $2, $3, $4, $5, 1, $6::jsonb,
+                $7, $8, $9, $10, $11,
+                $12, 1, $13, $14
+            )
+            ON CONFLICT (tenant_id, organization_id, supplier_id, endpoint_code) DO UPDATE SET
+                endpoint_name = EXCLUDED.endpoint_name,
+                base_url = EXCLUDED.base_url,
+                protocol_code = EXCLUDED.protocol_code,
+                environment = EXCLUDED.environment,
+                priority = EXCLUDED.priority,
+                routing_weight = EXCLUDED.routing_weight,
+                status = EXCLUDED.status,
+                metadata = EXCLUDED.metadata,
+                deleted_at = NULL,
+                deleted_by = NULL
+            "#,
+        )
+        .bind(endpoint_id)
+        .bind(stable_seed_uuid(
+            "sdk-ai-upstream-supplier-endpoint",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                seed.vendor_code,
+                DEFAULT_VENDOR_ENDPOINT_CODE,
+            ],
+        ))
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(DEFAULT_ADMIN_DATA_SCOPE)
+        .bind(&metadata)
+        .bind(supplier_id)
+        .bind(seed.vendor_code)
+        .bind(DEFAULT_VENDOR_ENDPOINT_CODE)
+        .bind(format!("{} Official", seed.supplier_name))
+        .bind(seed.base_url)
+        .bind(seed.protocol_code)
+        .bind(DEFAULT_VENDOR_ACCOUNT_PRIORITY)
+        .bind(DEFAULT_VENDOR_ACCOUNT_ROUTING_WEIGHT)
+        .execute(&mut **tx)
+        .await?;
+
+        let endpoint_id = sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT id
+            FROM ai_upstream_supplier_endpoint
+            WHERE tenant_id = $1 AND organization_id = $2
+              AND supplier_id = $3 AND endpoint_code = $4 AND deleted_at IS NULL
+            "#,
+        )
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(supplier_id)
+        .bind(DEFAULT_VENDOR_ENDPOINT_CODE)
+        .fetch_one(&mut **tx)
+        .await?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO ai_upstream_supplier_endpoint_health_state (
+                id, tenant_id, organization_id, supplier_id, endpoint_id,
+                health_status, consecutive_error_count
+            ) VALUES ($1, $2, $3, $4, $1, 0, 0)
+            ON CONFLICT (tenant_id, organization_id, endpoint_id) DO NOTHING
+            "#,
+        )
+        .bind(endpoint_id)
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(supplier_id)
+        .execute(&mut **tx)
+        .await?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO ai_upstream_supplier_auth_method (
+                id, uuid, tenant_id, organization_id, data_scope, status, metadata,
+                supplier_id, supplier_code, auth_method_code, auth_method_name,
+                auth_type, config_schema, runtime_auth_config, priority
+            ) VALUES (
+                $1, $2, $3, $4, $5, 1, $6::jsonb,
+                $7, $8, $9, 'API Key',
+                'api_key', '{"type":"object","required":["apiKey"],"properties":{"apiKey":{"type":"string","writeOnly":true}}}'::jsonb,
+                '{"credentialTransport":"bearer","defaultHeaders":{}}'::jsonb, $10
+            )
+            ON CONFLICT (tenant_id, organization_id, supplier_id, auth_method_code) DO UPDATE SET
+                auth_method_name = EXCLUDED.auth_method_name,
+                auth_type = EXCLUDED.auth_type,
+                config_schema = EXCLUDED.config_schema,
+                runtime_auth_config = EXCLUDED.runtime_auth_config,
+                priority = EXCLUDED.priority,
+                status = EXCLUDED.status,
+                metadata = EXCLUDED.metadata,
+                deleted_at = NULL,
+                deleted_by = NULL
+            "#,
+        )
+        .bind(stable_seed_id(
+            "sdk-ai-upstream-supplier-auth-method-id",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                seed.vendor_code,
+                DEFAULT_VENDOR_AUTH_METHOD_CODE,
+            ],
+        ))
+        .bind(stable_seed_uuid(
+            "sdk-ai-upstream-supplier-auth-method",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                seed.vendor_code,
+                DEFAULT_VENDOR_AUTH_METHOD_CODE,
+            ],
+        ))
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(DEFAULT_ADMIN_DATA_SCOPE)
+        .bind(&metadata)
+        .bind(supplier_id)
+        .bind(seed.vendor_code)
+        .bind(DEFAULT_VENDOR_AUTH_METHOD_CODE)
+        .bind(DEFAULT_VENDOR_ACCOUNT_PRIORITY)
+        .execute(&mut **tx)
+        .await?;
+
+        let account_id = stable_seed_id(
+            "sdk-ai-upstream-account-id",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                seed.account_code,
+            ],
+        );
+        sqlx::query(
+            r#"
+            INSERT INTO ai_upstream_account (
+                id, uuid, tenant_id, organization_id, data_scope, status, metadata,
+                supplier_id, supplier_code, preferred_endpoint_id,
+                account_code, account_name, account_type, auth_method_code,
+                credential_rotation_strategy, environment,
+                billing_mode, contract_cost_multiplier
+            ) VALUES (
+                $1, $2, $3, $4, $5, $6, $7::jsonb,
+                $8, $9, $10,
+                $11, $12, 'standard', $13,
+                'default', 1,
+                'prepay', 1.000000000000
+            )
+            ON CONFLICT (tenant_id, organization_id, account_code) DO UPDATE SET
+                -- Preserve an operator-configured account: refresh seed
+                -- metadata and revive a soft-deleted row. Rewriting supplier,
+                -- endpoint, auth method or status here would clobber admin
+                -- configuration and can violate the credential foreign key.
+                --
+                -- Exception: a row this seed itself created (recognised by the
+                -- vendor-account seed marker in its existing `metadata`) only
+                -- ever drifted because the install environment changed, so its
+                -- status is converged to the environment's intent. Without
+                -- this, flipping an install from production to development
+                -- left every bundled vendor account disabled forever and
+                -- re-seeding could never repair it.
+                --
+                -- This is safe because the vendor path is now the *only* writer
+                -- of these account rows: the legacy admin topology path seeds
+                -- none. An operator who edits an account replaces `metadata`,
+                -- which drops the marker and preserves their status.
+                status = CASE
+                    WHEN ai_upstream_account.metadata ->> 'itemType'
+                        = 'default_vendor_upstream_account'
+                    THEN EXCLUDED.status
+                    ELSE ai_upstream_account.status
+                END,
+                metadata = EXCLUDED.metadata,
+                deleted_at = NULL,
+                deleted_by = NULL
+            "#,
+        )
+        .bind(account_id)
+        .bind(stable_seed_uuid(
+            "sdk-ai-upstream-account",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                seed.account_code,
+            ],
+        ))
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(DEFAULT_ADMIN_DATA_SCOPE)
+        .bind(if enabled {
+            ACTIVE_STATUS
+        } else {
+            DISABLED_STATUS
+        })
+        .bind(&account_metadata)
+        .bind(supplier_id)
+        .bind(seed.vendor_code)
+        .bind(endpoint_id)
+        .bind(seed.account_code)
+        .bind(seed.account_name)
+        .bind(DEFAULT_VENDOR_AUTH_METHOD_CODE)
+        .execute(&mut **tx)
+        .await?;
+
+        let account_id = sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT id
+            FROM ai_upstream_account
+            WHERE tenant_id = $1 AND organization_id = $2
+              AND account_code = $3 AND deleted_at IS NULL
+            "#,
+        )
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(seed.account_code)
+        .fetch_one(&mut **tx)
+        .await?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO ai_upstream_account_health_state (
+                id, tenant_id, organization_id, account_id,
+                health_status, consecutive_error_count
+            ) VALUES ($1, $2, $3, $1, 0, 0)
+            ON CONFLICT (tenant_id, organization_id, account_id) DO NOTHING
+            "#,
+        )
+        .bind(account_id)
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .execute(&mut **tx)
+        .await?;
+
+        import_postgres_default_vendor_account_credential(
+            tx,
+            seed,
+            account_id,
+            enabled,
+            credential_codec,
+        )
+        .await?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO ai_resource_binding (
+                id, uuid, tenant_id, organization_id, data_scope, status, metadata,
+                binding_scope, supplier_id, supplier_code,
+                resource_id, resource_code, resource_group_code,
+                grant_type, priority
+            )
+            SELECT
+                $1, $2, $3, $4, $5, 1, $6::jsonb,
+                'supplier', $7, $8,
+                NULL, NULL, $9,
+                'allow', $10
+            ON CONFLICT (id) DO UPDATE SET
+                grant_type = EXCLUDED.grant_type,
+                priority = EXCLUDED.priority,
+                status = EXCLUDED.status,
+                metadata = EXCLUDED.metadata,
+                deleted_at = NULL,
+                deleted_by = NULL
+            "#,
+        )
+        .bind(stable_seed_id(
+            "sdk-ai-upstream-supplier-resource-id",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                seed.vendor_code,
+                resource_group_code,
+            ],
+        ))
+        .bind(stable_seed_uuid(
+            "sdk-ai-upstream-supplier-resource",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                seed.vendor_code,
+                resource_group_code,
+            ],
+        ))
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(DEFAULT_ADMIN_DATA_SCOPE)
+        .bind(&metadata)
+        .bind(supplier_id)
+        .bind(seed.vendor_code)
+        .bind(resource_group_code)
+        .bind(DEFAULT_VENDOR_ACCOUNT_PRIORITY)
+        .execute(&mut **tx)
+        .await?;
+
+        // Attach the account to every derived account group for this vendor so
+        // each group stops being an empty pool. The group's own resource grant
+        // already carries the modality scope, and the account deliberately has
+        // no account-scope binding, so the snapshot's second UNION branch
+        // inherits the group scope instead of intersecting it away.
+        for modality in modalities {
+            let group_code = format!("{}.{modality}", seed.vendor_code);
+            let account_group_id = sqlx::query_scalar::<_, i64>(
+                r#"
+                SELECT id
+                FROM ai_upstream_account_group
+                WHERE tenant_id = $1 AND organization_id = $2
+                  AND group_code = $3 AND deleted_at IS NULL
+                "#,
+            )
+            .bind(DEFAULT_IAM_TENANT_ID)
+            .bind(DEFAULT_IAM_ORGANIZATION_ID)
+            .bind(group_code.as_str())
+            .fetch_optional(&mut **tx)
+            .await?;
+            let Some(account_group_id) = account_group_id else {
+                // The group derives from the same catalog this function reads,
+                // so a miss means the catalog is internally inconsistent.
+                return Err(json_decode_error(AiRoutingSeedLoadError::Validation(
+                    format!(
+                        "default vendor upstream account `{}` targets missing account group `{group_code}`",
+                        seed.vendor_code
+                    ),
+                )));
+            };
+            let member_metadata = seed_metadata(
+                catalog,
+                "default_vendor_upstream_account_group_member",
+                &group_code,
+                serde_json::json!({
+                    "groupCode": group_code.as_str(),
+                    "accountCode": seed.account_code,
+                    "vendorCode": seed.vendor_code,
+                    "modality": modality.as_str(),
+                }),
+            );
+            sqlx::query(
+                r#"
+                INSERT INTO ai_upstream_account_group_member (
+                    id, uuid, tenant_id, organization_id, data_scope, status, metadata,
+                    account_group_id, account_id, priority, routing_weight, enabled
+                ) VALUES (
+                    $1, $2, $3, $4, $5, 1, $6::jsonb,
+                    $7, $8, $9, $10, TRUE
+                )
+                ON CONFLICT (tenant_id, organization_id, account_group_id, account_id) DO UPDATE SET
+                    priority = EXCLUDED.priority,
+                    routing_weight = EXCLUDED.routing_weight,
+                    enabled = EXCLUDED.enabled,
+                    status = EXCLUDED.status,
+                    metadata = EXCLUDED.metadata,
+                    deleted_at = NULL,
+                    deleted_by = NULL
+                "#,
+            )
+            .bind(stable_seed_id(
+                "sdk-ai-upstream-account-group-member-id",
+                &[
+                    &DEFAULT_IAM_TENANT_ID.to_string(),
+                    &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                    group_code.as_str(),
+                    seed.account_code,
+                ],
+            ))
+            .bind(stable_seed_uuid(
+                "sdk-ai-upstream-account-group-member",
+                &[
+                    &DEFAULT_IAM_TENANT_ID.to_string(),
+                    &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                    group_code.as_str(),
+                    seed.account_code,
+                ],
+            ))
+            .bind(DEFAULT_IAM_TENANT_ID)
+            .bind(DEFAULT_IAM_ORGANIZATION_ID)
+            .bind(DEFAULT_ADMIN_DATA_SCOPE)
+            .bind(&member_metadata)
+            .bind(account_group_id)
+            .bind(account_id)
+            .bind(DEFAULT_VENDOR_ACCOUNT_PRIORITY)
+            .bind(DEFAULT_VENDOR_ACCOUNT_ROUTING_WEIGHT)
+            .execute(&mut **tx)
+            .await?;
+        }
+
+        // Membership in the derived `{vendor}.{modality}` groups is necessary
+        // but not sufficient. Auth-token (app-session) requests never resolve
+        // one of those groups: the authenticator pins them to the default
+        // *mixed* group, and the selector then requires an exact
+        // `binding.account_group_id == group_id` match. A vendor account that
+        // is only a member of its own modality groups is therefore invisible to
+        // every signed-in end user, and the whole content-generation surface
+        // for that vendor fails closed with 50201.
+        //
+        // Binding the account into the default group as well — mirroring what
+        // the admin path does for `openai-default` — is what makes the default
+        // group a real mixed pool.
+        let default_group_id = sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT id
+            FROM ai_upstream_account_group
+            WHERE tenant_id = $1 AND organization_id = $2
+              AND group_code = $3 AND deleted_at IS NULL
+            "#,
+        )
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(DEFAULT_MIXED_ACCOUNT_GROUP_CODE)
+        .fetch_optional(&mut **tx)
+        .await?
+        .ok_or_else(|| {
+            json_decode_error(AiRoutingSeedLoadError::Validation(format!(
+                "default vendor upstream account `{}` targets missing default mixed account group `{DEFAULT_MIXED_ACCOUNT_GROUP_CODE}`",
+                seed.account_code
+            )))
+        })?;
+        let default_group_member_metadata = seed_metadata(
+            catalog,
+            "default_vendor_upstream_account_group_member",
+            DEFAULT_MIXED_ACCOUNT_GROUP_CODE,
+            serde_json::json!({
+                "groupCode": DEFAULT_MIXED_ACCOUNT_GROUP_CODE,
+                "accountCode": seed.account_code,
+                "vendorCode": seed.vendor_code,
+                "membership": "default-mixed-group",
+            }),
+        );
+        sqlx::query(
+            r#"
+            INSERT INTO ai_upstream_account_group_member (
+                id, uuid, tenant_id, organization_id, data_scope, status, metadata,
+                account_group_id, account_id, priority, routing_weight, enabled
+            ) VALUES (
+                $1, $2, $3, $4, $5, 1, $6::jsonb,
+                $7, $8, $9, $10, TRUE
+            )
+            ON CONFLICT (tenant_id, organization_id, account_group_id, account_id) DO UPDATE SET
+                priority = EXCLUDED.priority,
+                routing_weight = EXCLUDED.routing_weight,
+                enabled = EXCLUDED.enabled,
+                status = EXCLUDED.status,
+                metadata = EXCLUDED.metadata,
+                deleted_at = NULL,
+                deleted_by = NULL
+            "#,
+        )
+        .bind(stable_seed_id(
+            "sdk-ai-upstream-account-group-member-id",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                DEFAULT_MIXED_ACCOUNT_GROUP_CODE,
+                seed.account_code,
+            ],
+        ))
+        .bind(stable_seed_uuid(
+            "sdk-ai-upstream-account-group-member",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                DEFAULT_MIXED_ACCOUNT_GROUP_CODE,
+                seed.account_code,
+            ],
+        ))
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(DEFAULT_ADMIN_DATA_SCOPE)
+        .bind(&default_group_member_metadata)
+        .bind(default_group_id)
+        .bind(account_id)
+        .bind(DEFAULT_VENDOR_ACCOUNT_PRIORITY)
+        .bind(DEFAULT_VENDOR_ACCOUNT_ROUTING_WEIGHT)
+        .execute(&mut **tx)
+        .await?;
+    }
+
+    Ok(())
+}
+
+/// Seals and upserts the placeholder credential for one bundled vendor account.
+///
+/// The routing snapshot joins `ai_upstream_account_credential` on
+/// `status = 1 AND is_active`, and the runtime later decodes
+/// `secret_ciphertext` with the configured key ring, so the seeded row must
+/// carry a genuinely sealed value under the same AAD the codec uses. When no
+/// key ring is configured (no `SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING`)
+/// the credential is skipped: a row the runtime cannot decode is worse than a
+/// clearly-absent one, and the coverage probe will report the gap.
+async fn import_postgres_default_vendor_account_credential(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    seed: &DefaultVendorUpstreamAccountSeed,
+    account_id: i64,
+    enabled: bool,
+    credential_codec: Option<&(dyn UpstreamCredentialSecretCodec + Send + Sync)>,
+) -> Result<(), sqlx::Error> {
+    let Some(credential_codec) = credential_codec else {
+        return Ok(());
+    };
+    let credential_id = stable_seed_id(
+        "sdk-ai-upstream-account-credential-id",
+        &[
+            &DEFAULT_IAM_TENANT_ID.to_string(),
+            &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+            seed.account_code,
+            DEFAULT_VENDOR_AUTH_METHOD_CODE,
+        ],
+    );
+    let secret = default_account_placeholder_secret(seed.vendor_code);
+    let encoded = credential_codec
+        .encode_secret(
+            UpstreamCredentialSecretContext::new(
+                DEFAULT_IAM_TENANT_ID,
+                DEFAULT_IAM_ORGANIZATION_ID,
+                account_id,
+                credential_id,
+            ),
+            &secret,
+        )
+        .map_err(|error| {
+            sqlx::Error::Protocol(format!(
+                "failed to seal placeholder credential for `{}`: {}",
+                seed.vendor_code, error
+            ))
+        })?;
+    let masked_label = format!(
+        "{}***{}",
+        &secret[..secret.len().min(3)],
+        &secret[secret.len().saturating_sub(4)..]
+    );
+    let credential_metadata = credential_seed_metadata();
+    sqlx::query(
+        r#"
+        INSERT INTO ai_upstream_account_credential (
+            id, uuid, tenant_id, organization_id, data_scope, status,
+            version, metadata,
+            account_id, auth_method_code, credential_name,
+            secret_ciphertext, secret_key_id, secret_fingerprint, masked_label,
+            credential_version, priority, is_active
+        ) VALUES (
+            $1, $2, $3, $4, $5, $6,
+            0, $15::jsonb,
+            $7, $8, $9,
+            $10, $11, $12, $13,
+            1, $14, TRUE
+        )
+        ON CONFLICT (tenant_id, organization_id, account_id, credential_version) DO UPDATE SET
+            credential_name = EXCLUDED.credential_name,
+            secret_ciphertext = EXCLUDED.secret_ciphertext,
+            secret_key_id = EXCLUDED.secret_key_id,
+            secret_fingerprint = EXCLUDED.secret_fingerprint,
+            masked_label = EXCLUDED.masked_label,
+            priority = EXCLUDED.priority,
+            is_active = EXCLUDED.is_active,
+            -- Same environment-convergence rule as the account row: an operator
+            -- who rotated the credential replaces `metadata`, which drops the
+            -- seed marker, so their status survives a re-seed.
+            status = CASE
+                WHEN ai_upstream_account_credential.metadata ->> 'itemType'
+                    = 'default_vendor_upstream_account_credential'
+                THEN EXCLUDED.status
+                ELSE ai_upstream_account_credential.status
+            END,
+            deleted_at = NULL,
+            deleted_by = NULL
+        "#,
+    )
+    .bind(credential_id)
+    .bind(stable_seed_uuid(
+        "sdk-ai-upstream-account-credential",
+        &[
+            &DEFAULT_IAM_TENANT_ID.to_string(),
+            &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+            seed.account_code,
+            DEFAULT_VENDOR_AUTH_METHOD_CODE,
+        ],
+    ))
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(DEFAULT_IAM_ORGANIZATION_ID)
+    .bind(DEFAULT_ADMIN_DATA_SCOPE)
+    .bind(if enabled {
+        ACTIVE_STATUS
+    } else {
+        DISABLED_STATUS
+    })
+    .bind(account_id)
+    .bind(DEFAULT_VENDOR_AUTH_METHOD_CODE)
+    .bind(format!("{} Default Credential", seed.supplier_name))
+    .bind(encoded.ciphertext)
+    .bind(encoded.key_id)
+    .bind(encoded.fingerprint)
+    .bind(masked_label)
+    .bind(DEFAULT_VENDOR_ACCOUNT_PRIORITY)
+    .bind(&credential_metadata)
+    .execute(&mut **tx)
+    .await?;
+    Ok(())
+}
+
+/// Seed marker written to `ai_upstream_account_credential.metadata`.
+///
+/// The row has no catalog-backed metadata of its own, but the marker is what
+/// lets a re-seed tell "this credential is still the bundled placeholder" from
+/// "an operator rotated it". `itemType` is the same key `seed_metadata` emits,
+/// so the marker is recognisable with the same SQL predicate as every other
+/// seeded row.
+fn credential_seed_metadata() -> String {
+    serde_json::json!({
+        "itemType": "default_vendor_upstream_account_credential",
+        "source": "bundled",
+        "sourceHash": source_hash(),
+    })
+    .to_string()
+}
+
+/// Deterministic ordering for seeded vendor suppliers so the admin list is
+/// stable across re-seeds.
+fn seeded_supplier_sort_order(vendor_code: &str) -> i32 {
+    DEFAULT_VENDOR_UPSTREAM_ACCOUNTS
+        .iter()
+        .position(|seed| seed.vendor_code == vendor_code)
+        .map(|index| i32::try_from(index).unwrap_or(i32::MAX) + 1)
+        .unwrap_or(i32::MAX)
+}
+
 /// Seeds the default routing strategies that the account-group
 /// `routing_strategy_code` references. The price-first strategy is the
 /// default so a fresh install routes to the cheapest callable account without
@@ -2433,6 +3530,7 @@ mod tests {
             "vidu.video",
             "volcengine.image",
             "volcengine.video",
+            "volcengine.audio",
             "minimax.music",
             "minimax.audio",
             "suno.music",
@@ -2711,5 +3809,158 @@ mod tests {
             .map(|strategy| strategy.code)
             .collect();
         assert!(strategy_codes.contains("price_first"));
+    }
+
+    #[test]
+    fn every_derived_vendor_group_has_a_default_account() {
+        // The regression this guards: every vendor-modality group derived from
+        // the catalog must have a bundled default account, otherwise the group
+        // is an empty pool and every request routed to it fails closed with
+        // "no upstream account routes are configured".
+        let catalog = test_catalog();
+        let vendor_accounts: BTreeSet<&str> = DEFAULT_VENDOR_UPSTREAM_ACCOUNTS
+            .iter()
+            .map(|seed| seed.vendor_code)
+            .collect();
+        let groups = default_admin_upstream_account_groups(&catalog)
+            .expect("default account groups must derive");
+        let mut missing = Vec::new();
+        for group in &groups {
+            let Some(vendor_code) = group.vendor_code.as_deref() else {
+                continue;
+            };
+            if !vendor_accounts.contains(vendor_code) {
+                missing.push(group.group_code.clone());
+            }
+        }
+        assert!(
+            missing.is_empty(),
+            "derived account groups without a bundled default account: {missing:?}"
+        );
+    }
+
+    #[test]
+    fn default_vendor_accounts_are_unique_and_bound_to_known_vendors() {
+        let catalog = test_catalog();
+        let catalog_vendors: BTreeSet<&str> = catalog
+            .resources
+            .iter()
+            .filter(|resource| resource.resource_type == "vendor")
+            .filter_map(|resource| resource.vendor_code.as_deref())
+            .collect();
+        let mut account_codes = BTreeSet::new();
+        let mut vendor_codes = BTreeSet::new();
+        for seed in DEFAULT_VENDOR_UPSTREAM_ACCOUNTS.iter() {
+            assert!(
+                account_codes.insert(seed.account_code),
+                "duplicate default vendor account code {}",
+                seed.account_code
+            );
+            assert!(
+                vendor_codes.insert(seed.vendor_code),
+                "duplicate default vendor account for {}",
+                seed.vendor_code
+            );
+            assert!(
+                catalog_vendors.contains(seed.vendor_code),
+                "default vendor account {} is not declared by the bundled catalog",
+                seed.vendor_code
+            );
+            assert!(
+                seed.base_url.starts_with("https://"),
+                "default vendor account {} must use an https base URL",
+                seed.vendor_code
+            );
+        }
+    }
+
+    #[test]
+    fn default_vendor_account_passwords_are_placeholders() {
+        // A placeholder must never be mistakable for a real vendor key, and it
+        // must be non-empty so the credential row is well-formed.
+        for seed in DEFAULT_VENDOR_UPSTREAM_ACCOUNTS.iter() {
+            let secret = default_account_placeholder_secret(seed.vendor_code);
+            assert!(
+                secret.contains("placeholder"),
+                "{} placeholder secret must be self-describing",
+                seed.vendor_code
+            );
+            assert!(
+                secret.starts_with("sk-dev-"),
+                "{} placeholder secret must carry the dev marker",
+                seed.vendor_code
+            );
+        }
+    }
+
+    #[test]
+    fn vendor_accounts_seed_enabled_only_in_dev_like_environments() {
+        for environment in ["development", "test", "staging", "DEVELOPMENT", " Test "] {
+            assert!(
+                seed_environment_enables_vendor_accounts(Some(environment)),
+                "{environment} must seed enabled vendor accounts"
+            );
+        }
+        for environment in ["production", "Production", "provider", ""] {
+            assert!(
+                !seed_environment_enables_vendor_accounts(Some(environment)),
+                "{environment} must NOT seed enabled vendor accounts"
+            );
+        }
+        assert!(
+            !seed_environment_enables_vendor_accounts(None),
+            "an unresolved environment must default to disabled"
+        );
+    }
+
+    #[test]
+    fn vendor_account_marker_is_distinct_from_the_admin_path_marker() {
+        // Regression: openai is seeded by both the admin topology path and the
+        // vendor default-account path, and the admin path runs first. The
+        // vendor account upsert converges `status` only when the row still
+        // carries the *vendor* marker, so if the two paths shared a marker the
+        // pre-update metadata would match and the openai account would silently
+        // keep whatever status the admin path wrote (disabled).
+        let catalog = test_catalog();
+        let admin_marker = seed_metadata(
+            &catalog,
+            "default_admin_upstream_supplier",
+            "openai",
+            serde_json::json!({}),
+        );
+        let vendor_supplier_marker = seed_metadata(
+            &catalog,
+            "default_vendor_upstream_supplier",
+            "openai",
+            serde_json::json!({}),
+        );
+        let vendor_account_marker = seed_metadata(
+            &catalog,
+            "default_vendor_upstream_account",
+            "openai-default",
+            serde_json::json!({}),
+        );
+        let item_type = |raw: &str| {
+            serde_json::from_str::<Value>(raw)
+                .expect("seed metadata must be valid JSON")
+                .get("itemType")
+                .and_then(Value::as_str)
+                .expect("seed metadata must carry itemType")
+                .to_owned()
+        };
+        assert_ne!(
+            item_type(&vendor_account_marker),
+            item_type(&admin_marker),
+            "the vendor account marker must not collide with the admin path marker"
+        );
+        assert_ne!(
+            item_type(&vendor_account_marker),
+            item_type(&vendor_supplier_marker),
+            "the account marker must be distinguishable from the supplier marker"
+        );
+        assert_eq!(
+            item_type(&vendor_account_marker),
+            "default_vendor_upstream_account"
+        );
     }
 }

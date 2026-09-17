@@ -255,6 +255,19 @@ impl InvocationInterceptor for BillingSettlementInterceptor {
                 .load_cash_to_points_settings(context.clone())
                 .await
                 .map_err(billing_error)?;
+            // The provider outcome is checked before the amount on purpose. A
+            // vendor that rejected the call (401/403/4xx/5xx) produces no usage
+            // and therefore no billable amount **by construction**, so asking
+            // for one first reported "settlement did not produce a billable
+            // amount" for every rejected call — a gateway-sounding error message
+            // hiding a vendor-side rejection, which is the single most common
+            // outcome while credentials are still placeholders. Reporting the
+            // rejection is both accurate and actionable.
+            if !provider_response_succeeded(invocation) {
+                return Err(billing_error(
+                    "provider response was not successful; billable reservation will be refunded",
+                ));
+            }
             let Some(actual) = actual_amount(invocation, &settings) else {
                 tracing::warn!(
                     stage = "billing_settlement",
@@ -266,11 +279,6 @@ impl InvocationInterceptor for BillingSettlementInterceptor {
                     "settlement did not produce a billable amount",
                 ));
             };
-            if !provider_response_succeeded(invocation) {
-                return Err(billing_error(
-                    "provider response was not successful; billable reservation will be refunded",
-                ));
-            }
             if invocation.usage.usage_recording_failure_count > 0 {
                 // The provider has completed, but at least one usage fact was
                 // neither persisted nor accepted by the durable retry queue.

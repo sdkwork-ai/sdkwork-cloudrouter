@@ -70,7 +70,7 @@ export const consoleCoreMessages = {
     "console.tokenBank.businessTypes.gateway_invocation_billing": "Compute invocation billing",
     "console.tokenBank.businessTypes.usage_settlement": "Usage settlement",
     "console.tokenBank.businessTypes.token_bank_purchase_credit": "Compute Credits purchase",
-    "console.tokenBank.businessTypes.points_recharge": "Points recharge",
+    "console.tokenBank.businessTypes.points_recharge": "Compute Credits recharge",
     "console.tokenBank.businessTypes.refund": "Refund",
   },
   zh: {
@@ -142,7 +142,7 @@ export const consoleCoreMessages = {
     "console.tokenBank.businessTypes.gateway_invocation_billing": "网关调用计费",
     "console.tokenBank.businessTypes.usage_settlement": "用量结算",
     "console.tokenBank.businessTypes.token_bank_purchase_credit": "算力额度购买",
-    "console.tokenBank.businessTypes.points_recharge": "算力积分充值",
+    "console.tokenBank.businessTypes.points_recharge": "算力额度充值",
     "console.tokenBank.businessTypes.refund": "退款",
   },
 } satisfies I18nMessageBundle;

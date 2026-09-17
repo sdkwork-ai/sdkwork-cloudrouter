@@ -1,7 +1,12 @@
 mod billing_owner;
+mod upstream_account_group_selection;
 mod upstream_auth;
 
 pub use billing_owner::BillingOwnerKind;
+pub use upstream_account_group_selection::{
+    select_default_account_group_for_subject, upstream_account_group_in_subject_scope,
+    DefaultAccountGroupSelection, DefaultAccountGroupSelectionReason, DEFAULT_ACCOUNT_GROUP_CODE,
+};
 pub use sdkwork_models_catalog_service::domain::ResourceDefinition;
 pub use sdkwork_models_catalog_service::domain::{
     ensure_canonical_model_catalog_key, is_model_region_segment, model_catalog_scope_matches_key,

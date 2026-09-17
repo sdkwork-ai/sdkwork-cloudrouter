@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { fileURLToPath } from 'node:url';
 
 import {
   resolvePortalPackageModule,
@@ -10,12 +11,52 @@ import {
 const portalRoot = path.resolve(import.meta.dirname, '..');
 
 test('resolver falls back to the composed SDK facade when dist is missing', () => {
-  const importer = fileURLToPath(
-    new URL('../packages/sdkwork-cloudroutes-pc-commons/src/sdk-clients.ts', import.meta.url),
-  );
-  const resolved = resolvePortalPackageModule('@sdkwork/prompts-backend-sdk', portalRoot, importer);
+  // 这里曾经拿一个真实工作区包（`@sdkwork/prompts-backend-sdk`）当夹具，断言它的
+  // dist/ 不存在所以要回落到 src/。那个前提是环境状态而不是代码契约：任何人在
+  // 同仓里跑过一次 SDK 构建，dist/ 就出现了，这条断言随之变红——它测的是「谁
+  // 构建过」，不是解析器。改成自造夹具：清单固定把入口指向不存在的 dist，于是
+  // 断言只依赖解析逻辑本身。
+  const fixtureRoot = mkdtempSync(path.join(os.tmpdir(), 'portal-resolver-fixture-'));
+  try {
+    const packageDir = path.join(fixtureRoot, 'node_modules', '@sdkwork', 'portal-resolver-fixture');
+    mkdirSync(path.join(packageDir, 'src'), { recursive: true });
+    writeFileSync(
+      path.join(packageDir, 'package.json'),
+      `${JSON.stringify({
+        name: '@sdkwork/portal-resolver-fixture',
+        version: '0.0.0',
+        private: true,
+        type: 'module',
+        main: './dist/index.cjs',
+        module: './dist/index.js',
+        types: './dist/index.d.ts',
+        exports: {
+          '.': {
+            types: './dist/index.d.ts',
+            import: './dist/index.js',
+            require: './dist/index.cjs',
+          },
+        },
+      }, null, 2)}\n`,
+    );
+    writeFileSync(
+      path.join(packageDir, 'src', 'index.ts'),
+      'export const portalResolverFixture = true;\n',
+    );
+    const importer = path.join(fixtureRoot, 'app', 'consumer.ts');
+    mkdirSync(path.dirname(importer), { recursive: true });
+    writeFileSync(importer, "import { portalResolverFixture } from '@sdkwork/portal-resolver-fixture';\n");
 
-  assert.match(resolved ?? '', /[\\/]src[\\/]index\.ts$/u);
+    const resolved = resolvePortalPackageModule(
+      '@sdkwork/portal-resolver-fixture',
+      portalRoot,
+      importer,
+    );
+
+    assert.match(resolved ?? '', /[\\/]src[\\/]index\.ts$/u);
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
 });
 
 test('resolver resolves independent payment app SDK to its composed package source', () => {

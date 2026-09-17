@@ -1,0 +1,9 @@
+{
+  "desc": "SDKWork CloudRouter mini-program console",
+  "rules": [
+    {
+      "action": "allow",
+      "page": "*"
+    }
+  ]
+}

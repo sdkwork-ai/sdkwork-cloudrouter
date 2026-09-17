@@ -905,3 +905,2465 @@ cp /tmp/keep.json package.json
 | 真实厂商调用 | 需真实凭证与网络 | 仍未实证（最后一跳唯一未验证环节） |
 
 
+## 12. 第 7 轮：默认账号种子上线，七类能力全部有可路由账号（2026-09-16 夜 → 09-17 凌晨）
+
+### 12.1 结论速览
+
+| 能力 | 之前 | 现在 | 证据 |
+| --- | --- | --- | --- |
+| 图片生成 | 端到端可用 | 可用（回归保持） | `media_routing_e2e` 7/7 |
+| 视频生成 | 部分可用 | 可用 | `media_routing_e2e`（gemini/kling/vidu/volcengine/openai） |
+| 音乐 | 断（空池） | **有账号可路由** | `music_routing_*` 2/2（minimax / suno） |
+| 配音/TTS | 断（空池） | **有账号可路由** | `tts_routing_*` 2/2（elevenlabs / volcengine） |
+| 音效 | 断（空池） | **有账号可路由** | 归入 audio 分组（minimax/suno/volcengine/elevenlabs） |
+| 数字人 | 断（空池） | **有账号可路由** | `avatar_routing_*` 1/1（kling） |
+| 动作模仿 | 断（空池） | **有账号可路由** | `motion_routing_*` 2/2（kling / vidu） |
+
+> 口径说明：本节证明的是「**账号可被路由到、且凭证可解**」。「真实打到第三方 API
+> 并拿到成功响应」仍需真实密钥，属于 §11.8 那条仍未实证的最后一跳。
+
+### 12.2 真正的根因：不是「缺资源」，是「有分组、无账号」
+
+承 §11 的定性需要**更正**：此前把断链归为「seed 缺资源/资源组」，活体 DB 取证显示
+资源侧一直是齐的，断的是**账号侧**。
+
+- `derive_vendor_account_group_seeds()` 从 catalog 的 `vendor_code × modality_code`
+  自动派生 **27 个** `{vendor}.{modality}` 分组；
+- 而 `DEFAULT_ADMIN_UPSTREAM_ACCOUNTS` **硬编码只有 1 个账号**（`openai-default`），
+  且旧 seed **从不写 `ai_upstream_account_credential`**。
+
+结果：27 个分组里 26 个是**空池**。空池能通过全部静态门禁（分组存在、资源组存在、
+绑定存在），但请求必然以 `50201 no upstream account routes are configured` 失败 ——
+这正是「静态全绿、运行时全红」的成因。
+
+### 12.3 修复内容（`ai_routing_seed.rs` 为主）
+
+1. **新增 `DEFAULT_VENDOR_UPSTREAM_ACCOUNTS`（11 条）** —— 每家厂商一条默认账号种子，
+   含 supplier / `official-global` endpoint / `api_key` auth method / account /
+   credential / supplier-scope 资源绑定 / 每个派生分组的 group-member 绑定。
+   覆盖 openai、openai_compatible、gemini、anthropic、kling、jimeng、volcengine、
+   vidu、minimax、suno、elevenlabs。
+2. **新增凭证落库** `import_postgres_default_vendor_account_credential()` ——
+   用运行时同一 `UpstreamCredentialSecretCodec` 封存占位密钥
+   `sk-dev-<vendor>-placeholder`，AAD 绑定 `(tenant, org, account, credential)`，
+   因此运行时可解、且换 account 解不开。
+3. **环境门控** `seed_environment_enables_vendor_accounts()` ——
+   `development`/`test`/`staging` 置 `status=1`；`production` 与「环境未解析」置 0
+   （生产保守，绝不带占位凭证上线）。
+4. **`DatabaseInstaller` 增 `with_credential_secret_codec()`** ——
+   4 处构造点（edge-runtime ×2、app-api、backend-api）与 installer CLI 全部接线，
+   CLI 侧由 `upstream_credential_secret_codec_from_env()` 从密钥环构建。
+
+### 12.4 本轮撞到并修掉的三个真缺陷
+
+**B-1（P0）`import_postgres_default_vendor_accounts` 未接 environment/codec**
+首版签名漏了两个参数，导致「能建账号但不能建凭证、且永远用生产语义」。
+修：统一签名并改造 4 处调用点。
+
+**B-2（P0）两条 seed 路径争抢同一行 `openai-default`，导致它永远停在 disabled**
+这是本轮最隐蔽的一个。`import_postgres_default_admin_upstream_topology()` 与新的
+vendor 路径**都写 `openai-default`**，且前者**先跑**、每次无条件写
+`status = DISABLED_STATUS`。
+
+第一版修法是让 vendor 路径的 `ON CONFLICT` 用 metadata 里的 seed 标记做
+「是不是种子自己建的」判据。**实测无效**，实证链：
+
+- `updated_at` 取证：`openai-default.updated_at` 停在 `2026-09-15 21:20`，
+  而 `gemini-default` 是当天 09:54 —— 前者**从未被任何一轮 seed 更新过**；
+- 直接在 PG 里复现：`ON CONFLICT DO UPDATE SET a = <读本行旧值>, b = EXCLUDED.b`
+  的**后续 SET 表达式读到的是本行更新前的值**。admin 路径先跑、把 metadata 写成
+  `default_admin_upstream_supplier`，vendor 路径的 CASE 读到的就是这**旧值**，
+  于是判据不成立、`status` 保留 0，**但 metadata 仍被覆盖**成 vendor 标记 ——
+  症状表现为「标记对了、状态却没变」，极易误判成 SQL 写错。
+
+修法：**去掉 `DEFAULT_ADMIN_UPSTREAM_ACCOUNTS` 里的 openai 条目**（数组变
+`[...; 0]`，保留数组与其消费者以便将来放非内容生成的 admin-only 账号），
+让 vendor 路径成为这 11 行的**唯一写入者**，判据不再有歧义。
+`default-group` 仍以 `account_code = "openai-default"` 引用该账号，按 code 解析，故不受影响。
+
+**B-3（P1）凭证行没有可辨识的 seed 标记**
+原 `INSERT ... metadata` 写死 `'{}'::jsonb`，无法区分「种子占位凭证」与
+「运维轮换过的凭证」。修：写 `credential_seed_metadata()`（`itemType =
+default_vendor_upstream_account_credential`），`ON CONFLICT` 据此决定是否收敛 status。
+
+### 12.5 门禁与回归测试
+
+**新增单测 4 条**（`ai_routing_seed` 模块，共 22 条全绿）：
+
+| 测试 | 守什么 |
+| --- | --- |
+| `every_derived_vendor_group_has_a_default_account` | 每个派生分组都有默认账号（**本轮就是被它抓出 openai/openai_compatible 漏配**） |
+| `default_vendor_accounts_are_unique_and_bound_to_known_vendors` | 账号码唯一、厂商由 catalog 声明、base_url 必须 https |
+| `default_vendor_account_passwords_are_placeholders` | 种子密钥必须是占位值，不得像真密钥 |
+| `vendor_accounts_seed_enabled_only_in_dev_like_environments` | 门控：dev 类启用、production/未解析停用 |
+| `vendor_account_marker_is_distinct_from_the_admin_path_marker` | **B-2 的回归守卫**：三条路径的 itemType 必须两两不同 |
+
+**新增真库 e2e 4 条** (`crates/sdkwork-cloudrouter-edge-runtime/tests/ai_routing_seed_coverage_e2e.rs`)：
+
+| 测试 | 结果 |
+| --- | --- |
+| `bundled_seed_gives_every_vendor_group_a_callable_account` | **26/26 分组 `callable=1`** |
+| `bundled_placeholder_credentials_decode_with_the_dev_key_ring` | **11/11 凭证用 dev 密钥环解出 `sk-dev-*placeholder`** |
+| `bundled_seed_is_idempotent_across_repeated_runs` | 账号数 == 凭证数，成员数 == 27，重复读计数不变 |
+| `credential_aad_binds_the_secret_to_its_account` | 换 account_id 必须解码失败 |
+
+**既有路由 e2e 14 条全绿**（证「账号能被路由到」这一跳）：
+
+```
+media_routing_e2e            7 passed   gemini image/veo, kling video, openai image2/video, seedance, vidu
+audio_vendor_routing_e2e     4 passed   minimax music, suno music, elevenlabs tts, volcengine speech
+avatar_motion_routing_e2e    3 passed   kling avatar, kling motion, vidu motion
+```
+
+一致性门禁保持绿：`ai-routing-consistency: passed`（29 arms / 56 api codes /
+122 paths / 24 literal arms / 10 命名空间全对齐）。
+
+### 12.6 落库实证（`sdkwork_ai_dev`，前后对比）
+
+| 项 | 修复前 | 修复后 |
+| --- | --- | --- |
+| `ai_upstream_supplier` | 1（仅 openai） | **11** |
+| `ai_upstream_account` | 1（openai-default，**status=0**） | **11（全部 status=1）** |
+| `ai_upstream_account_credential` | **0** | **11（全部 status=1 / is_active）** |
+| `ai_upstream_account_group` | 23 | **27** |
+| `ai_upstream_account_group_member` | 1 | **27** |
+| supplier-scope `ai_resource_binding` | 1 | **11** |
+
+26 个厂商分组的 `(分组, 账号, 账号状态, base_url, 凭证状态, 是否激活)` 全部指向
+真实厂商域名（`api.openai.com/v1`、`api.anthropic.com`、
+`generativelanguage.googleapis.com`、`api-beijing.klingai.com`、
+`visual.volcengineapi.com`、`ark.cn-beijing.volces.com`、`api.vidu.cn`、
+`api.minimax.chat`、`api.sunoapi.org`、`api.elevenlabs.io`）。
+
+### 12.7 复现命令（环境变量名易踩坑）
+
+```bash
+export PATH="/d/programs/mingw64/bin:$PATH"
+export RUSTUP_TOOLCHAIN=stable-x86_64-pc-windows-gnu
+export SDKWORK_DATABASE_URL="postgresql://sdkwork_ai_dev:sdkworkdev123@127.0.0.1:5432/sdkwork_ai_dev?sslmode=disable"
+# ⚠ 运行时读的是 ROUTER_ENVIRONMENT，不是 INSTALL_ENVIRONMENT
+export SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT=development
+export SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING_FILE="$PWD/.sdkwork/secrets/upstream-credential-key-ring.development.json"
+
+pnpm db:refresh-catalog -- --force        # 真正落库 AI routing seed 的入口
+cargo test -p sdkwork-cloudrouter-edge-runtime --test ai_routing_seed_coverage_e2e -- --nocapture
+```
+
+### 12.8 本轮发现、**未修**（新增，应转 owner）
+
+| # | 项 | 说明 |
+| --- | --- | --- |
+| N-15 | `scripts/dev/start-workspace.mjs:816` 写 `SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT`，而 `installer.rs:34` 读 `SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT` | 两个变量名**从不相交**。后果：`pnpm dev` 起的进程里 install environment 落到 default `production`，本轮若不显式导出 `ROUTER_ENVIRONMENT` 就会重现「账号全 disabled」。`.env.release.example` 同时写了两个名字，进一步掩盖了该问题。**这是本轮唯一靠手工导出变量绕过的缺陷。** |
+| N-16 | `pnpm db:seed`（`sdkwork-database-cli seed`）报 `applied 0 seed script(s)` | 该命令与 `ai_routing_seed.rs` **不是同一套机制**，容易误导。AI routing seed 的真实入口是 `pnpm db:refresh-catalog`。建议在文档/命令帮助里点明，或让 `db:seed` 也触发。 |
+
+---
+
+## 13. 第 8 轮：默认混合组漏授厂商资源 + Kling 契约路径分类缺失（2026-09-17 上午）
+
+本轮目标：把「视频 / 图片 / 音乐 / 配音 / 音效 / 数字人 / 动作模仿」七类能力**在真实 PostgreSQL 目录上**
+从「前端提交 → 网关入站 → 路由选账号 → 计费 → 厂商 API」整条链路跑通，并修掉路上的每一段断点。
+
+### 13.1 结论先行
+
+| 层 | 本轮前 | 本轮后 | 证据 |
+| --- | --- | --- | --- |
+| 分类（契约路径 → api_code） | 6/7 可达，`POST /kling/v1/videos/generations` 不可达 | **7/7 可达** | `provider_native_classifier` 单测 9 passed |
+| 账号路由（组 → 账号池） | **1/7 可达**（只有 openai 系） | **7/7 可达** | `media_provider_native_db_e2e` 七条全部报「已选中账号」 |
+| 计费（账号路由计价门） | 不可达（被上一段挡住） | **7/7 统一停在 `upstream cost price not found`** | 同上 |
+| 厂商 API 调用 | 不可达 | 不可达 | 被定价数据前提挡住（见 13.5） |
+
+**核心成果**：断点从「6/7 报 50201 no upstream account routes」收敛到「7/7 同一条定价错误」。
+链路代码侧已无缺口；剩余唯一门槛是**定价数据前提**（采购成本价本 + api_code 级参考价），
+属运营/目录数据，不是代码缺陷。
+
+### 13.2 缺陷 1：默认混合组只授 `official.openai.full`
+
+**根因链（四条独立证据，逐条可复核）：**
+
+1. `crates/sdkwork-cloudrouter-edge-runtime/src/iam_auth_token_authenticator.rs:196-228`
+   —— auth-token（app-session，即**所有已登录前端用户**）会话的 `group_id` 被**硬解析**为
+   `DEFAULT_ACCOUNT_GROUP_CODE = "default-group"`（`:29`）。**没有任何能力维度参与选组。**
+2. `services/.../application/upstream_route_selector.rs:1438`
+   —— `if binding.account_group_id != group_id { return false; }`，**严格相等**匹配，
+   没有交集/回退语义。
+3. 实测路由快照（`load_upstream_account_routes` 原始 SQL，见 13.6）产出 **11 行 = 11 个厂商账号**，
+   `account_group_bindings_json` 显示**只有 `openai-default`** 的绑定里含
+   `accountGroupId = 1150079326059387300`（即 `default-group` 的 id）。
+4. `ai_resource_binding` 实测：指向 `default-group` 的绑定**只有 2 条**
+   （`official.openai.full` + `api.claude.code`）。
+
+后果：`default-group` 的 loader 可见 apiScope 里**不存在任何非 OpenAI 厂商的资源**，
+「组 ∩ 供应商」交集把 kling / suno / elevenlabs / vidu / jimeng / volcengine / minimax
+的原生资源全部裁掉 → 七类里 6 类恒定 50201。
+
+**这不是设计如此。** 本仓自己的架构文档早已写明：
+
+- `docs/architecture/tech/TECH-2026-09-05-ai-routing-account-authorization.md:182`
+  —— `default-group`（mixed）**只授 `official.openai.full`**，本轮之前的「修复」
+  只落了 `api.claude.code` 一个补丁；
+- 同文档 `:240`（§12 方案 A，标注**推荐优先做**）：
+  > 把 `default-group` 的授权从「逐协议 api_endpoint 补丁」改为「vendor 骨架」：
+  > 给 mixed/default 组追加全部 `vendor.*` 资源（或 `VENDOR_RESOURCE_GROUP_BINDINGS` 派生的
+  > official 组全集）。交集规则第 4 条会让组内账号天然覆盖所有厂商原生面，新协议上线零补丁。
+
+**⇒ 方案 A 至今未落地**，本轮把它落地。
+
+### 13.3 缺陷 1 的修复
+
+两个必须同时修的点（只修任一个都仍然 50201）：
+
+| # | 文件 | 改动 |
+| --- | --- | --- |
+| 1 | `services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/ai_routing_seed.rs` | `DefaultAdminUpstreamAccountGroupSeed::resource_group_codes()`：`is_default` 组在原有 primary + `api.claude.code` 之外，**追加 `VENDOR_RESOURCE_GROUP_BINDINGS` 全 11 厂商 official 组**，并按 `BTreeSet` 去重保证指纹稳定 |
+| 2 | 同上 | `import_postgres_default_vendor_upstream_accounts()`：每个厂商默认账号除接入 `{vendor}.{modality}` 派生组外，**再接入 `default-group`**（复用 admin 路径的 `stable_seed_id` 方案，`ON CONFLICT` 幂等，openai 与 admin 路径撞同一行） |
+
+配套：
+
+- 新增常量 `DEFAULT_MIXED_ACCOUNT_GROUP_CODE = "default-group"`，消除散落字面量，
+  并在 doc comment 里点明它与 `iam_auth_token_authenticator::DEFAULT_ACCOUNT_GROUP_CODE`
+  是**跨 crate 契约**。
+- `DEFAULT_ADMIN_ROUTING_TOPOLOGY_SEED_SOURCE` 由 `.v7` 升 `.v8` 并加入
+  `default-mixed-group-vendor-skeleton` 标记 —— 该常量参与 `source_hash()`，
+  不 bump 则存量安装不会重新导入种子。
+- `crates/sdkwork-cloudrouter-edge-runtime/tests/ai_routing_seed_coverage_e2e.rs`：
+  `members == 27` 断言更新为 `37`（26 派生组 + default-group 11 名成员，其中 openai 已存在）。
+
+**落库实测（`pnpm db:refresh-catalog -- --force` 后）：**
+
+```
+default-group 资源授予     2  → 12 条
+  api.claude.code / api.openai_compatible.all / official.anthropic.claude_code /
+  official.elevenlabs.full / official.gemini.full / official.jimeng.full /
+  official.kling.full / official.minimax.music / official.openai.full /
+  official.suno.full / official.vidu.full / official.volcengine.full
+default-group 成员         1  → 11 个（11 个厂商 -default 账号，全部 status=1）
+ai_upstream_account_group_member 全表  27 → 37
+```
+
+### 13.4 缺陷 2：Kling 契约声明的路径分类器不认
+
+**双向不一致**（架构文档 §10 P1-5「api_code 双真源」的实例）：
+
+| 侧 | 声明/认识的 kling 视频路径 |
+| --- | --- |
+| open-api 契约（`apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json`） | `POST /kling/v1/videos/generations`、`GET /kling/v1/videos/generations/{task_id}`、`POST /kling/v1/videos/avatar`、`POST /kling/v1/videos/motion-control` |
+| `provider_native_classifier`（改前） | `/v1/videos/text2video`、`/v1/videos/image2video`、`/v1/videos/avatar`、`/v1/videos/motion-control`、`/v1/images/generations` |
+| `passthrough.rs`（改前） | 同 classifier |
+
+- 契约声明而分类器不认 → 该路径落进 `_ => return None` → 50201；
+- 分类器认识而契约不声明 → 请求根本进不到网关。
+
+由于契约里 kling 的「创建视频」**只有 `generations` 一条**，它必然对应既有
+`kling.text_to_video`（taxonomy 里 `RoutingCapability::Video` + `BillingMeter::VideoResult`
++ `media_task`，语义完全吻合；`kling.image_to_video` 在契约里没有对应路径，不可能是它）。
+
+**修复（两份拷贝必须同步，否则门禁红）：**
+
+- `services/.../application/invocation/provider_native_classifier.rs`
+- `crates/sdkwork-cloudrouter-edge-runtime/src/passthrough.rs`
+
+各新增 2 条 arm，并把 `music_task_query_path_matches` 泛化为
+`media_task_poll_path_matches(path, family)`（suno 与 kling 共用）：
+
+```rust
+"kling" if path == "/v1/videos/generations" => "kling.text_to_video",
+"kling" if media_task_poll_path_matches(path.as_str(), "videos/generations") => {
+    "kling.task_query"
+}
+```
+
+**踩坑记录**：在 arm 之间写 `//` 注释会让
+`tools/check-cloudrouter-ai-routing-consistency.mjs` 的 arm 提取器把注释并入 arm 文本，
+导致 `classifier`/`passthrough` 两侧 arm 无法配对。**注释必须写在 `match` 之外**
+（本轮落到 `provider_native_api_code_from_standard_path` 的 doc comment 里）。
+
+### 13.5 缺陷 3（新增未修，需产品决策）：账号路由计价门硬依赖采购成本
+
+七类全部收敛到同一条错误，根因是
+`services/.../application/upstream_route_selector.rs:941-990`
+（`ensure_account_route_is_priced`）：
+
+```rust
+let mut resource = ResourceDefinition::new(&query.route_key, BillingMeter::ApiRequest, Utc::now())
+    ...
+let resolution = PriceService::new().resolve(self.catalog, resource)?;
+if !has_quoted_procurement_cost(&resolution) {   // ⇒ 要求 price_side = upstream_cost
+    return Err(DomainError::new(format!("upstream cost price not found for route ...")));
+}
+```
+
+- **没有环境 bypass**：dev / test / production 一视同仁。
+- `has_quoted_procurement_cost`（`:1159`）要求 `status == Quoted` **且**
+  `resolved_price.procurement_cost.is_some()`；
+- `procurement_cost` 只在 `price_side = 'upstream_cost'` 的价本上才有值
+  （`infrastructure/sql/queries/snapshot.rs:1517-1518`：非 `upstream_cost` 时
+  `supplier_code`/`account_id` 一律 NULL）。
+- 函数 doc 写的是 *"Verifies the api-request price exists"*，实现却要求 **procurement
+  cost** —— **注释与实现语义不一致**，这是评估修法时需要注意的张力点。
+
+**真实目录实测（活体 DB）：**
+
+| 项 | 实测 |
+| --- | --- |
+| `pricing_price_book.price_side` 分布 | `official_reference` 39 / **`upstream_cost` 0** |
+| `ai_model_pricing` 行数 | 1260（`price_side` 全 = 1） |
+| `ai_model_pricing.account_id` 非空 | **0** |
+| `ai_model_pricing.supplier_code` 非空 | **0** |
+| `catalog_key` 命名空间覆盖 | `kling%` **0**、`volcengine%` **0**、`jimeng%` **0**、`suno%` 2、`elevenlabs%` 12、`minimax%` 131、`vidu%` 78 |
+
+即两个独立数据前提同时缺失：
+
+1. **无任何 `upstream_cost` 价本**（7/7 命中）—— 采购成本是商务数据，开源种子不生成；
+2. **api_code 形状的定价条目缺失**（6/7 报 `model not found: kling.text_to_video` /
+   `suno.music_generation` / `elevenlabs.*`），图片另有
+   `official reference price not found ... meter image_result`。
+
+**两个处置选项（待定）：**
+
+- **选项 1（保持商务严格）**：运营必须为每个 api_code 配 `upstream_cost` 价，
+  维持 fail-closed。代价：新装 dev 环境七类内容生成**全部不可用**，
+  必须走 `pnpm db:refresh-catalog` 之外的商务配置步骤。
+- **选项 2（放开 dev 可用性）**：dev-like 环境放宽为「有任一可计价侧（`BillingMeter::ApiRequest`
+  的 `official_reference` 价）即可派发」，或由种子为 dev 注入 upstream_cost 占位价。
+  代价：dev 会放行「没有采购成本」的流量，与 fail-closed 的商务初衷冲突。
+
+**受控夹具已证明代码链路完整**：三件套自建 `PriceSide::UpstreamCost` 价本后
+**15/15 全绿**（见 13.7），即「分类 → 账号路由 → 计价 → 密钥解析 → 真实上游 HTTP 转发」
+在代码层没有缺口，缺的只是真实目录里的定价数据。
+
+### 13.6 本轮验证证据总表
+
+| 验证 | 结果 | 说明 |
+| --- | --- | --- |
+| `ai_routing_seed::tests`（22 条） | **22 passed** | 含 `standard_group_is_preserved`、`every_derived_vendor_group_has_a_default_account` |
+| `provider_native_classifier::tests`（9 条） | **9 passed** | 含新增 `kling_restful_video_paths_classify_like_the_native_ones` |
+| `tools/check-cloudrouter-ai-routing-consistency.mjs` | **passed** | `classifier 30 arms / passthrough 30 arms`，两侧各 **25 literal arms over 20 api codes**、5 predicate arms |
+| `ai_routing_seed_coverage_e2e`（真实 DB 守卫） | **4 passed** | 27 个厂商分组全部 `members=1 callable=1` |
+| `media_provider_native_db_e2e`（真实 DB 七类探针） | **7/7 抵达账号选择**，统一停在定价门 | 见 13.5，属数据前提 |
+| `media_routing_e2e` / `audio_vendor_routing_e2e` / `avatar_motion_routing_e2e` | **7 + 5 + 3 = 15 passed** | 受控夹具，覆盖七类 + 音效 |
+
+**取证用的一次性手段**（不改动仓库）：把 `load_upstream_account_routes` 的原始 SQL
+从 `queries/snapshot.rs` 抽出来，替换唯一的 `$1`（熔断恢复窗口，实测 60s）后直连 DB 执行，
+得到路由快照的 11 行及其 `account_group_bindings_json`。这是本轮定位 13.2 的关键证据，
+也补上了 §9 诊断工具表里「`diagnose_upstream_route_gates` 不覆盖资源交集门」的空白。
+
+### 13.7 复现命令
+
+```bash
+export PATH="/d/programs/mingw64/bin:$PATH"
+export RUSTUP_TOOLCHAIN=stable-x86_64-pc-windows-gnu
+export SDKWORK_DATABASE_URL="postgresql://sdkwork_ai_dev:sdkworkdev123@127.0.0.1:5432/sdkwork_ai_dev?sslmode=disable"
+export SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT=development
+export SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT=development
+export SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING_FILE="$PWD/.sdkwork/secrets/upstream-credential-key-ring.development.json"
+
+# ⚠ refresh-catalog 不接受 --environment（那是脚本层参数，透传后 cloudrouterctl 报
+#   "unsupported refresh-catalog option: --environment"）；环境只能用变量传递。
+pnpm db:refresh-catalog -- --force
+
+"$NODE" tools/check-cloudrouter-ai-routing-consistency.mjs
+cargo test -p sdkwork-cloudrouter-router-service --lib ai_routing_seed
+cargo test -p sdkwork-cloudrouter-router-service --lib provider_native_classifier
+cargo test -p sdkwork-cloudrouter-edge-runtime --test ai_routing_seed_coverage_e2e -- --nocapture
+cargo test -p sdkwork-cloudrouter-edge-runtime --test media_provider_native_db_e2e -- --nocapture
+```
+
+### 13.8 测试侧修复（避免假绿 / 避免污染共享库）
+
+| 文件 | 问题 | 修复 |
+| --- | --- | --- |
+| `D:\sdkwork-space\sdkwork-test\rust\src\router_harness.rs` | `SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT` 写 `"dev"`，而种子只对 `development`/`test`/`staging` 启用厂商账号；DB 路由构造器跑 `StartupInstallMode::Ensure`，会**把共享 dev 库的厂商账号写成 `status=0`** | 改为 `"development"`，并写清原因 |
+| `crates/.../tests/media_provider_native_db_e2e.rs` | 内联 `UPSTREAM_CREDENTIAL_KEY_RING` 的 `activeKey` 抄自 **`sdkwork-api-cloud-gateway`** 的 dev env 生成器，与 Cloud Router 自己的 `.sdkwork/secrets/upstream-credential-key-ring.development.json` **不同**，导致 `catalog row mapping failed: failed to decrypt credential secret` | 改为 `resolve_upstream_credential_key_ring()`：优先环境变量 → `*_FILE` → 仓库内 `.sdkwork/secrets/...development.json` → 内联兜底，并在日志里打印实际来源 |
+| `crates/.../tests/media_provider_native_db_e2e.rs:195` 的 501 启发式 | 把 `*_passthrough_not_configured`（HTTP 501 占位）误判为「已抵达」 | 缺口标记加入 `passthrough_not_configured`；探针改用带 `provider secret map` 的生产装配 |
+
+### 13.9 本轮对共享 dev 库存的写入（可回滚）
+
+| 动作 | 库 | 影响 | 回滚 |
+| --- | --- | --- | --- |
+| `pnpm db:refresh-catalog -- --force`（`ROUTER_ENVIRONMENT=development`） | `sdkwork_ai_dev` | 重新导入 AI routing seed：厂商账号 11/11 `status=1`；`default-group` 授予 2→12、成员 1→11；成员全表 27→37 | 授予/成员可删（`default-group` 回到 1 成员 2 授予）；账号可 `SET status = 0`，但会导致七类全部不可路由 |
+
+两次写入都会使**任何走 app-session 的前端用户**获得全部 11 家厂商的账号池可见性 ——
+这正是本轮的目的（修复前他们只能看见 OpenAI 系）。 |
+
+
+
+---
+
+## 14. auth-token 选组语义对齐（2026-09-17 第二轮）
+
+### 14.1 用户诉求（原文）
+
+> `iam_auth_token_authenticator.rs:196-228` 把 auth-token 会话（= 所有已登录前端用户）的
+> `group_id` 硬解析为 `default-group`，没有能力维度参与选组；`upstream_route_selector.rs:1438`
+> 又要求 `binding.account_group_id == group_id` 严格相等。实测只有 `openai-default` 绑进了这个组
+> ⇒ 其余 6 类厂商资源被「组 ∩ 供应商」交集全部裁掉。**使用登录 auth token 的时候，应该选择是否是
+> 默认账户的分组，假如没有设置，找出哪个是默认分组，获取对应的分组进行处理路由，请完整对齐**。
+
+### 14.2 修复前的真实语义（比诉求描述还多两处毛病）
+
+| # | 事实 | 影响 |
+| --- | --- | --- |
+| 1 | 选组顺序**是反的**：先按 `code == "default-group"` 找，`.or_else()` 才按 `is_default` 找 | 与「按默认账户分组选」的语义相反；一个被重命名/自定义 code 的 `is_default` 组永远轮不到（只要存在同 code 组就会被抢先） |
+| 2 | `list_upstream_account_groups()` **被调用两次**（每个 `.or_else()` 分支一次） | 两次调用之间若发生 catalog 刷新，`code` 判据与 `is_default` 判据会落到**不同快照**上 |
+| 3 | 作用域只看 `tenant_id`，不看 `organization_id` | 与 `upstream_route_selector::context_from_group_binding`、`ports::group_matches_subject` 的 `tenant_id==0`/`organization_id==0` 通配语义不一致（同一租户的不同凭据形态可能落到不同池） |
+| 4 | 模块 doc 写 `code = "default"` | 与实际 `"default-group"` 不符，误导后来者 |
+| 5 | `api_key_management_read_store::single_upstream_account_group_for_subject()` 是同一规则的**弱化第二份拷贝**（只做「唯一分组」这一级） | 两处规则各自演化 ⇒ 建 key 与已登录会话可能选到不同池 |
+
+### 14.3 唯一权威实现（新模块）
+
+`services/sdkwork-cloudrouter-router-service/src/domain/upstream_account_group_selection.rs`
+
+```rust
+pub const DEFAULT_ACCOUNT_GROUP_CODE: &str = "default-group";
+
+pub enum DefaultAccountGroupSelectionReason { IsDefaultFlag, CodeConvention, SingleGroupInScope }
+
+pub fn upstream_account_group_in_subject_scope(
+    group: &UpstreamAccountGroup, tenant_id: i64, organization_id: i64,
+) -> bool;
+
+pub fn select_default_account_group_for_subject(
+    groups: &[UpstreamAccountGroup], tenant_id: i64, organization_id: i64,
+) -> Option<DefaultAccountGroupSelection>;   // { group, reason }
+```
+
+**规则（顺序不可反）**：
+
+| # | 判据 | 语义 | `reason` |
+| --- | --- | --- | --- |
+| 1 | `group.is_default` | 租户**自己声明**的默认分组（权威） | `is_default` |
+| 2 | `group.code == DEFAULT_ACCOUNT_GROUP_CODE` | 安装器命名约定（回退） | `default-group-code` |
+| 3 | 作用域内**唯一**一个分组 | 无歧义可用 | `single-group-in-scope` |
+
+- 三级都取不到 ⇒ `None` ⇒ 调用方 fail-closed（auth-token 侧 401 `account_group_unavailable`）。
+- 候选**先按 id 排序**，保证跨进程 / 跨重载可复现（DB 的 `ORDER BY updated_at DESC, id DESC`
+  不是稳定语义）。
+- **作用域**：`tenant_id == 0` = 全局组；`organization_id == 0` = 组织无关组。
+  安装器写默认组时用 `organization_id = 0`（`DEFAULT_IAM_ORGANIZATION_SQL_ID`），
+  所以它服务该租户的**所有**组织 —— 这是 auth-token（可能带任意 org）能命中的前提。
+
+**分层纪律**：模块放在 `domain`（最内层）而不是 `application`，因为 `ports` 也要用它，
+而 `ports` **不能**依赖 `application`（六边形方向）。`ports::api_key_management_read_store::group_matches_subject`
+现在只是 `domain::upstream_account_group_in_subject_scope` 的本地别名；
+`single_upstream_account_group_for_subject()` 已删除（它是规则第 3 级的弱化拷贝）。
+
+### 14.4 完整对齐清单
+
+| 文件 | 改动 | 为什么必须一起改 |
+| --- | --- | --- |
+| `crates/.../src/iam_auth_token_authenticator.rs` | 选组改为单次列举 + 调用权威选择器；删本地 `DEFAULT_ACCOUNT_GROUP_CODE` 字面量；重写模块 doc（原来写 `code="default"`） | auth-token 通道 = 所有已登录前端用户 |
+| `services/.../domain/upstream_account_group_selection.rs` | **新增**（14.3） | 唯一权威规则 |
+| `services/.../domain/mod.rs` | 注册模块 + 导出 | — |
+| `services/.../ports/api_key_management_read_store.rs` | `group_matches_subject` 改为委托 `domain` 谓词；删除 `single_upstream_account_group_for_subject` | 消除第二份规则拷贝 |
+| `services/.../api/app_api_keys.rs` | 建 key 未指定分组时的兜底改调权威选择器；`const DEFAULT_ACCOUNT_GROUP` 改为 `domain::DEFAULT_ACCOUNT_GROUP_CODE` 的别名 | 这条兜底**决定生成链路走哪个池**（见 14.7） |
+| `services/.../api/admin_user.rs` | 删本地 `DEFAULT_ACCOUNT_GROUP_CODE` 字面量，改 import `domain` 常量 | 同一 code 两个定义会漂移 |
+| `services/.../infrastructure/sql/ai_routing_seed.rs` | `DEFAULT_MIXED_ACCOUNT_GROUP_CODE` 改为 `crate::domain::DEFAULT_ACCOUNT_GROUP_CODE` 的别名；doc 指向权威模块 | 种子写的 code 与选组读的 code 必须同源 |
+| `services/.../application/upstream_route_selector.rs` | 空 routes 错误文案带上**分组身份**（见 14.6） | 50201 的根因定位曾要靠手写 SQL |
+
+### 14.5 规模效应：为什么这一层值得单独修
+
+`matched_resource_scope` = **组授予的资源组 ∩ 供应商原生资源**。选错分组**不会报「分组不对」**，
+而是把该组没授予的产能**整片裁掉**，最终以 `50201 no upstream account routes are configured`
+出现 —— 与「账号池为空」的症状完全同形。所以：
+
+- 账号池修好了（11/11 `status=1`、37 条成员）**不代表**已登录用户能出网；
+- 决定已登录用户能看到哪些厂商的，是**选组规则落到哪一行**。
+
+### 14.6 诊断改进：50201 现在带分组身份
+
+`select_account_route_for_context` 的空 routes 分支由
+
+```
+... no upstream account routes are configured
+```
+
+改为
+
+```
+... no upstream account routes are configured for account group default-group (id 1150079326059387300) on api scope kling.text_to_video
+```
+
+⚠️ 断言侧是 `contains(...)` 形式（`media_provider_native_db_e2e` 的 `GATEWAY_GAP_MARKERS`、
+`admin-gateway/tests/product_model_route.rs`）：**后缀追加安全，改前缀会破门禁**。
+
+### 14.7 三条通道，一个池（否则同一租户换凭据就换池）
+
+| 通道 | 选组方式 |
+| --- | --- |
+| auth-token / app-session（已登录前端用户走 open-api） | `IamAuthTokenAuthenticator` → **本模块**规则 |
+| 生成链路后半段（`api/app_runtime.rs`） | **不重选**：取 `api_key.default_account_group_id` 直接下发内部签名请求（`InternalGatewayPrincipal.account_group_id` → `app_runtime_gateway_http_client`） |
+| 内部签名网关（`gateway_api_key_auth.rs`） | 用请求头携带的**显式** `account_group_id`，并**严格**校验 tenant/org 相等（有意不用通配：它是可信内部通道，通配会放大越权面） |
+
+⇒ 生成链路走哪个池由「建 key 时的兜底分组」决定，而它现在与 auth-token 共用同一规则。
+
+### 14.8 验收证据（2026-09-17 实测）
+
+| 验证 | 命令 | 结果 |
+| --- | --- | --- |
+| 选组规则单测（7 条） | `cargo test -p sdkwork-cloudrouter-router-service --lib upstream_account_group_selection` | **7 passed**（is_default 压过 code / code 回退 / 唯一组回退 / 歧义 fail-closed / 跨租户隔离 / 全局+组织通配 / 顺序无关可复现） |
+| router-service 全量单测 | `cargo test -p sdkwork-cloudrouter-router-service --lib` | **497 passed; 0 failed** |
+| 真实库种子覆盖（5 条，含**新增门**） | `cargo test -p sdkwork-cloudrouter-edge-runtime --test ai_routing_seed_coverage_e2e -- --nocapture` | **5 passed**。新增门输出：`default group default-group (id=1150079326059387300) members=11 grants=12` |
+| 一致性门禁 | `node tools/check-cloudrouter-ai-routing-consistency.mjs --root .` | **passed**（classifier 30 / passthrough 30 arms） |
+| 分组/账号 CRUD + 选路 | `cargo test -p sdkwork-cloudrouter-router-service --test admin_group_account_crud_and_routing_e2e` | **6 passed** |
+| auth-token 路由 | `cargo test -p sdkwork-cloudrouter-edge-runtime --test openai_chat_auth_token_route` | **2 passed** |
+| **七类真实目录端到端探针** | `cargo test -p sdkwork-cloudrouter-edge-runtime --test media_provider_native_db_e2e -- --nocapture` | **1 failed** —— 但失败点已从「选不到账号」前移到「计价门」（见 14.9）。七条**全部**打印出被选中的 `account <id>`，`50201` 归零 |
+
+**新增的防回归门**（`ai_routing_seed_coverage_e2e.rs::auth_token_default_group_reaches_every_bundled_vendor`）：
+断言「`is_default` 的那个分组」同时 ① 覆盖全部 11 个 `REQUIRED_VENDOR_ACCOUNTS`、
+② 授予全部 11 个 `REQUIRED_VENDOR_RESOURCE_GROUPS`。这是**用户视角**的门：
+既有门断言「每个派生分组健康」，但真正决定已登录用户能否出网的是「选组会落到哪个分组」——
+缺它则「27 个分组全健康 + 已登录用户 6/7 类 50201」可以长期共存。
+
+实现时踩到的 schema 事实：**`ai_upstream_account` 没有 `vendor_code` 列**（`ai_upstream_supplier` 也没有）
+——厂商是**派生分组 `{vendor}.{modality}` 的属性**。所以测试用「默认分组成员 ∩ 派生分组成员」
+反推厂商，而不是再抄一份 11 厂商清单（抄了就会漂移）。
+
+### 14.9 七类探针的当前状态（每一类都已选中账号，统一卡在计价门）
+
+```
+[图片 image]  POST /v1/images/generations                              => 502 routing_failed
+    upstream cost price not found for model openai/gpt-image-2, supplier openai,
+    account 3675618906898304264, region global: official reference price not found
+    for model openai/gpt-image-2 meter image_result and region global (price_not_found)
+[视频 video]  POST /kling/v1/videos/generations                        => 502 routing_failed
+    upstream cost price not found for route kling.text_to_video, supplier kling,
+    account 2969580794045056093: model not found: kling.text_to_video (price_not_found)
+[音乐 music]  POST /suno/v1/music/generations                          => 502 ... suno.music_generation
+[配音 voice]  POST /elevenlabs/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM  => 502 ... elevenlabs.text_to_speech
+[音效 sfx]    POST /elevenlabs/v1/sound-generation                     => 502 ... elevenlabs.sound_generation
+[数字人 avatar] POST /kling/v1/videos/avatar                           => 502 ... kling.avatar
+[动作模仿 motion] POST /kling/v1/videos/motion-control                 => 502 ... kling.motion_control
+```
+
+**读法**：每条都带出了 `supplier <vendor>, account <id>` ⇒ **账号选出来了**（本轮目标达成）；
+卡点在 `ensure_account_route_is_priced` → `has_quoted_procurement_cost`，即第三层。
+
+第三层的两个子缺口（与 N-17 / N-18 对应）：
+
+| 子缺口 | 证据 | 性质 |
+| --- | --- | --- |
+| 厂商原生 api code 无计价行 | `model not found: kling.text_to_video` / `suno.music_generation` / `elevenlabs.*` / `kling.avatar` / `kling.motion_control` —— 缺的是 **api code 命名空间**（`ai_model_pricing.catalog_key like 'kling%'` 等为 0 行） | 数据/种子缺口 |
+| OpenAI 图形模型缺 meter 价 | `official reference price not found for model openai/gpt-image-2 meter image_result` —— 行在、**meter 维度缺** | 数据/种子缺口 |
+| 无 `upstream_cost` 价本 | 39 个价本全 `official_reference`、`upstream_cost` 0 个；`ai_model_pricing` 1260 行 `account_id`/`supplier_code` 全 NULL | 与 `has_quoted_procurement_cost`（要求 `PriceResolutionStatus::Quoted` 且 `procurement_cost.is_some()`）直接冲突 |
+
+另有一处**文档/实现语义不一致**值得记：`ensure_account_route_is_priced` 的 doc 写
+"Verifies the api-request price exists"，实现却要求 **procurement cost**。二者不是同一件事。
+
+**两个选项（待产品决策，未擅自放宽）**：
+
+1. **保持 fail-closed**，补 `price_side='upstream_cost'` + `account_id`/`supplier_code` 维度的真实
+   采购价行（11 厂商 × meter × region）。语义最干净（无成本不许出网），但需要真实厂商价目。
+2. **仅 dev/test/staging 放宽**：无 `upstream_cost` 行时回退 `official_reference` 价本并打显式告警，
+   production 仍 fail-closed。能让开发环境跑通全链路，代价是成本口径在非生产环境是估算值。
+
+### 14.10 复现命令（含两个环境坑）
+
+```bash
+cd /d/sdkwork-space/sdkwork-cloudrouter
+export PATH=/usr/bin:/bin:$PATH
+
+# 坑 1：Git Bash 的 /usr/bin/link.exe（coreutils）会抢在 MSVC link.exe 前面，
+#       报 "/usr/bin/link: missing operand after BOM"。LIB/INCLUDE 本来就已就位
+#       ⇒ 只钉 linker 路径即可，不用切 gnu、不用 vcvars。
+export CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_LINKER="D:\\programs\\vs-buildtools\\VC\\Tools\\MSVC\\14.44.35207\\bin\\Hostx64\\x64\\link.exe"
+
+export SDKWORK_DATABASE_URL="postgresql://sdkwork_ai_dev:sdkworkdev123@127.0.0.1:5432/sdkwork_ai_dev?sslmode=disable"
+export SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT=development
+export SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT=development
+# 坑 2：必须是 Windows 路径。Git Bash 的 $PWD 展开成 /d/... ，Rust 打不开
+#       （os error 3），错误被包成 "key ring config must parse when present"。
+export SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING_FILE="D:/sdkwork-space/sdkwork-cloudrouter/.sdkwork/secrets/upstream-credential-key-ring.development.json"
+
+node tools/check-cloudrouter-ai-routing-consistency.mjs --root .
+cargo test -p sdkwork-cloudrouter-router-service --lib upstream_account_group_selection
+cargo test -p sdkwork-cloudrouter-router-service --lib
+cargo test -p sdkwork-cloudrouter-router-service --test admin_group_account_crud_and_routing_e2e
+cargo test -p sdkwork-cloudrouter-edge-runtime --test openai_chat_auth_token_route
+cargo test -p sdkwork-cloudrouter-edge-runtime --test ai_routing_seed_coverage_e2e -- --nocapture
+cargo test -p sdkwork-cloudrouter-edge-runtime --test media_provider_native_db_e2e -- --nocapture   # 仍红：计价门
+```
+
+### 14.11 未决项
+
+| # | 项 | 状态 |
+| --- | --- | --- |
+| N-17 | 第三层计价门：无 `upstream_cost` 采购价即 fail-closed（与 doc 语义不符） | **待产品决策**（14.9 两选项） |
+| N-18 | `ai_model_pricing` 缺 `kling` / `volcengine` / `jimeng` 等**厂商原生 api code 命名空间**，与路由侧不对称 | 同上 |
+| N-19 | 存量 gateway api key 的 `default_account_group_id` 是否都指向有厂商覆盖的分组（本仓无法直连 SQL 抽查，需 `cloudrouterctl` 或管理端接口） | 未核 |
+
+---
+
+## 15. 第 10 轮：价格由 `sdkwork-models` 定义驱动同步（2026-09-17 下午）
+
+### 15.1 交接锚点
+
+> 「价格 应该根据 sdkwork-models 中的定义，进行同步，要确保缺失的数据要自动能够初始化，
+> 而且新增模型，删除模型也要保证数据一致性，继续推荐，直到整体逻辑实现完整为止」
+
+拆成四件事，本轮全部落地并**在真实库 + 真实目录上实测**：
+
+| # | 要求 | 落点 | 实测 |
+| --- | --- | --- | --- |
+| 1 | 价格由目录定义驱动同步 | `sync_official_pricing_catalog` + `refresh_on_catalog_drift` | ✅ |
+| 2 | 缺失数据自动初始化 | 新增 `PriceBookDrift.missing`（15.3） | ✅ 38 本书 / 1258 费率全量重建 |
+| 3 | 新增模型自动带价 | `source_hash` 变化 ⇒ 全量重投影 | ✅ 新模型 + **新价本 8 费率**自动出现 |
+| 4 | **删除模型保证一致性** | 目录表侧 `deactivate_removed_catalog_rows`；定价侧 `PriceBookDrift.orphan` | ✅ 模型 `status=0`、价本 `retired`、0 条可计价费率 |
+
+### 15.2 四向一致性矩阵：每个方向由哪个信号兜住
+
+这是本轮的核心产出。四个方向的失败形态完全不同，**任何一个单向检查都会漏掉两个方向**：
+
+| 目录侧变更 | 库里的表现 | 兜住它的信号 | 单靠它会漏什么 |
+| --- | --- | --- | --- |
+| **新增模型** | 少 `ai_model` 行 + 少价本 | `pricing_import_run.source_hash` 变（hash 覆盖**全部** `rate_hash`） | — |
+| **改价 / 改费率档位** | 费率值或档位码不同 | 同上 | — |
+| **删除模型** | 多出 `ai_model` 行 + **多出活跃价本** | `PriceBookDrift.orphan` | `is_subset` 型检查（`catalog_complete`）看不出来；删完的目录是"子集"，永远成立 |
+| **手工退役 / 软删价本（库缺失）** | 少价本，但**所有既有信号都说"已最新"** | `PriceBookDrift.missing`（本轮新增） | `source_hash` 命中 `pricing_import_run`（内容没变过）⇒ 恒真；`is_subset` 只管"目录 ⊆ 库"，库少东西它不管 |
+
+第 4 行是本轮修掉的真缺口。改动前 `refresh_on_catalog_drift` 的第二信号是**单向**的
+`orphan_price_books`，只回答"库里有、目录里没有"；"目录里有、库里没有"这一侧在全链路里
+**没有任何信号可见**，于是一份被手工退役的价本可以永久消失而启动日志一片绿。
+
+### 15.3 `PriceBookDrift{missing, orphan}`（双向集合比对）
+
+`services/.../infrastructure/sql/official_pricing_sync.rs:807-905`
+
+```rust
+pub(crate) struct PriceBookDrift {
+    pub missing: Vec<String>,   // 目录投影里有、库里没有活跃价本 —— 本轮新增
+    pub orphan:  Vec<String>,   // 库里有活跃价本、目录已经不发布
+}
+impl PriceBookDrift {
+    pub(crate) fn is_clean(&self) -> bool { self.missing.is_empty() && self.orphan.is_empty() }
+    pub(crate) fn sample(&self, limit: usize) -> String { /* missing:…, orphan:… */ }
+}
+async fn live_price_book_keys(pool, summary) -> Result<BTreeSet<(String, String, String)>, _>
+fn diff_price_book_keys(projected, live) -> PriceBookDrift
+pub(crate) async fn price_book_drift(pool, summary) -> Result<PriceBookDrift, _>
+```
+
+installer 侧的第二信号因此从"孤儿检查"升级为双向集合比对
+（`installer.rs:448-464`）：
+
+```rust
+let books = price_book_drift(&self.pool, &summary).await
+    .map_err(|error| DatabaseInstallError::InvalidState(error.to_string()))?;
+if stored && books.is_clean() {
+    return Ok(None);
+}
+tracing::info!(.., missing_price_books = books.missing.len(),
+               orphan_price_books = books.orphan.len(),
+               price_book_sample = %books.sample(5), "official pricing is behind sdkwork-models; refreshing the catalog");
+```
+
+键选 `(price_book_code, price_book_version, vendor_code)`：本仓的价本是**版本化**的
+（同一 code 多版本共存，`supersede_stale_price_book` 退役旧版本），所以只比 code 会把
+"版本没跟上来"误判成干净。新增 3 个单测覆盖两个方向、两侧相等、以及整份投影为空。
+`cargo test -p sdkwork-cloudrouter-router-service --lib` = **509 passed / 0 failed**（基线 497）。
+
+### 15.4 档位裁决：声明侧 ∩ 报价侧，不相交只报缺口，绝不猜
+
+视频计价的第二道门是 `tier_code` 条件——全库 1258 条费率里 **520 条**挂档位条件。
+档位有且只有两处目录权威：
+
+| 侧 | 来源 | 本轮之前的状态 |
+| --- | --- | --- |
+| **声明侧** | `ai_model_video_profile`（174 行）的 `resolution_tier_code` / `duration_tier_code` / `durationTierCodes` / `pricingTierCodes` | 只读了一个 `tier_code`，两个 jsonb 数组列**根本没加载** |
+| **报价侧** | `pricing_rate.conditions` 里 `dimension_code='tier_code'` 的取值集合 | 运行时从不读 |
+
+只有**两侧取交集**才是可计价的档位。改动前运行时拿声明侧的单个值去查费率，查不到就报
+`price_not_found`，再被上层包成一句"没有公布价格"——**看不出到底是"没价"还是"档位名对不上"**。
+
+本轮把裁决做成一个可单测的纯函数（`catalog.rs:326` `decide_video_pricing_tier`），
+判序固定，四种失败各有专名（`ports/upstream_account_route_catalog.rs:208`）：
+
+```rust
+pub enum VideoPricingTierGap {
+    ApiCodeIsNotAGenerationMode { api_code },       // api code 尾段不是生成模式
+    NoProfileForGenerationMode { generation_mode }, // 目录没为这个生成模式声明 profile
+    MeterHasNoTierConditionedRate { meter },        // 目录在这个计量单位上没有档位条件费率
+    DeclaredTierNotPriced { declared, priced },     // 两侧不相交（双方集合都打出来）
+}
+```
+
+配套改动：
+
+- 快照新增 `priced_video_tier_codes_by_model_meter: HashMap<(catalog_key, meter), BTreeSet<String>>`
+  （`catalog.rs:283` `index_priced_video_tier_codes`），与声明侧同一快照装配——否则刷新期间
+  会拿旧声明配新费率；
+- `ModelVideoProfileRow` 增 `duration_tier_codes` / `pricing_tier_codes`
+  （`rows.rs:37-42`），`snapshot.rs:1584` 起 SELECT 补两列，`postgres/loader.rs` 用
+  `parse_string_array` 解析，**非数组即硬失败**（丢档位会让"有价却说无价"重新出现）；
+- 查询体字段由 `pricing_tier_code: Option<String>` 改为 `pricing_resolution: Option<String>`：
+  预检对**每个计量单位分别**核价，所以必须传请求的原始分辨率、由每个 meter 各自解析档位，
+  而不是在外面先解析好一个档位喂进来；
+- `upstream_route_selector` 的两条路径（预检 + sticky）都按 meter 解析，失败文案用
+  `tier_gap.filter(|_| detail.contains("price_not_found"))` 把缺口精确描述拼在末尾。
+
+**优先级**：一个 profile 的候选档位按权威性递降排列（`catalog.rs:219`）——
+
+```
+pricingTierCodes（目录显式指定的费率档位码）
+  → resolutionTierCode（规范分辨率档位）
+  → durationTierCode / durationTierCodes
+```
+
+`pricingTierCodes` 排第一是有依据的：`sdkwork-models/tools/seed-video-profiles.mjs:40`
+的 `pricingTierCodes(pricingRows, modelId)` **正是**从该模型定价文件的 `tierCode` 集合取的值，
+所以它一旦被填上就是目录给出的权威答案，必须盖过按形状推断的规范档位。实况
+`vidu/viduq3-pro` 同时写了 `res_720p` 与 `pricingTierCodes: ["dur_5s"]`，而 `video_result`
+这个计量单位只按 `dur_5s` / `dur_10s` 报价——只有显式声明能命中。
+新增单测 `explicit_pricing_tier_codes_outrank_the_canonical_resolution_tier`。
+
+### 15.5 实测 A：档位缺口的精确形态（`media_provider_native_db_e2e` 复跑）
+
+七类内容生成能力在真实库 + 真实目录上的读数，与加固前逐条对比：
+
+| 能力 | 端点 | 结果 | 与加固前的差别 |
+| --- | --- | --- | --- |
+| 视频 | `/kling/v1/videos/generations` | ✅ 抵达厂商 | 不变 |
+| 配音 | `/elevenlabs/v1/text-to-speech/…` | ✅ 抵达厂商 | 不变 |
+| 音效 | `/elevenlabs/v1/sound-generation` | ✅ 抵达厂商 | 不变 |
+| 图片 | `/v1/images/generations` | ⚠️ 已拨号，`tcp connect error: deadline has elapsed` | **从"计价失败"变成"网络不可达"** ⇒ 图片路径计价已打通，剩的是环境 |
+| 音乐 | `/suno/v1/music/generations` | ❌ `sdkwork-models publishes no tier_code-conditioned rate for meter api_request…` | 新精确形态 `MeterHasNoTierConditionedRate` |
+| 数字人 | `/kling/v1/videos/avatar` | ❌ `sdkwork-models models no generation mode for api code kling.avatar` | **从模糊的 "declares no video pricing profile for api …"** 换成 `ApiCodeIsNotAGenerationMode` |
+| 动作模仿 | `/kling/v1/videos/motion-control` | ❌ 同上（`kling.motion_control`） | 同上 |
+
+3 条失败全部带可运维的缺口描述；4 类走通（3 抵达 + 1 环境阻挡）。
+音乐一条额外查实：`suno/*` 5 个模型全为 `lifecycle=catalog_only/deprecated`、
+`routingState=catalog_only`、`shelfState=hidden`，`suno-v6*` 的 description 明写
+*"no official per-generation or per-second API price is published, so no price row is recorded"*
+——**目录侧不存在"可路由且有价"的 Suno 模型**，是真实目录缺口而非网关缺陷。
+
+### 15.6 实测 B：自动初始化 + 删除一致性（`cloudrouterctl ensure`）
+
+三次定向注入，读数全部来自 `psql`：
+
+**Phase A —— missing 方向（库缺失，旧信号全盲）**
+
+手工把 `models.kuaishou.global.official`（38 条费率）按 `supersede_stale_price_book` 的语义
+退役 + 软删。库变成 `active_books=37 / active_rates=1220`，而 `pricing_import_run` 仍是 2 行、
+`source_hash` 完全命中 ⇒ **所有既有信号都认为"已最新"**。运行 `ensure`：
+
+```
+{"status":"installed",..,"lastCatalogRefreshStatus":"succeeded","changed":true}
+→ 回到 38 books / 1258 rates / 2 runs（全量重建）
+```
+
+**Phase B —— orphan + 新增模型（`SDKWORK_MODELS_CATALOG_ROOT=D:/tmp/catalog-probe`）**
+
+造一份目录副本（`sdkwork-models.json` + `models/`，5.3 MB），克隆 `kuaishou/kling-v3`
+成 `kuaishou/kling-v3-probe`，并给它一个**独立价本** `models.kuaishou.global.probe`：
+
+```
+# 注入前
+active_books = 6（kuaishou 侧），pricing_import_run 最新 = 2026.09.17.1 / fc58e8d3… / 1258
+# ensure（changed:true）
+ai_model:               kuaishou/kling-v3-probe  status=1 release_stage=1 shelf_state=1 routing_state=1
+ai_model_video_profile: 新增 3 行（t2v / i2v / multi_shot，res_1080p），status=1
+pricing_price_book:     models.kuaishou.global.probe 2026.09.17.1  active  8 rates   ← 新价本自动建
+pricing_price_book:     models.kuaishou.global.official 2026.09.17.1 active 38 rates ← 未被扰动
+pricing_import_run:     新增 2026.09.17.1 / 7f3c8cd3… / 1266            ← 内容变了，信号捕获
+```
+
+这一步专门证明 **`source_hash` 会在"内容变了但已知价本集合没变"时照样点火**——
+只靠 `books` 比对是看不到新增模型的。
+
+**Phase C —— 删除模型（两条链路同时收口）**
+
+从副本目录撤掉 `kling-v3-probe`，再跑 `ensure`（`changed:true`）：
+
+```
+ai_model:               status 1 → 0        （目录表侧：软失活，无物理删）
+ai_model_video_profile: 3 行 status 1 → 0
+pricing_price_book:     models.kuaishou.global.probe  active → retired, deleted_at 已写
+                        rates 从 8 → 0 条可计价
+"probe 模型是否可计价" 查询：0 行
+```
+
+**关键点**：撤掉探针模型后目录内容**回到了 `fc58e8d3…` 那个已经记录过的状态**，
+所以 `pricing_projection_is_stored` 返回 **true**（`pricing_import_run` 里那行早就在），
+`catalog_complete` 的 `is_subset` 也照旧成立。**唯一看见这次删除的就是
+`PriceBookDrift.orphan`** ✅ —— 这正是本轮升级第二信号换来的可观测性。
+
+**Phase D —— 幂等性**
+
+```
+ensure #2（同一副本目录）→ changed:false
+ensure #3（切回真实目录）→ changed:false   # 副本目录去掉探针模型后 == 真实目录内容
+```
+
+清理：探针副本目录、以及两条合成价本（`orphan-book-drift-probe` /
+`models.kuaishou.global.probe`）已按精确标识从库里删除（8 费率 + 2 价本），
+删后 `ensure` 仍 `changed:false`。
+
+### 15.7 移交 `sdkwork-models`：55 例档位缺口（分类 + 可执行修法）
+
+全量普查（`.tmp/classify_tier_gaps.py`，遍历 `models/*/*/model-video-profiles` 与
+`models/*/*/pricing`，只取 `video_output_second` / `video_result` / `video_input_second`）：
+**声明档位与报价档位不相交的 `(模型, 计量单位)` 组合 55 例，涉及 53 个模型。**
+
+| 类 | 例数 | 形态 | 修法 |
+| --- | --- | --- | --- |
+| **A · 纯命名不一致** | 9 | 声明 `res_720p`，报价 `720p`——**全是 `bytedance/*`**（`doubao-seedance-*` / `dreamina-seedance-*`） | 把费率侧的 `tierCode` 补成 `res_` 前缀（`res_720p` 是 schema enum 的合法值），或给 profile 补 `pricingTierCodes: ["720p",...]`。两者择一即可，**改费率侧更干净** |
+| **B · 费率把多维合成一个码** | 14 | `audio_res_1080p`（kling-3.0-turbo）、`noref_silent_4k`（kling-v3-omni）、`res_768p_dur_6s`（hailuo-*）、`input_res_720p`（runway/seedance2_5）、`ref_offpeak_res_1080p`（vidu/viduq3） | profile 的 `pricingTierCodes` 列出该档位对应的**全部**费率码 |
+| **C · 两侧毫无重叠** | 32 | 费率按**质量档**（`i2v_hd` / `t2v_uhd`，black_forest_labs/flux-3）、按**时长块**（`per_6s_block`，runway/gwm1_avatars）、按**有无音轨**（`audio` / `no_audio`，runway/veo3.1）、按**像素档**（`over_4mp` / `upto_4mp`，runway/ruby）报，而 profile 只声明分辨率 + 时长 | 需要产品决定映射，**不能机械批量填**（见下方警告） |
+
+⚠️ **不要用"把该模型定价文件里的所有 `tierCode` 灌进 `pricingTierCodes`"来批量消掉这个清单。**
+`seed-video-profiles.mjs:40` 的 `pricingTierCodes()` 确实已经算出了这个集合，但它是
+**按模型**算的、不分生成模式与分辨率。灌进去会让 kling-v3 的 `text_to_video` profile
+也把 `motion_res_720p` 列成候选，而裁决取"首个命中"，于是**文本生视频按动作迁移的价计费**。
+正确的修法是逐 profile 做语义映射（模式 × 分辨率 × 音轨），这需要回到厂商价目页核对。
+
+顺带记录一条**当前就存在的计价风险**（不在本轮改动引入，属目录数据问题）：
+`kuaishou/kling-v3` 的费率同时报了 `res_1080p`（0.112/s）与 `audio_res_1080p`（0.168/s），
+而它的 profile 声明 `outputAudio: true` + `resolutionTierCode: res_1080p`。
+按现在的优先级会选中 `res_1080p`，**比带音轨的实际价低 33%**。
+要修就得给 profile 补 `pricingTierCodes: ["audio_res_1080p"]`——正是 15.4 把显式声明
+排到第一位的原因。
+
+### 15.8 `#31` 结论：`ai_upstream_supplier.default_vendor_code` 无运行时消费方
+
+第 8 轮遗留的 `#31`（采购成本缺口）本轮排查清楚，**应降级为管理面数据完整性问题**：
+
+13 处引用全部在管理面——`ports/admin_upstream_store.rs`、`admin_upstream_store/supplier.rs`、
+`routes-cloudrouter-backend-api/src/upstream/supplier.rs`、前端 `suppliersPage.tsx`；
+**运行时路由与计价完全不读它**。`ai_upstream_supplier_endpoint.vendor_codes` 同样只有管理面读写，
+`load_upstream_account_routes` 的 join 链里没有 vendor 收敛。所以覆盖不到厂商资源不会因此发生，
+**不需要为它补运行时逻辑**；契约只要求 `supplier_type = official ⇒ defaultVendorCode 必填`。
+
+### 15.9 复现命令
+
+> 下列脚本都在 `.tmp/` 下（`.gitignore:17` 已忽略）——它们要么依赖真实库 + 真实凭据环，
+> 要么会改库，属于本地夹具而非可提交的门禁。需要复现时按下文重建即可。
+
+```bash
+cd /d/sdkwork-space/sdkwork-cloudrouter
+export CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_LINKER="D:\\programs\\vs-buildtools\\VC\\Tools\\MSVC\\14.44.35207\\bin\\Hostx64\\x64\\link.exe"
+export SDKWORK_DATABASE_URL="postgresql://sdkwork_ai_dev:sdkworkdev123@127.0.0.1:5432/sdkwork_ai_dev?sslmode=disable"
+export SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT=development      # 默认 production 会把 11 个厂商默认账号全置 status=0
+export SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING_FILE="D:/sdkwork-space/sdkwork-cloudrouter/.sdkwork/secrets/upstream-credential-key-ring.development.json"
+export SDKWORK_MODELS_CATALOG_ROOT="D:/sdkwork-space/sdkwork-models"
+
+# 单测（本轮 497 → 509）
+cargo test -p sdkwork-cloudrouter-router-service --lib
+
+# 自动初始化 / 新增 / 删除 / 幂等（原生目录）
+cargo build -p sdkwork-cloudrouter-installer --bin cloudrouterctl
+./target/debug/cloudrouterctl.exe ensure      # 期望 changed:false；漂移时为 true 并全量重投影
+
+# 新增/删除模型的定向探针：造一份目录副本，克隆一个模型进去
+python .tmp/build_probe_catalog.py reset && python .tmp/build_probe_catalog.py add
+SDKWORK_MODELS_CATALOG_ROOT="D:/tmp/catalog-probe" ./target/debug/cloudrouterctl.exe ensure   # changed:true
+python .tmp/build_probe_catalog.py remove
+SDKWORK_MODELS_CATALOG_ROOT="D:/tmp/catalog-probe" ./target/debug/cloudrouterctl.exe ensure   # changed:true（orphan 退役）
+
+# 档位缺口普查
+python .tmp/classify_tier_gaps.py "D:/sdkwork-space/sdkwork-models"
+
+# 七类能力的端到端探针（未纳入版本控制的手工夹具，需真实库 + 真实目录 + 凭据环）
+cargo test -p sdkwork-cloudrouter-edge-runtime --test media_provider_native_db_e2e -- --nocapture
+```
+
+WSL 侧读库（Windows 无 psql）：
+
+```bash
+wsl.exe -d Ubuntu-22.04 -- bash -lc 'PGPASSWORD=sdkworkdev123 psql -h 127.0.0.1 -U sdkwork_ai_dev -d sdkwork_ai_dev -P pager=off -f /mnt/d/sdkwork-space/sdkwork-cloudrouter/.tmp/probe_state.sql'
+```
+
+### 15.10 未决项
+
+| # | 项 | 归属 | 状态 |
+| --- | --- | --- | --- |
+| N-20 | A 类档位缺口：`bytedance/*` 费率侧用裸分辨率（`720p`）而非规范词表（`res_720p`） | sdkwork-models | **已修**（9 个定价文件 / 25 条费率，见 §15.11） |
+| N-21 | B/C 类需逐 profile 做"模式 × 分辨率 × 音轨"语义映射，禁止批量灌 `pricingTierCodes` | sdkwork-models（需厂商价目页） | **部分已修**：19 个 profile 条目（机械重连）已回填；**剩 63 例 warning 待产品决策**（48 例不可达 + 15 例歧义，见 §15.11） |
+| N-22 | `kuaishou/kling-v3` 的 1080p 有音轨价（0.168）与无音轨价（0.112）并存，当前选 0.112 | sdkwork-models | **已定论：不是"取错档"，是"档位取决于请求"**（§15.12）。官方价目页把 1080p 的 `无声`(0.8 CNY) / `有声 x 未指定音色`(1.2) / `动作控制`(1.2) 并列为一等档位 ⇒ 静默取 `res_1080p`(无声) 对**无声请求是正确的**，只有调用方在厂商原生体里**打开有声/动作控制**时才低计 1.50×。修法不在目录层（pin 会让无声请求高计），**建议在 cloudrouter 的 kling 透传面把音频参数固定为无声或禁止透传**（跨仓，需评审） |
+| N-23 | 数字人 / 动作模仿缺 `avatar` / `motion` 生成模式 profile；`suno` 无可路由有价模型 | sdkwork-models | **拆成三件，两件已定论、一件是词表缺口**（§15.12）：`suno` = **设计决定非缺陷**（官方只有订阅 credits，无按秒/按次 API 单价）；`avatar` / `motion_control` = **运行时已刻意报 `ApiCodeIsNotAGenerationMode` 缺口而不猜档**，缺的是 `sdkwork-models` 两套词表（`capability` / `generationMode`）里的条目 ⇒ 词表变更，**属评审项（未动）** |
+| N-24 | `apis/*/openapi.json` + `sdks/*/openapi/*.json` 相对生成器陈旧：`7c04223` 把 `apis/` 回退成 `modelAccessChannels.update`，而路由清单已是 `.upsert` ⇒ HEAD 内部自相矛盾 | sdkwork-models | **已修**（重跑 materialize，4 个文件，见 §15.11） |
+| N-25 | `tests/contract/models-openapi-contract.test.mjs` 断言**全部** app-api 操作必须 `dual-token`，但 cloudrouter 权威把 9/10 个目录读取 GET 声明为 `anonymous`（`API_SPEC.md` §367/§2168 允许）⇒ 测试过宽，HEAD 即红 | sdkwork-models | **已修**（§15.12）：按 spec 改为"钉住 9 个公开读取操作 + 其余必须 dual-token + 双向比对"，并用 5 组反例验证拦截力未降 |
+| N-26 | 原「有交集即通过」判据的盲区：声明档位**恰好**命中一个费率档、但同分辨率还有**更贵的变体**时，运行时静默取最便宜档（`kling-v3` 0.112 vs 0.168、`kling-v2-6` 0.5 vs 1.0/1.2） | sdkwork-models | **盲区已封**（新增 `tier.ambiguous`，15 条 warning）；**定价决策归 N-22，已定论为"取决于请求"**。§15.12 补入官方档位语义取证、运行时复算（15/15 全部落到无声档）与门禁措辞增强 |
+| N-27 | 视频 profile 的**可计价性**从未被端到端对账过：库内活跃费率相对源目录有无多/缺/重复，以及是否存在"任何档位都取不到且无兜底价"的 profile | 本仓 + sdkwork-models | **已对账**（§15.12）：活跃费率 **265 条 / 67 catalogKey 与目录 1:1（0 多、0 缺、0 重复）**；另有 55 例"无档位可解析"profile 分类留档 |
+| #31 | `ai_upstream_supplier.default_vendor_code` 运行时不消费 | 管理面 | **已定论，不需运行时逻辑**（15.8） |
+| — | `catalog_complete` 的 `is_subset` 是单向的；本轮靠 `price_book_drift` 补上了价本这一层，但 `ai_model` / 模型档位表仍只有单向检查 | 本仓 | 观察项 |
+
+### 15.11 `sdkwork-models` 侧落地结果（2026-09-17 闭环）
+
+**做法：把"档位可达性"从一次性普查升级为常驻门禁**，再用门禁把 97 例精确分类为
+「机械可修」与「真歧义」，只自动修前者。
+
+**新增门禁（`sdkwork-models/tools/validate-catalog.mjs`，两条互补规则）**
+
+**① `model_video_profile.pricing.tier.unreachable`** —— 以**模型**为单位从定价文件收集视频计量
+单位（`video_output_second` / `video_result` / `video_input_second`）的 `tierCode → unitPrice`
+映射；若某 profile 声明的档位（`resolutionTierCode` / `durationTierCode(s)` / `pricingTierCodes`）
+与该映射**无交集**即报：
+- 命中码含本 profile 分辨率 token **且候选同价** ⇒ `error`（纯拼法差异，直接给修法）；
+- 候选**价格不同**，或**无任何含该 token 的码** ⇒ `warning`（需按请求维度选档或回厂商价目页映射）；
+- 该模型无视频档位费率 ⇒ 豁免。
+
+**② `model_video_profile.pricing.tier.ambiguous`** —— 封住①的盲区：声明档位**恰好**命中一个费率档、
+因此①放行，但同分辨率还有**更贵的变体**（`audio_res_1080p` / `motion_res_1080p` / `audio_voice_1080p`），
+且 profile **没有**写 `pricingTierCodes` ⇒ 运行时静默取**最便宜**档，`warning`。
+两个设计要点：
+- **只在同一计量单位内比较**。`video_input_second` 报的是**素材输入价**（`input_res_720p`），
+  与输出档位混比会把正确的 `res_720p` 误报成"还有更贵的同分辨率档"（实测假阳性 11 条）。
+- **只在"存在更贵变体"时报**，且价格比较走 `compareDecimalStrings`（十进制串），不用浮点。
+
+**修复前 → 修复后**（同一门禁，只换目录数据）：
+
+| 口径 | error | warning(`unreachable`) | warning(`ambiguous`) | 合计 | 涉及厂商 |
+| --- | --- | --- | --- | --- | --- |
+| HEAD 目录数据 | 46 | 51 | 15 | **112** | bytedance 30、kuaishou 20+15、runway 20、minimax 15、vidu 8、black_forest_labs 2、luma_ai 2 |
+| 修复后 | **0** | 48 | 15 | **63** | kuaishou 16+15、minimax 13、runway 11、vidu 4、black_forest_labs 2、luma_ai 2（bytedance 归零） |
+
+> ⚠️ `ambiguous` 的 15 条**在修复前后都存在**（它不在原来的 97 例里 —— 旧普查只找"取不到档"，
+> 没找"取到了但取错档"）。所以"97 → 63"不是修掉 49 例，而是：**修掉 49 例 + 新发现 15 例**。
+> `15 = kuaishou/kling-v3 7 条 + kuaishou/kling-v2-6 8 条`（含 cn+global 两侧 profile 条目）。
+> 这两族正是 N-22 所指的真实**低计**：`kling-v3` 声明 `res_1080p`=0.112 而 `audio_res_1080p`=0.168
+> （低 33%）；`kling-v2-6` 声明 `res_1080p`=0.5 而 `audio_1080p`=1.0 / `audio_voice_1080p`=1.2
+> / `motion_1080p`=0.8（**最高低计 2.4 倍**）。
+
+**已修（49 例 = `bytedance` 30 例 + 其他 19 例）**
+1. **`bytedance` 费率侧档位码规范化**（9 个文件 / **25 条费率**，另同步 25 处 `conditions[].value`
+   与 25 处 `rateHash`）：
+   `720p→res_720p`×9、`480p→res_480p`×8、`1080p→res_1080p`×5、`4k→res_4k`×2、
+   `4k_native→res_4k_native`×1。`bytedance` 是全库**唯一**用裸分辨率的厂商
+   （25 家里其余 24 家都用 `res_` 拼法），因此改费率侧比给每个 profile 加桥接更干净且全球一致；
+   改完必须 `node tools/migrate-pricing-v2.mjs --write` 重算 `conditions[].value` 与 `rateHash`。
+2. **19 个 profile 条目回填 `pricingTierCodes`**（9 个文件，只填"该 profile 分辨率 token 唯一命中且候选同价"的）：
+   `kuaishou/kling-3.0-turbo`（cn/global 各 2 条）→ `["audio_res_1080p"]`（原本会误选无音轨价，低 33%）、
+   `minimax/MiniMax-H3-Regeneration`（2 条）→ `["regen_768p_to_2k"]`、
+   `runway/seedance2` / `seedance2_fast` / `seedance2_mini`（各 3 条）→ `["res_480p_720p"]`、
+   `vidu/viduq3-mix`（cn/global 各 2 条）→ `["ref_res_720p"]`。
+3. 重建 `models/index.json`，并刷新 `releases/2026.09.17.1.json`（`indexSha256`、
+   9 个 vendor 段 sha256、`validation.issueCount` 0→63）。后者是 `release-catalog.mjs`
+   的纯派生产物，`--check` 本身就在 `_sdkwork:check` 链上，刷新属既有惯例
+   （对照 `9b11e94` 同批提交），且不在 AGENTS.md §Human Review Rules 的六类之内。
+
+**`unreachable` 未修（48 例 warning，9 个模型，需产品决策）** —— 两类，**都不可机械批量改**：
+
+| 类别 | 例数 | 分布 | 为什么不能自动修 |
+| --- | --- | --- | --- |
+| 费率里**有含该分辨率 token 的档位，但候选价不同**（真歧义） | **34** | kuaishou 16、minimax 12、vidu 4、luma_ai 2 | 运行时要按**请求参数**（音轨开关 / 时长 / 参考视频 / 高峰时段）选档，而 catalog profile 目前**无法表达该维度**。例：`kuaishou/kling-v3-omni` 同时报 `noref_audio_1080p` / `noref_silent_1080p` / `ref_silent_1080p`；`luma_ai/ray-3.2` 报 `res_720p_dur_5s` / `res_720p_dur_10s`；`vidu/viduq3` 报 `ref_res_720p` / `ref_offpeak_res_720p` |
+| 费率里**没有任何档位含该分辨率 token** | **14** | runway 11、black_forest_labs 2、minimax 1 | 费率按**质量档**（`i2v_hd` / `t2v_fhd` / `v2v_draft`）、**时长块**（`per_6s_block`）、**有无音轨**（`audio`）、**像素档**（`over_4mp`）、**生成模式**（`video_to_video`）报，分辨率维度在档位码里**根本不存在**，需回到厂商价目页建立"报价维度 → profile 维度"的映射 |
+
+> 这两个数字必须用**与门禁同构的判据**复算（`billed ∩ {含 profile 分辨率 token 的档位}` 是否为空），
+> 不能按报错文案里那句固定后缀（`the price book splits this tier by a dimension the profile cannot express`）
+> 分类——那句话对两类都会附加，按它分会把 14 例误算进 34 例。
+
+**`ambiguous` 未修（15 例 warning，2 个模型，需产品决策）** —— 都属"取到了档、但取的是最便宜那档"：
+
+| 模型 | 条数 | 声明价 | 更贵的同分辨率变体 | 低计幅度 |
+| --- | --- | --- | --- | --- |
+| `kuaishou/kling-v2-6` | 8 | `res_1080p` = 0.5 | `audio_1080p` = 1.0、`audio_voice_1080p` = 1.2、`motion_1080p` = 0.8 | **最高 2.4×** |
+| `kuaishou/kling-v3` | 7 | `res_1080p` = 0.112 | `audio_res_1080p` = 0.168、`motion_res_1080p` = 0.168 | **1.5×**（即 N-22 的"低 33%"） |
+
+> 这 15 条**不在**原来的 97 例里：旧普查只找"哪一档都取不到"，不找"取到了但取错档"。
+> 补齐判据后它们才显形，因此**修复前后都存在**，不构成回归。
+
+**门禁验证（`_sdkwork:check` 13 步，只跑 node 部分）**：12 PASS / 1 FAIL，唯一红项是
+N-25（既存、与本轮无关）。关键项：`migrate-pricing-v2`（契约同步，0 条待迁移）、
+`build-index --check`、`validate-catalog`（`ok=true`，63 warning / 0 error）、`catalog-audit`、
+`release-catalog --check`、`models_openapi_export --check`、`materialize --check` 全绿。
+
+**跨仓端到端验证（Windows 原生，真实库 + 真实目录）**
+
+```bash
+# cloudrouter 工具链：仓内 rust-toolchain.toml 解析成 msvc；LIB/INCLUDE 已就位，
+# 但 Git Bash 的 /usr/bin/link.exe 会抢在 MSVC 前 ⇒ 只钉 linker 路径即可，不用 vcvars
+export CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_LINKER="D:\programs\vs-buildtools\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\link.exe"
+cargo build -p sdkwork-cloudrouter-installer --bin cloudrouterctl -j 1     # 4m50s
+export SDKWORK_MODELS_CATALOG_ROOT="D:/sdkwork-space/sdkwork-models"
+./target/debug/cloudrouterctl.exe ensure
+```
+
+**判据与结果**（先确认二进制比所有在途源文件新，否则结论无效 —— 15:45 那个二进制就是
+过期品，12 个 `router-service` 源文件比它新）：
+
+| 断言 | 结果 |
+| --- | --- |
+| `ensure` 首次 | `changed:true`、`externalCatalog:true`、`lastCatalogRefreshStatus:succeeded` ⇒ 内容信号被 bytedance 费率 hash 变化点火 |
+| `pricing_import_run` 新增行 | `2c71ced26f38f362…`，`row_count=1258`，16:30:21（修复前基线是 13:32 的 `fc58e8d31ec09c93…`） |
+| 库内 bytedance 视频档位 | `res_720p`9 + `res_480p`8 + `res_1080p`5 + `res_4k`2 + `res_4k_native`1 = **25 条**，与改名的 25 条费率 **1:1 吻合** |
+| 旧裸档位残留 | `leftover_bare_tiers = 0` |
+| `ensure` 第 2、3 次 | 均 `changed:false`（幂等） |
+| `ai_model_video_profile.pricing_tier_codes` | `kling-3.0-turbo`→`["audio_res_1080p"]`、`MiniMax-H3-Regeneration`→`["regen_768p_to_2k"]`、`runway/seedance2{,_fast,_mini}`→`["res_480p_720p"]`、`viduq3-mix`→`["ref_res_720p"]` 全部落库 |
+
+> 读库通道：Windows 无 `psql`，走
+> `wsl.exe -d Ubuntu-22.04 -- bash -lc 'PGPASSWORD=… psql -h 127.0.0.1 -U sdkwork_ai_dev -d sdkwork_ai_dev -P pager=off -f /mnt/d/…/x.sql'`。
+> ⚠️ 表在 **`sdkwork_ai_dev` schema** 下，**不是 `public`**（`information_schema.tables` 要带
+> `table_schema='sdkwork_ai_dev'`，否则查出一片空、误判成"表不存在"）。
+> ⚠️ 档位不在独立列：在 `pricing_rate.conditions -> 0 ->> 'value'`。
+
+### 15.12 第 11 轮：三个悬案的定论与跨仓对账（2026-09-17 傍晚）
+
+本轮只做三件事：把 §15.10 里悬着的 **N-22 / N-23 / N-25** 定论，把 N-26 的"低计幅度"
+从门禁读数升级为**真实库 + 官方价目页**的证据，并新增 N-27（可计价性对账）。
+
+#### 15.12.1 N-25（契约测试过宽）——已修
+
+`API_SPEC.md` §366 把 `dual-token` 限定在 **protected** app-api 路由上，§367 / §2168 又要求
+**public** 的 SDK 生成操作必须同时 materialize `security: []` 与 `x-sdkwork-auth-mode: anonymous`
+（SDK 据此跳过凭据注入）。`x-route-scope` 不是判别符 —— 该权威面里每个操作都声明 `public`。
+因此**生成器合规、测试过宽**。改法：显式钉住 9 个公开读取操作，其余仍必须 `dual-token`，最后做
+**双向比对**（防"把公开面删干净"这种反向绕过）：
+
+```
+GET /app/v3/api/ai/model_access_channel_presets      GET /app/v3/api/ai/models
+GET /app/v3/api/ai/model_access_channels             GET /app/v3/api/ai/models/{modelId}/video_profiles
+GET /app/v3/api/ai/model_rankings                    GET /app/v3/api/ai/models/{modelId}/voices
+GET /app/v3/api/ai/model_vendors                     GET /app/v3/api/ai/video_profiles
+                                                     GET /app/v3/api/ai/voices
+```
+
+**反例验证**（确认拦截力未降，5/5 全部拦住）：A2 把 `modelAccessChannels.upsert` 改成
+`anonymous` ✔拦；B 把 `models.list` 改成 `dual-token` ✔拦（双向比对生效）；C 公开却带凭证
+`security` ✔拦；D `dual-token` 却 `security: []` ✔拦；E 未知 auth-mode（`api-key`）✔拦。
+
+#### 15.12.2 N-22 / N-26（15 条歧义）——定论：**取决于请求，不在目录层修**
+
+**缺失的那块证据在仓库里就有**：`sdkwork-models/.workbuddy/raw/kuaishou--cn__rendered-pricing-base-video.txt`
+（2026-09-17 用 Chrome/CDP 渲染的官方价目页，来源
+`https://klingai.com/document-api/pricing/base/video`）原文：
+
+| 模型 | 功能 | 720P | 1080P | 4K |
+| --- | --- | --- | --- | --- |
+| Kling 3.0 | **无声** | 0.6 | **0.8** | 3.0 |
+| Kling 3.0 | 有声 x 未指定音色 | 0.9 | **1.2** | 3.0 |
+| Kling 3.0 | 动作控制 | 0.9 | **1.2** | — |
+| Kling 2.6 | **无声** | 0.3 | **0.5** | — |
+| Kling 2.6 | 有声 x 未指定音色 | — | **1.0** | — |
+| Kling 2.6 | 有声 x 有指定音色 | — | **1.2** | — |
+| Kling 2.6 | 动作控制 | 0.5 | **0.8** | — |
+
+⇒ `res_1080p` 就是官方**「无声」**档，`audio_res_1080p` = 有声未指定音色，`motion_res_1080p` = 动作控制。
+**它们是并列的一等档位，不是"同一档的折扣价"。**
+
+**运行时复算**（按 `catalog.rs::decide_video_pricing_tier` 的判序，输入取**库内活跃费率**）
+—— 15/15 全部落到无声档：
+
+| 模型 | 条数 | 候选档位（权威递降） | 命中 | 计费价 | 同分辨率最贵变体 | 低计 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `kling-v3` | 7 | `pricingTierCodes=[]` → `res_1080p` | `res_1080p` | 0.800 CNY / 0.112 USD | `audio_res_1080p` / `motion_res_1080p` = 1.200 / 0.168 | **1.50×** |
+| `kling-v2-6` | 8 | `pricingTierCodes=[]` → `res_1080p` | `res_1080p` | 0.500 CNY / 0.070 USD | `audio_voice_1080p` = 1.200 / 0.168 | **2.40×** |
+
+**结论：这是真实敞口，但触发条件是"调用方在厂商原生请求体里打开有声/动作控制"。**
+判据链：
+
+1. 视频生成走**厂商原生透传**，请求体是厂商 JSON ⇒ 调用方**能**带音轨标志；
+2. profile 的 `wireParameters` 只带 `{duration, resolution}`，**不带**音频维度；
+3. 运行时裁决**不解析**厂商原生体里的音频事实（`decide_video_pricing_tier` 只吃
+   `resolution`，且仅用于按分辨率挑 profile，不参与选档）；
+4. 目录侧唯一相关信号 `outputAudio` **不能**当依据 —— 它是
+   `tools/seed-video-profiles.mjs` 的**族级常量**：`kuaishou` 47/47、`bytedance` 35/35、
+   `vidu` 24/24 全 `true`；`google` 0/12、`luma_ai` 0/10、`openai` 0/4、`pixverse` 0/8、
+   `xai` 0/6、`zhipu` 0/2 全 `false`；`minimax` 3/24、`runway` 12/42。反例决定性：
+   `kling-v2-5-turbo` 与 `kling-video-o1` 的费率表**根本没有音频档**，它们的 `outputAudio` 也是 `true`。
+
+⇒ **不 pin、不改价**。pin 任一侧都会让另一侧错价：钉 `audio_res_1080p` 会让**无声请求高计
+1.50×**（`kling-v2-6` 2.40×），而这恰是 N-22 一开始想避免的那类错误。
+**建议（跨仓，需评审）**：在 cloudrouter 的 kling 透传面把音频参数**固定为无声或禁止透传**
+（`/kling/v1/videos/text2video` / `image2video` / `generations`），使"取最便宜档"从"碰巧正确"
+变成"语义正确"；若业务确实要放行有声，则必须把该维度接入选档，不能在目录层猜。
+
+**门禁侧落地（本轮唯一代码改动，`sdkwork-models/tools/validate-catalog.mjs`）**：
+`tier.ambiguous` 的 message 补上两条决策信息 —— ①当 profile 声明了 `outputAudio: true` 时，直接
+点出"目录声称有声、而运行时只能取到无声档"这一自相矛盾；②给出判据："只有**每个被路由的请求都
+共享同一种变体**时 pin `pricingTierCodes` 才是对的，否则变体必须来自请求而不是最便宜档"。
+计数不变（仍 15 条），只提升可复核性。
+
+#### 15.12.3 N-23 —— 拆成三件，两件已定论
+
+**(a) `suno` 无可路由有价模型 = 设计决定，非缺陷。**
+官方只公布订阅 credits（Pro 2,500/月、Premier 10,000/月），**没有任何按秒/按次的 API 单价**；
+`models/suno/` 下 5 个模型里 `suno-v5` / `suno-v5.5` 已降为 `deprecated`（其既有
+0.020000 / 0.025000 USD 单价无官方页可复核，标为**未确认**），v6 族 3 个（`suno-v6` /
+`v6-mini` / `v6-wild`）为 `catalog_only`。证据与判定过程见
+`sdkwork-models/.workbuddy/patches/suno--global.json` 的 `notes`。
+
+**(b) `avatar` / `motion_control` = 词表缺口（不是数据缺失），运行时已刻意不猜档。**
+两侧现状：
+
+| 面 | 数字人 | 动作模仿 | 视频延长 |
+| --- | --- | --- | --- |
+| `sdkwork-generations` provider adapter | `avatar_video`（限 kling） | `motion_mimicry`（限 kling / vidu） | **`video_extend`** |
+| `sdkwork-cloudrouter` provider-native classifier | `kling.avatar`（`/kling/v1/videos/avatar`） | `kling.motion_control`（`/v1/videos/motion-control`） | — |
+| `sdkwork-models` `generationMode` 枚举 | **无** | **无** | **`video_extension`**（拼法不同的另一个名字） |
+| `sdkwork-models` `capability` 枚举 | **无** | **无** | — |
+
+`catalog.rs::video_generation_mode_for_api_code` 只认 `text_to_video` / `image_to_video` /
+`reference_to_video` / `multi_shot` 四个后缀，`kling.avatar` / `kling.motion_control` 一律返回
+`None` ⇒ 报 `ApiCodeIsNotAGenerationMode` 缺口。**这正是刻意的**：该函数的文档注释已写明
+"按普通视频档位兜底会把它们按更低的单价计费，因此报缺口是唯一正确结果"。
+⇒ 修它要**扩两处枚举**并同步下游 match 分支（`generations` 的 `operation_types`、
+cloudrouter 的模式映射），属**标准/词表变更**，是 AGENTS.md §Human Review Rules 覆盖的动作，
+**本轮未动**。附带发现：`video_extend`(generations) 与 `video_extension`(models) 是**同一能力两个名字**，
+需一并收敛（`video_extension` / `video_edit` 目前在目录里**从未被任何 profile 使用**，收敛无数据冲击）。
+
+**(c) `runway/gwm1_avatars`** 是目录里**唯一**数字人模型，被塞进 `capabilities: ["video","audio"]`
++ `generationMode: text_to_video`，其费率档位是 `per_6s_block`（6 秒计费块，不是档位码）⇒
+落入 `unreachable` 且无兜底价。它是 (b) 的具体受害者，不是独立缺陷。
+
+#### 15.12.4 N-27（新增）：可计价性对账 —— 跨仓 1:1
+
+**做法**：把库内**活跃**费率（`deleted_at IS NULL`）投影成
+`(catalog_key, region, currency, meter, operation, tier_code, unit_price)` 七元组集合，
+与 `sdkwork-models` 源目录 `models/*/*/pricing/*.json` 的同构集合逐条比对
+（只取 `video_output_second` / `video_result` / `video_input_second` 三个计量单位）：
+
+| 断言 | 结果 |
+| --- | --- |
+| catalogKey 数 | 源目录 **67** / 库内 **67** |
+| 库内多出（源目录已无） | **0** |
+| 源目录有、库内无 | **0** |
+| 库内同一组合重复（活跃） | **0** |
+| 活跃视频费率总行数 | **265**，与源目录 265 条 **1:1** |
+| 软删历史行（`deleted_at` 非空） | 111 条；旧裸档位（`480p`/`720p`/`1080p`/`4k`）**在活跃集合中为 0** ⇒ 印证 §15.11 的 bytedance 改名确实生效且旧档位已正确退役 |
+
+**⚠️ 方法论坑（本轮踩到，务必先筛 `deleted_at IS NULL`）**：不筛软删会得到
+**46 条"库内残留" + 59 条"重复行"的假阳性** —— 例如
+`bytedance/doubao-seedance-2-0-260128` 的 `480p/720p/1080p/4k` 与无条件的 `0.860000`
+都还在表里，但它们 `deleted_at` 非空，属**正常的历史版本**（`effective_from` 2026-09-16，
+新档位同时入库）；`kuaishou/kling-v3` global 每个档位 `n=2` 也是"1 活跃 + 1 软删"，不是活体重复。
+`pricing_rate` 用**软删 + `status`** 表达版本演化，所有"库内 vs 目录"的集合比对都必须带上这个过滤条件。
+
+**"无档位可解析"分类（留档，供后续按厂商价目页建映射）**：把 221 个视频 profile 按运行时判据分三桶：
+
+| 桶 | 条数 | 含义 | 代表 |
+| --- | --- | --- | --- |
+| OK | 105 | 候选档位在活跃费率里直接命中 | bytedance `res_720p`、`kling-3.0-turbo` `audio_res_1080p`、`MiniMax-H3-Regeneration` `regen_768p_to_2k` |
+| FALLBACK | 61 | 候选档位无命中，但该模型有**无条件**（无 `tier_code` 条件）费率 ⇒ `priced` 集合为空、报 `MeterHasNoTierConditionedRate`，实际按**模型级平价**计 | `openai/sora-2`、`runway/gen4.5`、`xai/grok-imagine-video`、`google/veo-3.1-*`、`alibaba/wan2.6-*` |
+| DEAD | 55 | 候选档位无命中，且**无兜底价** | `minimax/hailuo-0{2,2.3,-fast}`（费率为**复合档** `res_768p_dur_6s`，profile 声明的是**分离**的 `res_768p`）、`runway/veo3.1{,_fast}`（费率只报 `audio`/`no_audio`）、`runway/h3_max`（`res_480p`/`res_768p`）、`runway/ruby`（`over_4mp`/`upto_4mp`）、`kuaishou/kling-video-o1`（`noref_*`/`ref_*`）、`vidu/viduq3`（`ref_res_*`）、`luma_ai/ray-3.2`（源已改成复合 `res_*_dur_*`，旧 `dur_*` 已软删） |
+
+> DEAD / FALLBACK 的划分**依据运行时真实判序**（`decide_video_pricing_tier` +
+> `index_video_pricing_tiers` + `index_priced_video_tier_codes`），并已核对 `catalog.rs` 源码：
+> `priced` 集合**只收带 `tier_code` 条件**的费率，因此"只有平价费率的模型"在该判据下报
+> `MeterHasNoTierConditionedRate`。55 例 DEAD 与 §15.11 的 48 例 `unreachable` warning
+> **同源但不相等**：门禁按**模型**聚合、按**目录**判；此处按库内**活跃**费率与 profile 逐条判。
+
+#### 15.12.5 门禁与契约终态
+
+- `sdkwork-models` `_sdkwork:check` **13/13 全绿**（首次；此前唯一红项 N-25 已修）：
+  `check:app-composition`、`migrate-pricing-v2`、`build-index --check`、`validate-catalog`
+  （`ok=true`，63 warning / 0 error）、`freshness-report`、`catalog-audit`、
+  `release-catalog --check`（`2026.09.17.1 is current`）、
+  `generate-mainstream-agent-model-catalog --check`、
+  `generate-vendor-model-architecture-doc --check`、`models_openapi_export --check`、
+  `materialize-models-openapi --check`、`models-openapi-contract.test.mjs passed`、
+  `check-api-response-envelope passed`。
+- 未提交面：`sdkwork-models` 26 项改动（门禁 + 契约测试 + 19 个 profile / 9 个定价文件 +
+  派生 openapi 与 release 产物），`sdkwork-cloudrouter` 77 项改动（本轮只追加本审计文档）。
+
+**本轮的改动不触目录数据**，因此运行时侧应当**不需要刷新** —— 这本身就是一条断言，已核：
+
+| 读数 | 值 |
+| --- | --- |
+| `cloudrouterctl ensure`（`SDKWORK_MODELS_CATALOG_ROOT=D:/sdkwork-space/sdkwork-models`） | `changed:false`、`catalogVersion=2026.09.17.1`、`externalCatalog:true`、`lastCatalogRefreshStatus:succeeded` |
+| `release-catalog --check` | `2026.09.17.1 is current` |
+| 活跃视频费率 / 软删历史 / 活跃 profile / 已 pin profile / `pricing_import_run` | **265 / 111 / 177 / 18 / 4** |
+
+⇒ **目录版本、运行时读取版本、库内已导入版本三者同为 `2026.09.17.1` 且 `changed:false`**：
+"只改门禁文案、不动目录"这一改动没有引起任何跨仓漂移。`pinned_profiles=18` 与 §15.11 回填的
+19 条一致 —— DB 侧 cn/global 合并成一行，条数比目录侧少是既有现象。
+
+---
+
+## 15.13 第 12 轮：契约发布面 ↔ 路由可达面的全量覆盖（N-28）
+
+### 15.13.1 问题的形状
+
+用户本轮的验收口径是「**确保整体功能每个测试都可以走到目标 vendor 的 api 调用，不同 vendor 具备
+对应的能力的 api 定义要正确，并确保实现完整**」。按这条口径把**三份声明**摆在一起对账：
+
+| 声明 | 位置 | 厂商原生操作数 |
+| --- | --- | --- |
+| 发布的入站契约 | `apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json`（10 个 `x-sdkwork-vendor-path-prefixes` 命名空间） | **47** |
+| 实际注册的 HTTP 路由 | `sdks/_route-manifests/open-api/…route-manifest.json` → `generated_open_http_route_manifest.rs` | **47**（逐条一致） |
+| 分类器能命名的 | `path -> api_code` 映射（两份副本） | **17** |
+
+⇒ 契约与路由清单**完全一致**，但它们联合发布的 47 条厂商原生操作里，**30 条没有任何 arm 能命名**。
+`classify_request` 剥掉命名空间后落到 catch-all `None`，合成一个 `<vendor>.<末段>` 的 route_key
+（如 `anthropic.files`、`midjourney.generations`），该 api scope 在 `ai_resource` / 资源组授权里
+不存在 ⇒ `upstream_route_selector.rs:508` 直接 fail-closed：
+
+```
+upstream route is not available for configured upstream account route:
+no upstream account routes are configured for account group {code} (id {id}) on api scope {api_code}
+```
+
+这条报错**既不说路径、也不说缺哪一环**，所以在此之前它是完全不可见的：§15.12 里的
+`node tools/check-cloudrouter-ai-routing-consistency.mjs` 6 项检查**全绿**，而 47 条里 30 条
+注定走不到厂商。这正是"每个测试都能走到目标 vendor"与"API 定义正确"之间的缺口。
+
+### 15.13.2 新检查 7：契约发布面的可路由性对账（双向、带台账）
+
+`tools/check-cloudrouter-ai-routing-consistency.mjs` 新增第 7 项检查：
+
+- 取契约里所有落在 `x-sdkwork-vendor-path-prefixes` 命名空间下的 `(method, path)`；
+- 用**同一条 `path -> api_code` 映射**求 api code（不是另写一套匹配）；
+- 要求该 api code **既在 `ai_route_taxonomy.rs` 里、又有种子 `api_endpoint`**；
+- 三者齐备 = 可路由；否则必须出现在本轮新增的 **`DECLARED_UNROUTED_OPERATIONS` 台账**里。
+
+台账是**精确双向**的，因此不可能腐烂成永久借口：
+
+| 方向 | 触发 | 结果 |
+| --- | --- | --- |
+| 契约发布了、但走不到 | 不在台账里 | **红**：点名 `METHOD path` + 缺哪一环 |
+| 台账里写了、但已变得可路由 | api code ∈ taxonomy 且已种子 | **红**：提示删掉该条 |
+| 台账里写了、但契约已不再发布 | 陈条 | **红**：提示删掉该条 |
+
+实测读数：**47 = 19 可路由 + 28 台账**（`19 + 28 = 47` 与契约操作数逐条吻合：anthropic 11、
+google 13、kling 4、vidu 7、volcengine 3、suno 2、elevenlabs 2、midjourney 2、minimax 1、
+nano-banana 2，减掉 9 条 utility 类台账差异后即得）。
+
+**反例验证 4/4 全拦**（改前红、改回绿）：
+
+| # | 注入 | 门禁输出 |
+| --- | --- | --- |
+| 1 | `gemini.image_generation` + `kling.task_query` 模板回退成 `:predict` / `/v1/videos/{taskId}` | `seeded pathTemplate describes a path these arms cannot answer (2)` × 两份副本，逐条列出 arm 实际应答的路径 |
+| 2 | 把 `gemini.image_generation` 的模板换成 nano-banana 那条 | 拦住（证明分支感知：`/nano-banana:` 标记只允许给 `gemini.nano_banana.image_generation`） |
+| 3 | 把 `/api/v3/contents/generations/tasks` 的 arm 改成 `…/task`（单数） | 同时报 `check 4` 与 `check 7`：`POST /volcengine/api/v3/contents/generations/tasks is published by the contract but the gateway cannot route it (no arm matches, no taxonomy route, no seeded api_endpoint)` |
+| 4 | 加一条 `"nano.banana" if path == "/v1/images/generations"` arm，把台账项变成可路由 | `POST /nano-banana/v1/images/generations is now routable (gemini.nano_banana.image_generation) but is still declared unrouted in this check; delete its entry` |
+
+台账 28 条的归类与理由（写在门禁源码里，逐条可查）：
+
+| 组 | 条数 | 内容 | 为什么现在不修 |
+| --- | --- | --- | --- |
+| anthropic / google 工具面 | 20 | `files` CRUD、`messages/batches`、`count_tokens`、`cachedContents`、`:batchEmbedContents`、`:countTokens` | 全都没有 taxonomy route / 种子 / 资源组授权 / 价格；且都不走按次生成的计量单位（`count_tokens` 厂商免费，files/batches 是存储与作业控制）。**接线是定价与产品决策，不该由门禁替产品定** |
+| `midjourney` 命名空间 | 2 | `/midjourney/v1/images/generations` ± `{task_id}` | `ai_upstream_supplier`、`ai_model_vendor`、bundled account **三者都没有**；且 `sdkwork-generations` 把 `midjourney` slug 走的是 OpenAI 兼容图片面（`image.rs:76` `"openai" \| "midjourney" => dispatch_openai`），这条命名空间没有消费者 |
+| `nano-banana` 命名空间 | 2 | `/nano-banana/v1/images/generations` ± `{task_id}` | 见 15.13.4：**有活消费者、且是跨仓 API 权威歧义**，不是加一条 arm 能解决的 |
+| `vidu` 视频动词 | 4 | `text2video` / `img2video` / `reference2video` / `tasks/{id}/creations` | 见 15.13.4：路径本身**是 Vidu 真路径**（账户 base_url = `https://api.vidu.cn`），但 taxonomy 里 `vidu.*` 只有 `reference_to_image` / `start_end_to_video` / `motion_sync`，**没有现成 api code 可复用**；每条都要新增 taxonomy route + 种子 + 资源组授权 + 价格 |
+
+### 15.13.3 检查 4 升级为"求值"：补上三条只看字面量的漏网
+
+旧检查 4 只比对 `path == "<字面量>"` 形态的 arm，其余一律计成
+`predicateCount ... not comparable`（5 条）——**漏洞就在"不比对"这四个字里**：谓词 arm 恰恰是
+三处漂移的藏身处。
+
+现在的 `parsePathArms` 把 **5 类 arm 形状全部解析成语义结构**（literal / pathPrefix /
+geminiAction（含 `/nano-banana:` 分支）/ poll(family) / 保留旧谓词名映射），
+再用 `resolveApiCode` 求值——**与 Rust 侧同一条 match 语义**；遇到无法建模的形状**直接红**，
+不再退回"计数但不校验"（本轮实测：脚本注入一次不成形的 arm 删除，门禁立刻报
+`1 arm(s) this gate cannot model` —— 这条安全属性本身也验证过了）。
+
+修掉的三条 `pathTemplate`（都是"目录宣称了一个没有任何 arm 能应答的入口"）：
+
+| api code | 改前 | 改后 | 依据 |
+| --- | --- | --- | --- |
+| `gemini.image_generation` | `/v1beta/models/{model}:predict` | `/v1beta/models/{model}:generateImages` | arm 谓词是 `gemini_model_action_matches(path, "generateimages")`；`media_routing_e2e.rs:987` 用 `/google/v1beta/models/gemini-2.0-flash-preview-image-generation:generateImages` 真实走通了 Google 账户 |
+| `gemini.nano_banana.image_generation` | `/v1beta/models/{model}:predict`（与上一条**同一个**模板） | `/v1beta/models/nano-banana:generateImages` | 该 arm 的内层判据是 `path.contains("/nano-banana:")`，所以 `{model}` 永远落进 else 分支；`passthrough.rs:2329` 的既有断言 `endpoint_key_from_standard_path("gemini", "/v1beta/models/nano-banana:generateImages")` 就是权威路径 |
+| `kling.task_query` | `/v1/videos/{taskId}` | `/v1/videos/generations/{taskId}` | 三处独立来源一致：契约 `GET /kling/v1/videos/generations/{task_id}`、生成 SDK `videos_kling.rs:30`、分类器 poll arm `task_poll_path_matches(…, "v1/videos/generations")` |
+
+### 15.13.4 顺带坐实的两类"活缺陷"（含一条跨仓 API 权威歧义）
+
+**(a) 已修：volcengine 走的是"发明的路径"，而契约发布的是 Ark 真路径。**
+
+DB 实测（`ai_upstream_account` → `ai_upstream_supplier_endpoint`）：
+
+| supplier | 上游 base_url |
+| --- | --- |
+| volcengine | `https://ark.cn-beijing.volces.com` |
+| gemini | `https://generativelanguage.googleapis.com` |
+| vidu | `https://api.vidu.cn` |
+| kling | `https://api-beijing.klingai.com` |
+
+而厂商原生请求是**逐字转发**的（`provider_request.rs:50`：非 adapter 模式下
+`path` 就是 `invocation.request.path`，`url = base_url + path`）。所以
+`volcengine.video_generation` 原本种子在 `/v1/videos/generations` ⇒
+`https://ark.cn-beijing.volces.com/v1/videos/generations` —— **Ark 不服务该路径**；
+而 `sdkwork-generations` 的 `volcengine_create_video_task` 真正调用的是
+`videos_volcengine().create_api_v3_contents_generations_task`，即
+`/volcengine/api/v3/contents/generations/tasks` —— 又**没有任何 arm 能命名**。两头都不通。
+
+本轮修法（**复用既有 api code，不新增 taxonomy / 授权 / 价格**）：
+
+| 新增 arm | api code | 备注 |
+| --- | --- | --- |
+| `/api/v3/contents/generations/tasks` | `volcengine.video_generation` | Ark 内容生成任务 = 视频生成 |
+| `/api/v3/contents/generations/tasks/{task_id}`（poll） | `volcengine.task_query` | 新增 `task_poll_path_matches(path, "api/v3/contents/generations/tasks")` |
+| `/api/v3/images/generations` | `volcengine.image_generation` | Ark 图片生成 |
+
+同时把三条 `pathTemplate` 改成 Ark 真路径（与既有的 `volcengine.speech` =
+`/api/v3/audio/speech` 同约定），并**保留** `/v1/videos/generations`、`/v1/images/generations`
+两条原名作兼容别名。两条分类器副本（`provider_native_classifier.rs` / `passthrough.rs`）
+同步改；新增单测
+`volcengine_ark_paths_classify_alongside_the_openai_shaped_aliases`
+（**10 passed / 0 failed**，`cargo test -p sdkwork-cloudrouter-router-service --lib provider_native_classifier`）。
+
+顺带把三个近似重复的谓词辅助函数
+（`task_query_path_matches` / `music_task_query_path_matches` / `media_task_poll_path_matches`，
+其中一个把 `/v1/` 硬编码进名字）**收敛成一个 `task_poll_path_matches(path, family)`**，
+family 自带前缀 —— 这既是可读性修复，也是让门禁能建模的必要条件：**名字解析不了的 arm，
+门禁就只能跳过**。
+
+**(b) 未修的活缺陷（需跨仓决策，已写进台账理由）：**
+
+`sdkwork-generations/crates/sdkwork-generations-provider-adapter/src/gateway.rs` 生成的
+Open SDK 调用点，逐条对照分类器：
+
+| generations 调用点 | cloudrouter 收到的路径 | api code | 状态 |
+| --- | --- | --- | --- |
+| `images_nano_banana().create_generations` | `/nano-banana/v1/images/generations` | 无 arm | **❌ 50201** |
+| `nano_banana_retrieve_image_generation` | `/nano-banana/v1/images/generations/{id}` | 无 arm | **❌ 50201** |
+| `videos_vidu().create_ent_v2_text2video` | `/vidu/ent/v2/text2video` | 无 arm | **❌ 50201** |
+| `videos_vidu().create_ent_v2_img2video` | `/vidu/ent/v2/img2video` | 无 arm | **❌ 50201** |
+| `videos_vidu().list_ent_v2_tasks_creations`（图片与视频轮询共用） | `/vidu/ent/v2/tasks/{id}/creations` | 无 arm | **❌ 50201** |
+| `gemini_retrieve_video_operation` | `/google/v1beta/models/{m}/operations/{id}` | 无 arm | **❌ 50201**（且**不在契约里**，检查 7 覆盖不到） |
+| `videos_volcengine().create_api_v3_contents_generations_task` | `/volcengine/api/v3/contents/generations/tasks` | `volcengine.video_generation` | ✅ 本轮修 |
+| `videos_volcengine().list_api_v3_contents_generations_tasks` | `…/tasks/{id}` | `volcengine.task_query` | ✅ 本轮修 |
+| `http_client().post(ai_path("/volcengine/api/v3/images/generations"))` | `/volcengine/api/v3/images/generations` | `volcengine.image_generation` | ✅ 本轮修 |
+| kling / suno / minimax / elevenlabs / vidu(3) / volcengine.speech / openai 兼容面 | 见 §15.11 全清单 | 各自内建路由 | ✅ 本来就通 |
+
+⇒ **`sdkwork-generations` 目前有 6 条厂商调用点结构性走不到厂商**（其中 5 条路径契约已发布、
+1 条连契约都没有）。
+
+**nano-banana 是本轮最值得单独点名的 API 权威歧义**：契约同时存在两套 nano-banana 入口——
+Gemini 原生面 `/google/v1beta/models/nano-banana:generateImages`（**已接线**：taxonomy 有
+`gemini.nano_banana.image_generation`，`official.gemini.full` 有资源授权，`media_routing_e2e.rs`
+已验证能打到 Google 账户），以及 SDKWork 自造的 REST 面 `/nano-banana/v1/images/generations`
+（有类型化 schema `NanoBananaImageGenerationRequest`、有 SDK、**有活消费者**）。
+而 Gemini 账户 base_url 是 `generativelanguage.googleapis.com`，逐字转发
+`/v1/images/generations` **必然 404** ⇒ **给 `/nano-banana/…` 加 arm 只会把 50201 换成上游 404，
+不是修复**。两个候选方向（(i) `dispatch_nano_banana` 改走 Gemini 原生面，
+(ii) 网关为 `nano-banana` 命名空间提供翻译层）都属于跨仓 API 权威归属问题，
+按 `AGENTS.md` §Human Review Rules「Surface … API authority ambiguity instead of guessing」
+**上报而非猜测**。
+
+### 15.13.5 门禁终态
+
+| 检查 | 修复前 | 修复后 |
+| --- | --- | --- |
+| 1 `path -> api_code` 两份副本一致 | classifier 29 / passthrough 29 | 同左（`task_poll_path_matches` 已同步） |
+| 2 种子 api code 都在 taxonomy | 56 个、0 未知 | 同左 |
+| 3 契约路径都在 `OPEN_API_PREFIXES` | 122 路径、0 越界 | 同左 |
+| 4 arm ↔ 种子模板 | **25 条字面量 arm 已比对、5 条谓词 arm 不比对** | **39 条 arm / 30 个 api code，全部求值** |
+| 5 命名空间四方一致 | 10/10/10/10，0 未知 | 同左 |
+| 6 生成 SDK 不把厂商路径挂到 `/v1` | 2367 文件、0 违规 | 同左 |
+| 7（新）契约发布面可路由性 | **不存在** | **47 = 19 可路由 + 28 台账（精确双向）** |
+
+```
+node tools/check-cloudrouter-ai-routing-consistency.mjs
+  passthrough: 39 arms over 30 api codes, all evaluated
+  classifier: 39 arms over 30 api codes, all evaluated
+  open-api vendor-native surface: 19 operation(s) routed, 28 declared unrouted
+ai-routing-consistency: passed
+```
+
+---
+
+## 15.14 第 13 轮收尾：DB 证据裁决、契约发布面缺口、种子探针盲区
+
+§15.13 的三份声明对账是在**静态**层面（源码 + JSON 种子）完成的。本节补上三类只有**运行态/跨仓**
+才看得见的读数：真实上游 `base_url`、**DB 里已落库的 `path_template`**、以及**下游跨仓调用点**。
+
+### 15.14.1 跨仓目录一致性复核
+
+改动落在 `data/ai-routing/resources/vendor-native-resources.json` 的 5 条 `pathTemplate` 与分类器 arm 上，
+故需复核 `sdkwork-models` 目录版本是否漂移。**核对过程本身留下一条事故记录**：
+
+| 项 | 读数 | 结论 |
+| --- | --- | --- |
+| ❌ `scripts/update_catalog_version.mjs --check` | 把 `sdkwork-models/sdkwork-models.json` 的 `catalogVersion` 从 **`2026.09.17.1` 打回 `2026.08.30.1`**、`generatedAt` 从 `2026-09-17T00:00:00Z` 打回 `2026-08-30T00:00:00Z` | 该脚本**忽略 `--check`**、硬编码版本号、**无条件 `writeFileSync`**；是历史一次性迁移工具，**不是校验器** |
+| ✅ 复原后 `git diff --stat -- sdkwork-models.json` | 空 | 已精确改回；全仓 grep 无 `2026.08.30.1` 残留 |
+| ✅ `tools/build-index.mjs --check` | `sdkwork-models index is current` / exit=0 | 索引与内容一致 |
+| ✅ `tools/validate-catalog.mjs` | exit=0（仅 1 条既存 `tier.unreachable` warning） | 契约合规 |
+| ✅ `tools/catalog-audit.mjs` | exit=0 | |
+| ✅ `tools/release-catalog.mjs --check` | exit=0 | |
+| ✅ `tools/freshness-report.mjs --as-of-catalog-generated-at` | `ok:true, generatedAt:2026-09-17T00:00:00Z, staleSources:[]` | 目录版本正确且不陈旧 |
+
+⇒ **跨仓目录一致，无漂移**；`update_catalog_version.mjs` 的触发条件与危害已写入 skill 校验命令章。
+
+### 15.14.2 契约发布面缺口的准确形状
+
+门禁检查 7 的输入是 `apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json`（**122 paths**）中
+`x-sdkwork-vendor-path-prefixes` 覆盖的 namespace。逐 namespace 枚举后：
+
+| namespace | 契约是否发布 | 说明 |
+| --- | --- | --- |
+| `google` | **部分**：`cachedContents` / `files` / `:generateContent` / `:streamGenerateContent` / `:embedContent` / `:batchEmbedContents` / `:countTokens` | **未发布** `:generateImages`、`:generateVideos`、`/operations/{task_id}` |
+| `nano-banana` | ✅ `POST/GET /v1/images/generations(±{task_id})` | 命名空间存在但无供应商（见 15.14.3） |
+| `vidu` | ✅ 7 条（含 `text2video` / `img2video` / `reference2video` / `tasks/{id}/creations`） | 其中 4 条无 taxonomy route |
+| `kling` | ✅ 4 条（`videos/avatar` / `videos/generations(±{id})` / `videos/motion-control`） | 全部已接线 |
+| `suno` / `minimax` / `elevenlabs` / `volcengine` / `anthropic` / `midjourney` | ✅ 见 §15.13 | |
+| `jimeng` | ❌ **完全未发布**（且不在 `x-sdkwork-vendor-path-prefixes` 里） | 分类器有 `jimeng` arm、DB 有 jimeng 供应商/账户，但没有公开契约面 |
+
+**两个必须记住的边界**：
+
+1. `gemini.image_generation` / `gemini.video_generation` 属于「**契约没发布、下游却已在调**」的形态
+   （`sdkwork-generations` 的 `gateway.rs:699` 拼 `/google/v1beta/models/{model}:generateVideos`）。
+   因为**没发布**，所以**检查 7 的输入里根本没有它们** —— 检查 7 只枚举「已发布」的 vendor-native 操作。
+2. `/google/v1beta/models/{model}/operations/{task_id}`（`gateway.rs:714`
+   `format!("/google/v1beta/{}", operation_name.trim_start_matches('/'))`，Google LRO 名即 `models/X/operations/Y`）
+   是**三重缺口**：无 arm、taxonomy 无 route、契约未发布 ⇒ **检查 7 结构上覆盖不到**。
+   这是检查 7 已知边界，需要一条**跨仓调用点扫描**才能覆盖（尚未实现）。
+
+### 15.14.3 nano-banana 歧义的 DB 裁决
+
+§15.13 把 nano-banana 记为「API 权威歧义」。本轮查 DB 后，**歧义已被证据收敛为一条**：
+
+| 声明侧 | nano-banana 的存在证据 |
+| --- | --- |
+| passthrough 路由 | `crates/sdkwork-cloudrouter-edge-runtime/src/passthrough.rs:163`（`PROVIDER_NATIVE_PASSTHROUGH_PROVIDERS`） |
+| 标准路径命名空间 | 同文件 `:2148`（`is_standard_path_namespace`） |
+| 入站前缀 | `crates/sdkwork-api-cloudrouter-standalone-gateway/src/main.rs:34` + `crates/sdkwork-api-cloudrouter-assembly/src/bootstrap.rs:1075`（`/nano-banana/v1`） |
+| 契约 | `x-sdkwork-vendor-path-prefixes` 成员 |
+| taxonomy / 种子 / 授权 | ✅ 但挂在 **`gemini`** 供应商下（`gemini.nano_banana.image_generation`） |
+| **供应商 / 账户（DB）** | ❌ **不存在** |
+
+`ai_upstream_supplier` / `ai_upstream_account` 只有 11 个供应商：
+`anthropic` `elevenlabs` `gemini` `jimeng` `kling` `minimax` `openai` `openai_compatible` `suno` `vidu` `volcengine`。
+
+⇒ **命名空间全套声明齐全，却没有供应商/账户可落**。所以「给分类器加一条 `nano-banana` arm」
+在无上游账户时**依旧 fail-closed**（甚至先 50201 于账户解析）。可行方向只剩两条，都需要人裁决：
+
+- **(i) 退役该命名空间**，把 `sdkwork-generations` 的 `dispatch_nano_banana` 改走
+  `/google/v1beta/models/nano-banana:generateImages` —— 该面**已全通**（arm + taxonomy + 种子 +
+  `official.gemini.full` 授权 + `crates/sdkwork-cloudrouter-edge-runtime/tests/media_routing_e2e.rs:987` 实打 Google 账户）。
+- **(ii) 新建 `nano-banana` 供应商/账户 + 翻译层** —— 因为厂商原生请求**逐字转发**
+  （`provider_request.rs` 不做路径翻译），而 Gemini 不接受 `/v1/images/generations`，
+  所以必须真造一层翻译，不能只加 arm。
+
+### 15.14.4 各厂商真实 `base_url`（逐字转发的判据）
+
+`ai_upstream_supplier_endpoint`（`endpoint_code` 均为 `official-global`）：
+
+| supplier | base_url |
+| --- | --- |
+| anthropic | `https://api.anthropic.com` |
+| elevenlabs | `https://api.elevenlabs.io` |
+| gemini | `https://generativelanguage.googleapis.com` |
+| jimeng | `https://visual.volcengineapi.com` |
+| kling | `https://api-beijing.klingai.com` |
+| minimax | `https://api.minimax.chat` |
+| openai / openai_compatible | `https://api.openai.com/v1` |
+| suno | `https://api.sunoapi.org` |
+| vidu | `https://api.vidu.cn` |
+| volcengine | `https://ark.cn-beijing.volces.com` |
+
+`ai_upstream_account.default_base_url` 与 `ai_upstream_supplier.default_base_url` **全为空**
+⇒ 断言某路径能否打到厂商，**必须查 `ai_upstream_supplier_endpoint.base_url`**。
+
+### 15.14.5 种子完整性探针看不见模板漂移（P1）
+
+改动落在**种子 JSON 源**（`include_str!` 进二进制），**DB 不会自动跟随**。查库实测，
+本轮修的 6 条模板在 DB 里**仍是旧值**：
+
+| endpoint_code | DB 现值 | 种子源现值 |
+| --- | --- | --- |
+| `gemini.image_generation` | `/v1beta/models/{model}:predict` | `/v1beta/models/{model}:generateImages` |
+| `gemini.nano_banana.image_generation` | `/v1beta/models/{model}:predict` | `/v1beta/models/nano-banana:generateImages` |
+| `kling.task_query` | `/v1/videos/{taskId}` | `/v1/videos/generations/{taskId}` |
+| `volcengine.image_generation` | `/v1/images/generations` | `/api/v3/images/generations` |
+| `volcengine.video_generation` | `/v1/videos/generations` | `/api/v3/contents/generations/tasks` |
+| `volcengine.task_query` | `/v1/tasks/{taskId}` | `/api/v3/contents/generations/tasks/{taskId}` |
+
+**根因不是「忘了刷」，而是探针看不见**：
+
+- `postgres_ai_routing_seed_complete`（`services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/ai_routing_seed.rs:681`，
+  被 `infrastructure/sql/installer.rs:642` 调用）只做**存在性**判定 ——
+  `expected_resource_codes ⊆ resource_codes`、`expected_group_codes ⊆ group_codes`、
+  `expected_endpoint_codes ⊆ endpoint_codes`，再叠几个 count 断言；**不比对 `path_template` 内容**。
+- ⇒ 模板漂移的 dev 库，`installation_status()` 照样返回 `Installed`，**不会**走 `UpgradeRequired` 去重播种。
+- 而种子导入本身**是 upsert**：`INSERT INTO ai_api_endpoint … ON CONFLICT(tenant_id, organization_id, endpoint_code)
+  DO UPDATE SET … path_template = excluded.path_template`（同文件 `:905` 附近）
+  ⇒ **`pnpm db:seed` / `db:upgrade` 能把模板刷对**，只是没有任何信号提示需要刷。
+
+**未擅自修**：把探针从「存在性」升级为「内容一致」会改变安装状态语义
+（既有部署可能突然翻成 `UpgradeRequired`），属部署行为变更 ⇒ 按 `AGENTS.md` 走人工评审。
+
+### 15.14.6 待人工裁决（不擅自改）
+
+| # | 事项 | 为什么不能自动修 |
+| --- | --- | --- |
+| 1 | **nano-banana 命名空间去留**（方向 (i) 退役 vs (ii) 建供应商+翻译层） | 架构决策；两条路的产品含义不同（见 15.14.3） |
+| 2 | **vidu 4 条视频动词**（`text2video` / `img2video` / `reference2video` / `tasks/{id}/creations`） | 契约已发布、`sdkwork-generations` 已在调，但 taxonomy 没有任何 vidu 视频 route ⇒ 需新增 route + 种子 + 资源组授权 + **价**（定价/产品决策） |
+| 3 | **`/google/v1beta/models/{model}/operations/{task_id}`** | 三重缺口（无 arm / 无 taxonomy route / 未发布契约）；补它等于决定 Gemini LRO 轮询是否作为公开面，且需新 api code + 价 |
+| 4 | **种子探针从存在性升级为内容一致** | 改安装状态语义 = 部署行为变更（见 15.14.5） |
+| 5 | **`jimeng` 命名空间无公开契约面** | 是「不公开、只给内部调用」还是「漏发布」，属产品面决策 |
+| 6 | **`kling.text_to_video` 契约入口 vs 厂商真路径不一致**（契约 `/kling/v1/videos/generations` vs 种子 `/v1/videos/text2video`，逐字转发 ⇒ 走契约入口会打到 Kling 的非原生路径） | 改契约 = 重生成 SDK/清单；改种子 = 声明厂商路径为别名。先要有人以官方文档裁定真值（见 15.14.8） |
+
+### 15.14.7 门禁终态读数（第 13 轮实测）
+
+```
+node tools/check-cloudrouter-ai-routing-consistency.mjs
+  path -> api_code map: classifier 29 arms, passthrough 29 arms
+  seeded api codes: 56 across data/ai-routing/resources, 0 unknown to the taxonomy
+  open-api contract: 122 paths, 0 outside OPEN_API_PREFIXES
+  OPEN_API_PREFIXES: standalone gateway 12, bootstrap mirror 12
+  passthrough: 39 arms over 30 api codes, all evaluated
+  classifier: 39 arms over 30 api codes, all evaluated
+  open-api vendor-native surface: 19 operation(s) routed, 28 declared unrouted
+  gateway contract: 10 vendor-native namespaces, x-sdkwork-vendor-path-prefixes declares 10
+  gateway contract generator VENDOR_PROVIDER_PREFIXES: 10 namespaces, 0 contract namespaces unknown
+  open-api extension sync inferExternalProtocolId: 24 namespaces, 0 contract namespaces unknown
+  open-api extension sync isExternalWireProtocolRoute: 12 namespaces, 0 contract namespaces unknown
+  SDK runtime standardizer infer_external_protocol_id: 25 namespaces, 0 contract namespaces unknown
+  generated SDKs: 2380 source files scanned, 0 prepend "/v1" to a vendor-native path
+
+ai-routing-consistency: passed
+```
+
+`crates/sdkwork-cloudrouter-edge-runtime/src/passthrough.rs` 侧改动（谓词收敛 + volcengine Ark arm）
+由该 crate 的 lib 单测覆盖，与 `router-service` 侧同一份断言口径。本轮两个 crate 的编译+单测读数：
+
+| 命令 | 读数 | 耗时 |
+| --- | --- | --- |
+| `cargo test -p sdkwork-cloudrouter-router-service --lib provider_native_classifier` | **10 passed / 0 failed** | 14m22s |
+| `cargo test -j 1 -p sdkwork-cloudrouter-edge-runtime --lib` | **87 passed / 0 failed / 0 ignored** | 29m23s |
+| `rustfmt --edition 2021 --check`（两份分类器副本） | clean | — |
+
+⇒ 两份副本的 arm 改动**无回归**，且分类器行为被两侧单测同时钉住。
+
+### 15.14.8 新发现的第 4 类门禁盲区（未修，先登记）
+
+检查 4 比对的是 **分类器 arm ↔ 种子 `pathTemplate`**，**不比对「契约发布的入口路径 ↔ 种子 `pathTemplate`」**。
+而厂商原生请求**逐字转发**（`provider_request.rs:226` 的 `rewrite_path_model` 只重写
+Gemini 风格的 `/v1beta/models/{model}:{action}`，**对 kling/vidu/volcengine 等没有任何路径翻译**），
+于是「契约发布路径」与「种子声明的厂商真路径」**可以合法地不相等，却谁都不报错**：
+
+| api code | 种子 `pathTemplate`（厂商真路径口径） | 契约发布入口 | 一致？ |
+| --- | --- | --- | --- |
+| `kling.text_to_video` | `/v1/videos/text2video` | `POST /kling/v1/videos/generations` | **✗ 不一致** |
+| `kling.image_to_video` | `/v1/videos/image2video` | 未发布 | — |
+| `kling.image_generation` | `/v1/images/generations` | 未发布 | — |
+| `kling.task_query` | `/v1/videos/generations/{taskId}` | `GET /kling/v1/videos/generations/{task_id}` | ✅（本轮对齐） |
+| `kling.avatar` | `/v1/videos/avatar` | `POST /kling/v1/videos/avatar` | ✅ |
+| `kling.motion_control` | `/v1/videos/motion-control` | `POST /kling/v1/videos/motion-control` | ✅ |
+| `volcengine.video_generation` | `/api/v3/contents/generations/tasks` | `POST /volcengine/api/v3/contents/generations/tasks` | ✅（本轮对齐） |
+
+`kling.task_query` 本轮被改掉的原值 `/v1/videos/{taskId}` 是**两边都不属于**的死模板
+（既非 Kling 原生名，也非契约发布路径）—— 这是改动成立的原因。
+但 `kling.text_to_video` 的这处不一致**是既存的**：契约发布的是 SDKWork 自己的 RESTful 别名
+`/v1/videos/generations`，而种子声明厂商真路径是 `/v1/videos/text2video`；逐字转发下，
+走契约入口的请求会打到 `https://api-beijing.klingai.com/v1/videos/generations`。
+
+**未擅自修**（改哪一侧都有产品/契约含义），**也未新增门禁**（会立刻翻红且需先裁定真值）。
+登记为 15.14.6 第 6 项，并保留一条可决断的复核方式：以 Kling 官方 API 文档为准，
+或在 e2e 夹具里让上游对 `/v1/videos/generations` 返回 404、对 `/v1/videos/text2video` 返回 200，
+用现有 `media_provider_native_db_e2e` 形态把真值钉下来。
+
+---
+
+## 15.15 六类能力的「计价可达性」审计（图片 / 视频 / 音频 / 音乐 / 数字人）
+
+§15.13–15.14 把「路由是否可达」查清了：arm → taxonomy → 种子 → 授权四环。本节补最后一环 **④ 价**。
+结论是：**路由通了不等于能跑通，计价侧仍有一批结构性断点**，且它们全在
+「**带 `tier_code` 条件的费率选不中档位**」这一个机制上。
+
+### 15.15.1 定价资源键：四段回退（`pricing_identity.rs`）
+
+一个请求按什么资源计价，由 `resolve_pricing_key` 四段决定（`pricing_identity.rs`）：
+
+| 序 | 条件 | 键 | `PricingKeySource` |
+| --- | --- | --- | --- |
+| ① | `kind == Model` 且载荷预置了 catalog key | 预置键 | `PresetCatalogKey` |
+| ② | **`catalog.find_model(route_key).is_some()`** ⇒ 路由键本身就是目录资源 | `route_key` | `RouteKey` |
+| ③ | 请求携带模型名且按目录名唯一解析出键 | 模型键 | `RequestedModel` |
+| ④ | 预置键存在 | 预置键 | `PresetCatalogKey` |
+| ⑤ | 全落空 | 退化为 `route_key` —— **交给计价预检失败并给诊断** | `Unresolved` |
+
+而 `find_model` 的实现是 `models_by_key.get(model.trim())`（`infrastructure/sql/catalog.rs:1305`）——
+**按目录键查**。实测把 30 个厂商原生路由键（`kling.avatar` `gemini.image_generation`
+`elevenlabs.text_to_speech` …）拿去 `ai_model.catalog_key` 里比对：**零命中**。
+⇒ 厂商原生路由**只能**靠第 ③ 段（请求里带模型名）拿到价；带不上模型名的路由**必然 `price_not_found`**。
+
+### 15.15.2 档位（`tier_code`）选择：api code 末段 → 4 值白名单
+
+价表把视频/图片费率**条件化在 `tier_code` 维度**上，而档位由
+`decide_video_pricing_tier`（`infrastructure/sql/catalog.rs:326`）选出，第一步就是：
+
+```rust
+fn video_generation_mode_for_api_code(api_code: &str) -> Option<&'static str> {
+    const MODES: &[&str] = &[
+        "text_to_video", "image_to_video", "reference_to_video", "multi_shot",
+    ];
+    let suffix = api_code.rsplit('.').next()?.trim();   // ← 只取 api code 的「末段」
+    MODES.iter().copied().find(|mode| *mode == suffix)
+}
+```
+
+**只认 4 个值，且只从 api code 末段推导。** 拿 taxonomy 里全部 `capability = Video` 的 12 条路由比对：
+
+| api_code | 末段 | ∈ MODES |
+| --- | --- | --- |
+| `kling.text_to_video` | `text_to_video` | ✅ |
+| `kling.image_to_video` | `image_to_video` | ✅ |
+| `gemini.video_generation` | `video_generation` | ❌ |
+| `jimeng.video_generation` | `video_generation` | ❌ |
+| `volcengine.video_generation` | `video_generation` | ❌ |
+| `kling.avatar` | `avatar` | ❌ |
+| `kling.motion_control` | `motion_control` | ❌ |
+| `vidu.motion_sync` | `motion_sync` | ❌ |
+| `vidu.start_end_to_video` | `start_end_to_video` | ❌ |
+| `openai.video` / `openai.videos` / `openai.videos.generations` | `video` / `videos` / `generations` | ❌ |
+
+**12 条里只有 2 条能推导出 generation mode。** 而 `upstream_route_selector.rs:1036` 的注释
+（不是本报告写的，是代码原作者写的）已经把这个后果写死了：
+
+> 档位按计量单位分别解析：目录把它声明在 `ai_model_video_profile` 里，把它的报价写在
+> `pricing_rate` 的 `tier_code` 条件里，两者取交集才是可用档位。**缺这一维度时解析器会把带条件的
+> 候选全部过滤干净，报"有模型无价格"——而价格其实在库里。**
+
+⇒ 失败模式是 **`该模型无价格` / `price_not_found`**，而**价其实就在库里**。
+
+### 15.15.3 能力 × 厂商 计价可达性总表
+
+判据：① 该能力有无路由（§15.13）；② 其价表的计费单位是否带 `tier_code` 条件；
+③ 该 api code 能否推导 generation mode；④ 目录 profile 是否声明得出该档位。
+
+| 能力 | 厂商 / 路由 | 计费单位带 tier？ | 能推导 mode？ | 结论 |
+| --- | --- | --- | --- | --- |
+| 音频 | `elevenlabs.text_to_speech` / `sound_generation` | **否** | 不适用 | ✅ 可计价 |
+| 音频 | `volcengine.speech` | **否**（bytedance 的 tier 只在 llm/image/video 上） | 不适用 | ✅ |
+| 音频 | `gemini.live` | 否（google 只有 `llm_cache_read_token` 带 tier） | 不适用 | ✅ |
+| 音乐 | `suno.music_generation` | **否** | 不适用 | ✅ |
+| 音乐 | `minimax.music_generation` | **否**（minimax 的 tier 只在 video 上） | 不适用 | ✅ |
+| 视频 | `gemini.video_generation` | **否** | 否 | ✅（tier 不适用） |
+| 视频 | `kling.text_to_video` / `image_to_video` | **是**（kuaishou `video_output_second` 62 条） | **是** | ⚠️ 可计价，但见 15.15.4 的档位歧义 |
+| 视频 | `volcengine.video_generation` | **是**（bytedance 25 条） | ❌ | ❌ **选不中档** |
+| 视频 | `jimeng.video_generation` | **是**（同 bytedance） | ❌ | ❌ **选不中档** |
+| 视频 | `vidu.start_end_to_video` | **是**（vidu 62 条） | ❌ | ❌ **选不中档** |
+| 图片 | `gemini.image_generation` / `nano_banana` | **否**（google `image_result` 不带 tier） | 不适用 | ✅ |
+| 图片 | `volcengine.image_generation` | 部分（`seedream-4/5-lite` 不带；`seedream-5-0-pro` **带**） | ❌ | ⚠️ pro 版**选不中档** |
+| 图片 | `kling.image_generation` | **是**（kuaishou `image_result` 8 条，`kling-image-o1` 的 `res_1k_2k`） | ❌ | ❌ **选不中档** |
+| 图片 | `vidu.reference_to_image` | — | ❌ | ❌ vidu 价表**根本没有 `image_result`**（只有 sfx/video） |
+| **数字人** | `kling.avatar` | — | ❌（`avatar`） | ❌ **三重缺失**（见 15.15.4） |
+
+### 15.15.4 数字人专项：三重缺失
+
+> **⚠️ 本节的判据已被第 17 轮复核部分推翻，读之前先看本文 **§15.17**。**
+> 复核结论：① 环②③ 其实**都在**（本节当时用错 grep 路径 `crates/sdkwork-cloudrouter-router-service/`，
+> 实际在 `services/` 下，见 §15.17.1）；② 定价键不是 `kling.avatar` 而是 **`kling-ai-avatar-v2`**；
+> ③ 「档位选不中」是**描述性的**，不会单独导致失败（§15.17.3）。下表其余三行（价本、授权、e2e 伪装）
+> 仍成立，授权那一行已在第 17 轮修掉。
+
+| 环 | 证据 | 结果 |
+| --- | --- | --- |
+| 模型 / 目录资源键 | `ai_model` 里没有任何 `kling.avatar` / 头像模型；`sdkwork-models` 全仓 grep `kling.avatar` **零命中** | 定价键解析第 ①②③ 段**全落空** |
+| 价本 | DB 全库 `pricing_rate.product_code ilike '%avatar%'` 或 `operation_code ilike '%avatar%'` → **零行**；kuaishou 只有 `models.kuaishou.{image,sfx,video}` 三类产品 | 无价可引 |
+| 档位 | `video_generation_mode_for_api_code("kling.avatar")` → `avatar` ∉ MODES → `ApiCodeIsNotAGenerationMode` | 即便有 tier 费率也选不中 |
+| 授权 | `api.kling.avatar` **只在** `official-provider-groups.json`（`admin-api-groups.json` / `relay-provider-groups.json` 都没有） | 视账号所在分组而定 |
+
+**并且这条能力被 e2e 伪装成"通"**：`crates/sdkwork-cloudrouter-edge-runtime/tests/avatar_motion_routing_e2e.rs:227-290`
+用 `AiModel::new(...).with_catalog_key("kling.avatar")` + `ModelPrice::new_for_catalog_key("kling.avatar", …)`
+**自建了目录与价**，所以测试绿。这正是本 skill 开头那条纪律的现实版：
+**自建内存目录的 e2e 结构上无法暴露「目录里没有该资源」**。
+
+官方口径也印证了它不是遗漏而是**设计缺口**：`sdkwork-models/.workbuddy/reports/kuaishou--cn.md:61` 记载
+数字人（Avatar）属官方「Model-independent Capabilities」，只有单价、无 `model id`，
+因此**有意不建模型条目**；而 §15.15.1 的键解析要求它必须作为**目录资源**存在才能计价 —— 两者直接冲突。
+
+**唯一真实的数字人模型**是 `runway/gwm1_avatars`（`models/runway/global/`，价本 meter `api_request`），
+但 ① taxonomy 里**没有任何 `runway.*` 路由**；② 它走 `/v1/videos`（`openai.videos`）时
+api code 末段 `videos` ∉ MODES；③ 它的费率档位是 `per_6s_block`，profile 却声明 `res_720p, dur_5s, dur_10s`
+（`validate-catalog` 已报 `tier.unreachable`）⇒ **依然选不中档**。
+
+### 15.15.5 目录侧权威读数：63 条诊断 / 15 个模型
+
+`sdkwork-models` 自带的 `tools/validate-catalog.mjs` **已经能发现这个问题**，但它只发 **warning**、exit=0：
+
+```
+total diagnostics = 63
+Counter({'model_video_profile.pricing.tier.unreachable': 48,
+         'model_video_profile.pricing.tier.ambiguous': 15})
+```
+
+| 模型 | unreachable | ambiguous |
+| --- | --- | --- |
+| `kuaishou/kling-v3-omni` | **8** | 0 |
+| `kuaishou/kling-video-o1` | **8** | 0 |
+| `minimax/hailuo-2` | **8** | 0 |
+| `minimax/hailuo-02` | 4 | 0 |
+| `vidu/viduq3` | 4 | 0 |
+| `runway/veo3` | 4 | 0 |
+| `runway/gemini_omni_flash` | 3 | 0 |
+| `black_forest_labs/flux-3` | 2 | 0 |
+| `luma_ai/ray-3` | 2 | 0 |
+| `runway/h3_max` | 2 | 0 |
+| `runway/ruby` | 1 | 0 |
+| `runway/gwm1_avatars` | 1 | 0 |
+| `minimax/MiniMax-H3` | 1 | 0 |
+| `kuaishou/kling-v2-6` | 0 | 8 |
+| `kuaishou/kling-v3` | 0 | 7 |
+
+诊断原文把根因讲得很直白 —— **价表的维度空间大于 profile 的表达空间**：
+
+> `kuaishou/kling-v3-omni` bills `noref_audio_1080p, noref_audio_4k, noref_audio_720p,
+> noref_silent_1080p, …, ref_silent_1080p, …` but this profile declares `res_1080p`;
+> **the price book splits this tier by a dimension the profile cannot express**
+
+`kling-v3-omni` 的价格需要 `ref/noref × silent/audio × resolution` **三个**维度，
+而 profile 只能写 `generationMode` + `resolutionTierCode` + `durationTierCode` + `pricingTierCodes`。
+⇒ 48 个档位结构上选不中。
+
+而 `kling-v3` / `kling-v2-6` 的 15 条 `ambiguous` 是另一种风险：
+同一分辨率同时有 `res_1080p`（0.8）与 `audio_res_1080p`（1.2），
+profile 未声明 `pricingTierCodes`，裁决取首个被定价的候选 ⇒ **一律落到较便宜的无声档**。
+即 **有声请求按无声价计费（少收）**，且没有任何告警会拦住它。
+
+### 15.15.6 `tier_code` 条件在各厂商计费单位上的分布
+
+| 厂商 | 带 tier 的计费单位 |
+| --- | --- |
+| `kuaishou` | `image_result`、`video_output_second`（**62**） |
+| `bytedance` | `image_result`、`video_output_second`（**25**）、`llm_*` |
+| `vidu` | `sfx_result`、`video_result`、`video_output_second`（**60**，**价表无 `image_result`**） |
+| `minimax` | `video_result`（22）、`video_output_second` |
+| `runway` | `image_result`（40）、`video_input_second`、`video_output_second` |
+| `luma_ai` | `video_output_second` |
+| `black_forest_labs` | `image_megapixel`、`video_output_second` |
+| `google` | **仅** `llm_cache_read_token` ⇒ 图片/视频/音频**都不受档位机制影响** |
+| `elevenlabs` / `suno` | **无** ⇒ 音频/音乐不受影响 |
+
+⇒ 受影响面明确：**图片（kuaishou/bytedance-pro/runway）、视频（kuaishou/bytedance/vidu/minimax/runway/luma/bfl）**；
+**音频、音乐、以及全部 Google 系媒体路径不受此机制影响**。
+
+### 15.15.7 结论与修法向量（属人工评审）
+
+| # | 断点 | 修法向量 | 属性 |
+| --- | --- | --- | --- |
+| 1 | `kling.avatar` 数字人无任何计价键 | (i) 在 sdkwork-models 把 `kling.avatar` 作为**目录内 API 资源**发布（带官方单价），与 `pricing_identity` 第 ② 段的语义对齐；或 (ii) 改走 `runway/gwm1_avatars` 并把 profile 档位声明补对 | 目录建模 + 定价语义 |
+| 2 | `MODES` 白名单只有 4 值且只取 api code 末段 | 扩白名单（`video_generation`/`avatar`/`motion_control`/…）**或**改为按路由显式声明 mode。**只扩一个值不管用**，因为档位选择还要求 profile 声明得出该 mode | cloudrouter 结构性限制 |
+| 3 | 48 个档位不可达（profile 表达力 < 价表维度） | 给 profile 补 `pricingTierCodes`（`kling-3.0-turbo` 已是正确范例：`pricingTierCodes: ["audio_res_1080p"]`）；维度组合有歧义的（`ref/noref`、`audio/silent`）需先定产品口径 | 目录数据 + 可能需扩 profile schema |
+| 4 | 15 条 `ambiguous` ⇒ 有声/高码率请求按低价计费 | 给 `kling-v3` / `kling-v2-6` 显式声明 `pricingTierCodes` | **计费正确性（少收）** |
+| 5 | `validate-catalog` 对此只 warning、exit=0 | 决定这些诊断是否升为 error | CI 门禁策略 |
+
+**统一的根因**：`tier_code` 这个维度**跨仓两端各写一半** —— 云侧写「api code 末段 → mode」，
+目录侧写「profile → 档位码」，两边都不完整时，**价在库里却选不中**，报出来的是
+`该模型无价格`。这解释了为什么 §15.13 的四环全绿、e2e 全绿，能力仍然跑不通。
+
+## 15.16 profile 分辨率覆盖补全 + 覆盖度门禁（第 16 轮落地）
+
+§15.15 把 63 条诊断定成「价表维度 > profile 表达力」并**全部登记为人工评审**。本轮换一个
+方向问同一个问题：**除了「profile 声明了价本没有的档位」，还有没有反过来的缺口？**
+结论是有，而且它是能直接判死的功能性缺口。
+
+### 15.16.1 断点：请求带的分辨率没有 profile 声明 → 预检 fail-closed
+
+`decide_video_pricing_tier`（`catalog.rs:326`）的顺序是**先按分辨率筛 profile，再找档位码**：
+
+```rust
+let ordered = match requested {                       // requested = 请求 body 的 /resolution
+    Some(requested) => mode_tiers.into_iter()
+        .filter(|tier| tier.matches_resolution(requested))   // declared == requested || requested.contains(declared)
+        .collect::<Vec<_>>(),
+    None => mode_tiers,
+};
+for tier in &ordered {                                // ordered 为空 ⇒ 循环体一次都不进
+    if let Some(code) = tier.tier_codes.iter().find(|code| priced.contains(*code)) { … }
+}
+decision.gap = Some(VideoPricingTierGap::DeclaredTierNotPriced { … })
+```
+
+而 `requested_resolution`（`pricing_identity.rs:64`）取的是**客户端请求体的
+`/resolution`、`/size`、`/output/size`**：
+
+```rust
+["/resolution", "/size", "/output/size"].iter().find_map(|pointer| body.pointer(pointer))
+```
+
+⇒ 请求写 `"resolution": "1080p"`，而该 generationMode 的 profile 只声明了 `720p` 时，
+`ordered` 是空集，档位判定直接落到 `DeclaredTierNotPriced`，预检拿不到 `tier_code`、
+按条件费率全部匹配不上 → **在派发之前就被拒**（§15.15.2 的 fail-closed 路径）。
+价就在库里，但**任何**该分辨率的请求都发不出去。
+
+**这是与 §15.15 相反方向的缺口**：`validate-catalog` 原有的 `tier.unreachable` 只检查
+「profile 声明的档位是否在价本里」，**不检查「价本里的档位是否被某个 profile 声明」**，
+所以这条线上一个诊断都不发（63 条里全是 unreachable/ambiguous，没有一条覆盖度）。
+
+### 15.16.2 覆盖度实测
+
+`seed-video-profiles.mjs` 的 `vendorDurationTemplate` 每个厂商分支**硬编码一个分辨率**
+（kuaishou→1080p、bytedance/minimax/runway/vidu→720p/768p），只在 `dur_5s && dur_10s`
+的早分支里才用价本档位。于是「价本定价了 480p/720p/1080p/4k，profile 只声明 720p」。
+
+修前（按 `res_<token>` 形态的档位码与 profile 声明集求差）：
+
+| 分类 | model-region 数 | 说明 |
+| --- | --- | --- |
+| 未覆盖价本已定价的分辨率 | **49** | 其中 **31** 个缺失分辨率在价本里有 plain `res_<token>` 码 ⇒ 可机械补齐 |
+| 同上、但档位码带厂商维度 | 18 | 价本只有 `res_768p_dur_6s` / `audio` / `over_4mp` / `per_6s_block` / `noref_*` / `ref_*`，用分辨率单独命名不出来 ⇒ 不能补 |
+| 完全覆盖 | 1 | `bytedance/doubao-seedance-2-5-260623`（唯一被手工展开过多分辨率的模型，本轮把它变成规范） |
+
+修后：
+
+- **新增 126 个 profile，落 30 个 model-video-profiles 文件**（`--write` 前 dry-run 报 31 文件/128 profile，
+  差额来自 15.16.3 的数据错）。
+- `sync-video-profile-resolutions.mjs --check` → `every priced resolution has a profile`（exit 0）。
+- 残留「可覆盖却没覆盖」= **0**；剩下的全是上面那 18 个表达力缺口。
+
+补法（先例即 `doubao-seedance-2-5-260623`）：同一 generationMode 下按分辨率克隆
+`profileCode`/`displayName`/`resolution`/`resolutionTierCode`/`wireParameters.resolution`，
+`isDefault` 一律置 false（**不夺走既有默认档**），`sortOrder` 按 mode 分组连续重排。
+
+### 15.16.3 顺带修掉的目录数据错：`minimax/global/MiniMax-H3`
+
+该文件的 `t2v_range_2k` profile **自己内部就矛盾**：
+
+| 字段 | 修前 | 修后 |
+| --- | --- | --- |
+| `profileCode` / `displayName` / `wireParameters.resolution` | `t2v_range_2k` / `… · 2K` / `"2K"` | 不变 |
+| `resolution` | `"1080p"` ❌ | `"2k"` |
+| `resolutionTierCode` | `"res_1080p"` ❌ | `"res_2k"` |
+
+而该模型价本只有 `res_768p`(0.08) / `res_2k`(0.13)，**没有 `res_1080p`** ⇒ 修前这条 profile
+永远命中不到（正是 §15.15.5 里 `MiniMax-H3` 那条 unreachable）。修后它成为可达档，
+该模型由 1 条 unreachable 降为 0，且 2K 请求第一次能按 0.13 计费。
+
+### 15.16.4 新增门禁：`model_video_profile.pricing.tier.undeclared_resolution`（error）
+
+`validate-catalog.mjs` 新增一条 per-file 规则：**价本输出计量单位上的每个 plain
+`res_<token>` 档位，必须至少被该模型的一个 profile 声明**；否则报 error，并直接给出修法。
+
+- 只取输出计量单位（`video_output_second` / `video_result`），不取 `video_input_second`
+  ——输入侧档位命名的是输入面（`input_res_720p`），不该决定目录对外提供哪些分辨率。
+- `res_4k_native`、`res_480p_720p` 不算 plain（多一段带厂商区分），仍归 `tier.unreachable` 管。
+- 它是 §15.15.7 第 5 行「是否把诊断升为 error」的一个受控落地：**只升这一类**，
+  因为它是可机械修复的缺口；`unreachable` / `ambiguous` 仍保持 warning。
+
+**门禁有效性是实测过的**（不是「写完就跑绿」）：临时删掉
+`models/vidu/cn/model-video-profiles/viduq3-pro-fast.json` 里刚补的 `i2v_range_1080p`，
+校验器即 `ok:false / exit 1`：
+
+> `vidu/viduq3-pro-fast can be billed at 1080p but no profile declares that resolution;
+> a request naming one of them matches no profile and is refused before dispatch.
+> Run \`node tools/sync-video-profile-resolutions.mjs --write\` to add them.`
+
+再跑补全工具 → 只补回这 1 条，且与试验前**字节一致**（`diff` 为空）⇒ 工具幂等且确定性。
+补完复验 `ok:true / exit 0`。
+
+> ⚠️ **踩坑记录（值得记档）**：这条规则第一版写成 `const PLAIN_RESOLUTION_TIER_CODE = /^res_[^_]+$/;`
+> —— **正则没有捕获组**，于是 `match[1]` 恒为 `undefined`，两个集合都变成 `{undefined}`，
+> 差集恒为空，**门禁静默永不触发**（`ok:true` 假绿）。是「故意造违例」那一步把它逼出来的；
+> 若只跑绿就收工，会留下一条假门禁。同名常量在 `tools/sync-video-profile-resolutions.mjs`
+> 里写的是 `/^res_([^_]+)$/`（带括号），所以工具一直是对的。
+
+### 15.16.5 门禁终态读数（第 16 轮实测）
+
+| 门禁 | 结果 |
+| --- | --- |
+| `tools/migrate-pricing-v2.mjs` | `Would migrate 0 rates in 0 pricing files` |
+| `tools/build-index.mjs --check` | `index is current` |
+| `tools/validate-catalog.mjs` | **`ok: true`，exit 0，error = 0**；warning 77 = unreachable 47 + ambiguous 30 |
+| `tools/catalog-audit.mjs` | `ok: true`，errors 0 / warnings 0 |
+| `tools/release-catalog.mjs --check` | `release 2026.09.17.1 is current` |
+| `tools/freshness-report.mjs --as-of-catalog-generated-at` | `ok`，warnings `[]` |
+| `tools/generate-mainstream-agent-model-catalog.mjs --check` | 绿 |
+| `tools/generate-vendor-model-architecture-doc.mjs --check` | `docs are current` |
+| `tools/models_openapi_export.mjs --check` | 绿 |
+| `tools/materialize-models-openapi.mjs --check` | 绿 |
+| `tests/contract/models-openapi-contract.test.mjs` | passed |
+| `tools/sync-video-profile-resolutions.mjs --check` | `every priced resolution has a profile` |
+| cloudrouter `tools/check-cloudrouter-ai-routing-consistency.mjs` | `ai-routing-consistency: passed` |
+
+**12/12 绿 + cloudrouter 消费侧 1/1 绿。**
+
+### 15.16.6 取舍与未做（需人工裁决）
+
+1. **`unreachable` 47 → 47、`ambiguous` 15 → 30 是预期内的**。新增的 17 条 ambiguous **只落在
+   `kuaishou/kling-v2-6` 与 `kuaishou/kling-v3`**（v3 的 720p/4k、v2-6 的 720p）——这两个型号
+   1080p 的 audio/motion 变体歧义**本来就在目录里、本来就已登记为 warning**，本轮只是把它
+   扩展到同型号的其它分辨率。取舍理由：**不补 = 该分辨率的请求在派发前被拒（可见失败）；
+   补了 = 按该型号的标准档（无声）计费（有声请求少收，已被 warning 标出）**。目录既有惯例
+   就是「声明标准档、变体交给运行时」，且 `offpeak_*`/`ref_*` 这类运行时同样选不中的费率
+   也一直躺在价本里，故按惯例一致处理。**根治仍需运行时从请求读 audio/motion 维度**
+   （§15.15.7 第 2/4 行，未动）。
+2. **18 个表达力缺口未动**（`kling-v3-omni`、`kling-video-o1`、`kling-3.0-turbo`、
+   `luma_ai/ray-3.2`、`minimax/hailuo-02`、`hailuo-2.3(-fast)`、`runway/veo3.1(_fast)`、
+   `runway/gemini_omni_flash`、`runway/ruby`、`runway/h3_max`、`runway/gwm1_avatars`、
+   `black_forest_labs/flux-3`、`vidu/viduq3(-mix)`）。
+   它们的档位码带维度（`res_X_dur_Y` 同时编码分辨率与时长、`audio`/`no_audio`、
+   `over_4mp`、`per_6s_block`、`noref_*`/`ref_*`），**用分辨率单独命名不出来**；
+   硬填一个就是猜价格。
+3. **`res_X_dur_Y` 类**（luma / minimax hailuo）还暴露一个 schema 限制：profile 只能声明
+   `resolution` + `durationTierCode(s)`，而 `decide_video_pricing_tier` **只按分辨率筛**、
+   不按时长筛 ⇒ 即便把 `res_1080p_dur_10s`/`_5s` 都列进 `pricingTierCodes`，解析器也只会
+   取列表里**第一个命中的**（永远 5s），于是 10s 请求少收。⇒ 属**运行时/目录 schema 联合缺口**。
+4. **版本号不动**：本轮改的是「已有价本 → profile 声明」的派生数据，**没有重验任何厂商**。
+   升版会连带要求 `sources/vendor-sources.json` / `official-model-snapshots.json` /
+   `official-verification-policy.json` 三个**证据文件**同步 `catalogVersion`（即断言"此时重新核过厂商"），
+   而这不是事实。故沿用进行中批次的做法：原地重建 `releases/2026.09.17.1.json`
+   （`indexSha256` 随内容更新）。若组织口径要求「每次内容变更一个 patch 号」，则应改用
+   `tools/stamp-catalog-evidence.mjs --catalog-version 2026.09.17.2` 一并重盖证据。
+5. `kling.avatar` 数字人（§15.15.4 三重缺失）与本轮正交。**→ 第 17 轮已复核并修正判据，见 §15.17**。
+
+## 15.17 数字人专项复核 + 资源组覆盖门禁（第 17 轮落地）
+
+### 15.17.1 §15.15.4 的「三重缺失」判据要修正：四环里三环都在
+
+§15.15.4 当时读出的"三重缺失"里，**只有定价那一环是真的**。复核后逐环取证：
+
+| 环 | 权威位置 | 第 15 轮判据 | 第 17 轮实测 |
+| --- | --- | --- | --- |
+| ① 分类臂 | `crates/sdkwork-cloudrouter-edge-runtime/src/passthrough.rs:1857` | 未查 | ✅ `"kling" if path == "/v1/videos/avatar" => "kling.avatar"`（classifier 侧同形，29 arms 两侧一致） |
+| ② 路由 taxonomy | `services/sdkwork-cloudrouter-router-service/src/application/ai_route_taxonomy.rs:556` | 「taxonomy 无 route」 | ✅ **在**：`media_task("kling.avatar", …, RoutingCapability::Video, BillingMeter::VideoResult, "video_task")`（`kling.motion_control` 在 :562） |
+| ③ 种子 `api_endpoint` | `data/ai-routing/resources/vendor-native-resources.json:196` | 未查 | ✅ `api.kling.avatar` / POST `/v1/videos/avatar` / `capabilities: ["video","audio"]` |
+| ④ 资源组授权 | `data/ai-routing/resource-groups/*.json` | 「只在 official-provider-groups.json」 | ✅ 判据正确，**已修**（§15.17.4） |
+| ⑤ 定价（价本 + 声明） | `ai_model` / `pricing_rate` | 「零行」 | ✅ 判据正确：**真缺**（§15.17.3） |
+| ⑥ 档位 | `catalog.rs:201` `MODES` | `avatar` ∉ MODES | ✅ 判据正确，但**只在 ⑤ 具备时才成为阻塞**（见 §15.17.3 末段） |
+
+**为什么第 15 轮会误判②**：当时用的 grep 路径是
+`crates/sdkwork-cloudrouter-router-service/src/`，而该 crate 实际在 **`services/`** 下
+（`crates/` 下只有 edge-runtime / assembly / provider-adapter-registry 等）。路径不存在 ⇒ grep 恒为空 ⇒
+被读成"taxonomy 里没有"。这是一个**纯取证错误**，已记入方法论纪律（skill）。
+
+同时坐实：`kling.avatar` 的**定价键不是 `kling.avatar`**，而是
+**`kling-ai-avatar-v2`** —— 见 §15.17.2 的派发链路。§15.15.4 用 `kling.avatar` 去 `ai_model` 里找，
+方向本身也偏了一层。
+
+### 15.17.2 官方证据（本轮 CDP 实取，非推断）
+
+**(a) 我们的契约与官方文档不一致（路径 + 请求体）**
+
+| 面向 | 我们（`apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json`） | 官方（`klingai.com/document-api/api/video/avatar`，2026-09-17 CDP 渲染实取） |
+| --- | --- | --- |
+| 路径 | `POST /kling/v1/videos/avatar` | `POST /v1/videos/avatar/image2video` |
+| 必填 | `human_image` | `image` |
+| 音频 | `voice_mode`(`tts`/`audio`) + `text` + `audio_url` + `voice_id` + `voice_language` | `audio_id` \| `sound_file`（二选一，互斥） |
+| 其它 | `model_name` / `prompt` / `callback_url` | `prompt` / `mode`(`std`\|`pro`) / `watermark_info` / `callback_url` / `external_task_id` |
+| `model_name` | 文档示例 `kling-ai-avatar-v2` | **官方请求体里没有 `model_name`**（能力地图把数字人列为「与模型版本无关的能力 / 不区分模型版本」） |
+
+`/v1/videos/motion-control` 同理：官方 `POST` 体是 `contents[]`(`prompt`/`image`/`video`/`element`) +
+`settings` + `character_orientation` + `audio` + `resolution`，我们是 `{model_name, image, video}`。
+
+**(b) 真实调用方用的是 `kling/kling-ai-avatar-v2`**
+
+```
+sdkwork-generations/crates/sdkwork-generations-provider-adapter/src/video.rs:1073
+    let mut command = command("kling/kling-ai-avatar-v2");
+```
+`video.rs` 的 `kling_avatar_video_pends_and_maps_tts_voice_mode` 与
+`sdkwork-agents/.../generationsService.ts:198`（`avatar` → `POST /generations/videos/avatar`）都印证：
+平台侧**已经**把数字人当成一个具名模型在派发，模型 id 是 `kling-ai-avatar-v2`，
+而 `sdkwork-models` 里**没有**这个条目（`grep -rn "kling-ai-avatar" sdkwork-models/` 零命中）。
+
+**(c) 官方单价（`.workbuddy/raw/kuaishou--{cn,global}__rendered-pricing-base-video.txt`，逐字）**
+
+表头 `模型 计费方式 功能 价格（720P） 价格（1080P） 价格（4K）`：
+
+```
+CN : 数字人      按秒收费  数字人  0.4积分（¥0.4）/秒  0.8积分（¥0.8）/秒  -
+GL : Avatar     Per second Avatar  0.4 Units ($0.056) /s  0.8 Units ($0.112) /s  -
+```
+
+即按秒计费、两档、且**无 4K 档**——与 `video_output_second` + `res_720p`/`res_1080p` 的口径天然对齐。
+
+### 15.17.3 定价为什么还不能补：缺的不是"价"，是"选档维度"
+
+链路已全部验证到"只差最后一跳"：
+
+```
+请求 model_name=kling-ai-avatar-v2
+  → pricing_identity.rs:168  catalog.find_model("kling.avatar") → None（目录无此键）
+  → pricing_identity.rs:172  requested_model = "kling-ai-avatar-v2" → 目录唯一解析 → 命中（前提：目录有条目）
+  → catalog.rs:430            priced = (catalog_key, video_output_second) 的 tier_code 集合
+  → catalog.rs:345            video_generation_mode_for_api_code("kling.avatar")
+                              → 末段 "avatar" ∉ MODES{text_to_video,image_to_video,reference_to_video,multi_shot}
+                              → gap = ApiCodeIsNotAGenerationMode → tier_code = None
+  → 费率带 tier_code 条件 ⇒ 无维度可匹配 ⇒ price_not_found（gap 只作诊断附注，见 upstream_route_selector.rs:1090）
+```
+
+**关键取证**：`ApiCodeIsNotAGenerationMode` 自己**不导致失败**——
+`upstream_route_selector.rs:1067-1070` 只在价格真正解析成功时返回 `Ok`，gap 仅被拼进失败文案
+（`:1090`、`:1103`）。所以「`avatar` 不在 MODES」是**描述的**，真正拦人的是**费率带 `tier_code` 条件却没有档位可给**。
+
+要把两档区分开，请求侧必须给出一个**运行时可读的档位选择器**。官方给的旋钮是 `mode: std|pro`，
+但：
+
+1. 官方**没有文档化** `std ↔ 720P` / `pro ↔ 1080P`（价表按分辨率列，请求体只有 mode；能力地图该行为「不区分模型版本」）；
+2. 运行时只读 `/resolution`、`/size`、`/output/size`（`pricing_identity.rs:64`）与
+   `/quality`、`/output/quality`（`pricing.rs:628`），**都不含 `/mode`**。
+
+⇒ **把 `pro` 记成 ¥0.8 需要"std=720P / pro=1080P"这个未经文档确认的映射**。
+按本项目纪律（§15.15.7、§15.16.6：「硬填一个就是猜价格」），**本轮不猜、不落价**，
+只登记并给出行之有效的两条修法（§15.17.7）。
+
+> **⚠️ 本节被第 18 轮部分推翻，读之前先看 §15.18**：
+> ① "运行时只读 `/quality`、`/output/quality`，不含 `/mode`"**仍成立**，但修法不是新造维度而是给
+> `quality` 加 `/mode` 指针（§15.18.4 第 2 条）；② 下一条"需手写两条 `quality` 条件费率"**不成立**——
+> v2 迁移器会重写 `conditions`，必须写 `quality` **字段**（§15.18.4 第 1 条）；
+> ③ "官方没有文档化 `std ↔ 720P`"仍成立，但第 18 轮把四个独立来源的一致性坐实后**已落价**，
+> 并把该推断显式登记在模型 `description` 与 §15.18.2。
+
+### 15.17.4 已修：资源组「名不副实」（第④环）+ 新检查 8
+
+资源组是链路的最后一跳：路由解析出 api code 之后，**账号只有在某个所属组里被授予该资源才走得到**。
+三个账families 各用一套组：`official.*.full`（官方直连账号）、`api.<vendor>.all` /
+`api.<vendor>.<modality>`（admin-API 账号）、`relay.*`（中转账号）。
+
+**缺陷**：没有任何检查保证"组的名字与它的内容一致"，于是漂移了。实测（脚本按种子推导期望集）：
+
+| 组 | 名字承诺 | 实测 | 缺 |
+| --- | --- | --- | --- |
+| `api.kling.all` | "All Kling API resources" | 6 个种子 `api_endpoint` 里只授了 4 个 | `api.kling.avatar`、`api.kling.motion_control` |
+| `api.kling.video` | "Kling video generation API resources" | 4 个同模态资源里只授了 2 个 | 同上（两者 `modalityCode` 都是 `video`） |
+| `api.vidu.video` | "Vidu video generation API resources" | 2 个同模态资源里只授了 1 个 | `api.vidu.motion_sync` |
+
+后果：**admin-API 账号拿到了 Kling 除数字人与动作控制以外的全部视频 API**——恰好是产品主推的两个能力，
+且失败文案既不提组也不提资源（`50201 no upstream account routes are configured`）。
+`official.*.full` 侧全部完整（8/8 OK），`relay.*` 不含 kling，故不受影响。
+
+**修法**：`admin-api-groups.json` 三处补齐（`api.kling.all`、`api.kling.video`、`api.vidu.video`），
+顺序与种子 / `official.kling.full` 对齐。
+
+**新增检查 8（`tools/check-cloudrouter-ai-routing-consistency.mjs`）**：把上面这条不变式常驻化。
+期望集**由种子推导**而不是在脚本里声明，所以检查本身不会漂移：
+
+* `<family>.<vendor>.all` / `.full` ⇒ 必须授全该 vendor 的每个种子 `api_endpoint`；
+* `<family>.<vendor>.<modality>` ⇒ 必须授全该 vendor 中 `modalityCode` 等于该模态的每个种子 `api_endpoint`；
+* 三段组码里 scope 段既不等于已播种 vendor、也不等于已播种模态的（`relay.openai_compatible.media`、
+  `api.openai.embeddings`、`api.google.all` 等）判为**非 vendor/模态作用域**，计为 skipped 而不猜。
+
+**为什么既有测试没抓到**（`tests/test_ai_routing_seed_bundle_standard.py`，11/11 全绿）：
+
+* `test_official_and_relay_resource_groups_cover_vendor_native_api_codes`（:100）断言的是
+  **"所有 vendor-native 资源 ⊆ 全部 `official*` 组 items 的并集"**——是**族级并集**，不是**逐组**。
+  所以只要任意一个 `official.*.full` 收了它就算过；它管不到 `api.*` 组，也管不到"某组自己的名字"。
+  （这也解释了为什么 official 侧 8/8 完整：正是这条在守。）
+* `test_admin_api_groups_include_all_codex_api_resources`（:132）确实看 `admin-api-groups.json`，
+  但**只对 `api.openai.codex` 一个硬编码资源**做断言。
+
+⇒ admin 侧「`<vendor>.all` / `<vendor>.<modality>` 是否授全同名范围」**此前无人检查**，
+新检查 8 补的正是这个盲区，且期望集由种子推导、按组逐个比对。
+
+**三角验证（造违例 → 确认红 → 还原 → 确认绿）**，三个用例全 PASS：
+
+| 用例 | baseline | 造违例 | 还原字节一致 | 复原 |
+| --- | --- | --- | --- | --- |
+| 摘掉 `api.kling.avatar`（`.all` 分支） | green | red，且文案点名 `api.kling.all` | ✔ | green |
+| 摘掉 `api.kling.avatar`（`.video` 模态分支） | green | red，且文案点名 `api.kling.video` + `modalityCode "video"` | ✔ | green |
+| 摘掉 `api.vidu.motion_sync`（`official.vidu.full`） | green | red，且文案点名 `official.vidu.full` | ✔ | green |
+
+> **踩坑（与第 16 轮同一类假绿）**：第一版三角验证把 `api.kling.video` 的**最后**一个条目连同
+> 其后的 `}` 一起删掉，留下了悬空逗号 ⇒ 文件变非法 JSON ⇒ 门禁以"JSON 解析失败"退出 1。
+> 那时**新检查根本没跑**，却被读成"门禁会响"。判据是那一轮的 note 从
+> `19 vendor/modality-scoped group(s)` 掉到 `9`——期望集凭空少了一半。
+> 修法：变异脚本加**守卫**（变异后先 `JSON.parse`，不合法就直接 abort），并要求红文案**点名该组**，
+> 不接受"只看退出码"。
+
+### 15.17.5 顺带坐实的两个运行时/测试缺口（登记，未动）
+
+1. **OpenAI 兼容视频面的 api code 末段不是生成模式**。`openai_classifier.rs:520/528/545` 对
+   `/v1/videos` 产出 `openai.videos`，`/v1/videos/{id}` 产出 `openai.video_wait`/`openai.video`；
+   而唯一的模式映射是 `catalog.rs:201` 的**末段白名单**（4 值）。`videos`/`video` 都不在白名单里
+   ⇒ 凡**费率带 `tier_code` 条件**的模型，经 OpenAI 兼容视频面进入时都取不到档 ⇒ `price_not_found`，
+   且诊断只把 gap 拼在后面。`runway/gwm1_avatars`（目录里唯一有真实模型 id 的数字人）正是其中之一：
+   它走 `/v1/videos` 时同时踩中"末段不是模式"与"档位 `per_6s_block` ≠ profile 声明的 `res_720p`"。
+   **这是既存缺口，不是本轮引入**；判定它是否影响线上取用，要看 `sdkwork-generations` 的
+   provider adapter 实际驱动哪一面（检查 7 的注释记录 image adapter 走 vendor-native 路径）。
+2. **e2e 自建目录与价，因此对真实缺口零覆盖**。
+   `crates/sdkwork-cloudrouter-edge-runtime/tests/avatar_motion_routing_e2e.rs:227-290` 用
+   `AiModel::new(...).with_catalog_key("kling.avatar")` + `ModelPrice::new_for_catalog_key("kling.avatar", …)`
+   现场造出一个目录与价本，`:412` 还断言上游收到的**路径**
+   （`calls[0].path == "/v1/videos/avatar"`）与 body（`human_image`/`voice_mode` 原样转发）。
+   结论：**该 e2e 绿只证明"给定一个含 `kling.avatar` 的目录、转发链路是通的"，不证明真实目录里有它**；
+   且它把 §15.17.2(a) 的路径/字段漂移**锁成了期望值**——将来核查真实 vendor 契约时，这条断言会先亮红灯。
+
+### 15.17.6 门禁终态读数（第 17 轮实测）
+
+```
+tools/check-cloudrouter-ai-routing-consistency.mjs
+  path -> api_code map: classifier 29 arms, passthrough 29 arms
+  seeded api codes: 56 across data/ai-routing/resources, 0 unknown to the taxonomy
+  open-api contract: 122 paths, 0 outside OPEN_API_PREFIXES
+  OPEN_API_PREFIXES: standalone gateway 12, bootstrap mirror 12
+  passthrough: 39 arms over 30 api codes, all evaluated
+  classifier: 39 arms over 30 api codes, all evaluated
+  open-api vendor-native surface: 19 operation(s) routed, 28 declared unrouted
+  gateway contract: 10 vendor-native namespaces, x-sdkwork-vendor-path-prefixes declares 10
+  ... (4 个 registry 全 0 unknown)
+  generated SDKs: 2380 source files scanned, 0 prepend "/v1" to a vendor-native path
+  resource groups: 19 vendor/modality-scoped group(s) compared against the seeds, 14 not vendor- or modality-scoped
+ai-routing-consistency: passed
+```
+
+**本轮未改 `sdkwork-models`**（§15.17.3 说明了原因），故 models 侧 13 项门禁读数与 §15.16.5 一致，未重跑。
+
+### 15.17.7 待人工裁决
+
+1. **数字人定价（二选一，都只差一处改动）**
+   * **A. 运行时补"厂商 mode → 目录档位"**：给 `pricing.rs:625-642` 的 `quality` 指针加 `/mode`
+     （1 行；全库**没有任何费率**用 `quality` 条件，故对其余厂商是惰性的），
+     目录侧落 `kuaishou/{cn,global}/kling-ai-avatar-v2` 的两条 `quality` 条件费率
+     （`std`=0.4/0.056、`pro`=0.8/0.112）。**前提**：接受 `std`/`pro` 就是两档的语义标签
+     （官方未文档化其与 720P/1080P 的对应）。
+   * **B. 先修厂商定义**：把网关契约的 `KlingAvatarCreateRequest` 与路径对齐到官方
+     （`/v1/videos/avatar/image2video`、`image`/`audio_id`/`sound_file`/`prompt`/`mode`），
+     再按官方 `mode` 落价。工作量大（改 `tools/cloudrouter_gateway_openapi_generator.py`
+     + 重生成契约与九语言 SDK），但**同时消掉 §15.17.2(a) 的漂移**。
+2. **`KlingAvatarCreateRequest` 的字段集是否要保留**：现有字段（`human_image`/`voice_mode`/`text`/
+   `audio_url`/`voice_id`/`voice_language`）与官方现行文档不符，但可能对应可灵早期数字人 v1 接口。
+   是否仍被厂商接受**未验证**，故不擅自删改。
+3. **`avatar_motion_routing_e2e.rs` 的期望值**：它把当前路径/字段锁成断言。若采纳 1-B，
+   需同步改；若不采纳，建议把它标注为"转发链路测试"而非"契约测试"，避免误导。
+
+> **第 18 轮更新**：第 1 条候选 A **已落地**，且落地时发现它原先的描述在机制上不成立
+> （手写的 `quality` 条件会被 v2 迁移器静默抹掉）。第 2、3 条仍待裁决。详见 **§15.18**。
+
+---
+
+## 15.18 数字人落价：从"证据不足"到"三级验证通过"（第 18 轮落地）
+
+### 15.18.1 一句话结论
+
+数字人（`kling-ai-avatar-v2`）此前在目录里**完全不存在**：没有模型条目、没有价、没有 profile。
+本轮把它按官方证据补全，并把"官方默认档 ↔ `std`、高价档 ↔ `pro`"这条**唯一推断**显式登记。
+链路现在是：请求 `model_name=kling-ai-avatar-v2` + `mode` → `quality` 维度 → 官方两档价。
+
+### 15.18.2 判据是怎么被解开的
+
+第 17 轮卡在「官方未文档化 `std`/`pro` 与 720P/1080P 的对应」。本轮把这个问题**问到底**：
+
+| 取证 | 结论 |
+| --- | --- |
+| 官方数字人文档全文（CDP 实取，`textLen: 5827`） | `allParamNames` 仅 9 个：`image / audio_id / sound_file / prompt / mode / watermark_info / callback_url / external_task_id / task_id`。**`mentions720: false`、`resolutionMentions: []`** ⇒ 全文不出现 `720`/`1080`/`resolution` |
+| 官方**能力地图**页（`/document-api/guides/capability-map/video`） | 表格行 `数字人` / `对口型` 的值是「**不区分模型版本**」；同一表格的「分辨率」行是**按模型**列（720P、1080P、4K），**不含 mode 维度** ⇒ 官方正文里确实**不存在** mode↔分辨率对应 |
+| 官方文档对 `mode` 的描述 | `std：标准模式，基础模式，性价比高` / `pro：专家模式（高品质）…生成视频质量更佳`；`mode` **可选，默认 `std`** |
+| 四个独立来源（三个二手站 + 官方列序） | 一致：`std` = 720p 标准档（便宜档）、`pro` = 1080p 高品质档（贵档） |
+
+⇒ **官方正文缺这条对应，但官方自己的表格结构 + 四个独立来源一致指向同一映射**，
+且它与「默认值 `std`」+「`std` 被描述为性价比高」+「价表按单价升序」三者单调一致。
+本轮据此落价，并**把这条推断写进模型 `description` 与本文**，而不是当成已文档化的事实。
+
+另一个副产品是官方**时长**约束（首轮探针没取到，本轮取到原文）：
+
+> 仅支持使用 30 天内生成的、时长不短于 2 秒且不超过 300 秒的音频
+> 仅支持使用时长不短于 2 秒且不长于 300 秒的音频
+
+⇒ profile 的 `minDurationSeconds: 2` / `maxDurationSeconds: 300` 有官方出处，不是估的。
+
+### 15.18.3 落地清单（逐文件）
+
+**`sdkwork-models`**（新增 6 文件 / 改 4 文件）
+
+| 文件 | 动作 | 要点 |
+| --- | --- | --- |
+| `models/kuaishou/{cn,global}/models/kling-ai-avatar-v2.json` | 新增 | `familyCode: kling-avatar`、`routingState: enabled`、`shelfState: listed`、`capabilities: ["video"]`、`inputModalities: [text,image,audio]` |
+| `models/kuaishou/{cn,global}/pricing/kling-ai-avatar-v2.json` | 新增 | 每条各 **2 条费率**，`video_output_second`、`unitSize: 1`、`priority: 100`：① **无条件** ¥0.4 / $0.056（= 官方默认档 `std`）② **`quality eq pro`** ¥0.8 / $0.112 |
+| `models/kuaishou/{cn,global}/model-video-profiles/kling-ai-avatar-v2.json` | 新增 | 见 §15.18.4；`generationMode: image_to_video`、`durationPolicy: continuous`、2~300s、`resolution: 720p`，**不声明任何档位码** |
+| `models/kuaishou/{cn,global}/families.json` | 改 | 新增 family `kling-avatar`（`familyType: video`，`defaultModel: kling-ai-avatar-v2`，`sortOrder: 50`） |
+| `sources/vendor-sources.json` | 改 | 登记 avatar 文档 URL 到两区 `additionalUrls`；`kling-ai-avatar-v2` 进 `supportedModels`（**不是** `requiredModels`，理由见下）；补 `notes` |
+| `tools/migrate-pricing-v2.mjs` | 改 | 字段→维度映射表**追加** `["quality","quality"]`（置于末位，保证既有费率生成的 `conditions` 字节与 `rateHash` 不变） |
+| `tools/audit-pricing-consistency.py` | 改 | 同一映射，保持"忠实移植"承诺（`:177` 的 migrator drift check 会比对） |
+| `crates/sdkwork-models-catalog-service/src/application/price_service_tests.rs` | 改 | 新增 1 测试：**同等优先级下"有条件费率"压过"无条件费率"**（§15.18.6） |
+
+**`sdkwork-cloudrouter`**（改 1 文件）
+
+| 文件 | 动作 | 要点 |
+| --- | --- | --- |
+| `services/sdkwork-cloudrouter-router-service/src/application/invocation/pricing.rs` | 改 | `quality` 的指针列表由 `["/quality","/output/quality"]` 扩为 `+ "/mode"`；新增 1 测试（§15.18.6） |
+
+重生成物（按门禁要求）：`models/index.json`、`releases/2026.09.17.1.json`、`docs/vendor-model-architecture.md`。
+
+**为什么 `supportedModels` 而不是 `requiredModels`**：`catalog-audit.mjs:436-445` 对 `requiredModels`
+还会要求"官方快照里有它"（`mustHaveOfficialSnapshotIds = requiredModels ∪ enabledModelIds ∪ defaultModelIds`）。
+数字人在官方能力地图里**明确「不区分模型版本」**、不占模型版本位，官方模型清单里不会有它；
+放进 `requiredModels` 会在厂商升级为 `official_verified` 时埋一颗"快照缺模型"的雷。
+`supportedModels` 只校验"存在"，与该条目的真实性质一致（同区的 `kling-v3-0-preview` 也是这个形态）。
+
+### 15.18.4 三处机制反转：第 17 轮设想的写法其实不成立
+
+第 17 轮候选 A 写的是"目录侧落两条 `quality` 条件费率"。实测发现**三条硬约束**必须绕：
+
+1. **`migrate-pricing-v2.mjs:130` 会重写 `conditions`**：
+   `price.conditions = conditions(price);` —— 条件只从 6 个**字段**推导
+   （`tierCode`/`mediaDirection`/`mediaType`/`inputType`/`outputType`/（本轮新增）`quality`）。
+   ⇒ **手写 `conditions` 会被静默抹掉**，且 `--check` 模式因为 `JSON.stringify(price) !== before`
+   直接退出 1（`models:check:pricing-v2` 是 `_sdkwork:check` 的一环）。
+   所以正确写法是在费率上写 `"quality": "pro"` **字段**，让迁移器生成条件。
+2. **不能用新维度名 `mode`**。`tools/audit-pricing-consistency.py:223-224` 有 `KNOWN_DIMS` 白名单，
+   不在表内即报 `condition dimension 'mode' not evaluable at runtime`；`quality` **在表内且全库 0 条费率在用**
+   ⇒ 用 `quality` 既过白名单，又对全部 1258 条既有费率**惰性**（见 §15.18.6 的实测）。
+3. **视频模型必须有 profile 文件**。`validate-catalog.mjs:1011`：
+   `primaryCapability === "video" && !profileModelIds.has(modelId)` → error。
+   §17 提到的"6 个视频模型没有 profile"先例**不适用**——那 6 个的 `primaryCapability` 不是 `video`
+   （`vidu-s1` 是 `streaming`）。而 profile schema 的 `resolution` 与 `durationPolicy` 是**必填**
+   （`additionalProperties: false`），所以必须填：`resolution: "720p"` 取"官方默认档 `std` 的分辨率"
+   这一最小可解释值，**并且刻意不声明 `resolutionTierCode` / `pricingTierCodes`**——
+   声明了就等于为"该模型按 `res_720p` 计费"这个错误命题背书。
+   附带好处：本模型无 `tierCode` 条件的费率 ⇒ `validate-catalog` 的
+   `tier.unreachable` / `undeclared_resolution` 两条规则（都以"有 `tierCode` 的费率"为前提，
+   见 `:715-722`、`:855`）对本模型静默。
+
+另有两处一致性规则在落地时被踩到，记录以免下次重犯：
+
+- **`displayName` 跨区必须一致**（`modelIdentityDifferences` 比 19 个字段，含 `displayName`），
+  故 CN 不能叫「Kling 数字人」，统一为 `Kling Avatar`（与既有 kuaishou 全英文命名惯例一致）。
+- **`model.source.sourceUrl` 必须在 `sources/vendor-sources.json` 登记**
+  （`catalog-audit.mjs:454` 报 `model.source.unapproved`；`:466` 对 pricing 同样约束）。
+  未登记会直接把 `catalog-audit` 从 exit 0 打成 exit 1。
+
+### 15.18.5 为什么默认档要留一条**无条件**费率
+
+`mode` 官方是**可选、默认 `std`**。而运行时的维度提取是"请求体有 `/mode` 才有 `quality`"
+（`PricingRateCondition::matches` 对 `eq` 用 `actual.is_some_and(...)`，缺维度**不匹配**）。
+若两条费率都带条件（`std` / `pro`），那么**省略 `mode` 的请求会一条都匹配不上 → `price_not_found` → 调用被拦**。
+
+⇒ 费率设计为「**无条件**（默认档价）+ **`quality eq pro`**（高价档）」：
+
+| 请求 | 匹配到的费率 | 结果 |
+| --- | --- | --- |
+| 无 `mode`（我方现状） | 无条件那条 | ¥0.4/秒 = 官方默认档 ✓ |
+| `mode: "std"` | 无条件那条（`pro` 那条条件不成立） | ¥0.4/秒 ✓ |
+| `mode: "pro"` | 两条都匹配 → **按 specificity（条件数）取 `pro` 那条** | ¥0.8/秒 ✓ |
+
+顺带确认了我方流量确实落在默认档：`sdkwork-generations` 的
+`crates/sdkwork-generations-provider-adapter/src/video.rs` 断言请求只带
+`human_image`/`voice_mode`/`text`/`voice_id`，**不带 `mode`**；网关契约
+`KlingAvatarCreateRequest` 也没有 `mode` 字段。
+但该契约的 `additionalProperties` 是 `ProviderJsonValue`（**故意开放透传**），
+所以调用方**可以**透传 `mode: "pro"`——这正是必须把 `pro` 档也落价的原因。
+
+### 15.18.6 三级验证
+
+| 级 | 断言什么 | 怎么验 | 结果 |
+| --- | --- | --- | --- |
+| ① 维度提取（cloudrouter） | `/mode` 进得了 `quality`；省略 `mode` 时 `quality` **不被默认值填上**（否则两条费率都不匹配） | 新增 `pricing.rs::tests::kling_avatar_mode_reaches_the_quality_dimension` | `ok`（1 passed / 510 filtered） |
+| ② 费率裁决（models） | **同等 priority** 下，条件数多的费率压过无条件费率；无 `quality` 维度时回落到无条件那条 | 新增 `price_service_tests::a_conditioned_rate_outranks_an_unconditional_one_at_equal_priority`（同 meter、双 100 priority、只差条件数） | `ok`（1 passed / 80 filtered） |
+| ③ 目录契约（models 全门禁） | 条件被正确生成、`rateHash` 自洽、index/release 计数跟上、无 unreachable 报错 | 12 项 node 门禁 + `audit-pricing-consistency.py` | 全 exit 0（见 §15.18.7） |
+
+②这条测试之所以必要：既有 `resolves_condition_specific_rate_by_vendor_api_and_model` 让**优先级**不同
+（10 vs 100），因此无法区分"是按优先级赢的"还是"是按 specificity 赢的"。
+本模型两条费率**都是 100**，只有条件数不同，所以必须单独钉住 specificity 优先这一序
+（`pricing_resolver.rs::select_rate` 的排序：`rate_variant` → **specificity desc** → priority asc → …；
+且 `same_rate_rank` 只在 four-way 全等时报 ambiguous，此处 specificity 不同故不 ambiguous）。
+**若这条序被改，数字人的 `pro` 会静默按半价结算**（价还是解析成功的，链路上不会有别的信号）。
+
+### 15.18.7 门禁终态读数（第 18 轮实测）
+
+```
+sdkwork-models（12 项，全 exit 0）
+  tools/migrate-pricing-v2.mjs                                  exit=0   （新费率 conditions/rateHash 自洽）
+  tools/build-index.mjs --check                                 exit=0
+  tools/validate-catalog.mjs                                    ok=true  0 error
+  tools/freshness-report.mjs --max-age-policy ...               exit=0
+  tools/catalog-audit.mjs                                       ok=true  0 error（1 warning：suno，既存）
+  tools/release-catalog.mjs --check                             exit=0
+  tools/generate-mainstream-agent-model-catalog.mjs --check      exit=0
+  tools/generate-vendor-model-architecture-doc.mjs --check       exit=0
+  tools/models_openapi_export.mjs --check                       exit=0
+  tools/materialize-models-openapi.mjs --check                  exit=0
+  tests/contract/models-openapi-contract.test.mjs               exit=0
+  tools/audit-pricing-consistency.py                            exit=0
+  （另：cargo test 新增用例 1 passed；cloudrouter 侧新增用例 1 passed）
+
+validate-catalog 读数对比（本轮前后）
+  warning  model_video_profile.pricing.tier.ambiguous     x30   ← 未变
+  warning  model_video_profile.pricing.tier.unreachable   x47   ← 未变
+  releases/2026.09.17.1.json: validation.issueCount = 77       ← 与上两行之和一致，即本轮新增 0 条
+  kuaishou/cn + kuaishou/global: modelCount 11 → 12
+
+sdkwork-cloudrouter
+  tools/check-cloudrouter-ai-routing-consistency.mjs            ai-routing-consistency: passed
+    resource groups: 19 vendor/modality-scoped group(s) compared against the seeds, 14 not ...（与 §15.17.6 一致）
+  python -m unittest tests.test_ai_routing_seed_bundle_standard  11/11 OK
+```
+
+### 15.18.8 仍未做 / 待裁决（承接 §15.17.7）
+
+1. **网关契约与官方文档的字段/路径漂移（原 §15.17.7 第 2 条）**：仍未动。
+   `KlingAvatarCreateRequest` 是 `human_image`/`voice_mode`/`text`/`audio_url`/`voice_id`，
+   官方现行是 `image`/`audio_id`/`sound_file`/`prompt`/`mode`，路径也应含 `/image2video`。
+   **本轮的选择是不擅改**：因为该契约可能对应可灵早期数字人 v1 接口而仍被接受（未验证），
+   且改它要重生成契约与九语言 SDK。**但请注意**：本轮落的是"按 `mode` 计价"，
+   若厂商其实只认 `mode`、而我们发的是 `voice_mode`，则 `mode` 会走默认档 `std`——
+   与我们的定价一致，不会错价；但 `pro` 档在改契约前**只有靠调用方透传 `mode` 才用得上**。
+2. **`avatar_motion_routing_e2e.rs` 的期望值（原第 3 条）**：仍未动，理由同上。
+3. **§15.17.5 的两个既存缺口**（OpenAI 兼容视频面 api code 末段 ∉ MODES；e2e 自建目录）：
+   仍未动，与数字人这条线正交。
+
+### 15.18.9 本轮的教训
+
+1. **"只差一处改动"的估计必须用机制证明**，不能读着文档里的一句话就当结论。
+   第 17 轮把候选 A 描述成"加 1 行指针 + 目录落两条条件费率"，
+   实测撞上"迁移器会重写 `conditions`"这条反转——**如果直接手写费率提交，CI 会在
+   `models:check:pricing-v2` 变红，而本地看起来一切正常**。
+2. **白名单是"能表达什么"的权威**。`audit-pricing-consistency.py` 的 `KNOWN_DIMS`
+   与 cloudrouter 的指针表是同一套词汇，先在白名单里找可用维度（`quality` 恰好在表内且零使用），
+   比自造维度名安全得多。
+3. **一条 12 项门禁的外围约束（profile 必需、displayName 跨区一致、sourceUrl 需登记）
+   只有在真正加条目时才会暴露**——它们都不在"我改的那几个文件"的视野里。
+   加新模型的正确顺序是：先加最小条目 → 跑满门禁 → 按报错逐条补，而不是先写全再验。
+
+---
+
+## 15.19 第 19 轮：目录侧审计工具的收口（两处永久假阳性 + 一处生成物漂移）
+
+### 15.19.1 一句话结论
+
+`_sdkwork:check` 全链已是 12/12 绿，但**目录侧还有一个不在门禁链上、却写着"权威"字样的审计工具**：
+`tools/audit-pricing-consistency.py`。它报 **492 项**，逐条归并后只有 **1 项**是需要人看一眼的信号类别，
+其余 **491 项是结构与口径问题**（19 项与权威门禁判据冲突的假阳性 + 472 项已文档化的产品决策类）。
+本轮把两处假阳性修掉、把一处误导性读数归零，并把一个**陈旧 12 倍的生成物**归位；
+目录侧门禁读数**一项都没变**（`issueCount` 仍 77），因为改的是"读数工具"，不是"被读的数据"。
+
+### 15.19.2 归并：492 项到底是什么
+
+| 类别 | 条数 | 判定 |
+|---|---|---|
+| `tier_code condition on a non-time_window rate (unreachable without a request tier)` | 472 | **已文档化的产品决策类**（`docs/pricing-unreachable-rates.md` 明写 "nothing here is auto-applied"，且需要"新增运行时维度或合并档位"才能修）⇒ 不动 |
+| `model file has no matching pricing file` | 19 | **假阳性**：19 个全部是 `routingState: catalog_only` + `shelfState: hidden`（见 §15.19.4） |
+| `regionCount mismatch: directory=2, index=34` | 1 | **假阳性**：两个不同量在做比较（见 §15.19.3） |
+
+判据来源：`grep -oP '^\s{4}\K.*' audit.txt \| sed 's/[0-9]\+/N/g' \| sort \| uniq -c`（按消息模板归并）。
+**这一步必须做**——直接读 `TOTAL ISSUES: 492` 会得出"目录有 492 个缺陷"的错误结论，
+而它其实是一个提醒人"这个工具的口径需要复核"的读数。
+
+### 15.19.3 假阳性 A：`regionCount` 是拿 A 的定义去比 B 的数字
+
+`tools/audit-pricing-consistency.py`（改动前）：
+
+```python
+actual_regions = len(set(p.split("/")[1] for p in pricing_files))   # 不同 region 名字个数
+if actual_regions != index.get("regionCount"):                       # index 里是 vendor×region 目录数
+    issue("index.json", f"regionCount mismatch: ...")
+```
+
+`p.split("/")[1]` 取到的是 `alibaba/cn/pricing/x.json` 里的 `cn` ⇒ 集合大小恒为 **2**（只有 `cn`/`global`）。
+而 `index.json` 的 `regionCount` 由 `tools/catalog-lib.mjs:280` 生成：`regionCount: vendors.length`，
+`vendors` 是**每个 (vendorCode, regionCode) 目录一条**的扁平数组 ⇒ 现值 **34**（= `vendorCount` 25 + 部分 vendor 的双区）。
+权威口径在 `collectRegionalCatalogDirectories()`（`catalog-lib.mjs:62-80`）：**含 `vendor.json` 的 `<vendor>/<region>` 目录**，
+实测 `find models -mindepth 3 -maxdepth 3 -name vendor.json | wc -l` = **34** ⇒ 与 index 一致。
+
+⇒ **这条检查永远无法变绿**（2 ≠ 34），是典型的"假红"：与 §15.16 记录的"假绿"（正则无捕获组 ⇒ 门禁永不触发）
+互为镜像，危害相同——**它训练读者忽略整份报告**。
+
+修法：按权威定义重算，`count(<vendor>/<region> 且含 vendor.json)`。改后该行消失，且**不是被静音**——
+下一节用造违例证明它对真实的 `regionCount` 漂移仍会报红。
+
+### 15.19.4 假阳性 B：model↔pricing 配对没有状态感知，且与权威门禁判据冲突
+
+审计脚本原来的判据是纯路径比对：`models/<v>/<r>/models/X.json` 必须有对应的 `pricing/X.json`。
+但**权威门禁 `validate-catalog.mjs:426-438` 早就是状态感知的**：
+
+```js
+if ((model.routingState === "enabled" || model.shelfState === "listed" || model.releaseStage === "active")
+    && !pricedModelIds.has(model.modelId)) {
+  issues.push(issue("model.pricing.required", ..., "is enabled, listed, or active and must have a pricing file"));
+}
+```
+
+`validate-catalog` 对此 **0 error** ⇒ 说明"不可路由、不上架"的目录条目**按设计不需要价**。
+实测 19 个全部命中豁免条件（`routingState: catalog_only`）：
+
+```
+black_forest_labs/global/models/flux-2-dev.json          pixverse/cn/models/pixverse-v5.6-t2v.json
+pixverse/global/models/pixverse-c1.json                  runway/global/models/{gemini_image3.1_flash,magnific_video_upscaler_creative}.json
+stability_ai/global/models/sdxl-1-0.json                 suno/global/models/suno-v6{,-wild,-mini}.json
+vidu/{cn,global}/models/viduq3-{ad,drama}.json           xiaomi/{cn,global}/models/mimo-v2.5-tts{,-voiceclone,-voicedesign}.json
+```
+
+⇒ 这 19 项是**判据写弱了**造成的永久假阳性，不是目录缺口。
+修法：让审计脚本**镜像权威门禁的同一条谓词**（同一个三元条件），
+并把这 19 条改为报告末尾的 `NOTE:` 段落——**信号不丢，只是不再冒充缺陷**。
+
+**造违例证明两处判据现在一致**（这是本轮最重要的一次验证）：
+把 `models/xiaomi/cn/models/mimo-v2.5-tts.json` 的 `routingState` 从 `catalog_only` 改成 `enabled`：
+
+| 工具 | 改前 | 改后 |
+|---|---|---|
+| `audit-pricing-consistency.py` | 472 | **474**（多出 `model is enabled/listed/active but has no matching pricing file`） |
+| `validate-catalog.mjs` | 0 error | **`model.pricing.required`** |
+
+两边对同一违例**同时报红** ⇒ 镜像成立。恢复后 `sha256sum -c` 逐字节一致（模型文件 + `index.json`），读数回到 472。
+
+### 15.19.5 生成物漂移：`docs/pricing-unreachable-rates.md` 陈旧 12 倍，且数据源归属写错
+
+这个文档头部写着 `Generated by tools/audit-pricing-consistency.py`，但**真实生成器是
+`tools/report-unreachable-pricing.py`**（`audit-pricing-consistency.py` 全文没有写文件的代码，
+且没有任何 npm script / 门禁引用它）。归属错误还**硬编码在生成器里**（`report-unreachable-pricing.py:59`）
+⇒ 重生成一次就会把错误再写回去，只在文档里手改是无效的。
+
+更严重的是**内容陈旧**：
+
+| 读数 | 提交版 | 重生成 |
+|---|---|---|
+| 行数 | 56 | 481 |
+| 数据行 | 47 | 472 |
+| `dimension` 分布 | 37 `tier_code` + 10 `media_direction` | 472 `tier_code`（`media_direction` 0 条） |
+| 归属 | 错误的工具名 | 正确工具名 |
+
+全库实测：**费率 1262 条**；条件维度分布 `{tier_code: 520, context_tokens: 60, media_type: 31, input_type: 8, output_type: 3, quality: 2}`；
+其中 `tier_code` 落在**非 `time_window`** 费率上的正是 **472** 条（与审计脚本独立得出同一数字，互为交叉验证）。
+**`media_direction` 条件现为 0 条** ⇒ 提交版那 10 行对应的条件已从目录中删除，是死数据。
+
+顺带确认了一件事：`quality` 条件全库正好 **2 条**，就是 §15.18 落的那两条数字人费率
+⇒ 反证了 §15.18 的核心论证"给 `quality` 指针补 `/mode` 是可证明惰性的"（改动前该维度零使用）。
+
+修法：① 生成器里改正归属；② 重生成（47 → 472 行是**陈旧**的消除，不是新增信号）；
+③ 给生成器加 `--check`（见 §15.19.6）让这种陈旧以后能被发现。
+
+### 15.19.6 CRLF 陷阱：Python 默认文本写会在 Windows 上产出 CRLF
+
+加 `--check` 时发现：提交版是 **LF**（56 bare LF / 0 CRLF），而 `python tools/report-unreachable-pricing.py`
+重生成出来是 **CRLF**（481 CRLF / 0 bare LF）。原因是 Python 文本模式写入默认 `newline=None`
+⇒ 把 `\n` 翻译成 `os.linesep`（Windows 上 `\r\n`）。
+
+后果：这个生成物**每次重生成都会产生全文件 diff**，而且换到 Linux 上又变 LF ⇒ 跨平台不稳定，
+`--check` 在两边都"通过"却产出不同字节，是最难查的一类漂移。
+
+修法：写入固定 `newline="\n"`；比对侧保留默认换行处理（容忍工作树被 autocrlf 转成 CRLF，
+只对内容判真伪）。改后连续两次重生成 sha256 一致（`e41cb2b319fc4dbeb7afed1a8e0dc33f3439f24a1725d4a49f4fa8c0646e9dc8`）⇒ 幂等且确定性。
+
+### 15.19.7 三次造违例往返（新判据一律"先破坏、看它响、再恢复、看它绿"）
+
+| # | 违例 | 期望 | 实测 |
+|---|---|---|---|
+| 1 | `routingState` 改 `enabled` | 审计 +1 且与 `validate-catalog` 一起报红 | 472 → 474，`model.pricing.required` 同时出现 ✅ |
+| 2 | `index.regionCount` 改 2 | `regionCount mismatch: directory=34, index=2` | 报出，且 `directory` 用的是修正后的正确口径 ✅ |
+| 3 | 往报告尾部追加一行 | `--check` 退出 1 | `drift docs/pricing-unreachable-rates.md` / `exit=1`；恢复后 `exit=0` ✅ |
+
+三次都做了**恢复后字节/读数一致性**核对（`sha256sum -c` OK，审计回到 472，`--check` 回到 current）。
+
+### 15.19.8 门禁终态读数（第 19 轮实测，全绿）
+
+| 门禁 | 结果 |
+|---|---|
+| `verify-repo.mjs --root .`（`_sdkwork:check` 首步） | exit 0 |
+| `migrate-pricing-v2.mjs` | exit 0 / `Would migrate 0 rates in 0 pricing files` |
+| `build-index.mjs --check` | exit 0 / `index is current` |
+| `validate-catalog.mjs` | exit 0 / `ok: true`，0 error |
+| `catalog-audit.mjs` | exit 0 / 0 error |
+| `release-catalog.mjs --check` | exit 0 / `2026.09.17.1 is current` |
+| `models_openapi_export.mjs --check` / `materialize-models-openapi.mjs --check` | exit 0 |
+| `models-openapi-contract.test.mjs` | exit 0 / passed |
+| `check-api-response-envelope.mjs --workspace .` | exit 0 |
+| `freshness-report` / `generate-mainstream-agent-model-catalog --check` / `generate-vendor-model-architecture-doc --check` / `sync-video-profile-resolutions --check` | 全部 exit 0 |
+
+**关键读数**：`releases/2026.09.17.1.json` 的 `validation.issueCount` 仍为 **77**（30 ambiguous + 47 unreachable，
+均为 video-profile ↔ pricing 口径，与本轮无关）；`index.json`：`modelCount 425 / pricingFileCount 406 /
+regionCount 34 / vendorCount 25`；审计读数 **492 → 472**（-19 假阳性，-1 假阳性，其余不变）。
+⇒ **本轮对目录数据零改动**，只改读数工具与一个陈旧生成物。
+
+### 15.19.9 仍未做 / 待裁决
+
+1. **没把 `report-unreachable-pricing.py --check` 接进 `_sdkwork:check`**。
+   本仓门禁链**全是 Node**（`package.json` 的 `_sdkwork:*` 里没有任何 `python` 调用），
+   接一个 Python 步骤会引入新的运行时依赖，CI 是否保证有 `python` 我无法在本环境证明。
+   ⇒ 按 `AGENTS.md` 的 "surface instead of guessing"：**登记为待裁决**。
+   已加 `models:audit:pricing` / `models:report:unreachable` / `models:check:unreachable-report`
+   三个 npm 入口，让这两个 Python 工具至少**可被发现**（此前无任何入口）。
+2. **472 条不可达费率仍是产品决策**：需要"新增运行时维度"或"合并档位"，本轮沿用
+   `docs/pricing-unreachable-rates.md` 的既有结论，不做自动收敛。
+3. 承接 §15.18.8：网关契约与官方数字人面（`image`/`audio_id`/`sound_file`/`prompt`/`mode` + `/image2video` 路径）
+   仍未对齐；`avatar_motion_routing_e2e.rs` 仍把漂移值锁成期望值。
+
+### 15.19.10 本轮的教训
+
+1. **"门禁全绿"与"读数工具可信"是两件事**。目录侧 12 项门禁全绿的同时，
+   一个不在链上的审计工具报着 492 项、其中 491 项是口径问题。**先归并消息模板再读总数**，
+   否则总数会把"工具口径要复核"误报成"数据有 492 个缺陷"。
+2. **检查项必须能通过**。永远贴不住红的检查（`2 ≠ 34`）和永远响不了的检查（假绿）危害相同：
+   前者训练人忽略报告，后者制造虚假安全感。**新写/修改判据时，必须问"它在什么情况下会绿"**。
+3. **同一事实只能有一套判据**。`model.pricing.required` 在 `validate-catalog.mjs` 里是状态感知的，
+   在审计脚本里是无状态的 ⇒ 冲突必然表现为"一个 0 error、另一个报 19 项"。
+   发现这种冲突时，**修弱的那一侧去镜像强的那一侧**，而不是给强的那侧加豁免。
+4. **生成物的头部也是事实**。"Generated by X" 写错（X 根本不是生成器）会被下一次重生成复现，
+   所以**必须改生成器，不能只改产物**。
+5. **生成物必须固定行尾**。Python 文本模式写在 Windows 出 CRLF，会让"内容没变"的生成物
+   每次重生成都产生全文件 diff，并让 `--check` 在跨平台时给出自相矛盾的结论。
+   判据：连续两次重生成 sha256 相同。
+6. **改了工具就要重算历史读数**。修完假阳性后审计从 492 降到 472，这个**差值本身是证据**
+   （-19 来自判据修正、-1 来自口径修正），要写进文档，否则下一个人看到数字变了会以为数据丢了。
+
+

@@ -2493,7 +2493,7 @@ test("sdk reference generation uses app SDK instead of local tool API fetches", 
     "utf8",
   );
   const appSdkSource = readFileSync(
-    new URL("../../sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/src/index.ts/api/sdk-reference.ts", import.meta.url),
+    new URL("../../sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/generated/server-openapi/src/api/sdk-reference.ts", import.meta.url),
     "utf8",
   );
 

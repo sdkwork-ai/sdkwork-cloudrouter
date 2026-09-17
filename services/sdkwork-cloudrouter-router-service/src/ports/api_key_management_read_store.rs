@@ -112,22 +112,12 @@ impl GatewayApiKeyManagementSnapshot {
             .cloned()
     }
 
-    pub fn single_upstream_account_group_for_subject(
-        &self,
-        tenant_id: i64,
-        organization_id: i64,
-    ) -> Option<UpstreamAccountGroup> {
-        let mut groups = self
-            .upstream_account_groups
-            .iter()
-            .filter(|group| group_matches_subject(group, tenant_id, organization_id));
-        let group = groups.next()?.clone();
-        if groups.next().is_none() {
-            Some(group)
-        } else {
-            None
-        }
-    }
+    // `single_upstream_account_group_for_subject` used to live here: it picked
+    // the one group in scope, or nothing when the subject had several. That is
+    // step 3 of `domain::select_default_account_group_for_subject`, which also
+    // consults `is_default` and the `default-group` code convention first — so
+    // the standalone version was removed rather than left as a second, weaker
+    // copy of the same rule.
 
     pub fn find_access_policy(&self, policy_id: i64) -> Option<GatewayAccessPolicy> {
         self.access_policies
@@ -235,13 +225,18 @@ impl GatewayApiKeyManagementSnapshot {
     }
 }
 
+/// Subject-scope predicate for account groups, kept as a local alias so the
+/// snapshot readers read naturally. The predicate itself lives in
+/// [`crate::domain::upstream_account_group_in_subject_scope`] because the
+/// auth-token channel resolves its group through the same rule; two copies
+/// would let the same tenant route differently depending on the credential
+/// shape the client used.
 fn group_matches_subject(
     group: &UpstreamAccountGroup,
     tenant_id: i64,
     organization_id: i64,
 ) -> bool {
-    (group.tenant_id == 0 || group.tenant_id == tenant_id)
-        && (group.organization_id == 0 || group.organization_id == organization_id)
+    crate::domain::upstream_account_group_in_subject_scope(group, tenant_id, organization_id)
 }
 
 pub trait GatewayApiKeyManagementReadStore {

@@ -424,7 +424,13 @@ test("Playground delegates Token Plan UI to Agents and injects only host service
     "./packages/sdkwork-cloudrouter-pc-playground/src/pages/Playground.tsx",
   );
 
-  assert.match(playgroundSource, /@sdkwork\/agents-pc\/workbench/);
+  // 主机消费的是 agents 属主对外声明的 Playground 入口。`@sdkwork/agents-pc-playground`
+  // 内部再 re-export `@sdkwork/agents-pc/workbench`（见该包 src/index.ts 的头注释：
+  // 「Hosts embed AgentsPlayground ... new capabilities land in the workbench system and
+  // surface through this package」）——所以主机直连 workbench 才是越界：owner 换 workbench
+  // 实现时，直连的主机会被一起打断。
+  assert.match(playgroundSource, /@sdkwork\/agents-pc-playground/);
+  assert.doesNotMatch(playgroundSource, /@sdkwork\/agents-pc\/workbench/);
   assert.match(playgroundSource, /tokenPlan:\s*\{/);
   assert.match(playgroundSource, /checkoutService:\s*getCloudRouterMembershipCheckoutService\(\)/);
   assert.match(playgroundSource, /couponRechargeService:\s*getCloudRouterCouponRechargeService\(\)/);

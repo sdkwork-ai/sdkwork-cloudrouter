@@ -40,6 +40,11 @@ pub(crate) struct OfficialPricingSyncReport {
     pub pricing_plan_count: usize,
     pub pricing_rule_count: usize,
     pub account_rate_card_count: usize,
+    /// Price books this run retired because sdkwork-models no longer publishes
+    /// them (a model or a whole price side was deleted from the catalog). They
+    /// would otherwise stay `active` forever and keep feeding the runtime
+    /// snapshot stale rates.
+    pub orphan_price_book_count: usize,
     pub deprecated_price_setting_count: usize,
     pub removed_price_setting_count: usize,
     pub restored_price_setting_count: usize,
@@ -267,6 +272,13 @@ pub(crate) async fn sync_official_pricing_catalog(
     }
 
     activate_price_books(&mut transaction, &price_book_ids).await?;
+    // Delete-side of the same reconciliation. `supersede_previous_versions` and
+    // `activate_price_books` only walk the keys the projection produced, so a
+    // book that vanished from the catalog kept its last version `active` for
+    // ever. Scoped to the vendors this run actually projected, because a
+    // vendor-filtered refresh must not retire books it never looked at.
+    let orphan_price_book_count =
+        retire_orphan_price_books(&mut transaction, catalog, &price_book_ids).await?;
     let (pricing_plan_count, pricing_rule_count) =
         bootstrap_default_pricing_plans(&mut transaction).await?;
     // Runs last on purpose: it reconciles operator price settings against the
@@ -317,10 +329,12 @@ pub(crate) async fn sync_official_pricing_catalog(
         pricing_plan_count,
         pricing_rule_count,
         account_rate_card_count,
+        orphan_price_book_count,
         deprecated_price_setting_count: alignment.deprecated_count,
         removed_price_setting_count: alignment.removed_count,
         restored_price_setting_count: alignment.restored_count,
         changed: import_run_staged
+            || orphan_price_book_count > 0
             || alignment.deprecated_count > 0
             || alignment.removed_count > 0
             || alignment.restored_count > 0,
@@ -650,6 +664,231 @@ async fn restore_price_settings_availability(
         affected += usize::try_from(result.rows_affected()).unwrap_or(0);
     }
     Ok(affected)
+}
+
+/// Retires and soft-deletes every catalogue-owned price book the current
+/// sdkwork-models revision no longer publishes.
+///
+/// This is the delete half of the projection. Every other statement in this
+/// module is driven by the keys the catalog *does* produce, so a book that
+/// disappeared — because a model was deleted, or a vendor/region dropped a
+/// price side entirely — was never visited again: its last version stayed
+/// `active`, the runtime snapshot kept loading its rates, and nothing ever
+/// reported the catalog as drifted, because the completeness check is a subset
+/// check that a superset satisfies.
+///
+/// The scope is deliberately limited to the vendors present in `catalog` after
+/// vendor filtering: a `--vendor-codes` refresh is only authoritative for the
+/// vendors it projected, and retiring another vendor's books would silently
+/// delete pricing the operator never asked to touch.
+async fn retire_orphan_price_books(
+    transaction: &mut Transaction<'_, Postgres>,
+    catalog: &ModelCatalog,
+    projected: &BTreeMap<PriceBookKey, i64>,
+) -> Result<usize, OfficialPricingSyncError> {
+    let scope = catalog
+        .vendors
+        .iter()
+        .map(|vendor| vendor.vendor.vendor_code.as_str())
+        .collect::<BTreeSet<_>>();
+    if scope.is_empty() {
+        return Ok(0);
+    }
+    let live = sqlx::query(
+        r#"SELECT id, price_book_code, vendor_code, region_code
+           FROM pricing_price_book
+           WHERE tenant_id = 0 AND organization_id = 0 AND namespace_code = 'models'
+             AND lifecycle_state = 'active' AND deleted_at IS NULL"#,
+    )
+    .fetch_all(&mut **transaction)
+    .await?;
+    let mut retired = 0usize;
+    for row in live {
+        let vendor_code = row.get::<String, _>("vendor_code");
+        if !scope.contains(vendor_code.as_str()) {
+            continue;
+        }
+        let key = PriceBookKey {
+            price_book_code: row.get("price_book_code"),
+            vendor_code,
+            region_code: row.get("region_code"),
+        };
+        if projected.contains_key(&key) {
+            continue;
+        }
+        let price_book_id = row.get::<i64, _>("id");
+        supersede_stale_price_book(&mut *transaction, price_book_id).await?;
+        retired += 1;
+    }
+    Ok(retired)
+}
+
+/// Content identity of the pricing a catalog revision projects.
+///
+/// Used by the installer to answer "is the database behind the catalog on
+/// disk?" without duplicating `project_catalog`. `source_hash` is the same
+/// value `stage_import_run` keys `pricing_import_run` on, so a hit means the
+/// stored content is byte-identical to what the loaded catalog would write.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct CatalogPricingSummary {
+    pub source_hash: String,
+    pub catalog_version: String,
+    /// Every `(price_book_code, vendor_code, region_code)` the revision
+    /// publishes, i.e. the exact set the live books must equal.
+    pub price_book_keys: BTreeSet<(String, String, String)>,
+    /// Vendor scope of this projection, used to bound orphan detection so a
+    /// vendor-filtered refresh cannot judge another vendor's books.
+    pub vendor_codes: BTreeSet<String>,
+}
+
+/// Projects the catalog just far enough to report its pricing identity.
+///
+/// `project_catalog` is pure and in-memory, so this costs one pass over the
+/// catalog and never touches the database.
+pub(crate) fn summarize_catalog_pricing(
+    catalog: &ModelCatalog,
+) -> Result<CatalogPricingSummary, OfficialPricingSyncError> {
+    let projection = project_catalog(catalog)?;
+    Ok(CatalogPricingSummary {
+        source_hash: projection.source_hash,
+        catalog_version: catalog.manifest.catalog_version.clone(),
+        price_book_keys: projection
+            .price_books
+            .keys()
+            .map(|key| {
+                (
+                    key.price_book_code.clone(),
+                    key.vendor_code.clone(),
+                    key.region_code.clone(),
+                )
+            })
+            .collect(),
+        vendor_codes: catalog
+            .vendors
+            .iter()
+            .map(|vendor| vendor.vendor.vendor_code.clone())
+            .collect(),
+    })
+}
+
+/// True when `pricing_import_run` already stores this exact projection, i.e.
+/// the loaded revision produced the same rate content as the stored one.
+pub(crate) async fn pricing_projection_is_stored(
+    pool: &PgPool,
+    summary: &CatalogPricingSummary,
+) -> Result<bool, OfficialPricingSyncError> {
+    let stored = sqlx::query_scalar::<_, i64>(
+        r#"SELECT id FROM pricing_import_run
+           WHERE tenant_id = 0 AND organization_id = 0 AND source_system = $1
+             AND source_catalog_version = $2 AND source_hash = $3"#,
+    )
+    .bind(SOURCE_SYSTEM)
+    .bind(&summary.catalog_version)
+    .bind(&summary.source_hash)
+    .fetch_optional(pool)
+    .await?;
+    Ok(stored.is_some())
+}
+
+/// Set difference between the price books a catalog revision publishes and the
+/// live books the database holds, in **both** directions.
+///
+/// `pricing_import_run` and every completeness check in this module are
+/// one-directional: the run row answers "was this content ever imported?" and
+/// the expectation checks are subset checks, so both answer "nothing is
+/// missing" only for the keys they were handed. A book that was retired or
+/// soft-deleted *after* its run row was written therefore satisfied every
+/// existing signal while serving no pricing at all — the database silently
+/// served a vendor's whole price list as absent.
+///
+/// `missing` closes that direction; `orphan` keeps the delete direction
+/// (`retire_orphan_price_books`) observable from the outside.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct PriceBookDrift {
+    /// Projected keys with no live book: the database is missing pricing the
+    /// catalog publishes.
+    pub missing: Vec<String>,
+    /// Live books the revision no longer publishes: the database carries
+    /// pricing the catalog deleted.
+    pub orphan: Vec<String>,
+}
+
+impl PriceBookDrift {
+    pub(crate) fn is_clean(&self) -> bool {
+        self.missing.is_empty() && self.orphan.is_empty()
+    }
+
+    /// One comma-joined sample of both directions, bounded by the caller.
+    pub(crate) fn sample(&self, limit: usize) -> String {
+        let mut items = self
+            .missing
+            .iter()
+            .map(|key| format!("missing:{key}"))
+            .chain(self.orphan.iter().map(|key| format!("orphan:{key}")))
+            .take(limit)
+            .collect::<Vec<_>>();
+        items.sort();
+        items.join(", ")
+    }
+}
+
+/// Compares the projected price-book set with the live one. Pure, so the
+/// two-directional semantics are unit-testable without a database.
+fn diff_price_book_keys(
+    projected: &BTreeSet<(String, String, String)>,
+    live: &BTreeSet<(String, String, String)>,
+) -> PriceBookDrift {
+    let render = |key: &(String, String, String)| format!("{}/{}/{}", key.1, key.2, key.0);
+    let mut missing = projected
+        .difference(live)
+        .map(render)
+        .collect::<Vec<_>>();
+    let mut orphan = live.difference(projected).map(render).collect::<Vec<_>>();
+    missing.sort();
+    orphan.sort();
+    PriceBookDrift { missing, orphan }
+}
+
+/// Live catalogue-owned price books inside the projection's vendor scope, by
+/// key. Scoping keeps a `--vendor-codes` refresh from judging another vendor's
+/// books in either direction.
+async fn live_price_book_keys(
+    pool: &PgPool,
+    summary: &CatalogPricingSummary,
+) -> Result<BTreeSet<(String, String, String)>, OfficialPricingSyncError> {
+    if summary.vendor_codes.is_empty() {
+        return Ok(BTreeSet::new());
+    }
+    let vendors = summary.vendor_codes.iter().cloned().collect::<Vec<_>>();
+    let rows = sqlx::query(
+        r#"SELECT price_book_code, vendor_code, region_code
+           FROM pricing_price_book
+           WHERE tenant_id = 0 AND organization_id = 0 AND namespace_code = 'models'
+             AND lifecycle_state = 'active' AND deleted_at IS NULL
+             AND vendor_code = ANY($1::text[])"#,
+    )
+    .bind(&vendors)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows
+        .into_iter()
+        .map(|row| {
+            (
+                row.get::<String, _>("price_book_code"),
+                row.get::<String, _>("vendor_code"),
+                row.get::<String, _>("region_code"),
+            )
+        })
+        .collect())
+}
+
+/// Drift between the projected and the stored price books, both directions.
+pub(crate) async fn price_book_drift(
+    pool: &PgPool,
+    summary: &CatalogPricingSummary,
+) -> Result<PriceBookDrift, OfficialPricingSyncError> {
+    let live = live_price_book_keys(pool, summary).await?;
+    Ok(diff_price_book_keys(&summary.price_book_keys, &live))
 }
 
 fn normalize_price_side(value: &str) -> Result<String, OfficialPricingSyncError> {
@@ -1246,10 +1485,93 @@ async fn bootstrap_default_pricing_plans(
 
 #[cfg(test)]
 mod tests {
-    use super::{catalog_availability, normalize_price_side, project_catalog};
+    use super::{catalog_availability, diff_price_book_keys, normalize_price_side, project_catalog};
     use crate::infrastructure::sql::model_catalog_import::{
         model_catalog_key, sdkwork_model_is_publicly_active,
     };
+    use std::collections::BTreeSet;
+
+    fn book(code: &str, vendor: &str, region: &str) -> (String, String, String) {
+        (code.to_owned(), vendor.to_owned(), region.to_owned())
+    }
+
+    #[test]
+    fn price_book_drift_reports_both_directions() {
+        // The regression this guards: the drift check used to look only for live
+        // books the catalog no longer publishes. A book that was retired or
+        // soft-deleted *after* its `pricing_import_run` row was written therefore
+        // satisfied every signal — including the `source_hash` one — and the
+        // database served a vendor's pricing as absent for ever.
+        let published_kept = book("models.openai.global.official", "openai", "global");
+        let published_dropped_by_catalog =
+            book("models.google.global.reference", "google", "global");
+        let published_missing_from_db = book("models.kuaishou.global.official", "kuaishou", "global");
+        let deleted_by_catalog = book("models.openai.global.reference", "openai", "global");
+
+        let projected: BTreeSet<_> = [
+            published_kept.clone(),
+            published_dropped_by_catalog.clone(),
+            published_missing_from_db.clone(),
+        ]
+        .into_iter()
+        .collect();
+        let live: BTreeSet<_> = [
+            published_kept.clone(),
+            published_dropped_by_catalog,
+            deleted_by_catalog,
+        ]
+        .into_iter()
+        .collect();
+
+        let drift = diff_price_book_keys(&projected, &live);
+        assert_eq!(
+            drift.missing,
+            vec!["kuaishou/global/models.kuaishou.global.official".to_owned()],
+            "a projected book with no live row must be reported as missing"
+        );
+        assert_eq!(
+            drift.orphan,
+            vec!["openai/global/models.openai.global.reference".to_owned()],
+            "a live book the catalog dropped must be reported as orphan"
+        );
+        assert_eq!(drift.missing.len() + drift.orphan.len(), 2);
+        assert!(!drift.is_clean());
+        let sample = drift.sample(5);
+        assert!(sample.contains("missing:kuaishou/global/models.kuaishou.global.official"));
+        assert!(sample.contains("orphan:openai/global/models.openai.global.reference"));
+    }
+
+    #[test]
+    fn price_book_drift_is_clean_when_sets_match() {
+        let projected: BTreeSet<_> = [
+            book("models.openai.global.official", "openai", "global"),
+            book("models.suno.global.official", "suno", "global"),
+        ]
+        .into_iter()
+        .collect();
+        let drift = diff_price_book_keys(&projected, &projected.clone());
+        assert!(
+            drift.is_clean(),
+            "identical sets must not be reported as drift: {drift:?}"
+        );
+        assert!(drift.missing.is_empty() && drift.orphan.is_empty());
+        assert_eq!(drift.sample(5), "");
+    }
+
+    #[test]
+    fn price_book_drift_detects_an_entirely_empty_projection_gap() {
+        // A fresh-but-truncated database: every projected book is missing.
+        let projected: BTreeSet<_> = [
+            book("models.openai.global.official", "openai", "global"),
+            book("models.anthropic.global.official", "anthropic", "global"),
+        ]
+        .into_iter()
+        .collect();
+        let drift = diff_price_book_keys(&projected, &BTreeSet::new());
+        assert_eq!(drift.missing.len(), 2);
+        assert!(drift.orphan.is_empty());
+        assert!(!drift.is_clean());
+    }
 
     #[test]
     fn catalog_availability_splits_every_model_exactly_once() {

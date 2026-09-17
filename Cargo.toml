@@ -171,10 +171,14 @@ arc-swap = "1.9"
 prometheus = "0.13"
 dashmap = "6"
 # OpenTelemetry / OTLP observability stack (M-5: wire OTLP exporter into tracing_setup)
-opentelemetry = "0.27"
-opentelemetry_sdk = { version = "0.27", features = ["rt-tokio"] }
-opentelemetry-otlp = { version = "0.27", default-features = false, features = ["http-proto", "reqwest-rustls", "trace"] }
-tracing-opentelemetry = "0.28"
+# Pinned to the same generation as sdkwork-drive-observability and
+# sdkwork-agent-server so the build resolves exactly one OTel SDK, one
+# tracing-opentelemetry bridge and one tonic (tonic 0.12 used to drag axum 0.7,
+# tower 0.4 and indexmap 1.9 in as duplicates).
+opentelemetry = "0.30"
+opentelemetry_sdk = { version = "0.30", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "0.30", default-features = false, features = ["http-proto", "reqwest-rustls", "trace"] }
+tracing-opentelemetry = "0.31"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls-native-roots"] }
 
 # SDKWork workspace members - declared once at workspace root
