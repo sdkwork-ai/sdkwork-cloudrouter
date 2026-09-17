@@ -24,7 +24,7 @@
       "zh-CN",
       "en-US"
     ],
-    "activeSeedLocales": [],
+    "activeSeedLocales": ["zh-CN"],
     "driftCheckIntervalSec": 60
   },
   "paths": {
