@@ -400,22 +400,13 @@ fn extract_path_literal(text: &str) -> Option<&str> {
 
 /// Maps a probe's concrete path onto the manifest template it exercises.
 ///
-/// A probe must send a concrete path, but the manifest publishes templates. Two
-/// shapes need mapping, and both are listed explicitly rather than guessed at,
-/// so the mapping can never over-reach onto an unrelated route:
-///
-/// * a trailing identifier segment (`.../text-to-speech/<voice_id>`),
-/// * a model name inside a `:action` path (`.../models/<model>:generateContent`).
-fn resolve_probe_path(probe: &str) -> &str {
-    CONCRETE_TO_TEMPLATE
-        .iter()
-        .find(|(concrete, _)| *concrete == probe)
-        .map(|(_, template)| *template)
-        .unwrap_or(probe)
-}
-
 /// Replaces a concrete path parameter with `{}` so a probe spelling and a
 /// manifest template compare equal.
+///
+/// A case that dials a substituted path declares its template in
+/// `ApiCase::published_path`; this function then collapses both spellings to the
+/// same `{}` form, so the comparison never depends on which concrete value the
+/// probe happened to use.
 fn normalise_path(path: &str) -> String {
     let mut normalised = String::new();
     let mut in_param = false;
@@ -433,26 +424,6 @@ fn normalise_path(path: &str) -> String {
     }
     normalised
 }
-
-/// Concrete-value probes and their templated manifest counterparts.
-const CONCRETE_TO_TEMPLATE: &[(&str, &str)] = &[
-    (
-        "/elevenlabs/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM",
-        "/elevenlabs/v1/text-to-speech/{voice_id}",
-    ),
-    (
-        "/google/v1beta/models/gemini-2.5-flash:generateContent",
-        "/google/v1beta/models/{model}:generateContent",
-    ),
-    (
-        "/google/v1beta/models/gemini-2.5-flash:streamGenerateContent",
-        "/google/v1beta/models/{model}:streamGenerateContent",
-    ),
-    (
-        "/google/v1beta/models/text-embedding-004:embedContent",
-        "/google/v1beta/models/{model}:embedContent",
-    ),
-];
 
 #[tokio::test]
 async fn every_published_api_reaches_its_vendor_account_on_the_real_catalog() {
