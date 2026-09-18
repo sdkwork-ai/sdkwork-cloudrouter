@@ -272,12 +272,12 @@
       "sortOrder": 300
     },
     {
-      "resourceCode": "api.openai.videos",
+      "resourceCode": "api.openai.video",
       "resourceType": "api_endpoint",
       "displayName": "OpenAI Videos",
       "vendorCode": "openai",
       "modalityCode": "video",
-      "apiCode": "openai.videos",
+      "apiCode": "openai.video",
       "method": "POST",
       "pathTemplate": "/v1/videos",
       "capability": "video",
