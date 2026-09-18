@@ -1224,6 +1224,120 @@ if (!existsSync(groupDirectory)) {
 }
 
 // ---------------------------------------------------------------------------
+// 9. The closure guard's embedded declared-endpoint table has to match the
+//    seeds.
+// ---------------------------------------------------------------------------
+//
+// The five per-capability Rust guards each enumerate the vendors they know
+// about by hand, which is how the same "one generic endpoint per capability"
+// defect survived five times. Their replacement is a *closure* guard
+// (`every_capability_binds_only_to_a_declared_vendor_native_endpoint`, in both
+// copies of `model_catalog_import.rs`): it sweeps every
+// `(vendor, apiFormat, capability)` combination the catalog can carry and
+// asserts no descriptor invents a route outside the declared set.
+//
+// That guard needs the declared set spelled out inside the test, because the
+// module has no filesystem access at test time. An embedded copy is a second
+// source of truth, and a second source of truth that nothing compares is worse
+// than no guard at all — a resource added to the seeds would make the test
+// wrongly strict, and a hand-written line with no resource behind it would make
+// it wrongly lenient. This check is that comparison.
+//
+// It also asserts the *inverse*: every declared native endpoint is either
+// bindable by some capability descriptor or explicitly declared as a poll /
+// utility surface. A declared endpoint no model can bind to is a route the
+// project ships and no feature can use — how `minimax.music_generation` sat
+// declared-but-unbound while all 15 active music models collapsed onto the
+// Suno-protocol face.
+
+const CLOSURE_GUARD_SOURCES = [
+  "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/model_catalog_import.rs",
+  "../sdkwork-models/crates/sdkwork-models-catalog-repository-sqlx/src/model_catalog_import.rs",
+];
+
+/** The `(endpoint_code, path_template)` pairs the closure guard embeds. */
+function embeddedDeclaredEndpoints(source, relativePath) {
+  const table = source.match(
+    /DECLARED_VENDOR_NATIVE_ENDPOINTS\s*:\s*&\[\(&str,\s*&str\)\]\s*=\s*&\[([\s\S]*?)\n {8}\];/,
+  );
+  if (!table) return null;
+  // rustfmt wraps long tuples across lines (`(\n  "code",\n  "path",\n),`), so
+  // the scan has to tolerate arbitrary whitespace between the two literals —
+  // requiring them on one line silently dropped the five longest entries and
+  // made this check report a false gap.
+  const entries = [];
+  for (const match of table[1].matchAll(
+    /\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,?\s*\)/g,
+  )) {
+    entries.push([match[1], match[2]]);
+  }
+  return entries;
+}
+
+// The table mirrors exactly one seed file — the vendor-native declarations —
+// not every seed, so the comparison is scoped to that file. The generic
+// `openai.*` compatibility faces live in other seed files and are deliberately
+// outside the table: they are what a descriptor returns when it *declines* to
+// go native, so they must not be in the "declared native" set.
+const VENDOR_NATIVE_SEED = "data/ai-routing/resources/vendor-native-resources.json";
+const vendorNativeSeedPath = join(root, VENDOR_NATIVE_SEED);
+let nativeSeedEndpoints = [];
+if (existsSync(vendorNativeSeedPath)) {
+  try {
+    const document = JSON.parse(readFileSync(vendorNativeSeedPath, "utf8"));
+    nativeSeedEndpoints = (document.items ?? [])
+      .filter((item) => item.resourceType === "api_endpoint" && item.pathTemplate)
+      .map((item) => [item.apiCode, item.pathTemplate])
+      .sort(([leftCode, leftPath], [rightCode, rightPath]) =>
+        leftCode === rightCode
+          ? leftPath.localeCompare(rightPath)
+          : leftCode.localeCompare(rightCode),
+      );
+  } catch (error) {
+    failures.push(`${VENDOR_NATIVE_SEED}: invalid JSON (${error.message})`);
+  }
+}
+
+for (const relativePath of CLOSURE_GUARD_SOURCES) {
+  if (!existsSync(join(root, relativePath))) continue;
+  const source = read(relativePath);
+  if (!source.includes("every_capability_binds_only_to_a_declared_vendor_native_endpoint")) {
+    continue;
+  }
+  const embedded = embeddedDeclaredEndpoints(source, relativePath);
+  if (!embedded) {
+    failures.push(
+      `${relativePath}: carries the closure guard but its DECLARED_VENDOR_NATIVE_ENDPOINTS table cannot be read; the guard's declared set would go unchecked`,
+    );
+    continue;
+  }
+  const embeddedSorted = [...embedded].sort(([leftCode, leftPath], [rightCode, rightPath]) =>
+    leftCode === rightCode ? leftPath.localeCompare(rightPath) : leftCode.localeCompare(rightCode),
+  );
+  const missingFromGuard = nativeSeedEndpoints.filter(
+    ([code, path]) => !embeddedSorted.some(([c, p]) => c === code && p === path),
+  );
+  const notSeeded = embeddedSorted.filter(
+    ([code, path]) => !nativeSeedEndpoints.some(([c, p]) => c === code && p === path),
+  );
+  notes.push(
+    `${relativePath.split("/").pop()} closure guard: ${embeddedSorted.length} embedded endpoint(s) vs ${nativeSeedEndpoints.length} declared in ${VENDOR_NATIVE_SEED}`,
+  );
+  if (missingFromGuard.length > 0) {
+    failures.push(
+      `${relativePath}: the seeds declare ${missingFromGuard.length} vendor-native endpoint(s) the closure guard's table omits; the guard would reject a legitimate native binding`,
+    );
+    for (const [code, path] of missingFromGuard) failures.push(`    ${code} ${path}`);
+  }
+  if (notSeeded.length > 0) {
+    failures.push(
+      `${relativePath}: the closure guard's table declares ${notSeeded.length} endpoint(s) no seed backs; the guard would accept an invented route`,
+    );
+    for (const [code, path] of notSeeded) failures.push(`    ${code} ${path}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Report
 // ---------------------------------------------------------------------------
 

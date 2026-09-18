@@ -3367,3 +3367,1965 @@ regionCount 34 / vendorCount 25`；审计读数 **492 → 472**（-19 假阳性�
    （-19 来自判据修正、-1 来自口径修正），要写进文档，否则下一个人看到数字变了会以为数据丢了。
 
 
+## 15.20 第 20 轮：默认分组官方账号初始化的两个缺陷（环境变量名错配 + 完整性判据盲区）
+
+**需求**：确保默认分组中建立初始化官方账号配置，默认分组里必须存在每个 vendor 的官方账号，
+账号信息 / apikey 可以伪造，保证能够支持调用到对应的 api，
+并确保「账号路由 → 计费 → 最终 vendor api 调用」完整流程可跑通。
+
+### 15.20.1 结论
+
+**账号、分组、成员、凭据、资源绑定五者本来就已齐备**，供应链上游此前就已实现
+（`DEFAULT_VENDOR_UPSTREAM_ACCOUNTS` 11 个 vendor、衍生 26 个 (vendor, modality) 分组、
+`default-group` 持有 11 成员 / 12 项资源组授权）。真正的断点是**两个隐藏缺陷叠加**，
+两者的症状都不是「缺配置」，而是「配置在但全部不生效」：
+
+| # | 缺陷 | 直接后果 | 表面症状 |
+|---|---|---|---|
+| ① | **环境变量名错配**：installer 只读 `SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT`，开发脚本只写 `SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT` | 回落到 `DEFAULT_INSTALL_ENVIRONMENT = "production"`，11 个 vendor 官方账号**全部以 `status = 0` 禁用落地** | 全链路 `50201 no upstream account routes are configured` |
+| ② | **完整性判据盲区**：`postgres_ai_routing_seed_complete` 只看资源/分组/端点骨架，从不检查账号状态 | 缺陷①的库永远自报 `Installed`，`ensure` 直接短路，**再 seed 也修不回来** | 修了变量名仍然无效，必须 `refresh-catalog --force` 才动 |
+
+### 15.20.2 缺陷①：两个变量名，只有一个被读
+
+`installer.rs:35-38`：
+
+```rust
+pub const DEFAULT_SEED_PROFILE: &str = "standard";
+pub const DEFAULT_INSTALL_ENVIRONMENT: &str = "production";
+pub const ENV_INSTALL_ENVIRONMENT: &str = "SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT";  // ← 只认这个名字
+pub const ENV_INSTALL_SEED_PROFILE: &str = "SDKWORK_DATABASE_SEED_PROFILE";
+```
+
+而三处**人类会去写**的地方写的都是另一个名字：
+
+| 位置 | 写的名字 | 是否被 installer 读取 |
+|---|---|---|
+| `.env.postgres:70` | `SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT` | ❌ |
+| `scripts/dev/start-workspace.mjs:816` | `SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT` | ❌ |
+| `scripts/manage-cloud-router-database.mjs:249` | `SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT` | ❌ |
+| `scripts/lib/cloud-router-environment-admin.mjs:71-73` | **两个都写** | ✅（但只被 reset-admin / bootstrap-token 用） |
+| `etc/topology/standalone.development.env` | **`ROUTER_ENVIRONMENT`** | ✅（所以走 topology profile 的路径不中招） |
+
+**为什么长时间没被发现**：`dev` 走 topology profile（负责），`reset-admin` /
+`issue-bootstrap-token` 走 `resolveCloudRouterBootstrapAdminEnvOverrides`（两个都写，负责），
+**只有直接 `pnpm db:migrate` / `db:seed` / `db:init` 这一条路径把两个名字割裂了**。
+而它是首次装库的标准入口。
+
+**证据（现场读数）**：账号 metadata 里冻结着当时的判定结果 —
+
+```json
+{ "extra": { "initialAccountStatus": "disabled" }, "itemType": "default_vendor_upstream_account" }
+```
+
+改为 `SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT=development` 重跑后，
+`cloudrouterctl status` 的 `"environment"` 字段由（隐含）`production` 变为 `development`，
+11 个账号 `status` 一次性 `0 → 1`。
+
+**顺带发现的同块第二处漂移**：`start-workspace.mjs` 的
+`SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE` 默认值是 `'commercial'`，
+而 `installer::new` **拒绝**除 `DEFAULT_SEED_PROFILE`（`"standard"`）之外的任何值 ——
+在 dev 启动时会直接把安装打断。同批修正为 `standard`。
+
+### 15.20.3 缺陷②：完整性判据看不见账号
+
+`ai_routing_seed.rs` 原判据（只查骨架）：
+
+```rust
+Ok(expected_resource_codes(&catalog).is_subset(&resource_codes)
+    && expected_group_codes(&catalog).is_subset(&group_codes)
+    && expected_endpoint_codes(&catalog).is_subset(&endpoint_codes)
+    && postgres_default_admin_upstream_topology_complete(pool).await?
+    && postgres_default_admin_routing_strategies_complete(pool).await?
+    && postgres_resource_group_item_count(pool, &catalog).await? >= ...)
+```
+
+`bootstrap_status` 据此返回 `Installed` ⇒ `ensure` 命令短路 ⇒
+`import_postgres_ai_routing_seed` 从不重跑 ⇒ 缺陷①造成的禁用状态**永久固化**。
+`installer.rs` 里那段「环境从 production 翻到 development 后状态应收敛」的注释与
+UPSERT 分支（`status = CASE WHEN metadata->>'itemType' = 'default_vendor_upstream_account'
+THEN EXCLUDED.status ELSE ...`）**本来是为此写的，却永远不会被触发**。
+
+**修法**：新增 `postgres_default_vendor_upstream_accounts_complete`，
+按 `default_vendor_upstream_account` 标记逐个校验「账号启用 **且** 存在启用凭据」，
+接入原判据链。只检查本 seed 拥有的行 —— 运维改过的账号会丢掉该标记，不会被误判为种子不完整。
+
+**造违例往返验证**：
+
+| 步骤 | 操作 | 读数 |
+|---|---|---|
+| 1 | 基线 | `status: installed` |
+| 2 | `update ai_upstream_account set status=0 where account_code='suno-default'` | — |
+| 3 | `cloudrouterctl status` | **`upgrade_required`** ✅ 判据生效 |
+| 4 | `cloudrouterctl ensure` | `changed: true` → `installed` ✅ 自愈 |
+| 5 | 复查 | `enabled = 11 / total = 11` ✅ |
+
+### 15.20.4 全链路可达性证明（真实库）
+
+现成的 `crates/sdkwork-cloudrouter-edge-runtime/tests/ai_routing_seed_coverage_e2e.rs`
+正是本需求的守卫，跑在真 PostgreSQL 上：
+
+```
+$ SDKWORK_DATABASE_URL=... cargo test -p sdkwork-cloudrouter-edge-runtime \
+    --test ai_routing_seed_coverage_e2e -- --nocapture
+running 5 tests
+test auth_token_default_group_reaches_every_bundled_vendor ...
+  default group default-group (id=1150079326059387300) members=11 grants=12   ok
+test bundled_seed_gives_every_vendor_group_a_callable_account ...             ok
+  （26 个 (vendor, modality) 分组全部 members=1 callable=1，逐行列出）
+test bundled_seed_is_idempotent_across_repeated_runs ...                      ok
+test credential_aad_binds_the_secret_to_its_account ...                       ok
+test bundled_placeholder_credentials_decode_with_the_dev_key_ring ...         ok（本机未设 key ring，跳过）
+test result: ok. 5 passed; 0 failed
+```
+
+覆盖到的判据（对应需求逐条）：
+
+| 需求 | 守卫断言 |
+|---|---|
+| 默认分组存在 | `is_default` 分组存在（不断言 code，允许运维改名） |
+| 默认分组含每个 vendor 官方账号 | `members=11`，且 `REQUIRED_VENDOR_ACCOUNTS` 11 个 vendor 逐一命中 |
+| 可伪造凭据但支持调用 | `callable_member_count=1`（同时要求 `status=1` + base_url + 启用凭据三者齐备） |
+| 账号路由可达 vendor API | 26 个 vendor-modality 分组 `callable=1`；默认分组 `grants=12` 覆盖 11 vendor 资源组 |
+
+### 15.20.5 改动清单
+
+| 文件 | 改动 |
+|---|---|
+| `services/.../sql/ai_routing_seed.rs` | 新增 `postgres_default_vendor_upstream_accounts_complete`（约 +70 行）并接入 `postgres_ai_routing_seed_complete`；新增 2 个单测 |
+| `scripts/manage-cloud-router-database.mjs` | `--environment` 同时导出两个变量名；`redactedEnvSummary` 补列 |
+| `scripts/dev/start-workspace.mjs` | 同时导出两个变量名；seed profile `commercial` → `standard` |
+| `.env.postgres` | 补 `SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT` + `SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE=standard`，附说明注释 |
+| `.env.postgres.example` | 同上（模板必须先修，否则每个新人都复现） |
+| `scripts/run-cloud-router-application.test.mjs` | 4 处补 `ROUTER_ENVIRONMENT` 断言；2 处 `commercial` → `standard` |
+
+**未改动**：`data/ai-routing/**` 一个字节都没动 —— 供应链上游本来就是完备的，
+本轮修的全是「读配置的方式」和「判定是否装完的方式」。
+
+### 15.20.6 门禁读数
+
+| 门禁 | 结果 |
+|---|---|
+| `cargo test -p sdkwork-cloudrouter-router-service --lib` | **511 passed, 0 failed** |
+| `cargo test ... --lib ai_routing_seed` | **24 passed, 0 failed**（含 2 个新增） |
+| `--test ai_routing_seed_coverage_e2e`（真库） | **5 passed, 0 failed** |
+| `node scripts/dev/cloud-router-application-env.test.mjs` | **19 passed, 0 failed** |
+| `pnpm check:dev-bootstrap` | OK（183 scripts） |
+| `pnpm api:ai-routing-consistency:check` | **passed** |
+| `pnpm check:app-composition` | verify-repo passed |
+| `pnpm check:vendor-workspace` | passed（0 tracked vendor paths） |
+| `pnpm check:gateway-request-identity`（正确 MSVC PATH） | **25 passed, 0 failed** → alignment ok |
+| `node scripts/run-cloud-router-application.test.mjs` | 30 → **28** not-ok |
+
+**未修复的 28 项与本轮无关（已取证）**：其中 26 项是 `ensure-cloud-router-node-deps.mjs`
+前缀断言与 nginx 文档断言，另 2 项（`workspace launch plan defaults...` /
+`...local split-process debugging`，报 `VITE_SDKWORK_APPBASE_*` /
+`PORTAL_PUBLIC_SDK_BASE_URL` 期望值不符）由**其他会话在途改动**
+`scripts/dev/cloud-router-application-env.mjs`（`git diff` 显示 +8 行）引起。
+取证方式：把 `run-cloud-router-application.test.mjs` 换成 `git show HEAD:` 版本重跑，
+这 2 项**仍然失败**（且总数变 30），证明与我的改动无关。
+
+另有 `pnpm check:application-env` 报
+`ENOENT deployments/kubernetes/cloud-router-admin-api.yaml` ——
+该文件已被 commit `1ef6c8e3`（standalone-only 打包）删除，
+但 `scripts/check-cloud-router-application-env.mjs:97` 仍期望它存在。**预存在缺陷，属另一条线。**
+
+### 15.20.7 本轮的教训
+
+1. **「同一个概念的两个名字」是最贵的 bug 类型**。它不报错、不 warn、有合法默认值，
+   而且**默认值恰好是生产语义**（`production`）。判据不是「能不能跑」，
+   而是「配置没生效时，系统会不会告诉我」。这里它不会。
+2. **有默认值的读取失败，比硬报错危险得多**。若 `DEFAULT_INSTALL_ENVIRONMENT` 不存在，
+   这里会立刻炸出「environment 未设置」；正因为有 `production` 兜底，
+   才变成 11 个账号静默禁用 + 一句离因十万八千里的 50201。
+3. **完整性判据决定了「能不能自愈」**。`ensure` 的短路是设计意图（幂等），
+   但幂等的前提是**判据覆盖所有会漂移的维度**。判据漏掉账号状态，
+   就等于把「装完了」的定义缩窄成「骨架在了」。
+4. **修了症状还要验证根因链全通**。改完变量名后账号仍是 `0`，
+   若就此收工会得出「改变量名没用」的错误结论；正确判断是「①修的是写入端、
+   ②修的是重跑触发端，缺一不可」。**症状消失才算闭环，中间态要如实说。**
+5. **测试里的错误期望值会把 bug 锁死**。`assert.equal(env.SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT, 'development')`
+   只断言别名、`assert.equal(..., 'commercial')` 断言了一个 installer 明确拒绝的值 ——
+   这类断言不是在验证契约，是在**固化实现**。回归守卫要断言「被执行方真正读的那个名字」。
+6. **模板文件必须与实际配置同批修**。只修 `.env.postgres`（本机）不修 `.env.postgres.example`（模板），
+   等于让下一个新人在克隆后原样复现本 bug。
+
+## 15.21 第 21 轮：逐模型官方账号路由可达性（两个孤儿端点 + 一条分类学缺口）
+
+### 15.21.1 结论
+
+第 20 轮把保证做到了**按 vendor**：默认分组里有 11 个 vendor 官方账号、12 个资源组授权、
+全链路（账号→路由→计费→vendor API）可达。本轮把保证抬到**按 model**：
+
+> 目录里**每一个**可路由模型，都能走到它对应的官方账号路由。
+
+实测终态：**287 / 287 reachable，0 not reachable**（修复前 **210 / 287**）。
+
+### 15.21.2 关键判据：运行时真正的闸门是「按能力选通用端点」，不是「按厂商选原生端点」
+
+这是本轮最重要的一次**自我推翻**。我最初的假设是：模型能不能路由，取决于
+**它自己那个 vendor 的原生端点**有没有被授权。按这个假设算出来的头条数字是
+「226/345 不可达，因为 19 个 vendor 没有种子账号」。
+
+**实测证据推翻了它。** `model_catalog_import::model_endpoint_descriptor`
+（`services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/model_catalog_import.rs:1043`）
+把**每一个**模型绑到一个**与厂商无关**的通用端点，选择依据只有模型的 `primaryCapability`：
+
+| primaryCapability | endpoint_code | protocol_code | resource_code |
+|---|---|---|---|
+| （chat / 默认） | `openai.chat_completions` | openai_compatible | `api.openai.chat_completions` |
+| embedding | `openai.embeddings` | openai_compatible | `api.openai.embeddings` |
+| image | `openai.images` | openai_compatible | `api.openai.images` |
+| audio | `openai.audio` | openai_compatible | `api.openai.audio` |
+| video | `openai.video` | openai_compatible | `api.openai.video` |
+| music | `suno.music` | vendor_native | `api.suno.music` |
+| rerank | `rerank` | vendor_native | `api.rerank` |
+
+真库证据（`ai_model_api_endpoint`）：`xai/grok-4.5` → `openai.chat_completions`；
+`minimax/hailuo-2.3` → `openai.video`；`kuaishou/kling-v3` → `openai.video`；
+`elevenlabs/music_v2` → `suno.music`。**没有一条绑到自己的原生端点。**
+
+⇒ 真正的判据是：**请求所在账号分组有没有被授予那个「通用端点资源」**。
+按这个正确判据重算，可达性是 **210/287**，缺口 **77 个模型**，全部集中在 video(62) 与 music(15)。
+
+### 15.21.3 根因：两个「孤儿端点资源」——只被导入器创建，从未被种子声明
+
+`data/ai-routing/resources/` 下的三个 seed 文件里**没有一个**声明过：
+
+- `api.openai.video`（→ 通用 `openai.video`，**62 个 video 主能力模型**在用）
+- `api.suno.music`（→ 通用 `suno.music`，**15 个 music 主能力模型**在用）
+
+它们只由模型导入路径在运行时创建。后果是一条**三重塌陷**：
+
+```
+未在 seed 声明  ⇒  未被任何资源组引用  ⇒  未被授权给任何账号分组  ⇒  50201 失败关闭
+```
+
+而另外四个通用端点（chat 108 / embedding 8 / image 48 / audio 46 = 210 个模型）
+之所以正常，只是因为默认分组本来就持有的 `api.openai_compatible.all` 恰好携带了它们。
+
+**顺序是强制的**：`validate_catalog`（`ai_routing_seed.rs:2917`）会拒绝
+「资源组引用了未声明资源」——所以必须**先声明资源、再挂进资源组**，反过来直接报错。
+
+### 15.21.4 第 7 个缺口：`api.rerank` —— 一个「休眠臂」，登记而不粉饰
+
+新加的真库守卫顺手抓到了 `api.rerank`：`model_endpoint_descriptor` 里有 `rerank` 分支，
+但 `api.rerank` **同样没有被任何 seed 声明**。
+
+**判定为休眠，不修**，两条硬证据：
+
+1. **没有任何 seed 文件声明过它**（`grep -ri rerank data/ai-routing/` 零命中）。
+2. **没有任何目录模型用它**。实测 `primaryCapability` 全量分布（`D:\sdkwork-space\sdkwork-models\models`）：
+   chat 151 / video 96 / image 60 / audio 56 / music 29 / sfx 10 / embedding 9 / code 8 /
+   reasoning 4 / streaming 2 —— **`rerank` 一次都没出现**。
+
+⇒ 于是把它从守卫的必需清单里**显式排除并写清理由**，而不是补一条死资源行去「把门禁刷绿」。
+代价是：等到目录真的产出 rerank 模型的那天，资源和授权必须**同时**补上，守卫清单也要 +1。
+
+### 15.21.5 另一条被门禁抓到的真实缺口：分类学没登记 `suno.music`
+
+`pnpm api:ai-routing-consistency:check` 报了三条：
+
+1. `suno.music` seeded but absent from `ai_route_taxonomy.rs` → **资源在种子里、路由表里没有，按构造不可达**（真实缺口）。
+2. `official.openai.full` must grant every seeded `"openai"` api_endpoint but omits 1 → `api.openai.video`（真实缺口）。
+3. `official.suno.full` must grant every seeded `"suno"` api_endpoint but omits 1 → `api.suno.music`（真实缺口）。
+
+第 2、3 条的门禁语义值得记下来：**`<family>.<vendor>.all` / `.full` 必须授予该 vendor 的每一个种子端点**，
+不变式**从种子推导**而不是硬编码，所以门禁自身不会漂移。
+
+于是本轮改动从「3 个文件」扩到「6 个文件」：
+
+| # | 文件 | 改动 |
+|---|---|---|
+| 1 | `data/ai-routing/resources/openai-resources.json` | 声明 `api.openai.video`（26→27 项） |
+| 2 | `data/ai-routing/resources/vendor-native-resources.json` | 声明 `api.suno.music`（30→31 项） |
+| 3 | `data/ai-routing/resource-groups/admin-api-groups.json` | `api.openai_compatible.all` 15→17 项 |
+| 4 | `data/ai-routing/resource-groups/official-provider-groups.json` | `official.openai.full` 27→28、`official.suno.full` 3→4 |
+| 5 | `services/.../application/ai_route_taxonomy.rs` | 登记 `suno.music` → `media_task(Music, MusicOutputSecond, "music_task")` |
+| 6 | `services/.../infrastructure/sql/ai_routing_seed.rs` | 新增单测守卫 |
+
+修复后 video / music 各拿到**两处**授权（`api.openai_compatible.all` + 各自的 `official.*.full`），
+不再是单点。
+
+### 15.21.6 三条独立门禁（这是本轮的主要交付物）
+
+单一探针会漏，所以落了三层、判据各不相同的守卫：
+
+| 层 | 位置 | 判据 | 性质 |
+|---|---|---|---|
+| 静态单测 | `ai_routing_seed.rs::default_group_grants_every_generic_endpoint_the_catalog_import_binds` | 通用端点**已声明 且 已授予默认分组** | 无 DB，进 CI |
+| 真库 e2e | `crates/sdkwork-cloudrouter-edge-runtime/tests/ai_routing_seed_coverage_e2e.rs::auth_token_default_group_reaches_every_generic_capability_endpoint` | 默认分组**实际展开**出的资源码集合 ⊇ 通用端点集合 | 需 `SDKWORK_DATABASE_URL` |
+| 逐模型审计 | `scripts/dev/audit-model-route-reachability.mjs` | **按模型**逐条判定，退出码 = 0 仅当全可达 | 实库或打包种子 |
+
+审计脚本的 SQL 是关键，两个 JOIN 键都反直觉、都踩过坑：
+
+```sql
+ai_upstream_account_group          -- 账号池（is_default 在这张表）
+  -> ai_resource_binding           -- 按 account_group_id 关联（account_group_code 存的是空串！）
+  -> ai_resource_group             -- 分类学分组（与 ai_upstream_account_group 是两张不同的表）
+  -> ai_resource_group_item        -- 按 resource_code 关联（resource_id 恒为 NULL！）
+```
+
+- **`account_group_code` 全空** ⇒ 必须 JOIN `account_group_id`。
+- **`item.resource_id` 恒为 NULL**（`group_item_upsert_postgres()` 不写它）⇒ 必须 JOIN `resource_code`。
+  早期查询 JOIN `resource_id` 时把「这些资源属于哪个分组」错答成 `(NO GROUP)`。
+
+### 15.21.7 门禁终态读数（第 21 轮实测）
+
+| 门禁 | 结果 |
+|---|---|
+| `cargo test -p sdkwork-cloudrouter-router-service --lib` | **514 passed, 0 failed** |
+| `cargo test ... --lib ai_routing_seed::tests` | **25 passed, 0 failed**（含新增守卫） |
+| `--test ai_routing_seed_coverage_e2e`（真库） | **6 passed, 0 failed**（含新增守卫） |
+| `pnpm api:ai-routing-consistency:check` | **passed**（58 seeded api codes, **0** unknown to the taxonomy） |
+| `pnpm check:dev-bootstrap` | OK（183 scripts） |
+| `pnpm check:app-composition` | verify-repo passed |
+| 逐模型审计（实库） | **287/287 reachable** |
+| 逐模型审计（打包种子） | **287/287 reachable** |
+| 种子完整性 | 76 resources / 34 groups / **0 dangling** |
+
+`cloudrouterctl status` → `upgrade_required`（`include_str!` 让 seed 改动自动改变指纹），
+`ensure` → `{"status":"installed", ..., "changed":true}`，实库已应用。
+
+**一处预存在红（非本轮引入，已取证）**：`pnpm verify:fast` 停在
+`skills:seed:check`，报 `data/skills/cloudhub/manifest.json is stale`。
+取证结论：门禁期望的 `sourceHash = d2f619a2...` **正好等于 `raw/index.json` 的实际内容哈希**，
+说明工作区**是对的**、`manifest.json` 里存的 `61c088d0...` 才是陈旧值；
+且该路径 `data/skills/cloudhub/raw/index.json` 受 **git-lfs** 管（`.gitattributes:14`），
+`git status`/`git diff` 对它静默。**与本轮 seed 改动无关。**
+
+### 15.21.8 登记但**故意不改**的两项（需人工裁决）
+
+1. **19 个目录 vendor（198 个模型）根本没有种子官方账号。** 它们是
+   `xai` / `alibaba` / `zhipu` / `moonshot` / `xiaomi` / `runway` / `stability_ai` /
+   `black_forest_labs` / `mureka` / `pixverse` / `luma_ai` / `tencent` / `baidu` /
+   `deepseek` / `stepfun` / `meituan` …。**这不是路由缺陷**：只要通用端点已授权，
+   它们就能走到路由（本轮已证明 287/287）。要不要给它们建官方账号是**产品覆盖度决策**，
+   不是 bug。
+2. **目录的 vendor code 与账号的 vendor code 不是同一套**：目录用真实厂商名
+   （`google` / `kuaishou` / `bytedance`），种子账号用适配器码
+   （`gemini` / `kling` / `jimeng`），且 Rust 侧**没有系统性的别名表**，
+   只有 `provider_native_classifier.rs` 里零散的 `"google" | "gemini"` 匹配。
+   目前不影响可达性（闸门是能力不是厂商），但任何未来「按厂商比对」的判据都会踩它。
+
+### 15.21.9 本轮的教训
+
+1. **假设要用「绑定的实际取值」验证，不能用「命名的直觉」推断**。我按「模型→自己厂商的原生端点」
+   推出来的 226 不可达是错的；去 `ai_model_api_endpoint` 表里读**每一行实际绑了什么**，
+   才看到全部绑在通用端点上。**表里有答案的时候不要去猜语义。**
+2. **「缺失」有两种，处置相反**：`api.openai.video` / `api.suno.music` 是**活的**缺口（162 个模型
+   在两个能力族里被 de-route），必须补；`api.rerank` 是**休眠**臂（零模型使用），
+   该做的是**登记 + 写清唤醒条件**。把休眠项也补成死资源行，只是把门禁刷绿、把债藏起来。
+3. **一条静态门禁不够，因为它们的可见面不同。** 单测看得见「声明与授权的关系」、
+   真库 e2e 看得见「实际展开的授权集合」、逐模型审计看得见「每个模型的真实闸门」。
+   第 7 个缺口（`api.rerank`）就是被第三层抓到的，前两层都没响。
+4. **门禁报红先分成「我引入」和「既存」**。`skills:seed:check` 那条看起来像我的 seed 改动引起的，
+   取证后发现门禁期望值 = 文件实际哈希、manifest 才是陈旧方，且该路径受 LFS 管 →
+   与我的改动无关。**不做这一步就会去修一个没坏的东西。**
+5. **顺手扩守卫的收益是复利的**。本轮守卫从 5 条测试扩到 6 条、加了一个 per-generic-endpoint
+   断言，多花的成本很小，却直接抓出了我人工审计漏掉的 `api.rerank`。
+
+---
+
+## 15.22 第 22 轮：每个独立功能补齐官方账号并挂入默认分组（数据层全量覆盖）
+
+### 15.22.1 结论
+
+用户要求「每个独立的功能都要建立对应的官方账号中，放到默认分组中，确保从数据层面能够完整测试
+所有的 api 的完整调用流程」。按两个已确认的裁决执行：
+
+| 裁决项 | 选项 | 含义 |
+|---|---|---|
+| 账号范围 | 补齐 16 个账号（伪造 apikey 占位） | 接受凭证为占位值，dispatch 仍会在适配器层失败——目标是**数据层完整**（25/25 厂商） |
+| adapter 归置 | 按 `apiFormat` 映射到已有 11 个 adapter | 不新写适配器实现 |
+
+**终态读数（实测）**：
+
+| 指标 | 第 21 轮 | 第 22 轮 |
+|---|---|---|
+| 默认分组可调用账号 | 11 | **27** |
+| 默认分组展开授权资源码 | 12 | **84** |
+| 派生的 `<vendor>.<modality>` 分组 | 27 | **57** |
+| `official.*` 资源组 | 10 | **26** |
+| `vendor.*` 资源 | 11 | **27**（另有 3 个账号侧同义名：`bytedance`/`kuaishou`/`google`） |
+| 账号组成员总数 | 37 | **83** |
+| 可达模型 | 287/287 | **287/287**（不回退） |
+| `cloudrouterctl ensure` | — | `installed` / `changed:true` → 二次 `changed:false` |
+
+### 15.22.2 决定性发现：`adapter_code` 从不被应用层读取
+
+这是整个任务能安全推进的前提。`adapter_code` 写在 `ai_upstream_supplier` 上
+（种子出口 `ai_routing_seed.rs` 的 `DefaultVendorUpstreamAccountSeed` → supplier 行），但：
+
+- `infrastructure/sql/catalog.rs` 与 `rows.rs` 里 `grep adapter_code` → **0 命中**（未进入运行时快照）
+- `application/` 下 `grep adapter_code` → **0 命中**
+
+因此**账号可以在没有任何适配器实现的情况下完成路由**。真正决定线上协议的是
+`protocol_code_from_api_code`（`application/upstream_base_url.rs:118-129`）：`api_code`
+含 `anthropic`→AnthropicMessages；含 `responses`→OpenaiResponses；含 `chat`/`completion`
+→OpenaiChatCompletions；否则 None。**`adapter_code` 是给运维看的元数据，不是分派依据。**
+
+### 15.22.3 账号选择按「资源授权」而非「目录厂商」
+
+`select_model_route_plan_for_context`（`application/upstream_route_selector.rs:241`）
+只在**分组白/黑名单闸门**里调 `find_model(&query.catalog_key).map(|m| m.vendor_code)`
+（`:261-278` 的 `model_access_forbidden_reason`）；真正的账号路由来自
+`shared_upstream_account_routes()` ∩ `upstream_account_group_bindings(...)`；
+`account_route_allows_model_request`（`:1769`）检查分组归属 + `resource_entitlements`；
+而 `synthetic_model_route_from_account_route`（`:1694`）取的 `supplier_code` 来自
+**账号侧** `route.supplier_code`（如 `gemini`），**不是**目录厂商码。
+
+⇒ 新增 16 个厂商账号之所以安全：它们各自把模型导向已经可达的通用面，
+而默认分组同时持有通用面（`api.openai_compatible.all` / `official.openai.full` /
+`official.suno.full`）与这 16 个新厂商面。
+
+### 15.22.4 本轮改动（6 个文件）
+
+| # | 文件 | 改动 |
+|---|---|---|
+| 1 | `data/ai-routing/resources/core-resources.json` | 18→34 项；`vendor.*` 11→27（16 个新厂商资源，`capability` 取目录 `primaryCapability` 折叠值） |
+| 2 | `data/ai-routing/resource-groups/official-provider-groups.json` | 10→26 组；新增 16 个 `official.<vendor>.full` |
+| 3 | `.../infrastructure/sql/ai_routing_seed.rs` | `VENDOR_RESOURCE_GROUP_BINDINGS` 11→27；`VENDOR_LOCALIZED_NAMES` 11→27；`DEFAULT_VENDOR_UPSTREAM_ACCOUNTS` 11→27 |
+| 4 | `crates/.../tests/ai_routing_seed_coverage_e2e.rs` | `REQUIRED_VENDOR_ACCOUNTS` 11→27；`REQUIRED_VENDOR_RESOURCE_GROUPS` 11→27；幂等断言 `37 → 83` |
+| 5 | `scripts/dev/audit-model-route-reachability.mjs` | `DEFAULT_GROUP_GRANTS` 由硬编码改为**从 `ai_routing_seed.rs` 解析** |
+| 6 | `.../infrastructure/sql/installer.rs` | `UpgradeRequired` 失败时**指名**「账号无凭证 ⇒ 未配置密钥环」 |
+
+**16 个新厂商的 adapter/protocol/base_url**（按 `apiFormat` 归置）：
+
+| vendor | adapter_code | protocol_code | base_url |
+|---|---|---|---|
+| xai | openai_compatible | openai_compatible | https://api.x.ai |
+| alibaba | openai_compatible | openai_compatible | https://dashscope.aliyuncs.com |
+| deepseek | openai_compatible | openai_compatible | https://api.deepseek.com |
+| moonshot | openai_compatible | openai_compatible | https://api.moonshot.cn |
+| zhipu | openai_compatible | openai_compatible | https://open.bigmodel.cn |
+| tencent | openai_compatible | openai_compatible | https://api.hunyuan.cloud.tencent.com |
+| xiaomi | openai_compatible | openai_compatible | https://api.xiaomi.com |
+| stepfun | openai_compatible | openai_compatible | https://api.stepfun.com |
+| meituan | openai_compatible | openai_compatible | https://api.meituan.com |
+| runway | runway | vendor_native | https://api.dev.runwayml.com |
+| baidu | baidu | vendor_native | https://aip.baidubce.com |
+| luma_ai | luma_ai | vendor_native | https://api.lumalabs.ai |
+| pixverse | pixverse | vendor_native | https://api.pixverse.ai |
+| mureka | mureka | vendor_native | https://api.mureka.ai |
+| stability_ai | stability_ai | vendor_native | https://api.stability.ai |
+| black_forest_labs | black_forest_labs | vendor_native | https://api.bfl.ai |
+
+### 15.22.5 `resource_group_codes()` 无需改动——自动扩展
+
+`DefaultAdminUpstreamAccountGroupSeed::resource_group_codes()` 的实现是
+「primary + `DEFAULT_GROUP_EXTRA_RESOURCE_GROUP_CODES` + **全部** `VENDOR_RESOURCE_GROUP_BINDINGS` 值」
+再去重。所以**加 16 条 binding 就自动把 16 个新组挂进了默认分组**，
+`resource_group_codes()` 一行都不用改。这正是审计脚本能把它改成「从源码解析」的依据。
+
+### 15.22.6 设计决策：新组只声明 `vendor.<vendor>`，不声明厂商原生端点
+
+16 个新组的 items 只有一个 `vendor.<vendor>` 资源，理由是**发布侧还没有这些厂商的
+vendor-native `api_endpoint`**，它们现阶段的模型经通用面带出。这样处理同时满足一致性门禁
+「`<family>.<vendor>.full` 必须授予该厂商**所有已种子** api_endpoint」——
+该厂商已种子端点为 0，条件是空真（vacuous truth），门禁通过而语义正确：
+**把还没有的东西登记成死资源行，只是把门禁刷绿、把债藏起来**（第 21 轮教训 2 的复用）。
+
+### 15.22.7 真实缺陷：无密钥环 ⇒ 账号落库但凭证静默跳过 ⇒ `ensure` 永远不收敛
+
+这是本轮最有价值的发现，也是我一度误判为自己的改动引起的坑。
+
+**症状**：`cloudrouterctl ensure` 报
+`database bootstrap is invalid: catalog/seed bootstrap did not reach installed state: UpgradeRequired`。
+
+**取证过程（关键一步）**：`git stash` 掉我的三处改动 → 重建 → **基线（原始 11 厂商种子）
+同样报 `upgrade_required`** ⇒ 立刻排除「我引入的回归」，避免去修一个没坏的东西。
+
+**真实根因**：`import_postgres_default_vendor_account_credential`（`ai_routing_seed.rs:2733`）开头是
+
+```rust
+let Some(credential_codec) = credential_codec else {
+    return Ok(());
+};
+```
+
+未配置 `SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING(_FILE)` 时，
+**账号照写、凭证不写**；而完整性谓词 `postgres_default_vendor_upstream_accounts_complete`
+要求每个账号都有一条 `status=1 AND is_active` 的凭证 ⇒ 谓词恒为 false ⇒ `ensure` 永远失败。
+
+库里的指纹极具辨识度：**27 个账号、11 条凭证**。
+
+**处置**：
+- 用 `SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING_FILE` 指向
+  `.sdkwork/secrets/upstream-credential-key-ring.development.json` 重跑 ⇒
+  `{"status":"installed", ..., "changed":true}`；二次 `changed:false`（幂等）。
+- **加诊断**：`ensure` 在 `UpgradeRequired` 时查一次「是否存在无凭证的 vendor 默认账号」，
+  有则把原因直接写进错误消息（指名两个环境变量）。把 20 分钟的二分定位压缩成一行提示。
+- **加单测** `credential_writer_is_skipped_without_a_codec_and_the_predicate_notices`，
+  用源码断言把「写者有 codec 早退」与「谓词要求凭证」这对耦合钉住。
+
+> 注意这是**环境配置缺口**，不是种子缺陷：种子在无密钥环时跳过凭证是**正确**的
+> （运行时解不开的凭证比没有更糟，见该函数文档）。缺的是**「失败要说人话」**。
+
+### 15.22.8 顺手扩守卫：审计脚本改为从种子源码解析授权集合
+
+`scripts/dev/audit-model-route-reachability.mjs` 原先硬编码 `DEFAULT_GROUP_GRANTS`（12 条）。
+这是典型的**会静默漂移的镜像**：加 16 个厂商后，若不同步这份硬编码，审计会继续报
+「100% 可达」，而数据库里的默认分组可能真的丢了授权。
+
+改为从 `ai_routing_seed.rs` 解析三处：默认分组的内联 primary `resource_group_code`、
+`DEFAULT_GROUP_EXTRA_RESOURCE_GROUP_CODES`、`VENDOR_RESOURCE_GROUP_BINDINGS`
+（后者是 `(vendor, group)` 对，取其中能解析为已种子分组的名字，从而自然滤掉 vendor 那一半）。
+解析不到就抛错并指明「seed 被重构了，改解析器而不是猜授权」。
+**实测解析结果 84 条**，与实时库读数一致——镜像消失，漂移这一类缺陷被结构性消除。
+
+### 15.22.9 门禁终态读数（第 22 轮实测）
+
+```
+cargo test -p sdkwork-cloudrouter-router-service --lib ai_routing_seed
+    → 26 passed / 0 failed（含新守卫）
+
+cargo test -p sdkwork-cloudrouter-edge-runtime --test ai_routing_seed_coverage_e2e
+    → 6 passed / 0 failed（真实 PostgreSQL）
+       · bundled_seed_gives_every_vendor_group_a_callable_account   ← 57 个派生组全部有可调用成员
+       · bundled_seed_is_idempotent_across_repeated_runs            ← 27 账号 / 27 凭证 / 83 成员
+       · bundled_placeholder_credentials_decode_with_the_dev_key_ring
+
+node tools/check-cloudrouter-ai-routing-consistency.mjs
+    → passed（58 个已种子 api code，0 未知；19 个厂商/模态分组比对，30 个非厂商/模态作用域跳过）
+
+node scripts/dev/audit-model-route-reachability.mjs（live-db）
+    → 287 / 287 可达，27 个可调用账号，默认分组 84 条授权资源码，not reachable = 0
+
+cloudrouterctl ensure
+    → installed / changed:true ；二次 ensure → changed:false
+```
+
+### 15.22.10 本轮遗留（登记不改）
+
+1. **目录厂商码 ↔ 账号厂商码没有权威别名表**。目前只有 Rust 侧
+   `provider_native_classifier.rs:214-233` 的 `"google" | "gemini"` 一处别名；
+   `bytedance`/`kuaishou` **未**别名到 `jimeng`/`kling`，另有 12 个厂商零别名命中；
+   `vendors.json` 无 `providerCode`/`adapterCode`/`supplierCode`/`aliasOf` 字段。
+   已作为独立任务登记（本轮不动，避免在飞行中扰动路由）。
+2. **数据层覆盖 ≠ 路由可达**，两者是**不同的保证**，不要互相替代：
+   前者保证「每个能力都有一条可检视的账号行可被测试驱动」，
+   后者保证「每个模型都能选到账号路由」。本轮两者都成立，但由**不同的门禁**各自守着。
+
+---
+
+## 15.23 第 23 轮：逐个 API 端到端链路审计（调用 → 计费 → 目标账号 → 目标 vendor）
+
+**用户原话**：持续推进，确保整体系统可以商业化落地，并跑通图片、视频、音频、音效、音乐、
+LLM 模型的所有 API 能力，逐个 api 检查，确保从调用、计费、到目标账户和目标 vendor 的调用
+逻辑，保证链路逻辑正确。
+
+**本轮定位**：前 22 轮是「按能力」「按模型」「按厂商」审计；本轮换成**按 API 端点**逐条走链路，
+把「一个 API 从入站路径一路走到目标 vendor 的 wire 请求」拆成 7 个可独立断言的环节。
+这一视角立刻暴露出前三种视角都看不见的两个缺陷。
+
+### 15.23.1 结论
+
+| 指标 | 值 |
+|---|---|
+| 已种子 api_endpoint | 59 |
+| 端到端全链路通过 | **59 / 59** |
+| 断链 API | 0 |
+| 按能力 | 图片 10/10、视频 11/11、音频 10/10、音乐 3/3、LLM 12/12、向量 2/2、控制面 11/11 |
+| 逐模型可达性（不回退） | 287 / 287 |
+| `cloudrouterctl ensure` | `installed` / `changed:true` → 二次 `changed:false` |
+
+### 15.23.2 7 环链路模型（本轮的核心工具）
+
+`scripts/dev/audit-api-chain-reachability.mjs`（新建）对**每一个已种子 api_endpoint** 走：
+
+| # | 环节 | 判据 | 失败含义 |
+|---|---|---|---|
+| 1 | `path` → `api_code` | 该 api_code 在 `ai_route_taxonomy.rs` 有登记 | 无路由可达，按构造不可达 |
+| 2 | `api_code` → `resource_code` | 该资源被**至少一个**资源组授予 | 任何账号都到不了 |
+| 3 | 入站路径 → 出站协议 | `protocol_code_from_api_code` 有映射，或按文档合理地返回 `None` | 方言无法解析 |
+| 4 | 默认分组授权 | 该资源码在默认分组**实际展开**的集合里 | 登录用户 50201 |
+| 5 | 可调用账号 | 该 API 的**作用厂商**在默认分组里有 enabled + base_url + active credential 的账号 | 50201 |
+| 6 | wire 协议 | 同 #3，但用运行时视图 | — |
+| 7 | 计费 | 声明的 meter 在**价本或目录**任一侧有定义 | 计价 preflight 拒绝 |
+
+**退出码语义**：0 = 全通过；1 = 有断链；**2 = 拿不到数据库且未显式 `--seed-only`**。
+
+第 7 环的判据是本轮最需要小心的一条，见 15.23.6。
+
+### 15.23.3 缺陷一（头条）：`primaryCapability = "sfx"` 无端点分支 ⇒ 音效被当成 chat 打到 vendor
+
+**发现路径**：第 1 环就红了 —— `sfx.sound` 在 taxonomy 里**根本没登记**。
+
+**根因**：`model_endpoint_descriptor` 只看 `primaryCapability` 选通用端点。
+目录里 10 个 sfx 模型（4 个厂商：`elevenlabs` / `kuaishou` / `stability_ai` / `vidu`）
+的 `primaryCapability = "sfx"`，而该函数**没有 `"sfx"` 分支** ⇒ 全部落到 `_` 兜底：
+
+```rust
+_ => EndpointDescriptor { endpoint_code: "openai.chat_completions", ... }
+```
+
+⇒ **音效请求会被重放到 vendor 的 `/v1/chat/completions`**，永远产不出音频。
+
+**决定性证据（真库）**：修复前，6 个已导入的 sfx 模型
+`capability = 1`（= Chat，与 `openai/gpt-5.4` 相同），`capabilities = ["sfx"]` 只存在于 jsonb 里。
+即 AI 模型表把音效当成了聊天模型。
+
+**修复跨 2 个仓、8 个文件**（见 15.23.5），其中**第二个仓是真正的阻塞点**。
+
+### 15.23.4 缺陷二（本轮最贵的教训）：`model_endpoint_descriptor` 有两份独立副本
+
+第一份在 `sdkwork-cloudrouter`（router-service）—— 我改了它，重建，跑 `refresh-catalog --force`，
+返回 `synced: true`。**但 `ensure` 仍然 `UpgradeRequired`。**
+
+`ai_vendor_api_endpoint` 缺 4 个键。反算 uuid 确认正是 4 个厂商的 `sfx.sound` 关联。
+
+第二份在 **`sdkwork-models`**
+（`crates/sdkwork-models-catalog-repository-sqlx/src/model_catalog_import.rs:1148`，
+函数名相同、分支结构相同、**没有 `"sfx"` 分支**）。
+
+**两者的分工是本条教训的关键**：
+
+- `sdkwork-models` 侧**写库**（`import_vendor_api_endpoints` / `import_api_endpoints` /
+  `import_model_api_endpoints` 都从这里投影）；
+- `sdkwork-cloudrouter` 侧**读库**做完整性断言（`catalog_expectations`）。
+
+⇒ **router 侧永远无法自愈一个它不拥有的投影**。改了 router 副本却不改 models 副本，
+表现是「`refresh-catalog` 报告成功，但 `ensure` 永远不收敛」——
+`synced: true` 是**真的**（它同步了它知道的东西），只是它不知道的东西没有被同步。
+
+**结论**：任何 `model_endpoint_descriptor` 的能力分支改动，**必须两处同改**。
+
+### 15.23.5 缺陷三：`UpgradeRequired` 只报「类」不报「因」——本轮顺手治了
+
+`bootstrap_status` 是 `&&` 链：
+
+```
+schema → model_catalog_schema → pricing_schema → catalog_complete
+       → postgres_ai_routing_seed_complete → default_service_node_complete → Installed
+```
+
+失败时只返回 `UpgradeRequired`。而 installer 里原本的诊断只覆盖 2 个已知原因
+（种子投影落后 / 无密钥环），**不认识 `catalog_complete` 失败**——
+正是本轮遇到的第三种。于是错误消息是：
+
+```
+catalog/seed bootstrap did not reach installed state: UpgradeRequired
+```
+
+一句「有事发生」，没有「什么事」。
+
+**处置（3 处）**：
+
+1. 新增 `postgres_ai_routing_seed_gap()`（`ai_routing_seed.rs`）——
+   把 7 个 `&&` 子句改写成**返回子句名**的形式；
+   `postgres_ai_routing_seed_complete()` 改为它的薄包装（`gap().is_none()`）。
+   两者共用同一批调用，**不可能对「完整」的定义产生分歧**，只有**报告**不同。
+2. 新增 `Installer::catalog_gap()`（`installer.rs`）——
+   报出**第一个**缺失的 `表.列` 并给出最多 5 个缺失键样例。
+3. `ensure()` 的失败分支改为**汇总全部四个闸门**的诊断，而非只查密钥环。
+
+**效果（实测）**：错误消息从一句无信息的话变成
+
+```
+...did not reach installed state: UpgradeRequired — model catalog projection:
+ai_vendor_api_endpoint.uuid is missing 4 bundled key(s), e.g. sdk-vendor-endpoint-5237e36f...
+```
+
+一行定位，取代一次对 `&&` 链的二分。
+
+### 15.23.6 第 7 环（计费）的判据：为什么不能用「按能力兜底」
+
+`pricing_identity.rs` 的模块文档写明价本是**唯一权威**，taxonomy 的 meter 只是**默认建议**：
+
+| 目录定义 | 结果 |
+|---|---|
+| 无 | `RouteDeclared` —— 保留 taxonomy meter，交给 preflight 诊断 |
+| 有交集 | `RouteDeclaredWithinCatalog` —— 取交集 |
+| 无交集 | `CatalogDefinition` —— **目录赢，taxonomy 被覆盖** |
+
+但我最初的实现是「该能力下有任意一个 meter 被定价就算过」，这**放过了一个我自己注入的故障**：
+把 `openai.embeddings` 的 meter 改成 `LlmReasoningToken`（无价本、无目录定义）后审计仍报绿，
+因为「别的 Embedding meter 有价」把它盖住了。
+
+**改成**：声明的 meter 必须在**价本或该能力的目录定义**任一侧成立。
+负向对照随即报红（`1 of 59 FAILED`，退出码 1）。
+
+### 15.23.7 另外两类假阳性（都已修，判据收窄而非放水）
+
+1. **58 条「未定价」**：我拿 Rust 枚举变体名（`LlmInputToken`）去比数据库字符串
+   （`llm_input_token`）。改为从 `domain.rs` 的 `impl BillingMeter::code()` **表里解析**。
+2. **22 条「协议缺失」**（全是 `openai.*`）：我把 `None` 当成缺陷。
+   `protocol_code_from_api_code` 的文档注释写明
+   *「embeddings 等无协议资源返回 None，走默认 Base URL 链」*，
+   且 `resolve_upstream_base_url` 是一条五级回退链。
+   ⇒ `None` 对**非 LLM / vendor-native** 是**正确**答案，不是缺陷。
+   判据收窄为 `PROTOCOL_REQUIRED`：只有通用 chat 面缺协议才算失败。
+
+### 15.23.8 真实缺陷：第三方副本漂移 + 陈旧投影残留（登记为后续）
+
+**① 分类器有两份副本。** 一致性门禁
+（`tools/check-cloudrouter-ai-routing-consistency.mjs`）在我只改 router 侧时**立刻报红**，
+点名 5 条 arm「被 router 分类但未被 edge-runtime 透传」。补上 edge-runtime
+（`crates/sdkwork-cloudrouter-edge-runtime/src/passthrough.rs`）后 34/34 arm 对齐、门禁绿。
+
+> 门禁的 arm 正则会把**注释**当成 arm 的 condition（`"x" if <注释> => "y"`），
+> 于是注释位置不当会触发「1 arm(s) this gate cannot model」。
+> 已把解释性注释移到**函数上方 doc comment**，函数体内不再夹注释。
+
+**② 投影是纯增量的，没有清理阶段。** `sdkwork-models` 的 20 个 `import_*` 全是 upsert
+（`ON CONFLICT ... DO UPDATE`），**没有任何 prune/sweep**。于是模型换绑端点后，
+旧绑定以 `status = 0` 残留：
+
+```
+elevenlabs/eleven_text_to_sound_v2 | openai.chat_completions | status=0   ← 残留
+elevenlabs/eleven_text_to_sound_v2 | sfx.sound              | status=1   ← 正确
+（6 个 sfx 模型全部如此）
+```
+
+**严重性如实评估**：运行时快照的端点来自 `ai_upstream_supplier_endpoint`（见
+`queries/snapshot.rs:677`），**不读** `ai_model_api_endpoint`，
+所以残留行**不影响实际路由**。但它是**真隐患**：
+任何只按 `deleted_at IS NULL`（不看 `status`）过滤的消费者都会把 chat 当成活绑定。
+⇒ 登记为后续任务（补一个「投影后清扫」阶段），本轮不动，避免在飞行中改导入语义。
+
+**③ 完整性检查不过滤 `status`。** `postgres_string_values` 是
+`SELECT DISTINCT {column} FROM {table}`，无 `status`/`deleted_at` 条件
+⇒ 陈旧行也能满足完整性断言。同样是「能通过但不健康」，一并登记。
+
+### 15.23.9 改动清单
+
+| 仓 | 文件 | 改动 |
+|---|---|---|
+| cloudrouter | `services/.../infrastructure/sql/model_catalog_import.rs` | `model_endpoint_descriptor` 加 `"sfx"` 分支（`sfx.sound` / `vendor_native` / `/v1/sound/generate`）；加守卫单测 `each_media_capability_binds_to_its_own_endpoint_not_chat` |
+| cloudrouter | `services/.../application/ai_route_taxonomy.rs` | 登记 `sfx.sound` 路由（`RoutingCapability::Audio` + `BillingMeter::SfxResult`）；5 条音频输入路由 `AudioInputSecond` → `SttAudioMinute`；`suno.music` 路由（并行会话已有） |
+| cloudrouter | `services/.../application/invocation/provider_native_classifier.rs` | 加 5 条 sfx arm（kling / stability_ai×2 / vidu×2） |
+| cloudrouter | `crates/sdkwork-cloudrouter-edge-runtime/src/passthrough.rs` | 同步 5 条 sfx arm + doc comment |
+| cloudrouter | `services/.../infrastructure/sql/ai_routing_seed.rs` | `VENDOR_MODALITY_MAPPING` 5→6 加 `("sfx","audio")`；新增 `postgres_ai_routing_seed_gap()` |
+| cloudrouter | `services/.../infrastructure/sql/installer.rs` | 新增 `catalog_gap()`；`ensure()` 诊断汇总四个闸门 |
+| cloudrouter | `data/ai-routing/resources/vendor-native-resources.json` | 加 `api.sfx.sound` |
+| cloudrouter | `data/ai-routing/resource-groups/admin-api-groups.json` | `api.openai_compatible.all` 17→18（加 `api.sfx.sound`） |
+| cloudrouter | `data/ai-routing/resource-groups/official-provider-groups.json` | `official.kling.full` 7→8、`official.vidu.full` 4→5、`official.stability_ai.full` 1→2 |
+| cloudrouter | `scripts/dev/audit-api-chain-reachability.mjs` | **新建**（逐 API 7 环审计） |
+| cloudrouter | `scripts/dev/diagnose-bootstrap-predicates.mjs` | **新建**（逐子句诊断） |
+| cloudrouter | `package.json` | 加 `api:chain-reachability:check` / `:gaps` / `db:bootstrap-predicates` |
+| **sdkwork-models** | `crates/sdkwork-models-catalog-repository-sqlx/src/model_catalog_import.rs` | **`model_endpoint_descriptor` 加 `"sfx"` 分支（阻塞点）**；加同名守卫单测 |
+
+### 15.23.10 门禁终态读数（第 23 轮实测）
+
+```
+cargo test -p sdkwork-cloudrouter-router-service --lib        → 516 passed, 0 failed
+cargo test -p sdkwork-cloudrouter-edge-runtime --lib          → 87 passed, 0 failed
+cargo test -p sdkwork-models-catalog-repository-sqlx --lib    → 8 passed, 0 failed
+cargo test --test ai_routing_seed_coverage_e2e（真库）         → 6 passed, 0 failed
+
+node tools/check-cloudrouter-ai-routing-consistency.mjs
+    → passed（59 个 api code / 0 未知；分类器 34 arm = 透传 34 arm）
+
+node scripts/dev/audit-api-chain-reachability.mjs（live-db）   → passed（59/59），退出码 0
+node scripts/dev/audit-model-route-reachability.mjs（live-db） → 287/287，not reachable = 0
+node scripts/check-dev-bootstrap-coverage.mjs                  → OK（186 scripts）
+node ../sdkwork-specs/tools/verify-repo.mjs --root .           → passed
+
+cloudrouterctl ensure → installed / changed:true ；二次 → changed:false
+```
+
+`node scripts/run-cloud-router-application.test.mjs` 仍为 **28 项 not-ok**，
+与第 22 轮基线**同集合**（打包/文档/发布脚本类断言，无一涉及 AI 路由），非本轮引入。
+
+### 15.23.11 本轮教训（6 条）
+
+1. **同一函数的两份副本，出事时症状离根因最远**。`model_endpoint_descriptor` 有两份，
+   一份写库一份读库；改了读侧会得到「同步成功但永不收敛」这种**自相矛盾**的症状。
+   判据：**看到 `synced: true` 但状态没变，先找是不是有第二个写者/读者**。
+2. **失败诊断的粒度决定排障成本**。`&&` 链返回布尔值 = 把自己的排障成本转嫁给人。
+   把链改写成「返回第一个失败子句名」是一次性投入，此后每次失败都省一次二分。
+3. **换视角才有新发现**。同一个系统，「按能力/按模型/按厂商」三种视角都漏掉了
+   「按 API 端点」一眼就看见的东西。审计视角本身就是一种覆盖度。
+4. **判据收窄 ≠ 放水**。三类假阳性（枚举名 vs DB 串、`None` 协议、能力级兜底）
+   全部是**判据错**而不是**系统错**；收窄判据前必须先读文档注释确认什么是「正确」。
+5. **负向对照不可省**。我自己注入的 `openai.embeddings → LlmReasoningToken` 故障
+   一度没被抓住。**一个不能变红的审计等于没有审计**。
+6. **增量投影必须配清扫**。纯 `ON CONFLICT DO UPDATE` 的导入在**改绑**语义下会留残影。
+   残影不一定立刻有害（运行时可能读别的表），但它是「能通过但不健康」。
+
+### 15.23.12 环境要点（复现用）
+
+- **两个租户**：`ai_resource` / `ai_resource_group` / `ai_api_endpoint` /
+  `ai_vendor_api_endpoint` 在 `tenant_id = 0`；
+  而 `ai_routing_strategy` / `ops_gateway_instance` / `ai_upstream_account` 走
+  `DEFAULT_IAM_TENANT_SQL_ID`，即 **`sdkwork-iam` 的 `100_001`**。
+  **用错租户会得到「0 条策略」，看起来像真缺失**（我踩过，浪费一轮）。
+- `ai_resource_group_item` 的分组列名是 **`resource_group_code`**（不是 `group_code`）；
+  `resource_id` 恒为 NULL，必须 JOIN `resource_code`。
+- `ai_vendor_api_endpoint` / `ai_model_api_endpoint` 的写入者在 **`sdkwork-models`**，
+  cloudrouter 侧只有读取。
+- WSL 多行 SQL 陷阱：`wsl.exe ... psql -c "SELECT a\n FROM b"` 会把 `\n` 字面传入。
+  **用 Node 的 `oneLine(sql)` 压成单行 + `JSON.stringify` 传参**；
+  手写三层嵌套引号会把命令挂死。
+- `SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING_FILE` 必须给 **Windows 路径**
+  （`D:\...`）；给 `/d/...` 报 `os error 3`。
+
+---
+
+## §15.24 第 24 轮：全量回归检查（并发工作树 + 定价闸门口径漂移 + 七能力真库 e2e）
+
+本节记录 2026-09-18 17:00 之后的一轮「回归检查」。触发语是「继续回归检查，确保调用链路正确，保证调用完美」。
+
+### 15.24.1 结论先行
+
+| 项 | 结果 |
+|---|---|
+| 逐 API 7 环链审计 | **59/59 可达，exit 0**（未受并发改动影响） |
+| 模型级路由审计 | **287/287 可达**，可调用账号 **27** |
+| 路由一致性门禁 | **passed**（classifier 44 臂 = passthrough 44 臂，↑from 34） |
+| router-service 全量测试 | **0 failed**（516 库测试 + 全部集成测试） |
+| edge-runtime 测试 | **12/13 套件 ok**；1 套件失败见 §15.24.4 |
+| 七能力真库 e2e | **4/7 抵达厂商**（含**音效 ✅**）；3/7 为**既存缺口**，非本轮引入 |
+| **本轮新修** | 1 条**过时测试**（定价闸门口径漂移），见 §15.24.3 |
+
+### 15.24.2 最贵的一课：并发工作树
+
+本轮开工时 `git status` 显示 **71 个改动文件**，而本轮应有改动只有 **13 个**。同一 `D:\sdkwork-space\sdkwork-cloudrouter` 工作树上**有另一个 agent 会话在并行写入**。
+
+**证据链**：
+
+1. `ai_routing_seed.rs` 的 diff 是 **607 insertions / 12 hunks**，而本轮的 sfx 修复只动 `VENDOR_MODALITY_MAPPING` 与 `postgres_ai_routing_seed_gap`。
+2. 其中 8 个 hunk 在做 `DEFAULT_VENDOR_UPSTREAM_ACCOUNTS` 从 **11 → 27** 的扩容（xai / alibaba / deepseek / moonshot / zhipu / tencent / xiaomi / stepfun …）。
+3. `data/ai-routing/resources/vendor-native-resources.json` 与两个分组 JSON 里，除本轮的 `api.sfx.sound` 外还有 `api.suno.music`、`api.openai.video` —— **不是本轮加的**。
+4. `git stash` 失败：`Unable to create '.../index.lock': File exists`，且该 lock 是 **12:26 创建、0 字节、当前无 git 进程** ⇒ 另一会话的 git 被中断留下的**陈旧锁**。
+5. 分类器/穿透臂数从本轮的 34 → 44，也是另一会话扩的。
+
+**后果与纪律**：
+
+- **不得用「总体 diff」判断自己改了什么** —— 必须按文件逐个 `git diff --stat` 核对，与自己的记忆/记录对照。
+- **不得 `git stash`/`git add -A`/`git checkout --` 这类动共享 index 的操作** —— `index.lock` 存在就说明有人正在操作。改用 **`git worktree`** 做只读对照。
+- **worktree 路径必须给 Windows 形式**（`D:\triage-head`）。给 `D:/...` 或 `/d/...` 会被 Git Bash 解释成**相对路径**，worktree 落到 `D:/d/sdkwork-space/...` 这种奇怪位置，且 `git worktree list` 能看出。
+- 数据面的隔离 worktree 做不到 —— **两个会话指向同一个活库**，所以数据差异只能靠 SQL 取证，不能靠「纯净树重跑」。
+
+### 15.24.3 本轮唯一实质修复：定价闸门口径漂移导致的过时测试
+
+**症状**：`invocation_route_planning::sticky_route_with_missing_prices_falls_back_to_regular_planning` 失败：
+
+```
+left:  ["priced-provider"]      // 期望：粘性失效后回退，选中「有价」候选
+right: ["priced-provider", "unpriced-provider"]   // 实际：候选多了一个
+```
+
+（该断言写的是 `assert_eq!(vec!["priced-provider"], actual)`，`left` 是期望值。）
+
+**归因（三个相关文件都无未提交改动 ⇒ 必为提交态既存）**：
+
+- 测试与粘性闸门实现 `route_planning.rs` —— clean。
+- 定价闸门实现 `upstream_route_selector.rs` —— clean。
+- 追溯历史：`991f5d7d`（"fix(pricing): fail-safe price loading and sticky pricing pre-gate"）**引入**粘性定价预闸门与该测试（`route_planning.rs` +84、测试 +122）。
+- `a74e06de`（HEAD，"feat(cloudrouter): add common/h5 agent scaffolds…"）**改写了闸门口径**（`upstream_route_selector.rs` +247，新增 `pricing_identity.rs` +448），但**只改了 API 资源类路径**（`plan_upstream_account_route` +23 行），**没同步粘性路径的测试**。
+
+**根因（实现注释里的显式契约）**：`a74e06de` 把「已定价」的判据从
+
+> **要求 procurement cost**（按 supplier+account 精确匹配的 upstream-cost 价）
+
+改成
+
+> **只要求 customer billing 价**（`resource_is_priced_for_billing`，`Quoted`/`Rated`/`NonChargeable` 均算已定价，只有 `Unrated` 算缺口）
+
+并写明理由：
+
+> `PricingResolver` downgrades a missing upstream cost to "no procurement cost" and explicitly must never fail customer billing … **Requiring it made every direct-official account unrouteable** whenever the catalog shipped only the `official` price side — which is exactly what `sdkwork-models` ships today (**1245 `official` + 13 `reference` prices, zero `upstream`**).
+
+**活库独立验证（本轮实测，与注释一致）**：
+
+```
+pricing_rate: total=2150  with_vendor=2150  with_provider=2150  with_account=0
+billability: chargeable | 2150
+resource_type: model | 2150
+```
+
+⇒ **价格本只有客户端计费价（按 vendor），`account_id` 全为 NULL，零采购成本价。** 所以新口径**必须**放宽，否则**全部路由失败**。旧测试用 `PriceSide::UpstreamCost` 构造「有价 / 无价」，在新契约下**失去区分能力** ⇒ 过时测试。
+
+**诊断手法（可复用）**：在 `ensure_route_is_priced` 内临时 `eprintln!` 打印 `PriceService::resolve` 的 `status` 与 `has_price`，单跑该测试 `-- --nocapture`：
+
+```
+DIAG probe: catalog_key=openai/gpt-4o-mini supplier=unpriced-provider account=3005 \
+  meter=LlmInputToken => status=Ok(Quoted) has_price=true
+```
+
+一个**没写任何价**的 supplier 解析出 `Quoted` —— 因为 `base_catalog()` 里 `openai/gpt-4o-mini` 有**目录级 `OfficialReference` 客户价**（不绑 account），被兜底复用。诊断完**立即还原**（`git status` 确认该文件回到 clean）。
+
+**修复（两处，都在测试文件内）**：
+
+1. **用新契约的口径表达「无价」**：让粘性绑定的 `catalog_key` 指向一个价格本从不定价的键（`openai/gpt-4o-mini-unpriced`），使探针得到 `Unrated`；同时**不再往目录里注册这个模型**（否则常规规划会多出候选），路由仍挂在请求自身的 catalog key 下。
+2. **把断言从「绑定精确候选向量」提升为「绑定契约语义」**：
+
+```rust
+let suppliers = plan.candidates.iter().map(|c| c.supplier_code.as_str()).collect::<Vec<_>>();
+assert_eq!("priced-provider", suppliers.first().copied().expect("at least one candidate"),
+    "the invalid sticky binding must not stay pinned; got {suppliers:?}");
+assert!(!matches!(suppliers.first(), Some(&"unpriced-provider")),
+    "the unpriced sticky target must not head the plan; got {suppliers:?}");
+```
+
+理由：候选里**可以**出现无价账号，因为常规规划会为**同组的每个可调用账号**合成候选（`upstream_route_selector.rs:857-861` 的 `synthetic_model_route_from_account_route`，当账号无匹配模型路由时**凭空合成**一条）。原断言在「组内只有一个账号有模型路由」时恰好为单元素，属**绑定实现细节**。
+
+**结果**：该测试文件 **11 passed / 0 failed**。
+
+### 15.24.4 七能力真库 e2e：4/7 抵达，3/7 既存缺口
+
+`crates/sdkwork-cloudrouter-edge-runtime/tests/media_provider_native_db_e2e.rs` 需要
+`SDKWORK_DATABASE_URL`（缺失则干净跳过）。**只给 `SDKWORK_DATABASE_*` 分项不够**，必须显式导出 URL：
+
+```bash
+set -a && . ./.env.postgres; set +a
+export SDKWORK_DATABASE_URL="postgresql://$SDKWORK_DATABASE_USERNAME:$SDKWORK_DATABASE_PASSWORD@127.0.0.1:5432/$SDKWORK_DATABASE_NAME?sslmode=disable"
+```
+
+| 能力 | 端点 | 结果 |
+|---|---|---|
+| 图片 image | `/v1/images/generations` | ✅ 抵达厂商 |
+| 视频 video | `/kling/v1/videos/generations` | ✅ 抵达厂商 |
+| 配音 voice | `/elevenlabs/v1/text-to-speech/…` | ✅ 抵达厂商 |
+| **音效 sfx** | `/elevenlabs/v1/sound-generation` | ✅ **抵达厂商（本轮修复直接兑现）** |
+| 音乐 music | `/suno/v1/music/generations` | ❌ `model not found: suno.music_generation` |
+| 数字人 avatar | `/kling/v1/videos/avatar` | ❌ `no generation mode for api code kling.avatar` |
+| 动作模仿 motion | `/kling/v1/videos/motion-control` | ❌ 同上 |
+
+**3 个缺口的独立取证**：
+
+```
+ai_model_api_endpoint 端点绑定数:
+  sfx.sound          6     ← 本轮修复
+  suno.music        24     ← 另一会话新增（端点改名）
+  openai.video      63
+  suno.music_generation  0    ← 旧端点已无绑定
+  kling.avatar           0    ← 无绑定
+  kling.motion_control   0    ← 无绑定
+
+suno/* 模型 status: suno-v5/v5.5/v6/v6-mini/v6-wild 全部 = 0（禁用）
+```
+
+⇒ **音乐缺口** = `suno/*` 模型在 sdkwork-models 里**全部 `status=0`**（第 22 轮已登记的既存状态）；**数字人 / 动作** = 这两个端点**无模型绑定**（"avatar 契约对齐"既存待办）。
+
+**均为既存缺口，与本轮 sfx 修复无因果关系**：本轮改动只新增 `api.sfx.sound` 这一个资源、`"sfx"` 一个描述符分支、以及 5 条 classifier/passthrough 臂。
+
+**注意**：报错里 `supplier alibaba, account 1863158413733175571` 是另一会话新增 alibaba 账号后进入候选池所致，**属并发改动的中间状态**，不代表分组绑定错误 —— 实测账号分组绑定正确：
+
+```
+kling.video  → kling-default (kling)   ✅
+kling.image  → kling-default (kling)   ✅
+suno.music   → suno-default  (suno)    ✅
+suno.audio   → suno-default  (suno)    ✅
+```
+
+### 15.24.5 sfx 修复的活库终态（独立复核）
+
+```
+ai_model（capabilities @> ["sfx"]）：6 条
+  elevenlabs/eleven_text_to_sound_v2 | capability=1 | api_format=vendor_native
+  kuaishou/kling-sound-t2a           | capability=1 | api_format=vendor_native
+  kuaishou/kling-sound-v2a           | capability=1 | api_format=vendor_native
+  stability_ai/stable-audio-2.5-sfx  | capability=1 | api_format=vendor_native
+  vidu/audio1.0-text2audio           | capability=1 | api_format=vendor_native
+  vidu/audio1.0-timing2audio         | capability=1 | api_format=vendor_native
+
+ai_model_capability：6 条，capability_code="sfx"，endpoint_formats=["vendor_native"]，supported=true  ✅
+
+ai_model_api_endpoint：
+  每个模型一条 sfx.sound        (status=1，活)   ✅
+  每个模型另留一条 openai.chat_completions (status=0，软删残渣)   ← 只增不删的投影残留
+
+ai_api_endpoint:  sfx.sound | openai_compatible | POST | /v1/sound/generate | status=1
+ai_resource:      api.sfx.sound | api_code=sfx.sound | modality_code=sound-effect | status=1
+                  另有 6 条 model.<vendor>.<key>.sfx | api_code=sfx.sound | modality_code=sfx
+分组授予:         api.openai_compatible.all ✅ / official.kling.full ✅
+                  official.stability_ai.full ✅ / official.vidu.full ✅
+```
+
+**两个细节值得记住**：
+
+- `ai_api_endpoint.sfx.sound` 的 `protocol_code` 是 **`openai_compatible`**，而**种子声明是 `vendor_native`**（`model_catalog_import.rs` 的 `EndpointDescriptor`）。二者不一致但不影响调用：真实分发协议由请求的 `api_code` 经 `protocol_code_from_api_code` 推导。
+- 6 条 `status = 0` 的 chat 残渣是本轮之前就登记的「投影只增不删」隐患的可见实例。运行时无影响（快照读 `ai_upstream_supplier_endpoint`，从不读 `ai_model_api_endpoint`），但确认**确实存在**。
+
+### 15.24.6 活库 schema 纠错（避免再次靠猜列名）
+
+本轮多次因**猜列名**踩坑（`vendor_uuid` / `model_uuid` / `supplier_code` / `group_code` / `resource_group_code`）。正确口径：
+
+| 表 | 关键列 |
+|---|---|
+| `ai_model` | `id`(bigint) / `uuid`(varchar) / **`vendor_id`(bigint)** / **`vendor_code`(varchar)** / `capability`(int) / `capabilities`(jsonb) / `api_format` |
+| `ai_model_vendor` | `id`(bigint) / `uuid`(varchar) / `vendor_code` |
+| `ai_model_api_endpoint` | **`model_id`(bigint)** / `catalog_key` / `vendor_code` / `endpoint_code` / `status` / `sort_order` |
+| `ai_model_capability` | `model_id`(bigint) / `capability`(int) / **`capability_code`** / `endpoint_formats`(jsonb) / `supported` |
+| `ai_api_endpoint` | `endpoint_code` / `protocol_code` / `method` / `path_template` |
+| `ai_resource` | `resource_code` / `api_code` / `modality_code` / `resource_type` / `sort_order` |
+| `ai_resource_group` | **`group_code`**（不是 `resource_group_code`） |
+| `ai_resource_group_item` | `resource_group_code` / `resource_code`（`resource_id` 常为 NULL） |
+| `ai_upstream_account` | `supplier_code`（不是 `vendor_code`）/ `account_code` / `status` / `default_base_url` |
+| `ai_upstream_account_group` | `group_code` / `group_type` |
+| `ai_upstream_account_group_member` | **`account_group_id`** + `account_id` + `priority` + `enabled` |
+| `pricing_rate` | `meter_code` / **`vendor_code`** / **`provider_code`** / `account_id` / `billability` / `resource_type` / `catalog_key` / `conditions` / `tier` / 生效窗口（**无 `supplier_code`，无 `price_side`**） |
+
+> **纪律**：`information_schema.columns` 一次列全，别逐次试错。本轮为此多花了 6 次往返。
+
+### 15.24.7 两套「分组」不要混淆
+
+| 体系 | 表 | 形态 | 例 |
+|---|---|---|---|
+| **资源分组** | `ai_resource_group` (+`_item`) | `official.<vendor>.full` / `api.*` / `relay.*` | `official.kling.full` 授予 `api.kling.avatar`、`api.sfx.sound` |
+| **账号分组** | `ai_upstream_account_group` (+`_member`) | **`<vendor>.<modality>`** | `kling.video` → `kling-default`；`suno.music` → `suno-default` |
+
+链路是 **资源分组 → 账号分组 → 账号**。查「某能力为什么路由到某账号」时，**两侧都要查**。本轮一开始在 `official.kling.full` 里找账号成员，得到「空」，差点误判为缺口 —— 实际账号成员在 `kling.video` 里。
+
+### 15.24.8 七个能力在真库中的端点绑定现状（2026-09-18 17:15）
+
+```
+openai.video              63
+suno.music                24
+sfx.sound                  6   ← 本轮
+kling.avatar               0   ← 缺口：数字人
+kling.motion_control       0   ← 缺口：动作模仿
+suno.music_generation      0   ← 旧端点，已被 suno.music 取代
+```
+
+而 `official.kling.full` 资源分组**已授予** `api.kling.avatar` / `api.kling.motion_control` ⇒ **缺口在端点←模型的绑定层，不在资源分组层**。
+
+## §15.25 第 25 轮：图片能力的「vendor 原生 API 全部可调用」收口（2026-09-18）
+
+### 25.1 一句话结论
+
+**图片能力的 49 个模型全部塌陷到唯一的通用端点 `openai.images`，11 个厂商的原生图片 API 一行模型都没绑**
+——所以图片链路虽然"可达"（第 23 轮 59/59 全绿），但**永远走不到 vendor 的原生图片接口**，
+只是把请求按 OpenAI 兼容格式回放到厂商的 `/v1/images/generations`。
+这不是参数小偏差，是**接口定义层的塌陷**。
+
+### 25.2 真库证据（`sdkwork_ai_dev`，2026-09-18）
+
+图片端点共 11 行，其中 `vendor_native` 5 行是**真正的厂商原生接口**：
+
+| endpoint_code | protocol | method | path_template | 有模型绑定吗 |
+|---|---|---|---|---|
+| `gemini.image_generation` | vendor_native | POST | `/v1beta/models/{model}:generateImages` | **0** |
+| `gemini.nano_banana.image_generation` | vendor_native | POST | `/v1beta/models/nano-banana:generateImages` | **0** |
+| `jimeng.image_generation` | vendor_native | POST | `/v1/images/generations` | **0** |
+| `kling.image_generation` | vendor_native | POST | `/v1/images/generations` | **0** |
+| `volcengine.image_generation` | vendor_native | POST | `/api/v3/images/generations` | **0** |
+| `vidu.reference_to_image` | vendor_native | POST | `/ent/v2/reference2image` | **0** |
+| `openai.images` | openai_compatible | POST | `/v1/images/generations` | **49** |
+| `openai.images.edits` / `.generations` / `.variations` | openai_compatible | POST | … | 0 |
+
+绑定分布（塌陷的直接证据）：
+
+```
+=== image model bindings: endpoint_code distribution ===
+  openai.images | 49 | 0,1     <-- 全部 49 个模型挤在一个通用端点上
+```
+
+而模型侧的 vendor 是**目录 vendor code**，与端点前缀是两套命名：
+
+```
+alibaba(1) black_forest_labs(11) bytedance(4) google(8) kuaishou(2)
+minimax(2) openai(4) runway(13) stability_ai(7) xai(3) zhipu(2)
+```
+
+| 目录 vendor code | 该厂商的原生图片端点前缀 | 有别名吗 |
+|---|---|---|
+| `google` | `gemini.*` | ⚠️ 仅 classifier 里有 `"google" \| "gemini"` |
+| `bytedance` | `jimeng.*` | ❌ 无 |
+| `kuaishou` | `kling.*` | ❌ 无 |
+| （火山）| `volcengine.*` | ❌ 无（目录里没有对应图片 vendor 行）|
+| `alibaba` / `minimax` / `runway` / `stability_ai` / `black_forest_labs` / `xai` / `zhipu` | 无原生端点声明 | ❌ 无 |
+
+### 25.3 根因：`model_endpoint_descriptor` 只按 `primary_capability` 分派
+
+两份拷贝（router 侧**读**、`sdkwork-models` 侧**写**）都是同一个形状：
+
+```rust
+fn model_endpoint_descriptor(model: &ModelInfo) -> EndpointDescriptor {
+    match model.primary_capability.as_str() {
+        "image" => EndpointDescriptor { endpoint_code: "openai.images", .. },
+        "audio" => EndpointDescriptor { endpoint_code: "openai.audio", .. },
+        "music" => EndpointDescriptor { endpoint_code: "suno.music", .. },
+        "sfx"   => EndpointDescriptor { endpoint_code: "sfx.sound", .. },
+        "video" => EndpointDescriptor { endpoint_code: "openai.video", .. },
+        ..
+    }
+}
+```
+
+`match` 的 scrutinee **只有 `primary_capability`**，`vendor_code` 完全没参与。
+于是「`google` 的图片模型」和「`volcengine` 的图片模型」拿到**同一个** `EndpointDescriptor`。
+
+三处派生投影全部吃了这个塌陷（`model_catalog_import.rs:748/781/833/948`）：
+
+| 投影函数 | 表 | 后果 |
+|---|---|---|
+| `catalog_vendor_api_endpoint_projections` | `ai_vendor_api_endpoint` | 每个图片厂商只登记 `openai.images` 一条 |
+| `catalog_model_api_endpoint_projections` | `ai_model_api_endpoint` | 每个图片模型绑 `openai.images`，`provider_native_model` = 目录 `model_id` |
+| `catalog_ai_resource_projections` | `ai_resource`（`model.*` 行） | `api_endpoint_code` 全部指 `openai.images` |
+
+**关键点**：`sdkwork-models` 的 vendor 声明里 `apiEndpoints` 是**厂商级**的 host + pathPrefix
+（`google` → `{google:{host:generativelanguage.googleapis.com,pathPrefix:/v1beta}}`），
+**不是**端点级契约——它表达不了「这个厂商的图片走 `:generateImages`」。
+所以塌陷不是"声明写错了"，是**声明里根本没有这个维度**。
+
+### 25.4 与分类器的不对称：上下游说的不是同一件事
+
+`provider_native_classifier.rs`（及 `passthrough.rs` 镜像）**已经**按 vendor + path 正确分派：
+
+```rust
+"google" | "gemini" if gemini_model_action_matches(path, "generateimages") => {
+    if path.contains("/nano-banana:") { "gemini.nano_banana.image_generation" }
+    else { "gemini.image_generation" }
+}
+"kling"     if path == "/v1/images/generations" => "kling.image_generation",
+"jimeng"    if path == "/v1/images/generations" => "jimeng.image_generation",
+"volcengine" if path == "/api/v3/images/generations" => "volcengine.image_generation",
+"vidu"      if path == "/ent/v2/reference2image" => "vidu.reference_to_image",
+```
+
+**分类器是 vendor-aware 的（对），目录投影是 vendor-blind 的（错）。**
+链路两侧对「图片该走哪个 api_code」给出**互相矛盾**的答案：
+
+- 目录侧（选路 / 计价 / 候选生成）认为：`api_code = openai.images`
+- 分类器侧（真实回放）认为：`api_code = gemini.image_generation`（当 vendor=google 时）
+
+第 23 轮的链路审计之所以全绿，是因为它校验的是「**通用面**能否走通」
+（`GENERIC_ENDPOINT_SERVING_VENDORS` 把 `openai.images` 视为「可服务于任何 image vendor」）。
+**通用面确实能走通，但原生面从未被选中。**
+
+### 25.5 无绑定 / 停用绑定的模型（8 + 1）
+
+```
+black_forest_labs/flux-2-dev            -> <none>
+google/gemini-2.5-flash-image           -> <none>   (routingState=catalog_only, 已弃用)
+google/imagen-4.0-fast-generate-001     -> <none>   (lifecycle=retired)
+google/imagen-4.0-generate-001          -> <none>   (lifecycle=retired)
+google/imagen-4.0-ultra-generate-001    -> <none>   (retired)
+openai/gpt-image-1.5                    -> <none>
+runway/gemini_image3.1_flash            -> <none>
+stability_ai/sdxl-1-0                   -> <none>
+google/gemini-3.1-flash-image-preview   -> openai.images (status 0)
+```
+
+其中 3 个 `imagen-4.0-*` 是**官方已关停**（2026-08-17 公告，价表已删），`gemini-2.5-flash-image` 已弃用
+——这 4 个「无绑定」是**正确的**（退役模型不该有启用绑定），但它们仍应在审计里被显式归类为
+「退役 ⇒ 不要求绑定」，而不是混在"缺绑定"里。
+
+真正**需要修**的是：`black_forest_labs/flux-2-dev`、`openai/gpt-image-1.5`、
+`runway/gemini_image3.1_flash`、`stability_ai/sdxl-1-0`，以及 `gemini-3.1-flash-image-preview` 的 `status=0`。
+
+### 25.6 本轮处置
+
+见 25.7 起的落地记录。
+
+### 25.7 落地（2026-09-18）
+
+#### A. `model_endpoint_descriptor` 加 vendor 维度（两份拷贝）
+
+新增 `vendor_native_image_descriptor(vendor_code)` + `model_image_endpoint_descriptor(model)`，
+`match` 的 `"image"` 臂改为调用后者，不再返回常量：
+
+| catalog vendorCode | 原生 endpoint_code | method | path_template | 来源 |
+|---|---|---|---|---|
+| `google` / `gemini` | `gemini.image_generation` | POST | `/v1beta/models/{model}:generateImages` | 已有 |
+| `bytedance` / `jimeng` | `jimeng.image_generation` | POST | `/v1/images/generations` | 已有 |
+| `kuaishou` / `kling` | `kling.image_generation` | POST | `/v1/images/generations` | 已有 |
+| `volcengine` | `volcengine.image_generation` | POST | `/api/v3/images/generations` | 已有 |
+| `vidu` | `vidu.reference_to_image` | POST | `/ent/v2/reference2image` | 已有 |
+| `black_forest_labs` / `bfl` | `black_forest_labs.image_generation` | POST | `/v1/flux-{model}` | **本轮新增** |
+| `runway` / `runwayml` | `runway.image_generation` | POST | `/v1/text_to_image` | **本轮新增** |
+| `stability_ai` / `stability` | `stability_ai.image_generation` | POST | `/v2beta/stable-image/generate/{mode}` | **本轮新增** |
+
+判定规则（三条，优先级从高到低）：
+
+1. `apiFormat == "google_gemini"` ⇒ `gemini.image_generation`（该 apiFormat 本身就是 Gemini 原生面）。
+2. `apiFormat == "vendor_native"` 且 vendor 在表内 ⇒ 该 vendor 的原生端点。
+3. 其余（含 `apiFormat == "openai_compatible"`，以及 vendor 不在表内）⇒ `openai.images`。
+
+**规则 3 后半段是关键**：vendor 没有原生端点时**必须**留在通用面，
+否则会选到一条从未注册的路由（`50201`）。这与第 23 轮「通用面可服务任意 image vendor」的结论不冲突——
+通用面仍在，只是不再是**唯一**选项。
+
+#### B. 三个新厂商的原生端点声明（真实文档核对）
+
+| vendor | 官方文档 | method | path | 异步模型 | poll |
+|---|---|---|---|---|---|
+| black_forest_labs | `docs.bfl.ai` | POST | `/v1/flux-2-pro` 等，**一模型一路径** | `polling_url` 返回 | `GET /v1/get_result?id=` |
+| runway | `docs.dev.runwayml.com` | POST | `/v1/text_to_image`，body `model` 区分 | task id | `GET /v1/tasks/{id}` |
+| stability_ai | `platform.stability.ai` | POST | `/v2beta/stable-image/generate/{core,ultra,sd3}` | **同步** | 无 |
+
+三个厂商都**不是**「OpenAI 兼容面」，其 `vendor.json` 的 `supportedProtocols` 就是 `["vendor_native"]`
+且 `apiEndpoints` 为空——本轮把这条声明背后缺失的端点契约补上了。
+
+落地清单（一处不漏）：
+
+| 层 | 文件 | 内容 |
+|---|---|---|
+| 资源声明 | `data/ai-routing/resources/vendor-native-resources.json` | +5 行（3 个 image + 2 个 task_query） |
+| 资源组 | `data/ai-routing/resource-groups/official-provider-groups.json` | 3 个 `official.<vendor>.full` 补授端点（其 description 原本就写着"land 后加上"） |
+| 分类学 | `.../application/ai_route_taxonomy.rs` | +5 条（image 用 `media_task`，task_query 用 `account`；stability 同步故用 `model`） |
+| 分类器 | `provider_native_classifier.rs` | +5 臂 |
+| 分类器镜像 | `crates/sdkwork-cloudrouter-edge-runtime/src/passthrough.rs` | +5 臂（与上一条逐字一致） |
+
+#### C. 兼容面厂商的 `apiFormat` 修正
+
+`alibaba`(1) / `minimax`(3) 的图片模型声明 `vendor_native`，但两家 `vendor.json` 都**只**声明
+`openai` 端点（`dashscope.aliyuncs.com/compatible-mode/v1`、`api.minimaxi.com/v1`），
+没有厂商原生图片端点。把这些模型的 `apiFormat` 从 `vendor_native` 改成 `openai_compatible`，
+消除「声明说原生、投影落通用」的矛盾。`xai` / `zhipu` 已是 `openai_compatible`，无需改动。
+
+改动 4 个文件，每个**恰好 1 行**（已 `git diff --stat` 验证：4 files changed, 4 insertions(+), 4 deletions(-)）。
+
+#### D. 真库结果（`refresh-catalog --force` 后）
+
+```
+=== image model bindings: endpoint_code distribution ===
+  black_forest_labs.image_generation | 10 | 1   <- 新增
+  gemini.image_generation            |  3 | 1   <- 新增
+  kling.image_generation             |  2 | 1   <- 新增
+  openai.images                      | 49 | 0,1 <- 39 行 status=0（被正确退役）+ 10 行仍有效
+  runway.image_generation            | 12 | 1   <- 新增
+  stability_ai.image_generation      |  6 | 1   <- 新增
+```
+
+**48 个图片模型的活动绑定唯一性验证**：
+
+```
+=== A. active (status=1) binding count per image model ===
+  ZERO   black_forest_labs/flux-2-dev          (catalog_only)
+  ZERO   google/gemini-2.5-flash-image         (deprecated)
+  ZERO   google/gemini-3.1-flash-image-preview (retired)
+  ZERO   google/imagen-4.0-{fast-,ultra-}generate-001 (retired ×3)
+  ZERO   openai/gpt-image-1.5                  (catalog_only)
+  ZERO   runway/gemini_image3.1_flash          (catalog_only)
+  ZERO   stability_ai/sdxl-1-0                 (catalog_only)
+  -> ok=48 zero=9 multi=0
+
+=== C. enabled 图片模型缺活动绑定的数量 ===
+  (空)  <- 每一个 enabled 图片模型都有且仅有一个活动绑定
+```
+
+**结论：第 23/25 轮担心的「8 个无绑定 + 1 个 status=0」是假阳性。**
+那 9 个模型全部是 `catalog_only` / `deprecated` / `retired`，目录**故意**不给它们启用绑定，
+`status=0` 是 `deactivate_postgres_rows_not_in` 正确退役的痕迹，不是残留。
+
+#### E. 端点面全链路就绪
+
+| 层 | 结果 |
+|---|---|
+| `ai_resource`（5 行新端点） | 全部 `status=1` |
+| `ai_api_endpoint`（registry） | method / path / protocol 正确 |
+| 资源组授权 | 5 行全部落在对应 `official.<vendor>.full` |
+| `ai_vendor_api_endpoint` | 原生端点 `status=1`，`openai.images` 已被退役为 `status=0` |
+| `ai_upstream_account` | 3 家账号齐全，`status=1` |
+| 账号分组 `<vendor>.image` | 成员存在，`priority=100`，`enabled=true` |
+| `pricing_rate` | 图片计价齐全：BFL 23 / runway 46 / stability_ai 8 |
+
+#### F. 门禁与审计
+
+| 门禁 | 结果 |
+|---|---|
+| `ai-routing-consistency` | **passed**（classifier 36 = passthrough 36 臂，64 个 api code 全部被分类学认识，49 臂全部被评估） |
+| `audit-api-chain-reachability.mjs` | **passed 64/64**（原 59/59；新增 5 条端点全部可达） |
+| `audit-model-route-reachability.mjs` | **287/287 可达，0 不可达** |
+| `router-service` lib 测试 | **517 passed / 0 failed** |
+| `sdkwork-models` catalog-repository 测试 | **11 passed / 0 failed** |
+
+新增守卫测试 **两份拷贝各一个**：
+
+- `image_models_bind_to_their_vendor_native_endpoint`
+  - 8 个有原生端点的 vendor ⇒ 各自的 native endpoint；
+  - `apiFormat = "google_gemini"` ⇒ `gemini.image_generation`（google / gemini 两种拼写都测）；
+  - 5 个无原生端点的 vendor（openai / xai / zhipu / minimax / alibaba）⇒ 即使声明 `vendor_native` 也必须留在 `openai.images`；
+  - 8 个有原生端点的 vendor 若声明 `openai_compatible` ⇒ 不得被强制成原生。
+
+#### G. 审计表的口径修正（顺手清的一个假信号）
+
+`audit-model-route-reachability.mjs` 的 `generic endpoint coverage` 表是按
+`primaryCapability → 固定 endpoint` 的**静态**映射生成的，修复后它仍打印
+「48 models primary=image -> openai.images」，会**误导读者以为绑定没变**。
+已改为读真库 `ai_model_api_endpoint` 的活动绑定并逐 endpoint 拆分：
+
+```
+    48 models  primary=image  fallback=openai.images  ...
+           15 of those bound to openai.images
+           12 of those bound to runway.image_generation   <== vendor-native
+           10 of those bound to black_forest_labs.image_generation   <== vendor-native
+            6 of those bound to stability_ai.image_generation   <== vendor-native
+            3 of those bound to gemini.image_generation   <== vendor-native
+            2 of those bound to kling.image_generation   <== vendor-native
+```
+
+⇒ **48 个图片模型里 33 个（69%）真正打到厂商原生 API**（修复前 0 个）；
+其余 15 个是诚实走 OpenAI 兼容面的厂商（openai / bytedance / xai / zhipu / alibaba / minimax）。
+
+#### H. 一个踩过的坑（登记）
+
+给分类器加臂时把 `//` 注释写在**臂与 `=>` 之间**，被门禁的臂正则捕获成该臂的 `condition`，
+报成「3 arm(s) this gate cannot model」。**这与第 24 轮记的是同一个坑**：
+解释性注释必须放在函数 doc comment 里，不能夹在臂中间。
+
+### 25.8 待办（图片之后）
+
+按用户指定顺序继续：**视频 → 音频 → 音乐 → 音效 → 动作 → 数字人**。
+每个能力都要问同样三个问题：
+
+1. 该能力的模型绑定的 endpoint 是否与**它自己声明的 vendor / apiFormat** 一致？
+2. 不一致时，是该 vendor 有原生端点却没接上，还是该 vendor 本就只有兼容面（那要改 `apiFormat`）？
+3. 新接的原生端点，资源声明 / 资源组 / 分类学 / 分类器双拷贝 / 价表 / 账号分组是否一处不漏？
+
+顺带留意：`bytedance` 的图片模型声明 `openai_compatible`，但 `bytedance`(`jimeng`) 在分类器里
+**有** `jimeng.image_generation` 臂——视频能力跟进时要核一遍 `bytedance` 的模态映射是否也需要收敛。
+
+## §15.26 视频能力：端点坍缩（capability=5）+ 三个连带缺陷
+
+> 起因：用户指令「做完图片的接下来处理视频」。沿用图片（§15.25）的三问协议。
+
+### 15.26.1 先纠正一个前提：capability 是整数，且我上一轮读错了能力
+
+`ai_model.capability` 是 **INTEGER**，不是字符串；**不存在 `capability_code` 列**。
+实测取值（2026-09-18）：
+
+| int | 能力 | 模型数 |
+|---|---|---|
+| 1 | `chat` | 134 |
+| 2 | `image` | 57 |
+| 3 | `audio` | 46 |
+| 4 | `music` | 27 |
+| **5** | **`video`** | **74** |
+| 6 | `embedding` | 9 |
+
+还有一个更容易踩的坑：**catalog 表住在命名 schema `sdkwork_ai_dev` 里，不在 `public`。**
+`.env.postgres` 的 `SDKWORK_DATABASE_SCHEMA=sdkwork_ai_dev` 就是依据。不写 schema 限定
+时查询会命中 `public` 下的另一套 `plus_*` 应用表，**既不会报错也不会返回行**，看起来像
+"这张表是空的"。本轮一度据此得出错误结论，记录在此以免复现。
+
+### 15.26.2 缺陷本体：`"video"` 臂对 13 个 vendor 硬编码同一个端点
+
+与图片同源、同形状。`model_endpoint_descriptor` 的 `video` 臂是一个**常量**：
+
+```rust
+"video" => EndpointDescriptor {
+    endpoint_code: "openai.video", protocol_code: "openai_compatible",
+    path_template: "/v1/videos", ...
+},
+```
+
+后果（改前实测）：
+
+- **60 条活跃 video 绑定全部落在 `openai.video`**（`POST /v1/videos`）。
+- 其中 **55 条自己声明 `apiFormat = "vendor_native"`**。
+- 而 `ai_resource` / `vendor-native-resources.json` **早已声明 9 个厂商原生 video 端点**，
+  `provider_native_classifier.rs` **早已能路由它们的每一条路径**——它们只是
+  **`ai_model_api_endpoint` 行数为 0**，所以没有任何模型能走到。
+- `ai_api_endpoint` 里也确实有这些端点行（`status=1`），同样是孤儿。
+
+这与 §15.25 的图片缺陷是同一个函数的同一种写法，只是晚了一个能力。
+
+### 15.26.3 修法：加 `vendor_native_video_descriptor`（双拷贝同步）
+
+按 **catalog `vendorCode`** 取原生端点（注意端点侧名字与 catalog 名字不同：
+`bytedance`→`jimeng.*`、`kuaishou`→`kling.*`、`google`→`gemini.*`）：
+
+| catalog vendor | 原生端点 | method | path |
+|---|---|---|---|
+| `google` / `gemini` | `gemini.video_generation` | POST | `/v1beta/models/{model}:generateVideos` |
+| `kuaishou` / `kling` | `kling.text_to_video` | POST | `/v1/videos/text2video` |
+| `bytedance` / `jimeng` | `jimeng.video_generation` | POST | `/v1/videos/generations` |
+| `volcengine` | `volcengine.video_generation` | POST | `/api/v3/contents/generations/tasks` |
+| `vidu` | `vidu.start_end_to_video` | POST | `/ent/v2/start-end2video` |
+
+裁决规则与图片一致：`apiFormat == "google_gemini"` 直通 gemini 端点；`vendor_native`
+且该 vendor 有原生端点 → 原生；其余（含 `openai_compatible`）→ `openai.video`。
+
+**不在表内、保持兼容面的 vendor（诚实结论，catalog 未声明其原生视频 API）**：
+`alibaba`、`black_forest_labs`、`luma_ai`、`minimax`、`pixverse`、`runway`、`zhipu`、
+`xai`、`openai`。合计 35 条绑定。
+
+双拷贝（同 §15.25）：`sdkwork-cloudrouter-router-service`（读侧）+ `sdkwork-models`
+`crates/sdkwork-models-catalog-repository-sqlx`（写侧），外加 `endpoint_modality_code`
+补齐 video 端点的 modality 映射（否则 `ai_modality_api_endpoint` 投影丢链）。
+
+守卫测试 `video_models_bind_to_their_vendor_native_endpoint` **双拷贝各一份**：
+断言 5 个 vendor→原生端点、`google_gemini` 双拼写、9 个无原生端点 vendor 保持
+`openai.video`、5 个 vendor 声明 `openai_compatible` 时不被强制原生、以及 9 个端点
+都映射到 `video` modality。
+
+### 15.26.4 改后实测
+
+| 项 | 改前 | 改后 |
+|---|---|---|
+| video 活跃绑定落在 `openai.video` | 60 | 35（25 条迁到原生） |
+| `jimeng.video_generation` | 0 | **8** |
+| `kling.text_to_video` | 0 | **7** |
+| `gemini.video_generation` | 0 | **5** |
+| `vidu.start_end_to_video` | 0 | **5** |
+| 不变量 `ok / zero / multi` | — | **60 / 0 / 0** |
+
+⇒ **25 of 60（42%）video 模型真正走到厂商原生 API**（图片是 33/48 = 69%）。
+`ai-routing-consistency` 通过；`per-api-chain-reachability` 64/64。
+
+### 15.26.5 连带缺陷 ②：retirement sweep 只关 `status`，不关 `routing_state`
+
+`deactivate_removed_catalog_rows` 把 catalog 已删除的行置 `status = 0`，但
+**`sdkwork_model_is_publicly_active` 根本不看 `status`**——它读的是
+`release_stage` / `shelf_state` / `routing_state`。于是"已退役"的模型
+`routing_state` 仍是 1，"是否可路由"判定依然为真，而它的绑定已经全被停用。
+
+实测出 **8 行**矛盾（`status=0` 且 `routing_state=1`，全部 release/shelf/routing = 1/1/1）：
+
+| capability | catalog_key |
+|---|---|
+| video(5) | `kuaishou/kling-v3-probe` |
+| video(5) | `openai/sora-2`、`openai/sora-2-pro` |
+| audio(3) | `openai/gpt-4o-transcribe`、`-diarize`、`gpt-4o-mini-transcribe`、`gpt-realtime-mini`、`whisper-1` |
+
+`kuaishou/kling-v3-probe` **根本不在 `sdkwork-models` 里**（全仓 grep 无命中），
+是早期探测实验留下的 DB 孤儿；但因为 `routing_state=1`，它成了整个 74 模型 video 能力
+里**唯一"可路由却零绑定"**的模型——一个纯属自造的假缺口。
+
+修法：sweep 在置 `status = 0` 的同时**清 `routing_state = 0`**，使 `status=0 ⇒ 不可路由`
+自洽。因为 sweep 也跑在 `ai_model_pricing` 等没有该列的表上，用
+`postgres_table_has_routing_flags()` 先查 `information_schema` 再决定是否拼该列。
+sweep **只在 `sdkwork-models` 有一份**，无双拷贝漂移风险。
+
+同时把 DB 里现存 8 行一次性修正（`UPDATE ... SET routing_state=0, shelf_state=0
+WHERE status=0 AND routing_state=1` → `UPDATE 8`）。
+
+### 15.26.6 连带缺陷 ③：27 个官方账号全部 `status=0` —— seed 从未应用
+
+修完 video 后 `per-api-chain-audit` 变成 **FAILED (64 of 64)**，
+每行都是 `NO callable account for vendor X — this API returns 50201`。
+
+根因不是本轮改动，而是 DB 里 **27 个 `ai_upstream_account` 全部 `status=0`、
+`default_base_url = NULL`、凭据 27 条全 `status=0`**。而代码里
+`DEFAULT_VENDOR_UPSTREAM_ACCOUNTS`（**27 个 vendor 账号**，带真实 base_url、
+占位凭据、vendor-modality 分组绑定）**已经写好了**（本会话未提交改动的一部分）。
+即：**seed 代码存在，但从未应用到这台 DB**（`ops_seed_history` 显示上次 seed
+是 2026-09-15）。
+
+`db:ensure` 直接跑会报：
+
+```
+ai routing seed: ... the bundled vendor default accounts exist but carry no
+active credential — the seed skips credential writes when no upstream-credential
+key ring is configured; set SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING or
+..._KEY_RING_FILE and re-run
+```
+
+两次踩坑记录：
+
+1. **`SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING_FILE` 传了没用**——该变量
+   经 `pnpm`→`node scripts/manage-cloud-router-database.mjs`→`cargo run` 多层转发，
+   实测未生效；改为传**内联** `SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING`
+   才被读到。ring 内容取自 `.sdkwork/secrets/upstream-credential-key-ring.development.json`。
+   （`MIN_KEY_BYTES = 32`，dev ring 的 `activeKey` 39 字符，长度没问题。）
+2. **必须显式传 `--environment development`。** `scripts/manage-cloud-router-database.mjs`
+   的 `environment` 默认 `null`，于是 `SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT` 不被
+   export，installer 回落到 `DEFAULT_INSTALL_ENVIRONMENT`（"production"），
+   **把每个 bundled vendor 账号都 seed 成 disabled**。该脚本第 254 行附近的注释
+   恰好记录了这条历史坑，但它自己没给默认值——正是本轮 27 账号全 0 的直接原因。
+
+命令（可复现）：
+
+```bash
+export SDKWORK_DATABASE_URL="postgresql://sdkwork_ai_dev:sdkworkdev123@127.0.0.1:5432/sdkwork_ai_dev?sslmode=disable"
+export SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING='{"activeKeyId":"development-local-v1","activeKey":"-5PDMse125expXoiazBLwqMAj4M-pjE5eKv-lUjqoBA","fingerprintKey":"kChhxyXLmDK40OSw_BoLV5Yo_61uwocZ5fnUqB-z4iU","decryptionKeys":[]}'
+node scripts/manage-cloud-router-database.mjs ensure --environment development
+```
+
+结果：`{"status":"installed","environment":"development","changed":true}`。
+27 账号 → `status=1`，27 条凭据 → `status=1`，83 条分组成员不变。
+
+**连带效果：`per-api-chain-audit` 从 FAILED 64/64 变成 passed 64/64；
+`audit-model-route-reachability` 的 `callable accounts` 从 0 变成 27，
+`reachable 287 / not reachable 0`。**
+
+### 15.26.7 本轮交付清单
+
+| 文件 | 改动 |
+|---|---|
+| `services/.../infrastructure/sql/model_catalog_import.rs` | 加 `vendor_native_video_descriptor` + `model_video_endpoint_descriptor`；`"video"` 臂改为调用；扩 `endpoint_modality_code`；加视频守卫测试 |
+| `../sdkwork-models/crates/.../src/model_catalog_import.rs` | 同上（写侧拷贝）+ 同步 `endpoint_modality_code` |
+| `../sdkwork-models/crates/.../src/postgres/model_catalog_import.rs` | sweep 退休时清 `routing_state`；加 `postgres_table_has_routing_flags` |
+| `scripts/dev/audit-model-route-reachability.mjs` | （§15.25 已改）本次沿用其 live-binding 视图 |
+| DB（`sdkwork_ai_dev`） | 8 行矛盾 flags 修正；seed 重放激活 27 账号 + 27 凭据 |
+
+门禁全绿：`ai-routing-consistency` passed、`per-api-chain-audit` 64/64、
+`audit-model-route-reachability` 287/287、router lib 测试通过、writer 22 passed / 1 ignored。
+
+### 15.26.8 下一个能力（音频）的入口线索
+
+- `capability = 3` 即 `audio`（46 模型）。**注意 `sfx`（音效）不在 capability 表里**——
+  `"sfx"` 是 `primaryCapability` 字符串，其端点 `sfx.sound` 已存在且 6 个模型已绑定
+  （见 §15.26.4 的审计输出）。
+- 已知 audio 侧问题：§15.26.5 里 5 个 `openai/*` 转写/实时模型是 `status=0` 孤儿
+  （已顺手修 flags，但模型本身仍不在 catalog）。
+- music：`suno.music` 15 个模型绑定，但 `suno/*` 除 `minimax.music_generation` 外
+  多为兼容面，需按三问协议核。
+
+---
+
+## §15.27 第 25 轮收口：音乐 / 数字人 / 动作模仿三条路由的定价与 generation mode
+
+**结论先行：七能力真库 e2e 从 4/7 变为 7/7，全部「抵达厂商（链路完整）」。**
+修复口径按目录对齐（用户裁决）——3 条失败里有 **1 条是探针写错了目标**（suno），
+**2 条是真缺陷**（计费声明丢 meter、generation mode 词表缺两个模态）。
+
+### 15.27.1 先用 e2e 逐条取证（修复前的 4/7）
+
+```
+=== 抵达厂商（链路完整）===
+  [图片 image]  /v1/images/generations            => HTTP 502
+  [视频 video]  /kling/v1/videos/generations      => HTTP 502
+  [配音 voice]  /elevenlabs/v1/text-to-speech/... => HTTP 502
+  [音效 sfx]    /elevenlabs/v1/sound-generation   => HTTP 502
+=== 网关内部缺口（链路断裂）===
+  [音乐 music]           ApiCodeIsNotAGenerationMode? / meter 不相交
+  [数字人 avatar]        ApiCodeIsNotAGenerationMode { api_code: "kling.avatar" }
+  [动作模仿 motion]      ApiCodeIsNotAGenerationMode { api_code: "kling.motion_control" }
+```
+
+三条失败根因 **互不相同**，必须分开诊断，不能合并成一个「定价不全」的结论。
+
+### 15.27.2 根因一：音乐（suno）——探针把目标指向目录刻意停用的路由
+
+关键发现（推翻了我原先「sdkwork-models 缺 suno 定价」的假设）：
+
+`models/suno/global/models/suno-v5.json` 显式声明：
+
+```json
+{ "lifecycle": "deprecated", "releaseStage": "deprecated",
+  "shelfState": "hidden",   "routingState": "catalog_only" }
+```
+
+`suno-v6*` 则是 `lifecycle = "catalog_only"` + `shelfState = "hidden"`。
+**DB 忠实镜像了这组声明**：`release_stage=3`（deprecated）/ `2`（catalog_only）、
+`shelf_state=2`（hidden）、`routing_state=0`（非 enabled）、`status=0`。
+5 个 suno 模型全部如此；`suno/suno-v5`、`suno-v5.5` 绑 `suno.music` 但 `status=0`，
+`suno-v6*` 连绑定都没有。
+
+⇒ **suno 音乐模型是「目录级刻意停用」，不是定价缺失。** 原来的音乐 e2e 断言
+「suno 能到达厂商」，恰好是目录反面。这不是缺陷，是**探针选错了目标**。
+
+对照证据：`minimax/music-3.0` 计价锚在 `api_result`，而 `api_result` **在**
+`AdapterUsageLines` 的声明米表里 ⇒ 交集成功 ⇒ 可用；`suno/suno-v5` 计价锚在
+`music_output_second`，**不在** ⇒ 永远失败。这解释了「为什么同为音乐
+minimax 通、suno 不通」这个此前无法闭合的观察。
+
+### 15.27.3 根因二：音乐（真缺陷）——`declared_meters_for` 把自己目录价屏蔽掉
+
+`BillingMode::ExternalUsageLine` + `BillingQuantitySource::AdapterUsageLines`
+原先只返回 `[ApiResult, ApiItem, ApiRequest]`，**丢掉了 `billing.meter`**
+（分类学声明的 `MusicOutputSecond`）。于是即便定价键解析正确，声明米表与
+目录 `[music_output_second]` 也**不相交** ⇒ `catalog_pricing_meters` 为空 ⇒
+`RouteDeclared` 保留 `ApiRequest`。
+
+修复：`declared_meters_for` 现在**首先**推入 `billing.meter`，与
+`quantity_source` 分支无关：
+
+```rust
+BillingMode::ExternalUsageLine => {
+    if let Some(meter) = billing.meter.clone() { meters.push(meter); }
+    match billing.quantity_source {
+        BillingQuantitySource::FixedRequest => { meters.push(BillingMeter::ApiRequest); }
+        BillingQuantitySource::AdapterUsageLines => {
+            meters.push(BillingMeter::ApiResult);
+            meters.push(BillingMeter::ApiItem);
+            meters.push(BillingMeter::ApiRequest);
+        }
+        _ => { /* 同上三项 */ }
+    }
+}
+```
+
+这是**通用缺陷**，影响所有「目录按非 api_* 米计价的 ExternalUsageLine 路由」，
+不止 suno。
+
+### 15.27.4 根因三：数字人 / 动作模仿——generation mode 词表缺两个模态
+
+`video_generation_mode_for_api_code` 只认 4 个模态
+（`text_to_video` / `image_to_video` / `reference_to_video` / `multi_shot`），
+`kling.avatar` 与 `kling.motion_control` 的后缀匹配不上 ⇒ `None` ⇒
+`ApiCodeIsNotAGenerationMode`。
+
+而**价本早已为它们发布了档位**（`kuaishou/kling-v3`，全球 USD/秒）：
+`audio_res_720p` 0.126 / `audio_res_1080p` 0.168 / `audio_res_4k` 0.420（数字人）、
+`motion_res_720p` 0.126 / `motion_res_1080p` 0.168（动作模仿）。
+⇒ **有价无档，价格被打成孤儿**。
+
+`decide_video_pricing_tier` 的判定顺序（关键，决定了报错长什么样）：
+1. `priced.is_empty()` → `MeterHasNoTierConditionedRate`（**先于**模态检查）；
+2. `video_generation_mode_for_api_code` → `ApiCodeIsNotAGenerationMode`；
+3. 该模态无档位 → `NoProfileForGenerationMode`；
+4. 档位不相交 → `DeclaredTierNotPriced`。
+
+修复（一处代码 + 三处目录）：
+
+| 位置 | 改动 |
+|---|---|
+| `catalog.rs` `video_generation_mode_for_api_code` | 词表加 `avatar`、`motion_control` |
+| `models/kuaishou/{global,cn}/model-video-profiles/kling-v3.json` | 各 +108 行：4 个 profile（avatar 720p/1080p、motion_control 720p/1080p），`durationPolicy=continuous`、`outputAudio=true`、**`isDefault=false`** |
+| `models/kuaishou/{global,cn}/model-video-profiles/kling-ai-avatar-v2.json` | `generationMode` `image_to_video` → `avatar`（语义纠正：该端点本就是数字人，旧标签把音频输入藏了） |
+| `schemas/model-video-profiles.schema.json` + `specs/video-generation-profile.spec.json` | 词表同步加两个模态 |
+| `tools/validate-catalog.mjs` `GENERATION_MODE_INPUTS` | `avatar: ["image","audio"]`、`motion_control: ["image","video"]`（该规则是**析取**：`requiredInputs.some(...)`） |
+
+**踩坑记录**：`ai_model_video_profile` 约束「每文件仅一个 `isDefault`」
+（`model_video_profile.default.duplicate`）——我一度给两个新 profile 置 `true`，
+与既有 `t2v_range_1080p` 冲突报错 ×2，改为 `false` 后通过。
+
+### 15.27.5 测试与门禁
+
+`catalog.rs` 里那条钉住旧词表的测试（`api_code_that_is_not_a_generation_mode_reports_that_specific_gap`）
+按预期红了（`left: Some(NoProfileForGenerationMode{generation_mode:"avatar"})`
+vs `right: Some(ApiCodeIsNotAGenerationMode{api_code:"kling.avatar"})`）。
+拆成三条：模态识别、档位选择（断言 `tier_code()==Some("audio_res_1080p")` 且
+`gap.is_none()`）、非模态 api_code 仍报 `ApiCodeIsNotAGenerationMode`（改用
+`kling.image_generation` 作样本）。**11 passed / 0 failed。**
+
+| 门禁 | 结果 |
+|---|---|
+| router lib `video_pricing_tier_tests` | **11 passed / 0 failed** |
+| router lib 全量 | 520 passed / 1 failed → 修掉那条钉旧行为的 → 全绿 |
+| `validate-catalog.mjs`（sdkwork-models） | **0 errors；77 warnings = 基线完全一致** |
+| `db:refresh-catalog --force` | `synced: true`，346 models，1100 prices |
+| **七能力真库 e2e** | **7 / 7 抵达厂商**（原 4/7） |
+
+目录基线证明手法：把 7 个改动文件 `git stash push` 后重跑 `validate-catalog`，
+得 77 warnings（47 `tier.unreachable` + 30 `tier.ambiguous`）；`stash pop` 后再跑
+仍是 77 / 47 / 30，**且没有任何 warning 指向新增的两个 profile** ⇒ 零回归。
+
+### 15.27.6 修复后的决定性结果
+
+```
+=== 抵达厂商（链路完整）===
+  [图片 image]   /v1/images/generations                      => HTTP 502
+  [视频 video]   /kling/v1/videos/generations                => HTTP 502
+  [音乐 music]   /minimax/v1/music_generation                => HTTP 502
+  [配音 voice]   /elevenlabs/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM => HTTP 502
+  [音效 sfx]     /elevenlabs/v1/sound-generation             => HTTP 502
+  [数字人 avatar] /kling/v1/videos/avatar                     => HTTP 502
+  [动作模仿 motion] /kling/v1/videos/motion-control          => HTTP 502
+=== 已拨号但网络不可达（环境，非网关缺口）===
+=== 网关内部缺口（链路断裂）===
+test seven_media_capabilities_reach_their_vendor_on_the_real_catalog ... ok
+test result: ok. 1 passed; 0 failed; ignored; 0 measured; 0 filtered out; finished in 4.60s
+```
+
+HTTP 502 来自 dev 占位凭据（厂商侧真实拒绝），在探针里归类为「链路完整」。
+音乐用例同时改指 MiniMax（`minimax/music-cover`），并按
+`MiniMaxMusicGenerationRequest.required = ["model"]` 补上 `model` 字段。
+
+### 15.27.7 本轮交付清单
+
+| 文件 | 改动 |
+|---|---|
+| `services/.../application/invocation/pricing_identity.rs` | `declared_meters_for` 先推 `billing.meter` |
+| `services/.../infrastructure/sql/catalog.rs` | generation mode 词表 +2；测试 1 拆 3 |
+| `crates/.../tests/media_provider_native_db_e2e.rs` | 音乐用例 suno → minimax，补 `model` |
+| `../sdkwork-models/models/kuaishou/{global,cn}/model-video-profiles/kling-v3.json` | +4 profile |
+| `../sdkwork-models/models/kuaishou/{global,cn}/.../kling-ai-avatar-v2.json` | mode → `avatar` |
+| `../sdkwork-models/schemas/model-video-profiles.schema.json` | enum +2 |
+| `../sdkwork-models/specs/video-generation-profile.spec.json` | 词表 +2 |
+| `../sdkwork-models/tools/validate-catalog.mjs` | `GENERATION_MODE_INPUTS` +2 |
+| `../sdkwork-models/models/index.json` | `build-index.mjs` 重生成（×2） |
+
+### 15.27.8 音频能力的入口线索（下一轮）
+
+- `capability = 3` 即 `audio`（46 模型）。`sfx`（音效）**不是 capability 行**——
+  它是 `primaryCapability` 字符串，端点 `sfx.sound` 已存在且 6 个模型已绑定。
+- 需按三问协议核：(a) 模型绑定是否与其声明的 vendor/apiFormat 一致；
+  (b) 不一致时厂商有无未接的原生端点，还是只有兼容面（则改 `apiFormat`）；
+  (c) 新原生端点是否贯通资源声明/资源组/分类学/两份分类器/价本/账号组，无遗漏。
+- 已知 audio 侧遗留：5 个 `openai/*` 转写/实时模型是 `status=0` 孤儿
+  （flags 已顺手修，但模型本身仍不在 catalog 的 routable 面）。
+
+---
+
+## §15.28 第 26 轮：音频（audio）能力的 vendor 原生端点收口
+
+**结论先行：46 个音频模型里原本 40 个（全部有绑定者）坍缩在通用 `openai.audio`，
+其中 14 个自己的 `apiFormat` 就是 `vendor_native`；两个已声明的原生音频端点
+（`elevenlabs.text_to_speech`、`volcengine.speech`）绑定数为 0。修复后
+`elevenlabs.text_to_speech` = 5、`gemini.live` = 1、`elevenlabs.sound_generation` = 1。**
+
+与前两轮（图片 §15.25、视频 §15.26）**同型第三例**：`model_endpoint_descriptor`
+只按 `primary_capability` 选端点，忽略 `apiFormat` 与 `vendor_code`。
+
+### 15.28.1 取证：绑定分布
+
+```
+=== 46 audio 模型的 endpoint 绑定分布（修复前）===
+   openai.audio             vendor=bytedance      fmt=vendor_native        count=2
+   openai.audio             vendor=elevenlabs     fmt=vendor_native        count=8
+   openai.audio             vendor=google         fmt=google_gemini        count=6
+   openai.audio             vendor=minimax        fmt=vendor_native        count=6
+   openai.audio             vendor=openai         fmt=openai_compatible    count=17
+   openai.audio             vendor=xiaomi         fmt=openai_compatible    count=1
+   <none>                   vendor=elevenlabs     fmt=vendor_native        count=3   （st=0 退役）
+   <none>                   vendor=xiaomi         fmt=openai_compatible    count=3   （st=0 退役）
+```
+
+**后果不是装饰性的**：ElevenLabs 的 TTS 请求被规划到 `/v1/audio` 并携带 OpenAI 请求体，
+而分类器对 `elevenlabs` 只认 `/v1/text-to-speech/{voice_id}` 与 `/v1/sound-generation`
+—— 所以 ElevenLabs 的 TTS 调用**永远无法**被分类到 `elevenlabs.text_to_speech`，
+一个已声明的路由都到不了。
+
+同时 `volcengine.speech`（`/api/v3/audio/speech`）已声明资源、已被分类器路由、
+已被 `official.volcengine.full` 授予，却**零模型绑定**。
+
+### 15.28.2 判断依据：只有「已贯通端到端」的端点才可绑定
+
+`data/ai-routing/resources/vendor-native-resources.json` 中 `cap=audio` 的条目**只有 5 条**：
+
+| apiCode | path | 分类器臂 | 修复前绑定 |
+|---|---|---|---|
+| `volcengine.speech` | `/api/v3/audio/speech` | ✅ | **0** |
+| `elevenlabs.text_to_speech` | `/v1/text-to-speech/{voice_id}` | ✅ | **0** |
+| `elevenlabs.sound_generation` | `/v1/sound-generation` | ✅ | **0** |
+| `gemini.live` | `/v1beta/live/sessions` | ✅ | 0 |
+| `sfx.sound` | `/v1/sound/generate` | ✅ | 6 |
+
+**minimax / bytedance / xiaomi 没有声明的原生音频端点**。为它们编造路径
+（如 `/v1/t2a_v2`、`/api/v1/tts`）会造出「有绑定无资源、无门禁、无分类器臂」的孤儿路由
+—— 正是本审计要消灭的形态。⇒ 对它们 `openai.audio` 是**诚实答案**。
+
+### 15.28.3 修复
+
+新增两个函数（**两份拷贝**：router 读侧 + `sdkwork-models` 写侧），
+并从 sfx 臂拆出 `model_sfx_endpoint_descriptor`：
+
+```rust
+// 只列「已贯通端到端」的厂商；其余落 openai.audio
+fn vendor_native_audio_descriptor(vendor_code: &str) -> Option<EndpointDescriptor> {
+    match vendor_code {
+        "elevenlabs" => /* elevenlabs.text_to_speech, /v1/text-to-speech/{voice_id} */,
+        "volcengine" => /* volcengine.speech, /api/v3/audio/speech */,
+        _ => return None,
+    }
+}
+
+fn model_audio_endpoint_descriptor(model: &ModelInfo) -> EndpointDescriptor {
+    // 1. google_gemini + audio 入 + audio 出 → gemini.live（唯一已声明的 Google 音频原生面）
+    // 2. 转写（audio 入 / text 出）→ openai.audio（合成原生面答不了它）
+    // 3. vendor_native + 厂商有原生音频端点 → 原生；否则 → openai.audio
+}
+```
+
+`model_sfx_endpoint_descriptor`：**elevenlabs 是例外** —— 它的分类器臂刻意不含 sfx 路由，
+`/v1/sound-generation` 分类到更具体的 `elevenlabs.sound_generation`。
+把它的 sfx 模型绑到通用 `sfx.sound` 会规划到 `/v1/sound/generate`（ElevenLabs 不答此码）。
+
+`endpoint_modality_code` 补 `gemini.live → audio`。
+
+### 15.28.4 效果（仅统计 `status=1`）
+
+| 端点 | 修复前 | 修复后 |
+|---|---|---|
+| `openai.audio` | 40 | **29** |
+| `elevenlabs.text_to_speech` | 0 | **5** |
+| `gemini.live` | 0 | **1** |
+| `elevenlabs.sound_generation`（sfx） | 0 | **1** |
+| `sfx.sound` | 6 | 5 |
+
+三类**刻意留在 `openai.audio`** 的情形（已固化为守卫测试）：
+
+1. **转写**（`scribe_v2*`、`gemini-*-transcribe*`）：audio 入 / text 出，合成原生面答不了；
+   项目也未声明任何原生转写路由。
+2. **`apiFormat = openai_compatible`**：模型自己的声明优先，它收到的是 OpenAI 请求体。
+3. **无声明原生端点的厂商**（minimax / bytedance / xiaomi）。
+
+### 15.28.5 ⚠️ 踩坑：`refresh-catalog --force` 把 27 个账号打回 `status=0`
+
+本轮**再次**踩到 §15.26 已记录的坑。跑完 `pnpm db:refresh-catalog --force` 后
+`per-api-chain-audit` 由 **64/64 变成全红**，报错是**每个 vendor** 都
+`NO callable account ... this API returns 50201`；DB 里 `ai_upstream_account` 27 行全部
+回到 `status=0`（分组 `enabled=t` 的 83 条不变）。
+
+修法（与 §15.26 相同）：
+
+```bash
+node scripts/manage-cloud-router-database.mjs ensure --environment development
+# → {"status":"installed",...,"changed":true}
+```
+
+之后 `per-api-chain-audit` 恢复 **64/64**。
+
+⇒ **标准动作：`db:refresh-catalog` 之后必须补 `ensure --environment development` 再跑门禁。**
+出现「每个 vendor 同时缺账号」时，先查 `ai_upstream_account.status`，不要怀疑自己的改动。
+
+### 15.28.6 三个查询陷阱
+
+1. **`current_schema` 是 `sdkwork_ai_dev` 而非 `public`** ——
+   `information_schema ... where table_schema='public'` 会**全部返回空**，看起来像表不存在。
+2. **`ai_model` 没有 `model_code` 也没有 `primary_capability` 列**：标识列是
+   `catalog_key`/`model`；能力是 `capability`（int）+ `capabilities`（jsonb）。
+   数端点绑定要 join **`ai_model_api_endpoint`**，不是 `ai_resource_binding`。
+3. **查绑定必须过滤 `status=1`**：import 的 sweep（`deactivate_postgres_rows_not_in`）
+   把被替换的旧行置 `status=0` 而**不删**。不过滤会看到「一个模型两个端点」的**假重复**
+   —— 本轮一度据此误判为「sweep 缺失」，实际 sweep 工作正常。
+
+### 15.28.7 门禁
+
+| 门禁 | 结果 |
+|---|---|
+| router lib 单测 | **524 passed / 0 failed** |
+| `sdkwork-models-catalog-repository-sqlx` 单测 | **22 passed / 1 ignored** |
+| `api:ai-routing-consistency:check` | passed |
+| `api:chain-reachability:check` | **64/64** |
+| `audit-model-route-reachability` | **287/287**，27 callable accounts |
+| `validate-catalog.mjs` | **ok: true；77 issues = 基线一致**（47 `tier.unreachable` + 30 `tier.ambiguous`），0 errors |
+| 七能力真库 e2e | **7/7**（音频改动后仍绿） |
+
+### 15.28.8 音效（sfx）与音乐（music）——同型第四、五例，同一轮一并收口
+
+**音效（`primaryCapability = "sfx"`，6 模型）**：原本 6 个都绑 `sfx.sound`，
+但 `elevenlabs/eleven_text_to_sound_v2` 绑错了 —— ElevenLabs 的分类器臂**刻意不含**
+sfx 路由（`/v1/sound-generation` 分类到更具体的 `elevenlabs.sound_generation`）。
+绑到通用 `sfx.sound` 会把请求规划到 `/v1/sound/generate`（ElevenLabs 不答此码）。
+修复后：`elevenlabs.sound_generation` = 1，`sfx.sound` = 5。
+
+**音乐（`capability = 4`，27 模型 / 15 active）**：15 个 active 绑定**全部**落在
+`suno.music`，包括 `elevenlabs/music_*`、`google/lyria-*`、`mureka/*`、
+`stability_ai/stable-audio-*`、`bytedance/seed-music-gensong-v4`、`minimax/music-cover`
+—— 没有一个是 Suno。
+
+**关键澄清：`suno.music` 是兼容面，不是厂商端点。** 其资源 `api.suno.music` 的
+displayName 就是 "Music Generation (Suno-protocol)"，由 `api.openai_compatible.all`
+（兼容组）授予，`defaultBillingMeter = music_output_second` —— 与
+`openai.audio` / `openai.videos` 同构。
+
+音乐侧**唯一**有声明原生端点的厂商是 `minimax`（`minimax.music_generation`，
+`/v1/music/generations`，由 `official.minimax.music` 授予），而它**零模型绑定**。
+修复后 `minimax/music-cover` → `minimax.music_generation`；其余厂商
+（无声明原生音乐 API）保持在 Suno-protocol 兼容面，**不编造路径**。
+
+`suno` 自身的模型全部 `status=0`（`lifecycle = catalog_only` / `deprecated`、
+`shelfState = hidden`、`routingState = catalog_only`）⇒ 绑定为空，符合目录意图。
+
+### 15.28.9 用户给定顺序的完成度
+
+| 能力 | 状态 |
+|---|---|
+| 图片 image | ✅ §15.25 |
+| 视频 video | ✅ §15.26 |
+| **音频 audio** | ✅ §15.28 |
+| **音乐 music** | ✅ §15.28.8（`minimax.music_generation` 已绑；其余为兼容面） |
+| **音效 sfx** | ✅ §15.28.8（`elevenlabs.sound_generation` 已绑） |
+| 动作模仿 motion | ✅ §15.27 |
+| 数字人 avatar | ✅ §15.27 |
+
+⇒ **用户所列 7 类能力全部收口完成**。五类媒体端点坍缩（图片 / 视频 / 音频 / 音乐 / 音效）
+是**同一个根因的五张脸**（`model_endpoint_descriptor` 只按 `primary_capability` 选端点，
+忽略 `apiFormat` 与 `vendor_code`），已各自加守卫测试固化：
+
+| 守卫测试 | 覆盖 |
+|---|---|
+| `image_models_bind_to_their_vendor_native_endpoint` | 图片 |
+| `video_models_bind_to_their_vendor_native_endpoint` | 视频 |
+| `audio_models_bind_to_their_vendor_native_endpoint` | 音频 + 音效 |
+| `music_models_bind_to_their_vendor_native_endpoint` | 音乐 |
+
+
+---
+
+## 15.29 第 29 轮：把五张脸收成一条闭合不变式（#46 的落地）
+
+### 15.29.1 为什么要做这一步
+
+§15.25–§15.28 用**五条按能力分开的守卫测试**固化了同一个根因的五张脸
+（`model_endpoint_descriptor` 只按 `primary_capability` 选端点，忽略 `apiFormat` 与
+`vendor_code`）。但那五条守卫**各自手写厂商清单** —— 这正是同一个缺陷能连出五次的
+原因：手写清单只覆盖作者当时想到的厂商，**新厂商会静默回到通用面**，直到有人发现。
+
+所以本轮的交付物不是第六张脸，而是**把空间闭合**：不再枚举，改为扫全空间 + 判定式。
+
+### 15.29.2 闭合不变式（两份拷贝各一条守卫）
+
+新增 `every_capability_binds_only_to_a_declared_vendor_native_endpoint`，位于
+`model_catalog_import.rs` 的 `mod tests`（**两份拷贝都加**）。它扫
+`(vendor, apiFormat, capability)` 的**全组合**：
+
+| 维度 | 取值 |
+|---|---|
+| vendor | 目录 25 家 + 3 个端点侧别名（`gemini`/`kling`/`jimeng`）= 29 |
+| apiFormat | `vendor_native` / `google_gemini` / `openai_compatible` |
+| capability | `image` / `video` / `audio`(3 组模态) / `music` / `sfx` = 7 组 |
+
+对每个组合跑 `model_endpoint_descriptor`，断言三件事：
+
+1. **不编造路由。** 凡 `protocol_code == "vendor_native"`，其
+   `(endpoint_code, path_template)` 必须**双双命中**声明表
+   （`vendor-native-resources.json` 的镜像）。只比 code 不比 path 会放过
+   「code 对、路径无臂可答」的漂移 —— 即 `gemini.image_generation` /
+   `kling.task_query` 历史上出过的形状。
+2. **端点必有模态。** `endpoint_modality_code` 必须能命名它，否则计费侧的计量单位
+   回退到通用媒体表，**计错单位**。
+3. **反方向：声明不能悬空。** 声明表里每个端点都必须能被某个描述符绑定，或在
+   `NOT_BOUND_BY_DESCRIPTOR` 台账里**具名登记**。否则就是「项目 ships 了一条
+   没有功能能用的路由」—— `minimax.music_generation` 曾经的状态。
+
+另加**反空洞断言**：扫描必须同时产出 native 与 generic 两种描述符，否则
+「全部返回通用面」的重构会以空洞方式通过。
+
+### 15.29.3 守卫第一次跑就抓到的东西（这正是它的价值）
+
+新守卫第一次运行即 FAILED，报 4 个声明端点无描述符可绑：
+
+```
+gemini.nano_banana.image_generation, kling.avatar,
+kling.image_to_video, kling.motion_control
+```
+
+**逐条取证后判定为「合法不绑定」，不是缺陷**：
+
+| 端点 | 证据 |
+|---|---|
+| `kling.avatar` / `kling.motion_control` | 有分类器臂（两份拷贝）；有资源授权（`admin-api-groups.json`）；`crates/sdkwork-cloudrouter-edge-runtime/tests/avatar_motion_routing_e2e.rs` **真库 e2e 路由这两条到目标厂商**（`with_catalog_key("kling.avatar")` / 期望账户 4201） |
+| `kling.image_to_video` / `gemini.nano_banana.image_generation` | 有分类器臂、有资源授权；是**生成服务的显式入口**（调用方直接选 api code），不由模型的 `primaryCapability` 选中 |
+| 真库实测 | 4 个端点的 `ai_model_api_endpoint` 绑定数 **= 0** |
+
+结论：它们是**特性入口面**（数字人 / 动作控制 / 图生视频 / nano-banana），由生成服务
+带显式 api code 驱动，**不是**「某模型绑定到某端点」的形态。绑一个 `video` 模型到
+avatar 面会让**所有** video 模型去答 avatar 请求 —— 所以正确的处置是**在台账里具名
+登记原因**，而不是补绑定。
+
+### 15.29.4 反向对照：Node 侧门禁（第 9 项）
+
+守卫把声明表**内嵌**在 Rust 测试里（测试期无文件系统访问），这是**第二份真相源**。
+没有任何东西比对的第二真相源比没有守卫更糟：seed 加一条会让守卫**误严**，
+手写一条没有资源支撑的会让它**误松**。
+
+所以在 `tools/check-cloudrouter-ai-routing-consistency.mjs` 加了**第 9 项**：
+把两份拷贝的内嵌表与 `vendor-native-resources.json` **双向**比对
+（漏项 = 误严；多项 = 误松）。
+
+**作用域必须是那一个文件，不是全部 seed**：通用兼容面（`openai.images` /
+`openai.audio` / …）住在别的 seed 文件里，且是描述符**拒绝走原生时**的返回值 ——
+它们**本来就不该**出现在「已声明原生」集合里。第一版用全部 seed（64 条）比对，
+报出 32 条假缺口，就是踩了这条。
+
+### 15.29.5 本轮我自己踩的坑（两个，都是取证后修的）
+
+1. **`str_as_str` 不稳定库特性。** `EndpointDescriptor` 的字段全是 `&'static str`，
+   写 `descriptor.endpoint_code.as_str()` 会命中未稳定的 `str_as_str`
+   （issue #130366），**两份拷贝都报 E0658**。直接去掉 `.as_str()` 即可
+   （`&str` 本身就能比）。
+2. **正则要求元组单行，漏掉 5 条。** rustfmt 把最长的 5 个元组折成多行
+   （`(
+ "code",
+ "path",
+)`），我的 `\("([^"]+)",\s*"([^"]+)"\)` 因此
+   只读到 32/37 条，误报「漏 5 条」。修法是把正则改成容忍任意空白
+   （`\(\s*"([^"]+)"\s*,\s*"([^"]+)"\s*,?\s*\)`）—— **表的换行格式是 rustfmt 的事，
+   比对不该依赖它**。
+
+### 15.29.6 门禁终态读数（第 29 轮实测）
+
+| 门禁 | 结果 | 对比上一轮 |
+|---|---|---|
+| `cargo test -p sdkwork-cloudrouter-router-service --lib` | **526 passed / 0 failed** | 525 → +1（闭合守卫） |
+| `cargo test -p sdkwork-models-catalog-repository-sqlx` | **23 passed / 0 failed / 1 ignored** | 22 → +1（闭合守卫） |
+| `api:ai-routing-consistency:check` | **passed**（新增第 9 项：37 = 37） | 新增检查项 |
+| `api:chain-reachability:check` | **passed（64/64）** | 不回退 |
+| `audit-model-route-reachability` | **287 reachable / 0 not reachable**，27 callable accounts | 不回退 |
+| `validate-catalog.mjs` | **ok: true；77 issues = 基线一致**（47 unreachable + 30 ambiguous），0 errors | 不回退 |
+
+### 15.29.7 与 #46 的关系
+
+#46「扩展三层守卫到全部 25 个 vendor 并验证」**已由此闭合**：不再逐个 vendor 加断言，
+而是用全空间扫描把 25 家（+3 别名）一次性覆盖，并让「声明 ↔ 描述符」互为约束。
+新增两条防线：Rust 侧闭合不变式（含反方向悬空检查），Node 侧内嵌表 ↔ seed 双向比对。
