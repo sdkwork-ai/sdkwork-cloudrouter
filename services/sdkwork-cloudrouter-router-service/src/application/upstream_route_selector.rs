@@ -15,6 +15,7 @@ use crate::domain::{
 };
 use crate::ports::{
     AccountGroupModelAccess, UpstreamAccountRouteCatalog, UpstreamRouteGateDiagnosis,
+    VideoPricingTierDecision,
 };
 
 #[derive(Debug, Clone, Default)]
@@ -958,20 +959,50 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             let preferred_region =
                 self.default_billing_region_for(&query.context, &query.route_key);
             routes = prefer_default_region_variants(routes, preferred_region.as_deref());
-            // 首个为最终账号，其余为故障转移序列（planner 已按策略排序并
-            // 按 fallback mode 截断），供 dispatch 的 failover 使用。
-            let Some((primary, failover)) = routes.split_first() else {
-                continue;
-            };
-            // Model-less requests are api-request-metered; verify the
-            // candidate has an api-request price so pricing preflight cannot
-            // fail after the account was selected.
-            if let Err(error) = self.ensure_account_route_is_priced(query, primary) {
-                return CandidateUpstreamAccountRouteEvaluation::PricingUnavailable(error);
+            // 首个**可核价**的账号为最终账号，其余为故障转移序列（planner 已按
+            // 策略排序并按 fallback mode 截断），供 dispatch 的 failover 使用。
+            //
+            // 为什么不能直接取 `routes[0]`：`default-group` 这类混合分组里同时
+            // 住着多个供应商的账号，而 API 资源类路由的定价键是目录模型键
+            // （`vidu.start_end_to_video` → `vidu/viduq3`）。分组里的
+            // `alibaba-default` 对该资源有资格（它在同一分组的并集里）却没有
+            // 对应价格；取首个账号会把整条请求判死，把实际持有价格的
+            // `vidu-default` 白白挡在后面——症状是「某 API 永远 502
+            // routing_failed」，而价格其实在库里。
+            //
+            // 因此按 planner 给出的优先级顺序挑第一个能核价的账号；只有**全部**
+            // 账号都不可核价时才上报定价缺口（此时才是真的缺价）。
+            let mut priceable_index = None;
+            let mut unpriced_failure = None;
+            for (index, route) in routes.iter().enumerate() {
+                match self.ensure_account_route_is_priced(query, route) {
+                    Ok(()) => {
+                        priceable_index = Some(index);
+                        break;
+                    }
+                    Err(error) => {
+                        if unpriced_failure.is_none() {
+                            unpriced_failure = Some(error);
+                        }
+                    }
+                }
             }
+            let Some(index) = priceable_index else {
+                let error = unpriced_failure.unwrap_or_else(|| {
+                    DomainError::new(format!(
+                        "no upstream account route in account group {} carries a price for route {}",
+                        candidate.account_group_id, query.route_key
+                    ))
+                });
+                return CandidateUpstreamAccountRouteEvaluation::PricingUnavailable(error);
+            };
+            // 被跳过的账号不再作为故障转移目标：它们持有同一个资源但缺价，
+            // 放进 failover 只会把同一个失败在下游重演一遍。
+            let primary = routes[index].clone();
+            let failover = routes[index + 1..].to_vec();
             return CandidateUpstreamAccountRouteEvaluation::Selected(
-                Box::new(primary.clone()),
-                failover.to_vec(),
+                Box::new(primary),
+                failover,
             );
         }
         CandidateUpstreamAccountRouteEvaluation::NoCallableCandidate
@@ -1029,71 +1060,105 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             query.context.organization_id,
             pricing_catalog_key,
         );
+        // A model-keyed resource (`kuaishou/kling-v3`) can be priced directly.
+        // An *api-keyed* resource (`volcengine.video_generation`) cannot: the
+        // price book publishes rates per model, and an api code is not a model.
+        // Resolve the endpoints the api code is served from back to the catalog
+        // keys bound to them, then price against those. See
+        // `resolve_pricing_catalog_keys` for why this direction is the only
+        // correct one.
+        let catalog_keys = resolve_pricing_catalog_keys(self.catalog, query, pricing_catalog_key);
         let mut last_failure = None;
-        for meter in meters {
-            // 档位按计量单位分别解析：目录把它声明在 `ai_model_video_profile`
-            // 里，把它的报价写在 `pricing_rate` 的 `tier_code` 条件里，两者
-            // 取交集才是可用档位。缺这一维度时解析器会把带条件的候选全部过滤
-            // 干净，报"有模型无价格"——而价格其实在库里。
-            let tier_decision = self.catalog.video_pricing_tier(
-                pricing_catalog_key,
-                &query.api_code,
-                &meter,
-                query.pricing_resolution.as_deref(),
-            );
-            let mut resource = ResourceDefinition::new(pricing_catalog_key, meter, Utc::now())
-                .with_pricing_subject(query.context.api_key_id, Some(query.context.group_id))
-                .with_provider(&route.supplier_code, Some(route.account_id))
-                .with_region_code(&route.region_code)
-                .with_default_billing_region(configured_default_region.clone())
-                .with_api_code(&query.api_code);
-            if let Some(tier_code) = tier_decision.tier_code() {
-                resource = resource.with_dimensions(
-                    PricingDimensionContext::new()
-                        .with_value("tier_code", serde_json::json!(tier_code)),
-                );
+        for catalog_key in &catalog_keys {
+            let catalog_key = catalog_key.as_str();
+            for meter in &meters {
+                // 档位只对**视频计量单位**有意义：目录把档位声明在
+                // `ai_model_video_profile` 里，把它的报价写在 `pricing_rate` 的
+                // `tier_code` 条件里，两者取交集才是可用档位。缺这一维度时解析器
+                // 会把带条件的候选全部过滤干净，报"有模型无价格"——而价格其实在库里。
+                //
+                // 反之，对图像/音频/LLM 计量单位去问视频档位**只会产出噪音缺口**
+                // （实况 `nano_banana.image_generation`：图像模型没有
+                // `ai_model_video_profile`，于是拿到
+                // `MeterHasNoTierConditionedRate`，而该模型的 active 费率其实
+                // 用 `output_type eq image` 条件报价，与 video 档位毫无关系）。
+                let tier_decision = if is_video_meter(meter) {
+                    self.catalog.video_pricing_tier(
+                        catalog_key,
+                        &query.api_code,
+                        meter,
+                        query.pricing_resolution.as_deref(),
+                    )
+                } else {
+                    VideoPricingTierDecision::unknown()
+                };
+                let mut dimensions = PricingDimensionContext::new();
+                if let Some(tier_code) = tier_decision.tier_code() {
+                    dimensions = dimensions.with_value("tier_code", serde_json::json!(tier_code));
+                }
+                // 图像计量单位的费率常以 `output_type` 条件区分输入/输出
+                // （实况 `google/gemini-3-pro-image`：`image_output_token` 的
+                // active 费率带 `output_type eq image`）。不注入这个维度时，
+                // 那些费率会被条件过滤挡掉，表现为"明明有价却说无价"。
+                // 计量单位本身已经蕴含了输出类型，所以这里由计量单位推导，
+                // 而不是从请求体里猜。
+                if let Some(output_type) = output_type_for_meter(meter) {
+                    dimensions =
+                        dimensions.with_value("output_type", serde_json::json!(output_type));
+                }
+                let mut resource = ResourceDefinition::new(catalog_key, meter.clone(), Utc::now())
+                    .with_pricing_subject(query.context.api_key_id, Some(query.context.group_id))
+                    .with_provider(&route.supplier_code, Some(route.account_id))
+                    .with_region_code(&route.region_code)
+                    .with_default_billing_region(configured_default_region.clone())
+                    .with_api_code(&query.api_code);
+                resource = resource.with_dimensions(dimensions);
+                if let Some(requested_model) = query
+                    .requested_model
+                    .as_deref()
+                    .map(str::trim)
+                    .filter(|value| !value.is_empty())
+                {
+                    resource = resource.with_model(requested_model);
+                }
+                if let Some(identity) = parse_model_catalog_identity(catalog_key) {
+                    resource = resource.with_vendor_code(identity.vendor_code);
+                }
+                let resolution = PriceService::new().resolve(self.catalog, resource)?;
+                if resource_is_priced_for_billing(&resolution) {
+                    return Ok(());
+                }
+                last_failure = Some((
+                    format!(
+                        "model {catalog_key}, meter {}: {}{}",
+                        resolution
+                            .audit_snapshot
+                            .resource
+                            .meter
+                            .code(),
+                        resolution
+                            .failure
+                            .as_ref()
+                            .map(|failure| failure.message.as_str())
+                            .unwrap_or("no quoted rate"),
+                        resolution
+                            .failure
+                            .as_ref()
+                            .map(|failure| format!(" ({})", failure.code.code()))
+                            .unwrap_or_default()
+                    ),
+                    tier_decision.gap_description(),
+                ));
             }
-            if let Some(requested_model) = query
-                .requested_model
-                .as_deref()
-                .map(str::trim)
-                .filter(|value| !value.is_empty())
-            {
-                resource = resource.with_model(requested_model);
-            }
-            if let Some(identity) = parse_model_catalog_identity(pricing_catalog_key) {
-                resource = resource.with_vendor_code(identity.vendor_code);
-            }
-            let resolution = PriceService::new().resolve(self.catalog, resource)?;
-            if resource_is_priced_for_billing(&resolution) {
-                return Ok(());
-            }
-            last_failure = Some((
-                format!(
-                    "meter {}: {}{}",
-                    resolution
-                        .audit_snapshot
-                        .resource
-                        .meter
-                        .code(),
-                    resolution
-                        .failure
-                        .as_ref()
-                        .map(|failure| failure.message.as_str())
-                        .unwrap_or("no quoted rate"),
-                    resolution
-                        .failure
-                        .as_ref()
-                        .map(|failure| format!(" ({})", failure.code.code()))
-                        .unwrap_or_default()
-                ),
-                tier_decision.gap_description(),
-            ));
         }
         let (failure_detail, tier_gap) =
             last_failure.unwrap_or_else(|| ("no meters to price".to_owned(), None));
+        // 这条失败信息是运维唯一能看到的线索，因此把**定价身份**一并写出：
+        // 解析出的目录键候选、实际参与核价的计量单位、api code、请求声明的模型、
+        // 以及所在账号分组。缺了这些，"no price is published" 只能让人去猜是
+        // 目录缺口、别名没桥上、还是分组选错了账号。
         Err(DomainError::new(format!(
-            "no price is published for route {}, pricing resource {}, supplier {}, account {}, and region {}: {}{}{}",
+            "no price is published for route {}, pricing resource {}, supplier {}, account {}, and region {}: {}{}{}; resolved catalog keys {:?} for meters {:?} (api code {}, requested model {:?}, account group {})",
             query.route_key,
             pricing_catalog_key,
             route.supplier_code,
@@ -1105,6 +1170,11 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
                 .map(|gap| format!("; {gap}"))
                 .unwrap_or_default(),
             direct_official_cost_gap_hint(&route.supplier_code),
+            catalog_keys,
+            meters.iter().map(|meter| meter.code()).collect::<Vec<_>>(),
+            query.api_code,
+            query.requested_model,
+            query.context.group_code,
         )))
     }
 
@@ -1248,9 +1318,22 @@ where
         catalog.default_billing_region(probe.tenant_id, probe.organization_id, probe.catalog_key);
     for meter in meters {
         // 同一档位解析也用在 sticky 路径上：目录对视频模型的条件费率同样需要
-        // `tier_code`，两条核价路径的身份必须一致。这里同样按计量单位分别解析。
-        let tier_decision =
-            catalog.video_pricing_tier(probe.catalog_key, probe.api_code, &meter, None);
+        // `tier_code`，两条核价路径的身份必须一致。这里同样按计量单位分别解析：
+        // 视频计量单位才问视频档位，其余计量单位按自身蕴含的 `output_type` 注入
+        // 维度。预检侧（`ensure_account_route_is_priced`）用同一套规则，
+        // 否则会出现"预检过、调用期被挡"或反之的错配。
+        let tier_decision = if is_video_meter(&meter) {
+            catalog.video_pricing_tier(probe.catalog_key, probe.api_code, &meter, None)
+        } else {
+            VideoPricingTierDecision::unknown()
+        };
+        let mut dimensions = PricingDimensionContext::new();
+        if let Some(tier_code) = tier_decision.tier_code() {
+            dimensions = dimensions.with_value("tier_code", serde_json::json!(tier_code));
+        }
+        if let Some(output_type) = output_type_for_meter(&meter) {
+            dimensions = dimensions.with_value("output_type", serde_json::json!(output_type));
+        }
         let mut resource = ResourceDefinition::new(probe.catalog_key, meter.clone(), Utc::now())
             .with_pricing_subject(probe.api_key_id, Some(probe.account_group_id))
             .with_provider(probe.supplier_code, Some(probe.account_id))
@@ -1258,11 +1341,7 @@ where
             .with_default_billing_region(configured_default_region.clone())
             .with_model(probe.requested_model)
             .with_api_code(probe.api_code);
-        if let Some(tier_code) = tier_decision.tier_code() {
-            resource = resource.with_dimensions(
-                PricingDimensionContext::new().with_value("tier_code", serde_json::json!(tier_code)),
-            );
-        }
+        resource = resource.with_dimensions(dimensions);
         if let Some(identity) = parse_model_catalog_identity(probe.catalog_key) {
             resource = resource.with_vendor_code(identity.vendor_code);
         }
@@ -1344,6 +1423,56 @@ fn price_resolution_failure_suffix(resolution: &PriceResolution) -> String {
         .unwrap_or_default()
 }
 
+/// 该计量单位是否由目录的视频档位（`ai_model_video_profile`）定价。
+///
+/// 只有这些计量单位才该去问 `video_pricing_tier`：档位维度是为视频成片
+/// （按秒/按条、分辨率与时长分档）建模的，图像、音频、LLM 计量单位的费率
+/// 不按视频档位报价，问错地方只会产出误导性的缺口描述。
+fn is_video_meter(meter: &BillingMeter) -> bool {
+    matches!(
+        meter,
+        BillingMeter::VideoOutputSecond
+            | BillingMeter::VideoInputSecond
+            | BillingMeter::VideoOutputToken
+            | BillingMeter::VideoInputToken
+            | BillingMeter::VideoResult
+    )
+}
+
+/// 计量单位蕴含的 `output_type` 定价维度。
+///
+/// 目录对"同一个计量单位、不同输出形态"的费率用 `output_type` 条件区分
+/// （实况 `google/gemini-3-pro-image` 的 `image_output_token` 带
+/// `output_type eq image`）。计价预检必须注入与计量单位一致的值，否则这些
+/// 费率会被条件过滤挡掉，而失败信息只会说"某模型某计量单位无价"——读起来像
+/// 目录缺口，实际是预检少给了一个维度。
+///
+/// 只映射语义确定的几项：`*_output_*` 是产出侧，`*_input_*` 是投入侧。返回
+/// `None` 表示该计量单位的费率不带这一维度，无需注入。
+fn output_type_for_meter(meter: &BillingMeter) -> Option<&'static str> {
+    match meter {
+        BillingMeter::ImageOutputToken
+        | BillingMeter::ImageResult
+        | BillingMeter::ImagePixel
+        | BillingMeter::ImageMegapixel => Some("image"),
+        BillingMeter::ImageInputToken | BillingMeter::EmbeddingImage => Some("image_input"),
+        BillingMeter::VideoResult
+        | BillingMeter::VideoOutputSecond
+        | BillingMeter::VideoOutputToken => Some("video"),
+        BillingMeter::VideoInputSecond | BillingMeter::VideoInputToken => Some("video_input"),
+        BillingMeter::AudioOutputSecond
+        | BillingMeter::AudioOutputMinute
+        | BillingMeter::AudioOutputToken
+        | BillingMeter::SfxResult
+        | BillingMeter::MusicOutputSecond => Some("audio"),
+        BillingMeter::AudioInputSecond
+        | BillingMeter::AudioInputMinute
+        | BillingMeter::AudioInputToken
+        | BillingMeter::SttAudioMinute => Some("audio_input"),
+        _ => None,
+    }
+}
+
 /// Meters that must be priced for a route candidate before dispatch.
 ///
 /// Mirrors the invocation-layer composite billing profile: chat calls settle
@@ -1417,6 +1546,145 @@ fn group_bound_account_route_candidates(
         account_group_id,
         i64::from(binding.weight),
     )]
+}
+
+/// Ordered catalog keys to attempt pricing against for one account route.
+///
+/// The price book publishes rates against **models** (`kuaishou/kling-v3`,
+/// `bytedance/doubao-seedance-2-5-260628`), while a provider-native media route
+/// arrives as an **api code** (`volcengine.video_generation`,
+/// `vidu.reference_to_image`). An api code is not a model, so asking the price
+/// book for it can only ever miss — and the miss is reported as
+/// `no price is published`, which reads like a catalog gap rather than a
+/// vocabulary mismatch.
+///
+/// Three sources are consulted, in decreasing authority:
+///
+/// 1. **The key already being a model key.** `kuaishou/kling-v3` needs no
+///    translation; this is the common case for model-class routes.
+/// 2. **The api endpoint → model binding** (`ai_model_api_endpoint`), which the
+///    importer writes from `model_endpoint_descriptor`. This is the only
+///    authoritative answer to "which sellable models does this api code serve?",
+///    and it is what makes `volcengine.*` resolve to the `bytedance` models and
+///    `vidu.start_end_to_video` resolve to the `vidu/viduq3*` models.
+/// 3. **The route-side vendor alias.** An endpoint lookup can legitimately come
+///    back empty (a surface that publishes a route before any model binds to
+///    it). The alias table still names the catalog vendor the surface belongs
+///    to, so the *requested* model can be looked up under it.
+///
+/// Every candidate is returned so the caller can try each; the first priced one
+/// wins. Returning the whole list rather than a single guess is deliberate — a
+/// mis-resolved single key would price a request against the wrong model, which
+/// is worse than the honest "no candidate was priced" gap.
+fn resolve_pricing_catalog_keys<C>(
+    catalog: &C,
+    query: &SelectUpstreamAccountRouteQuery,
+    pricing_catalog_key: &str,
+) -> Vec<String>
+where
+    C: UpstreamAccountRouteCatalog + ?Sized,
+{
+    let mut keys: Vec<String> = Vec::new();
+    let push = |candidate: String, keys: &mut Vec<String>| {
+        let candidate = candidate.trim().to_owned();
+        if !candidate.is_empty() && !keys.contains(&candidate) {
+            keys.push(candidate);
+        }
+    };
+
+    // 1. Already a catalog model key — nothing to translate.
+    if parse_model_catalog_identity(pricing_catalog_key).is_some()
+        && catalog.model_catalog_keys_by_name(pricing_catalog_key).is_empty()
+    {
+        // Not a *known* model, but still shaped like one; keep it as the first
+        // candidate so an unknown-but-model-shaped key fails with the key the
+        // caller supplied rather than a translated one.
+        push(pricing_catalog_key.to_owned(), &mut keys);
+    }
+
+    // 2. Endpoint-bound models. The api code is the endpoint code
+    //    (`volcengine.video_generation`); resource codes may carry an `api.`
+    //    prefix (`api.volcengine.video_generation`).
+    for endpoint_code in endpoint_code_candidates(query) {
+        for key in catalog.model_catalog_keys_for_endpoint(&endpoint_code) {
+            push(key, &mut keys);
+        }
+    }
+
+    // 3. Translate the route's vendor through the surface→catalog alias table
+    //    and look the requested model up under that vendor.
+    if let Some(requested_model) = query
+        .requested_model
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        let requested = requested_model
+            .rsplit('/')
+            .next()
+            .unwrap_or(requested_model)
+            .trim();
+        for vendor in vendor_code_candidates(query, pricing_catalog_key) {
+            let catalog_vendor = crate::domain::catalog_vendor_code(&vendor);
+            let prefixed = format!("{catalog_vendor}/{requested}");
+            if !catalog.model_catalog_keys_by_name(&prefixed).is_empty() {
+                push(prefixed, &mut keys);
+            }
+        }
+    }
+
+    // 4. Last resort: the caller-supplied key, so the failure names it.
+    push(pricing_catalog_key.to_owned(), &mut keys);
+    keys
+}
+
+/// Endpoint codes a route may be published under.
+///
+/// The resource table uses `api.<vendor>.<name>` as its `resource_code` while
+/// `ai_api_endpoint.endpoint_code` is `<vendor>.<name>`, and `ai_resource.api_code`
+/// is the bare code. All three spellings reach this function depending on the
+/// caller, so all three are offered.
+fn endpoint_code_candidates(query: &SelectUpstreamAccountRouteQuery) -> Vec<String> {
+    let mut candidates: Vec<String> = Vec::new();
+    for raw in [query.api_code.as_str(), query.route_key.as_str()] {
+        let raw = raw.trim();
+        if raw.is_empty() {
+            continue;
+        }
+        for candidate in [raw.to_owned(), raw.strip_prefix("api.").unwrap_or(raw).to_owned()] {
+            if !candidate.is_empty() && !candidates.contains(&candidate) {
+                candidates.push(candidate);
+            }
+        }
+    }
+    candidates
+}
+
+/// Route-side vendors a route may be attributed to.
+///
+/// The api code's leading segment is the surface vendor
+/// (`volcengine.video_generation` → `volcengine`); the route key carries the
+/// same information for media routes. Both are offered so the alias table gets a
+/// chance regardless of which spelling the caller populated.
+fn vendor_code_candidates(query: &SelectUpstreamAccountRouteQuery, pricing_catalog_key: &str) -> Vec<String> {
+    let mut candidates: Vec<String> = Vec::new();
+    for raw in [
+        query.api_code.as_str(),
+        query.route_key.as_str(),
+        pricing_catalog_key,
+    ] {
+        let vendor = raw
+            .trim()
+            .trim_start_matches("api.")
+            .split(['.', '/'])
+            .next()
+            .unwrap_or("")
+            .trim();
+        if !vendor.is_empty() && !candidates.contains(&vendor.to_owned()) {
+            candidates.push(vendor.to_owned());
+        }
+    }
+    candidates
 }
 
 fn normalized_text_or(value: &str, fallback: &str) -> String {
@@ -2051,5 +2319,78 @@ pub fn model_access_forbidden_message(
         _ => format!(
             "model {requested_model} is not allowed by account group {group_code} (model whitelist)"
         ),
+    }
+}
+
+#[cfg(test)]
+mod pricing_dimension_tests {
+    use super::{is_video_meter, output_type_for_meter};
+    use crate::domain::BillingMeter;
+
+    #[test]
+    fn only_video_meters_consult_the_video_tier_table() {
+        // 视频档位（`ai_model_video_profile`）只为视频成片建模。图像、音频、
+        // LLM 计量单位去问它只会拿到误导性的"该计量单位无档位条件费率"缺口——
+        // 实况 `nano_banana.image_generation` 就是这样被引偏的：模型是图像模型
+        // （没有 video profile），而它的费率按 `output_type` 而不是视频档位报价。
+        for meter in [
+            BillingMeter::VideoOutputSecond,
+            BillingMeter::VideoInputSecond,
+            BillingMeter::VideoOutputToken,
+            BillingMeter::VideoInputToken,
+            BillingMeter::VideoResult,
+        ] {
+            assert!(is_video_meter(&meter), "{}", meter.code());
+        }
+        for meter in [
+            BillingMeter::ImageOutputToken,
+            BillingMeter::ImageResult,
+            BillingMeter::LlmInputToken,
+            BillingMeter::LlmOutputToken,
+            BillingMeter::AudioOutputSecond,
+            BillingMeter::TtsInputCharacter,
+            BillingMeter::ApiRequest,
+        ] {
+            assert!(!is_video_meter(&meter), "{}", meter.code());
+        }
+    }
+
+    #[test]
+    fn image_output_meters_inject_the_image_output_type_dimension() {
+        // 实况 `google/gemini-3-pro-image`：`image_output_token` 的 active 费率带
+        // `output_type eq image`。不注入这一维度时费率被条件过滤挡掉，失败信息只说
+        // "某模型某计量单位无价"，读起来像目录缺口，实际是预检少给了一个维度。
+        assert_eq!(
+            output_type_for_meter(&BillingMeter::ImageOutputToken),
+            Some("image")
+        );
+        assert_eq!(output_type_for_meter(&BillingMeter::ImageResult), Some("image"));
+        assert_eq!(
+            output_type_for_meter(&BillingMeter::ImageInputToken),
+            Some("image_input")
+        );
+        assert_eq!(
+            output_type_for_meter(&BillingMeter::VideoOutputSecond),
+            Some("video")
+        );
+        assert_eq!(
+            output_type_for_meter(&BillingMeter::VideoInputSecond),
+            Some("video_input")
+        );
+        assert_eq!(
+            output_type_for_meter(&BillingMeter::AudioOutputSecond),
+            Some("audio")
+        );
+        // LLM / API 类计量单位的费率不带这一维度，返回 `None` 以免凭空注入条件
+        // 把本来无条件的费率过滤掉。
+        for meter in [
+            BillingMeter::LlmInputToken,
+            BillingMeter::LlmOutputToken,
+            BillingMeter::ApiRequest,
+            BillingMeter::EmbeddingInputToken,
+            BillingMeter::RerankSearch,
+        ] {
+            assert_eq!(output_type_for_meter(&meter), None, "{}", meter.code());
+        }
     }
 }

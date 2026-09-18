@@ -13,7 +13,7 @@ use crate::domain::{
 use crate::infrastructure::in_memory_pricing_catalog::resolve_model_mapping_from_rules;
 use crate::infrastructure::sql::rows::{
     AccountRateCardRow, AiModelRow, GatewayAccessPolicyRow, GatewayApiKeyRow, GatewayRiskRuleRow,
-    ModelMappingRuleRow, ModelPriceRow, ModelUpstreamRouteRow, ModelVendorRow,
+    ModelApiEndpointRow, ModelMappingRuleRow, ModelPriceRow, ModelUpstreamRouteRow, ModelVendorRow,
     ModelVideoProfileRow, PricingDefaultRegionRow, PricingPlanRow, PricingRuleRow, QuotaPolicyRow,
     UpstreamAccountGroupMetricSnapshotRow, UpstreamAccountGroupRow, UpstreamAccountModelAccessRow,
     UpstreamAccountRouteRow, UpstreamSupplierModelAccessRow,
@@ -47,6 +47,9 @@ pub struct PricingCatalogRows {
     pub upstream_account_group_metric_snapshots: Vec<UpstreamAccountGroupMetricSnapshotRow>,
     pub prices: Vec<ModelPriceRow>,
     pub default_regions: Vec<PricingDefaultRegionRow>,
+    /// API 端点 → catalog 模型键（`ai_model_api_endpoint`）。定价把 api code 换
+    /// 成目录认得的模型键时必须靠它，见 `model_catalog_keys_for_endpoint`。
+    pub model_api_endpoints: Vec<ModelApiEndpointRow>,
     /// Captured only when `upstream_account_routes` loads empty; explains
     /// which configuration gate blocked the whole account pool.
     pub upstream_route_gate_diagnosis: Option<UpstreamRouteGateDiagnosis>,
@@ -158,6 +161,13 @@ pub struct SqlPricingCatalogSnapshot {
     /// 目录**实际报价**的视频档位：`(catalog_key, meter_code)` → 费率里
     /// `tier_code` 条件的取值集合（均已小写化）。与声明侧取交集才得到可用的档位。
     priced_video_tier_codes_by_model_meter: HashMap<(String, String), BTreeSet<String>>,
+    /// API 端点 → 挂载其上的 catalog 模型键（`ai_model_api_endpoint` 的反查索引）。
+    ///
+    /// 导入器按"模型 → 端点"写这张表（`kuaishou` 的模型绑 `kling.*`，`bytedance`
+    /// 的绑 `jimeng.*`，`google` 的绑 `gemini.*`）。定价必须反向问："这条 api
+    /// 端点上挂了哪些可售模型？"——否则只能拿 api code（`volcengine.video_generation`）
+    /// 当模型键去查价，而价格行按模型落库，必然查空。
+    model_keys_by_endpoint_code: HashMap<String, Vec<String>>,
 }
 
 /// 目录为某个视频模型声明的计价档位（`ai_model_video_profile` 的一行）。
@@ -194,20 +204,71 @@ impl VideoPricingTier {
 ///
 /// `kling.text_to_video` → `text_to_video`、`kling.image_to_video` →
 /// `image_to_video`：厂商原生资源声明 api code，`ai_model_video_profile` 声明
-/// 生成模式，两者对目录建模的这四种模式用的是同一套名字，因此按 api code 的
-/// 最后一段对齐即可，不需要另建映射表。目录未建模的端点（如 `kling.avatar`、
-/// `kling.motion_control`）返回 `None`，调用方据此报
-/// `ApiCodeIsNotAGenerationMode` 缺口。
+/// 生成模式，两者对目录建模的这些模式用的是同一套名字，因此按 api code 的
+/// 最后一段对齐即可，不需要另建映射表。
+///
+/// `avatar` / `motion_control` 与 `multi_shot` 同类：它们不是"输入模态"能推导
+/// 出来的模式，而是厂商在同一个视频 API 面下另立的**生成模式**，各自有独立的
+/// 计价档位（Kling 的费率表用 `motion_res_720p` / `motion_res_1080p` 报价动作
+/// 模仿）。此前这个列表只有四种模式，于是 `kling.avatar` /
+/// `kling.motion_control` 一律落进 `ApiCodeIsNotAGenerationMode`，而它们在
+/// `pricing_rate` 里明明有价——档位价目成了孤儿，路由被计价的**词汇表**而不是
+/// 数据挡住。目录补上对应 profile 后，这里必须能认出来，否则补了也白补。
+///
+/// `start_end_frame` 是同一形态的第三个受害者：`vidu/viduq3-pro` 用
+/// `se2v_*` profile 声明它（首尾帧成片），api code 却写成
+/// `vidu.start_end_to_video`。`ai_model_video_profile` 的 `generation_mode`
+/// 实测全集是 7 种（`text_to_video`/`image_to_video`/`reference_to_video`/
+/// `multi_shot`/`avatar`/`start_end_frame`/`motion_control`），本表**必须**与之
+/// 逐一对齐；少一个就有一整类端点的 active 费率被词汇表挡在门外。
+///
+/// 仍然返回 `None` 的那些 api code（如 `kling.image_generation`）才真的是
+/// 非视频档位模型，调用方据此报缺口。
 fn video_generation_mode_for_api_code(api_code: &str) -> Option<&'static str> {
     const MODES: &[&str] = &[
         "text_to_video",
         "image_to_video",
         "reference_to_video",
         "multi_shot",
+        "avatar",
+        "motion_control",
+        "start_end_frame",
     ];
+    let api_code = api_code.trim();
+    // 显式映射先于后缀匹配：有些端点的 api code 最后一段是**面名**而不是
+    // 生成模式名（`volcengine.video_generation` / `jimeng.video_generation`
+    // / `gemini.video_generation` 都叫 `video_generation`），后缀匹配永远
+    // 命中不了。这类端点服务的是"该厂商的视频生成面"，目录为它们的模型声明
+    // 的 profile 以 `text_to_video` 为主档（`bytedance/doubao-seedance-2-5-260628`
+    // 的 profile 里 `text_to_video` 的 720p 行是 `is_default=t`），因此映射到
+    // `text_to_video`；随后 `decide_video_pricing_tier` 仍会用请求分辨率在
+    // 声明侧过滤，只有两侧都有的档位码才会被选中，不会"猜一个档位"。
+    for (pattern, mode) in API_CODE_GENERATION_MODE_OVERRIDES {
+        if api_code.eq_ignore_ascii_case(pattern) {
+            return Some(mode);
+        }
+    }
     let suffix = api_code.rsplit('.').next()?.trim();
     MODES.iter().copied().find(|mode| *mode == suffix)
 }
+
+/// 后缀不是生成模式名、需要显式指认模式的端点。
+///
+/// 只登记**面名**（`video_generation`）或**同义名**（`start_end_to_video`
+/// ↔ 目录的 `start_end_frame`）型 api code；能靠后缀对齐的端点一律不进这张表，
+/// 避免把"词汇表对齐"退化成"人工逐个登记"。
+///
+/// `vidu.start_end_to_video` 是唯一的同义名实例：目录的生成模式叫
+/// `start_end_frame`，厂商端点叫 `start_end_to_video`（首尾帧成片）。两者指同
+/// 一件事，但后缀永远对不上，必须显式桥接——否则 `vidu/viduq3-pro` 那 3 条
+/// `se2v_*` profile 与它对应的 active 费率都成了孤儿。
+const API_CODE_GENERATION_MODE_OVERRIDES: &[(&str, &str)] = &[
+    ("volcengine.video_generation", "text_to_video"),
+    ("jimeng.video_generation", "text_to_video"),
+    ("gemini.video_generation", "text_to_video"),
+    ("vidu.start_end_to_video", "start_end_frame"),
+];
+
 
 /// 把 `ai_model_video_profile` 行折叠成"模型 → 档位列表"的索引。
 ///
@@ -308,6 +369,28 @@ fn index_priced_video_tier_codes(
                 ))
                 .or_default()
                 .insert(value.to_owned());
+        }
+    }
+    index
+}
+
+/// 把 `ai_model_api_endpoint` 折叠成 `endpoint_code → [catalog_key]` 索引。
+///
+/// 端点码与模型键统一小写去空白后建索引：端点码由导入器从
+/// `model_endpoint_descriptor` 写出（`gemini.image_generation`），而调用方拿到
+/// 的是资源表的 `api_code`（`gemini.image_generation`）或 route key，两侧大小写
+/// 与空白不保证一致。重复的 catalog key 只保留一次，顺序按加载顺序稳定。
+fn index_model_keys_by_endpoint(rows: &[ModelApiEndpointRow]) -> HashMap<String, Vec<String>> {
+    let mut index: HashMap<String, Vec<String>> = HashMap::new();
+    for row in rows {
+        let endpoint_code = row.endpoint_code.trim().to_ascii_lowercase();
+        let catalog_key = row.catalog_key.trim().to_owned();
+        if endpoint_code.is_empty() || catalog_key.is_empty() {
+            continue;
+        }
+        let keys = index.entry(endpoint_code).or_default();
+        if !keys.contains(&catalog_key) {
+            keys.push(catalog_key);
         }
     }
     index
@@ -560,6 +643,7 @@ impl SqlPricingCatalogSnapshot {
         // 报价侧与声明侧在同一个快照里取交集：两者必须来自同一次加载，否则
         // 刷新期间会拿旧声明配新费率。
         let priced_video_tier_codes_by_model_meter = index_priced_video_tier_codes(&prices);
+        let model_keys_by_endpoint_code = index_model_keys_by_endpoint(&rows.model_api_endpoints);
         let mut snapshot = Self {
             vendors: map_rows(rows.vendors, ModelVendorRow::try_into_domain)?,
             models: map_rows(rows.models, AiModelRow::try_into_domain)?,
@@ -623,6 +707,7 @@ impl SqlPricingCatalogSnapshot {
             default_regions_by_key,
             video_pricing_tiers_by_model,
             priced_video_tier_codes_by_model_meter,
+            model_keys_by_endpoint_code,
         };
         snapshot.build_indexes();
         Ok(snapshot)
@@ -883,6 +968,11 @@ impl UpstreamAccountRouteCatalog for RefreshableSqlPricingCatalog {
     fn model_catalog_keys_by_name(&self, model_name: &str) -> Vec<String> {
         self.current_snapshot()
             .model_catalog_keys_by_name(model_name)
+    }
+
+    fn model_catalog_keys_for_endpoint(&self, endpoint_code: &str) -> Vec<String> {
+        self.current_snapshot()
+            .model_catalog_keys_for_endpoint(endpoint_code)
     }
 }
 
@@ -1429,6 +1519,13 @@ impl UpstreamAccountRouteCatalog for SqlPricingCatalogSnapshot {
             .unwrap_or_default()
     }
 
+    fn model_catalog_keys_for_endpoint(&self, endpoint_code: &str) -> Vec<String> {
+        self.model_keys_by_endpoint_code
+            .get(&endpoint_code.trim().to_ascii_lowercase())
+            .cloned()
+            .unwrap_or_default()
+    }
+
     fn model_vendor_codes_by_name(&self, model_name: &str) -> Vec<String> {
         let mut vendors = Vec::new();
         if let Some(keys) = self.models_by_name.get(model_name) {
@@ -1619,7 +1716,10 @@ fn option_matches(actual: Option<&str>, expected: Option<&str>) -> bool {
 
 #[cfg(test)]
 mod video_pricing_tier_tests {
-    use super::{decide_video_pricing_tier, index_video_pricing_tiers, VideoPricingTier};
+    use super::{
+        decide_video_pricing_tier, index_video_pricing_tiers, video_generation_mode_for_api_code,
+        VideoPricingTier, API_CODE_GENERATION_MODE_OVERRIDES,
+    };
     use crate::infrastructure::sql::rows::ModelVideoProfileRow;
     use crate::ports::{VideoPricingTierDecision, VideoPricingTierGap};
     use std::collections::BTreeSet;
@@ -1685,13 +1785,178 @@ mod video_pricing_tier_tests {
     }
 
     #[test]
-    fn api_code_that_is_not_a_generation_mode_reports_that_specific_gap() {
-        // 实况 `kling.avatar` / `kling.motion_control`：目录为它们发布了
-        // `audio_res_*` / `motion_res_*` 费率，却没有声明对应生成模式。缺口是
-        // "目录没有这个模式"，不是"没有 profile 文件"——说清楚才能定位。
-        let tiers = vec![tier("text_to_video", Some("1080p"), &["res_1080p"], true)];
+    fn avatar_and_motion_control_are_recognised_generation_modes() {
+        // `kling.avatar` / `kling.motion_control` 曾经落进
+        // `ApiCodeIsNotAGenerationMode`，于是目录为这两个能力发布的
+        // `audio_res_*` / `motion_res_*` 费率永远选不中。它们不是"输入模态"
+        // 推得出来的模式，但在目录里确实是一等生成模式（各自有独立档位），
+        // 因此必须被词汇表认出来。
+        //
+        // 认出来之后，缺口形态变成"这个模型在这个模式下没有 profile"——这才是
+        // 运维真正要做的事（补 profile），而不是去改 api code 映射。
+        for (api_code, expected_mode) in [
+            ("kling.avatar", "avatar"),
+            ("kling.motion_control", "motion_control"),
+        ] {
+            let tiers = vec![tier("text_to_video", Some("1080p"), &["res_1080p"], true)];
+            let decision = decide_video_pricing_tier(
+                api_code,
+                "video_output_second",
+                None,
+                Some(&tiers),
+                &priced(&["motion_res_720p", "motion_res_1080p"]),
+            );
+            assert_eq!(decision.tier_code(), None, "{api_code}");
+            assert_eq!(
+                decision.gap,
+                Some(VideoPricingTierGap::NoProfileForGenerationMode {
+                    generation_mode: expected_mode.to_owned(),
+                }),
+                "{api_code}"
+            );
+        }
+    }
+
+    #[test]
+    fn start_end_frame_is_a_recognised_generation_mode_and_selects_a_priced_tier() {
+        // 实况 `vidu.start_end_to_video`：`ai_model_video_profile` 用
+        // `start_end_frame` 声明 `vidu/viduq3-pro` 的首尾帧成片 profile
+        // （`se2v_5s_{540p,720p,1080p}`，档位码 `["dur_5s"]`），但
+        //   ① 词汇表缺 `start_end_frame`；
+        //   ② 后缀是 `start_end_to_video`（同义名）也对不上。
+        // 两者任一未修，所有带 `tier_code` 条件的 active 费率都会因
+        // `select_rate` 的条件过滤被挡掉，只剩 retired 书里的无条件费率——
+        // 表现为"明明有价却说无价"。
+        assert_eq!(
+            video_generation_mode_for_api_code("vidu.start_end_to_video"),
+            Some("start_end_frame")
+        );
+        let tiers = vec![VideoPricingTier {
+            generation_mode: Some("start_end_frame".to_owned()),
+            resolution: Some("720p".to_owned()),
+            tier_codes: vec!["dur_5s".to_owned()],
+            is_default: true,
+        }];
+        let decision = decide_video_pricing_tier(
+            "vidu.start_end_to_video",
+            "video_output_second",
+            Some("720p"),
+            Some(&tiers),
+            &priced(&["dur_5s", "res_720p"]),
+        );
+        assert_eq!(decision.tier_code(), Some("dur_5s"));
+        assert!(decision.gap.is_none(), "{:?}", decision.gap);
+    }
+
+    #[test]
+    fn generic_video_generation_surfaces_map_to_text_to_video() {
+        // `volcengine.video_generation` 的最后一段是**面名**而不是生成模式名，
+        // 后缀匹配永远命中不了，于是 `bytedance/doubao-seedance-2-5-260628`
+        // 那批 active 的 `480p|720p|1080p` / `res_*` 费率全成了孤儿。
+        //
+        // 显式映射把它认到 `text_to_video`（该模型 profile 的主档；720p 行
+        // `is_default=t`）。认出来之后仍要过分辨率过滤，所以不存在"猜档位"。
+        for api_code in [
+            "volcengine.video_generation",
+            "jimeng.video_generation",
+            "gemini.video_generation",
+        ] {
+            assert_eq!(
+                video_generation_mode_for_api_code(api_code),
+                Some("text_to_video"),
+                "{api_code}"
+            );
+        }
+        let tiers = vec![VideoPricingTier {
+            generation_mode: Some("text_to_video".to_owned()),
+            resolution: Some("720p".to_owned()),
+            tier_codes: vec!["res_720p".to_owned()],
+            is_default: true,
+        }];
+        let decision = decide_video_pricing_tier(
+            "volcengine.video_generation",
+            "video_output_second",
+            Some("720p"),
+            Some(&tiers),
+            &priced(&["480p", "720p", "1080p", "res_480p", "res_720p", "res_1080p"]),
+        );
+        assert_eq!(decision.tier_code(), Some("res_720p"));
+    }
+
+    #[test]
+    fn video_generation_mode_vocabulary_matches_the_catalog_profile_vocabulary() {
+        // 门禁式断言：每一种目录生成模式都必须**有办法**被某个 api code 认出来
+        // （后缀同名，或落在显式映射表里）。这条断言的作用是——目录侧新增一种
+        // 生成模式时，这里的测试会红，逼着改的人同步词汇表/映射表，而不是让新
+        // 模式的费率静默变成孤儿。
+        //
+        // 实测全集（2026-09-18）：text_to_video / image_to_video /
+        // reference_to_video / multi_shot / avatar / start_end_frame /
+        // motion_control。
+        const CATALOG_GENERATION_MODES: &[&str] = &[
+            "text_to_video",
+            "image_to_video",
+            "reference_to_video",
+            "multi_shot",
+            "avatar",
+            "start_end_frame",
+            "motion_control",
+        ];
+        for mode in CATALOG_GENERATION_MODES {
+            // 后缀同名即可认出的那一类。
+            let same_name_api_code = format!("vendor.{mode}");
+            // 后缀对不上时，必须能在显式映射表里找到它。
+            let bridged = API_CODE_GENERATION_MODE_OVERRIDES
+                .iter()
+                .any(|(_, target)| target == mode);
+            assert!(
+                video_generation_mode_for_api_code(&same_name_api_code) == Some(*mode) || bridged,
+                "catalog mode {mode} is reachable by no api code: neither by suffix nor by \
+                 API_CODE_GENERATION_MODE_OVERRIDES"
+            );
+        }
+        // `start_end_frame` 只能经映射表到达：目录叫 `start_end_frame`，
+        // 厂商端点叫 `start_end_to_video`，后缀同名那一支对它永远不成立。
+        assert_eq!(
+            video_generation_mode_for_api_code("vendor.start_end_frame"),
+            Some("start_end_frame")
+        );
+        assert_eq!(
+            video_generation_mode_for_api_code("vidu.start_end_to_video"),
+            Some("start_end_frame")
+        );
+    }
+
+    #[test]
+    fn avatar_generation_mode_selects_the_audio_tier_once_a_profile_declares_it() {
+        // 补上 profile 之后就是完整闭环：`kling.avatar` 认到 `avatar` 模式，
+        // 该模式的 `pricingTierCodes` 指向费率表里真实报价的 `audio_res_1080p`，
+        // 于是档位被选中而不是报缺口。
+        let tiers = vec![VideoPricingTier {
+            generation_mode: Some("avatar".to_owned()),
+            resolution: Some("1080p".to_owned()),
+            tier_codes: vec!["audio_res_1080p".to_owned()],
+            is_default: true,
+        }];
         let decision = decide_video_pricing_tier(
             "kling.avatar",
+            "video_output_second",
+            Some("1080p"),
+            Some(&tiers),
+            &priced(&["audio_res_720p", "audio_res_1080p"]),
+        );
+        assert_eq!(decision.tier_code(), Some("audio_res_1080p"));
+        assert!(decision.gap.is_none());
+    }
+
+    #[test]
+    fn api_code_that_is_not_a_generation_mode_reports_that_specific_gap() {
+        // `kling.image_generation` 是图片端点，永远不该按视频档位计价。词汇表
+        // 扩容（新增 `avatar` / `motion_control`）不能顺手把非视频端点也吞进来，
+        // 否则会拿视频单价去计图片调用。
+        let tiers = vec![tier("text_to_video", Some("1080p"), &["res_1080p"], true)];
+        let decision = decide_video_pricing_tier(
+            "kling.image_generation",
             "video_output_second",
             None,
             Some(&tiers),
@@ -1701,7 +1966,7 @@ mod video_pricing_tier_tests {
         assert_eq!(
             decision.gap,
             Some(VideoPricingTierGap::ApiCodeIsNotAGenerationMode {
-                api_code: "kling.avatar".to_owned(),
+                api_code: "kling.image_generation".to_owned(),
             })
         );
     }

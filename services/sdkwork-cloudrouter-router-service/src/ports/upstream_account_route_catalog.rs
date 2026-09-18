@@ -366,6 +366,24 @@ pub trait UpstreamAccountRouteCatalog: PricingCatalog + PricingDefaultRegionProv
         VideoPricingTierDecision::unknown()
     }
 
+    /// 解析 API 资源**挂载的 catalog 模型键**列表（`ai_model_api_endpoint` 的反查）。
+    ///
+    /// 这是 `model_endpoint_descriptor` 的逆映射：导入器按"模型 → 端点"写
+    /// `ai_model_api_endpoint`，把每个模型绑到它自己的厂商原生端点上（`kuaishou`
+    /// 的模型绑 `kling.*`，`bytedance` 的绑 `jimeng.*`，`google` 的绑 `gemini.*`）。
+    /// 定价侧要问的是反向问题：**这条 api 端点上到底挂了哪些可售模型？** 拿到它们
+    /// 的 catalog key 才能用目录真正认得的键去查价。
+    ///
+    /// 为什么必须走这条反查：API 资源类路由的 route key 是 api code
+    /// （`volcengine.video_generation`），而目录的价格行按**模型**落库
+    /// （`bytedance/doubao-seedance-2-5-260628`）。两者之间唯一的权威关联就是这张
+    /// 表；不查它就只能拿 api code 去当模型键，结果必然"有价报无价"。
+    ///
+    /// 默认实现返回空列表，与改动前行为一致（内存目录不携带该表）。
+    fn model_catalog_keys_for_endpoint(&self, _endpoint_code: &str) -> Vec<String> {
+        Vec::new()
+    }
+
     /// 解析资源的**持久化路由类型**（`ai_resource.route_kind`）。
     ///
     /// 对应模型/API 资源类路由流程第 1 步：资源管理显式标记了 `route_kind`

@@ -43,7 +43,6 @@ fn builtin_route_taxonomy_classifies_standard_ai_api_routes() {
         "openai.uploads",
         "openai.batches",
         "openai.realtime",
-        "openai.videos",
         "openai.video",
         "openai.models",
         "openai.moderations",

@@ -1481,7 +1481,7 @@ fn model_sfx_endpoint_descriptor(model: &ModelInfo) -> EndpointDescriptor {
 /// resource is `api.suno.music`, display name "Music Generation
 /// (Suno-protocol)", and it is granted by `api.openai_compatible.all` (the
 /// compat group) with `defaultBillingMeter = music_output_second` — same shape
-/// as `openai.audio` / `openai.videos`. So models whose vendor publishes no
+/// as `openai.audio` / `openai.video`. So models whose vendor publishes no
 /// native music API legitimately stay there, which is the honest answer for
 /// `elevenlabs`, `google`, `mureka`, `stability_ai` and `bytedance`.
 ///

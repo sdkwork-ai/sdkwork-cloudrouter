@@ -17,7 +17,7 @@ use crate::infrastructure::sql::model_catalog_import::{
 use crate::infrastructure::sql::postgres::error::PostgresCatalogLoadError;
 use crate::infrastructure::sql::postgres::row_mapping;
 use crate::infrastructure::sql::routing_config_change::AI_ROUTING_CONFIG_SCOPE;
-use crate::infrastructure::sql::rows::{GatewayApiKeyRow, ModelVideoProfileRow};
+use crate::infrastructure::sql::rows::{GatewayApiKeyRow, ModelApiEndpointRow, ModelVideoProfileRow};
 use crate::infrastructure::sql::PricingCatalogSql;
 use crate::ports::{
     ApiKeyManagementReadFuture, GatewayApiKeyListPage, GatewayApiKeyManagementReadStore,
@@ -126,6 +126,7 @@ impl PostgresPricingCatalogLoader {
             vendors: database_rows.vendors,
             models: database_rows.models,
             model_video_profiles: load_model_video_profiles(&mut *tx).await?,
+            model_api_endpoints: load_model_api_endpoints(&mut *tx).await?,
             // Model routes are derived from the effective resource entitlements carried by
             // upstream account routes. Keeping a second SQL authority here would allow the two
             // snapshots to disagree and would reintroduce the retired channel tables.
@@ -401,6 +402,35 @@ where
                 )?,
                 is_default: row.try_get("is_default")?,
                 sort_order: row.try_get("sort_order")?,
+            })
+        })
+        .collect::<Result<Vec<_>, sqlx::Error>>()
+        .map_err(PostgresCatalogLoadError::from)
+}
+
+/// Loads the api-endpoint ↔ catalog-model binding.
+///
+/// Like the tier table this is not best-effort: an empty index makes every
+/// api-route unpriceable, which is exactly the failure mode it exists to
+/// prevent, so a load error fails the snapshot instead of degrading silently.
+async fn load_model_api_endpoints<'e, E>(
+    executor: E,
+) -> Result<Vec<ModelApiEndpointRow>, PostgresCatalogLoadError>
+where
+    E: sqlx::Executor<'e, Database = sqlx::Postgres>,
+{
+    let rows = sqlx::query(PricingCatalogSql::load_model_api_endpoints())
+        .fetch_all(executor)
+        .await
+        .map_err(PostgresCatalogLoadError::from)?;
+    use sqlx::Row;
+    rows.into_iter()
+        .map(|row| {
+            Ok(ModelApiEndpointRow {
+                endpoint_code: row.try_get("endpoint_code")?,
+                catalog_key: row.try_get("catalog_key")?,
+                vendor_code: row.try_get("vendor_code")?,
+                supported: row.try_get("supported")?,
             })
         })
         .collect::<Result<Vec<_>, sqlx::Error>>()

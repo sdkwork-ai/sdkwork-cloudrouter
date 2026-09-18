@@ -1588,6 +1588,34 @@ ORDER BY profile.model_catalog_key ASC, profile.sort_order ASC, profile.id ASC
 "#
     }
 
+    /// Loads the api-endpoint ↔ catalog-model binding (`ai_model_api_endpoint`).
+    ///
+    /// This is the reverse of `model_catalog_import::model_endpoint_descriptor`:
+    /// the importer decides which endpoint each model is served from, and writes
+    /// it here; pricing reads it to turn an inbound api code into the catalog
+    /// key the price book is keyed by. Without it an api-route has no model to
+    /// price against and answers `routing_failed: no price is published` even
+    /// though the catalog ships the rate.
+    ///
+    /// Only `supported` rows are returned: a row the catalog explicitly marks
+    /// unsupported must not be offered to pricing as a candidate.
+    pub fn load_model_api_endpoints() -> &'static str {
+        r#"
+SELECT
+    endpoint.endpoint_code,
+    endpoint.catalog_key,
+    endpoint.vendor_code,
+    endpoint.supported
+FROM ai_model_api_endpoint endpoint
+WHERE endpoint.status = 1
+  AND endpoint.deleted_at IS NULL
+  AND endpoint.supported
+  AND BTRIM(endpoint.endpoint_code) <> ''
+  AND BTRIM(endpoint.catalog_key) <> ''
+ORDER BY endpoint.endpoint_code ASC, endpoint.catalog_key ASC, endpoint.id ASC
+"#
+    }
+
     /// Loads the configured default billing region per model, scoped by
     /// tenant/organization. Used by the billing engine to fall back to the
     /// default region when an account carries no explicit region for a

@@ -1,8 +1,10 @@
 mod billing_owner;
 mod upstream_account_group_selection;
 mod upstream_auth;
+mod vendor_code_alias;
 
 pub use billing_owner::BillingOwnerKind;
+pub use vendor_code_alias::catalog_vendor_code;
 pub use upstream_account_group_selection::{
     select_default_account_group_for_subject, upstream_account_group_in_subject_scope,
     DefaultAccountGroupSelection, DefaultAccountGroupSelectionReason, DEFAULT_ACCOUNT_GROUP_CODE,

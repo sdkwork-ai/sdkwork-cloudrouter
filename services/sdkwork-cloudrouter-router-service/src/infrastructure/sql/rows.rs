@@ -13,6 +13,26 @@ pub struct ModelVendorRow {
     pub display_name: String,
 }
 
+/// One `ai_model_api_endpoint` row, reduced to the fields that answer "which
+/// sellable models does this api endpoint expose?".
+///
+/// The importer writes this table forward (`model_endpoint_descriptor` maps each
+/// model onto the vendor-native endpoint it is served from). Pricing needs the
+/// reverse direction: an api-route arrives as an api code
+/// (`volcengine.video_generation`) while `pricing_rate` publishes rates per
+/// *model* (`bytedance/doubao-seedance-2-5-260628`). This row is the only
+/// authoritative link between the two vocabularies.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ModelApiEndpointRow {
+    pub endpoint_code: String,
+    pub catalog_key: String,
+    /// The model's *catalog* vendor, which is what rates are keyed by. Not the
+    /// route's surface vendor (`gemini`/`kling`/`volcengine`) — those are the
+    /// router's own names, translated by `domain::catalog_vendor_code`.
+    pub vendor_code: String,
+    pub supported: bool,
+}
+
 /// One `ai_model_video_profile` row, reduced to the fields that decide which
 /// pricing tier a video request is billed against.
 ///

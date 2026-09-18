@@ -243,13 +243,6 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         BillingMeter::VideoResult,
         "video",
     ),
-    sticky_model(
-        "openai.videos",
-        "openai.videos",
-        RoutingCapability::Video,
-        BillingMeter::VideoResult,
-        "video",
-    ),
     model(
         "openai.videos.generations",
         "openai.videos.generations",

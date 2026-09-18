@@ -514,10 +514,23 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
         ));
     }
     if path == "/v1/videos" {
+        // `openai.video` 是**聚合面**（`POST /v1/videos`），目录把 12 家厂商的
+        // 63 个视频模型都挂在它上面（runway / bytedance / kuaishou / minimax /
+        // vidu / google / alibaba / pixverse / xai / luma_ai /
+        // black_forest_labs / zhipu）——凡是没有自建原生视频面的厂商，
+        // 都由这个 OpenAI 兼容面承载。
+        //
+        // 这里曾经写的是复数 `openai.videos`：那是一个**只存在于注释里的**
+        // 幽灵端点（`ai_resource` 里确有一行 `api.openai.videos`，但
+        // `ai_model_api_endpoint` 对它零绑定）。后果是媒体路由的端点反查永远
+        // 查空，于是回落到 route_key `openai/management/videos` 去当模型键查价，
+        // 必然 `model not found`——一条**本可售卖**的聚合面被一个字母之差挡住。
+        // 目录侧导入器写的一直是单数（`model_catalog_import.rs` 的
+        // `endpoint_code: "openai.video"`），分类器必须与之一致。
         if method == Method::POST {
             return Ok(create_api(
                 "openai/management/videos",
-                "openai.videos",
+                "openai.video",
                 ResourceType::Video,
                 RoutingCapability::Video,
                 "video",
@@ -525,7 +538,7 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
         }
         return Ok(api(
             "openai/management/videos",
-            "openai.videos",
+            "openai.video",
             ResourceType::Video,
             RoutingCapability::Video,
         ));
@@ -542,7 +555,7 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
     if path.starts_with("/v1/videos/") {
         return Ok(api(
             "openai/management/videos",
-            "openai.videos",
+            "openai.video",
             ResourceType::Video,
             RoutingCapability::Video,
         ));

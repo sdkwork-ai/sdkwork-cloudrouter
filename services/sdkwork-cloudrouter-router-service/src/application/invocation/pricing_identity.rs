@@ -339,24 +339,36 @@ pub fn declared_meters_for(billing: &InvocationBilling) -> Vec<BillingMeter> {
             meters.push(BillingMeter::LlmOutputToken);
             meters.push(BillingMeter::LlmCacheReadToken);
         }
-        BillingMode::ExternalUsageLine => match billing.quantity_source {
-            BillingQuantitySource::FixedRequest => {
-                meters.push(BillingMeter::ApiRequest);
+        BillingMode::ExternalUsageLine => {
+            // 路由声明的计量单位排在最前，它才是"这个媒体路由按什么计价"的
+            // 权威主张。曾经这里对 `AdapterUsageLines` 只展开
+            // `[ApiResult, ApiItem, ApiRequest]` 而**丢掉** `billing.meter`，
+            // 后果是媒体路由的目录价被自己屏蔽掉：taxonomy 明确写了
+            // `suno.music_generation → music_output_second`，目录也为
+            // `suno/suno-v5` 报了 `music_output_second` 的价，但声明侧从不
+            // 提出这个单位，于是 `reconcile_pricing_meters` 判为"无交集"，
+            // 价格永远匹配不上，最终报 `meter api_request: model not found`。
+            // 声明侧先列自己，报价侧才可能对上；对不上的部分仍由下面的
+            // `*_result` / `api_request` 兜底，历史行为不变。
+            if let Some(meter) = billing.meter.clone() {
+                meters.push(meter);
             }
-            BillingQuantitySource::AdapterUsageLines => {
-                meters.push(BillingMeter::ApiResult);
-                meters.push(BillingMeter::ApiItem);
-                meters.push(BillingMeter::ApiRequest);
-            }
-            _ => {
-                if let Some(meter) = billing.meter.clone() {
-                    meters.push(meter);
+            match billing.quantity_source {
+                BillingQuantitySource::FixedRequest => {
+                    meters.push(BillingMeter::ApiRequest);
                 }
-                meters.push(BillingMeter::ApiResult);
-                meters.push(BillingMeter::ApiItem);
-                meters.push(BillingMeter::ApiRequest);
+                BillingQuantitySource::AdapterUsageLines => {
+                    meters.push(BillingMeter::ApiResult);
+                    meters.push(BillingMeter::ApiItem);
+                    meters.push(BillingMeter::ApiRequest);
+                }
+                _ => {
+                    meters.push(BillingMeter::ApiResult);
+                    meters.push(BillingMeter::ApiItem);
+                    meters.push(BillingMeter::ApiRequest);
+                }
             }
-        },
+        }
         _ => {
             if let Some(meter) = billing.meter.clone() {
                 meters.push(meter);
