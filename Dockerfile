@@ -93,8 +93,11 @@ ENV SDKWORK_MODELS_APP_ROOT=${INSTALL_ROOT}/database-modules/sdkwork-models \
 # Application identity root: sdkwork.app.config.json is installed at the
 # install root; IAM tenant provisioning resolves it via SDKWORK_APP_ROOT.
 ENV SDKWORK_APP_ROOT=${INSTALL_ROOT}
-# Portal SPA static delivery (gateway-static: / mount + /index.html fallback).
-ENV SDKWORK_CLOUDROUTER_ROUTER_PORTAL_STATIC_DIST=${INSTALL_ROOT}/portal/dist
+# Adaptive Web static delivery (SDKWORK_DEPLOY_SPEC.md section 8): the gateway
+# selects pc or h5 by device class (Sec-CH-UA-Mobile -> iPad -> mobile UA) and
+# falls back to the other surface when the preferred one is not packaged.
+ENV SDKWORK_CLOUDROUTER_ROUTER_PC_STATIC_ROOT=${INSTALL_ROOT}/portal/dist
+ENV SDKWORK_CLOUDROUTER_ROUTER_H5_STATIC_ROOT=${INSTALL_ROOT}/portal/h5
 # Models catalog (sdkwork-models.json + models/ + overlays/) installed under
 # <install root>/data/sdkwork-models; overridable with a mounted catalog.
 ENV SDKWORK_MODELS_CATALOG_ROOT=${INSTALL_ROOT}/data/sdkwork-models

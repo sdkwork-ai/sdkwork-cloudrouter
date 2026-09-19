@@ -76,7 +76,11 @@ pub struct EdgeSectionConfig {
     pub backend_api_base_url: Option<String>,
     pub app_api_base_url: Option<String>,
     pub portal_base_url: Option<String>,
+    /// Adaptive Web PC surface root (desktop-preferred SPA bundle).
     pub portal_static_dist: Option<String>,
+    /// Adaptive Web H5 surface root (mobile-preferred SPA bundle).
+    /// SDKWORK_DEPLOY_SPEC.md section 8.
+    pub portal_h5_static_dist: Option<String>,
     pub csp_connect_src: Option<String>,
     pub cors_allowed_origins: Vec<String>,
     pub upstream_request_timeout_millis: Option<u64>,

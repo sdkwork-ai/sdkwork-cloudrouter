@@ -11,7 +11,16 @@ use sdkwork_web_bootstrap::{ReadinessCheck, ReadinessFuture};
 use serde_json::json;
 use tower::ServiceExt;
 
-pub const PORTAL_STATIC_DIST_ENV: &str = "SDKWORK_CLOUDROUTER_ROUTER_PORTAL_STATIC_DIST";
+use crate::adaptive_surface::{
+    adaptive_vary_header, classify_adaptive_client, select_adaptive_surface, AdaptiveSurface,
+    SEC_CH_UA_MOBILE,
+};
+
+/// Adaptive Web static roots (SDKWORK_DEPLOY_SPEC.md section 8). `PC` is the
+/// desktop-preferred surface and `H5` the mobile-preferred one; a client whose
+/// preferred surface is not packaged collapses onto the other one.
+pub const PC_STATIC_ROOT_ENV: &str = "SDKWORK_CLOUDROUTER_ROUTER_PC_STATIC_ROOT";
+pub const H5_STATIC_ROOT_ENV: &str = "SDKWORK_CLOUDROUTER_ROUTER_H5_STATIC_ROOT";
 const CSP_CONNECT_SRC_ENV: &str = "SDKWORK_CLOUDROUTER_EDGE_CSP_CONNECT_SRC";
 const CSP_FRAME_SRC_ENV: &str = "SDKWORK_CLOUDROUTER_EDGE_CSP_FRAME_SRC";
 const HSTS_ENABLED_ENV: &str = "SDKWORK_CLOUDROUTER_EDGE_HSTS_ENABLED";
@@ -46,9 +55,36 @@ impl Default for PortalRuntimeEnv {
     }
 }
 
+/// One packaged Adaptive Web surface. Both surfaces are plain SPA roots with an
+/// `index.html` shell; the delivery declares `/` mount plus `/index.html` SPA
+/// fallback for each of them.
+#[derive(Clone, Debug)]
+struct PortalLane {
+    root: PathBuf,
+    index: PathBuf,
+}
+
+impl PortalLane {
+    fn load(root: PathBuf, env_key: &str) -> Result<Self, String> {
+        let index = root.join("index.html");
+        let html = std::fs::read_to_string(&index).map_err(|error| {
+            format!(
+                "{env_key} must point at a packaged SPA root containing a readable index.html at {}: {error}",
+                index.display()
+            )
+        })?;
+        inject_portal_runtime_env_script(&html)?;
+        Ok(Self { root, index })
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct PortalStaticConfig {
-    dist_root: PathBuf,
+    pc: Option<PortalLane>,
+    h5: Option<PortalLane>,
+    /// `tabletArchitecture` of the adaptive delivery: tablets prefer the PC
+    /// surface unless the delivery declares `h5`.
+    tablet_prefers_h5: bool,
     runtime_env: PortalRuntimeEnv,
     /// Commercial edition (community/pro/enterprise/oem), resolved from the
     /// license key at startup. Injected into the runtime-env script.
@@ -63,13 +99,20 @@ impl PortalStaticConfig {
     pub fn from_env_and_runtime(
         runtime_toml: Option<&RuntimeTomlConfig>,
     ) -> Result<Option<Self>, String> {
-        let Some(dist_root) = env_text(PORTAL_STATIC_DIST_ENV)
-            .or_else(|| runtime_toml.and_then(|config| config.edge.portal_static_dist.clone()))
-        else {
+        let edge = runtime_toml.map(|config| &config.edge);
+        let pc_root = env_text(PC_STATIC_ROOT_ENV)
+            .or_else(|| edge.and_then(|config| config.portal_static_dist.clone()));
+        let h5_root = env_text(H5_STATIC_ROOT_ENV)
+            .or_else(|| edge.and_then(|config| config.portal_h5_static_dist.clone()));
+        if pc_root.is_none() && h5_root.is_none() {
+            // Neither SPA surface is packaged. `static-fallback` is a
+            // deploy-plane concern (SDKWORK_DEPLOY_SPEC.md section 8), so the
+            // process serves the API plane only.
             return Ok(None);
-        };
+        }
 
-        let mut config = Self::try_new(dist_root)?;
+        let mut config =
+            Self::try_new_adaptive(pc_root.map(PathBuf::from), h5_root.map(PathBuf::from))?;
         let public = runtime_toml.map(|config| &config.portal.public);
         if let Some(value) = env_text("PORTAL_PUBLIC_SDK_BASE_URL")
             .or_else(|| public.and_then(|section| section.sdk_base_url.clone()))
@@ -185,16 +228,25 @@ impl PortalStaticConfig {
         Ok(Some(config))
     }
 
-    pub fn try_new(dist_root: impl Into<PathBuf>) -> Result<Self, String> {
-        let dist_root = dist_root.into();
-        let index_path = dist_root.join("index.html");
-        let index = std::fs::read_to_string(&index_path).map_err(|error| {
-            format!(
-                "portal static dist must contain a readable index.html at {}: {error}",
-                index_path.display()
-            )
-        })?;
-        inject_portal_runtime_env_script(&index)?;
+    /// Loads the packaged PC and/or H5 surfaces. A root is optional only when
+    /// its surface is not packaged at all (SDKWORK_DEPLOY_SPEC.md section 8 plan
+    /// folding `collapse-pc` / `collapse-h5`); a configured root that cannot be
+    /// read is a broken install and fails closed.
+    pub fn try_new_adaptive(
+        pc_root: Option<PathBuf>,
+        h5_root: Option<PathBuf>,
+    ) -> Result<Self, String> {
+        let pc = pc_root
+            .map(|root| PortalLane::load(root, PC_STATIC_ROOT_ENV))
+            .transpose()?;
+        let h5 = h5_root
+            .map(|root| PortalLane::load(root, H5_STATIC_ROOT_ENV))
+            .transpose()?;
+        if pc.is_none() && h5.is_none() {
+            return Err(format!(
+                "portal static delivery requires {PC_STATIC_ROOT_ENV} or {H5_STATIC_ROOT_ENV}"
+            ));
+        }
         let runtime_env = PortalRuntimeEnv::default();
         let content_security_policy = build_portal_content_security_policy(
             &runtime_env,
@@ -202,7 +254,9 @@ impl PortalStaticConfig {
             &["https://player.bilibili.com".to_owned()],
         )?;
         Ok(Self {
-            dist_root,
+            pc,
+            h5,
+            tablet_prefers_h5: false,
             runtime_env,
             license_edition: None,
             content_security_policy,
@@ -212,10 +266,36 @@ impl PortalStaticConfig {
         })
     }
 
+    /// Single-surface constructor: `dist_root` is the PC surface and mobile
+    /// clients collapse onto it (`collapse-pc`).
+    pub fn try_new(dist_root: impl Into<PathBuf>) -> Result<Self, String> {
+        Self::try_new_adaptive(Some(dist_root.into()), None)
+    }
+
     pub fn readiness_check(&self) -> Arc<dyn ReadinessCheck> {
-        Arc::new(PortalReadinessCheck {
-            index_path: self.dist_root.join("index.html"),
-        })
+        let index_paths = [&self.pc, &self.h5]
+            .into_iter()
+            .flatten()
+            .map(|lane| lane.index.clone())
+            .collect();
+        Arc::new(PortalReadinessCheck { index_paths })
+    }
+
+    fn surfaces(&self) -> (bool, bool) {
+        (self.pc.is_some(), self.h5.is_some())
+    }
+
+    fn lane(&self, surface: AdaptiveSurface) -> &PortalLane {
+        match surface {
+            AdaptiveSurface::Pc => self
+                .pc
+                .as_ref()
+                .expect("pc surface selected without a packaged pc root"),
+            AdaptiveSurface::H5 => self
+                .h5
+                .as_ref()
+                .expect("h5 surface selected without a packaged h5 root"),
+        }
     }
 
     fn apply_sdk_base_url(&mut self, value: &str) -> Result<(), String> {
@@ -232,20 +312,21 @@ impl PortalStaticConfig {
 
 #[derive(Clone)]
 struct PortalReadinessCheck {
-    index_path: PathBuf,
+    index_paths: Vec<PathBuf>,
 }
 
 impl ReadinessCheck for PortalReadinessCheck {
     fn check(&self) -> ReadinessFuture<'_> {
         Box::pin(async move {
-            if self.index_path.is_file() {
-                Ok(())
-            } else {
-                Err(format!(
-                    "portal static index is unavailable: {}",
-                    self.index_path.display()
-                ))
+            for index_path in &self.index_paths {
+                if !index_path.is_file() {
+                    return Err(format!(
+                        "portal static index is unavailable: {}",
+                        index_path.display()
+                    ));
+                }
             }
+            Ok(())
         })
     }
 }
@@ -271,6 +352,7 @@ pub fn mount_portal_static(api_router: Router, portal: Option<PortalStaticConfig
 async fn dispatch_gateway_request(State(state): State<GatewayState>, request: Request) -> Response {
     let method = request.method().clone();
     let path = request.uri().path().to_owned();
+    let headers = request.headers().clone();
     let api_response = match state.api_router.clone().oneshot(request).await {
         Ok(response) => response,
         Err(error) => match error {},
@@ -278,11 +360,12 @@ async fn dispatch_gateway_request(State(state): State<GatewayState>, request: Re
     if api_response.status() != StatusCode::NOT_FOUND || is_reserved_api_path(&path) {
         return api_response;
     }
-    serve_portal_static(state.portal.as_ref(), &method, &path).await
+    serve_portal_static(state.portal.as_ref(), &headers, &method, &path).await
 }
 
 async fn serve_portal_static(
     config: &PortalStaticConfig,
+    headers: &HeaderMap,
     method: &Method,
     request_path: &str,
 ) -> Response {
@@ -301,9 +384,20 @@ async fn serve_portal_static(
         );
     }
 
-    let requested_file = match portal_file_path(&config.dist_root, request_path) {
+    let (pc_ready, h5_ready) = config.surfaces();
+    let Some(surface) = select_adaptive_surface(
+        classify_adaptive_client(headers),
+        config.tablet_prefers_h5,
+        pc_ready,
+        h5_ready,
+    ) else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    let lane = config.lane(surface);
+
+    let requested_file = match portal_file_path(&lane.root, request_path) {
         Some(path) if path.is_file() => path,
-        _ => config.dist_root.join("index.html"),
+        _ => lane.index.clone(),
     };
     let content_type = content_type_for_path(&requested_file);
     let cache_control = if requested_file.ends_with("index.html") {
@@ -329,7 +423,15 @@ async fn serve_portal_static(
             }
         }
     };
-    static_response(method, content_type, cache_control, bytes, config)
+    let mut response = static_response(method, content_type, cache_control, bytes, config);
+    response
+        .headers_mut()
+        .insert(header::VARY, adaptive_vary_header());
+    response.headers_mut().insert(
+        SEC_CH_UA_MOBILE,
+        HeaderValue::from_static("Sec-CH-UA-Mobile"),
+    );
+    response
 }
 
 fn static_response(
@@ -723,64 +825,74 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     use axum::body::to_bytes;
+    use axum::http::header::USER_AGENT;
     use axum::routing::get;
 
     use super::*;
 
-    fn fixture_root() -> PathBuf {
+    const DESKTOP_USER_AGENT: &str =
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
+    const MOBILE_USER_AGENT: &str =
+        "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36";
+
+    fn fixture_root(label: &str) -> PathBuf {
         let suffix = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("system clock")
             .as_nanos();
-        std::env::temp_dir().join(format!("cloudrouter-portal-static-{suffix}"))
+        std::env::temp_dir().join(format!("cloudrouter-portal-{label}-{suffix}"))
     }
 
-    fn write_fixture(root: &Path) {
+    fn write_fixture(root: &Path, shell: &str) {
         std::fs::create_dir_all(root.join("assets")).expect("create fixture");
         std::fs::write(
             root.join("index.html"),
-            r#"<div id="root"></div><script type="module" src="/assets/app.js"></script>"#,
+            format!(
+                r#"<div id="root">{shell}</div><script type="module" src="/assets/app.js"></script>"#
+            ),
         )
         .expect("write index");
         std::fs::write(root.join("assets/app.js"), "console.log('ok');").expect("write asset");
     }
 
+    async fn issue_request(router: Router, uri: &str, user_agent: Option<&str>) -> Response {
+        let mut request = Request::builder().uri(uri);
+        if let Some(user_agent) = user_agent {
+            request = request.header(USER_AGENT, user_agent);
+        }
+        router
+            .clone()
+            .oneshot(request.body(Body::empty()).expect("request"))
+            .await
+            .expect("response")
+    }
+
+    async fn body_text(response: Response) -> String {
+        let bytes = to_bytes(response.into_body(), usize::MAX)
+            .await
+            .expect("body");
+        String::from_utf8(bytes.to_vec()).expect("utf8")
+    }
+
     #[tokio::test]
     async fn api_routes_win_and_static_assets_use_spa_fallback() {
-        let root = fixture_root();
-        write_fixture(&root);
+        let root = fixture_root("single");
+        write_fixture(&root, "pc");
         let portal = PortalStaticConfig::try_new(&root).expect("portal config");
         let api = Router::new().route("/v1/ping", get(|| async { "pong" }));
         let router = mount_portal_static(api, Some(portal));
 
-        let api_response = router
-            .clone()
-            .oneshot(
-                Request::builder()
-                    .uri("/v1/ping")
-                    .body(Body::empty())
-                    .expect("api request"),
-            )
-            .await
-            .expect("api response");
+        let api_response =
+            issue_request(router.clone(), "/v1/ping", Some(DESKTOP_USER_AGENT)).await;
         assert_eq!(api_response.status(), StatusCode::OK);
-        assert_eq!(
-            to_bytes(api_response.into_body(), usize::MAX)
-                .await
-                .expect("api body"),
-            "pong"
-        );
+        assert_eq!(body_text(api_response).await, "pong");
 
-        let page_response = router
-            .clone()
-            .oneshot(
-                Request::builder()
-                    .uri("/console/dashboard")
-                    .body(Body::empty())
-                    .expect("page request"),
-            )
-            .await
-            .expect("page response");
+        let page_response = issue_request(
+            router.clone(),
+            "/console/dashboard",
+            Some(DESKTOP_USER_AGENT),
+        )
+        .await;
         assert_eq!(page_response.status(), StatusCode::OK);
         assert_eq!(
             page_response
@@ -789,29 +901,104 @@ mod tests {
                 .expect("security header"),
             "nosniff"
         );
-        let page = to_bytes(page_response.into_body(), usize::MAX)
-            .await
-            .expect("page body");
-        let page = String::from_utf8(page.to_vec()).expect("utf8 page");
+        assert_eq!(
+            page_response.headers().get(header::VARY).expect("vary"),
+            "User-Agent, Sec-CH-UA-Mobile"
+        );
+        assert_eq!(
+            page_response
+                .headers()
+                .get(SEC_CH_UA_MOBILE)
+                .expect("accept-ch"),
+            "Sec-CH-UA-Mobile"
+        );
+        let page = body_text(page_response).await;
         assert!(page.contains("/runtime-env.js"));
-        assert!(page.contains("<div id=\"root\"></div>"));
+        assert!(page.contains(r#"<div id="root">pc</div>"#));
 
-        let missing_api = router
+        let missing_api =
+            issue_request(router, "/backend/v3/api/missing", Some(DESKTOP_USER_AGENT)).await;
+        assert_eq!(missing_api.status(), StatusCode::NOT_FOUND);
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[tokio::test]
+    async fn adaptive_dispatch_selects_the_surface_by_device_class() {
+        let pc_root = fixture_root("adaptive-pc");
+        let h5_root = fixture_root("adaptive-h5");
+        write_fixture(&pc_root, "pc");
+        write_fixture(&h5_root, "h5");
+        let portal =
+            PortalStaticConfig::try_new_adaptive(Some(pc_root.clone()), Some(h5_root.clone()))
+                .expect("adaptive portal config");
+        let router = mount_portal_static(Router::new(), Some(portal));
+
+        let desktop = issue_request(router.clone(), "/", Some(DESKTOP_USER_AGENT)).await;
+        assert_eq!(desktop.status(), StatusCode::OK);
+        assert!(body_text(desktop)
+            .await
+            .contains(r#"<div id="root">pc</div>"#));
+
+        let mobile = issue_request(router.clone(), "/", Some(MOBILE_USER_AGENT)).await;
+        assert_eq!(mobile.status(), StatusCode::OK);
+        assert!(body_text(mobile)
+            .await
+            .contains(r#"<div id="root">h5</div>"#));
+
+        let hinted = router
+            .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/backend/v3/api/missing")
+                    .uri("/")
+                    .header(USER_AGENT, DESKTOP_USER_AGENT)
+                    .header(SEC_CH_UA_MOBILE, "?1")
                     .body(Body::empty())
-                    .expect("missing api request"),
+                    .expect("request"),
             )
             .await
-            .expect("missing api response");
-        assert_eq!(missing_api.status(), StatusCode::NOT_FOUND);
+            .expect("response");
+        assert!(body_text(hinted)
+            .await
+            .contains(r#"<div id="root">h5</div>"#));
+
+        let _ = std::fs::remove_dir_all(pc_root);
+        let _ = std::fs::remove_dir_all(h5_root);
+    }
+
+    #[tokio::test]
+    async fn mobile_collapses_onto_the_pc_surface_when_h5_is_not_packaged() {
+        let root = fixture_root("collapse-pc");
+        write_fixture(&root, "pc");
+        let portal = PortalStaticConfig::try_new(&root).expect("portal config");
+        let router = mount_portal_static(Router::new(), Some(portal));
+
+        let mobile = issue_request(router, "/", Some(MOBILE_USER_AGENT)).await;
+        assert_eq!(mobile.status(), StatusCode::OK);
+        assert!(body_text(mobile)
+            .await
+            .contains(r#"<div id="root">pc</div>"#));
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[tokio::test]
+    async fn desktop_collapses_onto_the_h5_surface_when_pc_is_not_packaged() {
+        let root = fixture_root("collapse-h5");
+        write_fixture(&root, "h5");
+        let portal =
+            PortalStaticConfig::try_new_adaptive(None, Some(root.clone())).expect("portal config");
+        let router = mount_portal_static(Router::new(), Some(portal));
+
+        let desktop = issue_request(router, "/", Some(DESKTOP_USER_AGENT)).await;
+        assert_eq!(desktop.status(), StatusCode::OK);
+        assert!(body_text(desktop)
+            .await
+            .contains(r#"<div id="root">h5</div>"#));
         let _ = std::fs::remove_dir_all(root);
     }
 
     #[test]
     fn config_rejects_missing_or_invalid_index() {
-        let root = fixture_root();
+        let root = fixture_root("invalid");
         std::fs::create_dir_all(&root).expect("create fixture");
         assert!(PortalStaticConfig::try_new(&root)
             .expect_err("missing index must fail")
@@ -821,5 +1008,12 @@ mod tests {
             .expect_err("invalid index must fail")
             .contains("module script"));
         let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn config_requires_at_least_one_surface() {
+        assert!(PortalStaticConfig::try_new_adaptive(None, None)
+            .expect_err("no surface must fail")
+            .contains(PC_STATIC_ROOT_ENV));
     }
 }
