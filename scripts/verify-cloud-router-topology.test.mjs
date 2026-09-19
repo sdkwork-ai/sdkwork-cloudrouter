@@ -74,7 +74,7 @@ test('declares v5 topology spec and profile env files for sdkwork-cloudrouter', 
       path: '/',
       primary: true,
       runtimeTargets: ['browser'],
-      clientArchitectures: ['pc-web'],
+      clientArchitectures: ['pc-web', 'h5'],
     },
     {
       id: 'application-api-reference',
@@ -84,10 +84,35 @@ test('declares v5 topology spec and profile env files for sdkwork-cloudrouter', 
       runtimeTargets: ['browser'],
     },
   ]);
+  // APP_RUNTIME_TOPOLOGY_SPEC.md section 8.2: one WEB_DEV_INGRESS client process
+  // plus a dev-server-proxy delivery whose renderers cover both pc-web and h5.
+  const adaptiveClient = standaloneDevelopment.processes
+    .find((process) => process.id === 'portal-renderer');
+  assert.equal(adaptiveClient.bindEnv, 'SDKWORK_CLOUDROUTER_ROUTER_WEB_DEV_INGRESS_BIND');
+  assert.deepEqual(adaptiveClient.clientArchitectures, ['pc-web', 'h5']);
+  assert.equal(adaptiveClient.script, undefined);
+  const [adaptiveDelivery] = standaloneDevelopment.browserDeliveries;
+  assert.equal(adaptiveDelivery.deliveryMode, 'dev-server-proxy');
+  assert.equal(adaptiveDelivery.clientProcessId, 'portal-renderer');
+  assert.equal(adaptiveDelivery.preserveCanonicalPaths, true);
+  assert.deepEqual(Object.keys(adaptiveDelivery.renderers), ['pc-web', 'h5']);
+  assert.equal(adaptiveDelivery.renderers.h5.applicationRoot, 'apps/sdkwork-cloudrouter-h5');
   assert.equal(
-    standaloneDevelopment.processes.find((process) => process.id === 'portal-renderer').bindEnv,
-    'SDKWORK_CLOUDROUTER_ROUTER_INTERNAL_PORTAL_RENDERER_BIND',
+    adaptiveDelivery.renderers['pc-web'].portEnv,
+    'SDKWORK_CLOUDROUTER_ROUTER_PC_INTERNAL_DEV_PORT',
   );
+  assert.equal(
+    adaptiveDelivery.renderers.h5.portEnv,
+    'SDKWORK_CLOUDROUTER_ROUTER_H5_INTERNAL_DEV_PORT',
+  );
+  // The production profile must keep one gateway-static lane per architecture
+  // the development client process declares, or the mobile client has no
+  // deployment target.
+  const productionLanes = spec.orchestration.profiles['standalone.production']
+    .browserDeliveries
+    .filter((delivery) => delivery.applicationRoot === 'apps/sdkwork-cloudrouter-pc')
+    .flatMap((delivery) => delivery.clientArchitectures);
+  assert.deepEqual([...productionLanes].sort(), ['h5', 'pc-web']);
 
   for (const profileId of [
     'standalone.development',
@@ -117,18 +142,28 @@ test('root package.json wires @sdkwork/app-topology and canonical dev scripts', 
   const spec = await readJson('specs/topology.spec.json');
   assert.equal(packageJson.dependencies['@sdkwork/app-topology'], 'workspace:*');
   assert.equal(packageJson.scripts.dev, 'pnpm dev:standalone');
-  assert.equal(
+  // PNPM_SCRIPT_SPEC.md section 2 pins the canonical facade delegation, and
+  // `check:dev-bootstrap` (check-dev-bootstrap-coverage.mjs, the repository's
+  // own enforcement of "every public entrypoint that calls the `sdkwork-app`
+  // facade bootstraps the root workspace install first") requires the preflight
+  // to sit in FRONT of the facade, never behind it. Both hold at once: the
+  // bootstrap preflight may precede the delegation, and the delegation itself
+  // must remain the terminal command with the profile it selects.
+  assert.match(
     packageJson.scripts['dev:standalone'],
-    'pnpm exec sdkwork-app dev --deployment-profile standalone',
+    /^(?:node scripts\/lib\/ensure-cloud-router-node-deps\.mjs && )?pnpm exec sdkwork-app dev --deployment-profile standalone$/u,
   );
-  assert.equal(
+  assert.match(
     packageJson.scripts['dev:cloud'],
-    'pnpm exec sdkwork-app dev --deployment-profile cloud',
+    /^(?:node scripts\/lib\/ensure-cloud-router-node-deps\.mjs && )?pnpm exec sdkwork-app dev --deployment-profile cloud$/u,
   );
-  assert.equal(
-    packageJson.scripts['_sdkwork:dev:standalone'],
-    'node scripts/cloud-router-dev.mjs --target browser --deployment-profile standalone --database postgres',
-  );
+  // APP_RUNTIME_TOPOLOGY_SPEC.md section 8.2: `sdkwork-app dev` consults
+  // `_sdkwork:dev:<deploymentProfile>` in the repository root first and returns
+  // when it finds one, so a surviving private root dev hook would silently
+  // replace the framework's generic development and the adaptive ingress would
+  // never start. They are retired rather than aliased.
+  assert.equal(packageJson.scripts['_sdkwork:dev:standalone'], undefined);
+  assert.equal(packageJson.scripts['_sdkwork:dev:cloud'], undefined);
   assert.equal(packageJson.scripts['dev:browser'], 'pnpm dev:browser:postgres:standalone');
   assert.match(packageJson.scripts['dev:browser:postgres:standalone'], /sdkwork-app dev/u);
   assert.match(packageJson.scripts['dev:browser:postgres:standalone'], /--deployment-profile standalone/u);
@@ -139,7 +174,9 @@ test('root package.json wires @sdkwork/app-topology and canonical dev scripts', 
   assert.match(packageJson.scripts['topology:validate'], /sdkwork-topology\.mjs validate/);
   assert.match(packageJson.scripts['gateway:matrix'], /sdkwork-topology\.mjs print-matrix/);
   assert.equal(spec.scripts.applicationDev, 'scripts/cloud-router-dev.mjs');
-  assert.equal(spec.components.portalRenderer.script, '_sdkwork:client:browser');
+  // The adaptive delivery owns renderer invocation now, so a component that
+  // still named a private package script would contradict it.
+  assert.equal(spec.components.portalRenderer, undefined);
   assert.equal(spec.scripts.pnpm.dev.deploymentProfile, 'standalone');
 });
 

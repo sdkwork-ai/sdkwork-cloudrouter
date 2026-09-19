@@ -83,10 +83,29 @@ for (const deploymentProfile of ['cloud', 'standalone']) {
         profileSource.includes(`VITE_SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL=${apiBaseUrl}`),
       );
     } else {
-      // Standalone profiles fold to loopback URLs; they must not reference
-      // any *.sdkwork.com cloud hostname.
-      assert.doesNotMatch(profileSource, /\.sdkwork\.com/u, `standalone ${environment} must not reference cloud hostnames`);
-      assert.match(profileSource, /127\.0\.0\.1/u, `standalone ${environment} must fold to loopback URLs`);
+      // Standalone *non-production* profiles fold their surfaces to loopback
+      // URLs; they must not point a public ingress at a *.sdkwork.com host.
+      //
+      // `standalone.production` is exempt: `DOCKER_SPEC.md` maps it to
+      // `server.<base-domain>` and `SDKWORK_WEBSERVER_SPEC.md` has
+      // `effective(standalone.production)` inherit the production hosts/TLS, so
+      // it carries the same `router.<base-domain>` origin as cloud production —
+      // `standalone.demo.env` already ships `router-demo.sdkwork.com` today.
+      //
+      // `SDKWORK_CORS_ALLOWED_ORIGINS` is exempt as well: it is derived by
+      // sdkwork-specs/tools/align-cors-standard.mjs from the registered base
+      // domains plus this profile's browser-reachable dev ports, so every
+      // `<surface>-dev.<base-domain>` host is required to be present there
+      // (CORS_SPEC.md). Only surface URLs are asserted below.
+      const surfaceSource = profileSource
+        .split(/\r?\n/u)
+        .filter((line) => !line.startsWith('SDKWORK_CORS_ALLOWED_ORIGINS='))
+        .join('\n');
+      assert.match(profileSource, /127\.0\.0\.1/u, `standalone ${environment} must keep its internal ports on loopback`);
+      if (environment !== 'production') {
+        assert.doesNotMatch(surfaceSource, /\.sdkwork\.com/u, `standalone ${environment} must not reference cloud hostnames`);
+        assert.match(surfaceSource, /127\.0\.0\.1/u, `standalone ${environment} must fold to loopback URLs`);
+      }
     }
   }
 }

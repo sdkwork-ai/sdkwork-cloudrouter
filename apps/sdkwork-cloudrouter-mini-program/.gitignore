@@ -1,0 +1,5 @@
+# Generated build temp and dependency directories. `src/runtime/` is NOT ignored:
+# the bundle is committed (as in `sdkwork-mail-mini-program`) so the devtools can
+# open the project and the test suite can run without a prior build.
+.cache/
+node_modules/

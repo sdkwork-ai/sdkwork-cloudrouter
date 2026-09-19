@@ -1,5 +1,4 @@
-import type { SdkworkAppClient } from '@sdkwork/cloudrouter-app-sdk';
-import type { SdkworkAppClient as ModelsAppClient } from '@sdkwork/models-app-sdk';
+import type { CloudRouterAppSdkClient, ModelsAppSdkClient } from '@sdkwork/cloudrouter-pc-console-core/sdk';
 
 /**
  * Injectable SDK clients for the api-keys capability.
@@ -13,12 +12,12 @@ import type { SdkworkAppClient as ModelsAppClient } from '@sdkwork/models-app-sd
  */
 export interface ApiKeyServiceClients {
   /** Cloud Router app SDK client (or factory) for the iam/ai domains. */
-  appClient: SdkworkAppClient | (() => SdkworkAppClient);
+  appClient: CloudRouterAppSdkClient | (() => CloudRouterAppSdkClient);
   /**
    * Models app SDK client (or factory) for the model-vendor catalog. When
    * absent, the vendor list falls back to the static vendor table.
    */
-  modelsClient?: ModelsAppClient | (() => ModelsAppClient | undefined);
+  modelsClient?: ModelsAppSdkClient | (() => ModelsAppSdkClient | undefined);
 }
 
 let configuredAppClient: ApiKeyServiceClients['appClient'] | undefined;
@@ -42,7 +41,7 @@ export function readBoundAppClient(): ApiKeyServiceClients['appClient'] | undefi
 }
 
 /** Resolve the models client for one vendor-catalog call, or undefined. */
-export function resolveApiKeyServiceModelsClient(): ModelsAppClient | undefined {
+export function resolveApiKeyServiceModelsClient(): ModelsAppSdkClient | undefined {
   const configured = configuredModelsClient;
   if (configured === undefined) {
     return undefined;

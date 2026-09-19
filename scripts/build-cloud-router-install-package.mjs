@@ -1145,6 +1145,7 @@ function createRuntimeConfigTemplate(packageItem) {
   const requestLimitsPolicy = requestLimitsPolicyFor();
   const runtimeAssetRoot = nativeRuntimeAssetRoot(packageItem);
   const portalStaticDist = `${runtimeAssetRoot}/portal/dist`;
+  const portalH5StaticDist = `${runtimeAssetRoot}/portal/h5`;
   const sdkArchiveRoot = `${runtimeAssetRoot}/portal/dist/sdk-archives`;
   const modelsCatalogRoot = `${runtimeAssetRoot}/catalog`;
   const secretRoot = packageItem.platform === 'windows'
@@ -1249,6 +1250,7 @@ function createRuntimeConfigTemplate(packageItem) {
     'app_api_base_url = "http://127.0.0.1:18082"',
     'portal_base_url = "http://127.0.0.1:3901"',
     `portal_static_dist = "${portalStaticDist}"`,
+    `portal_h5_static_dist = "${portalH5StaticDist}"`,
     '# csp_connect_src = "https://api.example.com"',
     'cors_allowed_origins = []',
     'upstream_request_timeout_millis = 30000',

@@ -1,5 +1,5 @@
 import type { ApiKeyGroupRoutingPolicy, CreateApiKeyInput } from './apiKeyService';
-import type { UpdateApiKeyRequest } from '@sdkwork/cloudrouter-app-sdk';
+import type { UpdateApiKeyRequest } from '@sdkwork/cloudrouter-pc-console-core/sdk';
 
 export type ApiKeyFormValues = {
   name: string;

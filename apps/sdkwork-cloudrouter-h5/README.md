@@ -43,9 +43,15 @@ the generated SDK directly (`COMPOSABLE_ARCHITECTURE_SPEC.md` §4).
 ## Commands
 
 ```bash
-pnpm dev                  # vite dev server
+pnpm dev                  # full standalone stack through @sdkwork/app-topology
+pnpm dev:standalone       # explicit standalone profile
+pnpm dev:cloud            # cloud profile
+pnpm stop                 # stop the development session
 pnpm typecheck            # tsc --noEmit
 pnpm test                 # surface contract test
-pnpm build:h5:prod        # standalone production bundle
-pnpm build:h5:prod:cloud  # cloud production bundle
+pnpm build                # vite production bundle
+pnpm build:prod           # standalone production bundle
+pnpm build:prod:cloud     # cloud production bundle
 ```
+
+The `build:h5:*` architecture axis is owned by the repository root; run it there.

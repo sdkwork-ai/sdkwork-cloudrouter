@@ -6,11 +6,24 @@
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "scripts": {
+    "dev": "pnpm dev:standalone",
+    "dev:standalone": "pnpm exec sdkwork-app dev --root ../.. --deployment-profile standalone",
+    "dev:cloud": "pnpm exec sdkwork-app dev --root ../.. --deployment-profile cloud",
+    "stop": "pnpm exec sdkwork-app stop --root ../..",
+    "build": "pnpm exec sdkwork-app build",
+    "test": "pnpm exec sdkwork-app test",
+    "check": "pnpm exec sdkwork-app check",
+    "verify": "pnpm exec sdkwork-app verify",
+    "clean": "pnpm exec sdkwork-app clean",
+    "build:mini-program": "node scripts/build-runtime.mjs",
+    "build:mini-program:staging": "node scripts/build-runtime.mjs --deployment-profile cloud --environment staging",
+    "build:mini-program:prod": "node scripts/build-runtime.mjs --deployment-profile cloud --environment production",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "node --test tests/*.test.mjs",
-    "check": "pnpm typecheck && pnpm test",
-    "verify": "pnpm check",
-    "clean": "node -e \"const fs=require('node:fs'); for (const path of ['dist']) fs.rmSync(path,{recursive:true,force:true})\""
+    "_sdkwork:build": "node scripts/build-runtime.mjs",
+    "_sdkwork:test": "node --test tests/*.test.mjs",
+    "_sdkwork:check": "pnpm typecheck && node ../../../sdkwork-specs/tools/check-source-config-standard.mjs --root .",
+    "_sdkwork:verify": "pnpm run _sdkwork:check && pnpm run _sdkwork:test && pnpm run _sdkwork:build",
+    "_sdkwork:clean": "node -e \"const fs=require('node:fs'); for(const path of ['src/runtime']) fs.rmSync(path,{recursive:true,force:true})\""
   },
   "dependencies": {
     "@sdkwork/cloudrouter-app-sdk": "workspace:*",
@@ -28,7 +41,9 @@
     "@sdkwork/sdk-common": "workspace:*"
   },
   "devDependencies": {
+    "@sdkwork/app-topology": "workspace:*",
     "@types/node": "catalog:",
+    "esbuild": "catalog:",
     "typescript": "catalog:"
   }
 }

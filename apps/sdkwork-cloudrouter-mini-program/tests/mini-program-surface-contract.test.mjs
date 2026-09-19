@@ -203,12 +203,57 @@ describe('cloudrouter mini program application root', () => {
     }
   });
 
-  it('declares the mini program build gap instead of claiming a bundle', () => {
+  it('declares only the WeChat DevTools install gap, never a build gap', () => {
     const metadata = manifest.artifacts.installConfig.metadata;
     assert.equal(metadata.deferred, true);
     assert.equal(metadata.packageManager, 'pnpm');
     assert.ok(String(metadata.deferredReason).length > 20);
+    assert.match(String(metadata.deferredReason), /DevTools/u);
+    assert.equal(metadata.runtimeBundle, 'src/runtime/cloudrouter-app.js');
+    assert.equal(metadata.runtimeEnv, 'src/runtime/runtime-env.js');
+    assert.equal(metadata.runtimeBundleCommand, 'pnpm build');
     assert.equal(rootSpec.component.type, 'mini-program-app-root');
     assert.deepEqual(rootSpec.contracts.sdkDependencies, ['cloudrouter-app-sdk']);
+  });
+
+  it('ships a self-contained runtime bundle built from the materialized profile', () => {
+    const scripts = readJson('package.json').scripts;
+    assert.equal(scripts.dev, 'pnpm dev:standalone');
+    assert.equal(scripts.build, 'pnpm exec sdkwork-app build');
+    assert.equal(scripts['_sdkwork:build'], 'node scripts/build-runtime.mjs');
+
+    const buildManifest = readJson('src/runtime/build-manifest.json');
+    assert.equal(buildManifest.deploymentProfile, 'standalone');
+    assert.equal(buildManifest.environment, 'development');
+    assert.equal(buildManifest.profileId, 'standalone.development');
+    assert.equal(buildManifest.runtimeTarget, 'mini-program');
+    assert.equal(buildManifest.bundle, 'src/runtime/cloudrouter-app.js');
+    assert.equal(buildManifest.runtimeEnv, 'src/runtime/runtime-env.js');
+
+    // `src/app.js` loads the bundle through the WeChat CommonJS runtime, so the
+    // bundle must be self-contained: a bare specifier left unresolved is a
+    // module the mini program cannot load on device.
+    const bundle = { exports: {} };
+    new Function('module', 'exports', 'require', readText(buildManifest.bundle))(
+      bundle,
+      bundle.exports,
+      (specifier) => {
+        throw new Error(`runtime bundle must be self-contained but required ${specifier}`);
+      },
+    );
+    assert.equal(typeof bundle.exports.bootstrapMiniProgramApplication, 'function');
+
+    const runtimeEnv = { exports: {} };
+    new Function('module', 'exports', readText(buildManifest.runtimeEnv))(runtimeEnv, runtimeEnv.exports);
+    assert.equal(runtimeEnv.exports.SDKWORK_PROFILE_ID, buildManifest.profileId);
+    assert.equal(runtimeEnv.exports.SDKWORK_RUNTIME_TARGET, 'mini-program');
+
+    // A bundle built from a stale profile is the one failure the running app
+    // cannot show: the identity keys would still be well-formed and the app
+    // would simply call the wrong gateway.
+    assert.deepEqual(
+      runtimeEnv.exports,
+      readJson(`config/mini-program/runtime-env.${buildManifest.profileId}.json`),
+    );
   });
 });

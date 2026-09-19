@@ -76,8 +76,12 @@ data/skills/cloudhub/raw/details/*.json
 
 # SDKWork profile env files (see specs/application-env-standard.md)
 # Host profiles such as .env.development and .env.release are ignored via .env.*
-*.production.env
-etc/topology/*.production.env
+# `etc/topology/<profile>.production.env` is authored topology source, not a host
+# profile: SOURCE_CONFIG_SPEC.md section "Profile resolution" registers
+# cloud.production / standalone.production under it. Ignoring it hid the whole
+# production profile from version control, so the deployment-profile gate could
+# only pass against a working tree that already had the files on disk. No
+# `*.production.env` rule belongs here.
 config/*.local.toml
 
 # Local verification scratch output (never commit)

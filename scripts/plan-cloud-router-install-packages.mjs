@@ -226,6 +226,13 @@ function buildArtifacts(binaryName, installerBinaryName, deploymentMode, platfor
       required: true,
     },
     {
+      // Adaptive Web mobile surface (SDKWORK_DEPLOY_SPEC.md section 8).
+      kind: 'portal-h5-dist',
+      path: 'portal/h5',
+      source: 'apps/sdkwork-cloudrouter-h5/dist/standalone/prod',
+      required: true,
+    },
+    {
       kind: 'sdk-archives',
       path: 'portal/dist/sdk-archives',
       source: 'apps/sdkwork-cloudrouter-pc/dist/sdk-archives',
@@ -640,6 +647,7 @@ function validatePackageItem(packageItem, seenIds, issues) {
     'edge-binary',
     'installer-binary',
     'portal-dist',
+    'portal-h5-dist',
     'sdk-archives',
     'env-template',
     'runtime-config-template',

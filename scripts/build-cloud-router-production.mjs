@@ -157,6 +157,16 @@ function createProductionBuildPlan(
       cwd: root,
     },
     {
+      // Adaptive Web ships the PC and H5 surfaces together
+      // (SDKWORK_DEPLOY_SPEC.md section 8); the gateway selects between them by
+      // device class and collapses onto the other one when a surface is absent.
+      label: 'h5 production assets',
+      command: pnpmCommand(platform),
+      args: ['--dir', 'apps/sdkwork-cloudrouter-h5', 'build'],
+      env,
+      cwd: root,
+    },
+    {
       label: 'SDK archive artifacts',
       command: 'node',
       args: ['scripts/archive-cloud-router-sdks.mjs'],

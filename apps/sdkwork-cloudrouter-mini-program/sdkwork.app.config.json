@@ -115,8 +115,11 @@
         "workspaceRoot": "apps/sdkwork-cloudrouter-mini-program",
         "framework": "mp-weixin",
         "packageManager": "pnpm",
+        "runtimeBundle": "src/runtime/cloudrouter-app.js",
+        "runtimeEnv": "src/runtime/runtime-env.js",
+        "runtimeBundleCommand": "pnpm build",
         "deferred": true,
-        "deferredReason": "WeChat DevTools CLI is not available in the current environment; the mini-program bundle cannot be built or previewed here."
+        "deferredReason": "The WeChat DevTools CLI is not available in the current environment, so the installable and previewable mini-program package cannot be produced or uploaded here. The committed runtime bundle and the materialized profile are built locally by `pnpm build`, and `pnpm typecheck && pnpm test` verify them. WeChat DevTools opening the project is the only remaining external step."
       }
     }
   },

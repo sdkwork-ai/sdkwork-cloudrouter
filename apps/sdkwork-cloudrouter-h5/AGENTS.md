@@ -101,8 +101,12 @@ Run commands from this application root unless a command explicitly targets the 
 - `pnpm typecheck`
 - `pnpm test`
 - `pnpm check`
-- `pnpm build:h5:dev`
-- `pnpm build:h5:prod`
+- `pnpm build:dev`
+- `pnpm build:prod`
+
+The architecture axis (`build:h5:*`) belongs to the repository root, not to this
+app surface; run `pnpm build:h5:dev` or `pnpm build:h5:prod` from the repository
+root when you need an architecture-scoped bundle.
 
 From the repository root, run `pnpm check:pnpm-script-standard` and `pnpm check:agent-workflow-standard` when changing app-surface commands, AGENTS, packaging, or workflow metadata.
 

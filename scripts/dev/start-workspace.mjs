@@ -813,14 +813,31 @@ function serviceEnv(settings, bindEnvName, bindValue, {
       process.env.SDKWORK_CLOUDROUTER_TRUSTED_SUBJECT_SECRET ?? DEFAULT_DEV_SECRET,
     SDKWORK_CLOUDROUTER_APP_SESSION_SECRET:
       process.env.SDKWORK_CLOUDROUTER_APP_SESSION_SECRET ?? DEFAULT_DEV_SECRET,
+    // Two names for one lifecycle. The installer reads
+    // `SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT` (the literal of
+    // `installer::ENV_INSTALL_ENVIRONMENT`); the rest of the dev stack reads
+    // `SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT`. Exporting only the latter sent
+    // the installer to its `DEFAULT_INSTALL_ENVIRONMENT` fallback
+    // ("production"), which seeded every bundled vendor account disabled and
+    // silently broke account-route → billing → vendor on a dev box. Both are
+    // exported so neither reader can drift again.
     SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT:
-      process.env.SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT ?? 'development',
+      process.env.SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT
+      ?? process.env.SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT
+      ?? 'development',
+    SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT:
+      process.env.SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT
+      ?? process.env.SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT
+      ?? 'development',
     SDKWORK_ENVIRONMENT:
       process.env.SDKWORK_ENVIRONMENT
       ?? process.env.SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT
       ?? 'development',
+    // `installer::new` rejects any seed profile other than
+    // `DEFAULT_SEED_PROFILE` ("standard"), so a stale "commercial" default here
+    // would abort the dev install outright.
     SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE:
-      process.env.SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE ?? 'commercial',
+      process.env.SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE ?? 'standard',
   };
   if (databaseMaxConnections !== undefined) {
     env.SDKWORK_DATABASE_MAX_CONNECTIONS = databaseMaxConnections;

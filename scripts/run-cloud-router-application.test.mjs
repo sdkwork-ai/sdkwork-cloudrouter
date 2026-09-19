@@ -1645,7 +1645,8 @@ test('Rust standalone gateway owns configurable portal CSP and static delivery p
   assert.ok(edgeServerSource.includes('portal_public_url_origin'));
   assert.ok(edgeServerSource.includes('"content-security-policy"'));
   assert.ok(edgeServerSource.includes('"strict-transport-security"'));
-  assert.ok(gatewayPortalSource.includes('SDKWORK_CLOUDROUTER_ROUTER_PORTAL_STATIC_DIST'));
+  assert.ok(gatewayPortalSource.includes('SDKWORK_CLOUDROUTER_ROUTER_PC_STATIC_ROOT'));
+  assert.ok(gatewayPortalSource.includes('SDKWORK_CLOUDROUTER_ROUTER_H5_STATIC_ROOT'));
   assert.ok(gatewayPortalSource.includes('SDKWORK_CLOUDROUTER_EDGE_CSP_CONNECT_SRC'));
   assert.ok(gatewayPortalSource.includes('SDKWORK_CLOUDROUTER_EDGE_HSTS_ENABLED'));
   assert.ok(gatewayPortalSource.includes('SDKWORK_CLOUDROUTER_EDGE_CSP_FRAME_SRC'));
@@ -2313,8 +2314,13 @@ test('cloud router workspace launch plan defaults to all-in-one Rust edge runtim
     assert.equal(installerStep.env.SDKWORK_CLOUDROUTER_STARTUP_INSTALL_MODE, 'ensure');
     assert.equal(installerStep.env.SDKWORK_CLOUDROUTER_SNOWFLAKE_NODE_ID, undefined);
     assert.equal(installerStep.env.SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT, 'development');
+    // The installer reads the lifecycle from `SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT`
+    // only (`installer::ENV_INSTALL_ENVIRONMENT`). Asserting the alias alone let
+    // the two names drift until every bundled vendor default account was seeded
+    // disabled, which broke account-route → billing → vendor chain-wide.
+    assert.equal(installerStep.env.SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT, 'development');
     assert.equal(installerStep.env.SDKWORK_ENVIRONMENT, 'development');
-    assert.equal(installerStep.env.SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE, 'commercial');
+    assert.equal(installerStep.env.SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE, 'standard');
     assert.equal(
       installerStep.env.SDKWORK_MODELS_CATALOG_ROOT,
       path.join(workspaceRoot, '..', 'sdkwork-models'),
@@ -2981,6 +2987,7 @@ test('admin reset wrapper maps postgres dev mode through the configured env file
   assert.equal(step.env.SDKWORK_DATABASE_MAX_CONNECTIONS, '10');
   assert.equal(step.env.SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD, 'Admin-Postgres-Reset-Password-2026!');
   assert.equal(step.env.SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT, 'development');
+  assert.equal(step.env.SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT, 'development');
   assert.equal(step.env.SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_USERNAME, 'admin-dev');
   assert.equal(step.env.SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_EMAIL, 'admin-dev@sdkwork.com');
   assert.equal(step.args.includes('admin-dev'), true);
@@ -3122,6 +3129,7 @@ test('bootstrap token wrapper maps dev mode through postgres env and installer i
   assert.equal(step.args.includes('--app-id'), true);
   assert.equal(step.args.includes('sdkwork-cloudrouter'), true);
   assert.equal(step.env.SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT, 'development');
+  assert.equal(step.env.SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT, 'development');
   assert.equal(step.env.SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_USERNAME, 'admin-dev');
   assert.equal(step.env.SDKWORK_ACCESS_TOKEN, undefined);
   rmSync(fixtureRoot, { recursive: true, force: true });
@@ -3165,7 +3173,9 @@ test('database management wrapper maps pnpm init and upgrade commands to the ins
     '--environment',
     'staging',
     '--seed-profile',
-    'commercial',
+    // `installer::new` rejects anything but `DEFAULT_SEED_PROFILE` ("standard"),
+    // so this keeps the wrapper test aligned with what the installer accepts.
+    'standard',
     '--models-catalog-root',
     '../sdkwork-models',
   ]);
@@ -3193,7 +3203,10 @@ test('database management wrapper maps pnpm init and upgrade commands to the ins
   assert.equal(initStep.env.SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE, 'server');
   assert.equal(initStep.env.SDKWORK_DATABASE_MAX_CONNECTIONS, '7');
   assert.equal(initStep.env.SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT, 'staging');
-  assert.equal(initStep.env.SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE, 'commercial');
+  // See the note in the dev-plan test: the installer only reads the
+  // `..._ROUTER_ENVIRONMENT` spelling, so both must be exported.
+  assert.equal(initStep.env.SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT, 'staging');
+  assert.equal(initStep.env.SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE, 'standard');
   assert.equal(initStep.env.SDKWORK_MODELS_CATALOG_ROOT, '../sdkwork-models');
 
   const upgradeSettings = module.parseDatabaseManagementArgs([
@@ -3811,8 +3824,12 @@ test('production starter supports help, dry-run, and full edge access matrix', a
   assert.equal(env.SDKWORK_CLOUDROUTER_EDGE_SERVER, '1');
   assert.equal(env.SDKWORK_CLOUDROUTER_ALL_IN_ONE_RUNTIME, '0');
   assert.equal(
-    env.SDKWORK_CLOUDROUTER_ROUTER_PORTAL_STATIC_DIST,
+    env.SDKWORK_CLOUDROUTER_ROUTER_PC_STATIC_ROOT,
     path.join(workspaceRoot, 'apps', 'sdkwork-cloudrouter-pc', 'dist'),
+  );
+  assert.equal(
+    env.SDKWORK_CLOUDROUTER_ROUTER_H5_STATIC_ROOT,
+    path.join(workspaceRoot, 'apps', 'sdkwork-cloudrouter-h5', 'dist', 'standalone', 'prod'),
   );
   assert.equal(env.SDKWORK_CLOUDROUTER_SERVER_BIND, '0.0.0.0:12900');
   assert.equal(env.SDKWORK_CLOUDROUTER_EDGE_GATEWAY_BASE_URL, 'http://gateway.internal:18080');
@@ -4349,6 +4366,9 @@ test('install package planner covers platforms, architectures, modes, fast init,
   ));
   assert.ok(windowsService.artifacts.some((artifact) =>
     artifact.kind === 'portal-dist' && artifact.path === 'portal/dist'
+  ));
+  assert.ok(windowsService.artifacts.some((artifact) =>
+    artifact.kind === 'portal-h5-dist' && artifact.path === 'portal/h5'
   ));
   assert.ok(windowsService.artifacts.some((artifact) =>
     artifact.kind === 'sdk-archives' && artifact.path === 'portal/dist/sdk-archives'

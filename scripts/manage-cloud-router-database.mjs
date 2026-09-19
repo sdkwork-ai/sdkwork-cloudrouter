@@ -245,8 +245,21 @@ export function createDatabaseManagementPlan({
     ...(settings.databaseMaxConnections
       ? { SDKWORK_DATABASE_MAX_CONNECTIONS: settings.databaseMaxConnections }
       : {}),
+    // The installer reads the install lifecycle from
+    // `ENV_INSTALL_ENVIRONMENT`, whose literal is
+    // `SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT` (see
+    // `router_service::infrastructure::sql::installer`). `start-workspace.mjs`
+    // and this plan historically exported only the *other* name
+    // (`SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT`), so the installer never saw
+    // `development`, fell back to `DEFAULT_INSTALL_ENVIRONMENT` ("production"),
+    // and seeded every bundled vendor account disabled — which silently broke
+    // the whole account-route → billing → vendor chain on a dev box. Both names
+    // are exported so neither reader can drift again.
     ...(settings.environment
-      ? { SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT: settings.environment }
+      ? {
+          SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT: settings.environment,
+          SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT: settings.environment,
+        }
       : {}),
     ...(settings.seedProfile
       ? { SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE: settings.seedProfile }
@@ -281,6 +294,7 @@ function redactedEnvSummary(env) {
     'SDKWORK_DATABASE_URL',
     'SDKWORK_DATABASE_MAX_CONNECTIONS',
     'SDKWORK_CLOUDROUTER_INSTALL_ENVIRONMENT',
+    'SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT',
     'SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE',
     'SDKWORK_MODELS_CATALOG_ROOT',
   ];

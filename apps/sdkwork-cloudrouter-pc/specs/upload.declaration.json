@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "appId": "sdkwork-cloudrouter",
+  "declarations": [
+    {
+      "appResourceType": "site.settings_brand_asset",
+      "appResourceIdKind": "entity",
+      "scene": "website-brand",
+      "source": "cloudrouter-pc-admin-site-logo-upload",
+      "uploadProfileCode": "image",
+      "retention": "long_term",
+      "purpose": "public_asset"
+    },
+    {
+      "appResourceType": "site.settings_brand_asset",
+      "appResourceIdKind": "entity",
+      "scene": "site-icon",
+      "source": "cloudrouter-pc-admin-site-icon-upload",
+      "uploadProfileCode": "image",
+      "retention": "long_term",
+      "purpose": "Site icon, publicly displayed functional mark."
+    },
+    {
+      "appResourceType": "site.settings_brand_asset",
+      "appResourceIdKind": "entity",
+      "scene": "site-favicon",
+      "source": "cloudrouter-pc-admin-site-favicon-upload",
+      "uploadProfileCode": "image",
+      "retention": "long_term",
+      "purpose": "Browser tab favicon."
+    },
+    {
+      "appResourceType": "site.settings_brand_asset",
+      "appResourceIdKind": "entity",
+      "scene": "site-qr-code",
+      "source": "cloudrouter-pc-admin-site-qr-code-upload",
+      "uploadProfileCode": "image",
+      "retention": "long_term",
+      "purpose": "Site QR code image, publicly displayed."
+    },
+    {
+      "appResourceType": "user.profile_avatar",
+      "appResourceIdKind": "entity",
+      "scene": "avatar",
+      "source": "cloudrouter-pc-console-user-avatar-upload",
+      "uploadProfileCode": "avatar",
+      "retention": "long_term",
+      "purpose": "Signed-in console user avatar."
+    },
+    {
+      "appResourceType": "community.circle_media",
+      "appResourceIdKind": "entity",
+      "scene": "circle-avatar",
+      "source": "cloudrouter-pc-admin-community-circle-avatar-upload",
+      "uploadProfileCode": "image",
+      "retention": "long_term",
+      "purpose": "Community circle avatar image."
+    },
+    {
+      "appResourceType": "community.circle_media",
+      "appResourceIdKind": "entity",
+      "scene": "circle-cover",
+      "source": "cloudrouter-pc-admin-community-circle-cover-upload",
+      "uploadProfileCode": "image",
+      "retention": "long_term",
+      "purpose": "Community circle cover image."
+    },
+    {
+      "appResourceType": "community.group_qr_code",
+      "appResourceIdKind": "entity",
+      "scene": "team-asset",
+      "source": "cloudrouter-pc-admin-community-group-qr-code-upload",
+      "uploadProfileCode": "image",
+      "retention": "long_term",
+      "purpose": "Community group join QR code."
+    },
+    {
+      "appResourceType": "membership.plan_icon",
+      "appResourceIdKind": "entity",
+      "scene": "admin-asset",
+      "source": "cloudrouter-pc-admin-membership-icon-upload",
+      "uploadProfileCode": "image",
+      "retention": "long_term",
+      "purpose": "Membership plan icon shown in the console."
+    },
+    {
+      "appResourceType": "admin.category_icon",
+      "appResourceIdKind": "entity",
+      "scene": "admin-asset",
+      "source": "cloudrouter-pc-admin-category-icon-upload",
+      "uploadProfileCode": "image",
+      "retention": "long_term",
+      "purpose": "Admin category icon shown in the console."
+    },
+    {
+      "appResourceType": "provider.logo",
+      "appResourceIdKind": "entity",
+      "scene": "admin-asset",
+      "source": "cloudrouter-pc-admin-provider-logo-upload",
+      "uploadProfileCode": "image",
+      "retention": "long_term",
+      "purpose": "Upstream provider logo shown in the console."
+    },
+    {
+      "appResourceType": "generation.artifact",
+      "appResourceIdKind": "entity",
+      "scene": "ai-generated",
+      "source": "cloudrouter-pc-playground-generation-image",
+      "uploadProfileCode": "image",
+      "retention": "long_term",
+      "purpose": "Image generated in the playground."
+    },
+    {
+      "appResourceType": "generation.artifact",
+      "appResourceIdKind": "entity",
+      "scene": "ai-generated",
+      "source": "cloudrouter-pc-playground-generation-video",
+      "uploadProfileCode": "video",
+      "retention": "long_term",
+      "purpose": "Video generated in the playground."
+    },
+    {
+      "appResourceType": "generation.artifact",
+      "appResourceIdKind": "entity",
+      "scene": "ai-generated",
+      "source": "cloudrouter-pc-playground-generation-audio",
+      "uploadProfileCode": "audio",
+      "retention": "long_term",
+      "purpose": "Audio generated in the playground."
+    },
+    {
+      "appResourceType": "cloudrouter.temporary_object",
+      "appResourceIdKind": "entity",
+      "scene": "temporary",
+      "source": "cloudrouter-pc-temporary-upload",
+      "uploadProfileCode": "document",
+      "retention": "temporary",
+      "purpose": "Temporary asset uploaded from the console and not meant to be retained.",
+      "retentionTtlSeconds": 86400
+    }
+  ]
+}

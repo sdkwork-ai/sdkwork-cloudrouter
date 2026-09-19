@@ -37,7 +37,7 @@ import {
   buildReleaseHostEdgeGeneratedEnv,
   sanitizeReleaseHostEnvRecord,
 } from '../lib/cloud-router-edge-env-contract.mjs';
-import { resolveRegionDefaultLocale } from '../lib/cloud-router-region.mjs';
+import { DATABASE_SEED_LOCALE_ENV, REGION_CODE_ENV, resolveRegionDefaultLocale } from '../lib/cloud-router-region.mjs';
 import {
   buildBootstrapAccessTokenEnvRecord,
 } from '../../../sdkwork-iam/scripts/dev/create-dev-bootstrap-access-token-env.mjs';
@@ -55,6 +55,13 @@ export const CLOUD_ROUTER_RELEASE_ENV_KEY_ORDER = Object.freeze([
   CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.environment,
   CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.deploymentProfile,
   CLOUD_ROUTER_LIFECYCLE_ENV_KEYS.runtimeTarget,
+  // Region deployment dimension (REGION_SPEC.md) and its derived seed locale.
+  // Registered in `release-environment-contract.mjs` under
+  // `optionalEdgePrivateEnv`; they are emitted right after the lifecycle keys, so
+  // the canonical order must place them here or `buildReleaseEnvFilePlan` writes
+  // two keys the order list never accounts for.
+  REGION_CODE_ENV,
+  DATABASE_SEED_LOCALE_ENV,
   'PORTAL_PUBLIC_SDK_BASE_URL',
   'PORTAL_PUBLIC_API_BASE_URL',
   'PORTAL_PUBLIC_OPEN_API_BASE_URL',

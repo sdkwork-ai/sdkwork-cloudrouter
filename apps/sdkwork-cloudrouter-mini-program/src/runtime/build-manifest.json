@@ -1,0 +1,15 @@
+{
+  "appKey": "sdkwork-cloudrouter-mini-program",
+  "deploymentProfile": "standalone",
+  "environment": "development",
+  "profileId": "standalone.development",
+  "runtimeTarget": "mini-program",
+  "platform": "MP_WEIXIN",
+  "bundle": "src/runtime/cloudrouter-app.js",
+  "runtimeEnv": "src/runtime/runtime-env.js",
+  "appJson": {
+    "pages": 4,
+    "subPackages": 0,
+    "tabBar": true
+  }
+}

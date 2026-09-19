@@ -27,7 +27,20 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const workspaceRoot = path.resolve(__dirname, '..');
-const portalDist = path.join(workspaceRoot, 'apps', 'sdkwork-cloudrouter-pc', 'dist');
+// A vite browser build always writes dist/<deploymentProfile>/<envAlias> and
+// never a bare dist/ (browser-dist-layout.mjs), so the production runtime roots
+// are the production leaves. `sdk-archives` stays a sibling of the
+// per-environment subtrees inside the same dist tree.
+const portalPcDistRoot = path.join(workspaceRoot, 'apps', 'sdkwork-cloudrouter-pc', 'dist');
+const portalDist = path.join(portalPcDistRoot, 'standalone', 'prod');
+const portalH5Dist = path.join(
+  workspaceRoot,
+  'apps',
+  'sdkwork-cloudrouter-h5',
+  'dist',
+  'standalone',
+  'prod',
+);
 const SERVER_DEFAULT_POSTGRES_HOST = 'db.example.com';
 const SERVER_DEFAULT_POSTGRES_PORT = 5432;
 const SERVER_DEFAULT_POSTGRES_DATABASE = 'sdkwork_ai_prod';
@@ -938,8 +951,9 @@ function resolveStartProductionEnv(
   baseEnv = process.env,
   distRoot = portalDist,
   settings = parseStartProductionArgs([]),
+  h5DistRoot = portalH5Dist,
 ) {
-  const defaultSdkArchiveRoot = path.join(distRoot, 'sdk-archives');
+  const defaultSdkArchiveRoot = path.join(portalPcDistRoot, 'sdk-archives');
   const serverBind = settings.serverBind ?? baseEnv.SDKWORK_CLOUDROUTER_SERVER_BIND ?? '0.0.0.0:3900';
   const edgeBaseUrl = edgeAccessBaseUrl({ SDKWORK_CLOUDROUTER_SERVER_BIND: serverBind });
   const allInOne = !settings.forwardingMode;
@@ -947,7 +961,8 @@ function resolveStartProductionEnv(
     ...mergePortalPublicRuntimeEnv(baseEnv),
     SDKWORK_CLOUDROUTER_EDGE_SERVER: '1',
     SDKWORK_CLOUDROUTER_ALL_IN_ONE_RUNTIME: allInOne ? '1' : '0',
-    SDKWORK_CLOUDROUTER_ROUTER_PORTAL_STATIC_DIST: distRoot,
+    SDKWORK_CLOUDROUTER_ROUTER_PC_STATIC_ROOT: distRoot,
+    SDKWORK_CLOUDROUTER_ROUTER_H5_STATIC_ROOT: h5DistRoot,
     SDKWORK_CLOUDROUTER_SERVER_BIND: serverBind,
     SDKWORK_CLOUDROUTER_EDGE_GATEWAY_BASE_URL:
       settings.gatewayForwardUrl
@@ -1046,14 +1061,21 @@ function buildStartProductionAccessLines(env) {
   return lines;
 }
 
-function assertPortalDistReadyForStart(dryRun, distRoot = portalDist) {
+function assertPortalDistReadyForStart(
+  dryRun,
+  distRoot = portalDist,
+  h5DistRoot = portalH5Dist,
+) {
   if (dryRun) {
     return;
   }
-  if (!existsSync(path.join(distRoot, 'index.html'))) {
-    throw new Error(
-      'portal production dist is missing. Run `pnpm build` before `pnpm start`.',
-    );
+  for (const [architecture, root] of [['pc', distRoot], ['h5', h5DistRoot]]) {
+    if (!existsSync(path.join(root, 'index.html'))) {
+      throw new Error(
+        `${architecture} portal production dist is missing at ${root}. `
+          + 'Run `pnpm build:prod` before `pnpm start`.',
+      );
+    }
   }
 }
 
@@ -1119,7 +1141,7 @@ function main(argv = process.argv.slice(2)) {
     throw new Error(runtimeConfig.blockingIssue.message);
   }
 
-  assertPortalDistReadyForStart(settings.dryRun, portalDist);
+  assertPortalDistReadyForStart(settings.dryRun, portalDist, portalH5Dist);
   const ensuredApplicationEnv = ensureCloudRouterEnvForLifecycle('start', {
     workspaceRoot,
     env: process.env,
@@ -1130,7 +1152,7 @@ function main(argv = process.argv.slice(2)) {
   const releaseApplicationEnv = ensuredApplicationEnv.release;
   const env = mergeRuntimeConfigEnv(
     {
-      ...resolveStartProductionEnv(process.env, portalDist, settings),
+      ...resolveStartProductionEnv(process.env, portalDist, settings, portalH5Dist),
       ...releaseApplicationEnv.mergedEnv,
       ...ensuredApplicationEnv.production.mergedEnv,
     },
