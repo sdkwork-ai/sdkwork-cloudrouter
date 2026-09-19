@@ -218,6 +218,10 @@
         {
           "itemType": "resource",
           "resourceCode": "api.kling.task_query"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.sfx.sound"
         }
       ]
     },
@@ -318,6 +322,10 @@
         {
           "itemType": "resource",
           "resourceCode": "api.vidu.motion_sync"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.sfx.sound"
         }
       ]
     },
@@ -340,6 +348,10 @@
         {
           "itemType": "resource",
           "resourceCode": "api.suno.music_task_query"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.suno.music"
         }
       ]
     },
@@ -362,6 +374,399 @@
         {
           "itemType": "resource",
           "resourceCode": "api.elevenlabs.sound_generation"
+        }
+      ]
+    },
+    {
+      "groupCode": "official.alibaba.full",
+      "groupName": "Official Alibaba Cloud Full API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Alibaba Cloud official account resources. This group declares only the `vendor.alibaba` resource: the vendor ships no vendor-native api_endpoint in the bundled catalog yet, so its models are served through the protocol-coherent generic surface (openai_compatible / vendor_native) the seed already grants to the default account group. Vendor-native endpoints are added here when they land.",
+      "sortOrder": 200,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.alibaba"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.alibaba.chat_completions",
+          "sortOrder": 1
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.alibaba.embeddings",
+          "sortOrder": 2
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.alibaba.image_generation",
+          "sortOrder": 3
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.alibaba.video_generation",
+          "sortOrder": 4
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.alibaba.video_generation_task_query",
+          "sortOrder": 5
+        }
+      ]
+    },
+    {
+      "groupCode": "official.baidu.full",
+      "groupName": "Official Baidu AI Cloud Full API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Baidu AI Cloud official account resources. This group declares only the `vendor.baidu` resource: the vendor ships no vendor-native api_endpoint in the bundled catalog yet, so its models are served through the protocol-coherent generic surface (openai_compatible / vendor_native) the seed already grants to the default account group. Vendor-native endpoints are added here when they land.",
+      "sortOrder": 205,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.baidu"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.baidu.chat_completions",
+          "sortOrder": 1
+        }
+      ]
+    },
+    {
+      "groupCode": "official.black_forest_labs.full",
+      "groupName": "Official Black Forest Labs Full API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Black Forest Labs official account resources: the `vendor.black_forest_labs` resource plus the FLUX native image surface (`POST /v1/{model}` and the `/v1/get_result` poll route).",
+      "sortOrder": 210,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.black_forest_labs"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.black_forest_labs.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.black_forest_labs.task_query"
+        }
+      ]
+    },
+    {
+      "groupCode": "official.deepseek.full",
+      "groupName": "Official DeepSeek Full API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "DeepSeek official account resources. This group declares only the `vendor.deepseek` resource: the vendor ships no vendor-native api_endpoint in the bundled catalog yet, so its models are served through the protocol-coherent generic surface (openai_compatible / vendor_native) the seed already grants to the default account group. Vendor-native endpoints are added here when they land.",
+      "sortOrder": 215,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.deepseek"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.deepseek.chat_completions",
+          "sortOrder": 1
+        }
+      ]
+    },
+    {
+      "groupCode": "official.luma_ai.full",
+      "groupName": "Official Luma AI Full API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Luma AI official account resources. This group declares only the `vendor.luma_ai` resource: the vendor ships no vendor-native api_endpoint in the bundled catalog yet, so its models are served through the protocol-coherent generic surface (openai_compatible / vendor_native) the seed already grants to the default account group. Vendor-native endpoints are added here when they land.",
+      "sortOrder": 220,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.luma_ai"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.luma_ai.video_generation",
+          "sortOrder": 1
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.luma_ai.video_generation_task_query",
+          "sortOrder": 2
+        }
+      ]
+    },
+    {
+      "groupCode": "official.meituan.full",
+      "groupName": "Official Meituan Full API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Meituan official account resources. This group declares only the `vendor.meituan` resource: the vendor ships no vendor-native api_endpoint in the bundled catalog yet, so its models are served through the protocol-coherent generic surface (openai_compatible / vendor_native) the seed already grants to the default account group. Vendor-native endpoints are added here when they land.",
+      "sortOrder": 225,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.meituan"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.meituan.chat_completions",
+          "sortOrder": 1
+        }
+      ]
+    },
+    {
+      "groupCode": "official.moonshot.full",
+      "groupName": "Official Moonshot Kimi Full API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Moonshot Kimi official account resources. This group declares only the `vendor.moonshot` resource: the vendor ships no vendor-native api_endpoint in the bundled catalog yet, so its models are served through the protocol-coherent generic surface (openai_compatible / vendor_native) the seed already grants to the default account group. Vendor-native endpoints are added here when they land.",
+      "sortOrder": 230,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.moonshot"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.moonshot.chat_completions",
+          "sortOrder": 1
+        }
+      ]
+    },
+    {
+      "groupCode": "official.mureka.full",
+      "groupName": "Official Mureka Full API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Mureka official account resources. This group declares only the `vendor.mureka` resource: the vendor ships no vendor-native api_endpoint in the bundled catalog yet, so its models are served through the protocol-coherent generic surface (openai_compatible / vendor_native) the seed already grants to the default account group. Vendor-native endpoints are added here when they land.",
+      "sortOrder": 235,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.mureka"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.mureka.music_generation",
+          "sortOrder": 1
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.mureka.music_generation_task_query",
+          "sortOrder": 2
+        }
+      ]
+    },
+    {
+      "groupCode": "official.pixverse.full",
+      "groupName": "Official PixVerse Full API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "PixVerse official account resources. This group declares only the `vendor.pixverse` resource: the vendor ships no vendor-native api_endpoint in the bundled catalog yet, so its models are served through the protocol-coherent generic surface (openai_compatible / vendor_native) the seed already grants to the default account group. Vendor-native endpoints are added here when they land.",
+      "sortOrder": 240,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.pixverse"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.pixverse.video_generation",
+          "sortOrder": 1
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.pixverse.video_generation_task_query",
+          "sortOrder": 2
+        }
+      ]
+    },
+    {
+      "groupCode": "official.runway.full",
+      "groupName": "Official Runway Full API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Runway official account resources: the `vendor.runway` resource plus the Runway native image surface (`POST /v1/text_to_image` and the `/v1/tasks/{id}` poll route).",
+      "sortOrder": 245,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.runway"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.runway.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.runway.task_query"
+        }
+      ]
+    },
+    {
+      "groupCode": "official.stability_ai.full",
+      "groupName": "Official Stability AI Full API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Stability AI official account resources: the `vendor.stability_ai` resource, the shared sound-effect surface, and the native image surface (`POST /v2beta/stable-image/generate/{mode}`).",
+      "sortOrder": 250,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.stability_ai"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.sfx.sound"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.stability_ai.image_generation"
+        }
+      ]
+    },
+    {
+      "groupCode": "official.stepfun.full",
+      "groupName": "Official StepFun Full API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "StepFun official account resources. This group declares only the `vendor.stepfun` resource: the vendor ships no vendor-native api_endpoint in the bundled catalog yet, so its models are served through the protocol-coherent generic surface (openai_compatible / vendor_native) the seed already grants to the default account group. Vendor-native endpoints are added here when they land.",
+      "sortOrder": 255,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.stepfun"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.stepfun.chat_completions",
+          "sortOrder": 1
+        }
+      ]
+    },
+    {
+      "groupCode": "official.tencent.full",
+      "groupName": "Official Tencent Cloud Full API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Tencent Cloud official account resources. This group declares only the `vendor.tencent` resource: the vendor ships no vendor-native api_endpoint in the bundled catalog yet, so its models are served through the protocol-coherent generic surface (openai_compatible / vendor_native) the seed already grants to the default account group. Vendor-native endpoints are added here when they land.",
+      "sortOrder": 260,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.tencent"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.tencent.chat_completions",
+          "sortOrder": 1
+        }
+      ]
+    },
+    {
+      "groupCode": "official.xai.full",
+      "groupName": "Official xAI Full API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "xAI official account resources. This group declares only the `vendor.xai` resource: the vendor ships no vendor-native api_endpoint in the bundled catalog yet, so its models are served through the protocol-coherent generic surface (openai_compatible / vendor_native) the seed already grants to the default account group. Vendor-native endpoints are added here when they land.",
+      "sortOrder": 265,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.xai"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.xai.chat_completions",
+          "sortOrder": 1
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.xai.image_generation",
+          "sortOrder": 2
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.xai.video_generation",
+          "sortOrder": 3
+        }
+      ]
+    },
+    {
+      "groupCode": "official.xiaomi.full",
+      "groupName": "Official Xiaomi MiMo Full API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Xiaomi MiMo official account resources. This group declares only the `vendor.xiaomi` resource: the vendor ships no vendor-native api_endpoint in the bundled catalog yet, so its models are served through the protocol-coherent generic surface (openai_compatible / vendor_native) the seed already grants to the default account group. Vendor-native endpoints are added here when they land.",
+      "sortOrder": 270,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.xiaomi"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.xiaomi.chat_completions",
+          "sortOrder": 1
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.xiaomi.image_generation",
+          "sortOrder": 2
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.xiaomi.video_generation",
+          "sortOrder": 3
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.xiaomi.speech",
+          "sortOrder": 4
+        }
+      ]
+    },
+    {
+      "groupCode": "official.zhipu.full",
+      "groupName": "Official Zhipu AI Full API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Zhipu AI official account resources. This group declares only the `vendor.zhipu` resource: the vendor ships no vendor-native api_endpoint in the bundled catalog yet, so its models are served through the protocol-coherent generic surface (openai_compatible / vendor_native) the seed already grants to the default account group. Vendor-native endpoints are added here when they land.",
+      "sortOrder": 275,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.zhipu"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.zhipu.chat_completions",
+          "sortOrder": 1
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.zhipu.embeddings",
+          "sortOrder": 2
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.zhipu.image_generation",
+          "sortOrder": 3
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.zhipu.video_generation",
+          "sortOrder": 4
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.zhipu.video_generation_task_query",
+          "sortOrder": 5
         }
       ]
     }

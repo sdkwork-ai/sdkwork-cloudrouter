@@ -269,6 +269,14 @@
         },
         {
           "itemType": "resource",
+          "resourceCode": "api.suno.music"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.sfx.sound"
+        },
+        {
+          "itemType": "resource",
           "resourceCode": "api.openai.codex"
         }
       ]

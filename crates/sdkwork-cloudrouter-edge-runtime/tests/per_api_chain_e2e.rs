@@ -10,11 +10,25 @@
 //! price book and the route manifest are per-api, and a seven-case probe cannot
 //! see a gap in the sixty-fourth.
 //!
-//! So this test does not carry a hand-written case list. It **derives** its
-//! cases from the catalog: every `api_endpoint` resource the seed declares, and
-//! every inbound HTTP route the generated assembly manifest publishes. A new API
-//! is covered the moment it is seeded, and a hand-written list cannot silently
-//! fall behind the catalog it is meant to check.
+//! So this probe enumerates the published surface one API at a time. Its cases
+//! live in the hand-written `API_CASES` table below, which is kept in step with
+//! the catalog by `check-cloudrouter-ai-routing-consistency.mjs` (the seeded
+//! `api_endpoint` set) and by `scripts/dev/audit-api-chain-reachability.mjs`
+//! (the per-endpoint four-link chain). Those two tools are the authority: a new
+//! API is covered here the moment someone adds its case, and the audits fail
+//! loudly if the table drifts behind the catalog.
+//!
+//! Catalogued-unrouted namespaces (see `load_catalogued_unrouted_scopes`, which
+//! reads the ledger shared with `tools/check-cloudrouter-ai-routing-consistency.mjs`)
+//! are dialed too, but they must fail closed with exactly
+//! `no upstream account routes are configured ... on api scope <scope>` — that
+//! exact tuple is their asserted contract, not a gap. Any other answer (404, a
+//! misrouted call, a different error) fails the test.
+//!
+//! Circuit-breaker carry-over (`failure_threshold: 5` per account,
+//! `open_duration: 30s` in `CircuitBreakerConfig::default()`) is absorbed
+//! mechanically: a case answered with `open circuit breaker` waits out the open
+//! window and re-probes (`BREAKER_MAX_RETRIES`) before it can be judged a gap.
 //!
 //! Same composition as the seven-capability probe, and the same two traps:
 //!
@@ -37,6 +51,7 @@
 use axum::body::Body;
 use axum::http::Request;
 use sdkwork_cloudrouter_config::{ApiKeySecurityConfig, DatabaseConfig, ProviderSecretMapConfig};
+use sdkwork_cloudrouter_test_support::resolve_upstream_credential_key_ring;
 use sdkwork_test::{AuthTokenClient, LoginHarness, PgTestContext};
 use sqlx::Row;
 use tower::ServiceExt;
@@ -46,52 +61,6 @@ const API_KEY_PEPPER: &str = "sdkwork-cloudrouter-local-dev-secret-20260507";
 const TRUSTED_SUBJECT: &str = "sdkwork-cloudrouter-local-dev-secret-20260507";
 const APP_SESSION: &str = "sdkwork-cloudrouter-local-dev-secret-20260507";
 const INTERNAL_GATEWAY_SIGNING: &str = "-zC9LRxQyR2B2LQLhoTMi1XQmH_phcEDDVBtX3sxtWY";
-
-/// Fallback key ring, used only when the repository's own development key ring
-/// cannot be located. See [`resolve_upstream_credential_key_ring`].
-const FALLBACK_UPSTREAM_CREDENTIAL_KEY_RING: &str = r#"{"activeKeyId":"development-local-v1","activeKey":"-H9WLZu6Ou7TZHIOSrl5axiRAK10KOkjrcFbYnWZabk","fingerprintKey":"HiYnoe11mwTzAyCWK0JVfhLahiVMRvZNi_IrxaZgh5o","decryptionKeys":[]}"#;
-
-const DEV_KEY_RING_RELATIVE_PATH: &str =
-    ".sdkwork/secrets/upstream-credential-key-ring.development.json";
-
-/// Resolves the upstream credential key ring used by this repository's dev
-/// environment. The catalog stores credentials as AEAD ciphertext, so the ring
-/// that builds the router must be byte-identical to the one active when the
-/// rows were written, or the snapshot fails to load before any request is
-/// served.
-fn resolve_upstream_credential_key_ring() -> String {
-    if let Ok(value) = std::env::var("SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING") {
-        if !value.trim().is_empty() {
-            return value;
-        }
-    }
-    let mut candidates: Vec<std::path::PathBuf> = Vec::new();
-    if let Ok(path) = std::env::var("SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING_FILE") {
-        if !path.trim().is_empty() {
-            candidates.push(std::path::PathBuf::from(path));
-        }
-    }
-    if let Some(repo_root) = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .and_then(|crates| crates.parent())
-    {
-        candidates.push(repo_root.join(DEV_KEY_RING_RELATIVE_PATH));
-    }
-    for path in candidates {
-        match std::fs::read_to_string(&path) {
-            Ok(content) if !content.trim().is_empty() => {
-                eprintln!("using upstream credential key ring from {}", path.display());
-                return content;
-            }
-            _ => continue,
-        }
-    }
-    eprintln!(
-        "warning: {DEV_KEY_RING_RELATIVE_PATH} not found; falling back to the inline dev ring, \
-         which only decrypts credentials written by that same ring"
-    );
-    FALLBACK_UPSTREAM_CREDENTIAL_KEY_RING.to_owned()
-}
 
 /// Pins the environment the production router constructor reads.
 ///
@@ -106,13 +75,19 @@ fn resolve_upstream_credential_key_ring() -> String {
 fn seal_environment() {
     std::env::set_var("SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE", "dev");
     std::env::set_var("SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT", "development");
-    std::env::set_var("SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE", "standalone");
+    std::env::set_var(
+        "SDKWORK_CLOUDROUTER_ROUTER_DEPLOYMENT_PROFILE",
+        "standalone",
+    );
     std::env::set_var("SDKWORK_CLOUDROUTER_ROUTER_RUNTIME_TARGET", "desktop");
     std::env::set_var("SDKWORK_CLOUDROUTER_STARTUP_INSTALL_MODE", "skip");
     std::env::set_var("SDKWORK_DATABASE_AUTO_MIGRATE", "false");
     std::env::set_var("SDKWORK_DATABASE_SEED_ON_BOOT", "false");
     std::env::set_var("SDKWORK_CLOUDROUTER_API_KEY_PEPPER", API_KEY_PEPPER);
-    std::env::set_var("SDKWORK_CLOUDROUTER_TRUSTED_SUBJECT_SECRET", TRUSTED_SUBJECT);
+    std::env::set_var(
+        "SDKWORK_CLOUDROUTER_TRUSTED_SUBJECT_SECRET",
+        TRUSTED_SUBJECT,
+    );
     std::env::set_var("SDKWORK_CLOUDROUTER_APP_SESSION_SECRET", APP_SESSION);
     std::env::set_var(
         "SDKWORK_CLOUDROUTER_INTERNAL_GATEWAY_SIGNING_SECRET",
@@ -149,6 +124,76 @@ const NETWORK_UNREACHABLE_MARKERS: &[&str] = &[
     "network is unreachable",
     "certificate",
 ];
+
+/// Published namespaces the routing contract declares unrouted live in the
+/// shared ledger `data/ai-routing/declared-unrouted.json` (authored and
+/// validated by `tools/check-cloudrouter-ai-routing-consistency.mjs`). Entries
+/// that carry `apiCode` + `failClosedScope` are doors the runtime probe dials:
+/// they mount an inbound route but have no supplier, vendor, or bundled
+/// account, so the *correct* behavior is to fail closed with exactly
+/// `no upstream account routes are configured ... on api scope <scope>`.
+///
+/// The probe still dials them and asserts that exact failure shape: a 404 would
+/// mean the manifest lost the door, and any other error means the fail-closed
+/// guard drifted. Only the exact tuple counts as the catalogued outcome.
+///
+/// Loading is fail-closed: a missing, malformed, or emptied ledger panics
+/// instead of silently reclassifying those doors as chain gaps.
+fn load_catalogued_unrouted_scopes() -> std::collections::BTreeMap<String, String> {
+    let repo_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(|crates| crates.parent())
+        .expect("edge-runtime lives at <repo>/crates/<crate>");
+    let ledger_path = repo_root.join("data/ai-routing/declared-unrouted.json");
+    let source = std::fs::read_to_string(&ledger_path).unwrap_or_else(|error| {
+        panic!(
+            "read the declared-unrouted ledger {} failed: {error}",
+            ledger_path.display()
+        )
+    });
+    let ledger: serde_json::Value = serde_json::from_str(&source).unwrap_or_else(|error| {
+        panic!(
+            "the declared-unrouted ledger {} is not valid JSON: {error}",
+            ledger_path.display()
+        )
+    });
+    let items = ledger
+        .get("items")
+        .and_then(|items| items.as_array())
+        .unwrap_or_else(|| {
+            panic!(
+                "the declared-unrouted ledger {} has no \"items\" array",
+                ledger_path.display()
+            )
+        });
+    let mut scopes = std::collections::BTreeMap::new();
+    for item in items {
+        if let (Some(api_code), Some(scope)) = (
+            item.get("apiCode").and_then(|value| value.as_str()),
+            item.get("failClosedScope").and_then(|value| value.as_str()),
+        ) {
+            scopes.insert(api_code.to_owned(), scope.to_owned());
+        }
+    }
+    assert!(
+        !scopes.is_empty(),
+        "the declared-unrouted ledger {} declares no fail-closed api scope; the \
+         catalogued-exemption contract shared with \
+         tools/check-cloudrouter-ai-routing-consistency.mjs is lost",
+        ledger_path.display()
+    );
+    scopes
+}
+
+/// The circuit breaker opens per account after `failure_threshold` (5)
+/// consecutive upstream failures. With placeholder credentials every real
+/// vendor call fails, so the sixth probe sharing one vendor account inherits an
+/// open circuit even though its own wiring is complete. The open window is 30s
+/// (`CircuitBreakerConfig::default()`); after it the half-open probe dials the
+/// vendor again, which is all this probe needs to prove the chain.
+const BREAKER_OPEN_MARKER: &str = "open circuit breaker";
+const BREAKER_RETRY_COOLDOWN: std::time::Duration = std::time::Duration::from_secs(31);
+const BREAKER_MAX_RETRIES: u32 = 2;
 
 /// One API under test: the api code, the inbound path, and a minimal body.
 struct ApiCase {
@@ -192,42 +237,205 @@ impl ApiCase {
 /// different facts.
 const API_CASES: &[ApiCase] = &[
     // --- LLM / chat ---
-    ApiCase { api_code: "anthropic.messages", path: "/anthropic/v1/messages", published_path: "", body: r#"{"model":"claude-sonnet-4-5","max_tokens":16,"messages":[{"role":"user","content":"hi"}]}"# },
-    ApiCase { api_code: "anthropic.chat", path: "/v1/chat/completions", published_path: "", body: r#"{"model":"claude-sonnet-4-5","messages":[{"role":"user","content":"hi"}],"max_tokens":16}"# },
-    ApiCase { api_code: "openai.responses", path: "/v1/responses", published_path: "", body: r#"{"model":"gpt-6-astra","input":"hi"}"# },
-    ApiCase { api_code: "openai.completions", path: "/v1/completions", published_path: "", body: r#"{"model":"gpt-6-astra","prompt":"hi","max_tokens":16}"# },
-    ApiCase { api_code: "google.generate_content", path: "/google/v1beta/models/gemini-3.5-flash:generateContent", published_path: "/google/v1beta/models/{model}:generateContent", body: r#"{"contents":[{"parts":[{"text":"hi"}]}]}"# },
-    ApiCase { api_code: "google.stream_generate_content", path: "/google/v1beta/models/gemini-3.5-flash:streamGenerateContent", published_path: "/google/v1beta/models/{model}:streamGenerateContent", body: r#"{"contents":[{"parts":[{"text":"hi"}]}]}"# },
-    ApiCase { api_code: "openai.threads", path: "/v1/threads", published_path: "", body: r#"{"model":"gpt-6-astra"}"# },
-    ApiCase { api_code: "openai.assistants", path: "/v1/assistants", published_path: "", body: r#"{"model":"gpt-6-astra"}"# },
-    ApiCase { api_code: "openai.conversations", path: "/v1/conversations", published_path: "", body: r#"{"model":"gpt-6-astra"}"# },
+    ApiCase {
+        api_code: "anthropic.messages",
+        path: "/anthropic/v1/messages",
+        published_path: "",
+        body: r#"{"model":"claude-sonnet-4-5","max_tokens":16,"messages":[{"role":"user","content":"hi"}]}"#,
+    },
+    ApiCase {
+        api_code: "anthropic.chat",
+        path: "/v1/chat/completions",
+        published_path: "",
+        body: r#"{"model":"claude-sonnet-4-5","messages":[{"role":"user","content":"hi"}],"max_tokens":16}"#,
+    },
+    ApiCase {
+        api_code: "openai.responses",
+        path: "/v1/responses",
+        published_path: "",
+        body: r#"{"model":"gpt-6-astra","input":"hi"}"#,
+    },
+    ApiCase {
+        api_code: "openai.completions",
+        path: "/v1/completions",
+        published_path: "",
+        body: r#"{"model":"gpt-6-astra","prompt":"hi","max_tokens":16}"#,
+    },
+    ApiCase {
+        api_code: "google.generate_content",
+        path: "/google/v1beta/models/gemini-3.5-flash:generateContent",
+        published_path: "/google/v1beta/models/{model}:generateContent",
+        body: r#"{"contents":[{"parts":[{"text":"hi"}]}]}"#,
+    },
+    ApiCase {
+        api_code: "google.stream_generate_content",
+        path: "/google/v1beta/models/gemini-3.5-flash:streamGenerateContent",
+        published_path: "/google/v1beta/models/{model}:streamGenerateContent",
+        body: r#"{"contents":[{"parts":[{"text":"hi"}]}]}"#,
+    },
+    ApiCase {
+        api_code: "openai.threads",
+        path: "/v1/threads",
+        published_path: "",
+        body: r#"{"model":"gpt-6-astra"}"#,
+    },
+    ApiCase {
+        api_code: "openai.assistants",
+        path: "/v1/assistants",
+        published_path: "",
+        body: r#"{"model":"gpt-6-astra"}"#,
+    },
+    ApiCase {
+        api_code: "openai.conversations",
+        path: "/v1/conversations",
+        published_path: "",
+        body: r#"{"model":"gpt-6-astra"}"#,
+    },
     // --- embedding ---
-    ApiCase { api_code: "openai.embeddings", path: "/v1/embeddings", published_path: "", body: r#"{"model":"text-embedding-3-small","input":"hi"}"# },
-    ApiCase { api_code: "google.embed_content", path: "/google/v1beta/models/gemini-embedding-2:embedContent", published_path: "/google/v1beta/models/{model}:embedContent", body: r#"{"content":{"parts":[{"text":"hi"}]}}"# },
+    ApiCase {
+        api_code: "openai.embeddings",
+        path: "/v1/embeddings",
+        published_path: "",
+        body: r#"{"model":"text-embedding-3-small","input":"hi"}"#,
+    },
+    ApiCase {
+        api_code: "google.embed_content",
+        path: "/google/v1beta/models/gemini-embedding-2:embedContent",
+        published_path: "/google/v1beta/models/{model}:embedContent",
+        body: r#"{"content":{"parts":[{"text":"hi"}]}}"#,
+    },
     // --- image ---
-    ApiCase { api_code: "openai.images", path: "/v1/images/generations", published_path: "", body: r#"{"model":"gpt-image-2","prompt":"a red apple","n":1}"# },
-    ApiCase { api_code: "openai.images.edits", path: "/v1/images/edits", published_path: "", body: r#"{"model":"gpt-image-2","prompt":"add a hat"}"# },
-    ApiCase { api_code: "nano_banana.image_generation", path: "/nano-banana/v1/images/generations", published_path: "", body: r#"{"model":"gemini-3-pro-image","prompt":"a red apple"}"# },
-    ApiCase { api_code: "midjourney.image_generation", path: "/midjourney/v1/images/generations", published_path: "", body: r#"{"model":"midjourney-v7","prompt":"a red apple"}"# },
+    ApiCase {
+        api_code: "openai.images",
+        path: "/v1/images/generations",
+        published_path: "",
+        body: r#"{"model":"gpt-image-2","prompt":"a red apple","n":1}"#,
+    },
+    ApiCase {
+        api_code: "openai.images.edits",
+        path: "/v1/images/edits",
+        published_path: "",
+        body: r#"{"model":"gpt-image-2","prompt":"add a hat"}"#,
+    },
+    ApiCase {
+        api_code: "nano_banana.image_generation",
+        path: "/nano-banana/v1/images/generations",
+        published_path: "",
+        body: r#"{"model":"gemini-3-pro-image","prompt":"a red apple"}"#,
+    },
+    ApiCase {
+        api_code: "midjourney.image_generation",
+        path: "/midjourney/v1/images/generations",
+        published_path: "",
+        body: r#"{"model":"midjourney-v7","prompt":"a red apple"}"#,
+    },
     // --- video ---
-    ApiCase { api_code: "openai.video", path: "/v1/videos", published_path: "", body: r#"{"model":"sora-2","prompt":"a paper plane"}"# },
-    ApiCase { api_code: "kling.text_to_video", path: "/kling/v1/videos/generations", published_path: "", body: r#"{"model_name":"kling-v3","prompt":"a paper plane","duration":"5"}"# },
-    ApiCase { api_code: "kling.avatar", path: "/kling/v1/videos/avatar", published_path: "", body: r#"{"model_name":"kling-v3","image":"https://cdn.example.test/p.png","audio":"https://cdn.example.test/a.mp3"}"# },
-    ApiCase { api_code: "kling.motion_control", path: "/kling/v1/videos/motion-control", published_path: "", body: r#"{"model_name":"kling-v3","image":"https://cdn.example.test/p.png","video":"https://cdn.example.test/d.mp4"}"# },
-    ApiCase { api_code: "vidu.start_end_to_video", path: "/vidu/ent/v2/start-end2video", published_path: "", body: r#"{"model":"viduq3","prompt":"a paper plane"}"# },
-    ApiCase { api_code: "vidu.motion_sync", path: "/vidu/ent/v2/template", published_path: "", body: r#"{"model":"vidu-motion","template_id":"t1"}"# },
-    ApiCase { api_code: "vidu.reference_to_image", path: "/vidu/ent/v2/reference2image", published_path: "", body: r#"{"model":"vidu-image","prompt":"a red apple"}"# },
-    ApiCase { api_code: "volcengine.video_generation", path: "/volcengine/api/v3/contents/generations/tasks", published_path: "", body: r#"{"model":"doubao-seedance-2-5-260628","content":[{"type":"text","text":"a paper plane"}]}"# },
+    ApiCase {
+        api_code: "openai.video",
+        path: "/v1/videos",
+        published_path: "",
+        body: r#"{"model":"sora-2","prompt":"a paper plane"}"#,
+    },
+    ApiCase {
+        api_code: "kling.text_to_video",
+        path: "/kling/v1/videos/generations",
+        published_path: "",
+        body: r#"{"model_name":"kling-v3","prompt":"a paper plane","duration":"5"}"#,
+    },
+    ApiCase {
+        api_code: "kling.avatar",
+        path: "/kling/v1/videos/avatar",
+        published_path: "",
+        body: r#"{"model_name":"kling-v3","image":"https://cdn.example.test/p.png","audio":"https://cdn.example.test/a.mp3"}"#,
+    },
+    ApiCase {
+        api_code: "kling.motion_control",
+        path: "/kling/v1/videos/motion-control",
+        published_path: "",
+        body: r#"{"model_name":"kling-v3","image":"https://cdn.example.test/p.png","video":"https://cdn.example.test/d.mp4"}"#,
+    },
+    ApiCase {
+        api_code: "vidu.start_end_to_video",
+        path: "/vidu/ent/v2/start-end2video",
+        published_path: "",
+        body: r#"{"model":"viduq3","prompt":"a paper plane"}"#,
+    },
+    // `POST /ent/v2/template` is *template*-driven: the official contract
+    // requires `template` (a scene-template name such as `hugging`). The body
+    // therefore carries the official shape. Because no model binds to this
+    // endpoint (`vidu.motion_sync` is registered in `NOT_BOUND_BY_DESCRIPTOR`
+    // — binding one would make every `video` model answer template requests),
+    // the price is resolved the same way `kling.motion_control` resolves it:
+    // the request names a real catalog model, and the resolver's
+    // requested-model path looks `<catalog-vendor>/<model>` up in the price
+    // book. `viduq3` is the vendor's active video model.
+    ApiCase {
+        api_code: "vidu.motion_sync",
+        path: "/vidu/ent/v2/template",
+        published_path: "",
+        body: r#"{"template":"hugging","model":"viduq3","images":["https://cdn.example.test/p.png"],"prompt":"hug"}"#,
+    },
+    // `POST /ent/v2/reference2image` accepts `viduq2` / `viduq1` (the official
+    // `model` enum). The previous fixture sent `vidu-image`, which is not a
+    // catalog model, so the price lookup derived `vidu/vidu-image` and could
+    // never match a price row.
+    ApiCase {
+        api_code: "vidu.reference_to_image",
+        path: "/vidu/ent/v2/reference2image",
+        published_path: "",
+        body: r#"{"model":"viduq2","prompt":"a red apple"}"#,
+    },
+    ApiCase {
+        api_code: "volcengine.video_generation",
+        path: "/volcengine/api/v3/contents/generations/tasks",
+        published_path: "",
+        body: r#"{"model":"doubao-seedance-2-5-260628","content":[{"type":"text","text":"a paper plane"}]}"#,
+    },
     // --- audio / speech ---
-    ApiCase { api_code: "openai.audio.speech", path: "/v1/audio/speech", published_path: "", body: r#"{"model":"tts-1-hd","input":"hi","voice":"alloy"}"# },
-    ApiCase { api_code: "openai.realtime", path: "/v1/realtime/sessions", published_path: "", body: r#"{"model":"gpt-realtime-2.1"}"# },
-    ApiCase { api_code: "elevenlabs.text_to_speech", path: "/elevenlabs/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM", published_path: "/elevenlabs/v1/text-to-speech/{voice_id}", body: r#"{"model_id":"eleven_multilingual_v2","text":"hello"}"# },
-    ApiCase { api_code: "volcengine.speech", path: "/volcengine/api/v3/audio/speech", published_path: "", body: r#"{"model":"seed-tts-2.0-standard","input":"hello"}"# },
+    ApiCase {
+        api_code: "openai.audio.speech",
+        path: "/v1/audio/speech",
+        published_path: "",
+        body: r#"{"model":"tts-1-hd","input":"hi","voice":"alloy"}"#,
+    },
+    ApiCase {
+        api_code: "openai.realtime",
+        path: "/v1/realtime/sessions",
+        published_path: "",
+        body: r#"{"model":"gpt-realtime-2.1"}"#,
+    },
+    ApiCase {
+        api_code: "elevenlabs.text_to_speech",
+        path: "/elevenlabs/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM",
+        published_path: "/elevenlabs/v1/text-to-speech/{voice_id}",
+        body: r#"{"model_id":"eleven_multilingual_v2","text":"hello"}"#,
+    },
+    ApiCase {
+        api_code: "volcengine.speech",
+        path: "/volcengine/api/v3/audio/speech",
+        published_path: "",
+        body: r#"{"model":"seed-tts-2.0-standard","input":"hello"}"#,
+    },
     // --- music ---
-    ApiCase { api_code: "suno.music", path: "/suno/v1/music/generations", published_path: "", body: r#"{"model":"mureka-v9","prompt":"upbeat"}"# },
-    ApiCase { api_code: "minimax.music_generation", path: "/minimax/v1/music_generation", published_path: "", body: r#"{"model":"music-cover","prompt":"upbeat"}"# },
+    ApiCase {
+        api_code: "suno.music",
+        path: "/suno/v1/music/generations",
+        published_path: "",
+        body: r#"{"model":"mureka-v9","prompt":"upbeat"}"#,
+    },
+    ApiCase {
+        api_code: "minimax.music_generation",
+        path: "/minimax/v1/music_generation",
+        published_path: "",
+        body: r#"{"model":"music-cover","prompt":"upbeat"}"#,
+    },
     // --- sfx ---
-    ApiCase { api_code: "elevenlabs.sound_generation", path: "/elevenlabs/v1/sound-generation", published_path: "", body: r#"{"model_id":"eleven_text_to_sound_v2","text":"whoosh"}"# },
+    ApiCase {
+        api_code: "elevenlabs.sound_generation",
+        path: "/elevenlabs/v1/sound-generation",
+        published_path: "",
+        body: r#"{"model_id":"eleven_text_to_sound_v2","text":"whoosh"}"#,
+    },
 ];
 
 /// Credits every `token_bank` wallet in the tenant so the prepaid hold can
@@ -327,7 +535,10 @@ fn every_probe_path_is_a_published_route() {
     let manifest_path = repo_root
         .join("crates/sdkwork-api-cloudrouter-assembly/src/generated_open_http_route_manifest.rs");
     let source = std::fs::read_to_string(&manifest_path).unwrap_or_else(|error| {
-        panic!("read route manifest {} failed: {error}", manifest_path.display())
+        panic!(
+            "read route manifest {} failed: {error}",
+            manifest_path.display()
+        )
     });
 
     // Pair each `HttpMethod::Post` with the path literal that follows it. The
@@ -451,30 +662,53 @@ async fn every_published_api_reaches_its_vendor_account_on_the_real_catalog() {
     let mut reached: Vec<String> = Vec::new();
     let mut unreachable: Vec<String> = Vec::new();
     let mut unrouted: Vec<String> = Vec::new();
+    let mut catalogued_unrouted: Vec<String> = Vec::new();
+    let catalogued_unrouted_scopes = load_catalogued_unrouted_scopes();
 
     for case in API_CASES {
-        let response = router
-            .clone()
-            .oneshot(
-                client
-                    .apply(
-                        Request::builder()
-                            .method("POST")
-                            .uri(case.path)
-                            .header("content-type", "application/json"),
-                    )
-                    .body(Body::from(case.body.to_owned()))
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
+        let send = || async {
+            let response = router
+                .clone()
+                .oneshot(
+                    client
+                        .apply(
+                            Request::builder()
+                                .method("POST")
+                                .uri(case.path)
+                                .header("content-type", "application/json"),
+                        )
+                        .body(Body::from(case.body.to_owned()))
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            let status = response.status();
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap();
+            let text = String::from_utf8_lossy(&bytes).to_string();
+            (status, text)
+        };
 
-        let status = response.status();
-        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-            .await
-            .unwrap();
-        let text = String::from_utf8_lossy(&bytes).to_string();
-        let excerpt = text.chars().take(300).collect::<String>();
+        let (mut status, mut text) = send().await;
+
+        // Circuit-breaker carry-over from earlier cases sharing the same vendor
+        // account: wait out the open window and re-probe before judging.
+        let mut breaker_retries = 0u32;
+        while text.contains(BREAKER_OPEN_MARKER) && breaker_retries < BREAKER_MAX_RETRIES {
+            breaker_retries += 1;
+            eprintln!(
+                "  wait [{}] POST {} hit an open circuit breaker; retry \
+                 {breaker_retries}/{BREAKER_MAX_RETRIES} after the 30s open window",
+                case.api_code, case.path
+            );
+            tokio::time::sleep(BREAKER_RETRY_COOLDOWN).await;
+            let (retry_status, retry_text) = send().await;
+            status = retry_status;
+            text = retry_text;
+        }
+
+        let excerpt = text.chars().take(600).collect::<String>();
         let label = format!("[{}] POST {}", case.api_code, case.path);
 
         // A 404 on a published path means the assembly never mounted the route:
@@ -485,7 +719,25 @@ async fn every_published_api_reaches_its_vendor_account_on_the_real_catalog() {
             continue;
         }
 
-        if GATEWAY_GAP_MARKERS.iter().any(|marker| text.contains(marker)) {
+        // A catalogued-unrouted namespace must fail closed with exactly the
+        // documented message naming its api scope. Anything else — 404, a
+        // misrouted call, a different error — is a defect, not the exemption.
+        if let Some(scope) = catalogued_unrouted_scopes.get(case.api_code) {
+            let fail_closed = text.contains("no upstream account routes are configured")
+                && text.contains(&format!("on api scope {scope}"));
+            if fail_closed {
+                catalogued_unrouted.push(format!(
+                    "{label} => HTTP {status} (declared unrouted, fails closed on api scope \
+                     {scope})"
+                ));
+                continue;
+            }
+        }
+
+        if GATEWAY_GAP_MARKERS
+            .iter()
+            .any(|marker| text.contains(marker))
+        {
             gaps.push(format!("{label} => HTTP {status}: {excerpt}"));
         } else if NETWORK_UNREACHABLE_MARKERS
             .iter()
@@ -505,6 +757,10 @@ async fn every_published_api_reaches_its_vendor_account_on_the_real_catalog() {
     for line in &unrouted {
         eprintln!("  ROUTE {line}");
     }
+    eprintln!("=== 已编目豁免：声明无路由且精确失败关闭 ===");
+    for line in &catalogued_unrouted {
+        eprintln!("  EXEMPT {line}");
+    }
     eprintln!("=== 已拨号但网络不可达（环境，非网关缺口）===");
     for line in &unreachable {
         eprintln!("  NET  {line}");
@@ -514,9 +770,10 @@ async fn every_published_api_reaches_its_vendor_account_on_the_real_catalog() {
         eprintln!("  GAP  {line}");
     }
     eprintln!(
-        "\nsummary: reached={} unrouted={} network={} gaps={} of {} case(s)",
+        "\nsummary: reached={} unrouted={} exempt={} network={} gaps={} of {} case(s)",
         reached.len(),
         unrouted.len(),
+        catalogued_unrouted.len(),
         unreachable.len(),
         gaps.len(),
         API_CASES.len()

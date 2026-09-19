@@ -1,13 +1,13 @@
 #![allow(dead_code)]
 
+use axum::Router;
 use axum::extract::{MatchedPath, Request};
 use axum::http::header::ALLOW;
 use axum::http::{HeaderValue, Method, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::MethodRouter;
-use axum::Router;
-use serde::de::IgnoredAny;
 use serde::Deserialize;
+use serde::de::IgnoredAny;
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
@@ -344,16 +344,20 @@ mod tests {
 
     #[test]
     fn provider_contract_accepts_declared_direct_and_aliased_routes() {
-        assert!(reject_unsupported_provider_route(&request(
-            Method::POST,
-            "/google/v1beta/models/gemini-2.5-flash:generateContent",
-        ))
-        .is_none());
-        assert!(reject_unsupported_provider_route(&request(
-            Method::POST,
-            "/tencent-cloud/vidu/ent/v2/start-end2video",
-        ))
-        .is_none());
+        assert!(
+            reject_unsupported_provider_route(&request(
+                Method::POST,
+                "/google/v1beta/models/gemini-2.5-flash:generateContent",
+            ))
+            .is_none()
+        );
+        assert!(
+            reject_unsupported_provider_route(&request(
+                Method::POST,
+                "/tencent-cloud/vidu/ent/v2/start-end2video",
+            ))
+            .is_none()
+        );
     }
 
     #[test]
@@ -368,11 +372,9 @@ mod tests {
 
     #[test]
     fn provider_contract_rejects_undeclared_methods_with_allow_header() {
-        let response = reject_unsupported_provider_route(&request(
-            Method::DELETE,
-            "/anthropic/v1/messages",
-        ))
-        .expect("undeclared provider-native method must be rejected");
+        let response =
+            reject_unsupported_provider_route(&request(Method::DELETE, "/anthropic/v1/messages"))
+                .expect("undeclared provider-native method must be rejected");
         assert_eq!(response.status(), StatusCode::METHOD_NOT_ALLOWED);
         assert_eq!(
             response.headers().get(ALLOW),

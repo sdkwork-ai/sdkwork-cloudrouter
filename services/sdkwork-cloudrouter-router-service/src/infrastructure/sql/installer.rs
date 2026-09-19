@@ -10,7 +10,7 @@ use sqlx::{PgPool, Row};
 use crate::application::UpstreamCredentialSecretCodec;
 use crate::domain::DomainError;
 use crate::infrastructure::sql::ai_routing_seed::{
-    import_postgres_ai_routing_seed, postgres_ai_routing_seed_complete,
+    import_postgres_ai_routing_seed, postgres_ai_routing_seed_complete, postgres_ai_routing_seed_gap,
 };
 use crate::infrastructure::sql::model_catalog_import::{
     catalog_api_endpoint_projections, catalog_authority_keys,
@@ -383,8 +383,54 @@ impl DatabaseInstaller {
         let refresh = self.refresh_catalog(refresh_options).await?;
         let status = self.bootstrap_status(&self.options).await?;
         if status != InstallationStatus::Installed {
+            // `UpgradeRequired` is an `&&` chain of gates, and they fail for
+            // unrelated reasons. Report *which* gate failed rather than only the
+            // class, because the four are indistinguishable from the status
+            // alone:
+            //
+            // * `catalog_complete` — the model-catalog projection is behind the
+            //   `sdkwork-models` revision on disk (a table is missing bundled
+            //   keys);
+            // * the routing seed's projection — a resource/group/endpoint, a
+            //   routing strategy, an account, or an account's credential;
+            // * `default_service_node_complete` — the control-plane instance row.
+            //
+            // The credential case is the historic trap: `import_postgres_default_vendor_account_credential`
+            // bails out when no codec is configured (a credential the runtime
+            // cannot decode is worse than an absent one), but
+            // `postgres_default_vendor_upstream_accounts_complete` still
+            // requires an active credential per account. The accounts land, the
+            // predicate stays false, and the operator sees only
+            // "did not reach installed state" — which reads like a seeding bug
+            // rather than a missing key ring.
+            let mut causes: Vec<String> = Vec::new();
+            if let Ok(catalog) = load_install_model_catalog(&self.options) {
+                if let Ok(Some(gap)) = self.catalog_gap(&catalog).await {
+                    causes.push(format!("model catalog projection: {gap}"));
+                }
+            }
+            if let Ok(Some(gap)) = postgres_ai_routing_seed_gap(&self.pool).await {
+                causes.push(format!("ai routing seed: {gap}"));
+            }
+            if self.vendor_accounts_lack_credentials().await.unwrap_or(false) {
+                causes.push(
+                    "the bundled vendor default accounts exist but carry no active credential — \
+                     the seed skips credential writes when no upstream-credential key ring is \
+                     configured; set SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING or \
+                     SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING_FILE and re-run"
+                        .to_owned(),
+                );
+            }
+            if !self.default_service_node_complete().await.unwrap_or(true) {
+                causes.push("the default service node instance row is absent".to_owned());
+            }
+            let hint = if causes.is_empty() {
+                String::new()
+            } else {
+                format!(" — {}", causes.join("; "))
+            };
             return Err(DatabaseInstallError::InvalidState(format!(
-                "catalog/seed bootstrap did not reach installed state: {status:?}"
+                "catalog/seed bootstrap did not reach installed state: {status:?}{hint}"
             )));
         }
         self.status_report_with_options(&self.options, refresh.synced || service_node_changed)
@@ -649,6 +695,37 @@ impl DatabaseInstaller {
         Ok(InstallationStatus::Installed)
     }
 
+    /// True when the bundled vendor default accounts exist but at least one has
+    /// no active credential — the signature of a seed run with no configured
+    /// upstream-credential key ring.
+    ///
+    /// Diagnostic only: it never changes the computed status, it only lets
+    /// `ensure` name the cause instead of reporting a bare `UpgradeRequired`.
+    /// Errors are swallowed into `false` because a diagnostic must never turn a
+    /// clear seeding failure into a confusing database error.
+    async fn vendor_accounts_lack_credentials(&self) -> Result<bool, sqlx::Error> {
+        sqlx::query_scalar::<_, bool>(
+            r#"
+            SELECT EXISTS (
+                SELECT 1
+                FROM ai_upstream_account account
+                WHERE account.metadata ->> 'itemType' = 'default_vendor_upstream_account'
+                  AND account.deleted_at IS NULL
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM ai_upstream_account_credential credential
+                      WHERE credential.account_id = account.id
+                        AND credential.status = 1
+                        AND credential.is_active
+                        AND credential.deleted_at IS NULL
+                  )
+            )
+            "#,
+        )
+        .fetch_one(&self.pool)
+        .await
+    }
+
     async fn ensure_default_service_node(&self) -> Result<bool, DatabaseInstallError> {
         let rows_affected = sqlx::query(DEFAULT_SERVICE_NODE_SEED_SQL)
             .execute(&self.pool)
@@ -723,14 +800,40 @@ impl DatabaseInstaller {
     }
 
     async fn catalog_complete(&self, catalog: &ModelCatalog) -> Result<bool, DatabaseInstallError> {
+        Ok(self.catalog_gap(catalog).await?.is_none())
+    }
+
+    /// Names the first `catalog_expectations` entry whose bundled keys are not a
+    /// subset of the live table.
+    ///
+    /// `catalog_complete` is a bare `&&` over fifteen tables; when it fails the
+    /// caller can only say `UpgradeRequired`. The tables fail for unrelated
+    /// reasons (a model added to the catalog but not projected, a projector
+    /// changed in one place and not the other, a vendor removed from the
+    /// catalog while its rows survive), and finding out which one from the
+    /// outside means diffing fifteen key sets by hand. Returning
+    /// `table.column` names it outright.
+    async fn catalog_gap(&self, catalog: &ModelCatalog) -> Result<Option<String>, DatabaseInstallError> {
         for expectation in catalog_expectations(catalog) {
             let actual =
                 postgres_string_values(&self.pool, expectation.table, expectation.column).await?;
             if !expectation.expected.is_subset(&actual) {
-                return Ok(false);
+                let missing: Vec<&str> = expectation
+                    .expected
+                    .difference(&actual)
+                    .take(5)
+                    .map(String::as_str)
+                    .collect();
+                return Ok(Some(format!(
+                    "{}.{} is missing {} bundled key(s), e.g. {}",
+                    expectation.table,
+                    expectation.column,
+                    expectation.expected.difference(&actual).count(),
+                    missing.join(", ")
+                )));
             }
         }
-        Ok(true)
+        Ok(None)
     }
 
     fn install_options_for_catalog_root(

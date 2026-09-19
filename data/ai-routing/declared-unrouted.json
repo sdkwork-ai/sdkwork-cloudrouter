@@ -1,0 +1,150 @@
+{
+  "schemaVersion": "1.0.0",
+  "description": "Ledger of published gateway operations the routing contract declares unrouted. Every entry needs a reason; an entry whose operation becomes routable fails tools/check-cloudrouter-ai-routing-consistency.mjs until it is removed, so the ledger cannot rot into a permanent excuse. The per-API runtime probe (crates/sdkwork-cloudrouter-edge-runtime/tests/per_api_chain_e2e.rs) reads the entries that carry apiCode + failClosedScope and asserts the gateway fails closed on exactly that api scope.",
+  "items": [
+    {
+      "operation": "GET /anthropic/v1/files",
+      "group": "vendor-utility",
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+    },
+    {
+      "operation": "POST /anthropic/v1/files",
+      "group": "vendor-utility",
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+    },
+    {
+      "operation": "GET /anthropic/v1/files/{file_id}",
+      "group": "vendor-utility",
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+    },
+    {
+      "operation": "DELETE /anthropic/v1/files/{file_id}",
+      "group": "vendor-utility",
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+    },
+    {
+      "operation": "GET /anthropic/v1/files/{file_id}/content",
+      "group": "vendor-utility",
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+    },
+    {
+      "operation": "POST /anthropic/v1/messages/batches",
+      "group": "vendor-utility",
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+    },
+    {
+      "operation": "GET /anthropic/v1/messages/batches",
+      "group": "vendor-utility",
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+    },
+    {
+      "operation": "GET /anthropic/v1/messages/batches/{batch_id}",
+      "group": "vendor-utility",
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+    },
+    {
+      "operation": "POST /anthropic/v1/messages/batches/{batch_id}/cancel",
+      "group": "vendor-utility",
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+    },
+    {
+      "operation": "POST /anthropic/v1/messages/count_tokens",
+      "group": "vendor-utility",
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+    },
+    {
+      "operation": "GET /google/v1beta/cachedContents",
+      "group": "vendor-utility",
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+    },
+    {
+      "operation": "POST /google/v1beta/cachedContents",
+      "group": "vendor-utility",
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+    },
+    {
+      "operation": "GET /google/v1beta/cachedContents/{cached_content_id}",
+      "group": "vendor-utility",
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+    },
+    {
+      "operation": "DELETE /google/v1beta/cachedContents/{cached_content_id}",
+      "group": "vendor-utility",
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+    },
+    {
+      "operation": "GET /google/v1beta/files",
+      "group": "vendor-utility",
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+    },
+    {
+      "operation": "POST /google/v1beta/files",
+      "group": "vendor-utility",
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+    },
+    {
+      "operation": "GET /google/v1beta/files/{file_id}",
+      "group": "vendor-utility",
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+    },
+    {
+      "operation": "DELETE /google/v1beta/files/{file_id}",
+      "group": "vendor-utility",
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+    },
+    {
+      "operation": "POST /google/v1beta/models/{model}:batchEmbedContents",
+      "group": "vendor-utility",
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+    },
+    {
+      "operation": "POST /google/v1beta/models/{model}:countTokens",
+      "group": "vendor-utility",
+      "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+    },
+    {
+      "operation": "POST /midjourney/v1/images/generations",
+      "group": "no-supplier-namespace",
+      "apiCode": "midjourney.image_generation",
+      "failClosedScope": "midjourney.generations",
+      "reason": "no supplier/vendor/account: generations dispatches the midjourney slug through the OpenAI-compatible image surface instead"
+    },
+    {
+      "operation": "GET /midjourney/v1/images/generations/{task_id}",
+      "group": "no-supplier-namespace",
+      "reason": "no supplier/vendor/account: generations dispatches the midjourney slug through the OpenAI-compatible image surface instead"
+    },
+    {
+      "operation": "POST /nano-banana/v1/images/generations",
+      "group": "no-supplier-namespace",
+      "apiCode": "nano_banana.image_generation",
+      "failClosedScope": "nano-banana.generations",
+      "reason": "no supplier/vendor/account, and the wired nano-banana ingress is the Gemini-native /google/v1beta/models/nano-banana:generateImages — but `dispatch_nano_banana` in sdkwork-generations drives THIS path, so it is a live cross-repo breakage (API authority ambiguity), not something an arm can paper over"
+    },
+    {
+      "operation": "GET /nano-banana/v1/images/generations/{task_id}",
+      "group": "no-supplier-namespace",
+      "reason": "no supplier/vendor/account, and the wired nano-banana ingress is the Gemini-native /google/v1beta/models/nano-banana:generateImages — but `dispatch_nano_banana` in sdkwork-generations drives THIS path, so it is a live cross-repo breakage (API authority ambiguity), not something an arm can paper over"
+    },
+    {
+      "operation": "POST /vidu/ent/v2/text2video",
+      "group": "published-no-route",
+      "reason": "published and called by sdkwork-generations, but the taxonomy names no vidu video route"
+    },
+    {
+      "operation": "POST /vidu/ent/v2/img2video",
+      "group": "published-no-route",
+      "reason": "published and called by sdkwork-generations, but the taxonomy names no vidu video route"
+    },
+    {
+      "operation": "POST /vidu/ent/v2/reference2video",
+      "group": "published-no-route",
+      "reason": "published and called by sdkwork-generations, but the taxonomy names no vidu video route"
+    },
+    {
+      "operation": "GET /vidu/ent/v2/tasks/{task_id}/creations",
+      "group": "published-no-route",
+      "reason": "published and called by sdkwork-generations, but the taxonomy names no vidu video route"
+    }
+  ]
+}

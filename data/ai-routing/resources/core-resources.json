@@ -7,7 +7,14 @@
       "displayName": "OpenAI",
       "vendorCode": "openai",
       "capability": "network",
-      "capabilities": ["llm", "image", "audio", "video", "embedding", "network"],
+      "capabilities": [
+        "llm",
+        "image",
+        "audio",
+        "video",
+        "embedding",
+        "network"
+      ],
       "sortOrder": 10
     },
     {
@@ -16,7 +23,13 @@
       "displayName": "OpenAI Compatible",
       "vendorCode": "openai_compatible",
       "capability": "network",
-      "capabilities": ["llm", "image", "audio", "embedding", "network"],
+      "capabilities": [
+        "llm",
+        "image",
+        "audio",
+        "embedding",
+        "network"
+      ],
       "sortOrder": 20
     },
     {
@@ -25,7 +38,9 @@
       "displayName": "Anthropic",
       "vendorCode": "anthropic",
       "capability": "llm",
-      "capabilities": ["llm"],
+      "capabilities": [
+        "llm"
+      ],
       "sortOrder": 30
     },
     {
@@ -34,7 +49,13 @@
       "displayName": "Gemini",
       "vendorCode": "gemini",
       "capability": "llm",
-      "capabilities": ["llm", "image", "audio", "video", "embedding"],
+      "capabilities": [
+        "llm",
+        "image",
+        "audio",
+        "video",
+        "embedding"
+      ],
       "sortOrder": 40
     },
     {
@@ -43,7 +64,11 @@
       "displayName": "Kling",
       "vendorCode": "kling",
       "capability": "video",
-      "capabilities": ["image", "video", "network"],
+      "capabilities": [
+        "image",
+        "video",
+        "network"
+      ],
       "sortOrder": 50
     },
     {
@@ -52,7 +77,11 @@
       "displayName": "Jimeng",
       "vendorCode": "jimeng",
       "capability": "image",
-      "capabilities": ["image", "video", "network"],
+      "capabilities": [
+        "image",
+        "video",
+        "network"
+      ],
       "sortOrder": 60
     },
     {
@@ -61,7 +90,11 @@
       "displayName": "Volcengine",
       "vendorCode": "volcengine",
       "capability": "image",
-      "capabilities": ["image", "video", "network"],
+      "capabilities": [
+        "image",
+        "video",
+        "network"
+      ],
       "sortOrder": 70
     },
     {
@@ -70,7 +103,10 @@
       "displayName": "Vidu",
       "vendorCode": "vidu",
       "capability": "video",
-      "capabilities": ["video", "network"],
+      "capabilities": [
+        "video",
+        "network"
+      ],
       "sortOrder": 80
     },
     {
@@ -79,7 +115,11 @@
       "displayName": "Minimax",
       "vendorCode": "minimax",
       "capability": "audio",
-      "capabilities": ["audio", "music", "network"],
+      "capabilities": [
+        "audio",
+        "music",
+        "network"
+      ],
       "sortOrder": 90
     },
     {
@@ -88,7 +128,11 @@
       "displayName": "Suno",
       "vendorCode": "suno",
       "capability": "audio",
-      "capabilities": ["audio", "music", "network"],
+      "capabilities": [
+        "audio",
+        "music",
+        "network"
+      ],
       "sortOrder": 92
     },
     {
@@ -97,7 +141,10 @@
       "displayName": "ElevenLabs",
       "vendorCode": "elevenlabs",
       "capability": "audio",
-      "capabilities": ["audio", "network"],
+      "capabilities": [
+        "audio",
+        "network"
+      ],
       "sortOrder": 94
     },
     {
@@ -106,7 +153,11 @@
       "displayName": "LLM",
       "modalityCode": "llm",
       "capability": "llm",
-      "capabilities": ["llm", "chat", "text"],
+      "capabilities": [
+        "llm",
+        "chat",
+        "text"
+      ],
       "sortOrder": 100
     },
     {
@@ -115,7 +166,9 @@
       "displayName": "Image",
       "modalityCode": "image",
       "capability": "image",
-      "capabilities": ["image"],
+      "capabilities": [
+        "image"
+      ],
       "sortOrder": 110
     },
     {
@@ -124,7 +177,10 @@
       "displayName": "Audio",
       "modalityCode": "audio",
       "capability": "audio",
-      "capabilities": ["audio", "speech"],
+      "capabilities": [
+        "audio",
+        "speech"
+      ],
       "sortOrder": 120
     },
     {
@@ -133,7 +189,10 @@
       "displayName": "Music",
       "modalityCode": "music",
       "capability": "audio",
-      "capabilities": ["audio", "music"],
+      "capabilities": [
+        "audio",
+        "music"
+      ],
       "sortOrder": 125
     },
     {
@@ -142,7 +201,9 @@
       "displayName": "Video",
       "modalityCode": "video",
       "capability": "video",
-      "capabilities": ["video"],
+      "capabilities": [
+        "video"
+      ],
       "sortOrder": 130
     },
     {
@@ -151,7 +212,11 @@
       "displayName": "Embedding",
       "modalityCode": "embedding",
       "capability": "embedding",
-      "capabilities": ["embedding", "embeddings", "llm"],
+      "capabilities": [
+        "embedding",
+        "embeddings",
+        "llm"
+      ],
       "sortOrder": 140
     },
     {
@@ -160,8 +225,219 @@
       "displayName": "Network",
       "modalityCode": "network",
       "capability": "network",
-      "capabilities": ["network", "http"],
+      "capabilities": [
+        "network",
+        "http"
+      ],
       "sortOrder": 150
+    },
+    {
+      "resourceCode": "vendor.alibaba",
+      "resourceType": "vendor",
+      "displayName": "Alibaba Cloud",
+      "vendorCode": "alibaba",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "embedding",
+        "image",
+        "network",
+        "video"
+      ],
+      "sortOrder": 96
+    },
+    {
+      "resourceCode": "vendor.baidu",
+      "resourceType": "vendor",
+      "displayName": "Baidu AI Cloud",
+      "vendorCode": "baidu",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "network"
+      ],
+      "sortOrder": 98
+    },
+    {
+      "resourceCode": "vendor.black_forest_labs",
+      "resourceType": "vendor",
+      "displayName": "Black Forest Labs",
+      "vendorCode": "black_forest_labs",
+      "capability": "audio",
+      "capabilities": [
+        "audio",
+        "image",
+        "video",
+        "network"
+      ],
+      "sortOrder": 100
+    },
+    {
+      "resourceCode": "vendor.deepseek",
+      "resourceType": "vendor",
+      "displayName": "DeepSeek",
+      "vendorCode": "deepseek",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "network"
+      ],
+      "sortOrder": 102
+    },
+    {
+      "resourceCode": "vendor.luma_ai",
+      "resourceType": "vendor",
+      "displayName": "Luma AI",
+      "vendorCode": "luma_ai",
+      "capability": "video",
+      "capabilities": [
+        "video",
+        "network"
+      ],
+      "sortOrder": 104
+    },
+    {
+      "resourceCode": "vendor.meituan",
+      "resourceType": "vendor",
+      "displayName": "Meituan",
+      "vendorCode": "meituan",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "network"
+      ],
+      "sortOrder": 106
+    },
+    {
+      "resourceCode": "vendor.moonshot",
+      "resourceType": "vendor",
+      "displayName": "Moonshot Kimi",
+      "vendorCode": "moonshot",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "network"
+      ],
+      "sortOrder": 108
+    },
+    {
+      "resourceCode": "vendor.mureka",
+      "resourceType": "vendor",
+      "displayName": "Mureka",
+      "vendorCode": "mureka",
+      "capability": "music",
+      "capabilities": [
+        "music",
+        "network"
+      ],
+      "sortOrder": 110
+    },
+    {
+      "resourceCode": "vendor.pixverse",
+      "resourceType": "vendor",
+      "displayName": "PixVerse",
+      "vendorCode": "pixverse",
+      "capability": "video",
+      "capabilities": [
+        "video",
+        "network"
+      ],
+      "sortOrder": 112
+    },
+    {
+      "resourceCode": "vendor.runway",
+      "resourceType": "vendor",
+      "displayName": "Runway",
+      "vendorCode": "runway",
+      "capability": "image",
+      "capabilities": [
+        "image",
+        "video",
+        "network"
+      ],
+      "sortOrder": 114
+    },
+    {
+      "resourceCode": "vendor.stability_ai",
+      "resourceType": "vendor",
+      "displayName": "Stability AI",
+      "vendorCode": "stability_ai",
+      "capability": "image",
+      "capabilities": [
+        "image",
+        "music",
+        "audio",
+        "network"
+      ],
+      "sortOrder": 116
+    },
+    {
+      "resourceCode": "vendor.stepfun",
+      "resourceType": "vendor",
+      "displayName": "StepFun",
+      "vendorCode": "stepfun",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "network"
+      ],
+      "sortOrder": 118
+    },
+    {
+      "resourceCode": "vendor.tencent",
+      "resourceType": "vendor",
+      "displayName": "Tencent Cloud",
+      "vendorCode": "tencent",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "network"
+      ],
+      "sortOrder": 120
+    },
+    {
+      "resourceCode": "vendor.xai",
+      "resourceType": "vendor",
+      "displayName": "xAI",
+      "vendorCode": "xai",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "image",
+        "video",
+        "network"
+      ],
+      "sortOrder": 122
+    },
+    {
+      "resourceCode": "vendor.xiaomi",
+      "resourceType": "vendor",
+      "displayName": "Xiaomi MiMo",
+      "vendorCode": "xiaomi",
+      "capability": "audio",
+      "capabilities": [
+        "audio",
+        "llm",
+        "image",
+        "video",
+        "network"
+      ],
+      "sortOrder": 124
+    },
+    {
+      "resourceCode": "vendor.zhipu",
+      "resourceType": "vendor",
+      "displayName": "Zhipu AI",
+      "vendorCode": "zhipu",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "embedding",
+        "image",
+        "video",
+        "network"
+      ],
+      "sortOrder": 126
     }
   ]
 }

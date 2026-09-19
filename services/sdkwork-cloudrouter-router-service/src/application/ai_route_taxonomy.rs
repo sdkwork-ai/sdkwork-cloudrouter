@@ -209,19 +209,19 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         "openai.audio",
         "openai.audio",
         RoutingCapability::Audio,
-        BillingMeter::AudioInputSecond,
+        BillingMeter::SttAudioMinute,
     ),
     model(
         "openai.audio.transcriptions",
         "openai.audio.transcriptions",
         RoutingCapability::Audio,
-        BillingMeter::AudioInputSecond,
+        BillingMeter::SttAudioMinute,
     ),
     model(
         "openai.audio.translations",
         "openai.audio.translations",
         RoutingCapability::Audio,
-        BillingMeter::AudioInputSecond,
+        BillingMeter::SttAudioMinute,
     ),
     model(
         "openai.audio.speech",
@@ -233,7 +233,7 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         "openai.realtime",
         "openai.realtime",
         RoutingCapability::Audio,
-        BillingMeter::AudioInputSecond,
+        BillingMeter::SttAudioMinute,
         "realtime_session",
     ),
     sticky_model(
@@ -359,7 +359,7 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         "openai_compatible.audio.transcriptions",
         "openai.audio.transcriptions",
         RoutingCapability::Audio,
-        BillingMeter::AudioInputSecond,
+        BillingMeter::SttAudioMinute,
     ),
     model(
         "openai_compatible.audio.speech",
@@ -410,7 +410,7 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         "gemini.live",
         "gemini.live",
         RoutingCapability::Audio,
-        BillingMeter::AudioInputSecond,
+        BillingMeter::SttAudioMinute,
         "live_session",
     ),
     model(
@@ -513,6 +513,47 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         BillingMeter::ImageResult,
         "image_task",
     ),
+    // Runway serves every image model from `POST /v1/text_to_image` and
+    // discriminates them by the body's `model` field, so the model requirement
+    // is Optional (absent `model` the account's default is used) and the result
+    // arrives asynchronously through `/v1/tasks/{id}`.
+    media_task(
+        "runway.image_generation",
+        "runway.image_generation",
+        RoutingCapability::Image,
+        BillingMeter::ImageResult,
+        "image_task",
+    ),
+    account(
+        "runway.task_query",
+        "runway.task_query",
+        RoutingCapability::Network,
+        BillingMeter::ApiRequest,
+    ),
+    // Stability names the model in the trailing path segment
+    // (`/v2beta/stable-image/generate/{core,ultra,sd3}`) and answers
+    // synchronously, so there is no task-poll route to register.
+    model(
+        "stability_ai.image_generation",
+        "stability_ai.image_generation",
+        RoutingCapability::Image,
+        BillingMeter::ImageResult,
+    ),
+    // FLUX takes the model in the path (`POST /v1/{model}`) and returns a
+    // `polling_url`; `/v1/get_result?id=` is the documented result route.
+    media_task(
+        "black_forest_labs.image_generation",
+        "black_forest_labs.image_generation",
+        RoutingCapability::Image,
+        BillingMeter::ImageResult,
+        "image_task",
+    ),
+    account(
+        "black_forest_labs.task_query",
+        "black_forest_labs.task_query",
+        RoutingCapability::Network,
+        BillingMeter::ApiRequest,
+    ),
     media_task(
         "vidu.start_end_to_video",
         "vidu.start_end_to_video",
@@ -545,6 +586,40 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         BillingMeter::MusicOutputSecond,
         "music_task",
     ),
+    // The *generic* music surface `model_catalog_import::model_endpoint_descriptor`
+    // binds every `primaryCapability = "music"` catalog model to. It sits next to
+    // the vendor-native `suno.music_generation` arm deliberately: `suno.music`
+    // (declared in `data/ai-routing/resources/vendor-native-resources.json`) is
+    // the vendor-agnostic fallback the OpenAI-compatible surface routes music
+    // through, while `suno.music_generation` is Suno's own protocol. A route
+    // code that exists in the seed but not here is unreachable by construction
+    // and answers 50201, which the ai-routing consistency gate rejects.
+    media_task(
+        "suno.music",
+        "suno.music",
+        RoutingCapability::Music,
+        BillingMeter::MusicOutputSecond,
+        "music_task",
+    ),
+    // Sound effects (音效).
+    //
+    // The catalog carries `primaryCapability = "sfx"` models for four vendors
+    // (`elevenlabs/eleven_text_to_sound_v2`, `kuaishou/kling-sound-{t2a,v2a}`,
+    // `stability_ai/stable-audio-2.5-sfx`, `vidu/audio1.0-{text2audio,timing2audio}`)
+    // and the price book already rates them under `sfx_result` on
+    // `sound.generate`. What was missing was the endpoint they bind to:
+    // `model_endpoint_descriptor` had no `"sfx"` arm, so every one of those
+    // models fell through to the generic chat branch and was bound to
+    // `openai.chat_completions`. This arm gives the capability a real
+    // vendor-native endpoint, and this route is what makes it reachable —
+    // a route code declared in the seed but absent here answers 50201.
+    media_task(
+        "sfx.sound",
+        "sfx.sound",
+        RoutingCapability::Audio,
+        BillingMeter::SfxResult,
+        "audio_task",
+    ),
     media_task(
         "kling.avatar",
         "kling.avatar",
@@ -569,6 +644,206 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
     account(
         "suno.music_task_query",
         "suno.music_task_query",
+        RoutingCapability::Network,
+        BillingMeter::ApiRequest,
+    ),
+    // Vendor-native surfaces for the catalog vendors that reach the gateway
+    // through their own OpenAI-compatible host.
+    //
+    // These vendors (`alibaba`, `baidu`, `deepseek`, `meituan`, `moonshot`,
+    // `stepfun`, `tencent`, `xai`, `xiaomi`, `zhipu`, plus `luma_ai`,
+    // `pixverse` and `mureka`) each ship a bundled official account whose
+    // `official.<vendor>.full` resource group granted only the `vendor.<vendor>`
+    // marker. A resource group that names no `api.*` resource produces no
+    // resource entitlement, and `account_route_allows_api_resource` fails
+    // closed for every request — so the account existed, the group existed, and
+    // no request could ever reach it. The seed declares one api resource per
+    // real vendor surface; these routes are what make each one addressable. A
+    // route code present in the seed but absent here is unreachable by
+    // construction and answers 50201, which the ai-routing consistency gate
+    // rejects.
+    //
+    // Every arm uses `model` (synchronous, stateless failover) because none of
+    // these hosts answers with a vendor task id the router polls; `mureka` and
+    // `luma_ai`/`pixverse` are registered here too, and if a vendor later
+    // documents asynchronous polling its arm should become `media_task`.
+    model(
+        "alibaba.chat_completions",
+        "alibaba.chat_completions",
+        RoutingCapability::Chat,
+        BillingMeter::LlmInputToken,
+    ),
+    model(
+        "alibaba.embeddings",
+        "alibaba.embeddings",
+        RoutingCapability::Embedding,
+        BillingMeter::EmbeddingInputToken,
+    ),
+    model(
+        "alibaba.image_generation",
+        "alibaba.image_generation",
+        RoutingCapability::Image,
+        BillingMeter::ImageResult,
+    ),
+    model(
+        "alibaba.video_generation",
+        "alibaba.video_generation",
+        RoutingCapability::Video,
+        BillingMeter::VideoResult,
+    ),
+    model(
+        "baidu.chat_completions",
+        "baidu.chat_completions",
+        RoutingCapability::Chat,
+        BillingMeter::LlmInputToken,
+    ),
+    model(
+        "deepseek.chat_completions",
+        "deepseek.chat_completions",
+        RoutingCapability::Chat,
+        BillingMeter::LlmInputToken,
+    ),
+    model(
+        "luma_ai.video_generation",
+        "luma_ai.video_generation",
+        RoutingCapability::Video,
+        BillingMeter::VideoResult,
+    ),
+    model(
+        "meituan.chat_completions",
+        "meituan.chat_completions",
+        RoutingCapability::Chat,
+        BillingMeter::LlmInputToken,
+    ),
+    model(
+        "moonshot.chat_completions",
+        "moonshot.chat_completions",
+        RoutingCapability::Chat,
+        BillingMeter::LlmInputToken,
+    ),
+    model(
+        "mureka.music_generation",
+        "mureka.music_generation",
+        RoutingCapability::Music,
+        BillingMeter::MusicOutputSecond,
+    ),
+    model(
+        "pixverse.video_generation",
+        "pixverse.video_generation",
+        RoutingCapability::Video,
+        BillingMeter::VideoResult,
+    ),
+    model(
+        "stepfun.chat_completions",
+        "stepfun.chat_completions",
+        RoutingCapability::Chat,
+        BillingMeter::LlmInputToken,
+    ),
+    model(
+        "tencent.chat_completions",
+        "tencent.chat_completions",
+        RoutingCapability::Chat,
+        BillingMeter::LlmInputToken,
+    ),
+    model(
+        "xai.chat_completions",
+        "xai.chat_completions",
+        RoutingCapability::Chat,
+        BillingMeter::LlmInputToken,
+    ),
+    model(
+        "xai.image_generation",
+        "xai.image_generation",
+        RoutingCapability::Image,
+        BillingMeter::ImageResult,
+    ),
+    model(
+        "xai.video_generation",
+        "xai.video_generation",
+        RoutingCapability::Video,
+        BillingMeter::VideoResult,
+    ),
+    model(
+        "xiaomi.chat_completions",
+        "xiaomi.chat_completions",
+        RoutingCapability::Chat,
+        BillingMeter::LlmInputToken,
+    ),
+    model(
+        "xiaomi.image_generation",
+        "xiaomi.image_generation",
+        RoutingCapability::Image,
+        BillingMeter::ImageResult,
+    ),
+    model(
+        "xiaomi.speech",
+        "xiaomi.speech",
+        RoutingCapability::Audio,
+        BillingMeter::TtsInputCharacter,
+    ),
+    model(
+        "xiaomi.video_generation",
+        "xiaomi.video_generation",
+        RoutingCapability::Video,
+        BillingMeter::VideoResult,
+    ),
+    model(
+        "zhipu.chat_completions",
+        "zhipu.chat_completions",
+        RoutingCapability::Chat,
+        BillingMeter::LlmInputToken,
+    ),
+    model(
+        "zhipu.embeddings",
+        "zhipu.embeddings",
+        RoutingCapability::Embedding,
+        BillingMeter::EmbeddingInputToken,
+    ),
+    model(
+        "zhipu.image_generation",
+        "zhipu.image_generation",
+        RoutingCapability::Image,
+        BillingMeter::ImageResult,
+    ),
+    model(
+        "zhipu.video_generation",
+        "zhipu.video_generation",
+        RoutingCapability::Video,
+        BillingMeter::VideoResult,
+    ),
+    // Async task-poll surfaces. Each of these vendors submits a generation
+    // task and then exposes the result behind a separate GET, so the poll is
+    // its own routable endpoint rather than a path the create operation
+    // answers. They are `account` routes like `kling.task_query` and
+    // `suno.music_task_query`: the poll itself performs no generation, so it
+    // meters as a plain API request.
+    account(
+        "alibaba.video_generation_task_query",
+        "alibaba.video_generation_task_query",
+        RoutingCapability::Network,
+        BillingMeter::ApiRequest,
+    ),
+    account(
+        "luma_ai.video_generation_task_query",
+        "luma_ai.video_generation_task_query",
+        RoutingCapability::Network,
+        BillingMeter::ApiRequest,
+    ),
+    account(
+        "pixverse.video_generation_task_query",
+        "pixverse.video_generation_task_query",
+        RoutingCapability::Network,
+        BillingMeter::ApiRequest,
+    ),
+    account(
+        "zhipu.video_generation_task_query",
+        "zhipu.video_generation_task_query",
+        RoutingCapability::Network,
+        BillingMeter::ApiRequest,
+    ),
+    account(
+        "mureka.music_generation_task_query",
+        "mureka.music_generation_task_query",
         RoutingCapability::Network,
         BillingMeter::ApiRequest,
     ),

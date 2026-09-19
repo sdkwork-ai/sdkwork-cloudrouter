@@ -522,6 +522,7 @@ if (!existsSync(seedDirectory)) {
           apiCode: item.apiCode,
           vendorCode: item.vendorCode,
           modalityCode: item.modalityCode,
+          seedFile: relativePath,
           pathTemplate: item.pathTemplate,
           method: item.method,
           resourceCode: item.resourceCode,
@@ -713,6 +714,114 @@ if (seededEndpoints.length > 0) {
 }
 
 // ---------------------------------------------------------------------------
+// 4b. Every seeded vendor-native api_endpoint has to be answerable by an arm, or
+//     be listed as deliberately served by the generic compatibility face.
+// ---------------------------------------------------------------------------
+//
+// Check 4 above only iterates over *arms* and looks the seeded endpoints up by
+// api code. A seeded endpoint that no arm can return is therefore invisible to
+// it: the catalogue can advertise an entry point, the seed can grant it, the
+// account group can entitle it, and nothing notices that the path map can never
+// classify a request onto it. That blind spot is how 24 endpoints for 13
+// vendors shipped with zero arms.
+//
+// This check closes it in the other direction: every seeded vendor-native
+// api_endpoint must either be reachable through an arm, or be named below as a
+// surface its vendor's models do not speak natively. The list is exact in both
+// directions — an entry that becomes reachable must be removed, or the check
+// reports a stale exemption.
+//
+// The scope is `vendor-native-resources.json` only. `openai-resources.json`
+// declares the OpenAI compatibility surface, whose paths are answered by the
+// generic protocol handlers rather than by this path map, so holding it to the
+// same rule would be a category error.
+const VENDOR_NATIVE_SEED = `${SEED_DIR}/vendor-native-resources.json`;
+const COMPAT_FACE_ENDPOINTS = new Set([
+  // Vendors whose catalog models all declare `openai_compatible` (or
+  // `anthropic_messages`): their requests are served by the generic protocol
+  // face, so the vendor's own path is advertised for operators and for
+  // protocol-coherent callers but is not a classifier entry point.
+  "alibaba.chat_completions",
+  "alibaba.embeddings",
+  "alibaba.image_generation",
+  "deepseek.chat_completions",
+  "meituan.chat_completions",
+  "moonshot.chat_completions",
+  "stepfun.chat_completions",
+  "tencent.chat_completions",
+  "xai.chat_completions",
+  "xai.image_generation",
+  "xai.video_generation",
+  "xiaomi.chat_completions",
+  "xiaomi.image_generation",
+  "xiaomi.video_generation",
+  "xiaomi.speech",
+  "zhipu.chat_completions",
+  "zhipu.embeddings",
+  "zhipu.image_generation",
+  // The OpenAI-compatible music surface: every music model binds to a
+  // vendor-native endpoint of its own, and this is the aliased generic face the
+  // classifier never needs to name.
+  "suno.music",
+]);
+
+if (parsedArmsByCopy.size > 0) {
+  const vendorNativeEndpoints = seededEndpoints.filter(
+    (endpoint) => endpoint.seedFile === VENDOR_NATIVE_SEED,
+  );
+  // The union of both copies: the gate already proves the two agree (check 1),
+  // so a code reachable in either is reachable in both.
+  const reachableApiCodes = new Set();
+  for (const arms of parsedArmsByCopy.values()) {
+    for (const arm of arms) {
+      for (const apiCode of [arm.apiCode, arm.branch?.apiCode].filter(Boolean)) {
+        reachableApiCodes.add(apiCode);
+      }
+    }
+  }
+  const unreachable = vendorNativeEndpoints
+    .filter((endpoint) => !reachableApiCodes.has(endpoint.apiCode))
+    .filter((endpoint) => !COMPAT_FACE_ENDPOINTS.has(endpoint.apiCode))
+    .map((endpoint) => `${endpoint.apiCode} (${endpoint.pathTemplate})`)
+    .sort();
+  if (unreachable.length > 0) {
+    failures.push(
+      `${VENDOR_NATIVE_SEED}: ${unreachable.length} seeded api_endpoint(s) no arm can classify a request onto and that no compat-face exemption covers; the path map resolves them to a synthesised key with no taxonomy route, so they carry no meter and fail closed`,
+    );
+    for (const entry of unreachable) failures.push(`    ${entry}`);
+  }
+
+  const stale = [...COMPAT_FACE_ENDPOINTS]
+    .filter((apiCode) => reachableApiCodes.has(apiCode))
+    .sort();
+  if (stale.length > 0) {
+    failures.push(
+      `${VENDOR_NATIVE_SEED}: ${stale.length} compat-face exemption(s) are stale — an arm now classifies onto them, so the entry must be removed rather than left to mask a later regression`,
+    );
+    for (const entry of stale) failures.push(`    ${entry}`);
+  }
+
+  const unknownExemptions = [...COMPAT_FACE_ENDPOINTS]
+    .filter(
+      (apiCode) =>
+        !vendorNativeEndpoints.some((endpoint) => endpoint.apiCode === apiCode),
+    )
+    .sort();
+  if (unknownExemptions.length > 0) {
+    failures.push(
+      `${VENDOR_NATIVE_SEED}: ${unknownExemptions.length} compat-face exemption(s) name an api code no seed declares`,
+    );
+    for (const entry of unknownExemptions) failures.push(`    ${entry}`);
+  }
+
+  notes.push(
+    `vendor-native endpoint coverage: ${vendorNativeEndpoints.length} declared, ${
+      vendorNativeEndpoints.length - unreachable.length - (COMPAT_FACE_ENDPOINTS.size - stale.length)
+    } classified by an arm, ${COMPAT_FACE_ENDPOINTS.size - stale.length} exempted as compat face`,
+  );
+}
+
+// ---------------------------------------------------------------------------
 // 7. Every vendor-native operation the open-api contract publishes has to be
 //    routable.
 // ---------------------------------------------------------------------------
@@ -743,77 +852,49 @@ if (seededEndpoints.length > 0) {
 /** `"<METHOD> <path>"` -> why the gateway cannot route it yet. */
 const DECLARED_UNROUTED_OPERATIONS = new Map();
 
-function declareUnrouted(operations, reason) {
-  for (const operation of operations) {
-    DECLARED_UNROUTED_OPERATIONS.set(operation, reason);
+// The ledger is data, shared with the runtime probe
+// (`per_api_chain_e2e.rs`), so a new exemption is a data entry and both
+// consumers stay in step by construction. A missing or malformed ledger is a
+// hard failure: silently accepting zero exemptions would turn every
+// declared-unrouted namespace into a red "wire it or declare it" failure the
+// moment the file is lost, which is the correct direction, but losing the
+// *reasons* must be just as loud.
+{
+  const ledgerPath = "data/ai-routing/declared-unrouted.json";
+  const ledgerSource = read(ledgerPath);
+  if (ledgerSource.length > 0) {
+    let ledger;
+    try {
+      ledger = JSON.parse(ledgerSource);
+    } catch (error) {
+      failures.push(`${ledgerPath}: invalid JSON (${error.message})`);
+    }
+    if (ledger) {
+      const items = Array.isArray(ledger.items) ? ledger.items : null;
+      if (!items) {
+        failures.push(`${ledgerPath}: "items" array is missing`);
+      } else {
+        for (const item of items) {
+          if (typeof item?.operation !== "string" || !item.operation.trim()) {
+            failures.push(`${ledgerPath}: entry without an "operation" string`);
+            continue;
+          }
+          if (typeof item?.reason !== "string" || !item.reason.trim()) {
+            failures.push(
+              `${ledgerPath}: ${item.operation} has no "reason"; an exemption without a reason is a permanent excuse`,
+            );
+            continue;
+          }
+          if (DECLARED_UNROUTED_OPERATIONS.has(item.operation)) {
+            failures.push(`${ledgerPath}: ${item.operation} is declared twice`);
+            continue;
+          }
+          DECLARED_UNROUTED_OPERATIONS.set(item.operation, item.reason);
+        }
+      }
+    }
   }
 }
-
-// Anthropic's and Google's utility surfaces. None of these has a taxonomy route,
-// an api_endpoint seed, an account-group resource grant or a price, and none is
-// billed on the per-generation meters: `count_tokens` / `countTokens` are free at
-// the vendor and files / batches / cachedContents are storage and job control.
-// Wiring them is a pricing and product decision, so they are declared rather
-// than invented.
-declareUnrouted(
-  [
-    "GET /anthropic/v1/files",
-    "POST /anthropic/v1/files",
-    "GET /anthropic/v1/files/{file_id}",
-    "DELETE /anthropic/v1/files/{file_id}",
-    "GET /anthropic/v1/files/{file_id}/content",
-    "POST /anthropic/v1/messages/batches",
-    "GET /anthropic/v1/messages/batches",
-    "GET /anthropic/v1/messages/batches/{batch_id}",
-    "POST /anthropic/v1/messages/batches/{batch_id}/cancel",
-    "POST /anthropic/v1/messages/count_tokens",
-    "GET /google/v1beta/cachedContents",
-    "POST /google/v1beta/cachedContents",
-    "GET /google/v1beta/cachedContents/{cached_content_id}",
-    "DELETE /google/v1beta/cachedContents/{cached_content_id}",
-    "GET /google/v1beta/files",
-    "POST /google/v1beta/files",
-    "GET /google/v1beta/files/{file_id}",
-    "DELETE /google/v1beta/files/{file_id}",
-    "POST /google/v1beta/models/{model}:batchEmbedContents",
-    "POST /google/v1beta/models/{model}:countTokens",
-  ],
-  "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price",
-);
-
-// `midjourney` and `nano-banana` publish a namespace but have no
-// `ai_upstream_supplier`, no `ai_model_vendor` and no bundled account, so no
-// routing support can exist yet.
-declareUnrouted(
-  [
-    "POST /midjourney/v1/images/generations",
-    "GET /midjourney/v1/images/generations/{task_id}",
-  ],
-  "no supplier/vendor/account: generations dispatches the midjourney slug through the OpenAI-compatible image surface instead",
-);
-declareUnrouted(
-  [
-    "POST /nano-banana/v1/images/generations",
-    "GET /nano-banana/v1/images/generations/{task_id}",
-  ],
-  "no supplier/vendor/account, and the wired nano-banana ingress is the Gemini-native /google/v1beta/models/nano-banana:generateImages — but `dispatch_nano_banana` in sdkwork-generations drives THIS path, so it is a live cross-repo breakage (API authority ambiguity), not something an arm can paper over",
-);
-
-// Vidu: the published paths are Vidu's own (`https://api.vidu.cn/ent/v2/...`) and
-// the generation adapter calls three of them, but the taxonomy only names
-// `vidu.reference_to_image`, `vidu.start_end_to_video` and `vidu.motion_sync`, so
-// the video verbs have no route to resolve to. Unlike the volcengine case there
-// is no existing api code to reuse: each needs a taxonomy route, a seed, a
-// resource grant and a price.
-declareUnrouted(
-  [
-    "POST /vidu/ent/v2/text2video",
-    "POST /vidu/ent/v2/img2video",
-    "POST /vidu/ent/v2/reference2video",
-    "GET /vidu/ent/v2/tasks/{task_id}/creations",
-  ],
-  "published and called by sdkwork-generations, but the taxonomy names no vidu video route",
-);
 
 const openApiContractSource = read(OPEN_API_CONTRACT);
 if (openApiContractSource.length > 0 && parsedArmsByCopy.has("classifier")) {
@@ -1279,7 +1360,6 @@ function embeddedDeclaredEndpoints(source, relativePath) {
 // `openai.*` compatibility faces live in other seed files and are deliberately
 // outside the table: they are what a descriptor returns when it *declines* to
 // go native, so they must not be in the "declared native" set.
-const VENDOR_NATIVE_SEED = "data/ai-routing/resources/vendor-native-resources.json";
 const vendorNativeSeedPath = join(root, VENDOR_NATIVE_SEED);
 let nativeSeedEndpoints = [];
 if (existsSync(vendorNativeSeedPath)) {

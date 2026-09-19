@@ -471,6 +471,573 @@
         "video"
       ],
       "sortOrder": 595
+    },
+    {
+      "resourceCode": "api.suno.music",
+      "resourceType": "api_endpoint",
+      "displayName": "Music Generation (Suno-protocol)",
+      "vendorCode": "suno",
+      "modalityCode": "music",
+      "apiCode": "suno.music",
+      "method": "POST",
+      "pathTemplate": "/v1/music",
+      "capability": "music",
+      "capabilities": [
+        "audio",
+        "music"
+      ],
+      "sortOrder": 596
+    },
+    {
+      "resourceCode": "api.sfx.sound",
+      "resourceType": "api_endpoint",
+      "displayName": "Sound Effects",
+      "vendorCode": "openai_compatible",
+      "modalityCode": "sound-effect",
+      "apiCode": "sfx.sound",
+      "method": "POST",
+      "pathTemplate": "/v1/sound/generate",
+      "capability": "audio",
+      "capabilities": [
+        "audio",
+        "sfx"
+      ],
+      "sortOrder": 597
+    },
+    {
+      "resourceCode": "api.black_forest_labs.image_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "FLUX Image Generation",
+      "vendorCode": "black_forest_labs",
+      "modalityCode": "image",
+      "apiCode": "black_forest_labs.image_generation",
+      "method": "POST",
+      "pathTemplate": "/v1/flux-{model}",
+      "capability": "image",
+      "capabilities": [
+        "image"
+      ],
+      "sortOrder": 600
+    },
+    {
+      "resourceCode": "api.black_forest_labs.task_query",
+      "resourceType": "api_endpoint",
+      "displayName": "FLUX Task Result",
+      "vendorCode": "black_forest_labs",
+      "modalityCode": "image",
+      "apiCode": "black_forest_labs.task_query",
+      "method": "GET",
+      "pathTemplate": "/v1/get_result",
+      "capability": "image",
+      "capabilities": [
+        "image"
+      ],
+      "sortOrder": 601
+    },
+    {
+      "resourceCode": "api.runway.image_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "Runway Text/Image To Image",
+      "vendorCode": "runway",
+      "modalityCode": "image",
+      "apiCode": "runway.image_generation",
+      "method": "POST",
+      "pathTemplate": "/v1/text_to_image",
+      "capability": "image",
+      "capabilities": [
+        "image"
+      ],
+      "sortOrder": 610
+    },
+    {
+      "resourceCode": "api.runway.task_query",
+      "resourceType": "api_endpoint",
+      "displayName": "Runway Task",
+      "vendorCode": "runway",
+      "modalityCode": "image",
+      "apiCode": "runway.task_query",
+      "method": "GET",
+      "pathTemplate": "/v1/tasks/{id}",
+      "capability": "image",
+      "capabilities": [
+        "image"
+      ],
+      "sortOrder": 611
+    },
+    {
+      "resourceCode": "api.stability_ai.image_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "Stability Image Generation",
+      "vendorCode": "stability_ai",
+      "modalityCode": "image",
+      "apiCode": "stability_ai.image_generation",
+      "method": "POST",
+      "pathTemplate": "/v2beta/stable-image/generate/{mode}",
+      "capability": "image",
+      "capabilities": [
+        "image"
+      ],
+      "sortOrder": 620
+    },
+    {
+      "resourceCode": "api.deepseek.chat_completions",
+      "resourceType": "api_endpoint",
+      "displayName": "DeepSeek Chat Completions",
+      "vendorCode": "deepseek",
+      "modalityCode": "llm",
+      "apiCode": "deepseek.chat_completions",
+      "method": "POST",
+      "pathTemplate": "/v1/chat/completions",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "chat",
+        "streaming"
+      ],
+      "sortOrder": 700
+    },
+    {
+      "resourceCode": "api.alibaba.chat_completions",
+      "resourceType": "api_endpoint",
+      "displayName": "Alibaba Cloud Chat Completions",
+      "vendorCode": "alibaba",
+      "modalityCode": "llm",
+      "apiCode": "alibaba.chat_completions",
+      "method": "POST",
+      "pathTemplate": "/compatible-mode/v1/chat/completions",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "chat",
+        "streaming"
+      ],
+      "sortOrder": 702
+    },
+    {
+      "resourceCode": "api.alibaba.embeddings",
+      "resourceType": "api_endpoint",
+      "displayName": "Alibaba Cloud Embeddings",
+      "vendorCode": "alibaba",
+      "modalityCode": "embedding",
+      "apiCode": "alibaba.embeddings",
+      "method": "POST",
+      "pathTemplate": "/compatible-mode/v1/embeddings",
+      "capability": "embedding",
+      "capabilities": [
+        "embedding"
+      ],
+      "sortOrder": 704
+    },
+    {
+      "resourceCode": "api.alibaba.image_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "Alibaba Cloud Image Generation",
+      "vendorCode": "alibaba",
+      "modalityCode": "image",
+      "apiCode": "alibaba.image_generation",
+      "method": "POST",
+      "pathTemplate": "/api/v1/services/aigc/text2image/image-synthesis",
+      "capability": "image",
+      "capabilities": [
+        "image"
+      ],
+      "sortOrder": 706
+    },
+    {
+      "resourceCode": "api.alibaba.video_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "Alibaba Cloud Video Generation",
+      "vendorCode": "alibaba",
+      "modalityCode": "video",
+      "apiCode": "alibaba.video_generation",
+      "method": "POST",
+      "pathTemplate": "/api/v1/services/aigc/video-generation/video-synthesis",
+      "capability": "video",
+      "capabilities": [
+        "video"
+      ],
+      "sortOrder": 708
+    },
+    {
+      "resourceCode": "api.baidu.chat_completions",
+      "resourceType": "api_endpoint",
+      "displayName": "Baidu AI Cloud Chat Completions",
+      "vendorCode": "baidu",
+      "modalityCode": "llm",
+      "apiCode": "baidu.chat_completions",
+      "method": "POST",
+      "pathTemplate": "/v2/chat/completions",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "chat",
+        "streaming"
+      ],
+      "sortOrder": 710
+    },
+    {
+      "resourceCode": "api.moonshot.chat_completions",
+      "resourceType": "api_endpoint",
+      "displayName": "Moonshot Kimi Chat Completions",
+      "vendorCode": "moonshot",
+      "modalityCode": "llm",
+      "apiCode": "moonshot.chat_completions",
+      "method": "POST",
+      "pathTemplate": "/v1/chat/completions",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "chat",
+        "streaming"
+      ],
+      "sortOrder": 712
+    },
+    {
+      "resourceCode": "api.zhipu.chat_completions",
+      "resourceType": "api_endpoint",
+      "displayName": "Zhipu AI Chat Completions",
+      "vendorCode": "zhipu",
+      "modalityCode": "llm",
+      "apiCode": "zhipu.chat_completions",
+      "method": "POST",
+      "pathTemplate": "/api/paas/v4/chat/completions",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "chat",
+        "streaming"
+      ],
+      "sortOrder": 714
+    },
+    {
+      "resourceCode": "api.zhipu.embeddings",
+      "resourceType": "api_endpoint",
+      "displayName": "Zhipu AI Embeddings",
+      "vendorCode": "zhipu",
+      "modalityCode": "embedding",
+      "apiCode": "zhipu.embeddings",
+      "method": "POST",
+      "pathTemplate": "/api/paas/v4/embeddings",
+      "capability": "embedding",
+      "capabilities": [
+        "embedding"
+      ],
+      "sortOrder": 716
+    },
+    {
+      "resourceCode": "api.zhipu.image_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "Zhipu AI Image Generation",
+      "vendorCode": "zhipu",
+      "modalityCode": "image",
+      "apiCode": "zhipu.image_generation",
+      "method": "POST",
+      "pathTemplate": "/api/paas/v4/images/generations",
+      "capability": "image",
+      "capabilities": [
+        "image"
+      ],
+      "sortOrder": 718
+    },
+    {
+      "resourceCode": "api.zhipu.video_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "Zhipu AI Video Generation",
+      "vendorCode": "zhipu",
+      "modalityCode": "video",
+      "apiCode": "zhipu.video_generation",
+      "method": "POST",
+      "pathTemplate": "/api/paas/v4/videos/generations",
+      "capability": "video",
+      "capabilities": [
+        "video"
+      ],
+      "sortOrder": 720
+    },
+    {
+      "resourceCode": "api.xai.chat_completions",
+      "resourceType": "api_endpoint",
+      "displayName": "xAI Chat Completions",
+      "vendorCode": "xai",
+      "modalityCode": "llm",
+      "apiCode": "xai.chat_completions",
+      "method": "POST",
+      "pathTemplate": "/v1/chat/completions",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "chat",
+        "streaming"
+      ],
+      "sortOrder": 722
+    },
+    {
+      "resourceCode": "api.xai.image_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "xAI Image Generation",
+      "vendorCode": "xai",
+      "modalityCode": "image",
+      "apiCode": "xai.image_generation",
+      "method": "POST",
+      "pathTemplate": "/v1/images/generations",
+      "capability": "image",
+      "capabilities": [
+        "image"
+      ],
+      "sortOrder": 724
+    },
+    {
+      "resourceCode": "api.xai.video_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "xAI Video Generation",
+      "vendorCode": "xai",
+      "modalityCode": "video",
+      "apiCode": "xai.video_generation",
+      "method": "POST",
+      "pathTemplate": "/v1/videos/generations",
+      "capability": "video",
+      "capabilities": [
+        "video"
+      ],
+      "sortOrder": 726
+    },
+    {
+      "resourceCode": "api.tencent.chat_completions",
+      "resourceType": "api_endpoint",
+      "displayName": "Tencent Hunyuan Chat Completions",
+      "vendorCode": "tencent",
+      "modalityCode": "llm",
+      "apiCode": "tencent.chat_completions",
+      "method": "POST",
+      "pathTemplate": "/v1/chat/completions",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "chat",
+        "streaming"
+      ],
+      "sortOrder": 728
+    },
+    {
+      "resourceCode": "api.stepfun.chat_completions",
+      "resourceType": "api_endpoint",
+      "displayName": "StepFun Chat Completions",
+      "vendorCode": "stepfun",
+      "modalityCode": "llm",
+      "apiCode": "stepfun.chat_completions",
+      "method": "POST",
+      "pathTemplate": "/v1/chat/completions",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "chat",
+        "streaming"
+      ],
+      "sortOrder": 730
+    },
+    {
+      "resourceCode": "api.meituan.chat_completions",
+      "resourceType": "api_endpoint",
+      "displayName": "Meituan Chat Completions",
+      "vendorCode": "meituan",
+      "modalityCode": "llm",
+      "apiCode": "meituan.chat_completions",
+      "method": "POST",
+      "pathTemplate": "/v1/chat/completions",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "chat",
+        "streaming"
+      ],
+      "sortOrder": 732
+    },
+    {
+      "resourceCode": "api.luma_ai.video_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "Luma AI Video Generation",
+      "vendorCode": "luma_ai",
+      "modalityCode": "video",
+      "apiCode": "luma_ai.video_generation",
+      "method": "POST",
+      "pathTemplate": "/dream-machine/v1/generations",
+      "capability": "video",
+      "capabilities": [
+        "video"
+      ],
+      "sortOrder": 734
+    },
+    {
+      "resourceCode": "api.pixverse.video_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "PixVerse Video Generation",
+      "vendorCode": "pixverse",
+      "modalityCode": "video",
+      "apiCode": "pixverse.video_generation",
+      "method": "POST",
+      "pathTemplate": "/openapi/v2/video/text/generate",
+      "capability": "video",
+      "capabilities": [
+        "video"
+      ],
+      "sortOrder": 736
+    },
+    {
+      "resourceCode": "api.mureka.music_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "Mureka Music Generation",
+      "vendorCode": "mureka",
+      "modalityCode": "music",
+      "apiCode": "mureka.music_generation",
+      "method": "POST",
+      "pathTemplate": "/v1/song/generate",
+      "capability": "music",
+      "capabilities": [
+        "music"
+      ],
+      "sortOrder": 738
+    },
+    {
+      "resourceCode": "api.xiaomi.chat_completions",
+      "resourceType": "api_endpoint",
+      "displayName": "Xiaomi MiMo Chat Completions",
+      "vendorCode": "xiaomi",
+      "modalityCode": "llm",
+      "apiCode": "xiaomi.chat_completions",
+      "method": "POST",
+      "pathTemplate": "/v1/chat/completions",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "chat",
+        "streaming"
+      ],
+      "sortOrder": 740
+    },
+    {
+      "resourceCode": "api.xiaomi.image_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "Xiaomi MiMo Image Generation",
+      "vendorCode": "xiaomi",
+      "modalityCode": "image",
+      "apiCode": "xiaomi.image_generation",
+      "method": "POST",
+      "pathTemplate": "/v1/images/generations",
+      "capability": "image",
+      "capabilities": [
+        "image"
+      ],
+      "sortOrder": 742
+    },
+    {
+      "resourceCode": "api.xiaomi.video_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "Xiaomi MiMo Video Generation",
+      "vendorCode": "xiaomi",
+      "modalityCode": "video",
+      "apiCode": "xiaomi.video_generation",
+      "method": "POST",
+      "pathTemplate": "/v1/videos/generations",
+      "capability": "video",
+      "capabilities": [
+        "video"
+      ],
+      "sortOrder": 744
+    },
+    {
+      "resourceCode": "api.xiaomi.speech",
+      "resourceType": "api_endpoint",
+      "displayName": "Xiaomi MiMo Speech",
+      "vendorCode": "xiaomi",
+      "modalityCode": "audio",
+      "apiCode": "xiaomi.speech",
+      "method": "POST",
+      "pathTemplate": "/v1/audio/speech",
+      "capability": "audio",
+      "capabilities": [
+        "audio"
+      ],
+      "sortOrder": 746
+    },
+    {
+      "resourceCode": "api.alibaba.video_generation_task_query",
+      "resourceType": "api_endpoint",
+      "displayName": "Alibaba Video Generation Task Query",
+      "vendorCode": "alibaba",
+      "modalityCode": "network",
+      "apiCode": "alibaba.video_generation_task_query",
+      "method": "GET",
+      "pathTemplate": "/api/v1/tasks/{task_id}",
+      "capability": "network",
+      "capabilities": [
+        "network",
+        "http"
+      ],
+      "sortOrder": 748
+    },
+    {
+      "resourceCode": "api.luma_ai.video_generation_task_query",
+      "resourceType": "api_endpoint",
+      "displayName": "Luma Video Generation Task Query",
+      "vendorCode": "luma_ai",
+      "modalityCode": "network",
+      "apiCode": "luma_ai.video_generation_task_query",
+      "method": "GET",
+      "pathTemplate": "/dream-machine/v1/generations/{id}",
+      "capability": "network",
+      "capabilities": [
+        "network",
+        "http"
+      ],
+      "sortOrder": 750
+    },
+    {
+      "resourceCode": "api.pixverse.video_generation_task_query",
+      "resourceType": "api_endpoint",
+      "displayName": "PixVerse Video Generation Task Query",
+      "vendorCode": "pixverse",
+      "modalityCode": "network",
+      "apiCode": "pixverse.video_generation_task_query",
+      "method": "GET",
+      "pathTemplate": "/openapi/v2/video/result/{video_id}",
+      "capability": "network",
+      "capabilities": [
+        "network",
+        "http"
+      ],
+      "sortOrder": 752
+    },
+    {
+      "resourceCode": "api.zhipu.video_generation_task_query",
+      "resourceType": "api_endpoint",
+      "displayName": "Zhipu Video Generation Task Query",
+      "vendorCode": "zhipu",
+      "modalityCode": "network",
+      "apiCode": "zhipu.video_generation_task_query",
+      "method": "GET",
+      "pathTemplate": "/api/paas/v4/async-result/{id}",
+      "capability": "network",
+      "capabilities": [
+        "network",
+        "http"
+      ],
+      "sortOrder": 754
+    },
+    {
+      "resourceCode": "api.mureka.music_generation_task_query",
+      "resourceType": "api_endpoint",
+      "displayName": "Mureka Music Generation Task Query",
+      "vendorCode": "mureka",
+      "modalityCode": "network",
+      "apiCode": "mureka.music_generation_task_query",
+      "method": "GET",
+      "pathTemplate": "/v1/song/query/{task_id}",
+      "capability": "network",
+      "capabilities": [
+        "network",
+        "http"
+      ],
+      "sortOrder": 756
     }
   ]
 }

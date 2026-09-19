@@ -613,10 +613,23 @@ async fn sticky_route_constraint_overrides_normal_route_selection() {
     assert_eq!(Some("sticky-model"), account.provider_model.as_deref());
 }
 
-/// A sticky binding committed before a catalog redeploy must not pin an
-/// unpriced model route: pricing finalization would fail the request only
-/// after the upstream call already succeeded. The binding is invalidated and
-/// regular route planning picks a priced candidate instead.
+/// A sticky binding committed before a catalog redeploy must not pin a route
+/// whose pricing resource publishes no **customer billing** price: pricing
+/// finalization would fail the request only after the upstream call already
+/// succeeded. The binding is invalidated and regular route planning picks a
+/// priced candidate instead.
+///
+/// The pre-gate checks `resource_is_priced_for_billing`, satisfied by a
+/// `Quoted`/`Rated`/`NonChargeable` customer price and violated only by
+/// `Unrated`. Upstream-cost prices do not participate: the shipped price book
+/// carries customer billing rates only (`pricing_rate` populates
+/// `vendor_code`/`provider_code` but leaves `account_id` NULL), so demanding a
+/// per-account procurement price would fail every route.
+///
+/// The binding therefore names a catalog key the price book never prices on
+/// the customer side. The request still asks for `gpt-4o-mini`, which *is*
+/// priced, so the fall-back demonstrates that regular planning recovers a
+/// priced candidate rather than only that the request survives.
 #[tokio::test]
 async fn sticky_route_with_missing_prices_falls_back_to_regular_planning() {
     let mut catalog = base_catalog();
@@ -628,8 +641,10 @@ async fn sticky_route_with_missing_prices_falls_back_to_regular_planning() {
         "openai.chat_completions",
         "0.110000",
     );
-    // Model route + account route without any upstream cost price: reachable
-    // for sticky pinning, but must fail the pricing pre-gate.
+    // Reachable for sticky pinning, but unpriced on the customer side: the
+    // binding names a catalog key the price book never prices, so the pre-gate
+    // sees `Unrated` and must reject the binding. The account still has a route
+    // under the request's own catalog key, so regular planning recovers it.
     catalog.add_model_upstream_route(
         ModelUpstreamRoute::new_for_catalog_key(
             "openai/gpt-4o-mini",
@@ -661,7 +676,7 @@ async fn sticky_route_with_missing_prices_falls_back_to_regular_planning() {
         account_group_id: Some(10),
         vendor_code: Some("unpriced-provider".to_owned()),
         api_code: Some("openai.chat_completions".to_owned()),
-        catalog_key: Some("openai/gpt-4o-mini".to_owned()),
+        catalog_key: Some("openai/gpt-4o-mini-unpriced".to_owned()),
         provider_model: Some("gpt-4o-mini-unpriced".to_owned()),
         region_code: Some("global".to_owned()),
         sticky_scope: Some("session".to_owned()),
@@ -673,12 +688,24 @@ async fn sticky_route_with_missing_prices_falls_back_to_regular_planning() {
         .expect("route planning falls back after invalid sticky pricing");
 
     let plan = invocation.routing.route_plan.expect("route plan");
+    let suppliers = plan
+        .candidates
+        .iter()
+        .map(|candidate| candidate.supplier_code.as_str())
+        .collect::<Vec<_>>();
+    // The binding must not survive: the request falls back to regular planning
+    // and the head of the plan is the priced provider, not the pinned one. The
+    // plan may still list the unpriced account as a fail-over candidate because
+    // regular planning enumerates every callable account in the group — that is
+    // why this asserts on the head rather than on the whole vector.
     assert_eq!(
-        vec!["priced-provider"],
-        plan.candidates
-            .iter()
-            .map(|candidate| candidate.supplier_code.as_str())
-            .collect::<Vec<_>>()
+        "priced-provider",
+        suppliers.first().copied().expect("at least one candidate"),
+        "the invalid sticky binding must not stay pinned; got {suppliers:?}"
+    );
+    assert!(
+        !matches!(suppliers.first(), Some(&"unpriced-provider")),
+        "the unpriced sticky target must not head the plan; got {suppliers:?}"
     );
 }
 

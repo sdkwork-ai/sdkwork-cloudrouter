@@ -1,7 +1,7 @@
 # CloudRouter AI 路由与账号授权逻辑全景
 
 - 日期：2026-09-05
-- 状态：现行架构梳理 + 问题清单 + 改进方案
+- 状态：**时点评审记录（已归档）**。本文的厂商/资源/资源组清单反映 2026-09-05 时点（9 家 vendor、16 项 core 资源、22 项 vendor-native 资源、32 个资源组），其中记录的路径与 api code 缺口（如 `anthropic.claude_code` 的 `/v1/claude/code`）已在后续版本修复，问题清单对应的改进方案已落地。现行事实权威是 `data/ai-routing/`（含 `declared-unrouted.json` 豁免账本）、`sdkwork-models` 模型目录，以及校验门 `tools/check-cloudrouter-ai-routing-consistency.mjs`（`pnpm api:ai-routing-consistency:check`）与审计 `scripts/dev/audit-api-chain-reachability.mjs`；两者全绿即为现行对齐状态。本文仅作设计脉络与推导链路参考。
 - 适用面：`sdkwork-cloudrouter-router-service`、`sdkwork-cloudrouter-edge-runtime`、`data/ai-routing/**`
 - 关联文档：`TECH-2026-05-10-group-account-pool-routing.md`（历史分组池路由）、`TECH-2026-05-29-ai-routing-sticky-cache.md`（sticky 缓存）
 

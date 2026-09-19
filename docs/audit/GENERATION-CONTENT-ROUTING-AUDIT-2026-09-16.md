@@ -1,5 +1,7 @@
 # 灵感内容生成 · 端到端链路审计（2026-09-16）
 
+> **时点审计快照（已归档）**：本文记录 2026-09-16 的审计发现，含当时尚未修复的缺陷（如 `anthropic.claude_code`/`gemini.live` 的 pathTemplate 漂移、`openai.videos` 拼写、vidu 模型名 fixture、Suno 音乐路由等）。这些问题已在后续版本逐一修复，正文中的"❌/缺陷"条目不再反映现状。现行对齐状态以校验门 `tools/check-cloudrouter-ai-routing-consistency.mjs`、审计 `scripts/dev/audit-api-chain-reachability.mjs` 与 `scripts/dev/audit-model-route-reachability.mjs`、运行时探针 `crates/sdkwork-cloudrouter-edge-runtime/tests/per_api_chain_e2e.rs` 的持续全绿为准。本文保留作缺陷模式与排查方法的历史证据。
+
 审计范围：`灵感`（AgentsWorkbench inspiration）暴露的各类内容生成能力，逐类型核查
 「入口 → 前端提交 → 生成服务 App API → CloudRouter 网关 → 路由账户/定价 → 第三方厂商 API」
 全链路是否存在缺陷、是否真的能打到目标路由账户并执行厂商调用。

@@ -202,12 +202,36 @@ fn external_usage_line_billing(meter: Option<BillingMeter>) -> InvocationBilling
 /// `tools/check-cloudrouter-ai-routing-consistency.mjs`, which refuses to pass
 /// when it meets a shape it cannot evaluate — an arm the gate cannot read is an
 /// arm whose drift nobody notices.
+///
+/// The `sfx.sound` arms cover sound effects (音效). The four sfx vendors each
+/// answer a different path; all of them resolve onto the one `sfx.sound` route
+/// so the capability has a single reachable endpoint code. `elevenlabs` is
+/// deliberately absent from those arms: it keeps its own vendor-native
+/// `elevenlabs.sound_generation` classification, which is the more specific one
+/// and must win.
+///
+/// This map is duplicated in the edge runtime
+/// (`crates/sdkwork-cloudrouter-edge-runtime/src/passthrough.rs`); the same gate
+/// compares the two arm sets, so an arm added to only one side fails the build
+/// rather than silently dropping the passthrough.
 fn provider_native_api_code_from_standard_path(
     supplier_code: &str,
     standard_path: &str,
 ) -> Option<String> {
     let provider = normalize_provider_match_key(supplier_code);
     let path = normalize_provider_api_path(supplier_code, provider.as_str(), standard_path);
+    // --- Vendor-native surfaces whose models declare
+    // `apiFormat = vendor_native`. Without these arms the catch-all below
+    // synthesises `<vendor>.<last.path.segment>` (for example
+    // `alibaba.video.synthesis`), which matches no taxonomy route, so the
+    // classification carries `meter: None` and the fail-closed pricing
+    // preflight refuses the request even though the resource grant, the
+    // account and the credential are all present.
+    //
+    // Only endpoints a `vendor_native` model actually binds to are listed.
+    // Each vendor's `openai_compatible` models keep the generic face, so
+    // `alibaba` chat / embedding / image and `zhipu` chat / embedding /
+    // image deliberately stay out.
     let api_code = match provider.as_str() {
         "anthropic" if path == "/v1/claude-code/sessions" => "anthropic.claude_code",
         "anthropic" if path == "/v1/messages" => "anthropic.messages",
@@ -264,6 +288,11 @@ fn provider_native_api_code_from_standard_path(
         "elevenlabs" if path == "/v1/text-to-speech/{voice_id}" => "elevenlabs.text_to_speech",
         "elevenlabs" if path.starts_with("/v1/text-to-speech/") => "elevenlabs.text_to_speech",
         "elevenlabs" if path == "/v1/sound-generation" => "elevenlabs.sound_generation",
+        "kling" if path == "/v1/sound/generate" => "sfx.sound",
+        "stability_ai" if path == "/v1/sound/generate" => "sfx.sound",
+        "stability_ai" if path == "/v2beta/audio/stable-audio-2/text-to-audio" => "sfx.sound",
+        "vidu" if path == "/ent/v2/text2audio" => "sfx.sound",
+        "vidu" if path == "/ent/v2/timing2audio" => "sfx.sound",
         "minimax" if path == "/v1/music_generation" => "minimax.music_generation",
         "minimax" if path == "/v1/music/generations" => "minimax.music_generation",
         "minimax" if path == "/v1/music/generation" => "minimax.music_generation",
@@ -272,6 +301,46 @@ fn provider_native_api_code_from_standard_path(
             "suno.music_task_query"
         }
         "vidu" if path == "/ent/v2/reference2image" => "vidu.reference_to_image",
+        "alibaba"
+            if path == "/api/v1/services/aigc/video-generation/video-synthesis" =>
+        {
+            "alibaba.video_generation"
+        }
+        "alibaba" if task_poll_path_matches(path.as_str(), "api/v1/tasks") => {
+            "alibaba.video_generation_task_query"
+        }
+        "luma_ai" if path == "/dream-machine/v1/generations" => "luma_ai.video_generation",
+        "luma_ai"
+            if task_poll_path_matches(path.as_str(), "dream-machine/v1/generations") =>
+        {
+            "luma_ai.video_generation_task_query"
+        }
+        "pixverse" if path == "/openapi/v2/video/text/generate" => "pixverse.video_generation",
+        "pixverse" if task_poll_path_matches(path.as_str(), "openapi/v2/video/result") => {
+            "pixverse.video_generation_task_query"
+        }
+        "zhipu" if path == "/api/paas/v4/videos/generations" => "zhipu.video_generation",
+        "zhipu" if task_poll_path_matches(path.as_str(), "api/paas/v4/async-result") => {
+            "zhipu.video_generation_task_query"
+        }
+        "mureka" if path == "/v1/song/generate" => "mureka.music_generation",
+        "mureka" if task_poll_path_matches(path.as_str(), "v1/song/query") => {
+            "mureka.music_generation_task_query"
+        }
+        "baidu" if path == "/v2/chat/completions" => "baidu.chat_completions",
+        "runway" | "runwayml" if path == "/v1/text_to_image" => "runway.image_generation",
+        "runway" | "runwayml" if task_poll_path_matches(path.as_str(), "v1/tasks") => {
+            "runway.task_query"
+        }
+        "stability_ai" | "stability"
+            if path.starts_with("/v2beta/stable-image/generate/") =>
+        {
+            "stability_ai.image_generation"
+        }
+        "black_forest_labs" | "bfl" if path == "/v1/get_result" => "black_forest_labs.task_query",
+        "black_forest_labs" | "bfl" if path.starts_with("/v1/flux-") => {
+            "black_forest_labs.image_generation"
+        }
         "vidu" if path == "/ent/v2/template" => "vidu.motion_sync",
         "vidu" if path == "/ent/v2/start-end2video" => "vidu.start_end_to_video",
         "tencent.cloud" if path == "/vidu/ent/v2/reference2image" => "vidu.reference_to_image",
@@ -604,5 +673,165 @@ mod tests {
             "gemini.stream_generate_content",
             classification.resource.route_key
         );
+    }
+
+    #[test]
+    fn runway_image_and_task_paths_classify_like_the_native_ones() {
+        let image = classify_post("/v1/text_to_image", "runway");
+        assert_eq!("runway.image_generation", image.resource.route_key);
+        assert_eq!(Some(BillingMeter::ImageResult), image.billing.meter);
+
+        let image_ml = classify_post("/v1/text_to_image", "runwayml");
+        assert_eq!("runway.image_generation", image_ml.resource.route_key);
+
+        let task = classify_post("/v1/tasks/task_abc123", "runway");
+        assert_eq!("runway.task_query", task.resource.route_key);
+        assert_eq!(Some(BillingMeter::ApiRequest), task.billing.meter);
+    }
+
+    #[test]
+    fn black_forest_labs_flux_paths_classify_like_the_native_ones() {
+        let image = classify_post("/v1/flux-2-pro", "black_forest_labs");
+        assert_eq!(
+            "black_forest_labs.image_generation",
+            image.resource.route_key
+        );
+        assert_eq!(Some(BillingMeter::ImageResult), image.billing.meter);
+
+        let image_bfl = classify_post("/v1/flux-2-pro", "bfl");
+        assert_eq!(
+            "black_forest_labs.image_generation",
+            image_bfl.resource.route_key
+        );
+
+        let task = classify_post("/v1/get_result?id=abc", "black_forest_labs");
+        assert_eq!("black_forest_labs.task_query", task.resource.route_key);
+        assert_eq!(Some(BillingMeter::ApiRequest), task.billing.meter);
+    }
+
+    #[test]
+    fn stability_ai_stable_image_generate_path_classifies_like_the_native_one() {
+        let core = classify_post("/v2beta/stable-image/generate/core", "stability_ai");
+        assert_eq!(
+            "stability_ai.image_generation",
+            core.resource.route_key
+        );
+        assert_eq!(Some(BillingMeter::ImageResult), core.billing.meter);
+
+        let ultra = classify_post("/v2beta/stable-image/generate/ultra", "stability");
+        assert_eq!(
+            "stability_ai.image_generation",
+            ultra.resource.route_key
+        );
+        assert_eq!(Some(BillingMeter::ImageResult), ultra.billing.meter);
+    }
+
+    /// The vendors whose catalog models declare `apiFormat = vendor_native` must
+    /// classify onto their own catalogued route, not onto the catch-all's
+    /// synthesised `<vendor>.<last.path.segment>` key.
+    ///
+    /// The synthesised key matches no taxonomy entry, so the classification
+    /// carries `meter: None` and `StatelessFailClosed`, and the fail-closed
+    /// pricing preflight then refuses a request whose account, credential,
+    /// group membership and resource grant are all present. `alibaba` and
+    /// `zhipu` are the pairs that make the point: their *video* models are
+    /// native while their chat / embedding / image models are
+    /// `openai_compatible`, so only the video path may classify and the others
+    /// must keep falling through to the generic face.
+    #[test]
+    fn vendor_native_models_classify_onto_their_own_endpoints() {
+        let native_video = [
+            (
+                "alibaba",
+                "/api/v1/services/aigc/video-generation/video-synthesis",
+                "alibaba.video_generation",
+            ),
+            (
+                "luma_ai",
+                "/dream-machine/v1/generations",
+                "luma_ai.video_generation",
+            ),
+            (
+                "pixverse",
+                "/openapi/v2/video/text/generate",
+                "pixverse.video_generation",
+            ),
+            (
+                "zhipu",
+                "/api/paas/v4/videos/generations",
+                "zhipu.video_generation",
+            ),
+        ];
+        for (vendor, path, route_key) in native_video {
+            let classification = classify_post(path, vendor);
+            assert_eq!(route_key, classification.resource.route_key, "for {vendor}");
+            assert_eq!(
+                Some(BillingMeter::VideoResult),
+                classification.billing.meter,
+                "for {vendor}"
+            );
+        }
+
+        let music = classify_post("/v1/song/generate", "mureka");
+        assert_eq!("mureka.music_generation", music.resource.route_key);
+        assert_eq!(
+            Some(BillingMeter::MusicOutputSecond),
+            music.billing.meter
+        );
+
+        let chat = classify_post("/v2/chat/completions", "baidu");
+        assert_eq!("baidu.chat_completions", chat.resource.route_key);
+        assert_eq!(
+            Some(BillingMeter::LlmInputToken),
+            chat.billing.meter
+        );
+    }
+
+    /// The async poll each of those vendors exposes is its own routable
+    /// endpoint. Without an arm the poll falls through to the synthesised key
+    /// and loses its meter, so a caller that submits a task can never collect
+    /// the result.
+    #[test]
+    fn vendor_native_async_polls_classify_onto_their_task_query_routes() {
+        let polls = [
+            (
+                "alibaba",
+                "/api/v1/tasks/task_abc123",
+                "alibaba.video_generation_task_query",
+            ),
+            (
+                "luma_ai",
+                "/dream-machine/v1/generations/gen_abc123",
+                "luma_ai.video_generation_task_query",
+            ),
+            (
+                "pixverse",
+                "/openapi/v2/video/result/12345",
+                "pixverse.video_generation_task_query",
+            ),
+            (
+                "zhipu",
+                "/api/paas/v4/async-result/task_abc123",
+                "zhipu.video_generation_task_query",
+            ),
+            (
+                "mureka",
+                "/v1/song/query/435134",
+                "mureka.music_generation_task_query",
+            ),
+        ];
+        for (vendor, path, route_key) in polls {
+            let request = InvocationClassificationRequest::new(Method::GET, path)
+                .with_supplier_code(vendor);
+            let classification = ProviderNativeResourceClassifier
+                .classify(&request)
+                .expect("vendor-native task polling classification");
+            assert_eq!(route_key, classification.resource.route_key, "for {path}");
+            assert_eq!(
+                Some(BillingMeter::ApiRequest),
+                classification.billing.meter,
+                "for {path}"
+            );
+        }
     }
 }

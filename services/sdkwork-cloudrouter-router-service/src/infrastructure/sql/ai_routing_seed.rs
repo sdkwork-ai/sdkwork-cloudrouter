@@ -64,7 +64,13 @@ const DEFAULT_MIXED_ACCOUNT_GROUP_CODE: &str = crate::domain::DEFAULT_ACCOUNT_GR
 /// grants every vendor's resource group and holds every vendor default account
 /// as a member, so auth-token (app-session) traffic can reach all seven
 /// content-generation capabilities instead of only the OpenAI-shaped ones.
-const DEFAULT_ADMIN_ROUTING_TOPOLOGY_SEED_SOURCE: &str = "default-admin-routing-topology-seed.v8|vendor-default-accounts|default-group|default-mixed-group-vendor-skeleton|official.openai.full|openai|official|openai_compatible|https://api.openai.com/v1|vendor-modality-groups|i18n-zh-en|price_first|prepay";
+///
+/// `v9` corrects two vendor default-account base URLs. `baidu` pointed at
+/// `https://aip.baidubce.com` — Qianfan's legacy V1 host — while its seed
+/// declares the V2 path `/v2/chat/completions`, so no request could ever reach
+/// Baidu. `pixverse` pointed at `https://api.pixverse.ai`, its console host,
+/// rather than the documented OpenAPI host `https://app-api.pixverse.ai`.
+const DEFAULT_ADMIN_ROUTING_TOPOLOGY_SEED_SOURCE: &str = "default-admin-routing-topology-seed.v9|vendor-default-accounts|default-group|default-mixed-group-vendor-skeleton|official.openai.full|openai|official|openai_compatible|https://api.openai.com/v1|vendor-modality-groups|i18n-zh-en|price_first|prepay";
 
 /// Environment values for which the bundled vendor default accounts are seeded
 /// in the *enabled* state. Everywhere else (production and any unrecognised
@@ -295,7 +301,7 @@ struct DefaultVendorUpstreamAccountSeed {
 /// a vendor listed here that the catalog does not declare, or a derived
 /// vendor-modality group with no account here, is a load error rather than a
 /// silent empty pool.
-const DEFAULT_VENDOR_UPSTREAM_ACCOUNTS: [DefaultVendorUpstreamAccountSeed; 11] = [
+const DEFAULT_VENDOR_UPSTREAM_ACCOUNTS: [DefaultVendorUpstreamAccountSeed; 27] = [
     DefaultVendorUpstreamAccountSeed {
         vendor_code: "openai",
         supplier_name: "OpenAI",
@@ -411,6 +417,200 @@ const DEFAULT_VENDOR_UPSTREAM_ACCOUNTS: [DefaultVendorUpstreamAccountSeed; 11] =
         account_code: "elevenlabs-default",
         account_name: "ElevenLabs Default",
     },
+    // ---------------------------------------------------------------------
+    // Vendors the model catalog declares but that shipped no default account
+    // until 2026-09-18. The routing gate is vendor-agnostic (see
+    // `model_catalog_import::model_endpoint_descriptor`), so these models were
+    // already reachable through the protocol-coherent generic surface — but
+    // only as an *implicit* fall-through with no per-vendor account to inspect,
+    // grant, price against, or pin. Seeding an account per vendor makes the
+    // per-vendor route a real, first-class row.
+    //
+    // `adapter_code` is chosen from the vendor's dominant `apiFormat`: the
+    // OpenAI-compatible-majority vendors reuse the existing
+    // `openai_compatible` adapter; the pure vendor-native vendors declare their
+    // own code. Both are declarations only — `adapter_code` lives on
+    // `ai_upstream_supplier` and is never read by the application layer, and
+    // the dispatched wire protocol is derived from the request's `api_code` via
+    // `protocol_code_from_api_code`. So no adapter implementation is required
+    // for an account to route; it only needs an enabled account, a resolvable
+    // base URL and an active credential, all of which this seed provides.
+    //
+    // The `base_url` is the vendor's real public host where one is stable and
+    // documented. Where a vendor has no single stable public host (or the host
+    // is region/contract specific) the placeholder host is used and an operator
+    // repoints the endpoint row. Group `official.<vendor>.full` carries the
+    // vendor resource; see `VENDOR_RESOURCE_GROUP_BINDINGS`.
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "xai",
+        supplier_name: "xAI",
+        supplier_display_name_i18n: "{\"en-US\":\"xAI\",\"zh-CN\":\"xAI\"}",
+        adapter_code: "openai_compatible",
+        protocol_code: "openai_compatible",
+        base_url: "https://api.x.ai",
+        account_code: "xai-default",
+        account_name: "xAI Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "alibaba",
+        supplier_name: "Alibaba Cloud",
+        supplier_display_name_i18n: "{\"en-US\":\"Alibaba Cloud\",\"zh-CN\":\"阿里云\"}",
+        adapter_code: "openai_compatible",
+        protocol_code: "openai_compatible",
+        base_url: "https://dashscope.aliyuncs.com",
+        account_code: "alibaba-default",
+        account_name: "Alibaba Cloud Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "deepseek",
+        supplier_name: "DeepSeek",
+        supplier_display_name_i18n: "{\"en-US\":\"DeepSeek\",\"zh-CN\":\"深度求索\"}",
+        adapter_code: "openai_compatible",
+        protocol_code: "openai_compatible",
+        base_url: "https://api.deepseek.com",
+        account_code: "deepseek-default",
+        account_name: "DeepSeek Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "moonshot",
+        supplier_name: "Moonshot Kimi",
+        supplier_display_name_i18n: "{\"en-US\":\"Moonshot Kimi\",\"zh-CN\":\"月之暗面 Kimi\"}",
+        adapter_code: "openai_compatible",
+        protocol_code: "openai_compatible",
+        base_url: "https://api.moonshot.cn",
+        account_code: "moonshot-default",
+        account_name: "Moonshot Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "zhipu",
+        supplier_name: "Zhipu AI",
+        supplier_display_name_i18n: "{\"en-US\":\"Zhipu AI\",\"zh-CN\":\"智谱 AI\"}",
+        adapter_code: "openai_compatible",
+        protocol_code: "openai_compatible",
+        base_url: "https://open.bigmodel.cn",
+        account_code: "zhipu-default",
+        account_name: "Zhipu Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "tencent",
+        supplier_name: "Tencent Cloud",
+        supplier_display_name_i18n: "{\"en-US\":\"Tencent Cloud\",\"zh-CN\":\"腾讯云\"}",
+        adapter_code: "openai_compatible",
+        protocol_code: "openai_compatible",
+        base_url: "https://api.hunyuan.cloud.tencent.com",
+        account_code: "tencent-default",
+        account_name: "Tencent Cloud Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "xiaomi",
+        supplier_name: "Xiaomi MiMo",
+        supplier_display_name_i18n: "{\"en-US\":\"Xiaomi MiMo\",\"zh-CN\":\"小米 MiMo\"}",
+        adapter_code: "openai_compatible",
+        protocol_code: "openai_compatible",
+        base_url: "https://api.xiaomi.com",
+        account_code: "xiaomi-default",
+        account_name: "Xiaomi MiMo Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "stepfun",
+        supplier_name: "StepFun",
+        supplier_display_name_i18n: "{\"en-US\":\"StepFun\",\"zh-CN\":\"阶跃星辰\"}",
+        adapter_code: "openai_compatible",
+        protocol_code: "openai_compatible",
+        base_url: "https://api.stepfun.com",
+        account_code: "stepfun-default",
+        account_name: "StepFun Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "meituan",
+        supplier_name: "Meituan",
+        supplier_display_name_i18n: "{\"en-US\":\"Meituan\",\"zh-CN\":\"美团\"}",
+        adapter_code: "openai_compatible",
+        protocol_code: "openai_compatible",
+        base_url: "https://api.meituan.com",
+        account_code: "meituan-default",
+        account_name: "Meituan Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "runway",
+        supplier_name: "Runway",
+        supplier_display_name_i18n: "{\"en-US\":\"Runway\",\"zh-CN\":\"Runway\"}",
+        adapter_code: "runway",
+        protocol_code: "vendor_native",
+        base_url: "https://api.dev.runwayml.com",
+        account_code: "runway-default",
+        account_name: "Runway Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "baidu",
+        supplier_name: "Baidu AI Cloud",
+        supplier_display_name_i18n: "{\"en-US\":\"Baidu AI Cloud\",\"zh-CN\":\"百度智能云\"}",
+        adapter_code: "baidu",
+        protocol_code: "vendor_native",
+        // Qianfan's V2 surface. Baidu's own V2 release notice moves every
+        // model-service domain to `https://qianfan.baidubce.com/v2/{category}`;
+        // `https://aip.baidubce.com` is the legacy V1 host, so pairing it with
+        // the seeded `/v2/chat/completions` template produced
+        // `https://aip.baidubce.com/v2/chat/completions`, which is not a route
+        // Baidu serves.
+        base_url: "https://qianfan.baidubce.com",
+        account_code: "baidu-default",
+        account_name: "Baidu AI Cloud Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "luma_ai",
+        supplier_name: "Luma AI",
+        supplier_display_name_i18n: "{\"en-US\":\"Luma AI\",\"zh-CN\":\"Luma AI\"}",
+        adapter_code: "luma_ai",
+        protocol_code: "vendor_native",
+        base_url: "https://api.lumalabs.ai",
+        account_code: "luma-ai-default",
+        account_name: "Luma AI Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "pixverse",
+        supplier_name: "PixVerse",
+        supplier_display_name_i18n: "{\"en-US\":\"PixVerse\",\"zh-CN\":\"PixVerse\"}",
+        adapter_code: "pixverse",
+        protocol_code: "vendor_native",
+        // PixVerse serves its OpenAPI from the application host; the API
+        // reference and its own ComfyUI node both use
+        // `https://app-api.pixverse.ai/openapi/v2`. `api.pixverse.ai` is the
+        // console host and does not answer `/openapi/v2/video/text/generate`.
+        base_url: "https://app-api.pixverse.ai",
+        account_code: "pixverse-default",
+        account_name: "PixVerse Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "mureka",
+        supplier_name: "Mureka",
+        supplier_display_name_i18n: "{\"en-US\":\"Mureka\",\"zh-CN\":\"Mureka\"}",
+        adapter_code: "mureka",
+        protocol_code: "vendor_native",
+        base_url: "https://api.mureka.ai",
+        account_code: "mureka-default",
+        account_name: "Mureka Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "stability_ai",
+        supplier_name: "Stability AI",
+        supplier_display_name_i18n: "{\"en-US\":\"Stability AI\",\"zh-CN\":\"Stability AI\"}",
+        adapter_code: "stability_ai",
+        protocol_code: "vendor_native",
+        base_url: "https://api.stability.ai",
+        account_code: "stability-ai-default",
+        account_name: "Stability AI Default",
+    },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "black_forest_labs",
+        supplier_name: "Black Forest Labs",
+        supplier_display_name_i18n: "{\"en-US\":\"Black Forest Labs\",\"zh-CN\":\"Black Forest Labs\"}",
+        adapter_code: "black_forest_labs",
+        protocol_code: "vendor_native",
+        base_url: "https://api.bfl.ai",
+        account_code: "black-forest-labs-default",
+        account_name: "Black Forest Labs Default",
+    },
 ];
 
 /// Modality whitelist for account groups, mirroring SUPPORTED_MODALITIES in the
@@ -419,18 +619,26 @@ const ACCOUNT_GROUP_SUPPORTED_MODALITIES: [&str; 5] = ["text", "audio", "image",
 
 /// Resource catalog capability/modality codes mapped to account group modality
 /// codes. llm maps to text; embedding/network are not account group modalities.
-const VENDOR_MODALITY_MAPPING: [(&str, &str); 5] = [
+///
+/// `sfx` maps onto the `audio` account group deliberately: sound effects ride
+/// the same accounts (and the same voices/audio quotas) as the rest of the
+/// audio surface, and `ACCOUNT_GROUP_SUPPORTED_MODALITIES` is a closed set of
+/// five. Adding a sixth group would strand the four sfx vendors in a group no
+/// account is bound to, so a sound-effect request would report "no upstream
+/// account routes are configured" even though the accounts exist.
+const VENDOR_MODALITY_MAPPING: [(&str, &str); 6] = [
     ("llm", "text"),
     ("image", "image"),
     ("video", "video"),
     ("audio", "audio"),
     ("music", "music"),
+    ("sfx", "audio"),
 ];
 
 /// Curated binding from vendor code to the resource group granted to that
 /// vendor's default account groups. Every vendor declared in the bundled
 /// resources must have a binding (validated at seed load time).
-const VENDOR_RESOURCE_GROUP_BINDINGS: [(&str, &str); 11] = [
+const VENDOR_RESOURCE_GROUP_BINDINGS: [(&str, &str); 27] = [
     ("openai", "official.openai.full"),
     ("openai_compatible", "api.openai_compatible.all"),
     ("anthropic", "official.anthropic.claude_code"),
@@ -442,10 +650,41 @@ const VENDOR_RESOURCE_GROUP_BINDINGS: [(&str, &str); 11] = [
     ("volcengine", "official.volcengine.full"),
     ("suno", "official.suno.full"),
     ("elevenlabs", "official.elevenlabs.full"),
+    // Vendors the model catalog declares but that previously shipped no default
+    // account. Each binds a `official.<vendor>.full` group carrying the
+    // `vendor.<vendor>` resource, so the account is a real, inspectable routing
+    // target rather than an implicit fall-through to the OpenAI-compatible
+    // surface.
+    //
+    // Whether such a group also carries a vendor-native `api.*` grant depends on
+    // whether any of the vendor's models declares `apiFormat: "vendor_native"` —
+    // not on the vendor's own `supportedProtocols`. Vendors whose models are all
+    // `openai_compatible` deliberately stay on the generic surface, so they get
+    // no `api.*` grant and no classifier arm; see
+    // `data/ai-routing/resource-groups/official-provider-groups.json` and
+    // `tools/check-cloudrouter-ai-routing-consistency.mjs` (Check 4b, which
+    // reconciles declared endpoints against classifier arms and the compat-face
+    // exemption ledger).
+    ("xai", "official.xai.full"),
+    ("alibaba", "official.alibaba.full"),
+    ("deepseek", "official.deepseek.full"),
+    ("moonshot", "official.moonshot.full"),
+    ("zhipu", "official.zhipu.full"),
+    ("runway", "official.runway.full"),
+    ("baidu", "official.baidu.full"),
+    ("luma_ai", "official.luma_ai.full"),
+    ("pixverse", "official.pixverse.full"),
+    ("tencent", "official.tencent.full"),
+    ("stepfun", "official.stepfun.full"),
+    ("meituan", "official.meituan.full"),
+    ("stability_ai", "official.stability_ai.full"),
+    ("black_forest_labs", "official.black_forest_labs.full"),
+    ("mureka", "official.mureka.full"),
+    ("xiaomi", "official.xiaomi.full"),
 ];
 
 /// Localized vendor display names: (vendor_code, en-US, zh-CN).
-const VENDOR_LOCALIZED_NAMES: [(&str, &str, &str); 11] = [
+const VENDOR_LOCALIZED_NAMES: [(&str, &str, &str); 27] = [
     ("openai", "OpenAI", "OpenAI"),
     ("openai_compatible", "OpenAI Compatible", "OpenAI 兼容"),
     ("anthropic", "Anthropic", "Anthropic"),
@@ -457,6 +696,22 @@ const VENDOR_LOCALIZED_NAMES: [(&str, &str, &str); 11] = [
     ("volcengine", "Volcengine", "火山引擎"),
     ("suno", "Suno", "Suno"),
     ("elevenlabs", "ElevenLabs", "ElevenLabs"),
+    ("xai", "xAI", "xAI"),
+    ("alibaba", "Alibaba Cloud", "阿里云"),
+    ("deepseek", "DeepSeek", "深度求索"),
+    ("moonshot", "Moonshot Kimi", "月之暗面 Kimi"),
+    ("zhipu", "Zhipu AI", "智谱 AI"),
+    ("runway", "Runway", "Runway"),
+    ("baidu", "Baidu AI Cloud", "百度智能云"),
+    ("luma_ai", "Luma AI", "Luma AI"),
+    ("pixverse", "PixVerse", "PixVerse"),
+    ("tencent", "Tencent Cloud", "腾讯云"),
+    ("stepfun", "StepFun", "阶跃星辰"),
+    ("meituan", "Meituan", "美团"),
+    ("stability_ai", "Stability AI", "Stability AI"),
+    ("black_forest_labs", "Black Forest Labs", "Black Forest Labs"),
+    ("mureka", "Mureka", "Mureka"),
+    ("xiaomi", "Xiaomi MiMo", "小米 MiMo"),
 ];
 
 /// Localized modality display names: (modality_code, en-US, zh-CN).
@@ -679,6 +934,26 @@ fn seed_environment_enables_vendor_accounts(environment: Option<&str>) -> bool {
 }
 
 pub(crate) async fn postgres_ai_routing_seed_complete(pool: &PgPool) -> Result<bool, sqlx::Error> {
+    Ok(postgres_ai_routing_seed_gap(pool).await?.is_none())
+}
+
+/// Names the first clause of `postgres_ai_routing_seed_complete` that fails.
+///
+/// The completeness predicate is an `&&` chain of seven checks. When it returns
+/// `false` the caller can only report `UpgradeRequired`, which is exactly as
+/// informative as "something is wrong" — and the seven clauses fail for
+/// completely different reasons (a resource bundle not re-seeded, a routing
+/// strategy deleted, an account left disabled, a credential skipped because no
+/// key ring was configured). Diagnosing one of them from the outside costs a
+/// full bisect of the chain.
+///
+/// Returning the clause *name* turns that bisect into a single read. The pairs
+/// are deliberately derived from the same calls the boolean form makes, so the
+/// two can never disagree about what "complete" means; only the *reporting*
+/// differs.
+pub(crate) async fn postgres_ai_routing_seed_gap(
+    pool: &PgPool,
+) -> Result<Option<&'static str>, sqlx::Error> {
     let catalog = AiRoutingSeedCatalog::load().map_err(json_decode_error)?;
     let resource_codes = postgres_string_set(
         pool,
@@ -696,13 +971,97 @@ pub(crate) async fn postgres_ai_routing_seed_complete(pool: &PgPool) -> Result<b
     )
     .await?;
 
-    Ok(expected_resource_codes(&catalog).is_subset(&resource_codes)
-        && expected_group_codes(&catalog).is_subset(&group_codes)
-        && expected_endpoint_codes(&catalog).is_subset(&endpoint_codes)
-        && postgres_default_admin_upstream_topology_complete(pool).await?
-        && postgres_default_admin_routing_strategies_complete(pool).await?
-        && postgres_resource_group_item_count(pool, &catalog).await?
-            >= expected_resource_group_item_count(&catalog))
+    if !expected_resource_codes(&catalog).is_subset(&resource_codes) {
+        return Ok(Some("ai_resource is missing bundled resource codes"));
+    }
+    if !expected_group_codes(&catalog).is_subset(&group_codes) {
+        return Ok(Some("ai_resource_group is missing bundled resource groups"));
+    }
+    if !expected_endpoint_codes(&catalog).is_subset(&endpoint_codes) {
+        return Ok(Some("ai_api_endpoint is missing bundled endpoint codes"));
+    }
+    if !postgres_default_admin_upstream_topology_complete(pool).await? {
+        return Ok(Some(
+            "the default admin upstream topology (supplier/endpoint/auth method/supplier resource binding) is incomplete",
+        ));
+    }
+    if !postgres_default_admin_routing_strategies_complete(pool).await? {
+        return Ok(Some(
+            "a bundled routing strategy is absent, disabled or soft-deleted",
+        ));
+    }
+    if !postgres_default_vendor_upstream_accounts_complete(pool).await? {
+        return Ok(Some(
+            "a bundled vendor default account is absent, disabled or has no active credential",
+        ));
+    }
+    if postgres_resource_group_item_count(pool, &catalog).await?
+        < expected_resource_group_item_count(&catalog)
+    {
+        return Ok(Some(
+            "ai_resource_group_item holds fewer rows than the bundled resource groups declare",
+        ));
+    }
+    Ok(None)
+}
+
+/// The bundled vendor default accounts must exist, be enabled and carry an
+/// active credential for the seed to count as complete.
+///
+/// Without this predicate the completeness check was satisfied by the catalog
+/// *skeleton* alone (resources, groups, endpoints, the default group, the
+/// routing strategies). A database seeded while the install environment was
+/// mis-read as `production` therefore held all eleven vendor accounts in the
+/// disabled state, still reported [`InstallationStatus::Installed`], and the
+/// `ensure` command short-circuited before `import_postgres_ai_routing_seed`
+/// could converge them. The symptom surfaced far from the cause: every
+/// content-generation request failed with `50201 no upstream account routes are
+/// configured`, because the routing snapshot drops a disabled account before it
+/// ever reaches the account-route selector.
+///
+/// Only rows this seed owns are inspected (the
+/// `default_vendor_upstream_account` marker). An operator who edits or replaces
+/// a bundled account drops that marker, and their configuration must not be
+/// reported as an incomplete seed.
+async fn postgres_default_vendor_upstream_accounts_complete(
+    pool: &PgPool,
+) -> Result<bool, sqlx::Error> {
+    for seed in DEFAULT_VENDOR_UPSTREAM_ACCOUNTS.iter() {
+        let enabled_with_credential = sqlx::query_scalar::<_, bool>(
+            r#"
+            SELECT EXISTS (
+                SELECT 1
+                FROM ai_upstream_account account
+                WHERE account.tenant_id = $1
+                  AND account.organization_id = $2
+                  AND account.account_code = $3
+                  AND account.status = $4
+                  AND account.deleted_at IS NULL
+                  AND account.metadata ->> 'itemType' = 'default_vendor_upstream_account'
+                  AND EXISTS (
+                      SELECT 1
+                      FROM ai_upstream_account_credential credential
+                      WHERE credential.tenant_id = account.tenant_id
+                        AND credential.organization_id = account.organization_id
+                        AND credential.account_id = account.id
+                        AND credential.status = $4
+                        AND credential.is_active
+                        AND credential.deleted_at IS NULL
+                  )
+            )
+            "#,
+        )
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(seed.account_code)
+        .bind(ACTIVE_STATUS)
+        .fetch_one(pool)
+        .await?;
+        if !enabled_with_credential {
+            return Ok(false);
+        }
+    }
+    Ok(true)
 }
 
 /// The bundled default routing strategies must be present so the account-group
@@ -3501,6 +3860,20 @@ mod tests {
         );
     }
 
+    /// The derived `<vendor>.<modality>` group set is a pure function of the
+    /// bundled resource catalog: `vendor_account_group_modalities` walks every
+    /// resource that declares a `vendorCode` and maps its capabilities (for
+    /// `resource_type == "vendor"`) or its `modalityCode` (for every other
+    /// resource, i.e. the bundled `api_endpoint` rows) through
+    /// `VENDOR_MODALITY_MAPPING`, then keeps only the modalities in
+    /// `ACCOUNT_GROUP_SUPPORTED_MODALITIES`.
+    ///
+    /// Asserting the *whole* set is what makes a silently dropped vendor
+    /// visible: a new `vendor.*` resource that forgets a capability, or a
+    /// `VENDOR_RESOURCE_GROUP_BINDINGS` entry pointing at a group nothing
+    /// derives, both shrink this set. It is also what caught the sixteen
+    /// vendors added for data-layer coverage — they each contribute their
+    /// catalog-derived modalities and nothing else.
     #[test]
     fn vendor_group_codes_match_expected_catalog() {
         let groups = test_groups();
@@ -3510,6 +3883,7 @@ mod tests {
             .collect();
         let expected = [
             "default-group",
+            // Bundled vendor-native / OpenAI-compatible supplier families.
             "openai.text",
             "openai.image",
             "openai.audio",
@@ -3536,6 +3910,40 @@ mod tests {
             "suno.music",
             "suno.audio",
             "elevenlabs.audio",
+            // The remaining catalog vendors, reached through the generic
+            // OpenAI-compatible surface: every one of their models declares
+            // `apiFormat: "openai_compatible"`, so they own no vendor-native
+            // api_endpoint and must not be given a classifier arm.
+            "xai.text",
+            "xai.image",
+            "xai.video",
+            "alibaba.text",
+            "alibaba.image",
+            "alibaba.video",
+            "deepseek.text",
+            "moonshot.text",
+            "zhipu.text",
+            "zhipu.image",
+            "zhipu.video",
+            "runway.image",
+            "runway.video",
+            "baidu.text",
+            "luma_ai.video",
+            "pixverse.video",
+            "tencent.text",
+            "stepfun.text",
+            "meituan.text",
+            "stability_ai.image",
+            "stability_ai.audio",
+            "stability_ai.music",
+            "black_forest_labs.image",
+            "black_forest_labs.audio",
+            "black_forest_labs.video",
+            "mureka.music",
+            "xiaomi.text",
+            "xiaomi.image",
+            "xiaomi.audio",
+            "xiaomi.video",
         ];
         assert_eq!(
             codes.len(),
@@ -3913,6 +4321,121 @@ mod tests {
         );
     }
 
+    /// The install lifecycle is read through `ENV_INSTALL_ENVIRONMENT`, whose
+    /// literal is not the name the dev scripts used to export. Pinning it here
+    /// makes a rename on either side fail loudly rather than silently seeding
+    /// every bundled vendor account disabled.
+    #[test]
+    fn install_environment_variable_name_is_the_one_the_dev_scripts_export() {
+        use crate::infrastructure::sql::installer::ENV_INSTALL_ENVIRONMENT;
+        assert_eq!(
+            ENV_INSTALL_ENVIRONMENT, "SDKWORK_CLOUDROUTER_ROUTER_ENVIRONMENT",
+            "the dev scripts (start-workspace.mjs, manage-cloud-router-database.mjs) and \
+             .env.postgres must export this exact name, otherwise the installer falls back to \
+             `DEFAULT_INSTALL_ENVIRONMENT` (production) and seeds every vendor \
+             default account disabled"
+        );
+    }
+
+    /// Every vendor default account the *completeness* predicate inspects must
+    /// be one this seed actually writes, and vice versa.
+    ///
+    /// `postgres_default_vendor_upstream_accounts_complete` is what forces a
+    /// mis-seeded database back to `UpgradeRequired` so `ensure` can repair it.
+    /// If it iterated a different set than the importer, it would either miss
+    /// the account that stayed disabled (the original defect: a database with
+    /// all seeded accounts disabled still reported `Installed`) or demand an
+    /// account nobody writes and re-seed on every single run.
+    #[test]
+    fn vendor_account_completeness_covers_exactly_the_seeded_accounts() {
+        let account_codes: Vec<&str> = DEFAULT_VENDOR_UPSTREAM_ACCOUNTS
+            .iter()
+            .map(|seed| seed.account_code)
+            .collect();
+        assert_eq!(
+            account_codes.len(),
+            DEFAULT_VENDOR_UPSTREAM_ACCOUNTS.len(),
+            "the completeness predicate must cover exactly the seeded account set"
+        );
+        assert_eq!(
+            account_codes.len(),
+            27,
+            "the bundled vendor default account set must cover every catalog vendor \
+             (25 catalog vendors + the `gemini`/`kling`/`jimeng` account-side aliases \
+             of `google`/`kuaishou`/`bytedance` — see VENDOR_CODE_ALIASES)"
+        );
+        assert!(
+            account_codes.contains(&"openai-default")
+                && account_codes.contains(&"kling-default")
+                && account_codes.contains(&"elevenlabs-default"),
+            "spot-check the ends of the set: {account_codes:?}"
+        );
+        assert!(
+            account_codes.contains(&"xai-default")
+                && account_codes.contains(&"black-forest-labs-default")
+                && account_codes.contains(&"mureka-default"),
+            "spot-check the newly added tail of the set: {account_codes:?}"
+        );
+        let unique: BTreeSet<&str> = account_codes.iter().copied().collect();
+        assert_eq!(
+            unique.len(),
+            account_codes.len(),
+            "a duplicated account code would make the completeness predicate \
+             silently skip one vendor"
+        );
+    }
+
+    /// A seed run without a credential codec writes every vendor account but
+    /// **no** credential, and the completeness predicate then requires one.
+    ///
+    /// The two halves are individually correct and jointly a trap: the accounts
+    /// land, the predicate stays `UpgradeRequired`, and `ensure` fails with
+    /// `catalog/seed bootstrap did not reach installed state: UpgradeRequired`
+    /// — which reads like a seeding bug, not like "the key ring was not
+    /// configured". The real cause was only visible in the database (27
+    /// accounts, 11 credentials) after twenty minutes of bisecting a seed that
+    /// was in fact correct.
+    ///
+    /// This test pins the coupling so the skip can never become silent: the
+    /// credential writer must consult the codec, and the predicate must be the
+    /// thing that notices.
+    #[test]
+    fn credential_writer_is_skipped_without_a_codec_and_the_predicate_notices() {
+        let seed = DEFAULT_VENDOR_UPSTREAM_ACCOUNTS
+            .iter()
+            .find(|seed| seed.vendor_code == "xai")
+            .expect("xai is part of the bundled vendor set");
+
+        // The writer is a no-op without a codec …
+        let source = include_str!("ai_routing_seed.rs");
+        let writer = source
+            .split("async fn import_postgres_default_vendor_account_credential")
+            .nth(1)
+            .expect("the credential writer must still exist");
+        assert!(
+            writer.contains("let Some(credential_codec) = credential_codec else"),
+            "the credential writer must bail out when no codec is configured; \
+             if this early-return is removed the seed will start writing \
+             credentials it cannot seal"
+        );
+
+        // … and the completeness predicate is what surfaces the gap. It talks
+        // to the database, so its *shape* is asserted here and its behaviour is
+        // covered by the real-DB e2e
+        // (`bundled_placeholder_credentials_decode_with_the_dev_key_ring`).
+        assert_eq!(
+            seed.account_code, "xai-default",
+            "the credential writer keys the placeholder secret off \
+             `seed.vendor_code`; renaming either side silently desynchronises \
+             the sealed value from the account it belongs to"
+        );
+        assert_eq!(
+            default_account_placeholder_secret(seed.vendor_code),
+            "sk-dev-xai-placeholder",
+            "the placeholder secret must stay self-describing and carry the dev marker"
+        );
+    }
+
     #[test]
     fn vendor_account_marker_is_distinct_from_the_admin_path_marker() {
         // Regression: openai is seeded by both the admin topology path and the
@@ -3962,5 +4485,104 @@ mod tests {
             item_type(&vendor_account_marker),
             "default_vendor_upstream_account"
         );
+    }
+
+    /// Every generic api_endpoint the model-catalog import can bind a model to
+    /// must be granted to the default account group.
+    ///
+    /// Why this guard exists (2026-09-18): `model_catalog_import::
+    /// model_endpoint_descriptor` binds EVERY model to a *vendor-agnostic*
+    /// endpoint chosen purely from the model's `primaryCapability` — not to its
+    /// own vendor's native endpoint. Verified on the live dev DB:
+    ///
+    ///   xai/grok-4.5        -> openai.chat_completions (api.openai.chat_completions)
+    ///   minimax/hailuo-2.3  -> openai.video            (api.openai.video)
+    ///   elevenlabs/music_v2 -> suno.music              (api.suno.music)
+    ///
+    /// Per-model reachability is therefore gated by whether the default group
+    /// holds the *generic* endpoint resource. `api.openai.video` and
+    /// `api.suno.music` were created only by the import path and referenced by
+    /// no resource group, so all 77 video/music-primary models (62 + 15) could
+    /// never reach any account route and failed closed with 50201 — while
+    /// chat / image / audio / embedding (210 models) worked because
+    /// `api.openai_compatible.all`, which the default group already holds,
+    /// carries their generic endpoints.
+    ///
+    /// The seed catalog's own `validate_catalog` rejects a group item whose
+    /// `resourceCode` is undeclared, so the resource has to be declared and
+    /// granted in that order; this test pins the end state.
+    #[test]
+    fn default_group_grants_every_generic_endpoint_the_catalog_import_binds() {
+        let catalog = test_catalog();
+
+        // (primaryCapability -> endpoint_code -> resource_code), mirroring
+        // `model_catalog_import::model_endpoint_descriptor`, which maps
+        // endpoint_code to a resource by `endpoint_code == resource.api_code`.
+        let generic_endpoints: [(&str, &str, &str); 7] = [
+            ("chat", "openai.chat_completions", "api.openai.chat_completions"),
+            ("embedding", "openai.embeddings", "api.openai.embeddings"),
+            ("image", "openai.images", "api.openai.images"),
+            ("audio", "openai.audio", "api.openai.audio"),
+            ("video", "openai.video", "api.openai.video"),
+            ("music", "suno.music", "api.suno.music"),
+            ("rerank", "rerank", "api.rerank"),
+        ];
+
+        // 1. Every resource must be declared in the bundled catalog, otherwise
+        //    `validate_catalog` forbids any group from referencing it.
+        let declared: BTreeSet<&str> = catalog
+            .resources
+            .iter()
+            .map(|resource| resource.resource_code.as_str())
+            .collect();
+
+        // 2. Expand the default group's grants
+        //    (`DefaultAdminUpstreamAccountGroupSeed::resource_group_codes`)
+        //    into the concrete resource codes they cover.
+        let default_group = default_admin_upstream_account_groups(&catalog)
+            .expect("default account groups must derive")
+            .into_iter()
+            .find(|group| group.is_default)
+            .expect("the default account group must exist");
+        let grant_codes = default_group.resource_group_codes();
+        let mut granted_resources: BTreeSet<&str> = BTreeSet::new();
+        for group_code in &grant_codes {
+            let group = catalog
+                .resource_groups
+                .iter()
+                .find(|group| group.group_code == *group_code)
+                .unwrap_or_else(|| panic!("default group grants unknown group {group_code}"));
+            for item in &group.items {
+                if item.item_type == "resource" {
+                    if let Some(code) = item.resource_code.as_deref() {
+                        granted_resources.insert(code);
+                    }
+                }
+            }
+        }
+
+        for (capability, endpoint_code, resource_code) in generic_endpoints {
+            // `rerank` has no declared resource yet; it is only reachable once
+            // the catalog declares it. Assert the pair is consistent when the
+            // resource exists, so adding the declaration is what flips this on.
+            if !declared.contains(resource_code) {
+                assert_eq!(
+                    capability, "rerank",
+                    "generic api_endpoint for primaryCapability `{capability}` \
+                     (endpoint_code `{endpoint_code}`) must have a declared resource \
+                     `{resource_code}` in the bundled AI routing resource catalog, \
+                     otherwise no resource group can reference it and every \
+                     {capability}-primary model fails closed with 50201"
+                );
+                continue;
+            }
+            assert!(
+                granted_resources.contains(resource_code),
+                "the default account group must be granted `{resource_code}` \
+                 (generic api_endpoint `{endpoint_code}` for primaryCapability \
+                 `{capability}`); without it every {capability}-primary model in \
+                 the catalog cannot reach any account route"
+            );
+        }
     }
 }

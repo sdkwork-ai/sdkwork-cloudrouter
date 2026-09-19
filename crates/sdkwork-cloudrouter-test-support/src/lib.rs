@@ -1,6 +1,6 @@
 use sdkwork_cloudrouter_config::{ApiKeySecurityConfig, AppSessionConfig, TrustedSubjectConfig};
 use sdkwork_cloudrouter_http::{
-    sign_app_session_token, sign_trusted_request_subject, TrustedRequestSubject,
+    TrustedRequestSubject, sign_app_session_token, sign_trusted_request_subject,
 };
 
 pub const API_KEY_PEPPER: &str = "0123456789abcdef0123456789abcdef";
@@ -196,4 +196,66 @@ pub fn postgres_account_ledger_append_port(
     pool: sqlx::PgPool,
 ) -> std::sync::Arc<dyn sdkwork_account_service::AccountLedgerAppendPort + Send + Sync> {
     std::sync::Arc::new(sdkwork_account_repository_sqlx::PostgresCommerceAccountStore::new(pool))
+}
+
+/// Relative path (from the repository root) of the development upstream
+/// credential key ring that `scripts/dev/start-workspace.mjs` materializes and
+/// that every `pnpm dev` run uses to wrap upstream credentials at rest.
+pub const DEV_UPSTREAM_CREDENTIAL_KEY_RING_RELATIVE_PATH: &str =
+    ".sdkwork/secrets/upstream-credential-key-ring.development.json";
+
+/// Inline fallback ring, used only when the repository's own development key
+/// ring cannot be located. Credentials written by a different ring do not
+/// decode, so falling back is a loud warning, never a silent success path.
+const FALLBACK_UPSTREAM_CREDENTIAL_KEY_RING: &str = r#"{"activeKeyId":"development-local-v1","activeKey":"-H9WLZu6Ou7TZHIOSrl5axiRAK10KOkjrcFbYnWZabk","fingerprintKey":"HiYnoe11mwTzAyCWK0JVfhLahiVMRvZNi_IrxaZgh5o","decryptionKeys":[]}"#;
+
+/// Resolves the upstream credential key ring **actually used by this
+/// repository's dev environment**.
+///
+/// The catalog stores upstream credentials as AEAD ciphertext, so the ring a
+/// test builds its router with must be byte-identical to the ring that was
+/// active when the rows were written; a mismatched ring fails at snapshot load
+/// with `failed to decrypt credential secret` before any request is served.
+///
+/// Resolution order, first hit wins:
+///
+/// 1. `SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING` (explicit inline ring),
+/// 2. `SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING_FILE` (explicit file),
+/// 3. `<repo>/.sdkwork/secrets/upstream-credential-key-ring.development.json`,
+/// 4. [`FALLBACK_UPSTREAM_CREDENTIAL_KEY_RING`] (with a loud warning).
+pub fn resolve_upstream_credential_key_ring() -> String {
+    if let Ok(value) = std::env::var("SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING") {
+        if !value.trim().is_empty() {
+            return value;
+        }
+    }
+
+    let mut candidates: Vec<std::path::PathBuf> = Vec::new();
+    if let Ok(path) = std::env::var("SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING_FILE") {
+        if !path.trim().is_empty() {
+            candidates.push(std::path::PathBuf::from(path));
+        }
+    }
+    if let Some(repo_root) = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(|crates| crates.parent())
+    {
+        candidates.push(repo_root.join(DEV_UPSTREAM_CREDENTIAL_KEY_RING_RELATIVE_PATH));
+    }
+
+    for path in candidates {
+        match std::fs::read_to_string(&path) {
+            Ok(content) if !content.trim().is_empty() => {
+                eprintln!("using upstream credential key ring from {}", path.display());
+                return content;
+            }
+            _ => continue,
+        }
+    }
+
+    eprintln!(
+        "warning: {DEV_UPSTREAM_CREDENTIAL_KEY_RING_RELATIVE_PATH} not found; falling back to \
+         the inline dev ring, which only decrypts credentials written by that same ring"
+    );
+    FALLBACK_UPSTREAM_CREDENTIAL_KEY_RING.to_owned()
 }

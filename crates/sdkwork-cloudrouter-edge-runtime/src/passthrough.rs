@@ -1821,12 +1821,42 @@ fn standard_api_code_for_provider_adapter_route(
         })
 }
 
+/// The edge runtime's copy of the router's `path -> api_code` classifier.
+///
+/// The two copies are compared arm-for-arm by
+/// `tools/check-cloudrouter-ai-routing-consistency.mjs`; a one-sided edit makes
+/// the edge side fall back to a synthesised `<vendor>.<path.with.dots>` key that
+/// matches no seeded resource, so the request reaches no account scope and the
+/// fail-closed pricing preflight refuses it.
+///
+/// The `sfx.sound` arms cover sound effects (音效). The four sfx vendors each
+/// answer a different path; all of them resolve onto the one `sfx.sound` route
+/// so the capability has a single reachable endpoint code. `elevenlabs` is
+/// deliberately absent from those arms: it keeps its own vendor-native
+/// `elevenlabs.sound_generation` classification, which is the more specific one
+/// and must win.
+///
+/// Comment text here is parsed by that gate's arm regex, so it must not sit
+/// between an arm and its `=>` — a comment there is captured as the arm's
+/// condition and reported as a shape the gate cannot model.
 fn provider_native_api_code_from_standard_path(
     provider: &str,
     standard_path: &str,
 ) -> Option<String> {
     let provider = normalize_endpoint_key_segment(provider);
     let path = normalize_provider_api_path(provider.as_str(), standard_path);
+    // --- Vendor-native surfaces whose models declare
+    // `apiFormat = vendor_native`. Without these arms the catch-all below
+    // synthesises `<vendor>.<last.path.segment>` (for example
+    // `alibaba.video.synthesis`), which matches no taxonomy route, so the
+    // classification carries `meter: None` and the fail-closed pricing
+    // preflight refuses the request even though the resource grant, the
+    // account and the credential are all present.
+    //
+    // Only endpoints a `vendor_native` model actually binds to are listed.
+    // Each vendor's `openai_compatible` models keep the generic face, so
+    // `alibaba` chat / embedding / image and `zhipu` chat / embedding /
+    // image deliberately stay out.
     let api_code = match provider.as_str() {
         "anthropic" if path == "/v1/claude-code/sessions" => "anthropic.claude_code",
         "anthropic" if path == "/v1/messages" => "anthropic.messages",
@@ -1883,6 +1913,11 @@ fn provider_native_api_code_from_standard_path(
         "elevenlabs" if path == "/v1/text-to-speech/{voice_id}" => "elevenlabs.text_to_speech",
         "elevenlabs" if path.starts_with("/v1/text-to-speech/") => "elevenlabs.text_to_speech",
         "elevenlabs" if path == "/v1/sound-generation" => "elevenlabs.sound_generation",
+        "kling" if path == "/v1/sound/generate" => "sfx.sound",
+        "stability_ai" if path == "/v1/sound/generate" => "sfx.sound",
+        "stability_ai" if path == "/v2beta/audio/stable-audio-2/text-to-audio" => "sfx.sound",
+        "vidu" if path == "/ent/v2/text2audio" => "sfx.sound",
+        "vidu" if path == "/ent/v2/timing2audio" => "sfx.sound",
         "minimax" if path == "/v1/music_generation" => "minimax.music_generation",
         "minimax" if path == "/v1/music/generations" => "minimax.music_generation",
         "minimax" if path == "/v1/music/generation" => "minimax.music_generation",
@@ -1891,6 +1926,46 @@ fn provider_native_api_code_from_standard_path(
             "suno.music_task_query"
         }
         "vidu" if path == "/ent/v2/reference2image" => "vidu.reference_to_image",
+        "alibaba"
+            if path == "/api/v1/services/aigc/video-generation/video-synthesis" =>
+        {
+            "alibaba.video_generation"
+        }
+        "alibaba" if task_poll_path_matches(path.as_str(), "api/v1/tasks") => {
+            "alibaba.video_generation_task_query"
+        }
+        "luma_ai" if path == "/dream-machine/v1/generations" => "luma_ai.video_generation",
+        "luma_ai"
+            if task_poll_path_matches(path.as_str(), "dream-machine/v1/generations") =>
+        {
+            "luma_ai.video_generation_task_query"
+        }
+        "pixverse" if path == "/openapi/v2/video/text/generate" => "pixverse.video_generation",
+        "pixverse" if task_poll_path_matches(path.as_str(), "openapi/v2/video/result") => {
+            "pixverse.video_generation_task_query"
+        }
+        "zhipu" if path == "/api/paas/v4/videos/generations" => "zhipu.video_generation",
+        "zhipu" if task_poll_path_matches(path.as_str(), "api/paas/v4/async-result") => {
+            "zhipu.video_generation_task_query"
+        }
+        "mureka" if path == "/v1/song/generate" => "mureka.music_generation",
+        "mureka" if task_poll_path_matches(path.as_str(), "v1/song/query") => {
+            "mureka.music_generation_task_query"
+        }
+        "baidu" if path == "/v2/chat/completions" => "baidu.chat_completions",
+        "runway" | "runwayml" if path == "/v1/text_to_image" => "runway.image_generation",
+        "runway" | "runwayml" if task_poll_path_matches(path.as_str(), "v1/tasks") => {
+            "runway.task_query"
+        }
+        "stability_ai" | "stability"
+            if path.starts_with("/v2beta/stable-image/generate/") =>
+        {
+            "stability_ai.image_generation"
+        }
+        "black_forest_labs" | "bfl" if path == "/v1/get_result" => "black_forest_labs.task_query",
+        "black_forest_labs" | "bfl" if path.starts_with("/v1/flux-") => {
+            "black_forest_labs.image_generation"
+        }
         "vidu" if path == "/ent/v2/template" => "vidu.motion_sync",
         "vidu" if path == "/ent/v2/start-end2video" => "vidu.start_end_to_video",
         "tencent.cloud" if path == "/vidu/ent/v2/reference2image" => "vidu.reference_to_image",

@@ -262,11 +262,18 @@ fn video_generation_mode_for_api_code(api_code: &str) -> Option<&'static str> {
 /// `start_end_frame`，厂商端点叫 `start_end_to_video`（首尾帧成片）。两者指同
 /// 一件事，但后缀永远对不上，必须显式桥接——否则 `vidu/viduq3-pro` 那 3 条
 /// `se2v_*` profile 与它对应的 active 费率都成了孤儿。
+///
+/// `vidu.motion_sync` 是同型第二例：模板成片（`/ent/v2/template`，场景模板 +
+/// 参考图 + 提示词）在目录词汇里就是 `reference_to_video`，后缀 `motion_sync`
+/// 对不上任何模式；且该端点刻意不绑模型（绑了会让所有 video 模型都答模板
+/// 请求），定价只能走请求声明的模型键——词汇表对不上时，`vidu/viduq3` 已报价
+/// 的 `ref_res_*` 档位也救不了它。
 const API_CODE_GENERATION_MODE_OVERRIDES: &[(&str, &str)] = &[
     ("volcengine.video_generation", "text_to_video"),
     ("jimeng.video_generation", "text_to_video"),
     ("gemini.video_generation", "text_to_video"),
     ("vidu.start_end_to_video", "start_end_frame"),
+    ("vidu.motion_sync", "reference_to_video"),
 ];
 
 
@@ -1924,6 +1931,10 @@ mod video_pricing_tier_tests {
         assert_eq!(
             video_generation_mode_for_api_code("vidu.start_end_to_video"),
             Some("start_end_frame")
+        );
+        assert_eq!(
+            video_generation_mode_for_api_code("vidu.motion_sync"),
+            Some("reference_to_video")
         );
     }
 

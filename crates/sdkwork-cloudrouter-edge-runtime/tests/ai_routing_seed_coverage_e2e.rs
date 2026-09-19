@@ -33,7 +33,14 @@ use sdkwork_test::PgTestContext;
 /// Vendors that ship a bundled default account. Mirrors
 /// `DEFAULT_VENDOR_UPSTREAM_ACCOUNTS` in the seed; kept explicit here so a
 /// silently-shrinking seed set fails this test instead of quietly passing.
+///
+/// The second block is the set added for **data-layer coverage**: every
+/// remaining catalog vendor gets an account so the full API call flow can be
+/// exercised against a real account row. They carry fabricated placeholder
+/// credentials, so a request through them reaches the account route and then
+/// fails at the provider hop — which is the intended, and asserted, boundary.
 const REQUIRED_VENDOR_ACCOUNTS: &[&str] = &[
+    // Bundled vendor-native / OpenAI-compatible supplier families.
     "openai",
     "openai_compatible",
     "gemini",
@@ -45,6 +52,23 @@ const REQUIRED_VENDOR_ACCOUNTS: &[&str] = &[
     "minimax",
     "suno",
     "elevenlabs",
+    // Remaining catalog vendors (data-layer coverage).
+    "xai",
+    "alibaba",
+    "deepseek",
+    "moonshot",
+    "zhipu",
+    "runway",
+    "baidu",
+    "luma_ai",
+    "pixverse",
+    "tencent",
+    "stepfun",
+    "meituan",
+    "stability_ai",
+    "black_forest_labs",
+    "mureka",
+    "xiaomi",
 ];
 
 /// The four routability prerequisites from
@@ -158,7 +182,132 @@ const REQUIRED_VENDOR_RESOURCE_GROUPS: &[(&str, &str)] = &[
     ("volcengine", "official.volcengine.full"),
     ("suno", "official.suno.full"),
     ("elevenlabs", "official.elevenlabs.full"),
+    // Remaining catalog vendors (data-layer coverage). Each binds the new
+    // `official.<vendor>.full` group, which grants only `vendor.<vendor>`:
+    // every model these vendors declare is `apiFormat: "openai_compatible"`,
+    // so they own no vendor-native `api_endpoint` and are served through the
+    // protocol-coherent generic surface the default group already grants.
+    ("xai", "official.xai.full"),
+    ("alibaba", "official.alibaba.full"),
+    ("deepseek", "official.deepseek.full"),
+    ("moonshot", "official.moonshot.full"),
+    ("zhipu", "official.zhipu.full"),
+    ("runway", "official.runway.full"),
+    ("baidu", "official.baidu.full"),
+    ("luma_ai", "official.luma_ai.full"),
+    ("pixverse", "official.pixverse.full"),
+    ("tencent", "official.tencent.full"),
+    ("stepfun", "official.stepfun.full"),
+    ("meituan", "official.meituan.full"),
+    ("stability_ai", "official.stability_ai.full"),
+    ("black_forest_labs", "official.black_forest_labs.full"),
+    ("mureka", "official.mureka.full"),
+    ("xiaomi", "official.xiaomi.full"),
 ];
+
+/// The generic (vendor-agnostic) `api_endpoint` resource every model must reach,
+/// as (`primaryCapability`, `resource_code`).
+///
+/// `model_catalog_import::model_endpoint_descriptor` binds **every** model in
+/// the catalog to an endpoint chosen purely from the model's
+/// `primaryCapability` — never to its own vendor's native endpoint. A model
+/// whose generic endpoint is granted to no account group can therefore never
+/// reach any account route, and every request for it fails closed with
+/// `50201 no upstream account routes are configured`, no matter how healthy its
+/// own vendor's account is.
+///
+/// Only capabilities that (a) the model catalog actually emits and (b) the seed
+/// actually declares are listed. `model_endpoint_descriptor` also has a
+/// `rerank` arm producing `rerank` / `api.rerank`, but `api.rerank` is declared
+/// by no seed file and no catalog model carries `primaryCapability = "rerank"`
+/// (measured 2026-09-18: chat 151 / video 96 / image 60 / audio 56 / music 29 /
+/// sfx 10 / embedding 9 / code 8 / reasoning 4 / streaming 2), so it is
+/// dormant. It is deliberately excluded rather than papered over with a dead
+/// resource row: the day the catalog emits a rerank model, the resource and its
+/// grant have to be authored together, and this list has to grow by one entry.
+///
+/// `sfx` is listed even though `model_sfx_endpoint_descriptor` sends
+/// elevenlabs sfx models to `elevenlabs.sound_generation` instead: every other
+/// sfx vendor (`kuaishou`, `stability_ai`, `vidu`) binds the generic
+/// `sfx.sound`, so the resource must stay granted in the default group.
+const REQUIRED_GENERIC_RESOURCES: &[(&str, &str)] = &[
+    ("chat", "api.openai.chat_completions"),
+    ("embedding", "api.openai.embeddings"),
+    ("image", "api.openai.images"),
+    ("audio", "api.openai.audio"),
+    ("video", "api.openai.video"),
+    ("music", "api.suno.music"),
+    ("sfx", "api.sfx.sound"),
+];
+
+/// Expand the default group's granted resource *groups* into the set of
+/// member resource codes, then assert every generic endpoint the catalog import
+/// can bind is inside it. This is the third leg of the coverage guard: the first
+/// two prove the vendor pools and the per-vendor grants exist, this one proves
+/// the *capability* surface is actually reachable.
+#[tokio::test]
+async fn auth_token_default_group_reaches_every_generic_capability_endpoint() {
+    let Some(pg) = PgTestContext::from_env(true).await else {
+        eprintln!("skipping: set SDKWORK_DATABASE_URL to run the real-DB e2e test");
+        return;
+    };
+
+    // `ai_upstream_account_group` (account pools) → `ai_resource_binding`
+    // (grants, keyed by group id because `account_group_code` is stored empty)
+    // → `ai_resource_group` (taxonomy group) → `ai_resource_group_item`
+    // (membership, keyed by `resource_code` because `resource_id` is left NULL
+    // by `group_item_upsert_postgres`) → `ai_resource` (declaration).
+    const GENERIC_REACHABILITY_SQL: &str = r#"
+SELECT DISTINCT item.resource_code
+FROM sdkwork_ai_dev.ai_upstream_account_group account_group
+JOIN sdkwork_ai_dev.ai_resource_binding binding
+  ON binding.account_group_id = account_group.id
+ AND binding.binding_scope = 'account_group'
+ AND binding.grant_type = 'allow'
+ AND binding.deleted_at IS NULL
+ AND binding.status = 1
+JOIN sdkwork_ai_dev.ai_resource_group resource_group
+  ON resource_group.group_code = binding.resource_group_code
+ AND resource_group.deleted_at IS NULL
+JOIN sdkwork_ai_dev.ai_resource_group_item item
+  ON item.resource_group_id = resource_group.id
+ AND item.deleted_at IS NULL
+WHERE account_group.deleted_at IS NULL
+  AND account_group.status = 1
+  AND account_group.is_default
+  AND item.item_type = 'resource'
+  AND item.resource_code IS NOT NULL
+"#;
+
+    let reachable: Vec<String> = sqlx::query_scalar(GENERIC_REACHABILITY_SQL)
+        .fetch_all(pg.pool())
+        .await
+        .expect("generic capability reachability query must succeed");
+
+    assert!(
+        !reachable.is_empty(),
+        "the default account group grants no resource at all, so every model request is \
+         de-routed"
+    );
+    eprintln!(
+        "  default group grants {} distinct resource code(s)",
+        reachable.len()
+    );
+
+    let mut missing = Vec::new();
+    for (capability, resource_code) in REQUIRED_GENERIC_RESOURCES {
+        if !reachable.iter().any(|value| value == resource_code) {
+            missing.push(format!("{capability} -> {resource_code}"));
+        }
+    }
+
+    assert!(
+        missing.is_empty(),
+        "the default account group does not reach these generic endpoints the model-catalog \
+         import binds models to, so every model whose `primaryCapability` maps here fails \
+         closed with `50201 no upstream account routes are configured`: {missing:#?}"
+    );
+}
 
 /// The group an auth-token (app-session) session resolves to must actually reach
 /// every bundled vendor — as a **member** and as a **resource grant**.
@@ -300,16 +449,21 @@ async fn bundled_placeholder_credentials_decode_with_the_dev_key_ring() {
         return;
     };
 
-    // The seed seals each placeholder credential with the key ring configured
-    // in the environment. Rebuild the same codec from that key ring and prove
-    // the stored ciphertext round-trips, so a request dispatched to the vendor
-    // really carries the seeded placeholder rather than an undecodable blob.
-    let Some(config) = sdkwork_cloudrouter_config::UpstreamCredentialSecurityConfig::from_env()
-        .expect("key ring config must parse when present")
-    else {
-        eprintln!("skipping: no upstream credential key ring configured in this environment");
-        return;
-    };
+    // The seed seals each placeholder credential with the repository's dev
+    // key ring. Rebuild the same codec from the ring
+    // `sdkwork_cloudrouter_test_support::resolve_upstream_credential_key_ring`
+    // resolves (env var → explicit file → repo dev ring) and prove the stored
+    // ciphertext round-trips, so a request dispatched to the vendor really
+    // carries the seeded placeholder rather than an undecodable blob. Skipping
+    // here would be a false green: the decode link is the one assertion this
+    // test exists for.
+    let config = sdkwork_cloudrouter_config::UpstreamCredentialSecurityConfig::from_optional_key_ring_payload(
+            Some(sdkwork_cloudrouter_test_support::resolve_upstream_credential_key_ring()),
+        )
+        .expect("resolved dev key ring must parse")
+        // The resolver never returns an empty payload (it carries an inline
+        // fallback ring), so the decode test always has a codec to build.
+        .expect("the key ring resolver always yields a payload");
     let codec = RingAeadCredentialSecretCodec::with_key_ring(
         config.active_key_id(),
         config.active_key(),
@@ -424,16 +578,24 @@ async fn bundled_seed_is_idempotent_across_repeated_runs() {
         accounts_before, credentials_before,
         "every seeded upstream account must carry exactly one seeded credential"
     );
-    // 27 derived vendor-modality groups each hold exactly one vendor account,
-    // and the default *mixed* group additionally holds all 11 vendor default
+    // 57 derived vendor-modality groups each hold exactly one vendor account,
+    // and the default *mixed* group additionally holds all 27 vendor default
     // accounts so auth-token (app-session) traffic can reach every vendor.
     // `openai-default` is already a member of the default group via the admin
-    // path, so the vendor pass adds the other 10: 27 + 10 = 37.
+    // path, so the vendor pass adds the other 26: 57 + 26 = 83.
+    //
+    // The derived-group count is a pure function of the bundled resource
+    // catalog (every `vendor.*` resource declares its capabilities, every
+    // bundled `api_endpoint` declares its `modalityCode`, and
+    // `VENDOR_MODALITY_MAPPING` folds both into the supported modality set).
+    // Changing the catalog therefore moves this number; the unit test
+    // `vendor_group_codes_match_expected_catalog` is the authority on the
+    // exact set, and this assertion is the live-DB echo of it.
     assert_eq!(
-        members_before, 37,
+        members_before, 83,
         "every derived vendor-modality group must have exactly one member, and the \
-         default mixed group must hold all 11 vendor default accounts \
-         (27 derived groups + 10 additional default-group members)"
+         default mixed group must hold all 27 vendor default accounts \
+         (57 derived groups + 26 additional default-group members)"
     );
 
     let accounts_after = count(pg.pool(), COUNT_ACCOUNTS).await;
