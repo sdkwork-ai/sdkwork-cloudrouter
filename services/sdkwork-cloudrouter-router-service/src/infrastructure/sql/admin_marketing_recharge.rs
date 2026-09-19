@@ -59,6 +59,27 @@ pub fn token_points_for_charge(
     i64::try_from(micro).map_err(|_| DomainError::new("usage charge points overflow"))
 }
 
+/// Floor-based **micro**-points for the asynchronous settlement worker's
+/// aggregated postpaid batches. The worker deliberately defers sub-micro dust
+/// so facts can accumulate instead of forcing a one-micro charge per batch;
+/// once a batch exceeds the bounded wait age the worker applies the ceiling
+/// rule (`token_points_for_charge`) so a positive amount never pends forever.
+/// Per-request precharged reconciliation keeps using the ceiling rule.
+pub fn token_points_for_aggregation(
+    amount: &str,
+    currency_code: &str,
+    settings: &RechargeSettingsModel,
+) -> DomainResult<i64> {
+    let factor = points_per_currency_unit_string(currency_code, settings)?;
+    let product =
+        decimal_multiply(amount, &factor, 6, DecimalRounding::Floor).map_err(decimal_error)?;
+    let micro = decimal_to_scaled(&product, 6, DecimalRounding::Floor).map_err(decimal_error)?;
+    if micro <= 0 {
+        return Ok(0);
+    }
+    i64::try_from(micro).map_err(|_| DomainError::new("usage aggregation points overflow"))
+}
+
 /// Points awarded per major unit of a pricing currency, as a decimal string
 /// (`currency→CNY × base points per CNY`). Used to render "1 <currency> ≈ N
 /// 积分" and to convert cash unit prices into points independently of any

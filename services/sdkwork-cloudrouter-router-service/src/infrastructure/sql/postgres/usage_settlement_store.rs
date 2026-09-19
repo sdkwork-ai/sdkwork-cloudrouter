@@ -15,7 +15,7 @@ use crate::domain::DomainError;
 use crate::infrastructure::sql::postgres::admin_marketing_store::load_recharge_settings_model_for_transaction;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
-    parse_recharge_settings_model, token_points_for_charge,
+    parse_recharge_settings_model, token_points_for_aggregation, token_points_for_charge,
     RechargeSettingsModel, UsageSettlementCommand, UsageSettlementFuture, UsageSettlementOutcome,
     UsageSettlementStore, MAX_PRICING_SNAPSHOT_BYTES,
 };
@@ -765,9 +765,11 @@ async fn precharge_tokens(
     // the category silently treated every precharged request as postpaid and
     // charged the full amount a second time in asynchronous settlement.
     let transaction_no = format!("cloudrouter:{}:precharge", usage_fact.request_id);
-    let amount = sqlx::query_scalar::<_, Option<i64>>(
+    // SUM(bigint) yields NUMERIC in PostgreSQL, so the expression must be
+    // cast back to bigint or the sqlx i64 decode fails on every probe.
+    let amount = sqlx::query_scalar::<_, i64>(
         r#"
-        SELECT COALESCE(SUM(CASE WHEN direction = 'DEBIT' THEN amount ELSE -amount END), 0)
+        SELECT COALESCE(SUM(CASE WHEN direction = 'DEBIT' THEN amount ELSE -amount END), 0)::bigint
         FROM acct_ledger_entry
         WHERE tenant_id = $1
           AND request_no = $2
@@ -783,7 +785,7 @@ async fn precharge_tokens(
     .fetch_one(&mut **tx)
     .await
     .map_err(|error| store_error("failed to load invocation precharge", error))?;
-    Ok(amount.unwrap_or(0).max(0))
+    Ok(amount.max(0))
 }
 
 /// Deterministic request hash for the settlement debit so the account-domain
@@ -981,12 +983,17 @@ async fn mark_settlement_terminal_failed(
     .await
 }
 
+/// Aggregated postpaid conversion uses FLOOR so fresh sub-micro dust defers
+/// and can accumulate instead of forcing one micro per batch; the aged-batch
+/// branch above restores the ceiling rule so a positive amount never pends
+/// forever. Per-request precharged reconciliation keeps the ceiling rule via
+/// `charge_precharged_tokens`.
 fn charge_tokens_from_scaled(
     scaled: i128,
     currency: &str,
     settings: &RechargeSettingsModel,
 ) -> Result<i64, DomainError> {
-    token_points_for_charge(&scaled_to_amount_string(scaled), currency, settings)
+    token_points_for_aggregation(&scaled_to_amount_string(scaled), currency, settings)
 }
 
 fn charge_precharged_tokens(
@@ -1036,6 +1043,26 @@ fn allocate_candidate_tokens(
             .ok_or_else(|| DomainError::new("usage settlement token allocation underflow"))?;
         allocations.push(candidate_tokens);
         allocated_tokens = cumulative_tokens;
+    }
+    if allocated_tokens < total_tokens {
+        // The aged-batch ceiling bump can raise the batch total above the
+        // floor-aggregated cumulative sum: a positive dust batch floors to
+        // zero and is then flushed as one micro after the bounded wait.
+        // Attribute the residual to the first billable candidate so the
+        // per-fact allocation still sums to the debited total.
+        let residual = total_tokens - allocated_tokens;
+        let index = candidates
+            .iter()
+            .position(|candidate| candidate.scaled_amount > 0)
+            .ok_or_else(|| {
+                DomainError::new("usage settlement token allocation has no billable candidate")
+            })?;
+        allocations[index] = allocations[index]
+            .checked_add(residual)
+            .ok_or_else(|| DomainError::new("usage settlement token allocation overflow"))?;
+        allocated_tokens = allocated_tokens
+            .checked_add(residual)
+            .ok_or_else(|| DomainError::new("usage settlement token allocation overflow"))?;
     }
     if allocated_tokens != total_tokens {
         return Err(DomainError::new(
@@ -1202,7 +1229,21 @@ fn store_error(context: &'static str, error: sqlx::Error) -> SettlementStoreErro
             return SettlementStoreError::RetryableTransaction { sqlstate };
         }
     }
+    // The returned domain error is redacted, so the full driver cause must be
+    // logged here or the failure is undiagnosable from server logs.
+    tracing::error!(
+        context,
+        sqlstate = sqlx_error_sqlstate(&error).as_deref().unwrap_or("none"),
+        "usage settlement store operation failed: {error}"
+    );
     SettlementStoreError::Domain(redacted_store_error(context, error))
+}
+
+fn sqlx_error_sqlstate(error: &sqlx::Error) -> Option<String> {
+    match error {
+        sqlx::Error::Database(database_error) => database_error.code().map(|code| code.to_string()),
+        _ => None,
+    }
 }
 
 #[cfg(test)]

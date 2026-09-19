@@ -1041,10 +1041,11 @@ fn cached_tokens(usage: &Value) -> Option<i64> {
 
 /// Normalizes miss-only cached reporting: when the provider reports more
 /// cached tokens than prompt tokens, `prompt_tokens` only covers the cache
-/// misses, so the inclusive prompt total is `prompt + cached`.
+/// misses, so the inclusive prompt total is `prompt + cached`. Provider
+/// frames are untrusted input, so the sum saturates instead of overflowing.
 fn normalized_input_tokens(input_tokens: i64, cached_tokens: i64) -> i64 {
     if cached_tokens > input_tokens {
-        input_tokens + cached_tokens
+        input_tokens.saturating_add(cached_tokens)
     } else {
         input_tokens
     }

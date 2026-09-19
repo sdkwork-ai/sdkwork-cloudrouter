@@ -241,7 +241,7 @@ async fn insert_payment_intent(
         INSERT INTO commerce_payment_intent
             (id, tenant_id, organization_id, owner_user_id, order_id, merchant_order_no, subject, provider, supplier_code, payment_method, scene_code, amount, currency_code, status, request_no, idempotency_key, metadata_json, provider_native_json, next_action_json, captured_amount, refunded_amount, created_at, updated_at)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NULL, NULL, $18, $19, $20, $21)
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NULL, NULL, $18, $19, $20::timestamptz, $21::timestamptz)
         ON CONFLICT DO NOTHING
         "#,
     )
@@ -280,7 +280,7 @@ async fn insert_payment_intent(
         INSERT INTO commerce_payment_attempt
             (id, tenant_id, organization_id, owner_user_id, payment_intent_id, order_id, provider, out_trade_no, amount, currency_code, status, callback_payload, created_at, paid_at, updated_at)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NULL, $14)
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::timestamptz, NULL, $14::timestamptz)
         "#,
     )
     .bind(&route_decision.payment_attempt_id)
@@ -305,7 +305,7 @@ async fn insert_payment_intent(
         INSERT INTO commerce_payment_route_decision
             (id, tenant_id, organization_id, payment_intent_id, payment_attempt_id, route_rule_id, account_id, supplier_code, provider_account_id, method_code, scene_code, country_code, currency_code, amount, risk_level, decision_reason, fallback_from_account_id, created_at)
         VALUES
-            ($1, $2, $3, $4, $5, NULL, $6, $7, $8, $9, $10, NULL, $11, $12, NULL, $13, NULL, $14)
+            ($1, $2, $3, $4, $5, NULL, $6, $7, $8, $9, $10, NULL, $11, $12, NULL, $13, NULL, $14::timestamptz)
         "#,
     )
     .bind(&route_decision.id)
@@ -348,7 +348,7 @@ async fn record_intent_provider_dispatch(
         UPDATE commerce_payment_intent
         SET status = $1,
             next_action_json = $2,
-            updated_at = $3
+            updated_at = $3::timestamptz
         WHERE tenant_id = $4
           AND id = $5
         "#,
@@ -393,7 +393,7 @@ async fn insert_operation_attempt(
         INSERT INTO commerce_payment_operation_attempt
             (id, tenant_id, organization_id, operation_no, supplier_code, provider_account_id, account_id, operation_code, sdkwork_resource_type, sdkwork_resource_id, idempotency_key, request_digest, response_digest, native_request_id, native_trade_id, native_refund_id, http_status, provider_error_code, provider_error_message, retryable, status, started_at, completed_at, created_at)
         VALUES
-            ($1, $2, $3, $4, $5, NULL, NULL, $6, $7, $8, $9, $10, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, $11, $12, NULL, $13)
+            ($1, $2, $3, $4, $5, NULL, NULL, $6, $7, $8, $9, $10, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, $11, $12::timestamptz, NULL, $13::timestamptz)
         "#,
     )
     .bind(&attempt.id)
@@ -431,7 +431,7 @@ async fn finish_operation_attempt(
             response_digest = $2,
             provider_error_code = $3,
             provider_error_message = $4,
-            completed_at = $5
+            completed_at = $5::timestamptz
         WHERE id = $6
         "#,
     )
@@ -539,7 +539,7 @@ async fn insert_refund(
         INSERT INTO commerce_refund
             (id, tenant_id, organization_id, payment_intent_id, payment_attempt_id, refund_no, amount, currency_code, supplier_code, reason, status, request_no, idempotency_key, created_at, updated_at)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::timestamptz, $15::timestamptz)
         ON CONFLICT DO NOTHING
         "#,
     )
@@ -569,8 +569,11 @@ async fn insert_refund(
     }
     // Cumulative refund-cap reservation. The UPDATE row-locks the intent, so
     // concurrent refunds of the same intent serialize here and each guard
-    // re-reads the committed refund sum: `sum(active refunds) + this refund`
-    // must never exceed the intent amount. A zero-row update rolls the whole
+    // re-reads the active refund sum: `sum(active refunds) + this refund`
+    // must never exceed the intent amount. The just-inserted row of THIS
+    // refund is visible to the same-statement subquery, so it is excluded by
+    // id — otherwise the amount would be counted twice and full refunds
+    // would always be rejected. A zero-row update rolls the whole
     // transaction back, so no orphan refund row survives a rejected cap.
     // Failed/canceled refunds are excluded from the sum, which releases their
     // reservation without dedicated bookkeeping.
@@ -578,7 +581,7 @@ async fn insert_refund(
         r#"
         UPDATE commerce_payment_intent
         SET version = version + 1,
-            updated_at = $4
+            updated_at = $4::timestamptz
         WHERE tenant_id = $1
           AND id = $2
           AND deleted_at IS NULL
@@ -589,6 +592,7 @@ async fn insert_refund(
                 WHERE active.tenant_id = $1
                   AND active.payment_intent_id = $2
                   AND active.deleted_at IS NULL
+                  AND active.id <> $5
                   AND active.status IN ('pending', 'processing', 'succeeded')
               ), 0) <= amount::numeric
         "#,
@@ -597,6 +601,7 @@ async fn insert_refund(
     .bind(&refund.payment_intent_id)
     .bind(&refund.amount)
     .bind(&refund.updated_at)
+    .bind(&refund.id)
     .execute(&mut *tx)
     .await
     .map_err(|error| store_error("failed to reserve payment refund amount", error))?
@@ -611,7 +616,7 @@ async fn insert_refund(
         INSERT INTO commerce_refund_attempt
             (id, tenant_id, organization_id, refund_attempt_no, refund_id, supplier_code, provider_account_id, out_refund_no, provider_refund_id, amount, currency_code, status, failure_code, failure_message, submitted_at, succeeded_at, failed_at, created_at, updated_at)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::timestamptz, $16::timestamptz, $17::timestamptz, $18::timestamptz, $19::timestamptz)
         "#,
     )
     .bind(&attempt.id)
@@ -642,7 +647,7 @@ async fn insert_refund(
             INSERT INTO commerce_refund_item
                 (id, tenant_id, organization_id, refund_id, order_item_id, quantity, refund_amount, tax_refund_amount, shipping_refund_amount, created_at)
             VALUES
-                ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::timestamptz)
             "#,
         )
         .bind(&item.id)
@@ -705,9 +710,9 @@ async fn finish_refund_attempt(
             provider_refund_id = $2,
             failure_code = $3,
             failure_message = $4,
-            succeeded_at = CASE WHEN $1 = 'SUCCEEDED' THEN $5 ELSE succeeded_at END,
-            failed_at = CASE WHEN $1 = 'FAILED' THEN $5 ELSE failed_at END,
-            updated_at = $5
+            succeeded_at = CASE WHEN $1 = 'SUCCEEDED' THEN $5::timestamptz ELSE succeeded_at END,
+            failed_at = CASE WHEN $1 = 'FAILED' THEN $5::timestamptz ELSE failed_at END,
+            updated_at = $5::timestamptz
         WHERE id = $6
            OR refund_id = $6
         "#,
@@ -756,7 +761,7 @@ async fn finish_refund(
         r#"
         UPDATE commerce_refund
         SET status = $1,
-            updated_at = $2
+            updated_at = $2::timestamptz
         WHERE id = $3
         "#,
     )
@@ -771,7 +776,7 @@ async fn finish_refund(
         INSERT INTO commerce_refund_event
             (id, tenant_id, organization_id, refund_id, event_type, from_status, to_status, reason, created_at)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            ($1, $2, $3, $4, $5, $6, $7, $8, $9::timestamptz)
         "#,
     )
     .bind(&event.id)

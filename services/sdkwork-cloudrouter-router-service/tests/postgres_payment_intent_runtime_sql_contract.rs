@@ -65,7 +65,7 @@ fn payment_intent_runtime_records_and_finishes_provider_operation_attempts() {
     for expected in [
         "INSERT INTO commerce_payment_operation_attempt",
         "(id, tenant_id, organization_id, operation_no, supplier_code, provider_account_id, account_id, operation_code, sdkwork_resource_type, sdkwork_resource_id, idempotency_key, request_digest, response_digest, native_request_id, native_trade_id, native_refund_id, http_status, provider_error_code, provider_error_message, retryable, status, started_at, completed_at, created_at)",
-        "UPDATE commerce_payment_operation_attempt SET status = $1, response_digest = $2, provider_error_code = $3, provider_error_message = $4, completed_at = $5 WHERE id = $6",
+        "UPDATE commerce_payment_operation_attempt SET status = $1, response_digest = $2, provider_error_code = $3, provider_error_message = $4, completed_at = $5::timestamptz WHERE id = $6",
         "FROM commerce_payment_operation_attempt",
         "WHERE id = $1",
     ] {
@@ -106,6 +106,10 @@ fn payment_intent_and_refund_inserts_are_atomic_idempotent_and_cap_guarded() {
         "UPDATE commerce_payment_intent SET version = version + 1, updated_at = $4",
         "AND status NOT IN ('failed', 'canceled')",
         "SELECT SUM(active.amount::numeric) FROM commerce_refund active",
+        // The just-inserted row of THIS refund is visible to the
+        // same-statement subquery, so it must be excluded by id — otherwise
+        // the amount counts twice and full refunds are always rejected.
+        "AND active.id <> $5",
         "AND active.status IN ('pending', 'processing', 'succeeded')",
         "), 0) <= amount::numeric",
         "if reserved_rows == 0",

@@ -28,6 +28,12 @@ const POSTGRES_TEST_DATABASE_URL: &str = "SDKWORK_DATABASE_URL";
 const ACCOUNT_BASELINE: &str = include_str!(
     "../../../../sdkwork-account/database/ddl/baseline/postgres/0001_account_baseline.sql"
 );
+// The settlement transaction loads recharge settings through the marketing
+// store, which reads `commerce_exchange_rule` / `commerce_exchange_currency_rate`
+// from the order baseline.
+const ORDER_BASELINE: &str = include_str!(
+    "../../../../sdkwork-order/database/ddl/baseline/postgres/0001_order_baseline.sql"
+);
 const AI_METERING_BASELINE: &str = include_str!(
     "../../../database/modules/ai-metering/ddl/baseline/postgres/0001_ai_metering_baseline.sql"
 );
@@ -47,7 +53,7 @@ async fn settlement_debits_user_token_bank_wallet_and_marks_facts_settled() {
     let Some(ctx) = PostgresTestContext::new("usage_settlement_debit").await else {
         return;
     };
-    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-credit-1", 5000)
+    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-credit-1", 5_000_000_000)
         .await
         .expect("credit token bank wallet");
     insert_usage_fact(&ctx.pool, 1, USER_ID, "settle-e2e-fact-1", "10.000000")
@@ -69,8 +75,8 @@ async fn settlement_debits_user_token_bank_wallet_and_marks_facts_settled() {
     assert_eq!(2, outcome.settled_count);
     assert_eq!(0, outcome.failed_count);
     assert_eq!(
-        4200, outcome.debited_tokens,
-        "60.00 USD at 70 tokens per major unit (USD→CNY 7 × 10 points/CNY)"
+        4_200_000_000, outcome.debited_tokens,
+        "60.00 USD at 70 tokens per unit in micro-points (USD→CNY 7 × 10 points/CNY × 1e6)"
     );
 
     let (status, settled_at) = usage_fact_settlement(&ctx.pool, 1).await;
@@ -82,13 +88,13 @@ async fn settlement_debits_user_token_bank_wallet_and_marks_facts_settled() {
 
     let balance = token_bank_balance(&ctx.pool, USER_ID).await;
     assert_eq!(
-        800, balance,
+        800_000_000, balance,
         "wallet must be debited through the account ledger"
     );
 
     let debits = ledger_debit_total(&ctx.pool, USER_ID).await;
     assert_eq!(
-        4200, debits,
+        4_200_000_000, debits,
         "exactly one usage_settlement ledger entry must exist for the batch"
     );
 
@@ -138,7 +144,7 @@ async fn settlement_replays_idempotently_without_double_debit() {
     let Some(ctx) = PostgresTestContext::new("usage_settlement_replay").await else {
         return;
     };
-    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-credit-2", 2000)
+    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-credit-2", 2_000_000_000)
         .await
         .expect("credit token bank wallet");
     insert_usage_fact(&ctx.pool, 1, USER_ID, "settle-e2e-fact-3", "20.000000")
@@ -155,8 +161,8 @@ async fn settlement_replays_idempotently_without_double_debit() {
         .expect("first settlement run");
     assert_eq!(1, first.settled_count);
     assert_eq!(
-        1400, first.debited_tokens,
-        "20.00 USD at 70 tokens per major unit (USD→CNY 7 × 10 points/CNY)"
+        1_400_000_000, first.debited_tokens,
+        "20.00 USD at 70 tokens per unit in micro-points (USD→CNY 7 × 10 points/CNY × 1e6)"
     );
 
     // Second run must settle nothing and must not debit the wallet again.
@@ -168,10 +174,10 @@ async fn settlement_replays_idempotently_without_double_debit() {
     assert_eq!(0, second.debited_tokens);
 
     let balance = token_bank_balance(&ctx.pool, USER_ID).await;
-    assert_eq!(600, balance, "wallet must be debited exactly once");
+    assert_eq!(600_000_000, balance, "wallet must be debited exactly once");
     let debits = ledger_debit_total(&ctx.pool, USER_ID).await;
     assert_eq!(
-        1400, debits,
+        1_400_000_000, debits,
         "only one usage_settlement ledger entry may exist"
     );
 
@@ -183,7 +189,7 @@ async fn settlement_recovers_after_sync_ledger_commit_without_double_debit() {
     let Some(ctx) = PostgresTestContext::new("usage_settlement_sync_recovery").await else {
         return;
     };
-    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-sync-recovery-credit", 1000)
+    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-sync-recovery-credit", 1_000_000_000)
         .await
         .expect("credit token bank wallet");
     let request_id = "settle-e2e-sync-recovery";
@@ -194,14 +200,17 @@ async fn settlement_recovers_after_sync_ledger_commit_without_double_debit() {
     // Model the failure window after synchronous account settlement commits
     // but before the usage fact status update. The worker must discover this
     // deterministic request-scoped ledger entry and only finish the status
-    // transition, without appending a second debit.
-    append_token_bank_ledger(
+    // transition, without appending a second debit. The production sync path
+    // writes the plain request id as `request_no` and the marker string as
+    // `business_no`; `has_existing_request_settlement` matches on both.
+    append_token_bank_ledger_with_request_no(
         &ctx.pool,
         USER_ID,
         CommerceLedgerDirection::Debit,
-        200,
+        200_000_000,
         "gateway_invocation_billing",
         &format!("cloudrouter:{request_id}:postpaid"),
+        request_id,
     )
     .await
     .expect("append existing synchronous settlement");
@@ -217,7 +226,7 @@ async fn settlement_recovers_after_sync_ledger_commit_without_double_debit() {
 
     assert_eq!(1, outcome.settled_count);
     assert_eq!(0, outcome.debited_tokens);
-    assert_eq!(800, token_bank_balance(&ctx.pool, USER_ID).await);
+    assert_eq!(800_000_000, token_bank_balance(&ctx.pool, USER_ID).await);
 
     ctx.cleanup().await;
 }
@@ -285,7 +294,7 @@ async fn settlement_recovers_after_async_adjustment_without_double_credit() {
     let Some(ctx) = PostgresTestContext::new("usage_settlement_async_recovery").await else {
         return;
     };
-    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-async-recovery-credit", 1000)
+    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-async-recovery-credit", 1_000_000_000)
         .await
         .expect("credit token bank wallet");
     let request_id = "settle-e2e-async-recovery";
@@ -299,7 +308,7 @@ async fn settlement_recovers_after_async_adjustment_without_double_credit() {
         &ctx.pool,
         USER_ID,
         CommerceLedgerDirection::Debit,
-        300,
+        300_000_000,
         "gateway_invocation_billing",
         &format!("cloudrouter:{request_id}:precharge"),
         request_id,
@@ -310,7 +319,7 @@ async fn settlement_recovers_after_async_adjustment_without_double_credit() {
         &ctx.pool,
         USER_ID,
         CommerceLedgerDirection::Credit,
-        100,
+        100_000_000,
         "usage_settlement",
         &format!("cloudrouter:{request_id}:async-adjust-credit"),
         request_id,
@@ -329,7 +338,7 @@ async fn settlement_recovers_after_async_adjustment_without_double_credit() {
 
     assert_eq!(1, outcome.settled_count);
     assert_eq!(0, outcome.debited_tokens);
-    assert_eq!(800, token_bank_balance(&ctx.pool, USER_ID).await);
+    assert_eq!(800_000_000, token_bank_balance(&ctx.pool, USER_ID).await);
     let (status, _) = usage_fact_settlement(&ctx.pool, 1).await;
     assert_eq!(2, status);
 
@@ -341,7 +350,7 @@ async fn settlement_flushes_positive_micro_amount_after_bounded_wait() {
     let Some(ctx) = PostgresTestContext::new("usage_settlement_micro_flush").await else {
         return;
     };
-    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-micro-credit", 10)
+    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-micro-credit", 10_000_000)
         .await
         .expect("credit token bank wallet");
     insert_usage_fact(
@@ -371,7 +380,7 @@ async fn settlement_flushes_positive_micro_amount_after_bounded_wait() {
 
     assert_eq!(1, outcome.settled_count);
     assert_eq!(1, outcome.debited_tokens);
-    assert_eq!(9, token_bank_balance(&ctx.pool, USER_ID).await);
+    assert_eq!(9_999_999, token_bank_balance(&ctx.pool, USER_ID).await);
 
     ctx.cleanup().await;
 }
@@ -381,7 +390,7 @@ async fn settlement_marks_shadow_charge_lines_settled_in_the_same_transaction() 
     let Some(ctx) = PostgresTestContext::new("usage_settlement_charge_line").await else {
         return;
     };
-    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-credit-3", 1000)
+    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-credit-3", 1_000_000_000)
         .await
         .expect("credit token bank wallet");
     insert_usage_fact(&ctx.pool, 1, USER_ID, "settle-e2e-charge-1", "10.000000")
@@ -443,7 +452,7 @@ async fn settlement_terminal_failure_marks_shadow_charge_lines_failed() {
         1,
         USER_ID,
         "settle-e2e-charge-bad",
-        "not-a-number",
+        "NaN",
     )
     .await
     .expect("insert malformed pending usage fact");
@@ -794,6 +803,10 @@ struct PostgresTestContext {
 
 impl PostgresTestContext {
     async fn new(label: &str) -> Option<Self> {
+        let _ = tracing_subscriber::fmt()
+            .with_max_level(tracing::level_filters::LevelFilter::ERROR)
+            .with_test_writer()
+            .try_init();
         let database_url = match env::var(POSTGRES_TEST_DATABASE_URL) {
             Ok(value) if !value.trim().is_empty() => value,
             _ => {
@@ -842,7 +855,7 @@ impl PostgresTestContext {
             .connect(&database_url)
             .await
             .unwrap();
-        create_schema(&pool).await;
+        create_schema(&pool, &schema).await;
 
         Some(Self {
             pool,
@@ -874,20 +887,39 @@ impl PostgresTestContext {
     }
 }
 
-async fn create_schema(pool: &PgPool) {
+async fn create_schema(pool: &PgPool, schema: &str) {
+    // Apply every baseline on ONE pinned connection with an explicit
+    // search_path: this machine's server default points at another schema, so
+    // any statement that slips through with the default search_path would
+    // silently create or resolve objects in the wrong schema.
+    let mut connection = pool
+        .acquire()
+        .await
+        .expect("acquire connection for baseline DDL");
+    sqlx::query(sqlx::AssertSqlSafe(format!(
+        "SET search_path TO {}",
+        quote_identifier(schema)
+    )))
+    .execute(&mut *connection)
+    .await
+    .expect("set baseline search_path");
     // Order matters: `cloudrouter_*` billing tables reference `pricing_*`
     // tables (rating decisions carry price-book/rate identities).
     for baseline in [
         ACCOUNT_BASELINE,
+        ORDER_BASELINE,
         AI_METERING_BASELINE,
         PRICING_BASELINE,
         CLOUDROUTER_BILLING_BASELINE,
     ] {
         for statement in split_statements(baseline) {
-            sqlx::query(sqlx::AssertSqlSafe(statement.to_owned()))
-                .execute(pool)
+            if let Err(error) = sqlx::query(sqlx::AssertSqlSafe(statement.clone()))
+                .execute(&mut *connection)
                 .await
-                .expect("apply baseline DDL");
+            {
+                panic!("apply baseline DDL failed for statement: {statement}
+error: {error}");
+            }
         }
     }
 }

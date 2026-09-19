@@ -70,8 +70,8 @@ mod usage_retention_store;
 mod usage_settlement_store;
 
 pub use crate::infrastructure::sql::admin_marketing_recharge::{
-    parse_recharge_settings_model, points_per_currency_unit_string, token_points_for_charge,
-    RechargeSettingsModel,
+    parse_recharge_settings_model, points_per_currency_unit_string, token_points_for_aggregation,
+    token_points_for_charge, RechargeSettingsModel,
 };
 pub use admin_ai_resource_store::{
     AdminAiResourceGroupItem, AdminAiResourceGroupListPage, AdminAiResourceGroupMemberCommand,
