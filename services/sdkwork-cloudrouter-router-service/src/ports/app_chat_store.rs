@@ -19,12 +19,18 @@ pub struct AppChatSubject {
 #[serde(rename_all = "camelCase")]
 pub struct AppChatConversationList {
     pub items: Vec<AppChatConversationItem>,
-    #[serde(with = "sdkwork_utils_rust::serde_int64")]
-    pub total: i64,
-    #[serde(with = "sdkwork_utils_rust::serde_int64")]
-    pub page_no: i64,
-    #[serde(with = "sdkwork_utils_rust::serde_int64")]
+    pub next_cursor: Option<AppChatConversationCursor>,
+    pub has_more: bool,
     pub page_size: i64,
+}
+
+/// Opaque keyset cursor for the per-user conversation list. `updated_at_micros`
+/// is the `updated_at` instant in microseconds since the Unix epoch and `id`
+/// breaks ties, mirroring the messages cursor contract.
+#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
+pub struct AppChatConversationCursor {
+    pub updated_at_micros: i64,
+    pub id: i64,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -178,7 +184,7 @@ pub trait AppChatStore {
     fn list_conversations<'a>(
         &'a self,
         subject: AppChatSubject,
-        page: i64,
+        cursor: Option<AppChatConversationCursor>,
         page_size: i64,
     ) -> AppChatFuture<'a, AppChatConversationList>;
 

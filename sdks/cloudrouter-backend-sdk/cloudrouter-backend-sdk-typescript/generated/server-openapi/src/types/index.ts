@@ -228,3 +228,5 @@ export type { UpstreamSupplierResourceCollectionResponse } from './upstream-supp
 export type { UpstreamSupplierResourceListResponse } from './upstream-supplier-resource-list-response';
 
 export type { VerifyUpstreamAccountRequest } from './verify-upstream-account-request';
+export type { UpstreamAccountCredentialSecretItemResponse } from './upstream-account-credential-secret-item-response';
+export type { UpstreamAccountCredentialSecret } from './upstream-account-credential-secret';

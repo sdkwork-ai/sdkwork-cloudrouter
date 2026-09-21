@@ -388,6 +388,66 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         RoutingCapability::Chat,
         BillingMeter::LlmInputToken,
     ),
+    // Anthropic Messages served by vendors other than Anthropic itself.
+    //
+    // These vendors publish an Anthropic-compatible endpoint at their own base
+    // URL (the catalog records it under
+    // `models/<vendor>/<region>/vendor.json -> protocolBaseUrls.anthropic_messages`),
+    // so a caller pointing Claude Code at `https://api.deepseek.com/anthropic`
+    // reaches the same `/v1/messages` wire path. The gateway publishes that
+    // through the `/anthropic/` namespace, and each vendor needs its own route
+    // because the classification must land on a meter; without these entries
+    // the classifier's synthesized key (`<vendor>.messages`) matches nothing and
+    // the request fails closed with `meter: None` even though the account, the
+    // credential, the group membership and the resource grant are all present.
+    model(
+        "alibaba.anthropic_messages",
+        "alibaba.anthropic_messages",
+        RoutingCapability::Chat,
+        BillingMeter::LlmInputToken,
+    ),
+    model(
+        "deepseek.anthropic_messages",
+        "deepseek.anthropic_messages",
+        RoutingCapability::Chat,
+        BillingMeter::LlmInputToken,
+    ),
+    model(
+        "meituan.anthropic_messages",
+        "meituan.anthropic_messages",
+        RoutingCapability::Chat,
+        BillingMeter::LlmInputToken,
+    ),
+    model(
+        "moonshot.anthropic_messages",
+        "moonshot.anthropic_messages",
+        RoutingCapability::Chat,
+        BillingMeter::LlmInputToken,
+    ),
+    model(
+        "stepfun.anthropic_messages",
+        "stepfun.anthropic_messages",
+        RoutingCapability::Chat,
+        BillingMeter::LlmInputToken,
+    ),
+    model(
+        "tencent.anthropic_messages",
+        "tencent.anthropic_messages",
+        RoutingCapability::Chat,
+        BillingMeter::LlmInputToken,
+    ),
+    model(
+        "xiaomi.anthropic_messages",
+        "xiaomi.anthropic_messages",
+        RoutingCapability::Chat,
+        BillingMeter::LlmInputToken,
+    ),
+    model(
+        "zhipu.anthropic_messages",
+        "zhipu.anthropic_messages",
+        RoutingCapability::Chat,
+        BillingMeter::LlmInputToken,
+    ),
     model(
         "gemini.generate_content",
         "gemini.generate_content",
@@ -476,6 +536,32 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
     account(
         "jimeng.task_query",
         "jimeng.task_query",
+        RoutingCapability::Network,
+        BillingMeter::ApiRequest,
+    ),
+    // ByteDance's catalog surface is Volcengine Ark, whose `doubao-seedance-*`
+    // video and `doubao-seedream-*` image families bind here. These are separate
+    // routes from `jimeng.*` because the two surfaces are different hosts with
+    // different paths; folding them (as the old `"bytedance" | "jimeng"`
+    // descriptor arm did) left every seedance model carrying a `jimeng.*` api
+    // code while the request dialled an Ark path.
+    media_task(
+        "bytedance.image_generation",
+        "bytedance.image_generation",
+        RoutingCapability::Image,
+        BillingMeter::ImageResult,
+        "image_task",
+    ),
+    media_task(
+        "bytedance.video_generation",
+        "bytedance.video_generation",
+        RoutingCapability::Video,
+        BillingMeter::VideoResult,
+        "video_task",
+    ),
+    account(
+        "bytedance.task_query",
+        "bytedance.task_query",
         RoutingCapability::Network,
         BillingMeter::ApiRequest,
     ),

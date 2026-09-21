@@ -301,6 +301,51 @@
       "sortOrder": 540
     },
     {
+      "resourceCode": "api.bytedance.image_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "ByteDance Image Generation",
+      "vendorCode": "bytedance",
+      "modalityCode": "image",
+      "apiCode": "bytedance.image_generation",
+      "method": "POST",
+      "pathTemplate": "/api/v3/images/generations",
+      "capability": "image",
+      "capabilities": [
+        "image"
+      ],
+      "sortOrder": 526
+    },
+    {
+      "resourceCode": "api.bytedance.video_generation",
+      "resourceType": "api_endpoint",
+      "displayName": "ByteDance Video Generation",
+      "vendorCode": "bytedance",
+      "modalityCode": "video",
+      "apiCode": "bytedance.video_generation",
+      "method": "POST",
+      "pathTemplate": "/api/v3/contents/generations/tasks",
+      "capability": "video",
+      "capabilities": [
+        "video"
+      ],
+      "sortOrder": 527
+    },
+    {
+      "resourceCode": "api.bytedance.task_query",
+      "resourceType": "api_endpoint",
+      "displayName": "ByteDance Task Query",
+      "vendorCode": "bytedance",
+      "modalityCode": "network",
+      "apiCode": "bytedance.task_query",
+      "method": "GET",
+      "pathTemplate": "/api/v3/contents/generations/tasks/{taskId}",
+      "capability": "network",
+      "capabilities": [
+        "network"
+      ],
+      "sortOrder": 528
+    },
+    {
       "resourceCode": "api.volcengine.video_generation",
       "resourceType": "api_endpoint",
       "displayName": "Volcengine Video Generation",
@@ -1038,6 +1083,142 @@
         "http"
       ],
       "sortOrder": 756
+    },
+    {
+      "resourceCode": "api.alibaba.anthropic_messages",
+      "resourceType": "api_endpoint",
+      "displayName": "Alibaba Bailian Anthropic Messages",
+      "vendorCode": "alibaba",
+      "modalityCode": "llm",
+      "apiCode": "alibaba.anthropic_messages",
+      "method": "POST",
+      "pathTemplate": "/v1/messages",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "chat",
+        "coding"
+      ],
+      "sortOrder": 420
+    },
+    {
+      "resourceCode": "api.deepseek.anthropic_messages",
+      "resourceType": "api_endpoint",
+      "displayName": "DeepSeek Anthropic Messages",
+      "vendorCode": "deepseek",
+      "modalityCode": "llm",
+      "apiCode": "deepseek.anthropic_messages",
+      "method": "POST",
+      "pathTemplate": "/v1/messages",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "chat",
+        "coding"
+      ],
+      "sortOrder": 422
+    },
+    {
+      "resourceCode": "api.meituan.anthropic_messages",
+      "resourceType": "api_endpoint",
+      "displayName": "Meituan LongCat Anthropic Messages",
+      "vendorCode": "meituan",
+      "modalityCode": "llm",
+      "apiCode": "meituan.anthropic_messages",
+      "method": "POST",
+      "pathTemplate": "/v1/messages",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "chat",
+        "coding"
+      ],
+      "sortOrder": 424
+    },
+    {
+      "resourceCode": "api.moonshot.anthropic_messages",
+      "resourceType": "api_endpoint",
+      "displayName": "Moonshot Kimi Anthropic Messages",
+      "vendorCode": "moonshot",
+      "modalityCode": "llm",
+      "apiCode": "moonshot.anthropic_messages",
+      "method": "POST",
+      "pathTemplate": "/v1/messages",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "chat",
+        "coding"
+      ],
+      "sortOrder": 426
+    },
+    {
+      "resourceCode": "api.stepfun.anthropic_messages",
+      "resourceType": "api_endpoint",
+      "displayName": "StepFun Anthropic Messages",
+      "vendorCode": "stepfun",
+      "modalityCode": "llm",
+      "apiCode": "stepfun.anthropic_messages",
+      "method": "POST",
+      "pathTemplate": "/v1/messages",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "chat",
+        "coding"
+      ],
+      "sortOrder": 428
+    },
+    {
+      "resourceCode": "api.tencent.anthropic_messages",
+      "resourceType": "api_endpoint",
+      "displayName": "Tencent Hunyuan Anthropic Messages",
+      "vendorCode": "tencent",
+      "modalityCode": "llm",
+      "apiCode": "tencent.anthropic_messages",
+      "method": "POST",
+      "pathTemplate": "/v1/messages",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "chat",
+        "coding"
+      ],
+      "sortOrder": 430
+    },
+    {
+      "resourceCode": "api.xiaomi.anthropic_messages",
+      "resourceType": "api_endpoint",
+      "displayName": "Xiaomi MiMo Anthropic Messages",
+      "vendorCode": "xiaomi",
+      "modalityCode": "llm",
+      "apiCode": "xiaomi.anthropic_messages",
+      "method": "POST",
+      "pathTemplate": "/v1/messages",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "chat",
+        "coding"
+      ],
+      "sortOrder": 432
+    },
+    {
+      "resourceCode": "api.zhipu.anthropic_messages",
+      "resourceType": "api_endpoint",
+      "displayName": "Zhipu GLM Anthropic Messages",
+      "vendorCode": "zhipu",
+      "modalityCode": "llm",
+      "apiCode": "zhipu.anthropic_messages",
+      "method": "POST",
+      "pathTemplate": "/v1/messages",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "chat",
+        "coding"
+      ],
+      "sortOrder": 434
     }
   ]
 }

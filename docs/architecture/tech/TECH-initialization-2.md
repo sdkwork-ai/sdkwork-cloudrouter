@@ -1,7 +1,7 @@
 > Migrated from `docs/installation/zh-CN/initialization.md` on 2026-06-24.
 > Owner: SDKWork maintainers
 
-初始化负责创建运行时配置、安装数据库 schema、导入或刷新模型目录，并确认运行时健康检查路径。不同部署模式的数据库默认策略不同�?
+初始化负责创建运行时配置、安装数据库 schema、导入或刷新模型目录，并确认运行时健康检查路径。不同部署模式的数据库默认策略不同。
 最快路径是在首次启动前完成初始化：
 
 ```bash
@@ -11,29 +11,35 @@ cloudrouterctl refresh-catalog --force
 cloudrouter
 ```
 
-如果安装的是 Linux 原生 `.deb`，公共命令位�?`/usr/bin`，私有运行时文件位于 `/usr/lib/sdkwork/router`�?
+如果安装的是 Linux 原生 `.deb`，公共命令位于 `/usr/bin`，私有运行时文件位于 `/usr/lib/sdkwork/router`。
 ```bash
 /usr/bin/cloudrouterctl ensure
 /usr/bin/cloudrouterctl refresh-catalog --force
 /usr/bin/cloudrouter
 ```
 
-如果安装的是 macOS 原生 `.pkg`，desktop 二进制位�?`/opt/sdkwork/router/bin`，service 二进制位�?`/Library/Application Support/sdkwork/router/bin`�?
+如果安装的是 macOS 原生 `.pkg`，desktop 二进制位于 `/opt/sdkwork/router/bin`，service 二进制位于 `/Library/Application Support/sdkwork/router/bin`。
 ```bash
 /opt/sdkwork/router/bin/cloudrouterctl ensure
 /opt/sdkwork/router/bin/cloudrouterctl refresh-catalog --force
 /opt/sdkwork/router/bin/cloudrouter
 ```
 
-如果安装的是 Windows MSI，默认安装目录为�?
+如果安装的是 Windows MSI，默认安装目录为：
 ```text
 <install-root>
 ```
 
-## 初始化顺�?
-archive/manual 部署推荐顺序�?
-1. 默认配置不足时，准备受保护的进程环境变量�?2. 准备运行�?TOML 配置�?3. 只有使用托管 PostgreSQL 时才设置数据�?URL�?4. 执行 `cloudrouterctl ensure`�?5. 执行 `cloudrouterctl refresh-catalog --force`�?6. 启动 `cloudrouter`�?7. 检�?`/healthz` �?`/readyz`�?
-Linux `service` 部署中，`.deb` 会创建默认运行时 TOML、`/etc/sdkwork/router/cloudrouter.env` �?`/etc/sdkwork/database/database.secret`。systemd unit 会在 gateway 启动前自动执�?`ensure` �?`refresh-catalog --force`。运行中的服务只能写�?`/var/lib/sdkwork/router` �?`/var/log/sdkwork/router`；`/etc/sdkwork/router` 对服务进程保持只读�?
+## 初始化顺序
+archive/manual 部署推荐顺序：
+
+1. 默认配置不足时，准备受保护的进程环境变量。
+2. 准备运行时 TOML 配置时3. 只有使用托管 PostgreSQL 时才设置数据库 URL。
+4. 执行 `cloudrouterctl ensure`。
+5. 执行 `cloudrouterctl refresh-catalog --force`。
+6. 启动 `cloudrouter`。
+7. 检查 `/healthz` 和 `/readyz`。
+Linux `service` 部署中，`.deb` 会创建默认运行时 TOML、`/etc/sdkwork/router/cloudrouter.env` 和 `/etc/sdkwork/database/database.secret`。systemd unit 会在 gateway 启动前自动执行 `ensure` 和 `refresh-catalog --force`。运行中的服务只能写入 `/var/lib/sdkwork/router` 和 `/var/log/sdkwork/router`；`/etc/sdkwork/router` 对服务进程保持只读。
 Linux service 包推荐顺序：
 
 ```bash
@@ -43,51 +49,53 @@ sudo systemctl start cloudrouter
 sudo systemctl status cloudrouter --no-pager
 ```
 
-## 运行时配置路�?
-server/service/container 默认路径�?
+## 运行时配置路径
+server/service/container 默认路径为：
+
 | 平台 | 配置文件 |
 | --- | --- |
 | Windows | `%ProgramData%/sdkwork/router/config.toml` |
 | Linux | `/etc/sdkwork/router/config.toml` |
 | macOS | `/Library/Application Support/sdkwork/router/config.toml` |
 
-desktop 默认路径�?
+desktop 默认路径为：
+
 | 平台 | 配置文件 |
 | --- | --- |
 | Windows | `%USERPROFILE%/.sdkwork/router/config/config.toml` |
 | Linux | `~/.sdkwork/router/config/config.toml` |
 | macOS | `~/.sdkwork/router/config/config.toml` |
 
-可用 `SDKWORK_CLOUDROUTER_CONFIG_FILE` 覆盖�?
+可用 `SDKWORK_CLOUDROUTER_CONFIG_FILE` 覆盖。
 ```bash
 export SDKWORK_CLOUDROUTER_CONFIG_FILE="/etc/sdkwork/router/config.toml"
 ```
 
-PowerShell�?
+PowerShell：
 ```powershell
 $env:SDKWORK_CLOUDROUTER_CONFIG_FILE = Join-Path $env:ProgramData "sdkwork/router/config.toml"
 ```
 
 原生安装包默认位置：
 
-| 平台 | 二进制目�?| 说明 |
+| 平台 | 二进制目录 | 说明 |
 | --- | --- | --- |
-| Linux `.deb` | `/usr/bin` 公共命令，`/usr/lib/sdkwork/router/bin` 私有二进�?| `service` 包还会安�?`/lib/systemd/system/cloudrouter.service`、`/etc/sdkwork/router`、`/var/lib/sdkwork/router` �?`/var/log/sdkwork/router`�?|
-| Windows `.msi` | `<install-root>/bin` | MSI 安装运行文件；如需 Windows Service 托管，按部署系统单独配置�?|
-| macOS `.pkg` | desktop �?`/opt/sdkwork/router/bin`，service �?`/Library/Application Support/sdkwork/router/bin` | `service` 包还会安�?`/Library/LaunchDaemons/com.sdkwork.cloudrouter.plist`�?|
+| Linux `.deb` | `/usr/bin` 公共命令，`/usr/lib/sdkwork/router/bin` 私有二进制 | `service` 包还会安装 `/lib/systemd/system/cloudrouter.service`、`/etc/sdkwork/router`、`/var/lib/sdkwork/router` 和 `/var/log/sdkwork/router`。|
+| Windows `.msi` | `<install-root>/bin` | MSI 安装运行文件；如需 Windows Service 托管，按部署系统单独配置。|
+| macOS `.pkg` | desktop 为 `/opt/sdkwork/router/bin`，service 为 `/Library/Application Support/sdkwork/router/bin` | `service` 包还会安装 `/Library/LaunchDaemons/com.sdkwork.cloudrouter.plist`。|
 
-每个包都包含�?`installConfiguration` �?`install-manifest.json`。原生安装包还包�?`nativeInstall`，用于描述最终安装路径、服务元数据、权限和运维命令�?
-## 数据库策�?
-desktop�?
+每个包都包含了 `installConfiguration` 和 `install-manifest.json`。原生安装包还包含 `nativeInstall`，用于描述最终安装路径、服务元数据、权限和运维命令。
+## 数据库策略
+desktop：
 - 默认 SQLite
 - 默认 `max_connections = 1`
 - 适合单机体验、桌面应用和轻量本地部署
 
-server/service/container�?
+server/service/container：
 - 默认 PostgreSQL
 - 默认 `max_connections = 16`
-- 生产、团队、SaaS、托管服务、多节点和商业部署使�?PostgreSQL
-- PostgreSQL 部署使用 `max_connections = 16` 或经过容量规划的�?
+- 生产、团队、SaaS、托管服务、多节点和商业部署使用 PostgreSQL
+- PostgreSQL 部署使用 `max_connections = 16` 或经过容量规划的值
 默认 Linux service 部署会创建以下运行时数据库配置：
 
 ```toml
@@ -204,12 +212,14 @@ payment_callback_body_max_bytes = 65536
 deployment_mode = "server"
 ```
 
-`.deb` 包创建的 `/etc/sdkwork/database/database.secret` 初始内容是占位�?`change-me`。启�?`cloudrouter` 前必须替换为真实 PostgreSQL 密码；server 配置仍使�?`db.example.com` �?`change-me` 时会被启动校验拒绝�?
-server/service/container 部署默认启用并要�?Redis。首次启动前必须配置 `[redis].host`、`[redis].port`、`[redis].database`；只有托�?Redis 端点无法用分离字段清晰表达时，才使用 `[redis].url` 作为高级覆盖。优先使�?`/etc/sdkwork/router/redis.secret` 或其他受保护�?`password_file`，只�?TOML 文件本身按密钥文件管理时才直接使�?`[redis].password`。desktop 部署仍保�?Redis 可选且默认关闭�?
-`[request_limits]` 控制运行�?JSON �?webhook 请求体限制，属于高风险写入入口的防护配置。`admin_app_json_body_max_bytes` �?`admin_skill_json_body_max_bytes` 保护后台管理 API，`forum_json_body_max_bytes` 保护公开应用论坛写入，`payment_callback_body_max_bytes` 保护支付供应商回调。反向代理、负载均衡和容器 ingress 的请求体限制应与这些值保持一致，使超大请求在进入昂贵业务处理前被拒绝�?
-`[edge]` 配置打包后的 Rust edge server 和上游服务目标。`[portal.static]` �?HTML/runtime env �?no-store 缓存策略与长期缓存的 hash 静态资源分离。`[portal.security]` 控制浏览器侧安全策略；只有公网主机名已经通过 HTTPS 访问时才启用 HSTS，启�?preload 时保�?`hsts_max_age_seconds >= 31536000` �?`hsts_include_subdomains = true`。`csp_frame_src` 只填写允�?portal 嵌入的明确信�?HTTP/HTTPS origin。`[portal.tools]` 控制可选本地工�?API 的请求体大小和限流。`[observability]` 负责生产日志默认策略：`log_filter` �?tracing 过滤器，`log_format` 可�?`compact`、`json`、`pretty` �?`full`，systemd �?container 日志建议保持 `log_ansi = false`，target/thread 字段控制输出的日志元信息；`RUST_LOG` 只建议用于临时进程级诊断覆盖�?`[edge].cors_allowed_origins` 是额外可信浏览器 origin 的显�?allowlist，例如外�?CDN 托管�?portal。打包后的同�?edge 部署保持空数组；通配�?origin 和带 path �?origin 会被拒绝�?`[provider_relay.runtime]` 配置 OpenAI-compatible 上游请求的全局响应超时，以�?admin/app 渠道健康检查超时。`[provider_relay.retry]` 是数据库路由渠道未单独定�?retry policy 时使用的默认重试策略�?
-生产 server/service/container 部署使用结构�?TOML。推荐使�?`password_file`，只有当 TOML 文件本身作为密钥文件保护时才直接使用 `password`�?
-- `password_file` 可以是绝对路径�?- `password_file` 可以是相�?`config.toml` 所在目录的路径�?- `password_file` 可以使用 `${VAR}`、`$VAR`、`%VAR%` �?`~` 展开，用于平�?Secret 路径�?
+`.deb` 包创建的 `/etc/sdkwork/database/database.secret` 初始内容是占位符 `change-me`。启用 `cloudrouter` 前必须替换为真实 PostgreSQL 密码；server 配置仍使用 `db.example.com` 和 `change-me` 时会被启动校验拒绝。
+server/service/container 部署默认启用并要求 Redis。首次启动前必须配置 `[redis].host`、`[redis].port`、`[redis].database`；只有托管 Redis 端点无法用分离字段清晰表达时，才使用 `[redis].url` 作为高级覆盖。优先使用 `/etc/sdkwork/router/redis.secret` 或其他受保护的 `password_file`，只有 TOML 文件本身按密钥文件管理时才直接使用 `[redis].password`。desktop 部署仍保持 Redis 可选且默认关闭。
+`[request_limits]` 控制运行时 JSON 和 webhook 请求体限制，属于高风险写入入口的防护配置。`admin_json_body_max_bytes` 和 `admin_skill_json_body_max_bytes` 保护后台管理 API，`forum_json_body_max_bytes` 保护公开应用论坛写入，`payment_callback_body_max_bytes` 保护支付供应商回调。反向代理、负载均衡和容器 ingress 的请求体限制应与这些值保持一致，使超大请求在进入昂贵业务处理前被拒绝。
+`[edge]` 配置打包后的 Rust edge server 和上游服务目标。`[portal.static]` 把 HTML/runtime env 和 no-store 缓存策略与长期缓存的 hash 静态资源分离。`[portal.security]` 控制浏览器侧安全策略；只有公网主机名已经通过 HTTPS 访问时才启用 HSTS，启用 preload 时保持 `hsts_max_age_seconds >= 31536000` 和 `hsts_include_subdomains = true`。`csp_frame_src` 只填写允许 portal 嵌入的明确信任 HTTP/HTTPS origin。`[portal.tools]` 控制可选本地工具 API 的请求体大小和限流。`[observability]` 负责生产日志默认策略：`log_filter` 是 tracing 过滤器，`log_format` 可为 `compact`、`json`、`pretty` 和 `full`，systemd 或 container 日志建议保持 `log_ansi = false`，target/thread 字段控制输出的日志元信息；`RUST_LOG` 只建议用于临时进程级诊断覆盖。`[edge].cors_allowed_origins` 是额外可信浏览器 origin 的显式 allowlist，例如外部 CDN 托管的 portal。打包后的同进程 edge 部署保持空数组；通配符 origin 和带 path 的 origin 会被拒绝。`[provider_relay.runtime]` 配置 OpenAI-compatible 上游请求的全局响应超时，以及 admin/app 渠道健康检查超时。`[provider_relay.retry]` 是数据库路由渠道未单独定义 retry policy 时使用的默认重试策略。
+生产 server/service/container 部署使用结构化 TOML。推荐使用 `password_file`，只有当 TOML 文件本身作为密钥文件保护时才直接使用 `password`。
+- `password_file` 可以是绝对路径。
+- `password_file` 可以是相对 `config.toml` 所在目录的路径。
+- `password_file` 可以使用 `${VAR}`、`$VAR`、`%VAR%` 和 `~` 展开，用于平滑 Secret 路径。
 ```toml
 [database]
 engine = "postgresql"
@@ -234,12 +244,12 @@ payment_callback_body_max_bytes = 65536
 deployment_mode = "server"
 ```
 
-`SDKWORK_DATABASE_URL` 仍可�?`/etc/sdkwork/router/cloudrouter.env` 或进程环境中作为明确运维覆盖�?
+`SDKWORK_DATABASE_URL` 仍可在 `/etc/sdkwork/router/cloudrouter.env` 或进程环境中作为明确运维覆盖。
 ```text
 SDKWORK_DATABASE_URL=postgresql://sdkwork_ai_prod:<password>@db.example.com:5432/sdkwork_ai_prod
 ```
 
-desktop SQLite 示例�?
+desktop SQLite 示例。
 ```toml
 [database]
 engine = "sqlite"
@@ -252,7 +262,7 @@ deployment_mode = "desktop"
 
 ## Installer 命令
 
-下面的命令假�?`cloudrouterctl` 已在 `PATH` 中。若�?release 包解压目录执行，Linux/macOS 使用 `./bin/cloudrouterctl`，Windows 使用 `.\bin\cloudrouterctl.exe`�?
+下面的命令假设 `cloudrouterctl` 已在 `PATH` 中。若在 release 包解压目录执行，Linux/macOS 使用 `./bin/cloudrouterctl`，Windows 使用 `.\bin\cloudrouterctl.exe`。
 Linux 原生 `.deb` 安装包使用：
 
 ```bash
@@ -285,46 +295,46 @@ Set-Location $installRoot
 cloudrouterctl status
 ```
 
-安装或修�?schema�?
+安装或修复 schema。
 ```bash
 cloudrouterctl ensure
 ```
 
-刷新模型目录�?
+刷新模型目录。
 ```bash
 cloudrouterctl refresh-catalog --force
 ```
 
-只刷新指�?vendor�?
+只刷新指定 vendor。
 ```bash
 cloudrouterctl refresh-catalog --vendor openai
 ```
 
-使用外部模型目录�?
+使用外部模型目录。
 ```bash
 cloudrouterctl refresh-catalog --catalog-root /opt/sdkwork-models --catalog-version 2026.05.08.1 --force
 ```
 
-预演刷新�?
+预演刷新。
 ```bash
 cloudrouterctl refresh-catalog --vendor openai --dry-run
 ```
 
-Windows 命令使用 `.exe`�?
+Windows 命令使用 `.exe`。
 ```powershell
 .\bin\cloudrouterctl.exe ensure
 .\bin\cloudrouterctl.exe refresh-catalog --force
 ```
 
-## 输出和错�?
-installer 标准输出为一�?JSON 对象。错误输出也�?JSON�?
+## 输出和错误
+installer 标准输出为一个 JSON 对象。错误输出也是 JSON。
 ```json
 {"status":"error","errorCode":"database_error","message":"..."}
 ```
 
 稳定错误码：
 
-- `missing_database_url`：部署明确要�?PostgreSQL，但没有提供 PostgreSQL URL
+- `missing_database_url`：部署明确要求 PostgreSQL，但没有提供 PostgreSQL URL
 - `invalid_argument`
 - `invalid_state`
 - `database_error`
@@ -332,7 +342,7 @@ installer 标准输出为一�?JSON 对象。错误输出也�?JSON�?
 - `commerce_error`
 - `installer_error`
 
-## 健康检�?
+## 健康检查
 启动后检查：
 
 ```bash
@@ -340,35 +350,36 @@ curl http://127.0.0.1:3900/healthz
 curl http://127.0.0.1:3900/readyz
 ```
 
-`/healthz` 只表�?edge server 进程健康。`/readyz` 会检�?gateway、backend/admin API、app API、portal upstream 和数据库相关依赖�?
-Linux service 还应检�?systemd 和日志：
+`/healthz` 只表示 edge server 进程健康。`/readyz` 会检查 gateway、backend/admin API、app API、portal upstream 和数据库相关依赖。
+Linux service 还应检查 systemd 和日志：
 
 ```bash
 sudo systemctl status cloudrouter --no-pager
 sudo journalctl -u cloudrouter -n 200 --no-pager
 ```
 
-## 首次账号�?IAM
+## 首次账号与 IAM
 
-首次安装或首次启动时，如果配置的 bootstrap admin 登录链路不完整，Cloud Router 会自动创建或修复初始化管理员账号。默认账号为�?
+首次安装或首次启动时，如果配置的 bootstrap admin 登录链路不完整，Cloud Router 会自动创建或修复初始化管理员账号。默认账号为：
 - 用户名：`admin`
-- 租户：`default`（`tenantId: "100001"`�?- 组织：`root`（`organizationId: "0"`�?
+- 租户：`default`（`tenantId: "100001"`）
+- 组织：`root`（`organizationId: "0"`）
 初始密码默认由操作系统随机源生成；如果设置了 `SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_PASSWORD`，则使用该显式密码。只要本次确实写入了新的初始化密码，系统会在两个位置输出一次：
 
-- installer JSON 输出�?`bootstrapAdmin.initialPassword`
+- installer JSON 输出含 `bootstrapAdmin.initialPassword`
 - gateway/admin/app 服务启动日志中的 `initial_password`
 
-请立即保存该密码，并在首次登录后立刻轮换。后续重复执�?`ensure` 或重启服务时，如果管理员登录链路已经完整，不会再次输出或重置密码。如果已�?admin 用户和有效密码，只是 IAM 组织成员关系缺失，启动修复只会补齐成员关系，不会改密码，也不会输出密码�?
-bootstrap admin 环境变量�?
-| 变量 | 默认�?| 说明 |
+请立即保存该密码，并在首次登录后立刻轮换。后续重复执行 `ensure` 或重启服务时，如果管理员登录链路已经完整，不会再次输出或重置密码。如果已有 admin 用户和有效密码，只是 IAM 组织成员关系缺失，启动修复只会补齐成员关系，不会改密码，也不会输出密码。
+bootstrap admin 环境变量：
+| 变量 | 默认值 | 说明 |
 | --- | --- | --- |
-| `SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_ENABLED` | `true` | 设置�?`false` 可关闭自动创建和修复 bootstrap admin�?|
-| `SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_USERNAME` | `admin` | 初始化用户名。允许字母、数字、`.`、`-`、`_`�?|
-| `SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_DISPLAY_NAME` | `Administrator` | 初始化用户显示名�?|
-| `SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_EMAIL` | `admin@sdkwork.com` | 初始化用户邮箱身份�?|
-| `SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_PASSWORD` | 随机生成 | 可选显式初始密码，长度 12 �?128 个字符�?|
+| `SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_ENABLED` | `true` | 设置为 `false` 可关闭自动创建和修复 bootstrap admin。|
+| `SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_USERNAME` | `admin` | 初始化用户名。允许字母、数字、`.`、`-`、`_`。|
+| `SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_DISPLAY_NAME` | `Administrator` | 初始化用户显示名称 |
+| `SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_EMAIL` | `admin@sdkwork.com` | 初始化用户邮箱身份。|
+| `SDKWORK_CLOUDROUTER_BOOTSTRAP_ADMIN_PASSWORD` | 随机生成 | 可选显式初始密码，长度 12 至 128 个字符。|
 
-installer 输出示例�?
+installer 输出示例：
 ```json
 {
   "status": "installed",
@@ -387,7 +398,7 @@ installer 输出示例�?
 }
 ```
 
-需要快速恢复管理员登录时，可以通过根目�?`pnpm` 命令重置 `admin` 密码。开发模式默认使�?`target/dev/cloudrouter.sqlite`，release 模式使用运行�?`config.toml` 中的数据库配置。脚本不会把密码继续传给 installer/cargo 子进程命令行；如果需要避免密码出现在 shell history �?Node 进程参数中，请使�?`SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD` 环境变量�?
+需要快速恢复管理员登录时，可以通过根目录 `pnpm` 命令重置 `admin` 密码。开发模式默认使用 `target/dev/cloudrouter.sqlite`，release 模式使用运行时 `config.toml` 中的数据库配置。脚本不会把密码继续传给 installer/cargo 子进程命令行；如果需要避免密码出现在 shell history 或 Node 进程参数中，请使用 `SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD` 环境变量。
 ```bash
 pnpm admin:reset:dev -- --password "Admin-Dev-Password-2026!"
 pnpm admin:reset:release -- --password "Admin-Release-Password-2026!"
@@ -399,7 +410,7 @@ pnpm admin:reset:release -- --password "Admin-Release-Password-2026!"
 SDKWORK_CLOUDROUTER_ADMIN_RESET_PASSWORD="Admin-Release-Password-2026!" pnpm admin:reset:release
 ```
 
-默认重置账号�?`admin`，显示名�?`Administrator`，邮箱身份为 `admin@sdkwork.com`。如需覆盖�?
+默认重置账号为 `admin`，显示名为 `Administrator`，邮箱身份为 `admin@sdkwork.com`。如需覆盖：
 ```bash
 pnpm admin:reset:release -- \
   --username admin \
@@ -408,5 +419,5 @@ pnpm admin:reset:release -- \
   --password "Admin-Release-Password-2026!"
 ```
 
-Cloud Router 的登录、注册、二维码登录、验证码策略和恢复方式由 IAM 运行时配置控制。`v0.3.0` 默认保持严格姿态：密码登录默认可用，二维码、验证码登录、OAuth、session bridge 等能力需要显式开启�?
-首次登录后，请在后台配置 IAM 策略，包括登录方式、二维码登录、注册验证码、OAuth 展示和账号恢复方式�?
+Cloud Router 的登录、注册、二维码登录、验证码策略和恢复方式由 IAM 运行时配置控制。`v0.3.0` 默认保持严格姿态：密码登录默认可用，二维码、验证码登录、OAuth、session bridge 等能力需要显式开启。
+首次登录后，请在后台配置 IAM 策略，包括登录方式、二维码登录、注册验证码、OAuth 展示和账号恢复方式。

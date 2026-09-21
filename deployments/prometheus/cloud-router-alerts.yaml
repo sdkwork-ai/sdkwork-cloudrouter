@@ -307,6 +307,36 @@ groups:
           description: "At least one required dependency readiness check failed in the last 5 minutes."
           runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
 
+      - alert: CloudRouterRuntimeIdLeaseLost
+        expr: cloudrouter_runtime_id_generator_ready == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Cloud Router runtime ID generator lost its database lease"
+          description: "The Snowflake generator is fenced: runtime writes fail closed and readiness reports unavailable until the recovery worker re-acquires a lease. Persist longer than 5 minutes to page the on-call."
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+
+      - alert: CloudRouterRuntimeIdFailures
+        expr: increase(cloudrouter_runtime_id_failures_total[10m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Cloud Router runtime ID allocation failures are occurring"
+          description: "Runtime ID allocation reported bounded failure conditions (clock, sequence, lease, contention). Flapping indicates lease or clock instability that precedes a full fence."
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+
+      - alert: CloudRouterAccountingRetryQueueDegraded
+        expr: cloudrouter_gateway_accounting_retry_dead_letter_depth > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Cloud Router accounting retry queue holds dead-letter entries"
+          description: "Accounting retry facts reached the dead-letter state: usage facts exist that the settlement ledger has not consumed. Financial reconciliation is blocked until the DLQ is drained per the runbook."
+          runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/observability-alert-response.md"
+
       - alert: CloudRouterMetricSeriesDropped
         expr: increase(sdkwork_http_metric_series_dropped_total[10m]) > 0
         for: 5m
@@ -336,7 +366,7 @@ groups:
           category: provider-resilience
         annotations:
           summary: "Gateway rate limiter degraded to per-process enforcement"
-          description: "The distributed (Redis-backed) invocation rate limiter could not reach Redis and fell back to local buckets, so each replica now enforces the configured quota divided by SDKWORK_CLOUDROUTER_PROVIDER_RATE_LIMIT_ESTIMATED_INSTANCE_COUNT. Cluster-wide quota accuracy is reduced until Redis is restored; verify the estimated instance count matches the current replica count."
+          description: "The distributed (Redis-backed) invocation rate limiter could not reach Redis and fell back to local buckets, so each replica now enforces the configured quota divided by SDKWORK_CLOUDROUTER_PROVIDER_RATE_LIMIT_ESTIMATED_INSTANCE_COUNT. Cluster-wide quota accuracy is reduced until Redis is restored; the fallback pin SDKWORK_CLOUDROUTER_PROVIDER_RATE_LIMIT_ESTIMATED_INSTANCE_COUNT is set to the HPA maxReplicas (fail-safe strict); review it when changing the scaling bounds."
           runbook_url: "https://github.com/sdkwork-ai/sdkwork-cloudrouter/blob/main/docs/runbooks/rate-limit-circuit-break.md"
 
       - alert: CloudRouterCircuitBreakerRejectionsHigh

@@ -99,7 +99,10 @@ impl ChatCompletionStreamRelay for AdapterAwareChatCompletionStreamRelay {
                         } => Ok(ChatCompletionStreamRelayResponse::new(
                             status_code,
                             content_type,
-                            stream_body,
+                            super::provider_stream_deadlines::apply_provider_stream_deadlines(
+                                stream_body,
+                                super::provider_stream_deadlines::DEFAULT_PROVIDER_STREAM_TOTAL,
+                            ),
                         )),
                     }
                 }

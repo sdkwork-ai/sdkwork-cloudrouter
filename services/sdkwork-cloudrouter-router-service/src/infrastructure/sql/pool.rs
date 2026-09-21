@@ -17,6 +17,35 @@ use super::runtime_id::{cloud_runtime_id_is_healthy, to_standard_database_config
 
 pub const POSTGRES_POOL_ACQUIRE_TIMEOUT_SECONDS: u64 = 10;
 
+/// Session-level guards applied to every server connection. A stuck single
+/// statement or an abandoned idle-in-transaction session must not hold row
+/// locks (chat ordinals, settlement claims) or pool slots indefinitely.
+/// Values are PostgreSQL milliseconds.
+pub const POSTGRES_STATEMENT_TIMEOUT_MS: u64 = 30_000;
+pub const POSTGRES_IDLE_IN_TRANSACTION_SESSION_TIMEOUT_MS: u64 = 120_000;
+
+/// Appends PostgreSQL session guards to the connection URL. sqlx merges the
+/// URL `options` entries with any options the pool builder sets afterwards,
+/// so the search-path handling in the database host is unaffected. Idempotent:
+/// an existing `options` parameter from the operator wins nothing — the guard
+/// keys are set only once per URL.
+fn with_postgres_session_guards(database_url: &str) -> String {
+    if database_url.starts_with("sqlite") {
+        return database_url.to_owned();
+    }
+    if database_url.contains("statement_timeout=") {
+        return database_url.to_owned();
+    }
+    let guard = format!(
+        "-c statement_timeout={POSTGRES_STATEMENT_TIMEOUT_MS} -c idle_in_transaction_session_timeout={POSTGRES_IDLE_IN_TRANSACTION_SESSION_TIMEOUT_MS}"
+    );
+    let encoded_guard = guard
+        .replace(' ', "%20")
+        .replace('=', "%3D");
+    let separator = if database_url.contains('?') { '&' } else { '?' };
+    format!("{database_url}{separator}options={encoded_guard}")
+}
+
 /// Maximum time a single readiness probe may take before it is reported as not ready.
 pub const READINESS_CHECK_TIMEOUT: Duration = Duration::from_millis(500);
 
@@ -96,6 +125,10 @@ pub async fn connect_standard_database_pool(
 ) -> Result<DatabasePool, RepositoryError> {
     let standard = to_standard_database_config(config)
         .map_err(|error| RepositoryError::Generic(error.to_string()))?;
+    let standard = StandardDatabaseConfig {
+        url: with_postgres_session_guards(&standard.url),
+        ..standard
+    };
     PoolBuilder::new(standard)
         .acquire_timeout(Duration::from_secs(POSTGRES_POOL_ACQUIRE_TIMEOUT_SECONDS))
         .build()
@@ -107,8 +140,11 @@ pub async fn connect_postgres_runtime_pool(
     database_url: &str,
     max_connections: u32,
 ) -> Result<PgPool, sqlx::Error> {
-    let pool = PoolBuilder::new(postgres_standard_config(database_url, max_connections))
-        .acquire_timeout(Duration::from_secs(POSTGRES_POOL_ACQUIRE_TIMEOUT_SECONDS))
+    let pool = PoolBuilder::new(postgres_standard_config(
+        &with_postgres_session_guards(database_url),
+        max_connections,
+    ))
+    .acquire_timeout(Duration::from_secs(POSTGRES_POOL_ACQUIRE_TIMEOUT_SECONDS))
         .build()
         .await
         .map_err(pool_error_to_sqlx)?;

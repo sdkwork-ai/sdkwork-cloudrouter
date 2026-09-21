@@ -69,6 +69,11 @@ const MOUNTED_BACKEND_CAPABILITIES: &[MountedBackendCapability] = &[
         manifest: sdkwork_routes_messaging_backend_api::backend_route_manifest,
     },
     MountedBackendCapability {
+        workspace: "sdkwork-models-catalog",
+        owner: "sdkwork-models-catalog",
+        manifest: sdkwork_routes_models_catalog_backend_api::backend_route_manifest,
+    },
+    MountedBackendCapability {
         workspace: "sdkwork-partner",
         owner: "sdkwork-partner",
         manifest: sdkwork_routes_partner_backend_api::gateway_route_manifest,
@@ -211,6 +216,40 @@ mod tests {
             assert!(
                 runtime_source.contains(merge_marker),
                 "runtime.rs must merge {workspace} backend surface"
+            );
+        }
+    }
+
+    #[test]
+    fn composed_manifest_includes_models_catalog_backend_routes() {
+        // Regression: the models-catalog capability was absent from
+        // MOUNTED_BACKEND_CAPABILITIES while its axum router was still merged in
+        // `routes.rs`. Every declared /backend/v3/api/ai/* path therefore fell
+        // through the Web Framework route manifest and answered
+        // 404 route-not-in-manifest ("route is not registered in the gateway
+        // route manifest") even though the handler was live.
+        let manifest = cloud_router_backend_composed_route_manifest();
+        for (method, path) in [
+            ("GET", "/backend/v3/api/ai/model_vendors"),
+            ("POST", "/backend/v3/api/ai/model_vendors"),
+            ("GET", "/backend/v3/api/ai/models"),
+            ("POST", "/backend/v3/api/ai/models"),
+            ("POST", "/backend/v3/api/ai/models/sync"),
+            ("GET", "/backend/v3/api/ai/model_mappings"),
+            ("POST", "/backend/v3/api/ai/model_mappings/resolve"),
+            ("GET", "/backend/v3/api/ai/model_rankings"),
+            ("GET", "/backend/v3/api/ai/voices"),
+            ("GET", "/backend/v3/api/ai/video_profiles"),
+            ("GET", "/backend/v3/api/ai/resources"),
+            ("GET", "/backend/v3/api/ai/resource_groups"),
+        ] {
+            let route = manifest.match_route(method, path).unwrap_or_else(|| {
+                panic!("{method} {path} must be registered by the models-catalog mount")
+            });
+            assert_eq!(
+                RouteAuth::DualToken,
+                route.auth,
+                "{method} {path} must inherit dual-token auth from the models-catalog manifest"
             );
         }
     }

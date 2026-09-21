@@ -85,6 +85,19 @@
       "sortOrder": 60
     },
     {
+      "resourceCode": "vendor.bytedance",
+      "resourceType": "vendor",
+      "displayName": "ByteDance",
+      "vendorCode": "bytedance",
+      "capability": "image",
+      "capabilities": [
+        "image",
+        "video",
+        "network"
+      ],
+      "sortOrder": 65
+    },
+    {
       "resourceCode": "vendor.volcengine",
       "resourceType": "vendor",
       "displayName": "Volcengine",

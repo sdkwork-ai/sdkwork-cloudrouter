@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
@@ -43,15 +42,30 @@ test('standalone.development profile env declares the workspace default binds', 
     envValue(profileEnv, 'SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_INGRESS_BIND'),
     targets.get('server'),
   );
+  // APP_RUNTIME_TOPOLOGY_SPEC.md section 8.2: the browser-visible dev binds are
+  // the adaptive web ingress plus the two private renderer ports; the retired
+  // portal renderer bind (3901) no longer exists in any profile env.
   assert.equal(
-    envValue(profileEnv, 'SDKWORK_CLOUDROUTER_ROUTER_INTERNAL_PORTAL_RENDERER_BIND'),
-    targets.get('portal'),
+    envValue(profileEnv, 'SDKWORK_CLOUDROUTER_ROUTER_WEB_DEV_INGRESS_BIND'),
+    '127.0.0.1:4734',
   );
+  assert.equal(
+    envValue(profileEnv, 'SDKWORK_CLOUDROUTER_ROUTER_PC_INTERNAL_DEV_PORT'),
+    '4736',
+  );
+  assert.equal(
+    envValue(profileEnv, 'SDKWORK_CLOUDROUTER_ROUTER_H5_INTERNAL_DEV_PORT'),
+    '4737',
+  );
+  assert.doesNotMatch(profileEnv, /INTERNAL_PORTAL_RENDERER_BIND/u);
 });
 
 test('declares v5 topology spec and profile env files for sdkwork-cloudrouter', async () => {
   assert.equal(await exists('specs/topology.spec.json'), true);
   assert.equal(await exists('scripts/lib/cloud-router-topology.mjs'), true);
+  // The legacy `cloud-router-dev.mjs` runner is retired from every browser,
+  // server, and plan entrypoint; it remains only as the carrier of the
+  // client-local `dev:desktop:sqlite` variant (PNPM_SCRIPT_SPEC section 4).
   assert.equal(await exists('scripts/cloud-router-dev.mjs'), true);
   assert.equal(await exists('docs/topology-standard.md'), true);
 
@@ -173,7 +187,8 @@ test('root package.json wires @sdkwork/app-topology and canonical dev scripts', 
   assert.match(packageJson.scripts['dev:desktop:postgres:standalone'], /--runtime-target desktop/u);
   assert.match(packageJson.scripts['topology:validate'], /sdkwork-topology\.mjs validate/);
   assert.match(packageJson.scripts['gateway:matrix'], /sdkwork-topology\.mjs print-matrix/);
-  assert.equal(spec.scripts.applicationDev, 'scripts/cloud-router-dev.mjs');
+  // The legacy applicationDev indirection is retired with the old runner.
+  assert.equal(spec.scripts.applicationDev, undefined);
   // The adaptive delivery owns renderer invocation now, so a component that
   // still named a private package script would contradict it.
   assert.equal(spec.components.portalRenderer, undefined);
@@ -306,13 +321,14 @@ test('bridgeTopologyBindEnvToLegacyRustEnv maps topology binds to Rust service e
     SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_OPEN_HTTP_BIND: '127.0.0.1:18080',
     SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_BACKEND_HTTP_BIND: '127.0.0.1:18081',
     SDKWORK_CLOUDROUTER_ROUTER_INTERNAL_APP_API_BIND: '127.0.0.1:18082',
-    SDKWORK_CLOUDROUTER_ROUTER_INTERNAL_PORTAL_RENDERER_BIND: '127.0.0.1:3901',
   });
   assert.equal(bridged.SDKWORK_CLOUDROUTER_SERVER_BIND, '0.0.0.0:3900');
   assert.equal(bridged.SDKWORK_CLOUDROUTER_GATEWAY_BIND, '127.0.0.1:18080');
   assert.equal(bridged.SDKWORK_CLOUDROUTER_ADMIN_API_BIND, '127.0.0.1:18081');
   assert.equal(bridged.SDKWORK_CLOUDROUTER_APP_API_BIND, '127.0.0.1:18082');
-  assert.equal(bridged.SDKWORK_CLOUDROUTER_PORTAL_BIND, '127.0.0.1:3901');
+  // The retired portal renderer bind is no longer bridged: no Rust surface
+  // consumes SDKWORK_CLOUDROUTER_PORTAL_BIND.
+  assert.equal(bridged.SDKWORK_CLOUDROUTER_PORTAL_BIND, undefined);
 });
 
 test('cloud-router dev dry-run omits cloud-only surfaces from standalone env', async () => {
@@ -411,44 +427,20 @@ test('sdkwork.workflow.json contains no application-owned platform host package 
   assert.equal(workflow.lifecycle.validate.some((step) => /cloud gateway/u.test(step.name)), false);
 });
 
-test('cloud-router dev orchestrator loads topology profile and forwards workspace flags', async () => {
-  const devScript = await read('scripts/lib/cloud-router-dev-main.mjs');
-  assert.match(devScript, /loadTopologyProfileForWorkspace/);
-  assert.match(devScript, /--deployment-profile/);
-  assert.match(devScript, /--service-layout is retired/);
-  assert.match(devScript, /--target/);
-  assert.match(devScript, /--database/);
-  assert.match(devScript, /run-cloud-router-application\.mjs/);
-  assert.match(devScript, /topology is retired/);
-});
-
-test('cloud-router dev hook consumes sdkwork-app lifecycle arguments', () => {
-  const result = spawnSync(process.execPath, [
-    'scripts/cloud-router-dev.mjs',
-    '--target',
-    'browser',
-    '--deployment-profile',
-    'standalone',
-    '--database',
-    'postgres',
-    '--dry-run',
-    '--',
-    '--deployment-profile',
-    'standalone',
-    '--environment',
-    'development',
-    '--runtime-target',
-    'browser',
-  ], {
-    cwd: ROOT,
-    encoding: 'utf8',
-  });
-
-  assert.equal(result.status, 0, result.stderr || result.stdout);
-  const summary = JSON.parse(result.stdout.slice(result.stdout.indexOf('{')));
-  assert.equal(summary.deploymentProfile, 'standalone');
-  assert.equal(summary.environment, 'development');
-  assert.equal(summary.target, 'browser');
+test('the legacy cloud-router dev runner is retired from every browser and plan entrypoint', async () => {
+  const packageJson = await readJson('package.json');
+  const spec = await readJson('specs/topology.spec.json');
+  // PNPM_SCRIPT_SPEC.md section 3: `sdkwork-app dev` is the only development
+  // orchestration path for browser/server/cloud. The retired runner survives
+  // solely as the carrier of the client-local `dev:desktop:sqlite` variant.
+  for (const [name, script] of Object.entries(packageJson.scripts)) {
+    if (name === 'dev:desktop:sqlite') continue;
+    assert.doesNotMatch(String(script), /cloud-router-dev/u, `script ${name} still references the retired runner`);
+  }
+  assert.equal(spec.internalUpstreams, undefined);
+  // The retired portal renderer bind must not be reintroduced in any profile.
+  const retiredEnvKeys = spec.retired?.envKeys ?? [];
+  assert.ok(retiredEnvKeys.includes('SDKWORK_CLOUDROUTER_ROUTER_INTERNAL_PORTAL_RENDERER_BIND'));
 });
 
 test('CI verification plan includes commercial contract guardians and portal typecheck', async () => {

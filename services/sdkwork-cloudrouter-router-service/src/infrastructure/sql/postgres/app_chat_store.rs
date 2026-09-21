@@ -5,6 +5,7 @@ use sqlx::{PgPool, Postgres, Row, Transaction};
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::ports::{
+    AppChatConversationCursor,
     AppChatConversationItem, AppChatConversationList, AppChatFuture, AppChatMessageCursor,
     AppChatMessageItem, AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnItem,
     AppChatTurnOutcome, AppChatUsageSnapshot, CompleteAppChatTurnCommand,
@@ -81,45 +82,46 @@ impl AppChatStore for PostgresAppChatStore {
     fn list_conversations<'a>(
         &'a self,
         subject: AppChatSubject,
-        page: i64,
+        cursor: Option<AppChatConversationCursor>,
         page_size: i64,
     ) -> AppChatFuture<'a, AppChatConversationList> {
         Box::pin(async move {
-            let page = page.max(1);
             let page_size = page_size.max(1);
-            let offset = (page - 1) * page_size;
+            // Keyset seek over (updated_at, id) DESC: the scoped index
+            // idx_ai_chat_conversation_user_status_updated covers the prefix.
+            // No OFFSET and no total window: pages are bounded by
+            // LIMIT page_size + 1 and continuation is opaque-cursor based.
+            let (cursor_micros, cursor_id) = match cursor {
+                Some(cursor) => (Some(cursor.updated_at_micros), Some(cursor.id)),
+                None => (None, None),
+            };
             let sql = conversation_select_sql(
                 r#"
                   AND c.status <> 'deleted'
                   AND c.deleted_at IS NULL
-                ORDER BY c.updated_at DESC NULLS LAST, c.id DESC
-                LIMIT $4 OFFSET $5
+                  AND (
+                      $4::bigint IS NULL
+                      OR c.updated_at < TIMESTAMPTZ 'epoch' + ($4::bigint * INTERVAL '1 microsecond')
+                      OR (
+                          c.updated_at = TIMESTAMPTZ 'epoch' + ($4::bigint * INTERVAL '1 microsecond')
+                          AND c.id < $5
+                      )
+                  )
+                ORDER BY c.updated_at DESC, c.id DESC
+                LIMIT $6
                 "#,
-                true,
             );
             let rows = sqlx::query(sqlx::AssertSqlSafe(sql))
                 .bind(subject.tenant_id)
                 .bind(subject.organization_id)
                 .bind(subject.user_id)
-                .bind(page_size)
-                .bind(offset)
+                .bind(cursor_micros)
+                .bind(cursor_id)
+                .bind(page_size + 1)
                 .fetch_all(&self.pool)
                 .await
                 .map_err(sql_error)?;
-            let total = rows
-                .first()
-                .and_then(|row| row.try_get::<i64, _>("total").ok())
-                .unwrap_or(0);
-            let items = rows
-                .into_iter()
-                .map(row_to_conversation)
-                .collect::<DomainResult<Vec<_>>>()?;
-            Ok(AppChatConversationList {
-                items,
-                total,
-                page_no: page,
-                page_size,
-            })
+            map_conversation_page(rows, page_size)
         })
     }
 
@@ -136,7 +138,6 @@ impl AppChatStore for PostgresAppChatStore {
                   AND c.deleted_at IS NULL
                 LIMIT 1
                 "#,
-                false,
             );
             let row = sqlx::query(sqlx::AssertSqlSafe(sql))
                 .bind(subject.tenant_id)
@@ -1962,12 +1963,7 @@ async fn insert_item(
     .map_err(sql_error)
 }
 
-fn conversation_select_sql(extra: &'static str, include_total: bool) -> String {
-    let total_expr = if include_total {
-        ", COUNT(*) OVER() AS total"
-    } else {
-        ""
-    };
+fn conversation_select_sql(extra: &'static str) -> String {
     format!(
         r#"
         SELECT
@@ -1984,8 +1980,9 @@ fn conversation_select_sql(extra: &'static str, include_total: bool) -> String {
             c.message_count,
             c.turn_count,
             CAST(c.created_at AS TEXT) AS created_at,
-            CAST(c.updated_at AS TEXT) AS updated_at
-            {total_expr}
+            CAST(c.updated_at AS TEXT) AS updated_at,
+            CAST(TRUNC(EXTRACT(EPOCH FROM c.updated_at) * 1000000) AS BIGINT) AS cursor_updated_at_micros,
+            c.id AS cursor_id
         FROM ai_chat_conversation c
         WHERE c.tenant_id = $1
           AND c.organization_id = $2
@@ -2011,6 +2008,38 @@ fn row_to_conversation(row: sqlx::postgres::PgRow) -> DomainResult<AppChatConver
         turn_count: integer_cell(&row, "turn_count"),
         created_at: string_cell(&row, "created_at"),
         updated_at: string_cell(&row, "updated_at"),
+    })
+}
+
+fn map_conversation_page(
+    rows: Vec<sqlx::postgres::PgRow>,
+    page_size: i64,
+) -> DomainResult<AppChatConversationList> {
+    let page_size_usize = usize::try_from(page_size)
+        .map_err(|_| DomainError::new("chat conversation page size is invalid"))?;
+    let has_more = rows.len() > page_size_usize;
+    let mut items = Vec::with_capacity(rows.len().min(page_size_usize));
+    let mut last_cursor = None;
+
+    for row in rows.into_iter().take(page_size_usize) {
+        let cursor = AppChatConversationCursor {
+            updated_at_micros: integer_cell(&row, "cursor_updated_at_micros"),
+            id: integer_cell(&row, "cursor_id"),
+        };
+        if cursor.updated_at_micros < 0 || cursor.id <= 0 {
+            return Err(DomainError::new(
+                "invalid chat conversation cursor values from database row",
+            ));
+        }
+        items.push(row_to_conversation(row)?);
+        last_cursor = Some(cursor);
+    }
+
+    Ok(AppChatConversationList {
+        items,
+        next_cursor: has_more.then_some(last_cursor).flatten(),
+        has_more,
+        page_size,
     })
 }
 

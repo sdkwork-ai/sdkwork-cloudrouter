@@ -55,7 +55,7 @@ customer-facing documentation.
 
 ## Installation And Usage
 
-Current release: `0.3.0` (`2026-05-17`). Release records live under
+Current release: `0.4.1`. Release records live under
 [docs/release](./docs/release/).
 
 Primary installation and usage guides:
@@ -94,7 +94,7 @@ purpose: `pnpm exec sdkwork-app` resolves its bin from the root
 Quick Ubuntu/Debian service install from a release asset:
 
 ```bash
-sudo apt install ./cloudrouter-linux-x64-server-0.3.0.deb
+sudo apt install ./cloudrouter-linux-x64-server-0.4.1.deb
 sudo editor /etc/sdkwork/router/config.toml
 sudo editor /etc/sdkwork/database/database.secret
 sudo systemctl start cloudrouter
@@ -380,12 +380,12 @@ Command intent:
 - `pnpm dev` (alias: `pnpm dev:server`) starts the default
   integrated product server workspace (`standalone.development`).
   See `docs/topology-standard.md` for the full command matrix and env keys.
-- `pnpm dev:browser:postgres:standalone:debug` starts distributed internal validation layout.
-- `pnpm dev:cloud` starts only the local Vite client against the deployed
-  cloud API surfaces (platform `sdkwork-api-cloud-gateway` at
-  `api-dev/api-test/api-staging.sdkwork.com` for development/test/staging and `api.sdkwork.com`
-  for production) without starting any local API, gateway, or database
-  process. `pnpm dev:browser:cloud` is the browser-target variant.
+- `pnpm dev:cloud` starts only the adaptive web dev ingress (`4734`) and its
+  private renderers; every gateway-attached base URL binds to the locally
+  started platform `sdkwork-api-cloud-gateway` (`SDKWORK_LOCAL_PLATFORM_API_GATEWAY_HTTP_URL`,
+  default `http://127.0.0.1:3900`, started by that repository's own `pnpm dev`),
+  and no local API, gateway, or database process is started by this repository.
+  `pnpm dev:browser:cloud` is the browser-target variant.
 - `pnpm build:browser:cloud` builds the environment-neutral cloud web bundle
   under `dist/cloud-web/<environment>`; pass `--environment test|production`
   to select the lifecycle environment (default production).
@@ -433,56 +433,39 @@ On Windows, the equivalent path is `%USERPROFILE%/.sdkwork/router/data`.
 Use `pnpm dev:desktop:sqlite` when validating client-local SQLite behavior; it
 does not select SQLite for a product backend service.
 
-Standalone client startup (`pnpm dev:desktop`) prints the browser and API
-access matrix before launching processes. With default ports, the application
-gateway listens on `3900` and the portal dev server listens on `3901`:
+Browser development (`pnpm dev`, `pnpm dev:browser`) prints the access matrix
+before launching processes. With default ports there is ONE browser entry: the
+adaptive web dev ingress on `4734` selects the PC
+(`apps/sdkwork-cloudrouter-pc`) or H5 (`apps/sdkwork-cloudrouter-h5`) renderer
+by device class with cross-renderer fallback (`APP_RUNTIME_TOPOLOGY_SPEC.md`
+section 8.2). The renderers bind private loopback ports (`4736`, `4737`) and
+are not browser entry points. Canonical API paths traverse the same origin to
+the application public ingress (`3905`):
 
-- Direct Portal Dev: `http://127.0.0.1:3901/`
-- Application Gateway: `http://127.0.0.1:3900/`
-- Gateway/Open API: `http://127.0.0.1:3900/v1`
-- Backend/Admin API: `http://127.0.0.1:3900/backend/v3/api`
-- App API: `http://127.0.0.1:3900/app/v3/api`
-- Application Gateway Health: `http://127.0.0.1:3900/healthz`
-- Application Gateway Ready: `http://127.0.0.1:3900/readyz`
+- Adaptive Web (PC/H5 auto-selected): `http://127.0.0.1:4734/`
+- App API (same-origin via the ingress): `http://127.0.0.1:4734/app/v3/api`
+- Backend/Admin API (same-origin via the ingress):
+  `http://127.0.0.1:4734/backend/v3/api`
+- Open API (same-origin via the ingress): `http://127.0.0.1:4734/v1`
+- Application Public Ingress: `http://127.0.0.1:3905/`
+- Application Ingress Health: `http://127.0.0.1:3905/healthz`
+- Application Ingress Ready: `http://127.0.0.1:3905/readyz`
 
-The portal dev server proxies same-origin API requests to the managed
-standalone application gateway:
+`pnpm dev:desktop` starts the same application public ingress for the Tauri
+desktop client without the browser renderers. Server development
+(`pnpm dev:server`) starts the application public ingress plus the internal
+open/backend listeners as the single product server entrypoint:
 
-- Direct Portal Gateway API Proxy: `http://127.0.0.1:3901/v1`
-- Direct Portal Backend/Admin API Proxy:
-  `http://127.0.0.1:3901/backend/v3/api`
-- Direct Portal App API Proxy: `http://127.0.0.1:3901/app/v3/api`
-- Direct Portal Gateway OpenAPI Proxy:
-  `http://127.0.0.1:3901/openapi.json`
-- Direct Portal Admin API OpenAPI Proxy:
-  `http://127.0.0.1:3901/backend/v3/api/openapi.json`
-- Direct Portal App API OpenAPI Proxy:
-  `http://127.0.0.1:3901/app/v3/api/openapi.json`
+- Product Server (application public ingress): `http://127.0.0.1:3905/`
+- Product Server OpenAPI: `http://127.0.0.1:3905/openapi.json`
+- Product Server Health: `http://127.0.0.1:3905/healthz`
+- Product Server Ready: `http://127.0.0.1:3905/readyz`
 
-Explicit `pnpm dev:server` startup prints the product edge access matrix. With
-default ports, the Rust edge server at `3900` is the single product server
-entrypoint. In default all-in-one server mode, `/v1`, `/backend/v3/api`, and
-`/app/v3/api` are dispatched to in-process Rust routers while portal assets
-are served through the portal dev server:
-
-- Portal: `http://127.0.0.1:3900/`
-- Edge Gateway OpenAPI: `http://127.0.0.1:3900/openapi.json`
-- Edge Admin API OpenAPI:
-  `http://127.0.0.1:3900/backend/v3/api/openapi.json`
-- Edge App API OpenAPI:
-  `http://127.0.0.1:3900/app/v3/api/openapi.json`
-- Edge OpenAI-compatible Gateway API: `http://127.0.0.1:3900/v1`
-- Edge Backend/Admin API: `http://127.0.0.1:3900/backend/v3/api`
-- Edge App API: `http://127.0.0.1:3900/app/v3/api`
-- Edge Server Health: `http://127.0.0.1:3900/healthz`
-- Edge Server Ready: `http://127.0.0.1:3900/readyz`
-
-`/healthz` reports the edge server process health. `/readyz` probes the
-in-process gateway, admin API, app API routers and the portal upstream
-`/healthz` endpoint in all-in-one mode, and returns `503` when any dependency
-is unavailable.
-
-for debugging and external reverse proxy setups:
+`/healthz` reports the product server process health. `/readyz` probes the
+in-process gateway, admin API, and app API routers and returns `503` when any
+dependency is unavailable. The internal split-process listeners
+(`18080`/`18081`/`18082`) exist for debugging and external reverse proxy
+setups:
 
 - Gateway OpenAPI: `http://127.0.0.1:18080/openapi.json`
 - Admin API OpenAPI:
@@ -492,17 +475,14 @@ for debugging and external reverse proxy setups:
 - Backend/Admin API: `http://127.0.0.1:18081/backend/v3/api`
 - App API: `http://127.0.0.1:18082/app/v3/api`
 
-Use `pnpm topology:plan:server` to print the explicit product server URLs and command
-plan without starting processes. Forward bind overrides through `--`, for
-example:
+Use `pnpm topology:plan:server` to print the explicit product server URLs and
+command plan without starting processes. Binds resolve from the topology
+profile (`etc/topology/*.env`) — do not override them with hard-coded ports in
+launchers (`APP_RUNTIME_TOPOLOGY_SPEC.md` section 8).
 
-```powershell
-pnpm dev:server -- --server-bind 0.0.0.0:12900 --portal-bind 0.0.0.0:13900
-```
-
-The Rust edge server forwarding targets default to the edge server itself in
-when the edge server should forward to another host, container network, or
-separate local service process:
+The product server forwarding targets default to the in-process routers when
+the server should forward to another host, container network, or separate
+local service process:
 
 ```powershell
 pnpm dev:server -- --gateway-forward-url http://gateway.internal:18080 --backend-api-forward-url http://admin.internal:18081 --app-api-forward-url http://app.internal:18082
@@ -519,9 +499,9 @@ default to one same-origin public SDK root in server mode:
 
 This avoids publishing loopback addresses such as `127.0.0.1` into browser
 configuration and keeps remote deployments reachable through the same edge host
-that served the portal. Direct `3901` portal dev requests proxy the same
-same-origin API paths to the edge server in all-in-one mode, so opening the
-Vite dev server directly exercises the same SDK base URLs as the unified edge
+that served the portal. The adaptive dev ingress and both renderer dev servers
+proxy the same same-origin API paths to the application public ingress, so any
+dev-surface origin exercises the same SDK base URLs as the unified edge
 entrypoint. `PORTAL_PUBLIC_API_BASE_URL`, `PORTAL_PUBLIC_OPEN_API_BASE_URL`,
 `PORTAL_PUBLIC_APP_API_BASE_URL`, and `PORTAL_PUBLIC_BACKEND_API_BASE_URL`
 remain available as per-surface overrides for split deployments.
@@ -1147,7 +1127,7 @@ only portable archives. `scripts/build-cloud-router-native-installer.mjs`
 consumes the same staged production directory and package plan to build:
 
 - Linux `.deb` packages for Ubuntu/Debian installation through
-  `apt install ./cloudrouter-linux-x64-server-0.3.0.deb` or
+  `apt install ./cloudrouter-linux-x64-server-0.4.1.deb` or
   `dpkg -i`.
 - Windows `.msi` packages through WiX for service and desktop install targets.
 - macOS `.pkg` packages through `pkgbuild` for service and desktop install
@@ -1517,7 +1497,7 @@ support.
 | --- | --- | --- | --- |
 | Community | AGPL-3.0-or-later, free | Evaluation and non-commercial self-deployment | None |
 | Pro | Commercial subscription | Commercial multi-tenant deployments | 99.5% monthly uptime |
-| Enterprise | Commercial enterprise subscription | SSO, enhanced audit, dedicated support, private deployment | 99.9% monthly uptime |
+| Enterprise | Commercial enterprise subscription | Enhanced audit, dedicated support, private deployment | SLA targets per docs/legal/SLA.md (accepted SLO evidence is a GA-phase gate, not yet claimed) |
 | OEM / White-label | One-time license + royalty | Embedded, rebranded, and redistributed deployments | Custom |
 
 Detailed commercial documents:

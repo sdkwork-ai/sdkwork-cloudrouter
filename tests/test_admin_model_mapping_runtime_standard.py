@@ -217,8 +217,8 @@ class AdminModelMappingRuntimeStandardTest(unittest.TestCase):
         self.assertNotIn("matchedScopeType", resolve_contract)
 
     def test_model_mapping_design_plan_is_recorded(self) -> None:
-        spec_path = ROOT / "docs/superpowers/specs/2026-06-02-admin-model-mapping-design.md"
-        plan_path = ROOT / "docs/superpowers/plans/2026-06-02-admin-model-mapping.md"
+        spec_path = ROOT / "docs/architecture/tech/TECH-2026-06-02-admin-model-mapping-design.md"
+        plan_path = ROOT / "docs/architecture/tech/TECH-2026-06-02-admin-model-mapping.md"
         self.assertTrue(spec_path.exists())
         self.assertTrue(plan_path.exists())
         spec = spec_path.read_text(encoding="utf-8")

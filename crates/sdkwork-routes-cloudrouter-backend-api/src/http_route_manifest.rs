@@ -724,6 +724,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "system",
         "site.settings.update",
     ),
+    HttpRoute::dual_token(
+        HttpMethod::Get,
+        "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}/secret",
+        "ai",
+        "upstreamAccounts.credentials.secrets.list",
+    ),
 ];
 
 pub fn http_route_manifest() -> HttpRouteManifest {

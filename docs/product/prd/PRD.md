@@ -230,7 +230,7 @@ backup/restore, and multi-replica tests. They are not inferred from design.
 | --- | --- | --- |
 | Domain convergence | Supplier/account/account-group model, PostgreSQL schema, APIs, SDKs, UI, tests, and docs agree | In progress |
 | Payment composition convergence | Payment owner SDK, Cloud extension boundary, write-only credentials, exact action RBAC, server pagination, and docs agree | In progress |
-| Chat persistence convergence | Eight-table PostgreSQL authority, API/SDK pagination, concurrency, readiness, recovery, and docs agree | In progress |
+| Chat persistence convergence | Ten-table PostgreSQL authority, API/SDK pagination, concurrency, readiness, recovery, and docs agree | In progress |
 | Production hardening | Security, streaming, financial, load, recovery, observability, and HA gates pass | Planned |
 | Commercial beta | Clean release candidate, signed artifacts, runbooks, support controls, and reviewed evidence | Planned |
 | General availability | Accepted SLO/SLA, operational history, recovery drills, and supply-chain evidence | Planned |
@@ -246,7 +246,7 @@ manifest remains `preLaunch: true` until the release gate is accepted.
 - [Upstream supplier architecture decision](../../architecture/decisions/ADR-20260728-standardize-upstream-supplier-routing.md)
 - [Chat PostgreSQL ownership decision](../../architecture/decisions/ADR-20260730-own-chat-runtime-postgres-authority.md)
 - [Production-readiness revalidation](../../engineering/reviews/REVIEW-20260714-production-readiness-revalidation.md)
-- [Security policy](../../SECURITY.md)
+- [Security policy](../../../SECURITY.md)
 - [Commercial pricing](../../commercial/PRICING.md)
 - [Edition tier matrix](../../legal/TIER_MATRIX.md)
 

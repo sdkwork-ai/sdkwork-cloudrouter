@@ -333,6 +333,10 @@ fn status_code_for_error(error: &InvocationError) -> u16 {
         InvocationErrorKind::Authentication => 401,
         InvocationErrorKind::Authorization | InvocationErrorKind::ModelForbidden => 403,
         InvocationErrorKind::Idempotency => 409,
+        // Insufficient balance is a client-side, self-healable funding problem:
+        // 402 (Payment Required) instead of the 502 used for infrastructure
+        // faults, so clients can route the user to recharge.
+        InvocationErrorKind::InsufficientBalance => 402,
         // No routable upstream account/model → 503 (route unavailable), same
         // as the HTTP surface in `response_from_invocation_error`.
         InvocationErrorKind::Routing => 503,

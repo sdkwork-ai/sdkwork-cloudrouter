@@ -8,13 +8,15 @@ pub struct ApiKeySecurityConfig {
 
 /// How raw API key secrets are persisted.
 ///
-/// `Plaintext` (the default) stores the raw key directly so management
-/// surfaces can re-display it; `Ciphertext` stores an AEAD-encrypted copy
-/// derived from the api key pepper and decrypts on read.
+/// `Ciphertext` (the default) stores an AEAD-encrypted copy derived from the
+/// api key pepper and decrypts on read; `Plaintext` stores the raw key
+/// directly and is only for explicit operator opt-in on disposable
+/// environments. API keys are gateway credentials: a database dump must never
+/// disclose them, so encryption is the safe default.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum ApiKeySecretStorageMode {
-    #[default]
     Plaintext,
+    #[default]
     Ciphertext,
 }
 

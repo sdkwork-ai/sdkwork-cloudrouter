@@ -13,7 +13,7 @@
 
 内部接口包括 worker、runtime、event、snapshot，不作为外部长期公共契约。
 
-App/Backend API 的公共路径必须与 Java API 模块完全一致。cloud-router 只能切换 `baseUrl`，不得在公共路径中额外插入 `/cloud-router`、`/router`、`/sdkwork` 等产品或部署命名空间。详细自由切换标准见 [10-API路径一致性与自由切换架构.md](./10-API路径一致性与自由切换架构.md)。
+App/Backend API 的公共路径必须与 Java API 模块完全一致。cloud-router 只能切换 `baseUrl`，不得在公共路径中额外插入 `/cloud-router`、`/router`、`/sdkwork` 等产品或部署命名空间。详细自由切换标准见 [10-API路径一致性与自由切换架构.md](./TECH-10-api-architecture.md)。
 
 ## 2. Gateway API
 

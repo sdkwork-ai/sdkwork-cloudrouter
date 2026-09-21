@@ -301,7 +301,7 @@ fn statement_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<PaymentStatem
     Ok(PaymentStatementRecord {
         id: string_cell(row, "id"),
         tenant_id: string_cell(row, "tenant_id"),
-        organization_id: optional_string_cell(row, "organization_id"),
+        organization_id: organization_id_cell(row, "organization_id"),
         statement_no: string_cell(row, "statement_no"),
         supplier_code: string_cell(row, "supplier_code"),
         provider_account_id: optional_string_cell(row, "provider_account_id"),
@@ -338,7 +338,7 @@ fn statement_item_from_row(
     Ok(PaymentStatementItemRecord {
         id: string_cell(row, "id"),
         tenant_id: string_cell(row, "tenant_id"),
-        organization_id: optional_string_cell(row, "organization_id"),
+        organization_id: organization_id_cell(row, "organization_id"),
         statement_id: string_cell(row, "statement_id"),
         supplier_code: string_cell(row, "supplier_code"),
         provider_account_id: optional_string_cell(row, "provider_account_id"),
@@ -390,7 +390,7 @@ async fn claim_due_reconciliation_runs(
         "#,
     )
     .bind(&command.tenant_id)
-    .bind(command.organization_id.as_deref())
+    .bind(command.organization_id.as_deref().or(Some("0")))
     .bind(command.limit)
     .bind(&command.claimed_at)
     .fetch_all(pool)
@@ -494,7 +494,7 @@ async fn load_reconciliation_ledger_entries(
         "#,
     )
     .bind(&command.tenant_id)
-    .bind(command.organization_id.as_deref())
+    .bind(command.organization_id.as_deref().or(Some("0")))
     .bind(command.provider_code.as_deref())
     .bind(&command.period_start)
     .bind(&command.period_end)
@@ -541,7 +541,7 @@ fn reconciliation_run_from_row(
     Ok(ReconciliationRunRecord {
         id: string_cell(row, "id"),
         tenant_id: string_cell(row, "tenant_id"),
-        organization_id: optional_string_cell(row, "organization_id"),
+        organization_id: organization_id_cell(row, "organization_id"),
         run_no: string_cell(row, "run_no"),
         provider_code: optional_string_cell(row, "provider_code"),
         period_start: string_cell(row, "period_start"),
@@ -575,6 +575,14 @@ fn string_cell(row: &sqlx::postgres::PgRow, name: &str) -> String {
 
 fn optional_string_cell(row: &sqlx::postgres::PgRow, name: &str) -> Option<String> {
     row.try_get::<Option<String>, _>(name).ok().flatten()
+}
+
+/// Reads an `organization_id` cell, normalizing the platform "no organization"
+/// sentinel. `organization_id` is `NOT NULL DEFAULT '0'` (DATABASE_SPEC DB089),
+/// so the in-memory model never carries the invalid `NULL` scope (DB090); rows
+/// written before the constraint converged still read back as the sentinel.
+fn organization_id_cell(row: &sqlx::postgres::PgRow, name: &str) -> Option<String> {
+    optional_string_cell(row, name).or_else(|| Some("0".to_owned()))
 }
 
 fn store_error(context: &str, error: sqlx::Error) -> DomainError {

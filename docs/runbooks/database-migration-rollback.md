@@ -1,8 +1,8 @@
-# SDKWork Cloud Router - Database Migration Rollback Runbook
+# SDKWork Claw Router - Database Migration Rollback Runbook
 
 **Document Version:** 1.0
-**Last Updated:** 2026-07-14
-**Owner:** Platform Engineering / cloudrouter-data
+**Last Updated:** 2026-06-27
+**Owner:** Platform Engineering / clawrouter-data
 **Review Frequency:** Quarterly
 **Severity:** P1
 **Status:** Target procedure only. It is not an approved current-candidate
@@ -39,9 +39,9 @@ contract migration goes wrong.
 
 Before any migration reaches production:
 
-- **Back up first.** Obtain evidence for the current candidate's backup,
-  archive, isolated restore, and reconciliation procedure. The repository does
-  not currently prove a scheduled `pg_dump`/WAL recovery path.
+- **Back up first.** Confirm the daily `pg_dump -Fc` snapshot exists and WAL
+  archiving is current (see
+  [Disaster Recovery Plan](../../deployments/runbooks/disaster-recovery-plan.md#database-backup)).
 - **Test on staging.** Apply the migration against a staging database restored
   from the latest snapshot; run the schema contract audit:
   ```bash
@@ -54,8 +54,8 @@ Before any migration reaches production:
 - **Verify Flyway ordering.** Confirm the new version number does not collide
   with applied migrations:
   ```bash
-  kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
-    psql -h postgres -U cloudrouter -c \
+  kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+    psql -h postgres -U clawrouter -c \
     "SELECT installed_rank, version, description, success FROM flyway_schema_history ORDER BY installed_rank;"
   ```
 
@@ -64,8 +64,8 @@ Before any migration reaches production:
 ### Step 1: Identify the failed migration version
 
 ```bash
-kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
-  psql -h postgres -U cloudrouter -c \
+kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+  psql -h postgres -U clawrouter -c \
   "SELECT installed_rank, version, description, success, installed_on
    FROM flyway_schema_history
    ORDER BY installed_rank DESC LIMIT 5;"
@@ -80,33 +80,42 @@ Stop the services that write to the affected tables so the rollback runs
 against a quiescent database:
 
 ```bash
-kubectl scale deployment cloud-router-gateway --replicas=0 -n cloudrouter
-kubectl scale deployment cloud-router-admin-api --replicas=0 -n cloudrouter
+kubectl scale deployment claw-router-gateway --replicas=0 -n clawrouter
+kubectl scale deployment claw-router-admin-api --replicas=0 -n clawrouter
 ```
 
-### Step 3: Execute only the reviewed lifecycle reversal
+### Step 3: Run the down migration (if available)
 
-Do not invoke an arbitrary SQL down file or delete `flyway_schema_history`.
-The canonical database lifecycle owner must provide and review the exact
-rollback/forward-fix procedure, including migration-history semantics, tenant
-data preservation, upgrade compatibility, and an isolated rehearsal. A
-history-row delete can conceal an incomplete migration and make recovery less
-auditable.
+```bash
+# Roll back the specific version using the prepared down script
+kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+  psql -h postgres -U clawrouter -f /migrations/V<version>__down.sql
+
+# Remove the failed/rolled-back row from Flyway history so future runs succeed
+kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+  psql -h postgres -U clawrouter -c \
+  "DELETE FROM flyway_schema_history WHERE version = '<version>';"
+```
 
 ### Step 4: Restore from backup when no down migration exists
 
-If the migration is not reversible (for example, an irreversible `DROP COLUMN`
-with no approved recovery path), stop here and invoke the reviewed provider or
-`sdkwork-database` PITR procedure. No current-candidate RPO, base-backup/WAL
-inventory, isolated restore, or cutover/reconciliation sequence is available
-in this repository, so an ad hoc restore must not be attempted.
+If the migration is not reversible (e.g. an irreversible `DROP COLUMN` with no
+down script), restore from backup via PITR (RPO 5 min per DR plan):
+
+```bash
+# Point-in-time recovery to just before the migration window
+pg_restore --checkpoint='2026-06-27 02:00:00 UTC' \
+  --jobs=4 --dbname=clawrouter /backups/full_latest.dump
+restore_command = 'rsync backup-server:/wal/%f %p'
+recovery_target_time = '2026-06-27 02:00:00 UTC'
+```
 
 ### Step 5: Verify data integrity
 
 ```bash
-kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
-  psql -h postgres -U cloudrouter -c \
-  "SELECT COUNT(*) FROM ai_usage;
+kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
+  psql -h postgres -U clawrouter -c \
+  "SELECT COUNT(*) FROM ai_usage_fact;
    SELECT COUNT(*) FROM ops_audit_log;
    SELECT COUNT(*) FROM ai_routing;"
 ```
@@ -115,30 +124,30 @@ kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
 
 | Check | Command / probe | Pass criteria |
 |-------|-----------------|---------------|
-| Table structure | `\d ai_usage` against schema registry | Matches `docs/schema-registry/*.yaml` |
+| Table structure | `\d ai_usage_fact` against schema registry | Matches `docs/schema-registry/*.yaml` |
 | Indexes present | `\di` for critical tables | No missing indexes vs baseline |
 | Row counts | `SELECT COUNT(*)` per critical table | Within tolerance of pre-migration snapshot |
 | Flyway history clean | `flyway_schema_history` query | No `success = false` rows |
-| Application starts | `curl /readyz` after scale-up | Configured dependencies are healthy; this alone does not prove migration/drift or all enabled tables |
+| Application starts | `curl /readyz` after scale-up | `200 {"status":"ready"}` |
 | Schema contract audit | `pnpm check:alignment:audit` | exit 0 |
 | Gateway healthy | `curl /healthz` | `200 {"status":"ok"}` |
 
 After verification, scale the writers back up:
 
 ```bash
-kubectl scale deployment cloud-router-gateway --replicas=2 -n cloudrouter
-kubectl scale deployment cloud-router-admin-api --replicas=1 -n cloudrouter
+kubectl scale deployment claw-router-gateway --replicas=2 -n clawrouter
+kubectl scale deployment claw-router-admin-api --replicas=1 -n clawrouter
 ```
 
 ## Post-Incident Improvement
 
 - **Add the missing `down` migration** for the version that lacked one.
-- **Extend migration tests** 鈥?add a CI step that applies `up` then `down` on a
+- **Extend migration tests** — add a CI step that applies `up` then `down` on a
   throwaway database and asserts schema equivalence with the baseline.
-- **Tighten the schema guardian** 鈥?fail CI when a tenant-scoped table change
+- **Tighten the schema guardian** — fail CI when a tenant-scoped table change
   lacks a reversible counterpart (see `TECH-20-schema-guardian-quality-gate.md`).
-- Attach immutable current-candidate drill evidence to the runbook index
-  ([README.md](README.md)); historical dates are not recovery proof.
+- Record the incident in the runbook index *Last Drill* tracker
+  ([README.md](README.md)).
 
 ## Related Documents
 

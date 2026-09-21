@@ -282,6 +282,24 @@ pub struct AdminUpstreamAccountCredentialItem {
     pub status: i32,
 }
 
+/// 单条上游账号凭据的明文解密结果（管理面显式读取）。
+///
+/// 明文只在「读取单条凭据明文」这一条显式路径上产出；列表读取与其他任何
+/// 读表面都只暴露 `masked_label` 元数据。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AdminUpstreamAccountCredentialSecretItem {
+    pub id: i64,
+    pub account_id: i64,
+    pub credential_name: String,
+    pub auth_method_code: String,
+    pub masked_label: Option<String>,
+    pub credential_version: i64,
+    pub is_active: bool,
+    pub status: i32,
+    /// 解密后的明文密钥。
+    pub secret: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CreateAdminUpstreamAccountCredentialCommand {
     pub subject: AdminUpstreamSubject,
@@ -460,6 +478,16 @@ pub trait AdminUpstreamStore: Send + Sync {
         query: AdminUpstreamListQuery,
         account_id: i64,
     ) -> AdminUpstreamFuture<'a, AdminUpstreamPage<AdminUpstreamAccountCredentialItem>>;
+    /// 读取单条凭据的明文密钥。
+    ///
+    /// 这是唯一会把 `secret_ciphertext` 解密进读表面的入口，供管理面编辑场景
+    /// 显式调用；列表接口永不返回明文，调用方不得把它缓存进列表状态。
+    fn reveal_account_credential_secret<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        account_id: i64,
+        credential_id: i64,
+    ) -> AdminUpstreamFuture<'a, AdminUpstreamAccountCredentialSecretItem>;
     fn create_account_credential<'a>(
         &'a self,
         command: CreateAdminUpstreamAccountCredentialCommand,

@@ -23,6 +23,7 @@
   "errors.result.42301": "The resource is locked",
   "errors.result.42801": "A precondition is required for this request",
   "errors.result.42901": "Rate limit exceeded",
+  "errors.result.40201": "Insufficient account balance for this request. Please top up and retry",
   "errors.result.60002": "The operation quota has been exceeded",
   "errors.result.50001": "An internal error occurred",
   "errors.result.50201": "The upstream service returned a bad gateway response",

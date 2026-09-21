@@ -223,8 +223,10 @@ test('root package exposes pnpm application entrypoints', () => {
   const canonicalDesktop = 'pnpm exec sdkwork-app dev --runtime-target desktop --deployment-profile standalone';
   const canonicalServer = 'pnpm exec sdkwork-app dev --runtime-target server --deployment-profile standalone';
   const canonicalDesktopSqlite = 'node scripts/cloud-router-dev.mjs --target desktop --deployment-profile standalone --database sqlite';
-  const canonicalPlanPostgres = 'node scripts/cloud-router-dev.mjs --target plan --deployment-profile standalone --database postgres --dev-env-file .env.postgres';
-  const canonicalCloudDevHook = 'node scripts/cloud-router-dev.mjs --deployment-profile cloud';
+  // PNPM_SCRIPT_SPEC.md section 3: plan entrypoints go through the sdkwork-app
+  // lifecycle facade; the legacy runner serves only the client-local SQLite
+  // desktop variant.
+  const canonicalPlanPostgres = 'node scripts/lib/ensure-cloud-router-node-deps.mjs && pnpm exec sdkwork-app topology:plan --deployment-profile standalone --environment development --runtime-target server';
 
   assert.equal(rootPackage.private, true);
   assert.equal(rootPackage.packageManager, 'pnpm@10.33.0');
@@ -250,8 +252,12 @@ test('root package exposes pnpm application entrypoints', () => {
   assert.match(rootPackage.scripts['test:topology'], /verify-cloud-router-topology\.test\.mjs/u);
   assert.match(rootPackage.scripts['dev:browser:postgres:standalone'], /sdkwork-app dev/u);
   assert.match(rootPackage.scripts['dev:browser:cloud'], /--deployment-profile cloud/u);
-  assert.equal(rootPackage.scripts['_sdkwork:dev:cloud'], canonicalCloudDevHook);
+  // Private `_sdkwork:dev:*` hooks are retired: `sdkwork-app dev` runs the
+  // generic adaptive development directly (APP_RUNTIME_TOPOLOGY_SPEC 8.2).
+  assert.equal(rootPackage.scripts['_sdkwork:dev:standalone'], undefined);
+  assert.equal(rootPackage.scripts['_sdkwork:dev:cloud'], undefined);
   assert.equal(rootPackage.scripts['dev:browser:cloud:debug'], undefined);
+  assert.equal(rootPackage.scripts['dev:browser:postgres:standalone:debug'], undefined);
   assert.match(rootPackage.scripts['gateway:matrix'], /sdkwork-topology\.mjs print-matrix/u);
   assert.equal(
     rootPackage.scripts['build:browser:cloud'],

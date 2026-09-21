@@ -173,6 +173,22 @@ export async function deleteUpstreamAccountCredential(accountId: string, credent
   );
 }
 
+/**
+ * 读取单条凭据的明文密钥，供管理面编辑场景回填。
+ *
+ * 明文只在这条显式路径上被解密下发；`listUpstreamAccountCredentials` 恒只返回
+ * `maskedLabel`，调用方不要把明文写进列表状态或日志。
+ */
+export async function revealUpstreamAccountCredentialSecret(
+  accountId: string,
+  credentialId: string,
+) {
+  return getCloudRouterBackendSdkClient().ai.upstreamAccounts.credentials.secrets.list(
+    accountId,
+    credentialId,
+  );
+}
+
 export async function listUpstreamAccountResources(accountId: string) {
   const response = await getCloudRouterBackendSdkClient().ai.upstreamAccounts.resources.list(accountId);
   return response.items;
@@ -292,6 +308,7 @@ export const upstreamService = {
     listCredentials: listUpstreamAccountCredentials,
     createCredential: createUpstreamAccountCredential,
     deleteCredential: deleteUpstreamAccountCredential,
+    revealCredentialSecret: revealUpstreamAccountCredentialSecret,
     listResources: listUpstreamAccountResources,
     replaceResources: updateUpstreamAccountResources,
     verify: verifyUpstreamAccount,

@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.5.0.
--- Registry SHA-256: 49368459d8224063b687875b137a8beb3f7f92405504f41c5ec72dbd857e550c.
+-- Registry SHA-256: 06b32c0efa9e086c12c6c17e9d2f2622eca9e1d36b478ce5ba279ee8d2060d9f.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -408,3 +408,18 @@ CREATE TABLE IF NOT EXISTS ops_referral_strategy (
 );
 
 CREATE INDEX IF NOT EXISTS idx_ops_referral_strategy_tenant_status ON ops_referral_strategy (tenant_id, organization_id, status, created_at, id);
+
+CREATE TABLE IF NOT EXISTS sdkwork_node_registry (
+    node_id INTEGER NOT NULL PRIMARY KEY CHECK (node_id BETWEEN 0 AND 1023),
+    service_name TEXT NOT NULL,
+    instance_identity TEXT NOT NULL,
+    hostname TEXT NOT NULL,
+    pid BIGINT NOT NULL,
+    lease_token TEXT NOT NULL,
+    lease_version BIGINT NOT NULL DEFAULT 1,
+    started_at_ms BIGINT NOT NULL,
+    last_heartbeat_at_ms BIGINT NOT NULL,
+    expires_at_ms BIGINT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_sdkwork_node_registry_service_expiry ON sdkwork_node_registry (service_name, expires_at_ms);

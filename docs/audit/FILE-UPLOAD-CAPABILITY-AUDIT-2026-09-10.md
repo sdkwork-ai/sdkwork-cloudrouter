@@ -304,6 +304,6 @@ Drive 现有唯一用量端点：
 3. Playground 参考图/视频/音频的文件选择位于外部 `@sdkwork/agents-pc/workbench`，
    需确认其内部同样调用 `client.uploader.*` 并携带归类信息。
 4. 同步更新 `docs/architecture/tech/TECH-2026-05-23-sdkwork-file-platform-*.md` 与
-   `docs/superpowers/plans/2026-05-23-sdkwork-file-platform-foundation.md`（已失效的设计文档）。
+   `docs/architecture/tech/TECH-2026-05-23-sdkwork-file-platform-foundation.md`（原设计文档，已归档）。
 
 ---

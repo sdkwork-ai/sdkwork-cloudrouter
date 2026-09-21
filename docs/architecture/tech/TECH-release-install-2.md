@@ -407,7 +407,7 @@ server 部署保持 `[redis].enabled = true`，首次启动前配置 `host`、`p
 
 `[edge]` 负责打包后的 Rust edge server、上游服务目标、portal 静态资源目录、上游超时和额外 CORS origin allowlist。同源打包部署保持 `cors_allowed_origins` 为空；只有外部可信 portal 或 CDN 必须从不同浏览器 origin 调用 edge API 时，才填写明确的 HTTP/HTTPS origin。通配符和带 path 的 origin 会被拒绝。`[portal.static]` 将 HTML/runtime env 的 no-store 响应与长期缓存的 hash 静态资源分离。`[portal.security]` 控制浏览器侧安全策略；只有公网主机名已经通过 HTTPS 访问时才启用 HSTS，启用 preload 时保持 `hsts_max_age_seconds >= 31536000` 且 `hsts_include_subdomains = true`。`csp_frame_src` 只填写允许 portal 嵌入的明确信任 HTTP/HTTPS origin。`[portal.tools]` 将可选工具 API 的请求体限制和限流放在 TOML 中。`[provider_relay.runtime]` 控制 OpenAI-compatible 上游响应超时和渠道健康检查超时。`[provider_relay.retry]` 是数据库路由渠道未单独定义 retry policy 时使用的默认重试策略。`[request_limits]` 控制后台应用 JSON、后台技能 JSON、公开论坛 JSON 和支付回调请求体限制；负载均衡、反向代理和容器 ingress 的限制应与这些值保持一致。`[observability]` 负责生产日志默认策略：`log_filter` 是 tracing 过滤器，`log_format` 可选 `compact`、`json`、`pretty` 或 `full`，systemd 和 container 日志建议保持 `log_ansi = false`，target/thread 字段控制输出的日志元信息；`RUST_LOG` 只建议作为临时进程级覆盖。
 
-默认配置路径、数据库示例、Redis 设置和 bootstrap admin 设置见 [initialization.md](./initialization.md)。
+默认配置路径、数据库示例、Redis 设置和 bootstrap admin 设置见 [initialization.md](../../installation/zh-CN/initialization.md)。
 
 ## 5. 初始化数据库和模型目录
 

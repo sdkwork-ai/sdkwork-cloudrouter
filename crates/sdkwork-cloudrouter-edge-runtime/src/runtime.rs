@@ -288,6 +288,7 @@ struct RelayAuthenticatedOpenAiPassthroughInput<C> {
     provider_adapter_config: Option<ProviderAdapterConfig>,
     usage_recorder: Option<UsageRecorder>,
     secret_resolver_configured: bool,
+    production_posture: bool,
     query_string_api_key_policy: QueryStringApiKeyPolicy,
     body_max_bytes: usize,
     provider_response_timeout: Duration,
@@ -296,7 +297,7 @@ struct RelayAuthenticatedOpenAiPassthroughInput<C> {
 
 fn merge_relay_authenticated_openai_passthrough<C>(
     input: RelayAuthenticatedOpenAiPassthroughInput<C>,
-) -> Router
+) -> Result<Router, GatewayRouterError>
 where
     C: UpstreamAccountRouteCatalog + Send + Sync + 'static,
 {
@@ -308,17 +309,27 @@ where
         provider_adapter_config,
         usage_recorder,
         secret_resolver_configured,
+        production_posture,
         query_string_api_key_policy,
         body_max_bytes,
         provider_response_timeout,
         provider_http_pool_config,
     } = input;
     if secret_resolver_configured {
-        return router;
+        return Ok(router);
     }
     let Some(config) = provider_passthrough_config else {
-        return router;
+        return Ok(router);
     };
+    // Production/staging server postures must never mount the unmetered
+    // legacy relay passthrough: the billing and quota bypass is
+    // unacceptable. They fail startup instead.
+    if production_posture {
+        return Err(GatewayRouterError::Config(
+            "provider secret resolver is not configured: production deployments must run the fully metered invocation pipeline; the legacy unmetered static relay passthrough is not allowed"
+                .to_owned(),
+        ));
+    }
     // 遗留降级模式：未配置 provider secret resolver 时启用静态 relay
     // passthrough。该路径不解析账号/模型路由，也不做用量计量与计价——
     // 生产部署应配置 secret resolver 走完整调用管道；此处显式告警，
@@ -327,7 +338,7 @@ where
         "provider secret resolver is not configured: legacy static relay passthrough is active; \
          relay usage is NOT metered and model/account routing is bypassed"
     );
-    router.merge(
+    Ok(router.merge(
         crate::passthrough::authenticated_gateway_passthrough_router_with_adapter_config_and_query_string_api_key_policy(
             crate::passthrough::AuthenticatedGatewayPassthroughConfig {
                 config,
@@ -341,7 +352,7 @@ where
                 http_pool_config: provider_http_pool_config,
             },
         ),
-    )
+    ))
 }
 
 struct DatabaseRuntimeRoutesInput<'a, C> {
@@ -514,7 +525,19 @@ where
             gateway_balance_store,
         ),
     );
-    Ok(merge_relay_authenticated_openai_passthrough(
+    // Production/staging server postures must never silently mount the
+    // unmetered legacy relay passthrough when the provider secret resolver is
+    // missing; they fail startup instead (see merge_relay_...).
+    let passthrough_deployment_mode =
+        DeploymentMode::from_env_or_runtime_toml(runtime_toml).map_err(GatewayRouterError::Config)?;
+    let passthrough_environment = runtime_toml
+        .and_then(|runtime| runtime.install.environment.as_deref())
+        .unwrap_or("development")
+        .trim()
+        .to_ascii_lowercase();
+    let production_posture = passthrough_deployment_mode != DeploymentMode::Desktop
+        && matches!(passthrough_environment.as_str(), "production" | "prod" | "staging");
+    merge_relay_authenticated_openai_passthrough(
         RelayAuthenticatedOpenAiPassthroughInput {
             router,
             catalog,
@@ -523,12 +546,13 @@ where
             provider_adapter_config,
             usage_recorder,
             secret_resolver_configured,
+            production_posture,
             query_string_api_key_policy,
             body_max_bytes,
             provider_response_timeout: provider_runtime_config.response_timeout,
             provider_http_pool_config: provider_runtime_config.http_pool_config,
         },
-    ))
+    )
 }
 
 fn build_internal_gateway_request_verifier(

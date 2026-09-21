@@ -136,5 +136,5 @@ For Kubernetes:
 
 ## Source
 
-See [source-install.md](./source-install.md). Source checkouts are for development, validation, and release package builds. For production, prefer release packages, host services, or containers.
+See [source-install.md](../../installation/zh-CN/source-install.md). Source checkouts are for development, validation, and release package builds. For production, prefer release packages, host services, or containers.
 

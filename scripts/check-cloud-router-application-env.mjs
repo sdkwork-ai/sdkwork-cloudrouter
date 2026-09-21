@@ -29,11 +29,6 @@ const PORTAL_ROOT = path.join(WORKSPACE_ROOT, 'apps', 'sdkwork-cloudrouter-pc');
 
 const REQUIRED_ENTRYPOINT_MARKERS = Object.freeze([
   {
-    label: 'cloud-router-dev',
-    file: path.join(WORKSPACE_ROOT, 'scripts', 'lib', 'cloud-router-dev-main.mjs'),
-    markers: ['ensureCloudRouterBrowserDevelopmentEnv'],
-  },
-  {
     label: 'start-workspace',
     file: path.join(WORKSPACE_ROOT, 'scripts', 'dev', 'start-workspace.mjs'),
     markers: ['ensureCloudRouterBrowserDevelopmentEnv', 'CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS', 'buildRuntimeEdgePrivateEnv', 'skipDevEnvFile'],

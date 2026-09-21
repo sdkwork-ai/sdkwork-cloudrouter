@@ -361,6 +361,17 @@ test("Compute Credits balances and activity use the Token Bank account", () => {
   assert.match(providerSource, /tokenBank:\s*accountClient\.tokenBank/);
   assert.match(dashboardSource, /getCloudRouterAccountAppService\(\)\.tokenBank\.account\.retrieve\(\)/);
   assert.match(dashboardSource, /tokenBankAvailable\s*=\s*readTokenBankAvailableAmount\(tokenBankResult\.value\)/);
+  // The Token Bank wire field `availableAmount` carries integer micro-points;
+  // the dashboard must convert it with the shared helper, otherwise it renders
+  // the raw micro value and inflates the balance by 1e6 relative to the navbar.
+  assert.match(
+    dashboardSource,
+    /toSdkworkAccountPointsFromMicro\(value\.availableAmount\)/,
+  );
+  assert.doesNotMatch(
+    dashboardSource,
+    /readRequiredNonNegativeNumber\(\s*value,\s*'availableAmount'/,
+  );
   assert.match(dashboardSource, /Promise\.allSettled/);
   assert.doesNotMatch(dashboardSource, /DASHBOARD_(?:DATA_UNAVAILABLE|PARTIAL_DATA)_WARNING/);
   assert.doesNotMatch(dashboardSource, /warnings\.push/);

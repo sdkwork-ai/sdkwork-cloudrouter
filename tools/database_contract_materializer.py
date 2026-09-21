@@ -110,6 +110,13 @@ AUXILIARY_MODULES = (
         baseline_anchor_table="ops_gateway_instance",
         baseline_file="0001_operations_baseline.sql",
         relative_root="database/modules/operations",
+        # `sdkwork_node_registry` is the Snowflake node-lease registry. Its
+        # write path is owned by `sdkwork-database-id`, but Cloud Router
+        # provisions the table (migration 0039) so a least-privilege runtime
+        # role never needs schema CREATE at startup. It lives in the
+        # `ops-runtime` fragment next to the `ops_*` tables, so this module
+        # owns its provisioning under the `sdkwork_` prefix.
+        table_prefixes=("ops_", "sdkwork_"),
     ),
     DatabaseModuleSpec(
         module_id="pricing",
@@ -140,14 +147,14 @@ AUXILIARY_MODULES = (
 # their baselines or contracts.
 HAND_AUTHORED_MODULES = (
     DatabaseModuleSpec(
-        module_id="payment-runtime",
-        service_code="CLOUD_ROUTER_PAYMENT_RUNTIME",
-        display_name="Cloud Router Payment Runtime Database",
+        module_id="payment-control-plane",
+        service_code="CLOUD_ROUTER_PAYMENT_CONTROL_PLANE",
+        display_name="Cloud Router Payment Control Plane Database",
         owner="cloud-router-platform",
         table_prefix="commerce_",
-        baseline_anchor_table="commerce_payment_intent",
-        baseline_file="0001_payment_runtime_baseline.sql",
-        relative_root="database/modules/payment-runtime",
+        baseline_anchor_table="commerce_payment_route_decision",
+        baseline_file="0001_payment_control_plane_baseline.sql",
+        relative_root="database/modules/payment-control-plane",
     ),
 )
 
@@ -180,7 +187,13 @@ class DatabaseContractMaterializer:
         self.compiler = SchemaCompiler(
             self.root,
             self.registry_path,
-            table_prefixes=(module_spec.table_prefix,),
+            # Must use `owned_prefixes`, not the singular `table_prefix`: a
+            # module can own several namespaces (`operations` owns both `ops_`
+            # and `sdkwork_`), and `render()` already reads `owned_prefixes`.
+            # Using the singular field here made the module baseline drop the
+            # secondary-prefix tables while the registry and manifest kept
+            # them, so the three artifacts disagreed.
+            table_prefixes=module_spec.owned_prefixes,
         )
         self.composite_compiler = SchemaCompiler(self.root, self.registry_path)
 

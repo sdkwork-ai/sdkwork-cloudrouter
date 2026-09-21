@@ -35,7 +35,7 @@ outside the cluster.
 kubectl apply -f deployments/kubernetes/cloud-router-network-policy.yaml
 kubectl apply -f deployments/kubernetes/cloud-router-egress-cilium-policy.yaml
 kubectl apply -f deployments/kubernetes/cloud-router-migration-job.yaml
-kubectl wait --for=condition=complete job/sdkwork-cloudrouter-db-upgrade-0-3-0 --timeout=600s
+kubectl wait --for=condition=complete job/sdkwork-cloudrouter-db-upgrade-0-4-1 --timeout=600s
 kubectl apply -f deployments/kubernetes/cloud-router-standalone.yaml
 kubectl apply -f deployments/kubernetes/cloud-router-ingress.yaml
 ```

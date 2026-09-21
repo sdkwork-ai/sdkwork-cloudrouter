@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: sdkwork-cloudrouter-db-upgrade-0-3-0
+  name: sdkwork-cloudrouter-db-upgrade-0-4-1
   labels:
     app: sdkwork-cloudrouter
     component: migration

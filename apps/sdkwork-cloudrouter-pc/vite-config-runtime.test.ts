@@ -13,6 +13,8 @@ import {
   buildCloudrouterMarkdownCjsDefaultExportShimSource,
   buildPortalRuntimeEnvScript,
   findStaticChunkCycle,
+  resolvePortalDevBrowserRuntimeEnv,
+  resolvePortalDevProxy,
   resolvePortalRuntimeEnv,
   resolvePortalWorkspaceDependencyRoot,
 } from "./vite.config.ts";
@@ -164,7 +166,9 @@ test("dev server enables React Fast Refresh and HMR by default", async () => {
   assert.ok(plugins.some((plugin) => hasPluginName(plugin, "vite:react-babel")));
   assert.ok(plugins.some((plugin) => hasPluginName(plugin, "vite:react-refresh")));
   assert.deepEqual(config.server?.hmr, {
-    clientPort: 3901,
+    // Bare `vite` fallback port; `sdkwork-app dev` overrides it with the
+    // topology-declared PC renderer port (4736) through --port.
+    clientPort: 4736,
     host: "127.0.0.1",
   });
 });
@@ -726,13 +730,15 @@ test("portal scripts run dependency preflight before Vite entrypoints", () => {
   assert.equal(portalPackage.scripts["check:dependencies"], "node scripts/check-portal-deps.mjs");
   assert.equal(portalPackage.scripts.predev, "node ../../scripts/ensure-cloud-router-env.mjs --lifecycle dev");
   assert.equal(portalPackage.scripts.prebuild, "node ../../scripts/ensure-cloud-router-env.mjs --lifecycle build");
-  assert.equal(
-    portalPackage.scripts.dev,
-    "pnpm check:dependencies && vite --configLoader native",
-  );
-  assert.equal(
-    portalPackage.scripts["dev:browser"],
-    "pnpm check:dependencies && vite --configLoader native",
+  // Dev entrypoints delegate to the canonical `sdkwork-app` facade so the
+  // adaptive web ingress owns renderer selection (APP_RUNTIME_TOPOLOGY_SPEC
+  // section 8.2); direct `vite` runs would bypass it. The dependency preflight
+  // stays in front of the facade and of the private vite entrypoint.
+  assert.equal(portalPackage.scripts.dev, "pnpm dev:standalone");
+  assert.equal(portalPackage.scripts["dev:browser"], "pnpm dev:browser:postgres:standalone");
+  assert.ok(
+    portalPackage.scripts["dev:standalone"].startsWith("pnpm exec sdkwork-app dev --root ../"),
+    "dev:standalone must delegate to the sdkwork-app facade",
   );
   assert.equal(
     portalPackage.scripts["_sdkwork:client:browser"],
@@ -1034,43 +1040,46 @@ test("portal runtime env derives SDK surface base URLs from one public SDK base 
   );
 });
 
-test("portal runtime env derives Commerce dependency SDK base URLs from one public SDK base URL", () => {
-  const runtimeEnv = resolvePortalRuntimeEnv({
-    PORTAL_PUBLIC_SDK_BASE_URL: "https://tenant.example.com/router",
-    PORTAL_PUBLIC_COMMERCE_APP_API_BASE_URL: "",
-    PORTAL_PUBLIC_COMMERCE_BACKEND_API_BASE_URL: "",
-  });
-
-  assert.equal(
-    runtimeEnv.VITE_SDKWORK_COMMERCE_APP_API_BASE_URL,
-    "https://tenant.example.com/router/app/v3/api",
-  );
-  assert.equal(
-    runtimeEnv.VITE_SDKWORK_COMMERCE_BACKEND_API_BASE_URL,
-    "https://tenant.example.com/router/backend/v3/api",
-  );
-});
-
-test("portal runtime env lets Commerce dependency SDK base URLs override the shared SDK base URL", () => {
-  const runtimeEnv = resolvePortalRuntimeEnv({
+test("dev browser document retires the consumer-less Commerce SDK base keys", () => {
+  // BROWSER_RUNTIME_ENV_SPEC.md §5.4: every browser-visible SDK base key must be
+  // consumed by a generated client. The Commerce dependency pair had no reader
+  // anywhere in the repository (`git grep` found only the retired
+  // vite.config.ts mapping and these assertions), so publishing them only leaked
+  // a deploy-time domain into the dev document. The dev authoring step now
+  // strips them; the release host keeps whatever it declares for its own
+  // surfaces.
+  const runtimeEnv = resolvePortalDevBrowserRuntimeEnv({
     PORTAL_PUBLIC_SDK_BASE_URL: "https://tenant.example.com/router",
     PORTAL_PUBLIC_COMMERCE_APP_API_BASE_URL: "https://commerce-app.example.com/app/v3/api",
     PORTAL_PUBLIC_COMMERCE_BACKEND_API_BASE_URL: "https://commerce-admin.example.com/backend/v3/api",
   });
 
-  assert.equal(
-    runtimeEnv.VITE_SDKWORK_COMMERCE_APP_API_BASE_URL,
-    "https://commerce-app.example.com/app/v3/api",
-  );
-  assert.equal(
-    runtimeEnv.VITE_SDKWORK_COMMERCE_BACKEND_API_BASE_URL,
-    "https://commerce-admin.example.com/backend/v3/api",
-  );
-  assert.equal(runtimeEnv.VITE_CLOUDROUTER_APP_API_BASE_URL, "https://tenant.example.com/router/app/v3/api");
-  assert.equal(
-    runtimeEnv.VITE_CLOUDROUTER_BACKEND_API_BASE_URL,
-    "https://tenant.example.com/router/backend/v3/api",
-  );
+  assert.equal(runtimeEnv.VITE_SDKWORK_COMMERCE_APP_API_BASE_URL, undefined);
+  assert.equal(runtimeEnv.VITE_SDKWORK_COMMERCE_BACKEND_API_BASE_URL, undefined);
+});
+
+test("dev browser document folds every router-owned SDK base to same-origin", () => {
+  // BROWSER_RUNTIME_ENV_SPEC.md §2.2/§2.3: no absolute API base may survive in a
+  // dev document — the dev ingress fronts the whole router-owned surface. The
+  // appbase backend key is consumed by `resolveRequiredAppbaseBackendBaseUrl`
+  // and used to keep its deploy origin, which bypassed the ingress fan-out.
+  const runtimeEnv = resolvePortalDevBrowserRuntimeEnv({
+    PORTAL_PUBLIC_SDK_BASE_URL: "https://tenant.example.com/router",
+    PORTAL_PUBLIC_APPBASE_BACKEND_API_BASE_URL: "https://api.sdkwork.com/backend/v3/api",
+  });
+
+  assert.equal(runtimeEnv.VITE_CLOUDROUTER_APP_API_BASE_URL, "/app/v3/api");
+  assert.equal(runtimeEnv.VITE_CLOUDROUTER_BACKEND_API_BASE_URL, "/backend/v3/api");
+  assert.equal(runtimeEnv.VITE_CLOUDROUTER_OPEN_API_BASE_URL, "/v1");
+  assert.equal(runtimeEnv.VITE_API_BASE_URL, "/v1");
+  assert.equal(runtimeEnv.VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL, "/backend/v3/api");
+  for (const [key, value] of Object.entries(runtimeEnv)) {
+    assert.equal(
+      typeof value === "string" && /^https?:\/\//u.test(value),
+      false,
+      `${key} must not carry an absolute origin in a dev document, got ${value}`,
+    );
+  }
 });
 
 test("production start env lets one public SDK base URL drive portal surfaces unless explicitly overridden", async () => {
@@ -1185,6 +1194,41 @@ test("portal runtime env aligns platform dependency app SDK bases to same-origin
   assert.equal(runtimeEnv.VITE_SDKWORK_ACCOUNT_APP_API_BASE_URL, "/app/v3/api");
   assert.equal(runtimeEnv.VITE_SDKWORK_MEMBERSHIP_APP_API_BASE_URL, "/app/v3/api");
   assert.equal(runtimeEnv.VITE_SDKWORK_MODELS_BACKEND_API_BASE_URL, "/backend/v3/api");
+});
+
+test("portal dev proxy targets the application ingress, never a private loopback bind", () => {
+  // The standalone.development topology starts exactly two processes: the
+  // standalone gateway bound to the public ingress (0.0.0.0:3905) and the Vite
+  // renderer. It starts NO open/backend surface listener, so forwarding a
+  // same-origin dev API path to the private loopback binds reported by the
+  // materialized `.env.standalone.development` (18080/18081) is guaranteed
+  // `ECONNREFUSED`. The ingress leads every fallback (API_ASSEMBLY_SPEC §6.1.1).
+  const env = {
+    SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL: "http://127.0.0.1:3905",
+    VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL: "http://127.0.0.1:4734",
+    VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_BACKEND_HTTP_URL: "http://127.0.0.1:18081",
+    VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_OPEN_HTTP_URL: "http://127.0.0.1:18080",
+  };
+
+  const proxy = resolvePortalDevProxy(env);
+
+  assert.equal(proxy["/v1"]?.target, "http://127.0.0.1:3905");
+  assert.equal(proxy["/feeds/v3/api"]?.target, "http://127.0.0.1:3905");
+  assert.equal(proxy["/backend/v3/api"]?.target, "http://127.0.0.1:3905");
+  assert.equal(proxy["/app/v3/api"]?.target, "http://127.0.0.1:3905");
+  // The web dev ingress (4734) is the page's own origin, never an API target.
+  assert.notEqual(proxy["/app/v3/api"]?.target, "http://127.0.0.1:4734");
+});
+
+test("portal dev proxy honours an explicit dev-proxy origin override", () => {
+  const proxy = resolvePortalDevProxy({
+    SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_OPEN_API_ORIGIN: "http://127.0.0.1:3999",
+    SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL: "http://127.0.0.1:3905",
+  });
+
+  assert.equal(proxy["/v1"]?.target, "http://127.0.0.1:3999");
+  // Unset surfaces still fall back to the ingress.
+  assert.equal(proxy["/app/v3/api"]?.target, "http://127.0.0.1:3905");
 });
 
 test("portal runtime env rewrites standalone topology leaks to same-origin SDK bases", () => {

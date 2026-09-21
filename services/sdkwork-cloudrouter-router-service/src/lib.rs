@@ -46,6 +46,3 @@ pub fn catalog_scope_count_snapshot(
 pub fn catalog_accepted_count(catalog: &sdkwork_models::ModelCatalog) -> i64 {
     infrastructure::sql::model_catalog_import::catalog_scope_counts(catalog).accepted_count()
 }
-
-#[doc(hidden)]
-pub use infrastructure::sql::commerce_bootstrap::commerce_database_tables;

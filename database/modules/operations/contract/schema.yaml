@@ -2627,3 +2627,81 @@ tables:
     semantic_contracts: null
     frontend_routes:
       - /admin/marketing/referralStrategies
+  - name: sdkwork_node_registry
+    domain: ops
+    profile: runtime_infrastructure
+    compliance_level: L2
+    write_owner: sdkwork-database-id
+    system_of_record: true
+    tenant_scope: null
+    soft_delete_policy: null
+    columns:
+      node_id:
+        type: int32
+        required: true
+        postgres_type: INTEGER
+        constraints: NOT NULL PRIMARY KEY CHECK (node_id BETWEEN 0 AND 1023)
+      service_name:
+        type: text
+        required: true
+        postgres_type: TEXT
+        constraints: NOT NULL
+      instance_identity:
+        type: text
+        required: true
+        postgres_type: TEXT
+        constraints: NOT NULL
+      hostname:
+        type: text
+        required: true
+        postgres_type: TEXT
+        constraints: NOT NULL
+      pid:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      lease_token:
+        type: text
+        required: true
+        postgres_type: TEXT
+        constraints: NOT NULL
+      lease_version:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL DEFAULT 1
+      started_at_ms:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      last_heartbeat_at_ms:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+      expires_at_ms:
+        type: int64
+        required: true
+        postgres_type: BIGINT
+        constraints: NOT NULL
+    constraints:
+      - name: pk_sdkwork_node_registry
+        type: primary_key
+        columns:
+          - node_id
+    indexes:
+      - name: idx_sdkwork_node_registry_service_expiry
+        columns:
+          - service_name
+          - expires_at_ms
+        unique: false
+        where: null
+    source_tables: []
+    source_refs: []
+    projection_policy: null
+    lifecycle:
+      storage_strategy: live_state
+    semantic_contracts: null
+    frontend_routes: []

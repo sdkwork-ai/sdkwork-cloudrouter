@@ -35,11 +35,18 @@ export function isKnownLlmProtocol(code: string): boolean {
  * LLM 协议 → 资源分组 联动映射（按供应商类型区分）。
  * 目录资源分组（data/ai-routing/resource-groups/*.json）无 items 明细下发，
  * 此处静态映射协议对应的能力分组；勾选/取消协议时联动增删。
- * official：官方能力分组；relay：中继兼容分组（含 vendor.openai_compatible 资源）。
+ *
+ * LLM/coding 对话面已经标准化：无论官方还是中继，只要声明了某协议，就复用同一批
+ * 「协议面分组」。因此 relay 与 official 指向同一组分组，不再为 relay 另建平行分组——
+ * 那正是导致分组越建越多、且与已有分组语义重复的原因。
+ *
+ * 只有图片/视频这类**未标准化**的能力（各 vendor 主机与路径各不相同）才需要独立分组，
+ * 它们与协议无关，由 `relay.*.visual_generation` / `relay.bytedance.media` 承载，
+ * 通过供应商声明的能力开关授权，不在此映射内。
  */
 export const PROTOCOL_RESOURCE_GROUPS: Record<LlmProtocolConfig['protocolCode'], { official: readonly string[]; relay: readonly string[] }> = {
-  openai_chat_completions: { official: ['api.openai.chat'], relay: ['relay.openai_compatible.chat'] },
-  openai_responses: { official: ['api.openai.chat'], relay: ['relay.openai_compatible.chat'] },
+  openai_chat_completions: { official: ['api.openai.chat'], relay: ['api.openai.chat'] },
+  openai_responses: { official: ['api.openai.chat'], relay: ['api.openai.chat'] },
   anthropic_messages: { official: ['api.claude.code'], relay: ['api.claude.code'] },
 };
 

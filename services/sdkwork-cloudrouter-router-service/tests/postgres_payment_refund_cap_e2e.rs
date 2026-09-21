@@ -22,8 +22,28 @@ use sqlx::{PgPool, Row};
 use std::env;
 
 const POSTGRES_TEST_DATABASE_URL: &str = "SDKWORK_DATABASE_URL";
-const PAYMENT_BASELINE: &str = include_str!(
-    "../../../database/modules/payment-runtime/ddl/baseline/postgres/0001_payment_runtime_baseline.sql"
+
+// The refund-cap guard spans two table owners, so the fixture must materialize
+// every source that a real deployment would:
+//   * `sdkwork-payment` owns the aggregate tables the store writes through
+//     (`commerce_payment_intent`, `commerce_payment_attempt`, `commerce_refund`,
+//     `commerce_refund_event`).
+//   * `payment-control-plane` (this repository) owns the four control-plane
+//     tables that only Cloud Router defines (`commerce_payment_route_decision`,
+//     `commerce_payment_operation_attempt`, `commerce_refund_attempt`,
+//     `commerce_refund_item`).
+//
+// The legacy `payment-runtime` module bundled all eight; it was retired because
+// four of them duplicated `sdkwork-payment`'s definitions. `sdkwork-payment` is
+// a sibling repository in the workspace, so this fixture follows the same
+// cross-repository `include_str!` convention already used for the federated
+// commerce surface instead of re-declaring those tables here.
+const PAYMENT_BASELINE: &str = concat!(
+    include_str!("../../../../sdkwork-payment/database/ddl/baseline/postgres/0001_payment_baseline.sql"),
+    "\n",
+    include_str!(
+        "../../../database/modules/payment-control-plane/ddl/baseline/postgres/0001_payment_control_plane_baseline.sql"
+    ),
 );
 
 const TENANT_ID: &str = "tenant-refund-cap-e2e";
@@ -86,7 +106,7 @@ impl PostgresTestContext {
             sqlx::query(sqlx::AssertSqlSafe(statement))
                 .execute(&pool)
                 .await
-                .expect("apply payment runtime baseline DDL");
+                .expect("apply payment baseline DDL");
         }
 
         Some(Self {

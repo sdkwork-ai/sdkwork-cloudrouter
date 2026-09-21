@@ -5,7 +5,7 @@
 
 The canonical promotion and card-coupon design is:
 
-- [2026-05-26-admin-marketing-promotion-standard-design.md](2026-05-26-admin-marketing-promotion-standard-design.md)
+- [TECH-2026-05-26-admin-marketing-promotion-standard-design.md](TECH-2026-05-26-admin-marketing-promotion-standard-design.md)
 
 This document only records the appbase ownership boundary around that design.
 

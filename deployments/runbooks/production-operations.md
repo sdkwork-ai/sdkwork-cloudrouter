@@ -9,7 +9,7 @@
 | Endpoint | Purpose | Expected |
 | --- | --- | --- |
 | `/healthz` | Liveness | `200`, `status: ok` |
-| `/readyz` | Dependency readiness | `200` only when the current database `SELECT 1`, enabled settlement-schema subset, and configured Redis checks pass; `503` with `status: not_ready` otherwise. It is not proof of generic migration state, drift, or every application feature table. |
+| `/readyz` | Dependency readiness | `200` only when every table declared by the embedded database manifests is materialized, lifecycle module/version state is installed, critical Chat columns and scoped indexes exist, database connectivity passes, and the runtime ID lease is healthy; `503` with `status: not_ready` otherwise (accounting-retry health included where the surface mounts it). |
 
 Edge all-in-one mode additionally aggregates upstream readiness via `edge_ready()`.
 
@@ -39,8 +39,8 @@ If the IAM ephemeral store is unavailable, login fails closed with HTTP `503`
 
 Admin membership is an admission prerequisite for administrative routes,
 including trusted-subject signed requests. It is not, by itself, proof of
-tenant or object authorization; `route_explain` remains an open P0
-tenant/object-scope authorization issue.
+tenant or object authorization; `route_explain` is closed in the worktree
+(see REVIEW-20260714).
 
 ## Supply chain
 

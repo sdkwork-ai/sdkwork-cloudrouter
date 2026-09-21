@@ -104,7 +104,6 @@ struct AppApiKeyItemResponse {
     id: String,
     name: String,
     masked_key: String,
-    raw_key: Option<String>,
     account_group: String,
     account_group_name: String,
     account_groups: Vec<String>,
@@ -759,7 +758,6 @@ fn to_item_response_with_used_quota(
         id: api_key.id.to_string(),
         name: api_key.display_name(),
         masked_key,
-        raw_key: api_key.raw_key.clone(),
         account_group: group_code(group.as_ref()),
         account_group_name: group_name(group.as_ref()),
         account_groups: account_group_codes(&api_key, snapshot),
@@ -1499,9 +1497,6 @@ fn merge_updated_api_key_defaults(
     }
     if updated.key_hash.is_empty() {
         updated.key_hash = existing.key_hash;
-    }
-    if updated.raw_key.is_none() {
-        updated.raw_key = existing.raw_key.clone();
     }
     if updated.created_at.is_empty() {
         updated.created_at = existing.created_at;

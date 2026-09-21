@@ -109,6 +109,12 @@ pub struct InvocationRequest {
     /// ownership on the invocation avoids request-id collisions between
     /// concurrent callers and makes terminal release exactly-once.
     pub(crate) tenant_inflight_owner_token: Option<String>,
+    /// Liveness witness for the tenant in-flight lease renewal task. The
+    /// strong handle lives only as long as this request (it drops with the
+    /// invocation future), so the renewal task can detect an invocation that
+    /// was dropped without reaching a terminal interceptor and release the
+    /// distributed lease instead of renewing it forever.
+    pub(crate) tenant_inflight_witness: Option<std::sync::Arc<()>>,
     cancellation_signal: InvocationCancellationSignal,
     pub client_ip: Option<String>,
 }
@@ -129,6 +135,7 @@ impl InvocationRequest {
             idempotency_key: None,
             idempotency_owner_token: None,
             tenant_inflight_owner_token: None,
+            tenant_inflight_witness: None,
             cancellation_signal: InvocationCancellationSignal::default(),
             client_ip: None,
         }

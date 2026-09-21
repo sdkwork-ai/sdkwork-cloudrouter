@@ -238,8 +238,8 @@ table_fragments:
 - tables/iam-gateway.yaml
 - tables/ops-runtime.yaml
 - tables/ai-chat-runtime.yaml
-- tables/ai-mcp-runtime.yaml
 - tables/user-settings.yaml
+- tables/payment-control-plane.yaml
 modules:
   user-settings:
     owner: cloud-router-platform
@@ -342,6 +342,21 @@ modules:
     - ai_runtime_artifact
     - ai_runtime_usage_link
     ddl_location: database/ddl/baseline/{engine}/0001_cloudrouter_baseline.sql
+  payment-control-plane:
+    owner: cloud-router-platform
+    description: Cloud Router-owned payment control-plane tables (route decision,
+      provider operation attempt, refund attempt, refund item). The payment
+      aggregate tables these reference (commerce_payment_intent, commerce_refund,
+      and friends) are owned by the sibling `sdkwork-payment` repository and are
+      intentionally not declared here.
+    compliance_level: L2
+    tables_count: 4
+    tables:
+    - commerce_payment_route_decision
+    - commerce_payment_operation_attempt
+    - commerce_refund_attempt
+    - commerce_refund_item
+    ddl_location: database/modules/payment-control-plane/ddl/baseline/{engine}/0001_payment_control_plane_baseline.sql
 registry_dependencies:
 - module_id: appbase-iam
   locator: ../sdkwork-appbase

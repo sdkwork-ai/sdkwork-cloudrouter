@@ -37,9 +37,16 @@
 //!
 //! The seed's own completeness test
 //! (`ai_routing_seed::vendor_account_completeness_covers_exactly_the_seeded_accounts`)
-//! asserts the 27 bundled accounts equal **25 catalog vendors + 3 account-side
+//! asserts the 28 bundled accounts equal **26 catalog vendors + 2 account-side
 //! aliases**, and names this constant as the authority for that claim. Keeping
 //! the two in step is what that test is for.
+//!
+//! `bytedance` is itself a catalog vendor *and* the alias target of `jimeng` and
+//! `volcengine`, so it carries its own default account. That is not a duplicate:
+//! the three name three different hosts (`ark.cn-beijing.volces.com` for the
+//! catalog/Ark surface, `jimeng.jianying.com` for the consumer surface, and the
+//! Volcengine cloud endpoints), and on the *pricing* side all three still
+//! resolve to the one `bytedance` rate book through this table.
 
 /// Canonical alias: `(surface_vendor, catalog_vendor)`.
 ///

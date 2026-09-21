@@ -1,8 +1,11 @@
 import { resolveViteEnvironment, resolveLucideReactEntry } from '../../../sdkwork-specs/tools/vite-runtime-profile.mjs';
 import { resolveBrowserDistOutDir } from '../../../sdkwork-specs/tools/browser-dist-layout.mjs';
+import {
+  createBrowserRuntimeEnvVitePlugin,
+  serializeBrowserRuntimeEnvScript,
+} from '../../../sdkwork-specs/tools/browser-runtime-env-vite.mjs';
 
 import tailwindcss from '@tailwindcss/vite';
-import { readBootstrapAccessTokenEnvFile } from '../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-credential-entry/src/node-bootstrap.mjs';
 import { createSdkworkCredentialEntryBootstrapVitePlugin } from '../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-credential-entry/src/vite.ts';
 import react from '@vitejs/plugin-react';
 import { createRequire } from 'node:module';
@@ -18,7 +21,7 @@ import {
 } from './scripts/lib/portal-workspace-package-resolver.mjs';
 import { createPortalOptimizeDepsEsbuildPlugin } from './scripts/lib/portal-optimize-deps-esbuild-resolver.mjs';
 import { readGenerationAssetConfigStubReplacement } from './scripts/lib/portal-generation-asset-config-stub.mjs';
-import { alignStandaloneSameOriginBrowserSdkRuntimeEnv } from '../../scripts/lib/cloud-router-browser-env-contract.mjs';
+import { alignStandaloneSameOriginBrowserSdkRuntimeEnv, authorBrowserDevelopmentSdkBaseUrls } from '../../scripts/lib/cloud-router-browser-env-contract.mjs';
 
 const TYPESCRIPT_SOURCE_PATTERN = /\.(?:ts|tsx|mts|cts)$/;
 const SOURCE_MAP_PATTERN = /\n?\/\/# sourceMappingURL=.*$/;
@@ -28,8 +31,10 @@ const nodeEnvPattern = /\b(?:globalThis\.|global\.)?process\.env\.NODE_ENV\b/g;
 const processEnvPattern = /\b(?:globalThis\.|global\.)?process\.env\b/g;
 const HTML_MODULE_SCRIPT_PATTERN = /<script\b(?=[^>]*\btype=["']module["'])(?=[^>]*\bsrc=["'][^"']+["'])[^>]*><\/script>/i;
 const RUNTIME_ENV_SCRIPT_PATH = '/runtime-env.js';
-const DEFAULT_PORTAL_DEV_PORT = 3901;
-const DEFAULT_BROWSER_DEV_PROXY_GATEWAY_TARGET = 'http://127.0.0.1:3900';
+// Fallback only for a bare `vite` run outside `sdkwork-app dev` (which always
+// passes --port). Source of truth: the topology profile's PC renderer port
+// (SDKWORK_CLOUDROUTER_ROUTER_PC_INTERNAL_DEV_PORT, etc/topology/*.env).
+const DEFAULT_PORTAL_DEV_PORT = 4736;
 const LOCAL_ROUTE_PACKAGE_PATTERN =
   /\/packages\/(sdkwork-cloudrouter-pc-(?:(?:admin|console)-(?!core(?:\/|$)|shell(?:\/|$))[^/]+|downloads|home|models|playground|pricing|rankings))\//u;
 const BROWSER_DEV_PROXY_ENV_KEYS = {
@@ -149,12 +154,19 @@ const PORTAL_SOURCE_OPTIMIZE_EXCLUDE = [
   '@sdkwork/generations-pc-asset-config',
 ];
 
+/**
+ * Release-host `PORTAL_PUBLIC_*` -> browser `VITE_*` runtime keys.
+ *
+ * Every key here must be consumed by some generated SDK client; a key nobody
+ * reads would publish a deploy-time domain into the browser document for
+ * nothing (BROWSER_RUNTIME_ENV_SPEC.md §5.4). The retired commerce pair is
+ * listed in CLOUD_ROUTER_BROWSER_RETIRED_RUNTIME_VITE_KEYS and stripped from
+ * dev documents.
+ */
 const PORTAL_RUNTIME_URL_ENV = [
   ['PORTAL_PUBLIC_APP_API_BASE_URL', 'VITE_CLOUDROUTER_APP_API_BASE_URL'],
   ['PORTAL_PUBLIC_BACKEND_API_BASE_URL', 'VITE_CLOUDROUTER_BACKEND_API_BASE_URL'],
   ['PORTAL_PUBLIC_APPBASE_BACKEND_API_BASE_URL', 'VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL'],
-  ['PORTAL_PUBLIC_COMMERCE_APP_API_BASE_URL', 'VITE_SDKWORK_COMMERCE_APP_API_BASE_URL'],
-  ['PORTAL_PUBLIC_COMMERCE_BACKEND_API_BASE_URL', 'VITE_SDKWORK_COMMERCE_BACKEND_API_BASE_URL'],
   ['PORTAL_PUBLIC_DOWNLOAD_BASE_URL', 'VITE_CLOUDROUTER_DOWNLOAD_BASE_URL'],
 ] as const;
 
@@ -329,24 +341,27 @@ export function readBrowserRuntimeEnvDocumentOverrides(configDir: string): Recor
   return overrides;
 }
 
+/**
+ * Shared Vite integration factory (APP_RUNTIME_ENV_SPEC.md §6,
+ * sdkwork-specs/tools/browser-runtime-env-vite.mjs): the serve-only
+ * middleware, build asset emit, and HTML injection wiring live there; this
+ * app only authors its document VALUES.
+ */
 function cloudrouterRuntimeEnvPlugin(
   resolveEnv: () => NodeJS.ProcessEnv = () => process.env,
   configDir: string = process.cwd(),
 ): Plugin {
-  return {
+  return createBrowserRuntimeEnvVitePlugin({
     name: 'cloudrouter-runtime-env',
-    configureServer(server) {
-      server.middlewares.use((request, response, next) => {
-        if (request.url?.split('?', 1)[0] !== RUNTIME_ENV_SCRIPT_PATH) {
-          next();
-          return;
-        }
-
-        response.statusCode = 200;
-        response.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-        response.setHeader('Cache-Control', 'no-store');
-        response.end(buildPortalRuntimeEnvScript(resolvePortalRuntimeEnv(resolveEnv())));
-      });
+    path: RUNTIME_ENV_SCRIPT_PATH,
+    resolveServeDocument: () => {
+      // Dev contract: the dev-injected process env wins over the shared
+      // dotenv file (the materializer keeps deploy-time domain values in the
+      // file and relies on process-env precedence in dev — see
+      // materialize-client-env.mjs "vite gives process env precedence").
+      const env = resolveEnv();
+      const processFirstEnv = { ...env, ...process.env };
+      return buildPortalRuntimeEnvScript(resolvePortalDevBrowserRuntimeEnv(processFirstEnv));
     },
     // Static hosting has no dev middleware: emit the same script the dev server
     // serves so `window.__CLOUDROUTER_ENV__` is defined at runtime. Without this
@@ -355,23 +370,12 @@ function cloudrouterRuntimeEnvPlugin(
     // text/html), the module script fails to parse, and every SDK base URL
     // falls back to its root-relative same-origin prefix — e.g. POST
     // /app/v3/api/oauth/device_authorizations hitting the static handler (405).
-    generateBundle() {
-      this.emitFile({
-        type: 'asset',
-        fileName: RUNTIME_ENV_SCRIPT_PATH.replace(/^\//u, ''),
-        source: buildPortalRuntimeEnvScript({
-          ...resolvePortalRuntimeEnv(resolveEnv()),
-          ...readBrowserRuntimeEnvDocumentOverrides(configDir),
-        }),
-      });
-    },
-    transformIndexHtml: {
-      order: 'post',
-      handler(html) {
-        return injectPortalRuntimeEnvScript(html);
-      },
-    },
-  };
+    resolveBuildAsset: () => buildPortalRuntimeEnvScript({
+      ...resolvePortalRuntimeEnv(resolveEnv()),
+      ...readBrowserRuntimeEnvDocumentOverrides(configDir),
+    }),
+    transformIndexHtml: injectPortalRuntimeEnvScript,
+  });
 }
 
 function cloudrouterTypeScriptTransform() {
@@ -691,7 +695,7 @@ function resolvePortalMarkdownOptimizeEntries(
   ];
 }
 
-export default defineConfig(({mode}) => {
+export default defineConfig(({mode, command}) => {
   const configDir = import.meta.dirname;
   const workspaceRoot = path.resolve(configDir, '../..');
   const appbaseRoot = resolvePortalWorkspaceDependencyRoot(configDir, 'sdkwork-appbase');
@@ -740,19 +744,18 @@ export default defineConfig(({mode}) => {
     sdkworkPaymentRoot,
     sdkworkOrderRoot,
   ];
-	const env = loadEnv(mode, configDir, '');
-  const bootstrapAccessToken = process.env.SDKWORK_ACCESS_TOKEN
-    ?? (mode === 'development'
-      ? readBootstrapAccessTokenEnvFile(
-          path.join(configDir, '.env.development.bootstrap.local'),
-        )
-      : undefined);
+  const env = loadEnv(mode, configDir, '');
+  // Vite `mode` is a profile id (`standalone.development` / `cloud.development`),
+  // never a bare lifecycle name. Normalize once through the shared helper, then
+  // derive everything else from it: the credential-entry plugin's injection gate
+  // needs the lifecycle, not the profile id.
+  const lifecycleEnvironment = resolveViteEnvironment(mode, process.env);
   return {
     cacheDir: path.resolve(configDir, 'node_modules/.vite-portal'),
     plugins: [
       createSdkworkCredentialEntryBootstrapVitePlugin({
-        accessToken: bootstrapAccessToken,
-        environment: mode,
+        accessToken: process.env.SDKWORK_ACCESS_TOKEN,
+        environment: lifecycleEnvironment,
       }),
       cloudrouterMarkdownCjsInteropShim(configDir),
       cloudrouterRuntimeEnvPlugin(() => ({ ...process.env, ...env }), configDir),
@@ -796,42 +799,49 @@ export default defineConfig(({mode}) => {
         { find: '@', replacement: path.resolve(configDir, '.') },
       ],
     },
-    server: {
-      host: resolvePortalDevHost(process.env),
-      port: resolvePortalDevPort(process.env),
-      strictPort: true,
-      fs: {
-        allow: [
-          configDir,
-          workspaceRoot,
-          appbaseRoot,
-          iamRoot,
-          sdkworkCoreRoot,
-          sdkworkDriveRoot,
-          sdkworkGenerationsRoot,
-          sdkworkMemoryRoot,
-        sdkworkAgentsRoot,
-          sdkworkPromptsRoot,
-	          sdkworkModelsRoot,
-	          sdkworkImageRoot,
-	          sdkworkAssetsRoot,
-	          sdkworkVideoRoot,
-	          sdkworkMusicRoot,
-	          sdkworkAudioRoot,
-	          sdkworkUiRoot,
-          sdkworkDocumentsRoot,
-          sdkworkUtilsRoot,
-          sdkworkAccountRoot,
-          sdkworkPromotionRoot,
-          sdkworkMembershipRoot,
-          sdkworkPaymentRoot,
-          sdkworkOrderRoot,
-        ],
-      },
-      proxy: resolvePortalDevProxy({ ...process.env, ...env }),
-      // Disable HMR in automated product smoke runs when file watching is noisy.
-      hmr: resolvePortalDevHmr({ ...process.env, ...env }),
-    },
+    // The dev-server block (host/port/proxy/HMR) is resolved only for `vite`
+    // serve runs: builds must not require the topology dev-proxy environment
+    // (CONFIG_SPEC §3.1 — proxy targets are dev-process configuration).
+    ...(command === 'serve'
+      ? {
+          server: {
+            host: resolvePortalDevHost(process.env),
+            port: resolvePortalDevPort(process.env),
+            strictPort: true,
+            fs: {
+              allow: [
+                configDir,
+                workspaceRoot,
+                appbaseRoot,
+                iamRoot,
+                sdkworkCoreRoot,
+                sdkworkDriveRoot,
+                sdkworkGenerationsRoot,
+                sdkworkMemoryRoot,
+                sdkworkAgentsRoot,
+                sdkworkPromptsRoot,
+                sdkworkModelsRoot,
+                sdkworkImageRoot,
+                sdkworkAssetsRoot,
+                sdkworkVideoRoot,
+                sdkworkMusicRoot,
+                sdkworkAudioRoot,
+                sdkworkUiRoot,
+                sdkworkDocumentsRoot,
+                sdkworkUtilsRoot,
+                sdkworkAccountRoot,
+                sdkworkPromotionRoot,
+                sdkworkMembershipRoot,
+                sdkworkPaymentRoot,
+                sdkworkOrderRoot,
+              ],
+            },
+            proxy: resolvePortalDevProxy({ ...process.env, ...env }),
+            // Disable HMR in automated product smoke runs when file watching is noisy.
+            hmr: resolvePortalDevHmr({ ...process.env, ...env }),
+          },
+        }
+      : {}),
     build: {
       outDir: resolveBrowserDistOutDir(resolveViteEnvironment(mode, process.env)),
       target: 'esnext',
@@ -1047,7 +1057,7 @@ function resolvePortalDevHost(env: NodeJS.ProcessEnv = process.env): string {
 }
 
 function resolvePortalDevPort(env: NodeJS.ProcessEnv = process.env): number {
-  const rawPort = env.PORT?.trim();
+  const rawPort = env.PORT?.trim() || env.SDKWORK_CLOUDROUTER_ROUTER_PC_INTERNAL_DEV_PORT?.trim();
   if (rawPort === undefined || rawPort === '') {
     return DEFAULT_PORTAL_DEV_PORT;
   }
@@ -1074,20 +1084,52 @@ function resolvePortalDevHmr(
   };
 }
 
-function resolvePortalDevProxy(env: NodeJS.ProcessEnv = process.env): Record<string, string | ProxyOptions> {
+/**
+ * DEV-ONLY dev-server-proxy targets (APP_RUNTIME_TOPOLOGY_SPEC §8.2).
+ *
+ * The topology profile declares exactly one browser-reachable API surface for a
+ * `dev-server-proxy` / `same-origin` delivery: the application **public ingress**
+ * (`apiSurfaceId: "application.public-ingress"`, bound by
+ * `SDKWORK_*_APPLICATION_PUBLIC_INGRESS_BIND`). Every composed SDK surface —
+ * including the federated feeds/open surface (`/feeds/v3/api`) — is mounted on
+ * that ingress (API_ASSEMBLY_SPEC §6.1.1), so the proxy MUST forward there and
+ * never to a sibling private loopback bind.
+ *
+ * The private binds (`..._APPLICATION_OPEN_HTTP_BIND=127.0.0.1:18080`,
+ * `..._APPLICATION_BACKEND_HTTP_BIND=127.0.0.1:18081`) exist for in-process
+ * fan-out only and are not started as separate listeners in this profile; using
+ * one as a proxy target yields `ECONNREFUSED`. They are also declared forbidden
+ * browser runtime env by `CLOUD_ROUTER_BROWSER_FORBIDDEN_RUNTIME_VITE_KEYS`, yet
+ * a materialized `.env.<profile>` may still carry them (the standalone
+ * materializer copies the topology profile verbatim). Reading them here would
+ * therefore reintroduce the exact loopback leak that
+ * `alignStandaloneSameOriginBrowserSdkRuntimeEnv` strips from the browser
+ * document.
+ *
+ * Resolution order per surface: the explicit dev-proxy origin override, then the
+ * ingress origin, then the declared surface URL. Private loopback binds are
+ * discarded before they can become a target.
+ */
+export function resolvePortalDevProxy(env: NodeJS.ProcessEnv = process.env): Record<string, string | ProxyOptions> {
   const gatewayTarget = resolvePortalDevProxyTarget(
     env[BROWSER_DEV_PROXY_ENV_KEYS.openApi],
     BROWSER_DEV_PROXY_ENV_KEYS.openApi,
+    env,
   );
   const backendApiTarget = resolvePortalDevProxyTarget(
     env[BROWSER_DEV_PROXY_ENV_KEYS.backendApi],
     BROWSER_DEV_PROXY_ENV_KEYS.backendApi,
+    env,
   );
   const appApiTarget = resolvePortalDevProxyTarget(
     env[BROWSER_DEV_PROXY_ENV_KEYS.appApi],
     BROWSER_DEV_PROXY_ENV_KEYS.appApi,
+    env,
   );
 
+  // Fail closed when no topology surface URL is configured (CONFIG_SPEC §3.1):
+  // a silent loopback default would send same-origin dev API paths to an
+  // unrelated port instead of the declared application ingress.
   return {
     '/openapi/schema-tabs.json': portalDevProxyOptions(gatewayTarget),
     '/openapi.json': portalDevProxyOptions(gatewayTarget),
@@ -1110,11 +1152,14 @@ function portalDevProxyOptions(target: string): ProxyOptions {
   };
 }
 
-function resolvePortalDevProxyTarget(
+export function resolvePortalDevProxyTarget(
   value: string | undefined,
   name: string,
   env: NodeJS.ProcessEnv = process.env,
 ): string {
+  const applicationIngressHttpUrl = readConfiguredPortalPublicEnv(
+    env.SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL,
+  );
   const applicationPublicHttpUrl = readConfiguredPortalPublicEnv(
     env.VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL
     ?? env.SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL,
@@ -1131,10 +1176,18 @@ function resolvePortalDevProxyTarget(
     env.VITE_SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL
     ?? env.SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL,
   );
+  // The application ingress is the single browser-reachable API surface of a
+  // `dev-server-proxy` / `same-origin` delivery, so it leads every fallback.
+  // The per-surface `*_HTTP_URL` values are private loopback binds in the
+  // standalone profile (no separate listener is started), so they only serve as
+  // a last resort and must never shadow the ingress.
   const fallbackByName: Record<string, string | undefined> = {
-    [BROWSER_DEV_PROXY_ENV_KEYS.openApi]: applicationOpenHttpUrl ?? applicationPublicHttpUrl ?? platformHttpUrl ?? DEFAULT_BROWSER_DEV_PROXY_GATEWAY_TARGET,
-    [BROWSER_DEV_PROXY_ENV_KEYS.backendApi]: applicationBackendHttpUrl ?? applicationPublicHttpUrl ?? platformHttpUrl ?? DEFAULT_BROWSER_DEV_PROXY_GATEWAY_TARGET,
-    [BROWSER_DEV_PROXY_ENV_KEYS.appApi]: applicationPublicHttpUrl ?? platformHttpUrl ?? DEFAULT_BROWSER_DEV_PROXY_GATEWAY_TARGET,
+    [BROWSER_DEV_PROXY_ENV_KEYS.openApi]:
+      applicationIngressHttpUrl ?? applicationOpenHttpUrl ?? applicationPublicHttpUrl ?? platformHttpUrl,
+    [BROWSER_DEV_PROXY_ENV_KEYS.backendApi]:
+      applicationIngressHttpUrl ?? applicationBackendHttpUrl ?? applicationPublicHttpUrl ?? platformHttpUrl,
+    [BROWSER_DEV_PROXY_ENV_KEYS.appApi]:
+      applicationIngressHttpUrl ?? applicationPublicHttpUrl ?? platformHttpUrl,
   };
   const target = value?.trim() || fallbackByName[name];
   if (!target) {
@@ -1217,11 +1270,24 @@ function resolvePortalRuntimeEnv(env: NodeJS.ProcessEnv = process.env): Record<s
   return alignStandaloneSameOriginBrowserSdkRuntimeEnv(runtimeEnv);
 }
 
+/**
+ * DEV-ONLY browser document (APP_RUNTIME_TOPOLOGY_SPEC §8.2, CONFIG_SPEC §3.1).
+ * Author the canonical same-origin SDK bases explicitly, then re-run the
+ * same-origin alignment so dependency SDK loopback URLs fold to relative
+ * prefixes and the process-only topology `_HTTP_URL` bindings never reach the
+ * browser. The build emit path keeps `resolvePortalRuntimeEnv` unchanged: built
+ * artifacts stay domain-bound per ENVIRONMENT_SPEC §5.1.4.
+ */
+function resolvePortalDevBrowserRuntimeEnv(env: NodeJS.ProcessEnv = process.env): Record<string, string> {
+  return alignStandaloneSameOriginBrowserSdkRuntimeEnv(
+    authorBrowserDevelopmentSdkBaseUrls(resolvePortalRuntimeEnv(env)),
+  );
+}
+
 function mergeDirectBrowserViteEnv(
   runtimeEnv: Record<string, string>,
   env: NodeJS.ProcessEnv,
-): void {
-  for (const [key, rawValue] of Object.entries(env)) {
+): void {  for (const [key, rawValue] of Object.entries(env)) {
     if (!key.startsWith('VITE_')) {
       continue;
     }
@@ -1247,11 +1313,9 @@ function resolvePortalRuntimeUrlFromSdkBaseUrl(
 ): string | undefined {
   switch (sourceName) {
     case 'PORTAL_PUBLIC_APP_API_BASE_URL':
-    case 'PORTAL_PUBLIC_COMMERCE_APP_API_BASE_URL':
       return appendPortalPublicSdkBaseUrl(sdkBaseUrl, APP_API_PREFIX);
     case 'PORTAL_PUBLIC_BACKEND_API_BASE_URL':
     case 'PORTAL_PUBLIC_APPBASE_BACKEND_API_BASE_URL':
-    case 'PORTAL_PUBLIC_COMMERCE_BACKEND_API_BASE_URL':
       return appendPortalPublicSdkBaseUrl(sdkBaseUrl, BACKEND_API_PREFIX);
     default:
       return undefined;
@@ -1274,14 +1338,16 @@ function buildPortalRuntimeEnvScript(runtimeEnv = resolvePortalRuntimeEnv()): st
   const browserSafeEnv = Object.fromEntries(
     Object.entries(runtimeEnv).filter(([key]) => key.startsWith('VITE_')),
   );
-  const serializedEnv = JSON.stringify(browserSafeEnv)
-    .replace(/</g, '\\u003C')
-    .replace(/>/g, '\\u003E')
-    .replace(/&/g, '\\u0026')
-    .replace(/\u2028/g, '\\u2028')
-    .replace(/\u2029/g, '\\u2029');
 
-  return `window.__CLOUDROUTER_ENV__ = Object.freeze(${serializedEnv});\n`;
+  // BROWSER_RUNTIME_ENV_SPEC.md §4: the same document is published to the
+  // canonical global so shared SDK packages (@sdkwork/sdk-common base-url and
+  // deployment-mode resolvers) can read runtime values inside the browser.
+  // Escaping/serialization is the shared factory's concern; the canonical
+  // global aliases the app global's frozen document.
+  return serializeBrowserRuntimeEnvScript([
+    ['window.__CLOUDROUTER_ENV__', browserSafeEnv],
+    ['globalThis.SDKWORK_RUNTIME_ENV', { aliasOf: 'window.__CLOUDROUTER_ENV__' }],
+  ]);
 }
 
 function injectPortalRuntimeEnvScript(html: string): string {
@@ -1354,6 +1420,7 @@ export {
   buildPortalRuntimeEnvScript,
   injectPortalRuntimeEnvScript,
   PORTAL_RUNTIME_VITE_PASSTHROUGH_ENV,
+  resolvePortalDevBrowserRuntimeEnv,
   resolvePortalRuntimeEnv,
   resolvePortalWorkspaceDependencyRoot,
 };

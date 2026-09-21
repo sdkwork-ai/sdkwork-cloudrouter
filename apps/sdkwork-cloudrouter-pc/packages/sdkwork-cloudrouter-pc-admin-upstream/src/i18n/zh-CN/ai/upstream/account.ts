@@ -52,7 +52,7 @@ export const upstreamAccountZhCnMessages = {
   'admin.upstream.account.form.baseUrlPriority.hint': '调用时优先使用账号配置的 Base URL，未配置时再使用供应商配置',
   'admin.upstream.account.form.apiKey': 'API Key',
   'admin.upstream.account.form.apiKeyPlaceholder': '尚未录入密钥，可在此填写新密钥',
-  'admin.upstream.account.form.apiKeyRotatePlaceholder': '留空表示保持当前密钥，输入新密钥可轮换',
+  'admin.upstream.account.form.apiKeyRotatePlaceholder': '当前密钥，可直接修改；改为新值后保存即轮换',
   'admin.upstream.account.form.showApiKey': '显示明文',
   'admin.upstream.account.form.hideApiKey': '隐藏明文',
   'admin.upstream.account.form.resources.title': '关联资源',

@@ -3,7 +3,5 @@
   "sdkType": "backend",
   "name": "cloudrouter-backend-sdk",
   "packageName": "cloudrouter-backend-sdk-generated-typescript",
-  "version": "0.1.0",
-  "transportPackageName": "cloudrouter-backend-sdk-generated-typescript",
-  "consumerPackageName": "@sdkwork/cloudrouter-backend-sdk"
+  "version": "0.1.0"
 }

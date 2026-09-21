@@ -607,8 +607,15 @@ function sanitizeText(value) {
   return `${value ?? ''}`
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/gu, ' ')
     .replace(/\uFFFD/gu, ' ')
-    .replace(/[锛�€�]/gu, ' ')
-    .replace(/鈥[^\s]*/gu, ' ')
+    // Mojibake artifacts left behind when upstream UTF-8 text is decoded as
+    // GBK. A stray fullwidth punctuation mark or smart quote/dash collapses
+    // into a CJK-range character plus a replacement char, e.g.
+    //   "（" (U+FF08) -> U+950B + U+FFFD
+    //   "“" (U+201C) -> U+9225 + U+FFFD
+    //   "€" (U+20AC)      -> U+9227 + U+FFFD
+    // Strip the artifact together with any trailing non-space run so a
+    // half-decoded sequence cannot survive into the mirrored seed.
+    .replace(/[\u9500-\u95FF\u9220-\u922F\u20AC\uFFFD]+[^\s]*/gu, ' ')
     .trim();
 }
 

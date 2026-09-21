@@ -788,7 +788,7 @@ Expected: exit 0.
 ### Task 10: Documentation And Architecture Guards
 
 **Files:**
-- Modify: `docs/06-API-Gateway与接口标准设�?md`
+- Modify: `docs/06-API-Gateway与接口标准设计.md`
 - Modify: `docs/27-rust-runtime-and-sdk-integration-standard.md`
 - Create: `docs/provider-adapter-architecture.md`
 - Create: `tests/test_provider_adapter_architecture_standard.py`

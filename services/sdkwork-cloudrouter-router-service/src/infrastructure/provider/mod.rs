@@ -5,6 +5,7 @@ mod adapter_aware_openai_relay;
 mod adapter_aware_responses_relay;
 mod openai_compatible_relay;
 mod provider_secret_map_resolver;
+mod provider_stream_deadlines;
 mod response_memory_budget;
 
 pub use adapter_aware_chat_completion_relay::AdapterAwareChatCompletionRelay;

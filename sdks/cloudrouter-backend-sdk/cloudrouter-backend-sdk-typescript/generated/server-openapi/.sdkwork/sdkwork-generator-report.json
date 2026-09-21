@@ -12,7 +12,7 @@
   "mode": "apply",
   "hasChanges": true,
   "hasDestructiveChanges": false,
-  "changeFingerprint": "96c1f9d005709a42aa8f9df7a7f735a2ac34294e0d6f358b095372b9ad18fd84",
+  "changeFingerprint": "e1aeb135133e71132d23bad4df0d45af15cce921ac3163e2dd2a537c48c172b6",
   "changeImpact": {
     "schemaVersion": 1,
     "areas": [
@@ -207,6 +207,8 @@
           "src/types/update-upstream-supplier-request.ts",
           "src/types/upstream-account-credential-item-response.ts",
           "src/types/upstream-account-credential-list-response.ts",
+          "src/types/upstream-account-credential-secret-item-response.ts",
+          "src/types/upstream-account-credential-secret.ts",
           "src/types/upstream-account-credential.ts",
           "src/types/upstream-account-group-item-response.ts",
           "src/types/upstream-account-group-list-response.ts",
@@ -332,7 +334,7 @@
         "title": "Unified package check",
         "required": true,
         "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-backend-sdk\\cloudrouter-backend-sdk-typescript\\generated\\server-openapi",
+        "workingDirectory": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-backend-sdk\\cloudrouter-backend-sdk-typescript\\generated\\server-openapi",
         "command": "node",
         "args": [
           "./bin/publish-core.mjs",
@@ -350,7 +352,7 @@
         "title": "Unified package build",
         "required": true,
         "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-backend-sdk\\cloudrouter-backend-sdk-typescript\\generated\\server-openapi",
+        "workingDirectory": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-backend-sdk\\cloudrouter-backend-sdk-typescript\\generated\\server-openapi",
         "command": "node",
         "args": [
           "./bin/publish-core.mjs",
@@ -375,7 +377,7 @@
         "title": "Unified package check",
         "required": true,
         "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-backend-sdk\\cloudrouter-backend-sdk-typescript\\generated\\server-openapi",
+        "workingDirectory": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-backend-sdk\\cloudrouter-backend-sdk-typescript\\generated\\server-openapi",
         "command": "node",
         "args": [
           "./bin/publish-core.mjs",
@@ -393,7 +395,7 @@
         "title": "Unified package build",
         "required": true,
         "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-backend-sdk\\cloudrouter-backend-sdk-typescript\\generated\\server-openapi",
+        "workingDirectory": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-backend-sdk\\cloudrouter-backend-sdk-typescript\\generated\\server-openapi",
         "command": "node",
         "args": [
           "./bin/publish-core.mjs",
@@ -414,7 +416,7 @@
     "language": "typescript",
     "sdkType": "backend",
     "protocol": "http",
-    "outputPath": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-backend-sdk\\cloudrouter-backend-sdk-typescript\\generated\\server-openapi",
+    "outputPath": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-backend-sdk\\cloudrouter-backend-sdk-typescript\\generated\\server-openapi",
     "packageName": "@sdkwork/cloudrouter-backend-sdk"
   },
   "versioning": {
@@ -422,10 +424,10 @@
     "localVersions": []
   },
   "stats": {
-    "totalFiles": 341,
-    "models": 311,
+    "totalFiles": 344,
+    "models": 314,
     "apis": 7,
-    "types": 313
+    "types": 316
   },
   "warnings": [
     {
@@ -472,12 +474,12 @@
   "syncSummary": {
     "dryRun": false,
     "controlPlaneEnabled": true,
-    "writtenFiles": 237,
+    "writtenFiles": 239,
     "skippedScaffoldFiles": 0,
     "skippedUnchangedGeneratedFiles": 0,
     "deletedGeneratedFiles": 0,
     "changeSummaryPath": ".sdkwork/sdkwork-generator-changes.json",
-    "changeFingerprint": "96c1f9d005709a42aa8f9df7a7f735a2ac34294e0d6f358b095372b9ad18fd84",
+    "changeFingerprint": "e1aeb135133e71132d23bad4df0d45af15cce921ac3163e2dd2a537c48c172b6",
     "changes": {
       "createdGeneratedFiles": [
         "bin/publish-core.mjs",
@@ -666,6 +668,8 @@
         "src/types/update-upstream-supplier-request.ts",
         "src/types/upstream-account-credential-item-response.ts",
         "src/types/upstream-account-credential-list-response.ts",
+        "src/types/upstream-account-credential-secret-item-response.ts",
+        "src/types/upstream-account-credential-secret.ts",
         "src/types/upstream-account-credential.ts",
         "src/types/upstream-account-group-item-response.ts",
         "src/types/upstream-account-group-list-response.ts",
@@ -920,6 +924,8 @@
             "src/types/update-upstream-supplier-request.ts",
             "src/types/upstream-account-credential-item-response.ts",
             "src/types/upstream-account-credential-list-response.ts",
+            "src/types/upstream-account-credential-secret-item-response.ts",
+            "src/types/upstream-account-credential-secret.ts",
             "src/types/upstream-account-credential.ts",
             "src/types/upstream-account-group-item-response.ts",
             "src/types/upstream-account-group-list-response.ts",
@@ -1032,7 +1038,7 @@
           "title": "Unified package check",
           "required": true,
           "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-          "workingDirectory": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-backend-sdk\\cloudrouter-backend-sdk-typescript\\generated\\server-openapi",
+          "workingDirectory": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-backend-sdk\\cloudrouter-backend-sdk-typescript\\generated\\server-openapi",
           "command": "node",
           "args": [
             "./bin/publish-core.mjs",
@@ -1050,7 +1056,7 @@
           "title": "Unified package build",
           "required": true,
           "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-          "workingDirectory": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-backend-sdk\\cloudrouter-backend-sdk-typescript\\generated\\server-openapi",
+          "workingDirectory": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-backend-sdk\\cloudrouter-backend-sdk-typescript\\generated\\server-openapi",
           "command": "node",
           "args": [
             "./bin/publish-core.mjs",

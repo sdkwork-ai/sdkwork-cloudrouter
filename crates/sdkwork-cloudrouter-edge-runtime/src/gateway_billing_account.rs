@@ -13,6 +13,7 @@ use sdkwork_cloudrouter_router_service::ports::{
 };
 use sdkwork_contract_service::{
     CommerceAccountAssetType, CommerceLedgerDirection, CommerceMoney, CommerceRequestHash,
+    CommerceServiceError, CommerceServiceErrorKind,
 };
 use sqlx::{PgPool, Row};
 use std::collections::BTreeMap;
@@ -227,7 +228,7 @@ impl PostgresGatewayBillingStore {
             .account_store
             .create_account_hold(command, hash)
             .await
-            .map_err(|error| DomainError::new(error.message().to_owned()))?;
+            .map_err(account_hold_error)?;
         Ok(outcome.hold.uuid)
     }
 
@@ -536,6 +537,28 @@ fn platform_catalog_tenant_id() -> i64 {
         .and_then(|value| value.trim().parse::<i64>().ok())
         .filter(|value| *value > 0)
         .unwrap_or(DEFAULT_PLATFORM_CATALOG_TENANT_ID)
+}
+
+/// Maps an account-store hold rejection onto a [`DomainError`] while
+/// **preserving the insufficient-balance classification**.
+///
+/// The account repository reports a shortfall as
+/// `CommerceServiceErrorKind::InsufficientBalance`. Collapsing that into a plain
+/// `DomainError::new(..)` (which defaults to `DomainErrorKind::System`) is what
+/// previously turned "your wallet cannot cover this call" into an opaque
+/// upstream failure: the router lost the reason at the error boundary, the
+/// gateway stamped `failedStage: dispatch_failed`, and users were told the
+/// upstream service was broken with no path to recharge. Classifying by type
+/// here is what lets the 402 surface carry a funding action.
+fn account_hold_error(error: CommerceServiceError) -> DomainError {
+    let message = error.message().to_owned();
+    if matches!(
+        error.kind(),
+        CommerceServiceErrorKind::InsufficientBalance
+    ) {
+        return DomainError::insufficient_balance(message);
+    }
+    DomainError::new(message)
 }
 
 fn jsonb_string_map(value: serde_json::Value) -> Option<BTreeMap<String, String>> {

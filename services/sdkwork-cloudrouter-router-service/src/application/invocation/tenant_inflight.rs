@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, Weak};
 use std::time::{Duration, Instant};
 
 use redis::aio::ConnectionManager;
@@ -392,6 +392,7 @@ impl TenantInflightInterceptor {
         &self,
         lease: TenantInflightLease,
         cancellation_signal: InvocationCancellationSignal,
+        lease_witness: Weak<()>,
     ) {
         let Some(interval) = self.counter.renewal_interval() else {
             return;
@@ -401,6 +402,14 @@ impl TenantInflightInterceptor {
         let task = tokio::spawn(async move {
             loop {
                 tokio::time::sleep(interval).await;
+                if lease_witness.upgrade().is_none() {
+                    // The owning invocation was dropped without reaching a
+                    // terminal interceptor (client disconnect, graceful
+                    // shutdown abort, panic). Stop renewing and release the
+                    // slot so the lease cannot be extended forever.
+                    counter.release(&lease).await;
+                    return;
+                }
                 if !handle_renewal_result(&lease, &cancellation_signal, counter.renew(&lease).await)
                 {
                     return;
@@ -426,6 +435,10 @@ impl TenantInflightInterceptor {
     }
 
     async fn release_invocation_lease(&self, invocation: &mut Invocation) {
+        // Defuse the liveness witness first: the explicit release below owns
+        // the terminal transition, and a dropped invocation must never
+        // double-release through the witness path.
+        invocation.request.tenant_inflight_witness = None;
         let Some(owner_token) = invocation.request.tenant_inflight_owner_token.take() else {
             return;
         };
@@ -519,7 +532,13 @@ impl InvocationInterceptor for TenantInflightInterceptor {
                 .with_retry_after(1));
             }
             invocation.request.tenant_inflight_owner_token = Some(lease.owner_token.clone());
-            self.start_renewal(lease, invocation.request.cancellation_signal());
+            let witness = Arc::new(());
+            invocation.request.tenant_inflight_witness = Some(witness.clone());
+            self.start_renewal(
+                lease,
+                invocation.request.cancellation_signal(),
+                Arc::downgrade(&witness),
+            );
             Ok(())
         })
     }

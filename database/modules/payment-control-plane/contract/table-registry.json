@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "kind": "sdkwork.database.table-registry",
+  "tables": [
+    {
+      "table_name": "commerce_payment_route_decision",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "payment_control_plane_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "commerce_payment_operation_attempt",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "payment_control_plane_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "commerce_refund_attempt",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "payment_control_plane_entity",
+      "system_of_record": true
+    },
+    {
+      "table_name": "commerce_refund_item",
+      "owner": "router-service",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "payment_control_plane_entity",
+      "system_of_record": true
+    }
+  ]
+}

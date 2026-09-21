@@ -52,7 +52,7 @@ export const upstreamAccountEnUsMessages = {
   'admin.upstream.account.form.baseUrlPriority.hint': 'The account Base URL configuration is used first; the supplier configuration is the fallback',
   'admin.upstream.account.form.apiKey': 'API Key',
   'admin.upstream.account.form.apiKeyPlaceholder': 'No key stored yet; enter a new key here',
-  'admin.upstream.account.form.apiKeyRotatePlaceholder': 'Leave blank to keep the current key; enter a new key to rotate',
+  'admin.upstream.account.form.apiKeyRotatePlaceholder': 'Current key; edit it directly, saving a new value rotates it',
   'admin.upstream.account.form.showApiKey': 'Show plaintext',
   'admin.upstream.account.form.hideApiKey': 'Hide plaintext',
   'admin.upstream.account.form.resources.title': 'Linked resources',

@@ -34,7 +34,7 @@ service-level commitment.
 - **License:** AGPL-3.0-or-later, open source, free of charge.
 - **Use case:** Self-deployment, single tenant, community support only.
 - **Capability scope:** Core OpenAI-compatible gateway, basic model catalog,
-  local SQLite or external PostgreSQL, single-tenant console, OpenAPI surface.
+  external PostgreSQL (the only authoritative server engine), single-tenant console, OpenAPI surface.
 - **Excludes:** Multi-tenant isolation, full admin console, SSO, audit log
   enhancement, paid support, SLA commitment, commercial production use.
 - **Commercial use:** Prohibited without a separate written commercial

@@ -128,8 +128,8 @@ Example requests and responses live in `apis/<surface>/cloudrouter/examples/`. T
 
 ## 8. Related
 
-- [App API OpenAPI](../../apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json)
-- [Backend API OpenAPI](../../apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json)
-- [Open API OpenAPI](../../apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json)
+- [App API OpenAPI](../../../apis/app-api/cloudrouter/cloudrouter-app-api.openapi.json)
+- [Backend API OpenAPI](../../../apis/backend-api/cloudrouter/cloudrouter-backend-api.openapi.json)
+- [Open API OpenAPI](../../../apis/open-api/cloudrouter/cloudrouter-open-api.openapi.json)
 - [API spec](../../../../sdkwork-specs/API_SPEC.md)
 - [Developer guide](../developer/README.md)

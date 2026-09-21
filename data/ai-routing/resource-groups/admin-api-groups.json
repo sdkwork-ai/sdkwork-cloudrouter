@@ -426,6 +426,56 @@
       ]
     },
     {
+      "groupCode": "api.anthropic.messages",
+      "groupName": "Anthropic Messages (all vendors)",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "Anthropic Messages served by every vendor that publishes an Anthropic-compatible endpoint, including the non-Anthropic vendors whose catalog vendor.json declares protocolBaseUrls.anthropic_messages.",
+      "sortOrder": 9,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.anthropic.claude_code"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.anthropic.messages"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.alibaba.anthropic_messages"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.deepseek.anthropic_messages"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.meituan.anthropic_messages"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.moonshot.anthropic_messages"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.stepfun.anthropic_messages"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.tencent.anthropic_messages"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.xiaomi.anthropic_messages"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.zhipu.anthropic_messages"
+        }
+      ]
+    },
+    {
       "groupCode": "api.gemini.chat",
       "groupName": "Gemini Chat API",
       "groupType": "api_group",

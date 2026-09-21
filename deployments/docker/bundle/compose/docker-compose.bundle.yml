@@ -162,16 +162,20 @@ services:
     logging: *default-logging
     security_opt:
       - no-new-privileges:true
+    # Redis holds quota counters, idempotency keys, circuit state, and
+    # accounting retry facts: eviction silently loses financial state and
+    # persistence must survive restarts (TECH_ARCHITECTURE.md §7,
+    # cloud-router-redis.yaml). Do not switch these to allkeys-lru/no.
     command:
       - redis-server
-      - --save
-      - ""
       - --appendonly
-      - "no"
+      - "yes"
+      - --appendfsync
+      - everysec
       - --maxmemory
       - ${REDIS_MAXMEMORY:-768mb}
       - --maxmemory-policy
-      - ${REDIS_MAXMEMORY_POLICY:-allkeys-lru}
+      - ${REDIS_MAXMEMORY_POLICY:-noeviction}
     deploy:
       resources:
         limits:

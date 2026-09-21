@@ -56,6 +56,9 @@
       "protocols": [
         "http"
       ],
+      "healthAttempts": 600,
+      "healthIntervalMs": 1000,
+      "healthTimeoutMs": 2000,
       "bindEnv": "SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_INGRESS_BIND",
       "httpUrlEnv": "SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL",
       "clientHttpEnv": "VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL"
@@ -85,14 +88,6 @@
       ],
       "httpUrlEnv": "SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL",
       "clientHttpEnv": "VITE_SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL"
-    }
-  },
-  "internalUpstreams": {
-    "app-api": {
-      "bindEnv": "SDKWORK_CLOUDROUTER_ROUTER_INTERNAL_APP_API_BIND"
-    },
-    "portal-renderer": {
-      "bindEnv": "SDKWORK_CLOUDROUTER_ROUTER_INTERNAL_PORTAL_RENDERER_BIND"
     }
   },
   "components": {
@@ -472,6 +467,35 @@
             "required": true
           }
         ],
+        "accessEndpoints": [
+          {
+            "id": "application-ui",
+            "kind": "user-interface",
+            "source": {
+              "processId": "portal-renderer"
+            },
+            "path": "/",
+            "primary": true,
+            "runtimeTargets": [
+              "browser"
+            ],
+            "clientArchitectures": [
+              "pc-web",
+              "h5"
+            ]
+          },
+          {
+            "id": "application-api-reference",
+            "kind": "api-reference",
+            "source": {
+              "surfaceId": "platform.api-gateway"
+            },
+            "path": "/openapi.json",
+            "runtimeTargets": [
+              "browser"
+            ]
+          }
+        ],
         "healthSurfaces": [
           "application.public-ingress",
           "platform.api-gateway"
@@ -486,7 +510,7 @@
             ],
             "originMode": "same-origin",
             "deliveryMode": "dev-server-proxy",
-            "apiSurfaceId": "application.public-ingress",
+            "apiSurfaceId": "platform.api-gateway",
             "clientProcessId": "portal-renderer",
             "preserveCanonicalPaths": true,
             "tabletArchitecture": "pc-web",
@@ -559,6 +583,35 @@
             "required": true
           }
         ],
+        "accessEndpoints": [
+          {
+            "id": "application-ui",
+            "kind": "user-interface",
+            "source": {
+              "processId": "portal-renderer"
+            },
+            "path": "/",
+            "primary": true,
+            "runtimeTargets": [
+              "browser"
+            ],
+            "clientArchitectures": [
+              "pc-web",
+              "h5"
+            ]
+          },
+          {
+            "id": "application-api-reference",
+            "kind": "api-reference",
+            "source": {
+              "surfaceId": "platform.api-gateway"
+            },
+            "path": "/openapi.json",
+            "runtimeTargets": [
+              "browser"
+            ]
+          }
+        ],
         "healthSurfaces": [
           "application.public-ingress",
           "platform.api-gateway"
@@ -573,7 +626,7 @@
             ],
             "originMode": "same-origin",
             "deliveryMode": "dev-server-proxy",
-            "apiSurfaceId": "application.public-ingress",
+            "apiSurfaceId": "platform.api-gateway",
             "clientProcessId": "portal-renderer",
             "preserveCanonicalPaths": true,
             "tabletArchitecture": "pc-web",
@@ -644,7 +697,6 @@
     "targets": []
   },
   "scripts": {
-    "applicationDev": "scripts/cloud-router-dev.mjs",
     "pnpm": {
       "dev": {
         "script": "dev",
@@ -699,7 +751,8 @@
       "SDKWORK_CLOUDROUTER_TOPOLOGY",
       "VITE_CLOUDROUTER_TOPOLOGY",
       "SDKWORK_CLOUDROUTER_ROUTER_HOSTING",
-      "VITE_SDKWORK_CLOUDROUTER_ROUTER_HOSTING"
+      "VITE_SDKWORK_CLOUDROUTER_ROUTER_HOSTING",
+      "SDKWORK_CLOUDROUTER_ROUTER_INTERNAL_PORTAL_RENDERER_BIND"
     ],
     "profileIds": [
       "standalone.split-services.development",

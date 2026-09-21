@@ -252,6 +252,32 @@
       ]
     },
     {
+      "groupCode": "official.bytedance.full",
+      "groupName": "Official ByteDance Full API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "ByteDance official account resources served by Volcengine Ark, including the doubao-seedream image and doubao-seedance video families plus their async task query.",
+      "sortOrder": 145,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.bytedance"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.bytedance.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.bytedance.video_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.bytedance.task_query"
+        }
+      ]
+    },
+    {
       "groupCode": "official.volcengine.full",
       "groupName": "Official Volcengine Full API",
       "groupType": "api_group",
@@ -413,6 +439,10 @@
           "itemType": "resource",
           "resourceCode": "api.alibaba.video_generation_task_query",
           "sortOrder": 5
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.alibaba.anthropic_messages"
         }
       ]
     },
@@ -473,6 +503,10 @@
           "itemType": "resource",
           "resourceCode": "api.deepseek.chat_completions",
           "sortOrder": 1
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.deepseek.anthropic_messages"
         }
       ]
     },
@@ -516,6 +550,10 @@
           "itemType": "resource",
           "resourceCode": "api.meituan.chat_completions",
           "sortOrder": 1
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.meituan.anthropic_messages"
         }
       ]
     },
@@ -535,6 +573,10 @@
           "itemType": "resource",
           "resourceCode": "api.moonshot.chat_completions",
           "sortOrder": 1
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.moonshot.anthropic_messages"
         }
       ]
     },
@@ -646,6 +688,10 @@
           "itemType": "resource",
           "resourceCode": "api.stepfun.chat_completions",
           "sortOrder": 1
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.stepfun.anthropic_messages"
         }
       ]
     },
@@ -665,6 +711,10 @@
           "itemType": "resource",
           "resourceCode": "api.tencent.chat_completions",
           "sortOrder": 1
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.tencent.anthropic_messages"
         }
       ]
     },
@@ -728,6 +778,10 @@
           "itemType": "resource",
           "resourceCode": "api.xiaomi.speech",
           "sortOrder": 4
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.xiaomi.anthropic_messages"
         }
       ]
     },
@@ -767,6 +821,10 @@
           "itemType": "resource",
           "resourceCode": "api.zhipu.video_generation_task_query",
           "sortOrder": 5
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.zhipu.anthropic_messages"
         }
       ]
     }

@@ -20,6 +20,7 @@ futures-util.workspace = true
 getrandom.workspace = true
 hmac.workspace = true
 hex.workspace = true
+http-body.workspace = true
 http-body-util.workspace = true
 hyper.workspace = true
 hyper-rustls.workspace = true

@@ -113,6 +113,14 @@
       "lifecycle_status": "active",
       "profile": "operational_state",
       "system_of_record": true
+    },
+    {
+      "table_name": "sdkwork_node_registry",
+      "owner": "sdkwork-database-id",
+      "compliance_level": "L2",
+      "lifecycle_status": "active",
+      "profile": "runtime_infrastructure",
+      "system_of_record": true
     }
   ]
 }

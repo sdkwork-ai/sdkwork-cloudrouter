@@ -5,7 +5,10 @@ import {
   readRequiredNonNegativeNumber,
   type ApiRecord,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
-import { getCloudRouterAccountAppService } from '@sdkwork/cloudroutes-pc-commons/domain-service-providers';
+import {
+  getCloudRouterAccountAppService,
+  toSdkworkAccountPointsFromMicro,
+} from '@sdkwork/cloudroutes-pc-commons/domain-service-providers';
 import { getCloudRouterAppSdkClient } from '@sdkwork/cloudrouter-pc-console-core/sdk';
 import type {
   DashboardConfigurationDomain as SdkDashboardConfigurationDomain,
@@ -505,15 +508,25 @@ function normalizeSummary(value: unknown, fallback: DashboardSummary): Dashboard
   };
 }
 
+/**
+ * Reads the spendable Token Bank balance from `token_bank.account.retrieve()`.
+ *
+ * The wire field `availableAmount` carries integer **micro-points**
+ * (1 point = 1_000_000 micro-points; the account table stores it as a BIGINT
+ * minor unit, see `acct_account.available_amount`). It MUST be converted with
+ * `toSdkworkAccountPointsFromMicro` before display, exactly like the navbar
+ * wallet entry and `getCloudRouterTokenBankBalance` do. Reading it as a plain
+ * number renders the raw micro value and inflates the balance by 1e6 relative
+ * to the header entry.
+ */
 function readTokenBankAvailableAmount(value: unknown): number {
   if (!isRecord(value)) {
     throw new Error('Token Bank account must be an object');
   }
-  return readRequiredNonNegativeNumber(
-    value,
-    'availableAmount',
-    'Token Bank available amount must be a non-negative number',
-  );
+  if (value.availableAmount === undefined || value.availableAmount === null) {
+    throw new Error('Token Bank available amount is required');
+  }
+  return toSdkworkAccountPointsFromMicro(value.availableAmount);
 }
 
 function normalizeSparkline(

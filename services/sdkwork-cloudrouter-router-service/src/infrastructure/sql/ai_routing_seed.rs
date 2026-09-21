@@ -70,7 +70,35 @@ const DEFAULT_MIXED_ACCOUNT_GROUP_CODE: &str = crate::domain::DEFAULT_ACCOUNT_GR
 /// declares the V2 path `/v2/chat/completions`, so no request could ever reach
 /// Baidu. `pixverse` pointed at `https://api.pixverse.ai`, its console host,
 /// rather than the documented OpenAPI host `https://app-api.pixverse.ai`.
-const DEFAULT_ADMIN_ROUTING_TOPOLOGY_SEED_SOURCE: &str = "default-admin-routing-topology-seed.v9|vendor-default-accounts|default-group|default-mixed-group-vendor-skeleton|official.openai.full|openai|official|openai_compatible|https://api.openai.com/v1|vendor-modality-groups|i18n-zh-en|price_first|prepay";
+///
+/// `v11` adds `default-relay-suppliers`: four bundled relay (中转站) suppliers
+/// (`sdkwork-global`, `sdkwork-cn`, `birdcoder-global`, `birdcoder-cn`), each
+/// with a `relay`-typed supplier row, a per-protocol `protocols` array, an
+/// endpoint, a `api_key` auth method, an account and a default-group
+/// membership. `v10` is skipped in the prose but was the released value; the
+/// bump is what forces an already-installed environment to re-import the seed
+/// and pick the relay rows up.
+///
+/// `v12` carries two changes that both have to reach an already-seeded
+/// environment, which is the whole point of the fingerprint:
+///
+/// * `bytedance-ark-media-split` — `bytedance` becomes a first-class vendor
+///   instead of an alias of `jimeng`. Before it, the two shared one descriptor
+///   arm, so the eight `vendor_native` Doubao Seedance models were bound to
+///   `jimeng`'s `/v1/videos/generations`; ByteDance's real surface is Ark,
+///   `/api/v3/contents/generations/tasks`. A stale database keeps routing
+///   Seedance traffic at the 即梦 consumer path until this bump forces the
+///   re-import, so the fingerprint is load-bearing, not bookkeeping.
+/// * `relay-media-vendor-groups` — the relay (中转站) account grants move from
+///   a single `relay.openai_compatible.*` family onto three media groups
+///   (`relay.bytedance.media`, `relay.cn.visual_generation`,
+///   `relay.global.visual_generation`). Provider-native image/video APIs are
+///   *not* standardised across vendors (every vendor ships its own path and
+///   payload), so they need per-vendor groups; the LLM/coding chat surfaces
+///   already share standard protocols (`openai_chat_completions`,
+///   `openai_responses`, `anthropic_messages`) and therefore keep reusing the
+///   protocol-surface groups instead of growing a parallel family.
+const DEFAULT_ADMIN_ROUTING_TOPOLOGY_SEED_SOURCE: &str = "default-admin-routing-topology-seed.v12|vendor-default-accounts|default-group|default-mixed-group-vendor-skeleton|default-relay-suppliers|official.openai.full|openai|official|openai_compatible|https://api.openai.com/v1|vendor-modality-groups|i18n-zh-en|price_first|prepay|anthropic-messages-multi-vendor|bytedance-ark-media-split|relay-media-vendor-groups";
 
 /// Environment values for which the bundled vendor default accounts are seeded
 /// in the *enabled* state. Everywhere else (production and any unrecognised
@@ -95,6 +123,21 @@ const DEFAULT_VENDOR_ENDPOINT_CODE: &str = "official-global";
 
 /// Auth method code shared by every bundled vendor default account.
 const DEFAULT_VENDOR_AUTH_METHOD_CODE: &str = "api_key";
+
+/// `ai_upstream_supplier.supplier_type` value for a relay (中转站) supplier.
+///
+/// The column is constrained by
+/// `ck_ai_upstream_supplier_type CHECK (supplier_type IN ('official', 'relay'))`,
+/// so this is a closed set rather than free text, and a relay must not carry a
+/// `default_vendor_code`.
+const RELAY_SUPPLIER_TYPE: &str = "relay";
+
+/// Sort-order offset for seeded relay suppliers.
+///
+/// `seeded_supplier_sort_order` numbers the 28 vendor suppliers from 1, so the
+/// relay block starts clear of it and the admin list reads vendors first,
+/// relays after.
+const RELAY_SUPPLIER_SORT_ORDER_BASE: i32 = 1000;
 
 /// Routing priority and weight for bundled vendor default accounts. They match
 /// the OpenAI seed so seeded vendors compete on equal footing under the
@@ -287,6 +330,203 @@ struct DefaultVendorUpstreamAccountSeed {
     account_name: &'static str,
 }
 
+/// One `{protocolCode, baseUrl}` pair on a relay supplier.
+///
+/// A relay terminates several protocol surfaces on its own host, and each
+/// surface has a *different* path prefix — the OpenAI-shaped ones live under
+/// `/v1` while the Anthropic-shaped one lives under `/anthropic`. A single
+/// scalar `base_url` therefore cannot describe a relay, which is why
+/// `ai_upstream_supplier.protocols` exists and why the relay seed populates it.
+struct DefaultRelayProtocolSeed {
+    protocol_code: &'static str,
+    base_url: &'static str,
+}
+
+/// Bundled default relay (中转站) supplier.
+///
+/// A relay differs from a vendor default account in three ways the seed must
+/// honour, and each one is a hard constraint rather than a convention:
+///
+/// * `supplier_type` is `relay`, not `official`. The column has a CHECK
+///   constraint (`ck_ai_upstream_supplier_type`) so the value cannot be
+///   approximated, and `official` suppliers additionally require a
+///   `default_vendor_code` that a relay by definition does not have.
+/// * `protocols` carries every protocol surface the relay exposes, each with
+///   its own base URL. The scalar `protocol_code`/`base_url` pair is kept only
+///   as the compatibility projection of `protocols[0]`, mirroring what the
+///   admin API writes.
+/// * There is no `vendor.<code>` resource for a relay, so the account cannot be
+///   a member of a derived `{vendor}.{modality}` group. It is bound into the
+///   default mixed group directly and granted the relay resource groups, which
+///   is what makes it reachable from auth-token (app-session) traffic.
+struct DefaultRelaySupplierSeed {
+    supplier_code: &'static str,
+    supplier_name: &'static str,
+    supplier_display_name_i18n: &'static str,
+    adapter_code: &'static str,
+    endpoint_code: &'static str,
+    endpoint_name: &'static str,
+    protocols: &'static [DefaultRelayProtocolSeed],
+    resource_group_codes: &'static [&'static str],
+    account_code: &'static str,
+    account_name: &'static str,
+}
+
+/// Base URLs of the bundled relay (中转站) suppliers, one constant per
+/// (host, protocol surface) pair.
+///
+/// They are seeded as *separate* suppliers per host rather than two endpoints
+/// of one supplier because the two hosts differ while their surface prefixes do
+/// not, so neither the scalar `base_url` nor a single endpoint row can express
+/// both without silently dialling the wrong host for one region.
+///
+/// Naming the URLs rather than inlining them keeps the host string in exactly
+/// one place per pair, so a host change cannot miss a protocol.
+const DEFAULT_SDKWORK_RELAY_GLOBAL_OPENAI_BASE_URL: &str = "https://api.sdkwork.com/v1";
+const DEFAULT_SDKWORK_RELAY_GLOBAL_ANTHROPIC_BASE_URL: &str = "https://api.sdkwork.com/anthropic";
+const DEFAULT_SDKWORK_RELAY_CN_OPENAI_BASE_URL: &str = "https://api.sdkwork.cn/v1";
+const DEFAULT_SDKWORK_RELAY_CN_ANTHROPIC_BASE_URL: &str = "https://api.sdkwork.cn/anthropic";
+/// The BirdCoder relay mirrors the SDKWork relay surface on its own domains.
+const DEFAULT_BIRDCODER_RELAY_GLOBAL_OPENAI_BASE_URL: &str = "https://api.birdcoder.com/v1";
+const DEFAULT_BIRDCODER_RELAY_GLOBAL_ANTHROPIC_BASE_URL: &str = "https://api.birdcoder.com/anthropic";
+const DEFAULT_BIRDCODER_RELAY_CN_OPENAI_BASE_URL: &str = "https://api.birdcoder.cn/v1";
+const DEFAULT_BIRDCODER_RELAY_CN_ANTHROPIC_BASE_URL: &str = "https://api.birdcoder.cn/anthropic";
+
+/// Resource groups a relay account is granted.
+///
+/// The LLM/coding conversation surface is standardised: every vendor that
+/// fronts it speaks one of the three protocols (OpenAI Chat Completions, OpenAI
+/// Responses, Anthropic Messages), so the protocol-surface groups that already
+/// exist for official suppliers carry relay traffic too and no parallel relay
+/// LLM group is created. `llmProtocols.ts` maps each protocol a relay declares
+/// to the matching group, and the grant is driven from that declaration.
+///
+/// Only the media faces need groups of their own, because image/video APIs are
+/// *not* standardised — each vendor has its own host and path, so a relay that
+/// fronts them cannot be covered by one OpenAI-compatible group. The two media
+/// relay groups are keyed by market rather than by brand: the China-native set
+/// (Kling / Jimeng / Volcengine / Vidu) and the global-native set
+/// (Gemini / FLUX / Runway / Luma / PixVerse / Stability), plus ByteDance's Ark
+/// media set, which is its own host and whose seedance/seedream models are the
+/// reason the group exists.
+const RELAY_ACCOUNT_RESOURCE_GROUP_CODES: [&str; 3] = [
+    "relay.bytedance.media",
+    "relay.cn.visual_generation",
+    "relay.global.visual_generation",
+];
+
+/// Bundled default relay suppliers.
+///
+/// Four suppliers, not two: each brand ships an international and a mainland
+/// edge, and the two edges have different hosts. Folding them into one supplier
+/// would make one region's traffic dial the other region's host.
+const DEFAULT_RELAY_SUPPLIERS: [DefaultRelaySupplierSeed; 4] = [
+    DefaultRelaySupplierSeed {
+        supplier_code: "sdkwork-global",
+        supplier_name: "SDKWork Relay (Global)",
+        supplier_display_name_i18n:
+            "{\"en-US\":\"SDKWork Relay (Global)\",\"zh-CN\":\"SDKWork 中转站（国际）\"}",
+        adapter_code: "openai_compatible",
+        endpoint_code: "relay-global",
+        endpoint_name: "SDKWork Relay Global",
+        protocols: &[
+            DefaultRelayProtocolSeed {
+                protocol_code: "openai_chat_completions",
+                base_url: DEFAULT_SDKWORK_RELAY_GLOBAL_OPENAI_BASE_URL,
+            },
+            DefaultRelayProtocolSeed {
+                protocol_code: "openai_responses",
+                base_url: DEFAULT_SDKWORK_RELAY_GLOBAL_OPENAI_BASE_URL,
+            },
+            DefaultRelayProtocolSeed {
+                protocol_code: "anthropic_messages",
+                base_url: DEFAULT_SDKWORK_RELAY_GLOBAL_ANTHROPIC_BASE_URL,
+            },
+        ],
+        resource_group_codes: &RELAY_ACCOUNT_RESOURCE_GROUP_CODES,
+        account_code: "sdkwork-global-default",
+        account_name: "SDKWork Relay (Global) Default",
+    },
+    DefaultRelaySupplierSeed {
+        supplier_code: "sdkwork-cn",
+        supplier_name: "SDKWork Relay (China)",
+        supplier_display_name_i18n:
+            "{\"en-US\":\"SDKWork Relay (China)\",\"zh-CN\":\"SDKWork 中转站（中国）\"}",
+        adapter_code: "openai_compatible",
+        endpoint_code: "relay-cn",
+        endpoint_name: "SDKWork Relay China",
+        protocols: &[
+            DefaultRelayProtocolSeed {
+                protocol_code: "openai_chat_completions",
+                base_url: DEFAULT_SDKWORK_RELAY_CN_OPENAI_BASE_URL,
+            },
+            DefaultRelayProtocolSeed {
+                protocol_code: "openai_responses",
+                base_url: DEFAULT_SDKWORK_RELAY_CN_OPENAI_BASE_URL,
+            },
+            DefaultRelayProtocolSeed {
+                protocol_code: "anthropic_messages",
+                base_url: DEFAULT_SDKWORK_RELAY_CN_ANTHROPIC_BASE_URL,
+            },
+        ],
+        resource_group_codes: &RELAY_ACCOUNT_RESOURCE_GROUP_CODES,
+        account_code: "sdkwork-cn-default",
+        account_name: "SDKWork Relay (China) Default",
+    },
+    DefaultRelaySupplierSeed {
+        supplier_code: "birdcoder-global",
+        supplier_name: "BirdCoder Relay (Global)",
+        supplier_display_name_i18n:
+            "{\"en-US\":\"BirdCoder Relay (Global)\",\"zh-CN\":\"BirdCoder 中转站（国际）\"}",
+        adapter_code: "openai_compatible",
+        endpoint_code: "relay-global",
+        endpoint_name: "BirdCoder Relay Global",
+        protocols: &[
+            DefaultRelayProtocolSeed {
+                protocol_code: "openai_chat_completions",
+                base_url: DEFAULT_BIRDCODER_RELAY_GLOBAL_OPENAI_BASE_URL,
+            },
+            DefaultRelayProtocolSeed {
+                protocol_code: "openai_responses",
+                base_url: DEFAULT_BIRDCODER_RELAY_GLOBAL_OPENAI_BASE_URL,
+            },
+            DefaultRelayProtocolSeed {
+                protocol_code: "anthropic_messages",
+                base_url: DEFAULT_BIRDCODER_RELAY_GLOBAL_ANTHROPIC_BASE_URL,
+            },
+        ],
+        resource_group_codes: &RELAY_ACCOUNT_RESOURCE_GROUP_CODES,
+        account_code: "birdcoder-global-default",
+        account_name: "BirdCoder Relay (Global) Default",
+    },
+    DefaultRelaySupplierSeed {
+        supplier_code: "birdcoder-cn",
+        supplier_name: "BirdCoder Relay (China)",
+        supplier_display_name_i18n:
+            "{\"en-US\":\"BirdCoder Relay (China)\",\"zh-CN\":\"BirdCoder 中转站（中国）\"}",
+        adapter_code: "openai_compatible",
+        endpoint_code: "relay-cn",
+        endpoint_name: "BirdCoder Relay China",
+        protocols: &[
+            DefaultRelayProtocolSeed {
+                protocol_code: "openai_chat_completions",
+                base_url: DEFAULT_BIRDCODER_RELAY_CN_OPENAI_BASE_URL,
+            },
+            DefaultRelayProtocolSeed {
+                protocol_code: "openai_responses",
+                base_url: DEFAULT_BIRDCODER_RELAY_CN_OPENAI_BASE_URL,
+            },
+            DefaultRelayProtocolSeed {
+                protocol_code: "anthropic_messages",
+                base_url: DEFAULT_BIRDCODER_RELAY_CN_ANTHROPIC_BASE_URL,
+            },
+        ],
+        resource_group_codes: &RELAY_ACCOUNT_RESOURCE_GROUP_CODES,
+        account_code: "birdcoder-cn-default",
+        account_name: "BirdCoder Relay (China) Default",
+    },
+];
+
 /// Vendors that must ship a routable default account so that every bundled
 /// content-generation capability has a live route out of the box in a
 /// development-like environment.
@@ -301,7 +541,7 @@ struct DefaultVendorUpstreamAccountSeed {
 /// a vendor listed here that the catalog does not declare, or a derived
 /// vendor-modality group with no account here, is a load error rather than a
 /// silent empty pool.
-const DEFAULT_VENDOR_UPSTREAM_ACCOUNTS: [DefaultVendorUpstreamAccountSeed; 27] = [
+const DEFAULT_VENDOR_UPSTREAM_ACCOUNTS: [DefaultVendorUpstreamAccountSeed; 28] = [
     DefaultVendorUpstreamAccountSeed {
         vendor_code: "openai",
         supplier_name: "OpenAI",
@@ -366,6 +606,21 @@ const DEFAULT_VENDOR_UPSTREAM_ACCOUNTS: [DefaultVendorUpstreamAccountSeed; 27] =
         base_url: "https://visual.volcengineapi.com",
         account_code: "jimeng-default",
         account_name: "Jimeng Default",
+    },
+    // ByteDance's catalog surface is Volcengine Ark, not the Jimeng consumer
+    // host. Its `doubao-seedance-*` / `doubao-seedream-*` models bind the
+    // `bytedance.*` vendor-native endpoints (`/api/v3/...`), so it needs its
+    // own supplier row pointing at the Ark host — reusing jimeng's base URL
+    // would dial a host that does not serve those paths.
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "bytedance",
+        supplier_name: "ByteDance",
+        supplier_display_name_i18n: "{\"en-US\":\"ByteDance\",\"zh-CN\":\"字节跳动\"}",
+        adapter_code: "volcengine",
+        protocol_code: "volcengine_ark",
+        base_url: "https://ark.cn-beijing.volces.com",
+        account_code: "bytedance-default",
+        account_name: "ByteDance Default",
     },
     DefaultVendorUpstreamAccountSeed {
         vendor_code: "volcengine",
@@ -638,13 +893,14 @@ const VENDOR_MODALITY_MAPPING: [(&str, &str); 6] = [
 /// Curated binding from vendor code to the resource group granted to that
 /// vendor's default account groups. Every vendor declared in the bundled
 /// resources must have a binding (validated at seed load time).
-const VENDOR_RESOURCE_GROUP_BINDINGS: [(&str, &str); 27] = [
+const VENDOR_RESOURCE_GROUP_BINDINGS: [(&str, &str); 28] = [
     ("openai", "official.openai.full"),
     ("openai_compatible", "api.openai_compatible.all"),
     ("anthropic", "official.anthropic.claude_code"),
     ("gemini", "official.gemini.full"),
     ("kling", "official.kling.full"),
     ("jimeng", "official.jimeng.full"),
+    ("bytedance", "official.bytedance.full"),
     ("minimax", "official.minimax.music"),
     ("vidu", "official.vidu.full"),
     ("volcengine", "official.volcengine.full"),
@@ -684,13 +940,14 @@ const VENDOR_RESOURCE_GROUP_BINDINGS: [(&str, &str); 27] = [
 ];
 
 /// Localized vendor display names: (vendor_code, en-US, zh-CN).
-const VENDOR_LOCALIZED_NAMES: [(&str, &str, &str); 27] = [
+const VENDOR_LOCALIZED_NAMES: [(&str, &str, &str); 28] = [
     ("openai", "OpenAI", "OpenAI"),
     ("openai_compatible", "OpenAI Compatible", "OpenAI 兼容"),
     ("anthropic", "Anthropic", "Anthropic"),
     ("gemini", "Gemini", "谷歌 Gemini"),
     ("kling", "Kling", "可灵"),
     ("jimeng", "Jimeng", "即梦"),
+    ("bytedance", "ByteDance", "字节跳动"),
     ("minimax", "MiniMax", "MiniMax"),
     ("vidu", "Vidu", "Vidu"),
     ("volcengine", "Volcengine", "火山引擎"),
@@ -745,7 +1002,34 @@ fn modality_group_type(modality: &str) -> &'static str {
 /// so without an anthropic-shaped group grant those resources are intersected
 /// away and the account can never serve `/anthropic/v1/messages` (50201 "no
 /// upstream account routes are configured").
-const DEFAULT_GROUP_EXTRA_RESOURCE_GROUP_CODES: [&str; 1] = ["api.claude.code"];
+///
+/// `api.claude.code` carries the two Anthropic-owned endpoints.
+/// `api.anthropic.messages` carries those plus the per-vendor
+/// `<vendor>.anthropic_messages` endpoints for every vendor whose catalog
+/// `vendor.json` publishes `protocolBaseUrls.anthropic_messages` (DeepSeek,
+/// Zhipu, Moonshot, Alibaba, Tencent, StepFun, Meituan, Xiaomi). Both groups are
+/// granted because the intersection is computed against the resources the
+/// *resolved account's supplier* owns: an Anthropic account owns
+/// `api.anthropic.messages` and a DeepSeek account owns
+/// `api.deepseek.anthropic_messages`, and only the group that names the right
+/// one survives the intersection.
+///
+/// The two relay groups are the same fix for a different supplier kind. A relay
+/// account owns no `vendor.<code>` resource, so it is not carried in by
+/// `VENDOR_RESOURCE_GROUP_BINDINGS` and would otherwise have no route visible
+/// to the default group at all — the group would be a member holding an account
+/// whose scope the loader never surfaces, which fails closed with 50201 exactly
+/// like an empty pool. Listing the relay chat and media groups here is what
+/// makes the bundled relay suppliers reachable by signed-in users, and it keeps
+/// the relay surface additive: adding another relay supplier needs no change in
+/// this file, because every relay is granted the same groups.
+const DEFAULT_GROUP_EXTRA_RESOURCE_GROUP_CODES: [&str; 5] = [
+    "api.claude.code",
+    "api.anthropic.messages",
+    "relay.bytedance.media",
+    "relay.cn.visual_generation",
+    "relay.global.visual_generation",
+];
 
 fn default_admin_upstream_account_group() -> DefaultAdminUpstreamAccountGroupSeed {
     DefaultAdminUpstreamAccountGroupSeed {
@@ -888,12 +1172,27 @@ impl AiRoutingSeedCatalog {
 /// gateway uses. When present, the seed seals a placeholder credential per
 /// vendor account; when absent, no credential is written (and the account is
 /// consequently not routable until an operator sets one).
-pub(crate) async fn import_postgres_ai_routing_seed(
+pub async fn import_postgres_ai_routing_seed(
     pool: &PgPool,
     environment: Option<&str>,
     credential_codec: Option<&(dyn UpstreamCredentialSecretCodec + Send + Sync)>,
 ) -> Result<(), sqlx::Error> {
     let catalog = AiRoutingSeedCatalog::load().map_err(json_decode_error)?;
+    // The seed is a convergent upsert: it runs on every startup that decides
+    // `UpgradeRequired`, and re-running it against an already-current database
+    // writes the same rows with the same deterministic ids. The fingerprint is
+    // logged because it is the only signal that says *which* revision of the
+    // bundled topology this process is about to project — and therefore which
+    // revision the previous startup left behind when the two differ.
+    tracing::info!(
+        target: "sdkwork_cloudrouter::ai_routing_seed",
+        source_hash = %source_hash(),
+        catalog_code = %catalog.manifest.catalog_code,
+        environment = environment.unwrap_or("<unresolved>"),
+        vendor_accounts_enabled = seed_environment_enables_vendor_accounts(environment),
+        credential_codec_configured = credential_codec.is_some(),
+        "importing the bundled AI routing seed"
+    );
     let mut tx = pool.begin().await?;
     import_postgres_api_endpoints(&mut tx, &catalog).await?;
     import_postgres_resources(&mut tx, &catalog).await?;
@@ -912,6 +1211,21 @@ pub(crate) async fn import_postgres_ai_routing_seed(
         credential_codec,
     )
     .await?;
+
+    // Relay suppliers have no `vendor.<code>` resource and therefore no derived
+    // vendor-modality group to attach to, so they take a separate write path
+    // that binds their accounts into the default mixed group directly.
+    import_postgres_default_relay_upstream_accounts(
+        &mut tx,
+        &catalog,
+        seed_environment_enables_vendor_accounts(environment),
+        credential_codec,
+    )
+    .await?;
+
+    // The default mixed group names an account the vendor path above creates,
+    // so its membership is completed here rather than during the topology pass.
+    sync_default_group_members(&mut tx, &catalog).await?;
 
     let rate_card_effective_at = sqlx::query_scalar::<_, String>("SELECT CURRENT_TIMESTAMP::text")
         .fetch_one(&mut *tx)
@@ -933,7 +1247,7 @@ fn seed_environment_enables_vendor_accounts(environment: Option<&str>) -> bool {
         .is_some_and(|value| DEV_LIKE_INSTALL_ENVIRONMENTS.contains(&value.as_str()))
 }
 
-pub(crate) async fn postgres_ai_routing_seed_complete(pool: &PgPool) -> Result<bool, sqlx::Error> {
+pub async fn postgres_ai_routing_seed_complete(pool: &PgPool) -> Result<bool, sqlx::Error> {
     Ok(postgres_ai_routing_seed_gap(pool).await?.is_none())
 }
 
@@ -951,7 +1265,7 @@ pub(crate) async fn postgres_ai_routing_seed_complete(pool: &PgPool) -> Result<b
 /// are deliberately derived from the same calls the boolean form makes, so the
 /// two can never disagree about what "complete" means; only the *reporting*
 /// differs.
-pub(crate) async fn postgres_ai_routing_seed_gap(
+pub async fn postgres_ai_routing_seed_gap(
     pool: &PgPool,
 ) -> Result<Option<&'static str>, sqlx::Error> {
     let catalog = AiRoutingSeedCatalog::load().map_err(json_decode_error)?;
@@ -995,12 +1309,139 @@ pub(crate) async fn postgres_ai_routing_seed_gap(
             "a bundled vendor default account is absent, disabled or has no active credential",
         ));
     }
+    if !postgres_default_relay_upstream_accounts_complete(pool).await? {
+        return Ok(Some(
+            "a bundled relay default account is absent, disabled, missing its relay supplier or has no active credential",
+        ));
+    }
     if postgres_resource_group_item_count(pool, &catalog).await?
         < expected_resource_group_item_count(&catalog)
     {
         return Ok(Some(
             "ai_resource_group_item holds fewer rows than the bundled resource groups declare",
         ));
+    }
+    if let Some(gap) = postgres_default_admin_account_group_gap(pool, &catalog).await? {
+        return Ok(Some(gap));
+    }
+    Ok(None)
+}
+
+/// Names the first bundled default account group that is missing, disabled or
+/// still carrying the wrong vendor/resource binding.
+///
+/// The item-count clause above is the only account-group signal the chain
+/// otherwise has, and a count cannot see *which* group is absent: a group that
+/// the catalog added while a previously-seeded one was soft-deleted keeps the
+/// total identical and the seed reports complete. That is exactly the shape of
+/// the media-vendor change — `relay.bytedance.media` and the two visual
+/// groups arrive while the retired `relay.openai_compatible.*` family leaves,
+/// so the migration is invisible to a row count.
+///
+/// This walks the same derivation the seed writes from
+/// ([`default_admin_upstream_account_groups`]), including each group's full
+/// [`DefaultAdminUpstreamAccountGroupSeed::resource_group_codes`] grant list
+/// *and* the member account each group names, so the predicate and the writer
+/// can never disagree about what "complete" means; only the reporting differs.
+async fn postgres_default_admin_account_group_gap(
+    pool: &PgPool,
+    catalog: &AiRoutingSeedCatalog,
+) -> Result<Option<&'static str>, sqlx::Error> {
+    let groups = default_admin_upstream_account_groups(catalog).map_err(json_decode_error)?;
+    for group in &groups {
+        let group_id = sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT id
+            FROM ai_upstream_account_group
+            WHERE tenant_id = $1
+              AND organization_id = $2
+              AND group_code = $3
+              AND status = $4
+              AND deleted_at IS NULL
+              AND metadata ->> 'itemCode' = $3
+            "#,
+        )
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(group.group_code.as_str())
+        .bind(ACTIVE_STATUS)
+        .fetch_optional(pool)
+        .await?;
+        let Some(group_id) = group_id else {
+            return Ok(Some(
+                "a bundled default account group is absent, disabled, or not seed-owned",
+            ));
+        };
+        for resource_group_code in group.resource_group_codes() {
+            let granted = sqlx::query_scalar::<_, bool>(
+                r#"
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM ai_resource_binding binding
+                    WHERE binding.tenant_id = $1
+                      AND binding.organization_id = $2
+                      AND binding.account_group_id = $3
+                      AND binding.resource_group_code = $4
+                      AND binding.grant_type = 'allow'
+                      AND binding.status = $5
+                      AND binding.deleted_at IS NULL
+                )
+                "#,
+            )
+            .bind(DEFAULT_IAM_TENANT_ID)
+            .bind(DEFAULT_IAM_ORGANIZATION_ID)
+            .bind(group_id)
+            .bind(resource_group_code)
+            .bind(ACTIVE_STATUS)
+            .fetch_one(pool)
+            .await?;
+            if !granted {
+                return Ok(Some(
+                    "a bundled default account group no longer grants a resource group it is seeded with",
+                ));
+            }
+        }
+        // The group's member account is the other half of the same seed, and it
+        // lives in a different table that no other clause in the chain reads.
+        // It is also the half that a fresh database used to lose: the default
+        // mixed group names `openai-default`, which the *vendor* account pass
+        // creates *after* the topology pass that writes the group, so the
+        // membership has to be reconciled on a second pass
+        // ([`sync_default_group_members`]). Without an assertion here that
+        // reconciliation is unobservable — a silently missing member leaves the
+        // startup gate reporting `Installed` while routed traffic fails to
+        // resolve the account.
+        if let Some(account_code) = group.account_code.as_deref() {
+            let member_present = sqlx::query_scalar::<_, bool>(
+                r#"
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM ai_upstream_account_group_member member
+                    JOIN ai_upstream_account account
+                      ON account.id = member.account_id
+                     AND account.deleted_at IS NULL
+                    WHERE member.tenant_id = $1
+                      AND member.organization_id = $2
+                      AND member.account_group_id = $3
+                      AND account.account_code = $4
+                      AND member.status = $5
+                      AND member.deleted_at IS NULL
+                )
+                "#,
+            )
+            .bind(DEFAULT_IAM_TENANT_ID)
+            .bind(DEFAULT_IAM_ORGANIZATION_ID)
+            .bind(group_id)
+            .bind(account_code)
+            .bind(ACTIVE_STATUS)
+            .fetch_one(pool)
+            .await?;
+            if !member_present {
+                return Ok(Some(
+                    "a bundled default account group is missing the member account it is seeded with",
+                ));
+            }
+        }
     }
     Ok(None)
 }
@@ -1055,6 +1496,72 @@ async fn postgres_default_vendor_upstream_accounts_complete(
         .bind(DEFAULT_IAM_ORGANIZATION_ID)
         .bind(seed.account_code)
         .bind(ACTIVE_STATUS)
+        .fetch_one(pool)
+        .await?;
+        if !enabled_with_credential {
+            return Ok(false);
+        }
+    }
+    Ok(true)
+}
+
+/// The bundled relay default accounts must exist, be enabled, still carry their
+/// `relay` supplier and hold an active credential.
+///
+/// This is the relay counterpart to
+/// [`postgres_default_vendor_upstream_accounts_complete`], and it exists for the
+/// same reason: without it a relay row that never landed — or landed disabled
+/// because the install environment was mis-read — would still report
+/// [`InstallationStatus::Installed`], and every relay-routed request would fail
+/// closed with `50201` far from the cause.
+///
+/// It also asserts the joined supplier is actually `supplier_type = 'relay'`.
+/// That is the one property which distinguishes these rows from a vendor
+/// account, and a row that lost it would be treated as an official supplier by
+/// every consumer that branches on the type.
+///
+/// Only rows this seed owns are inspected (the `default_relay_upstream_account`
+/// marker), so an operator who replaced a relay account with their own drops
+/// the marker and is not reported as an incomplete seed.
+async fn postgres_default_relay_upstream_accounts_complete(
+    pool: &PgPool,
+) -> Result<bool, sqlx::Error> {
+    for seed in DEFAULT_RELAY_SUPPLIERS.iter() {
+        let enabled_with_credential = sqlx::query_scalar::<_, bool>(
+            r#"
+            SELECT EXISTS (
+                SELECT 1
+                FROM ai_upstream_account account
+                JOIN ai_upstream_supplier supplier
+                  ON supplier.tenant_id = account.tenant_id
+                 AND supplier.organization_id = account.organization_id
+                 AND supplier.id = account.supplier_id
+                WHERE account.tenant_id = $1
+                  AND account.organization_id = $2
+                  AND account.account_code = $3
+                  AND account.status = $4
+                  AND account.deleted_at IS NULL
+                  AND account.metadata ->> 'itemType' = 'default_relay_upstream_account'
+                  AND supplier.supplier_type = $5
+                  AND supplier.deleted_at IS NULL
+                  AND EXISTS (
+                      SELECT 1
+                      FROM ai_upstream_account_credential credential
+                      WHERE credential.tenant_id = account.tenant_id
+                        AND credential.organization_id = account.organization_id
+                        AND credential.account_id = account.id
+                        AND credential.status = $4
+                        AND credential.is_active
+                        AND credential.deleted_at IS NULL
+                  )
+            )
+            "#,
+        )
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(seed.account_code)
+        .bind(ACTIVE_STATUS)
+        .bind(RELAY_SUPPLIER_TYPE)
         .fetch_one(pool)
         .await?;
         if !enabled_with_credential {
@@ -1870,22 +2377,31 @@ async fn import_postgres_default_admin_upstream_topology(
     }
 
     for group in default_admin_upstream_account_groups(catalog).map_err(json_decode_error)? {
+        // The member account may legitimately not exist yet: the default mixed
+        // group names `openai-default`, which the *vendor* account path below
+        // creates, and `DEFAULT_ADMIN_UPSTREAM_ACCOUNTS` is deliberately empty
+        // so the two paths never write the same row. A `fetch_one` here would
+        // therefore abort the whole seed on a fresh database with a bare
+        // `RowNotFound`, leaving the schema half-populated and the startup gate
+        // reporting an unexplained `UpgradeRequired` for ever.
+        //
+        // The membership is loaded again once the vendor accounts exist (see
+        // `sync_default_group_members` at the end of the seed), so a group that
+        // resolves no account here is completed rather than skipped.
         let account_id = match group.account_code.as_deref() {
-            Some(account_code) => Some(
-                sqlx::query_scalar::<_, i64>(
-                    r#"
+            Some(account_code) => sqlx::query_scalar::<_, i64>(
+                r#"
                     SELECT id
                     FROM ai_upstream_account
                     WHERE tenant_id = $1 AND organization_id = $2
                       AND account_code = $3 AND deleted_at IS NULL
                     "#,
-                )
-                .bind(DEFAULT_IAM_TENANT_ID)
-                .bind(DEFAULT_IAM_ORGANIZATION_ID)
-                .bind(account_code)
-                .fetch_one(&mut **tx)
-                .await?,
-            ),
+            )
+            .bind(DEFAULT_IAM_TENANT_ID)
+            .bind(DEFAULT_IAM_ORGANIZATION_ID)
+            .bind(account_code)
+            .fetch_optional(&mut **tx)
+            .await?,
             None => None,
         };
         let account_group_id = default_admin_upstream_account_group_id(&group);
@@ -2121,6 +2637,121 @@ async fn import_postgres_default_admin_upstream_topology(
         }
     }
 
+    Ok(())
+}
+
+/// Attaches the bundled default account-group members that could not be
+/// resolved while [`import_postgres_default_admin_upstream_topology`] ran.
+///
+/// The default mixed group names `openai-default`, and that account is created
+/// by the *vendor* path, which runs afterwards. The topology step therefore
+/// leaves the membership out when the account does not exist yet, and this
+/// reconciliation closes the gap once it does.
+///
+/// It is deliberately a separate pass rather than a reordering: the vendor path
+/// needs the supplier rows and resource groups the topology step writes, so the
+/// two cannot be swapped. Running the membership upsert twice is harmless — the
+/// insert is keyed on the same unique index the first pass would have used — and
+/// it keeps a *pre-existing* database (where the account was already there)
+/// converging to exactly the same rows.
+///
+/// A member is only written when both the group and the account exist and the
+/// group is seed-owned, so an operator who replaced either one is not
+/// re-attached.
+async fn sync_default_group_members(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    catalog: &AiRoutingSeedCatalog,
+) -> Result<(), sqlx::Error> {
+    for group in default_admin_upstream_account_groups(catalog).map_err(json_decode_error)? {
+        let Some(account_code) = group.account_code.as_deref() else {
+            continue;
+        };
+        let membership = sqlx::query_as::<_, (i64, i64)>(
+            r#"
+            SELECT account_group.id, account.id
+            FROM ai_upstream_account_group account_group
+            JOIN ai_upstream_account account
+              ON account.tenant_id = account_group.tenant_id
+             AND account.organization_id = account_group.organization_id
+             AND account.account_code = $4
+             AND account.deleted_at IS NULL
+            WHERE account_group.tenant_id = $1
+              AND account_group.organization_id = $2
+              AND account_group.group_code = $3
+              AND account_group.deleted_at IS NULL
+              AND account_group.metadata ->> 'itemCode' = $3
+            "#,
+        )
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(group.group_code.as_str())
+        .bind(account_code)
+        .fetch_optional(&mut **tx)
+        .await?;
+        let Some((account_group_id, account_id)) = membership else {
+            continue;
+        };
+
+        let metadata = seed_metadata(
+            catalog,
+            "default_admin_upstream_account_group",
+            &group.group_code,
+            serde_json::json!({
+                "groupCode": group.group_code.as_str(),
+                "accountCode": account_code,
+                "resourceGroupCode": group.resource_group_code.as_str(),
+                "vendorCode": &group.vendor_code,
+                "modalities": &group.modalities,
+            }),
+        );
+        sqlx::query(
+            r#"
+            INSERT INTO ai_upstream_account_group_member (
+                id, uuid, tenant_id, organization_id, data_scope, status, metadata,
+                account_group_id, account_id, priority, routing_weight, enabled
+            ) VALUES (
+                $1, $2, $3, $4, $5, 1, $6::jsonb,
+                $7, $8, $9, $10, TRUE
+            )
+            ON CONFLICT (tenant_id, organization_id, account_group_id, account_id) DO UPDATE SET
+                priority = EXCLUDED.priority,
+                routing_weight = EXCLUDED.routing_weight,
+                enabled = EXCLUDED.enabled,
+                status = EXCLUDED.status,
+                metadata = EXCLUDED.metadata,
+                deleted_at = NULL,
+                deleted_by = NULL
+            "#,
+        )
+        .bind(stable_seed_id(
+            "sdk-ai-upstream-account-group-member-id",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                group.group_code.as_str(),
+                account_code,
+            ],
+        ))
+        .bind(stable_seed_uuid(
+            "sdk-ai-upstream-account-group-member",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                group.group_code.as_str(),
+                account_code,
+            ],
+        ))
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(DEFAULT_ADMIN_DATA_SCOPE)
+        .bind(&metadata)
+        .bind(account_group_id)
+        .bind(account_id)
+        .bind(group.priority)
+        .bind(group.routing_weight)
+        .execute(&mut **tx)
+        .await?;
+    }
     Ok(())
 }
 
@@ -2789,6 +3420,728 @@ async fn import_postgres_default_vendor_upstream_accounts(
     }
 
     Ok(())
+}
+
+/// Seeds the bundled relay (中转站) suppliers and their default-group accounts.
+///
+/// This is a separate entry point from
+/// `import_postgres_default_vendor_upstream_accounts` because the two differ in
+/// ways that cannot be expressed as a flag on the vendor seed:
+///
+/// * the supplier row is `supplier_type = 'relay'`, while the vendor path writes
+///   the SQL literal `'official'`;
+/// * the relay row carries a `protocols` array and a scalar `default_base_url`,
+///   neither of which the vendor seed struct has;
+/// * a relay account has no `vendor.<code>` resource and so has no derived
+///   `{vendor}.{modality}` groups to join — it is bound into the default mixed
+///   group and granted the relay resource groups instead.
+///
+/// Credentials are the placeholder `sk-dev-{supplier_code}-placeholder` value
+/// for the same reason the vendor path uses one: the routing snapshot requires
+/// an active credential row before an account can route, and the placeholder is
+/// deliberately not a usable relay key.
+async fn import_postgres_default_relay_upstream_accounts(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    catalog: &AiRoutingSeedCatalog,
+    enabled: bool,
+    credential_codec: Option<&(dyn UpstreamCredentialSecretCodec + Send + Sync)>,
+) -> Result<(), sqlx::Error> {
+    let resource_group_codes: BTreeSet<&str> = catalog
+        .resource_groups
+        .iter()
+        .map(|group| group.group_code.as_str())
+        .collect();
+
+    for seed in DEFAULT_RELAY_SUPPLIERS.iter() {
+        // Fail loudly rather than silently granting nothing: a relay whose
+        // granted group the catalog does not declare would seed an account that
+        // is visible in the admin surface but unreachable in routing.
+        for resource_group_code in seed.resource_group_codes.iter() {
+            if !resource_group_codes.contains(resource_group_code) {
+                return Err(json_decode_error(AiRoutingSeedLoadError::Validation(
+                    format!(
+                        "default relay supplier `{}` grants unknown resource group `{resource_group_code}`",
+                        seed.supplier_code
+                    ),
+                )));
+            }
+        }
+        if seed.protocols.is_empty() {
+            return Err(json_decode_error(AiRoutingSeedLoadError::Validation(
+                format!(
+                    "default relay supplier `{}` declares no protocols",
+                    seed.supplier_code
+                ),
+            )));
+        }
+        // `protocols[0]` is projected onto the scalar compatibility columns, so
+        // an empty or duplicate code list would desynchronise the two views of
+        // the same supplier.
+        let mut seen_protocol_codes = BTreeSet::new();
+        for protocol in seed.protocols.iter() {
+            if protocol.protocol_code.trim().is_empty() {
+                return Err(json_decode_error(AiRoutingSeedLoadError::Validation(
+                    format!(
+                        "default relay supplier `{}` declares a blank protocol code",
+                        seed.supplier_code
+                    ),
+                )));
+            }
+            if !seen_protocol_codes.insert(protocol.protocol_code) {
+                return Err(json_decode_error(AiRoutingSeedLoadError::Validation(
+                    format!(
+                        "default relay supplier `{}` declares duplicate protocol code `{}`",
+                        seed.supplier_code, protocol.protocol_code
+                    ),
+                )));
+            }
+        }
+
+        let primary = &seed.protocols[0];
+        let protocols_json = serde_json::Value::Array(
+            seed.protocols
+                .iter()
+                .map(|protocol| {
+                    serde_json::json!({
+                        "protocolCode": protocol.protocol_code,
+                        "baseUrl": protocol.base_url,
+                    })
+                })
+                .collect(),
+        );
+
+        let supplier_id = stable_seed_id(
+            "sdk-ai-upstream-supplier-id",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                seed.supplier_code,
+            ],
+        );
+        let supplier_metadata = seed_metadata(
+            catalog,
+            "default_relay_upstream_supplier",
+            seed.supplier_code,
+            serde_json::json!({
+                "supplierCode": seed.supplier_code,
+                "supplierType": "relay",
+                "accountCode": seed.account_code,
+                "initialAccountStatus": if enabled { "enabled" } else { "disabled" },
+                "seedPurpose": "relay-default-supplier",
+            }),
+        );
+
+        // `supplier_type` is bound rather than inlined so the relay value cannot
+        // drift back to the vendor path's `'official'` literal, and
+        // `default_vendor_code` stays NULL: the CHECK constraint only requires
+        // it for `official` suppliers, and a relay has no single vendor.
+        sqlx::query(
+            r#"
+            INSERT INTO ai_upstream_supplier (
+                id, uuid, tenant_id, organization_id, data_scope, status, metadata,
+                supplier_code, supplier_name, display_name, display_name_i18n, supplier_type,
+                adapter_code, protocol_code, protocols, default_base_url,
+                environment, sort_order
+            ) VALUES (
+                $1, $2, $3, $4, $5, 1, $6::jsonb,
+                $7, $8, $8, $9::jsonb, $10,
+                $11, $12, $13::jsonb, $14,
+                1, $15
+            )
+            ON CONFLICT (tenant_id, organization_id, supplier_code) DO UPDATE SET
+                supplier_name = EXCLUDED.supplier_name,
+                display_name = EXCLUDED.display_name,
+                display_name_i18n = EXCLUDED.display_name_i18n,
+                supplier_type = EXCLUDED.supplier_type,
+                adapter_code = EXCLUDED.adapter_code,
+                protocol_code = EXCLUDED.protocol_code,
+                protocols = EXCLUDED.protocols,
+                default_base_url = EXCLUDED.default_base_url,
+                environment = EXCLUDED.environment,
+                sort_order = EXCLUDED.sort_order,
+                status = EXCLUDED.status,
+                metadata = EXCLUDED.metadata,
+                deleted_at = NULL,
+                deleted_by = NULL
+            "#,
+        )
+        .bind(supplier_id)
+        .bind(stable_seed_uuid(
+            "sdk-ai-upstream-supplier",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                seed.supplier_code,
+            ],
+        ))
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(DEFAULT_ADMIN_DATA_SCOPE)
+        .bind(&supplier_metadata)
+        .bind(seed.supplier_code)
+        .bind(seed.supplier_name)
+        .bind(seed.supplier_display_name_i18n)
+        .bind(RELAY_SUPPLIER_TYPE)
+        .bind(seed.adapter_code)
+        .bind(primary.protocol_code)
+        .bind(protocols_json.to_string())
+        .bind(primary.base_url)
+        .bind(seeded_relay_supplier_sort_order(seed.supplier_code))
+        .execute(&mut **tx)
+        .await?;
+
+        let supplier_id = sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT id
+            FROM ai_upstream_supplier
+            WHERE tenant_id = $1 AND organization_id = $2
+              AND supplier_code = $3 AND deleted_at IS NULL
+            "#,
+        )
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(seed.supplier_code)
+        .fetch_one(&mut **tx)
+        .await?;
+
+        // One endpoint per relay supplier. The per-protocol base URLs live in
+        // `supplier.protocols`; the endpoint is the account's resolvable
+        // `preferred_endpoint_id` and carries the primary protocol's URL.
+        let endpoint_id = stable_seed_id(
+            "sdk-ai-upstream-supplier-endpoint-id",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                seed.supplier_code,
+                seed.endpoint_code,
+            ],
+        );
+        sqlx::query(
+            r#"
+            INSERT INTO ai_upstream_supplier_endpoint (
+                id, uuid, tenant_id, organization_id, data_scope, status, metadata,
+                supplier_id, supplier_code, endpoint_code, endpoint_name, base_url,
+                protocol_code, environment, priority, routing_weight
+            ) VALUES (
+                $1, $2, $3, $4, $5, 1, $6::jsonb,
+                $7, $8, $9, $10, $11,
+                $12, 1, $13, $14
+            )
+            ON CONFLICT (tenant_id, organization_id, supplier_id, endpoint_code) DO UPDATE SET
+                endpoint_name = EXCLUDED.endpoint_name,
+                base_url = EXCLUDED.base_url,
+                protocol_code = EXCLUDED.protocol_code,
+                environment = EXCLUDED.environment,
+                priority = EXCLUDED.priority,
+                routing_weight = EXCLUDED.routing_weight,
+                status = EXCLUDED.status,
+                metadata = EXCLUDED.metadata,
+                deleted_at = NULL,
+                deleted_by = NULL
+            "#,
+        )
+        .bind(endpoint_id)
+        .bind(stable_seed_uuid(
+            "sdk-ai-upstream-supplier-endpoint",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                seed.supplier_code,
+                seed.endpoint_code,
+            ],
+        ))
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(DEFAULT_ADMIN_DATA_SCOPE)
+        .bind(&supplier_metadata)
+        .bind(supplier_id)
+        .bind(seed.supplier_code)
+        .bind(seed.endpoint_code)
+        .bind(seed.endpoint_name)
+        .bind(primary.base_url)
+        .bind(primary.protocol_code)
+        .bind(DEFAULT_VENDOR_ACCOUNT_PRIORITY)
+        .bind(DEFAULT_VENDOR_ACCOUNT_ROUTING_WEIGHT)
+        .execute(&mut **tx)
+        .await?;
+
+        let endpoint_id = sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT id
+            FROM ai_upstream_supplier_endpoint
+            WHERE tenant_id = $1 AND organization_id = $2
+              AND supplier_id = $3 AND endpoint_code = $4 AND deleted_at IS NULL
+            "#,
+        )
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(supplier_id)
+        .bind(seed.endpoint_code)
+        .fetch_one(&mut **tx)
+        .await?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO ai_upstream_supplier_endpoint_health_state (
+                id, tenant_id, organization_id, supplier_id, endpoint_id,
+                health_status, consecutive_error_count
+            ) VALUES ($1, $2, $3, $4, $1, 0, 0)
+            ON CONFLICT (tenant_id, organization_id, endpoint_id) DO NOTHING
+            "#,
+        )
+        .bind(endpoint_id)
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(supplier_id)
+        .execute(&mut **tx)
+        .await?;
+
+        // Same `api_key` auth method shape the vendor path writes: relays
+        // authenticate with a bearer-typed API key.
+        sqlx::query(
+            r#"
+            INSERT INTO ai_upstream_supplier_auth_method (
+                id, uuid, tenant_id, organization_id, data_scope, status, metadata,
+                supplier_id, supplier_code, auth_method_code, auth_method_name,
+                auth_type, config_schema, runtime_auth_config, priority
+            ) VALUES (
+                $1, $2, $3, $4, $5, 1, $6::jsonb,
+                $7, $8, $9, 'API Key',
+                'api_key', '{"type":"object","required":["apiKey"],"properties":{"apiKey":{"type":"string","writeOnly":true}}}'::jsonb,
+                '{"credentialTransport":"bearer","defaultHeaders":{}}'::jsonb, $10
+            )
+            ON CONFLICT (tenant_id, organization_id, supplier_id, auth_method_code) DO UPDATE SET
+                auth_method_name = EXCLUDED.auth_method_name,
+                auth_type = EXCLUDED.auth_type,
+                config_schema = EXCLUDED.config_schema,
+                runtime_auth_config = EXCLUDED.runtime_auth_config,
+                priority = EXCLUDED.priority,
+                status = EXCLUDED.status,
+                metadata = EXCLUDED.metadata,
+                deleted_at = NULL,
+                deleted_by = NULL
+            "#,
+        )
+        .bind(stable_seed_id(
+            "sdk-ai-upstream-supplier-auth-method-id",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                seed.supplier_code,
+                DEFAULT_VENDOR_AUTH_METHOD_CODE,
+            ],
+        ))
+        .bind(stable_seed_uuid(
+            "sdk-ai-upstream-supplier-auth-method",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                seed.supplier_code,
+                DEFAULT_VENDOR_AUTH_METHOD_CODE,
+            ],
+        ))
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(DEFAULT_ADMIN_DATA_SCOPE)
+        .bind(&supplier_metadata)
+        .bind(supplier_id)
+        .bind(seed.supplier_code)
+        .bind(DEFAULT_VENDOR_AUTH_METHOD_CODE)
+        .bind(DEFAULT_VENDOR_ACCOUNT_PRIORITY)
+        .execute(&mut **tx)
+        .await?;
+
+        let account_id = stable_seed_id(
+            "sdk-ai-upstream-account-id",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                seed.account_code,
+            ],
+        );
+        // The marker vocabulary matches the vendor path so the same
+        // environment-convergence rule applies, but the `itemType` differs: an
+        // operator who edits a relay account must be distinguishable from one
+        // who edits a vendor account.
+        let account_metadata = seed_metadata(
+            catalog,
+            "default_relay_upstream_account",
+            seed.account_code,
+            serde_json::json!({
+                "supplierCode": seed.supplier_code,
+                "accountCode": seed.account_code,
+                "supplierType": "relay",
+                "initialAccountStatus": if enabled { "enabled" } else { "disabled" },
+                "seedPurpose": "relay-default-account",
+            }),
+        );
+        sqlx::query(
+            r#"
+            INSERT INTO ai_upstream_account (
+                id, uuid, tenant_id, organization_id, data_scope, status, metadata,
+                supplier_id, supplier_code, preferred_endpoint_id,
+                account_code, account_name, account_type, auth_method_code,
+                credential_rotation_strategy, environment,
+                billing_mode, contract_cost_multiplier
+            ) VALUES (
+                $1, $2, $3, $4, $5, $6, $7::jsonb,
+                $8, $9, $10,
+                $11, $12, 'standard', $13,
+                'default', 1,
+                'prepay', 1.000000000000
+            )
+            ON CONFLICT (tenant_id, organization_id, account_code) DO UPDATE SET
+                status = CASE
+                    WHEN ai_upstream_account.metadata ->> 'itemType'
+                        = 'default_relay_upstream_account'
+                    THEN EXCLUDED.status
+                    ELSE ai_upstream_account.status
+                END,
+                metadata = EXCLUDED.metadata,
+                deleted_at = NULL,
+                deleted_by = NULL
+            "#,
+        )
+        .bind(account_id)
+        .bind(stable_seed_uuid(
+            "sdk-ai-upstream-account",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                seed.account_code,
+            ],
+        ))
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(DEFAULT_ADMIN_DATA_SCOPE)
+        .bind(if enabled {
+            ACTIVE_STATUS
+        } else {
+            DISABLED_STATUS
+        })
+        .bind(&account_metadata)
+        .bind(supplier_id)
+        .bind(seed.supplier_code)
+        .bind(endpoint_id)
+        .bind(seed.account_code)
+        .bind(seed.account_name)
+        .bind(DEFAULT_VENDOR_AUTH_METHOD_CODE)
+        .execute(&mut **tx)
+        .await?;
+
+        let account_id = sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT id
+            FROM ai_upstream_account
+            WHERE tenant_id = $1 AND organization_id = $2
+              AND account_code = $3 AND deleted_at IS NULL
+            "#,
+        )
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(seed.account_code)
+        .fetch_one(&mut **tx)
+        .await?;
+
+        sqlx::query(
+            r#"
+            INSERT INTO ai_upstream_account_health_state (
+                id, tenant_id, organization_id, account_id,
+                health_status, consecutive_error_count
+            ) VALUES ($1, $2, $3, $1, 0, 0)
+            ON CONFLICT (tenant_id, organization_id, account_id) DO NOTHING
+            "#,
+        )
+        .bind(account_id)
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .execute(&mut **tx)
+        .await?;
+
+        import_postgres_default_relay_account_credential(
+            tx,
+            seed,
+            account_id,
+            enabled,
+            credential_codec,
+        )
+        .await?;
+
+        // Supplier-scope grants: one `ai_resource_binding` row per relay
+        // resource group. The relay account itself carries no account-scope
+        // binding, so the routing snapshot's second UNION branch inherits these
+        // group scopes instead of intersecting them away.
+        for resource_group_code in seed.resource_group_codes.iter() {
+            sqlx::query(
+                r#"
+                INSERT INTO ai_resource_binding (
+                    id, uuid, tenant_id, organization_id, data_scope, status, metadata,
+                    binding_scope, supplier_id, supplier_code,
+                    resource_id, resource_code, resource_group_code,
+                    grant_type, priority
+                )
+                SELECT
+                    $1, $2, $3, $4, $5, 1, $6::jsonb,
+                    'supplier', $7, $8,
+                    NULL, NULL, $9,
+                    'allow', $10
+                ON CONFLICT (id) DO UPDATE SET
+                    grant_type = EXCLUDED.grant_type,
+                    priority = EXCLUDED.priority,
+                    status = EXCLUDED.status,
+                    metadata = EXCLUDED.metadata,
+                    deleted_at = NULL,
+                    deleted_by = NULL
+                "#,
+            )
+            .bind(stable_seed_id(
+                "sdk-ai-upstream-supplier-resource-id",
+                &[
+                    &DEFAULT_IAM_TENANT_ID.to_string(),
+                    &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                    seed.supplier_code,
+                    resource_group_code,
+                ],
+            ))
+            .bind(stable_seed_uuid(
+                "sdk-ai-upstream-supplier-resource",
+                &[
+                    &DEFAULT_IAM_TENANT_ID.to_string(),
+                    &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                    seed.supplier_code,
+                    resource_group_code,
+                ],
+            ))
+            .bind(DEFAULT_IAM_TENANT_ID)
+            .bind(DEFAULT_IAM_ORGANIZATION_ID)
+            .bind(DEFAULT_ADMIN_DATA_SCOPE)
+            .bind(&supplier_metadata)
+            .bind(supplier_id)
+            .bind(seed.supplier_code)
+            .bind(*resource_group_code)
+            .bind(DEFAULT_VENDOR_ACCOUNT_PRIORITY)
+            .execute(&mut **tx)
+            .await?;
+        }
+
+        // Membership in the default mixed group is what makes the relay
+        // reachable. Auth-token (app-session) requests are pinned to this group
+        // by the authenticator and the selector then requires an exact
+        // `binding.account_group_id == group_id` match, so a relay account that
+        // were only granted at supplier scope would be invisible to every
+        // signed-in user.
+        let default_group_id = sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT id
+            FROM ai_upstream_account_group
+            WHERE tenant_id = $1 AND organization_id = $2
+              AND group_code = $3 AND deleted_at IS NULL
+            "#,
+        )
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(DEFAULT_MIXED_ACCOUNT_GROUP_CODE)
+        .fetch_optional(&mut **tx)
+        .await?
+        .ok_or_else(|| {
+            json_decode_error(AiRoutingSeedLoadError::Validation(format!(
+                "default relay upstream account `{}` targets missing default mixed account group `{DEFAULT_MIXED_ACCOUNT_GROUP_CODE}`",
+                seed.account_code
+            )))
+        })?;
+        let default_group_member_metadata = seed_metadata(
+            catalog,
+            "default_relay_upstream_account_group_member",
+            DEFAULT_MIXED_ACCOUNT_GROUP_CODE,
+            serde_json::json!({
+                "groupCode": DEFAULT_MIXED_ACCOUNT_GROUP_CODE,
+                "accountCode": seed.account_code,
+                "supplierCode": seed.supplier_code,
+                "supplierType": "relay",
+                "membership": "default-mixed-group",
+            }),
+        );
+        sqlx::query(
+            r#"
+            INSERT INTO ai_upstream_account_group_member (
+                id, uuid, tenant_id, organization_id, data_scope, status, metadata,
+                account_group_id, account_id, priority, routing_weight, enabled
+            ) VALUES (
+                $1, $2, $3, $4, $5, 1, $6::jsonb,
+                $7, $8, $9, $10, TRUE
+            )
+            ON CONFLICT (tenant_id, organization_id, account_group_id, account_id) DO UPDATE SET
+                priority = EXCLUDED.priority,
+                routing_weight = EXCLUDED.routing_weight,
+                enabled = EXCLUDED.enabled,
+                status = EXCLUDED.status,
+                metadata = EXCLUDED.metadata,
+                deleted_at = NULL,
+                deleted_by = NULL
+            "#,
+        )
+        .bind(stable_seed_id(
+            "sdk-ai-upstream-account-group-member-id",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                DEFAULT_MIXED_ACCOUNT_GROUP_CODE,
+                seed.account_code,
+            ],
+        ))
+        .bind(stable_seed_uuid(
+            "sdk-ai-upstream-account-group-member",
+            &[
+                &DEFAULT_IAM_TENANT_ID.to_string(),
+                &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+                DEFAULT_MIXED_ACCOUNT_GROUP_CODE,
+                seed.account_code,
+            ],
+        ))
+        .bind(DEFAULT_IAM_TENANT_ID)
+        .bind(DEFAULT_IAM_ORGANIZATION_ID)
+        .bind(DEFAULT_ADMIN_DATA_SCOPE)
+        .bind(&default_group_member_metadata)
+        .bind(default_group_id)
+        .bind(account_id)
+        .bind(DEFAULT_VENDOR_ACCOUNT_PRIORITY)
+        .bind(DEFAULT_VENDOR_ACCOUNT_ROUTING_WEIGHT)
+        .execute(&mut **tx)
+        .await?;
+    }
+
+    Ok(())
+}
+
+/// Seals and upserts the placeholder credential for one bundled relay account.
+///
+/// Mirrors `import_postgres_default_vendor_account_credential`; the secret is
+/// derived from the *supplier* code rather than a vendor code, because a relay
+/// has no vendor.
+async fn import_postgres_default_relay_account_credential(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    seed: &DefaultRelaySupplierSeed,
+    account_id: i64,
+    enabled: bool,
+    credential_codec: Option<&(dyn UpstreamCredentialSecretCodec + Send + Sync)>,
+) -> Result<(), sqlx::Error> {
+    let Some(credential_codec) = credential_codec else {
+        return Ok(());
+    };
+    let credential_id = stable_seed_id(
+        "sdk-ai-upstream-account-credential-id",
+        &[
+            &DEFAULT_IAM_TENANT_ID.to_string(),
+            &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+            seed.account_code,
+            DEFAULT_VENDOR_AUTH_METHOD_CODE,
+        ],
+    );
+    let secret = default_account_placeholder_secret(seed.supplier_code);
+    let encoded = credential_codec
+        .encode_secret(
+            UpstreamCredentialSecretContext::new(
+                DEFAULT_IAM_TENANT_ID,
+                DEFAULT_IAM_ORGANIZATION_ID,
+                account_id,
+                credential_id,
+            ),
+            &secret,
+        )
+        .map_err(|error| {
+            sqlx::Error::Protocol(format!(
+                "failed to seal placeholder credential for relay `{}`: {}",
+                seed.supplier_code, error
+            ))
+        })?;
+    let masked_label = format!(
+        "{}***{}",
+        &secret[..secret.len().min(3)],
+        &secret[secret.len().saturating_sub(4)..]
+    );
+    let credential_metadata = credential_seed_metadata();
+    sqlx::query(
+        r#"
+        INSERT INTO ai_upstream_account_credential (
+            id, uuid, tenant_id, organization_id, data_scope, status,
+            version, metadata,
+            account_id, auth_method_code, credential_name,
+            secret_ciphertext, secret_key_id, secret_fingerprint, masked_label,
+            credential_version, priority, is_active
+        ) VALUES (
+            $1, $2, $3, $4, $5, $6,
+            0, $15::jsonb,
+            $7, $8, $9,
+            $10, $11, $12, $13,
+            1, $14, TRUE
+        )
+        ON CONFLICT (tenant_id, organization_id, account_id, credential_version) DO UPDATE SET
+            credential_name = EXCLUDED.credential_name,
+            secret_ciphertext = EXCLUDED.secret_ciphertext,
+            secret_key_id = EXCLUDED.secret_key_id,
+            secret_fingerprint = EXCLUDED.secret_fingerprint,
+            masked_label = EXCLUDED.masked_label,
+            priority = EXCLUDED.priority,
+            is_active = EXCLUDED.is_active,
+            -- Same environment-convergence rule as the relay account row: an
+            -- operator who rotated the credential replaces `metadata`, which
+            -- drops the marker, so their status survives a re-seed. The marker
+            -- checked here is the vendor path's, because both paths share one
+            -- credential seed marker (see `credential_seed_metadata`).
+            status = CASE
+                WHEN ai_upstream_account_credential.metadata ->> 'itemType'
+                    = 'default_vendor_upstream_account_credential'
+                THEN EXCLUDED.status
+                ELSE ai_upstream_account_credential.status
+            END,
+            deleted_at = NULL,
+            deleted_by = NULL
+        "#,
+    )
+    .bind(credential_id)
+    .bind(stable_seed_uuid(
+        "sdk-ai-upstream-account-credential",
+        &[
+            &DEFAULT_IAM_TENANT_ID.to_string(),
+            &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+            seed.account_code,
+            DEFAULT_VENDOR_AUTH_METHOD_CODE,
+        ],
+    ))
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(DEFAULT_IAM_ORGANIZATION_ID)
+    .bind(DEFAULT_ADMIN_DATA_SCOPE)
+    .bind(if enabled {
+        ACTIVE_STATUS
+    } else {
+        DISABLED_STATUS
+    })
+    .bind(account_id)
+    .bind(DEFAULT_VENDOR_AUTH_METHOD_CODE)
+    .bind(format!("{} Default Credential", seed.supplier_name))
+    .bind(encoded.ciphertext)
+    .bind(encoded.key_id)
+    .bind(encoded.fingerprint)
+    .bind(masked_label)
+    .bind(DEFAULT_VENDOR_ACCOUNT_PRIORITY)
+    .bind(&credential_metadata)
+    .execute(&mut **tx)
+    .await?;
+    Ok(())
+}
+
+/// Deterministic ordering for seeded relay suppliers, offset past the vendor
+/// block so the admin list keeps vendors first and relays grouped after them.
+fn seeded_relay_supplier_sort_order(supplier_code: &str) -> i32 {
+    DEFAULT_RELAY_SUPPLIERS
+        .iter()
+        .position(|seed| seed.supplier_code == supplier_code)
+        .map(|index| {
+            i32::try_from(index)
+                .unwrap_or(i32::MAX)
+                .saturating_add(RELAY_SUPPLIER_SORT_ORDER_BASE)
+        })
+        .unwrap_or(i32::MAX)
 }
 
 /// Seals and upserts the placeholder credential for one bundled vendor account.
@@ -3900,6 +5253,8 @@ mod tests {
             "kling.video",
             "jimeng.image",
             "jimeng.video",
+            "bytedance.image",
+            "bytedance.video",
             "vidu.image",
             "vidu.video",
             "volcengine.image",
@@ -4359,10 +5714,12 @@ mod tests {
         );
         assert_eq!(
             account_codes.len(),
-            27,
+            28,
             "the bundled vendor default account set must cover every catalog vendor \
-             (25 catalog vendors + the `gemini`/`kling`/`jimeng` account-side aliases \
-             of `google`/`kuaishou`/`bytedance` — see VENDOR_CODE_ALIASES)"
+             (26 catalog vendors + the `gemini`/`kling` account-side aliases of \
+             `google`/`kuaishou` — see VENDOR_CODE_ALIASES). `bytedance` used to be \
+             an alias of `jimeng` and shared its account; they are separate vendors \
+             now, each with its own host, so each carries its own account."
         );
         assert!(
             account_codes.contains(&"openai-default")
@@ -4582,6 +5939,380 @@ mod tests {
                  (generic api_endpoint `{endpoint_code}` for primaryCapability \
                  `{capability}`); without it every {capability}-primary model in \
                  the catalog cannot reach any account route"
+            );
+        }
+    }
+
+    /// The bundled relay (中转站) suppliers must be expressible by the schema
+    /// the seed writes into.
+    ///
+    /// `ck_ai_upstream_supplier_type` is a closed set, so a typo in
+    /// `supplier_type` is a runtime seed failure rather than a bad-looking row.
+    /// The relay path deliberately does *not* set `default_vendor_code`, and the
+    /// corresponding CHECK only requires it for `official` suppliers, so the
+    /// pair `(relay, no vendor)` is the shape that has to hold.
+    #[test]
+    fn relay_suppliers_declare_the_schema_permitted_supplier_type() {
+        assert_eq!(
+            RELAY_SUPPLIER_TYPE, "relay",
+            "`ck_ai_upstream_supplier_type` admits only 'official' and 'relay'"
+        );
+        assert_eq!(
+            DEFAULT_RELAY_SUPPLIERS.len(),
+            4,
+            "the bundled relay set is the four host/brand combinations"
+        );
+        let codes: BTreeSet<&str> = DEFAULT_RELAY_SUPPLIERS
+            .iter()
+            .map(|seed| seed.supplier_code)
+            .collect();
+        assert_eq!(
+            codes,
+            BTreeSet::from([
+                "sdkwork-global",
+                "sdkwork-cn",
+                "birdcoder-global",
+                "birdcoder-cn",
+            ]),
+            "the relay supplier codes are the public identity of each relay edge"
+        );
+    }
+
+    /// A relay must expose all three bundled LLM protocol surfaces, and the
+    /// OpenAI-shaped two must share a base URL while Anthropic has its own.
+    ///
+    /// This is the shape that makes the relay reachable from both the OpenAI
+    /// and Anthropic client SDKs. Getting it wrong is silent: a relay that
+    /// declares `anthropic_messages` with a `/v1` base URL would have the
+    /// Anthropic SDK dial `/v1/v1/messages` (the SDK appends the version
+    /// segment itself), and the failure would surface as a 404 from the relay
+    /// rather than as a seed error.
+    #[test]
+    fn relay_protocols_cover_all_llm_surfaces_with_per_surface_base_urls() {
+        for seed in DEFAULT_RELAY_SUPPLIERS.iter() {
+            let codes: Vec<&str> = seed
+                .protocols
+                .iter()
+                .map(|protocol| protocol.protocol_code)
+                .collect();
+            assert_eq!(
+                codes,
+                vec![
+                    "openai_chat_completions",
+                    "openai_responses",
+                    "anthropic_messages"
+                ],
+                "relay `{}` must expose the full LLM surface set so both the \
+                 OpenAI and Anthropic client SDKs can route through it",
+                seed.supplier_code
+            );
+
+            let openai_base = seed
+                .protocols
+                .iter()
+                .find(|protocol| protocol.protocol_code == "openai_chat_completions")
+                .map(|protocol| protocol.base_url)
+                .expect("openai_chat_completions must be present");
+            let responses_base = seed
+                .protocols
+                .iter()
+                .find(|protocol| protocol.protocol_code == "openai_responses")
+                .map(|protocol| protocol.base_url)
+                .expect("openai_responses must be present");
+            assert_eq!(
+                openai_base, responses_base,
+                "relay `{}` serves both OpenAI-shaped surfaces from one prefix",
+                seed.supplier_code
+            );
+
+            let anthropic_base = seed
+                .protocols
+                .iter()
+                .find(|protocol| protocol.protocol_code == "anthropic_messages")
+                .map(|protocol| protocol.base_url)
+                .expect("anthropic_messages must be present");
+            assert_ne!(
+                openai_base, anthropic_base,
+                "relay `{}` must give the Anthropic surface its own prefix; \
+                 sharing the OpenAI `/v1` prefix makes the Anthropic SDK dial \
+                 `/v1/v1/messages`",
+                seed.supplier_code
+            );
+            assert!(
+                anthropic_base.ends_with("/anthropic"),
+                "relay `{}` anthropic base `{anthropic_base}` must end at the \
+                 `/anthropic` surface so the SDK-supplied `/v1/messages` \
+                 completes it to `/anthropic/v1/messages`",
+                seed.supplier_code
+            );
+            assert!(
+                openai_base.ends_with("/v1"),
+                "relay `{}` openai base `{openai_base}` must end at `/v1` so the \
+                 client-appended `/chat/completions` completes the documented \
+                 path",
+                seed.supplier_code
+            );
+
+            // Every base URL is written straight into `ai_upstream_supplier_
+            // protocols` and dialled by the runtime, so it has to satisfy the
+            // same absolute-HTTPS rule the admin API enforces.
+            for protocol in seed.protocols.iter() {
+                assert!(
+                    protocol.base_url.starts_with("https://"),
+                    "relay `{}` protocol `{}` base URL `{}` must be absolute \
+                     HTTPS; the admin API rejects anything else and the runtime \
+                     would emit it verbatim into the upstream request",
+                    seed.supplier_code,
+                    protocol.protocol_code,
+                    protocol.base_url
+                );
+                assert!(
+                    !protocol.base_url.contains('?')
+                        && !protocol.base_url.contains('#')
+                        && !protocol.base_url.contains('@'),
+                    "relay `{}` protocol `{}` base URL `{}` must not carry a \
+                     query string, fragment or embedded credentials",
+                    seed.supplier_code,
+                    protocol.protocol_code,
+                    protocol.base_url
+                );
+            }
+        }
+    }
+
+    /// Each relay supplier must have a distinct host, and the two brands must
+    /// not accidentally share one.
+    ///
+    /// The four relays exist precisely because the hosts differ; a copy-paste
+    /// slip that gives `sdkwork-cn` the `api.sdkwork.com` host would produce a
+    /// supplier labelled "China" that dials the international edge, and nothing
+    /// else in the seed would notice.
+    #[test]
+    fn relay_suppliers_dial_four_distinct_hosts() {
+        let hosts: BTreeSet<&str> = DEFAULT_RELAY_SUPPLIERS
+            .iter()
+            .map(|seed| {
+                seed.protocols[0]
+                    .base_url
+                    .strip_prefix("https://")
+                    .and_then(|rest| rest.split('/').next())
+                    .expect("relay base URLs are absolute HTTPS with a host")
+            })
+            .collect();
+        assert_eq!(
+            hosts,
+            BTreeSet::from([
+                "api.sdkwork.com",
+                "api.sdkwork.cn",
+                "api.birdcoder.com",
+                "api.birdcoder.cn",
+            ]),
+            "each relay supplier must dial its own host"
+        );
+        assert_eq!(
+            hosts.len(),
+            DEFAULT_RELAY_SUPPLIERS.len(),
+            "two relay suppliers sharing a host would make one of them \
+             redundant and one region's traffic miss its intended edge"
+        );
+    }
+
+    /// The accounts the relay path writes must not collide with the vendor
+    /// path's account codes.
+    ///
+    /// `ai_upstream_account` is unique on `(tenant_id, organization_id,
+    /// account_code)` and both paths upsert with `ON CONFLICT` on that key. A
+    /// collision would make the second writer silently take over the first
+    /// writer's row — including its supplier, when the two suppliers differ.
+    #[test]
+    fn relay_account_codes_do_not_collide_with_vendor_account_codes() {
+        let vendor_codes: BTreeSet<&str> = DEFAULT_VENDOR_UPSTREAM_ACCOUNTS
+            .iter()
+            .map(|seed| seed.account_code)
+            .collect();
+        let relay_codes: Vec<&str> = DEFAULT_RELAY_SUPPLIERS
+            .iter()
+            .map(|seed| seed.account_code)
+            .collect();
+        let unique_relay: BTreeSet<&str> = relay_codes.iter().copied().collect();
+        assert_eq!(
+            unique_relay.len(),
+            relay_codes.len(),
+            "relay account codes must be unique: {relay_codes:?}"
+        );
+        for code in relay_codes {
+            assert!(
+                !vendor_codes.contains(code),
+                "relay account code `{code}` collides with a vendor account; \
+                 the two seed paths upsert on the same unique key and the \
+                 second one would overwrite the first"
+            );
+        }
+    }
+
+    /// The relay supplier codes must not collide with the vendor suppliers'.
+    ///
+    /// Same reasoning as the account codes, one table up: a relay named after a
+    /// vendor would take over that vendor's supplier row.
+    #[test]
+    fn relay_supplier_codes_do_not_collide_with_vendor_supplier_codes() {
+        let vendor_codes: BTreeSet<&str> = DEFAULT_VENDOR_UPSTREAM_ACCOUNTS
+            .iter()
+            .map(|seed| seed.vendor_code)
+            .collect();
+        for seed in DEFAULT_RELAY_SUPPLIERS.iter() {
+            assert!(
+                !vendor_codes.contains(seed.supplier_code),
+                "relay supplier code `{}` collides with a vendor supplier code",
+                seed.supplier_code
+            );
+        }
+    }
+
+    /// The relay resource groups a relay account is granted must exist in the
+    /// bundled catalog, and the default group must grant them.
+    ///
+    /// Without the default-group grant the relay account is a member of a group
+    /// whose granted scope the loader never surfaces for auth-token traffic, so
+    /// the relay is invisible to signed-in users — the same failure mode as an
+    /// empty pool, and one that no static check on the supplier row can see.
+    #[test]
+    fn relay_resource_groups_exist_and_are_granted_to_the_default_group() {
+        let catalog = test_catalog();
+        let declared: BTreeSet<&str> = catalog
+            .resource_groups
+            .iter()
+            .map(|group| group.group_code.as_str())
+            .collect();
+
+        for group_code in RELAY_ACCOUNT_RESOURCE_GROUP_CODES.iter() {
+            assert!(
+                declared.contains(group_code),
+                "relay account group `{group_code}` must exist in the bundled \
+                 resource-group catalog"
+            );
+        }
+
+        let default_group = default_admin_upstream_account_groups(&catalog)
+            .expect("default account groups must derive")
+            .into_iter()
+            .find(|group| group.is_default)
+            .expect("the default account group must exist");
+        let grants = default_group.resource_group_codes();
+        for group_code in RELAY_ACCOUNT_RESOURCE_GROUP_CODES.iter() {
+            assert!(
+                grants.contains(group_code),
+                "the default account group must grant relay group \
+                 `{group_code}`; a relay account is bound into the default group \
+                 and is otherwise unreachable from every auth-token session"
+            );
+        }
+    }
+
+    /// Every relay must be granted the same relay groups.
+    ///
+    /// The relay path reads the groups from the seed entry, so a divergence
+    /// would give one brand a narrower surface than the other with no other
+    /// signal. The media groups are what carry image and video, so a relay that
+    /// lost one would silently stop supporting the capabilities its brand is
+    /// required to provide. The LLM/coding surface is *not* in this list on
+    /// purpose: it reuses the protocol-surface groups, which are granted from
+    /// the protocols the relay declares (see `llmProtocols.ts`).
+    #[test]
+    fn every_relay_supplier_is_granted_the_media_groups() {
+        for seed in DEFAULT_RELAY_SUPPLIERS.iter() {
+            for group_code in [
+                "relay.bytedance.media",
+                "relay.cn.visual_generation",
+                "relay.global.visual_generation",
+            ] {
+                assert!(
+                    seed.resource_group_codes.contains(&group_code),
+                    "relay `{}` must be granted `{group_code}`; the relay \
+                     product requirement covers image and video generation, and \
+                     a missing grant fails that capability closed with 50201 \
+                     without any seed error",
+                    seed.supplier_code
+                );
+            }
+        }
+    }
+
+    /// The media relay groups must cover the vendor-native image/video surfaces
+    /// the relay product requirement names.
+    ///
+    /// Why this guard exists (2026-09-20): the first relay cut pointed the
+    /// media grant at `relay.openai_compatible.media`, which covers only the
+    /// *OpenAI-shaped* media endpoints. Seedance, Seedream, Kling, Jimeng,
+    /// Volcengine, Vidu, FLUX, Runway, Luma, PixVerse, Stability and Gemini all
+    /// publish vendor-native paths that share no common protocol, so none of
+    /// them was reachable through a relay — every such request failed closed
+    /// with 50201 while the OpenAI-shaped media calls worked, a partial-surface
+    /// failure that looks like a vendor problem rather than a missing grant.
+    #[test]
+    fn relay_media_groups_cover_the_vendor_native_visual_surfaces() {
+        let catalog = test_catalog();
+        let granted_by_group = |group_code: &str| -> BTreeSet<&str> {
+            catalog
+                .resource_groups
+                .iter()
+                .find(|group| group.group_code == group_code)
+                .unwrap_or_else(|| panic!("resource group `{group_code}` must exist"))
+                .items
+                .iter()
+                .filter(|item| item.item_type == "resource")
+                .filter_map(|item| item.resource_code.as_deref())
+                .collect()
+        };
+
+        // ByteDance's Ark media surface — the reason this split exists. A
+        // `doubao-seedance-*` request binds `api.bytedance.video_generation` at
+        // `/api/v3/contents/generations/tasks`, and `api.bytedance.task_query`
+        // polls it.
+        let bytedance = granted_by_group("relay.bytedance.media");
+        for resource_code in [
+            "api.bytedance.image_generation",
+            "api.bytedance.video_generation",
+            "api.bytedance.task_query",
+        ] {
+            assert!(
+                bytedance.contains(resource_code),
+                "`relay.bytedance.media` must grant `{resource_code}`"
+            );
+        }
+
+        // The China-market vendor-native set.
+        let cn = granted_by_group("relay.cn.visual_generation");
+        for resource_code in [
+            "api.kling.text_to_video",
+            "api.kling.image_generation",
+            "api.jimeng.video_generation",
+            "api.jimeng.image_generation",
+            "api.volcengine.video_generation",
+            "api.volcengine.image_generation",
+            "api.vidu.start_end_to_video",
+            "api.vidu.reference_to_image",
+        ] {
+            assert!(
+                cn.contains(resource_code),
+                "`relay.cn.visual_generation` must grant `{resource_code}`"
+            );
+        }
+
+        // The global vendor-native set, including Gemini's image/video actions.
+        let global = granted_by_group("relay.global.visual_generation");
+        for resource_code in [
+            "api.gemini.image_generation",
+            "api.gemini.video_generation",
+            "api.black_forest_labs.image_generation",
+            "api.runway.image_generation",
+            "api.luma_ai.video_generation",
+            "api.pixverse.video_generation",
+            "api.stability_ai.image_generation",
+        ] {
+            assert!(
+                global.contains(resource_code),
+                "`relay.global.visual_generation` must grant `{resource_code}`"
             );
         }
     }

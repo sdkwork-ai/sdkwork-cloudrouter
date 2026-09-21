@@ -148,7 +148,6 @@ export function applyTopologyProfileToWorkspaceSettings(settings, profileEnv = {
   const backendBind = readTrimmedValue(profileEnv.SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_BACKEND_HTTP_BIND);
   const publicBind = readTrimmedValue(profileEnv.SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_INGRESS_BIND);
   const appApiBind = readTrimmedValue(profileEnv.SDKWORK_CLOUDROUTER_ROUTER_INTERNAL_APP_API_BIND);
-  const portalBind = readTrimmedValue(profileEnv.SDKWORK_CLOUDROUTER_ROUTER_INTERNAL_PORTAL_RENDERER_BIND);
   const platformBind = readTrimmedValue(profileEnv.SDKWORK_API_CLOUD_GATEWAY_BIND);
   const platformGatewayHttpUrl = readTrimmedValue(
     profileEnv.SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL,
@@ -165,9 +164,6 @@ export function applyTopologyProfileToWorkspaceSettings(settings, profileEnv = {
   }
   if (publicBind && !settings.serverBindExplicit) {
     settings.serverBind = publicBind;
-  }
-  if (portalBind && !settings.portalBindExplicit) {
-    settings.portalBind = portalBind;
   }
   if (platformBind && !settings.sdkworkApiGatewayBindExplicit) {
     settings.sdkworkApiGatewayBind = platformBind;
@@ -225,7 +221,6 @@ export function resolveWorkspaceRuntimePlan(settings) {
   const effectiveEnv = runtime.applyProfileEnv(profileId, [
     profileEnv,
     {
-      SDKWORK_CLOUDROUTER_ROUTER_INTERNAL_PORTAL_RENDERER_BIND: settings.portalBind,
       ...(settings.runtimeMode === 'client'
         ? {}
         : {
@@ -305,8 +300,6 @@ export function bridgeTopologyBindEnvToLegacyRustEnv(profileEnv = {}, settings =
     ?? readTrimmedValue(profileEnv.SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_BACKEND_HTTP_BIND);
   const appApiBind = settings.appApiBind
     ?? readTrimmedValue(profileEnv.SDKWORK_CLOUDROUTER_ROUTER_INTERNAL_APP_API_BIND);
-  const portalBind = settings.portalBind
-    ?? readTrimmedValue(profileEnv.SDKWORK_CLOUDROUTER_ROUTER_INTERNAL_PORTAL_RENDERER_BIND);
 
   if (serverBind) {
     bridged.SDKWORK_CLOUDROUTER_SERVER_BIND = serverBind;
@@ -319,9 +312,6 @@ export function bridgeTopologyBindEnvToLegacyRustEnv(profileEnv = {}, settings =
   }
   if (appApiBind) {
     bridged.SDKWORK_CLOUDROUTER_APP_API_BIND = appApiBind;
-  }
-  if (portalBind) {
-    bridged.SDKWORK_CLOUDROUTER_PORTAL_BIND = portalBind;
   }
   return bridged;
 }

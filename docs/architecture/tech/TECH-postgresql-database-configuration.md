@@ -47,8 +47,8 @@ desktop local data profile stores SQLite under `~/.sdkwork/router/data/cloudrout
 
 Guides:
 
-- [Development PostgreSQL configuration](./postgresql-development.md)
-- [Production PostgreSQL configuration](./postgresql-production.md)
+- [Development PostgreSQL configuration](../../installation/postgresql-development.md)
+- [Production PostgreSQL configuration](../../installation/postgresql-production.md)
 
 Desktop/runtime local user data remains SQLite by default. Use desktop packages
 or explicit product server SQLite dev entrypoints when validating

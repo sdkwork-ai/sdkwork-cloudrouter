@@ -6,7 +6,8 @@ use axum::routing::get;
 use axum::{Json, Router};
 use sdkwork_cloudrouter_router_service::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
 use sdkwork_cloudrouter_router_service::ports::{
-    AdminLlmProtocolConfig, AdminUpstreamAccountCredentialItem, AdminUpstreamAccountItem,
+    AdminLlmProtocolConfig, AdminUpstreamAccountCredentialItem,
+    AdminUpstreamAccountCredentialSecretItem, AdminUpstreamAccountItem,
     AdminUpstreamAccountVerificationItem, AdminUpstreamResourceInput,
     CreateAdminUpstreamAccountCredentialCommand, SaveAdminUpstreamAccountCommand,
     VerifyAdminUpstreamAccountCommand,
@@ -189,6 +190,21 @@ struct CredentialResponse {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+struct CredentialSecretResponse {
+    id: String,
+    account_id: String,
+    credential_name: String,
+    auth_method_code: String,
+    masked_label: Option<String>,
+    credential_version: String,
+    is_active: bool,
+    status: i32,
+    /// 解密后的明文密钥。仅此端点下发；列表端点恒不含该字段。
+    secret: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct AccountVerificationResponse {
     id: String,
     account_id: String,
@@ -221,6 +237,10 @@ pub(super) fn routes() -> Router<UpstreamState> {
         .route(
             "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}",
             axum::routing::delete(deactivate_credential),
+        )
+        .route(
+            "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}/secret",
+            get(reveal_credential_secret),
         )
         .route(
             "/backend/v3/api/ai/upstream_accounts/{accountId}/resources",
@@ -445,6 +465,33 @@ async fn deactivate_credential(
     {
         Ok(true) => no_content_response(),
         Ok(false) => not_found("upstream account credential"),
+        Err(error) => domain_error(error),
+    }
+}
+
+/// 读取单条凭据的明文密钥，供管理面编辑场景显式调用。
+///
+/// 只有这个端点会把 `secret_ciphertext` 解密后下发；列表端点
+/// （`GET .../credentials`）恒只返回 `maskedLabel`。
+async fn reveal_credential_secret(
+    State(state): State<UpstreamState>,
+    RequiredAdminSqlScopedSubject(scoped): RequiredAdminSqlScopedSubject,
+    Path((account_id, credential_id)): Path<(String, String)>,
+) -> Response {
+    let account_id = match parse_id(account_id, "accountId") {
+        Ok(value) => value,
+        Err(response) => return response.into_response(),
+    };
+    let credential_id = match parse_id(credential_id, "credentialId") {
+        Ok(value) => value,
+        Err(response) => return response.into_response(),
+    };
+    match state
+        .store
+        .reveal_account_credential_secret(subject(scoped), account_id, credential_id)
+        .await
+    {
+        Ok(item) => item_response(StatusCode::OK, CredentialSecretResponse::from(item)),
         Err(error) => domain_error(error),
     }
 }
@@ -1017,6 +1064,22 @@ impl From<AdminUpstreamAccountCredentialItem> for CredentialResponse {
     }
 }
 
+impl From<AdminUpstreamAccountCredentialSecretItem> for CredentialSecretResponse {
+    fn from(item: AdminUpstreamAccountCredentialSecretItem) -> Self {
+        Self {
+            id: item.id.to_string(),
+            account_id: item.account_id.to_string(),
+            credential_name: item.credential_name,
+            auth_method_code: item.auth_method_code,
+            masked_label: item.masked_label,
+            credential_version: item.credential_version.to_string(),
+            is_active: item.is_active,
+            status: item.status,
+            secret: item.secret,
+        }
+    }
+}
+
 impl From<AdminUpstreamAccountVerificationItem> for AccountVerificationResponse {
     fn from(item: AdminUpstreamAccountVerificationItem) -> Self {
         let account_id = item.account_id.to_string();
@@ -1095,8 +1158,12 @@ mod tests {
         assert!(!serialized.contains("\"secret\""));
     }
 
+    /// 列表响应必须保持掩码元数据，绝不泄漏明文。
+    ///
+    /// 管理面编辑场景走 `reveal_credential_secret` 专用端点；列表端点一旦也
+    /// 带上明文，分页缓存、批量查询与 devtools 网络记录都会变成明文泄漏面。
     #[test]
-    fn credential_response_exposes_only_masked_secret_metadata() {
+    fn credential_list_response_exposes_only_masked_secret_metadata() {
         let response = CredentialResponse::from(AdminUpstreamAccountCredentialItem {
             id: 13,
             auth_method_code: "api-key".to_owned(),
@@ -1118,6 +1185,33 @@ mod tests {
         assert!(!serialized.contains("rawSecret"));
         assert!(!serialized.contains("secretCiphertext"));
         assert!(!serialized.contains("\"secret\""));
+    }
+
+    /// 明文读取端点返回解密后的密钥，并保留掩码作为对照元数据。
+    #[test]
+    fn credential_secret_response_returns_decrypted_secret() {
+        let response = CredentialSecretResponse::from(AdminUpstreamAccountCredentialSecretItem {
+            id: 13,
+            account_id: 11,
+            credential_name: "primary".to_owned(),
+            auth_method_code: "api-key".to_owned(),
+            masked_label: Some("sk-****1234".to_owned()),
+            credential_version: 1,
+            is_active: true,
+            status: 1,
+            secret: "sk-live-1234abcd".to_owned(),
+        });
+        let payload = serde_json::to_value(response).unwrap();
+        let serialized = payload.to_string();
+
+        assert_eq!("13", payload["id"]);
+        assert_eq!("11", payload["accountId"]);
+        assert_eq!("sk-live-1234abcd", payload["secret"]);
+        assert_eq!("sk-****1234", payload["maskedLabel"]);
+        // 密文与密钥标识绝不离开服务端。
+        assert!(!serialized.contains("secretCiphertext"));
+        assert!(!serialized.contains("secretKeyId"));
+        assert!(!serialized.contains("rawSecret"));
     }
 
     #[test]

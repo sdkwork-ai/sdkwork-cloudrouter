@@ -2,15 +2,16 @@ use std::sync::Arc;
 
 use crate::domain::DomainResult;
 use crate::ports::{
-    AdminUpstreamAccountCredentialItem, AdminUpstreamAccountGroupItem,
-    AdminUpstreamAccountGroupMemberInput, AdminUpstreamAccountGroupMemberItem,
-    AdminUpstreamAccountItem, AdminUpstreamFuture, AdminUpstreamListQuery, AdminUpstreamPage,
-    AdminUpstreamResourceInput, AdminUpstreamResourceItem, AdminUpstreamStore,
-    AdminUpstreamSubject, AdminUpstreamSupplierAuthMethodInput,
-    AdminUpstreamSupplierAuthMethodItem, AdminUpstreamSupplierEndpointInput,
-    AdminUpstreamSupplierEndpointItem, AdminUpstreamSupplierItem,
-    CreateAdminUpstreamAccountCredentialCommand, SaveAdminUpstreamAccountCommand,
-    SaveAdminUpstreamAccountGroupCommand, SaveAdminUpstreamSupplierCommand,
+    AdminUpstreamAccountCredentialItem, AdminUpstreamAccountCredentialSecretItem,
+    AdminUpstreamAccountGroupItem, AdminUpstreamAccountGroupMemberInput,
+    AdminUpstreamAccountGroupMemberItem, AdminUpstreamAccountItem, AdminUpstreamFuture,
+    AdminUpstreamListQuery, AdminUpstreamPage, AdminUpstreamResourceInput,
+    AdminUpstreamResourceItem, AdminUpstreamStore, AdminUpstreamSubject,
+    AdminUpstreamSupplierAuthMethodInput, AdminUpstreamSupplierAuthMethodItem,
+    AdminUpstreamSupplierEndpointInput, AdminUpstreamSupplierEndpointItem,
+    AdminUpstreamSupplierItem, CreateAdminUpstreamAccountCredentialCommand,
+    SaveAdminUpstreamAccountCommand, SaveAdminUpstreamAccountGroupCommand,
+    SaveAdminUpstreamSupplierCommand,
 };
 
 use super::ai_routing_cache_invalidation::AiRoutingCacheInvalidator;
@@ -229,6 +230,17 @@ impl AdminUpstreamStore for AiRoutingCacheInvalidatingAdminUpstreamStore {
         account_id: i64,
     ) -> AdminUpstreamFuture<'a, AdminUpstreamPage<AdminUpstreamAccountCredentialItem>> {
         self.inner.list_account_credentials(query, account_id)
+    }
+
+    /// 明文读取是纯读路径，不触碰路由缓存，直接透传。
+    fn reveal_account_credential_secret<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        account_id: i64,
+        credential_id: i64,
+    ) -> AdminUpstreamFuture<'a, AdminUpstreamAccountCredentialSecretItem> {
+        self.inner
+            .reveal_account_credential_secret(subject, account_id, credential_id)
     }
 
     fn create_account_credential<'a>(

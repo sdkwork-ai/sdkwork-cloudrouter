@@ -21,6 +21,7 @@ export const consoleSettlementsMessages = {
     "console.settlements.columns.paymentMethod": "Payment method",
     "console.settlements.columns.paidAt": "Paid",
     "console.settlements.columns.paidAmount": "Paid amount",
+    "console.settlements.columns.tokenBankQuota": "Token Bank quota",
     "console.settlements.columns.expireAt": "Expires",
   },
   zh: {
@@ -43,6 +44,7 @@ export const consoleSettlementsMessages = {
     "console.settlements.columns.paymentMethod": "支付方式",
     "console.settlements.columns.paidAt": "支付时间",
     "console.settlements.columns.paidAmount": "实付金额",
+    "console.settlements.columns.tokenBankQuota": "Token Bank 额度",
     "console.settlements.columns.expireAt": "过期时间",
   },
 } satisfies I18nMessageBundle;

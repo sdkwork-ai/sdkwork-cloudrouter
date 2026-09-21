@@ -156,6 +156,15 @@ export function getCloudRouterAccountAppService(): SdkworkAccountAppService {
   return getSdkworkAccountService();
 }
 
+/**
+ * Re-exported from `@sdkwork/account-service` so Cloud Router consumers convert
+ * Token Bank micro-point wire values through one sanctioned helper instead of
+ * re-declaring the 1e6 scale. `token_bank.account.retrieve().availableAmount`
+ * is an integer micro-point string; reading it as a plain number inflates the
+ * balance by 1e6.
+ */
+export { toSdkworkAccountPointsFromMicro } from '@sdkwork/account-service';
+
 export interface CloudRouterTokenBankBalance {
   /** Spendable Token Bank balance expressed in credit points. */
   available: number;

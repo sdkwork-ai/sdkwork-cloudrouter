@@ -44,7 +44,7 @@
     "provider": "default",
     "hooks": []
   },
-  "materializedTableCount": 14,
+  "materializedTableCount": 15,
   "materializedTables": [
     "ops_alert_event",
     "ops_audit_log",
@@ -59,9 +59,11 @@
     "ops_referral_invite_code",
     "ops_referral_relation",
     "ops_referral_stat_snapshot",
-    "ops_referral_strategy"
+    "ops_referral_strategy",
+    "sdkwork_node_registry"
   ],
   "tablePrefixes": [
-    "ops_"
+    "ops_",
+    "sdkwork_"
   ]
 }

@@ -9,9 +9,9 @@ use crate::application::{UpstreamCredentialSecretCodec, UpstreamCredentialSecret
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::ports::{
-    AdminUpstreamAccountCredentialItem, AdminUpstreamAccountItem, AdminUpstreamListQuery,
-    AdminUpstreamPage, AdminUpstreamSubject, CreateAdminUpstreamAccountCredentialCommand,
-    SaveAdminUpstreamAccountCommand,
+    AdminUpstreamAccountCredentialItem, AdminUpstreamAccountCredentialSecretItem,
+    AdminUpstreamAccountItem, AdminUpstreamListQuery, AdminUpstreamPage, AdminUpstreamSubject,
+    CreateAdminUpstreamAccountCredentialCommand, SaveAdminUpstreamAccountCommand,
 };
 
 const MAX_CREDENTIAL_SECRET_BYTES: usize = 32 * 1024;
@@ -431,6 +431,90 @@ pub(super) async fn list_credentials(
         page: query.page,
         page_size: query.page_size,
         total,
+    })
+}
+
+/// 读取单条凭据的明文密钥（管理面显式读取）。
+///
+/// 这是唯一会把 `secret_ciphertext` 解密进读表面的 SQL 路径。列表读取
+/// （[`list_credentials`]）保持只暴露掩码元数据，绝不解密。
+pub(super) async fn reveal_credential_secret(
+    pool: &PgPool,
+    secret_codec: &(dyn UpstreamCredentialSecretCodec + Send + Sync),
+    subject: AdminUpstreamSubject,
+    account_id: i64,
+    credential_id: i64,
+) -> DomainResult<AdminUpstreamAccountCredentialSecretItem> {
+    ensure_account_exists(pool, &subject, account_id).await?;
+    let row = sqlx::query(
+        r#"
+        SELECT
+            id, account_id, auth_method_code, credential_name, masked_label,
+            secret_ciphertext, secret_key_id, credential_version, is_active, status
+        FROM ai_upstream_account_credential
+        WHERE tenant_id = $1 AND organization_id = $2
+          AND account_id = $3 AND id = $4 AND deleted_at IS NULL
+        "#,
+    )
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(account_id)
+    .bind(credential_id)
+    .fetch_optional(pool)
+    .await
+    .map_err(|error| store_error("failed to read upstream account credential secret", error))?
+    .ok_or_else(|| not_found("upstream account credential"))?;
+
+    let ciphertext: String = column(
+        &row,
+        "secret_ciphertext",
+        "failed to map upstream credential ciphertext",
+    )?;
+    let key_id: String = column(
+        &row,
+        "secret_key_id",
+        "failed to map upstream credential key id",
+    )?;
+    let secret = secret_codec.decode_secret(
+        UpstreamCredentialSecretContext::new(
+            subject.tenant_id,
+            subject.organization_id,
+            account_id,
+            credential_id,
+        ),
+        &key_id,
+        &ciphertext,
+    )?;
+    Ok(AdminUpstreamAccountCredentialSecretItem {
+        id: column(&row, "id", "failed to map upstream credential id")?,
+        account_id: column(&row, "account_id", "failed to map upstream credential account")?,
+        credential_name: column(
+            &row,
+            "credential_name",
+            "failed to map upstream credential name",
+        )?,
+        auth_method_code: column(
+            &row,
+            "auth_method_code",
+            "failed to map upstream credential auth method",
+        )?,
+        masked_label: column(
+            &row,
+            "masked_label",
+            "failed to map upstream credential masked label",
+        )?,
+        credential_version: column(
+            &row,
+            "credential_version",
+            "failed to map upstream credential version",
+        )?,
+        is_active: column(
+            &row,
+            "is_active",
+            "failed to map upstream credential active state",
+        )?,
+        status: column(&row, "status", "failed to map upstream credential status")?,
+        secret,
     })
 }
 

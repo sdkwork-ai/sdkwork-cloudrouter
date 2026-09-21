@@ -17,7 +17,7 @@
     "operations",
     "pricing",
     "cloudrouter-billing",
-    "payment-runtime"
+    "payment-control-plane"
   ],
   "lifecycle": {
     "autoMigrate": false,
@@ -49,7 +49,7 @@
     "provider": "default",
     "hooks": []
   },
-  "materializedTableCount": 42,
+  "materializedTableCount": 38,
   "materializedTables": [
     "ai_chat_context_snapshot",
     "ai_chat_conversation",
@@ -59,10 +59,6 @@
     "ai_chat_turn",
     "ai_config_change_event",
     "ai_config_version",
-    "ai_mcp_binding",
-    "ai_mcp_server",
-    "ai_mcp_server_revision",
-    "ai_mcp_tool",
     "ai_metering_request_trace",
     "ai_metering_usage",
     "ai_model_access_policy",

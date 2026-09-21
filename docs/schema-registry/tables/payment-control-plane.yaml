@@ -1,0 +1,272 @@
+# Cloud Router payment control-plane tables.
+#
+# These four tables are owned by Cloud Router (module `payment-control-plane`).
+# They are declared here as a registry fragment -- rather than only in the
+# module baseline -- because `scripts/check-database-ownership.mjs` requires
+# every table registered by a declared module to also be composed into the root
+# composite baseline, and the composite compiler is registry-driven.
+#
+# Type plane: this is the `commerce_*` family, shared with `sdkwork-payment` and
+# `payment-reconciliation`. It uses TEXT identifiers and TEXT amounts with
+# TIMESTAMPTZ timestamps. The registry common-column groups (`tenant_entity`,
+# `operational_state`) cannot express that plane because
+# `COMMON_COLUMN_DEFINITIONS` in `tools/schema_compiler.py` hardcodes
+# `id`/`tenant_id`/`organization_id` as `BIGINT NOT NULL DEFAULT 0`. Every
+# column below is therefore declared explicitly with `type: text` (and
+# `int32`/`boolean`/`instant` where the shape calls for it) so no common group
+# is used and the BIGINT coercion cannot apply.
+#
+# `organization_id` carries `NOT NULL DEFAULT '0'` per DATABASE_SPEC DB089/DB090:
+# the sentinel `'0'` means "no organization" and NULL is never legal.
+tables:
+- table: commerce_payment_route_decision
+  domain: payment
+  profile: payment_control_plane_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  api_surfaces:
+  - app
+  columns:
+    id:
+      type: text
+      constraints: NOT NULL PRIMARY KEY
+    tenant_id:
+      type: text
+      constraints: NOT NULL
+    organization_id:
+      type: text
+      constraints: NOT NULL DEFAULT '0'
+    payment_intent_id:
+      type: text
+      constraints: NOT NULL
+    payment_attempt_id:
+      type: text
+      constraints: NOT NULL
+    route_rule_id:
+      type: text
+    account_id:
+      type: text
+      constraints: NOT NULL DEFAULT ''
+    supplier_code:
+      type: text
+      constraints: NOT NULL DEFAULT ''
+    provider_account_id:
+      type: text
+    method_code:
+      type: text
+      constraints: NOT NULL DEFAULT ''
+    scene_code:
+      type: text
+      constraints: NOT NULL DEFAULT ''
+    country_code:
+      type: text
+    currency_code:
+      type: text
+      constraints: NOT NULL DEFAULT 'CNY'
+    amount:
+      type: text
+      constraints: NOT NULL DEFAULT '0.00'
+    risk_level:
+      type: text
+    decision_reason:
+      type: text
+      constraints: NOT NULL DEFAULT ''
+    fallback_from_account_id:
+      type: text
+    created_at:
+      type: instant
+      constraints: NOT NULL DEFAULT NOW()
+  indexes:
+  - name: idx_commerce_payment_route_decision_intent
+    columns:
+    - tenant_id
+    - payment_intent_id
+- table: commerce_payment_operation_attempt
+  domain: payment
+  profile: payment_control_plane_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  api_surfaces:
+  - app
+  columns:
+    id:
+      type: text
+      constraints: NOT NULL PRIMARY KEY
+    tenant_id:
+      type: text
+      constraints: NOT NULL
+    organization_id:
+      type: text
+      constraints: NOT NULL DEFAULT '0'
+    operation_no:
+      type: text
+      constraints: NOT NULL
+    supplier_code:
+      type: text
+      constraints: NOT NULL DEFAULT ''
+    provider_account_id:
+      type: text
+    account_id:
+      type: text
+    operation_code:
+      type: text
+      constraints: NOT NULL DEFAULT ''
+    sdkwork_resource_type:
+      type: text
+      constraints: NOT NULL DEFAULT ''
+    sdkwork_resource_id:
+      type: text
+      constraints: NOT NULL DEFAULT ''
+    idempotency_key:
+      type: text
+      constraints: NOT NULL
+    request_digest:
+      type: text
+    response_digest:
+      type: text
+    native_request_id:
+      type: text
+    native_trade_id:
+      type: text
+    native_refund_id:
+      type: text
+    http_status:
+      type: int32
+    provider_error_code:
+      type: text
+    provider_error_message:
+      type: text
+    retryable:
+      type: bool
+      constraints: NOT NULL DEFAULT FALSE
+    status:
+      type: text
+      constraints: NOT NULL DEFAULT 'PENDING'
+    started_at:
+      type: instant
+      constraints: NOT NULL
+    completed_at:
+      type: instant
+    created_at:
+      type: instant
+      constraints: NOT NULL DEFAULT NOW()
+  indexes:
+  - name: idx_commerce_payment_operation_attempt_no
+    columns:
+    - tenant_id
+    - operation_no
+  - name: idx_commerce_payment_operation_attempt_resource
+    columns:
+    - tenant_id
+    - sdkwork_resource_type
+    - sdkwork_resource_id
+- table: commerce_refund_attempt
+  domain: payment
+  profile: payment_control_plane_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  api_surfaces:
+  - app
+  columns:
+    id:
+      type: text
+      constraints: NOT NULL PRIMARY KEY
+    tenant_id:
+      type: text
+      constraints: NOT NULL
+    organization_id:
+      type: text
+      constraints: NOT NULL DEFAULT '0'
+    refund_attempt_no:
+      type: text
+      constraints: NOT NULL
+    refund_id:
+      type: text
+      constraints: NOT NULL
+    supplier_code:
+      type: text
+      constraints: NOT NULL DEFAULT ''
+    provider_account_id:
+      type: text
+    out_refund_no:
+      type: text
+      constraints: NOT NULL DEFAULT ''
+    provider_refund_id:
+      type: text
+    amount:
+      type: text
+      constraints: NOT NULL DEFAULT '0.00'
+    currency_code:
+      type: text
+      constraints: NOT NULL DEFAULT 'CNY'
+    status:
+      type: text
+      constraints: NOT NULL DEFAULT 'RECEIVED'
+    failure_code:
+      type: text
+    failure_message:
+      type: text
+    submitted_at:
+      type: instant
+    succeeded_at:
+      type: instant
+    failed_at:
+      type: instant
+    created_at:
+      type: instant
+      constraints: NOT NULL DEFAULT NOW()
+    updated_at:
+      type: instant
+      constraints: NOT NULL DEFAULT NOW()
+  indexes:
+  - name: idx_commerce_refund_attempt_refund
+    columns:
+    - tenant_id
+    - refund_id
+- table: commerce_refund_item
+  domain: payment
+  profile: payment_control_plane_entity
+  compliance_level: L2
+  system_of_record: true
+  write_owner: router-service
+  api_surfaces:
+  - app
+  columns:
+    id:
+      type: text
+      constraints: NOT NULL PRIMARY KEY
+    tenant_id:
+      type: text
+      constraints: NOT NULL
+    organization_id:
+      type: text
+      constraints: NOT NULL DEFAULT '0'
+    refund_id:
+      type: text
+      constraints: NOT NULL
+    order_item_id:
+      type: text
+      constraints: NOT NULL DEFAULT ''
+    quantity:
+      type: int32
+      constraints: NOT NULL DEFAULT 0
+    refund_amount:
+      type: text
+      constraints: NOT NULL DEFAULT '0.00'
+    tax_refund_amount:
+      type: text
+      constraints: NOT NULL DEFAULT '0.00'
+    shipping_refund_amount:
+      type: text
+      constraints: NOT NULL DEFAULT '0.00'
+    created_at:
+      type: instant
+      constraints: NOT NULL DEFAULT NOW()
+  indexes:
+  - name: idx_commerce_refund_item_refund
+    columns:
+    - tenant_id
+    - refund_id

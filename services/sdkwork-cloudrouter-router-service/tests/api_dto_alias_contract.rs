@@ -12,11 +12,7 @@ const PRODUCT_API_SOURCES: &[(&str, &str)] = &[
         "admin_marketing.rs",
         include_str!("../src/api/admin_marketing.rs"),
     ),
-    ("admin_mcp.rs", include_str!("../src/api/admin_mcp.rs")),
-    (
-        "admin_record.rs",
-        include_str!("../src/api/admin_record.rs"),
-    ),
+    ("admin_record.rs", include_str!("../src/api/admin_record.rs")),
     (
         "admin_model_command.rs",
         include_str!(

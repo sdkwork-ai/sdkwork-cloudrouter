@@ -116,11 +116,8 @@ const SCANNED_REPO_METADATA_FILES = [
   'docs/architecture/tech/TECH-2026-05-20-appbase-commerce-account-wallet-ledger.md',
   'docs/architecture/tech/TECH-2026-05-21-appbase-commerce-standard-design.md',
   'docs/architecture/tech/TECH-2026-05-21-appbase-commerce-standard-phase1.md',
-  'docs/superpowers/specs/2026-05-20-appbase-commerce-platform-design.md',
   'docs/architecture/tech/TECH-2026-05-22-admin-product-center-design.md',
   'docs/architecture/tech/TECH-2026-05-22-admin-product-center.md',
-  'docs/superpowers/specs/2026-05-22-admin-product-center-design.md',
-  'docs/superpowers/plans/2026-05-22-admin-product-center.md',
   'apps/sdkwork-cloudrouter-pc/src/main.tsx',
 ];
 

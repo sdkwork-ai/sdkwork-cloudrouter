@@ -1,4 +1,16 @@
 tables:
+# `sdkwork_node_registry` is the Snowflake node-lease registry. Its shape is
+# owned by `sdkwork-database-id` (see `crates/sdkwork-database-id/src/node_allocator.rs`,
+# CREATE_POSTGRES_TABLE_SQL). Cloud Router provisions it through migration 0039
+# so a least-privilege runtime role never needs schema CREATE at startup; the
+# definition below must therefore mirror that authoritative DDL exactly, not a
+# lossy projection of it.
+#
+# The table is intentionally NOT part of the `operations` module registry: its
+# write path lives in `sdkwork-database-id`, and `write_owner` records that.
+#
+# Columns are explicit (`text` / `int32` / `int64`) so no common-column group
+# applies; `node_id` carries the 0..1023 lease-range CHECK from the allocator.
 - table: sdkwork_node_registry
   domain: ops
   profile: runtime_infrastructure
@@ -8,16 +20,36 @@ tables:
   api_surfaces:
   - worker
   columns:
-    node_id: int32
-    service_name: string(256)
-    instance_identity: string(256)
-    hostname: string(256)
-    pid: int64
-    lease_token: string(64)
-    lease_version: int64
-    started_at_ms: int64
-    last_heartbeat_at_ms: int64
-    expires_at_ms: int64
+    node_id:
+      type: int32
+      constraints: PRIMARY KEY CHECK (node_id BETWEEN 0 AND 1023)
+    service_name:
+      type: text
+      constraints: NOT NULL
+    instance_identity:
+      type: text
+      constraints: NOT NULL
+    hostname:
+      type: text
+      constraints: NOT NULL
+    pid:
+      type: int64
+      constraints: NOT NULL
+    lease_token:
+      type: text
+      constraints: NOT NULL
+    lease_version:
+      type: int64
+      constraints: NOT NULL DEFAULT 1
+    started_at_ms:
+      type: int64
+      constraints: NOT NULL
+    last_heartbeat_at_ms:
+      type: int64
+      constraints: NOT NULL
+    expires_at_ms:
+      type: int64
+      constraints: NOT NULL
   indexes:
   - name: idx_sdkwork_node_registry_service_expiry
     columns:

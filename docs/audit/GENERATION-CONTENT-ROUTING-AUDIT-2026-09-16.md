@@ -5331,3 +5331,245 @@ avatar 面会让**所有** video 模型去答 avatar 请求 —— 所以正确�
 #46「扩展三层守卫到全部 25 个 vendor 并验证」**已由此闭合**：不再逐个 vendor 加断言，
 而是用全空间扫描把 25 家（+3 别名）一次性覆盖，并让「声明 ↔ 描述符」互为约束。
 新增两条防线：Rust 侧闭合不变式（含反方向悬空检查），Node 侧内嵌表 ↔ seed 双向比对。
+
+## 15.30 第 30 轮：协议面（Anthropic / Codex）的跨 vendor 对齐
+
+### 15.30.1 §15.29 闭合不变的射程盲区
+
+§15.29 的闭合不变式扫的是 `(vendor, apiFormat, capability)` ——
+即**媒体能力**（image / video / audio / music / sfx）的端点绑定。
+它**不覆盖「协议面」这一维度**：`anthropic_messages` / `openai_responses`
+这类「同一族请求用它自己的客户端协议」的面，不在 `primaryCapability` 的枚举里，
+所以 §15.29 全绿的同时，9 家声明 `anthropic_messages` 的 vendor 里
+**8 家根本没有端点 / 授予 / 分类臂**，且没有任何门禁会报。
+
+本轮的交付物是把这一维度也闭合。
+
+### 15.30.2 根因：分类臂按 vendor 硬编码
+
+```
+provider_native_classifier.rs / passthrough.rs
+  "anthropic" if path == "/v1/messages" => "anthropic.messages"
+```
+
+非 anthropic 的 vendor 发同一 wire 路径时落入 catch-all，合成 `<vendor>.messages`
+——taxonomy 无此路由 ⇒ `meter: None` + `StatelessFailClosed` ⇒ 计价预检拒绝，
+**即使账号、凭据、组、授予全都在**。这与 §15.25–15.29 是同一根因的**第六张脸**：
+「同一族能力只在某一个 vendor 上被接线」。
+
+### 15.30.3 判据：目录 `protocolBaseUrls`（不是 vendor 级 `supportedProtocols`）
+
+`sdkwork-models/models/<vendor>/<region>/vendor.json` 的 `protocolBaseUrls`
+是仓内真源。逐 region 双向比对 `supportedProtocols` 与 `protocolBaseUrls`：
+声明缺 baseUrl **0 家**、有 baseUrl 未声明 **0 家** ⇒ 目录自洽，
+缺的是 router 侧六链落地。
+
+9 家的 official anthropic base_url（全部取证，含 `api.deepseek.com/anthropic`、
+`open.bigmodel.cn/api/anthropic`、`api.moonshot.cn/anthropic`、
+`api.hunyuan.cloud.tencent.com/anthropic`、`api.xiaomimimo.com/anthropic` 等），
+wire 路径统一 `/v1/messages`（网关以 `/anthropic/` 命名空间发布，
+契约实测 `POST /anthropic/v1/messages`）。
+
+### 15.30.4 六链落地
+
+| 链 | 改动 |
+|---|---|
+| ① | seed +8 条 `<vendor>.anthropic_messages`，`pathTemplate: /v1/messages` |
+| ② | taxonomy +8 条 `model(..., Chat, LlmInputToken)` |
+| ③ | 8 个 `official.<v>.full` 各 +1；新增 `api.anthropic.messages` 组（10 条）授给 `default-group` |
+| ④ | 两份闭包守卫 `DECLARED_VENDOR_NATIVE_ENDPOINTS` 各 +8（74 = 74） |
+| ④′ | 两份 `NOT_BOUND_BY_DESCRIPTOR` 各 +8（协议入口面，无模型能力选中） |
+| ⑥ | 两份同构分类器各 +8 臂 |
+| — | seed `.v9` → `.v10`，`DEFAULT_GROUP_EXTRA_RESOURCE_GROUP_CODES` 加 `api.anthropic.messages` |
+
+**踩坑（§15.29 已记过、本轮又差点犯）**：注释块被写进 match 体内会让门禁
+`parsePathArms` 把它折进上一条 arm 的 chunk，报 `N arm(s) this gate cannot model`。
+注释必须放在 `let api_code = match ...` **之上**。
+
+### 15.30.5 `default-group` 授予：链审计能抓、门禁抓不到
+
+门禁只查「声明 ↔ 臂」，**不查「端点 → default-group 可达」**。
+补完六链后门禁全绿，但 `audit-api-chain-reachability.mjs` 报 8 条
+`default-group-grant: NOT granted`（50201）。这印证了两条工具的分工：
+门禁管声明一致性，链审计管端到端可达。`DEFAULT_GROUP_EXTRA_RESOURCE_GROUP_CODES`
+的既有注释**早已预言了这一幕**（「OpenAI-compatible vendors such as DeepSeek
+declare Anthropic Messages ... so without an anthropic-shaped group grant those
+resources are intersected away」），只是一直没有对应的组。
+
+### 15.30.6 Codex / `openai_responses` 面：机制不同，**不**加 vendor 臂
+
+三条独立证据表明 Responses 走 **OpenAI 兼容面**，不是 per-vendor 命名空间：
+
+1. `invocation_http.rs:572` —— `path.starts_with("/v1/")` 一律交
+   `OpenAiResourceClassifier`；Responses 发布在 `/v1/responses`，**不经过 vendor 分类器**。
+2. `ai_route_taxonomy.rs:329` 已有别名
+   `model("openai_compatible.responses", "openai.responses", ...)`。
+3. `api.openai_compatible.all` 已含 `api.openai.responses`，且 `default-group` 已绑定该组。
+
+且 5 家声明 `openai_responses` 的 vendor，其 `protocolBaseUrls.openai_responses`
+与 `openai_compatible` **逐字节相同** ⇒ 是同一 base URL 上的请求体形状变体。
+
+按 skill §6 硬判据（**模型 `apiFormat` 而非 vendor 级声明**），这 5 家模型全是
+`openai_compatible`（deepseek 8 / xai 12 / alibaba 20 / bytedance 41 / stepfun 3），
+**诚实留在兼容面**，不编 vendor 臂。残留缺口属**目录内容**（缺 `openai_responses`
+模型），不属路由接线，见 `docs/audit/protocol-face-vendor-alignment-evidence-2026-09-20.md`。
+
+### 15.30.7 门禁终态
+
+| 门禁 | 前 | 后 |
+|---|---|---|
+| classifier / passthrough arms | 41 / 41 | **49 / 49** |
+| seeded api codes | 92, 0 unknown | **100, 0 unknown** |
+| vendor-native coverage | 66 = 47 + 19 | **74 = 55 + 19** |
+| closure guard（两份源） | 66 vs 66 | **74 vs 74** |
+| `audit-api-chain-reachability` | 92/92 | **100/100, 0 broken** |
+| `audit-model-route-reachability` | 289 / 0 | **289 / 0**（不回退） |
+| router-service `--lib` | 526 | **534 passed / 0 failed** |
+| `per_api_chain_e2e` | — | **2 passed / 0 failed**（真库探针无 gap） |
+| `validate-catalog` | ok: true | **ok: true** |
+
+落库 `pnpm db:ensure` → `{"status":"installed","changed":true}`。
+## 15.31 LLM 面上游拨号 URL 形状缺口（静态可达 ≠ 拨号正确）
+
+采集日期：2026-09-20。触发：用户要求「确保所有 vendor 的 LLM 模型和资源配置正确，反复回归直到正确为止」。
+
+### 15.31.1 缺口性质：第四类射程盲区
+
+§15.29 的闭合不变式覆盖 `(vendor × apiFormat × capability)` **媒体能力**维度；
+§15.30 补了**协议面**（`anthropic_messages` / `openai_responses`）的六链落地。
+本节暴露的是**第三层**：**这些链路的「上游拨号 URL」从未被任何验证构造过。**
+
+| 验证层 | 读数（改动前） | 为什么漏 |
+|---|---|---|
+| `check-cloudrouter-ai-routing-consistency` | passed | 只查**声明 ↔ arm ↔ 授予**静态一致，不构造 URL |
+| `audit-api-chain-reachability` | 100/100 reachable | 终点是「有账号可路由」，不校验拨号 URL |
+| `audit-model-route-reachability` | 289 / 0 | 同上，终点是「模型落到官方账号路由」 |
+| `per_api_chain_e2e` | 2 passed / 0 failed | 占位凭据，**不发真实出网请求** ⇒ 拼错的 URL 不暴露 |
+| `validate-catalog` | ok: true, 0 errors | 只校验目录自身，**不跨仓比对活库端点** |
+
+⇒ 五层全绿，而**真实调用必然 404**。
+
+### 15.31.2 根因（逐跳代码级取证）
+
+```
+① 活库 ai_upstream_supplier.protocols = '[]'（全部 27 家）
+② 活库 ai_upstream_supplier.default_base_url 全空
+③ 活库 ai_upstream_account.protocols  = '[]'
+④ 活库 ai_upstream_account.default_base_url 全空
+   ⇒ route_planning.rs:316 调 resolve_upstream_base_url，
+     解析链 account.protocols[P] → account.default → supplier.protocols[P]
+     → supplier.default → route_base_url 的**前四跳全部失效**，
+     只剩第五跳 route_base_url = ai_upstream_supplier_endpoint.base_url（裸主机）
+⑤ provider_passthrough_transport.rs#build_uri 朴素拼接：
+     format!("{}{}", self.base_url(), path_and_query)
+⑥ 入站 /anthropic/v1/messages 经 split_provider_passthrough_path +
+   is_standard_path_namespace（"anthropic" 在标准集内）⇒ 上游 path = /v1/messages
+   ⇒ 目录 vendor.json 的 protocolBaseUrls.<proto>.pathPrefix **从不参与拼接**
+```
+
+**核心判据**：目录 `protocolBaseUrls` 同时给出 `host` 与 `pathPrefix`；
+`pathPrefix` 必须在端点 `base_url` 里落地，否则拼出的 URL 缺段。
+
+### 15.31.3 全量比对（42 个 vendor×协议 组合，**只有 openai 一家正确**）
+
+| 档 | 数量 | 含义 |
+|---|---|---|
+| `OK` | 2 | openai（`api.openai.com/v1` 自带 `/v1`，与目录 pathPrefix 一致） |
+| `PREFIX-MISSING` | 26 | host 对但缺 pathPrefix |
+| `HOST-WRONG` | 14 | 连 host 都不对 |
+
+**巧合正确的一类（暂可用，但非设计）**：入站路径自带 `/v1`，且该 vendor 的兼容面
+恰好也在 `/v1` ⇒ `deepseek` / `moonshot` / `tencent` / `stepfun` / `xai` 的
+openai_compatible 面拼出的 URL 是对的。**一旦 vendor 改用非 `/v1` 前缀即断。**
+
+### 15.31.4 破坏性用例（pathPrefix ≠ `/v1`，无法靠巧合救回）
+
+| vendor | 目录 pathPrefix | 活库 base_url | 拼出的上游 URL | 应为 |
+|---|---|---|---|---|
+| **alibaba** | `/compatible-mode/v1` | `https://dashscope.aliyuncs.com` | `.../v1/chat/completions` | `.../compatible-mode/v1/chat/completions` |
+| **baidu** | `/v2` | `https://qianfan.baidubce.com` | `.../v1/chat/completions` | `.../v2/chat/completions` |
+| **zhipu** | `/api/paas/v4` | `https://open.bigmodel.cn` | `.../v1/chat/completions` | `.../api/paas/v4/chat/completions` |
+| **bytedance** | `/api/v3` | `https://visual.volcengineapi.com` | `.../v1/chat/completions` | `.../api/v3/chat/completions`（host 亦应改为 `ark.cn-beijing.volces.com`） |
+| **google** | `/v1beta/openai` | `https://generativelanguage.googleapis.com` | `.../v1/chat/completions` | `.../v1beta/openai/chat/completions` |
+| **meituan** | `/openai/v1` | `https://api.meituan.com` | `.../v1/chat/completions` | `.../openai/v1/chat/completions`（host 亦应改为 `api.longcat.chat`） |
+
+⇒ **这 6 家的 LLM chat 面全部打不通**（约 56 个模型）。
+另：**`anthropic_messages` 面 8 家全挂**（缺 `/anthropic` 或不含 host 前缀）。
+`HOST-WRONG` 中最严重的是 **`xiaomi`**：目录 `api.xiaomimimo.com` vs 活库
+`api.xiaomi.com`（**不同域名**）。
+
+### 15.31.5 三份官方文档逐字佐证（目录对、活库错）
+
+| vendor | 官方原文 | 出处 |
+|---|---|---|
+| deepseek | `base_url` 为 `https://api.deepseek.com/anthropic` | `api-docs.deepseek.com/guides/anthropic_api` |
+| zhipu | `ANTHROPIC_BASE_URL: "https://open.bigmodel.cn/api/anthropic"` | `docs.bigmodel.cn/cn/guide/develop/claude` |
+| alibaba | base_url「以 `/compatible-mode/v1` 结尾、不含 `/chat/completions`」 | `help.aliyun.com/zh/model-studio/compatibility-of-openai-with-dashscope` |
+
+⇒ **目录是对的，活库端点 `base_url` 是错的。** 取证只能靠官方文档逐字，不能靠域名猜测。
+
+### 15.31.6 机制早已建成、数据从未装载
+
+`database/migrations/postgres/0024_add_upstream_supplier_protocols.up.sql` 的
+`purpose` 逐字写着：supplier 可声明多个 LLM 协议
+「**with an independent base URL per protocol**」。已具备且完整的部件：
+
+| 部件 | 位置 |
+|---|---|
+| `LlmProtocolCode` 枚举 | `ports/admin_upstream_store.rs` |
+| `ai_upstream_supplier.protocols` / `ai_upstream_account.protocols` JSONB 列 | 迁移 0024 / 0030 |
+| admin API 读写 + min/max 校验 + `primary_protocol_code` | `upstream/supplier.rs`、`upstream/account.rs` |
+| 解析链协议分支 | `application/upstream_base_url.rs#resolve_upstream_base_url` |
+| 生成的 TS 类型 | `llm-protocol-config.ts` |
+
+**唯一缺的是 seed 从未写入该列。**
+
+### 15.31.7 处置提案（**未落库，待确认**）
+
+| 方案 | 内容 | 权衡 |
+|---|---|---|
+| A. 改端点 `base_url` | 把前缀塞进 `ai_upstream_supplier_endpoint.base_url` | ❌ 一个 vendor 的多协议前缀**各不相同**，单行无法同时满足 |
+| **B. 灌 `supplier.protocols`** | 从目录 `protocolBaseUrls` 派生，灌入 `ai_upstream_supplier.protocols` | ✅ **语义正确**，解析链已支持；需 seed 侧新增装载点 |
+
+⇒ 建议 B。改活库属数据变更，按「改活库先问」纪律**只登记不动手**。
+
+### 15.31.8 本轮已落地的回归 pin
+
+`crates/sdkwork-cloudrouter-edge-runtime/src/provider_passthrough_transport.rs` 的 `mod tests`：
+
+| 测试 | 钉住 |
+|---|---|
+| `build_uri_is_base_url_concatenated_with_path` | 「base_url + path 朴素拼接」，含 `/anthropic` 有无前缀的对照 |
+| `normalize_openai_compatible_path_depends_on_base_url_shape` | `/v1` 剥离**取决于 base_url 形状** |
+
+实测：`cargo test -p sdkwork-cloudrouter-edge-runtime --lib provider_passthrough_transport`
+→ **6 passed / 0 failed**；`--lib` 全量 **89 passed / 0 failed**。
+
+> **更正**：本节起草时我断言「`.../compatible-mode/v1` 不被识别为 `/v1` 前缀」是**错的**。
+> 实测 `Uri::path()` 保留路径段，`path.ends_with("/v1")` 为**真** ⇒ **会被识别并剥离**。
+> 已按实测行为修正断言。
+
+### 15.31.9 附：`capabilities` 空数组合法（非缺陷，无需修）
+
+审计发现 11 个 LLM 模型（如 `qwen3.7-flash`）无 `capabilities` 字段。**判定为合法**：
+
+- `schemas/model.schema.json` 的 `required` **不含 `capabilities`**；
+- `model_catalog_import.rs` 三处兜底 `if model.capabilities.is_empty() { vec![primary_capability] }`；
+- 活库实证：`qwen3.7-flash` 落库 `capabilities = ["chat"]`，与有声明者（`qwen3.8-max`）**一致**。
+
+⇒ 判据以 `primaryCapability` 为准，`capabilities` 是可选冗余。**无需修。**
+
+### 15.31.10 门禁终态（本轮结束时）
+
+| 门禁 | 读数 |
+|---|---|
+| `check-cloudrouter-ai-routing-consistency --check` | **passed** |
+| `audit-api-chain-reachability` | **100/100 reachable, 0 broken** |
+| `audit-model-route-reachability` | **289 reachable / 0 not reachable** |
+| `cargo test -p sdkwork-cloudrouter-router-service --lib` | **534 passed / 0 failed** |
+| `cargo test -p sdkwork-cloudrouter-edge-runtime --lib` | **89 passed / 0 failed**（+2 本轮） |
+| `per_api_chain_e2e`（真库） | **2 passed / 0 failed** |
+| `validate-catalog` | **ok: true, 0 errors** |
+
+⚠️ **全部绿，而 §15.31.4 的 6 家 + Anthropic 面 8 家仍会 404** —— 这正是本节的要点。
+

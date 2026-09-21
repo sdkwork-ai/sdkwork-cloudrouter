@@ -1568,10 +1568,17 @@ async fn send_chat_completion_stream_with_runtime(
         content_type = content_type.as_deref().unwrap_or(""),
         "upstream OpenAI-compatible chat stream response received"
     );
+    // The header timeout above bounds only header arrival; the stream body
+    // itself must carry total/idle deadlines or a stalled provider pins the
+    // client and upstream connections indefinitely.
+    let stream_total = runtime.stream_response_timeout;
     Ok(ChatCompletionStreamRelayResponse::new(
         status_code,
         content_type,
-        Body::new(response.into_body()),
+        super::provider_stream_deadlines::apply_provider_stream_deadlines(
+            Body::new(response.into_body()),
+            stream_total,
+        ),
     ))
 }
 

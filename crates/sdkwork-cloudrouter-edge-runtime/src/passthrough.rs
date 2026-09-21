@@ -1857,9 +1857,44 @@ fn provider_native_api_code_from_standard_path(
     // Each vendor's `openai_compatible` models keep the generic face, so
     // `alibaba` chat / embedding / image and `zhipu` chat / embedding /
     // image deliberately stay out.
+    //
+    // The eight `<vendor>.anthropic_messages` arms are the Anthropic Messages
+    // protocol as served by vendors other than Anthropic. Each of them publishes
+    // an Anthropic-compatible endpoint under its own base URL
+    // (`protocolBaseUrls.anthropic_messages` in the catalog), and the gateway
+    // serves them all through the `/anthropic/` namespace — so
+    // `normalize_provider_api_path` has already stripped that prefix and every
+    // one of them arrives here as `/v1/messages`. Without an arm the catch-all
+    // synthesises `<vendor>.messages`, which names no taxonomy route, so the
+    // classification carries `meter: None` and the fail-closed pricing preflight
+    // rejects the request even though the account, the credential, the grant and
+    // the group membership all exist.
+    //
+    // This map is duplicated in the router service's
+    // `provider_native_classifier.rs`; the same gate compares the two arm sets.
+    //
+    // `jimeng` and `bytedance` are two different ByteDance surfaces and must not
+    // be aliased together. `jimeng` is the standalone consumer host
+    // (`jimeng.jianying.com`, `/v1/...`); `bytedance` is the catalog surface,
+    // which is Volcengine Ark (`ark.cn-beijing.volces.com/api/v3`), whose
+    // `doubao-seedance-*` / `doubao-seedream-*` families live under
+    // `/api/v3/...`. Folding them — as the old `"bytedance" | "jimeng"`
+    // descriptor arm did — left every seedance model carrying a `jimeng.*` api
+    // code while the request dialled an Ark path. Without the `bytedance` arms
+    // the catch-all would synthesise `bytedance.tasks`, which names no taxonomy
+    // route, so the classification would carry `meter: None` and the
+    // fail-closed pricing preflight would reject every seedance request.
     let api_code = match provider.as_str() {
         "anthropic" if path == "/v1/claude-code/sessions" => "anthropic.claude_code",
         "anthropic" if path == "/v1/messages" => "anthropic.messages",
+        "alibaba" if path == "/v1/messages" => "alibaba.anthropic_messages",
+        "deepseek" if path == "/v1/messages" => "deepseek.anthropic_messages",
+        "meituan" if path == "/v1/messages" => "meituan.anthropic_messages",
+        "moonshot" if path == "/v1/messages" => "moonshot.anthropic_messages",
+        "stepfun" if path == "/v1/messages" => "stepfun.anthropic_messages",
+        "tencent" if path == "/v1/messages" => "tencent.anthropic_messages",
+        "xiaomi" if path == "/v1/messages" => "xiaomi.anthropic_messages",
+        "zhipu" if path == "/v1/messages" => "zhipu.anthropic_messages",
         "google" | "gemini" if path == "/v1beta/live/sessions" => "gemini.live",
         "google" | "gemini" if gemini_model_action_matches(path.as_str(), "generatecontent") => {
             "gemini.generate_content"
@@ -1895,6 +1930,13 @@ fn provider_native_api_code_from_standard_path(
         "jimeng" if path == "/v1/images/generations" => "jimeng.image_generation",
         "jimeng" if path == "/v1/videos/generations" => "jimeng.video_generation",
         "jimeng" if task_poll_path_matches(path.as_str(), "v1/tasks") => "jimeng.task_query",
+        "bytedance" if path == "/api/v3/images/generations" => "bytedance.image_generation",
+        "bytedance" if path == "/api/v3/contents/generations/tasks" => "bytedance.video_generation",
+        "bytedance"
+            if task_poll_path_matches(path.as_str(), "api/v3/contents/generations/tasks") =>
+        {
+            "bytedance.task_query"
+        }
         "volcengine" if path == "/v1/images/generations" => "volcengine.image_generation",
         "volcengine" if path == "/v1/videos/generations" => "volcengine.video_generation",
         "volcengine" if path == "/api/v3/audio/speech" => "volcengine.speech",
@@ -2172,12 +2214,17 @@ fn adapter_streaming_response(
     let content_type = HeaderValue::from_str(content_type.as_str()).map_err(|error| {
         format!("provider adapter returned invalid streaming content type: {error}")
     })?;
+    // Keep upstream reads coupled to downstream body polling; collecting
+    // here would turn a live adapter stream back into an in-memory buffer.
+    // The body still must not be able to stall forever: apply the same
+    // total/idle deadlines the HTTP passthrough path enforces.
     Response::builder()
         .status(status)
         .header(axum::http::header::CONTENT_TYPE, content_type)
-        // Keep upstream reads coupled to downstream body polling; collecting
-        // here would turn a live adapter stream back into an in-memory buffer.
-        .body(stream_body)
+        .body(crate::provider_passthrough_transport::apply_stream_deadlines_to_body(
+            stream_body,
+            crate::provider_passthrough_transport::PROVIDER_STREAM_TOTAL,
+        ))
         .map_err(|error| format!("failed to build provider adapter streaming response: {error}"))
 }
 

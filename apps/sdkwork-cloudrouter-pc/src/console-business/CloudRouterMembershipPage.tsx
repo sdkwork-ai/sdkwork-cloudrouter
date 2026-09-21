@@ -14,16 +14,11 @@ import {
   StatusNotice,
 } from '@sdkwork/ui-pc-react';
 import {
-  SdkworkMembershipFeatureGates,
   SdkworkMembershipIntlProvider,
-  SdkworkMembershipQuotaRechargePanel,
-  sdkworkMembershipService,
   useSdkworkMembershipController,
   useSdkworkMembershipControllerState,
   useSdkworkMembershipIntl,
   type SdkworkMembershipMessagesOverrides,
-  type SdkworkMembershipPurchaseResult,
-  type SdkworkMembershipQuotaRechargeInput,
   type SdkworkMembershipSummary,
 } from '@sdkwork/membership-pc-membership';
 import {
@@ -39,61 +34,10 @@ import { resolveConsoleMembershipLocale } from './consoleCommerceLocale.ts';
 const TOKEN_PLAN_SECTION_ID = 'cloud-router-membership-token-plan';
 
 export function CloudRouterMembershipPage() {
-  const { i18n, t } = useTranslation();
+  const { i18n } = useTranslation();
   const locale = resolveConsoleMembershipLocale(i18n.resolvedLanguage ?? i18n.language);
 
-  const messages = useMemo<SdkworkMembershipMessagesOverrides>(
-    () => ({
-      quota: {
-        title: t('console.memberships.quota.title', 'Quota Recharge'),
-        description: t(
-          'console.memberships.quota.description',
-          'Add AI quota to your current membership period. Recharged quota stays valid until the subscription expires.',
-        ),
-        quantityLabel: t('console.memberships.quota.quantityLabel', 'Quota units'),
-        quantityPlaceholder: t('console.memberships.quota.quantityPlaceholder', 'e.g. 1000'),
-        amountLabel: t('console.memberships.quota.amountLabel', 'Amount (CNY)'),
-        amountPlaceholder: t('console.memberships.quota.amountPlaceholder', 'e.g. 10.00'),
-        submit: t('console.memberships.quota.submit', 'Recharge'),
-        submitting: t('console.memberships.quota.submitting', 'Recharging...'),
-        error: t(
-          'console.memberships.quota.error',
-          'Enter a positive quota quantity and amount.',
-        ),
-        onlyForMembers: t(
-          'console.memberships.quota.onlyForMembers',
-          'Quota recharge is available for active members only.',
-        ),
-      },
-      gates: {
-        title: t('console.memberships.gates.title', 'Member Features'),
-        description: t(
-          'console.memberships.gates.description',
-          'Some features are unlocked by membership level.',
-        ),
-        requiredLevel: t('console.memberships.gates.requiredLevel', 'Required level'),
-        unlocked: t('console.memberships.gates.unlocked', 'Unlocked'),
-        locked: t('console.memberships.gates.locked', 'Locked'),
-        labels: {
-          aiChat: t('console.memberships.gates.labels.aiChat', 'AI Chat'),
-          imageGeneration: t(
-            'console.memberships.gates.labels.imageGeneration',
-            'Image Generation',
-          ),
-          prioritySpeedUp: t(
-            'console.memberships.gates.labels.prioritySpeedUp',
-            'Priority Speed-up',
-          ),
-          priorityQueue: t('console.memberships.gates.labels.priorityQueue', 'Priority Queue'),
-          exclusiveModel: t(
-            'console.memberships.gates.labels.exclusiveModel',
-            'Exclusive Model',
-          ),
-        },
-      },
-    }),
-    [t],
-  );
+  const messages = useMemo<SdkworkMembershipMessagesOverrides>(() => ({}), []);
 
   return (
     <CloudRouterTokenBankIntlProvider locale={locale}>
@@ -111,9 +55,6 @@ function CloudRouterMembershipPageContent() {
   const walletState = useSdkworkWalletControllerState(walletController);
   const { copy } = useSdkworkMembershipIntl();
   const { t } = useTranslation();
-  const [isRecharging, setIsRecharging] = useState(false);
-  const [rechargeResult, setRechargeResult] = useState<SdkworkMembershipPurchaseResult | null>(null);
-  const [rechargeError, setRechargeError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!state.isBootstrapped && !state.isLoading && !state.lastError) {
@@ -134,27 +75,6 @@ function CloudRouterMembershipPageContent() {
     });
   }
 
-  function handleRecharge(input: SdkworkMembershipQuotaRechargeInput) {
-    setRechargeError(null);
-    setRechargeResult(null);
-    setIsRecharging(true);
-    void sdkworkMembershipService
-      .rechargeQuota({ grantQuantity: input.grantQuantity, amountCny: input.amountCny })
-      .then((result) => {
-        setRechargeResult(result);
-        const paymentTarget = result.qrCode || result.cashierUrl;
-        if (paymentTarget) {
-          window.open(paymentTarget, '_blank', 'noopener,noreferrer');
-        }
-      })
-      .catch((error: unknown) => {
-        setRechargeError(error instanceof Error ? error.message : String(error));
-      })
-      .finally(() => setIsRecharging(false));
-  }
-
-  const isMember = state.dashboard.summary.isMember === true;
-
   return (
     <div className="h-full overflow-y-auto bg-zinc-50 text-zinc-950 dark:bg-black dark:text-white">
       <div className="w-full max-w-none">
@@ -165,38 +85,6 @@ function CloudRouterMembershipPageContent() {
           summary={state.dashboard.summary}
           tokenBankBalance={walletState.overview.account.tokenBankAvailable}
         />
-
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <SdkworkMembershipQuotaRechargePanel
-            disabled={isRecharging}
-            isMember={isMember}
-            isSubmitting={isRecharging}
-            onRecharge={handleRecharge}
-          />
-          <SdkworkMembershipFeatureGates service={sdkworkMembershipService} />
-        </div>
-
-        {rechargeError ? (
-          <div className="mt-4">
-            <StatusNotice tone="danger" title={copy.quota.title}>
-              <span className="text-sm">{rechargeError}</span>
-            </StatusNotice>
-          </div>
-        ) : null}
-
-        {rechargeResult ? (
-          <div className="mt-4">
-            <StatusNotice tone="success" title={t('console.memberships.recharge.created', 'Recharge order created')}>
-              <span className="text-sm">
-                {t(
-                  'console.memberships.recharge.amount',
-                  'Order {{orderId}} ({{amount}} CNY) — complete the payment in the opened window.',
-                  { orderId: rechargeResult.orderId ?? '-', amount: rechargeResult.amountCny ?? '-' },
-                )}
-              </span>
-            </StatusNotice>
-          </div>
-        ) : null}
 
         {state.isLoading && !state.isBootstrapped ? (
           <div className="mt-4 rounded-3xl border border-zinc-200 bg-white px-5 py-8 dark:border-zinc-800 dark:bg-zinc-950">

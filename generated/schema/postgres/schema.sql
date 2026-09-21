@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.5.0.
--- Registry SHA-256: 49368459d8224063b687875b137a8beb3f7f92405504f41c5ec72dbd857e550c.
+-- Registry SHA-256: 06b32c0efa9e086c12c6c17e9d2f2622eca9e1d36b478ce5ba279ee8d2060d9f.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -353,152 +353,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_config_version_uuid ON ai_config_version
 CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_config_version_scope ON ai_config_version (tenant_id, organization_id, config_scope);
 CREATE INDEX IF NOT EXISTS idx_ai_config_version_scope_updated ON ai_config_version (tenant_id, organization_id, config_scope, updated_at, id);
 CREATE INDEX IF NOT EXISTS idx_ai_config_version_scope_status ON ai_config_version (config_scope, status, deleted_at, id);
-
-CREATE TABLE IF NOT EXISTS ai_mcp_binding (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    server_id BIGINT NOT NULL,
-    server_revision_id BIGINT,
-    tool_id BIGINT,
-    owner_type VARCHAR(64) NOT NULL,
-    owner_id BIGINT NOT NULL DEFAULT 0,
-    allowed_tools JSONB,
-    denied_tools JSONB,
-    policy_json JSONB,
-    priority INTEGER NOT NULL DEFAULT 0,
-    enabled BOOLEAN NOT NULL DEFAULT true,
-    snapshot_json JSONB NOT NULL DEFAULT '{}'::jsonb,
-    CONSTRAINT ck_ai_mcp_binding_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT ck_ai_mcp_binding_subject_scope CHECK (tenant_id > 0 AND organization_id >= 0 AND server_id > 0),
-    CONSTRAINT ck_ai_mcp_binding_values CHECK (length(owner_type) > 0 AND priority >= 0)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_mcp_binding_uuid ON ai_mcp_binding (uuid);
-CREATE INDEX IF NOT EXISTS idx_ai_mcp_binding_scope_priority ON ai_mcp_binding (tenant_id, organization_id, server_id, priority, id);
-
-CREATE TABLE IF NOT EXISTS ai_mcp_server (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    server_key VARCHAR(128) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    description VARCHAR(4000),
-    category_id BIGINT,
-    category_code VARCHAR(128),
-    transport VARCHAR(64) NOT NULL DEFAULT 'http',
-    visibility VARCHAR(64) NOT NULL DEFAULT 'organization',
-    owner_user_id BIGINT NOT NULL DEFAULT 0,
-    latest_revision_id BIGINT,
-    published_revision_id BIGINT,
-    health_status VARCHAR(64) NOT NULL DEFAULT 'unchecked',
-    last_checked_at TIMESTAMPTZ,
-    last_error_masked VARCHAR(1024),
-    tags JSONB NOT NULL DEFAULT '[]'::jsonb,
-    published_at TIMESTAMPTZ,
-    deprecated_at TIMESTAMPTZ,
-    CONSTRAINT ck_ai_mcp_server_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT ck_ai_mcp_server_subject_scope CHECK (tenant_id > 0 AND organization_id >= 0),
-    CONSTRAINT ck_ai_mcp_server_values CHECK (length(server_key) > 0 AND length(name) > 0 AND length(transport) > 0 AND length(visibility) > 0 AND length(health_status) > 0)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_mcp_server_uuid ON ai_mcp_server (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_mcp_server_scope_key ON ai_mcp_server (tenant_id, organization_id, server_key);
-CREATE INDEX IF NOT EXISTS idx_ai_mcp_server_scope_updated ON ai_mcp_server (tenant_id, organization_id, updated_at, id);
-CREATE INDEX IF NOT EXISTS idx_ai_mcp_server_scope_category ON ai_mcp_server (tenant_id, organization_id, category_id);
-
-CREATE TABLE IF NOT EXISTS ai_mcp_server_revision (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    server_id BIGINT NOT NULL,
-    revision_no VARCHAR(128) NOT NULL,
-    transport VARCHAR(64) NOT NULL DEFAULT 'http',
-    endpoint_url VARCHAR(1024),
-    command VARCHAR(1024),
-    args_json JSONB NOT NULL DEFAULT '[]'::jsonb,
-    env_schema JSONB NOT NULL DEFAULT '{}'::jsonb,
-    auth_type VARCHAR(64) NOT NULL DEFAULT 'none',
-    secret_ref VARCHAR(512),
-    timeout_ms INTEGER NOT NULL DEFAULT 30000,
-    retry_policy JSONB NOT NULL DEFAULT '{}'::jsonb,
-    config_hash VARCHAR(128),
-    lifecycle_status VARCHAR(64) NOT NULL DEFAULT 'draft',
-    created_by BIGINT,
-    published_at TIMESTAMPTZ,
-    deprecated_at TIMESTAMPTZ,
-    CONSTRAINT ck_ai_mcp_server_revision_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT ck_ai_mcp_server_revision_subject_scope CHECK (tenant_id > 0 AND organization_id >= 0 AND server_id > 0),
-    CONSTRAINT ck_ai_mcp_server_revision_values CHECK (length(revision_no) > 0 AND length(transport) > 0 AND length(lifecycle_status) > 0 AND timeout_ms > 0)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_mcp_server_revision_uuid ON ai_mcp_server_revision (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_mcp_server_revision_scope_no ON ai_mcp_server_revision (tenant_id, organization_id, server_id, revision_no);
-CREATE INDEX IF NOT EXISTS idx_ai_mcp_server_revision_scope_created ON ai_mcp_server_revision (tenant_id, organization_id, server_id, created_at, id);
-
-CREATE TABLE IF NOT EXISTS ai_mcp_tool (
-    id BIGINT NOT NULL PRIMARY KEY,
-    uuid VARCHAR(64) NOT NULL,
-    tenant_id BIGINT NOT NULL DEFAULT 0,
-    organization_id BIGINT NOT NULL DEFAULT 0,
-    data_scope INTEGER NOT NULL DEFAULT 0,
-    status INTEGER NOT NULL DEFAULT 1,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    version BIGINT NOT NULL DEFAULT 0,
-    deleted_at TIMESTAMPTZ,
-    deleted_by BIGINT,
-    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
-    server_id BIGINT NOT NULL,
-    server_revision_id BIGINT,
-    tool_key VARCHAR(128) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    description VARCHAR(4000),
-    input_schema JSONB,
-    output_schema JSONB,
-    risk_level VARCHAR(64) NOT NULL DEFAULT 'low',
-    requires_approval BOOLEAN NOT NULL DEFAULT false,
-    enabled BOOLEAN NOT NULL DEFAULT true,
-    rate_limit_policy JSONB,
-    schema_hash VARCHAR(128),
-    discovered_at TIMESTAMPTZ,
-    last_invoked_at TIMESTAMPTZ,
-    sort_weight INTEGER NOT NULL DEFAULT 0,
-    CONSTRAINT ck_ai_mcp_tool_tenant_scope CHECK (tenant_id >= 0 AND organization_id >= 0 AND (tenant_id > 0 OR organization_id = 0)),
-    CONSTRAINT ck_ai_mcp_tool_subject_scope CHECK (tenant_id > 0 AND organization_id >= 0 AND server_id > 0),
-    CONSTRAINT ck_ai_mcp_tool_values CHECK (length(tool_key) > 0 AND length(name) > 0 AND length(risk_level) > 0 AND sort_weight >= 0)
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_mcp_tool_uuid ON ai_mcp_tool (uuid);
-CREATE UNIQUE INDEX IF NOT EXISTS uk_ai_mcp_tool_scope_key ON ai_mcp_tool (tenant_id, organization_id, server_id, tool_key);
-CREATE INDEX IF NOT EXISTS idx_ai_mcp_tool_scope_sort ON ai_mcp_tool (tenant_id, organization_id, server_id, sort_weight, id);
 
 CREATE TABLE IF NOT EXISTS ai_metering_request_trace (
     id BIGINT NOT NULL PRIMARY KEY,
@@ -1999,6 +1853,98 @@ CREATE INDEX IF NOT EXISTS idx_cloudrouter_charge_line_dashboard ON cloudrouter_
 CREATE INDEX IF NOT EXISTS idx_cloudrouter_charge_line_settlement ON cloudrouter_charge_line (tenant_id, organization_id, charge_status, settled_at, id);
 CREATE INDEX IF NOT EXISTS idx_cloudrouter_charge_line_retention ON cloudrouter_charge_line (retention_until, id);
 
+CREATE TABLE IF NOT EXISTS commerce_payment_operation_attempt (
+    id TEXT NOT NULL PRIMARY KEY,
+    tenant_id TEXT NOT NULL,
+    organization_id TEXT NOT NULL DEFAULT '0',
+    operation_no TEXT NOT NULL,
+    supplier_code TEXT NOT NULL DEFAULT '',
+    provider_account_id TEXT,
+    account_id TEXT,
+    operation_code TEXT NOT NULL DEFAULT '',
+    sdkwork_resource_type TEXT NOT NULL DEFAULT '',
+    sdkwork_resource_id TEXT NOT NULL DEFAULT '',
+    idempotency_key TEXT NOT NULL,
+    request_digest TEXT,
+    response_digest TEXT,
+    native_request_id TEXT,
+    native_trade_id TEXT,
+    native_refund_id TEXT,
+    http_status INTEGER,
+    provider_error_code TEXT,
+    provider_error_message TEXT,
+    retryable BOOLEAN NOT NULL DEFAULT FALSE,
+    status TEXT NOT NULL DEFAULT 'PENDING',
+    started_at TIMESTAMPTZ NOT NULL,
+    completed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_commerce_payment_operation_attempt_no ON commerce_payment_operation_attempt (tenant_id, operation_no);
+CREATE INDEX IF NOT EXISTS idx_commerce_payment_operation_attempt_resource ON commerce_payment_operation_attempt (tenant_id, sdkwork_resource_type, sdkwork_resource_id);
+
+CREATE TABLE IF NOT EXISTS commerce_payment_route_decision (
+    id TEXT NOT NULL PRIMARY KEY,
+    tenant_id TEXT NOT NULL,
+    organization_id TEXT NOT NULL DEFAULT '0',
+    payment_intent_id TEXT NOT NULL,
+    payment_attempt_id TEXT NOT NULL,
+    route_rule_id TEXT,
+    account_id TEXT NOT NULL DEFAULT '',
+    supplier_code TEXT NOT NULL DEFAULT '',
+    provider_account_id TEXT,
+    method_code TEXT NOT NULL DEFAULT '',
+    scene_code TEXT NOT NULL DEFAULT '',
+    country_code TEXT,
+    currency_code TEXT NOT NULL DEFAULT 'CNY',
+    amount TEXT NOT NULL DEFAULT '0.00',
+    risk_level TEXT,
+    decision_reason TEXT NOT NULL DEFAULT '',
+    fallback_from_account_id TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_commerce_payment_route_decision_intent ON commerce_payment_route_decision (tenant_id, payment_intent_id);
+
+CREATE TABLE IF NOT EXISTS commerce_refund_attempt (
+    id TEXT NOT NULL PRIMARY KEY,
+    tenant_id TEXT NOT NULL,
+    organization_id TEXT NOT NULL DEFAULT '0',
+    refund_attempt_no TEXT NOT NULL,
+    refund_id TEXT NOT NULL,
+    supplier_code TEXT NOT NULL DEFAULT '',
+    provider_account_id TEXT,
+    out_refund_no TEXT NOT NULL DEFAULT '',
+    provider_refund_id TEXT,
+    amount TEXT NOT NULL DEFAULT '0.00',
+    currency_code TEXT NOT NULL DEFAULT 'CNY',
+    status TEXT NOT NULL DEFAULT 'RECEIVED',
+    failure_code TEXT,
+    failure_message TEXT,
+    submitted_at TIMESTAMPTZ,
+    succeeded_at TIMESTAMPTZ,
+    failed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_commerce_refund_attempt_refund ON commerce_refund_attempt (tenant_id, refund_id);
+
+CREATE TABLE IF NOT EXISTS commerce_refund_item (
+    id TEXT NOT NULL PRIMARY KEY,
+    tenant_id TEXT NOT NULL,
+    organization_id TEXT NOT NULL DEFAULT '0',
+    refund_id TEXT NOT NULL,
+    order_item_id TEXT NOT NULL DEFAULT '',
+    quantity INTEGER NOT NULL DEFAULT 0,
+    refund_amount TEXT NOT NULL DEFAULT '0.00',
+    tax_refund_amount TEXT NOT NULL DEFAULT '0.00',
+    shipping_refund_amount TEXT NOT NULL DEFAULT '0.00',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_commerce_refund_item_refund ON commerce_refund_item (tenant_id, refund_id);
+
 CREATE TABLE IF NOT EXISTS iam_gateway_access_policy (
     id BIGINT NOT NULL PRIMARY KEY,
     uuid VARCHAR(64) NOT NULL,
@@ -2717,16 +2663,16 @@ CREATE INDEX IF NOT EXISTS idx_pricing_default_region_catalog_key ON pricing_def
 CREATE INDEX IF NOT EXISTS idx_pricing_default_region_resource_key ON pricing_default_region (tenant_id, organization_id, resource_key, default_region_code, id);
 
 CREATE TABLE IF NOT EXISTS sdkwork_node_registry (
-    node_id INTEGER,
-    service_name VARCHAR(256),
-    instance_identity VARCHAR(256),
-    hostname VARCHAR(256),
-    pid BIGINT,
-    lease_token VARCHAR(64),
-    lease_version BIGINT,
-    started_at_ms BIGINT,
-    last_heartbeat_at_ms BIGINT,
-    expires_at_ms BIGINT
+    node_id INTEGER NOT NULL PRIMARY KEY CHECK (node_id BETWEEN 0 AND 1023),
+    service_name TEXT NOT NULL,
+    instance_identity TEXT NOT NULL,
+    hostname TEXT NOT NULL,
+    pid BIGINT NOT NULL,
+    lease_token TEXT NOT NULL,
+    lease_version BIGINT NOT NULL DEFAULT 1,
+    started_at_ms BIGINT NOT NULL,
+    last_heartbeat_at_ms BIGINT NOT NULL,
+    expires_at_ms BIGINT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_sdkwork_node_registry_service_expiry ON sdkwork_node_registry (service_name, expires_at_ms);

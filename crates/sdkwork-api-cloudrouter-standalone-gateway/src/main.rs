@@ -63,15 +63,22 @@ async fn gateway_main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
         Some("postgresql"),
     )
     .map_err(std::io::Error::other)?;
-    let bind_address = std::env::var("SDKWORK_CLOUDROUTER_APPLICATION_PUBLIC_INGRESS_BIND")
-        .ok()
-        .or_else(|| std::env::var("SDKWORK_CLOUDROUTER_SERVER_BIND").ok())
-        .or_else(|| {
-            runtime_toml
-                .as_ref()
-                .and_then(|config| config.server.bind.clone())
-        })
-        .unwrap_or_else(|| "127.0.0.1:3905".to_owned());
+    // Listener bind precedence lives in the shared component so every SDKWork
+    // gateway resolves its bind identically (application bind, then server
+    // bind, then the runtime-config value, then the compiled default).
+    let application_bind = std::env::var("SDKWORK_CLOUDROUTER_APPLICATION_PUBLIC_INGRESS_BIND").ok();
+    let server_bind = std::env::var("SDKWORK_CLOUDROUTER_SERVER_BIND").ok();
+    let runtime_bind = runtime_toml
+        .as_ref()
+        .and_then(|config| config.server.bind.as_deref());
+    let bind_address = sdkwork_utils_rust::service_base_url::resolve_listener_bind(
+        [
+            application_bind.as_deref(),
+            server_bind.as_deref(),
+            runtime_bind,
+        ],
+        "127.0.0.1:3905",
+    );
     let assembly = sdkwork_api_cloudrouter_assembly::assemble_api_router(
         sdkwork_api_cloudrouter_assembly::ApiAssemblyContext::default(),
     )

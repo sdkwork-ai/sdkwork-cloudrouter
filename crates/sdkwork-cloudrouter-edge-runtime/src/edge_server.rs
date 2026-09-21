@@ -2926,7 +2926,13 @@ async fn upstream_to_axum_response(
     upstream_response: HyperResponse<hyper::body::Incoming>,
 ) -> Result<Response, String> {
     let (parts, body) = upstream_response.into_parts();
-    let mut response = Response::new(Body::new(body));
+    // The response-header timeout only bounds header arrival; the forwarded
+    // body must carry total/idle deadlines too or a stalled remote gateway
+    // pins the edge connection indefinitely.
+    let mut response = Response::new(crate::provider_passthrough_transport::apply_stream_deadlines_to_body(
+        Body::new(body),
+        crate::provider_passthrough_transport::PROVIDER_STREAM_TOTAL,
+    ));
     *response.status_mut() = parts.status;
     let connection_header_names = connection_header_names(&parts.headers);
     for (name, value) in parts.headers.iter() {

@@ -23,6 +23,7 @@
   "errors.result.42301": "资源已被锁定",
   "errors.result.42801": "请求需要携带前置条件",
   "errors.result.42901": "请求过于频繁，请稍后重试",
+  "errors.result.40201": "账户余额不足，无法完成本次请求，请充值后重试",
   "errors.result.60002": "操作配额已用尽",
   "errors.result.50001": "服务器内部错误",
   "errors.result.50201": "上游服务返回错误响应",

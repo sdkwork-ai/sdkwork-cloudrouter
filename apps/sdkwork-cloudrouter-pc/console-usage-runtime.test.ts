@@ -324,7 +324,7 @@ test("console usage logs i18n resources include English and Chinese entries", ()
   }
   assert.match(source, /"console\.usage\.loadedCost": "Loaded spend"/);
   assert.match(source, /"console\.usage\.table\.cost": "Spend"/);
-  assert.match(source, /"console\.usage\.loadedCost": "已加载花�?/);
+  assert.match(source, /"console\.usage\.loadedCost": "已加载花费/);
   assert.match(source, /"console\.usage\.table\.cost": "花费"/);
 });
 
@@ -357,7 +357,7 @@ test("console settlement page keeps menu copy in navigation without page title c
 
   assert.match(menuSource, /labelKey: 'console\.menu\.settlements'/);
   assert.match(coreMessages, /"console\.menu\.settlements": "Bills and Reports"/);
-  assert.match(coreMessages, /"console\.menu\.settlements": "账单与报�?/);
+  assert.match(coreMessages, /"console\.menu\.settlements": "账单与报表/);
   assert.match(appSource, /path="settlements" element=\{<SettlementsView/);
   assert.match(appSource, /ConsoleSettlementsView/);
 });

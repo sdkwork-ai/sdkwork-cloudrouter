@@ -28,6 +28,7 @@ Generated SDK transport output, live credentials, private customer data, runtime
 | Product PRD | [product/prd/PRD.md](product/prd/PRD.md) |
 | Upstream supplier PRD | [product/prd/PRD-UPSTREAM-SUPPLIER.md](product/prd/PRD-UPSTREAM-SUPPLIER.md) |
 | Technical architecture | [architecture/tech/TECH_ARCHITECTURE.md](architecture/tech/TECH_ARCHITECTURE.md) |
+| Browser access contract | [browser-access-contract.md](browser-access-contract.md) |
 | Active production-readiness requirement | [product/requirements/REQ-2026-0001-commercial-production-readiness.md](product/requirements/REQ-2026-0001-commercial-production-readiness.md) |
 | Active readiness revalidation | [engineering/reviews/REVIEW-20260714-production-readiness-revalidation.md](engineering/reviews/REVIEW-20260714-production-readiness-revalidation.md) |
 | Schema registry catalog | [schema-registry/table-catalog.md](schema-registry/table-catalog.md) |
@@ -52,6 +53,18 @@ current product, route, schema, or architecture authorities:
 - [architecture/tech/TECH-usage.md](architecture/tech/TECH-usage.md)
 - [architecture/tech/TECH-usage-2.md](architecture/tech/TECH-usage-2.md)
 - [standard-alignment-audit.md](standard-alignment-audit.md)
+
+## Archived Trees
+
+Retired historical documentation trees are preserved as path manifests under
+`docs/archive/`. The original files were ingested into Canon shards and removed;
+each manifest lists the retired paths and names their live authority.
+
+- [archive/migrated-legacy/README.md](archive/migrated-legacy/README.md) — numbered
+  design roots (`00-` … `34-`) ingested into Canon shards.
+- [archive/migrated-superpowers/README.md](archive/migrated-superpowers/README.md) —
+  `docs/superpowers/{plans,specs}/` ingested into `architecture/tech/TECH-*.md`
+  on 2026-06-24 and retired on 2026-09-21.
 
 Active versus superseded status is registered in [INDEX.yaml](INDEX.yaml).
 

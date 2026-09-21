@@ -131,5 +131,5 @@ Kubernetes 部署时建议：
 
 ## Source
 
-源码方式详见 [source-install.md](./source-install.md)。源码工作区适合开发、验证和构建 release 包，不建议直接作为生产守护进程运行。生产运行优先使用 release 包、系统服务或容器。
+源码方式详见 [source-install.md](../../installation/zh-CN/source-install.md)。源码工作区适合开发、验证和构建 release 包，不建议直接作为生产守护进程运行。生产运行优先使用 release 包、系统服务或容器。
 

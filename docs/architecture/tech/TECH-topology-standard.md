@@ -26,16 +26,16 @@ deployment.
 
 ## Command Matrix (`package.json`)
 
-Canonical topology commands use `scripts/cloud-router-dev.mjs` with explicit
-`--deployment-profile`, `--target`, and `--database` flags.
-Authoritative mapping is also declared in `specs/topology.spec.json` ->
-`scripts.pnpm`.
+Canonical topology commands go through the `sdkwork-app` lifecycle facade with
+explicit `--deployment-profile` / `--runtime-target` flags; the legacy
+`scripts/cloud-router-dev.mjs` runner survives only as the carrier of the
+client-local `dev:desktop:sqlite` variant. Authoritative mapping is also
+declared in `specs/topology.spec.json` -> `scripts.pnpm`.
 
 | Script | Deployment profile | Target | Database |
 | --- | --- | --- | --- |
 | `pnpm dev` | standalone | browser | postgres |
 | `pnpm dev:browser` | standalone | browser | postgres |
-| `pnpm dev:browser:postgres:standalone:debug` | standalone | browser | postgres |
 | `pnpm dev:cloud` | cloud | browser | — |
 | `pnpm dev:browser:cloud` | cloud | browser | — |
 | `pnpm dev:desktop` | standalone | desktop | postgres |
@@ -66,23 +66,35 @@ application roots must not expose `gateway:*:cloud` commands
 
 | Surface | URL |
 | --- | --- |
+| Adaptive Web dev ingress (PC/H5 auto-selected, one browser entry) | http://127.0.0.1:4734 |
 | `application.public-ingress` | http://127.0.0.1:3905 |
+| PC renderer (private, not a browser entry) | http://127.0.0.1:4736 |
+| H5 renderer (private, not a browser entry) | http://127.0.0.1:4737 |
 | `application.open-http` | http://127.0.0.1:18080 (distributed mode) |
 | `application.backend-http` | http://127.0.0.1:18081 (distributed mode) |
-| `platform.api-gateway` | http://127.0.0.1:3902 (optional; embedded in unified-process) |
 
-## Cloud dev (remote client only)
+The adaptive ingress (`APP_RUNTIME_TOPOLOGY_SPEC.md` section 8.2) selects the
+`apps/sdkwork-cloudrouter-pc` (pc-web) or `apps/sdkwork-cloudrouter-h5` (h5)
+renderer by device class with cross-renderer fallback, keeps canonical API
+paths (`/v1`, `/app/v3/api`, `/backend/v3/api`, `/openapi.json`) on
+`application.public-ingress`, and answers with `Vary: user-agent`.
+
+## Cloud dev (local gateway client only)
 
 `pnpm dev:cloud` resolves the `cloud.development` topology profile and starts
-only the portal Vite dev server (bind `127.0.0.1:3901`). The Vite proxy forwards
-`/v1`, `/app/v3/api`, and `/backend/v3/api` to the deployed platform cloud
-gateway origin from
-`SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL`
-(`https://api-dev.sdkwork.com` for development, `https://api-test.sdkwork.com`
-for test, `https://api-staging.sdkwork.com` for staging,
-`https://api.sdkwork.com` for production). The command fails before client
-startup when the gateway URL is absent; it never falls back to loopback API
-defaults.
+only the adaptive web dev ingress (bind `127.0.0.1:4734`) plus the two private
+renderers; it never starts a local gateway, database, or edge process owned by
+this repository. Every gateway-attached base URL (platform gateway plus the
+application public/open/backend surface URLs) is rebound to the locally started
+`sdkwork-api-cloud-gateway` development bind declared by
+`SDKWORK_LOCAL_PLATFORM_API_GATEWAY_HTTP_URL` (`http://127.0.0.1:3900`,
+started by that repository's own `pnpm dev`). Domain edges
+(`api-dev.sdkwork.com` and the registered `api-<suffix>.<base-domain>` family)
+stay authoritative for cloud-mode builds and deployed services only
+(`PNPM_SCRIPT_SPEC.md` section 3, `APP_RUNTIME_TOPOLOGY_SPEC.md` section 4.2).
+The command health-checks the local gateway before client startup and fails
+closed when it is absent; it never falls back to remote domains or unrelated
+loopback defaults.
 
 Client env keys:
 
@@ -91,8 +103,8 @@ Client env keys:
 - `VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_OPEN_HTTP_URL` - open SDK (`/v1`)
 - `VITE_SDKWORK_CLOUDROUTER_ROUTER_PLATFORM_API_GATEWAY_HTTP_URL` - platform / IAM SDKs
 
-`start-workspace.mjs` health-gates the portal dev server: backend processes
-start first, required `/healthz` endpoints must pass, then Vite starts.
+`sdkwork-app dev` health-gates the web ingress: required `/healthz` surfaces
+must pass before the renderers and the adaptive ingress start.
 
 Profile values live in `etc/topology/*.env` only. Do not hardcode ports in
 route crates or feature packages.

@@ -17,6 +17,32 @@ import {
   CLOUD_ROUTER_BROWSER_FORBIDDEN_PRIVATE_EDGE_PREFIXES,
 } from './cloud-router-edge-env-contract.mjs';
 
+import {
+  assertBrowserDevRuntimeEnvDocument as assertBrowserDevRuntimeEnvDocumentCanonical,
+  authorSameOriginSdkBaseUrls,
+  buildBrowserDevRuntimeEnvDocument as buildBrowserDevRuntimeEnvDocumentCanonical,
+  isLoopbackAbsoluteUrl as isLoopbackAbsoluteUrlCanonical,
+} from '../../../sdkwork-specs/tools/browser-runtime-env.mjs';
+
+import {
+  primaryOriginFromEnvValue,
+  readLocalPlatformApiGatewayHttpUrl,
+  resolveBaseUrl as resolveAppBaseUrlCanonical,
+  selectBaseUrlForPageHost as selectBaseUrlForPageHostCanonical,
+  splitBaseUrls as splitBaseUrlsCanonical,
+} from '../../../sdkwork-specs/tools/app-base-url.mjs';
+
+/** Multi-domain splitting (re-exported from the canonical matrix resolver). */
+export const splitBaseUrls = splitBaseUrlsCanonical;
+
+/**
+ * Auto-adapting multi-domain page-host selection (re-exported from the
+ * canonical matrix resolver): standalone resolves the page origin itself;
+ * cloud maps the module page host onto its same-brand
+ * `api-<suffix>.<base-domain>` gateway.
+ */
+export const selectBaseUrlForPageHost = selectBaseUrlForPageHostCanonical;
+
 export const CLOUD_ROUTER_BROWSER_DEVELOPMENT_FORBIDDEN_KEY_PREFIX = 'PORTAL_PUBLIC_';
 
 export const CLOUD_ROUTER_LIFECYCLE_ENV_KEYS = Object.freeze({
@@ -55,6 +81,64 @@ export const CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS = Object.freeze({
   appApi: 'SDKWORK_CLOUDROUTER_BROWSER_DEV_PROXY_APP_API_ORIGIN',
 });
 
+/** Topology env keys the Cloud Router base-URL contract reads (process-only). */
+export const CLOUD_ROUTER_BASE_URL_ENV_KEYS = Object.freeze({
+  localPlatformApiGatewayHttpUrl: 'SDKWORK_LOCAL_PLATFORM_API_GATEWAY_HTTP_URL',
+  applicationPublicHttpUrl: 'SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL',
+  applicationPublicHttpUrlVite: 'VITE_SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL',
+});
+
+/**
+ * Cloud Router binding of the canonical lifecycle-matrix resolver
+ * (`sdkwork-specs/tools/app-base-url.mjs` `resolveBaseUrl`,
+ * APP_RUNTIME_ENV_SPEC.md §2/§4). Fills the application-owned topology inputs
+ * from the profile env bag when the caller does not pass them explicitly:
+ *
+ * - cloud dev transport ← `SDKWORK_LOCAL_PLATFORM_API_GATEWAY_HTTP_URL`
+ *   (the locally started `sdkwork-api-cloud-gateway`, ip+port);
+ * - standalone transport ← the primary origin of
+ *   `SDKWORK_CLOUDROUTER_ROUTER_APPLICATION_PUBLIC_HTTP_URL`
+ *   (dev: the adaptive ingress ip+port; build: the serving domain edge).
+ *
+ * Application code MUST call this (or the canonical resolver) instead of
+ * re-deriving profile/phase decisions; the browser/runtime counterpart is
+ * `resolveBaseUrl` in `@sdkwork/sdk-common` (ENVIRONMENT_SPEC.md §6.3).
+ */
+export function resolveCloudRouterBaseUrl({
+  deploymentProfile,
+  environment,
+  phase,
+  surface,
+  env = {},
+  cloudApiBaseUrls,
+  repositoryRoot,
+  deployment,
+  topology,
+  localPlatformApiGatewayHttpUrl,
+  applicationPublicHttpUrl,
+} = {}) {
+  return resolveAppBaseUrlCanonical({
+    deploymentProfile,
+    environment,
+    phase,
+    surface,
+    cloudApiBaseUrls,
+    repositoryRoot,
+    deployment,
+    topology,
+    localPlatformApiGatewayHttpUrl:
+      localPlatformApiGatewayHttpUrl
+      ?? readLocalPlatformApiGatewayHttpUrl(env),
+    applicationPublicHttpUrl:
+      applicationPublicHttpUrl
+      // Transport = the origin the CLIENT calls, so the browser-visible
+      // projection wins over the process-only binding (dev: the adaptive
+      // ingress ip+port 4734, not the application public-ingress 3905).
+      ?? primaryOriginFromEnvValue(env[CLOUD_ROUTER_BASE_URL_ENV_KEYS.applicationPublicHttpUrlVite])
+      ?? primaryOriginFromEnvValue(env[CLOUD_ROUTER_BASE_URL_ENV_KEYS.applicationPublicHttpUrl]),
+  });
+}
+
 export const CLOUD_ROUTER_BROWSER_DEV_PROXY_LEGACY_ALIASES = Object.freeze({
   [CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.openApi]: 'PORTAL_DEV_PROXY_GATEWAY_TARGET',
   [CLOUD_ROUTER_BROWSER_DEV_PROXY_ENV_KEYS.backendApi]: 'PORTAL_DEV_PROXY_BACKEND_API_TARGET',
@@ -82,6 +166,7 @@ export const CLOUD_ROUTER_BROWSER_DEVELOPMENT_DEFAULT_VITE_ENV = Object.freeze({
   VITE_CLOUDROUTER_OPEN_API_BASE_URL: STANDALONE_SAME_ORIGIN_API_PREFIXES.openApi,
   VITE_CLOUDROUTER_APP_API_BASE_URL: STANDALONE_SAME_ORIGIN_API_PREFIXES.appApi,
   VITE_CLOUDROUTER_BACKEND_API_BASE_URL: STANDALONE_SAME_ORIGIN_API_PREFIXES.backendApi,
+  VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL: STANDALONE_SAME_ORIGIN_API_PREFIXES.backendApi,
   VITE_SDKWORK_DRIVE_BACKEND_API_BASE_URL: STANDALONE_SAME_ORIGIN_API_PREFIXES.backendApi,
   VITE_SDKWORK_FEEDS_OPEN_API_BASE_URL: STANDALONE_SAME_ORIGIN_API_PREFIXES.feedsOpenApi,
   VITE_TOOL_API_ENABLED: 'false',
@@ -334,15 +419,7 @@ function isLoopbackHostname(hostname) {
 }
 
 export function isLoopbackAbsoluteUrl(value) {
-  if (!value?.startsWith('http://') && !value?.startsWith('https://')) {
-    return false;
-  }
-
-  try {
-    return isLoopbackHostname(new URL(value).hostname);
-  } catch {
-    return false;
-  }
+  return isLoopbackAbsoluteUrlCanonical(value);
 }
 
 function resolveStandaloneOpenApiBaseUrl(runtimeEnv) {
@@ -395,9 +472,15 @@ export function alignCloudLocalGatewayBrowserDevelopmentEnv(record = {}, {
  * Standalone browser dev mounts every composed SDK surface on the portal edge.
  * Rewrite loopback absolute dependency SDK URLs to same-origin prefixes and
  * strip process-only topology HTTP bindings from the browser runtime bag.
+ *
+ * The forbidden-key strip runs BEFORE any early return: a dev surface that
+ * never authored the canonical base keys (previously the standalone.development
+ * materialized env) used to bypass alignment entirely and leak loopback
+ * `_HTTP_URL` bindings into the browser document.
  */
 export function alignStandaloneSameOriginBrowserSdkRuntimeEnv(runtimeEnv = {}) {
   const aligned = { ...runtimeEnv };
+  stripForbiddenRuntimeViteKeys(aligned);
 
   if (isLoopbackAbsoluteUrl(aligned.VITE_CLOUDROUTER_APP_API_BASE_URL)) {
     aligned.VITE_CLOUDROUTER_APP_API_BASE_URL = STANDALONE_SAME_ORIGIN_API_PREFIXES.appApi;
@@ -421,8 +504,8 @@ export function alignStandaloneSameOriginBrowserSdkRuntimeEnv(runtimeEnv = {}) {
     return aligned;
   }
 
-  for (const [key, rawValue] of Object.entries(aligned)) {
-    if (!key.startsWith('VITE_SDKWORK_') || !isLoopbackAbsoluteUrl(rawValue)) {
+  for (const key of Object.keys(aligned)) {
+    if (!key.startsWith('VITE_SDKWORK_') || !isLoopbackAbsoluteUrl(aligned[key])) {
       continue;
     }
 
@@ -437,13 +520,175 @@ export function alignStandaloneSameOriginBrowserSdkRuntimeEnv(runtimeEnv = {}) {
     }
 
     if (key.endsWith('_OPEN_API_BASE_URL')) {
-      aligned[key] = resolveStandaloneFeedsOpenApiBaseUrl(aligned, rawValue);
+      aligned[key] = resolveStandaloneFeedsOpenApiBaseUrl(aligned, aligned[key]);
     }
-  }
-
-  for (const key of CLOUD_ROUTER_BROWSER_FORBIDDEN_RUNTIME_VITE_KEYS) {
-    delete aligned[key];
   }
 
   return aligned;
 }
+
+function stripForbiddenRuntimeViteKeys(aligned) {
+  for (const key of CLOUD_ROUTER_BROWSER_FORBIDDEN_RUNTIME_VITE_KEYS) {
+    delete aligned[key];
+  }
+  return aligned;
+}
+
+function stripRetiredRuntimeViteKeys(aligned) {
+  for (const key of CLOUD_ROUTER_BROWSER_RETIRED_RUNTIME_VITE_KEYS) {
+    delete aligned[key];
+  }
+  return aligned;
+}
+
+/** Router-owned dependency *backend* SDK bases that must stay same-origin in dev. */
+const ROUTER_OWNED_BACKEND_SDK_BASE_KEYS = Object.freeze([
+  'VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL',
+]);
+
+/**
+ * Fold router-owned dependency backend SDK bases onto the canonical
+ * same-origin backend prefix.
+ *
+ * BROWSER_RUNTIME_ENV_SPEC.md §2.3 rejects every non-relative API base in a dev
+ * document, not only the loopback ones: the dev ingress fronts the whole
+ * router-owned surface, so an absolute `https://api.<domain>/backend/v3/api`
+ * left in the dev bag points the browser straight at a deploy edge and bypasses
+ * the ingress fan-out. `mergeDirectBrowserViteEnv` publishes whatever the shared
+ * dotenv file carries (deploy-time values by design), so this fold must run
+ * unconditionally for these keys — the same-origin prefix is the contract, not
+ * a coincidence of the value happening to be loopback.
+ *
+ * DEV-ONLY. It is deliberately NOT called from
+ * `alignStandaloneSameOriginBrowserSdkRuntimeEnv` (which also runs on the
+ * release/build path, where a declared `PORTAL_PUBLIC_APPBASE_BACKEND_API_BASE_URL`
+ * deploy origin is legitimate and must survive). Call it from the dev document
+ * builder only.
+ *
+ * Federated sibling edges (drive, agents, voice, ...) are deliberately NOT in
+ * this list: §5.3 lets them keep their declared remote origins in cloud
+ * development.
+ */
+export function foldRouterOwnedBackendSdkBasesToSameOrigin(aligned) {
+  for (const key of ROUTER_OWNED_BACKEND_SDK_BASE_KEYS) {
+    if (normalizeText(aligned[key])) {
+      aligned[key] = CLOUD_ROUTER_BROWSER_DEVELOPMENT_DEFAULT_VITE_ENV[key];
+    }
+  }
+  return aligned;
+}
+
+/**
+ * Every SDK base URL key a Cloud Router browser surface may publish in its dev
+ * document. BROWSER_RUNTIME_ENV_SPEC.md §2.2/§5.1: each of these MUST end up on
+ * its canonical same-origin prefix, because each is consumed by a generated SDK
+ * client through `readCloudRouterRuntimeEnv` (PC) or the shared runtime
+ * document (H5). A key that exists in the dev bag but is NOT force-authored here
+ * silently keeps whatever deploy-time domain the shared dotenv file carries, so
+ * adding a consumed key without adding it here is the regression this list
+ * exists to prevent.
+ *
+ * `VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL` is the appbase backend SDK base
+ * (consumed by `resolveRequiredAppbaseBackendBaseUrl` ->
+ * `buildAppbaseBackendConfig` -> `new SdkworkAppbaseBackendClient`). It is an
+ * independent dependency surface, but it is still a router-owned backend SDK
+ * base: in dev it must be `/backend/v3/api`, exactly like the Cloud Router
+ * backend family it falls back to.
+ */
+const BROWSER_DEV_CONTRACT_BASE_URL_KEYS = Object.freeze([
+  'VITE_API_BASE_URL',
+  'VITE_CLOUDROUTER_OPEN_API_BASE_URL',
+  'VITE_CLOUDROUTER_APP_API_BASE_URL',
+  'VITE_CLOUDROUTER_BACKEND_API_BASE_URL',
+  'VITE_SDKWORK_APPBASE_BACKEND_API_BASE_URL',
+]);
+
+/**
+ * Browser-visible runtime keys that no SDK client consumes. Publishing them in
+ * a browser document violates BROWSER_RUNTIME_ENV_SPEC.md §5.4 (generated SDK
+ * clients receive their base through the composition root; a dangling
+ * deploy-time key is dead weight that invites future misuse). They are stripped
+ * from every dev document.
+ */
+export const CLOUD_ROUTER_BROWSER_RETIRED_RUNTIME_VITE_KEYS = Object.freeze([
+  'VITE_SDKWORK_COMMERCE_APP_API_BASE_URL',
+  'VITE_SDKWORK_COMMERCE_BACKEND_API_BASE_URL',
+]);
+
+/**
+ * Force the canonical same-origin SDK bases onto a dev browser document
+ * (ENVIRONMENT_SPEC §5.1.4, CONFIG_SPEC §3.1). Dev surfaces share their dotenv
+ * file with `vite build` (deploy-safe domain values), so the dev contract must
+ * OVERRIDE those values, not merely fill gaps — same-origin is the contract,
+ * never a coincidence of missing keys.
+ *
+ * DEV-ONLY. Retirement stripping runs here (not in
+ * `alignStandaloneSameOriginBrowserSdkRuntimeEnv`) so the release/build path
+ * keeps whatever the release host declares for its own surfaces.
+ */
+export function authorBrowserDevelopmentSdkBaseUrls(runtimeEnv = {}) {
+  return foldRouterOwnedBackendSdkBasesToSameOrigin(
+    stripRetiredRuntimeViteKeys(
+      authorSameOriginSdkBaseUrls(
+        runtimeEnv,
+        BROWSER_DEV_CONTRACT_BASE_URL_KEYS.map((key) => [key, CLOUD_ROUTER_BROWSER_DEVELOPMENT_DEFAULT_VITE_ENV[key]]),
+      ),
+    ),
+  );
+}
+
+
+/**
+ * One dev runtime document shared by every browser surface (PC `/runtime-env.js`
+ * bag, H5 `/runtime-env.json`): profile identity plus same-origin relative API
+ * bases. The deployment profile changes only the server-side fan-out target
+ * (standalone → application.public-ingress, cloud → the local platform
+ * gateway) — never the browser-visible document shape.
+ */
+export function buildBrowserDevRuntimeEnvDocument({
+  profileId,
+  deploymentProfile,
+  environment,
+} = {}) {
+  // Canonical implementation: sdkwork-specs/tools/browser-runtime-env.mjs
+  // (BROWSER_RUNTIME_ENV_SPEC.md). Same-origin prefixes match
+  // STANDALONE_SAME_ORIGIN_API_PREFIXES.
+  return buildBrowserDevRuntimeEnvDocumentCanonical({ profileId, deploymentProfile, environment });
+}
+
+/**
+ * Reusable alignment gate for every dev runtime document a browser surface
+ * serves. Throws with one line per violation so the mode-matrix regression
+ * test can run it against standalone AND cloud documents unchanged.
+ *
+ * Accepts both canonical shapes:
+ * - H5 `/runtime-env.json` field style (`appApiBaseUrl`, `browserOriginMode`);
+ * - PC `/runtime-env.js` Vite bag style (`VITE_CLOUDROUTER_APP_API_BASE_URL`).
+ *
+ * Contract: same-origin mode + relative canonical bases + router-owned
+ * topology bindings never leak. Federated sibling edges (drive, agents, ...)
+ * legitimately keep their declared remote origins in cloud development, so
+ * only LOOPBACK absolutes are rejected unconditionally.
+ */
+export function assertBrowserDevRuntimeEnvDocument(document, { profileId, sameOriginBaseEntries } = {}) {
+  // Canonical implementation: sdkwork-specs/tools/browser-runtime-env.mjs
+  // (BROWSER_RUNTIME_ENV_SPEC.md) — shared gate for every SDKWork surface.
+  // Shape-aware defaults: JSON documents enforce the three canonical fields;
+  // Vite bags enforce the Cloud Router base keys. Both bind to the same
+  // same-origin prefixes (STANDALONE_SAME_ORIGIN_API_PREFIXES).
+  const jsonShape = document?.appApiBaseUrl !== undefined || document?.openApiBaseUrl !== undefined;
+  return assertBrowserDevRuntimeEnvDocumentCanonical(document, {
+    profileId,
+    sameOriginBaseEntries:
+      sameOriginBaseEntries
+      ?? (jsonShape
+        ? []
+        : [
+            ['VITE_CLOUDROUTER_APP_API_BASE_URL', STANDALONE_SAME_ORIGIN_API_PREFIXES.appApi],
+            ['VITE_CLOUDROUTER_BACKEND_API_BASE_URL', STANDALONE_SAME_ORIGIN_API_PREFIXES.backendApi],
+            ['VITE_CLOUDROUTER_OPEN_API_BASE_URL', STANDALONE_SAME_ORIGIN_API_PREFIXES.openApi],
+          ]),
+    requireSameOriginBases: sameOriginBaseEntries === undefined && jsonShape,
+  });
+}
+

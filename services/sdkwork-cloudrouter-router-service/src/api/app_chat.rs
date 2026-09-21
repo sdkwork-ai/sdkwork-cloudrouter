@@ -15,14 +15,15 @@ use serde_json::{Map, Value};
 use crate::api::app_sql_subject::{map_required_app_sql_subject, RequiredAppSqlScopedSubject};
 
 use crate::api::response::{
-    internal_problem, json_created_response, json_success_list_response, offset_page_info,
-    parse_offset_list_query, problem_from_wire_code, service_unavailable_problem, success_envelope,
+    internal_problem, json_created_response, json_success_list_response, problem_from_wire_code,
+    service_unavailable_problem, success_envelope,
 };
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::infrastructure::OsApiKeySecretGenerator;
 use crate::ports::{
-    AppChatConversationItem, AppChatConversationList, AppChatFuture, AppChatMessageCursor,
+    AppChatConversationCursor, AppChatConversationItem, AppChatConversationList, AppChatFuture,
+    AppChatMessageCursor,
     AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnOutcome, AppChatUsageSnapshot,
     CompleteAppChatTurnCommand, CreateAppChatConversationCommand, CreateAppChatTurnCommand,
 };
@@ -50,7 +51,7 @@ struct AppChatState {
 
 #[derive(Debug, Default)]
 struct AppChatListQuery {
-    page: Option<i64>,
+    cursor: Option<String>,
     page_size: Option<i64>,
 }
 
@@ -64,6 +65,13 @@ struct AppChatMessagesListQuery {
 #[serde(deny_unknown_fields)]
 struct AppChatMessageCursorPayload {
     message_no: i64,
+    id: i64,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct AppChatConversationCursorPayload {
+    updated_at_micros: i64,
     id: i64,
 }
 
@@ -136,7 +144,7 @@ impl AppChatStore for UnavailableAppChatStore {
     fn list_conversations<'a>(
         &'a self,
         _subject: AppChatSubject,
-        _page: i64,
+        _cursor: Option<AppChatConversationCursor>,
         _page_size: i64,
     ) -> AppChatFuture<'a, AppChatConversationList> {
         Box::pin(async { Err(app_chat_store_unavailable_error()) })
@@ -235,20 +243,37 @@ async fn list_conversations(
         Ok(query) => query,
         Err(message) => return invalid_parameter(message),
     };
-    let pagination = match parse_offset_list_query(query.page, query.page_size) {
+    let (cursor, page_size) = match validate_app_chat_conversations_list_query(query) {
         Ok(value) => value,
         Err(message) => return invalid_parameter(message),
     };
+    let requested_cursor = cursor;
     match state
         .store
-        .list_conversations(subject, pagination.page_no, pagination.page_size)
+        .list_conversations(subject, requested_cursor, page_size)
         .await
     {
-        Ok(list) => json_success_list_response(
-            None,
-            list.items,
-            offset_page_info(list.page_no, list.page_size, list.total),
-        ),
+        Ok(list) => {
+            // A store that echoes the requested cursor for a has_more page
+            // is stalling: fail the continuation instead of looping forever.
+            let stalled_page =
+                list.has_more && list.next_cursor.as_ref() == requested_cursor.as_ref();
+            let next_cursor = match (list.has_more, list.next_cursor.as_ref()) {
+                (true, Some(cursor)) if !stalled_page => {
+                    encode_app_chat_conversation_cursor(cursor).ok()
+                }
+                _ => None,
+            };
+            json_success_list_response(
+                None,
+                list.items,
+                cursor_window_page_info(
+                    Some(usize::try_from(page_size).unwrap_or(0)),
+                    next_cursor,
+                    list.has_more && !stalled_page,
+                ),
+            )
+        }
         Err(error) => app_chat_system_response("app chat conversations are unavailable", error),
     }
 }
@@ -679,19 +704,24 @@ fn parse_app_chat_list_query(raw_query: Option<&str>) -> Result<AppChatListQuery
     let mut query = AppChatListQuery::default();
 
     for (key, value) in url::form_urlencoded::parse(raw_query.unwrap_or_default().as_bytes()) {
-        let target = match key.as_ref() {
-            "page" => &mut query.page,
-            "page_size" => &mut query.page_size,
+        match key.as_ref() {
+            "cursor" => {
+                if query.cursor.is_some() {
+                    return Err("cursor must not be repeated".to_owned());
+                }
+                query.cursor = Some(value.to_string());
+            }
+            "page_size" => {
+                if query.page_size.is_some() {
+                    return Err("page_size must not be repeated".to_owned());
+                }
+                let parsed: i64 = value
+                    .parse()
+                    .map_err(|_| "page_size must be an integer".to_owned())?;
+                query.page_size = Some(parsed);
+            }
             _ => return Err("unsupported query parameter".to_owned()),
-        };
-        if target.is_some() {
-            return Err(format!("{key} must not be repeated"));
         }
-        *target = Some(
-            value
-                .parse::<i64>()
-                .map_err(|_| format!("{key} must be an integer"))?,
-        );
     }
 
     Ok(query)
@@ -725,6 +755,55 @@ fn parse_app_chat_messages_list_query(
     }
 
     Ok(query)
+}
+
+fn validate_app_chat_conversations_list_query(
+    query: AppChatListQuery,
+) -> Result<(Option<AppChatConversationCursor>, i64), String> {
+    let page_size = query.page_size.unwrap_or(DEFAULT_MESSAGE_PAGE_SIZE);
+    if !(1..=MAX_MESSAGE_PAGE_SIZE).contains(&page_size) {
+        return Err(format!(
+            "page_size must be between 1 and {MAX_MESSAGE_PAGE_SIZE}"
+        ));
+    }
+    let cursor = query
+        .cursor
+        .as_deref()
+        .map(decode_app_chat_conversation_cursor)
+        .transpose()?;
+    Ok((cursor, page_size))
+}
+
+fn encode_app_chat_conversation_cursor(
+    cursor: &AppChatConversationCursor,
+) -> Result<String, DomainError> {
+    if cursor.updated_at_micros < 0 || cursor.id <= 0 {
+        return Err(DomainError::new(
+            "app chat store returned an invalid conversation cursor",
+        ));
+    }
+    serde_json::to_vec(&AppChatConversationCursorPayload {
+        updated_at_micros: cursor.updated_at_micros,
+        id: cursor.id,
+    })
+    .map(|value| base64url_encode(&value))
+    .map_err(|_| DomainError::new("app chat conversation cursor serialization failed"))
+}
+
+fn decode_app_chat_conversation_cursor(value: &str) -> Result<AppChatConversationCursor, String> {
+    if value.is_empty() || value.len() > MAX_MESSAGE_CURSOR_LEN || value.trim() != value {
+        return Err("cursor is invalid".to_owned());
+    }
+    let decoded = base64url_decode(value).ok_or_else(|| "cursor is invalid".to_owned())?;
+    let payload = serde_json::from_slice::<AppChatConversationCursorPayload>(&decoded)
+        .map_err(|_| "cursor is invalid".to_owned())?;
+    if payload.updated_at_micros < 0 || payload.id <= 0 {
+        return Err("cursor is invalid".to_owned());
+    }
+    Ok(AppChatConversationCursor {
+        updated_at_micros: payload.updated_at_micros,
+        id: payload.id,
+    })
 }
 
 fn validate_app_chat_messages_list_query(

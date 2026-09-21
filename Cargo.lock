@@ -4555,13 +4555,16 @@ dependencies = [
 name = "sdkwork-agents-tool-cloudrouter"
 version = "0.1.0"
 dependencies = [
+ "axum",
  "cloudrouter-open-sdk",
  "reqwest 0.13.5",
  "sdkwork-agent-kernel",
  "sdkwork-agent-provider-rig",
  "sdkwork-agents-tool-contract",
+ "sdkwork-utils-rust",
  "serde_json",
  "tokio",
+ "tower",
  "tracing",
 ]
 
@@ -4751,6 +4754,7 @@ dependencies = [
  "sdkwork-cloudrouter-license",
  "sdkwork-cloudrouter-security",
  "sdkwork-iam-web-adapter",
+ "sdkwork-utils-rust",
  "sdkwork-web-bootstrap",
  "sdkwork-web-core",
  "serde_json",
@@ -5476,6 +5480,7 @@ dependencies = [
  "getrandom 0.3.4",
  "hex",
  "hmac 0.12.1",
+ "http-body 1.1.0",
  "http-body-util",
  "hyper",
  "hyper-rustls",

@@ -245,18 +245,25 @@ recorded in
 
 ### MCP Runtime Persistence
 
-The admin MCP management surface persists to four PostgreSQL-only tenant-scoped
-tables that are part of the materialized baseline:
-`ai_mcp_server` (server registry, transport, visibility, health),
-`ai_mcp_server_revision` (immutable draft/published configuration revisions),
-`ai_mcp_tool` (discovered tool schemas and execution policy), and
-`ai_mcp_binding` (owner-scoped allow/deny bindings with a bounded snapshot).
-Revision creation and publication update the server pointer and the revision
-lifecycle inside one transaction, and scoped unique indexes
-(`(tenant_id, organization_id, server_key)` and the per-server revision tuple)
-are the final collision guard. The schema authority is
-`docs/schema-registry/tables/ai-mcp-runtime.yaml`; both the baseline DDL and
-`generated/schema/postgres/schema.sql` are materialized from it.
+Cloud Router does **not** own an MCP runtime registry. The MCP surface — server
+registry, configuration revisions, discovered tool schemas and execution policy,
+and owner-scoped bindings — is owned by the sibling `sdkwork-mcp` repository,
+which declares `ai_mcp_server`, `ai_mcp_tool` and its related tables in its own
+baseline and serves the MCP API through its own assembly.
+
+Cloud Router previously carried a duplicate local MCP runtime store over
+`ai_mcp_server` / `ai_mcp_tool` / `ai_mcp_server_revision` / `ai_mcp_binding`.
+That store was retired because `ai_mcp_server` and `ai_mcp_tool` collide on name
+with the tables `sdkwork-mcp` owns: on a shared database where `sdkwork-mcp` had
+already created them, Cloud Router's `CREATE TABLE IF NOT EXISTS` migrations
+silently no-opped while still recording themselves as applied, leaving the live
+shape owned by another repository. This mirrors the prompt surface, which is
+owned by `sdkwork-prompts` for the same reason. Cloud Router keeps no local
+store for either surface.
+
+The `c_category` MCP *catalog* taxonomy (categoryType 40, seeded from
+`data/categories/mcp/categories.json`) is a product-marketplace category seed
+unrelated to the retired runtime registry and remains in Cloud Router.
 
 ## 4. Upstream Supplier Data Model
 
@@ -347,9 +354,10 @@ all non-desktop deployments require Redis at startup and never fall back to an
 in-memory or SQLite accounting queue.
 
 Payment intent and refund facts are runtime-written through the payment
-runtime store and materialized by the Cloud Router-owned `payment-runtime`
-database module (fresh installs receive the runtime shape directly; shared
-payment tables self-heal against federated baselines). Refund creation is
+runtime store and materialized by the Cloud Router-owned
+`payment-control-plane` database module (fresh installs receive the control
+plane shape directly; shared payment tables self-heal against federated
+baselines owned by `sdkwork-payment`). Refund creation is
 atomically idempotent (`ON CONFLICT` on the `(tenant_id, idempotency_key)`
 arbiter) and carries a cumulative refund-cap reservation in the same
 transaction: the guard row-locks the intent, re-reads the active refund sum,

@@ -946,6 +946,10 @@ pub(crate) fn response_from_invocation_error(error: &InvocationError) -> Respons
         | InvocationErrorKind::Usage
         | InvocationErrorKind::Telemetry
         | InvocationErrorKind::Internal => StatusCode::BAD_GATEWAY,
+        // A rejected precharge hold means the caller cannot fund the request
+        // right now. 402 keeps it distinguishable from a genuine bad gateway so
+        // clients surface a recharge action instead of a retry hint.
+        InvocationErrorKind::InsufficientBalance => StatusCode::PAYMENT_REQUIRED,
         InvocationErrorKind::Idempotency => StatusCode::CONFLICT,
         InvocationErrorKind::RateLimit => StatusCode::TOO_MANY_REQUESTS,
     };

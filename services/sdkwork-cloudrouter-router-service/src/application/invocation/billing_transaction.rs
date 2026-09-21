@@ -4,7 +4,7 @@ use super::{
     AccountBillingMode, BillingMode, Invocation, InvocationError, InvocationErrorKind,
     InvocationFuture, InvocationInterceptor,
 };
-use crate::domain::{BillingMeter, BillingOwnerKind, DecimalValue};
+use crate::domain::{BillingMeter, BillingOwnerKind, DecimalValue, DomainError};
 use crate::ports::{
     token_points_for_charge, CustomerChargeMode, GatewayBillingAmount, GatewayBillingContext,
     GatewayBillingStore, RechargeSettingsModel,
@@ -146,7 +146,7 @@ impl InvocationInterceptor for BillingTransactionInterceptor {
                         );
                         continue;
                     }
-                    Err(error) => return Err(billing_error(error)),
+                    Err(error) => return Err(billing_port_error(error)),
                 }
             }
             invocation.charging.reserved_amount = Some(amount);
@@ -560,8 +560,29 @@ fn conservative_quantity(meter: &BillingMeter, input: i64, output: i64) -> i64 {
     }
 }
 
+/// Maps a billing-store failure onto an invocation error.
+///
+/// The default classification is `Pricing`, because most precharge failures are
+/// local pricing/configuration faults (missing price, unknown currency,
+/// multiple plans). A wallet rejection is the exception: when the store reports
+/// [`DomainError::is_insufficient_balance`] the caller can self-heal by funding
+/// the account, so it must stay a distinct kind. Folding it into `Pricing`
+/// (which the gateway stamps as `dispatch_failed`) is what previously told users
+/// the upstream service was broken when in fact their balance was short.
 fn billing_error(error: impl std::fmt::Display) -> InvocationError {
     InvocationError::new(InvocationErrorKind::Pricing, error.to_string())
+}
+
+/// Same as [`billing_error`], but preserves the insufficient-balance
+/// classification carried by a [`DomainError`] coming through the billing port.
+fn billing_port_error(error: DomainError) -> InvocationError {
+    if error.is_insufficient_balance() {
+        return InvocationError::new(
+            InvocationErrorKind::InsufficientBalance,
+            error.to_string(),
+        );
+    }
+    billing_error(error)
 }
 
 fn provider_response_succeeded(invocation: &Invocation) -> bool {

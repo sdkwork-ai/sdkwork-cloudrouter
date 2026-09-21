@@ -670,16 +670,30 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
       account ? upstreamService.accounts.listResources(account.id) : Promise.resolve([]),
       account ? upstreamService.accounts.listCredentials(account.id, { page: 1, pageSize: 200 }) : Promise.resolve([]),
     ])
-      .then(([nextCatalog, items, credentials]) => {
+      .then(async ([nextCatalog, items, credentials]) => {
         if (cancelled) return;
         setCatalog(nextCatalog);
-        if (account) {
-          setSelection(toSelection(items.map(({ resourceCode, resourceGroupCode, grantType, priority, status }) => ({ resourceCode, resourceGroupCode, grantType, priority, status }))));
-          const activeCredential = credentials.find((credential) => credential.isActive) ?? credentials[0] ?? null;
-          // 凭据为只写（write-only）：后端从不下发明文或可解密密钥，
-          // 编辑模式统一回填掩码，仅在用户重新输入时覆盖。
-          setApiKeyMasked(activeCredential?.maskedLabel ?? '');
-          setApiKeyInput(activeCredential?.maskedLabel ?? '');
+        if (!account) return;
+        setSelection(toSelection(items.map(({ resourceCode, resourceGroupCode, grantType, priority, status }) => ({ resourceCode, resourceGroupCode, grantType, priority, status }))));
+        const activeCredential = credentials.find((credential) => credential.isActive) ?? credentials[0] ?? null;
+        // 列表接口是只写语义，只返回掩码；编辑面需要可查看/可修改的明文，
+        // 因此按需向凭据明文端点再取一次。掩码仍保留一份作为「未修改」的
+        // 比较基准，避免把回填的明文误当成用户输入而去重建凭据。
+        setApiKeyMasked(activeCredential?.maskedLabel ?? '');
+        if (!activeCredential) {
+          setApiKeyInput('');
+          return;
+        }
+        try {
+          const revealed = await upstreamService.accounts.revealCredentialSecret(
+            account.id,
+            activeCredential.id,
+          );
+          if (!cancelled) setApiKeyInput(revealed.secret);
+        } catch {
+          // 明文读取失败（权限/密钥轮换/解码失败）时回退到掩码，
+          // 不让弹窗整体失败；用户仍可输入新密钥完成轮换。
+          if (!cancelled) setApiKeyInput(activeCredential.maskedLabel ?? '');
         }
       })
       .catch((cause) => {
@@ -693,7 +707,7 @@ function AccountModal({ account, suppliers, groups, initialGroupId, busy, onSubm
 
   const selectedAuthMethod = authMethods.find((method) => method.authMethodCode === authMethodCode) ?? null;
   // 认证方式为 APIKEY 时显示 API Key 输入：创建模式必填，编辑模式回填当前
-  // 明文密钥（管理面解密），可直接查看与修改；留空表示保持当前密钥。
+  // 明文密钥（走凭据明文端点按需解密），可直接查看与修改；留空表示保持当前密钥。
   const showApiKeyInput = selectedAuthMethod?.authType === 'api_key';
   const selectedSupplier = suppliers.find((item) => item.id === supplierId) ?? null;
   const protocolRows = (selectedSupplier?.protocols ?? []).map((protocol) => ({

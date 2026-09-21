@@ -1,8 +1,8 @@
-# SDKWork Cloud Router - Tenant Isolation Incident Runbook
+# SDKWork Claw Router - Tenant Isolation Incident Runbook
 
 **Document Version:** 1.0
 **Last Updated:** 2026-06-27
-**Owner:** Security / cloudrouter-security
+**Owner:** Security / clawrouter-security
 **Review Frequency:** Quarterly
 **Severity:** P0 (data breach class)
 
@@ -26,7 +26,7 @@
 A request authenticated as tenant A unexpectedly reads or modifies data
 belonging to tenant B. Per [SECURITY.md](../../SECURITY.md), any cross-tenant
 data access is treated as Critical regardless of exploit complexity, because
-the multi-tenant trust boundary is the core security invariant of Cloud Router.
+the multi-tenant trust boundary is the core security invariant of Claw Router.
 
 The boundary is normally enforced by:
 
@@ -35,7 +35,7 @@ The boundary is normally enforced by:
   repository boundary.
 - Schema-registry owned-table prefixes per capability.
 - App session tokens signed with the shared HMAC secret
-  (`SDKWORK_CLOUDROUTER_APP_SESSION_SECRET`).
+  (`SDKWORK_CLAW_APP_SESSION_SECRET`).
 
 An isolation failure means one of these enforcement layers was bypassed.
 
@@ -50,7 +50,7 @@ An isolation failure means one of these enforcement layers was bypassed.
 - Logs showing principal/row tenant mismatch:
 
   ```
-  ERROR tenant_isolation_violation principal_tenant=tenantA row_tenant=tenantB table=ai_usage
+  ERROR tenant_isolation_violation principal_tenant=tenantA row_tenant=tenantB table=ai_usage_fact
   WARN  sql_scoped_subject bypass detected actor=<user-id> scope=missing
   ```
 
@@ -63,14 +63,14 @@ boundary, and freeze the affected tenant(s) to stop further data movement:
 
 ```bash
 # Suspend the implicated API key (admin-only, membership_kind=admin required)
-kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
+kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
   curl -sS -X PATCH http://localhost:8080/admin/api-keys/<api-key-id> \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
     -d '{"status": "suspended"}'
 
 # If a tenant-wide freeze is required
-kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
+kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
   curl -sS -X PATCH http://localhost:8080/admin/tenants/<tenant-id> \
     -H "Authorization: Bearer ${ADMIN_TOKEN}" \
     -H "Content-Type: application/json" \
@@ -94,7 +94,7 @@ ORDER BY created_at;
 
 ```bash
 # Capture distributed traces for the implicated request ids
-kubectl exec -it deploy/cloud-router-gateway -n cloudrouter -- \
+kubectl exec -it deploy/claw-router-gateway -n clawrouter -- \
   curl -s "http://otel-collector:4318/api/traces?tenant_id=<tenantA>" > traces.json
 ```
 
@@ -106,7 +106,7 @@ through a `SqlScopedSubject` that injects the `tenant_id` predicate.
 
 ```bash
 # Find queries on tenant-scoped tables that bypass the scoped subject
-rg --type rust "FROM ai_usage|FROM ai_routing|FROM ops_audit_log" \
+rg --type rust "FROM ai_usage_fact|FROM ai_routing|FROM ops_audit_log" \
    --glob '!**/sql_scoped*' crates/
 ```
 
@@ -116,7 +116,7 @@ Redis keys for rate limiting, idempotency, and circuit breaker state MUST
 embed the `tenant_id` so one tenant cannot read another tenant's counters:
 
 ```bash
-kubectl exec -it deploy/redis-primary -n cloudrouter -- redis-cli --scan \
+kubectl exec -it deploy/redis-primary -n clawrouter -- redis-cli --scan \
   --pattern 'ratelimit:*' | head -50
 # Expected: ratelimit:{tenant_id}:{scope}:...
 # Investigate any key missing the tenant_id segment.
@@ -124,32 +124,32 @@ kubectl exec -it deploy/redis-primary -n cloudrouter -- redis-cli --scan \
 
 ## Root Cause Analysis
 
-1. **Code change history** 鈥?diff the repository since the last known-good
+1. **Code change history** — diff the repository since the last known-good
    deploy. Look for:
    - New repository methods that bypass `SqlScopedSubject`.
    - Raw SQL strings lacking `WHERE tenant_id = $1`.
    - Redis key builders that dropped the tenant segment.
-2. **SQL query audit** 鈥?review the query plan / executed SQL captured in
+2. **SQL query audit** — review the query plan / executed SQL captured in
    tracing for the implicated `request_id`. Confirm whether the `tenant_id`
    predicate was present.
-3. **Principal resolution** 鈥?confirm the `WebRequestPrincipal` carried the
+3. **Principal resolution** — confirm the `WebRequestPrincipal` carried the
    correct `tenant_id` and that no client-supplied tenant header was trusted
    (SECURITY.md hardening: `[server].trust_forwarded_headers = off`).
-4. **Key compromise** 鈥?if the principal was correct but data still crossed
+4. **Key compromise** — if the principal was correct but data still crossed
    tenants, suspect the HMAC signing key (see
    [Token / API Key Rotation](token-api-key-rotation.md)).
 
 ## Fix and Recovery
 
-1. **Fix the code** 鈥?restore the `SqlScopedSubject` / tenant-segment guard;
+1. **Fix the code** — restore the `SqlScopedSubject` / tenant-segment guard;
    add a regression test that asserts cross-tenant reads return empty.
-2. **Migrate / repair data** 鈥?if tenant B's rows were modified by tenant A,
+2. **Migrate / repair data** — if tenant B's rows were modified by tenant A,
    restore affected rows from PITR (see
    [Database Migration Rollback](database-migration-rollback.md) and
    [Disaster Recovery Plan](../../deployments/runbooks/disaster-recovery-plan.md#scenario-4-data-corruption)).
-3. **Revoke and reissue credentials** 鈥?for the implicated principal, rotate
+3. **Revoke and reissue credentials** — for the implicated principal, rotate
    its API key and force re-authentication of affected sessions.
-4. **Restore tenant access** 鈥?once verified, unfreeze the tenant and
+4. **Restore tenant access** — once verified, unfreeze the tenant and
    re-enable the (reissued) API key.
 
 ## Compliance Reporting

@@ -6,6 +6,11 @@
       "prefix": "ops_",
       "owner": "cloud-router-platform",
       "domain": "operations"
+    },
+    {
+      "prefix": "sdkwork_",
+      "owner": "cloud-router-platform",
+      "domain": "operations"
     }
   ]
 }

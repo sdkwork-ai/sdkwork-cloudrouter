@@ -51,7 +51,6 @@ impl_admin_port_subject_from_sql_scope!(crate::ports::AdminStorageSubject);
 impl_admin_port_subject_from_sql_scope!(crate::ports::AdminTransactionCenterSubject);
 impl_admin_port_subject_from_sql_scope!(crate::ports::AdminServiceNodeSubject);
 impl_admin_port_subject_from_sql_scope!(crate::ports::AdminModelRateLimitSubject);
-impl_admin_port_subject_from_sql_scope!(crate::ports::AdminMcpSubject);
 impl_admin_port_subject_from_sql_scope!(crate::ports::AdminMarketingSubject);
 impl_admin_port_subject_from_sql_scope!(crate::ports::AdminPricingSubject);
 impl_admin_port_subject_from_sql_scope!(crate::ports::AdminReferralSubject);

@@ -49,7 +49,20 @@ services:
   redis:
     image: redis:7-alpine
     # Survive host/WSL restarts together with the gateway (commercial ops).
+    # Redis holds quota counters, idempotency keys, circuit state, and
+    # accounting retry facts: AOF persistence and noeviction are mandatory
+    # (TECH_ARCHITECTURE.md §7). A memory ceiling prevents unbounded growth.
     restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --maxmemory
+      - ${REDIS_MAXMEMORY:-768mb}
+      - --maxmemory-policy
+      - ${REDIS_MAXMEMORY_POLICY:-noeviction}
     volumes:
       - redis-data:/data
     healthcheck:

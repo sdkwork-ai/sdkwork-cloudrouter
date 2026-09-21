@@ -191,24 +191,35 @@ pub(crate) async fn forward_provider_passthrough_to_target(
     ))
 }
 
+/// Total stream lifetime applied when no request-specific stream timeout is
+/// configured (30 minutes, matching the OpenAI-compatible relay default).
+pub(crate) const PROVIDER_STREAM_TOTAL: Duration = Duration::from_secs(1_800);
+
 /// Applies bounded total and idle deadlines to a forwarded streaming response
 /// body. The response-header timeout above only covers header arrival; a
 /// stalled upstream that never sends another frame must not hold the
 /// downstream connection (and its upstream quota) indefinitely.
 fn apply_passthrough_stream_timeouts(response: Response, total_timeout: Duration) -> Response {
     let (parts, body) = response.into_parts();
+    Response::from_parts(
+        parts,
+        apply_stream_deadlines_to_body(body, total_timeout),
+    )
+}
+
+/// Applies the passthrough total/idle stream deadlines to an already-built
+/// body. Used directly by the adapter streaming path, which has no
+/// response-level wrapper to attach deadlines to.
+pub(crate) fn apply_stream_deadlines_to_body(body: Body, total_timeout: Duration) -> Body {
     let idle_timeout = total_timeout
         .min(Duration::from_secs(60))
         .max(Duration::from_secs(1));
-    Response::from_parts(
-        parts,
-        Body::new(PassthroughStreamTimeoutBody {
-            inner: body,
-            total_deadline: std::time::Instant::now() + total_timeout,
-            idle: idle_timeout,
-            idle_timer: None,
-        }),
-    )
+    Body::new(PassthroughStreamTimeoutBody {
+        inner: body,
+        total_deadline: std::time::Instant::now() + total_timeout,
+        idle: idle_timeout,
+        idle_timer: None,
+    })
 }
 
 /// Poll-based body wrapper enforcing total and idle deadlines without
@@ -233,13 +244,6 @@ impl HttpBody for PassthroughStreamTimeoutBody {
                 "provider passthrough stream exceeded the total response deadline",
             )))));
         }
-        if let Some(timer) = self.idle_timer.as_mut() {
-            if timer.as_mut().poll(cx).is_ready() {
-                return Poll::Ready(Some(Err(axum::Error::new(std::io::Error::other(
-                    "provider passthrough stream idle deadline exceeded",
-                )))));
-            }
-        }
         match Pin::new(&mut self.inner).poll_frame(cx) {
             Poll::Ready(Some(Ok(frame))) => {
                 // A frame arrived: reset the idle timer for the next gap.
@@ -249,8 +253,18 @@ impl HttpBody for PassthroughStreamTimeoutBody {
             Poll::Ready(Some(Err(error))) => Poll::Ready(Some(Err(error))),
             Poll::Ready(None) => Poll::Ready(None),
             Poll::Pending => {
-                if self.idle_timer.is_none() {
-                    self.idle_timer = Some(Box::pin(tokio::time::sleep(self.idle)));
+                // No frame yet: poll the idle timer in the same call so its
+                // waker is registered with the consumer. Creating the timer
+                // without polling it would leave the stream unable to wake
+                // when a stalled upstream never wakes the inner body.
+                let idle = self.idle;
+                let timer = self
+                    .idle_timer
+                    .get_or_insert_with(|| Box::pin(tokio::time::sleep(idle)));
+                if timer.as_mut().poll(cx).is_ready() {
+                    return Poll::Ready(Some(Err(axum::Error::new(std::io::Error::other(
+                        "provider passthrough stream idle deadline exceeded",
+                    )))));
                 }
                 Poll::Pending
             }
@@ -426,6 +440,90 @@ mod tests {
     use sdkwork_cloudrouter_security::OutboundTargetPolicy;
     use std::collections::HashSet;
     use std::time::Duration;
+
+    /// Regression pin: the upstream URI is a naive `base_url + path` concatenation.
+    ///
+    /// The catalog publishes the *host* and the protocol *path prefix* separately
+    /// (`models/<vendor>/<region>/vendor.json -> protocolBaseUrls.<protocol>`), e.g.
+    /// DeepSeek's Anthropic face is `host: api.deepseek.com, pathPrefix: /anthropic`.
+    /// The runtime only carries the endpoint `base_url` (the bare host), so the
+    /// prefix must be present in `base_url` for the composed URL to be the vendor's
+    /// real endpoint. This test pins the composition so a future change to either
+    /// side is visible instead of silently producing a 404 upstream.
+    #[test]
+    fn build_uri_is_base_url_concatenated_with_path() {
+        let bare_host = ProviderPassthroughTarget::new(
+            "deepseek",
+            "https://api.deepseek.com",
+            ProviderPassthroughAuth::bearer("provider-secret").unwrap(),
+            Vec::new(),
+        );
+        // No `/anthropic` prefix on base_url -> the Anthropic Messages call lands on
+        // the vendor root, not the Anthropic-compatible surface.
+        assert_eq!(
+            "https://api.deepseek.com/v1/messages",
+            bare_host.build_uri("/v1/messages").unwrap().to_string()
+        );
+
+        let prefixed = ProviderPassthroughTarget::new(
+            "deepseek",
+            "https://api.deepseek.com/anthropic",
+            ProviderPassthroughAuth::bearer("provider-secret").unwrap(),
+            Vec::new(),
+        );
+        // Prefix present -> the vendor's real Anthropic surface.
+        assert_eq!(
+            "https://api.deepseek.com/anthropic/v1/messages",
+            prefixed.build_uri("/v1/messages").unwrap().to_string()
+        );
+    }
+
+    /// `normalize_openai_compatible_path` strips a leading `/v1` from the inbound
+    /// path **only when the base_url already ends with `/v1`** (see
+    /// `build_uri_is_base_url_concatenated_with_path` for why the composed URL is a
+    /// plain concatenation). `Uri::path()` keeps the trailing segment, so all of
+    /// `.../v1`, `.../compatible-mode/v1` and `.../v1beta/openai/v1` are recognised.
+    /// A bare-host base_url keeps the inbound `/v1`, which is what the vendor wants.
+    #[test]
+    fn normalize_openai_compatible_path_depends_on_base_url_shape() {
+        let with_v1 = ProviderPassthroughTarget::new(
+            "openai",
+            "https://api.openai.com/v1",
+            ProviderPassthroughAuth::bearer("provider-secret").unwrap(),
+            Vec::new(),
+        );
+        assert!(with_v1.base_url_has_openai_v1_prefix());
+        assert_eq!(
+            "/chat/completions",
+            with_v1.normalize_openai_compatible_path("/v1/chat/completions")
+        );
+
+        let bare = ProviderPassthroughTarget::new(
+            "deepseek",
+            "https://api.deepseek.com",
+            ProviderPassthroughAuth::bearer("provider-secret").unwrap(),
+            Vec::new(),
+        );
+        assert!(!bare.base_url_has_openai_v1_prefix());
+        assert_eq!(
+            "/v1/chat/completions",
+            bare.normalize_openai_compatible_path("/v1/chat/completions")
+        );
+
+        // Alibaba's real OpenAI-compatible prefix also ends in `/v1`, so it is
+        // recognised and the inbound `/v1` is stripped -> no duplicated segment.
+        let compatible_mode = ProviderPassthroughTarget::new(
+            "alibaba",
+            "https://dashscope.aliyuncs.com/compatible-mode/v1",
+            ProviderPassthroughAuth::bearer("provider-secret").unwrap(),
+            Vec::new(),
+        );
+        assert!(compatible_mode.base_url_has_openai_v1_prefix());
+        assert_eq!(
+            "/chat/completions",
+            compatible_mode.normalize_openai_compatible_path("/v1/chat/completions")
+        );
+    }
 
     #[tokio::test]
     async fn production_policy_rejects_local_target_before_forwarding_body_or_credentials() {

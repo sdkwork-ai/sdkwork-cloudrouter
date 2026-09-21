@@ -27,7 +27,8 @@ import {
   type SdkworkOrderMessagesOverrides,
   type SdkworkOrderVisualTone,
 } from '@sdkwork/order-pc-order';
-import { formatMoney } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
+import { formatMoneyMinorUnits } from '@sdkwork/cloudroutes-pc-commons/sdkwork-utils';
+import { formatTokenBankPoints } from '@sdkwork/cloudroutes-pc-commons/runtime';
 
 import { resolveConsoleOrderLocale } from './consoleCommerceLocale.ts';
 
@@ -41,6 +42,31 @@ const SETTLEMENTS_FILTERS: SdkworkOrderFilter[] = [
   'refunded',
   'cancelled',
 ];
+
+/**
+ * Order subjects that credit a Token Bank quota.
+ *
+ * The warehouse is not uniform here, so both spellings must be accepted:
+ *
+ * - `token_bank_recharge` / `token_bank_plan_purchase` / `token_bank_plan_renewal`
+ *   are the subjects the contract maps to the Token Bank asset
+ *   (`AccountValueOrderSubject::fixed_target_asset` in
+ *   `sdkwork-order-service/src/domain/account_value.rs`).
+ * - `points_recharge` is the contract default and is what the existing orders
+ *   actually carry: every Token Bank recharge in the database is stored with
+ *   this subject, and its ledger entries all land on the `token_bank` asset.
+ *   Rejecting it would leave the quota column empty for real rows.
+ *
+ * `account_recharge_package`, `coupon_recharge`, `refund_request` and
+ * `cash_withdrawal` are deliberately excluded — the contract gives the first
+ * two no fixed asset and the last two are not recharges.
+ */
+const TOKEN_BANK_QUOTA_SUBJECTS = new Set([
+  'points_recharge',
+  'token_bank_recharge',
+  'token_bank_plan_purchase',
+  'token_bank_plan_renewal',
+]);
 
 type TranslationFunction = ReturnType<typeof useTranslation>['t'];
 
@@ -88,6 +114,59 @@ function resolveStatusTone(status: string): SdkworkOrderVisualTone {
   }
 
   return 'neutral';
+}
+
+/**
+ * Renders the Token Bank quota for Token Bank recharge orders only.
+ *
+ * The order row carries the credited quota in **micro-points** (1 point = 1e6
+ * micro), matching the account ledger written by the backend
+ * (`postgres_recharge.rs` `compute_grant_amount`). `formatTokenBankPoints`
+ * converts that micro-point integer into a points decimal string before
+ * formatting, so a stored `500000000` renders as `500` — the same figure the
+ * Token Bank ledger and admin surfaces show — and never as a 1000000x
+ * overstatement.
+ *
+ * The quota is a unit count, not money, so it is formatted without a currency
+ * symbol — deliberately distinct from the adjacent CNY amount columns. Non-Token
+ * Bank orders return `null` so the cell falls back to a placeholder rather than
+ * a misleading `0`.
+ */
+function formatTokenBankQuota(
+  subject: string,
+  quota: number | null,
+  locale: string,
+): string | null {
+  if (!TOKEN_BANK_QUOTA_SUBJECTS.has(subject.trim().toLowerCase())) {
+    return null;
+  }
+
+  if (quota === null || !Number.isFinite(quota) || quota <= 0) {
+    return null;
+  }
+
+  return formatTokenBankPoints(String(Math.trunc(quota)), locale);
+}
+
+/**
+ * Renders a CNY amount that the order API supplies in **minor units** (fen).
+ *
+ * Order amounts reach the client as canonical integer smallest-unit strings
+ * (`commerce_order_amount_breakdown.payable_amount`, e.g. `5000` for ¥50.00),
+ * and neither the Rust DTO nor `mapOrderSummary` rescales them. `formatMoney`
+ * would treat that value as major units and overstate it by 100x, so the
+ * conversion must go through `formatMoneyMinorUnits`, which divides by
+ * `10 ** exponent` (CNY exponent = 2).
+ *
+ * Returns `null` when the amount is absent so callers can render a placeholder
+ * instead of `¥0.00` for an order that has not been paid.
+ */
+function formatMinorUnitsCny(value: number | null, locale: string): string | null {
+  if (value === null || !Number.isFinite(value)) {
+    return null;
+  }
+
+  return formatMoneyMinorUnits(Math.trunc(value), 'CNY', locale, 'symbol');
 }
 
 interface SettlementsStat {
@@ -186,7 +265,7 @@ function SettlementsPageContent({ controller }: { controller: SdkworkOrderContro
       icon: CircleDollarSign,
       label: copy.stats.totalAmount,
       tone: 'accent',
-      value: formatMoney(state.dashboard.statistics.totalAmountCny, { currency: 'CNY', locale, mode: 'symbol' }) ?? '--',
+      value: formatMinorUnitsCny(state.dashboard.statistics.totalAmountCny, locale) ?? '--',
     },
   ], [copy, state.dashboard.statistics, locale]);
 
@@ -325,6 +404,9 @@ function SettlementsPageContent({ controller }: { controller: SdkworkOrderContro
                       <th className="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
                         {t('console.settlements.columns.paidAmount', 'Paid amount')}
                       </th>
+                      <th className="whitespace-nowrap px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
+                        {t('console.settlements.columns.tokenBankQuota', 'Token Bank quota')}
+                      </th>
                       <th className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--sdk-color-text-muted)]" scope="col">
                         {t('console.settlements.columns.expireAt', 'Expires')}
                       </th>
@@ -369,10 +451,13 @@ function SettlementsPageContent({ controller }: { controller: SdkworkOrderContro
                             {formatTimestamp(order.payTime)}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3.5 text-right text-sm font-semibold tabular-nums text-[var(--sdk-color-text-primary)]">
-                            {formatMoney(order.totalAmountCny, { currency: 'CNY', locale, mode: 'symbol' }) ?? '--'}
+                            {formatMinorUnitsCny(order.totalAmountCny, locale) ?? '--'}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3.5 text-right text-sm tabular-nums text-[var(--sdk-color-text-secondary)]">
-                            {formatMoney(order.paidAmountCny, { currency: 'CNY', locale, mode: 'symbol' }) ?? '--'}
+                            {formatMinorUnitsCny(order.paidAmountCny, locale) ?? '--'}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3.5 text-right text-sm tabular-nums text-[var(--sdk-color-text-secondary)]">
+                            {formatTokenBankQuota(order.subject, order.quota, locale) ?? '--'}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3.5 text-sm text-[var(--sdk-color-text-secondary)]">
                             {formatTimestamp(order.expireTime)}

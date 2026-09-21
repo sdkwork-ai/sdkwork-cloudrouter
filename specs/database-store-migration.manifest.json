@@ -138,8 +138,8 @@
       "ownerReviewRequired": true
     },
     {
-      "capability": "payment-runtime",
-      "targetCrate": "crates/sdkwork-cloudrouter-payment-runtime-repository-sqlx",
+      "capability": "payment-control-plane",
+      "targetCrate": "crates/sdkwork-cloudrouter-payment-control-plane-repository-sqlx",
       "storePaths": [
         "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/payment_intent_runtime_store.rs",
         "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/payment_reconciliation_runtime_store.rs"
@@ -350,21 +350,6 @@
       "targetCrate": "crates/sdkwork-cloudrouter-admin-storage-repository-sqlx"
     },
     {
-      "capability": "admin-mcp",
-      "targetCrate": "crates/sdkwork-cloudrouter-admin-mcp-repository-sqlx",
-      "storePaths": [
-        "services/sdkwork-cloudrouter-router-service/src/infrastructure/sql/postgres/admin_mcp_store.rs"
-      ],
-      "tables": [
-        "ai_mcp_binding",
-        "ai_mcp_server",
-        "ai_mcp_server_revision",
-        "ai_mcp_tool"
-      ],
-      "priority": "MEDIUM",
-      "migrationOrder": 18
-    },
-    {
       "capability": "admin-announcement",
       "targetCrate": "crates/sdkwork-cloudrouter-admin-announcement-repository-sqlx",
       "storePaths": [
@@ -376,7 +361,7 @@
         "ops_notification_recipient"
       ],
       "priority": "MEDIUM",
-      "migrationOrder": 19
+      "migrationOrder": 18
     },
     {
       "capability": "app-notification",
@@ -391,7 +376,7 @@
         "ops_notification_recipient"
       ],
       "priority": "MEDIUM",
-      "migrationOrder": 20,
+      "migrationOrder": 19,
       "ownerReviewRequired": true
     },
     {
@@ -411,7 +396,7 @@
         "ops_notification_recipient"
       ],
       "priority": "MEDIUM",
-      "migrationOrder": 21
+      "migrationOrder": 20
     },
     {
       "capability": "admin-service-node",
@@ -423,7 +408,7 @@
         "ops_gateway_instance"
       ],
       "priority": "MEDIUM",
-      "migrationOrder": 22
+      "migrationOrder": 21
     },
     {
       "capability": "admin-auth-settings",
@@ -436,7 +421,7 @@
         "ops_config_snapshot"
       ],
       "priority": "MEDIUM",
-      "migrationOrder": 23
+      "migrationOrder": 22
     },
     {
       "capability": "runtime-region-settings",
@@ -449,7 +434,7 @@
         "ops_config_snapshot"
       ],
       "priority": "MEDIUM",
-      "migrationOrder": 24
+      "migrationOrder": 23
     },
     {
       "capability": "site-settings",
@@ -462,7 +447,7 @@
         "ops_config_snapshot"
       ],
       "priority": "LOW",
-      "migrationOrder": 25
+      "migrationOrder": 24
     },
     {
       "capability": "settings",
@@ -475,7 +460,7 @@
         "integration_webhook_endpoint"
       ],
       "priority": "LOW",
-      "migrationOrder": 26,
+      "migrationOrder": 25,
       "ownerReviewRequired": false
     },
     {
@@ -490,7 +475,7 @@
         "ops_config_snapshot"
       ],
       "priority": "HIGH",
-      "migrationOrder": 27
+      "migrationOrder": 26
     },
     {
       "capability": "admin-pricing",
@@ -505,7 +490,7 @@
         "ops_audit_log"
       ],
       "priority": "CRITICAL",
-      "migrationOrder": 28
+      "migrationOrder": 27
     },
     {
       "capability": "admin-referral",
@@ -519,7 +504,7 @@
         "ops_referral_strategy"
       ],
       "priority": "MEDIUM",
-      "migrationOrder": 29
+      "migrationOrder": 28
     },
     {
       "capability": "app-invite",
@@ -532,7 +517,7 @@
         "ops_referral_relation"
       ],
       "priority": "MEDIUM",
-      "migrationOrder": 30
+      "migrationOrder": 29
     },
     {
       "capability": "gateway-chain-policy",
@@ -544,7 +529,7 @@
         "iam_gateway_chain_policy"
       ],
       "priority": "HIGH",
-      "migrationOrder": 31
+      "migrationOrder": 30
     },
     {
       "capability": "official-pricing-catalog-read",
@@ -556,7 +541,7 @@
         "ai_model"
       ],
       "priority": "MEDIUM",
-      "migrationOrder": 32
+      "migrationOrder": 31
     },
     {
       "capability": "upstream-credential-rotation",
@@ -569,7 +554,7 @@
         "ai_upstream_account_credential"
       ],
       "priority": "HIGH",
-      "migrationOrder": 33
+      "migrationOrder": 32
     },
     {
       "capability": "usage-retention",
@@ -582,13 +567,13 @@
         "ai_metering_usage"
       ],
       "priority": "MEDIUM",
-      "migrationOrder": 34
+      "migrationOrder": 33
     }
   ],
   "inventoryStats": {
-    "activeStoreFiles": 36,
-    "coveredStoreFiles": 36,
-    "capabilityGroups": 34,
-    "logicalStores": 36
+    "activeStoreFiles": 35,
+    "coveredStoreFiles": 35,
+    "capabilityGroups": 33,
+    "logicalStores": 35
   }
 }

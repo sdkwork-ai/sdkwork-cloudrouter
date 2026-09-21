@@ -1,8 +1,7 @@
 pub(crate) mod account_rate_card;
 pub(crate) mod admin_marketing_recharge;
-pub(crate) mod ai_routing_seed;
+pub mod ai_routing_seed;
 pub mod catalog;
-pub(crate) mod commerce_bootstrap;
 pub(crate) mod dashboard_overview_metrics;
 pub mod iam_scope_resolver;
 pub mod installer;

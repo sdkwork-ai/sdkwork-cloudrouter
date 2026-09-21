@@ -346,7 +346,7 @@ Change:
 
 Effect:
 
-- removes a large part of the manual “which Rust command should I run for this edit?�?overhead
+- removes a large part of the manual “which Rust command should I run for this edit?” overhead
 - reduces the chance that developers jump from a narrow source edit straight to `cargo test --workspace`
 - keeps the fast path conservative: exact-target selection where the repo naming makes that safe, existing curated profiles otherwise
 

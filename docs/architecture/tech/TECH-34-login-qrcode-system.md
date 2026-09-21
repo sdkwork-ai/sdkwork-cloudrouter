@@ -122,6 +122,6 @@ Appbase side:
 
 Related standards and plans:
 
-- [Appbase OAuth System Design](./superpowers/specs/2026-06-09-appbase-oauth-system-design.md)
-- [Appbase OAuth System Implementation Plan](./superpowers/plans/2026-06-09-appbase-oauth-system.md)
+- [Appbase OAuth System Design](./TECH-2026-06-09-appbase-oauth-system-design.md)
+- [Appbase OAuth System Implementation Plan](./TECH-2026-06-09-appbase-oauth-system.md)
 

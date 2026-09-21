@@ -152,6 +152,65 @@ Use canonical root package scripts from `PNPM_SCRIPT_SPEC.md`:
 
 Run the narrowest relevant check first, then broader verification when API contracts, SDK generation, persistence, security, packaging, or cross-package boundaries change.
 
+## Dev Web Access Contract (Adaptive Web)
+
+Authority: `../sdkwork-specs/APP_RUNTIME_ENV_SPEC.md` (umbrella runtime-env
+standard for EVERY application surface: the four-quadrant
+standalone×cloud / dev×build base-URL lifecycle matrix, `browser-document`
+vs `transport` surface styles, the unified tooling-side
+`resolveBaseUrl({ deploymentProfile, environment, phase, surface })` with
+multi-domain splitting in `../sdkwork-specs/tools/app-base-url.mjs`, and the
+shared Vite integration
+`../sdkwork-specs/tools/browser-runtime-env-vite.mjs` — do not re-declare the
+matrix or the middleware wiring per app),
+`APP_RUNTIME_TOPOLOGY_SPEC.md` §8.2, `PNPM_SCRIPT_SPEC.md` §3,
+`ENVIRONMENT_SPEC.md` §5.1.4.0 and §6.3 (runtime `resolveBaseUrl` from
+`@sdkwork/sdk-common`),
+`../sdkwork-specs/BROWSER_RUNTIME_ENV_SPEC.md` (browser annex: dev runtime
+document + `SDKWORK_RUNTIME_ENV` global bridge + SDK base integration rules;
+canonical tool `../sdkwork-specs/tools/browser-runtime-env.mjs`); values live
+only in `etc/topology/*.env` and `specs/topology.spec.json`. This repository
+binds the canonical matrix through
+`scripts/lib/cloud-router-browser-env-contract.mjs` `resolveCloudRouterBaseUrl`.
+Full Chinese rule summary (all environments, dev + build) and debt ledger:
+[docs/browser-access-contract.md](docs/browser-access-contract.md).
+
+- `pnpm dev` / `pnpm dev:browser` (standalone.development, PostgreSQL) expose
+  ONE browser entry: the adaptive same-origin ingress bound by
+  `SDKWORK_CLOUDROUTER_ROUTER_WEB_DEV_INGRESS_BIND` (default `127.0.0.1:4734`).
+  Device class (Sec-CH-UA-Mobile → mobile UA → desktop) selects the PC
+  (`apps/sdkwork-cloudrouter-pc`) or H5 (`apps/sdkwork-cloudrouter-h5`)
+  renderer with cross-renderer fallback. The renderers bind private loopback
+  ports (`..._PC_INTERNAL_DEV_PORT` 4736 / `..._H5_INTERNAL_DEV_PORT` 4737);
+  they are internal client tooling, never access URLs or console entries.
+- Canonical API paths (`/v1`, `/app/v3/api`, `/backend/v3/api`,
+  `/openapi.json`) are proxied by the ingress to `application.public-ingress`
+  (3905 in development), so browser SDK base URLs stay same-origin
+  (`CONFIG_SPEC.md` §3.1).
+- `pnpm dev:cloud` (cloud.development) starts the same ingress plus the private
+  renderers only; every gateway-attached base URL (platform gateway plus the
+  application surface URLs) binds to the locally started
+  `sdkwork-api-cloud-gateway` via `SDKWORK_LOCAL_PLATFORM_API_GATEWAY_HTTP_URL`
+  (`http://127.0.0.1:3900`, declared in `etc/topology/cloud.development.env`).
+  The gateway process itself is started by that sibling repository's `pnpm dev`;
+  `dev:cloud` health-checks it and fails closed — never remote
+  `api-<suffix>.<base-domain>` domains in a dev surface.
+- Builds are domain-bound: standalone `dist/standalone/<env>` is served
+  same-origin by the standalone gateway (device-class static delivery); cloud
+  `dist/cloud/<env>` targets the unified `api-<suffix>.<base-domain>` family.
+- Renderer dev-server output is forwarded under `[renderer pc-web]` /
+  `[renderer h5]` tags; an untagged access URL in dev console output is always
+  the adaptive ingress origin.
+- Dev runtime documents (`/runtime-env.js` bag, `/runtime-env.json`) must be
+  authored same-origin relative (contract helpers +
+  `assertBrowserDevRuntimeEnvDocument` in
+  `scripts/lib/cloud-router-browser-env-contract.mjs`, shared by both apps).
+  Process-only topology `_HTTP_URL` bindings never enter a browser document;
+  deploy-time domain values stay in build surfaces only.
+- Regression gate for the whole matrix (both modes × both surfaces, driven
+  from `specs/topology.spec.json` + `etc/topology/*.env`):
+  `pnpm test:topology` (includes `scripts/dev/browser-dev-access-contract.test.mjs`).
+
 ## Packaging And Deployment (bin/ entrypoints — MANDATORY)
 
 **All image build, package, deploy, rollback, log, backup, and config operations MUST go through

@@ -6,6 +6,7 @@ use axum::http::{Request, StatusCode};
 use sdkwork_cloudrouter_router_service::application::EntityUuidGenerator;
 use sdkwork_cloudrouter_router_service::domain::DomainResult;
 use sdkwork_cloudrouter_router_service::ports::{
+    AppChatConversationCursor,
     AppChatConversationItem, AppChatConversationList, AppChatFuture, AppChatMessageCursor,
     AppChatMessageItem, AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnItem,
     AppChatTurnOutcome, AppChatUsageSnapshot, CompleteAppChatTurnCommand,
@@ -82,7 +83,7 @@ async fn app_chat_list_conversations_uses_trusted_subject_and_returns_items() {
     let response = router
         .oneshot(chat_json_request(
             "GET",
-            "/app/v3/api/chat/conversations?page=1&page_size=20",
+            "/app/v3/api/chat/conversations?page_size=20",
             Body::empty(),
         ))
         .await
@@ -112,7 +113,7 @@ async fn app_chat_default_router_fails_closed_without_store_and_redacts_configur
     let response = router
         .oneshot(chat_json_request(
             "GET",
-            "/app/v3/api/chat/conversations?page=1&page_size=20",
+            "/app/v3/api/chat/conversations?page_size=20",
             Body::empty(),
         ))
         .await
@@ -612,15 +613,15 @@ impl AppChatStore for TestAppChatStore {
     fn list_conversations<'a>(
         &'a self,
         subject: AppChatSubject,
-        _page: i64,
+        _cursor: Option<AppChatConversationCursor>,
         _page_size: i64,
     ) -> AppChatFuture<'a, AppChatConversationList> {
         Box::pin(async move {
             self.list_subjects.lock().unwrap().push(subject);
             Ok(AppChatConversationList {
                 items: vec![sample_conversation()],
-                total: 1,
-                page_no: _page.max(1),
+                next_cursor: None,
+                has_more: false,
                 page_size: _page_size.max(1),
             })
         })

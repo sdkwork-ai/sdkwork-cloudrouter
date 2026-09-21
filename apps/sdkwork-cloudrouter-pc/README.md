@@ -9,7 +9,7 @@ SDKWork CloudRouter PC is the browser console for the Cloud Router product. Root
 - Admin and backend APIs use `@sdkwork/cloudrouter-backend-sdk` for `/backend/v3/api`.
 - Standalone development uses `application.public-ingress` (default `http://127.0.0.1:3900`); remote client development reads explicit surface URLs and does not depend on a gateway implementation identity.
 - The Rust edge server is the default development entrypoint (`pnpm dev`) and the production packaged entrypoint.
-- Direct product service ports remain available for distributed profiles (`pnpm dev:browser:postgres:standalone:debug`) and explicit diagnostics.
+- Direct product service ports remain available for explicit diagnostics (`pnpm topology:plan:server`, internal `18080`/`18081`/`18082` listeners).
 
 ## Local Layout
 

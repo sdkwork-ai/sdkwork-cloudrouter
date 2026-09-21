@@ -247,7 +247,7 @@ async fn insert_payment_intent(
     )
     .bind(&intent.id)
     .bind(&intent.tenant_id)
-    .bind(intent.organization_id.as_deref())
+    .bind(intent.organization_id.as_deref().or(Some("0")))
     .bind(&intent.owner_user_id)
     .bind(&intent.merchant_order_no)
     .bind(&intent.merchant_order_no)
@@ -285,7 +285,7 @@ async fn insert_payment_intent(
     )
     .bind(&route_decision.payment_attempt_id)
     .bind(&intent.tenant_id)
-    .bind(intent.organization_id.as_deref())
+    .bind(intent.organization_id.as_deref().or(Some("0")))
     .bind(&intent.owner_user_id)
     .bind(&intent.id)
     .bind(&intent.merchant_order_no)
@@ -310,7 +310,7 @@ async fn insert_payment_intent(
     )
     .bind(&route_decision.id)
     .bind(&route_decision.tenant_id)
-    .bind(route_decision.organization_id.as_deref())
+    .bind(route_decision.organization_id.as_deref().or(Some("0")))
     .bind(&route_decision.payment_intent_id)
     .bind(&route_decision.payment_attempt_id)
     .bind(&route_decision.account_id)
@@ -351,6 +351,7 @@ async fn record_intent_provider_dispatch(
             updated_at = $3::timestamptz
         WHERE tenant_id = $4
           AND id = $5
+          AND status NOT IN ('succeeded', 'failed', 'canceled')
         "#,
     )
     .bind(status.as_str())
@@ -398,7 +399,7 @@ async fn insert_operation_attempt(
     )
     .bind(&attempt.id)
     .bind(&attempt.tenant_id)
-    .bind(attempt.organization_id.as_deref())
+    .bind(attempt.organization_id.as_deref().or(Some("0")))
     .bind(&attempt.operation_no)
     .bind(&attempt.supplier_code)
     .bind(attempt.operation.as_code())
@@ -433,6 +434,7 @@ async fn finish_operation_attempt(
             provider_error_message = $4,
             completed_at = $5::timestamptz
         WHERE id = $6
+          AND status NOT IN ('SUCCESS', 'FAILED')
         "#,
     )
     .bind(status)
@@ -545,7 +547,7 @@ async fn insert_refund(
     )
     .bind(&refund.id)
     .bind(&refund.tenant_id)
-    .bind(refund.organization_id.as_deref())
+    .bind(refund.organization_id.as_deref().or(Some("0")))
     .bind(&refund.payment_intent_id)
     .bind(&refund.payment_attempt_id)
     .bind(&refund.merchant_refund_no)
@@ -621,7 +623,7 @@ async fn insert_refund(
     )
     .bind(&attempt.id)
     .bind(&attempt.tenant_id)
-    .bind(attempt.organization_id.as_deref())
+    .bind(attempt.organization_id.as_deref().or(Some("0")))
     .bind(&attempt.refund_attempt_no)
     .bind(&attempt.refund_id)
     .bind(&attempt.supplier_code)
@@ -652,7 +654,7 @@ async fn insert_refund(
         )
         .bind(&item.id)
         .bind(&item.tenant_id)
-        .bind(item.organization_id.as_deref())
+        .bind(item.organization_id.as_deref().or(Some("0")))
         .bind(&item.refund_id)
         .bind(&item.order_item_id)
         .bind(item.quantity)
@@ -713,8 +715,8 @@ async fn finish_refund_attempt(
             succeeded_at = CASE WHEN $1 = 'SUCCEEDED' THEN $5::timestamptz ELSE succeeded_at END,
             failed_at = CASE WHEN $1 = 'FAILED' THEN $5::timestamptz ELSE failed_at END,
             updated_at = $5::timestamptz
-        WHERE id = $6
-           OR refund_id = $6
+        WHERE (id = $6 OR refund_id = $6)
+          AND status NOT IN ('SUCCEEDED', 'FAILED')
         "#,
     )
     .bind(status)
@@ -763,6 +765,7 @@ async fn finish_refund(
         SET status = $1,
             updated_at = $2::timestamptz
         WHERE id = $3
+          AND status IN ('pending', 'processing')
         "#,
     )
     .bind(status.as_str())
@@ -781,7 +784,7 @@ async fn finish_refund(
     )
     .bind(&event.id)
     .bind(&event.tenant_id)
-    .bind(event.organization_id.as_deref())
+    .bind(event.organization_id.as_deref().or(Some("0")))
     .bind(&event.refund_id)
     .bind(&event.event_type)
     .bind(event.from_status.as_deref())
@@ -828,7 +831,7 @@ fn intent_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<PaymentIntentRun
     Ok(PaymentIntentRuntimeRecord {
         id: string_cell(row, "id"),
         tenant_id: string_cell(row, "tenant_id"),
-        organization_id: optional_string_cell(row, "organization_id"),
+        organization_id: organization_id_cell(row, "organization_id"),
         owner_user_id: string_cell(row, "owner_user_id"),
         merchant_order_no: string_cell(row, "merchant_order_no"),
         amount: string_cell(row, "amount"),
@@ -864,7 +867,7 @@ fn refund_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<PaymentRefundRun
     Ok(PaymentRefundRuntimeRecord {
         id: string_cell(row, "id"),
         tenant_id: string_cell(row, "tenant_id"),
-        organization_id: optional_string_cell(row, "organization_id"),
+        organization_id: organization_id_cell(row, "organization_id"),
         payment_intent_id: string_cell(row, "payment_intent_id"),
         payment_attempt_id: string_cell(row, "payment_attempt_id"),
         merchant_refund_no: string_cell(row, "refund_no"),
@@ -884,7 +887,7 @@ fn refund_item_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<PaymentRefu
     Ok(PaymentRefundItemRecord {
         id: string_cell(row, "id"),
         tenant_id: string_cell(row, "tenant_id"),
-        organization_id: optional_string_cell(row, "organization_id"),
+        organization_id: organization_id_cell(row, "organization_id"),
         refund_id: string_cell(row, "refund_id"),
         order_item_id: string_cell(row, "order_item_id"),
         quantity: row
@@ -903,7 +906,7 @@ fn refund_attempt_from_row(
     Ok(PaymentRefundAttemptRecord {
         id: string_cell(row, "id"),
         tenant_id: string_cell(row, "tenant_id"),
-        organization_id: optional_string_cell(row, "organization_id"),
+        organization_id: organization_id_cell(row, "organization_id"),
         refund_attempt_no: string_cell(row, "refund_attempt_no"),
         refund_id: string_cell(row, "refund_id"),
         supplier_code: string_cell(row, "supplier_code"),
@@ -929,7 +932,7 @@ fn operation_attempt_from_row(
     Ok(PaymentOperationAttemptRecord {
         id: string_cell(row, "id"),
         tenant_id: string_cell(row, "tenant_id"),
-        organization_id: optional_string_cell(row, "organization_id"),
+        organization_id: organization_id_cell(row, "organization_id"),
         operation_no: string_cell(row, "operation_no"),
         supplier_code: string_cell(row, "supplier_code"),
         operation: operation_from_code(&string_cell(row, "operation_code"))?,
@@ -971,6 +974,14 @@ fn string_cell(row: &sqlx::postgres::PgRow, name: &str) -> String {
 
 fn optional_string_cell(row: &sqlx::postgres::PgRow, name: &str) -> Option<String> {
     row.try_get::<Option<String>, _>(name).ok().flatten()
+}
+
+/// Reads an `organization_id` cell, normalizing the platform "no organization"
+/// sentinel. `organization_id` is `NOT NULL DEFAULT '0'` (DATABASE_SPEC DB089),
+/// so the in-memory model never carries the invalid `NULL` scope (DB090); rows
+/// written before the constraint converged still read back as the sentinel.
+fn organization_id_cell(row: &sqlx::postgres::PgRow, name: &str) -> Option<String> {
+    optional_string_cell(row, name).or_else(|| Some("0".to_owned()))
 }
 
 fn store_error(message: &str, error: sqlx::Error) -> DomainError {

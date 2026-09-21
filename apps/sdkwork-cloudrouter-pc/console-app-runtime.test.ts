@@ -4664,7 +4664,7 @@ test("playground chat SSE stream errors fail the runtime invocation", async () =
 });
 
 test("playground chat SSE HTTP errors surface backend and upstream messages", async () => {
-  const upstreamMessage = "鐢ㄦ埛棰濆害涓嶈冻, 鍓╀綑棰濆害: 锛?0.170132";
+  const upstreamMessage = "用户额度不足, 剩余额度: ￥0.170132";
   const gatewayMessage = `app runtime event stream is unavailable: gateway runtime stream returned HTTP 403 for model=openai/gpt-5.5: ${JSON.stringify({
     error: {
       code: "insufficient_user_quota",
@@ -4697,7 +4697,7 @@ test("playground chat SSE HTTP errors surface backend and upstream messages", as
             name: "GPT-5.5",
           },
         }),
-        /鐢ㄦ埛棰濆害涓嶈冻.*insufficient_user_quota/,
+        /用户额度不足.*insufficient_user_quota/,
       );
 
       assert.deepEqual(captured.map((request) => `${request.method} ${request.url}`), [
@@ -4710,10 +4710,10 @@ test("playground chat SSE HTTP errors surface backend and upstream messages", as
       ]);
       assert.equal(captured[4].body.status, "failed");
       assert.equal(captured[4].body.errorCode, "runtime_stream_failed");
-      assert.match(captured[4].body.errorMessageMasked, /鐢ㄦ埛棰濆害涓嶈冻/);
+      assert.match(captured[4].body.errorMessageMasked, /用户额度不足/);
       assert.match(captured[4].body.errorMessageMasked, /insufficient_user_quota/);
       assert.equal(captured[5].body.status, "failed");
-      assert.match(captured[5].body.message, /鐢ㄦ埛棰濆害涓嶈冻/);
+      assert.match(captured[5].body.message, /用户额度不足/);
       assert.match(captured[5].body.message, /insufficient_user_quota/);
     },
     { authenticated: true },

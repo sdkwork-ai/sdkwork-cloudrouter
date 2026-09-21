@@ -63,18 +63,20 @@ fn unique_secret_path(name: &str) -> std::path::PathBuf {
 }
 
 #[test]
-fn api_key_secret_storage_mode_defaults_to_plaintext() {
+fn api_key_secret_storage_mode_defaults_to_ciphertext() {
     let config = ApiKeySecurityConfig::from_optional_parts(Some(
         "0123456789abcdef0123456789abcdef".to_owned(),
     ))
     .unwrap()
     .unwrap();
 
+    // Gateway API keys are credentials: the default must never store them in
+    // cleartext, so a database dump cannot disclose live keys.
     assert_eq!(
-        sdkwork_cloudrouter_config::ApiKeySecretStorageMode::Plaintext,
+        sdkwork_cloudrouter_config::ApiKeySecretStorageMode::Ciphertext,
         config.secret_storage_mode()
     );
-    assert!(!config.secret_storage_mode().is_ciphertext());
+    assert!(config.secret_storage_mode().is_ciphertext());
 }
 
 #[test]

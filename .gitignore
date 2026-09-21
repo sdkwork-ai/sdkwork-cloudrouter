@@ -20,7 +20,7 @@ _tmp_*
 .env
 .env.*
 !.env.*.example
-# Host profile env files (.env.development, .env.release, �? are ignored via .env.*
+# Host profile env files (.env.development, .env.release, …) are ignored via .env.*
 
 node_modules/
 dist/
@@ -125,6 +125,9 @@ Thumbs.db
 
 
 # SDKWork local-only and generated artifacts
+# Runtime-parity/audit evidence snapshots (generated, never commit)
+**/.sdkwork/evidence/
+**/.sdkwork/artifacts/
 .env
 .env.*
 !.env.example

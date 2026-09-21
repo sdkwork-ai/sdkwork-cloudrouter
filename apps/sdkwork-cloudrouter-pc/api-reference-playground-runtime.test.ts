@@ -607,7 +607,7 @@ const cloudStorageSpec = JSON.parse(readFileSync(
 test("api reference schema tabs sort by backend order and keep schema urls", () => {
   const tabs: ApiSchemaTab[] = [
     { id: "backend", name: "Backend API", order: 30, schemaUrls: ["/backend/v3/api/openapi.json"], defaultSchemaUrl: "/backend/v3/api/openapi.json" },
-    { id: "gateway", name: "AI鑱氬悎API", order: 10, schemaUrls: ["/openapi.json"], defaultSchemaUrl: "/openapi.json" },
+    { id: "gateway", name: "AI聚合API", order: 10, schemaUrls: ["/openapi.json"], defaultSchemaUrl: "/openapi.json" },
   ];
 
   assert.deepEqual(sortApiSchemaTabs(tabs).map((tab) => tab.id), ["gateway", "backend"]);
@@ -669,7 +669,7 @@ test("api reference builds one system per backend schema tab", async () => {
     cacheTtlSeconds: 30,
     tabs: [
       { id: "app", name: "App API", order: 20, schemaUrls: ["/app/v3/api/openapi.json"], defaultSchemaUrl: "/app/v3/api/openapi.json" },
-      { id: "gateway", name: "AI鑱氬悎API", order: 10, schemaUrls: ["/openapi.json"], defaultSchemaUrl: "/openapi.json" },
+      { id: "gateway", name: "AI聚合API", order: 10, schemaUrls: ["/openapi.json"], defaultSchemaUrl: "/openapi.json" },
     ],
   };
 
@@ -736,7 +736,7 @@ test("api reference loads available payment aggregate, paas, cloud storage and a
       },
       {
         id: "cloud-services",
-        name: "鍩虹浜戞湇鍔PI",
+        name: "基础云服务API",
         order: 40,
         schemaUrls: ["/cloud/v3/openapi.json"],
         defaultSchemaUrl: "/cloud/v3/openapi.json",
@@ -775,14 +775,14 @@ test("api reference loads available payment aggregate, paas, cloud storage and a
       },
       {
         id: "gateway",
-        name: "AI鑱氬悎API",
+        name: "AI聚合API",
         order: 10,
         schemaUrls: ["/openapi.json"],
         defaultSchemaUrl: "/openapi.json",
       },
       {
         id: "payment-aggregate",
-        name: "鏀粯鑱氬悎API",
+        name: "支付聚合API",
         order: 20,
         schemaUrls: ["/payments/v3/openapi.json"],
         defaultSchemaUrl: "/payments/v3/openapi.json",
@@ -866,8 +866,8 @@ test("api reference systems derive request base urls per API surface", async () 
   const manifest: ApiSchemaTabsDocument = {
     cacheTtlSeconds: 30,
     tabs: [
-      { id: "gateway", name: "AI鑱氬悎API", order: 10, schemaUrls: ["/openapi.json"], defaultSchemaUrl: "/openapi.json" },
-      { id: "payment-aggregate", name: "鏀粯鑱氬悎API", order: 20, schemaUrls: ["/payments/v3/openapi.json"], defaultSchemaUrl: "/payments/v3/openapi.json" },
+      { id: "gateway", name: "AI聚合API", order: 10, schemaUrls: ["/openapi.json"], defaultSchemaUrl: "/openapi.json" },
+      { id: "payment-aggregate", name: "支付聚合API", order: 20, schemaUrls: ["/payments/v3/openapi.json"], defaultSchemaUrl: "/payments/v3/openapi.json" },
       { id: "app", name: "App API", order: 30, schemaUrls: ["/app/v3/api/openapi.json"], defaultSchemaUrl: "/app/v3/api/openapi.json" },
       { id: "backend", name: "Backend API", order: 40, schemaUrls: ["/backend/v3/api/openapi.json"], defaultSchemaUrl: "/backend/v3/api/openapi.json" },
     ],
@@ -1357,7 +1357,7 @@ test("api reference resolves reusable OpenAPI parameters", async () => {
   const manifest: ApiSchemaTabsDocument = {
     cacheTtlSeconds: 30,
     tabs: [
-      { id: "payment-aggregate", name: "鏀粯鑱氬悎API", order: 20, schemaUrls: ["/payments/v3/openapi.json"], defaultSchemaUrl: "/payments/v3/openapi.json" },
+      { id: "payment-aggregate", name: "支付聚合API", order: 20, schemaUrls: ["/payments/v3/openapi.json"], defaultSchemaUrl: "/payments/v3/openapi.json" },
     ],
   };
   const spec = {
@@ -1731,8 +1731,8 @@ test("sdk reference reuses schema tabs and maps tabs to generated SDK metadata",
   const manifest: ApiSchemaTabsDocument = {
     cacheTtlSeconds: 30,
     tabs: [
-      { id: "payment-aggregate", name: "鏀粯鑱氬悎API", order: 20, schemaUrls: ["/payments/v3/openapi.json"], defaultSchemaUrl: "/payments/v3/openapi.json", status: "available" },
-      { id: "cloud-services", name: "鍩虹浜戞湇鍔PI", order: 30, schemaUrls: ["/cloud/v3/openapi.json"], defaultSchemaUrl: "/cloud/v3/openapi.json", status: "available" },
+      { id: "payment-aggregate", name: "支付聚合API", order: 20, schemaUrls: ["/payments/v3/openapi.json"], defaultSchemaUrl: "/payments/v3/openapi.json", status: "available" },
+      { id: "cloud-services", name: "基础云服务API", order: 30, schemaUrls: ["/cloud/v3/openapi.json"], defaultSchemaUrl: "/cloud/v3/openapi.json", status: "available" },
       { id: "app", name: "App API", order: 40, schemaUrls: ["/app/v3/api/openapi.json"], defaultSchemaUrl: "/app/v3/api/openapi.json" },
       { id: "backend", name: "Backend API", order: 50, schemaUrls: ["/backend/v3/api/openapi.json"], defaultSchemaUrl: "/backend/v3/api/openapi.json" },
     ],

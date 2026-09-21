@@ -9,6 +9,11 @@ pub enum InvocationErrorKind {
     ResourceClassification,
     Routing,
     Pricing,
+    /// The wallet, credits, or plan backing the request cannot fund it and the
+    /// caller can self-heal by recharging. Distinct from `Pricing` (misconfigured
+    /// price book) and `Dispatch` (upstream failure) because it maps to HTTP 402
+    /// with a funding action instead of a retry hint.
+    InsufficientBalance,
     Dispatch,
     ProviderPassthroughFailed,
     Usage,
@@ -30,6 +35,7 @@ impl InvocationErrorKind {
             Self::ResourceClassification => "resource_classification_failed",
             Self::Routing => "routing_failed",
             Self::Pricing => "pricing_failed",
+            Self::InsufficientBalance => "insufficient_balance",
             Self::Dispatch => "dispatch_failed",
             Self::ProviderPassthroughFailed => "provider_passthrough_failed",
             Self::Usage => "usage_failed",
@@ -54,6 +60,11 @@ impl InvocationErrorKind {
             Self::Authorization | Self::ModelForbidden => "permission_error",
             Self::Idempotency => "conflict_error",
             Self::RateLimit => "rate_limit_error",
+            // OpenAI's official vocabulary has a dedicated value for a funding
+            // shortfall; clients already special-case it, so map it here rather
+            // than letting it fall into `server_error` (which is what made the
+            // message read as an upstream outage).
+            Self::InsufficientBalance => "insufficient_quota",
             Self::Routing
             | Self::Pricing
             | Self::Dispatch

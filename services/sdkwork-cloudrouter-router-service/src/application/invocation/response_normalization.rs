@@ -334,6 +334,10 @@ fn status_code_for_error(error: &InvocationError) -> u16 {
             403
         }
         super::InvocationErrorKind::Idempotency => 409,
+        // Insufficient balance is a client-side, self-healable funding problem:
+        // 402 (Payment Required) instead of the 502 used for infrastructure
+        // faults, so clients can route the user to recharge.
+        super::InvocationErrorKind::InsufficientBalance => 402,
         super::InvocationErrorKind::Routing
         | super::InvocationErrorKind::Pricing
         | super::InvocationErrorKind::Dispatch

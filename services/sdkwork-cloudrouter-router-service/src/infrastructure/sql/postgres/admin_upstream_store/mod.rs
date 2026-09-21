@@ -17,15 +17,16 @@ use sqlx::PgPool;
 
 use crate::application::UpstreamCredentialSecretCodec;
 use crate::ports::{
-    AdminUpstreamAccountCredentialItem, AdminUpstreamAccountGroupItem,
-    AdminUpstreamAccountGroupMemberInput, AdminUpstreamAccountGroupMemberItem,
-    AdminUpstreamAccountItem, AdminUpstreamFuture, AdminUpstreamListQuery, AdminUpstreamPage,
-    AdminUpstreamResourceInput, AdminUpstreamResourceItem, AdminUpstreamStore,
-    AdminUpstreamSubject, AdminUpstreamSupplierAuthMethodInput,
-    AdminUpstreamSupplierAuthMethodItem, AdminUpstreamSupplierEndpointInput,
-    AdminUpstreamSupplierEndpointItem, AdminUpstreamSupplierItem,
-    CreateAdminUpstreamAccountCredentialCommand, SaveAdminUpstreamAccountCommand,
-    SaveAdminUpstreamAccountGroupCommand, SaveAdminUpstreamSupplierCommand,
+    AdminUpstreamAccountCredentialItem, AdminUpstreamAccountCredentialSecretItem,
+    AdminUpstreamAccountGroupItem, AdminUpstreamAccountGroupMemberInput,
+    AdminUpstreamAccountGroupMemberItem, AdminUpstreamAccountItem, AdminUpstreamFuture,
+    AdminUpstreamListQuery, AdminUpstreamPage, AdminUpstreamResourceInput,
+    AdminUpstreamResourceItem, AdminUpstreamStore, AdminUpstreamSubject,
+    AdminUpstreamSupplierAuthMethodInput, AdminUpstreamSupplierAuthMethodItem,
+    AdminUpstreamSupplierEndpointInput, AdminUpstreamSupplierEndpointItem,
+    AdminUpstreamSupplierItem, CreateAdminUpstreamAccountCredentialCommand,
+    SaveAdminUpstreamAccountCommand, SaveAdminUpstreamAccountGroupCommand,
+    SaveAdminUpstreamSupplierCommand,
 };
 
 pub use verifier::PostgresAdminUpstreamAccountVerifier;
@@ -233,6 +234,24 @@ impl AdminUpstreamStore for PostgresAdminUpstreamStore {
         account_id: i64,
     ) -> AdminUpstreamFuture<'a, AdminUpstreamPage<AdminUpstreamAccountCredentialItem>> {
         Box::pin(async move { account::list_credentials(&self.pool, query, account_id).await })
+    }
+
+    fn reveal_account_credential_secret<'a>(
+        &'a self,
+        subject: AdminUpstreamSubject,
+        account_id: i64,
+        credential_id: i64,
+    ) -> AdminUpstreamFuture<'a, AdminUpstreamAccountCredentialSecretItem> {
+        Box::pin(async move {
+            account::reveal_credential_secret(
+                &self.pool,
+                self.secret_codec.as_ref(),
+                subject,
+                account_id,
+                credential_id,
+            )
+            .await
+        })
     }
 
     fn create_account_credential<'a>(

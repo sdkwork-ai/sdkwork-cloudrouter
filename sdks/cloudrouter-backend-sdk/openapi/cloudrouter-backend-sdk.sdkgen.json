@@ -14964,6 +14964,115 @@
           }
         },
         "type": "object"
+      },
+      "UpstreamAccountCredentialSecretItemResponse": {
+        "additionalProperties": false,
+        "description": "Upstream account credential secret item response schema exposed by Cloud Router.",
+        "name": "UpstreamAccountCredentialSecretItemResponse",
+        "properties": {
+          "item": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UpstreamAccountCredentialSecret"
+              }
+            ],
+            "description": "Item field on upstream account credential secret item response."
+          }
+        },
+        "required": [
+          "item"
+        ],
+        "type": "object"
+      },
+      "UpstreamAccountCredentialSecret": {
+        "additionalProperties": false,
+        "description": "Decrypted upstream account credential secret schema exposed by Cloud Router for the administrative edit surface.",
+        "properties": {
+          "accountId": {
+            "description": "Account id field on upstream account credential secret.",
+            "maxLength": 32,
+            "type": "string"
+          },
+          "authMethodCode": {
+            "description": "Auth method code field on upstream account credential secret.",
+            "maxLength": 128,
+            "type": "string"
+          },
+          "credentialName": {
+            "description": "Credential name field on upstream account credential secret.",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "credentialVersion": {
+            "description": "Credential version field on upstream account credential secret.",
+            "maxLength": 32,
+            "type": "string"
+          },
+          "id": {
+            "description": "Id field on upstream account credential secret.",
+            "maxLength": 32,
+            "type": "string"
+          },
+          "isActive": {
+            "description": "Is active field on upstream account credential secret.",
+            "type": "boolean"
+          },
+          "maskedLabel": {
+            "description": "Masked label field on upstream account credential secret.",
+            "maxLength": 256,
+            "nullable": true,
+            "type": "string"
+          },
+          "secret": {
+            "description": "Decrypted plaintext secret. Present only on this reveal endpoint; the credentials list endpoint never returns plaintext.",
+            "maxLength": 32768,
+            "type": "string"
+          },
+          "status": {
+            "description": "Status field on upstream account credential secret.",
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "authMethodCode",
+          "credentialName",
+          "maskedLabel",
+          "credentialVersion",
+          "isActive",
+          "status",
+          "secret"
+        ],
+        "type": "object"
+      },
+      "UpstreamAccountsCredentialsSecretsListResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/SdkWorkApiResponse"
+          },
+          {
+            "additionalProperties": false,
+            "description": "Object schema used by upstream accounts credentials reveal secret result.",
+            "properties": {
+              "data": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/UpstreamAccountCredentialSecretItemResponse"
+                  }
+                ],
+                "description": "Data field on upstream accounts credentials reveal secret result."
+              }
+            },
+            "required": [
+              "data"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "Upstream accounts credentials reveal secret result schema exposed by Cloud Router.",
+        "x-operation-id": "upstreamAccounts.credentials.secrets.list"
       }
     },
     "securitySchemes": {
@@ -28672,6 +28781,114 @@
         "x-sdkwork-request-context": "WebRequestContext",
         "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
         "x-sdkwork-permission": "cloudrouter.site_settings.manage",
+        "x-sdkwork-required-surface": "organizationMember"
+      }
+    },
+    "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}/secret": {
+      "get": {
+        "description": "Read the decrypted upstream account credential secret. Reads ai_upstream_account, ai_upstream_account_credential. Writes none. File targets none. This is the only read surface that decrypts secret_ciphertext into a response; the credentials list endpoint never returns plaintext.",
+        "operationId": "upstreamAccounts.credentials.secrets.list",
+        "parameters": [
+          {
+            "description": "Account id path parameter.",
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Credential id path parameter.",
+            "in": "path",
+            "name": "credentialId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpstreamAccountsCredentialsSecretsListResult"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Server Error"
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetail"
+                }
+              }
+            },
+            "description": "Error response."
+          }
+        },
+        "security": [
+          {
+            "AccessToken": [],
+            "AuthToken": []
+          }
+        ],
+        "summary": "List upstream account credential secret",
+        "tags": [
+          "ai"
+        ],
+        "x-contract-kind": "read",
+        "x-file-targets": [],
+        "x-read-sources": [
+          "ai_upstream_account",
+          "ai_upstream_account_credential"
+        ],
+        "x-route-scope": "admin",
+        "x-sdk-domain": "intelligence",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.backend",
+        "x-sdkwork-api-surface": "backend-api",
+        "x-sdkwork-auth-mode": "dual-token",
+        "x-sdkwork-domain": "intelligence",
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-resource": "upstreamAccounts.credentials",
+        "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
+        "x-write-tables": [],
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-backend-api",
+        "x-sdkwork-permission": "cloudrouter.upstreamAccounts_credentials.read",
         "x-sdkwork-required-surface": "organizationMember"
       }
     }

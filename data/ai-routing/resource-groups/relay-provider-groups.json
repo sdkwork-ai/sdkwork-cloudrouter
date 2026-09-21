@@ -2,108 +2,24 @@
   "kind": "ai-routing.resource-groups",
   "items": [
     {
-      "groupCode": "relay.openai_compatible.llm",
-      "groupName": "OpenAI Compatible LLM Relay",
+      "groupCode": "relay.bytedance.media",
+      "groupName": "ByteDance Media Relay",
       "groupType": "api_group",
       "selectionMode": "any",
-      "description": "Relay account group for OpenAI-compatible LLM endpoints.",
-      "sortOrder": 200,
+      "description": "Relay account group for ByteDance's Volcengine Ark media surface: the doubao-seedance-* video and doubao-seedream-* image families, plus their async task poll. These are vendor-native paths (/api/v3/...), so a relay account that fronts Ark needs this group rather than the OpenAI-compatible one.",
+      "sortOrder": 215,
       "items": [
         {
           "itemType": "resource",
-          "resourceCode": "vendor.openai_compatible"
+          "resourceCode": "api.bytedance.image_generation"
         },
         {
           "itemType": "resource",
-          "resourceCode": "api.openai.responses"
+          "resourceCode": "api.bytedance.video_generation"
         },
         {
           "itemType": "resource",
-          "resourceCode": "api.openai.chat_completions"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.openai.completions"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.openai.embeddings"
-        }
-      ]
-    },
-    {
-      "groupCode": "relay.openai_compatible.chat",
-      "groupName": "OpenAI Compatible Chat",
-      "groupType": "api_group",
-      "selectionMode": "any",
-      "description": "OpenAI-compatible account resources for Chat Completions, Responses, legacy Completions, and model discovery.",
-      "sortOrder": 205,
-      "items": [
-        {
-          "itemType": "resource",
-          "resourceCode": "vendor.openai_compatible"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.openai.responses"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.openai.chat_completions"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.openai.completions"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.openai.models"
-        }
-      ]
-    },
-    {
-      "groupCode": "relay.openai_compatible.media",
-      "groupName": "OpenAI Compatible Media Relay",
-      "groupType": "api_group",
-      "selectionMode": "any",
-      "description": "Relay account group for OpenAI-compatible image and audio endpoints.",
-      "sortOrder": 210,
-      "items": [
-        {
-          "itemType": "resource",
-          "resourceCode": "vendor.openai_compatible"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.openai.images"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.openai.images.generations"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.openai.images.edits"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.openai.images.variations"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.openai.audio"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.openai.audio.transcriptions"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.openai.audio.translations"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.openai.audio.speech"
+          "resourceCode": "api.bytedance.task_query"
         }
       ]
     },
@@ -112,28 +28,12 @@
       "groupName": "China Visual Generation Relay",
       "groupType": "api_group",
       "selectionMode": "any",
-      "description": "Relay account group for Kling, Jimeng, and Volcengine image/video APIs.",
+      "description": "Relay account group for the China-market visual generation APIs (Kling, Jimeng, Volcengine, Vidu image/video). These surfaces are not standardised across vendors, so each one keeps its own vendor-native path and this group grants the whole set.",
       "sortOrder": 220,
       "items": [
         {
           "itemType": "resource",
-          "resourceCode": "vendor.kling"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "vendor.jimeng"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "vendor.volcengine"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "vendor.vidu"
-        },
-        {
-          "itemType": "resource",
-          "resourceCode": "api.kling.text_to_video"
+          "resourceCode": "api.kling.image_generation"
         },
         {
           "itemType": "resource",
@@ -141,7 +41,7 @@
         },
         {
           "itemType": "resource",
-          "resourceCode": "api.kling.image_generation"
+          "resourceCode": "api.kling.text_to_video"
         },
         {
           "itemType": "resource",
@@ -178,6 +78,60 @@
         {
           "itemType": "resource",
           "resourceCode": "api.vidu.start_end_to_video"
+        }
+      ]
+    },
+    {
+      "groupCode": "relay.global.visual_generation",
+      "groupName": "Global Visual Generation Relay",
+      "groupType": "api_group",
+      "selectionMode": "any",
+      "description": "Relay account group for the non-China visual generation APIs (Gemini/Google, FLUX, Runway, Luma, PixVerse, Stability). Like the China group, these vendor-native paths share no common protocol, so each is declared separately and granted as a set.",
+      "sortOrder": 225,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.video_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.black_forest_labs.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.black_forest_labs.task_query"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.runway.image_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.runway.task_query"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.luma_ai.video_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.luma_ai.video_generation_task_query"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.pixverse.video_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.pixverse.video_generation_task_query"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.stability_ai.image_generation"
         }
       ]
     }

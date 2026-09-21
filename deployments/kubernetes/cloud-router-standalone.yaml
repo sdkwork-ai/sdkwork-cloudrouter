@@ -100,11 +100,14 @@ spec:
             # Redis-outage fallback: when the distributed rate limiter degrades
             # to per-process enforcement, each replica divides the configured
             # quota by this fleet estimate so the cluster still enforces
-            # roughly the intended limit. Keep it equal to the steady-state
-            # replica count (spec.replicas, currently 2) and update it when
-            # scaling the deployment.
+            # roughly the intended limit. A Deployment cannot observe its own
+            # replica count, and the HPA scales 2..10, so the pin is the HPA
+            # maxReplicas: under a Redis outage the fleet then errs on the
+            # strict side (admits at most quota, never quota x N/2) instead of
+            # silently over-admitting when scaled out. CloudRouterRateLimitRedisDegraded
+            # fires on every degradation; tune the pin with the alert.
             - name: SDKWORK_CLOUDROUTER_PROVIDER_RATE_LIMIT_ESTIMATED_INSTANCE_COUNT
-              value: "2"
+              value: "10"
             # Database, Redis, and runtime secrets are injected by the
             # sdkwork-cloudrouter-config secret (see deployments/kubernetes/
             # README.md). In a real deployment set the split database fields

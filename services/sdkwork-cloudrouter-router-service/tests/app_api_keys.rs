@@ -43,8 +43,10 @@ async fn app_api_key_create_ensures_default_group_when_missing() {
     assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("default-group", payload["data"]["item"]["accountGroup"]);
     assert_eq!("Default", payload["data"]["item"]["accountGroupName"]);
+    // The raw key is disclosed exactly once, at creation, as a top-level
+    // field; the item payload stays write-only (masked key only).
     assert_eq!("sk-test-secret", payload["data"]["rawKey"]);
-    assert_eq!("sk-test-secret", payload["data"]["item"]["rawKey"]);
+    assert!(payload["data"]["item"].get("rawKey").is_none());
 
     let commands = command_store.commands.lock().unwrap();
     assert_eq!(1, commands.len());
@@ -81,8 +83,8 @@ async fn app_api_key_update_rebinds_key_to_available_group_for_owner() {
     assert_eq!("701", payload["data"]["item"]["id"]);
     assert_eq!("Updated Console Key", payload["data"]["item"]["name"]);
     assert_eq!("premium", payload["data"]["item"]["accountGroup"]);
-    // Updated keys keep their stored raw key material (merged from the existing row).
-    assert_eq!("sk-test-secret-raw", payload["data"]["item"]["rawKey"]);
+    // Update responses never re-display the secret (write-only credential).
+    assert!(payload["data"]["item"].get("rawKey").is_none());
 }
 
 #[tokio::test]
@@ -114,7 +116,7 @@ async fn app_api_key_update_marks_one_owner_key_as_runtime_default() {
 }
 
 #[tokio::test]
-async fn app_api_key_list_returns_stored_raw_key_material() {
+async fn app_api_key_list_never_returns_raw_key_material() {
     let read_store = Arc::new(TestApiKeyReadStore::with_owner_key());
     let command_store = Arc::new(TestApiKeyCommandStore::default());
     let router = sdkwork_cloudrouter_router_service::api::app_api_key_router_with_read_store_and_command_store(
@@ -134,7 +136,8 @@ async fn app_api_key_list_returns_stored_raw_key_material() {
     let payload = json_payload(response).await;
     assert_eq!(0, payload["code"].as_i64().unwrap());
     assert_eq!("701", payload["data"]["items"][0]["id"]);
-    assert_eq!("sk-test-secret-raw", payload["data"]["items"][0]["rawKey"]);
+    // List reads expose only the masked key: the raw secret is write-only.
+    assert!(payload["data"]["items"][0].get("rawKey").is_none());
     assert_eq!(
         "sk-test********CRET",
         payload["data"]["items"][0]["maskedKey"]

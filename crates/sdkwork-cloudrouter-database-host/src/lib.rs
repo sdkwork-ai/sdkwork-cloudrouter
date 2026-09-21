@@ -406,7 +406,7 @@ mod tests {
                 "operations",
                 "pricing",
                 "cloudrouter-billing",
-                "payment-runtime",
+                "payment-control-plane",
             ],
             module_ids
         );
