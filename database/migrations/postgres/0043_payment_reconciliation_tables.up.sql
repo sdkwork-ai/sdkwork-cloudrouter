@@ -1,16 +1,40 @@
--- =============================================================================
--- payment-reconciliation baseline (PostgreSQL)
+-- sdkwork:migration
+-- id: 0043_payment_reconciliation_tables
+-- engine: postgres
+-- module: sdkwork-cloudrouter
+-- purpose: Provision the payment reconciliation tables the Cloud Router
+--   reconciliation store and worker write to.
 --
--- Provider statement and reconciliation result tables consumed by the Cloud
--- Router payment reconciliation runtime and worker. `commerce_payment_statement`,
--- `commerce_payment_statement_item` and `commerce_payment_reconciliation_item`
--- have no DDL in the federated sdkwork-payment module; they are owned here so
--- the reconciliation store can run against a real database.
+--   Three tables had no DDL anywhere in the workspace while
+--   `PostgresPaymentReconciliationStore` referenced all of them:
 --
--- `commerce_payment_reconciliation_run` is owned by sdkwork-payment; the
--- self-healing ALTER block below only guarantees the columns and index the
--- reconciliation worker reads/writes, and is a no-op on current baselines.
--- =============================================================================
+--     * `commerce_payment_statement`             -- provider settlement header
+--     * `commerce_payment_statement_item`        -- provider settlement line
+--     * `commerce_payment_reconciliation_item`   -- difference/result row
+--
+--   They are owned by the declared federated module `payment-reconciliation`
+--   (`commerce_payment_` prefix family, declared in
+--   `database/modules/payment-reconciliation/contract/table-registry.json`).
+--   `sdkwork-payment` supplies no definitions for them, so Cloud Router is the
+--   system of record. The federated `payment-control-plane` module supplies
+--   `commerce_payment_reconciliation_run`; this migration only re-asserts the
+--   columns the worker reads so the worker also runs against an older run table.
+--
+--   All statements are `IF NOT EXISTS`, so replaying against a database that
+--   already carries the federated baseline is a no-op and cannot overwrite a
+--   sibling repository's objects.
+--
+--   Column types follow the `commerce_*` family convention established by
+--   `sdkwork-payment`: TEXT identifiers and TEXT decimal money (not
+--   BIGINT/VARCHAR/NUMERIC, which is the `ai_*` family convention).
+-- reversible: true
+-- rollback: down-migration
+-- transactional: true
+-- lock: exclusive
+-- lock_timeout: 2s
+-- statement_timeout: 30s
+
+BEGIN;
 
 CREATE TABLE IF NOT EXISTS commerce_payment_statement (
     id                      TEXT PRIMARY KEY,
@@ -45,7 +69,6 @@ CREATE TABLE IF NOT EXISTS commerce_payment_statement (
 CREATE UNIQUE INDEX IF NOT EXISTS ux_commerce_payment_statement_idempotency
     ON commerce_payment_statement (tenant_id, idempotency_key)
     WHERE deleted_at IS NULL;
-
 CREATE INDEX IF NOT EXISTS idx_commerce_payment_statement_run_match
     ON commerce_payment_statement (tenant_id, supplier_code, period_start, period_end)
     WHERE deleted_at IS NULL;
@@ -82,15 +105,12 @@ CREATE TABLE IF NOT EXISTS commerce_payment_statement_item (
 CREATE UNIQUE INDEX IF NOT EXISTS ux_commerce_payment_statement_item_row
     ON commerce_payment_statement_item (tenant_id, statement_id, row_no)
     WHERE deleted_at IS NULL;
-
 CREATE INDEX IF NOT EXISTS idx_commerce_payment_statement_item_statement
     ON commerce_payment_statement_item (tenant_id, statement_id)
     WHERE deleted_at IS NULL;
-
 CREATE INDEX IF NOT EXISTS idx_commerce_payment_statement_item_trade_no
     ON commerce_payment_statement_item (tenant_id, sdkwork_out_trade_no)
     WHERE deleted_at IS NULL AND sdkwork_out_trade_no IS NOT NULL;
-
 CREATE INDEX IF NOT EXISTS idx_commerce_payment_statement_item_refund_no
     ON commerce_payment_statement_item (tenant_id, sdkwork_out_refund_no)
     WHERE deleted_at IS NULL AND sdkwork_out_refund_no IS NOT NULL;
@@ -127,20 +147,14 @@ CREATE TABLE IF NOT EXISTS commerce_payment_reconciliation_item (
 CREATE INDEX IF NOT EXISTS idx_commerce_payment_reconciliation_item_run
     ON commerce_payment_reconciliation_item (tenant_id, reconciliation_run_id, difference_type)
     WHERE deleted_at IS NULL;
-
 CREATE INDEX IF NOT EXISTS idx_commerce_payment_reconciliation_item_unresolved
     ON commerce_payment_reconciliation_item (tenant_id, resolution_status, created_at)
     WHERE deleted_at IS NULL AND resolution_status = 'unresolved';
 
--- -----------------------------------------------------------------------------
--- commerce_payment_reconciliation_run self-heal (owned by payment-control-plane)
---
--- The table and its columns are owned and defined by the `payment-control-plane`
--- module. This block deliberately does NOT create the table: it only re-asserts
--- the columns and indexes the reconciliation worker reads/writes, so the worker
--- can run against a `payment-control-plane` baseline that predates them. It is a
--- no-op on current baselines.
--- -----------------------------------------------------------------------------
+-- `commerce_payment_reconciliation_run` is owned by the `payment-control-plane`
+-- module. These additive guards keep the reconciliation worker runnable against a
+-- run table that predates the columns it writes; all are no-ops on current
+-- baselines.
 ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS reconciliation_type TEXT NOT NULL DEFAULT 'daily';
 ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS unmatched_count INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS total_difference_amount NUMERIC(18,2) NOT NULL DEFAULT 0;
@@ -151,7 +165,8 @@ ALTER TABLE commerce_payment_reconciliation_run ADD COLUMN IF NOT EXISTS deleted
 CREATE UNIQUE INDEX IF NOT EXISTS ux_commerce_payment_reconciliation_run_no
     ON commerce_payment_reconciliation_run (tenant_id, run_no)
     WHERE deleted_at IS NULL;
-
 CREATE INDEX IF NOT EXISTS idx_commerce_payment_reconciliation_run_claim
     ON commerce_payment_reconciliation_run (tenant_id, status, created_at)
     WHERE deleted_at IS NULL;
+
+COMMIT;

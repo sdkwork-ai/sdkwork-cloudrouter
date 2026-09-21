@@ -10,7 +10,13 @@ const AGENT_SKILL_CATEGORY_SEED_JSON: &str =
 const MCP_CATEGORY_SEED_JSON: &str =
     include_str!("../../../../data/categories/mcp/categories.json");
 
-pub fn c_category_type_scope(
+/// Resolves the `category_type` scope a *classification* seed dataset persists
+/// under inside `commerce_product_category`.
+///
+/// The legacy numeric `categoryType` is the historical App Store taxonomy code;
+/// it is kept as the primary key because the shipped seed manifests still carry
+/// it, and the human-readable scope name is what actually lands in the database.
+pub fn classification_scope(
     legacy_category_type: i32,
     dataset: &str,
     group_name: Option<&str>,
@@ -38,8 +44,9 @@ pub fn c_category_type_scope(
             "agent-skills" => Ok("skill_market"),
             "agents" => Ok("agent"),
             "mcp" => Ok("mcp"),
+            "apps" => Ok("app"),
             other => Err(DomainError::new(format!(
-                "unsupported c_category seed scope for dataset {other} with categoryType {legacy_category_type}"
+                "unsupported category seed scope for dataset {other} with categoryType {legacy_category_type}"
             ))),
         },
     }
@@ -115,4 +122,26 @@ fn validate_bundle(dataset: &str, bundle: &AdminCategorySeedBundle) -> DomainRes
         )));
     }
     Ok(())
+}
+
+/// The scope a bundle persists under.
+///
+/// Product-taxonomy bundles (`target = commerce_product_category`) are unscoped:
+/// their categories are the catalog's own taxonomy. Classification bundles
+/// (`target = c_category`) persist into the same table under a resolved
+/// `category_type` scope, because Cloud Router owns no `c_category` table --
+/// see the module documentation for why.
+pub fn bundle_scope(bundle: &AdminCategorySeedBundle) -> DomainResult<Option<&'static str>> {
+    if bundle.target == "commerce_product_category" {
+        return Ok(None);
+    }
+    let legacy_category_type = bundle
+        .category_type
+        .ok_or_else(|| DomainError::new("c_category seed requires categoryType"))?;
+    classification_scope(
+        legacy_category_type,
+        bundle.dataset.as_str(),
+        bundle.group_name.as_deref(),
+    )
+    .map(Some)
 }

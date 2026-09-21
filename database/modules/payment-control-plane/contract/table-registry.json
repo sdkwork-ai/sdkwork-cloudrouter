@@ -3,7 +3,7 @@
   "kind": "sdkwork.database.table-registry",
   "tables": [
     {
-      "table_name": "commerce_payment_route_decision",
+      "table_name": "commerce_payment_operation_attempt",
       "owner": "router-service",
       "compliance_level": "L2",
       "lifecycle_status": "active",
@@ -11,7 +11,15 @@
       "system_of_record": true
     },
     {
-      "table_name": "commerce_payment_operation_attempt",
+      "table_name": "commerce_payment_reconciliation_run",
+      "owner": "cloud-router-platform",
+      "compliance_level": "L3",
+      "lifecycle_status": "active",
+      "profile": "financial_record",
+      "system_of_record": true
+    },
+    {
+      "table_name": "commerce_payment_route_decision",
       "owner": "router-service",
       "compliance_level": "L2",
       "lifecycle_status": "active",

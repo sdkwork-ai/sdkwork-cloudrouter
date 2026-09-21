@@ -12,6 +12,33 @@
       "lock": "lightweight",
       "lock_timeout": "2s",
       "statement_timeout": "30s"
+    },
+    "0043_payment_reconciliation_tables.up.sql": {
+      "engine": "postgres",
+      "reversible": "true",
+      "rollback": "down-migration",
+      "transactional": "true",
+      "lock": "exclusive",
+      "lock_timeout": "2s",
+      "statement_timeout": "30s"
+    },
+    "0044_product_catalog_relation_tables.up.sql": {
+      "engine": "postgres",
+      "reversible": "true",
+      "rollback": "down-migration",
+      "transactional": "true",
+      "lock": "exclusive",
+      "lock_timeout": "2s",
+      "statement_timeout": "30s"
+    },
+    "0045_price_list_customer_segment.up.sql": {
+      "engine": "postgres",
+      "reversible": "true",
+      "rollback": "down-migration",
+      "transactional": "true",
+      "lock": "exclusive",
+      "lock_timeout": "2s",
+      "statement_timeout": "30s"
     }
   }
 }

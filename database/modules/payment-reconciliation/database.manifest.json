@@ -10,8 +10,10 @@
     "postgres"
   ],
   "defaultEngine": "postgres",
-  "tablePrefix": "commerce_payment_",
-  "contractVersion": "0.1.0",
+  "tablePrefixes": [
+    "commerce_payment_"
+  ],
+  "contractVersion": "0.5.0",
   "baselineStrategy": "baseline-plus-migrations",
   "baselineAnchorTable": "commerce_payment_statement",
   "modules": [],

@@ -3,7 +3,7 @@ use std::collections::{BTreeMap, HashSet};
 use serde_json::{json, Map, Value};
 use sqlx::{PgPool, Row};
 
-use crate::application::c_category_type_scope;
+use crate::application::bundle_scope;
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::sql_admin_product_center::{
     drive_uri_from_resource, is_unique_constraint_error, sql_error_message,
@@ -190,24 +190,24 @@ async fn list_categories(
         SELECT
             id,
             category_no,
-            parent_category_id,
+            parent_id AS parent_category_id,
             name,
             status,
-            sort_weight,
+            sort_order AS sort_weight,
             created_at,
             updated_at,
             COUNT(*) OVER() AS total
         FROM commerce_product_category
         WHERE tenant_id = $1::text
           AND (organization_id = $2::text OR organization_id = '0')
-          AND ($3 IS NULL OR parent_category_id = $3)
+          AND ($3 IS NULL OR parent_id = $3)
           AND ($4 IS NULL OR status = $4)
           AND (
               $5 IS NULL
               OR LOWER(category_no) LIKE $6
               OR LOWER(name) LIKE $7
           )
-        ORDER BY sort_weight ASC, category_no ASC
+        ORDER BY sort_order ASC, category_no ASC, id ASC
         LIMIT $8 OFFSET $9
         "#,
     )
@@ -292,10 +292,10 @@ async fn fetch_category_ancestor_rows(
             SELECT
                 id,
                 category_no,
-                parent_category_id,
+                parent_id AS parent_category_id,
                 name,
                 status,
-                sort_weight,
+                sort_order AS sort_weight,
                 created_at,
                 updated_at
             FROM commerce_product_category
@@ -306,10 +306,10 @@ async fn fetch_category_ancestor_rows(
             SELECT
                 c.id,
                 c.category_no,
-                c.parent_category_id,
+                c.parent_id AS parent_category_id,
                 c.name,
                 c.status,
-                c.sort_weight,
+                c.sort_order AS sort_weight,
                 c.created_at,
                 c.updated_at
             FROM commerce_product_category c
@@ -348,10 +348,10 @@ async fn fetch_category_rows(
         SELECT
             id,
             category_no,
-            parent_category_id,
+            parent_id AS parent_category_id,
             name,
             status,
-            sort_weight,
+            sort_order AS sort_weight,
             created_at,
             updated_at
         FROM commerce_product_category
@@ -439,9 +439,9 @@ async fn upsert_category(
             r#"
             UPDATE commerce_product_category
             SET category_no = $1,
-                parent_category_id = $2,
+                parent_id = $2,
                 name = $3,
-                sort_weight = $4,
+                sort_order = $4,
                 status = $5,
                 updated_at = $6
             WHERE id = $7
@@ -468,13 +468,13 @@ async fn upsert_category(
         sqlx::query(
             r#"
             INSERT INTO commerce_product_category
-                (id, tenant_id, organization_id, category_no, parent_category_id, name, sort_weight, status, created_at, updated_at)
+                (id, tenant_id, organization_id, category_no, parent_id, name, sort_order, status, created_at, updated_at)
             VALUES
                 ($1, $2::text, $3::text, $4, $5, $6, $7, $8, $9, $9)
             ON CONFLICT (tenant_id, category_no) DO UPDATE SET
-                parent_category_id = EXCLUDED.parent_category_id,
+                parent_id = EXCLUDED.parent_id,
                 name = EXCLUDED.name,
-                sort_weight = EXCLUDED.sort_weight,
+                sort_order = EXCLUDED.sort_order,
                 status = EXCLUDED.status,
                 updated_at = EXCLUDED.updated_at
             "#,
@@ -540,7 +540,7 @@ async fn delete_category(pool: &PgPool, command: DeleteAdminCategoryCommand) -> 
         FROM commerce_product_category
         WHERE tenant_id = $1::text
           AND (organization_id = $2::text OR organization_id = '0')
-          AND parent_category_id = $3
+          AND parent_id = $3
           AND status <> 'archived'
         "#,
     )
@@ -616,11 +616,16 @@ async fn initialize_category_seeds(
     let mut summaries = Vec::with_capacity(command.bundles.len());
     for bundle in command.bundles {
         let summary = match bundle.target.as_str() {
+            // The product taxonomy seeds straight into the table.
             "commerce_product_category" => {
                 import_product_category_seed(pool, command.subject, &command.requested_at, &bundle)
                     .await?
             }
-            "c_category" => import_c_category_seed(pool, &command.requested_at, &bundle).await?,
+            // Classification datasets carry the legacy `c_category` target name
+            // but converge onto the table Cloud Router actually owns.
+            "c_category" => {
+                import_classification_category_seed(pool, &command.requested_at, &bundle).await?
+            }
             target => {
                 return Err(DomainError::new(format!(
                     "unsupported category seed target {target}"
@@ -679,13 +684,13 @@ async fn import_product_category_seed(
         sqlx::query(
             r#"
             INSERT INTO commerce_product_category
-                (id, tenant_id, organization_id, category_no, parent_category_id, name, sort_weight, status, created_at, updated_at)
+                (id, tenant_id, organization_id, category_no, parent_id, name, sort_order, status, created_at, updated_at)
             VALUES
                 ($1, $2::text, $3::text, $4, $5, $6, $7, $8, $9, $9)
             ON CONFLICT (tenant_id, category_no) DO UPDATE SET
-                parent_category_id = EXCLUDED.parent_category_id,
+                parent_id = EXCLUDED.parent_id,
                 name = EXCLUDED.name,
-                sort_weight = EXCLUDED.sort_weight,
+                sort_order = EXCLUDED.sort_order,
                 status = EXCLUDED.status,
                 updated_at = EXCLUDED.updated_at
             "#,
@@ -707,88 +712,97 @@ async fn import_product_category_seed(
     Ok(seed_summary(bundle, upserted, 0))
 }
 
-async fn import_c_category_seed(
+/// Imports a *classification* seed dataset (`agent-skills`, `agents`, `mcp`,
+/// `apps`) into `commerce_product_category` under a resolved `category_type`
+/// scope.
+///
+/// Cloud Router owns no `c_category` table: the schema registry guardrails
+/// declare it a transitional projection until `sdkwork-appstore` publishes
+/// canonical DDL, and the guardrails also forbid generating appstore tables in
+/// Cloud Router's schema. `sdkwork-appstore` has since published its own
+/// taxonomy as `appstore_category` / `appstore_category_localization` and does
+/// not carry `c_category` at all, so the projection has no owner and no DDL
+/// anywhere in the workspace. Persisting the classification rows into Cloud
+/// Router's own `commerce_product_category` -- the only category table it
+/// actually owns -- removes the phantom table instead of creating a seventh
+/// unowned one.
+///
+/// The classification datasets are tenant *global* (their seed manifests ship
+/// no tenant), matching the historical `tenant_id = 0, organization_id = 0`
+/// projection semantics.
+async fn import_classification_category_seed(
     pool: &PgPool,
     requested_at: &str,
     bundle: &AdminCategorySeedBundle,
 ) -> DomainResult<AdminCategorySeedInitializeSummary> {
-    let legacy_category_type = bundle
-        .category_type
-        .ok_or_else(|| DomainError::new("c_category seed requires categoryType"))?;
-    let category_type = c_category_type_scope(
-        legacy_category_type,
-        bundle.dataset.as_str(),
-        bundle.group_name.as_deref(),
-    )?;
+    let category_type = bundle_scope(bundle)?.ok_or_else(|| {
+        DomainError::new("classification category seed requires a resolved scope")
+    })?;
     let id_by_code = bundle
         .categories
         .iter()
         .map(|item| {
-            let id = seed_item_id(item)?;
             let code = required_seed_text(item.code.as_deref(), "code")?;
-            Ok((code.to_owned(), id))
+            Ok((
+                code.to_owned(),
+                stable_product_center_id(
+                    "catalog-category",
+                    &[
+                        "0",
+                        "0",
+                        &format!("{category_type}:{code}"),
+                    ],
+                ),
+            ))
         })
         .collect::<DomainResult<BTreeMap<_, _>>>()?;
 
     let mut upserted = 0_i64;
     for item in &bundle.categories {
-        let id = seed_item_id(item)?;
-        let uuid = required_seed_text(item.uuid.as_deref(), "uuid")?;
         let code = required_seed_text(item.code.as_deref(), "code")?;
+        let category_id = id_by_code
+            .get(code)
+            .cloned()
+            .ok_or_else(|| DomainError::new("category seed id map is incomplete"))?;
         let parent_id = item
             .parent_code
             .as_deref()
             .map(|parent_code| {
-                id_by_code.get(parent_code).copied().ok_or_else(|| {
+                id_by_code.get(parent_code).cloned().ok_or_else(|| {
                     DomainError::new(format!(
                         "category seed parentCode {parent_code} was not found"
                     ))
                 })
             })
             .transpose()?;
-        let description = item.description.as_deref().unwrap_or_default();
-        let tags = json_string(&item.tags);
-        let path = item
-            .path
-            .clone()
-            .unwrap_or_else(|| format!("/{}/{}", bundle.dataset, code));
         sqlx::query(
             r#"
-            INSERT INTO c_category
-                (id, uuid, tenant_id, organization_id, data_scope, category_type, name, description, code, tags, icon_drive_uri, icon_resource_snapshot, sort_weight, parent_id, path, visible, status, created_at, updated_at)
+            INSERT INTO commerce_product_category
+                (id, tenant_id, organization_id, category_no, parent_id, name, sort_order, status, created_at, updated_at)
             VALUES
-                ($1, $2, 0, 0, 0, $3, $4, $5, $6, $7::jsonb, NULL, NULL, $8, $9, $10, $11, $12, $13, $13)
-            ON CONFLICT (id) DO UPDATE SET
-                uuid = EXCLUDED.uuid,
-                category_type = EXCLUDED.category_type,
-                name = EXCLUDED.name,
-                description = EXCLUDED.description,
-                code = EXCLUDED.code,
-                tags = EXCLUDED.tags,
-                sort_weight = EXCLUDED.sort_weight,
+                ($1, '0', '0', $2, $3, $4, $5, $6, $7, $7)
+            ON CONFLICT (tenant_id, category_no) DO UPDATE SET
                 parent_id = EXCLUDED.parent_id,
-                path = EXCLUDED.path,
-                visible = EXCLUDED.visible,
+                name = EXCLUDED.name,
+                sort_order = EXCLUDED.sort_order,
                 status = EXCLUDED.status,
                 updated_at = EXCLUDED.updated_at
             "#,
         )
-        .bind(id)
-        .bind(uuid)
-        .bind(category_type)
+        .bind(&category_id)
+        .bind(format!("{category_type}:{code}"))
+        .bind(parent_id.as_deref())
         .bind(&item.name)
-        .bind(description)
-        .bind(code)
-        .bind(tags)
         .bind(item.sort_weight.or(item.sort_order).unwrap_or(0))
-        .bind(parent_id)
-        .bind(path)
-        .bind(item.visible.unwrap_or(true))
-        .bind(seed_status_i64(item, 1))
+        .bind(if item.visible.unwrap_or(true) {
+            seed_status_text(item, "active")
+        } else {
+            "inactive".to_owned()
+        })
         .bind(requested_at)
         .execute(pool)
         .await
-        .map_err(|error| write_error("failed to import c_category seed", error))?;
+        .map_err(|error| write_error("failed to import classification category seed", error))?;
         upserted += 1;
     }
     Ok(seed_summary(bundle, upserted, 0))
@@ -817,17 +831,6 @@ fn required_seed_text<'a>(value: Option<&'a str>, field_name: &str) -> DomainRes
         .ok_or_else(|| DomainError::new(format!("category seed {field_name} is required")))
 }
 
-fn seed_item_id(item: &AdminCategorySeedItem) -> DomainResult<i64> {
-    item.id
-        .as_ref()
-        .and_then(|value| match value {
-            Value::Number(number) => number.as_i64(),
-            Value::String(text) => text.trim().parse::<i64>().ok(),
-            _ => None,
-        })
-        .ok_or_else(|| DomainError::new("category seed id is required"))
-}
-
 fn seed_status_text(item: &AdminCategorySeedItem, fallback: &str) -> String {
     item.status
         .as_ref()
@@ -836,17 +839,6 @@ fn seed_status_text(item: &AdminCategorySeedItem, fallback: &str) -> String {
         .filter(|value| !value.is_empty())
         .unwrap_or(fallback)
         .to_owned()
-}
-
-fn seed_status_i64(item: &AdminCategorySeedItem, fallback: i64) -> i64 {
-    item.status
-        .as_ref()
-        .and_then(|value| match value {
-            Value::Number(number) => number.as_i64(),
-            Value::String(text) => text.trim().parse::<i64>().ok(),
-            _ => None,
-        })
-        .unwrap_or(fallback)
 }
 
 async fn list_products(
@@ -1428,7 +1420,7 @@ async fn list_attributes(
         WHERE tenant_id = $1::text
           AND (organization_id = $2::text OR organization_id = '0')
           AND ($3 IS NULL OR status = $3)
-        ORDER BY sort_weight ASC, attribute_no ASC
+        ORDER BY sort_order ASC, attribute_no ASC, id ASC
         LIMIT $4 OFFSET $5
         "#,
     )
@@ -1483,7 +1475,7 @@ async fn create_attribute(
     sqlx::query(
         r#"
         INSERT INTO commerce_product_attribute
-            (id, tenant_id, organization_id, attribute_no, name, value_type, status, sort_weight, created_at, updated_at)
+            (id, tenant_id, organization_id, attribute_no, name, value_type, status, sort_order, created_at, updated_at)
         VALUES
             ($1, $2::text, $3::text, $4, $5, $6, $7, 0, $8, $8)
         ON CONFLICT (tenant_id, attribute_no) DO UPDATE SET
@@ -2169,7 +2161,7 @@ async fn sku_attributes(
          AND av.id = sav.attribute_value_id
         WHERE sav.tenant_id = $1::text
           AND sav.sku_id = $2
-        ORDER BY a.sort_weight ASC, a.attribute_no ASC
+        ORDER BY a.sort_order ASC, a.attribute_no ASC, a.id ASC
         "#,
     )
     .bind(subject.tenant_id)

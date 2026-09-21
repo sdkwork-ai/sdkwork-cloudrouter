@@ -8,6 +8,11 @@
       "domain": "cloudrouter"
     },
     {
+      "prefix": "commerce_product_",
+      "owner": "cloud-router-platform",
+      "domain": "product-catalog"
+    },
+    {
       "prefix": "iam_user_",
       "owner": "cloud-router-platform",
       "domain": "cloudrouter"

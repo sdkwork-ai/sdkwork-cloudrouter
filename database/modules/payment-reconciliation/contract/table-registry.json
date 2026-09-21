@@ -4,23 +4,26 @@
   "tables": [
     {
       "table_name": "commerce_payment_statement",
-      "owner": "sdkwork-cloudrouter",
+      "owner": "cloud-router-platform",
       "compliance_level": "L3",
       "lifecycle_status": "active",
+      "profile": "financial_record",
       "system_of_record": true
     },
     {
       "table_name": "commerce_payment_statement_item",
-      "owner": "sdkwork-cloudrouter",
+      "owner": "cloud-router-platform",
       "compliance_level": "L3",
       "lifecycle_status": "active",
+      "profile": "financial_record",
       "system_of_record": true
     },
     {
       "table_name": "commerce_payment_reconciliation_item",
-      "owner": "sdkwork-cloudrouter",
+      "owner": "cloud-router-platform",
       "compliance_level": "L3",
       "lifecycle_status": "active",
+      "profile": "financial_record",
       "system_of_record": true
     }
   ]

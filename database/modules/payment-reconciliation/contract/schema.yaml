@@ -2,7 +2,7 @@ schema_version: 1
 kind: sdkwork.database.schema
 database_role: authoritative-server
 module_id: payment-reconciliation
-contract_version: 0.1.0
+contract_version: 0.5.0
 owner_team: sdkwork-cloudrouter
 compliance_level: L3
 engines:

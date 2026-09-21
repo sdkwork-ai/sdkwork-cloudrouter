@@ -12,7 +12,8 @@ use sdkwork_cloudrouter_config::{
     DatabaseEngine, DeploymentMode, DeploymentRuntime, InternalGatewaySecurityConfig,
     ProviderAdapterConfig, ProviderAdapterManifestDiscoveryConfig, ProviderRelayConfig,
     ProviderSecretMapConfig, RedisConfig, RequestLimitsConfig, RuntimeConfigProfile,
-    RuntimeTomlConfig, StartupInstallMode, TrustedSubjectConfig, UpstreamCredentialSecurityConfig,
+    RuntimeTomlConfig, SecretHygienePosture, StartupInstallMode, TrustedSubjectConfig,
+    UpstreamCredentialSecurityConfig,
 };
 use sdkwork_cloudrouter_database_host::bootstrap_cloud_router_database;
 use sdkwork_cloudrouter_http::QueryStringApiKeyPolicy;
@@ -1470,6 +1471,11 @@ async fn router_with_database_bootstrap(
         UpstreamCredentialSecurityConfig::from_env_or_runtime_toml(runtime_toml)
             .map_err(GatewayRouterError::Config)?,
     )?;
+    // `require_postgres_server_database` above already proved this is the server
+    // runtime, so the secret-hygiene posture is authoritative here. Deriving it
+    // from `deployment_mode` instead would fail open whenever no deployment
+    // profile variable is exported, because `DeploymentMode` defaults to
+    // `Desktop` and this process still serves PostgreSQL-backed traffic.
     ensure_no_known_default_secret_material(
         [
             (
@@ -1485,7 +1491,7 @@ async fn router_with_database_bootstrap(
                 Some(upstream_credential_security_config.fingerprint_key()),
             ),
         ],
-        deployment_mode.is_production_like(),
+        SecretHygienePosture::server_deployment(),
     )
     .map_err(GatewayRouterError::Config)?;
     let credential_secret_codec =
@@ -2127,7 +2133,9 @@ async fn all_in_one_runtime_context_from_env() -> anyhow::Result<AllInOneRuntime
                 Some(app_session_config.signing_secret()),
             ),
         ],
-        deployment_mode.is_production_like(),
+        // All-in-one startup already enforced `require_postgres_server_database`
+        // above, so the posture must not be re-derived from `deployment_mode`.
+        SecretHygienePosture::server_deployment(),
     )
     .map_err(anyhow::Error::msg)?;
     let provider_relay_config = ProviderRelayConfig::from_env_or_runtime_toml(runtime_toml_ref)

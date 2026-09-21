@@ -50,10 +50,14 @@ contracts without adding conditionals to the core selector.
 | Upstream transport | HTTPS provider adapters with bounded request/response behavior | Credentials are attached only after target validation |
 
 PostgreSQL is the sole authoritative server engine in standalone, split-service,
-container, and cloud deployments. Server startup rejects SQLite before database
-initialization. SQLite is allowed only for a separately owned client-local
-contract such as device-scoped cache or offline state; none is implemented by
-the router-service SQL infrastructure.
+container, and cloud deployments. Every server-runtime entry point calls
+`require_postgres_server_database` and fails closed with
+`Cloud Router server runtime requires PostgreSQL; SQLite is client-local only`
+when the resolved engine is not PostgreSQL, so a `sqlite:` URL is rejected
+before any pool is opened, migration is applied, or query is issued. SQLite is
+allowed only for a separately owned client-local contract such as device-scoped
+cache or offline state; none is implemented by the router-service SQL
+infrastructure.
 
 Server-side SQLite is fully removed from the authoritative data layer: the
 workspace `sqlx`/`database-sqlx`/`database-id` definitions, `router-service`
@@ -168,15 +172,19 @@ Scoped unique indexes remain the final collision guard. Counter underflow and
 `BIGINT` exhaustion fail closed. Conversation previews are bounded to the
 schema's 1024-character limit before persistence.
 
-Conversation lists use bounded offset pagination for their low-volume navigation
-surface. High-volume message history uses an opaque `(message_no, id)` cursor,
-the scoped backward tuple keyset predicate, stable descending database seek,
-and `LIMIT page_size + 1`; each bounded page is normalized to chronological
-order before it leaves the repository. It does not issue `OFFSET` or a
-total-count window. The first page therefore contains the latest context, while
-the HTTP boundary accepts only `cursor` and `page_size`, caps pages at 200, and
-the generated Cloud Router App SDK exposes `pageInfo.nextCursor` for bounded
-earlier-window reads. The mounted `/playground` UI is the composed Agents
+Conversation lists and message history both use cursor/keyset pagination. The
+message history surface uses an opaque `(message_no, id)` cursor, the scoped
+backward tuple keyset predicate, stable descending database seek, and
+`LIMIT page_size + 1`; each bounded page is normalized to chronological order
+before it leaves the repository. Conversation lists seek over `(updated_at, id)`
+descending through the scoped
+`idx_ai_chat_conversation_user_status_updated` index with the same
+`LIMIT page_size + 1` bound and an opaque continuation cursor. Neither surface
+issues `OFFSET` or a total-count window. The first page therefore contains the
+latest context, while the HTTP boundary accepts only `cursor` and `page_size`,
+caps pages at 200, and the generated Cloud Router App SDK exposes
+`pageInfo.nextCursor` for bounded earlier-window reads. The mounted `/playground`
+UI is the composed Agents
 Workbench and uses the separately owned Agents session/message APIs; it does
 not claim to consume the Cloud Router Chat history endpoint. The existing scoped
 conversation/message indexes cover the seek prefix.

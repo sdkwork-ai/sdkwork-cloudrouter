@@ -47,7 +47,8 @@ pub use runtime::{
     ServiceBindSectionConfig, ServicesSectionConfig, UsageSettlementSectionConfig,
 };
 pub use security_startup_guard::{
-    ensure_no_known_default_secret_material, KNOWN_DEFAULT_SECRET_FRAGMENTS,
+    ensure_no_known_default_secret_material, ensure_no_known_default_secret_material_for_mode,
+    SecretHygienePosture, KNOWN_DEFAULT_SECRET_FRAGMENTS,
 };
 pub use startup_install::{
     ensure_production_startup_install_policy, is_production_like_runtime_environment,

@@ -39,10 +39,11 @@
     "hooks": []
   },
   "materializedTables": [
-    "commerce_payment_route_decision",
     "commerce_payment_operation_attempt",
+    "commerce_payment_reconciliation_run",
+    "commerce_payment_route_decision",
     "commerce_refund_attempt",
     "commerce_refund_item"
   ],
-  "materializedTableCount": 4
+  "materializedTableCount": 5
 }
