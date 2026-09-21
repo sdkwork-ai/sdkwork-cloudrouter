@@ -2,8 +2,13 @@
 
 Application: sdkwork-cloudrouter
 Status: active
-Owner: SDKWork maintainers
 Specs: APPLICATION_SPEC.md, SDKWORK_WORKSPACE_SPEC.md
+
+## Purpose
+`apps/` stores the selected language and architecture client application roots for the SDKWork Cloud Router surface, one directory per runtime target.
+
+## Owner
+SDKWork Cloud Router maintainers and client application root owners.
 
 ## Primary App Surface
 

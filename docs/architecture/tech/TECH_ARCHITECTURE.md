@@ -4,7 +4,7 @@ Status: active
 Owner: SDKWork maintainers  
 Application: sdkwork-cloudrouter  
 Updated: 2026-07-31
-Specs: `ARCHITECTURE_SPEC.md`, `API_SPEC.md`, `SDK_SPEC.md`, `DATABASE_SPEC.md`, `SECURITY_SPEC.md`, `DEPLOYMENT_SPEC.md`
+Specs: `ARCHITECTURE_SPEC.md`, `ARCHITECTURE_DECISION_SPEC.md`, `API_SPEC.md`, `SDK_SPEC.md`, `DATABASE_SPEC.md`, `SECURITY_SPEC.md`, `DEPLOYMENT_SPEC.md`
 
 ## 1. Architecture Overview
 
@@ -606,7 +606,125 @@ injection evidence from the release candidate.
 Older documents that describe provider/site/channel or dual server database
 models are superseded and must not be used as current architecture authority.
 
-## 10. Verification
+## 10. Canon Shard Index
+
+Technical architecture shards live beside this entry as `TECH-<kebab-topic>.md`.
+Each remains the detail authority for its topic; this index is the discoverability contract.
+
+| Shard | Title |
+| --- | --- |
+| [TECH-02-architecturedesign.md](TECH-02-architecturedesign.md) | sdkwork-cloudrouter 技术架构设计 |
+| [TECH-03-tech-stack.md](TECH-03-tech-stack.md) | sdkwork-cloudrouter 技术选型 |
+| [TECH-04-modulesplanning.md](TECH-04-modulesplanning.md) | sdkwork-cloudrouter 模块规划 |
+| [TECH-05-design.md](TECH-05-design.md) | Cloud Router Database Design |
+| [TECH-06-api-gateway-standarddesign.md](TECH-06-api-gateway-standarddesign.md) | TECH-06-api-gateway-standarddesign |
+| [TECH-07-performancedesign.md](TECH-07-performancedesign.md) | TECH-07-performancedesign |
+| [TECH-08-securitydesign.md](TECH-08-securitydesign.md) | TECH-08-securitydesign |
+| [TECH-09-deploymentarchitecturedesign.md](TECH-09-deploymentarchitecturedesign.md) | sdkwork-cloudrouter 部署架构设计 |
+| [TECH-10-api-architecture.md](TECH-10-api-architecture.md) | TECH-10-api-architecture |
+| [TECH-11-design.md](TECH-11-design.md) | Cloud Router Data Contracts |
+| [TECH-12-featuresmodules.md](TECH-12-featuresmodules.md) | Superseded Frontend And Database Mapping |
+| [TECH-13-schemaregistry-design.md](TECH-13-schemaregistry-design.md) | Superseded Schema Registry Design |
+| [TECH-15-new-api-sub2api-cloudrouter-design.md](TECH-15-new-api-sub2api-cloudrouter-design.md) | Cloud Router Sub2API Pricing and Billing Design |
+| [TECH-16-design.md](TECH-16-design.md) | Superseded Frontend Contract Review |
+| [TECH-20-schema-guardian-quality-gate.md](TECH-20-schema-guardian-quality-gate.md) | TECH-20-schema-guardian-quality-gate |
+| [TECH-2026-05-06-model-catalog-pricing-standard-design.md](TECH-2026-05-06-model-catalog-pricing-standard-design.md) | TECH-2026-05-06-model-catalog-pricing-standard-design |
+| [TECH-2026-05-06-model-catalog-pricing-standard.md](TECH-2026-05-06-model-catalog-pricing-standard.md) | TECH-2026-05-06-model-catalog-pricing-standard |
+| [TECH-2026-05-07-sdkwork-models-install-flow.md](TECH-2026-05-07-sdkwork-models-install-flow.md) | sdkwork-models Install Flow Implementation Plan |
+| [TECH-2026-05-09-sdkwork-app-system.md](TECH-2026-05-09-sdkwork-app-system.md) | SDKWork App System Implementation Plan |
+| [TECH-2026-05-10-group-account-pool-routing.md](TECH-2026-05-10-group-account-pool-routing.md) | Group Account Pool Routing Architecture |
+| [TECH-2026-05-12-forum-default-tutorial-seed.md](TECH-2026-05-12-forum-default-tutorial-seed.md) | Forum Default Tutorial Seed Implementation Plan |
+| [TECH-2026-05-13-generation-cloud-router-capture-billing.md](TECH-2026-05-13-generation-cloud-router-capture-billing.md) | TECH-2026-05-13-generation-cloud-router-capture-billing |
+| [TECH-2026-05-13-generation-standard-appbase-plan.md](TECH-2026-05-13-generation-standard-appbase-plan.md) | TECH-2026-05-13-generation-standard-appbase-plan |
+| [TECH-2026-05-14-saas-verification-code-delivery.md](TECH-2026-05-14-saas-verification-code-delivery.md) | SaaS Verification Code Delivery Implementation Plan |
+| [TECH-2026-05-15-v0-1-0.md](TECH-2026-05-15-v0-1-0.md) | TECH-2026-05-15-v0-1-0 |
+| [TECH-2026-05-16-v0-2-0.md](TECH-2026-05-16-v0-2-0.md) | SdkWork Cloud Router v0.2.0 |
+| [TECH-2026-05-17-agent-platform-design.md](TECH-2026-05-17-agent-platform-design.md) | TECH-2026-05-17-agent-platform-design |
+| [TECH-2026-05-17-agent-platform.md](TECH-2026-05-17-agent-platform.md) | Agent Platform Implementation Plan |
+| [TECH-2026-05-17-v0-3-0.md](TECH-2026-05-17-v0-3-0.md) | TECH-2026-05-17-v0-3-0 |
+| [TECH-2026-05-18-chat-conversation-agent-memory-design.md](TECH-2026-05-18-chat-conversation-agent-memory-design.md) | First-Party Chat Persistence Design |
+| [TECH-2026-05-18-chat-conversation-agent-memory.md](TECH-2026-05-18-chat-conversation-agent-memory.md) | Chat Persistence Implementation Status |
+| [TECH-2026-05-20-appbase-commerce-account-wallet-ledger.md](TECH-2026-05-20-appbase-commerce-account-wallet-ledger.md) | Appbase Commerce Account / Wallet / Ledger (Archive) |
+| [TECH-2026-05-20-appbase-commerce-platform-design.md](TECH-2026-05-20-appbase-commerce-platform-design.md) | Appbase Commerce Platform Design |
+| [TECH-2026-05-21-appbase-commerce-standard-design.md](TECH-2026-05-21-appbase-commerce-standard-design.md) | Appbase Commerce Standard Design (Archive) |
+| [TECH-2026-05-21-appbase-commerce-standard-phase1.md](TECH-2026-05-21-appbase-commerce-standard-phase1.md) | Appbase Commerce Standard Phase 1 (Archive) |
+| [TECH-2026-05-22-admin-product-center-design.md](TECH-2026-05-22-admin-product-center-design.md) | Admin Product Center Design (Archive) |
+| [TECH-2026-05-22-admin-product-center.md](TECH-2026-05-22-admin-product-center.md) | Admin Product Center Implementation Plan (Archive) |
+| [TECH-2026-05-22-provider-adapter-invocation-design.md](TECH-2026-05-22-provider-adapter-invocation-design.md) | TECH-2026-05-22-provider-adapter-invocation-design |
+| [TECH-2026-05-22-provider-adapter-invocation.md](TECH-2026-05-22-provider-adapter-invocation.md) | TECH-2026-05-22-provider-adapter-invocation |
+| [TECH-2026-05-23-admin-membership-center-completeness-design.md](TECH-2026-05-23-admin-membership-center-completeness-design.md) | TECH-2026-05-23-admin-membership-center-completeness-design |
+| [TECH-2026-05-23-admin-membership-center-completeness.md](TECH-2026-05-23-admin-membership-center-completeness.md) | TECH-2026-05-23-admin-membership-center-completeness |
+| [TECH-2026-05-23-appbase-promotion-membership-entitlement-core.md](TECH-2026-05-23-appbase-promotion-membership-entitlement-core.md) | TECH-2026-05-23-appbase-promotion-membership-entitlement-core |
+| [TECH-2026-05-23-appbase-promotion-membership-entitlement-design.md](TECH-2026-05-23-appbase-promotion-membership-entitlement-design.md) | TECH-2026-05-23-appbase-promotion-membership-entitlement-design |
+| [TECH-2026-05-23-payment-center-default-initialization-design.md](TECH-2026-05-23-payment-center-default-initialization-design.md) | TECH-2026-05-23-payment-center-default-initialization-design |
+| [TECH-2026-05-23-payment-center-default-initialization.md](TECH-2026-05-23-payment-center-default-initialization.md) | Payment Center Default Initialization Implementation Plan |
+| [TECH-2026-05-23-recharge-package-ratio-design.md](TECH-2026-05-23-recharge-package-ratio-design.md) | TECH-2026-05-23-recharge-package-ratio-design |
+| [TECH-2026-05-23-sdkwork-file-platform-design.md](TECH-2026-05-23-sdkwork-file-platform-design.md) | TECH-2026-05-23-sdkwork-file-platform-design |
+| [TECH-2026-05-23-sdkwork-file-platform-foundation.md](TECH-2026-05-23-sdkwork-file-platform-foundation.md) | TECH-2026-05-23-sdkwork-file-platform-foundation |
+| [TECH-2026-05-23-test-efficiency-optimization.md](TECH-2026-05-23-test-efficiency-optimization.md) | Test Efficiency Optimization Implementation Plan |
+| [TECH-2026-05-25-channel-group-channel-association.md](TECH-2026-05-25-channel-group-channel-association.md) | Channel Group Channel Association Implementation Plan |
+| [TECH-2026-05-26-admin-marketing-promotion-standard-design.md](TECH-2026-05-26-admin-marketing-promotion-standard-design.md) | TECH-2026-05-26-admin-marketing-promotion-standard-design |
+| [TECH-2026-05-26-admin-prompts-mcp-vertical.md](TECH-2026-05-26-admin-prompts-mcp-vertical.md) | Admin Prompts And MCP Vertical Implementation Plan |
+| [TECH-2026-05-29-ai-routing-sticky-cache.md](TECH-2026-05-29-ai-routing-sticky-cache.md) | AI Routing Sticky Cache Implementation Plan |
+| [TECH-2026-05-29-all-in-one-runtime.md](TECH-2026-05-29-all-in-one-runtime.md) | All-In-One Runtime Implementation Plan |
+| [TECH-2026-05-29-api-reference-aggregate-groups.md](TECH-2026-05-29-api-reference-aggregate-groups.md) | API Reference Aggregate Groups Implementation Plan |
+| [TECH-2026-05-29-rust-test-performance-report.md](TECH-2026-05-29-rust-test-performance-report.md) | Rust Test Performance Report |
+| [TECH-2026-05-30-recharge-multi-currency-standardization.md](TECH-2026-05-30-recharge-multi-currency-standardization.md) | Recharge Multi-Currency Standardization Implementation Plan |
+| [TECH-2026-06-01-admin-category-initialization-standard.md](TECH-2026-06-01-admin-category-initialization-standard.md) | Admin Category Initialization Standard Implementation Plan (Archive) |
+| [TECH-2026-06-02-admin-model-mapping-design.md](TECH-2026-06-02-admin-model-mapping-design.md) | Admin Model Mapping Design |
+| [TECH-2026-06-02-admin-model-mapping.md](TECH-2026-06-02-admin-model-mapping.md) | TECH-2026-06-02-admin-model-mapping |
+| [TECH-2026-06-05-api-router-invocation-pipeline-redesign.md](TECH-2026-06-05-api-router-invocation-pipeline-redesign.md) | API Router Invocation Pipeline Redesign |
+| [TECH-2026-06-05-api-router-invocation-pipeline-rewrite.md](TECH-2026-06-05-api-router-invocation-pipeline-rewrite.md) | API Router Invocation Pipeline Rewrite Implementation Plan |
+| [TECH-2026-06-09-api-relay-provider-platform-design.md](TECH-2026-06-09-api-relay-provider-platform-design.md) | TECH-2026-06-09-api-relay-provider-platform-design |
+| [TECH-2026-06-09-appbase-oauth-system-design.md](TECH-2026-06-09-appbase-oauth-system-design.md) | TECH-2026-06-09-appbase-oauth-system-design |
+| [TECH-2026-06-09-appbase-oauth-system.md](TECH-2026-06-09-appbase-oauth-system.md) | TECH-2026-06-09-appbase-oauth-system |
+| [TECH-2026-06-10-admin-product-center-commercial-design.md](TECH-2026-06-10-admin-product-center-commercial-design.md) | TECH-2026-06-10-admin-product-center-commercial-design |
+| [TECH-2026-06-10-admin-product-center-commercial.md](TECH-2026-06-10-admin-product-center-commercial.md) | TECH-2026-06-10-admin-product-center-commercial |
+| [TECH-2026-06-13-single-port-dev-topology-design.md](TECH-2026-06-13-single-port-dev-topology-design.md) | TECH-2026-06-13-single-port-dev-topology-design |
+| [TECH-2026-06-13-single-port-dev-topology.md](TECH-2026-06-13-single-port-dev-topology.md) | TECH-2026-06-13-single-port-dev-topology |
+| [TECH-2026-06-20-router-minimal-domain-migration-design.md](TECH-2026-06-20-router-minimal-domain-migration-design.md) | Superseded Minimal-Domain Migration Proposal |
+| [TECH-2026-06-21-generation-field-mapping-ai-to-generation.md](TECH-2026-06-21-generation-field-mapping-ai-to-generation.md) | Generation Field Mapping: `ai_generation_*` → `generation_*` |
+| [TECH-2026-06-21-kernel-field-mapping-ai-to-agent.md](TECH-2026-06-21-kernel-field-mapping-ai-to-agent.md) | Superseded Kernel Chat Mapping Proposal |
+| [TECH-2026-06-21-memory-field-mapping-ai-to-mem.md](TECH-2026-06-21-memory-field-mapping-ai-to-mem.md) | TECH-2026-06-21-memory-field-mapping-ai-to-mem |
+| [TECH-2026-09-05-ai-routing-account-authorization.md](TECH-2026-09-05-ai-routing-account-authorization.md) | CloudRouter AI 路由与账号授权逻辑全景 |
+| [TECH-21-schema-compiler-postgres-ddl.md](TECH-21-schema-compiler-postgres-ddl.md) | TECH-21-schema-compiler-postgres-ddl |
+| [TECH-22-domain-type-generator.md](TECH-22-domain-type-generator.md) | TECH-22-domain-type-generator |
+| [TECH-23-schema-manifest.md](TECH-23-schema-manifest.md) | TECH-23-schema-manifest |
+| [TECH-24-openapi-schema-components.md](TECH-24-openapi-schema-components.md) | TECH-24-openapi-schema-components |
+| [TECH-25-frontend-contract-guardian.md](TECH-25-frontend-contract-guardian.md) | TECH-25-frontend-contract-guardian |
+| [TECH-27-rust-runtime-and-sdk-integration-standard.md](TECH-27-rust-runtime-and-sdk-integration-standard.md) | Cloud Router Rust Runtime And SDK Integration |
+| [TECH-28-architecture-standard-guardian.md](TECH-28-architecture-standard-guardian.md) | sdkwork-cloudrouter Architecture Standard Guardian |
+| [TECH-29-rust-backend-module-standard.md](TECH-29-rust-backend-module-standard.md) | Cloud Router Rust Backend Module Standard |
+| [TECH-30-flyway-schema-contract-audit.md](TECH-30-flyway-schema-contract-audit.md) | TECH-30-flyway-schema-contract-audit |
+| [TECH-30-platform-data-model-v4.md](TECH-30-platform-data-model-v4.md) | TECH-30-platform-data-model-v4 |
+| [TECH-31-cloudrouter-openapi-generator.md](TECH-31-cloudrouter-openapi-generator.md) | TECH-31-cloudrouter-openapi-generator |
+| [TECH-31-product-composition-model.md](TECH-31-product-composition-model.md) | TECH-31-product-composition-model |
+| [TECH-32-sdkwork-models-standard.md](TECH-32-sdkwork-models-standard.md) | TECH-32-sdkwork-models-standard |
+| [TECH-33-sdkwork-models-install-flow.md](TECH-33-sdkwork-models-install-flow.md) | sdkwork-models Install Flow |
+| [TECH-34-login-qrcode-system.md](TECH-34-login-qrcode-system.md) | TECH-34-login-qrcode-system |
+| [TECH-35-high-volume-ledger-evolution.md](TECH-35-high-volume-ledger-evolution.md) | High-Volume Ledger And Trace Evolution |
+| [TECH-changelog.md](TECH-changelog.md) | Changelog |
+| [TECH-deployment-modes-2.md](TECH-deployment-modes-2.md) | TECH-deployment-modes-2 |
+| [TECH-deployment-modes.md](TECH-deployment-modes.md) | TECH-deployment-modes |
+| [TECH-initialization-2.md](TECH-initialization-2.md) | password = "change-me" |
+| [TECH-initialization.md](TECH-initialization.md) | password = "change-me" |
+| [TECH-postgresql-database-configuration.md](TECH-postgresql-database-configuration.md) | TECH-postgresql-database-configuration |
+| [TECH-postgresql-development.md](TECH-postgresql-development.md) | TECH-postgresql-development |
+| [TECH-postgresql-production.md](TECH-postgresql-production.md) | TECH-postgresql-production |
+| [TECH-provider-adapter-architecture.md](TECH-provider-adapter-architecture.md) | TECH-provider-adapter-architecture |
+| [TECH-release-install-2.md](TECH-release-install-2.md) | password = "change-me" |
+| [TECH-release-install.md](TECH-release-install.md) | password = "change-me" |
+| [TECH-source-install-2.md](TECH-source-install-2.md) | TECH-source-install-2 |
+| [TECH-source-install.md](TECH-source-install.md) | TECH-source-install |
+| [TECH-standard-alignment-audit.md](TECH-standard-alignment-audit.md) | Historical Standard Alignment Audit |
+| [TECH-table-catalog.md](TECH-table-catalog.md) | Superseded Table Catalog |
+| [TECH-topology-standard.md](TECH-topology-standard.md) | TECH-topology-standard |
+| [TECH-usage-2.md](TECH-usage-2.md) | Superseded Chinese Usage Copy |
+| [TECH-usage.md](TECH-usage.md) | Superseded English Usage Copy |
+| [TECH-verification-code-delivery.md](TECH-verification-code-delivery.md) | TECH-verification-code-delivery |
+| [TECH-version.md](TECH-version.md) | TECH-version |
+
+## 11. Verification
 
 The narrowest changed-surface checks run first. Cross-boundary changes also
 run:

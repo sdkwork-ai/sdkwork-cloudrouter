@@ -33,7 +33,7 @@ entries:
     owner: cloudrouter-platform
     title: Superseded detailed PRD redirect
   - id: PRD-0004
-    path: docs/product/prd/PRD-UPSTREAM-SUPPLIER.md
+    path: docs/product/prd/PRD-upstream-supplier.md
     kind: prd
     status: active
     owner: cloudrouter-platform

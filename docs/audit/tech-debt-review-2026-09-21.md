@@ -133,3 +133,128 @@ git mv specs/api-runtime-parity.standalone.evidence.json \
 - `46 D` = 退役 MCP / payment-runtime / commerce 子系统 + 本轮 2 个补丁脚本
 - `19 ??` = 前序会话新增的合法产物（含 `.sdkwork/evidence/` 与本轮生成器）
 - 全部改动**尚未提交**
+
+---
+
+## 六、历史文档清理（续轮）
+
+### 6.1 退役 `docs/superpowers/`（55 个重复文件）
+
+**判据**：该目录是 `DOCUMENTATION_SPEC.md` §2.1 之外的**编号/日期设计根**——规范明文规定
+此类目录 `MUST NOT` 新建，既有历史目录 `MAY` 保留在 `docs/archive/` 下。2026-06-24 其全部
+内容已迁移到 `docs/architecture/tech/TECH-*.md`（每个带 `> Migrated from ...` 溯源头）。
+
+**1:1 验证**：
+
+| 检查 | 结果 |
+|---|---|
+| 55 个 superpowers 文件是否有同名 TECH 副本 | **55/55 全部有** |
+| 抽样逐字节比对（含前几轮乱码修复） | 除 TECH 溯源头 + 末尾换行外**完全相同** ⇒ 零独有价值 |
+
+**删除前查到的两个硬依赖（关键，差点造成回归）**：
+
+1. `tests/test_admin_model_mapping_runtime_standard.py:220-221` **断言这两个路径必须存在**
+   并校验 6 项内容 ⇒ 已改指 `docs/architecture/tech/TECH-2026-06-02-admin-model-mapping{,-design}.md`，
+   实测该测试 **ok**。
+2. `scripts/check-commerce-debt.mjs` 白名单含 3 条 superpowers 路径 ⇒ 已移除
+   （该脚本对缺失文件本就 `if (!source) continue` 静默跳过，且 TECH 等价项已在同表）。
+
+> ⚠️ **陷阱**：`git rm -r docs/superpowers` 报 6 个文件「local modifications」——那是我前几轮的
+> **乱码修复**。必须先确认 `TECH-*` 副本**已含同样修复**（`grep -c '商'` = 0）再 `-f` 强制删除。
+> **顺序纪律：先验证副本已修，再删原件。**
+
+归档清单按 `migrated-legacy` 惯例落在 `docs/archive/migrated-superpowers/README.md`
+（只保留路径清单 + 指名活权威），`docs/README.md` 新增「Archived Trees」段。
+
+### 6.2 `docs/plans/` → Canon 目录
+
+`docs/plans/2026-09-09-team-account-billing.md` 自称「团队计费**唯一权威描述**」⇒ 活内容，
+但落在规范外的 `docs/plans/`。按 `PLAN-YYYY-NNNN-<slug>.md` 惯例迁为
+`docs/engineering/plans/PLAN-2026-0004-team-account-billing.md` 并登记进目录 README。
+
+### 6.3 全量断链修复：49 → 0
+
+自建扫描器（正则抓相对链接 + 存在性判定）在 301 个文档中发现 **49 条断链**：
+
+| 文件 | 条数 | 根因 | 处置 |
+|---|---|---|---|
+| `product/prd/PRD-00-design.md` | **34** | 是 `00-设计文档索引.md` 的迁移存根，链接指向**已退役**的 `docs/01-` … `docs/34-` | 逐条改指 TECH 分片（编号→slug 映射）；无 shard 的 14/19/26 改纯文本加「已退役」说明 |
+| `guides/integrator/README.md` | 3 | `../../apis/` 少一层 | → `../../../apis/` |
+| `TECH-30-platform-data-model-v4.md` | 2 | 指向未迁移的 17/18 | 改纯文本 + 退役说明 |
+| `TECH-postgresql-database-configuration.md` | 2 | 指向不存在的 `./postgresql-*.md` | 真身在 `docs/installation/` |
+| `TECH-release-install{,-2}.md` | 2 | 指向不存在的 `./initialization.md` | → `../../installation/zh-CN/initialization.md` |
+| `TECH-deployment-modes{,-2}.md` | 2 | 指向不存在的 `./source-install.md` | → `../../installation/zh-CN/source-install.md` |
+| `TECH-06-*` / `TECH-2026-05-23-*` / `PRD.md` | 4 | 旧编号 / `../specs/` / `SECURITY.md` 层级错 | 逐条改指 |
+
+**复扫结果：broken = 0**（文档总数 301 → 247）。
+
+### 6.4 并发提交观察（多会话共用工作树）
+
+清理进行中，另一会话创建了 `da7e51fa refactor: retire ai-mcp runtime registry, ...`，
+**把在途文档改动一并卷进该提交**（含 55 条 superpowers 删除与本轮 README/PRD/tests/scripts 改动）。
+⇒ 多会话共用同一 git 工作树时 `git status` 读数会突变，**判据是 `git log` 出现未知 HEAD**。
+
+
+## 七、第七轮：文档 Canon 契约与架构守卫归零
+
+前六轮聚焦「重复内容退役 + 断链修复」，本轮转向**机器可校验的 Canon 契约**——
+即 `sdkwork-specs/tools/check-repository-docs-standard.mjs` 所强制的规则。
+此前从未在 CI/本地跑过该工具，故这批债长期未被发现。
+
+### 7.1 架构守卫 11 条既存发现（已归零）
+
+`python -B tools/architecture_standard_guardian.py` 报 11 条：
+
+| 文件 | 条数 | 根因 | 处置 |
+|---|---|---|---|
+| `apps/README.md` | 2 | 缺 `## Purpose` / `## Owner` **二级标题**（仅有 `Owner:` 元数据行） | 补两个 H2 段；同时移除与 H2「Owner」重复的元数据行 |
+| `apps/sdkwork-cloudrouter-mini-program/specs/component.spec.json` | 9 | canonicalSpecs 9 条 spec 路径**多一层 `../`** | 4 层 → 3 层 |
+
+**`apps/README.md` 的决定性判据**：`apps/` 是 12 个 `STANDARD_PROJECT_DIRECTORIES` 中**唯一**缺这两个 H2 段的目录
+（其余 11 个 `## Purpose`/`## Owner` 均为 1），且要求的段名是 H2 而非元数据键
+（`_has_markdown_section` 判定 `## {section}`）。
+
+**路径层数的正确基准（重要，与直觉相反）**：守卫**不是**以 spec 文件所在目录解析，
+而是 `_component_spec_base_path()`（`:286-300`）：
+因 `component.root == "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-mini-program"`
+以 `self.root.name + '/'` 为前缀 ⇒ 基准 = **`self.root / "apps/sdkwork-cloudrouter-mini-program"`**（即 `apps/<app>`）。
+
+由此：
+- 3 层 `../../../` → `D:\sdkwork-space\sdkwork-specs\` ✅ 存在
+- 4 层 `../../../../` → `D:\sdkwork-specs\` ❌ **不存在**（原值确为真 bug）
+
+> ⚠️ 纠正前一轮摘要中的误判：从 `apps/<app>/specs/` 数层数会得出「4 层才对」的错误结论。
+> **判据必须以守卫的实际解析函数为准，不能手数 `../`。**
+
+### 7.2 文档 Canon 契约 114 条（已归零）
+
+`node ../sdkwork-specs/tools/check-repository-docs-standard.mjs --root <repo>` 报 114 条，收敛为 **3 个根因 + 110 条回链**：
+
+| # | 条数 | 规则 | 处置 |
+|---|---|---|---|
+| 1 | 1 | `TECH_ARCHITECTURE.md` **必须引用** `ARCHITECTURE_DECISION_SPEC.md` | 加入头部 `Specs:` 行 |
+| 2 | 1 | shard 文件名须匹配 `/^PRD-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/u`（**小写**） | `git mv PRD-UPSTREAM-SUPPLIER.md → PRD-upstream-supplier.md`，同步 6 处引用 |
+| 3 | 109 | `TECH_ARCHITECTURE.md` 必须**逐个链接**其 `TECH-*.md` shard（110 个，1 个原已链） | 新增「## 10. Canon Shard Index」表格 |
+| 4 | 2 | `PRD.md` 必须逐个链接其 shard | 新增「## 10. Canon Shard Index」表格 |
+
+**规则实现要点**（`validateCanonShards` `:126-145`）：按 **basename 子串** 判定回链
+（`entryText.includes(baseName)`），而非解析链接目标。故索引表格中的 `[name](name)` 即满足。
+`PRD-00-design.md` / `PRD-01-…` 是迁移存根（其 `#` 标题非文件名），**同样受此规则约束**，必须回链。
+
+**顺带发现**：`docs/product/prd/README.md` 早已明文写死该契约
+（"Every shard `MUST` be linked from `PRD.md`"），但从未被执行 ⇒ 规则存在 ≠ 规则生效。
+
+### 7.3 复扫结果
+
+| 项 | 前 | 后 |
+|---|---|---|
+| `architecture_standard_guardian` | 11 findings | **passed** |
+| `check-repository-docs-standard` | 114 findings | **ok** (profile=application) |
+| `audit-repository-docs-debt` | — | **0 debt** |
+| docs 断链 | 0 / 384 链接 | **0 / 497 链接** |
+| 乱码 A/B/C 三类 | — | **0 / 0 / 0**（1,595 文件） |
+| 自有源码 TODO/FIXME/HACK | — | **0**（15 条命中全为模板占位/审计散文） |
+
+**方法论结论**：`docs/superpowers/` 与 `docs/plans/` 的退役（前几轮）解决的是「内容重复」，
+本轮解决的是「**入口文档未履行索引契约**」。两者根因不同，**不可互相替代**——
+即使内容全对，只要 Canon 入口不链接 shard，门禁就是红的。

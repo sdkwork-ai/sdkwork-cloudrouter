@@ -4,7 +4,7 @@
 > 版本：v4.1  
 > 日期：2026-06-20  
 > 状态：**现行标准**（greenfield，无生产存量数据） 
-> 替代：[17-AppCenter-platform_app-compatible-design.md](./TECH-30-platform-data-model-v4.md)、[18-SkillsHub-AgentSkills-PlusCategory-compatible-design.md](./TECH-30-platform-data-model-v4.md)
+> 替代：`17-AppCenter-platform_app-compatible-design.md`、`18-SkillsHub-AgentSkills-PlusCategory-compatible-design.md`（均已退役，无独立 Canon shard；退役路径见 `docs/archive/migrated-legacy/README.md`）
 
 ## 1. 设计原则
 

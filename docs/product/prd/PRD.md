@@ -104,7 +104,7 @@ evidence.
 - Route explanation with eligibility and rejection reasons but no secrets.
 
 The detailed product contract is
-[PRD-UPSTREAM-SUPPLIER.md](PRD-UPSTREAM-SUPPLIER.md). The architecture decision
+[PRD-upstream-supplier.md](PRD-upstream-supplier.md). The architecture decision
 is
 [ADR-20260728](../../architecture/decisions/ADR-20260728-standardize-upstream-supplier-routing.md).
 
@@ -240,7 +240,7 @@ manifest remains `preLaunch: true` until the release gate is accepted.
 
 ## 8. Linked Requirements
 
-- [Upstream supplier PRD](PRD-UPSTREAM-SUPPLIER.md)
+- [Upstream supplier PRD](PRD-upstream-supplier.md)
 - [Commercial production readiness](../requirements/REQ-2026-0001-commercial-production-readiness.md)
 - [Technical architecture](../../architecture/tech/TECH_ARCHITECTURE.md)
 - [Upstream supplier architecture decision](../../architecture/decisions/ADR-20260728-standardize-upstream-supplier-routing.md)
@@ -259,3 +259,14 @@ manifest remains `preLaunch: true` until the release gate is accepted.
   read-only candidate snapshot plus health state?
 - What measured throughput, p95/p99 latency overhead, stream concurrency, and
   process RSS ceilings are required for the first commercial beta topology?
+
+## 10. Canon Shard Index
+
+Product shards live beside this entry as `PRD-<kebab-topic>.md`. Each shard is
+the detail authority for its topic and is linked here by basename.
+
+| Shard | Title | Role |
+| --- | --- | --- |
+| [PRD-upstream-supplier.md](PRD-upstream-supplier.md) | Upstream Supplier Management | Active shard: upstream supplier, account, and account-group product contract |
+| [PRD-00-design.md](PRD-00-design.md) | PRD-00-design | Retained migration stub for the retired numbered design root |
+| [PRD-01-prd-sdkwork-cloudrouter.md](PRD-01-prd-sdkwork-cloudrouter.md) | Superseded Cloud Router Detailed PRD | Superseded stable path retained for existing links |
