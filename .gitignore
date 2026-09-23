@@ -181,3 +181,17 @@ sdks/*/*-typescript/src/index.js
 sdks/*/*-typescript/src/index.js.map
 sdks/*/*-typescript/src/index.d.ts
 sdks/*/*-typescript/src/index.d.ts.map
+
+# Compiler emit beside source is not content (REPOSITORY_BASELINE_SPEC.md section 2).
+# The negations below keep authored ambient declarations committable.
+**/src/**/*.js
+**/src/**/*.d.ts
+**/composed/**/*.js
+**/composed/**/*.d.ts
+!**/src/**/vite-env.d.ts
+!**/src/**/global.d.ts
+!**/src/**/shims.d.ts
+
+# The negations keep authored ambient declarations committable.
+*.js.map
+*.d.ts.map
