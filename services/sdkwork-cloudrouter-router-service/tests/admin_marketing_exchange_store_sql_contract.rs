@@ -14,7 +14,7 @@ fn admin_marketing_exchange_rule_uses_appbase_exchange_rule_table() {
         source_section(
             source,
             "async fn upsert_exchange_rule",
-            "async fn sync_recharge_package_product_for_create"
+            "async fn list_referral_stats"
         ),
         source_section(
             source,
@@ -45,7 +45,7 @@ fn admin_marketing_exchange_rule_uses_appbase_exchange_rule_table() {
 fn admin_marketing_recharge_catalog_uses_appbase_catalog_tables() {
     let source = POSTGRES_ADMIN_MARKETING_STORE;
     let recharge_catalog_sections = format!(
-        "{}{}{}",
+        "{}{}",
         source_section(
             source,
             "async fn list_recharge_packages",
@@ -56,16 +56,9 @@ fn admin_marketing_recharge_catalog_uses_appbase_catalog_tables() {
             "async fn insert_recharge_package",
             "async fn upsert_exchange_rule"
         ),
-        source_section(
-            source,
-            "async fn sync_recharge_package_product_for_create",
-            "async fn list_referral_stats"
-        ),
     );
 
     assert!(recharge_catalog_sections.contains("commerce_recharge_package"));
-    assert!(recharge_catalog_sections.contains("commerce_product_spu"));
-    assert!(recharge_catalog_sections.contains("commerce_product_sku"));
     assert!(
         recharge_catalog_sections.contains("discount"),
         "admin recharge package catalog path must persist and read the discount rate column"
@@ -86,6 +79,32 @@ fn admin_marketing_recharge_catalog_uses_appbase_catalog_tables() {
         !recharge_catalog_sections.contains("recharge_package_status_code"),
         "admin recharge package catalog path must use appbase string status values directly"
     );
+}
+
+/// The recharge package catalog is owned by `sdkwork-order`
+/// (`commerce_recharge_package`), and the product catalog family
+/// (`commerce_product_*`) is owned by `sdkwork-merchandise`. Cloud Router must
+/// not write a sibling repository's tables over raw SQL: it did until the
+/// "recharge package is a product" projection was retired, which wrote
+/// TEXT-shaped rows into `commerce_product_spu` / `commerce_product_sku` /
+/// `commerce_product_spu_category` and thereby collided with merchandise's
+/// BIGINT/UUID catalog model v2 (both sides used `CREATE TABLE IF NOT EXISTS`,
+/// so whichever ran first silently won).
+#[test]
+fn admin_marketing_store_does_not_write_merchandise_catalog_tables() {
+    let source = POSTGRES_ADMIN_MARKETING_STORE;
+    for forbidden in [
+        "commerce_product_spu",
+        "commerce_product_sku",
+        "commerce_product_spu_category",
+        "commerce_product_media",
+    ] {
+        assert!(
+            !source.contains(forbidden),
+            "cloudrouter admin marketing store must not write the merchandise-owned \
+             `{forbidden}`: the product catalog family belongs to `sdkwork-merchandise`"
+        );
+    }
 }
 
 #[test]

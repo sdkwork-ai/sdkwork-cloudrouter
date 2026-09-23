@@ -35,7 +35,6 @@ export const IAM_APPLICATION_BOOTSTRAP_ENV = {
   SDKWORK_MEMBERSHIP_APP_ROOT: path.resolve(REPO_ROOT, '..', 'sdkwork-membership'),
   SDKWORK_ORDER_APP_ROOT: path.resolve(REPO_ROOT, '..', 'sdkwork-order'),
   SDKWORK_SHOP_APP_ROOT: path.resolve(REPO_ROOT, '..', 'sdkwork-shop'),
-  SDKWORK_CATALOG_APP_ROOT: path.resolve(REPO_ROOT, '..', 'sdkwork-catalog'),
   SDKWORK_INVOICE_APP_ROOT: path.resolve(REPO_ROOT, '..', 'sdkwork-invoice'),
 };
 

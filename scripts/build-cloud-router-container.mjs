@@ -234,7 +234,9 @@ const CORE_DATABASE_MODULES = [
   { repo: 'sdkwork-partner', envKey: 'SDKWORK_PARTNER_APP_ROOT' },
   { repo: 'sdkwork-promotion', envKey: 'SDKWORK_PROMOTION_APP_ROOT' },
   { repo: 'sdkwork-merchandise', envKey: 'SDKWORK_MERCHANDISE_APP_ROOT' },
-  { repo: 'sdkwork-catalog', envKey: 'SDKWORK_CATALOG_APP_ROOT' },
+  // sdkwork-catalog is deliberately absent: it is an API-only dependency surface whose routes read
+  // the merchandise-owned `commerce_product*` tables, so it ships no `database/` assets to stage.
+  // Listing it here would look for a directory that does not exist.
   { repo: 'sdkwork-shop', envKey: 'SDKWORK_SHOP_APP_ROOT' },
   { repo: 'sdkwork-inventory', envKey: 'SDKWORK_INVENTORY_APP_ROOT' },
   { repo: 'sdkwork-aiot', envKey: 'SDKWORK_AIOT_APP_ROOT' },

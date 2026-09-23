@@ -23,7 +23,7 @@
         "content_openapi_snapshot",
         "content_sdk_release"
       ],
-      "source_hash": "sha256:4cae40dc0fb1f42e4dfb35e80c4d433540104fe90edbbb8e8e4cdf22f9983ef6",
+      "source_hash": "sha256:328446c0e38c2ef824e623dca6ce3663052ce8a80764ba712e738ac7265cfc0d",
       "source_ref": "apps/sdkwork-cloudrouter-pc/src/App.tsx"
     },
     "static-route:/models": {
@@ -37,7 +37,7 @@
         "ai_model_capability",
         "ai_model_pricing"
       ],
-      "source_hash": "sha256:5a71a2d8c63a39f2aec5262031c68e62c35dc78063dd4d7b57de3343fa2b3f98",
+      "source_hash": "sha256:bfa6a86a3687f9eb42ce629494515612c87f019a3c92846b1b64269e1aa92a81",
       "source_ref": "docs/schema-registry/sdkwork-cloudrouter.tables.yaml"
     },
     "static-route:/product-docs": {
@@ -49,7 +49,7 @@
         "content_doc_page",
         "content_openapi_snapshot"
       ],
-      "source_hash": "sha256:4cae40dc0fb1f42e4dfb35e80c4d433540104fe90edbbb8e8e4cdf22f9983ef6",
+      "source_hash": "sha256:328446c0e38c2ef824e623dca6ce3663052ce8a80764ba712e738ac7265cfc0d",
       "source_ref": "apps/sdkwork-cloudrouter-pc/src/App.tsx"
     },
     "static-route:/rankings": {
@@ -61,7 +61,7 @@
         "ai_model_rank_snapshot",
         "ai_usage"
       ],
-      "source_hash": "sha256:5a71a2d8c63a39f2aec5262031c68e62c35dc78063dd4d7b57de3343fa2b3f98",
+      "source_hash": "sha256:bfa6a86a3687f9eb42ce629494515612c87f019a3c92846b1b64269e1aa92a81",
       "source_ref": "docs/schema-registry/sdkwork-cloudrouter.tables.yaml"
     },
     "static-route:/sdk-reference": {
@@ -74,7 +74,7 @@
         "content_openapi_snapshot",
         "content_sdk_release"
       ],
-      "source_hash": "sha256:4cae40dc0fb1f42e4dfb35e80c4d433540104fe90edbbb8e8e4cdf22f9983ef6",
+      "source_hash": "sha256:328446c0e38c2ef824e623dca6ce3663052ce8a80764ba712e738ac7265cfc0d",
       "source_ref": "apps/sdkwork-cloudrouter-pc/src/App.tsx"
     }
   },

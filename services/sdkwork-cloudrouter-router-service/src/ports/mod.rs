@@ -9,7 +9,6 @@ mod admin_analytics_read_store;
 mod admin_announcement_store;
 mod admin_api_key_rate_limit_store;
 mod admin_auth_settings_store;
-mod admin_catalog_store;
 mod admin_chain_policy_store;
 mod admin_dashboard_read_store;
 mod admin_finance_store;
@@ -105,16 +104,6 @@ pub use admin_auth_settings_store::{
     AdminAuthSettingsSubject, AdminAuthVerificationPolicy, AdminAuthWechatMini,
     AdminAuthWechatOfficial, AdminAuthWechatSettings, GetAdminAuthSettingsQuery,
     GetAdminAuthSettingsScopeQuery, UpdateAdminAuthSettingsCommand,
-};
-pub use admin_catalog_store::{
-    AdminAttributeMutationCommand, AdminCatalogCollection, AdminCatalogFuture,
-    AdminCatalogJsonRecord, AdminCatalogStore, AdminCatalogSubject,
-    AdminCategoryAttributeMutationCommand, AdminCategoryMutationCommand, AdminCategorySeedBundle,
-    AdminCategorySeedInitializeCommand, AdminCategorySeedInitializeSummary,
-    AdminCategorySeedInstallPolicy, AdminCategorySeedItem, AdminPriceListMutationCommand,
-    AdminProductMutationCommand, AdminSkuAttributeInput, AdminSkuMutationCommand,
-    DeleteAdminCategoryAttributeCommand, DeleteAdminCategoryCommand, DeleteAdminProductCommand,
-    DeleteAdminSkuCommand, ListAdminCatalogRecordsQuery,
 };
 pub use admin_chain_policy_store::{
     AdminChainPolicyItem, AdminChainPolicyStore, AdminChainPolicyStoreError,

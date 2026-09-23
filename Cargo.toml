@@ -321,7 +321,6 @@ sdkwork_shop_service_host = { package = "sdkwork-shop-service-host", path = "../
 sdkwork_shop_database_host = { package = "sdkwork-shop-database-host", path = "../sdkwork-shop/crates/sdkwork-shop-database-host" }
 sdkwork_routes_commerce_catalog_app_api = { package = "sdkwork-routes-catalog-app-api", path = "../sdkwork-catalog/crates/sdkwork-routes-catalog-app-api" }
 sdkwork_catalog_service_host = { package = "sdkwork-catalog-service-host", path = "../sdkwork-catalog/crates/sdkwork-catalog-service-host" }
-sdkwork_catalog_database_host = { package = "sdkwork-catalog-database-host", path = "../sdkwork-catalog/crates/sdkwork-catalog-database-host" }
 sdkwork_invoice_database_bootstrap = { package = "sdkwork-invoice-database-bootstrap", path = "../sdkwork-invoice/crates/sdkwork-invoice-database-bootstrap" }
 # The community module is embedded, so its commerce integrations reach membership
 # and order through the in-process ports wired by the composition root

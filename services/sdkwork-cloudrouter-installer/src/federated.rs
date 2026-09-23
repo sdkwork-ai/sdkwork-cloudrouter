@@ -51,8 +51,6 @@ pub async fn bootstrap_federated_commerce_modules(
         .map_err(|error| format!("load merchandise database module failed: {error}"))?;
     let shop_module = sdkwork_shop_database_host::database_module()
         .map_err(|error| format!("load shop database module failed: {error}"))?;
-    let catalog_module = sdkwork_catalog_database_host::database_module()
-        .map_err(|error| format!("load catalog database module failed: {error}"))?;
     let inventory_module = sdkwork_inventory_database_host::database_module()
         .map_err(|error| format!("load inventory database module failed: {error}"))?;
     let registry = DatabaseModuleRegistry::builder()
@@ -70,8 +68,6 @@ pub async fn bootstrap_federated_commerce_modules(
         .map_err(|error| format!("register merchandise database module failed: {error}"))?
         .register(shop_module)
         .map_err(|error| format!("register shop database module failed: {error}"))?
-        .register(catalog_module)
-        .map_err(|error| format!("register catalog database module failed: {error}"))?
         .register(inventory_module)
         .map_err(|error| format!("register inventory database module failed: {error}"))?
         .build();
@@ -126,9 +122,6 @@ mod tests {
         let shop = source
             .find("sdkwork_shop_database_host::database_module()")
             .expect("shop database module registration");
-        let catalog = source
-            .find("sdkwork_catalog_database_host::database_module()")
-            .expect("catalog database module registration");
         let inventory = source
             .find("sdkwork_inventory_database_host::database_module()")
             .expect("inventory database module registration");
@@ -156,13 +149,16 @@ mod tests {
             merchandise < shop,
             "merchandise database must bootstrap before shop"
         );
+        // Catalog owns no database module: its app root ships no `database/` assets, so the
+        // lifecycle discovery reports it as an API-only dependency surface instead of a module.
+        // The needle is assembled at compile time so this assertion cannot satisfy itself.
         assert!(
-            shop < catalog,
-            "shop database must bootstrap before catalog"
+            !source.contains(concat!("sdkwork_", "catalog_database_host")),
+            "catalog is an API-only dependency surface and must not register a database module"
         );
         assert!(
-            catalog < inventory,
-            "catalog database must bootstrap before inventory"
+            shop < inventory,
+            "shop database must bootstrap before inventory"
         );
         assert!(source.contains(".register(payment_module)"));
         assert!(source.contains(".register(order_module)"));
@@ -171,7 +167,6 @@ mod tests {
         assert!(source.contains(".register(partner_module)"));
         assert!(source.contains(".register(merchandise_module)"));
         assert!(source.contains(".register(shop_module)"));
-        assert!(source.contains(".register(catalog_module)"));
         assert!(source.contains(".register(inventory_module)"));
         assert!(
             source

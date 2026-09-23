@@ -263,14 +263,6 @@ pub(crate) fn recharge_package_name(price_amount: &str, currency_code: &str) -> 
     format!("Points recharge {price_amount} {currency_code}")
 }
 
-pub(crate) fn recharge_sku_specs(price_amount: &str, currency_code: &str) -> String {
-    serde_json::json!({
-        "amount": price_amount,
-        "currencyCode": currency_code,
-    })
-    .to_string()
-}
-
 pub(crate) fn canonical_decimal_string(
     value: &str,
     scale: usize,

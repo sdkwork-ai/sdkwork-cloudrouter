@@ -105,6 +105,30 @@ consolidation; the files no longer exist in this directory.
   and `ops_referral_strategy` (marketing-center referral reward strategy
   configuration). Reward granting is a follow-up phase; relations carry a
   `reward_status` marker only.
+- `0044_product_catalog_relation_tables.up.sql` created four Cloud Router-owned
+  product-catalog *relation* tables (`commerce_product_spu_category`,
+  `commerce_product_category_attribute`, `commerce_product_sku_attribute`,
+  `commerce_product_media`) for the Cloud Router admin product-catalog surface.
+  It is **retired, not folded**: the surface it served was retired in favour of
+  `sdkwork-merchandise`'s backend catalog surface
+  (`/backend/v3/api/catalog/*`), which is the system of record for the whole
+  `commerce_*` catalog family. Three of the four names (`*_category_attribute`,
+  `*_sku_attribute`, `*_media`) were also declared by `sdkwork-merchandise`'s
+  baseline with an incompatible column family (TEXT ids here, BIGINT/UUID with
+  foreign keys and soft-delete there); because both sides used
+  `CREATE TABLE IF NOT EXISTS`, whichever ran first won and the other silently
+  no-opped — the same class of defect that `0042` had to clean up for `ai_mcp_*`.
+  The retirement landed before any release tag contained this migration, so the
+  file was removed under pre-release consolidation instead of shipping a DROP.
+  `sdkwork-merchandise` re-provisions its own shapes through its own baseline.
+- `0045_price_list_customer_segment.up.sql` projected a `customer_segment`
+  column onto `commerce_price_list`, which is owned by `sdkwork-merchandise`.
+  It is removed for the same reason: it was a cross-module guard that assumed an
+  older sibling baseline and therefore only worked when the sibling had already
+  bootstrapped. Cloud Router's own module lifecycle runs before the federated
+  commerce modules, so on a clean database the guard ran first and failed on a
+  table that did not exist yet. `sdkwork-merchandise`'s baseline carries
+  `customer_segment` itself, which is the one authoritative definition.
 
 ## Naming
 

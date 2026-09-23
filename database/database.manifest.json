@@ -50,7 +50,7 @@
     "provider": "default",
     "hooks": []
   },
-  "materializedTableCount": 42,
+  "materializedTableCount": 38,
   "materializedTables": [
     "ai_chat_context_snapshot",
     "ai_chat_conversation",
@@ -88,10 +88,6 @@
     "ai_upstream_supplier_auth_method",
     "ai_upstream_supplier_endpoint",
     "ai_upstream_supplier_endpoint_health_state",
-    "commerce_product_category_attribute",
-    "commerce_product_media",
-    "commerce_product_sku_attribute",
-    "commerce_product_spu_category",
     "iam_user_preference",
     "integration_webhook_endpoint"
   ],
@@ -99,7 +95,6 @@
   "tablePrefixes": [
     "ai_",
     "iam_user_",
-    "integration_",
-    "commerce_product_"
+    "integration_"
   ]
 }

@@ -15,6 +15,66 @@
       "sdkOwner": "sdkwork-cloudrouter",
       "apiAuthority": "sdkwork-cloudrouter.app",
       "consumerSdkOwner": "sdkwork-cloudrouter",
+      "corePackage": "sdkwork_cloudrouter_flutter_mobile_core",
+      "source": "apps/sdkwork-cloudrouter-flutter-mobile/packages/sdkwork_cloudrouter_flutter_mobile_core/specs/component.spec.json"
+    },
+    {
+      "workspace": "cloudrouter-app-sdk",
+      "surface": "app-api",
+      "apiPrefix": "/app/v3/api",
+      "connectivityPlane": "application",
+      "runtimeMode": "same-origin-embedded",
+      "mountStatus": null,
+      "envKey": null,
+      "forbidApplicationSameOriginFallback": false,
+      "sdkOwner": "sdkwork-cloudrouter",
+      "apiAuthority": "sdkwork-cloudrouter.app",
+      "consumerSdkOwner": "sdkwork-cloudrouter",
+      "corePackage": "@sdkwork/cloudrouter-h5-core",
+      "source": "apps/sdkwork-cloudrouter-h5/packages/sdkwork-cloudrouter-h5-core/specs/component.spec.json"
+    },
+    {
+      "workspace": "cloudrouter-app-sdk",
+      "surface": "app-api",
+      "apiPrefix": "/app/v3/api",
+      "connectivityPlane": "application",
+      "runtimeMode": "same-origin-embedded",
+      "mountStatus": null,
+      "envKey": null,
+      "forbidApplicationSameOriginFallback": false,
+      "sdkOwner": "sdkwork-cloudrouter",
+      "apiAuthority": "sdkwork-cloudrouter.app",
+      "consumerSdkOwner": "sdkwork-cloudrouter",
+      "corePackage": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-core",
+      "source": "apps/sdkwork-cloudrouter-harmony-mobile/packages/sdkwork-cloudrouter-harmony-mobile-core/specs/component.spec.json"
+    },
+    {
+      "workspace": "cloudrouter-app-sdk",
+      "surface": "app-api",
+      "apiPrefix": "/app/v3/api",
+      "connectivityPlane": "application",
+      "runtimeMode": "same-origin-embedded",
+      "mountStatus": null,
+      "envKey": null,
+      "forbidApplicationSameOriginFallback": false,
+      "sdkOwner": "sdkwork-cloudrouter",
+      "apiAuthority": "sdkwork-cloudrouter.app",
+      "consumerSdkOwner": "sdkwork-cloudrouter",
+      "corePackage": "@sdkwork/cloudrouter-mp-core",
+      "source": "apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-core/specs/component.spec.json"
+    },
+    {
+      "workspace": "cloudrouter-app-sdk",
+      "surface": "app-api",
+      "apiPrefix": "/app/v3/api",
+      "connectivityPlane": "application",
+      "runtimeMode": "same-origin-embedded",
+      "mountStatus": null,
+      "envKey": null,
+      "forbidApplicationSameOriginFallback": false,
+      "sdkOwner": "sdkwork-cloudrouter",
+      "apiAuthority": "sdkwork-cloudrouter.app",
+      "consumerSdkOwner": "sdkwork-cloudrouter",
       "corePackage": "@sdkwork/cloudrouter-pc-core",
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-core/specs/component.spec.json"
     },
@@ -561,6 +621,1363 @@
   },
   "architecture": {
     "components": [
+      {
+        "name": "@sdkwork/cloudrouter-contracts",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-common/packages/sdkwork-cloudrouter-contracts",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "shared-contract",
+        "languages": [
+          "typescript"
+        ],
+        "source": "apps/sdkwork-cloudrouter-common/packages/sdkwork-cloudrouter-contracts/specs/component.spec.json",
+        "layerRole": "contract",
+        "publicExports": [
+          "src/index.ts"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-client-contracts",
+            "export": "src/index.ts"
+          }
+        ],
+        "requiredPorts": [],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/cloudrouter-sdk-ports",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-common/packages/sdkwork-cloudrouter-sdk-ports",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "shared-contract",
+        "languages": [
+          "typescript"
+        ],
+        "source": "apps/sdkwork-cloudrouter-common/packages/sdkwork-cloudrouter-sdk-ports/specs/component.spec.json",
+        "layerRole": "contract",
+        "publicExports": [
+          "src/index.ts"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-console-ports",
+            "export": "src/index.ts"
+          }
+        ],
+        "requiredPorts": [
+          {
+            "name": "cloudrouter-client-contracts",
+            "export": "@sdkwork/cloudrouter-contracts"
+          }
+        ],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/cloudrouter-service",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-common/packages/sdkwork-cloudrouter-service",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "shared-service",
+        "languages": [
+          "typescript"
+        ],
+        "source": "apps/sdkwork-cloudrouter-common/packages/sdkwork-cloudrouter-service/specs/component.spec.json",
+        "layerRole": "frontend-core",
+        "publicExports": [
+          "src/index.ts"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-console-read-models",
+            "export": "src/index.ts"
+          }
+        ],
+        "requiredPorts": [
+          {
+            "name": "cloudrouter-console-ports",
+            "export": "@sdkwork/cloudrouter-sdk-ports"
+          }
+        ],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "sdkwork_cloudrouter_flutter_mobile_commons",
+        "type": "dart-package",
+        "root": "apps/sdkwork-cloudrouter-flutter-mobile/packages/sdkwork_cloudrouter_flutter_mobile_commons",
+        "domain": "cloudrouter",
+        "capability": "router",
+        "surface": "app",
+        "languages": [
+          "dart"
+        ],
+        "source": "apps/sdkwork-cloudrouter-flutter-mobile/packages/sdkwork_cloudrouter_flutter_mobile_commons/specs/component.spec.json",
+        "layerRole": "frontend-commons",
+        "publicExports": [
+          "."
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudRouterFlutterCommons",
+            "export": "."
+          }
+        ],
+        "requiredPorts": [],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "sdkwork_cloudrouter_flutter_mobile_console_api_keys",
+        "type": "dart-package",
+        "root": "apps/sdkwork-cloudrouter-flutter-mobile/packages/sdkwork_cloudrouter_flutter_mobile_console_api_keys",
+        "domain": "cloudrouter",
+        "capability": "api_keys",
+        "surface": "app",
+        "languages": [
+          "dart"
+        ],
+        "source": "apps/sdkwork-cloudrouter-flutter-mobile/packages/sdkwork_cloudrouter_flutter_mobile_console_api_keys/specs/component.spec.json",
+        "layerRole": "frontend-feature",
+        "publicExports": [
+          "."
+        ],
+        "providedPorts": [
+          {
+            "name": "console_api_keysScreens",
+            "export": "."
+          },
+          {
+            "name": "console_api_keysRoutes",
+            "export": "."
+          }
+        ],
+        "requiredPorts": [
+          {
+            "name": "cloudRouterConsolePorts",
+            "package": "sdkwork_cloudrouter_flutter_mobile_core",
+            "export": "."
+          },
+          {
+            "name": "cloudRouterFlutterCommons",
+            "package": "sdkwork_cloudrouter_flutter_mobile_commons",
+            "export": "."
+          }
+        ],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "sdkwork_cloudrouter_flutter_mobile_console_catalog",
+        "type": "dart-package",
+        "root": "apps/sdkwork-cloudrouter-flutter-mobile/packages/sdkwork_cloudrouter_flutter_mobile_console_catalog",
+        "domain": "cloudrouter",
+        "capability": "catalog",
+        "surface": "app",
+        "languages": [
+          "dart"
+        ],
+        "source": "apps/sdkwork-cloudrouter-flutter-mobile/packages/sdkwork_cloudrouter_flutter_mobile_console_catalog/specs/component.spec.json",
+        "layerRole": "frontend-feature",
+        "publicExports": [
+          "."
+        ],
+        "providedPorts": [
+          {
+            "name": "console_catalogScreens",
+            "export": "."
+          },
+          {
+            "name": "console_catalogRoutes",
+            "export": "."
+          }
+        ],
+        "requiredPorts": [
+          {
+            "name": "cloudRouterConsolePorts",
+            "package": "sdkwork_cloudrouter_flutter_mobile_core",
+            "export": "."
+          },
+          {
+            "name": "cloudRouterFlutterCommons",
+            "package": "sdkwork_cloudrouter_flutter_mobile_commons",
+            "export": "."
+          }
+        ],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "sdkwork_cloudrouter_flutter_mobile_console_dashboard",
+        "type": "dart-package",
+        "root": "apps/sdkwork-cloudrouter-flutter-mobile/packages/sdkwork_cloudrouter_flutter_mobile_console_dashboard",
+        "domain": "cloudrouter",
+        "capability": "dashboard",
+        "surface": "app",
+        "languages": [
+          "dart"
+        ],
+        "source": "apps/sdkwork-cloudrouter-flutter-mobile/packages/sdkwork_cloudrouter_flutter_mobile_console_dashboard/specs/component.spec.json",
+        "layerRole": "frontend-feature",
+        "publicExports": [
+          "."
+        ],
+        "providedPorts": [
+          {
+            "name": "console_dashboardScreens",
+            "export": "."
+          },
+          {
+            "name": "console_dashboardRoutes",
+            "export": "."
+          }
+        ],
+        "requiredPorts": [
+          {
+            "name": "cloudRouterConsolePorts",
+            "package": "sdkwork_cloudrouter_flutter_mobile_core",
+            "export": "."
+          },
+          {
+            "name": "cloudRouterFlutterCommons",
+            "package": "sdkwork_cloudrouter_flutter_mobile_commons",
+            "export": "."
+          }
+        ],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "sdkwork_cloudrouter_flutter_mobile_console_usage",
+        "type": "dart-package",
+        "root": "apps/sdkwork-cloudrouter-flutter-mobile/packages/sdkwork_cloudrouter_flutter_mobile_console_usage",
+        "domain": "cloudrouter",
+        "capability": "usage",
+        "surface": "app",
+        "languages": [
+          "dart"
+        ],
+        "source": "apps/sdkwork-cloudrouter-flutter-mobile/packages/sdkwork_cloudrouter_flutter_mobile_console_usage/specs/component.spec.json",
+        "layerRole": "frontend-feature",
+        "publicExports": [
+          "."
+        ],
+        "providedPorts": [
+          {
+            "name": "console_usageScreens",
+            "export": "."
+          },
+          {
+            "name": "console_usageRoutes",
+            "export": "."
+          }
+        ],
+        "requiredPorts": [
+          {
+            "name": "cloudRouterConsolePorts",
+            "package": "sdkwork_cloudrouter_flutter_mobile_core",
+            "export": "."
+          },
+          {
+            "name": "cloudRouterFlutterCommons",
+            "package": "sdkwork_cloudrouter_flutter_mobile_commons",
+            "export": "."
+          }
+        ],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "sdkwork_cloudrouter_flutter_mobile_core",
+        "type": "dart-package",
+        "root": "apps/sdkwork-cloudrouter-flutter-mobile/packages/sdkwork_cloudrouter_flutter_mobile_core",
+        "domain": "cloudrouter",
+        "capability": "router",
+        "surface": "app",
+        "languages": [
+          "dart"
+        ],
+        "source": "apps/sdkwork-cloudrouter-flutter-mobile/packages/sdkwork_cloudrouter_flutter_mobile_core/specs/component.spec.json",
+        "layerRole": "frontend-core",
+        "publicExports": [
+          "."
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudRouterAppSdkClients",
+            "export": "."
+          },
+          {
+            "name": "cloudRouterConsolePorts",
+            "export": "."
+          },
+          {
+            "name": "cloudRouterConsoleSession",
+            "export": "."
+          }
+        ],
+        "requiredPorts": [],
+        "sdkDependencies": [
+          {
+            "workspace": "cloudrouter-app-sdk",
+            "surface": "app-api",
+            "credentialMode": "authenticated-app-api",
+            "packageName": "cloudrouter_app_sdk",
+            "status": "active"
+          }
+        ],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "sdkwork_cloudrouter_flutter_mobile_shell",
+        "type": "dart-package",
+        "root": "apps/sdkwork-cloudrouter-flutter-mobile/packages/sdkwork_cloudrouter_flutter_mobile_shell",
+        "domain": "cloudrouter",
+        "capability": "router",
+        "surface": "app",
+        "languages": [
+          "dart"
+        ],
+        "source": "apps/sdkwork-cloudrouter-flutter-mobile/packages/sdkwork_cloudrouter_flutter_mobile_shell/specs/component.spec.json",
+        "layerRole": "frontend-shell",
+        "publicExports": [
+          "."
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudRouterFlutterRoutes",
+            "export": "."
+          },
+          {
+            "name": "cloudRouterFlutterAuthGate",
+            "export": "."
+          }
+        ],
+        "requiredPorts": [],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "sdkwork-cloudrouter-flutter-mobile",
+        "type": "flutter-mobile-app-root",
+        "root": "apps/sdkwork-cloudrouter-flutter-mobile",
+        "domain": "cloudrouter",
+        "capability": "router",
+        "surface": "app",
+        "languages": [
+          "dart"
+        ],
+        "source": "apps/sdkwork-cloudrouter-flutter-mobile/specs/component.spec.json",
+        "layerRole": null,
+        "publicExports": [],
+        "providedPorts": [],
+        "requiredPorts": [],
+        "sdkDependencies": [
+          {
+            "workspace": "cloudrouter-app-sdk",
+            "surface": "app-api",
+            "credentialMode": "authenticated-app-api",
+            "packageName": "cloudrouter_app_sdk",
+            "status": "active"
+          }
+        ],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/cloudrouter-h5-commons",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-h5/packages/sdkwork-cloudrouter-h5-commons",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "typescript",
+          "react"
+        ],
+        "source": "apps/sdkwork-cloudrouter-h5/packages/sdkwork-cloudrouter-h5-commons/specs/component.spec.json",
+        "layerRole": "frontend-commons",
+        "publicExports": [
+          "src/index.ts"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-h5-ui-primitives",
+            "export": "src/index.ts"
+          }
+        ],
+        "requiredPorts": [],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/cloudrouter-h5-console-api-keys",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-h5/packages/sdkwork-cloudrouter-h5-console-api-keys",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "typescript",
+          "react"
+        ],
+        "source": "apps/sdkwork-cloudrouter-h5/packages/sdkwork-cloudrouter-h5-console-api-keys/specs/component.spec.json",
+        "layerRole": "frontend-feature",
+        "publicExports": [
+          "src/index.ts"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-h5-apiKeys-screen",
+            "export": "src/index.ts"
+          }
+        ],
+        "requiredPorts": [
+          {
+            "name": "cloudrouter-console-ports",
+            "export": "@sdkwork/cloudrouter-sdk-ports"
+          },
+          {
+            "name": "cloudrouter-console-read-models",
+            "export": "@sdkwork/cloudrouter-service"
+          }
+        ],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/cloudrouter-h5-console-catalog",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-h5/packages/sdkwork-cloudrouter-h5-console-catalog",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "typescript",
+          "react"
+        ],
+        "source": "apps/sdkwork-cloudrouter-h5/packages/sdkwork-cloudrouter-h5-console-catalog/specs/component.spec.json",
+        "layerRole": "frontend-feature",
+        "publicExports": [
+          "src/index.ts"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-h5-catalog-screen",
+            "export": "src/index.ts"
+          }
+        ],
+        "requiredPorts": [
+          {
+            "name": "cloudrouter-console-ports",
+            "export": "@sdkwork/cloudrouter-sdk-ports"
+          },
+          {
+            "name": "cloudrouter-console-read-models",
+            "export": "@sdkwork/cloudrouter-service"
+          }
+        ],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/cloudrouter-h5-console-dashboard",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-h5/packages/sdkwork-cloudrouter-h5-console-dashboard",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "typescript",
+          "react"
+        ],
+        "source": "apps/sdkwork-cloudrouter-h5/packages/sdkwork-cloudrouter-h5-console-dashboard/specs/component.spec.json",
+        "layerRole": "frontend-feature",
+        "publicExports": [
+          "src/index.ts"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-h5-overview-screen",
+            "export": "src/index.ts"
+          }
+        ],
+        "requiredPorts": [
+          {
+            "name": "cloudrouter-console-ports",
+            "export": "@sdkwork/cloudrouter-sdk-ports"
+          },
+          {
+            "name": "cloudrouter-console-read-models",
+            "export": "@sdkwork/cloudrouter-service"
+          }
+        ],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/cloudrouter-h5-console-usage",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-h5/packages/sdkwork-cloudrouter-h5-console-usage",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "typescript",
+          "react"
+        ],
+        "source": "apps/sdkwork-cloudrouter-h5/packages/sdkwork-cloudrouter-h5-console-usage/specs/component.spec.json",
+        "layerRole": "frontend-feature",
+        "publicExports": [
+          "src/index.ts"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-h5-usage-screen",
+            "export": "src/index.ts"
+          }
+        ],
+        "requiredPorts": [
+          {
+            "name": "cloudrouter-console-ports",
+            "export": "@sdkwork/cloudrouter-sdk-ports"
+          },
+          {
+            "name": "cloudrouter-console-read-models",
+            "export": "@sdkwork/cloudrouter-service"
+          }
+        ],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/cloudrouter-h5-core",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-h5/packages/sdkwork-cloudrouter-h5-core",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "typescript"
+        ],
+        "source": "apps/sdkwork-cloudrouter-h5/packages/sdkwork-cloudrouter-h5-core/specs/component.spec.json",
+        "layerRole": "frontend-core",
+        "publicExports": [
+          ".",
+          "./sdk",
+          "./session"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-app-sdk-client",
+            "export": "."
+          },
+          {
+            "name": "cloudrouter-console-ports",
+            "export": "./sdk"
+          },
+          {
+            "name": "cloudrouter-console-session",
+            "export": "./session"
+          }
+        ],
+        "requiredPorts": [
+          {
+            "name": "cloudrouter-console-ports",
+            "export": "@sdkwork/cloudrouter-sdk-ports"
+          },
+          {
+            "name": "cloudrouter-client-contracts",
+            "export": "@sdkwork/cloudrouter-contracts"
+          }
+        ],
+        "sdkDependencies": [
+          {
+            "workspace": "cloudrouter-app-sdk",
+            "surface": "app-api",
+            "credentialMode": "authenticated-app-api"
+          }
+        ],
+        "routeManifest": null,
+        "runtimeEntrypoints": [
+          "package.json#scripts.typecheck",
+          "package.json#scripts.build"
+        ],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/cloudrouter-h5-i18n",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-h5/packages/sdkwork-cloudrouter-h5-i18n",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "typescript"
+        ],
+        "source": "apps/sdkwork-cloudrouter-h5/packages/sdkwork-cloudrouter-h5-i18n/specs/component.spec.json",
+        "layerRole": "contract",
+        "publicExports": [
+          "src/index.ts"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-console-messages",
+            "export": "src/index.ts"
+          }
+        ],
+        "requiredPorts": [],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/cloudrouter-h5-shell",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-h5/packages/sdkwork-cloudrouter-h5-shell",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "typescript",
+          "react"
+        ],
+        "source": "apps/sdkwork-cloudrouter-h5/packages/sdkwork-cloudrouter-h5-shell/specs/component.spec.json",
+        "layerRole": "frontend-shell",
+        "publicExports": [
+          "src/index.ts"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-h5-console-shell",
+            "export": "src/index.ts"
+          }
+        ],
+        "requiredPorts": [
+          {
+            "name": "cloudrouter-client-contracts",
+            "export": "@sdkwork/cloudrouter-contracts"
+          }
+        ],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "sdkwork-cloudrouter-h5",
+        "type": "h5-app-root",
+        "root": "apps/sdkwork-cloudrouter-h5",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "typescript",
+          "react"
+        ],
+        "source": "apps/sdkwork-cloudrouter-h5/specs/component.spec.json",
+        "layerRole": "runtime-composition",
+        "publicExports": [
+          "src/main.tsx",
+          "src/App.tsx",
+          "src/AuthGate.tsx"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-h5-app-surface",
+            "export": "src/main.tsx"
+          }
+        ],
+        "requiredPorts": [],
+        "sdkDependencies": [
+          {
+            "workspace": "cloudrouter-app-sdk"
+          }
+        ],
+        "routeManifest": null,
+        "runtimeEntrypoints": [
+          "package.json#scripts.dev",
+          "package.json#scripts.build"
+        ],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-commons",
+        "type": "arkts-package",
+        "root": "apps/sdkwork-cloudrouter-harmony-mobile/packages/sdkwork-cloudrouter-harmony-mobile-commons",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "arkts"
+        ],
+        "source": "apps/sdkwork-cloudrouter-harmony-mobile/packages/sdkwork-cloudrouter-harmony-mobile-commons/specs/component.spec.json",
+        "layerRole": "frontend-commons",
+        "publicExports": [
+          "Index.ets"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-harmony-ui-primitives",
+            "export": "Index.ets"
+          },
+          {
+            "name": "cloudrouter-harmony-i18n-helpers",
+            "export": "Index.ets"
+          }
+        ],
+        "requiredPorts": [],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-console-api-keys",
+        "type": "arkts-package",
+        "root": "apps/sdkwork-cloudrouter-harmony-mobile/packages/sdkwork-cloudrouter-harmony-mobile-console-api-keys",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "arkts"
+        ],
+        "source": "apps/sdkwork-cloudrouter-harmony-mobile/packages/sdkwork-cloudrouter-harmony-mobile-console-api-keys/specs/component.spec.json",
+        "layerRole": "frontend-feature",
+        "publicExports": [
+          "Index.ets"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-harmony-api-keys-screen",
+            "export": "Index.ets"
+          }
+        ],
+        "requiredPorts": [
+          {
+            "name": "cloudrouter-harmony-app-sdk-client",
+            "export": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-core"
+          },
+          {
+            "name": "cloudrouter-harmony-ui-primitives",
+            "export": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-commons"
+          },
+          {
+            "name": "cloudrouter-harmony-route-stack",
+            "export": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-shell"
+          }
+        ],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-console-catalog",
+        "type": "arkts-package",
+        "root": "apps/sdkwork-cloudrouter-harmony-mobile/packages/sdkwork-cloudrouter-harmony-mobile-console-catalog",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "arkts"
+        ],
+        "source": "apps/sdkwork-cloudrouter-harmony-mobile/packages/sdkwork-cloudrouter-harmony-mobile-console-catalog/specs/component.spec.json",
+        "layerRole": "frontend-feature",
+        "publicExports": [
+          "Index.ets"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-harmony-catalog-screen",
+            "export": "Index.ets"
+          }
+        ],
+        "requiredPorts": [
+          {
+            "name": "cloudrouter-harmony-app-sdk-client",
+            "export": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-core"
+          },
+          {
+            "name": "cloudrouter-harmony-ui-primitives",
+            "export": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-commons"
+          },
+          {
+            "name": "cloudrouter-harmony-route-stack",
+            "export": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-shell"
+          }
+        ],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-console-dashboard",
+        "type": "arkts-package",
+        "root": "apps/sdkwork-cloudrouter-harmony-mobile/packages/sdkwork-cloudrouter-harmony-mobile-console-dashboard",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "arkts"
+        ],
+        "source": "apps/sdkwork-cloudrouter-harmony-mobile/packages/sdkwork-cloudrouter-harmony-mobile-console-dashboard/specs/component.spec.json",
+        "layerRole": "frontend-feature",
+        "publicExports": [
+          "Index.ets"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-harmony-dashboard-screen",
+            "export": "Index.ets"
+          }
+        ],
+        "requiredPorts": [
+          {
+            "name": "cloudrouter-harmony-app-sdk-client",
+            "export": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-core"
+          },
+          {
+            "name": "cloudrouter-harmony-ui-primitives",
+            "export": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-commons"
+          },
+          {
+            "name": "cloudrouter-harmony-route-stack",
+            "export": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-shell"
+          }
+        ],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-console-usage",
+        "type": "arkts-package",
+        "root": "apps/sdkwork-cloudrouter-harmony-mobile/packages/sdkwork-cloudrouter-harmony-mobile-console-usage",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "arkts"
+        ],
+        "source": "apps/sdkwork-cloudrouter-harmony-mobile/packages/sdkwork-cloudrouter-harmony-mobile-console-usage/specs/component.spec.json",
+        "layerRole": "frontend-feature",
+        "publicExports": [
+          "Index.ets"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-harmony-usage-screen",
+            "export": "Index.ets"
+          }
+        ],
+        "requiredPorts": [
+          {
+            "name": "cloudrouter-harmony-app-sdk-client",
+            "export": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-core"
+          },
+          {
+            "name": "cloudrouter-harmony-ui-primitives",
+            "export": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-commons"
+          },
+          {
+            "name": "cloudrouter-harmony-route-stack",
+            "export": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-shell"
+          }
+        ],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-core",
+        "type": "arkts-package",
+        "root": "apps/sdkwork-cloudrouter-harmony-mobile/packages/sdkwork-cloudrouter-harmony-mobile-core",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "arkts"
+        ],
+        "source": "apps/sdkwork-cloudrouter-harmony-mobile/packages/sdkwork-cloudrouter-harmony-mobile-core/specs/component.spec.json",
+        "layerRole": "frontend-core",
+        "publicExports": [
+          "Index.ets"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-harmony-app-sdk-client",
+            "export": "Index.ets"
+          },
+          {
+            "name": "cloudrouter-harmony-session",
+            "export": "Index.ets"
+          },
+          {
+            "name": "cloudrouter-harmony-composition",
+            "export": "Index.ets"
+          }
+        ],
+        "requiredPorts": [],
+        "sdkDependencies": [
+          {
+            "workspace": "cloudrouter-app-sdk",
+            "permissionModuleId": "cloudrouter",
+            "surface": "app-api",
+            "credentialMode": "authenticated-app-api",
+            "status": "active",
+            "runtimeAdaptation": "arkts-pending"
+          }
+        ],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-host",
+        "type": "arkts-package",
+        "root": "apps/sdkwork-cloudrouter-harmony-mobile/packages/sdkwork-cloudrouter-harmony-mobile-host",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "arkts"
+        ],
+        "source": "apps/sdkwork-cloudrouter-harmony-mobile/packages/sdkwork-cloudrouter-harmony-mobile-host/specs/component.spec.json",
+        "layerRole": "frontend-host",
+        "publicExports": [
+          "Index.ets"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-harmony-host-adapters",
+            "export": "Index.ets"
+          }
+        ],
+        "requiredPorts": [],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-shell",
+        "type": "arkts-package",
+        "root": "apps/sdkwork-cloudrouter-harmony-mobile/packages/sdkwork-cloudrouter-harmony-mobile-shell",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "arkts"
+        ],
+        "source": "apps/sdkwork-cloudrouter-harmony-mobile/packages/sdkwork-cloudrouter-harmony-mobile-shell/specs/component.spec.json",
+        "layerRole": "frontend-shell",
+        "publicExports": [
+          "Index.ets"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-harmony-route-stack",
+            "export": "Index.ets"
+          },
+          {
+            "name": "cloudrouter-harmony-auth-gate",
+            "export": "Index.ets"
+          }
+        ],
+        "requiredPorts": [],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "sdkwork-cloudrouter-harmony-mobile",
+        "type": "harmony-mobile-app-root",
+        "root": "apps/sdkwork-cloudrouter-harmony-mobile",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "arkts"
+        ],
+        "source": "apps/sdkwork-cloudrouter-harmony-mobile/specs/component.spec.json",
+        "layerRole": null,
+        "publicExports": [
+          "entry/src/main/ets/entryability/EntryAbility.ets",
+          "entry/src/main/ets/bootstrap/Runtime.ets"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-harmony-bootstrap",
+            "export": "entry/src/main/ets/bootstrap/Runtime.ets"
+          }
+        ],
+        "requiredPorts": [],
+        "sdkDependencies": [
+          {
+            "workspace": "cloudrouter-app-sdk",
+            "permissionModuleId": "cloudrouter",
+            "surface": "app-api",
+            "credentialMode": "authenticated-app-api",
+            "status": "active",
+            "runtimeAdaptation": "arkts-pending"
+          }
+        ],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/cloudrouter-mp-commons",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-commons",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "typescript"
+        ],
+        "source": "apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-commons/specs/component.spec.json",
+        "layerRole": "frontend-commons",
+        "publicExports": [
+          "src/index.ts"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-mp-presentation",
+            "export": "src/index.ts"
+          }
+        ],
+        "requiredPorts": [],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/cloudrouter-mp-console-api-keys",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-console-api-keys",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "typescript"
+        ],
+        "source": "apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-console-api-keys/specs/component.spec.json",
+        "layerRole": "frontend-feature",
+        "publicExports": [
+          "src/index.ts"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-mp-apiKeys-page",
+            "export": "src/index.ts"
+          }
+        ],
+        "requiredPorts": [
+          {
+            "name": "cloudrouter-console-ports",
+            "export": "@sdkwork/cloudrouter-sdk-ports"
+          },
+          {
+            "name": "cloudrouter-console-read-models",
+            "export": "@sdkwork/cloudrouter-service"
+          }
+        ],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/cloudrouter-mp-console-catalog",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-console-catalog",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "typescript"
+        ],
+        "source": "apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-console-catalog/specs/component.spec.json",
+        "layerRole": "frontend-feature",
+        "publicExports": [
+          "src/index.ts"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-mp-catalog-page",
+            "export": "src/index.ts"
+          }
+        ],
+        "requiredPorts": [
+          {
+            "name": "cloudrouter-console-ports",
+            "export": "@sdkwork/cloudrouter-sdk-ports"
+          },
+          {
+            "name": "cloudrouter-console-read-models",
+            "export": "@sdkwork/cloudrouter-service"
+          }
+        ],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/cloudrouter-mp-console-dashboard",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-console-dashboard",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "typescript"
+        ],
+        "source": "apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-console-dashboard/specs/component.spec.json",
+        "layerRole": "frontend-feature",
+        "publicExports": [
+          "src/index.ts"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-mp-overview-page",
+            "export": "src/index.ts"
+          }
+        ],
+        "requiredPorts": [
+          {
+            "name": "cloudrouter-console-ports",
+            "export": "@sdkwork/cloudrouter-sdk-ports"
+          },
+          {
+            "name": "cloudrouter-console-read-models",
+            "export": "@sdkwork/cloudrouter-service"
+          }
+        ],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/cloudrouter-mp-console-usage",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-console-usage",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "typescript"
+        ],
+        "source": "apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-console-usage/specs/component.spec.json",
+        "layerRole": "frontend-feature",
+        "publicExports": [
+          "src/index.ts"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-mp-usage-page",
+            "export": "src/index.ts"
+          }
+        ],
+        "requiredPorts": [
+          {
+            "name": "cloudrouter-console-ports",
+            "export": "@sdkwork/cloudrouter-sdk-ports"
+          },
+          {
+            "name": "cloudrouter-console-read-models",
+            "export": "@sdkwork/cloudrouter-service"
+          }
+        ],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/cloudrouter-mp-core",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-core",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "typescript"
+        ],
+        "source": "apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-core/specs/component.spec.json",
+        "layerRole": "frontend-core",
+        "publicExports": [
+          ".",
+          "./sdk",
+          "./session"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-app-sdk-client",
+            "export": "."
+          },
+          {
+            "name": "cloudrouter-console-ports",
+            "export": "./sdk"
+          },
+          {
+            "name": "cloudrouter-console-session",
+            "export": "./session"
+          }
+        ],
+        "requiredPorts": [
+          {
+            "name": "cloudrouter-console-ports",
+            "export": "@sdkwork/cloudrouter-sdk-ports"
+          },
+          {
+            "name": "cloudrouter-client-contracts",
+            "export": "@sdkwork/cloudrouter-contracts"
+          }
+        ],
+        "sdkDependencies": [
+          {
+            "workspace": "cloudrouter-app-sdk",
+            "surface": "app-api",
+            "credentialMode": "authenticated-app-api"
+          }
+        ],
+        "routeManifest": null,
+        "runtimeEntrypoints": [
+          "package.json#scripts.typecheck"
+        ],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/cloudrouter-mp-i18n",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "typescript"
+        ],
+        "source": "apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-i18n/specs/component.spec.json",
+        "layerRole": "contract",
+        "publicExports": [
+          "src/index.ts"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-console-messages",
+            "export": "src/index.ts"
+          }
+        ],
+        "requiredPorts": [],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "@sdkwork/cloudrouter-mp-shell",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-shell",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "typescript"
+        ],
+        "source": "apps/sdkwork-cloudrouter-mini-program/packages/sdkwork-cloudrouter-mp-shell/specs/component.spec.json",
+        "layerRole": "frontend-shell",
+        "publicExports": [
+          "src/index.ts"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-mp-navigation",
+            "export": "src/index.ts"
+          }
+        ],
+        "requiredPorts": [],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
+      {
+        "name": "sdkwork-cloudrouter-mini-program",
+        "type": "mini-program-app-root",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-mini-program",
+        "domain": "platform",
+        "capability": "router",
+        "surface": "console",
+        "languages": [
+          "typescript",
+          "javascript"
+        ],
+        "source": "apps/sdkwork-cloudrouter-mini-program/specs/component.spec.json",
+        "layerRole": "runtime-composition",
+        "publicExports": [
+          "src/app.js"
+        ],
+        "providedPorts": [
+          {
+            "name": "cloudrouter-mp-app-surface",
+            "export": "src/app.js"
+          }
+        ],
+        "requiredPorts": [],
+        "sdkDependencies": [
+          {
+            "workspace": "cloudrouter-app-sdk"
+          }
+        ],
+        "routeManifest": null,
+        "runtimeEntrypoints": [],
+        "dependencyApiSurfaces": []
+      },
       {
         "name": "@sdkwork/cloudrouter-pc-admin-analytics",
         "type": "node-package",
@@ -1282,6 +2699,35 @@
         "dependencyApiSurfaces": []
       },
       {
+        "name": "@sdkwork/cloudrouter-pc-console-memory",
+        "type": "node-package",
+        "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-memory",
+        "domain": "intelligence",
+        "capability": "memory",
+        "surface": "console",
+        "languages": [
+          "typescript"
+        ],
+        "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-memory/specs/component.spec.json",
+        "layerRole": "frontend-feature",
+        "publicExports": [
+          "."
+        ],
+        "providedPorts": [
+          "cloudrouter.console.memory"
+        ],
+        "requiredPorts": [
+          "cloudrouter.app-sdk.memory"
+        ],
+        "sdkDependencies": [],
+        "routeManifest": null,
+        "runtimeEntrypoints": [
+          "package.json#scripts.typecheck",
+          "package.json#scripts.test"
+        ],
+        "dependencyApiSurfaces": []
+      },
+      {
         "name": "@sdkwork/cloudrouter-pc-console-settings",
         "type": "node-package",
         "root": "sdkwork-cloudrouter/apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-settings",
@@ -1735,28 +3181,6 @@
         "languages": [
           "rust"
         ],
-        "source": "crates/provider-adapters/alicloud/specs/component.spec.json",
-        "layerRole": null,
-        "publicExports": [],
-        "providedPorts": [],
-        "requiredPorts": [],
-        "sdkDependencies": [],
-        "routeManifest": null,
-        "runtimeEntrypoints": [
-          "Cargo.toml"
-        ],
-        "dependencyApiSurfaces": []
-      },
-      {
-        "name": "sdkwork-provider-adapter-alicloud",
-        "type": "rust-crate",
-        "root": "sdkwork-cloudrouter/crates/provider-adapters/alicloud",
-        "domain": "platform",
-        "capability": "router",
-        "surface": null,
-        "languages": [
-          "rust"
-        ],
         "source": "crates/provider-adapters/sdkwork-provider-adapter-alicloud/specs/component.spec.json",
         "layerRole": null,
         "publicExports": [],
@@ -1780,28 +3204,6 @@
           "rust"
         ],
         "source": "crates/provider-adapters/sdkwork-provider-adapter-tencent-cloud/specs/component.spec.json",
-        "layerRole": null,
-        "publicExports": [],
-        "providedPorts": [],
-        "requiredPorts": [],
-        "sdkDependencies": [],
-        "routeManifest": null,
-        "runtimeEntrypoints": [
-          "Cargo.toml"
-        ],
-        "dependencyApiSurfaces": []
-      },
-      {
-        "name": "sdkwork-provider-adapter-tencent-cloud",
-        "type": "rust-crate",
-        "root": "sdkwork-cloudrouter/crates/provider-adapters/tencent-cloud",
-        "domain": "platform",
-        "capability": "router",
-        "surface": null,
-        "languages": [
-          "rust"
-        ],
-        "source": "crates/provider-adapters/tencent-cloud/specs/component.spec.json",
         "layerRole": null,
         "publicExports": [],
         "providedPorts": [],
@@ -3377,28 +4779,6 @@
         "dependencyApiSurfaces": []
       },
       {
-        "name": "sdkwork-cloudrouter-provider-adapter",
-        "type": "rust-crate",
-        "root": "sdkwork-cloudrouter/services/sdkwork-cloudrouter-provider-adapter",
-        "domain": "platform",
-        "capability": "router",
-        "surface": null,
-        "languages": [
-          "rust"
-        ],
-        "source": "services/sdkwork-cloudrouter-provider-adapter/specs/component.spec.json",
-        "layerRole": null,
-        "publicExports": [],
-        "providedPorts": [],
-        "requiredPorts": [],
-        "sdkDependencies": [],
-        "routeManifest": null,
-        "runtimeEntrypoints": [
-          "Cargo.toml"
-        ],
-        "dependencyApiSurfaces": []
-      },
-      {
         "name": "sdkwork-cloudrouter-router-service",
         "type": "rust-crate",
         "root": "sdkwork-cloudrouter/services/sdkwork-cloudrouter-router-service",
@@ -3522,6 +4902,125 @@
     ],
     "frontend": {
       "packages": [
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-h5",
+          "architecture": "h5",
+          "directoryName": "sdkwork-cloudrouter-h5-commons",
+          "name": "@sdkwork/cloudrouter-h5-commons",
+          "role": "commons"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-h5",
+          "architecture": "h5",
+          "directoryName": "sdkwork-cloudrouter-h5-console-api-keys",
+          "name": "@sdkwork/cloudrouter-h5-console-api-keys",
+          "role": "capability"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-h5",
+          "architecture": "h5",
+          "directoryName": "sdkwork-cloudrouter-h5-console-catalog",
+          "name": "@sdkwork/cloudrouter-h5-console-catalog",
+          "role": "capability"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-h5",
+          "architecture": "h5",
+          "directoryName": "sdkwork-cloudrouter-h5-console-dashboard",
+          "name": "@sdkwork/cloudrouter-h5-console-dashboard",
+          "role": "capability"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-h5",
+          "architecture": "h5",
+          "directoryName": "sdkwork-cloudrouter-h5-console-usage",
+          "name": "@sdkwork/cloudrouter-h5-console-usage",
+          "role": "capability"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-h5",
+          "architecture": "h5",
+          "directoryName": "sdkwork-cloudrouter-h5-core",
+          "name": "@sdkwork/cloudrouter-h5-core",
+          "role": "core"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-h5",
+          "architecture": "h5",
+          "directoryName": "sdkwork-cloudrouter-h5-i18n",
+          "name": "@sdkwork/cloudrouter-h5-i18n",
+          "role": "capability"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-h5",
+          "architecture": "h5",
+          "directoryName": "sdkwork-cloudrouter-h5-shell",
+          "name": "@sdkwork/cloudrouter-h5-shell",
+          "role": "shell"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-harmony-mobile",
+          "architecture": "harmony-mobile",
+          "directoryName": "sdkwork-cloudrouter-harmony-mobile-core",
+          "name": "@sdkwork/sdkwork-cloudrouter-harmony-mobile-core",
+          "role": "core"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-mini-program",
+          "architecture": "mp",
+          "directoryName": "sdkwork-cloudrouter-mp-commons",
+          "name": "@sdkwork/cloudrouter-mp-commons",
+          "role": "commons"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-mini-program",
+          "architecture": "mp",
+          "directoryName": "sdkwork-cloudrouter-mp-console-api-keys",
+          "name": "@sdkwork/cloudrouter-mp-console-api-keys",
+          "role": "capability"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-mini-program",
+          "architecture": "mp",
+          "directoryName": "sdkwork-cloudrouter-mp-console-catalog",
+          "name": "@sdkwork/cloudrouter-mp-console-catalog",
+          "role": "capability"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-mini-program",
+          "architecture": "mp",
+          "directoryName": "sdkwork-cloudrouter-mp-console-dashboard",
+          "name": "@sdkwork/cloudrouter-mp-console-dashboard",
+          "role": "capability"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-mini-program",
+          "architecture": "mp",
+          "directoryName": "sdkwork-cloudrouter-mp-console-usage",
+          "name": "@sdkwork/cloudrouter-mp-console-usage",
+          "role": "capability"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-mini-program",
+          "architecture": "mp",
+          "directoryName": "sdkwork-cloudrouter-mp-core",
+          "name": "@sdkwork/cloudrouter-mp-core",
+          "role": "core"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-mini-program",
+          "architecture": "mp",
+          "directoryName": "sdkwork-cloudrouter-mp-i18n",
+          "name": "@sdkwork/cloudrouter-mp-i18n",
+          "role": "capability"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-mini-program",
+          "architecture": "mp",
+          "directoryName": "sdkwork-cloudrouter-mp-shell",
+          "name": "@sdkwork/cloudrouter-mp-shell",
+          "role": "shell"
+        },
         {
           "appRoot": "apps/sdkwork-cloudrouter-pc",
           "architecture": "pc",
@@ -3700,6 +5199,13 @@
         {
           "appRoot": "apps/sdkwork-cloudrouter-pc",
           "architecture": "pc",
+          "directoryName": "sdkwork-cloudrouter-pc-console-memory",
+          "name": "@sdkwork/cloudrouter-pc-console-memory",
+          "role": "capability"
+        },
+        {
+          "appRoot": "apps/sdkwork-cloudrouter-pc",
+          "architecture": "pc",
           "directoryName": "sdkwork-cloudrouter-pc-console-messages",
           "name": "@sdkwork/cloudrouter-pc-console-messages",
           "role": "capability"
@@ -3815,19 +5321,6 @@
       "crates": [
         {
           "packageName": "sdkwork-provider-adapter-alicloud",
-          "manifest": "crates/provider-adapters/alicloud/Cargo.toml",
-          "dependencies": [
-            "sdkwork-cloudrouter-provider-adapter-contract",
-            "sdkwork-cloudrouter-provider-adapter",
-            "hex",
-            "hmac",
-            "hyper",
-            "serde-json",
-            "sha2"
-          ]
-        },
-        {
-          "packageName": "sdkwork-provider-adapter-alicloud",
           "manifest": "crates/provider-adapters/sdkwork-provider-adapter-alicloud/Cargo.toml",
           "dependencies": [
             "sdkwork-cloudrouter-provider-adapter-contract",
@@ -3842,16 +5335,6 @@
         {
           "packageName": "sdkwork-provider-adapter-tencent-cloud",
           "manifest": "crates/provider-adapters/sdkwork-provider-adapter-tencent-cloud/Cargo.toml",
-          "dependencies": [
-            "sdkwork-cloudrouter-provider-adapter-contract",
-            "sdkwork-cloudrouter-provider-adapter",
-            "serde-json",
-            "tokio"
-          ]
-        },
-        {
-          "packageName": "sdkwork-provider-adapter-tencent-cloud",
-          "manifest": "crates/provider-adapters/tencent-cloud/Cargo.toml",
           "dependencies": [
             "sdkwork-cloudrouter-provider-adapter-contract",
             "sdkwork-cloudrouter-provider-adapter",
@@ -3912,6 +5395,7 @@
             "sdkwork-iam-web-adapter",
             "sdkwork-web-bootstrap",
             "sdkwork-web-core",
+            "sdkwork-utils-rust",
             "serde-json",
             "tokio",
             "tower",
@@ -4284,7 +5768,6 @@
             "sdkwork-partner-database-host",
             "sdkwork-merchandise-database-host",
             "sdkwork-shop-database-host",
-            "sdkwork-catalog-database-host",
             "sdkwork-inventory-database-host",
             "sdkwork-membership-database-host",
             "sdkwork-api-order-assembly",
@@ -4440,74 +5923,6 @@
           ]
         },
         {
-          "packageName": "cc-switch",
-          "manifest": "external/cc-switch/src-tauri/Cargo.toml",
-          "dependencies": [
-            "tauri-build",
-            "serde-json",
-            "serde",
-            "log",
-            "chrono",
-            "tauri",
-            "tauri-plugin-log",
-            "tauri-plugin-opener",
-            "tauri-plugin-process",
-            "tauri-plugin-updater",
-            "tauri-plugin-dialog",
-            "tauri-plugin-store",
-            "tauri-plugin-deep-link",
-            "tauri-plugin-window-state",
-            "dirs",
-            "toml",
-            "toml-edit",
-            "reqwest",
-            "arboard",
-            "flate2",
-            "brotli",
-            "zstd",
-            "tokio",
-            "futures",
-            "async-stream",
-            "bytes",
-            "axum",
-            "tower",
-            "tower-http",
-            "hyper",
-            "hyper-util",
-            "hyper-rustls",
-            "http",
-            "http-body",
-            "http-body-util",
-            "httparse",
-            "tokio-rustls",
-            "rustls",
-            "webpki-roots",
-            "rustls-native-certs",
-            "regex",
-            "rquickjs",
-            "thiserror",
-            "anyhow",
-            "zip",
-            "serde-yaml",
-            "tempfile",
-            "url",
-            "auto-launch",
-            "once-cell",
-            "base64",
-            "rusqlite",
-            "indexmap",
-            "rust-decimal",
-            "uuid",
-            "sha2",
-            "hmac",
-            "json5",
-            "json-five",
-            "sys-locale",
-            "serial-test",
-            "tempfile"
-          ]
-        },
-        {
           "packageName": "cloudrouter-app-sdk",
           "manifest": "sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-rust/generated/server-openapi/Cargo.toml",
           "dependencies": [
@@ -4589,7 +6004,6 @@
             "sdkwork-membership-database-host",
             "sdkwork-merchandise-database-host",
             "sdkwork-shop-database-host",
-            "sdkwork-catalog-database-host",
             "sdkwork-inventory-database-host",
             "sdkwork-models-database-host",
             "sdkwork-partner-database-host",
@@ -4623,23 +6037,6 @@
           ]
         },
         {
-          "packageName": "cloud-provider-adapter",
-          "manifest": "services/sdkwork-cloudrouter-provider-adapter/Cargo.toml",
-          "dependencies": [
-            "anyhow",
-            "axum",
-            "serde-json",
-            "sdkwork-cloudrouter-config",
-            "sdkwork-cloudrouter-provider-adapter",
-            "sdkwork-cloudrouter-provider-adapter-http",
-            "sdkwork-provider-adapter-alicloud",
-            "sdkwork-provider-adapter-tencent-cloud",
-            "tokio",
-            "sdkwork-cloudrouter-provider-adapter-contract",
-            "tower"
-          ]
-        },
-        {
           "packageName": "sdkwork-cloudrouter-router-service",
           "manifest": "services/sdkwork-cloudrouter-router-service/Cargo.toml",
           "dependencies": [
@@ -4655,6 +6052,7 @@
             "getrandom",
             "hmac",
             "hex",
+            "http-body",
             "http-body-util",
             "hyper",
             "hyper-rustls",
@@ -4752,13 +6150,13 @@
           "source": "sdks/_route-manifests/backend-api/sdkwork-routes-cloudrouter-backend-api.route-manifest.json",
           "packageName": "sdkwork-routes-cloudrouter-backend-api",
           "surface": "backend-api",
-          "routeCount": 120
+          "routeCount": 121
         },
         {
           "source": "sdks/_route-manifests/open-api/sdkwork-routes-cloudrouter-open-api.route-manifest.json",
           "packageName": "sdkwork-routes-cloudrouter-open-api",
           "surface": "open-api",
-          "routeCount": 162
+          "routeCount": 167
         }
       ]
     },

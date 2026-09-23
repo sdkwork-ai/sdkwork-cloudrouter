@@ -45,6 +45,10 @@ const DashboardView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-da
 const UsageView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-usage'), 'UsageView');
 const GatewayView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-gateway'), 'GatewayView');
 const ApiKeysView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-api-keys'), 'ApiKeysView');
+// Memory capability: the console entry is a thin adapter that embeds the
+// sdkwork-memory console block. Route packages must stay lazy-loaded (portal
+// lazy-route rule), so the Memory console chunk loads with the route.
+const MemoryView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-memory'), 'MemoryView');
 
 // The api-keys service layer resolves clients through the injectable seam
 // (embeddable hosts construct their own); the console binds the shared
@@ -185,6 +189,8 @@ export default function App() {
               <Route path="usage" element={<UsageView />} />
               <Route path="gateway" element={<GatewayView />} />
               <Route path="api-keys" element={<ApiKeysView />} />
+              {/* Memory console: module sub-routes stay deep-linkable. */}
+              <Route path="memory/*" element={<MemoryView />} />
               <Route path="iam/oauth/official-accounts/:resourceAccountId/custom-menus" element={<CloudRouterConsoleIamOauthMenuRoute />} />
               <Route path="account" element={<AccountView />} />
               {CloudRouterConsoleBusinessHostRoutes()}

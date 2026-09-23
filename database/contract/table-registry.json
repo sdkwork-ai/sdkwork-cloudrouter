@@ -291,38 +291,6 @@
       "system_of_record": true
     },
     {
-      "table_name": "commerce_product_category_attribute",
-      "owner": "cloud-router-platform",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "product_relation",
-      "system_of_record": true
-    },
-    {
-      "table_name": "commerce_product_media",
-      "owner": "cloud-router-platform",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "product_relation",
-      "system_of_record": true
-    },
-    {
-      "table_name": "commerce_product_sku_attribute",
-      "owner": "cloud-router-platform",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "product_relation",
-      "system_of_record": true
-    },
-    {
-      "table_name": "commerce_product_spu_category",
-      "owner": "cloud-router-platform",
-      "compliance_level": "L2",
-      "lifecycle_status": "active",
-      "profile": "product_relation",
-      "system_of_record": true
-    },
-    {
       "table_name": "iam_user_preference",
       "owner": "router-service",
       "compliance_level": "L2",

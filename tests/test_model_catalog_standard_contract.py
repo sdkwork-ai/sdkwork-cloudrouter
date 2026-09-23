@@ -1097,38 +1097,6 @@ class ModelCatalogStandardContractTest(unittest.TestCase):
                     "typed target columns must cast parameters explicitly.",
                 )
 
-    def test_postgres_commerce_product_category_writes_integer_primary_flag(self) -> None:
-        product_sql_dir = (
-            ROOT
-            / "services"
-            / "sdkwork-cloudrouter-router-service"
-            / "src"
-            / "infrastructure"
-            / "sql"
-        )
-        admin_catalog_source = read_text(
-            product_sql_dir / "postgres" / "admin_catalog_store.rs"
-        )
-        admin_marketing_source = read_text(
-            product_sql_dir / "postgres" / "admin_marketing_store.rs"
-        )
-
-        self.assertIn(
-            "'commerce-recharge', 1, 0, 'active'",
-            admin_marketing_source,
-            "PostgreSQL recharge product writes must use the integer primary_flag contract.",
-        )
-        self.assertNotIn(
-            "'commerce-recharge', TRUE, 0, 'active'",
-            admin_marketing_source,
-        )
-        self.assertIn(
-            ".bind(if index == 0 { 1 } else { 0 })",
-            admin_catalog_source,
-            "PostgreSQL product category writes must bind integer primary_flag values.",
-        )
-        self.assertNotIn(".bind(index == 0)", admin_catalog_source)
-
     def test_studio_catalog_seed_tables_index_tenant_scoped_uuid(self) -> None:
         studio_registry_path = ROOT / "docs" / "schema-registry" / "tables" / "020-studio.yaml"
         if not studio_registry_path.is_file():

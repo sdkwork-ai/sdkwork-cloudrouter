@@ -51,6 +51,12 @@ pub async fn merge_federated_commerce_app_routers(
 /// Cargo dependency and add one `.register(...)` line below. The framework
 /// handles init, migration, and seeding automatically based on each module's
 /// own `database.manifest.json` and env overrides.
+///
+/// A capability that owns no tables is **not** registered here. `sdkwork-catalog` is that case: it
+/// is an API-only dependency surface whose routes read the merchandise-owned `commerce_product*`
+/// tables, so its app root deliberately ships no `database/` assets. Registering it would demand a
+/// module that does not exist, and `sdkwork-database-lifecycle` already names the correct shape
+/// (`DatabaseModuleDiscoveryReport::skipped_without_database_assets`).
 async fn bootstrap_federated_databases(pool: &DatabasePool) -> Result<(), String> {
     let payment_module = sdkwork_payment_database_host::database_module()
         .map_err(|e| format!("load payment database module failed: {e}"))?;
@@ -66,8 +72,6 @@ async fn bootstrap_federated_databases(pool: &DatabasePool) -> Result<(), String
         .map_err(|e| format!("load merchandise database module failed: {e}"))?;
     let shop_module = sdkwork_shop_database_host::database_module()
         .map_err(|e| format!("load shop database module failed: {e}"))?;
-    let catalog_module = sdkwork_catalog_database_host::database_module()
-        .map_err(|e| format!("load catalog database module failed: {e}"))?;
     let inventory_module = sdkwork_inventory_database_host::database_module()
         .map_err(|e| format!("load inventory database module failed: {e}"))?;
     let registry = DatabaseModuleRegistry::builder()
@@ -85,8 +89,6 @@ async fn bootstrap_federated_databases(pool: &DatabasePool) -> Result<(), String
         .map_err(|e| format!("register merchandise database module failed: {e}"))?
         .register(shop_module)
         .map_err(|e| format!("register shop database module failed: {e}"))?
-        .register(catalog_module)
-        .map_err(|e| format!("register catalog database module failed: {e}"))?
         .register(inventory_module)
         .map_err(|e| format!("register inventory database module failed: {e}"))?
         .build();
@@ -172,9 +174,6 @@ mod tests {
         let shop = source
             .find("sdkwork_shop_database_host::database_module()")
             .expect("shop database module registration");
-        let catalog = source
-            .find("sdkwork_catalog_database_host::database_module()")
-            .expect("catalog database module registration");
         let inventory = source
             .find("sdkwork_inventory_database_host::database_module()")
             .expect("inventory database module registration");
@@ -202,20 +201,26 @@ mod tests {
             merchandise < shop,
             "merchandise database must bootstrap before shop"
         );
+        // Catalog owns no database module. Every catalog route reads tables owned by
+        // `sdkwork-merchandise`, so the catalog app root ships no `database/` assets and the
+        // lifecycle discovery reports it as an `skipped_without_database_assets` API-only
+        // dependency surface. Registering it here would try to load a module that does not exist.
+        //
+        // The needle is assembled at compile time so this assertion cannot satisfy itself: the
+        // contiguous identifier never appears in this file, including inside the assertion.
         assert!(
-            shop < catalog,
-            "shop database must bootstrap before catalog"
+            !source.contains(concat!("sdkwork_", "catalog_database_host")),
+            "catalog is an API-only dependency surface and must not register a database module"
         );
         assert!(
-            catalog < inventory,
-            "catalog database must bootstrap before inventory"
+            shop < inventory,
+            "shop database must bootstrap before inventory"
         );
         assert!(source.contains(".register(payment_module)"));
         assert!(source.contains(".register(order_module)"));
         assert!(source.contains(".register(membership_module)"));
         assert!(source.contains(".register(merchandise_module)"));
         assert!(source.contains(".register(shop_module)"));
-        assert!(source.contains(".register(catalog_module)"));
         assert!(source.contains(".register(inventory_module)"));
         assert!(
             source.contains("sdkwork_api_order_assembly::assemble_app_api_contribution_with_pool(")

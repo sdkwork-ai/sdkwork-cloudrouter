@@ -7,8 +7,7 @@ use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::admin_marketing_recharge::{
     canonical_decimal_string, parse_recharge_settings_model,
     recharge_package_item as build_recharge_package_item, recharge_package_name,
-    recharge_settings_to_item, recharge_sku_specs, RechargePackageRecord, RechargeSettingsModel,
-    RECHARGE_RULE_NO,
+    recharge_settings_to_item, RechargePackageRecord, RechargeSettingsModel, RECHARGE_RULE_NO,
 };
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
 use crate::infrastructure::sql::store_error::redacted_store_error;
@@ -32,8 +31,6 @@ const POINTS_STORAGE_ASSET_TYPE: &str = "points";
 const CASH_STORAGE_ASSET_TYPE: &str = "cash";
 const EXCHANGE_RULE_STATUS_ACTIVE: &str = "active";
 const POINTS_TO_CASH_RULE_NO: &str = "POINTS_TO_CASH";
-const RECHARGE_PRODUCT_GROUP_CNY: &str = "cny";
-const RECHARGE_PRODUCT_GROUP_NON_CNY: &str = "non-cny";
 /// Platform-owned recharge catalog fallback (S6): the recharge package and
 /// exchange-rule catalog is owned by sdkwork-order
 /// (`commerce_recharge_package`/`commerce_exchange_rule`, same commerce pool)
@@ -104,23 +101,6 @@ async fn resolve_exchange_rule_scope(
         PLATFORM_CATALOG_ORGANIZATION_ID,
         true,
     ))
-}
-
-#[derive(Debug, Clone)]
-struct RechargePackageSkuBinding {
-    sku_id: String,
-    currency_code: String,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct RechargeSkuMutation<'a> {
-    requested_at: &'a str,
-    tenant_id: i64,
-    organization_id: i64,
-    product_id: &'a str,
-    price_amount: &'a str,
-    currency_code: &'a str,
-    status: AdminRechargePackageStatus,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -204,7 +184,6 @@ impl AdminMarketingStore for PostgresAdminMarketingStore {
                 command.subject.organization_id,
                 package_sequence,
             );
-            sync_recharge_package_product_for_create(&mut tx, &command, package_sequence).await?;
             insert_audit_log(
                 &mut tx,
                 MarketingAuditContext::new(
@@ -256,7 +235,6 @@ impl AdminMarketingStore for PostgresAdminMarketingStore {
             if !updated {
                 return Err(DomainError::not_found("recharge package was not found"));
             }
-            sync_recharge_package_product_for_update(&mut tx, &command).await?;
             insert_audit_log(
                 &mut tx,
                 MarketingAuditContext::new(
@@ -306,7 +284,6 @@ impl AdminMarketingStore for PostgresAdminMarketingStore {
             })?;
             let deleted = soft_delete_recharge_package(&mut tx, &command).await?;
             if deleted {
-                disable_recharge_product_and_sku_for_amount(&mut tx, &command).await?;
                 insert_audit_log(
                     &mut tx,
                     MarketingAuditContext::new(
@@ -901,63 +878,6 @@ async fn soft_delete_recharge_package(
     Ok(result.rows_affected() > 0)
 }
 
-async fn load_recharge_package_sku_binding(
-    tx: &mut Transaction<'_, Postgres>,
-    package_id: &str,
-    tenant_id: i64,
-    organization_id: i64,
-) -> DomainResult<Option<RechargePackageSkuBinding>> {
-    let row = sqlx::query(
-        r#"
-        SELECT
-            COALESCE(sku_id, '') AS sku_id,
-            COALESCE(NULLIF(currency_code, ''), 'CNY') AS currency_code
-        FROM commerce_recharge_package
-        WHERE id = $1
-          AND tenant_id = $2::text
-          AND organization_id = $3::text
-        LIMIT 1
-        "#,
-    )
-    .bind(package_id)
-    .bind(tenant_id)
-    .bind(organization_id)
-    .fetch_optional(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to load recharge package sku binding", error))?;
-    Ok(row.map(|row| RechargePackageSkuBinding {
-        sku_id: string_cell(&row, "sku_id"),
-        currency_code: string_cell(&row, "currency_code"),
-    }))
-}
-
-async fn load_recharge_sku_product_id(
-    tx: &mut Transaction<'_, Postgres>,
-    sku_id: &str,
-    tenant_id: i64,
-    organization_id: i64,
-) -> DomainResult<Option<String>> {
-    sqlx::query_scalar(
-        r#"
-        SELECT spu_id
-        FROM commerce_product_sku
-        WHERE id = $1
-          AND tenant_id = $2::text
-          AND (
-                organization_id = $3::text
-                OR organization_id = '0'
-              )
-        LIMIT 1
-        "#,
-    )
-    .bind(sku_id)
-    .bind(tenant_id)
-    .bind(organization_id)
-    .fetch_optional(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to load recharge sku product id", error))
-}
-
 async fn load_recharge_package_by_id(
     tx: &mut Transaction<'_, Postgres>,
     package_id: &str,
@@ -1173,421 +1093,6 @@ async fn load_exchange_rule_by_id(
     .map_err(|error| store_error("failed to load exchange rule", error))?;
 
     row.as_ref().map(exchange_rule_from_row).transpose()
-}
-
-async fn sync_recharge_package_product_for_create(
-    tx: &mut Transaction<'_, Postgres>,
-    command: &CreateAdminRechargePackageCommand,
-    sequence: i64,
-) -> DomainResult<()> {
-    let product_id = insert_recharge_product_row(
-        tx,
-        &command.requested_at,
-        &command.request_id,
-        command.subject.tenant_id,
-        command.subject.organization_id,
-        &command.currency_code,
-    )
-    .await?;
-    insert_recharge_sku_row(
-        tx,
-        sequence,
-        RechargeSkuMutation {
-            requested_at: &command.requested_at,
-            tenant_id: command.subject.tenant_id,
-            organization_id: command.subject.organization_id,
-            product_id: &product_id,
-            price_amount: &command.price_amount,
-            currency_code: &command.currency_code,
-            status: command.status,
-        },
-    )
-    .await?;
-    refresh_recharge_product_status(tx, &product_id, &command.requested_at, &command.request_id)
-        .await
-}
-
-async fn sync_recharge_package_product_for_update(
-    tx: &mut Transaction<'_, Postgres>,
-    command: &UpdateAdminRechargePackageCommand,
-) -> DomainResult<()> {
-    let Some(binding) = load_recharge_package_sku_binding(
-        tx,
-        &command.package_id,
-        command.subject.tenant_id,
-        command.subject.organization_id,
-    )
-    .await?
-    else {
-        return Ok(());
-    };
-    if binding.sku_id.trim().is_empty() {
-        return Err(DomainError::new(
-            "recharge package is missing sku binding for product sync",
-        ));
-    }
-    let previous_product_id = load_recharge_sku_product_id(
-        tx,
-        &binding.sku_id,
-        command.subject.tenant_id,
-        command.subject.organization_id,
-    )
-    .await?;
-    let product_id = insert_recharge_product_row(
-        tx,
-        &command.requested_at,
-        &command.request_id,
-        command.subject.tenant_id,
-        command.subject.organization_id,
-        &command.currency_code,
-    )
-    .await?;
-    let updated = update_recharge_sku_row_by_id(
-        tx,
-        &binding.sku_id,
-        RechargeSkuMutation {
-            requested_at: &command.requested_at,
-            tenant_id: command.subject.tenant_id,
-            organization_id: command.subject.organization_id,
-            product_id: &product_id,
-            price_amount: &command.price_amount,
-            currency_code: &command.currency_code,
-            status: command.status,
-        },
-    )
-    .await?;
-    if !updated {
-        return Err(DomainError::new("recharge package sku was not found"));
-    }
-    refresh_recharge_product_status(tx, &product_id, &command.requested_at, &command.request_id)
-        .await?;
-    if let Some(previous_product_id) = previous_product_id {
-        if previous_product_id != product_id {
-            refresh_recharge_product_status(
-                tx,
-                &previous_product_id,
-                &command.requested_at,
-                &command.request_id,
-            )
-            .await?;
-        }
-    } else {
-        let previous_group_product_id = recharge_product_id(
-            command.subject.tenant_id,
-            command.subject.organization_id,
-            recharge_product_group_key(&binding.currency_code),
-        );
-        if previous_group_product_id != product_id {
-            refresh_recharge_product_status(
-                tx,
-                &previous_group_product_id,
-                &command.requested_at,
-                &command.request_id,
-            )
-            .await?;
-        }
-    }
-    Ok(())
-}
-
-async fn disable_recharge_product_and_sku_for_amount(
-    tx: &mut Transaction<'_, Postgres>,
-    command: &DeleteAdminRechargePackageCommand,
-) -> DomainResult<()> {
-    let Some(binding) = load_recharge_package_sku_binding(
-        tx,
-        &command.package_id,
-        command.subject.tenant_id,
-        command.subject.organization_id,
-    )
-    .await?
-    else {
-        return Ok(());
-    };
-    if binding.sku_id.trim().is_empty() {
-        return Ok(());
-    }
-    let product_id = load_recharge_sku_product_id(
-        tx,
-        &binding.sku_id,
-        command.subject.tenant_id,
-        command.subject.organization_id,
-    )
-    .await?;
-    let updated = update_recharge_sku_status_by_id(
-        tx,
-        &binding.sku_id,
-        command.subject.tenant_id,
-        command.subject.organization_id,
-        &command.requested_at,
-        AdminRechargePackageStatus::Inactive,
-    )
-    .await?;
-    if !updated {
-        return Ok(());
-    }
-    if let Some(product_id) = product_id {
-        refresh_recharge_product_status(
-            tx,
-            &product_id,
-            &command.requested_at,
-            &command.request_id,
-        )
-        .await?;
-    } else {
-        let product_id = recharge_product_id(
-            command.subject.tenant_id,
-            command.subject.organization_id,
-            recharge_product_group_key(&binding.currency_code),
-        );
-        refresh_recharge_product_status(
-            tx,
-            &product_id,
-            &command.requested_at,
-            &command.request_id,
-        )
-        .await?;
-    }
-    Ok(())
-}
-
-async fn insert_recharge_product_row(
-    tx: &mut Transaction<'_, Postgres>,
-    requested_at: &str,
-    request_id: &str,
-    tenant_id: i64,
-    organization_id: i64,
-    currency_code: &str,
-) -> DomainResult<String> {
-    let group_key = recharge_product_group_key(currency_code);
-    let product_id = recharge_product_id(tenant_id, organization_id, group_key);
-    sqlx::query(
-        r#"
-        INSERT INTO commerce_product_spu
-            (id, tenant_id, organization_id, spu_no, title, subtitle, description, product_type, status, visible_surfaces, created_at, updated_at)
-        VALUES
-            ($1, $2::text, $3::text, $4, $5, $6, $7, 'points_recharge', 'active', '["app","console","admin"]', $8::timestamptz, $9::timestamptz)
-        ON CONFLICT (tenant_id, organization_id, spu_no) DO UPDATE SET
-            id = EXCLUDED.id,
-            organization_id = EXCLUDED.organization_id,
-            title = EXCLUDED.title,
-            subtitle = EXCLUDED.subtitle,
-            description = EXCLUDED.description,
-            status = EXCLUDED.status,
-            visible_surfaces = EXCLUDED.visible_surfaces,
-            updated_at = EXCLUDED.updated_at
-        "#,
-    )
-    .bind(&product_id)
-    .bind(tenant_id)
-    .bind(organization_id)
-    .bind(recharge_product_no(group_key))
-    .bind(recharge_product_group_title(group_key))
-    .bind("SDKWork points recharge catalog")
-    .bind(format!("request_id={request_id}"))
-    .bind(requested_at)
-    .bind(requested_at)
-    .execute(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to create recharge product", error))?;
-
-    let spu_category_id = format!("{product_id}:commerce-recharge");
-    sqlx::query(
-        r#"
-        INSERT INTO commerce_product_spu_category
-            (id, tenant_id, organization_id, spu_id, category_id, primary_flag, sort_order, status, created_at, updated_at)
-        VALUES
-            ($1, $2::text, $3::text, $4, 'commerce-recharge', true, 0, 'active', $5::timestamptz, $6::timestamptz)
-        ON CONFLICT (tenant_id, spu_id, category_id) DO UPDATE SET
-            organization_id = EXCLUDED.organization_id,
-            primary_flag = EXCLUDED.primary_flag,
-            sort_order = EXCLUDED.sort_order,
-            status = EXCLUDED.status,
-            updated_at = EXCLUDED.updated_at
-        "#,
-    )
-    .bind(spu_category_id)
-    .bind(tenant_id)
-    .bind(organization_id)
-    .bind(&product_id)
-    .bind(requested_at)
-    .bind(requested_at)
-    .execute(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to link recharge product category", error))?;
-
-    Ok(product_id)
-}
-
-async fn insert_recharge_sku_row(
-    tx: &mut Transaction<'_, Postgres>,
-    sequence: i64,
-    mutation: RechargeSkuMutation<'_>,
-) -> DomainResult<()> {
-    sqlx::query(
-        r#"
-        INSERT INTO commerce_product_sku
-            (id, tenant_id, organization_id, spu_id, sku_no, name, title, price_amount, original_price_amount, currency_code, fulfillment_type, inventory_tracking, status, spec_json, created_at, updated_at)
-        VALUES
-            ($1, $2::text, $3::text, $4, $5, $6, $6, $7, $7, $8, 'points_credit', 'untracked', $9, $10, $11::timestamptz, $11::timestamptz)
-        ON CONFLICT (tenant_id, organization_id, sku_no) DO UPDATE SET
-            spu_id = EXCLUDED.spu_id,
-            name = EXCLUDED.name,
-            title = EXCLUDED.title,
-            price_amount = EXCLUDED.price_amount,
-            original_price_amount = EXCLUDED.original_price_amount,
-            currency_code = EXCLUDED.currency_code,
-            status = EXCLUDED.status,
-            spec_json = EXCLUDED.spec_json,
-            updated_at = EXCLUDED.updated_at
-        "#,
-    )
-    .bind(recharge_sku_id(
-        mutation.tenant_id,
-        mutation.organization_id,
-        sequence,
-    ))
-    .bind(mutation.tenant_id)
-    .bind(mutation.organization_id)
-    .bind(mutation.product_id)
-    .bind(recharge_sku_no(sequence))
-    .bind(recharge_package_name(
-        mutation.price_amount,
-        mutation.currency_code,
-    ))
-    .bind(mutation.price_amount)
-    .bind(mutation.currency_code)
-    .bind(recharge_package_status_label(mutation.status))
-    .bind(recharge_sku_specs(
-        mutation.price_amount,
-        mutation.currency_code,
-    ))
-    .bind(mutation.requested_at)
-    .execute(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to create recharge sku", error))?;
-    Ok(())
-}
-
-async fn update_recharge_sku_row_by_id(
-    tx: &mut Transaction<'_, Postgres>,
-    sku_id: &str,
-    mutation: RechargeSkuMutation<'_>,
-) -> DomainResult<bool> {
-    let result = sqlx::query(
-        r#"
-        UPDATE commerce_product_sku
-        SET spu_id = $1,
-            name = $2,
-            title = $2,
-            price_amount = $3,
-            original_price_amount = $3,
-            currency_code = $4,
-            status = $5,
-            spec_json = $6,
-            updated_at = $7::timestamptz
-        WHERE id = $8
-          AND tenant_id = $9::text
-          AND (
-                organization_id = $10::text
-                OR organization_id = '0'
-              )
-        "#,
-    )
-    .bind(mutation.product_id)
-    .bind(recharge_package_name(
-        mutation.price_amount,
-        mutation.currency_code,
-    ))
-    .bind(mutation.price_amount)
-    .bind(mutation.currency_code)
-    .bind(recharge_package_status_label(mutation.status))
-    .bind(recharge_sku_specs(
-        mutation.price_amount,
-        mutation.currency_code,
-    ))
-    .bind(mutation.requested_at)
-    .bind(sku_id)
-    .bind(mutation.tenant_id)
-    .bind(mutation.organization_id)
-    .execute(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to update recharge sku", error))?;
-    Ok(result.rows_affected() > 0)
-}
-
-async fn update_recharge_sku_status_by_id(
-    tx: &mut Transaction<'_, Postgres>,
-    sku_id: &str,
-    tenant_id: i64,
-    organization_id: i64,
-    requested_at: &str,
-    status: AdminRechargePackageStatus,
-) -> DomainResult<bool> {
-    let result = sqlx::query(
-        r#"
-        UPDATE commerce_product_sku
-        SET status = $1,
-            updated_at = $2::timestamptz
-        WHERE id = $3
-          AND tenant_id = $4::text
-          AND (
-                organization_id = $5::text
-                OR organization_id = '0'
-              )
-        "#,
-    )
-    .bind(recharge_package_status_label(status))
-    .bind(requested_at)
-    .bind(sku_id)
-    .bind(tenant_id)
-    .bind(organization_id)
-    .execute(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to disable recharge sku", error))?;
-    Ok(result.rows_affected() > 0)
-}
-
-async fn refresh_recharge_product_status(
-    tx: &mut Transaction<'_, Postgres>,
-    product_id: &str,
-    requested_at: &str,
-    request_id: &str,
-) -> DomainResult<()> {
-    let active_sku_count: i64 = sqlx::query_scalar(
-        r#"
-        SELECT COUNT(1)
-        FROM commerce_product_sku
-        WHERE spu_id = $1
-          AND status = 'active'
-        "#,
-    )
-    .bind(product_id)
-    .fetch_one(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to count active recharge skus", error))?;
-
-    sqlx::query(
-        r#"
-        UPDATE commerce_product_spu
-        SET description = $1,
-            status = $2,
-            updated_at = $3::timestamptz
-        WHERE id = $4
-        "#,
-    )
-    .bind(format!("request_id={request_id}"))
-    .bind(if active_sku_count > 0 {
-        "active"
-    } else {
-        "inactive"
-    })
-    .bind(requested_at)
-    .bind(product_id)
-    .execute(&mut **tx)
-    .await
-    .map_err(|error| store_error("failed to refresh recharge product status", error))?;
-    Ok(())
 }
 
 async fn upsert_recharge_settings(
@@ -2035,40 +1540,8 @@ fn recharge_package_no(sequence: i64) -> String {
     format!("RECHARGE-PACKAGE-{sequence}")
 }
 
-fn is_cny_currency(code: &str) -> bool {
-    let normalized = code.trim();
-    normalized.is_empty() || normalized.eq_ignore_ascii_case("CNY")
-}
-
-fn recharge_product_group_key(currency_code: &str) -> &'static str {
-    if is_cny_currency(currency_code) {
-        RECHARGE_PRODUCT_GROUP_CNY
-    } else {
-        RECHARGE_PRODUCT_GROUP_NON_CNY
-    }
-}
-
-fn recharge_product_group_title(group_key: &str) -> &'static str {
-    match group_key {
-        RECHARGE_PRODUCT_GROUP_CNY => "Points recharge (CNY)",
-        _ => "Points recharge (Non-CNY)",
-    }
-}
-
-fn recharge_product_id(tenant_id: i64, organization_id: i64, group_key: &str) -> String {
-    format!("recharge-product-{tenant_id}-{organization_id}-{group_key}")
-}
-
-fn recharge_product_no(group_key: &str) -> String {
-    format!("RECHARGE-PRODUCT-{}", group_key.to_ascii_uppercase())
-}
-
 fn recharge_sku_id(tenant_id: i64, organization_id: i64, sequence: i64) -> String {
     format!("recharge-sku-{tenant_id}-{organization_id}-{sequence}")
-}
-
-fn recharge_sku_no(sequence: i64) -> String {
-    format!("RECHARGE-SKU-{sequence}")
 }
 
 fn optional_string_cell(row: &sqlx::postgres::PgRow, column: &str) -> Option<String> {

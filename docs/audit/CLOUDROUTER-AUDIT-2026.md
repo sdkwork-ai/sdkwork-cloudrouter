@@ -64,7 +64,7 @@
 ### 2.2 其它名义/残缺实现（HIGH/MEDIUM）
 
 - **Chat 表面无契约**：`/app/v3/api/chat/*`（conversations/messages/turns）已挂载生产路由（`sdkwork-routes-cloudrouter-app-api/src/routes.rs:169,287,478-487`），但 app-api OpenAPI **0 条 chat 路径**、生成 SDK 无对应方法 → 前端无法通过 SDK 调用、无文档、无验证门覆盖。
-- **挂载未入契约路由集群**（API/SDK 子代理核实）：app `app_invite.rs:93`（/invites/issue）、`app_routing_strategy.rs:81`、`app_settlements.rs:57-61`；backend `admin_announcement.rs:106-110`、`admin_catalog.rs`、`admin_mcp.rs`、`admin_finance.rs`、`admin_marketing.rs`、`admin_user.rs:113-116`（遗留 user/apikey 面）；open `gateway_balance.rs:107`（/v1/user/balance）、`openai_vendors.rs:74`（/v1/vendors）、`payment_aggregate.rs:234-248`（/payments/v3/*）。
+- **挂载未入契约路由集群**（API/SDK 子代理核实）：app `app_invite.rs:93`（/invites/issue）、`app_routing_strategy.rs:81`、`app_settlements.rs:57-61`；backend `admin_announcement.rs:106-110`、`admin_catalog.rs`（**2026-09-23 整面退役，本条目已消解**）、`admin_mcp.rs`、`admin_finance.rs`、`admin_marketing.rs`、`admin_user.rs:113-116`（遗留 user/apikey 面）；open `gateway_balance.rs:107`（/v1/user/balance）、`openai_vendors.rs:74`（/v1/vendors）、`payment_aggregate.rs:234-248`（/payments/v3/*）。
 - **标准扩展 stamp 未同步**：`sync-cloudrouter-api-standard-extensions.mjs --check` 4 文件 drift，openapi 已重生成但未重新 stamp `x-sdkwork-request-context`。
 
 ---
@@ -212,7 +212,7 @@
 - **HIGH-降级**：`RedisConfig::from_env_or_runtime_toml(...).ok().flatten()` 吞 Err + Redis 失败静默回退本地计数/内存流总线 → 多副本下配额按节点放大、去重失效、事件丢失。
 - **HIGH-重试**：legacy relay `openai_compatible_relay.rs:1444-1517` 对 POST 429/5xx 无幂等键重试（双重计费风险）；全量管道路径正确（仅 GET/HEAD/OPTIONS 重试）。
 - **HIGH-溢出**：`admin_ip_rate_limit.rs:270-285` `amount * 86_400` 无 checked_mul（debug panic/release 回绕绕过封顶）。
-- **MEDIUM**：`next_recharge_package_sequence` 用 `SELECT MAX(external_id)+1`（违反项目自身禁 MAX+1 规则，并发重复）；`admin_chain_policy_store.rs:51-52,117-166` DB 错误 `.ok().flatten()` 吞成"无策略"（fail-open）；PATCH 读全量→内存合并→整文档覆盖无事务（并发丢字段，6 处）；`app_chat_store.rs:1361-1366` streaming 完成路径普通减法可把 token 总计驱动为负；`admin_catalog_store.rs` 多写非事务 + `load_category` 只扫前 200 行 → 写入后读 404；`dashboard_overview_read_store.rs:191-233` 7 条独立查询无快照事务。
+- **MEDIUM**：`next_recharge_package_sequence` 用 `SELECT MAX(external_id)+1`（违反项目自身禁 MAX+1 规则，并发重复）；`admin_chain_policy_store.rs:51-52,117-166` DB 错误 `.ok().flatten()` 吞成"无策略"（fail-open）；PATCH 读全量→内存合并→整文档覆盖无事务（并发丢字段，6 处）；`app_chat_store.rs:1361-1366` streaming 完成路径普通减法可把 token 总计驱动为负；`admin_catalog_store.rs` 多写非事务 + `load_category` 只扫前 200 行 → 写入后读 404（**2026-09-23 该面整面退役，本条目已消解**）；`dashboard_overview_read_store.rs:191-233` 7 条独立查询无快照事务。
 - **MEDIUM-错误泄漏（系统性约 20 处）**：handler 拼 `sqlx::Error` 原文进响应（`redacted_store_error` 未全量使用）。
 - **MEDIUM-指标**：`metrics.rs:170-177` `/metrics` 无 token 放行；`health.rs:9-43` readyz 无注册检查返回 200。
 - **MEDIUM-int64**：ports 层约 30 个 i64 字段以 JSON number 序列化（违反 §13.6，浏览器 >2^53 丢精度）。
@@ -258,7 +258,7 @@
 - **官方自审计佐证（`generated/audit/standard-alignment-facts.json`）**：`postgresPairs.complete: false`（0002-0010 等缺 down、down 文件无 CLI 消费者/无 rollback）；`tableConsistency.counts: ddl=53/registry=38/schemaYaml=0, consistent: false`（P0 项 pending）；高流量表未分区（TECH-35 策略已文档化，P0 pending）；**Redis HA `isHa: false`**（replicas=3 + sentinel 声明但 `hasReplicaConfiguration: false`、`runtimeSupportsSentinel: false`、`hasWritablePrimaryDiscovery: false`，P0 pending）——部署级 HA 实际未闭合。
 
 **MEDIUM（子代理 2）**：
-- 迁移 `0015` 缺 down（0019 已声明 forward-fix 非缺陷）；`next_recharge_package_sequence` MAX+1；store 层 LIMIT 未钳制；`admin_catalog_store` 多写非事务；dashboard 7 查询无快照事务；租约分配器运行时 DDL（文档自认 P0）。
+- 迁移 `0015` 缺 down（0019 已声明 forward-fix 非缺陷）；`next_recharge_package_sequence` MAX+1；store 层 LIMIT 未钳制；`admin_catalog_store` 多写非事务（**已于 2026-09-23 随该面整面退役而消失**，见 `commercial-readiness-audit-2026-09-21.md` §3）；dashboard 7 查询无快照事务；租约分配器运行时 DDL（文档自认 P0）。
 
 **LOW（子代理 2）**：若干行解码吞错、LIKE 未转义、mask_ip_target 恒等、自定义 CSS 存储型 XSS 面等（与 §7 后端核心 LOW 交叉）。
 

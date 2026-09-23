@@ -18,5 +18,8 @@ sdkwork-database-sqlx.workspace = true
 sdkwork_models_catalog_service.workspace = true
 sdkwork-cloudrouter-router-service.workspace = true
 
+[dev-dependencies]
+tokio.workspace = true
+
 [lints]
 workspace = true

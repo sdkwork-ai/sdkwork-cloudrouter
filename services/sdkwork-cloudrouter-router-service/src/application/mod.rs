@@ -5,7 +5,6 @@ mod alipay_payment_adapter;
 mod api_key_secret_codec;
 mod api_key_secret_generator;
 mod cache_runtime;
-mod category_seed;
 mod gateway_accounting_retry;
 mod gateway_chain_policy;
 mod gateway_invocation_policy;
@@ -71,10 +70,6 @@ pub use cache_runtime::{
     DEFAULT_SERVICE_CACHE_INSTANCE_NAME, ROUTING_CONFIG_VERSION_CACHE_NAMESPACE,
     ROUTING_DISABLED_UPSTREAM_ACCOUNT_CACHE_NAMESPACE, ROUTING_IDEMPOTENCY_CACHE_NAMESPACE,
     ROUTING_SNAPSHOT_CACHE_NAMESPACE, ROUTING_UPSTREAM_OBJECT_ROUTE_CACHE_NAMESPACE,
-};
-pub use category_seed::{
-    bundle_scope, classification_scope, load_admin_category_seed_bundles,
-    DEFAULT_ADMIN_CATEGORY_SEED_DATASETS,
 };
 pub use gateway_accounting_retry::{
     GatewayAccountingRetryHealth, GatewayAccountingRetryRecorderConfig,

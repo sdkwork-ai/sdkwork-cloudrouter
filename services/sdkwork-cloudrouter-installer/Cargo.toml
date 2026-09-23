@@ -28,7 +28,6 @@ sdkwork-iam-web-adapter.workspace = true
 sdkwork_membership_database_host.workspace = true
 sdkwork_merchandise_database_host.workspace = true
 sdkwork_shop_database_host.workspace = true
-sdkwork_catalog_database_host.workspace = true
 sdkwork_inventory_database_host.workspace = true
 sdkwork-models-database-host.workspace = true
 sdkwork_partner_database_host.workspace = true

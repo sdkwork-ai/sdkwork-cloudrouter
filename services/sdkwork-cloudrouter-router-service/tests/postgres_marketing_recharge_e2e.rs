@@ -91,9 +91,6 @@ async fn admin_recharge_package_crud_writes_scoped_catalog_and_shadows_platform(
     let created = store
         .create_recharge_package(CreateAdminRechargePackageCommand {
             subject,
-            package_uuid: "pkg-uuid-1".to_owned(),
-            product_uuid: "product-uuid-1".to_owned(),
-            sku_uuid: "sku-uuid-1".to_owned(),
             audit_log_uuid: "audit-uuid-1".to_owned(),
             price_amount: "25.00".to_owned(),
             currency_code: "CNY".to_owned(),
@@ -129,8 +126,6 @@ async fn admin_recharge_package_crud_writes_scoped_catalog_and_shadows_platform(
         .update_recharge_package(UpdateAdminRechargePackageCommand {
             subject,
             package_id: created.id.clone(),
-            product_uuid: "product-uuid-2".to_owned(),
-            sku_uuid: "sku-uuid-2".to_owned(),
             audit_log_uuid: "audit-uuid-2".to_owned(),
             price_amount: "30.00".to_owned(),
             currency_code: "CNY".to_owned(),
@@ -344,9 +339,11 @@ impl PostgresTestContext {
 }
 
 async fn create_schema(pool: &PgPool) {
-    // Order baseline (commerce_recharge_package) + the shared merchandise
-    // catalog DDL from the order e2e test migration, plus the shared
-    // exchange-rule and cloudrouter audit tables the admin store writes.
+    // Order baseline (`commerce_recharge_package`) + the order e2e migration,
+    // plus the exchange-rule and cloudrouter audit tables the admin store
+    // writes. The merchandise catalog family (`commerce_product_*`) is *not*
+    // provisioned here: the admin marketing store must not write a sibling
+    // repository's catalog tables, so no fixture of them is required.
     for (_, baseline) in [ORDER_BASELINE, ORDER_E2E_MIGRATION, EXTRA_TABLES]
         .iter()
         .enumerate()
@@ -394,63 +391,6 @@ CREATE TABLE IF NOT EXISTS commerce_exchange_rule (
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (tenant_id, organization_id, source_asset_type, target_asset_type)
-);
-
--- The shared merchandise catalog tables are written by the admin recharge
--- package paths with the full column set; replace the minimal order-e2e
--- variants with the complete shape.
-DROP TABLE IF EXISTS commerce_product_spu_category;
-DROP TABLE IF EXISTS commerce_product_sku;
-DROP TABLE IF EXISTS commerce_product_spu;
-
-CREATE TABLE commerce_product_spu (
-    id TEXT NOT NULL PRIMARY KEY,
-    tenant_id TEXT NOT NULL,
-    organization_id TEXT NOT NULL DEFAULT '0',
-    spu_no TEXT NOT NULL,
-    title TEXT,
-    subtitle TEXT,
-    description TEXT,
-    product_type TEXT NOT NULL DEFAULT 'standard',
-    status TEXT NOT NULL DEFAULT 'active',
-    visible_surfaces TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (tenant_id, organization_id, spu_no)
-);
-
-CREATE TABLE commerce_product_sku (
-    id TEXT NOT NULL PRIMARY KEY,
-    tenant_id TEXT NOT NULL,
-    organization_id TEXT NOT NULL DEFAULT '0',
-    spu_id TEXT NOT NULL,
-    sku_no TEXT NOT NULL,
-    name TEXT,
-    title TEXT,
-    price_amount TEXT,
-    original_price_amount TEXT,
-    currency_code TEXT,
-    fulfillment_type TEXT NOT NULL DEFAULT 'physical',
-    inventory_tracking TEXT NOT NULL DEFAULT 'untracked',
-    status TEXT NOT NULL DEFAULT 'active',
-    spec_json TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (tenant_id, organization_id, sku_no)
-);
-
-CREATE TABLE commerce_product_spu_category (
-    id TEXT NOT NULL PRIMARY KEY,
-    tenant_id TEXT NOT NULL,
-    organization_id TEXT NOT NULL DEFAULT '0',
-    spu_id TEXT NOT NULL,
-    category_id TEXT NOT NULL,
-    primary_flag BOOLEAN NOT NULL DEFAULT false,
-    sort_order INTEGER NOT NULL DEFAULT 0,
-    status TEXT NOT NULL DEFAULT 'active',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (tenant_id, spu_id, category_id)
 );
 "#;
 

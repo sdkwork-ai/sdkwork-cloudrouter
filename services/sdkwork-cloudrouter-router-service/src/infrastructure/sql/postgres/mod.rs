@@ -1,7 +1,6 @@
 mod admin_announcement_store;
 mod admin_api_key_rate_limit_store;
 mod admin_auth_settings_store;
-mod admin_catalog_store;
 mod admin_chain_policy_store;
 mod admin_finance_store;
 mod admin_firewall_rule_store;
@@ -49,7 +48,6 @@ mod usage_settlement_store;
 pub use admin_announcement_store::PostgresAdminAnnouncementStore;
 pub use admin_api_key_rate_limit_store::PostgresAdminApiKeyRateLimitStore;
 pub use admin_auth_settings_store::PostgresAdminAuthSettingsStore;
-pub use admin_catalog_store::PostgresAdminCatalogStore;
 pub use admin_chain_policy_store::PostgresAdminChainPolicyStore;
 pub use admin_finance_store::PostgresAdminFinanceStore;
 pub use admin_firewall_rule_store::PostgresAdminFirewallRuleStore;

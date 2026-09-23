@@ -9295,6 +9295,41 @@ test('verification plan includes portal console routing runtime tests before bro
   ));
 });
 
+test('verification plan includes portal console layout and embedded block tests before broad suites', async () => {
+  const module = await import(
+    pathToFileURL(path.join(workspaceRoot, 'scripts', 'verify-cloud-router-application.mjs')).href
+  );
+  const plan = module.buildVerificationPlan(
+    { skipRustTests: false, skipPythonTests: false, skipSchemaGate: true },
+    {},
+  );
+  const commandLines = plan.map((step) => `${step.command} ${step.args.join(' ')}`);
+  const consoleRoutingRuntimeIndex = plan.findIndex((step) => step.label === 'portal console routing runtime tests');
+  const consoleLayoutRuntimeIndex = plan.findIndex((step) => step.label === 'portal console layout runtime tests');
+  const consoleMemoryIntegrationIndex = plan.findIndex((step) => step.label === 'portal console memory integration tests');
+  const rustTestsIndex = plan.findIndex((step) => step.label === 'rust workspace tests');
+  const pythonTestsIndex = plan.findIndex((step) => step.label === 'python standard tests');
+
+  assert.ok(
+    consoleLayoutRuntimeIndex > consoleRoutingRuntimeIndex,
+    'console layout runtime tests must run after console routing runtime tests',
+  );
+  assert.ok(
+    consoleMemoryIntegrationIndex > consoleLayoutRuntimeIndex,
+    'embedded console block tests must run after console layout runtime tests',
+  );
+  assert.ok(consoleMemoryIntegrationIndex < rustTestsIndex, 'console memory integration tests must run before broad Rust tests');
+  assert.ok(consoleMemoryIntegrationIndex < pythonTestsIndex, 'console memory integration tests must run before broad Python tests');
+  assert.ok(commandLines.includes(
+    'node --experimental-strip-types apps/sdkwork-cloudrouter-pc/console-layout-runtime.test.ts',
+  ));
+  // The plan enumerates entrypoints, so the package spec must be named: no glob
+  // would otherwise reach `packages/**/*.test.tsx`.
+  assert.ok(commandLines.includes(
+    `${module.pnpmCommand()} --filter @sdkwork/cloudrouter-pc-console-memory test`,
+  ));
+});
+
 test('verification plan includes portal admin model runtime tests before broad suites', async () => {
   const module = await import(
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'verify-cloud-router-application.mjs')).href

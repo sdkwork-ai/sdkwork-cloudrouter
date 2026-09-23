@@ -37,7 +37,7 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::installer::{
 use sdkwork_cloudrouter_router_service::infrastructure::sql::pool::connect_standard_database_pool;
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
     PostgresAdminAnnouncementStore, PostgresAdminApiKeyRateLimitStore,
-    PostgresAdminAuthSettingsStore, PostgresAdminCatalogStore, PostgresAdminChainPolicyStore,
+    PostgresAdminAuthSettingsStore, PostgresAdminChainPolicyStore,
     PostgresAdminFinanceStore, PostgresAdminFirewallRuleStore, PostgresAdminIpRateLimitStore,
     PostgresAdminMarketingStore, PostgresAdminModelRateLimitStore,
     PostgresAdminPricingStore, PostgresAdminRecordStore, PostgresAdminReferralStore,
@@ -49,7 +49,7 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
 use sdkwork_cloudrouter_router_service::infrastructure::OsApiKeySecretGenerator;
 use sdkwork_cloudrouter_router_service::ports::{
     AdminAnalyticsReadStore, AdminAnnouncementStore, AdminApiKeyRateLimitStore,
-    AdminAuthSettingsStore, AdminCatalogStore, AdminChainPolicyStore, AdminDashboardReadStore,
+    AdminAuthSettingsStore, AdminChainPolicyStore, AdminDashboardReadStore,
     AdminFinanceStore, AdminFirewallRuleStore, AdminIpRateLimitStore, AdminMarketingStore,
     AdminModelRateLimitStore, AdminMonitorReadStore, AdminPricingStore,
     AdminRecordStore, AdminReferralStore, AdminServiceNodeStore, AdminStorageStore,
@@ -89,7 +89,6 @@ type CredentialCodec = Arc<dyn UpstreamCredentialSecretCodec + Send + Sync>;
 type AdminAnnouncementRuntimeStore = Arc<dyn AdminAnnouncementStore + Send + Sync>;
 type AdminAuthSettingsRuntimeStore = Arc<dyn AdminAuthSettingsStore + Send + Sync>;
 type ApiKeyCommandRuntimeStore = Arc<dyn GatewayApiKeyCommandStore + Send + Sync>;
-type AdminCatalogRuntimeStore = Arc<dyn AdminCatalogStore + Send + Sync>;
 type SiteSettingsRuntimeStore = Arc<dyn SiteSettingsStore + Send + Sync>;
 type RuntimeRegionSettingsRuntimeStore = Arc<dyn RuntimeRegionSettingsStore + Send + Sync>;
 type AdminAiResourceRuntimeStore = Arc<dyn AdminAiResourceStore + Send + Sync>;
@@ -154,7 +153,6 @@ struct AdminRouterRuntime<'a> {
     announcement_store: Option<AdminAnnouncementRuntimeStore>,
     auth_settings_store: Option<AdminAuthSettingsRuntimeStore>,
     api_key_command_store: Option<ApiKeyCommandRuntimeStore>,
-    catalog_store: Option<AdminCatalogRuntimeStore>,
     site_settings_store: Option<SiteSettingsRuntimeStore>,
     runtime_region_settings_store: Option<RuntimeRegionSettingsRuntimeStore>,
     ai_resource_store: Option<AdminAiResourceRuntimeStore>,
@@ -300,7 +298,6 @@ where
         announcement_store,
         auth_settings_store,
         api_key_command_store,
-        catalog_store,
         site_settings_store,
         runtime_region_settings_store,
         ai_resource_store,
@@ -432,15 +429,6 @@ where
             admin_model_rankings_router(),
         ),
     };
-    if let Some(store) = catalog_store {
-        let catalog_product_router =
-            sdkwork_cloudrouter_router_service::api::admin_catalog_router_with_store(store);
-        router = merge_admin_router_with_subject_boundary(
-            router,
-            &admin_subject_boundary_config,
-            catalog_product_router,
-        );
-    }
     if let Some(admin_subject_boundary_config) = admin_subject_boundary_config {
         if let (Some(store), Some(api_key_hasher)) = (api_key_command_store, api_key_hasher.clone())
         {
@@ -699,23 +687,6 @@ fn ai_routing_cache_invalidating_upstream_store(
     }
 }
 
-pub async fn router_with_postgres_product_catalog(
-    pool: PgPool,
-) -> Result<Router, PostgresCatalogLoadError> {
-    let snapshot = PostgresPricingCatalogLoader::new(pool.clone())
-        .load_snapshot()
-        .await?;
-    let catalog_store: AdminCatalogRuntimeStore =
-        Arc::new(PostgresAdminCatalogStore::new(pool.clone()));
-    Ok(router_with_product_catalog_and_runtime(
-        Arc::new(snapshot),
-        AdminRouterRuntime {
-            catalog_store: Some(catalog_store),
-            ..AdminRouterRuntime::default()
-        },
-    ))
-}
-
 pub struct PostgresSharedRuntime {
     pub config: DatabaseConfig,
     pub pool: PgPool,
@@ -803,8 +774,6 @@ pub async fn router_with_postgres_shared_runtime(
             pool.clone(),
             build_api_key_secret_storage_config(&api_key_security_config)?,
         ));
-    let catalog_store: AdminCatalogRuntimeStore =
-        Arc::new(PostgresAdminCatalogStore::new(pool.clone()));
     let site_settings_store: SiteSettingsRuntimeStore =
         Arc::new(PostgresSiteSettingsStore::new(pool.clone()));
     let runtime_region_settings_store: RuntimeRegionSettingsRuntimeStore =
@@ -924,7 +893,6 @@ pub async fn router_with_postgres_shared_runtime(
             announcement_store: Some(announcement_store),
             auth_settings_store: Some(auth_settings_store),
             api_key_command_store: Some(api_key_command_store),
-            catalog_store: Some(catalog_store),
             site_settings_store: Some(site_settings_store),
             runtime_region_settings_store: Some(runtime_region_settings_store),
             ai_resource_store: Some(ai_resource_store),
@@ -1106,8 +1074,6 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
             pool.clone(),
             build_api_key_secret_storage_config(&api_key_security_config)?,
         ));
-    let catalog_store: AdminCatalogRuntimeStore =
-        Arc::new(PostgresAdminCatalogStore::new(pool.clone()));
     let site_settings_store: SiteSettingsRuntimeStore =
         Arc::new(PostgresSiteSettingsStore::new(pool.clone()));
     let runtime_region_settings_store: RuntimeRegionSettingsRuntimeStore =
@@ -1176,7 +1142,6 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
                             announcement_store: Some(announcement_store),
                             auth_settings_store: Some(auth_settings_store),
                     api_key_command_store: Some(api_key_command_store),
-                    catalog_store: Some(catalog_store),
                     site_settings_store: Some(site_settings_store),
                     runtime_region_settings_store: Some(runtime_region_settings_store),
                     ai_resource_store: Some(ai_resource_store),

@@ -107,9 +107,6 @@ pub enum AdminRechargePackageStatus {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CreateAdminRechargePackageCommand {
     pub subject: AdminMarketingSubject,
-    pub package_uuid: String,
-    pub product_uuid: String,
-    pub sku_uuid: String,
     pub audit_log_uuid: String,
     pub price_amount: String,
     pub currency_code: String,
@@ -124,8 +121,6 @@ pub struct CreateAdminRechargePackageCommand {
 pub struct UpdateAdminRechargePackageCommand {
     pub subject: AdminMarketingSubject,
     pub package_id: String,
-    pub product_uuid: String,
-    pub sku_uuid: String,
     pub audit_log_uuid: String,
     pub price_amount: String,
     pub currency_code: String,

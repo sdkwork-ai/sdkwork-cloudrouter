@@ -1,6 +1,6 @@
 > Migrated from `docs/superpowers/plans/2026-06-01-admin-category-initialization-standard.md` on 2026-06-24.
 > Owner: SDKWork maintainers
-> Status: **retired** — portal category admin UI removed (2026-06-30); backend seed APIs may remain for domain apps
+> Status: **retired** — portal category admin UI removed (2026-06-30). The "backend seed APIs may remain for domain apps" caveat was superseded on **2026-09-23**: the whole `/backend/v3/api/catalog/*` admin surface (product, category, sku, attribute, and price-list CRUD plus `category_seeds/initialize`) was retired from this repository, and product catalog authority now belongs to `sdkwork-merchandise`. Kept as an archive only; do not implement.
 
 # Admin Category Initialization Standard Implementation Plan (Archive)
 

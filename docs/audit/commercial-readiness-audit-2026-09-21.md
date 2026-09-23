@@ -147,6 +147,20 @@ fn resolve_legacy_deployment_runtime(..) -> Result<DeploymentRuntime, String> {
 > **本节在实施阶段被重新定级。** 原审计把它记为「P1 分页排序缺唯一键」，那是**误判严重程度**：
 > 深入复核（活库 + 联邦 owner 契约双向取证）显示这不是"翻页不稳定"，而是
 > **接口必然 500**、且**表/列根本不存在**。以下为更正后的记录。
+>
+> **本节在 2026-09-23 再次更新：整面退役，不再修复。** 那 5 张缺失表已由
+> `sdkwork-merchandise@b88a0ef` 的 v2 基线补齐（BIGINT/UUID/TIMESTAMPTZ + FK），
+> 但 cloudrouter 侧那份 TEXT 口径的 `admin_catalog_store.rs` 没有跟进的价值：
+> 该路径前缀本就被 `crates/sdkwork-routes-cloudrouter-backend-api/src/routes.rs`
+> 的 `is_commerce_dependency_contract_path()` 归入「归依赖方 commerce」，
+> `apps/sdkwork-cloudrouter-pc/sdk-composition-standard.test.mjs` 也早已断言
+> `/backend/v3/api/catalog/products`「belongs to an independent owner backend SDK」。
+> 因此处置从「推进 owner 补表后修复本仓实现」改为「cloudrouter 不再本地实现该面」：
+> `api/admin_catalog.rs`、`ports/admin_catalog_store.rs`、
+> `infrastructure/sql/postgres/admin_catalog_store.rs`、`application/category_seed.rs`
+> 及 4 个对应测试文件已删除，跨模块迁移 `0044` / `0045` 一并退役，
+> `specs/database-store-migration.manifest.json` 的 `admin-catalog` capability 摘除。
+> 下文 §3.1–§3.7 保留为当时的取证记录，其中「当前必然失败」的表述已不再成立。
 
 ### 3.1 缺陷清单（活库实测）
 

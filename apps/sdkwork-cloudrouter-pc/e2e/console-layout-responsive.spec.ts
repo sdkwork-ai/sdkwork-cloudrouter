@@ -4,6 +4,15 @@ import path from 'node:path';
 const CONSOLE_PERMISSION_SCOPE = [
   'cloudrouter.console.access',
   'cloudrouter.system.read',
+  // The Memory console block gates each of its modules on the permission its
+  // owning package declares, so the stubbed console-user session grants them and
+  // the route renders its page instead of the denied state.
+  'memory.spaces.read',
+  'memory.records.read',
+  'memory.candidates.read',
+  'memory.retrievals.write',
+  'memory.app.entities.read',
+  'memory.app.policies.write',
 ];
 
 const CONSOLE_ROUTES = [
@@ -11,6 +20,7 @@ const CONSOLE_ROUTES = [
   '/console/usage',
   '/console/gateway',
   '/console/api-keys',
+  '/console/memory',
   '/console/account',
   '/console/wallet',
   '/console/coupons',

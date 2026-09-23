@@ -547,9 +547,6 @@ fn build_create_recharge_package_command(
     let mutation = normalize_recharge_package_mutation(request)?;
     Ok(CreateAdminRechargePackageCommand {
         subject,
-        package_uuid: generate_entity_uuid(&state)?,
-        product_uuid: generate_entity_uuid(&state)?,
-        sku_uuid: generate_entity_uuid(&state)?,
         audit_log_uuid: generate_entity_uuid(&state)?,
         price_amount: mutation.price_amount,
         currency_code: mutation.currency_code,
@@ -572,8 +569,6 @@ fn build_update_recharge_package_command(
     Ok(UpdateAdminRechargePackageCommand {
         subject,
         package_id,
-        product_uuid: generate_entity_uuid(&state)?,
-        sku_uuid: generate_entity_uuid(&state)?,
         audit_log_uuid: generate_entity_uuid(&state)?,
         price_amount: mutation.price_amount,
         currency_code: mutation.currency_code,

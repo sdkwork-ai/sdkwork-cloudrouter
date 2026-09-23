@@ -1318,6 +1318,9 @@ importers:
       '@sdkwork/drive-app-sdk':
         specifier: workspace:*
         version: link:../../../../sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript
+      '@sdkwork/iam-credential-entry':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-credential-entry
       '@sdkwork/sdk-common':
         specifier: workspace:*
         version: link:../../../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript
@@ -2249,6 +2252,138 @@ importers:
       '@sdkwork/utils':
         specifier: ^0.11.0
         version: 0.11.0
+
+  ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-commons:
+    dependencies:
+      '@sdkwork/utils':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-utils/packages/sdkwork-utils-typescript
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.31.0(react@19.2.8)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+      react-router-dom:
+        specifier: ^7.14.0
+        version: 7.18.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+
+  ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-console-core:
+    dependencies:
+      '@sdkwork/memory-app-sdk':
+        specifier: workspace:*
+        version: link:../../../../sdks/sdkwork-memory-app-sdk/sdkwork-memory-app-sdk-typescript
+      '@sdkwork/memory-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-commons
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+
+  ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-console-governance:
+    dependencies:
+      '@sdkwork/memory-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-commons
+      '@sdkwork/memory-pc-console-core':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-console-core
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+
+  ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-console-knowledge:
+    dependencies:
+      '@sdkwork/memory-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-commons
+      '@sdkwork/memory-pc-console-core':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-console-core
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+
+  ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-console-learning:
+    dependencies:
+      '@sdkwork/memory-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-commons
+      '@sdkwork/memory-pc-console-core':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-console-core
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+
+  ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-console-memory:
+    dependencies:
+      '@sdkwork/memory-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-commons
+      '@sdkwork/memory-pc-console-core':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-console-core
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+
+  ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-console-overview:
+    dependencies:
+      '@sdkwork/memory-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-commons
+      '@sdkwork/memory-pc-console-core':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-console-core
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+
+  ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-console-retrieval:
+    dependencies:
+      '@sdkwork/memory-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-commons
+      '@sdkwork/memory-pc-console-core':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-console-core
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+
+  ../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-console-shell:
+    dependencies:
+      '@sdkwork/memory-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-commons
+      '@sdkwork/memory-pc-console-core':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-console-core
+      '@sdkwork/memory-pc-console-governance':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-console-governance
+      '@sdkwork/memory-pc-console-knowledge':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-console-knowledge
+      '@sdkwork/memory-pc-console-learning':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-console-learning
+      '@sdkwork/memory-pc-console-memory':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-console-memory
+      '@sdkwork/memory-pc-console-overview':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-console-overview
+      '@sdkwork/memory-pc-console-retrieval':
+        specifier: workspace:*
+        version: link:../sdkwork-memory-pc-console-retrieval
+      react:
+        specifier: 'catalog:'
+        version: 19.2.8
+      react-router-dom:
+        specifier: ^7.14.0
+        version: 7.18.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
 
   ../sdkwork-memory/sdks/sdkwork-memory-app-sdk/sdkwork-memory-app-sdk-typescript:
     dependencies:
@@ -4178,6 +4313,9 @@ importers:
       '@sdkwork/cloudrouter-pc-console-gateway':
         specifier: workspace:*
         version: link:packages/sdkwork-cloudrouter-pc-console-gateway
+      '@sdkwork/cloudrouter-pc-console-memory':
+        specifier: workspace:*
+        version: link:packages/sdkwork-cloudrouter-pc-console-memory
       '@sdkwork/cloudrouter-pc-console-messages':
         specifier: workspace:*
         version: link:packages/sdkwork-cloudrouter-pc-console-messages
@@ -5069,6 +5207,31 @@ importers:
       '@sdkwork/cloudroutes-pc-commons':
         specifier: workspace:*
         version: link:../sdkwork-cloudroutes-pc-commons
+
+  apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-memory:
+    dependencies:
+      '@sdkwork/cloudroutes-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-cloudroutes-pc-commons
+      '@sdkwork/memory-pc-console-shell':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-memory/apps/sdkwork-memory-pc/packages/sdkwork-memory-pc-console-shell
+    devDependencies:
+      '@testing-library/react':
+        specifier: 'catalog:'
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      jsdom:
+        specifier: 'catalog:'
+        version: 29.1.1
+      typescript:
+        specifier: ~5.8.2
+        version: 5.8.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@25.9.4)(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(tsx@4.23.12)
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-messages:
     dependencies:

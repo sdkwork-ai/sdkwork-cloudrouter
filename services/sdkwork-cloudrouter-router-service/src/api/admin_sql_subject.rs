@@ -57,7 +57,6 @@ impl_admin_port_subject_from_sql_scope!(crate::ports::AdminReferralSubject);
 impl_admin_port_subject_from_sql_scope!(crate::ports::AdminIpRateLimitSubject);
 impl_admin_port_subject_from_sql_scope!(crate::ports::AdminFirewallRuleSubject);
 impl_admin_port_subject_from_sql_scope!(crate::ports::AdminFinanceSubject);
-impl_admin_port_subject_from_sql_scope!(crate::ports::AdminCatalogSubject);
 impl_admin_port_subject_from_sql_scope!(crate::ports::AdminAuthSettingsSubject);
 impl_admin_port_subject_from_sql_scope!(crate::ports::AdminApiKeyRateLimitSubject);
 impl_admin_port_subject_from_sql_scope!(crate::ports::AdminAnnouncementSubject);

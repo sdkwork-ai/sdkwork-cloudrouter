@@ -711,6 +711,24 @@ function buildVerificationPlan(settings, env = process.env) {
     args: ['--experimental-strip-types', 'apps/sdkwork-cloudrouter-pc/console-routing-runtime.test.ts'],
     env,
   });
+  // The console shell route/menu contract: this spec reads `ConsoleLayout.tsx`,
+  // `App.tsx`, and the console page sources as text, so it is the only place a
+  // new console route can be forgotten in either the sidebar or the router.
+  plan.push({
+    label: 'portal console layout runtime tests',
+    command: 'node',
+    args: ['--experimental-strip-types', 'apps/sdkwork-cloudrouter-pc/console-layout-runtime.test.ts'],
+    env,
+  });
+  // Cross-repository console blocks (Memory) are embedded through a host adapter
+  // package, so their integration spec has to be named explicitly here: the plan
+  // enumerates portal test entrypoints and never globs `packages/**/*.test.tsx`.
+  plan.push({
+    label: 'portal console memory integration tests',
+    command: pnpmCommand(),
+    args: ['--filter', '@sdkwork/cloudrouter-pc-console-memory', 'test'],
+    env,
+  });
   plan.push({
     label: 'portal admin model runtime tests',
     command: 'node',
