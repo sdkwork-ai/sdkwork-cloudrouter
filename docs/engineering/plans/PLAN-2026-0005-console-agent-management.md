@@ -110,7 +110,7 @@
 
 | 方案 | 做法 | 代价 | 越权面 | 评价 |
 | --- | --- | --- | --- | --- |
-| **A（推荐）归属自服务动作** | 在 kernel 策略里为顶层 agent 引入归属自服务动作（如 `update_owned` / `delete_owned` / `change_status_owned`）：命中条件 = 持有 `ai.agents.use` **且** 目标记录 `owner_user_id == subject.user_id` **且** 同租户；资源级动作 `update`/`delete` 保持原来的 manage 门槛 | 改 `infrastructure.rs` 策略表 + 新增归属判定注入 + 单测；`agents-app-api` 契约**无需改**（权限码仍写 `ai.agents.use`，与 `project.update` 同款） | 最小：仅"自己的"记录 | ✅ 与既有 `project.*` / `session.*` 自服务一致；`org_admin` 不受影响 |
+| **A（推荐）归属自服务动作** | 在 kernel 策略里为顶层 agent 引入归属自服务动作（如 `update_owned` / `delete_owned`；`change_status_owned` **不纳入**，理由见 §5.4 偏差 ①）：命中条件 = 持有 `ai.agents.use` **且** 目标记录 `owner_user_id == subject.user_id` **且** 同租户；资源级动作 `update`/`delete` 保持原来的 manage 门槛 | 改 `infrastructure.rs` 策略表 + 应用层归属判定 + `*_as` 入口 + 单测；`agents-app-api` 契约**必须改**（`agents.update`/`agents.delete` 的 `x-sdkwork-permission` 由 `ai.agents.manage` 改为 `ai.agents.use`，并跑本仓 SDK 物化器；见 §5.4 偏差 ④ 与「漏步」） | 最小：仅"自己的"记录 | ✅ 与既有 `project.*` / `session.*` 自服务一致；`org_admin` 不受影响 |
 | B 直接给 `app_user` 加 `ai.agents.manage` | 改 `iam.module.manifest.json` 一行 | 一次改动最小 | **大**：同时放开"租户内任意智能体"的编辑/删除/上下架/provider_binding.activate/变更状态，多人共租户下互相篡改 | ❌ 权限爆炸，不推荐 |
 | C 不做 | 控制台对无 manage 用户隐藏编辑/删除 | 0 | 0 | ❌ 与需求冲突，退化成"只读 + 新建" |
 
@@ -241,15 +241,41 @@ export function projectAgentCapabilities(
 
 > 变异验证：把「归属闸」短路（恒 true）⇒ 应恰好红第 3、4 两条。
 
-### 5.4 服务端最小改动（仅方案 A 需要）
+### 5.4 服务端最小改动（仅方案 A 需要）—— 落地记录
 
-| 文件 | 改动 |
-| --- | --- |
-| `crates/sdkwork-intelligence-agents-service/src/infrastructure.rs` | 策略动作表：顶层 agent 增加归属自服务动作；`update/delete/change_status` 的判定顺序 = 先试自服务（`ai.agents.use` + owner 匹配）→ 否则回退 manage |
-| 同文件 `:7321-7345` | 既有单测同步调整，并**新增**「非归属 + use ⇒ Deny」反向断言 |
-| `src/http.rs`（`app_update_agent` / `app_delete_agent` 等 handler） | 取记录 → 比对 `owner_user_id` → 选择动作码；**判定顺序必须与策略表一致**（勿从契约权限名反推） |
-| `agents-app-api.openapi.yaml` | `agents.update` / `agents.delete` 的 `x-sdkwork-permission` 文案改为自服务口径（权限码仍是 `ai.agents.use`，与 `project.update` 同款）；`apis/agents/` 下 changelog 追加一条 |
-| 契约链 | 改 yaml 后必跑：契约校验 → `sdk_runtime_standardizer --openapi-only` → 逐个 SDK `generate-sdk.mjs` → **`pnpm --dir <...-typescript> build`**（少最后一步会 `dist/*.d.ts` 陈旧） |
+> 实施于 2026-09-23，`sdkwork-agents`（工作树基线 `14be8e8`）。下表是**落地并复核过**的真实改动；与初稿的四处偏差另列于后，均已核对原因。
+
+| 文件 | 实际改动 | 验证 |
+| --- | --- | --- |
+| `crates/sdkwork-intelligence-agents-service/src/infrastructure.rs` | `SELF_SERVICE_POLICY_ACTIONS` 增加 `update_owned` / `delete_owned`（**不含** `change_status_owned`，见偏差 ①）；补注释说明 `*_owned` 契约 | 新增 2 条单测；`iam_gated_provider` 过滤集 **23 passed / 0 failed** |
+| `src/application.rs` | 新增 `update_agent_as(command, acting_owner_user_id)` / `delete_agent_as(...)`；原 `update_agent` / `delete_agent` 退化为 `_as(cmd, None)` 薄包装 ⇒ **既有 25 处命令构造点与所有既有测试零改动** | 新增 8 条 `agent_ownership_tests`，**8 passed / 0 failed** |
+| 同文件 | 新增 `acting_owner_matches(Option<u64>, u64)`：**两侧都必须是 >0 的真实用户 id**，`None` 与哨兵 `0` 一律不匹配（对齐 `parse_tenant_id` 对 `0` 的既有防御） | 单测 `acting_owner_matches_requires_a_real_positive_user_id_on_both_sides` |
+| `src/http/context.rs` | 新增 `RequestScope::owner_evidence()`：归属**证据**专用，解析失败/缺失一律返回 `None` 而**不报错**（否则无 principal 与 open-api 调用方会被无理由拒绝） | 由 8 条归属测试的绑定路径覆盖 |
+| `src/http.rs` | `execute_update` / `execute_delete` 改调 `*_as` 并传 `scope.owner_evidence()` | `http` 模块既有测试无新增失败 |
+| `crates/.../specs/openapi/agents-app-api.openapi.yaml` | `agents.update`(:191) / `agents.delete`(:270)：`x-sdkwork-permission` 由 `ai.agents.manage` 改 **`ai.agents.use`**，补 `x-sdkwork-permission-scope: authenticated`，补自服务口径 `description` | `check-permission-composition` **passed** |
+| 契约链（本仓） | 🔴 **初稿漏了一步**：本仓 SDK 族内保存权威契约的**物化副本**，改 yaml 后必须 `node sdks/materialize-agent-v3-openapi-boundaries.mjs`。本次它**精确只改 2 个文件**（`sdks/sdkwork-agents-app-sdk/openapi/sdkwork-agents-app-api.{openapi,sdkgen}.yaml`）。漏跑 ⇒ `check-agent-sdk-workspace` 报 `authority OpenAPI drifted` | `check-agent-sdk-workspace` **passed** |
+
+**两段门（实现与策略表一致，勿从契约权限名反推）**
+
+```
+① 加载记录之前：按「自服务动作」过策略（update_owned / delete_owned ⇒ 需 ai.agents.use）
+   —— 放在加载前，是为了让「无任何 agent 权限的调用方」在 404/403 上分辨不出记录是否存在
+② 仅当归属未命中：再按「未限定动作」过策略（update / delete ⇒ 需 ai.agents.manage）
+   —— manage 蕴含 use（infrastructure.rs:6213-6220），故管理员不会被①挡住
+```
+
+> ⚠️ **运行期门禁只在应用层**：已核实 `sdkwork-routes-agents-http-shared/build.rs` 生成的 `RouteEntry` 只含 `method`/`path`/`tag`/`operation_id`/`auth`，**不携带** `x-sdkwork-permission`；`agents_service_security_policy()` 只管 CORS/跨站。⇒ 契约里的 `x-sdkwork-permission` 是**作者源元数据**（受 `check-permission-composition` 校验、供 SDK 与文档消费），真正拦截的是应用层 `IamGatedPolicyProvider`。因此本项改动是**必要且充分**的。
+
+**与初稿的偏差（初稿写过、实际未照做，逐条说明）**
+
+① `change_status` **不**纳入自服务集合。初稿 §3.2 与 §5.4 列了 `change_status_owned`，但同文档 §1.1 目标 G-8 明确写「提交发布 / 停用 …… **受 manage 权限约束**」，两处自相矛盾。G-8 是更具体的产品意图陈述，且 D3 一期范围（列表 + 创建 + 编辑 + 删除）不需要状态变更 ⇒ **采纳 G-8**，`change_status` 保持 manage-only。
+
+② `infrastructure.rs` 既有单测 **不需要改**。初稿判「必须同步改」，理由是「它断言的正是要被放开的集合」。实际做法是把**未限定**动作留给非归属者、只新增 `*_owned` 变体，因此 `iam_gated_provider_keeps_management_actions_behind_manage_permission`（断言 `update`/`delete`/`change_status` + `ai.agents.use` ⇒ Deny）**仍然正确**，已复核通过；初稿拟新增的那条等价反向断言因此**删除**，避免同义断言两处维护（只给该测试补了一句「近名兄弟动作」说明）。
+
+③ 归属判定落在 **应用层**，不在 `http.rs`。初稿写「handler 取记录 → 比对 → 选动作码」。实际放进 `application.rs`：记录加载本就在该层（`repository` 由它持有），放到 handler 会重复读一次库、并把授权判据切成两处。handler 只负责把「行为人 id」作为证据传下去。
+
+④ 用 `*_as` 新方法而非给命令结构加字段。初稿未指定，但直接给 `UpdateAgentCommand` / `DeleteAgentCommand` / `ChangeAgentStatusCommand` 加「行为人 id」字段会波及 **25 处既有构造点**（含 3 个测试文件）。`_as` 变体把「无归属证据 ⇒ 仍需 manage」设为默认，**语义上正是改动前的行为**，故既有测试无需改动即继续有效。
+
 
 ---
 
@@ -277,10 +303,10 @@ export function projectAgentCapabilities(
 | 我的智能体列表 | `GET /app/v3/api/ai/agents`（**不带 `scope`** ⇒ 归属过滤） | `agents.list` | `ai.agents.read` |
 | 新建 | `POST /app/v3/api/ai/agents` | `agents.create` | `ai.agents.use` |
 | 详情 | `GET /app/v3/api/ai/agents/{agentId}` | `agents.retrieve` | `ai.agents.read` |
-| 编辑 | `PATCH /app/v3/api/ai/agents/{agentId}` | `agents.update` | 见 §3 |
-| 删除（软删） | `DELETE /app/v3/api/ai/agents/{agentId}` | `agents.delete` | 见 §3 |
+| 编辑 | `PATCH /app/v3/api/ai/agents/{agentId}` | `agents.update` | 本人记录：`ai.agents.use`；非本人：`ai.agents.manage`（§5.4 落地） |
+| 删除（软删） | `DELETE /app/v3/api/ai/agents/{agentId}` | `agents.delete` | 本人记录：`ai.agents.use`；非本人：`ai.agents.manage`（§5.4 落地） |
 | 恢复 | `POST /app/v3/api/ai/agents/{agentId}/restore` | — | `ai.agents.manage` |
-| 提交 / 停用 | 状态变更动作 | `change_status` | 见 §3 |
+| 提交 / 停用 | 状态变更动作 | `change_status` | `ai.agents.manage`（**保持** manage-only，见 §5.4 偏差 ①） |
 | 版本列表 / 激活 | `GET /app/v3/api/ai/agents/{agentId}/versions`、`.../versions/{versionId}/activate` | — | `ai.agents.read` / `manage` |
 | 试运行 | `POST /app/v3/api/ai/agents/{agentId}/preview_responses` | — | `ai.agents.use` |
 | 提示词优化 | `POST /app/v3/api/ai/agents/{agentId}/prompt_optimizations` | — | `ai.agents.use` |
@@ -367,6 +393,21 @@ export function projectAgentCapabilities(
 | 门禁变异测试 | 故意破坏一处接线（如抽掉 i18n 键）⇒ 对应门禁/断言**必须变红**；不动则说明没覆盖到 |
 | 门禁基线对照 | 治理套件失败集合与 HEAD 基线**逐项相同**（区分"本轮引入"与"预先存在"） |
 
+### P1 验证结果（2026-09-23，`sdkwork-agents` 工作树基线 `14be8e8`）
+
+| 项 | 结果 |
+| --- | --- |
+| `cargo test -p sdkwork-intelligence-agents-service --lib` | **286 passed / 27 failed**（共 313 条） |
+| 基线对照（`git stash` 暂存我在改的 4 个 Rust 文件后重跑同一命令） | 基线 **276 passed / 27 failed**（共 303 条）⇒ **本轮新增失败 = 0**，失败集合与基线**逐项完全一致** |
+| 新增测试对账 | `infrastructure.rs` +2、`agent_ownership_tests` +8 ⇒ **+10**；313 − 303 = 10 ✅ 吻合 |
+| 失败根因（与本次改动无关） | 全部集中在 `provider_session_sync` / `runtime_facade_bridge` / `http::tests`（模型选择），panic 文案为 `codex provider is not enabled in this build (enable the codex-provider feature to integrate it)` 与 `engine default model` ⇒ **构建特性未启用的环境性失败** |
+| 抖动判定 | `tool_calling::tests::external_executor_invokes_bound_server_over_jsonrpc` 在**基线态**连跑 3 次 = 失败/失败/通过 ⇒ **抖动**，非本轮引入 |
+| 契约门禁 | `check-permission-composition` / `check-api-operation-patterns` / `check-api-response-envelope` / `check-agent-sdk-workspace` / `scripts/check-agent-call-contract.mjs` **全 passed** |
+| `tests/agent_business_service_contracts` | 修复既有编译错误后 **21 passed / 0 failed** |
+| 暂存/恢复完整性 | `git stash pop` 后 4 个文件 SHA256 与暂存前**逐字节一致** |
+
+> 🔴 **顺带修掉的既有缺陷（非本方案引入）**：`crates/.../tests/agent_business_service_contracts.rs` 在 `HEAD` 上**编译不过** —— `CreateTurnCommand` 已含 `system_prompt` / `access_token` 两个字段，而该集成测试夹具只补了 `auth_token` / `wire_protocol`，报 `E0063`。`application/commands.rs` 与该测试文件均**不是本会话的改动**（`git diff` 为空、两个字段在 `HEAD` 已存在）⇒ 这是提交 `14be8e8` 留下的遗留红灯，会让整个 `agent_business_service_contracts` 目标（含 `policy_deny_blocks_management_operations`、`stale_expected_version_is_rejected_for_update`）无法运行。已补 2 个 `None` 字段解锁，属**解锁验证的最小修复**，与本方案功能改动分开记录。
+
 ---
 
 ## 12. 已裁决项（2026-09-23 定稿）
@@ -387,7 +428,7 @@ export function projectAgentCapabilities(
 | 阶段 | 内容 | 产出判据 |
 | --- | --- | --- |
 | **P0** | 裁决 D1–D4 | ✅ 已完成（见 §12），2026-09-23 |
-| **P1（服务端）** | 方案 A：策略动作 + handler 归属判定 + 单测（含反向断言）+ 契约文案 + 契约链五步 | `cargo test` 目标用例全绿；契约校验通过 |
+| **P1（服务端）** | ✅ **已完成（2026-09-23）**：策略动作 + 应用层归属判定 + `*_as` 入口 + 10 条新单测 + 契约文案 + 本仓 SDK 物化复制 | 见 §11「P1 验证结果」 |
 | **P2（能力包）** | 新包骨架 + `runtime.ts` 注入 seam + 列表页 + 创建向导 + 编辑抽屉 + 删除 | 能力包 `typecheck` 通过；归属投影单测 + 变异验证通过 |
 | **P3（宿主接线）** | 六处 + 两处易漏（含 D1 决定的新分组）；`sync-workspace` 通过；应用根链接建立 | `pnpm typecheck` 0 error；`verify-repo` passed |
 | **P4（验收）** | 真实浏览器全链（PC dev 入口 4736）+ 门禁变异 + 基线对照 | 本文件 §11 全表勾选 |
