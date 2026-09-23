@@ -128,6 +128,12 @@ entries:
     status: superseded
     owner: sdkwork-platform
     title: Historical crate responsibility rename plan
+  - id: PLAN-2026-0005
+    path: docs/engineering/plans/PLAN-2026-0005-console-agent-management.md
+    kind: plan
+    status: in-progress
+    owner: sdkwork-platform
+    title: Console agent management functional design and implementation plan
   - id: REVIEW-20260705
     path: docs/engineering/reviews/REVIEW-20260705-commercial-readiness-audit.md
     kind: review
