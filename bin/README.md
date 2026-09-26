@@ -13,7 +13,7 @@ directory only carries identity and delegation.
 | `apps-deploy.sh` | container-only: points operators at the bundle path |
 
 Declared app types: `server`. Default image tag comes from
-`sdkwork.app.config.json` → `release.currentVersion` (0.4.0).
+`sdkwork.app.config.json` → `release.currentVersion` (0.4.1).
 
 ## Container path (every environment)
 

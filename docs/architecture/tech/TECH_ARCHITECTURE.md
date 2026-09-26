@@ -3,7 +3,7 @@
 Status: active  
 Owner: SDKWork maintainers  
 Application: sdkwork-cloudrouter  
-Updated: 2026-07-31
+Updated: 2026-09-27
 Specs: `ARCHITECTURE_SPEC.md`, `ARCHITECTURE_DECISION_SPEC.md`, `API_SPEC.md`, `SDK_SPEC.md`, `DATABASE_SPEC.md`, `SECURITY_SPEC.md`, `DEPLOYMENT_SPEC.md`
 
 ## 1. Architecture Overview
@@ -504,10 +504,13 @@ negative authorization evidence.
 - Request and response bodies, retry batches, query pages, and worker batches
   require explicit bounds. Streaming paths must apply backpressure and terminal
   cleanup rather than buffering complete responses.
-- Outbound payment provider dispatch (Stripe, Alipay, WeChat Pay, PayPal) runs
-  through one shared bounded HTTP client: 10-second connect budget, 60-second
-  total request deadline, and a hard 4 MiB response-body ceiling
-  (`application/payment_provider_http.rs`).
+- Live outbound payment provider dispatch ships for Stripe and PayPal; Alipay
+  and WeChat Pay adapters are fail-closed extension points that reject live
+  assembly until their signers/clients are injected (see
+  `application/payment_provider_runtime_assembler.rs`). Every provider
+  dispatch runs through one shared bounded HTTP client: 10-second connect
+  budget, 60-second total request deadline, and a hard 4 MiB response-body
+  ceiling (`application/payment_provider_http.rs`).
 - Database pools, timeouts, and transaction isolation are explicit. Financial
   and idempotent writes use PostgreSQL transaction and locking semantics.
 

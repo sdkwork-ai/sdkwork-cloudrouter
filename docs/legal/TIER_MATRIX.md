@@ -34,7 +34,8 @@ Legend:
 | `/v1/models` | Included | Included | Included | Included |
 | Provider circuit breaker and failover | Included | Included | Included | Included |
 | Idempotency cache | Included | Included | Included | Included |
-| Streaming SSE passthrough | Included | Included | Included | Included |
+| Streaming SSE (OpenAI-compatible `/v1`) | Included | Included | Included | Included |
+| Provider-native passthrough streaming | Roadmap | Roadmap | Roadmap | Roadmap |
 | Custom provider relay integration | Not available | Add-on | Included | Included |
 
 ## 3. Management Console
