@@ -25,8 +25,16 @@ interface MembershipPlanDrawerFormProps {
   onSubmit: (input: MembershipsAdminPlanMutationInput) => Promise<void>;
 }
 
+// Stable React keys for editable benefit rows (survive middle-row removal).
+let nextBenefitRowUid = 0;
+function makeBenefitRowUid(): string {
+  nextBenefitRowUid += 1;
+  return `benefit-row-${nextBenefitRowUid}`;
+}
+
 type MembershipPlanBenefitFormValue = Omit<MembershipsAdminPlanBenefitInput, 'usageLimit'> & {
   usageLimitText: string;
+  rowUid: string;
 };
 
 // Benefit type vocabulary aligned with the backend CHECK constraint
@@ -118,7 +126,10 @@ export function MembershipPlanDrawerForm({
           <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{t('admin.commerce.memberships.plans.form.benefits', 'Benefits')}</span>
           <button
             type="button"
-            onClick={() => setBenefits((current) => [...current, { name: '', benefitKey: '', type: 'quota', usageLimitText: '' }])}
+            onClick={() => setBenefits((current) => [
+              ...current,
+              { name: '', benefitKey: '', type: 'quota', usageLimitText: '', rowUid: makeBenefitRowUid() },
+            ])}
             className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5"
           >
             <Plus className="h-3.5 w-3.5" />
@@ -129,7 +140,7 @@ export function MembershipPlanDrawerForm({
           {benefits.length === 0 ? (
             <p className="text-sm text-slate-400">{t('admin.commerce.memberships.plans.form.noBenefits', 'No benefits')}</p>
           ) : benefits.map((benefit, index) => (
-            <div key={index} className="grid gap-2 rounded-lg border border-slate-100 p-3 dark:border-white/5">
+            <div key={benefit.rowUid} className="grid gap-2 rounded-lg border border-slate-100 p-3 dark:border-white/5">
               <div className="flex justify-end">
                 <button
                   type="button"
@@ -165,7 +176,7 @@ export function MembershipPlanDrawerForm({
   }
 
   function toMembershipPlanBenefitInput(benefit: MembershipPlanBenefitFormValue): MembershipsAdminPlanBenefitInput {
-    const { usageLimitText, ...input } = benefit;
+    const { usageLimitText, rowUid: _rowUid, ...input } = benefit;
     return {
       ...input,
       usageLimit: parseOptionalNonNegativeIntegerField(
@@ -180,9 +191,11 @@ function toMembershipPlanBenefitFormValue(
   benefit: MembershipsAdminPlanBenefitInput,
 ): MembershipPlanBenefitFormValue {
   const { usageLimit, ...input } = benefit;
+  nextBenefitRowUid += 1;
   return {
     ...input,
     usageLimitText: usageLimit === undefined ? '' : String(usageLimit),
+    rowUid: `benefit-row-${nextBenefitRowUid}`,
   };
 }
 

@@ -652,6 +652,7 @@ describe('price setting model', () => {
       priceMode: 'time_window',
       timeZone: 'Asia/Shanghai',
       weeklyWindows: [{
+        rowUid: 'test-window-1',
         windowCode: 'business-hours',
         daysOfWeek: [5, 1, 1],
         startTime: '09:00',
@@ -688,7 +689,7 @@ function baseGroup(overrides: Partial<PriceSettingRegionForm> = {}): PriceSettin
     removedRuleIds: [],
     priceMode: 'standard',
     timeZone: 'Asia/Shanghai',
-    weeklyWindows: [{ windowCode: 'business-hours', daysOfWeek: [1, 2, 3, 4, 5], startTime: '09:00', endTime: '12:00', endDayOffset: 0 }],
+    weeklyWindows: [{ rowUid: 'test-window-1', windowCode: 'business-hours', daysOfWeek: [1, 2, 3, 4, 5], startTime: '09:00', endTime: '12:00', endDayOffset: 0 }],
     includeDates: '',
     excludeDates: '',
     priority: '100',

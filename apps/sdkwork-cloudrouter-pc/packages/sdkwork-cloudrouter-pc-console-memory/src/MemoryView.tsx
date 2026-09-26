@@ -1,5 +1,6 @@
 import {
   getSdkworkMemoryAppSdkClient,
+  readCloudRouterRuntimeEnv,
   readPortalPermissionScope,
   resolveSdkworkSdkLocale,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
@@ -9,6 +10,7 @@ import {
   memoryConsoleModules,
 } from '@sdkwork/memory-pc-console-shell';
 import { useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import {
@@ -34,6 +36,16 @@ export interface MemoryViewProps {
 export function MemoryView({ className }: MemoryViewProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  // Cloud Router owns no memory app-api surface: the console entry proxies the
+  // federated sdkwork-memory service, which deployments attach through the
+  // dedicated base-URL env key. Without it every request would fall back to
+  // the same-origin app-api prefix and fail, so render an explicit
+  // not-attached state instead of a page of guaranteed errors.
+  const memorySurfaceConfigured = Boolean(
+    readCloudRouterRuntimeEnv('VITE_SDKWORK_MEMORY_APP_API_BASE_URL'),
+  );
 
   // Lazy singleton from the shared runtime boundary: the same instance already
   // used for session auth, locale propagation, and idempotency boundaries.
@@ -50,6 +62,28 @@ export function MemoryView({ className }: MemoryViewProps) {
     },
     [navigate],
   );
+
+  if (!memorySurfaceConfigured) {
+    return (
+      <div
+        className={className}
+        role="status"
+        aria-live="polite"
+      >
+        <div className="flex min-h-[40vh] flex-col items-center justify-center gap-2 px-6 text-center">
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+            {t('console.memory.notAttached.title', 'Memory is not attached to this deployment')}
+          </p>
+          <p className="max-w-md text-xs text-slate-500 dark:text-slate-400">
+            {t(
+              'console.memory.notAttached.hint',
+              'This deployment has no memory service configured (VITE_SDKWORK_MEMORY_APP_API_BASE_URL). Contact the operator to enable it.',
+            )}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <MemoryConsoleEmbed

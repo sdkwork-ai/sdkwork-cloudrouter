@@ -13,6 +13,18 @@ import type {
   CommunityAdminGroupQrInput,
 } from '../communityService';
 
+// Stable React keys for editable rows: rows carry an identity that survives
+// middle-row removal instead of keying by array index.
+let nextQrRowUid = 0;
+function makeQrRowUid(): string {
+  nextQrRowUid += 1;
+  return `qr-row-${nextQrRowUid}`;
+}
+type QrCodeFormRow = CommunityAdminGroupQrInput & { rowUid: string };
+function toQrCodeRow(input: CommunityAdminGroupQrInput): QrCodeFormRow {
+  return { ...input, rowUid: makeQrRowUid() };
+}
+
 interface GroupDrawerFormProps {
   mode: 'create' | 'edit';
   initialValue?: CommunityAdminGroupItem | null;
@@ -35,8 +47,8 @@ export function GroupDrawerForm({ initialValue, onSubmit }: GroupDrawerFormProps
   const [platform, setPlatform] = useState(initialValue?.platform ?? 'wechat');
   const [description, setDescription] = useState(initialValue?.description ?? '');
   const [memberCount, setMemberCount] = useState(initialValue?.memberCount ?? '');
-  const [qrCodes, setQrCodes] = useState<CommunityAdminGroupQrInput[]>(
-    initialValue?.qrCodes ?? [],
+  const [qrCodes, setQrCodes] = useState<QrCodeFormRow[]>(
+    (initialValue?.qrCodes ?? []).map(toQrCodeRow),
   );
   const [error, setError] = useState<string | null>(null);
 
@@ -49,7 +61,9 @@ export function GroupDrawerForm({ initialValue, onSubmit }: GroupDrawerFormProps
         platform,
         description: description.trim() || undefined,
         memberCount: parseOptionalMemberCount(memberCount),
-        qrCodes: qrCodes.filter((entry) => entry.url.trim().length > 0),
+        qrCodes: qrCodes
+          .filter((entry) => entry.url.trim().length > 0)
+          .map(({ rowUid: _rowUid, ...input }) => input),
       });
     } catch (saveError) {
       setError(
@@ -93,7 +107,7 @@ export function GroupDrawerForm({ initialValue, onSubmit }: GroupDrawerFormProps
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-3">
           {qrCodes.map((entry, index) => (
-            <div key={index} className="flex items-start gap-2">
+            <div key={entry.rowUid} className="flex items-start gap-2">
               <div className="flex flex-1 flex-col gap-2">
                 <input
                   value={entry.url}
@@ -128,7 +142,7 @@ export function GroupDrawerForm({ initialValue, onSubmit }: GroupDrawerFormProps
           ))}
           <button
             type="button"
-            onClick={() => setQrCodes([...qrCodes, { url: '' }])}
+            onClick={() => setQrCodes([...qrCodes, toQrCodeRow({ url: '' })])}
             className="inline-flex items-center gap-1 self-start rounded-md border border-dashed border-slate-300 px-3 py-2 text-xs font-medium text-slate-500 hover:border-slate-400 hover:text-slate-700 dark:border-white/20 dark:text-slate-400"
           >
             <Plus className="h-3.5 w-3.5" />

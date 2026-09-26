@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Activity, AlertTriangle, Coins, Database, RefreshCw, Search, Users, Zap } from 'lucide-react';
 import type { TFunction } from 'i18next';
 import {
@@ -92,17 +92,29 @@ export function AnalyticsAdmin() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  // Monotonic request version: a slower earlier fetch must never replace a
+  // newer result, and in-flight responses are discarded after unmount.
+  const loadVersionRef = useRef(0);
   const loadOverview = async () => {
+    const requestId = ++loadVersionRef.current;
     setLoading(true);
     setLoadError(null);
     try {
       const data = await AdminAnalyticsService.fetchOverview({ timeRange, rankingSize: 12 });
+      if (loadVersionRef.current !== requestId) {
+        return;
+      }
       setOverview(data);
     } catch (error) {
+      if (loadVersionRef.current !== requestId) {
+        return;
+      }
       setOverview(createEmptyAnalyticsOverview(timeRange));
       setLoadError(resolveProblemMessage(error, t, t('admin.analytics.errors.loadFallback', 'Analytics data could not be loaded.')));
     } finally {
-      setLoading(false);
+      if (loadVersionRef.current === requestId) {
+        setLoading(false);
+      }
     }
   };
 

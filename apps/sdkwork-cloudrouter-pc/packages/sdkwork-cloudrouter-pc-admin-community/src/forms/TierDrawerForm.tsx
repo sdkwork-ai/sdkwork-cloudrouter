@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { parseDecimalMoney } from '../money';
 import { useTranslation } from 'react-i18next';
 import {
   CommunityFormFrame,
@@ -25,11 +26,11 @@ function parseOptionalNonNegativeInt(value: string): number | undefined {
 }
 
 function parseRequiredMoney(value: string): number {
-  const parsed = Number.parseFloat(value.trim());
-  if (!Number.isFinite(parsed) || parsed < 0) {
-    throw new Error('price must be a non-negative amount');
+  const parsed = parseDecimalMoney(value);
+  if (parsed === undefined) {
+    throw new Error('price must be a non-negative amount with at most two decimal places');
   }
-  return Math.round(parsed * 100) / 100;
+  return parsed;
 }
 
 function splitBenefits(value: string): string[] {

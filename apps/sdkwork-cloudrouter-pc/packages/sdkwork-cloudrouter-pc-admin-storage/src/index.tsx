@@ -213,13 +213,25 @@ function StorageAdminSections({ sectionId }: StorageAdminProps = {}) {
   const knownProviderIdsRef = useRef<readonly string[]>([]);
   const [deletingProvider, setDeletingProvider] = useState<{ id: string; name: string; providerCode: string } | null>(null);
 
+  // 定时器句柄集中登记，卸载时统一清理，避免卸载后 setState。
+  const toastTimersRef = useRef<Set<number>>(new Set());
+  useEffect(() => {
+    const timers = toastTimersRef.current;
+    return () => {
+      timers.forEach((timer) => window.clearTimeout(timer));
+      timers.clear();
+    };
+  }, []);
+
   /** 推送一条 Toast 提示，超时后自动移除（错误比成功展示更久）；最多同时保留 5 条防堆积。 */
   const pushToast = useCallback((kind: ToastKind, text: string) => {
     const id = ++toastIdRef.current;
     setToasts((current) => [...current.slice(-4), { id, kind, text }]);
-    window.setTimeout(() => {
+    const timer = window.setTimeout(() => {
+      toastTimersRef.current.delete(timer);
       setToasts((current) => current.filter((item) => item.id !== id));
     }, kind === 'error' ? TOAST_ERROR_DURATION_MS : TOAST_SUCCESS_DURATION_MS);
+    toastTimersRef.current.add(timer);
   }, []);
 
   const dismissToast = useCallback((id: number) => {

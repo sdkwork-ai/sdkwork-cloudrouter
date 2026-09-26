@@ -98,6 +98,12 @@ export function Rankings() {
   const recordedChunksRef = useRef<Blob[]>([]);
   const targetRef = useRef<HTMLDivElement>(null);
   const captureCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const timelapseStartTimerRef = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (timelapseStartTimerRef.current !== null) {
+      window.clearTimeout(timelapseStartTimerRef.current);
+    }
+  }, []);
 
   const [selectedVendor, setSelectedVendor] = useState<string | null>(null);
 
@@ -415,7 +421,7 @@ export function Rankings() {
       setIsRecording(true);
 
       // Auto-start timelapse from beginning
-      setTimeout(() => {
+      timelapseStartTimerRef.current = window.setTimeout(() => {
         setSelectedWeekIndex(0);
         setIsPlaying(true);
       }, 500);

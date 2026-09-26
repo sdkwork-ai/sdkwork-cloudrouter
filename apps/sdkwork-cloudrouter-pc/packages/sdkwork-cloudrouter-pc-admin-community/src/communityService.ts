@@ -787,10 +787,12 @@ function requiredPositiveInteger(value: number | undefined, fieldName: string): 
 }
 
 function requiredMoneyNumber(value: number | undefined, fieldName: string): number {
+  // Form inputs are decimal-validated by money.ts before they reach this
+  // boundary; no float clamping arithmetic happens on submitted amounts.
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
     throw new Error(`${fieldName} must be a non-negative amount`);
   }
-  return Math.round(value * 100) / 100;
+  return value;
 }
 
 function optionalMoneyNumber(value: number | undefined, fieldName: string): number | undefined {

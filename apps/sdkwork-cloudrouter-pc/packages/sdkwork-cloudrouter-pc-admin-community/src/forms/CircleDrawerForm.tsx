@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { parseDecimalMoney } from '../money';
 import { useTranslation } from 'react-i18next';
 import type { CloudRouterMediaResource } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { CommunityMediaUploadField } from '../components/CommunityMediaUploadField';
@@ -33,11 +34,7 @@ function parseOptionalNonNegativeInt(value: string, fallback: number | undefined
 }
 
 function parseOptionalMoney(value: string): number | undefined {
-  if (value.trim() === '') {
-    return undefined;
-  }
-  const parsed = Number.parseFloat(value.trim());
-  return Number.isFinite(parsed) && parsed >= 0 ? Math.round(parsed * 100) / 100 : undefined;
+  return parseDecimalMoney(value);
 }
 
 function splitTags(value: string): string[] {
