@@ -6442,8 +6442,10 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "sdkwork-sandbox-provider-spi",
+ "sdkwork-utils-rust",
  "thiserror 2.0.20",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -8386,6 +8388,7 @@ name = "sdkwork-sandbox-provider-spi"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "sha2 0.10.9",
  "thiserror 2.0.20",
  "uuid",
  "zeroize",
