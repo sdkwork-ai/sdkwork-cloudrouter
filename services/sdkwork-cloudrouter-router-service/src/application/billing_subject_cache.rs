@@ -88,7 +88,7 @@ impl CachedBillingSubjectResolver {
     pub fn invalidate(&self, tenant_id: i64, user_id: i64) {
         self.cache
             .lock()
-            .expect("billing subject cache poisoned")
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
             .remove(&(tenant_id, user_id));
     }
 
@@ -96,7 +96,10 @@ impl CachedBillingSubjectResolver {
         &self,
         key: (i64, i64),
     ) -> Option<Result<ResolvedBillingSubject, BillingSubjectError>> {
-        let mut cache = self.cache.lock().expect("billing subject cache poisoned");
+        let mut cache = self
+            .cache
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         match cache.get(&key) {
             Some(entry) if entry.expires_at > Instant::now() => Some(entry.value.clone()),
             _ => {
@@ -107,12 +110,29 @@ impl CachedBillingSubjectResolver {
     }
 
     fn store(&self, key: (i64, i64), value: Result<ResolvedBillingSubject, BillingSubjectError>) {
-        let mut cache = self.cache.lock().expect("billing subject cache poisoned");
+        let mut cache = self
+            .cache
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         if cache.len() >= self.max_entries {
             let now = Instant::now();
             cache.retain(|_, entry| entry.expires_at > now);
             if cache.len() >= self.max_entries {
-                cache.clear();
+                // Soft-land a saturated cache: drop an arbitrary slice (HashMap
+                // iteration order is non-deterministic, so this approximates
+                // random eviction) instead of clearing everything. A full
+                // clear() would stampede the authority store with every
+                // tenant's concurrent resolution at once.
+                let evict = (cache.len() / 8).max(1);
+                let mut dropped = 0;
+                cache.retain(|_, _| {
+                    if dropped < evict {
+                        dropped += 1;
+                        false
+                    } else {
+                        true
+                    }
+                });
             }
         }
         cache.insert(

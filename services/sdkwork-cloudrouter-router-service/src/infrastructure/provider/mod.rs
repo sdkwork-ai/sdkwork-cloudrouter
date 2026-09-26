@@ -3,6 +3,7 @@ mod adapter_aware_chat_completion_stream_relay;
 mod adapter_aware_embeddings_relay;
 mod adapter_aware_openai_relay;
 mod adapter_aware_responses_relay;
+mod dispatch_gate;
 mod openai_compatible_relay;
 mod provider_secret_map_resolver;
 mod provider_stream_deadlines;
@@ -12,6 +13,10 @@ pub use adapter_aware_chat_completion_relay::AdapterAwareChatCompletionRelay;
 pub use adapter_aware_chat_completion_stream_relay::AdapterAwareChatCompletionStreamRelay;
 pub use adapter_aware_embeddings_relay::AdapterAwareEmbeddingsRelay;
 pub use adapter_aware_responses_relay::AdapterAwareResponsesRelay;
+pub use dispatch_gate::{
+    PermitHoldingBody, ProviderDispatchGate, ProviderDispatchGateError,
+    DEFAULT_PROVIDER_DISPATCH_MAX_CONCURRENCY, PROVIDER_DISPATCH_MAX_CONCURRENCY_ENV,
+};
 pub use openai_compatible_relay::{
     OpenAiCompatibleChatCompletionRelay, OpenAiCompatibleChatCompletionStreamRelay,
     OpenAiCompatibleEmbeddingsRelay, OpenAiCompatibleResponsesRelay,

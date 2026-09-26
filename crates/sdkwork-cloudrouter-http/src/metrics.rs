@@ -173,7 +173,27 @@ fn metrics_bearer_authorized(request: &Request) -> bool {
         .map(|value| value.trim().to_owned())
         .filter(|value| !value.is_empty())
     else {
-        return true;
+        // Fail closed outside dev/test: an unauthenticated /metrics endpoint
+        // leaks traffic fingerprints, route names, and capacity posture.
+        // Dev/test stay open for local tooling; production-style deployments
+        // must configure SDKWORK_CLOUDROUTER_METRICS_BEARER_TOKEN or opt out
+        // explicitly via SDKWORK_CLOUDROUTER_METRICS_AUTH_DISABLED (e.g.
+        // annotation-based scraping that cannot send bearer headers).
+        if std::env::var("SDKWORK_CLOUDROUTER_METRICS_AUTH_DISABLED")
+            .map(|value| {
+                matches!(
+                    value.trim().to_ascii_lowercase().as_str(),
+                    "1" | "true" | "yes"
+                )
+            })
+            .unwrap_or(false)
+        {
+            return true;
+        }
+        return matches!(
+            crate::web_security::resolve_cloud_web_environment_from_process_env(),
+            sdkwork_web_core::WebEnvironment::Dev | sdkwork_web_core::WebEnvironment::Test
+        );
     };
 
     let provided = request

@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::future::Future;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
@@ -26,6 +27,10 @@ const PAYLOAD_SUFFIX: &str = "gateway-accounting-retry:payload";
 const MAX_CLAIM_BATCH_SIZE: usize = 200;
 const MAX_RETRY_ENVELOPE_BYTES: usize = 32 * 1024;
 const MAX_IN_MEMORY_RETRY_ENTRIES: usize = 1024;
+/// Hard deadline for one Redis command on the accounting retry path so a hung
+/// Redis server degrades to a queue error instead of parking the worker (and,
+/// with the cursor lock released across awaits, every future claim) forever.
+const REDIS_COMMAND_TIMEOUT: Duration = Duration::from_secs(5);
 
 struct InvalidRetryEntry<'a> {
     stream_entry_id: &'a str,
@@ -162,17 +167,39 @@ impl RedisGatewayAccountingRetryQueue {
             .cloned()
     }
 
+    /// Runs one Redis command under [`REDIS_COMMAND_TIMEOUT`].
+    async fn bounded<T>(
+        &self,
+        operation: &'static str,
+        command: impl Future<Output = redis::RedisResult<T>>,
+    ) -> DomainResult<T> {
+        tokio::time::timeout(REDIS_COMMAND_TIMEOUT, command)
+            .await
+            .map_err(|_| queue_error(operation, "redis command timed out"))?
+            .map_err(|error| queue_error(operation, error))
+    }
+
+    /// Deadline for a read that may intentionally BLOCK on the server: the
+    /// caller's block window plus one command-timeout budget of slack.
+    fn blocking_read_timeout(wait_timeout: Duration) -> Duration {
+        if wait_timeout.is_zero() {
+            REDIS_COMMAND_TIMEOUT
+        } else {
+            REDIS_COMMAND_TIMEOUT + wait_timeout
+        }
+    }
+
     async fn ensure_group(&self, connection: &mut ConnectionManager) -> DomainResult<()> {
-        match connection
-            .xgroup_create_mkstream(&self.stream, &self.group, "0-0")
+        match self
+            .bounded(
+                "gateway accounting retry Redis consumer group creation failed",
+                connection.xgroup_create_mkstream(&self.stream, &self.group, "0-0"),
+            )
             .await
         {
             Ok(()) => Ok(()),
             Err(error) if error.to_string().contains("BUSYGROUP") => Ok(()),
-            Err(error) => Err(queue_error(
-                "gateway accounting retry Redis consumer group creation failed",
-                error,
-            )),
+            Err(error) => Err(error),
         }
     }
 
@@ -214,22 +241,19 @@ impl RedisGatewayAccountingRetryQueue {
             return #due
             "#,
         );
-        script
-            .key(&self.stream)
-            .key(&self.schedule)
-            .key(&self.payloads)
-            .key(&self.dedupe_hash)
-            .key(&self.dlq)
-            .arg(now_epoch_millis())
-            .arg(batch_size.max(1))
-            .invoke_async::<i64>(connection)
-            .await
-            .map_err(|error| {
-                queue_error(
-                    "gateway accounting retry Redis delayed promotion failed",
-                    error,
-                )
-            })?;
+        self.bounded(
+            "gateway accounting retry Redis delayed promotion failed",
+            script
+                .key(&self.stream)
+                .key(&self.schedule)
+                .key(&self.payloads)
+                .key(&self.dedupe_hash)
+                .key(&self.dlq)
+                .arg(now_epoch_millis())
+                .arg(batch_size.max(1))
+                .invoke_async::<i64>(connection),
+        )
+        .await?;
         Ok(())
     }
 
@@ -272,25 +296,23 @@ impl RedisGatewayAccountingRetryQueue {
             return 1
             "#,
         );
-        let result = script
-            .key(&self.stream)
-            .key(&self.schedule)
-            .key(&self.payloads)
-            .key(&self.dedupe_hash)
-            .arg(&self.group)
-            .arg(stream_entry_id)
-            .arg(consumer_id)
-            .arg(event_id)
-            .arg(envelope_evidence.as_ref())
-            .arg(available_at_epoch_millis)
-            .invoke_async::<i64>(connection)
-            .await
-            .map_err(|error| {
-                queue_error(
-                    "gateway accounting retry Redis delayed deferral failed",
-                    error,
-                )
-            })?;
+        let result = self
+            .bounded(
+                "gateway accounting retry Redis delayed deferral failed",
+                script
+                    .key(&self.stream)
+                    .key(&self.schedule)
+                    .key(&self.payloads)
+                    .key(&self.dedupe_hash)
+                    .arg(&self.group)
+                    .arg(stream_entry_id)
+                    .arg(consumer_id)
+                    .arg(event_id)
+                    .arg(envelope_evidence.as_ref())
+                    .arg(available_at_epoch_millis)
+                    .invoke_async::<i64>(connection),
+            )
+            .await?;
         if result == -1 {
             return Err(DomainError::new(
                 "gateway accounting retry Redis stream event_id mismatch during deferral",
@@ -429,27 +451,25 @@ impl RedisGatewayAccountingRetryQueue {
             return 1
             "#,
         );
-        let result = script
-            .key(&self.stream)
-            .key(&self.dlq)
-            .key(&self.schedule)
-            .key(&self.payloads)
-            .key(&self.dedupe_hash)
-            .arg(&self.group)
-            .arg(stream_entry_id)
-            .arg(consumer_id)
-            .arg(stream_event_id)
-            .arg(envelope_evidence.as_ref())
-            .arg(failure_code)
-            .arg(canonical_event_id.unwrap_or_default())
-            .invoke_async::<i64>(connection)
-            .await
-            .map_err(|error| {
-                queue_error(
-                    "gateway accounting retry Redis invalid envelope DLQ failed",
-                    error,
-                )
-            })?;
+        let result = self
+            .bounded(
+                "gateway accounting retry Redis invalid envelope DLQ failed",
+                script
+                    .key(&self.stream)
+                    .key(&self.dlq)
+                    .key(&self.schedule)
+                    .key(&self.payloads)
+                    .key(&self.dedupe_hash)
+                    .arg(&self.group)
+                    .arg(stream_entry_id)
+                    .arg(consumer_id)
+                    .arg(stream_event_id)
+                    .arg(envelope_evidence.as_ref())
+                    .arg(failure_code)
+                    .arg(canonical_event_id.unwrap_or_default())
+                    .invoke_async::<i64>(connection),
+            )
+            .await?;
         if result == 1 {
             Ok(())
         } else {
@@ -502,20 +522,20 @@ impl GatewayAccountingRetryQueue for RedisGatewayAccountingRetryQueue {
                 return 1
                 "#,
             );
-            script
-                .key(&self.stream)
-                .key(&self.dedupe_hash)
-                .key(&self.payloads)
-                .key(&self.schedule)
-                .arg(&envelope.event_id)
-                .arg(payload)
-                .arg(envelope.available_at_epoch_millis)
-                .arg(now_epoch_millis())
-                .invoke_async::<i64>(&mut connection)
-                .await
-                .map_err(|error| {
-                    queue_error("gateway accounting retry Redis enqueue failed", error)
-                })?;
+            self.bounded(
+                "gateway accounting retry Redis enqueue failed",
+                script
+                    .key(&self.stream)
+                    .key(&self.dedupe_hash)
+                    .key(&self.payloads)
+                    .key(&self.schedule)
+                    .arg(&envelope.event_id)
+                    .arg(payload)
+                    .arg(envelope.available_at_epoch_millis)
+                    .arg(now_epoch_millis())
+                    .invoke_async::<i64>(&mut connection),
+            )
+            .await?;
             Ok(())
         })
     }
@@ -534,24 +554,26 @@ impl GatewayAccountingRetryQueue for RedisGatewayAccountingRetryQueue {
             }
             let mut connection = self.connection().await?;
             self.ensure_group(&mut connection).await?;
-            let reclaim = {
-                let mut cursor = self.reclaim_cursor.lock().await;
-                let reclaim: redis::streams::StreamAutoClaimReply = connection
-                    .xautoclaim_options(
+            // The reclaim cursor is read and written under the lock, but the
+            // network await happens outside it: a hung Redis call must not
+            // serialize every future claim behind one stuck XAUTOCLAIM. Two
+            // concurrent claims may rescan a cursor window, which is safe —
+            // XAUTOCLAIM only steals entries idle beyond `reclaim_idle`.
+            let cursor = self.reclaim_cursor.lock().await.clone();
+            let reclaim: redis::streams::StreamAutoClaimReply = self
+                .bounded(
+                    "gateway accounting retry Redis reclaim failed",
+                    connection.xautoclaim_options(
                         &self.stream,
                         &self.group,
                         consumer_id,
                         reclaim_idle.as_millis().try_into().unwrap_or(usize::MAX),
                         cursor.as_str(),
                         StreamAutoClaimOptions::default().count(batch_size),
-                    )
-                    .await
-                    .map_err(|error| {
-                        queue_error("gateway accounting retry Redis reclaim failed", error)
-                    })?;
-                *cursor = reclaim.next_stream_id.clone();
-                reclaim
-            };
+                    ),
+                )
+                .await?;
+            *self.reclaim_cursor.lock().await = reclaim.next_stream_id.clone();
             let mut deliveries = self
                 .read_claimed(&mut connection, reclaim.claimed, consumer_id)
                 .await?;
@@ -565,12 +587,20 @@ impl GatewayAccountingRetryQueue for RedisGatewayAccountingRetryQueue {
                     options =
                         options.block(wait_timeout.as_millis().try_into().unwrap_or(usize::MAX));
                 }
-                let reply: Option<StreamReadReply> = connection
-                    .xread_options(&[self.stream.as_str()], &[">"], &options)
-                    .await
-                    .map_err(|error| {
-                        queue_error("gateway accounting retry Redis read failed", error)
-                    })?;
+                let reply: Option<StreamReadReply> = tokio::time::timeout(
+                    Self::blocking_read_timeout(wait_timeout),
+                    connection.xread_options(&[self.stream.as_str()], &[">"], &options),
+                )
+                .await
+                .map_err(|_| {
+                    queue_error(
+                        "gateway accounting retry Redis read failed",
+                        "redis read timed out",
+                    )
+                })?
+                .map_err(|error| {
+                    queue_error("gateway accounting retry Redis read failed", error)
+                })?;
                 if let Some(reply) = reply {
                     for key in reply.keys {
                         deliveries.extend(
@@ -621,17 +651,20 @@ impl GatewayAccountingRetryQueue for RedisGatewayAccountingRetryQueue {
                 return acknowledged
                 "#,
             );
-            let result = script
-                .key(&self.stream)
-                .key(&self.schedule)
-                .key(&self.payloads)
-                .key(&self.dedupe_hash)
-                .arg(&self.group)
-                .arg(stream_entry_id)
-                .arg(consumer_id)
-                .invoke_async::<i64>(&mut connection)
-                .await
-                .map_err(|error| queue_error("gateway accounting retry Redis ACK failed", error))?;
+            let result = self
+                .bounded(
+                    "gateway accounting retry Redis ACK failed",
+                    script
+                        .key(&self.stream)
+                        .key(&self.schedule)
+                        .key(&self.payloads)
+                        .key(&self.dedupe_hash)
+                        .arg(&self.group)
+                        .arg(stream_entry_id)
+                        .arg(consumer_id)
+                        .invoke_async::<i64>(&mut connection),
+                )
+                .await?;
             if result == 1 {
                 Ok(())
             } else {
@@ -688,23 +721,24 @@ impl GatewayAccountingRetryQueue for RedisGatewayAccountingRetryQueue {
                 return 1
                 "#,
             );
-            let result = script
-                .key(&self.stream)
-                .key(&self.schedule)
-                .key(&self.payloads)
-                .key(&self.dedupe_hash)
-                .arg(&self.group)
-                .arg(&envelope.event_id)
-                .arg(payload)
-                .arg(stream_entry_id)
-                .arg(consumer_id)
-                .arg(envelope.available_at_epoch_millis)
-                .arg(now_epoch_millis())
-                .invoke_async::<i64>(&mut connection)
-                .await
-                .map_err(|error| {
-                    queue_error("gateway accounting retry Redis reschedule failed", error)
-                })?;
+            let result = self
+                .bounded(
+                    "gateway accounting retry Redis reschedule failed",
+                    script
+                        .key(&self.stream)
+                        .key(&self.schedule)
+                        .key(&self.payloads)
+                        .key(&self.dedupe_hash)
+                        .arg(&self.group)
+                        .arg(&envelope.event_id)
+                        .arg(payload)
+                        .arg(stream_entry_id)
+                        .arg(consumer_id)
+                        .arg(envelope.available_at_epoch_millis)
+                        .arg(now_epoch_millis())
+                        .invoke_async::<i64>(&mut connection),
+                )
+                .await?;
             match result {
                 1 => Ok(()),
                 -1 => Err(DomainError::new(
@@ -755,21 +789,24 @@ impl GatewayAccountingRetryQueue for RedisGatewayAccountingRetryQueue {
                 return 1
                 "#,
             );
-            let result = script
-                .key(&self.stream)
-                .key(&self.dlq)
-                .key(&self.schedule)
-                .key(&self.payloads)
-                .key(&self.dedupe_hash)
-                .arg(&self.group)
-                .arg(&envelope.event_id)
-                .arg(payload)
-                .arg(failure_code)
-                .arg(stream_entry_id)
-                .arg(consumer_id)
-                .invoke_async::<i64>(&mut connection)
-                .await
-                .map_err(|error| queue_error("gateway accounting retry Redis DLQ failed", error))?;
+            let result = self
+                .bounded(
+                    "gateway accounting retry Redis DLQ failed",
+                    script
+                        .key(&self.stream)
+                        .key(&self.dlq)
+                        .key(&self.schedule)
+                        .key(&self.payloads)
+                        .key(&self.dedupe_hash)
+                        .arg(&self.group)
+                        .arg(&envelope.event_id)
+                        .arg(payload)
+                        .arg(failure_code)
+                        .arg(stream_entry_id)
+                        .arg(consumer_id)
+                        .invoke_async::<i64>(&mut connection),
+                )
+                .await?;
             match result {
                 1 => Ok(()),
                 -1 => Err(DomainError::new(
@@ -783,9 +820,11 @@ impl GatewayAccountingRetryQueue for RedisGatewayAccountingRetryQueue {
     fn dead_letter_depth<'a>(&'a self) -> GatewayAccountingRetryQueueFuture<'a, u64> {
         Box::pin(async move {
             let mut connection = self.connection().await?;
-            connection.xlen(&self.dlq).await.map_err(|error| {
-                queue_error("gateway accounting retry Redis DLQ depth failed", error)
-            })
+            self.bounded(
+                "gateway accounting retry Redis DLQ depth failed",
+                connection.xlen(&self.dlq),
+            )
+            .await
         })
     }
 }

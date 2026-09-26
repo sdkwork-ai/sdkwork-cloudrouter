@@ -18,9 +18,12 @@ pub enum PaymentRefundStatus {
 }
 
 impl PaymentRefundStatus {
+    /// Wire spelling follows the federated `sdkwork-payment` status domain
+    /// (`commerce_refund.status` CHECK: submitted/processing/succeeded/
+    /// failed/canceled); the domain name `Pending` is kept for readability.
     pub fn as_str(&self) -> &'static str {
         match self {
-            Self::Pending => "pending",
+            Self::Pending => "submitted",
             Self::Processing => "processing",
             Self::Succeeded => "succeeded",
             Self::Failed => "failed",

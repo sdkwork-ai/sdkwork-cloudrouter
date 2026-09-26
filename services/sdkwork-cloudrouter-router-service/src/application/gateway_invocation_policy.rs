@@ -20,6 +20,47 @@ const TARGET_TYPE_CIDR: i32 = 2;
 const MATCH_MODE_EXACT: i32 = 1;
 const MATCH_MODE_CIDR: i32 = 3;
 
+/// Default per-credential invocation limits applied when neither a quota
+/// policy nor a risk rule configured any rate limit. Without this floor a
+/// default deployment lets any valid credential (including login auth-token
+/// sessions, which cannot carry key-scoped quota policies) drive unbounded
+/// request rates into the invocation plane. Operators override per key
+/// through quota policies/risk rules, or fleet-wide through the env keys.
+pub const DEFAULT_GATEWAY_INVOCATION_RATE_LIMIT_RPS: i64 = 20;
+pub const DEFAULT_GATEWAY_INVOCATION_RATE_LIMIT_PER_DAY: i64 = 200_000;
+pub const DEFAULT_GATEWAY_INVOCATION_RATE_LIMIT_BURST: i64 = 40;
+pub const GATEWAY_DEFAULT_RATE_LIMIT_RPS_ENV: &str =
+    "SDKWORK_CLOUDROUTER_GATEWAY_DEFAULT_RATE_LIMIT_RPS";
+pub const GATEWAY_DEFAULT_RATE_LIMIT_PER_DAY_ENV: &str =
+    "SDKWORK_CLOUDROUTER_GATEWAY_DEFAULT_RATE_LIMIT_PER_DAY";
+
+fn positive_env_i64(key: &str) -> Option<i64> {
+    std::env::var(key)
+        .ok()
+        .and_then(|value| value.trim().parse::<i64>().ok())
+        .filter(|value| *value > 0)
+}
+
+/// Applies the conservative floor only when nothing was configured at all, so
+/// an operator-supplied per-day-only or per-second-only policy keeps exactly
+/// the dimension they set.
+fn apply_default_rate_limit_floor(target: &mut GatewayRateLimitSpec) {
+    if target.requests_per_second.is_some() || target.requests_per_day.is_some() {
+        return;
+    }
+    target.requests_per_second = Some(
+        positive_env_i64(GATEWAY_DEFAULT_RATE_LIMIT_RPS_ENV)
+            .unwrap_or(DEFAULT_GATEWAY_INVOCATION_RATE_LIMIT_RPS),
+    );
+    target.requests_per_day = Some(
+        positive_env_i64(GATEWAY_DEFAULT_RATE_LIMIT_PER_DAY_ENV)
+            .unwrap_or(DEFAULT_GATEWAY_INVOCATION_RATE_LIMIT_PER_DAY),
+    );
+    if target.burst_limit.is_none() {
+        target.burst_limit = Some(DEFAULT_GATEWAY_INVOCATION_RATE_LIMIT_BURST);
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GatewayInvocationPolicyViolation {
     Forbidden(String),
@@ -101,8 +142,16 @@ impl GatewayInvocationPolicyGuard {
             }
         }
 
+        apply_default_rate_limit_floor(&mut rate_spec);
         if rate_spec.requests_per_second.is_some() || rate_spec.requests_per_day.is_some() {
-            let scope_key = format!("api-key:{}", auth.api_key_id);
+            // The auth-token channel has no gateway key, so scope its floor to
+            // the resolved tenant/user identity instead of `api-key:0`, which
+            // would let every auth-token session share one limiter bucket.
+            let scope_key = if auth.api_key_id > 0 {
+                format!("api-key:{}", auth.api_key_id)
+            } else {
+                format!("auth-token:{}:{}", auth.tenant_id, auth.user_id)
+            };
             self.rate_limiter
                 .check_and_record(&scope_key, &rate_spec)
                 .await

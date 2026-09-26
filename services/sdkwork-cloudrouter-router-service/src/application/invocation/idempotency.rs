@@ -845,16 +845,30 @@ impl IdempotencyStore for UnavailableIdempotencyStore {
 
 struct RedisIdempotencyStore {
     client: redis::Client,
+    connection_manager: Arc<tokio::sync::OnceCell<redis::aio::ConnectionManager>>,
     key_prefix: String,
 }
+
+/// Hard deadline for every Redis command on the idempotency hot path so a hung
+/// Redis server degrades to store-unavailable instead of parking requests.
+const REDIS_COMMAND_TIMEOUT: Duration = Duration::from_secs(2);
 
 impl RedisIdempotencyStore {
     fn try_new(url: &str, prefix: &str) -> Result<Self, IdempotencyStoreError> {
         let client = redis::Client::open(url).map_err(|_| IdempotencyStoreError)?;
         Ok(Self {
             client,
+            connection_manager: Arc::new(tokio::sync::OnceCell::const_new()),
             key_prefix: format!("{prefix}:idempotency:v2"),
         })
+    }
+
+    async fn connection(&self) -> Option<redis::aio::ConnectionManager> {
+        self.connection_manager
+            .get_or_try_init(|| async { self.client.get_connection_manager().await })
+            .await
+            .ok()
+            .cloned()
     }
 
     fn redis_key(&self, storage_key: &str) -> String {
@@ -895,16 +909,16 @@ impl IdempotencyStore for RedisIdempotencyStore {
         &self,
         storage_key: &str,
     ) -> Result<Option<IdempotencyStoreEntry>, IdempotencyStoreError> {
-        let mut connection = self
-            .client
-            .get_multiplexed_async_connection()
-            .await
-            .map_err(|_| IdempotencyStoreError)?;
-        let value: Option<String> = redis::cmd("GET")
-            .arg(self.redis_key(storage_key))
-            .query_async(&mut connection)
-            .await
-            .map_err(|_| IdempotencyStoreError)?;
+        let mut connection = self.connection().await.ok_or(IdempotencyStoreError)?;
+        let value: Option<String> = tokio::time::timeout(
+            REDIS_COMMAND_TIMEOUT,
+            redis::cmd("GET")
+                .arg(self.redis_key(storage_key))
+                .query_async(&mut connection),
+        )
+        .await
+        .map_err(|_| IdempotencyStoreError)?
+        .map_err(|_| IdempotencyStoreError)?;
         value
             .map(|value| {
                 serde_json::from_str::<StoredIdempotencyRecord>(&value)
@@ -926,20 +940,20 @@ impl IdempotencyStore for RedisIdempotencyStore {
             owner_token,
         ))
         .map_err(|_| IdempotencyStoreError)?;
-        let mut connection = self
-            .client
-            .get_multiplexed_async_connection()
-            .await
-            .map_err(|_| IdempotencyStoreError)?;
-        let result: Option<String> = redis::cmd("SET")
-            .arg(self.redis_key(storage_key))
-            .arg(payload)
-            .arg("NX")
-            .arg("EX")
-            .arg(ttl_seconds(ttl))
-            .query_async(&mut connection)
-            .await
-            .map_err(|_| IdempotencyStoreError)?;
+        let mut connection = self.connection().await.ok_or(IdempotencyStoreError)?;
+        let result: Option<String> = tokio::time::timeout(
+            REDIS_COMMAND_TIMEOUT,
+            redis::cmd("SET")
+                .arg(self.redis_key(storage_key))
+                .arg(payload)
+                .arg("NX")
+                .arg("EX")
+                .arg(ttl_seconds(ttl))
+                .query_async(&mut connection),
+        )
+        .await
+        .map_err(|_| IdempotencyStoreError)?
+        .map_err(|_| IdempotencyStoreError)?;
         Ok(if result.is_some() {
             IdempotencyLockAcquisition::Acquired
         } else {
@@ -961,22 +975,22 @@ impl IdempotencyStore for RedisIdempotencyStore {
             return Ok(false);
         };
         let payload = serde_json::to_string(&completed).map_err(|_| IdempotencyStoreError)?;
-        let mut connection = self
-            .client
-            .get_multiplexed_async_connection()
-            .await
-            .map_err(|_| IdempotencyStoreError)?;
-        let result: i64 = redis::cmd("EVAL")
-            .arg(Self::lua_complete_if_owner())
-            .arg(1)
-            .arg(self.redis_key(storage_key))
-            .arg(owner_token)
-            .arg(request_fingerprint)
-            .arg(payload)
-            .arg(ttl_seconds(ttl))
-            .query_async(&mut connection)
-            .await
-            .map_err(|_| IdempotencyStoreError)?;
+        let mut connection = self.connection().await.ok_or(IdempotencyStoreError)?;
+        let result: i64 = tokio::time::timeout(
+            REDIS_COMMAND_TIMEOUT,
+            redis::cmd("EVAL")
+                .arg(Self::lua_complete_if_owner())
+                .arg(1)
+                .arg(self.redis_key(storage_key))
+                .arg(owner_token)
+                .arg(request_fingerprint)
+                .arg(payload)
+                .arg(ttl_seconds(ttl))
+                .query_async(&mut connection),
+        )
+        .await
+        .map_err(|_| IdempotencyStoreError)?
+        .map_err(|_| IdempotencyStoreError)?;
         if result < 0 {
             return Err(IdempotencyStoreError);
         }
@@ -988,19 +1002,19 @@ impl IdempotencyStore for RedisIdempotencyStore {
         storage_key: &str,
         owner_token: &str,
     ) -> Result<bool, IdempotencyStoreError> {
-        let mut connection = self
-            .client
-            .get_multiplexed_async_connection()
-            .await
-            .map_err(|_| IdempotencyStoreError)?;
-        let result: i64 = redis::cmd("EVAL")
-            .arg(Self::lua_release_if_owner())
-            .arg(1)
-            .arg(self.redis_key(storage_key))
-            .arg(owner_token)
-            .query_async(&mut connection)
-            .await
-            .map_err(|_| IdempotencyStoreError)?;
+        let mut connection = self.connection().await.ok_or(IdempotencyStoreError)?;
+        let result: i64 = tokio::time::timeout(
+            REDIS_COMMAND_TIMEOUT,
+            redis::cmd("EVAL")
+                .arg(Self::lua_release_if_owner())
+                .arg(1)
+                .arg(self.redis_key(storage_key))
+                .arg(owner_token)
+                .query_async(&mut connection),
+        )
+        .await
+        .map_err(|_| IdempotencyStoreError)?
+        .map_err(|_| IdempotencyStoreError)?;
         if result < 0 {
             return Err(IdempotencyStoreError);
         }

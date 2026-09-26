@@ -261,6 +261,45 @@ pub struct CircuitBreakerInterceptor {
     distributed_required: bool,
 }
 
+/// Upper bound for the per-node fallback maps (desktop/development mode, where
+/// no distributed store is configured). Absent means "closed / no statistics",
+/// so dropping closed circuits and skipping untracked stats keeps the maps
+/// bounded across long-lived processes with many historical account ids
+/// without changing any permit decision.
+const MAX_LOCAL_CIRCUIT_ENTRIES: usize = 10_000;
+
+/// Prepares an insert for `account_id`: evicts closed circuits at capacity and
+/// returns `false` when the map is saturated with live circuits, in which case
+/// the caller falls back to absent-entry semantics (closed / not tracked).
+fn reserve_circuit_entry(circuits: &mut HashMap<i64, CircuitEntry>, account_id: i64) -> bool {
+    if circuits.contains_key(&account_id) {
+        return true;
+    }
+    if circuits.len() >= MAX_LOCAL_CIRCUIT_ENTRIES {
+        circuits.retain(|_, entry| entry.state != CircuitState::Closed);
+        if circuits.len() >= MAX_LOCAL_CIRCUIT_ENTRIES {
+            return false;
+        }
+    }
+    true
+}
+
+/// Bounded stats accessor: telemetry for untracked accounts is dropped at
+/// capacity instead of growing the map without a limit.
+fn bounded_stats_entry<'a>(
+    stats: &'a mut HashMap<i64, CircuitBreakerStats>,
+    account_id: i64,
+) -> Option<&'a mut CircuitBreakerStats> {
+    if stats.len() >= MAX_LOCAL_CIRCUIT_ENTRIES && !stats.contains_key(&account_id) {
+        return None;
+    }
+    Some(
+        stats
+            .entry(account_id)
+            .or_insert_with(|| CircuitBreakerStats::new(account_id)),
+    )
+}
+
 /// Trait for distributed circuit breaker state management.
 ///
 /// Implementations must be safe for concurrent access across nodes.
@@ -404,6 +443,9 @@ impl CircuitBreakerInterceptor {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
+        if !reserve_circuit_entry(&mut circuits, account_id) {
+            return CircuitCallPermit::Closed;
+        }
         let entry = circuits
             .entry(account_id)
             .or_insert_with(CircuitEntry::closed);
@@ -467,6 +509,10 @@ impl CircuitBreakerInterceptor {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
+        if !reserve_circuit_entry(&mut circuits, account_id) {
+            self.record_success_metric(account_id);
+            return;
+        }
         let entry = circuits
             .entry(account_id)
             .or_insert_with(CircuitEntry::closed);
@@ -501,6 +547,10 @@ impl CircuitBreakerInterceptor {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
+        if !reserve_circuit_entry(&mut circuits, account_id) {
+            self.record_failure_metric(account_id);
+            return;
+        }
         let entry = circuits
             .entry(account_id)
             .or_insert_with(CircuitEntry::closed);
@@ -549,11 +599,10 @@ impl CircuitBreakerInterceptor {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
-        let stat = stats
-            .entry(account_id)
-            .or_insert_with(|| CircuitBreakerStats::new(account_id));
-        stat.state = new_state;
-        stat.last_state_change = Some(std::time::SystemTime::now());
+        if let Some(stat) = bounded_stats_entry(&mut stats, account_id) {
+            stat.state = new_state;
+            stat.last_state_change = Some(std::time::SystemTime::now());
+        }
     }
 
     fn record_success_metric(&self, account_id: i64) {
@@ -561,12 +610,11 @@ impl CircuitBreakerInterceptor {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
-        let stat = stats
-            .entry(account_id)
-            .or_insert_with(|| CircuitBreakerStats::new(account_id));
-        stat.total_successes = stat.total_successes.saturating_add(1);
-        stat.consecutive_successes = stat.consecutive_successes.saturating_add(1);
-        stat.consecutive_failures = 0;
+        if let Some(stat) = bounded_stats_entry(&mut stats, account_id) {
+            stat.total_successes = stat.total_successes.saturating_add(1);
+            stat.consecutive_successes = stat.consecutive_successes.saturating_add(1);
+            stat.consecutive_failures = 0;
+        }
     }
 
     fn record_failure_metric(&self, account_id: i64) {
@@ -574,12 +622,11 @@ impl CircuitBreakerInterceptor {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
         };
-        let stat = stats
-            .entry(account_id)
-            .or_insert_with(|| CircuitBreakerStats::new(account_id));
-        stat.total_failures = stat.total_failures.saturating_add(1);
-        stat.consecutive_failures = stat.consecutive_failures.saturating_add(1);
-        stat.consecutive_successes = 0;
+        if let Some(stat) = bounded_stats_entry(&mut stats, account_id) {
+            stat.total_failures = stat.total_failures.saturating_add(1);
+            stat.consecutive_failures = stat.consecutive_failures.saturating_add(1);
+            stat.consecutive_successes = 0;
+        }
     }
 
     async fn record_final_route_attempts(&self, attempts: &[InvocationRouteAttempt]) {
@@ -801,18 +848,34 @@ impl InvocationInterceptor for CircuitBreakerInterceptor {
 /// Keys use TTL to automatically clean up rarely-used channel state.
 struct RedisCircuitBreakerStore {
     client: redis::Client,
+    connection_manager: Arc<tokio::sync::OnceCell<redis::aio::ConnectionManager>>,
+    command_timeout: Duration,
     key_prefix: String,
     config: CircuitBreakerConfig,
 }
+
+/// Hard deadline for every coordination command so a hung Redis server degrades
+/// to the configured fail_open/fail_closed posture instead of parking dispatch.
+const REDIS_COMMAND_TIMEOUT: Duration = Duration::from_secs(2);
 
 impl RedisCircuitBreakerStore {
     fn try_new(url: &str, prefix: &str, config: &CircuitBreakerConfig) -> Result<Self, String> {
         let client = redis::Client::open(url).map_err(|e| format!("redis connect error: {e}"))?;
         Ok(Self {
             client,
+            connection_manager: Arc::new(tokio::sync::OnceCell::const_new()),
+            command_timeout: REDIS_COMMAND_TIMEOUT,
             key_prefix: format!("{prefix}:circuit_breaker"),
             config: config.clone(),
         })
+    }
+
+    async fn connection(&self) -> Option<redis::aio::ConnectionManager> {
+        self.connection_manager
+            .get_or_try_init(|| async { self.client.get_connection_manager().await })
+            .await
+            .ok()
+            .cloned()
     }
 
     fn redis_key(&self, account_id: i64) -> String {
@@ -1009,34 +1072,34 @@ impl RedisCircuitBreakerStore {
 #[async_trait::async_trait]
 impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
     async fn acquire_call_permit(&self, account_id: i64) -> CircuitCallPermit {
-        let mut conn = match self.client.get_multiplexed_async_connection().await {
-            Ok(conn) => conn,
-            Err(error) => {
-                self.observe_coordination_error("acquire", error);
-                if !self.config.fail_open {
-                    observe_circuit_breaker_rejection("redis", "coordination_unavailable", 1);
-                }
-                return self.degraded_permit();
+        let Some(mut conn) = self.connection().await else {
+            self.observe_coordination_error("acquire", "redis connection unavailable");
+            if !self.config.fail_open {
+                observe_circuit_breaker_rejection("redis", "coordination_unavailable", 1);
             }
+            return self.degraded_permit();
         };
         let key = self.redis_key(account_id);
         let now = now_unix_timestamp();
 
-        let result: Result<i64, _> = redis::cmd("EVAL")
-            .arg(Self::lua_allow_call())
-            .arg(1)
-            .arg(&key)
-            .arg(self.config.open_duration.as_secs() as i64)
-            .arg(self.config.half_open_max_probes as i64)
-            .arg(now)
-            .arg(self.key_ttl_seconds() as i64)
-            .query_async(&mut conn)
-            .await;
+        let result = tokio::time::timeout(
+            self.command_timeout,
+            redis::cmd("EVAL")
+                .arg(Self::lua_allow_call())
+                .arg(1)
+                .arg(&key)
+                .arg(self.config.open_duration.as_secs() as i64)
+                .arg(self.config.half_open_max_probes as i64)
+                .arg(now)
+                .arg(self.key_ttl_seconds() as i64)
+                .query_async::<i64>(&mut conn),
+        )
+        .await;
 
         match result {
-            Ok(1) => CircuitCallPermit::Closed,
-            Ok(2) => CircuitCallPermit::HalfOpenProbe,
-            Ok(3) => {
+            Ok(Ok(1)) => CircuitCallPermit::Closed,
+            Ok(Ok(2)) => CircuitCallPermit::HalfOpenProbe,
+            Ok(Ok(3)) => {
                 observe_circuit_breaker_transition(
                     "redis",
                     CircuitState::Open,
@@ -1044,24 +1107,31 @@ impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
                 );
                 CircuitCallPermit::HalfOpenProbe
             }
-            Ok(-1) => {
+            Ok(Ok(-1)) => {
                 observe_circuit_breaker_rejection("redis", "open", 1);
                 CircuitCallPermit::Rejected
             }
-            Ok(-2) => {
+            Ok(Ok(-2)) => {
                 observe_circuit_breaker_rejection("redis", "probe_limit", 1);
                 CircuitCallPermit::Rejected
             }
-            Ok(-3) => {
+            Ok(Ok(-3)) => {
                 observe_circuit_breaker_rejection("redis", "probes_disabled", 1);
                 CircuitCallPermit::Rejected
             }
-            Ok(_) => {
+            Ok(Ok(_)) => {
                 observe_circuit_breaker_rejection("redis", "invalid_state", 1);
                 CircuitCallPermit::Rejected
             }
-            Err(error) => {
+            Ok(Err(error)) => {
                 self.observe_coordination_error("acquire", error);
+                if !self.config.fail_open {
+                    observe_circuit_breaker_rejection("redis", "coordination_unavailable", 1);
+                }
+                self.degraded_permit()
+            }
+            Err(_) => {
+                self.observe_coordination_error("acquire", "redis command timed out");
                 if !self.config.fail_open {
                     observe_circuit_breaker_rejection("redis", "coordination_unavailable", 1);
                 }
@@ -1071,82 +1141,85 @@ impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
     }
 
     async fn release_half_open_probe(&self, account_id: i64) {
-        let mut conn = match self.client.get_multiplexed_async_connection().await {
-            Ok(conn) => conn,
-            Err(error) => {
-                self.observe_coordination_error("release_probe", error);
-                return;
-            }
+        let Some(mut conn) = self.connection().await else {
+            self.observe_coordination_error("release_probe", "redis connection unavailable");
+            return;
         };
-        let result: Result<i64, _> = redis::cmd("EVAL")
-            .arg(Self::lua_release_half_open_probe())
-            .arg(1)
-            .arg(self.redis_key(account_id))
-            .arg(self.key_ttl_seconds() as i64)
-            .query_async(&mut conn)
-            .await;
-        if let Err(error) = result {
-            self.observe_coordination_error("release_probe", error);
+        let result = tokio::time::timeout(
+            self.command_timeout,
+            redis::cmd("EVAL")
+                .arg(Self::lua_release_half_open_probe())
+                .arg(1)
+                .arg(self.redis_key(account_id))
+                .arg(self.key_ttl_seconds() as i64)
+                .query_async::<i64>(&mut conn),
+        )
+        .await;
+        match result {
+            Ok(Ok(_)) => {}
+            Ok(Err(error)) => self.observe_coordination_error("release_probe", error),
+            Err(_) => self.observe_coordination_error("release_probe", "redis command timed out"),
         }
     }
 
     async fn record_success(&self, account_id: i64) {
-        let mut conn = match self.client.get_multiplexed_async_connection().await {
-            Ok(conn) => conn,
-            Err(error) => {
-                self.observe_coordination_error("record_success", error);
-                return;
-            }
+        let Some(mut conn) = self.connection().await else {
+            self.observe_coordination_error("record_success", "redis connection unavailable");
+            return;
         };
         let key = self.redis_key(account_id);
 
-        let result: Result<String, _> = redis::cmd("EVAL")
-            .arg(Self::lua_record_success())
-            .arg(1)
-            .arg(&key)
-            .arg(self.config.success_threshold as i64)
-            .arg(self.key_ttl_seconds() as i64)
-            .query_async(&mut conn)
-            .await;
+        let result = tokio::time::timeout(
+            self.command_timeout,
+            redis::cmd("EVAL")
+                .arg(Self::lua_record_success())
+                .arg(1)
+                .arg(&key)
+                .arg(self.config.success_threshold as i64)
+                .arg(self.key_ttl_seconds() as i64)
+                .query_async::<String>(&mut conn),
+        )
+        .await;
         match result {
-            Ok(result) if result == "closed" => observe_circuit_breaker_transition(
+            Ok(Ok(result)) if result == "closed" => observe_circuit_breaker_transition(
                 "redis",
                 CircuitState::HalfOpen,
                 CircuitState::Closed,
             ),
-            Ok(_) => {}
-            Err(error) => self.observe_coordination_error("record_success", error),
+            Ok(Ok(_)) => {}
+            Ok(Err(error)) => self.observe_coordination_error("record_success", error),
+            Err(_) => self.observe_coordination_error("record_success", "redis command timed out"),
         }
     }
 
     async fn record_failure(&self, account_id: i64) {
-        let mut conn = match self.client.get_multiplexed_async_connection().await {
-            Ok(conn) => conn,
-            Err(error) => {
-                self.observe_coordination_error("record_failure", error);
-                return;
-            }
+        let Some(mut conn) = self.connection().await else {
+            self.observe_coordination_error("record_failure", "redis connection unavailable");
+            return;
         };
         let key = self.redis_key(account_id);
         let now = now_unix_timestamp();
 
-        let result: Result<String, _> = redis::cmd("EVAL")
-            .arg(Self::lua_record_failure())
-            .arg(1)
-            .arg(&key)
-            .arg(self.config.failure_threshold as i64)
-            .arg(now)
-            .arg(self.key_ttl_seconds() as i64)
-            .query_async(&mut conn)
-            .await;
+        let result = tokio::time::timeout(
+            self.command_timeout,
+            redis::cmd("EVAL")
+                .arg(Self::lua_record_failure())
+                .arg(1)
+                .arg(&key)
+                .arg(self.config.failure_threshold as i64)
+                .arg(now)
+                .arg(self.key_ttl_seconds() as i64)
+                .query_async::<String>(&mut conn),
+        )
+        .await;
 
         match result {
-            Ok(state) if state == "opened" => observe_circuit_breaker_transition(
+            Ok(Ok(state)) if state == "opened" => observe_circuit_breaker_transition(
                 "redis",
                 CircuitState::Closed,
                 CircuitState::Open,
             ),
-            Ok(state) if state == "reopened" => {
+            Ok(Ok(state)) if state == "reopened" => {
                 observe_circuit_breaker_transition(
                     "redis",
                     CircuitState::HalfOpen,
@@ -1157,33 +1230,42 @@ impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
                     "circuit breaker re-opened from half-open (distributed)"
                 );
             }
-            Ok(_) => {}
-            Err(error) => self.observe_coordination_error("record_failure", error),
+            Ok(Ok(_)) => {}
+            Ok(Err(error)) => self.observe_coordination_error("record_failure", error),
+            Err(_) => self.observe_coordination_error("record_failure", "redis command timed out"),
         }
     }
 
     async fn get_state(&self, account_id: i64) -> CircuitState {
-        let mut conn = match self.client.get_multiplexed_async_connection().await {
-            Ok(conn) => conn,
-            Err(error) => {
+        let Some(mut conn) = self.connection().await else {
+            self.observe_coordination_error("get_state", "redis connection unavailable");
+            return if self.config.fail_open {
+                CircuitState::Closed
+            } else {
+                CircuitState::Open
+            };
+        };
+        let key = self.redis_key(account_id);
+        let state = tokio::time::timeout(
+            self.command_timeout,
+            redis::cmd("HGET")
+                .arg(&key)
+                .arg("state")
+                .query_async::<Option<String>>(&mut conn),
+        )
+        .await;
+        match state {
+            Ok(Ok(state)) => CircuitState::from_str(state.as_deref().unwrap_or("closed")),
+            Ok(Err(error)) => {
                 self.observe_coordination_error("get_state", error);
-                return if self.config.fail_open {
+                if self.config.fail_open {
                     CircuitState::Closed
                 } else {
                     CircuitState::Open
-                };
+                }
             }
-        };
-        let key = self.redis_key(account_id);
-        let state: Result<Option<String>, _> = redis::cmd("HGET")
-            .arg(&key)
-            .arg("state")
-            .query_async(&mut conn)
-            .await;
-        match state {
-            Ok(state) => CircuitState::from_str(state.as_deref().unwrap_or("closed")),
-            Err(error) => {
-                self.observe_coordination_error("get_state", error);
+            Err(_) => {
+                self.observe_coordination_error("get_state", "redis command timed out");
                 if self.config.fail_open {
                     CircuitState::Closed
                 } else {
@@ -1194,27 +1276,28 @@ impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
     }
 
     async fn reset(&self, account_id: i64) {
-        let mut conn = match self.client.get_multiplexed_async_connection().await {
-            Ok(conn) => conn,
-            Err(error) => {
-                self.observe_coordination_error("reset", error);
-                return;
-            }
+        let Some(mut conn) = self.connection().await else {
+            self.observe_coordination_error("reset", "redis connection unavailable");
+            return;
         };
         let key = self.redis_key(account_id);
-        let result: Result<String, _> = redis::cmd("EVAL")
-            .arg(Self::lua_reset())
-            .arg(1)
-            .arg(&key)
-            .query_async(&mut conn)
-            .await;
+        let result = tokio::time::timeout(
+            self.command_timeout,
+            redis::cmd("EVAL")
+                .arg(Self::lua_reset())
+                .arg(1)
+                .arg(&key)
+                .query_async::<String>(&mut conn),
+        )
+        .await;
         match result {
-            Ok(previous) => observe_circuit_breaker_transition(
+            Ok(Ok(previous)) => observe_circuit_breaker_transition(
                 "redis",
                 CircuitState::from_str(&previous),
                 CircuitState::Closed,
             ),
-            Err(error) => self.observe_coordination_error("reset", error),
+            Ok(Err(error)) => self.observe_coordination_error("reset", error),
+            Err(_) => self.observe_coordination_error("reset", "redis command timed out"),
         }
     }
 

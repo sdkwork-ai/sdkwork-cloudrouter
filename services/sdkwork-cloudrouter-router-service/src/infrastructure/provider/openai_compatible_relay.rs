@@ -13,6 +13,7 @@ use sdkwork_cloudrouter_security::{redact_url, validate_outbound_base_url, Outbo
 use serde_json::Value;
 use std::time::Duration;
 
+use super::dispatch_gate::{PermitHoldingBody, ProviderDispatchGate};
 use super::response_memory_budget::{
     ProviderResponseMemoryBudget, ProviderResponseMemoryBudgetError,
 };
@@ -326,7 +327,7 @@ impl UpstreamProviderEndpoint {
                 ))
             })?;
         let started_at = std::time::Instant::now();
-        let response = send_provider_request(&runtime, request).await?;
+        let (response, _dispatch_permit) = send_provider_request(&runtime, request).await?;
         let latency_ms = u64::try_from(started_at.elapsed().as_millis()).unwrap_or(u64::MAX);
         let status_code = response.status().as_u16();
         let _memory_guard = runtime
@@ -1554,7 +1555,7 @@ async fn send_chat_completion_stream_with_runtime(
             ))
         })?;
 
-    let response = send_provider_request(runtime, http_request).await?;
+    let (response, dispatch_permit) = send_provider_request(runtime, http_request).await?;
     let status_code = response.status().as_u16();
     let content_type = response
         .headers()
@@ -1576,7 +1577,10 @@ async fn send_chat_completion_stream_with_runtime(
         status_code,
         content_type,
         super::provider_stream_deadlines::apply_provider_stream_deadlines(
-            Body::new(response.into_body()),
+            Body::new(PermitHoldingBody::new(
+                response.into_body(),
+                dispatch_permit,
+            )),
             stream_total,
         ),
     ))
@@ -1639,7 +1643,7 @@ async fn send_responses_stream_with_runtime(
             ))
         })?;
 
-    let response = send_provider_request(runtime, http_request).await?;
+    let (response, dispatch_permit) = send_provider_request(runtime, http_request).await?;
     let status_code = response.status().as_u16();
     let content_type = response
         .headers()
@@ -1656,7 +1660,10 @@ async fn send_responses_stream_with_runtime(
     Ok(ResponsesStreamRelayResponse::new(
         status_code,
         content_type,
-        Body::new(response.into_body()),
+        Body::new(PermitHoldingBody::new(
+            response.into_body(),
+            dispatch_permit,
+        )),
     ))
 }
 
@@ -1720,7 +1727,7 @@ async fn send_openai_json_with_runtime(
                 ))
             })?;
 
-        let response = send_provider_request(runtime, http_request).await?;
+        let (response, dispatch_permit) = send_provider_request(runtime, http_request).await?;
         let status_code = response.status().as_u16();
         let memory_guard = runtime
             .response_memory_budget
@@ -1763,6 +1770,7 @@ async fn send_openai_json_with_runtime(
         if attempt < retry_policy.max_attempts && retry_policy.is_retryable_status(status_code) {
             drop(body);
             drop(memory_guard);
+            drop(dispatch_permit);
             if retry_policy.backoff_ms > 0 {
                 tokio::time::sleep(Duration::from_millis(retry_policy.backoff_ms)).await;
             }
@@ -1789,14 +1797,25 @@ fn provider_response_memory_error(error: ProviderResponseMemoryBudgetError) -> D
 async fn send_provider_request(
     runtime: &ProviderRelayRuntime,
     http_request: Request<RequestBody>,
-) -> DomainResult<hyper::Response<hyper::body::Incoming>> {
-    tokio::time::timeout(
+) -> DomainResult<(
+    hyper::Response<hyper::body::Incoming>,
+    super::dispatch_gate::ProviderDispatchPermit,
+)> {
+    // One process-wide slot per in-flight dispatch. Streaming relays keep the
+    // permit alive through the response body (`PermitHoldingBody`); buffered
+    // JSON relays hold it until the body is collected.
+    let dispatch_permit = ProviderDispatchGate::shared()
+        .acquire(runtime.response_timeout)
+        .await
+        .map_err(|error| DomainError::new(format!("provider_dispatch_saturated: {error}")))?;
+    let response = tokio::time::timeout(
         runtime.response_timeout,
         runtime.client.request(http_request),
     )
     .await
     .map_err(|_| DomainError::new("upstream provider response timed out"))?
-    .map_err(|error| DomainError::new(format!("upstream provider request failed: {error}")))
+    .map_err(|error| DomainError::new(format!("upstream provider request failed: {error}")))?;
+    Ok((response, dispatch_permit))
 }
 
 fn build_provider_client(

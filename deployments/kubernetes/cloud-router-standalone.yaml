@@ -108,6 +108,22 @@ spec:
             # fires on every degradation; tune the pin with the alert.
             - name: SDKWORK_CLOUDROUTER_PROVIDER_RATE_LIMIT_ESTIMATED_INSTANCE_COUNT
               value: "10"
+            # Buffered-response admission budget: 1 GiB admits 4 concurrent
+            # 64 MiB non-streaming responses under the default 4x reservation
+            # multiplier (the 512 MiB code default admits only 2). Keep below
+            # the container memory limit; scale both together.
+            - name: SDKWORK_CLOUDROUTER_PROVIDER_RESPONSE_MEMORY_BUDGET_BYTES
+              value: "1073741824"
+            # Process-wide ceiling for concurrent upstream provider dispatches
+            # (streaming relays hold a slot for the stream's lifetime).
+            - name: SDKWORK_CLOUDROUTER_PROVIDER_DISPATCH_MAX_CONCURRENCY
+              value: "256"
+            # /metrics is fail-closed without a bearer token outside dev/test.
+            # Annotation-based Prometheus scraping cannot send bearer headers,
+            # so this explicit opt-out keeps the shipped scrape working;
+            # migrate to a ServiceMonitor with bearerSecretRef and remove it.
+            - name: SDKWORK_CLOUDROUTER_METRICS_AUTH_DISABLED
+              value: "true"
             # Database, Redis, and runtime secrets are injected by the
             # sdkwork-cloudrouter-config secret (see deployments/kubernetes/
             # README.md). In a real deployment set the split database fields
@@ -129,13 +145,15 @@ spec:
               mountPath: /tmp
           resources:
             # Google SRE Book capacity guidance: CPU 2:1 (compressible), memory
-            # kept close to 1:1 (not compressible).
+            # kept close to 1:1 (not compressible). The 2 Gi limit must stay
+            # above the buffered-response memory budget below plus the process
+            # baseline; raise both together.
             requests:
               cpu: 500m
               memory: 1Gi
             limits:
               cpu: "1"
-              memory: 1.5Gi
+              memory: 2Gi
           startupProbe:
             httpGet:
               path: /healthz

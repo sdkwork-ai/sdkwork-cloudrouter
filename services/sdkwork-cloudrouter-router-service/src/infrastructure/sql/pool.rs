@@ -26,22 +26,38 @@ pub const POSTGRES_IDLE_IN_TRANSACTION_SESSION_TIMEOUT_MS: u64 = 120_000;
 
 /// Appends PostgreSQL session guards to the connection URL. sqlx merges the
 /// URL `options` entries with any options the pool builder sets afterwards,
-/// so the search-path handling in the database host is unaffected. Idempotent:
-/// an existing `options` parameter from the operator wins nothing — the guard
-/// keys are set only once per URL.
+/// so the search-path handling in the database host is unaffected. Each guard
+/// key is appended independently: an operator supplying their own
+/// `statement_timeout=` must not silently drop the idle-in-transaction guard
+/// (abandoned transactions holding chat ordinal or settlement claim row locks
+/// are exactly the failure mode this guard exists to bound).
 fn with_postgres_session_guards(database_url: &str) -> String {
     if database_url.starts_with("sqlite") {
         return database_url.to_owned();
     }
-    if database_url.contains("statement_timeout=") {
+    let mut guard_keys: Vec<&str> = Vec::new();
+    if !database_url.contains("statement_timeout=") {
+        guard_keys.push("statement_timeout");
+    }
+    if !database_url.contains("idle_in_transaction_session_timeout=") {
+        guard_keys.push("idle_in_transaction_session_timeout");
+    }
+    if guard_keys.is_empty() {
         return database_url.to_owned();
     }
-    let guard = format!(
-        "-c statement_timeout={POSTGRES_STATEMENT_TIMEOUT_MS} -c idle_in_transaction_session_timeout={POSTGRES_IDLE_IN_TRANSACTION_SESSION_TIMEOUT_MS}"
-    );
-    let encoded_guard = guard
-        .replace(' ', "%20")
-        .replace('=', "%3D");
+    let guard = guard_keys
+        .iter()
+        .map(|key| match *key {
+            "statement_timeout" => {
+                format!("-c statement_timeout={POSTGRES_STATEMENT_TIMEOUT_MS}")
+            }
+            _ => format!(
+                "-c idle_in_transaction_session_timeout={POSTGRES_IDLE_IN_TRANSACTION_SESSION_TIMEOUT_MS}"
+            ),
+        })
+        .collect::<Vec<_>>()
+        .join(" ");
+    let encoded_guard = guard.replace(' ', "%20").replace('=', "%3D");
     let separator = if database_url.contains('?') { '&' } else { '?' };
     format!("{database_url}{separator}options={encoded_guard}")
 }
@@ -145,9 +161,9 @@ pub async fn connect_postgres_runtime_pool(
         max_connections,
     ))
     .acquire_timeout(Duration::from_secs(POSTGRES_POOL_ACQUIRE_TIMEOUT_SECONDS))
-        .build()
-        .await
-        .map_err(pool_error_to_sqlx)?;
+    .build()
+    .await
+    .map_err(pool_error_to_sqlx)?;
     pool.as_postgres()
         .cloned()
         .ok_or_else(|| sqlx::Error::Configuration("expected PostgreSQL database pool".into()))

@@ -114,6 +114,9 @@ const RUNTIME_SSE_BUFFER_MAX_BYTES: usize = 4 * 1024 * 1024;
 struct RuntimeEventSseStreamState {
     provider_stream: BoxedByteStream,
     buffer: String,
+    /// Bytes of a multi-byte UTF-8 sequence split across chunk boundaries;
+    /// carried into the next chunk instead of being lossily replaced.
+    pending_utf8: Vec<u8>,
     pending: VecDeque<Bytes>,
     done: bool,
     done_sent: bool,
@@ -124,6 +127,51 @@ struct RuntimeEventSseStreamState {
     invocation_id: String,
     event_source: String,
     target_type: Option<String>,
+}
+
+/// Incremental UTF-8 decoding for chunked SSE frames: a truncated multi-byte
+/// sequence at a chunk boundary is carried to the next chunk. Naive
+/// `from_utf8_lossy` per chunk corrupts CJK/emoji characters that straddle
+/// the provider's frame boundary.
+fn decode_utf8_incremental(pending: &mut Vec<u8>, chunk: &[u8]) -> String {
+    if pending.is_empty() {
+        if let Ok(text) = std::str::from_utf8(chunk) {
+            return text.to_owned();
+        }
+    }
+    let mut bytes = std::mem::take(pending);
+    bytes.extend_from_slice(chunk);
+    let carry = incomplete_utf8_tail_len(&bytes);
+    let split = bytes.len() - carry;
+    let decoded = String::from_utf8_lossy(&bytes[..split]).into_owned();
+    pending.extend_from_slice(&bytes[split..]);
+    decoded
+}
+
+/// Length of the trailing truncated multi-byte UTF-8 sequence (0..=3), if any.
+fn incomplete_utf8_tail_len(bytes: &[u8]) -> usize {
+    let len = bytes.len();
+    let window_start = len.saturating_sub(3);
+    for index in (window_start..len).rev() {
+        match bytes[index] {
+            0x00..=0x7F => return 0,
+            0xC0..=0xDF => {
+                return if len - index < 2 { len - index } else { 0 };
+            }
+            0xE0..=0xEF => {
+                return if len - index < 3 { len - index } else { 0 };
+            }
+            0xF0..=0xF7 => {
+                return if len - index < 4 { len - index } else { 0 };
+            }
+            // Continuation byte: the sequence lead sits further back.
+            0x80..=0xBF => {}
+            _ => return 0,
+        }
+    }
+    // Every byte in the window is a continuation byte, so the sequence lead
+    // sits immediately before it and the whole window is a truncated tail.
+    len - window_start
 }
 
 struct RuntimeEventTailSseStreamState {
@@ -1588,6 +1636,7 @@ fn runtime_provider_stream_sse_response(
     let stream_state = RuntimeEventSseStreamState {
         provider_stream,
         buffer: String::new(),
+        pending_utf8: Vec::new(),
         pending: VecDeque::new(),
         done: false,
         done_sent: false,
@@ -1630,6 +1679,7 @@ fn runtime_gateway_stream_sse_response(
     let stream_state = RuntimeEventSseStreamState {
         provider_stream,
         buffer: String::new(),
+        pending_utf8: Vec::new(),
         pending: VecDeque::new(),
         done: false,
         done_sent: false,
@@ -5244,7 +5294,9 @@ async fn next_runtime_sse_chunk(
                         state,
                     ));
                 }
-                state.buffer.push_str(&String::from_utf8_lossy(&chunk));
+                state
+                    .buffer
+                    .push_str(&decode_utf8_incremental(&mut state.pending_utf8, &chunk));
                 while let Some((boundary, boundary_len)) = next_sse_event_boundary(&state.buffer) {
                     let event = state.buffer[..boundary].to_owned();
                     state.buffer.drain(..boundary + boundary_len);

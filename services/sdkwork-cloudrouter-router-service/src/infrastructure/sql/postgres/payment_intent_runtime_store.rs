@@ -463,22 +463,50 @@ async fn finish_operation_attempt(
     operation_attempt_from_row(&row)
 }
 
+/// Federated `commerce_refund` projection mapped back onto the Cloud Router
+/// refund record. The refund→intent linkage is recovered from `request_no`
+/// (which `insert_refund` writes as the intent id); `supplier_code` comes from
+/// the latest refund attempt row because the federated aggregate does not
+/// carry supplier columns. Literals only — the workspace SQL audit rejects
+/// interpolated statements, and every expansion stays `&'static`.
+macro_rules! refund_federated_projection_sql {
+    ($predicate:literal) => {
+        concat!(
+            "SELECT r.id, r.tenant_id, r.organization_id, \
+             COALESCE(pi.payment_intent_id, '') AS payment_intent_id, \
+             r.payment_attempt_id, r.refund_no, \
+             r.amount, r.currency_code, att.supplier_code AS supplier_code, \
+             COALESCE(r.refund_reason_code, '') AS reason, r.status, r.idempotency_key, \
+             r.created_at::text AS created_at, r.updated_at::text AS updated_at \
+             FROM commerce_refund r \
+             LEFT JOIN LATERAL ( \
+                 SELECT i.id AS payment_intent_id \
+                 FROM commerce_payment_intent i \
+                 WHERE i.tenant_id = r.tenant_id \
+                   AND i.id = NULLIF(r.request_no, '') \
+                   AND i.deleted_at IS NULL \
+                 LIMIT 1 \
+             ) pi ON true \
+             LEFT JOIN LATERAL ( \
+                 SELECT a.supplier_code \
+                 FROM commerce_refund_attempt a \
+                 WHERE a.tenant_id = r.tenant_id AND a.refund_id = r.id \
+                 ORDER BY a.created_at DESC, a.id DESC \
+                 LIMIT 1 \
+             ) att ON true",
+            $predicate
+        )
+    };
+}
+
 async fn load_refund_by_idempotency(
     pool: &PgPool,
     tenant_id: &str,
     idempotency_key: &str,
 ) -> DomainResult<Option<PaymentRefundRuntimeRecord>> {
-    let row = sqlx::query(
-        r#"
-        SELECT id, tenant_id, organization_id, payment_intent_id, payment_attempt_id, refund_no,
-               amount, currency_code, supplier_code, reason, status, idempotency_key,
-               created_at::text AS created_at, updated_at::text AS updated_at
-        FROM commerce_refund
-        WHERE tenant_id = $1
-          AND idempotency_key = $2
-        LIMIT 1
-        "#,
-    )
+    let row = sqlx::query(refund_federated_projection_sql!(
+        " WHERE r.tenant_id = $1 AND r.idempotency_key = $2 LIMIT 1"
+    ))
     .bind(tenant_id)
     .bind(idempotency_key)
     .fetch_optional(pool)
@@ -498,17 +526,9 @@ async fn load_refund_by_id(
     tenant_id: &str,
     id: &str,
 ) -> DomainResult<Option<PaymentRefundRuntimeRecord>> {
-    let row = sqlx::query(
-        r#"
-        SELECT id, tenant_id, organization_id, payment_intent_id, payment_attempt_id, refund_no,
-               amount, currency_code, supplier_code, reason, status, idempotency_key,
-               created_at::text AS created_at, updated_at::text AS updated_at
-        FROM commerce_refund
-        WHERE tenant_id = $1
-          AND id = $2
-        LIMIT 1
-        "#,
-    )
+    let row = sqlx::query(refund_federated_projection_sql!(
+        " WHERE r.tenant_id = $1 AND r.id = $2 LIMIT 1"
+    ))
     .bind(tenant_id)
     .bind(id)
     .fetch_optional(pool)
@@ -533,16 +553,25 @@ async fn insert_refund(
         .begin()
         .await
         .map_err(|error| store_error("failed to begin payment refund transaction", error))?;
-    // Atomic idempotency: the (tenant_id, idempotency_key) arbiter absorbs a
-    // lost insert race; a zero-row insert reports a typed conflict so the
-    // caller replays the winner's record instead of double-refunding.
+    // Atomic idempotency against the federated `sdkwork-payment` arbiter
+    // (`ux_commerce_refund_idempotency`: tenant_id, order_id, idempotency_key
+    // WHERE deleted_at IS NULL). The row is written in the federated column
+    // contract: `order_id` carries the intent's commerce order reference,
+    // `request_no` carries the Cloud Router intent id so reads can recover the
+    // refund→intent linkage, and `refund_reason_code` carries the reason. A
+    // zero-row insert reports a typed conflict so the caller replays the
+    // winner's record instead of double-refunding; the arbiter lookup below
+    // separates an idempotency replay from an unrelated identity collision.
     let inserted_rows = sqlx::query(
         r#"
         INSERT INTO commerce_refund
-            (id, tenant_id, organization_id, payment_intent_id, payment_attempt_id, refund_no, amount, currency_code, supplier_code, reason, status, request_no, idempotency_key, created_at, updated_at)
+            (id, tenant_id, organization_id, order_id, payment_attempt_id, refund_no, amount, currency_code, status, refund_reason_code, request_no, idempotency_key, created_at, updated_at)
         VALUES
-            ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::timestamptz, $15::timestamptz)
-        ON CONFLICT DO NOTHING
+            ($1, $2, $3,
+             (SELECT i.order_id FROM commerce_payment_intent i WHERE i.tenant_id = $2 AND i.id = $4),
+             $5, $6, $7, $8, $9, $10, $4, $11, $12::timestamptz, $13::timestamptz)
+        ON CONFLICT (tenant_id, order_id, idempotency_key) WHERE deleted_at IS NULL
+        DO NOTHING
         "#,
     )
     .bind(&refund.id)
@@ -553,10 +582,8 @@ async fn insert_refund(
     .bind(&refund.merchant_refund_no)
     .bind(&refund.amount)
     .bind(&refund.currency_code)
-    .bind(&refund.supplier_code)
-    .bind(&refund.reason)
     .bind(refund.status.as_str())
-    .bind(&refund.merchant_refund_no)
+    .bind(&refund.reason)
     .bind(&refund.idempotency_key)
     .bind(&refund.created_at)
     .bind(&refund.updated_at)
@@ -565,8 +592,30 @@ async fn insert_refund(
     .map_err(|error| store_error("failed to insert payment refund", error))?
     .rows_affected();
     if inserted_rows == 0 {
+        let same_arbiter_rows: i64 = sqlx::query_scalar(
+            r#"
+            SELECT COUNT(*)
+            FROM commerce_refund
+            WHERE tenant_id = $1 AND idempotency_key = $2
+            "#,
+        )
+        .bind(&refund.tenant_id)
+        .bind(&refund.idempotency_key)
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(|error| {
+            store_error(
+                "failed to inspect payment refund idempotency arbiter",
+                error,
+            )
+        })?;
+        if same_arbiter_rows > 0 {
+            return Err(DomainError::conflict(
+                "payment refund idempotency key already exists",
+            ));
+        }
         return Err(DomainError::conflict(
-            "payment refund idempotency key already exists",
+            "payment refund identity conflicts with an existing refund record",
         ));
     }
     // Cumulative refund-cap reservation. The UPDATE row-locks the intent, so
@@ -592,10 +641,13 @@ async fn insert_refund(
                 SELECT SUM(active.amount::numeric)
                 FROM commerce_refund active
                 WHERE active.tenant_id = $1
-                  AND active.payment_intent_id = $2
+                  AND active.order_id = (
+                      SELECT i.order_id FROM commerce_payment_intent i
+                      WHERE i.tenant_id = $1 AND i.id = $2
+                  )
                   AND active.deleted_at IS NULL
                   AND active.id <> $5
-                  AND active.status IN ('pending', 'processing', 'succeeded')
+                  AND active.status IN ('submitted', 'processing', 'succeeded')
               ), 0) <= amount::numeric
         "#,
     )
@@ -765,7 +817,7 @@ async fn finish_refund(
         SET status = $1,
             updated_at = $2::timestamptz
         WHERE id = $3
-          AND status IN ('pending', 'processing')
+          AND status IN ('submitted', 'processing')
         "#,
     )
     .bind(status.as_str())
@@ -794,19 +846,11 @@ async fn finish_refund(
     .execute(&mut *tx)
     .await
     .map_err(|error| store_error("failed to insert payment refund event", error))?;
-    let row = sqlx::query(
-        r#"
-        SELECT id, tenant_id, organization_id, payment_intent_id, payment_attempt_id, refund_no,
-               amount, currency_code, supplier_code, reason, status, idempotency_key,
-               created_at::text AS created_at, updated_at::text AS updated_at
-        FROM commerce_refund
-        WHERE id = $1
-        "#,
-    )
-    .bind(id)
-    .fetch_one(&mut *tx)
-    .await
-    .map_err(|error| store_error("failed to reload payment refund", error))?;
+    let row = sqlx::query(refund_federated_projection_sql!(" WHERE r.id = $1"))
+        .bind(id)
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(|error| store_error("failed to reload payment refund", error))?;
     let refund = refund_from_row(&row)?;
     tx.commit().await.map_err(|error| {
         store_error("failed to commit finish payment refund transaction", error)
@@ -853,7 +897,7 @@ fn intent_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<PaymentIntentRun
 
 fn refund_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<PaymentRefundRuntimeRecord> {
     let status = match string_cell(row, "status").as_str() {
-        "pending" => PaymentRefundStatus::Pending,
+        "submitted" | "pending" => PaymentRefundStatus::Pending,
         "processing" => PaymentRefundStatus::Processing,
         "succeeded" => PaymentRefundStatus::Succeeded,
         "failed" => PaymentRefundStatus::Failed,

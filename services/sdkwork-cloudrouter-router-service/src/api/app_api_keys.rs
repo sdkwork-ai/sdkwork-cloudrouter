@@ -78,11 +78,24 @@ impl Clone for AppApiKeyState {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct AppApiKeyCreateResponse {
     item: AppApiKeyItemResponse,
     raw_key: String,
+}
+
+// The create response intentionally carries the one-time raw gateway key.
+// Debug is hand-written (not derived) so a future `tracing::debug!(?response)`
+// can never leak the secret into logs or traces.
+impl std::fmt::Debug for AppApiKeyCreateResponse {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("AppApiKeyCreateResponse")
+            .field("item", &self.item)
+            .field("raw_key", &"<redacted>")
+            .finish()
+    }
 }
 
 #[derive(Debug, Serialize)]

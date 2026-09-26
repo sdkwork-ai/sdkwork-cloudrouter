@@ -128,12 +128,16 @@ impl ReadinessCheck for RouterReadinessCheck {
 pub async fn assemble_api_router(
     context: ApiAssemblyContext,
 ) -> Result<ApiAssembly, ApiAssemblyError> {
-    sdkwork_api_models_assembly::bootstrap_database_from_env()
-        .await
-        .map_err(anyhow::Error::msg)?;
+    // Fail closed on a non-PostgreSQL server engine BEFORE any dependency
+    // domain bootstraps its own database: the models host builds a pool and
+    // migrates straight from the shared environment, so it must never observe
+    // a `sqlite:` URL the Cloud Router guard is about to reject.
     let upstreams =
         sdkwork_cloudrouter_edge_runtime::runtime::all_in_one_in_process_upstreams_from_env()
             .await?;
+    sdkwork_api_models_assembly::bootstrap_database_from_env()
+        .await
+        .map_err(anyhow::Error::msg)?;
     let (upstreams, account_provisioner, feeds_open) = if context.includes_dependency_apis() {
         let iam_router = iam::wire_iam_app_router().await?;
         let provisioner = resolve_account_provisioner().await?;
