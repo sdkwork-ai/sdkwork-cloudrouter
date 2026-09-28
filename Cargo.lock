@@ -8167,6 +8167,7 @@ dependencies = [
  "sdkwork-intelligence-memory-service",
  "sdkwork-memory-contract",
  "sdkwork-routes-memory-support",
+ "sdkwork-utils-rust",
  "sdkwork-web-axum",
  "sdkwork-web-core",
  "serde",
@@ -8651,6 +8652,7 @@ dependencies = [
  "async-trait",
  "sha2 0.10.9",
  "thiserror 2.0.20",
+ "tokio",
  "uuid",
  "zeroize",
 ]
