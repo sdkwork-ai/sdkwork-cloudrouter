@@ -202,11 +202,11 @@
       "workspace": "sdkwork-memory-app-sdk",
       "surface": "app-api",
       "apiPrefix": "/app/v3/api",
-      "connectivityPlane": "platform",
-      "runtimeMode": "external-via-platform-surface",
-      "mountStatus": null,
-      "envKey": "VITE_SDKWORK_MEMORY_APP_API_BASE_URL",
-      "forbidApplicationSameOriginFallback": true,
+      "connectivityPlane": "application",
+      "runtimeMode": "same-origin-embedded",
+      "mountStatus": "verified",
+      "envKey": null,
+      "forbidApplicationSameOriginFallback": false,
       "sdkOwner": "sdkwork-memory",
       "apiAuthority": "sdkwork-memory.app",
       "consumerSdkOwner": "sdkwork-cloudrouter",
@@ -442,11 +442,11 @@
       "workspace": "sdkwork-memory-app-sdk",
       "surface": "app-api",
       "apiPrefix": "/app/v3/api",
-      "connectivityPlane": "platform",
-      "runtimeMode": "external-via-platform-surface",
-      "mountStatus": null,
-      "envKey": "VITE_SDKWORK_MEMORY_APP_API_BASE_URL",
-      "forbidApplicationSameOriginFallback": true,
+      "connectivityPlane": "application",
+      "runtimeMode": "same-origin-embedded",
+      "mountStatus": "verified",
+      "envKey": null,
+      "forbidApplicationSameOriginFallback": false,
       "sdkOwner": "sdkwork-memory",
       "apiAuthority": "sdkwork-memory.app",
       "consumerSdkOwner": "sdkwork-cloudrouter",
@@ -3915,6 +3915,11 @@
           {
             "name": "orderAppApi",
             "export": "sdkwork_api_order_assembly::ApiAssembly::from_database_pool"
+          },
+          {
+            "name": "memoryAppApiContribution",
+            "provider": "sdkwork-api-memory-assembly",
+            "export": "sdkwork_api_memory_assembly::assemble_app_api_contribution_from_env"
           }
         ],
         "sdkDependencies": [],
@@ -3923,7 +3928,8 @@
           "src/manifest.rs#route_manifest",
           "src/routes.rs#build_sdkwork_cloudrouter_router_app_api_router",
           "src/routes.rs#build_sdkwork_cloudrouter_router_app_api_router_from_env",
-          "src/commerce_runtime.rs#merge_federated_commerce_app_routers"
+          "src/commerce_runtime.rs#merge_federated_commerce_app_routers",
+          "src/memory_runtime.rs#merge_federated_memory_app_router"
         ],
         "dependencyApiSurfaces": [
           {
@@ -4015,6 +4021,25 @@
               "src/routes.rs",
               "../../../sdkwork-order/crates/sdkwork-api-order-assembly/assembly-manifest.json",
               "../../../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+            ]
+          },
+          {
+            "workspace": "sdkwork-memory",
+            "sdkFamily": "sdkwork-memory-app-sdk",
+            "apiAuthority": "sdkwork-memory.app",
+            "surface": "app-api",
+            "apiPrefix": "/app/v3/api",
+            "runtimeMode": "same-origin-mounted",
+            "profileCoverage": [
+              "standalone"
+            ],
+            "cargoDependency": "sdkwork_api_memory_assembly",
+            "embeddedExecutableExport": "sdkwork_api_memory_assembly::assemble_app_api_contribution_from_env",
+            "coverageEvidence": [
+              "src/memory_runtime.rs",
+              "src/routes.rs",
+              "../../../sdkwork-memory/crates/sdkwork-api-memory-assembly/assembly-manifest.json",
+              "../../../sdkwork-memory/apis/app-api/memory-app-api.openapi.json"
             ]
           }
         ]
@@ -5709,7 +5734,8 @@
             "sqlx",
             "sdkwork-database-sqlx",
             "sdkwork-models-catalog-service",
-            "sdkwork-cloudrouter-router-service"
+            "sdkwork-cloudrouter-router-service",
+            "tokio"
           ]
         },
         {
@@ -5786,6 +5812,7 @@
             "sdkwork-api-iam-assembly",
             "sdkwork-api-drive-assembly",
             "sdkwork-api-assets-assembly",
+            "sdkwork-api-memory-assembly",
             "sdkwork-database-lifecycle",
             "sdkwork-database-spi",
             "sdkwork-database-sqlx",
@@ -6339,6 +6366,27 @@
             "src/routes.rs",
             "../../../sdkwork-order/crates/sdkwork-api-order-assembly/assembly-manifest.json",
             "../../../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+          ]
+        },
+        {
+          "component": "sdkwork-routes-cloudrouter-app-api",
+          "source": "crates/sdkwork-routes-cloudrouter-app-api/specs/component.spec.json",
+          "workspace": "sdkwork-memory",
+          "sdkFamily": "sdkwork-memory-app-sdk",
+          "apiAuthority": "sdkwork-memory.app",
+          "surface": "app-api",
+          "apiPrefix": "/app/v3/api",
+          "runtimeMode": "same-origin-mounted",
+          "profileCoverage": [
+            "standalone"
+          ],
+          "cargoDependency": "sdkwork_api_memory_assembly",
+          "embeddedExecutableExport": "sdkwork_api_memory_assembly::assemble_app_api_contribution_from_env",
+          "coverageEvidence": [
+            "src/memory_runtime.rs",
+            "src/routes.rs",
+            "../../../sdkwork-memory/crates/sdkwork-api-memory-assembly/assembly-manifest.json",
+            "../../../sdkwork-memory/apis/app-api/memory-app-api.openapi.json"
           ]
         },
         {

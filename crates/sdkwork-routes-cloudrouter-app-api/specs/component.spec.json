@@ -49,13 +49,19 @@
       {
         "name": "orderAppApi",
         "export": "sdkwork_api_order_assembly::ApiAssembly::from_database_pool"
+      },
+      {
+        "name": "memoryAppApiContribution",
+        "provider": "sdkwork-api-memory-assembly",
+        "export": "sdkwork_api_memory_assembly::assemble_app_api_contribution_from_env"
       }
     ],
     "runtimeEntrypoints": [
       "src/manifest.rs#route_manifest",
       "src/routes.rs#build_sdkwork_cloudrouter_router_app_api_router",
       "src/routes.rs#build_sdkwork_cloudrouter_router_app_api_router_from_env",
-      "src/commerce_runtime.rs#merge_federated_commerce_app_routers"
+      "src/commerce_runtime.rs#merge_federated_commerce_app_routers",
+      "src/memory_runtime.rs#merge_federated_memory_app_router"
     ],
     "routeManifest": "src/manifest.rs",
     "sdkClients": [],
@@ -141,6 +147,23 @@
           "src/routes.rs",
           "../../../sdkwork-order/crates/sdkwork-api-order-assembly/assembly-manifest.json",
           "../../../sdkwork-order/apis/app-api/order/order-app-api.openapi.json"
+        ]
+      },
+      {
+        "workspace": "sdkwork-memory",
+        "sdkFamily": "sdkwork-memory-app-sdk",
+        "apiAuthority": "sdkwork-memory.app",
+        "surface": "app-api",
+        "apiPrefix": "/app/v3/api",
+        "runtimeMode": "same-origin-mounted",
+        "profileCoverage": ["standalone"],
+        "cargoDependency": "sdkwork_api_memory_assembly",
+        "embeddedExecutableExport": "sdkwork_api_memory_assembly::assemble_app_api_contribution_from_env",
+        "coverageEvidence": [
+          "src/memory_runtime.rs",
+          "src/routes.rs",
+          "../../../sdkwork-memory/crates/sdkwork-api-memory-assembly/assembly-manifest.json",
+          "../../../sdkwork-memory/apis/app-api/memory-app-api.openapi.json"
         ]
       }
     ],

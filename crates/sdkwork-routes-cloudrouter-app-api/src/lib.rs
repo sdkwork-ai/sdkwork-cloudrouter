@@ -10,6 +10,7 @@ mod http_route_manifest;
 mod invoice_runtime;
 pub mod manifest;
 mod manifest_composition;
+mod memory_runtime;
 pub mod paths;
 pub mod routes;
 mod skills_runtime;

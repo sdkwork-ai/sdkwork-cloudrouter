@@ -141,6 +141,13 @@ const MOUNTED_APP_CAPABILITIES: &[MountedAppCapability] = &[
         platform_gateway_mounts_separately: false,
         included_in_cloud_assembly_manifest: false,
     },
+    MountedAppCapability {
+        workspace: "sdkwork-memory",
+        owner: "sdkwork-memory",
+        manifest: sdkwork_api_memory_assembly::app_api_route_manifest,
+        platform_gateway_mounts_separately: false,
+        included_in_cloud_assembly_manifest: false,
+    },
 ];
 
 fn mounts_for_standalone_host(include_platform_gateway_mounted: bool) -> Vec<RouteManifestMount> {
@@ -262,6 +269,7 @@ mod tests {
             "sdkwork-assets",
             "sdkwork-skills",
             "sdkwork-generations",
+            "sdkwork-memory",
         ] {
             assert!(
                 workspaces.contains(&required),
@@ -281,6 +289,7 @@ mod tests {
                 "sdkwork-generations",
                 "merge_federated_generations_app_router",
             ),
+            ("sdkwork-memory", "merge_federated_memory_app_router"),
         ] {
             assert!(
                 MOUNTED_APP_CAPABILITIES
@@ -415,6 +424,10 @@ mod tests {
             .match_route("GET", "/app/v3/api/generations")
             .expect("generations app-api route must be registered");
         assert_eq!(RouteAuth::DualToken, generations.auth);
+        let memory = manifest
+            .match_route("GET", "/app/v3/api/memory/spaces")
+            .expect("memory app-api route must be registered");
+        assert_eq!(RouteAuth::DualToken, memory.auth);
     }
 
     #[test]
@@ -431,6 +444,12 @@ mod tests {
                 .match_route("GET", "/app/v3/api/memberships/package_groups")
                 .is_none(),
             "cloud assembly manifest must not advertise external membership app routes"
+        );
+        assert!(
+            manifest
+                .match_route("GET", "/app/v3/api/memory/spaces")
+                .is_none(),
+            "cloud assembly manifest must not advertise external memory app routes"
         );
         assert!(
             manifest

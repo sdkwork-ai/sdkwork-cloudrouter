@@ -60,6 +60,14 @@ function readPortalFile(relativePath: string): string {
   return readFileSync(path.resolve(PORTAL_ROOT, relativePath), 'utf8');
 }
 
+/** Root of the Cloud Router repository hosting this portal. */
+const CLOUDROUTER_REPOSITORY_ROOT = path.resolve(PORTAL_ROOT, '..', '..');
+
+/** Reads a file addressed relative to the Cloud Router repository root. */
+function readCloudRouterRepositoryFile(relativePath: string): string {
+  return readFileSync(path.resolve(CLOUDROUTER_REPOSITORY_ROOT, relativePath), 'utf8');
+}
+
 const requireFromPackage = createRequire(path.join(PACKAGE_ROOT, 'package.json'));
 
 /**
@@ -364,5 +372,78 @@ describe('console integration wiring', () => {
     // One English plus one Chinese entry each; a single hit means a half-translated menu.
     expect(occurrences).toHaveLength(2);
     expect(groupOccurrences).toHaveLength(2);
+  });
+});
+
+describe('Memory console surface attachment', () => {
+  it('renders the embed instead of an env-gated not-attached state', () => {
+    const viewSource = readFileSync(path.join(SPEC_FILE_DIR, 'MemoryView.tsx'), 'utf8');
+
+    // The Memory app-api surface is served same-origin by the unified runtime, so
+    // a missing dedicated base-URL key is not evidence that the capability is
+    // absent. Both needles are assembled at runtime so the assertion cannot be
+    // satisfied by its own literal.
+    expect(viewSource).not.toContain(['VITE_SDKWORK_MEMORY', 'APP_API_BASE_URL'].join('_'));
+    expect(viewSource).not.toContain(['not', 'Attached'].join(''));
+    expect(viewSource).toContain('client={client}');
+    expect(viewSource).toContain('permissionScope={readPortalPermissionScope()}');
+  });
+
+  it('serves the memory app-api surface through the dependency assembly contribution', () => {
+    const runtimeSource = readCloudRouterRepositoryFile(
+      'crates/sdkwork-routes-cloudrouter-app-api/src/memory_runtime.rs',
+    );
+
+    // Cloud Router must consume the dependency-owned app-api-only contribution
+    // (API_ASSEMBLY_SPEC section 3), never import the memory route crates
+    // directly: the whole-module factory would republish the open-api and
+    // backend-api surfaces the gateway already mounts itself.
+    expect(runtimeSource).toContain(
+      ['sdkwork_api_memory_assembly::assemble_app_api_', 'contribution_from_env('].join(''),
+    );
+    expect(runtimeSource).not.toContain(['sdkwork_routes_memory', '_app_api::'].join(''));
+  });
+
+  it('declares the memory app-api surface as a verified same-origin dependency', () => {
+    const spec = JSON.parse(
+      readCloudRouterRepositoryFile(
+        'crates/sdkwork-routes-cloudrouter-app-api/specs/component.spec.json',
+      ),
+    ) as {
+      contracts?: {
+        dependencyApiSurfaces?: {
+          sdkFamily?: string;
+          surface?: string;
+          runtimeMode?: string;
+          apiPrefix?: string;
+          profileCoverage?: string[];
+          cargoDependency?: string;
+          embeddedExecutableExport?: string;
+          coverageEvidence?: string[];
+        }[];
+      };
+    };
+    const declared = (spec.contracts?.dependencyApiSurfaces ?? []).find(
+      (surface) => surface.sdkFamily === 'sdkwork-memory-app-sdk' && surface.surface === 'app-api',
+    );
+
+    // The composition resolver only grants `same-origin-embedded` plus
+    // `envKey: null` to a dependency-owned surface that carries a cargo
+    // dependency, an executable export, and coverage evidence; a declaration
+    // without that assembly evidence silently degrades to
+    // external-via-platform-surface and the console loses its same-origin base.
+    expect(declared).toBeTruthy();
+    expect(declared?.runtimeMode).toBe('same-origin-mounted');
+    expect(declared?.apiPrefix).toBe('/app/v3/api');
+    expect(declared?.cargoDependency).toBe('sdkwork_api_memory_assembly');
+    expect(declared?.embeddedExecutableExport).toBe(
+      'sdkwork_api_memory_assembly::assemble_app_api_contribution_from_env',
+    );
+    expect(declared?.coverageEvidence).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('sdkwork-memory/apis/app-api/memory-app-api.openapi.json'),
+      ]),
+    );
+    expect(declared?.profileCoverage).toContain('standalone');
   });
 });

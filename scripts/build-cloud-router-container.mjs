@@ -243,9 +243,10 @@ const CORE_DATABASE_MODULES = [
   { repo: 'sdkwork-image', envKey: 'SDKWORK_IMAGE_APP_ROOT' },
   { repo: 'sdkwork-web-framework', envKey: 'SDKWORK_WEB_STORE_APP_ROOT' },
   // Federated module hosts compiled into the standalone gateway since the
-  // original list: feeds, generations, messaging, rtc, skills.
+  // original list: feeds, generations, memory, messaging, rtc, skills.
   { repo: 'sdkwork-feeds', envKey: 'SDKWORK_FEEDS_APP_ROOT' },
   { repo: 'sdkwork-generations', envKey: 'SDKWORK_GENERATIONS_APP_ROOT' },
+  { repo: 'sdkwork-memory', envKey: 'SDKWORK_MEMORY_APP_ROOT' },
   { repo: 'sdkwork-messaging', envKey: 'SDKWORK_MESSAGING_APP_ROOT' },
   { repo: 'sdkwork-rtc', envKey: 'SDKWORK_RTC_APP_ROOT' },
   { repo: 'sdkwork-skills', envKey: 'SDKWORK_SKILLS_APP_ROOT' },

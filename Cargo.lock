@@ -2663,6 +2663,7 @@ version = "0.37.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1f111c8c41e7c61a49cd34e44c7619462967221a6443b0ec299e0ac30cfb9b1"
 dependencies = [
+ "cc",
  "pkg-config",
  "vcpkg",
 ]
@@ -4935,6 +4936,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdkwork-api-memory-assembly"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "sdkwork-intelligence-memory-repository-sqlx",
+ "sdkwork-intelligence-memory-service",
+ "sdkwork-memory-database-host",
+ "sdkwork-memory-drive",
+ "sdkwork-memory-provider-openai",
+ "sdkwork-routes-memory-app-api",
+ "sdkwork-routes-memory-backend-api",
+ "sdkwork-routes-memory-open-api",
+ "sdkwork-routes-memory-support",
+ "sdkwork-web-bootstrap",
+ "sdkwork-web-core",
+ "tokio",
+ "tower",
+ "tracing",
+]
+
+[[package]]
 name = "sdkwork-api-messaging-assembly"
 version = "0.1.0"
 dependencies = [
@@ -5921,6 +5943,7 @@ dependencies = [
 name = "sdkwork-database-sqlx"
 version = "0.1.0"
 dependencies = [
+ "libsqlite3-sys",
  "sdkwork-database-config",
  "serde",
  "sqlx",
@@ -6427,6 +6450,58 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdkwork-intelligence-memory-repository-sqlx"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "sdkwork-database-config",
+ "sdkwork-database-id",
+ "sdkwork-database-repository",
+ "sdkwork-database-sqlx",
+ "sdkwork-intelligence-memory-service",
+ "sdkwork-memory-contract",
+ "sdkwork-memory-database-host",
+ "sdkwork-memory-plugin-native-sql",
+ "sdkwork-memory-profile-resolver",
+ "sdkwork-memory-retrieval",
+ "sdkwork-memory-spi",
+ "sdkwork-utils-rust",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "sdkwork-intelligence-memory-service"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "base64 0.22.1",
+ "futures",
+ "hmac 0.12.1",
+ "rand 0.8.8",
+ "regex",
+ "reqwest 0.12.28",
+ "sdkwork-database-id",
+ "sdkwork-id-core",
+ "sdkwork-memory-contract",
+ "sdkwork-memory-plugin-native-sql",
+ "sdkwork-memory-plugin-search-first-vector",
+ "sdkwork-memory-retrieval",
+ "sdkwork-memory-spi",
+ "sdkwork-utils-rust",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror 2.0.20",
+ "tokio",
+ "tracing",
+ "url",
+]
+
+[[package]]
 name = "sdkwork-intelligence-prompts-ai-contract"
 version = "0.1.0"
 dependencies = [
@@ -6698,6 +6773,121 @@ dependencies = [
  "sqlx",
  "tokio",
  "tracing",
+]
+
+[[package]]
+name = "sdkwork-memory-contract"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "sdkwork-utils-rust",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "sdkwork-memory-database-host"
+version = "0.1.0"
+dependencies = [
+ "dotenvy",
+ "sdkwork-database-config",
+ "sdkwork-database-lifecycle",
+ "sdkwork-database-spi",
+ "sdkwork-database-sqlx",
+]
+
+[[package]]
+name = "sdkwork-memory-drive"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "sdkwork-database-config",
+ "sdkwork-database-sqlx",
+ "sdkwork-drive-config",
+ "sdkwork-drive-storage-contract",
+ "sdkwork-drive-storage-local",
+ "sdkwork-drive-storage-s3",
+ "sdkwork-drive-uploader-service",
+ "sdkwork-drive-workspace-service",
+ "sdkwork-memory-spi",
+ "sdkwork-utils-rust",
+ "sqlx",
+ "tracing",
+]
+
+[[package]]
+name = "sdkwork-memory-plugin-native-sql"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "futures",
+ "sdkwork-database-config",
+ "sdkwork-database-id",
+ "sdkwork-database-sqlx",
+ "sdkwork-memory-spi",
+ "sdkwork-utils-rust",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "sdkwork-memory-plugin-search-first-vector"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "sdkwork-memory-spi",
+ "sdkwork-utils-rust",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tracing",
+]
+
+[[package]]
+name = "sdkwork-memory-profile-resolver"
+version = "0.1.0"
+dependencies = [
+ "sdkwork-memory-spi",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "sdkwork-memory-provider-openai"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "reqwest 0.12.28",
+ "sdkwork-memory-spi",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "sdkwork-memory-retrieval"
+version = "0.1.0"
+dependencies = [
+ "sdkwork-memory-contract",
+ "sdkwork-utils-rust",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "sdkwork-memory-spi"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
 ]
 
 [[package]]
@@ -7293,6 +7483,7 @@ dependencies = [
  "sdkwork-api-iam-assembly",
  "sdkwork-api-invoice-assembly",
  "sdkwork-api-membership-assembly",
+ "sdkwork-api-memory-assembly",
  "sdkwork-api-models-assembly",
  "sdkwork-api-order-assembly",
  "sdkwork-api-partner-assembly",
@@ -7932,6 +8123,76 @@ dependencies = [
  "serde",
  "serde_json",
  "sqlx",
+]
+
+[[package]]
+name = "sdkwork-routes-memory-app-api"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "axum",
+ "sdkwork-iam-web-adapter",
+ "sdkwork-intelligence-memory-service",
+ "sdkwork-memory-contract",
+ "sdkwork-routes-memory-support",
+ "sdkwork-web-axum",
+ "sdkwork-web-core",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "sdkwork-routes-memory-backend-api"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "axum",
+ "sdkwork-iam-web-adapter",
+ "sdkwork-intelligence-memory-service",
+ "sdkwork-memory-contract",
+ "sdkwork-routes-memory-support",
+ "sdkwork-web-axum",
+ "sdkwork-web-core",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "sdkwork-routes-memory-open-api"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "axum",
+ "sdkwork-iam-web-adapter",
+ "sdkwork-intelligence-memory-service",
+ "sdkwork-memory-contract",
+ "sdkwork-routes-memory-support",
+ "sdkwork-web-axum",
+ "sdkwork-web-core",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "sdkwork-routes-memory-support"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "axum",
+ "futures",
+ "sdkwork-database-sqlx",
+ "sdkwork-iam-web-adapter",
+ "sdkwork-memory-contract",
+ "sdkwork-utils-rust",
+ "sdkwork-web-axum",
+ "sdkwork-web-bootstrap",
+ "sdkwork-web-core",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+ "tower",
+ "tracing",
 ]
 
 [[package]]
@@ -9564,6 +9825,7 @@ dependencies = [
  "pin-project-lite",
  "sync_wrapper",
  "tokio",
+ "tokio-util",
  "tower-layer",
  "tower-service",
  "tracing",
