@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Activity,
   Bell,
+  Bot,
   Brain,
   ChevronDown,
   ChevronLeft,
@@ -54,6 +55,9 @@ const consoleSidebarItems = [
 const consoleSidebarGroups = [
   groupBlock('console.menu.group.integration', 'Access & Routing', [
     itemBlock({ path: '/console/api-keys', labelKey: 'console.menu.apiKeys', fallbackLabel: 'Token management', icon: Key }),
+  ]),
+  groupBlock('console.menu.group.agents', 'Agents', [
+    itemBlock({ path: '/console/agents', labelKey: 'console.menu.agents', fallbackLabel: 'Agents console', icon: Bot }),
   ]),
   groupBlock('console.menu.group.memory', 'Memory', [
     itemBlock({ path: '/console/memory', labelKey: 'console.menu.memory', fallbackLabel: 'Memory console', icon: Brain }),

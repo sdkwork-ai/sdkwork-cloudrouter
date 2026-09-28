@@ -1519,6 +1519,16 @@ importers:
         specifier: ^6.0.2
         version: 6.0.3
 
+  ../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-desktop-auth:
+    dependencies:
+      '@sdkwork/iam-sdk-ports':
+        specifier: workspace:*
+        version: link:../sdkwork-iam-sdk-ports
+    devDependencies:
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.3
+
   ../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-rpc-contracts: {}
 
   ../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-runtime:
@@ -1599,6 +1609,9 @@ importers:
       '@sdkwork/iam-contracts':
         specifier: workspace:*
         version: link:../../../sdkwork-iam-common/packages/sdkwork-iam-contracts
+      '@sdkwork/iam-desktop-auth':
+        specifier: workspace:*
+        version: link:../../../sdkwork-iam-common/packages/sdkwork-iam-desktop-auth
       '@sdkwork/iam-sdk-adapter':
         specifier: workspace:*
         version: link:../../../sdkwork-iam-common/packages/sdkwork-iam-sdk-adapter
@@ -4301,6 +4314,9 @@ importers:
       '@sdkwork/cloudrouter-pc-admin-upstream':
         specifier: workspace:*
         version: link:packages/sdkwork-cloudrouter-pc-admin-upstream
+      '@sdkwork/cloudrouter-pc-console-agents':
+        specifier: workspace:*
+        version: link:packages/sdkwork-cloudrouter-pc-console-agents
       '@sdkwork/cloudrouter-pc-console-api-keys':
         specifier: workspace:*
         version: link:packages/sdkwork-cloudrouter-pc-console-api-keys
@@ -5149,6 +5165,31 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+
+  apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-agents:
+    dependencies:
+      '@sdkwork/agents-pc-agents':
+        specifier: workspace:*
+        version: link:../../../../../sdkwork-agents/apps/sdkwork-agents-pc/packages/sdkwork-agents-pc-agents
+      '@sdkwork/cloudroutes-pc-commons':
+        specifier: workspace:*
+        version: link:../sdkwork-cloudroutes-pc-commons
+    devDependencies:
+      '@testing-library/react':
+        specifier: 'catalog:'
+        version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      jsdom:
+        specifier: 'catalog:'
+        version: 29.1.1
+      typescript:
+        specifier: ~5.8.2
+        version: 5.8.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.10(@types/node@25.9.4)(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(tsx@4.23.12)
 
   apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys:
     dependencies:

@@ -29,6 +29,7 @@ test("every console route is covered by the shared content gutter contract", () 
     "usage",
     "gateway",
     "api-keys",
+    "agents",
     "memory",
     "account",
     "wallet",
@@ -75,6 +76,7 @@ test("console pages inherit shell height instead of duplicating the navbar offse
   const consolePagePaths = [
     "./packages/sdkwork-cloudrouter-pc-console-api-keys/src/ApiKeysView.tsx",
     "./packages/sdkwork-cloudrouter-pc-console-dashboard/src/DashboardView.tsx",
+    "./packages/sdkwork-cloudrouter-pc-console-agents/src/AgentsView.tsx",
     "./packages/sdkwork-cloudrouter-pc-console-gateway/src/GatewayView.tsx",
     "./packages/sdkwork-cloudrouter-pc-console-memory/src/MemoryView.tsx",
     "./packages/sdkwork-cloudrouter-pc-console-messages/src/MessagesView.tsx",

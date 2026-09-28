@@ -45,6 +45,11 @@ const DashboardView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-da
 const UsageView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-usage'), 'UsageView');
 const GatewayView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-gateway'), 'GatewayView');
 const ApiKeysView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-api-keys'), 'ApiKeysView');
+// Agents capability: the console entry is a thin adapter that embeds the
+// sdkwork-agents console block (agent catalog, creation/edit flow). Route
+// packages must stay lazy-loaded (portal lazy-route rule), so the Agents console
+// chunk loads with the route.
+const AgentsView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-agents'), 'AgentsView');
 // Memory capability: the console entry is a thin adapter that embeds the
 // sdkwork-memory console block. Route packages must stay lazy-loaded (portal
 // lazy-route rule), so the Memory console chunk loads with the route.
@@ -189,6 +194,9 @@ export default function App() {
               <Route path="usage" element={<UsageView />} />
               <Route path="gateway" element={<GatewayView />} />
               <Route path="api-keys" element={<ApiKeysView />} />
+              {/* Agents console: module sub-routes stay deep-linkable, and the
+                  editor deep link carries the agent id. */}
+              <Route path="agents/*" element={<AgentsView />} />
               {/* Memory console: module sub-routes stay deep-linkable. */}
               <Route path="memory/*" element={<MemoryView />} />
               <Route path="iam/oauth/official-accounts/:resourceAccountId/custom-menus" element={<CloudRouterConsoleIamOauthMenuRoute />} />

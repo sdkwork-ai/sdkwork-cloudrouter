@@ -720,9 +720,16 @@ function buildVerificationPlan(settings, env = process.env) {
     args: ['--experimental-strip-types', 'apps/sdkwork-cloudrouter-pc/console-layout-runtime.test.ts'],
     env,
   });
-  // Cross-repository console blocks (Memory) are embedded through a host adapter
-  // package, so their integration spec has to be named explicitly here: the plan
-  // enumerates portal test entrypoints and never globs `packages/**/*.test.tsx`.
+  // Cross-repository console blocks (Agents, Memory) are embedded through host
+  // adapter packages, so their integration specs have to be named explicitly
+  // here: the plan enumerates portal test entrypoints and never globs
+  // `packages/**/*.test.tsx`.
+  plan.push({
+    label: 'portal console agents integration tests',
+    command: pnpmCommand(),
+    args: ['--filter', '@sdkwork/cloudrouter-pc-console-agents', 'test'],
+    env,
+  });
   plan.push({
     label: 'portal console memory integration tests',
     command: pnpmCommand(),
