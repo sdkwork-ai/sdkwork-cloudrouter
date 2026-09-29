@@ -53,8 +53,9 @@ pub trait ApiKeySecretCodec {
 
 /// How raw API key secrets are persisted and how they can be re-read.
 ///
-/// `Plaintext` (the default) stores the raw key directly; `Ciphertext`
-/// stores an AEAD-encrypted copy that is decrypted on read.
+/// `Ciphertext` (the configuration default, `sdkwork-cloudrouter-config`
+/// `api_key.rs`) stores an AEAD-encrypted copy that is decrypted on read;
+/// `Plaintext` stores the raw key directly and is a desktop-only escape hatch.
 #[derive(Clone)]
 pub struct ApiKeySecretStorageConfig {
     mode: ApiKeySecretStorageMode,

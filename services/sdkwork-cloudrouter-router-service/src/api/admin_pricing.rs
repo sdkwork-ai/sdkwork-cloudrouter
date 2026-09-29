@@ -61,7 +61,7 @@ struct AdminPricingItemEnvelope<T> {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct AdminPricingListQueryRequest {
     q: Option<String>,
     base_price_side: Option<String>,
@@ -142,6 +142,7 @@ struct PriceSettingMutationRequest {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct PriceSettingResolveQueryRequest {
     official_rate_code: Option<String>,
     region_code: Option<String>,
@@ -150,7 +151,7 @@ struct PriceSettingResolveQueryRequest {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct PriceBookListQueryRequest {
     q: Option<String>,
     price_side: Option<String>,

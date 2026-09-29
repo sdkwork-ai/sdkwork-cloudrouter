@@ -1733,13 +1733,6 @@ tables:
         columns: *id020
         unique: true
         where: null
-      - name: uq_cloudrouter_usage_measurement_scope_reference
-        columns:
-          - tenant_id
-          - organization_id
-          - id
-        unique: true
-        where: null
       - name: idx_cloudrouter_usage_measurement_rating
         columns:
           - tenant_id

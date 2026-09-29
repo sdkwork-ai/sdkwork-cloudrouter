@@ -2258,7 +2258,7 @@
       ],
       "file_targets": [],
       "interface": "AdminDefaultRegionItem",
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts"
     },
     {
@@ -2279,7 +2279,7 @@
       ],
       "file_targets": [],
       "interface": "AdminDefaultRegionMutationInput",
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts"
     },
     {
@@ -2301,7 +2301,7 @@
       ],
       "file_targets": [],
       "interface": "AdminOfficialPricingRefreshResult",
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts"
     },
     {
@@ -2494,7 +2494,7 @@
       ],
       "file_targets": [],
       "interface": "AdminPricingRuleMutationInput",
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts"
     },
     {
@@ -2881,9 +2881,12 @@
         "region",
         "bucket",
         "pathStyle",
-        "strictTls",
         "credentialRef",
-        "status"
+        "providerAccountId",
+        "serverSideEncryptionMode",
+        "defaultStorageClass",
+        "status",
+        "strictTls"
       ],
       "file_targets": [],
       "interface": "StorageProviderUpdateInput",

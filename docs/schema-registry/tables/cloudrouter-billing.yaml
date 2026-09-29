@@ -163,7 +163,6 @@ tables:
   check_constraints:
   - { name: ck_cloudrouter_usage_measurement_quantity, expression: quantity >= 0 }
   indexes:
-  - { name: uq_cloudrouter_usage_measurement_scope_reference, columns: [tenant_id, organization_id, id], unique: true }
   - { name: idx_cloudrouter_usage_measurement_rating, columns: [tenant_id, organization_id, status, occurred_at, id] }
   - { name: idx_cloudrouter_usage_measurement_subject, columns: [tenant_id, organization_id, user_id, occurred_at, id] }
   - { name: idx_cloudrouter_usage_measurement_retention, columns: [retention_until, id] }

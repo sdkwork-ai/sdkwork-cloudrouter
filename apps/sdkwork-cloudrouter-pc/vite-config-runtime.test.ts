@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import fs, { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import type { UserConfig } from "vite";
 
@@ -724,18 +725,85 @@ test("third-party runtime dependencies are direct dependencies instead of Vite a
   );
 });
 
+test("React external-store shim aliases cover every dependency-tree specifier form", async () => {
+  const config = await resolvePortalViteConfig();
+  const aliases = config.resolve?.alias;
+  assert.ok(Array.isArray(aliases));
+
+  // A string `find` is a Vite *prefix* rule whose residual subpath is appended
+  // to the replacement, so a plain `use-sync-external-store/shim` entry rewrote
+  // the explicit `shim/index.js` specifier emitted by @tiptap/react into
+  // `<compat>.ts/index.js` and failed to resolve.
+  assert.equal(
+    aliases.filter((alias) => (
+      typeof alias === "object"
+      && alias !== null
+      && "find" in alias
+      && typeof alias.find === "string"
+      && alias.find.includes("use-sync-external-store")
+    )).length,
+    0,
+    "external-store shim aliases must be anchored RegExps, not string prefixes",
+  );
+
+  const portalRoot = path.dirname(fileURLToPath(import.meta.url));
+  const expectations = [
+    {
+      specifiers: [
+        "use-sync-external-store/shim",
+        "use-sync-external-store/shim/index.js",
+      ],
+      compatModule: "src/auth/useSyncExternalStoreShimCompat.ts",
+    },
+    {
+      specifiers: [
+        "use-sync-external-store/shim/with-selector",
+        "use-sync-external-store/shim/with-selector.js",
+      ],
+      compatModule: "src/auth/useSyncExternalStoreWithSelectorCompat.ts",
+    },
+  ];
+
+  for (const { specifiers, compatModule } of expectations) {
+    for (const specifier of specifiers) {
+      const matched = aliases.filter((alias) => (
+        typeof alias === "object"
+        && alias !== null
+        && "find" in alias
+        && alias.find instanceof RegExp
+        && alias.find.test(specifier)
+      ));
+      assert.equal(matched.length, 1, `${specifier} must match exactly one Vite alias`);
+      assert.equal(
+        matched[0].replacement,
+        path.resolve(portalRoot, compatModule),
+        `${specifier} must be served by the ESM compat module, not the CommonJS package`,
+      );
+      assert.ok(existsSync(path.resolve(portalRoot, compatModule)), `${compatModule} must exist`);
+    }
+  }
+});
+
 test("portal scripts run dependency preflight before Vite entrypoints", () => {
   const portalPackage = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8"));
 
   assert.equal(portalPackage.scripts["check:dependencies"], "node scripts/check-portal-deps.mjs");
   assert.equal(portalPackage.scripts.predev, "node ../../scripts/ensure-cloud-router-env.mjs --lifecycle dev");
   assert.equal(portalPackage.scripts.prebuild, "node ../../scripts/ensure-cloud-router-env.mjs --lifecycle build");
-  // Dev entrypoints delegate to the canonical `sdkwork-app` facade so the
-  // adaptive web ingress owns renderer selection (APP_RUNTIME_TOPOLOGY_SPEC
-  // section 8.2); direct `vite` runs would bypass it. The dependency preflight
-  // stays in front of the facade and of the private vite entrypoint.
-  assert.equal(portalPackage.scripts.dev, "pnpm dev:standalone");
-  assert.equal(portalPackage.scripts["dev:browser"], "pnpm dev:browser:postgres:standalone");
+  // The portal-local dev entrypoints run the renderer Vite directly with the
+  // native config loader: the renderer is internal client tooling whose base
+  // URLs come from the shared browser runtime-env contract, while the
+  // workspace-root `pnpm dev` facade keeps owning the adaptive ingress and
+  // renderer selection (APP_RUNTIME_TOPOLOGY_SPEC section 8.2). The
+  // dependency preflight stays in front of the direct Vite run.
+  assert.equal(
+    portalPackage.scripts.dev,
+    "node ../../scripts/ensure-cloud-router-env.mjs --lifecycle dev && vite --configLoader native",
+  );
+  assert.equal(
+    portalPackage.scripts["dev:browser"],
+    "node ../../scripts/ensure-cloud-router-env.mjs --lifecycle dev && vite --configLoader native",
+  );
   assert.ok(
     portalPackage.scripts["dev:standalone"].startsWith("pnpm exec sdkwork-app dev --root ../"),
     "dev:standalone must delegate to the sdkwork-app facade",

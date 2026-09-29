@@ -22,9 +22,10 @@ export function BatchCodesPage({ batchId }: { batchId: string }) {
     let cancelled = false;
     void (async () => {
       try {
-        // Reference load bounded to one server page (PAGINATION_SPEC §8);
-        // the batch header falls back to the plain id when the batch is not
-        // on the first page.
+        // Reference load bounded to one server page (PAGINATION_SPEC §8).
+        // When the batch header is not on the first page, the header area
+        // renders an explicit unavailable state instead of silently falling
+        // back to the bare id; the codes list below stays fully functional.
         const page = await backendPromotionCodeBatchesList({ page: 1, pageSize: 200 });
         if (cancelled) return;
         const matched = page.items.find((item) => String(item['id']) === batchId);
@@ -106,7 +107,17 @@ export function BatchCodesPage({ batchId }: { batchId: string }) {
               {' · '}
               <MarketingBatchStatusBadge status={batch['status']} />
             </p>
-          ) : null}
+          ) : (
+            !batchError && (
+              <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">
+                {t(
+                  'admin.marketing.promotions.batchCodes.headerUnavailable',
+                  'Batch header is outside the first reference page; showing codes for batch {{batchId}} only.',
+                  { batchId },
+                )}
+              </p>
+            )
+          )}
         </div>
       </div>
       <MarketingListView

@@ -896,8 +896,12 @@ impl RedisCircuitBreakerStore {
         local key = KEYS[1]
         local open_duration = tonumber(ARGV[1])
         local max_probes = tonumber(ARGV[2])
-        local now = tonumber(ARGV[3])
-        local ttl = tonumber(ARGV[4])
+        local ttl = tonumber(ARGV[3])
+        -- Clock authority is the Redis server (mirrors tenant_inflight): node
+        -- clocks drift, and a drifted `now` would stretch or shrink the open
+        -- window differently per replica.
+        local clock = redis.call('TIME')
+        local now = tonumber(clock[1])
 
         local state = redis.call('HGET', key, 'state') or 'closed'
 
@@ -986,8 +990,10 @@ impl RedisCircuitBreakerStore {
         r#"
         local key = KEYS[1]
         local failure_threshold = tonumber(ARGV[1])
-        local now = tonumber(ARGV[2])
-        local ttl = tonumber(ARGV[3])
+        local ttl = tonumber(ARGV[2])
+        -- Clock authority is the Redis server (mirrors tenant_inflight).
+        local clock = redis.call('TIME')
+        local now = tonumber(clock[1])
 
         local state = redis.call('HGET', key, 'state') or 'closed'
 
@@ -1080,7 +1086,6 @@ impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
             return self.degraded_permit();
         };
         let key = self.redis_key(account_id);
-        let now = now_unix_timestamp();
 
         let result = tokio::time::timeout(
             self.command_timeout,
@@ -1090,7 +1095,6 @@ impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
                 .arg(&key)
                 .arg(self.config.open_duration.as_secs() as i64)
                 .arg(self.config.half_open_max_probes as i64)
-                .arg(now)
                 .arg(self.key_ttl_seconds() as i64)
                 .query_async::<i64>(&mut conn),
         )
@@ -1198,7 +1202,6 @@ impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
             return;
         };
         let key = self.redis_key(account_id);
-        let now = now_unix_timestamp();
 
         let result = tokio::time::timeout(
             self.command_timeout,
@@ -1207,7 +1210,6 @@ impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
                 .arg(1)
                 .arg(&key)
                 .arg(self.config.failure_threshold as i64)
-                .arg(now)
                 .arg(self.key_ttl_seconds() as i64)
                 .query_async::<String>(&mut conn),
         )
@@ -1304,13 +1306,6 @@ impl CircuitBreakerStateStore for RedisCircuitBreakerStore {
     fn is_distributed_ha(&self) -> bool {
         true
     }
-}
-
-fn now_unix_timestamp() -> i64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_secs() as i64)
-        .unwrap_or(0)
 }
 
 #[cfg(test)]

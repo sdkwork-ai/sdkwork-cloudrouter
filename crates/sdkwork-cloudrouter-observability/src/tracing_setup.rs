@@ -314,7 +314,12 @@ fn build_otlp_http_client(
 ) -> Result<reqwest::Client, String> {
     let mut builder = reqwest::Client::builder()
         .connect_timeout(timeout)
-        .timeout(timeout);
+        .timeout(timeout)
+        // Telemetry export targets are operator-configured endpoints; a
+        // redirect must never re-send trace batches (or any configured
+        // exporter headers) to a different host. Matches the redirect
+        // discipline of every other outbound client in this workspace.
+        .redirect(reqwest::redirect::Policy::none());
     if let Some(certificate_path) = config.certificate_path.as_deref() {
         for certificate in read_otlp_certificates(certificate_path)? {
             builder = builder.add_root_certificate(certificate);

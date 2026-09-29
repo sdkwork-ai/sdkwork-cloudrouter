@@ -86,6 +86,7 @@ struct PaymentRefundCreateRequest {
 #[serde(rename_all = "camelCase")]
 struct PaymentRefundItemRequest {
     order_item_id: String,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     quantity: i64,
     refund_amount: MoneyAmountRequest,
     tax_refund_amount: Option<MoneyAmountRequest>,
@@ -192,6 +193,7 @@ struct PaymentRefundResponse {
 struct PaymentRefundItemResponse {
     id: String,
     order_item_id: String,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     quantity: i64,
     refund_amount: MoneyAmountResponse,
     tax_refund_amount: MoneyAmountResponse,

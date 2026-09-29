@@ -40,21 +40,34 @@ impl UsageRetentionStore for PostgresUsageRetentionStore {
             // settled before this code shipped, so the retention index
             // `idx_ai_metering_usage_retention (retention_until, id)` serves
             // the sweep instead of a settled_at predicate that has no index.
-            sqlx::query(
-                r#"
-                UPDATE ai_metering_usage
-                SET retention_until = settled_at + ($3 * INTERVAL '1 day')
-                WHERE retention_until IS NULL
-                  AND settled_at IS NOT NULL
-                  AND settled_at < now() - ($3 * INTERVAL '1 day')
-                "#,
-            )
-            .bind(command.tenant_id)
-            .bind(command.organization_id)
-            .bind(command.retention_days)
-            .execute(&self.pool)
-            .await
-            .map_err(|error| store_error("failed to backfill usage retention_until", error))?;
+            // The backfill itself is batched: a cold first run over a
+            // million-row legacy table must not hold one long transaction
+            // (and its row locks) for the whole backfill.
+            loop {
+                let backfill_result = sqlx::query(
+                    r#"
+                    UPDATE ai_metering_usage
+                    SET retention_until = settled_at + ($3 * INTERVAL '1 day')
+                    WHERE id IN (
+                        SELECT id FROM ai_metering_usage
+                        WHERE retention_until IS NULL
+                          AND settled_at IS NOT NULL
+                          AND settled_at < now() - ($3 * INTERVAL '1 day')
+                        LIMIT $4
+                    )
+                    "#,
+                )
+                .bind(command.tenant_id)
+                .bind(command.organization_id)
+                .bind(command.retention_days)
+                .bind(RETENTION_BATCH_SIZE)
+                .execute(&self.pool)
+                .await
+                .map_err(|error| store_error("failed to backfill usage retention_until", error))?;
+                if backfill_result.rows_affected() == 0 {
+                    break;
+                }
+            }
 
             let mut deleted_usage_facts: i64 = 0;
             loop {
@@ -90,22 +103,33 @@ impl UsageRetentionStore for PostgresUsageRetentionStore {
 
             let mut deleted_traces: i64 = 0;
             // Backfill the same cleanup key for legacy trace rows so the
-            // trace retention index serves the sweep too.
-            sqlx::query(
-                r#"
-                UPDATE ai_metering_request_trace
-                SET retention_until = ended_at + ($3 * INTERVAL '1 day')
-                WHERE retention_until IS NULL
-                  AND ended_at IS NOT NULL
-                  AND ended_at < now() - ($3 * INTERVAL '1 day')
-                "#,
-            )
-            .bind(command.tenant_id)
-            .bind(command.organization_id)
-            .bind(command.retention_days)
-            .execute(&self.pool)
-            .await
-            .map_err(|error| store_error("failed to backfill trace retention_until", error))?;
+            // trace retention index serves the sweep too. Batched for the
+            // same long-transaction reason as the usage backfill above.
+            loop {
+                let trace_backfill_result = sqlx::query(
+                    r#"
+                    UPDATE ai_metering_request_trace
+                    SET retention_until = ended_at + ($3 * INTERVAL '1 day')
+                    WHERE id IN (
+                        SELECT id FROM ai_metering_request_trace
+                        WHERE retention_until IS NULL
+                          AND ended_at IS NOT NULL
+                          AND ended_at < now() - ($3 * INTERVAL '1 day')
+                        LIMIT $4
+                    )
+                    "#,
+                )
+                .bind(command.tenant_id)
+                .bind(command.organization_id)
+                .bind(command.retention_days)
+                .bind(RETENTION_BATCH_SIZE)
+                .execute(&self.pool)
+                .await
+                .map_err(|error| store_error("failed to backfill trace retention_until", error))?;
+                if trace_backfill_result.rows_affected() == 0 {
+                    break;
+                }
+            }
             loop {
                 let trace_result = sqlx::query(
                     r#"

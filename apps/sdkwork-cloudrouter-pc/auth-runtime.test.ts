@@ -137,6 +137,11 @@ function readI18nResourceSource(): string {
       .map(includeI18nLocaleContext),
     ...readPortalSourceFiles("./packages/sdkwork-cloudrouter-pc-admin-iam/src/i18n/")
       .map(includeI18nLocaleContext),
+    // Pricing and RTC admin modules own their translation bundles in-package.
+    ...readPortalSourceFiles("./packages/sdkwork-cloudrouter-pc-admin-pricing/src/i18n/")
+      .map(includeI18nLocaleContext),
+    ...readPortalSourceFiles("./packages/sdkwork-cloudrouter-pc-admin-rtc/src/i18n/")
+      .map(includeI18nLocaleContext),
     ...readPortalSourceFiles("./node_modules/@sdkwork/log-pc-admin-request-log/src/i18n/")
       .map(includeI18nLocaleContext),
   ].join("\n");
@@ -155,9 +160,41 @@ function findObjectBlockAt(source: string, start: number): string {
   let depth = 0;
   let quote: string | undefined;
   let escaped = false;
+  let lineComment = false;
+  let blockComment = false;
 
   for (let index = openBrace; index < source.length; index += 1) {
     const char = source[index];
+    const next = source[index + 1];
+
+    if (lineComment) {
+      // i18n resources carry // comments whose prose may contain quotes or
+      // braces; comment text must not drive the quote/brace scanner.
+      if (char === "\n") {
+        lineComment = false;
+      }
+      continue;
+    }
+
+    if (blockComment) {
+      if (char === "*" && next === "/") {
+        blockComment = false;
+        index += 1;
+      }
+      continue;
+    }
+
+    if (!quote && char === "/" && next === "/") {
+      lineComment = true;
+      index += 1;
+      continue;
+    }
+
+    if (!quote && char === "/" && next === "*") {
+      blockComment = true;
+      index += 1;
+      continue;
+    }
 
     if (quote) {
       if (escaped) {
@@ -303,10 +340,14 @@ function installPortalAuthRedirectWindow({
         }
         return true;
       },
+      // §6.3 base-url resolution reads the page protocol/port alongside the
+      // hostname, so the stub location carries the full browser location shape.
       location: {
         hash,
         hostname,
         pathname,
+        port: "",
+        protocol: "https:",
         replace,
         search,
       },
@@ -510,7 +551,9 @@ test("cloud router auth controller reuses appbase runtime while preserving app S
   assert.doesNotMatch(sdkClientsSource, /Messaging App SDK requires/);
   assert.match(sdkClientsSource, /function resolveRequiredMessagingAppBaseUrl\([\s\S]*?\?\? APP_API_PREFIX/u);
   assert.match(sdkClientsSource, /function buildGenerationsAppConfig\(options: SdkworkGenerationsAppSdkClientOptions\): SdkworkGenerationsAppConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveCloudRouterSdkTokenManager\(options\.tokenManager\)/);
-  assert.match(sdkClientsSource, /function buildDriveAppConfig\(options: SdkworkDriveAppSdkClientOptions\): SdkworkDriveAppConfig \{\s*return \{[\s\S]*?tokenManager:\s*resolveCloudRouterSdkTokenManager\(options\.tokenManager\)/);
+  // buildDriveAppConfig delegates to the shared buildDependencyAppConfig, which
+  // owns the tokenManager: resolveCloudRouterSdkTokenManager(options.tokenManager) wiring.
+  assert.match(sdkClientsSource, /function buildDriveAppConfig\(options: SdkworkDriveAppSdkClientOptions\): SdkworkDriveAppConfig \{\s*return buildDependencyAppConfig\(options, 'VITE_SDKWORK_DRIVE_APP_API_BASE_URL'\) as SdkworkDriveAppConfig;/);
   assert.match(sdkClientsSource, /function buildDependencyAppConfig\([\s\S]*?tokenManager:\s*resolveCloudRouterSdkTokenManager\(options\.tokenManager\)/);
   assert.doesNotMatch(sdkClientsSource, /DomainTransport|BackendDomainDependencyOverlay|facade\.catalog\.spus/);
   assert.doesNotMatch(sdkClientsSource, /authToken:\s*options\.authToken/);
@@ -1465,7 +1508,15 @@ test("navbar routes sign in through the auth module instead of bootstrapping ses
 });
 
 test("portal auth guard classifies every console, admin, playground, and conversation path as login protected", () => {
-  assert.deepEqual(PROTECTED_PORTAL_ROUTE_PREFIXES, ["/console", "/admin", "/playground", "/c"]);
+  // partner-join apply/status surfaces are authenticated applicant flows.
+  assert.deepEqual(PROTECTED_PORTAL_ROUTE_PREFIXES, [
+    "/console",
+    "/admin",
+    "/playground",
+    "/c",
+    "/partner-join/apply",
+    "/partner-join/status",
+  ]);
 
   for (const path of [
     "/console",
@@ -1479,6 +1530,8 @@ test("portal auth guard classifies every console, admin, playground, and convers
     "/playground",
     "/playground/chat",
     "/c/conversation-123",
+    "/partner-join/apply",
+    "/partner-join/status",
   ]) {
     assert.equal(isProtectedPortalPath(path), true, `${path} must require login`);
   }
@@ -2244,8 +2297,13 @@ test("generated SDK request boundary redirects when API responses report an expi
     resetCloudRouterSdkSessionAuthRedirectState,
   } = await loadSdkSessionAuthRuntime();
   const redirects: string[] = [];
+  // Client construction resolves base URLs against the page host
+  // (ENVIRONMENT_SPEC §6.3), and the unauthorized handler redirects only on a
+  // non-local host (local hosts default to modal mode), so the stub page host
+  // mirrors the deployed (non-localhost) portal.
   const restoreWindow = installPortalAuthRedirectWindow({
     hash: "",
+    hostname: "portal.example.com",
     pathname: "/console/api-keys",
     replace: (to) => redirects.push(to),
     search: "?tab=usage",
@@ -2298,8 +2356,13 @@ test("generated SDK request boundary clears sessions for invalid IAM session Pro
     resetCloudRouterSdkSessionAuthRedirectState,
   } = await loadSdkSessionAuthRuntime();
   const redirects: string[] = [];
+  // Client construction resolves base URLs against the page host
+  // (ENVIRONMENT_SPEC §6.3), and the unauthorized handler redirects only on a
+  // non-local host (local hosts default to modal mode), so the stub page host
+  // mirrors the deployed (non-localhost) portal.
   const restoreWindow = installPortalAuthRedirectWindow({
     hash: "",
+    hostname: "portal.example.com",
     pathname: "/console/dashboard",
     replace: (to) => redirects.push(to),
     search: "",
@@ -2626,7 +2689,9 @@ test("upstream credentials never expose plaintext after submission", () => {
   const serviceSource = readPortalFile("./packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts");
 
   assert.doesNotMatch(accountSource, /rawSecret|credential\.secret|oneTimeSecret/);
-  assert.match(accountSource, /name="secret" type="password" autoComplete="new-password"/);
+  // The secret input stays password-masked by default (showSecret starts false)
+  // and only reveals through the explicit eye toggle; autocomplete stays off.
+  assert.match(accountSource, /name="secret" type=\{showSecret \? 'text' : 'password'\} autoComplete="new-password"/);
   assert.match(serviceSource, /createCredential/);
   assert.doesNotMatch(serviceSource, /rawSecret/);
   assert.doesNotMatch(serviceSource, /fetch\(|axios|authorization/i);
@@ -2731,8 +2796,14 @@ test("portal composes appbase auth and Tauri host packages through workspace ins
   assert.equal(packageJson.dependencies["@sdkwork/host-tauri-pc-react"], "workspace:*");
   assert.equal(packageJson.dependencies["@sdkwork/i18n-pc-react"], "workspace:*");
   assert.equal(packageJson.dependencies["@sdkwork/ui-pc-react"], "workspace:*");
-  assert.equal(packageJson.dependencies.qrcode, "^1.5.4");
-  assert.equal(packageJson.dependencies["react-hook-form"], "^7.72.1");
+  // qrcode stays pinned to ^1.5.4 via the root pnpm-workspace.yaml catalog
+  // (`qrcode: ^1.5.4` in the catalog block); the app consumes it with the
+  // workspace `catalog:` protocol per the pnpm workspace dependency standard.
+  assert.equal(packageJson.dependencies.qrcode, "catalog:");
+  assert.match(workspaceSource, /^\s+qrcode:\s\^1\.5\.4$/m);
+  // react-hook-form is likewise catalog-managed (root catalog: ^7.85.0).
+  assert.equal(packageJson.dependencies["react-hook-form"], "catalog:");
+  assert.match(workspaceSource, /^\s+react-hook-form:\s\^7\.85\.0$/m);
 
   assert.match(viteConfigSource, /cloudrouter-portal-pnpm-workspace-resolver/);
   assert.doesNotMatch(viteConfigSource, /find: '@sdkwork\//);
@@ -2845,9 +2916,19 @@ test("portal serves the React external-store shim through an ESM compat module i
   const withSelectorCompatSource = readPortalFile("./src/auth/useSyncExternalStoreWithSelectorCompat.ts");
   const viteConfigSource = readPortalFile("./vite.config.ts");
 
-  assert.match(viteConfigSource, /find: 'use-sync-external-store\/shim'/);
+  // Anchored RegExps, never string prefixes: a string `find` is a Vite prefix
+  // rule that keeps the residual subpath, so `use-sync-external-store/shim`
+  // rewrote the explicit `shim/index.js` specifier emitted by @tiptap/react
+  // into `<compat>.ts/index.js` and failed resolution.
+  assert.ok(
+    viteConfigSource.includes("/^use-sync-external-store\\/shim(?:\\/index\\.js)?$/"),
+    "the React external-store shim alias must match the shim entrypoints exactly",
+  );
   assert.match(viteConfigSource, /replacement: path\.resolve\(configDir, 'src\/auth\/useSyncExternalStoreShimCompat\.ts'\)/);
-  assert.match(viteConfigSource, /find: 'use-sync-external-store\/shim\/with-selector'/);
+  assert.ok(
+    viteConfigSource.includes("/^use-sync-external-store\\/shim\\/with-selector(?:\\.js)?$/"),
+    "the with-selector shim alias must match the with-selector entrypoints exactly",
+  );
   assert.match(viteConfigSource, /replacement: path\.resolve\(configDir, 'src\/auth\/useSyncExternalStoreWithSelectorCompat\.ts'\)/);
   assert.doesNotMatch(viteConfigSource, /source\.startsWith\('@radix-ui\/'\)/);
   assert.match(compatSource, /from 'react'/);

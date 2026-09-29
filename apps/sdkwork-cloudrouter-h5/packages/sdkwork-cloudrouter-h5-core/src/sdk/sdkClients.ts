@@ -15,11 +15,12 @@ let appSdkClient: SdkworkAppClient | null = null;
 export function createCloudRouterH5AppSdkClient(
   overrides: Partial<SdkworkAppConfig> = {},
 ): SdkworkAppClient {
+  // No `tenantId`/`organizationId` here: the app manifest binding is a server-side
+  // deployment concern and identity projection headers are forbidden on the wire
+  // (API_SPEC §10.2), so the client never declares a hardcoded tenant.
   return createClient({
     baseUrl: resolveCloudRouterAppApiBaseUrl(),
     platform: 'H5',
-    tenantId: '100001',
-    organizationId: '0',
     tokenManager: getCloudRouterTokenManager(),
     ...overrides,
   });

@@ -36,6 +36,7 @@ struct AdminIpRateLimitState {
 }
 
 #[derive(Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct AdminIpRateLimitListQueryRequest {
     page: Option<i64>,
     page_size: Option<i64>,

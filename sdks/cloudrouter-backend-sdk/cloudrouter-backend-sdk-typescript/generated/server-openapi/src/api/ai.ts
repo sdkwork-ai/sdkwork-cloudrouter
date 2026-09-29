@@ -223,8 +223,8 @@ export class AiUpstreamAccountsCredentialsSecretsApi {
   }
 
 
-/** List upstream account credential secret */
-  async list(accountId: string, credentialId: string, requestOptions?: ApiRequestOptions): Promise<UpstreamAccountCredentialSecret> {
+/** Reveal upstream account credential secret */
+  async retrieve(accountId: string, credentialId: string, requestOptions?: ApiRequestOptions): Promise<UpstreamAccountCredentialSecret> {
     return this.client.request<UpstreamAccountCredentialSecret>(backendApiPath(`/ai/upstream_accounts/${serializePathParameter(accountId, { name: 'accountId', style: 'simple', explode: false })}/credentials/${serializePathParameter(credentialId, { name: 'credentialId', style: 'simple', explode: false })}/secret`), { ...(requestOptions?.signal !== undefined ? { signal: requestOptions.signal } : {}), ...(requestOptions?.timeout !== undefined ? { timeout: requestOptions.timeout } : {}), method: 'GET' as any, sdkworkUnwrapKind: 'item' });
   }
 }

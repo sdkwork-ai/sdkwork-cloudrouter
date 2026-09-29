@@ -11,7 +11,7 @@ This package is the Cloud Router **integration seam** for the Agents capability 
 
 ## Public API
 
-- `.` — `AgentsView` plus the host-side routing helpers (`AGENTS_CONSOLE_BASE_PATH`, `readAgentsConsoleModuleRoute`, `readAgentsConsoleAgentId`, `buildAgentsConsolePath`).
+- `.` — `AgentsView` (the console-shell route) and `AgentsEditorPage` (the full-bleed create/edit flow route), plus the host-side routing helpers (`AGENTS_CONSOLE_BASE_PATH`, `readAgentsConsoleModuleRoute`, `readAgentsConsoleAgentId`, `buildAgentsConsolePath`).
 
 ## Required SDK Surface
 
@@ -28,12 +28,17 @@ Configuration keys, runtime entrypoints, and integration contracts are declared 
 
 The module *catalog* — ids, route segments, titles — stays owned by `sdkwork-agents`. Adding an Agents console module therefore requires no change in this repository: its route segment is just another segment below the prefix, and its copy ships with the owner's `common` namespace catalog the portal already registers.
 
+Create and edit do not render inside the console shell. `AgentsEditorPage` is mounted at `<base>/editor[/<agentId>]`, declared in `src/App.tsx` as a **sibling** of the `/console` branch rather than a child of it, so the page is the form and nothing else: no site navbar, no console sidebar, no content gutters, and the form's own header (back / save draft / publish) is the only chrome.
+
+That shape rests on route *ranking*, not declaration order: the console branch reaches the list through `agents/*`, which also matches the editor path, and the more specific static path wins. `src/agentsConsoleIntegration.test.ts` pins both halves — the declaration and the resolution — so the shell cannot quietly swallow the flow.
+
 ## Integration Contract
 
 The host side of the seam is intentionally tiny: `AgentsView` calls `configureAgentsConsoleRuntime` once with the host's SDK client factories, maps the console URL onto `moduleId`/`agentId`, and renders `AgentsConsoleEmbed`. Everything the user sees comes from `@sdkwork/agents-pc-agents/console`:
 
 - `AgentsConsoleEmbed` takes a `hiddenCapabilities` list so a host can declare which editor panels its deployment cannot serve. This portal assembles agents/assets/skills/memory app-api surfaces but not knowledgebase or voice, so those two panels are hidden rather than rendered as catalogs that can only fail.
 - The creation flow is the owner's `CreateAgentView`: basic info, model and policy, memory and context, voice, knowledge base, plugins, skills, and advanced settings. The same module renders an existing agent when the URL carries an id, so create and edit can never drift into two forms.
+- Create/edit is a *flow* route, not a section. It is mounted outside the console shell (`AgentsEditorPage`), and the owner's embed renders no module switcher while an `editsAgent` module is active — so "create" is an action taken from the agent list, never a peer tab of it.
 
 ## SaaS/Private/Local Behavior
 

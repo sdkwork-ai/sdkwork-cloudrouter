@@ -214,14 +214,14 @@ async fn payment_aggregate_api_create_refund_records_failed_refund_runtime() {
                     "items":[
                         {{
                             "orderItemId":"order-item-api-1004-1",
-                            "quantity":1,
+                            "quantity":"1",
                             "refundAmount":{{"currency":"CNY","value":"7.00"}},
                             "taxRefundAmount":{{"currency":"CNY","value":"1.00"}},
                             "shippingRefundAmount":{{"currency":"CNY","value":"0.00"}}
                         }},
                         {{
                             "orderItemId":"order-item-api-1004-2",
-                            "quantity":1,
+                            "quantity":"1",
                             "refundAmount":{{"currency":"CNY","value":"2.00"}}
                         }}
                     ]
@@ -284,7 +284,7 @@ async fn payment_aggregate_api_rejects_refund_item_currency_mismatch() {
                     "reason":"customer requested refund",
                     "items":[{{
                         "orderItemId":"order-item-api-1004-currency",
-                        "quantity":1,
+                        "quantity":"1",
                         "refundAmount":{{"currency":"USD","value":"10.00"}}
                     }}]
                 }}"#

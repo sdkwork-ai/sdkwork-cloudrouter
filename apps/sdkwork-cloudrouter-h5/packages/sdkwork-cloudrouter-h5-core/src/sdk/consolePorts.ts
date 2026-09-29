@@ -49,6 +49,7 @@ export function createCloudRouterH5ConsolePorts(): CloudRouterConsolePorts {
     usage: {
       listUsageLogs: async (query: ConsoleUsageQuery): Promise<CloudRouterTransportPayload> =>
         (await client().ai.usage.logs.list({
+          ...(query.cursor !== undefined ? { cursor: query.cursor } : {}),
           ...(query.pageSize !== undefined ? { pageSize: query.pageSize } : {}),
           ...(query.model !== undefined ? { q: query.model } : {}),
           ...(query.status === 'succeeded'
@@ -61,6 +62,7 @@ export function createCloudRouterH5ConsolePorts(): CloudRouterConsolePorts {
     apiKeys: {
       listApiKeys: async (query: CloudRouterConsoleQuery): Promise<CloudRouterTransportPayload> =>
         (await client().iam.apiKeys.list({
+          ...(query.page !== undefined ? { page: query.page } : {}),
           ...(query.pageSize !== undefined ? { pageSize: query.pageSize } : {}),
         })) as unknown as CloudRouterTransportPayload,
       createApiKey: async (input: ConsoleApiKeyCreateInput): Promise<CloudRouterTransportPayload> =>

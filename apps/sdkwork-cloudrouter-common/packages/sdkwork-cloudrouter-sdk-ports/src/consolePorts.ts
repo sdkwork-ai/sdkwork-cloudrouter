@@ -11,6 +11,8 @@ export interface CloudRouterConsoleQuery {
 export interface ConsoleUsageQuery extends CloudRouterConsoleQuery {
   readonly model?: string;
   readonly status?: string;
+  /** Opaque keyset continuation (`PageInfo.nextCursor`); the usage wire API paginates by cursor. */
+  readonly cursor?: string;
 }
 
 export interface ConsoleCatalogQuery extends CloudRouterConsoleQuery {

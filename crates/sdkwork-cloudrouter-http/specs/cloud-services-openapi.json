@@ -5277,9 +5277,11 @@
             "type": "string"
           },
           "size": {
-            "type": "integer",
+            "type": "string",
             "format": "int64",
-            "minimum": 0
+            "pattern": "^[0-9]+$",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
           },
           "storageClass": {
             "type": "string"
@@ -5454,9 +5456,11 @@
             "type": "string"
           },
           "contentLength": {
-            "type": "integer",
+            "type": "string",
             "format": "int64",
-            "minimum": 0
+            "pattern": "^[0-9]+$",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
           },
           "metadata": {
             "type": "object",
@@ -5757,9 +5761,11 @@
             "type": "string"
           },
           "size": {
-            "type": "integer",
+            "type": "string",
             "format": "int64",
-            "minimum": 0
+            "pattern": "^[0-9]+$",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
           },
           "lastModified": {
             "type": "string",
@@ -5937,9 +5943,11 @@
             "type": "string"
           },
           "maxContentLength": {
-            "type": "integer",
+            "type": "string",
             "format": "int64",
-            "minimum": 1
+            "pattern": "^[1-9][0-9]*$",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
           },
           "expiresInSeconds": {
             "type": "integer",

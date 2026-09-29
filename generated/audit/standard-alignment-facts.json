@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-08-04T10:26:49.509Z",
+  "generatedAt": "2026-09-28T23:13:49.173Z",
   "facts": {
-    "generatedAt": "2026-08-04T10:26:49.509Z",
+    "generatedAt": "2026-09-28T23:13:49.173Z",
     "identity": {
       "appKey": "sdkwork-cloudrouter",
-      "version": "0.3.0",
+      "version": "0.4.1",
       "releaseChannels": [
         "STABLE"
       ],
@@ -24,7 +24,7 @@
       "workflowSbomRequired": true,
       "workflowOidcRequired": true,
       "workflowArtifactAttestations": true,
-      "installPackageTargetCount": 18
+      "installPackageTargetCount": 20
     },
     "ciSecurity": {
       "exists": true,
@@ -41,29 +41,65 @@
     },
     "migrations": {
       "postgresMigrationFiles": [
-        "0002_ai_request_trace_gateway_attribution.up.sql",
-        "0003_standardize_upstream_supplier_routing.up.sql",
-        "0004_add_chat_runtime_schema.up.sql",
-        "0005_reconcile_upstream_supplier_routing.up.sql",
-        "0006_align_chat_runtime_optional_cost.up.sql",
-        "0007_reconcile_canonical_contract_constraints.up.sql",
-        "0008_add_api_key_secret_storage.up.sql",
-        "0009_account_group_vendor_modalities.up.sql",
-        "0010_add_gateway_chain_policy.up.sql"
+        "0015_upstream_account_resource.up.sql",
+        "0018_user_settings_console.down.sql",
+        "0018_user_settings_console.up.sql",
+        "0019_organization_id_not_null_legacy_tables.up.sql",
+        "0020_upstream_account_group_default_flag.down.sql",
+        "0020_upstream_account_group_default_flag.up.sql",
+        "0021_add_runtime_event_artifact_tables.down.sql",
+        "0021_add_runtime_event_artifact_tables.up.sql",
+        "0022_runtime_invocation_scope_sequence_guard.down.sql",
+        "0022_runtime_invocation_scope_sequence_guard.up.sql",
+        "0023_ops_metric_snapshot_period_indexes.down.sql",
+        "0023_ops_metric_snapshot_period_indexes.up.sql",
+        "0024_add_upstream_supplier_protocols.down.sql",
+        "0024_add_upstream_supplier_protocols.up.sql",
+        "0025_upstream_account_group_model_lists.down.sql",
+        "0025_upstream_account_group_model_lists.up.sql",
+        "0026_add_upstream_supplier_model_lists.down.sql",
+        "0026_add_upstream_supplier_model_lists.up.sql",
+        "0027_add_upstream_supplier_endpoint_vendors.down.sql",
+        "0027_add_upstream_supplier_endpoint_vendors.up.sql",
+        "0028_add_upstream_supplier_default_base_url.down.sql",
+        "0028_add_upstream_supplier_default_base_url.up.sql",
+        "0029_api_key_group_binding_routing_strategy.down.sql",
+        "0029_api_key_group_binding_routing_strategy.up.sql",
+        "0030_add_upstream_account_base_urls.down.sql",
+        "0030_add_upstream_account_base_urls.up.sql",
+        "0031_ai_metering_usage_user_index.down.sql",
+        "0031_ai_metering_usage_user_index.up.sql",
+        "0032_router_strategy_and_billing.down.sql",
+        "0032_router_strategy_and_billing.up.sql",
+        "0033_unify_resource_binding.down.sql",
+        "0033_unify_resource_binding.up.sql",
+        "0034_model_access_policy_account_scope.down.sql",
+        "0034_model_access_policy_account_scope.up.sql",
+        "0035_ai_metering_usage_settlement_columns.down.sql",
+        "0035_ai_metering_usage_settlement_columns.up.sql",
+        "0036_ai_metering_usage_failure_message.down.sql",
+        "0036_ai_metering_usage_failure_message.up.sql",
+        "0037_usage_points_and_original_currency.down.sql",
+        "0037_usage_points_and_original_currency.up.sql",
+        "0038_ai_routing_policy_profile_rule.down.sql",
+        "0038_ai_routing_policy_profile_rule.up.sql",
+        "0039_sdkwork_node_registry.down.sql",
+        "0039_sdkwork_node_registry.up.sql",
+        "0040_ai_metering_usage_claim_indexes.down.sql",
+        "0040_ai_metering_usage_claim_indexes.up.sql",
+        "0041_ai_mcp_registry_and_gateway_membership.down.sql",
+        "0041_ai_mcp_registry_and_gateway_membership.up.sql",
+        "0042_retire_ai_mcp_runtime_registry.down.sql",
+        "0042_retire_ai_mcp_runtime_registry.up.sql",
+        "0043_payment_reconciliation_tables.down.sql",
+        "0043_payment_reconciliation_tables.up.sql"
       ],
       "postgresBaselineExists": true,
       "postgresPairs": {
         "complete": false,
         "missingDown": [
-          "0002_ai_request_trace_gateway_attribution",
-          "0003_standardize_upstream_supplier_routing",
-          "0004_add_chat_runtime_schema",
-          "0005_reconcile_upstream_supplier_routing",
-          "0006_align_chat_runtime_optional_cost",
-          "0007_reconcile_canonical_contract_constraints",
-          "0008_add_api_key_secret_storage",
-          "0009_account_group_vendor_modalities",
-          "0010_add_gateway_chain_policy"
+          "0015_upstream_account_resource",
+          "0019_organization_id_not_null_legacy_tables"
         ],
         "missingUp": []
       },
@@ -77,29 +113,28 @@
     },
     "kubernetes": {
       "manifests": [
-        "cloud-router-admin-api.yaml",
-        "cloud-router-app-api.yaml",
-        "cloud-router-edge.yaml",
+        "cloud-router-db-backup-cronjob.yaml",
         "cloud-router-egress-cilium-policy.yaml",
-        "cloud-router-gateway.yaml",
         "cloud-router-ingress.yaml",
         "cloud-router-migration-job.yaml",
         "cloud-router-network-policy.yaml",
         "cloud-router-redis-external-secret.example.yaml",
-        "cloud-router-redis.yaml"
+        "cloud-router-redis.yaml",
+        "cloud-router-standalone.yaml"
       ],
       "expectedPresent": [
-        "cloud-router-gateway.yaml",
-        "cloud-router-app-api.yaml",
-        "cloud-router-admin-api.yaml",
-        "cloud-router-edge.yaml",
         "cloud-router-redis.yaml",
         "cloud-router-ingress.yaml",
         "cloud-router-network-policy.yaml",
         "cloud-router-migration-job.yaml"
       ],
-      "expectedMissing": [],
-      "hasAllExpected": true
+      "expectedMissing": [
+        "cloud-router-gateway.yaml",
+        "cloud-router-app-api.yaml",
+        "cloud-router-admin-api.yaml",
+        "cloud-router-edge.yaml"
+      ],
+      "hasAllExpected": false
     },
     "redisHa": {
       "exists": true,
@@ -146,7 +181,7 @@
     "circuitBreaker": {
       "exists": true,
       "implemented": true,
-      "lineCount": 1483,
+      "lineCount": 1622,
       "hasStateMachine": true,
       "hasRedisDistributedStore": true,
       "hasChannelIdScope": false
@@ -154,7 +189,7 @@
     "idempotency": {
       "exists": true,
       "implemented": true,
-      "lineCount": 1435,
+      "lineCount": 1482,
       "hasRedisStore": true,
       "hasStreamingExclusion": true,
       "hasSyntheticLocalResponse": true
@@ -174,9 +209,9 @@
       "alicloud": {
         "isStub": false,
         "endpointsEmpty": false,
-        "resolveEndpointNone": true,
-        "signerStub": false,
-        "hasHttpClientDep": true
+        "resolveEndpointNone": false,
+        "signerStub": true,
+        "hasHttpClientDep": false
       },
       "paasPlugin": {
         "hasBuiltinInvokeOverride": true
@@ -197,12 +232,16 @@
         {
           "name": "Sign artifacts (cosign for OCI + signtool for MSI + codesign for pkg)",
           "run": "$ErrorActionPreference = \"Stop\"\n$packageId = $env:SDKWORK_PACKAGE_ID\n$variant = $env:SDKWORK_PACKAGE_VARIANT\n$artifactsDir = \"./deployments/artifacts\"\nif (-not (Test-Path $artifactsDir)) { New-Item -I"
+        },
+        {
+          "name": "Create detached release signature",
+          "run": "node scripts/release/workflow-supply-chain-evidence.mjs sign"
         }
       ]
     },
     "techArch": {
       "exists": true,
-      "lineCount": 500,
+      "lineCount": 772,
       "emptySections": [
         "## 4. Directory And Package Layout",
         "## 5. API, SDK, And Data Ownership",
@@ -213,13 +252,13 @@
     },
     "metrics": {
       "exists": true,
-      "lineCount": 260,
+      "lineCount": 280,
       "hasOnlyAtomicU64Counters": false,
       "hasLabelVec": true
     },
     "tableConsistency": {
       "counts": {
-        "ddl": 53,
+        "ddl": 77,
         "registry": 38,
         "schemaYaml": 0
       },
@@ -277,6 +316,10 @@
           {
             "name": "Sign artifacts (cosign for OCI + signtool for MSI + codesign for pkg)",
             "run": "$ErrorActionPreference = \"Stop\"\n$packageId = $env:SDKWORK_PACKAGE_ID\n$variant = $env:SDKWORK_PACKAGE_VARIANT\n$artifactsDir = \"./deployments/artifacts\"\nif (-not (Test-Path $artifactsDir)) { New-Item -I"
+          },
+          {
+            "name": "Create detached release signature",
+            "run": "node scripts/release/workflow-supply-chain-evidence.mjs sign"
           }
         ]
       }
@@ -326,7 +369,7 @@
       "title": "Prometheus histogram + OTLP metrics",
       "status": "done",
       "evidence": {
-        "lineCount": 260,
+        "lineCount": 280,
         "hasOnlyAtomicU64Counters": false
       }
     },
@@ -362,9 +405,9 @@
       "evidence": {
         "isStub": false,
         "endpointsEmpty": false,
-        "resolveEndpointNone": true,
-        "signerStub": false,
-        "hasHttpClientDep": true
+        "resolveEndpointNone": false,
+        "signerStub": true,
+        "hasHttpClientDep": false
       }
     },
     {
@@ -386,7 +429,7 @@
           "## 6. Security, Privacy, And Observability",
           "## 7. Deployment And Runtime Topology"
         ],
-        "lineCount": 500
+        "lineCount": 772
       }
     },
     {
@@ -395,7 +438,7 @@
       "status": "pending",
       "evidence": {
         "counts": {
-          "ddl": 53,
+          "ddl": 77,
           "registry": 38,
           "schemaYaml": 0
         },

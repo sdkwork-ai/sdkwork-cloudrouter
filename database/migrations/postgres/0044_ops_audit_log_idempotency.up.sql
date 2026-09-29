@@ -1,0 +1,23 @@
+-- sdkwork:migration
+-- id: 0044_ops_audit_log_idempotency
+-- engine: postgres
+-- module: sdkwork-cloudrouter
+-- purpose: Give the ops audit trail a database-backed idempotency arbiter.
+--
+--   `ops_audit_log` writers converge on the stable-uuid + `WHERE NOT EXISTS`
+--   pattern for replay-safe audit rows (for example the payment provider
+--   update audit in `admin_transaction_center_store.rs`). The guard has a
+--   concurrency window: two replicas executing the same audited request can
+--   both pass the `NOT EXISTS` probe and double-insert. This unique index is
+--   the arbiter that closes the window — the losing insert fails, and its
+--   transaction (which holds the audited mutation) rolls back with it.
+--
+--   The column set `(tenant_id, organization_id, action, target_uuid,
+--   request_id)` matches every idempotent writer. Writers that generate a
+--   fresh `request_id` per mutation are unconstrained (distinct rows), and
+--   `request_id` NULLs stay mutually distinct under PostgreSQL's default
+--   NULLS DISTINCT semantics, so writers without a request id are
+--   unconstrained too. The application is pre-launch: no deployed database
+--   carries duplicate rows, so the index build is safe to run unconditionally.
+CREATE UNIQUE INDEX IF NOT EXISTS ux_ops_audit_log_idempotency
+    ON ops_audit_log (tenant_id, organization_id, action, target_uuid, request_id);

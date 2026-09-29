@@ -18,7 +18,7 @@ use sdkwork_utils_rust::{
 };
 use serde::{Deserialize, Serialize};
 
-pub(super) const MAX_NESTED_ITEMS: usize = 200;
+pub(super) const MAX_NESTED_ITEMS: usize = 100;
 pub(super) const MAX_LIST_PAGE_SIZE: usize = 200;
 const MAX_SEARCH_LENGTH: usize = 256;
 const MAX_IDEMPOTENCY_KEY_LENGTH: usize = 128;

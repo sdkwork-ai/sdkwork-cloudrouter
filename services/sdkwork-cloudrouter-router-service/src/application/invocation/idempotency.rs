@@ -126,6 +126,12 @@ impl IdempotencyInterceptor {
     /// Builds a Redis-backed interceptor when Redis is configured. A runtime
     /// Redis failure is fail-closed; silently switching to a per-node lock can
     /// duplicate side effects in a multi-node deployment.
+    ///
+    /// `None` selects the local desktop/development mode, mirroring the
+    /// circuit breaker's `try_with_redis_config`. Server (non-desktop)
+    /// deployments cannot reach that branch: the runtime fails closed at
+    /// startup when Redis is not configured, because durable accounting
+    /// retries require it.
     pub fn try_with_redis_config(
         config: IdempotencyConfig,
         redis_config: Option<&RedisConfig>,

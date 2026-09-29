@@ -29481,6 +29481,7 @@
   "x-api-prefix": "/v1",
   "x-router-product": "sdkwork-cloudrouter",
   "x-sdkwork-int64-openai-compat": true,
+  "x-sdkwork-query-parameter-vendor-compat": true,
   "x-sdkwork-vendor-path-prefixes": [
     "anthropic",
     "elevenlabs",

@@ -388,6 +388,15 @@ tables:
           - request_id
         unique: false
         where: null
+      - name: ux_ops_audit_log_idempotency
+        columns:
+          - tenant_id
+          - organization_id
+          - action
+          - target_uuid
+          - request_id
+        unique: true
+        where: null
       - name: idx_ops_audit_log_retention
         columns:
           - retention_until

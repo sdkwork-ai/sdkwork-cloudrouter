@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { matchRoutes } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -281,6 +282,117 @@ describe('console integration wiring', () => {
       expect(viewSource).toContain(factory);
     }
     expect(viewSource).toContain('configureAgentsConsoleRuntime');
+  });
+});
+
+/**
+ * The create/edit flow is a full-bleed route, which makes *route ranking* part of
+ * the contract: the console branch reaches the agent list through an `agents/*`
+ * splat, and that splat also matches the editor path. Both halves are pinned
+ * below — that `App.tsx` declares the flow outside the console branch, and that
+ * React Router really resolves it there instead of into the shell.
+ */
+describe('create/edit flow route composition', () => {
+  /** The one module route the owner marks as the agent editor. */
+  function ownerEditorModuleRoute(): string {
+    const match = /route:\s*'([^']+)'[^}]*editsAgent:\s*true/u.exec(AGENTS_CONSOLE_MODULES_SOURCE);
+    if (!match) throw new Error('the owner console module catalog declares no agent-editing route');
+    return match[1];
+  }
+
+  /** The flow path this host must mount, derived from the owner's route segment. */
+  const EDITOR_PATH = `${AGENTS_CONSOLE_BASE_PATH}/${ownerEditorModuleRoute()}/:agentId?`;
+
+  it('declares the flow on its own route above the console branch', () => {
+    const appSource = readPortalFile('src/App.tsx');
+    const flowRouteIndex = appSource.indexOf(`path="${EDITOR_PATH}"`);
+    const consoleBranchIndex = appSource.indexOf('path="/console" element=');
+
+    // Declared above the console branch so a reviewer reads the two paths
+    // together; React Router ranks them, so order alone does not route it.
+    expect(flowRouteIndex).toBeGreaterThan(-1);
+    expect(consoleBranchIndex).toBeGreaterThan(-1);
+    expect(flowRouteIndex).toBeLessThan(consoleBranchIndex);
+    // Lazy-route rule: the flow is reached through the same dynamic import.
+    expect(appSource).toContain("'AgentsEditorPage'");
+  });
+
+  it('resolves the flow path outside the console shell while the list stays inside it', () => {
+    // Mirrors the shape `App.tsx` declares: a static flow path beside a console
+    // branch whose agent list is reached through a splat.
+    const routes = [
+      { id: 'agents-editor', path: EDITOR_PATH },
+      {
+        id: 'console-shell',
+        path: '/console',
+        children: [{ id: 'console-agents', path: 'agents/*' }],
+      },
+    ];
+
+    // The deepest match is the page that actually renders; `matchRoutes` returns
+    // the whole branch root-first, so a nested route's parent is not the answer.
+    const leafRouteId = (pathname: string) => matchRoutes(routes, pathname)?.at(-1)?.route.id;
+
+    for (const pathname of [
+      `${AGENTS_CONSOLE_BASE_PATH}/${ownerEditorModuleRoute()}`,
+      `${AGENTS_CONSOLE_BASE_PATH}/${ownerEditorModuleRoute()}/42`,
+    ]) {
+      expect(leafRouteId(pathname), pathname).toBe('agents-editor');
+    }
+
+    // The list — and every module the owner adds later — must keep resolving
+    // inside the shell, which is the whole point of the splat.
+    expect(leafRouteId(AGENTS_CONSOLE_BASE_PATH)).toBe('console-agents');
+    expect(leafRouteId(`${AGENTS_CONSOLE_BASE_PATH}/mine`)).toBe('console-agents');
+  });
+
+  it('renders the flow as a viewport-height frame with no chrome of its own', () => {
+    const source = readFileSync(path.join(SPEC_FILE_DIR, 'AgentsEditorPage.tsx'), 'utf8');
+
+    expect(source).toContain('h-[100dvh]');
+    expect(source).toContain('<AgentsView />');
+    // A header or a switcher of its own would compete with the form's header.
+    expect(source).not.toMatch(/<nav|Navbar|agents-console-nav/u);
+  });
+
+  it('keeps the owner module switcher free of flow modules', () => {
+    // Cross-repository behaviour, and this side has no render test by design
+    // (see vitest.config.ts), so the rule is read off the source it lives in.
+    const embedSource = readFileSync(
+      path.join(agentsPackageRoot, 'src', 'console', 'AgentsConsoleEmbed.tsx'),
+      'utf8',
+    );
+
+    expect(embedSource).toMatch(/modules\.filter\(\(candidate\) => !candidate\.editsAgent\)/u);
+    expect(embedSource).toContain('switcherModules.map');
+    expect(embedSource).toMatch(/!activeModule\?\.editsAgent && switcherModules\.length > 1/u);
+  });
+
+  it('gives the module content area a flex parent so a flex-1 module root fills it', () => {
+    // The two owned modules fill their content area differently — the manager page
+    // with `h-full` and the editor with `flex-1` — so the content area has to be a
+    // flex container, or the editor's `flex-1` is inert and the root collapses to
+    // content height. That is not cosmetic: measured in Chrome, a 1440px viewport
+    // left a 390px empty band above the page background, and a viewport shorter than
+    // the form clipped its bottom because the host frame clips.
+    const embedSource = readFileSync(
+      path.join(agentsPackageRoot, 'src', 'console', 'AgentsConsoleEmbed.tsx'),
+      'utf8',
+    );
+
+    const contentArea = /<div\s+className="([^"]*)"[^>]*>\s*\{\s*activeModule\.editsAgent \?/u.exec(
+      embedSource,
+    );
+    expect(
+      contentArea,
+      'the content area must stay the div that wraps the module switch',
+    ).toBeTruthy();
+
+    const tokens = contentArea![1].split(/\s+/u);
+    expect(tokens, 'must be a flex item that takes the space under the nav').toContain('flex-1');
+    expect(tokens, 'must not let content push it past the given height').toContain('min-h-0');
+    expect(tokens, 'must be a flex container so `flex-1` roots stretch').toContain('flex');
+    expect(tokens, 'column, matching the editor root that fills it').toContain('flex-col');
   });
 });
 

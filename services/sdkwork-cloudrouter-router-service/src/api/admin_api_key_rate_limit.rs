@@ -36,6 +36,7 @@ struct AdminApiKeyRateLimitState {
 }
 
 #[derive(Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct AdminApiKeyRateLimitListQueryRequest {
     page: Option<i64>,
     page_size: Option<i64>,

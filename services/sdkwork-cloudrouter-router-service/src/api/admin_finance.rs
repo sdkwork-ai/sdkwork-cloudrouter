@@ -31,6 +31,7 @@ struct AdminFinanceState {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct AdminFinanceRequestQuery {
     // `page` is accepted only to reject it explicitly: these operations are
     // cursor-only per `PAGINATION_SPEC.md` §12 pre-launch zero-debt, and

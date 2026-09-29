@@ -116,7 +116,6 @@ CREATE TABLE IF NOT EXISTS cloudrouter_usage_measurement (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_cloudrouter_usage_measurement_scope_id ON cloudrouter_usage_measurement (tenant_id, organization_id, id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_cloudrouter_usage_measurement_idempotency ON cloudrouter_usage_measurement (tenant_id, organization_id, idempotency_key);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_cloudrouter_usage_measurement_line ON cloudrouter_usage_measurement (tenant_id, organization_id, invocation_id, measurement_key);
-CREATE UNIQUE INDEX IF NOT EXISTS uq_cloudrouter_usage_measurement_scope_reference ON cloudrouter_usage_measurement (tenant_id, organization_id, id);
 CREATE INDEX IF NOT EXISTS idx_cloudrouter_usage_measurement_rating ON cloudrouter_usage_measurement (tenant_id, organization_id, status, occurred_at, id);
 CREATE INDEX IF NOT EXISTS idx_cloudrouter_usage_measurement_subject ON cloudrouter_usage_measurement (tenant_id, organization_id, user_id, occurred_at, id);
 CREATE INDEX IF NOT EXISTS idx_cloudrouter_usage_measurement_retention ON cloudrouter_usage_measurement (retention_until, id);

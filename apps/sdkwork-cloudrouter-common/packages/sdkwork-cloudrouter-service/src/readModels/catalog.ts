@@ -5,7 +5,7 @@ import type {
 } from '@sdkwork/cloudrouter-contracts';
 import type { CloudRouterConsolePorts, ConsoleCatalogQuery } from '@sdkwork/cloudrouter-sdk-ports';
 
-import { readCollection, readFiniteNumber, readNonEmptyString, readRecord, toRecord } from '../read/record.js';
+import { readBoolean, readCollection, readFiniteNumber, readNonEmptyString, readRecord, toRecord } from '../read/record.js';
 
 export function toConsoleCatalogRateRow(payload: unknown): ConsoleCatalogRateRow {
   const record = toRecord(payload);
@@ -35,11 +35,18 @@ export function toConsoleCatalogPage(
   const items = readCollection(payload).map(toConsoleCatalogRateRow);
   const meta = readRecord(payload, ['page', 'pagination', 'pageInfo']) ?? {};
   const pageSize = readFiniteNumber(meta, ['pageSize', 'size', 'limit']) ?? query.pageSize ?? items.length;
+  const page = readFiniteNumber(meta, ['page', 'pageNumber', 'current']) ?? query.page ?? 1;
+  const total = readFiniteNumber(meta, ['total', 'totalCount', 'count']) ?? items.length;
+  const nextCursor = readNonEmptyString(meta, ['nextCursor', 'next_cursor']) ?? null;
+  const hasMore =
+    readBoolean(meta, ['hasMore', 'has_more']) ?? (nextCursor !== null || page * pageSize < total);
   return {
     items,
-    page: readFiniteNumber(meta, ['page', 'pageNumber', 'current']) ?? query.page ?? 1,
+    page,
     pageSize: pageSize === 0 ? items.length : pageSize,
-    total: readFiniteNumber(meta, ['total', 'totalCount', 'count']) ?? items.length,
+    total,
+    nextCursor,
+    hasMore,
   };
 }
 

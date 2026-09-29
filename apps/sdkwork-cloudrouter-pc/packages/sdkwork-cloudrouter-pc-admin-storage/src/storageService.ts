@@ -51,11 +51,35 @@ export type StorageProviderRecord = StorageProviderView;
 /**
  * 服务商更新（drive 契约：未提供的字段保持不变）。
  *
- * 直接取自共享服务的签名，不再手抄一份子集：手抄的版本漏掉了
- * `providerAccountId`，于是 cloudrouter 的存储服务商无法像 drive 那样
- * 绑定一个可复用的账号中心账号——同一份契约只在一处声明，就不会再漏。
+ * 字段清单显式声明，与共享服务签名由下方编译期双向断言锁定：共享服务
+ * 增删或改型字段时 tsc 立即报错。这样既保留"同一份契约只在一处声明"的
+ * 防漂移目标（历史上手抄子集漏掉过 `providerAccountId`），又让字段契约
+ * 审计可以静态解析出完整字段清单。
  */
-export type StorageProviderUpdateInput = Parameters<StorageProviderAdminService['updateProvider']>[1];
+export interface StorageProviderUpdateInput {
+  name?: string;
+  endpointUrl?: string;
+  region?: string;
+  bucket?: string;
+  pathStyle?: boolean;
+  credentialRef?: string;
+  providerAccountId?: string;
+  serverSideEncryptionMode?: string;
+  defaultStorageClass?: string;
+  status?: string;
+  strictTls?: boolean;
+}
+
+/** 编译期防漂移断言：本接口必须与共享服务签名双向可赋值。 */
+type StorageProviderUpdateInputMatchesService = [
+  StorageProviderUpdateInput,
+] extends [Parameters<StorageProviderAdminService['updateProvider']>[1]]
+  ? [Parameters<StorageProviderAdminService['updateProvider']>[1]] extends [
+        StorageProviderUpdateInput,
+      ]
+    ? true
+    : never
+  : never;
 
 /** 账号中心：可复用服务商账号的查询入参。 */
 export type StorageProviderAccountsListInput = Parameters<StorageProviderAdminService['listProviderAccounts']>[0];

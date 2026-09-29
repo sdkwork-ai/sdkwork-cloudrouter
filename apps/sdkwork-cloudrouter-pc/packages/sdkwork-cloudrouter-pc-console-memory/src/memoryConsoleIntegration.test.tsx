@@ -5,6 +5,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { APP_API_PREFIX } from '@sdkwork/cloudroutes-pc-commons/sdk-clients';
+
 import {
   MemoryConsoleEmbed,
   findMemoryConsoleModuleByRoute,
@@ -434,7 +436,7 @@ describe('Memory console surface attachment', () => {
     // external-via-platform-surface and the console loses its same-origin base.
     expect(declared).toBeTruthy();
     expect(declared?.runtimeMode).toBe('same-origin-mounted');
-    expect(declared?.apiPrefix).toBe('/app/v3/api');
+    expect(declared?.apiPrefix).toBe(APP_API_PREFIX);
     expect(declared?.cargoDependency).toBe('sdkwork_api_memory_assembly');
     expect(declared?.embeddedExecutableExport).toBe(
       'sdkwork_api_memory_assembly::assemble_app_api_contribution_from_env',

@@ -20,8 +20,8 @@ use super::{
 };
 use crate::application::payment_adapter::STANDARD_PAYMENT_ADAPTER_OPERATIONS;
 use crate::application::payment_provider_http::{
-    build_payment_provider_http_client, send_bounded, PaymentProviderHttpClient,
-    PaymentProviderHttpError,
+    build_payment_provider_http_client, ensure_payment_provider_target, send_bounded,
+    PaymentProviderHttpClient, PaymentProviderHttpError,
 };
 
 type AlipayHttpClient = PaymentProviderHttpClient;
@@ -889,18 +889,18 @@ fn normalize_gateway_url(gateway_url: String) -> Result<String, PaymentProviderR
             "Alipay gateway URL is required",
         ));
     }
-    let uri = gateway_url.parse::<Uri>().map_err(|error| {
+    gateway_url.parse::<Uri>().map_err(|error| {
         invalid_request(
             PaymentAdapterOperation::InvokeNativeOperation,
             format!("Alipay gateway URL is invalid: {error}"),
         )
     })?;
-    if !matches!(uri.scheme_str(), Some("http" | "https")) || uri.authority().is_none() {
-        return Err(invalid_request(
+    ensure_payment_provider_target(&gateway_url).map_err(|reason| {
+        invalid_request(
             PaymentAdapterOperation::InvokeNativeOperation,
-            "Alipay gateway URL must be an absolute http or https URL",
-        ));
-    }
+            format!("Alipay gateway URL must be a public HTTPS endpoint: {reason}"),
+        )
+    })?;
     Ok(gateway_url)
 }
 

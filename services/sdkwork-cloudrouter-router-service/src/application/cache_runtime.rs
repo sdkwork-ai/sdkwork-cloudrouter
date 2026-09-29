@@ -1,7 +1,8 @@
 use std::collections::hash_map::DefaultHasher;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, VecDeque};
 use std::fmt;
 use std::hash::{Hash, Hasher};
+use std::sync::Mutex as StdMutex;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -352,6 +353,11 @@ type MonotonicNow = Arc<dyn Fn() -> Instant + Send + Sync>;
 
 pub struct LocalCacheBackend {
     entries: RwLock<BTreeMap<String, CacheValueEntry>>,
+    /// Insertion-order journal for O(1) amortized eviction. May contain
+    /// keys removed out of band; those are skipped lazily at the front and
+    /// the journal is compacted once garbage dominates (see
+    /// [`LocalCacheBackend::evict_overflow`]).
+    insertion_order: StdMutex<VecDeque<String>>,
     max_entries: Option<usize>,
     now: MonotonicNow,
 }
@@ -385,9 +391,67 @@ impl LocalCacheBackend {
     ) -> Self {
         Self {
             entries: RwLock::new(BTreeMap::new()),
+            insertion_order: StdMutex::new(VecDeque::new()),
             max_entries,
             now: Arc::new(now),
         }
+    }
+
+    /// Enforces the entry cap by evicting the oldest live entries in FIFO
+    /// insertion order. The journal is the amortization device: each insert
+    /// pushes one key, each eviction pops from the front, and keys removed
+    /// out of band are skipped in O(1). Once skipped garbage dominates the
+    /// journal, it is rebuilt from the live entries ordered by
+    /// `(inserted_at, key)` — the same ordering the previous per-eviction
+    /// `min_by_key` full-table scan produced, at amortized O(1) instead of
+    /// O(n) per evicted key.
+    fn evict_overflow(
+        entries: &mut BTreeMap<String, CacheValueEntry>,
+        order: &mut VecDeque<String>,
+        max_entries: usize,
+    ) {
+        let mut skipped_garbage = 0usize;
+        while entries.len() > max_entries {
+            match order.pop_front() {
+                Some(candidate) => {
+                    if entries.remove(&candidate).is_none() {
+                        skipped_garbage += 1;
+                    }
+                }
+                None => break,
+            }
+        }
+        let journal_floor = (entries.len() * 2) + 64;
+        if skipped_garbage > 0 && order.len() > journal_floor {
+            *order = Self::compacted_order(entries);
+        }
+    }
+
+    /// Removes `key` from the entries map and keeps the insertion-order
+    /// journal from growing without bound under delete-heavy churn: once the
+    /// journal holds more than twice the live entries (plus slack), it is
+    /// rebuilt from the live set.
+    fn remove_and_compact(
+        entries: &mut BTreeMap<String, CacheValueEntry>,
+        order: &mut VecDeque<String>,
+        key: &str,
+    ) -> bool {
+        let removed = entries.remove(key).is_some();
+        if removed && order.len() > (entries.len() * 2) + 64 {
+            *order = Self::compacted_order(entries);
+        }
+        removed
+    }
+
+    fn compacted_order(entries: &BTreeMap<String, CacheValueEntry>) -> VecDeque<String> {
+        let mut ordered: Vec<(Instant, String)> = entries
+            .iter()
+            .map(|(key, entry)| (entry.inserted_at, key.clone()))
+            .collect();
+        ordered.sort_by(|(left_at, left_key), (right_at, right_key)| {
+            left_at.cmp(right_at).then_with(|| left_key.cmp(right_key))
+        });
+        ordered.into_iter().map(|(_, key)| key).collect()
     }
 }
 
@@ -433,6 +497,17 @@ impl CacheBackend for LocalCacheBackend {
                             expires_at,
                         },
                     );
+                    // A fresh counter entry is a new insertion for eviction
+                    // purposes; the counter branch above keeps the existing
+                    // journal position instead.
+                    if let Some(max_entries) = self.max_entries {
+                        let mut order = self
+                            .insertion_order
+                            .lock()
+                            .unwrap_or_else(|poisoned| poisoned.into_inner());
+                        order.push_back(key.to_owned());
+                        Self::evict_overflow(&mut entries, &mut order, max_entries);
+                    }
                     1
                 }
             };
@@ -453,31 +528,36 @@ impl CacheBackend for LocalCacheBackend {
                 .ok_or_else(|| DomainError::new("cache ttl overflowed"))?;
             let mut entries = self.entries.write().await;
             entries.insert(
-                key,
+                key.clone(),
                 CacheValueEntry {
                     value,
                     inserted_at,
                     expires_at,
                 },
             );
+            // The insertion-order journal only exists to serve eviction; the
+            // unlimited backend never evicts and must not grow a journal.
             if let Some(max_entries) = self.max_entries {
-                while entries.len() > max_entries {
-                    let Some(oldest_key) = entries
-                        .iter()
-                        .min_by_key(|(_, entry)| entry.inserted_at)
-                        .map(|(entry_key, _)| entry_key.clone())
-                    else {
-                        break;
-                    };
-                    entries.remove(&oldest_key);
-                }
+                let mut order = self
+                    .insertion_order
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner());
+                order.push_back(key);
+                Self::evict_overflow(&mut entries, &mut order, max_entries);
             }
             Ok(())
         })
     }
 
     fn delete<'a>(&'a self, key: &'a str) -> CacheBackendFuture<'a, bool> {
-        Box::pin(async move { Ok(self.entries.write().await.remove(key).is_some()) })
+        Box::pin(async move {
+            let mut entries = self.entries.write().await;
+            let mut order = self
+                .insertion_order
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
+            Ok(Self::remove_and_compact(&mut entries, &mut order, key))
+        })
     }
 
     fn delete_prefix<'a>(&'a self, prefix: String) -> CacheBackendFuture<'a, usize> {
@@ -485,6 +565,15 @@ impl CacheBackend for LocalCacheBackend {
             let mut entries = self.entries.write().await;
             let before = entries.len();
             entries.retain(|key, _| !key.starts_with(&prefix));
+            if before.saturating_sub(entries.len()) > 0 {
+                let mut order = self
+                    .insertion_order
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner());
+                if order.len() > (entries.len() * 2) + 64 {
+                    *order = Self::compacted_order(&entries);
+                }
+            }
             Ok(before.saturating_sub(entries.len()))
         })
     }
@@ -498,6 +587,15 @@ impl CacheBackend for LocalCacheBackend {
             let mut entries = self.entries.write().await;
             let before = entries.len();
             entries.retain(|key, entry| !key.starts_with(&prefix) || entry.expires_at > now);
+            if before.saturating_sub(entries.len()) > 0 {
+                let mut order = self
+                    .insertion_order
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner());
+                if order.len() > (entries.len() * 2) + 64 {
+                    *order = Self::compacted_order(&entries);
+                }
+            }
             let refreshed_entries = entries
                 .iter()
                 .filter(|(key, entry)| key.starts_with(&prefix) && entry.expires_at > now)

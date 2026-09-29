@@ -4052,8 +4052,10 @@
             "type": "integer"
           },
           "totalItems": {
+            "format": "int64",
             "pattern": "^[0-9]+$",
-            "type": "string"
+            "type": "string",
+            "x-sdkwork-int64-string": true
           },
           "totalPages": {
             "minimum": 0,

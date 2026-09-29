@@ -651,6 +651,12 @@ class CloudRouterGatewayOpenApiGenerator:
             # numbers for timestamps/bytes/seeds (all < 2^53) are exempt from the
             # API_SPEC §13.6 int64-string closure (see API_SPEC §13.6 exemption).
             "x-sdkwork-int64-openai-compat": True,
+            # Vendor-protocol mirror: Google (`pageSize`/`pageToken`) and
+            # OpenAI (`include[]`) protocol query vocabulary is mirrored
+            # verbatim for upstream-client compatibility and is exempt from
+            # the API_SPEC §13 lower_snake_case query-parameter closure (see
+            # API_SPEC §13 vendor-compat exemption).
+            "x-sdkwork-query-parameter-vendor-compat": True,
         }
         self._materialize_public_generic_payload_schemas(spec)
         self._normalize_open_object_extension_maps(components)

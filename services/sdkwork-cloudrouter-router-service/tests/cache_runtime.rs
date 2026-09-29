@@ -1343,3 +1343,49 @@ async fn cache_namespace_policy_enforces_standard_failure_mode_and_consistency()
         .to_string()
         .contains("cache namespace auth.qr.challenge consistency is unsupported"));
 }
+
+/// Regression pin for the local-cache eviction rewrite: eviction walks an
+/// insertion-order journal instead of scanning the whole table per evicted
+/// key, so (a) the oldest live entry is evicted in FIFO order, (b) keys
+/// removed out of band are skipped without evicting live entries, and
+/// (c) delete-heavy churn cannot make the journal evict a freshly written
+/// entry ahead of older live ones.
+#[tokio::test]
+async fn local_cache_evicts_oldest_live_entries_in_fifo_order() -> DomainResult<()> {
+    let clock = ManualClock::new();
+    let backend = LocalCacheBackend::with_max_entries_and_clock(Some(3), {
+        let clock = clock.clone();
+        move || clock.now()
+    });
+
+    for key in ["a", "b", "c"] {
+        backend
+            .set_json(key.to_owned(), serde_json::json!(key), Duration::from_secs(60))
+            .await?;
+        clock.elapsed_millis.fetch_add(1, Ordering::Relaxed);
+    }
+    // Out-of-band delete of the middle entry: the journal keeps its key and
+    // must skip it during the next eviction.
+    assert!(backend.delete("b").await?);
+    backend
+        .set_json("d".to_owned(), serde_json::json!("d"), Duration::from_secs(60))
+        .await?;
+    let expected = ["a", "c", "d"];
+    for key in expected {
+        let hit = backend.get_json(key).await?.is_some();
+        assert!(hit, "entry {key} must survive the b-deleted eviction");
+    }
+    let miss = backend.get_json("b").await?.is_none();
+    assert!(miss, "deleted entry b must stay deleted after eviction");
+
+    // One more insert over the cap evicts the next-oldest live entry (a).
+    backend
+        .set_json("e".to_owned(), serde_json::json!("e"), Duration::from_secs(60))
+        .await?;
+    assert!(backend.get_json("a").await?.is_none(), "a must be evicted");
+    for key in ["c", "d", "e"] {
+        let hit = backend.get_json(key).await?.is_some();
+        assert!(hit, "entry {key} must survive");
+    }
+    Ok(())
+}

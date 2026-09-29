@@ -62,16 +62,27 @@ infrastructure.
 Server-side SQLite is fully removed from the authoritative data layer: the
 workspace `sqlx`/`database-sqlx`/`database-id` definitions, `router-service`
 features, the `models` and `appbase` assemblies, and `rusqlite` are gone from
-server builds. The SQLite-backed Codex agent provider is an optional,
-per-application integration: `sdkwork-agent-server` and
-`sdkwork-agents-runtime-facade` expose a `codex-provider` feature that is
-**off by default**, so a server/container build links no
-`codex-state`/`libsqlite3-sys` unless an application explicitly enables it.
-It owns no tenant, billing, entitlement, audit, or other system-of-record
-data (DATABASE_SPEC §7.2: `authoritative-server` persistence is PostgreSQL
-only). Client-local SQLite (`sdkwork-agent-client` and desktop crates)
-enables the Codex provider explicitly for device-scoped state with its local
-thread history, logs, goals, and memories.
+server builds. SQLite-reachable components are optional, per-application
+integrations that are **off by default**:
+
+- The SQLite-backed Codex agent provider: `sdkwork-agent-server` and
+  `sdkwork-agents-runtime-facade` expose a `codex-provider` feature.
+- The federated `sdkwork-memory` module: its repository, native-SQL plugin,
+  drive, and app-api assembly expose a `sqlite` feature that forwards to
+  `sqlx/sqlite` + `sdkwork-database-sqlx/sqlite` (which owns the optional
+  `libsqlite3-sys` dependency). Server assemblies that embed the Memory
+  app-api plane never enable it — the embedded surface itself skips
+  non-PostgreSQL engines (`memory_runtime.rs`), so a server/container build
+  links no `codex-state`/`libsqlite3-sys` unless an application explicitly
+  enables a feature. `sdkwork-api-memory-standalone-gateway` (the desktop /
+  local surface) defaults `sqlite` on.
+
+Neither integration owns tenant, billing, entitlement, audit, or other
+system-of-record data (DATABASE_SPEC §7.2: `authoritative-server`
+persistence is PostgreSQL only). Client-local SQLite (`sdkwork-agent-client`,
+desktop crates, and the Memory standalone gateway) enables the features
+explicitly for device-scoped state with its local thread history, logs,
+goals, and memories.
 
 ## 3. System Boundaries And Modules
 
@@ -366,8 +377,10 @@ runtime store and materialized by the Cloud Router-owned
 `payment-control-plane` database module (fresh installs receive the control
 plane shape directly; shared payment tables self-heal against federated
 baselines owned by `sdkwork-payment`). Refund creation is
-atomically idempotent (`ON CONFLICT` on the `(tenant_id, idempotency_key)`
-arbiter) and carries a cumulative refund-cap reservation in the same
+atomically idempotent (`ON CONFLICT` on the
+`(tenant_id, order_id, idempotency_key) WHERE deleted_at IS NULL` arbiter
+backed by `ux_commerce_refund_idempotency` in the federated payment baseline)
+and carries a cumulative refund-cap reservation in the same
 transaction: the guard row-locks the intent, re-reads the active refund sum,
 and rolls back the full refund write when `sum(active refunds) + this refund`
 would exceed the intent amount — failed/canceled refunds release their

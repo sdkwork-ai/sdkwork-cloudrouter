@@ -1496,7 +1496,7 @@ support.
 | Edition | License | Best for | SLA |
 | --- | --- | --- | --- |
 | Community | AGPL-3.0-or-later, free | Evaluation and non-commercial self-deployment | None |
-| Pro | Commercial subscription | Commercial multi-tenant deployments | 99.5% monthly uptime |
+| Pro | Commercial subscription | Commercial multi-tenant deployments | 99.5% monthly uptime target per docs/legal/SLA.md (accepted SLO evidence is a GA-phase gate, not yet claimed; the application remains `preLaunch`) |
 | Enterprise | Commercial enterprise subscription | Enhanced audit, dedicated support, private deployment | SLA targets per docs/legal/SLA.md (accepted SLO evidence is a GA-phase gate, not yet claimed) |
 | OEM / White-label | One-time license + royalty | Embedded, rebranded, and redistributed deployments | Custom |
 

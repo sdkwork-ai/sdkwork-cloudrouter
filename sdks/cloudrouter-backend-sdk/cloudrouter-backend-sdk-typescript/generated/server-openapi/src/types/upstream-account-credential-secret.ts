@@ -1,4 +1,4 @@
-/** Decrypted upstream account credential secret schema exposed by Cloud Router for the administrative edit surface. */
+/** Upstream account credential secret schema exposed by Cloud Router. */
 export interface UpstreamAccountCredentialSecret {
   /** Account id field on upstream account credential secret. */
   accountId: string;
@@ -14,7 +14,7 @@ export interface UpstreamAccountCredentialSecret {
   isActive: boolean;
   /** Masked label field on upstream account credential secret. */
   maskedLabel: string | null;
-  /** Decrypted plaintext secret. Present only on this reveal endpoint; the credentials list endpoint never returns plaintext. */
+  /** Secret field on upstream account credential secret. */
   secret: string;
   /** Status field on upstream account credential secret. */
   status: number;

@@ -794,8 +794,17 @@ export default defineConfig(({mode, command}) => {
       alias: [
         { find: 'qrcode', replacement: resolvePortalDependency('qrcode/lib/browser.js', configDir) },
         { find: /^style-to-js$/, replacement: path.resolve(configDir, 'scripts/shims/style-to-js.ts') },
-        { find: 'use-sync-external-store/shim/with-selector', replacement: path.resolve(configDir, 'src/auth/useSyncExternalStoreWithSelectorCompat.ts') },
-        { find: 'use-sync-external-store/shim', replacement: path.resolve(configDir, 'src/auth/useSyncExternalStoreShimCompat.ts') },
+        // Anchor the React external-store shim aliases to their exact
+        // entrypoints. A string `find` is a Vite *prefix* rule — the rewrite is
+        // `importee.replace(find, replacement)` and the residual suffix is kept
+        // — so the plain `use-sync-external-store/shim` entry previously turned
+        // the explicit `use-sync-external-store/shim/index.js` specifier that
+        // @tiptap/react emits into `<compat>.ts/index.js` and failed to
+        // resolve it. Each consumer form in the workspace dependency tree
+        // (bare entrypoint plus the `.js` sibling) must map to the ESM compat
+        // module, and nothing else may be swallowed by the pattern.
+        { find: /^use-sync-external-store\/shim\/with-selector(?:\.js)?$/, replacement: path.resolve(configDir, 'src/auth/useSyncExternalStoreWithSelectorCompat.ts') },
+        { find: /^use-sync-external-store\/shim(?:\/index\.js)?$/, replacement: path.resolve(configDir, 'src/auth/useSyncExternalStoreShimCompat.ts') },
         { find: '@', replacement: path.resolve(configDir, '.') },
       ],
     },

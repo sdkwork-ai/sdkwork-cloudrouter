@@ -2286,10 +2286,12 @@
             "description": "Merchant or SDKWORK order item id being refunded."
           },
           "quantity": {
-            "type": "integer",
+            "type": "string",
             "format": "int64",
-            "minimum": 1,
-            "description": "Refunded item quantity."
+            "pattern": "^[1-9][0-9]*$",
+            "description": "Refunded item quantity.",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
           },
           "refundAmount": {
             "$ref": "#/components/schemas/MoneyAmount"
@@ -2403,9 +2405,12 @@
             "description": "Order item id being refunded."
           },
           "quantity": {
-            "type": "integer",
+            "type": "string",
             "format": "int64",
-            "description": "Refunded item quantity."
+            "pattern": "^[1-9][0-9]*$",
+            "description": "Refunded item quantity.",
+            "x-sdkwork-int64-string": true,
+            "x-sdkwork-rust-type": "i64"
           },
           "refundAmount": {
             "$ref": "#/components/schemas/MoneyAmount"

@@ -18,6 +18,7 @@ struct AdminMonitorState {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct AdminMonitorListQuery {
     page: Option<i64>,
     page_size: Option<i64>,

@@ -9494,6 +9494,184 @@ components:
         occurred_at:
           type: string
           format: date-time
+    CommercePaymentOperationAttemptRecord:
+      type: object
+      x-table: commerce_payment_operation_attempt
+      x-domain: payment
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        organization_id:
+          type: string
+        operation_no:
+          type: string
+        supplier_code:
+          type: string
+        provider_account_id:
+          type: string
+        account_id:
+          type: string
+        operation_code:
+          type: string
+        sdkwork_resource_type:
+          type: string
+        sdkwork_resource_id:
+          type: string
+        idempotency_key:
+          type: string
+        request_digest:
+          type: string
+        response_digest:
+          type: string
+        native_request_id:
+          type: string
+        native_trade_id:
+          type: string
+        native_refund_id:
+          type: string
+        http_status:
+          type: integer
+          format: int32
+        provider_error_code:
+          type: string
+        provider_error_message:
+          type: string
+        retryable:
+          type: boolean
+        status:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+    CommercePaymentRouteDecisionRecord:
+      type: object
+      x-table: commerce_payment_route_decision
+      x-domain: payment
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        organization_id:
+          type: string
+        payment_intent_id:
+          type: string
+        payment_attempt_id:
+          type: string
+        route_rule_id:
+          type: string
+        account_id:
+          type: string
+        supplier_code:
+          type: string
+        provider_account_id:
+          type: string
+        method_code:
+          type: string
+        scene_code:
+          type: string
+        country_code:
+          type: string
+        currency_code:
+          type: string
+        amount:
+          type: string
+        risk_level:
+          type: string
+        decision_reason:
+          type: string
+        fallback_from_account_id:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    CommerceRefundAttemptRecord:
+      type: object
+      x-table: commerce_refund_attempt
+      x-domain: payment
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        organization_id:
+          type: string
+        refund_attempt_no:
+          type: string
+        refund_id:
+          type: string
+        supplier_code:
+          type: string
+        provider_account_id:
+          type: string
+        out_refund_no:
+          type: string
+        provider_refund_id:
+          type: string
+        amount:
+          type: string
+        currency_code:
+          type: string
+        status:
+          type: string
+        failure_code:
+          type: string
+        failure_message:
+          type: string
+        submitted_at:
+          type: string
+          format: date-time
+        succeeded_at:
+          type: string
+          format: date-time
+        failed_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CommerceRefundItemRecord:
+      type: object
+      x-table: commerce_refund_item
+      x-domain: payment
+      x-generated-by-this-project: true
+      properties:
+        id:
+          type: string
+        tenant_id:
+          type: string
+        organization_id:
+          type: string
+        refund_id:
+          type: string
+        order_item_id:
+          type: string
+        quantity:
+          type: integer
+          format: int32
+        refund_amount:
+          type: string
+        tax_refund_amount:
+          type: string
+        shipping_refund_amount:
+          type: string
+        created_at:
+          type: string
+          format: date-time
     IamGatewayAccessPolicyRecord:
       type: object
       x-table: iam_gateway_access_policy
@@ -12230,13 +12408,10 @@ components:
           format: int32
         service_name:
           type: string
-          maxLength: 256
         instance_identity:
           type: string
-          maxLength: 256
         hostname:
           type: string
-          maxLength: 256
         pid:
           type: string
           format: int64
@@ -12245,7 +12420,6 @@ components:
           x-sdkwork-rust-type: i64
         lease_token:
           type: string
-          maxLength: 64
         lease_version:
           type: string
           format: int64

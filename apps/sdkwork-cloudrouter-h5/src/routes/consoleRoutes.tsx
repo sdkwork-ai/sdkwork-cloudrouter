@@ -15,6 +15,7 @@ import { CLOUDROUTER_CONSOLE_ROUTES } from '@sdkwork/cloudrouter-contracts';
 
 import { AppAuthGate } from '../AuthGate.js';
 import { useConsoleRuntime } from '../providers/AppProviders.js';
+import { RouteErrorBoundary } from './RouteErrorBoundary.js';
 
 export function ConsoleRouteAssembly() {
   const runtime = useConsoleRuntime();
@@ -35,28 +36,36 @@ export function ConsoleRouteAssembly() {
         labelForKey={(key) => translate(key)}
         onSignOut={runtime.signOut}
       >
-        <Routes>
-          <Route path="/" element={<Navigate to={CLOUDROUTER_CONSOLE_ROUTES.dashboard.path} replace />} />
-          <Route
-            path={CLOUDROUTER_CONSOLE_ROUTES.dashboard.path}
-            element={
-              <ConsoleDashboardScreen ports={ports} locale={locale} labels={dashboardLabels(translate)} />
-            }
-          />
-          <Route
-            path={CLOUDROUTER_CONSOLE_ROUTES.usage.path}
-            element={<ConsoleUsageScreen ports={ports} locale={locale} labels={usageLabels(translate)} />}
-          />
-          <Route
-            path={CLOUDROUTER_CONSOLE_ROUTES.apiKeys.path}
-            element={<ConsoleApiKeysScreen ports={ports} locale={locale} labels={apiKeyLabels(translate)} />}
-          />
-          <Route
-            path={CLOUDROUTER_CONSOLE_ROUTES.catalog.path}
-            element={<ConsoleCatalogScreen ports={ports} locale={locale} labels={catalogLabels(translate)} />}
-          />
-          <Route path="*" element={<Navigate to={CLOUDROUTER_CONSOLE_ROUTES.dashboard.path} replace />} />
-        </Routes>
+        <RouteErrorBoundary
+          labels={{
+            title: translate('cloudrouter.console.shared.errorTitle'),
+            message: translate('cloudrouter.console.shared.errorMessage'),
+            retry: translate('cloudrouter.console.shared.reload'),
+          }}
+        >
+          <Routes>
+            <Route path="/" element={<Navigate to={CLOUDROUTER_CONSOLE_ROUTES.dashboard.path} replace />} />
+            <Route
+              path={CLOUDROUTER_CONSOLE_ROUTES.dashboard.path}
+              element={
+                <ConsoleDashboardScreen ports={ports} locale={locale} labels={dashboardLabels(translate)} />
+              }
+            />
+            <Route
+              path={CLOUDROUTER_CONSOLE_ROUTES.usage.path}
+              element={<ConsoleUsageScreen ports={ports} locale={locale} labels={usageLabels(translate)} />}
+            />
+            <Route
+              path={CLOUDROUTER_CONSOLE_ROUTES.apiKeys.path}
+              element={<ConsoleApiKeysScreen ports={ports} locale={locale} labels={apiKeyLabels(translate)} />}
+            />
+            <Route
+              path={CLOUDROUTER_CONSOLE_ROUTES.catalog.path}
+              element={<ConsoleCatalogScreen ports={ports} locale={locale} labels={catalogLabels(translate)} />}
+            />
+            <Route path="*" element={<Navigate to={CLOUDROUTER_CONSOLE_ROUTES.dashboard.path} replace />} />
+          </Routes>
+        </RouteErrorBoundary>
       </ConsoleShellLayout>
     </AppAuthGate>
   );
@@ -82,6 +91,7 @@ function usageLabels(translate: (key: string) => string): ConsoleUsageLabels & {
   loading: string;
   empty: string;
   reload: string;
+  loadMore: string;
 } {
   return {
     columnModel: translate('cloudrouter.console.usage.columnModel'),
@@ -96,6 +106,7 @@ function usageLabels(translate: (key: string) => string): ConsoleUsageLabels & {
     loading: translate('cloudrouter.console.shared.loading'),
     empty: translate('cloudrouter.console.shared.empty'),
     reload: translate('cloudrouter.console.shared.reload'),
+    loadMore: translate('cloudrouter.console.shared.loadMore'),
   };
 }
 
@@ -104,6 +115,7 @@ function apiKeyLabels(translate: (key: string) => string): ConsoleApiKeysLabels 
   empty: string;
   reload: string;
   createdOnce: string;
+  loadMore: string;
 } {
   return {
     create: translate('cloudrouter.console.apiKeys.create'),
@@ -119,6 +131,7 @@ function apiKeyLabels(translate: (key: string) => string): ConsoleApiKeysLabels 
     empty: translate('cloudrouter.console.shared.empty'),
     reload: translate('cloudrouter.console.shared.reload'),
     createdOnce: translate('cloudrouter.console.apiKeys.createdOnce'),
+    loadMore: translate('cloudrouter.console.shared.loadMore'),
   };
 }
 

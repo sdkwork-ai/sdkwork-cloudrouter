@@ -43,6 +43,10 @@
     "cloudrouter_pricing_rule",
     "cloudrouter_rating_decision",
     "cloudrouter_usage_measurement",
+    "commerce_payment_operation_attempt",
+    "commerce_payment_route_decision",
+    "commerce_refund_attempt",
+    "commerce_refund_item",
     "iam_gateway_access_policy",
     "iam_gateway_api_key",
     "iam_gateway_api_key_account_group",
@@ -1022,16 +1026,16 @@
   },
   "summary": {
     "api_surface_counts": {
-      "app": 107,
+      "app": 111,
       "backend": 106,
       "openai_v1": 3,
       "worker": 113
     },
     "external_legacy_table_count": 0,
     "frontend_route_count": 66,
-    "generated_table_count": 69,
+    "generated_table_count": 73,
     "legacy_table_count": 0,
-    "table_count": 130
+    "table_count": 134
   },
   "tables": [
     {
@@ -27791,15 +27795,6 @@
           "columns": [
             "tenant_id",
             "organization_id",
-            "id"
-          ],
-          "name": "uq_cloudrouter_usage_measurement_scope_reference",
-          "unique": true
-        },
-        {
-          "columns": [
-            "tenant_id",
-            "organization_id",
             "status",
             "occurred_at",
             "id"
@@ -27920,6 +27915,514 @@
         }
       ],
       "write_owner": "cloudrouter-metering-service"
+    },
+    {
+      "api_surfaces": [
+        "app"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "name": "id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "tenant_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "organization_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "operation_no",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "supplier_code",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "provider_account_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "account_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "operation_code",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "sdkwork_resource_type",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "sdkwork_resource_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "idempotency_key",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "request_digest",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "response_digest",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "native_request_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "native_trade_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "native_refund_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "http_status",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "provider_error_code",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "provider_error_message",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "retryable",
+          "source": "explicit",
+          "type": "bool"
+        },
+        {
+          "name": "status",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "started_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "completed_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "created_at",
+          "source": "explicit",
+          "type": "instant"
+        }
+      ],
+      "common_columns": [],
+      "compliance_level": "L2",
+      "domain": "payment",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "operation_no"
+          ],
+          "name": "idx_commerce_payment_operation_attempt_no",
+          "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "sdkwork_resource_type",
+            "sdkwork_resource_id"
+          ],
+          "name": "idx_commerce_payment_operation_attempt_resource",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "payment_control_plane_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "commerce_payment_operation_attempt",
+      "unique_constraints": [],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "app"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "name": "id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "tenant_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "organization_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "payment_intent_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "payment_attempt_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "route_rule_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "account_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "supplier_code",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "provider_account_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "method_code",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "scene_code",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "country_code",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "currency_code",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "amount",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "risk_level",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "decision_reason",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "fallback_from_account_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "created_at",
+          "source": "explicit",
+          "type": "instant"
+        }
+      ],
+      "common_columns": [],
+      "compliance_level": "L2",
+      "domain": "payment",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "payment_intent_id"
+          ],
+          "name": "idx_commerce_payment_route_decision_intent",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "payment_control_plane_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "commerce_payment_route_decision",
+      "unique_constraints": [],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "app"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "name": "id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "tenant_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "organization_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "refund_attempt_no",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "refund_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "supplier_code",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "provider_account_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "out_refund_no",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "provider_refund_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "amount",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "currency_code",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "status",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "failure_code",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "failure_message",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "submitted_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "succeeded_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "failed_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "created_at",
+          "source": "explicit",
+          "type": "instant"
+        },
+        {
+          "name": "updated_at",
+          "source": "explicit",
+          "type": "instant"
+        }
+      ],
+      "common_columns": [],
+      "compliance_level": "L2",
+      "domain": "payment",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "refund_id"
+          ],
+          "name": "idx_commerce_refund_attempt_refund",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "payment_control_plane_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "commerce_refund_attempt",
+      "unique_constraints": [],
+      "write_owner": "router-service"
+    },
+    {
+      "api_surfaces": [
+        "app"
+      ],
+      "column_types": {},
+      "columns": [
+        {
+          "name": "id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "tenant_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "organization_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "refund_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "order_item_id",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "quantity",
+          "source": "explicit",
+          "type": "int32"
+        },
+        {
+          "name": "refund_amount",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "tax_refund_amount",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "shipping_refund_amount",
+          "source": "explicit",
+          "type": "text"
+        },
+        {
+          "name": "created_at",
+          "source": "explicit",
+          "type": "instant"
+        }
+      ],
+      "common_columns": [],
+      "compliance_level": "L2",
+      "domain": "payment",
+      "foreign_keys": [],
+      "frontend_routes": [],
+      "generated_by_this_project": true,
+      "indexes": [
+        {
+          "columns": [
+            "tenant_id",
+            "refund_id"
+          ],
+          "name": "idx_commerce_refund_item_refund",
+          "unique": false
+        }
+      ],
+      "lifecycle": null,
+      "not_null_columns": [],
+      "physical_columns": null,
+      "profile": "payment_control_plane_entity",
+      "projection_policy": null,
+      "security": null,
+      "source_refs": [],
+      "source_tables": [],
+      "system_of_record": true,
+      "table": "commerce_refund_item",
+      "unique_constraints": [],
+      "write_owner": "router-service"
     },
     {
       "api_surfaces": [
@@ -30590,6 +31093,17 @@
           ],
           "name": "idx_ops_audit_log_request",
           "unique": false
+        },
+        {
+          "columns": [
+            "tenant_id",
+            "organization_id",
+            "action",
+            "target_uuid",
+            "request_id"
+          ],
+          "name": "ux_ops_audit_log_idempotency",
+          "unique": true
         },
         {
           "columns": [
@@ -35047,17 +35561,17 @@
         {
           "name": "service_name",
           "source": "explicit",
-          "type": "string(256)"
+          "type": "text"
         },
         {
           "name": "instance_identity",
           "source": "explicit",
-          "type": "string(256)"
+          "type": "text"
         },
         {
           "name": "hostname",
           "source": "explicit",
-          "type": "string(256)"
+          "type": "text"
         },
         {
           "name": "pid",
@@ -35067,7 +35581,7 @@
         {
           "name": "lease_token",
           "source": "explicit",
-          "type": "string(64)"
+          "type": "text"
         },
         {
           "name": "lease_version",

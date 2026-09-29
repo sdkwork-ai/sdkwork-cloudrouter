@@ -25,13 +25,18 @@ curl http://127.0.0.1:3900/readyz
 
 ## 2. Login And Authentication Methods
 
-`v0.3.0` supports admin-configured login methods, QR login, OAuth visibility, recovery methods, registration methods, and verification-code policy.
+This version supports admin-configured login methods, QR login, recovery methods, registration methods, and verification-code policy.
 
 The default posture is strict:
 
 - Password login is available by default.
-- QR login, email code login, phone code login, OAuth, and session bridge require explicit enablement.
+- QR login, email code login, phone code login, and session bridge require explicit enablement.
 - Whether registration requires verification code is controlled by IAM runtime policy.
+- The OAuth configuration section visible in the admin console is a
+  configuration placeholder owned by the sibling `sdkwork-appbase` runtime:
+  end-to-end OAuth authorization/refresh/revocation/encrypted persistence is
+  not a declared working capability of this product yet (a PRD non-goal), so
+  do not enable it in production until the sibling delivers the full chain.
 
 The first install/start initializes a bootstrap administrator when needed. The default username is `admin`; the one-time password appears as `bootstrapAdmin.initialPassword` in installer output or `initial_password` in startup logs. Rotate it after first login, then configure IAM policy in the backend.
 

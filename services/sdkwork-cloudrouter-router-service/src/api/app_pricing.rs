@@ -41,6 +41,7 @@ struct AppPricingState {
 }
 
 #[derive(Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct AppPricingQuery {
     category: Option<String>,
     q: Option<String>,
@@ -53,6 +54,7 @@ struct AppPricingQuery {
 }
 
 #[derive(Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct AdminProductPricingQuery {
     category: Option<String>,
     q: Option<String>,

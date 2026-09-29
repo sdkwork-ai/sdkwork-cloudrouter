@@ -178,6 +178,8 @@ export type { UpstreamAccount } from './upstream-account';
 export type { UpstreamAccountCredential } from './upstream-account-credential';
 export type { UpstreamAccountCredentialItemResponse } from './upstream-account-credential-item-response';
 export type { UpstreamAccountCredentialListResponse } from './upstream-account-credential-list-response';
+export type { UpstreamAccountCredentialSecret } from './upstream-account-credential-secret';
+export type { UpstreamAccountCredentialSecretItemResponse } from './upstream-account-credential-secret-item-response';
 export type { UpstreamAccountGroup } from './upstream-account-group';
 export type { UpstreamAccountGroupItemResponse } from './upstream-account-group-item-response';
 export type { UpstreamAccountGroupListResponse } from './upstream-account-group-list-response';
@@ -228,5 +230,3 @@ export type { UpstreamSupplierResourceCollectionResponse } from './upstream-supp
 export type { UpstreamSupplierResourceListResponse } from './upstream-supplier-resource-list-response';
 
 export type { VerifyUpstreamAccountRequest } from './verify-upstream-account-request';
-export type { UpstreamAccountCredentialSecretItemResponse } from './upstream-account-credential-secret-item-response';
-export type { UpstreamAccountCredentialSecret } from './upstream-account-credential-secret';

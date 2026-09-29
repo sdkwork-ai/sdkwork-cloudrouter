@@ -34,6 +34,7 @@ struct AppNotificationState {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct NotificationListQuery {
     app_id: Option<String>,
     include_archived: Option<bool>,
@@ -42,6 +43,7 @@ struct NotificationListQuery {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct NotificationCommandQuery {
     app_id: Option<String>,
 }

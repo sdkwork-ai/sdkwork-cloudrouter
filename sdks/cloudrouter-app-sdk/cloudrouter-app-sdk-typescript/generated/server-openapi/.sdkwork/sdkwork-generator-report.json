@@ -212,7 +212,7 @@
         "title": "Unified package check",
         "required": true,
         "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-typescript\\generated\\server-openapi",
+        "workingDirectory": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-typescript\\generated\\server-openapi",
         "command": "node",
         "args": [
           "./bin/publish-core.mjs",
@@ -230,7 +230,7 @@
         "title": "Unified package build",
         "required": true,
         "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-typescript\\generated\\server-openapi",
+        "workingDirectory": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-typescript\\generated\\server-openapi",
         "command": "node",
         "args": [
           "./bin/publish-core.mjs",
@@ -255,7 +255,7 @@
         "title": "Unified package check",
         "required": true,
         "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-typescript\\generated\\server-openapi",
+        "workingDirectory": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-typescript\\generated\\server-openapi",
         "command": "node",
         "args": [
           "./bin/publish-core.mjs",
@@ -273,7 +273,7 @@
         "title": "Unified package build",
         "required": true,
         "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-        "workingDirectory": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-typescript\\generated\\server-openapi",
+        "workingDirectory": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-typescript\\generated\\server-openapi",
         "command": "node",
         "args": [
           "./bin/publish-core.mjs",
@@ -294,7 +294,7 @@
     "language": "typescript",
     "sdkType": "app",
     "protocol": "http",
-    "outputPath": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-typescript\\generated\\server-openapi",
+    "outputPath": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-typescript\\generated\\server-openapi",
     "packageName": "@sdkwork/cloudrouter-app-sdk"
   },
   "versioning": {
@@ -664,7 +664,7 @@
           "title": "Unified package check",
           "required": true,
           "rationale": "Validate the generated package with the unified publish helper. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-          "workingDirectory": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-typescript\\generated\\server-openapi",
+          "workingDirectory": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-typescript\\generated\\server-openapi",
           "command": "node",
           "args": [
             "./bin/publish-core.mjs",
@@ -682,7 +682,7 @@
           "title": "Unified package build",
           "required": true,
           "rationale": "Run the full package build because this language uses a lighter check path than the final build. Triggered by: api-surface, models, runtime, build-metadata, publish-workflow, documentation, custom-scaffold, unknown.",
-          "workingDirectory": "E:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-typescript\\generated\\server-openapi",
+          "workingDirectory": "D:\\sdkwork-space\\sdkwork-cloudrouter\\sdks\\cloudrouter-app-sdk\\cloudrouter-app-sdk-typescript\\generated\\server-openapi",
           "command": "node",
           "args": [
             "./bin/publish-core.mjs",

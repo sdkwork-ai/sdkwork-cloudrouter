@@ -6,7 +6,7 @@ use axum::http::uri::PathAndQuery;
 use axum::http::{HeaderMap, Uri};
 use axum::response::Response;
 use http_body::Frame;
-use http_body_util::Full;
+use http_body_util::{BodyExt, Full};
 use hyper::Request as HyperRequest;
 use hyper_rustls::HttpsConnector;
 use hyper_util::client::legacy::connect::proxy::Tunnel;
@@ -186,7 +186,7 @@ pub(crate) async fn forward_provider_passthrough_to_target(
             })?
             .map_err(|error| format!("provider passthrough upstream request failed: {error}"))?;
     Ok(apply_passthrough_stream_timeouts(
-        upstream_to_axum_response(upstream_response),
+        upstream_to_axum_response(upstream_response).await,
         response_timeout,
     ))
 }
@@ -351,11 +351,66 @@ fn configured_provider_passthrough_header_names(
     Ok(headers)
 }
 
-fn upstream_to_axum_response(
-    upstream_response: hyper::Response<hyper::body::Incoming>,
-) -> Response {
-    let (parts, body) = upstream_response.into_parts();
-    let mut response = Response::new(axum::body::Body::new(body));
+/// Upper bound for buffering a non-success provider error body so it can be
+/// scrubbed before it reaches the gateway client. Provider rejections are
+/// small JSON documents; anything near this bound is a contract violation and
+/// the body is withheld instead of forwarded.
+const MAX_PROVIDER_PASSTHROUGH_ERROR_BYTES: usize = 64 * 1024;
+
+fn withheld_provider_error_body() -> &'static str {
+    "{\"error\":{\"message\":\"provider error body exceeded the redaction buffer and was withheld\",\"code\":\"provider_error_body_withheld\"}}"
+}
+
+/// Converts an upstream provider response into an axum response.
+///
+/// Success responses stream through with zero buffering. Non-success bodies
+/// are buffered (bounded) and scrubbed through the shared
+/// [`redact_sensitive_tokens`] pass first: the upstream credentials were just
+/// attached to this request, so a provider that echoes a rejected credential
+/// (`sk-...`, `Bearer ...`, `api key: ...`) inside its error body must not
+/// leak that material to the calling tenant. This mirrors the buffered relay
+/// path in `invocation_http` so redaction behavior cannot drift between the
+/// two egress paths.
+async fn upstream_to_axum_response(upstream_response: hyper::Response<hyper::body::Incoming>) -> Response {
+    let (mut parts, body) = upstream_response.into_parts();
+    let mut response = if parts.status.is_success() {
+        Response::new(axum::body::Body::new(body))
+    } else {
+        // A compressed error body cannot be scrubbed (and could re-expand into
+        // echoed credential material on the client), so it is withheld whole.
+        // Providers should not compress in the first place: `accept-encoding`
+        // is stripped from forwarded requests.
+        let compressed = parts.headers.contains_key(header::CONTENT_ENCODING);
+        let mut buffered = bytes::BytesMut::new();
+        let mut overflow = compressed;
+        let mut body = body;
+        while !overflow {
+            let Some(frame) = body.frame().await else {
+                break;
+            };
+            let Ok(frame) = frame else {
+                break;
+            };
+            if let Some(data) = frame.data_ref() {
+                if buffered.len() + data.len() > MAX_PROVIDER_PASSTHROUGH_ERROR_BYTES {
+                    overflow = true;
+                    break;
+                }
+                buffered.extend_from_slice(data);
+            }
+        }
+        let body: axum::body::Body = if overflow {
+            axum::body::Body::from(withheld_provider_error_body())
+        } else {
+            axum::body::Body::from(
+                redact_sensitive_tokens(&String::from_utf8_lossy(&buffered)).into_bytes(),
+            )
+        };
+        if overflow {
+            parts.headers.remove(header::CONTENT_ENCODING);
+        }
+        Response::new(body)
+    };
     *response.status_mut() = parts.status;
     let connection_header_names = connection_header_names(&parts.headers);
     for (name, value) in parts.headers.iter() {
@@ -364,6 +419,10 @@ fn upstream_to_axum_response(
         }
     }
     response
+}
+
+fn redact_sensitive_tokens(message: &str) -> String {
+    sdkwork_cloudrouter_router_service::redaction::redact_sensitive_tokens(message)
 }
 
 fn should_forward_provider_request_header(
@@ -378,6 +437,10 @@ fn should_forward_provider_request_header(
         && name != header::AUTHORIZATION
         && name != header::CONTENT_LENGTH
         && name != header::COOKIE
+        // Error responses are scrubbed in clear text before passthrough; a
+        // compressed upstream response could hide echoed credentials from the
+        // redaction pass, so compression is never solicited.
+        && name != header::ACCEPT_ENCODING
         && name.as_str() != "x-api-key"
         && name.as_str() != "x-goog-api-key"
         && name.as_str() != "x-forwarded-host"
@@ -649,6 +712,135 @@ mod tests {
         .expect_err("slow upstream headers must respect the configured timeout");
 
         assert!(error.contains("timed out after 25 ms"));
+        server.abort();
+    }
+
+    async fn spawn_upstream(upstream: Router) -> (std::net::SocketAddr, tokio::task::JoinHandle<()>) {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind test upstream");
+        let address = listener.local_addr().expect("test upstream address");
+        let server = tokio::spawn(async move {
+            axum::serve(listener, upstream)
+                .await
+                .expect("serve test upstream");
+        });
+        (address, server)
+    }
+
+    /// Regression pin: a provider that echoes the (gateway-injected) upstream
+    /// credential in a non-success body must not leak it through the
+    /// passthrough path; the body is scrubbed with the shared redaction pass
+    /// while the upstream status code is preserved.
+    #[tokio::test]
+    async fn passthrough_error_bodies_are_redacted_before_forwarding() {
+        let leaked = "sk-gateway-secret-1234567890";
+        let upstream = Router::new().route(
+            "/v1/invoke",
+            post(move || async move {
+                (
+                    axum::http::StatusCode::UNAUTHORIZED,
+                    format!("Incorrect API key provided: {leaked}"),
+                )
+            }),
+        );
+        let (address, server) = spawn_upstream(upstream).await;
+        let target = ProviderPassthroughTarget::new(
+            "test-provider",
+            format!("http://{address}"),
+            ProviderPassthroughAuth::bearer("provider-secret").expect("test provider auth"),
+            Vec::new(),
+        );
+        let (parts, _) = Request::builder()
+            .method("POST")
+            .uri("/test-provider/v1/invoke")
+            .body(())
+            .expect("test passthrough request")
+            .into_parts();
+        let upstream_uri = format!("http://{address}/v1/invoke")
+            .parse()
+            .expect("test upstream URI");
+
+        let response = forward_provider_passthrough_to_target(
+            &build_provider_passthrough_client(
+                OutboundTargetPolicy::Development,
+                ProviderRelayHttpPoolConfig::default(),
+                None,
+            ),
+            OutboundTargetPolicy::Development,
+            parts,
+            Bytes::new(),
+            &target,
+            upstream_uri,
+            Duration::from_secs(5),
+        )
+        .await
+        .expect("forwarding must succeed");
+
+        assert_eq!(response.status(), axum::http::StatusCode::UNAUTHORIZED);
+        let body = axum::body::to_bytes(response.into_body(), 64 * 1024)
+            .await
+            .expect("read redacted body");
+        let body = String::from_utf8(body.to_vec()).expect("body is utf-8");
+        assert!(!body.contains(leaked), "leaked credential in body: {body}");
+        assert!(body.contains("[REDACTED]"), "body must be scrubbed: {body}");
+        server.abort();
+    }
+
+    /// Regression pin: success responses keep streaming through unchanged
+    /// (no buffering, no body rewrite).
+    #[tokio::test]
+    async fn passthrough_success_bodies_stream_through_unchanged() {
+        let upstream = Router::new().route(
+            "/v1/invoke",
+            post(|| async {
+                axum::Json(serde_json::json!({
+                    "choices": [{"message": {"role": "assistant", "content": "ok"}}]
+                }))
+            }),
+        );
+        let (address, server) = spawn_upstream(upstream).await;
+        let target = ProviderPassthroughTarget::new(
+            "test-provider",
+            format!("http://{address}"),
+            ProviderPassthroughAuth::bearer("provider-secret").expect("test provider auth"),
+            Vec::new(),
+        );
+        let (parts, _) = Request::builder()
+            .method("POST")
+            .uri("/test-provider/v1/invoke")
+            .body(())
+            .expect("test passthrough request")
+            .into_parts();
+        let upstream_uri = format!("http://{address}/v1/invoke")
+            .parse()
+            .expect("test upstream URI");
+
+        let response = forward_provider_passthrough_to_target(
+            &build_provider_passthrough_client(
+                OutboundTargetPolicy::Development,
+                ProviderRelayHttpPoolConfig::default(),
+                None,
+            ),
+            OutboundTargetPolicy::Development,
+            parts,
+            Bytes::new(),
+            &target,
+            upstream_uri,
+            Duration::from_secs(5),
+        )
+        .await
+        .expect("forwarding must succeed");
+
+        assert!(response.status().is_success());
+        let body = axum::body::to_bytes(response.into_body(), 64 * 1024)
+            .await
+            .expect("read forwarded body");
+        let body: serde_json::Value = serde_json::from_slice(&body).expect("json body");
+        assert_eq!(
+            body["choices"][0]["message"]["content"],
+            serde_json::Value::String("ok".to_owned())
+        );
         server.abort();
     }
 }

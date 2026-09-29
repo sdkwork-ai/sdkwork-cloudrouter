@@ -199,6 +199,13 @@ models use camelCase, including `pageSize`, with `items` and standard page
 metadata. Pagination is executed in the repository query, not by materializing
 an unbounded collection in process.
 
+Nested sub-resource collections (supplier endpoints, supplier auth methods,
+supplier resources, account resources, account-group members, account-group
+resources) are bounded at 100 items per authorized scope and are enforced at
+both the write boundary (replace/create validation) and the read boundary
+(fail-closed when the persisted set exceeds the bound), per
+`PAGINATION_SPEC.md` §11.
+
 Identifiers are string-encoded Snowflake values at JSON boundaries. Inputs
 declare length, format, enum, numeric range, and unknown-field behavior. Success
 responses use the standard envelope; failures use RFC 9457 Problem Details with

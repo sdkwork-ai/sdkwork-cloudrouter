@@ -14,7 +14,7 @@ use crate::ports::{
 };
 
 pub(super) const DEFAULT_DATA_SCOPE: i32 = 1;
-pub(super) const MAX_NESTED_ITEMS: usize = 200;
+pub(super) const MAX_NESTED_ITEMS: usize = 100;
 
 /** 供应商/账号协议配置 JSONB 字符串 → 协议配置列表（结构一致：[{protocolCode, baseUrl}]） */
 pub(super) fn parse_protocols(

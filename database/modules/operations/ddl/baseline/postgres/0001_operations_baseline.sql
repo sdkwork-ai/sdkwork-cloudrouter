@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS ops_audit_log (
 CREATE INDEX IF NOT EXISTS idx_ops_audit_log_tenant_operator_created ON ops_audit_log (tenant_id, organization_id, operator_type, operator_id, created_at, id);
 CREATE INDEX IF NOT EXISTS idx_ops_audit_log_tenant_target_created ON ops_audit_log (tenant_id, organization_id, target_type, target_id, created_at, id);
 CREATE INDEX IF NOT EXISTS idx_ops_audit_log_request ON ops_audit_log (tenant_id, organization_id, request_id);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_ops_audit_log_idempotency ON ops_audit_log (tenant_id, organization_id, action, target_uuid, request_id);
 CREATE INDEX IF NOT EXISTS idx_ops_audit_log_retention ON ops_audit_log (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ops_config_snapshot (

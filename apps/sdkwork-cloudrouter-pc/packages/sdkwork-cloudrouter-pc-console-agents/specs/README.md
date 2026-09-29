@@ -50,6 +50,7 @@ Root SDKWork standards remain authoritative. Local component specs can narrow or
 
 - Agents console presentation, module catalog, management page, creation/edit flow, styles, and message catalogs are owned by `sdkwork-agents` (`@sdkwork/agents-pc-agents/console`). This component binds the host runtime to that block and owns no Agents UI.
 - `src/agentsConsoleRoute.ts` documents the one host-owned configuration point: the console base path (`/console/agents`) and its path grammar. The module route segments themselves stay owned by sdkwork-agents, so a new console module needs no change in this repository.
+- `src/AgentsEditorPage.tsx` is where this component chooses *layout*, and the only such choice it makes: create/edit renders full-bleed, so the host mounts it as a sibling of the `/console` branch in `src/App.tsx` instead of under the console shell. The route *ranking* that keeps the flow out of the console branch's `agents/*` splat is part of the contract — `src/agentsConsoleIntegration.test.ts` pins both the declaration and the resolution.
 - `hiddenCapabilities` on the embed is a deployment statement, not a capability statement: this portal's app-api composition serves agents/assets/skills/memory but not knowledgebase or voice, so those editor panels are hidden here. The list is asserted against the resolved composition by `src/agentsConsoleIntegration.test.ts`.
 
 ## Verification

@@ -90,11 +90,25 @@ fn redact_prefixed_tokens(input: &str, prefix: &str) -> String {
                 .zip(prefix_bytes)
                 .all(|(left, right)| left.eq_ignore_ascii_case(right))
         {
-            // Count alphanumeric chars after the prefix.
+            // Count token characters after the prefix. Vendor key families
+            // embed separators inside the token (OpenAI project keys look
+            // like `sk-proj-...`), so `-` and `_` continue the token; any
+            // other punctuation, whitespace, or quote ends it.
             let token_start = i + prefix_bytes.len();
             let mut token_end = token_start;
-            while token_end < bytes.len() && bytes[token_end].is_ascii_alphanumeric() {
+            while token_end < bytes.len()
+                && (bytes[token_end].is_ascii_alphanumeric()
+                    || matches!(bytes[token_end], b'-' | b'_'))
+            {
                 token_end += 1;
+            }
+            // The trailing separators are not part of the secret; trim them
+            // so `sk-proj-` followed by a non-token character does not fold
+            // the separator into the redaction.
+            while token_end > token_start
+                && matches!(bytes[token_end - 1], b'-' | b'_')
+            {
+                token_end -= 1;
             }
             if token_end - token_start >= 8 {
                 result.push_str(prefix);
@@ -155,6 +169,32 @@ mod tests {
             redact_sensitive_tokens("auth failed: Bearer eyJhbGciOiJIUzI1NiJ9.token.value")
                 .contains("Bearer [REDACTED]"),
             "long bearer credentials must be redacted"
+        );
+    }
+
+    #[test]
+    fn redacts_hyphenated_vendor_key_families() {
+        // OpenAI project keys embed separators inside the token
+        // (`sk-proj-...`); the token scan must span them so an echoed
+        // project key cannot survive provider error passthrough.
+        let redacted = redact_sensitive_tokens(
+            "Incorrect API key provided: sk-proj-AbCdEfGh1234567890IjKlMn.",
+        );
+        assert!(
+            !redacted.contains("AbCdEfGh1234567890"),
+            "hyphenated sk- token body must never survive redaction: {redacted}"
+        );
+        assert!(
+            redacted.contains("sk-[REDACTED]"),
+            "hyphenated sk- key must collapse to the sentinel: {redacted}"
+        );
+        // A short hyphenated fragment is not a key and must stay intact.
+        assert_eq!(
+            "sk-ab-cd",
+            redact_sensitive_tokens("check sk-ab-cd trailing")
+                .split_whitespace()
+                .find(|word| word.starts_with("sk-"))
+                .unwrap()
         );
     }
 

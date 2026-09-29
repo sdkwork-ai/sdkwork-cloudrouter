@@ -12,6 +12,10 @@ export interface PagedResult<T> {
   readonly page: number;
   readonly pageSize: number;
   readonly total: number;
+  /** Server continuation marker (`PageInfo.nextCursor`); `null` when the server sent none. */
+  readonly nextCursor: string | null;
+  /** Server-declared continuation flag; derived from cursor/total when the server omits it. */
+  readonly hasMore: boolean;
 }
 
 export interface ConsoleOverviewSnapshot {

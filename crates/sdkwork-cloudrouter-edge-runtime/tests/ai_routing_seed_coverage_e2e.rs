@@ -578,24 +578,26 @@ async fn bundled_seed_is_idempotent_across_repeated_runs() {
         accounts_before, credentials_before,
         "every seeded upstream account must carry exactly one seeded credential"
     );
-    // 57 derived vendor-modality groups each hold exactly one vendor account,
-    // and the default *mixed* group additionally holds all 27 vendor default
+    // Each derived vendor-modality group holds exactly one vendor account,
+    // and the default *mixed* group additionally holds all vendor default
     // accounts so auth-token (app-session) traffic can reach every vendor.
     // `openai-default` is already a member of the default group via the admin
-    // path, so the vendor pass adds the other 26: 57 + 26 = 83.
+    // path, so the vendor pass adds one fewer.
     //
-    // The derived-group count is a pure function of the bundled resource
-    // catalog (every `vendor.*` resource declares its capabilities, every
-    // bundled `api_endpoint` declares its `modalityCode`, and
-    // `VENDOR_MODALITY_MAPPING` folds both into the supported modality set).
-    // Changing the catalog therefore moves this number; the unit test
+    // The member total is a pure function of the bundled resource catalog
+    // (every `vendor.*` resource declares its capabilities, every bundled
+    // `api_endpoint` declares its `modalityCode`, and `VENDOR_MODALITY_MAPPING`
+    // folds both into the supported modality set). Changing the catalog
+    // therefore moves this number; `bundled_seed_expected_member_count()`
+    // derives it from the same catalog inputs as the seed, the unit test
     // `vendor_group_codes_match_expected_catalog` is the authority on the
-    // exact set, and this assertion is the live-DB echo of it.
+    // exact set, and this assertion is the live-DB echo of both.
+    let expected_members =
+        sdkwork_cloudrouter_router_service::infrastructure::sql::ai_routing_seed::bundled_seed_expected_member_count();
     assert_eq!(
-        members_before, 83,
-        "every derived vendor-modality group must have exactly one member, and the \
-         default mixed group must hold all 27 vendor default accounts \
-         (57 derived groups + 26 additional default-group members)"
+        members_before, expected_members,
+        "the live default-group/derived-group member total must equal the \
+         catalog-derived seed expectation"
     );
 
     let accounts_after = count(pg.pool(), COUNT_ACCOUNTS).await;

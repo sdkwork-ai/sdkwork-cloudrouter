@@ -230,6 +230,7 @@ struct RuntimeGatewayRequestPlan {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct AppRuntimeListQuery {
     #[serde(default)]
     page: Option<i64>,

@@ -7,6 +7,8 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 
+use crate::api::admin_sql_subject::RequiredAdminSqlScopedSubject;
+
 use crate::api::response::{problem_from_wire_code, success_envelope};
 use crate::infrastructure::sql::installer::{DatabaseInstallError, DatabaseInstaller};
 
@@ -50,7 +52,13 @@ pub fn admin_system_router_with_installer(installer: Arc<DatabaseInstaller>) -> 
         })
 }
 
-async fn fetch_installation_status(State(state): State<AdminSystemState>) -> Response {
+async fn fetch_installation_status(
+    State(state): State<AdminSystemState>,
+    // Handler-level extractor as defense in depth: the mount boundary already
+    // denies unauthenticated traffic, and this extractor keeps the handler
+    // independently safe if it is ever mounted outside that boundary.
+    RequiredAdminSqlScopedSubject(_scoped): RequiredAdminSqlScopedSubject,
+) -> Response {
     let now = Instant::now();
     if let Some(cached) = state.installation_status_cache.read().await.as_ref() {
         if cached.expires_at > now {

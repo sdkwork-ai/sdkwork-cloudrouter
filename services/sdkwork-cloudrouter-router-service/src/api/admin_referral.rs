@@ -44,7 +44,7 @@ struct AdminReferralState {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct AdminReferralListQueryRequest {
     page: Option<i64>,
     page_size: Option<i64>,

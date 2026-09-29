@@ -38,31 +38,13 @@ function sha256(path) {
   return createHash('sha256').update(readFileSync(path)).digest('hex');
 }
 
-function stripSdkWorkExtensionFields(value) {
-  if (Array.isArray(value)) {
-    return value.map(stripSdkWorkExtensionFields);
-  }
-  if (!value || typeof value !== 'object') {
-    return value;
-  }
-  const next = {};
-  for (const [key, item] of Object.entries(value)) {
-    if (key.startsWith('x-sdkwork-')) {
-      continue;
-    }
-    next[key] = stripSdkWorkExtensionFields(item);
-  }
-  return next;
-}
-
 function contractBodyHash(contract, filePath) {
-  if (contract.surface !== 'open-api') {
-    return sha256(filePath);
-  }
-  const text = readFileSync(filePath, 'utf8');
-  const payload = stripSdkWorkExtensionFields(JSON.parse(text));
-  const normalized = `${JSON.stringify(payload, null, 2)}\n`;
-  return createHash('sha256').update(normalized).digest('hex');
+  // Raw-byte hashing on purpose: document-root governance extensions such as
+  // `x-sdkwork-int64-openai-compat` and `x-sdkwork-query-parameter-vendor-compat`
+  // are contractual (API_SPEC §13: the marker must be present on the API
+  // authority and every derived mirror), so an extension-only source change
+  // must still propagate to the materialized authority copy.
+  return sha256(filePath);
 }
 
 function ensureParent(path) {

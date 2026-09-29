@@ -32,8 +32,9 @@ export interface MemoryViewProps {
  * app-api credential boundary in one place.
  *
  * The Memory app-api surface is a verified **embedded same-origin** dependency:
- * the unified runtime serves `/app/v3/api/memory*` through the
- * `sdkwork-api-memory-assembly` app-api-only contribution, and the shared SDK
+ * the unified runtime serves the Memory app-api routes (the shared app-api
+ * prefix plus the `memory` namespace) through the `sdkwork-api-memory-assembly`
+ * app-api-only contribution, and the shared SDK
  * client factory already falls back to the portal's own app-api base URL when no
  * dedicated memory base URL is configured. There is therefore no
  * deployment-attachment gate here — an env-gated "not attached" state would hide

@@ -4664,6 +4664,36 @@ fn default_admin_upstream_accounts() -> &'static [DefaultAdminUpstreamAccountSee
     &DEFAULT_ADMIN_UPSTREAM_ACCOUNTS
 }
 
+/// The exact number of live `ai_upstream_account_group_member` rows the
+/// bundled seed must produce:
+///
+/// - one member per derived `<vendor>.<modality>` group **and** per relay
+///   media group (every group seed other than the default mixed group carries
+///   exactly one account);
+/// - every vendor default account ([`DEFAULT_VENDOR_UPSTREAM_ACCOUNTS`]) in
+///   the default mixed group;
+/// - every relay supplier account ([`DEFAULT_RELAY_SUPPLIERS`]) likewise —
+///   the vendor and relay account sets are disjoint.
+///
+/// `openai-default` is *included* in the count: unlike the group skeleton it
+/// is seeded by this same module, so no admin-path subtraction applies.
+/// Derived from the same static/catalog inputs as the seed itself, so seed
+/// evolution moves this value together with the seed; the seed-coverage e2e
+/// asserts it as the live-DB echo, while
+/// `vendor_group_codes_match_expected_catalog` remains the authority on the
+/// derived group set.
+pub fn bundled_seed_expected_member_count() -> i64 {
+    let catalog = AiRoutingSeedCatalog::load().expect("bundled AI routing seed catalog must load");
+    let non_default_groups = default_admin_upstream_account_groups(&catalog)
+        .expect("default account groups must derive")
+        .len()
+        .saturating_sub(1); // the default mixed group itself
+    let mixed_group_members =
+        DEFAULT_VENDOR_UPSTREAM_ACCOUNTS.len() + DEFAULT_RELAY_SUPPLIERS.len();
+    i64::try_from(non_default_groups + mixed_group_members)
+        .expect("bundled seed member count fits i64")
+}
+
 fn default_admin_upstream_account_groups(
     catalog: &AiRoutingSeedCatalog,
 ) -> Result<Vec<DefaultAdminUpstreamAccountGroupSeed>, AiRoutingSeedLoadError> {

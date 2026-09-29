@@ -140,7 +140,24 @@ class FrontendFieldContractCompiler:
         )
 
     def write(self) -> Path:
+        # The composite snapshot is authoritative until the fragment migration
+        # completes: composing against a missing or non-fragment index yields
+        # an empty payload, and writing that over the snapshot would destroy
+        # the authored contract. Refuse both failure modes explicitly.
+        if not self.index_path.is_file():
+            raise RuntimeError(
+                f"frontend field contract index is missing; refusing to overwrite "
+                f"the composite snapshot: {self.index_path}"
+            )
+        if self.snapshot_path == self.index_path:
+            raise RuntimeError(
+                "frontend field contract snapshot path must differ from the fragment index path"
+            )
         content = render_frontend_field_contract(self.root, self.index_path)
+        if not content.strip() or content.strip() in {"{}", "[]"}:
+            raise RuntimeError(
+                "compiled frontend field contract is empty; refusing to overwrite the snapshot"
+            )
         self.snapshot_path.parent.mkdir(parents=True, exist_ok=True)
         self.snapshot_path.write_text(content, encoding="utf-8", newline="\n")
         return self.snapshot_path

@@ -2,8 +2,8 @@ use sqlx::postgres::PgRow;
 use sqlx::{PgPool, Postgres, Transaction};
 
 use super::shared::{
-    column, conflict, masked_secret, not_found, parse_protocols, record_routing_change,
-    search_pattern, store_error, DEFAULT_DATA_SCOPE,
+    column, conflict, generated_uuid, masked_secret, not_found, parse_protocols,
+    record_routing_change, search_pattern, store_error, DEFAULT_DATA_SCOPE,
 };
 use crate::application::{UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext};
 use crate::domain::{DomainError, DomainResult};
@@ -485,6 +485,10 @@ pub(super) async fn reveal_credential_secret(
         &key_id,
         &ciphertext,
     )?;
+    // Fail-closed audit: the plaintext reveal is the most sensitive read on
+    // this surface, so a failed audit write must abort the reveal instead of
+    // letting an unaudited decryption succeed.
+    record_credential_secret_reveal_audit(pool, &subject, account_id, credential_id).await?;
     Ok(AdminUpstreamAccountCredentialSecretItem {
         id: column(&row, "id", "failed to map upstream credential id")?,
         account_id: column(&row, "account_id", "failed to map upstream credential account")?,
@@ -516,6 +520,44 @@ pub(super) async fn reveal_credential_secret(
         status: column(&row, "status", "failed to map upstream credential status")?,
         secret,
     })
+}
+
+/// Audit trail for the one read surface that decrypts an upstream credential.
+/// The row records who revealed which credential; the secret itself, its
+/// ciphertext, and any key metadata never enter the audit record.
+async fn record_credential_secret_reveal_audit(
+    pool: &PgPool,
+    subject: &AdminUpstreamSubject,
+    account_id: i64,
+    credential_id: i64,
+) -> DomainResult<()> {
+    sqlx::query(
+        r#"
+        INSERT INTO ops_audit_log
+            (id, uuid, tenant_id, organization_id, request_id, operator_id, operator_type,
+             action, target_id, change_summary)
+        VALUES
+            ($1, $2, $3, $4, $5, $6, $7,
+             'upstream_accounts.credentials.secret.reveal', $8, $9::jsonb)
+        "#,
+    )
+    .bind(next_cloud_runtime_id("ops_audit_log")?)
+    .bind(generated_uuid())
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(generated_uuid())
+    .bind(subject.operator_id)
+    .bind(subject.operator_type)
+    .bind(credential_id)
+    .bind(format!(
+        "{{\"accountId\":{account_id},\"credentialId\":{credential_id},\"revealedSecret\":true}}"
+    ))
+    .execute(pool)
+    .await
+    .map_err(|error| {
+        store_error("failed to write credential secret reveal audit log", error)
+    })?;
+    Ok(())
 }
 
 pub(super) async fn create_credential(

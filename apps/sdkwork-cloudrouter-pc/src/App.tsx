@@ -50,6 +50,11 @@ const ApiKeysView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-api-
 // packages must stay lazy-loaded (portal lazy-route rule), so the Agents console
 // chunk loads with the route.
 const AgentsView = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-agents'), 'AgentsView');
+// Same chunk as AgentsView (one dynamic import); the create/edit flow is a
+// *flow* route rather than a section, so it is mounted outside the console branch
+// below — no navbar, no sidebar, no content gutters, because the form owns its
+// own header. See the route declaration for the ranking that keeps it there.
+const AgentsEditorPage = lazyRoute(() => import('@sdkwork/cloudrouter-pc-console-agents'), 'AgentsEditorPage');
 // Memory capability: the console entry is a thin adapter that embeds the
 // sdkwork-memory console block. Route packages must stay lazy-loaded (portal
 // lazy-route rule), so the Memory console chunk loads with the route.
@@ -186,6 +191,17 @@ export default function App() {
         <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route path="/auth/*" element={<PortalAuthenticatedAuthRouteGuard><CloudRouterAuthRoutes /></PortalAuthenticatedAuthRouteGuard>} />
+
+            {/* Agents create/edit renders full-bleed, so it is declared as a
+                sibling of the console branch rather than a child of it: the form
+                is the whole page and the console chrome would fight its own
+                header. React Router ranks this static path above the console
+                branch's `agents/*` splat, and `agentsConsoleIntegration.test.ts`
+                pins that ranking so the shell cannot quietly swallow the flow. */}
+            <Route
+              path="/console/agents/editor/:agentId?"
+              element={<PortalErrorBoundary><RequirePortalSession><AgentsEditorPage /></RequirePortalSession></PortalErrorBoundary>}
+            />
 
             {/* Console Routes - standalone structure with global Navbar */}
             <Route path="/console" element={<PortalErrorBoundary><RequirePortalSession><ConsoleLayout isDark={isDark} toggleTheme={toggleTheme} theme={theme} setTheme={setTheme} themeColor={themeColor} setThemeColor={setThemeColor} navbarAuthenticatedActionsStart={<CloudRouterConsoleBusinessNavbarActions isDark={isDark} routePrefix="/console" />} /></RequirePortalSession></PortalErrorBoundary>}>

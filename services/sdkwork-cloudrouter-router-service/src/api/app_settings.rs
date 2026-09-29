@@ -233,16 +233,23 @@ fn validate_webhook_url(value: Option<String>) -> Result<String, String> {
     if value.is_empty() {
         return Ok(value);
     }
-    if !(value.starts_with("https://") || value.starts_with("http://")) {
-        return Err("webhook URL must use http or https".to_owned());
-    }
     if value
         .chars()
         .any(|ch| ch.is_ascii_control() || ch.is_whitespace())
     {
         return Err("webhook URL must not contain whitespace or control characters".to_owned());
     }
-    Ok(value)
+    // Stored webhook endpoints are future outbound-call sinks: hold them to
+    // the production outbound boundary (HTTPS, public host, no userinfo or
+    // fragment) at configuration time so a later caller cannot inherit an
+    // SSRF-capable URL (`TECH_ARCHITECTURE.md` §7 "Egress And Runtime
+    // Safety").
+    sdkwork_cloudrouter_security::validate_outbound_base_url(
+        &value,
+        sdkwork_cloudrouter_security::OutboundTargetPolicy::Production,
+    )
+    .map(|_| value)
+    .map_err(|error| format!("webhook URL rejected: {error}"))
 }
 
 fn required_bool(field_name: &str, value: Option<bool>) -> Result<bool, String> {

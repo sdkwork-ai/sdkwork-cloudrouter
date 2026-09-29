@@ -1,6 +1,6 @@
 -- Generated from docs/schema-registry/sdkwork-cloudrouter.tables.yaml.
 -- Registry version: 0.5.0.
--- Registry SHA-256: 06b32c0efa9e086c12c6c17e9d2f2622eca9e1d36b478ce5ba279ee8d2060d9f.
+-- Registry SHA-256: 4daa5030cfebad1d808e2ceba1ae5579427d1a7e893d3cb63e29efc1fe42d6ab.
 -- Dialect: postgres.
 -- Materialize: python -B -m tools.schema_compiler --dialect postgres --materialize.
 -- Do not edit by hand; update Schema Registry and regenerate.
@@ -1514,7 +1514,6 @@ CREATE TABLE IF NOT EXISTS cloudrouter_usage_measurement (
 CREATE UNIQUE INDEX IF NOT EXISTS uk_cloudrouter_usage_measurement_scope_id ON cloudrouter_usage_measurement (tenant_id, organization_id, id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_cloudrouter_usage_measurement_idempotency ON cloudrouter_usage_measurement (tenant_id, organization_id, idempotency_key);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_cloudrouter_usage_measurement_line ON cloudrouter_usage_measurement (tenant_id, organization_id, invocation_id, measurement_key);
-CREATE UNIQUE INDEX IF NOT EXISTS uq_cloudrouter_usage_measurement_scope_reference ON cloudrouter_usage_measurement (tenant_id, organization_id, id);
 CREATE INDEX IF NOT EXISTS idx_cloudrouter_usage_measurement_rating ON cloudrouter_usage_measurement (tenant_id, organization_id, status, occurred_at, id);
 CREATE INDEX IF NOT EXISTS idx_cloudrouter_usage_measurement_subject ON cloudrouter_usage_measurement (tenant_id, organization_id, user_id, occurred_at, id);
 CREATE INDEX IF NOT EXISTS idx_cloudrouter_usage_measurement_retention ON cloudrouter_usage_measurement (retention_until, id);
@@ -2282,6 +2281,7 @@ CREATE TABLE IF NOT EXISTS ops_audit_log (
 CREATE INDEX IF NOT EXISTS idx_ops_audit_log_tenant_operator_created ON ops_audit_log (tenant_id, organization_id, operator_type, operator_id, created_at, id);
 CREATE INDEX IF NOT EXISTS idx_ops_audit_log_tenant_target_created ON ops_audit_log (tenant_id, organization_id, target_type, target_id, created_at, id);
 CREATE INDEX IF NOT EXISTS idx_ops_audit_log_request ON ops_audit_log (tenant_id, organization_id, request_id);
+CREATE UNIQUE INDEX IF NOT EXISTS ux_ops_audit_log_idempotency ON ops_audit_log (tenant_id, organization_id, action, target_uuid, request_id);
 CREATE INDEX IF NOT EXISTS idx_ops_audit_log_retention ON ops_audit_log (retention_until, id);
 
 CREATE TABLE IF NOT EXISTS ops_config_snapshot (

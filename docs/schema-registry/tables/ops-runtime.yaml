@@ -255,6 +255,14 @@ tables:
     - tenant_id
     - organization_id
     - request_id
+  - name: ux_ops_audit_log_idempotency
+    columns:
+    - tenant_id
+    - organization_id
+    - action
+    - target_uuid
+    - request_id
+    unique: true
   - name: idx_ops_audit_log_retention
     columns:
     - retention_until

@@ -183,7 +183,7 @@ export async function revealUpstreamAccountCredentialSecret(
   accountId: string,
   credentialId: string,
 ) {
-  return getCloudRouterBackendSdkClient().ai.upstreamAccounts.credentials.secrets.list(
+  return getCloudRouterBackendSdkClient().ai.upstreamAccounts.credentials.secrets.retrieve(
     accountId,
     credentialId,
   );

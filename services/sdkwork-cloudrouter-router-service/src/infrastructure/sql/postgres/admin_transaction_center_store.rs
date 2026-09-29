@@ -98,6 +98,13 @@ async fn update_payment_provider(
     pool: &PgPool,
     command: UpdatePaymentProviderCommand,
 ) -> DomainResult<AdminTransactionJsonRecord> {
+    // The provider UPDATE and its audit INSERT commit together: a provider
+    // edit whose audit row fails to write must roll back instead of leaving
+    // an unaudited configuration change behind.
+    let mut transaction = pool
+        .begin()
+        .await
+        .map_err(|error| write_error("failed to begin payment provider update", error))?;
     let result = sqlx::query(
         r#"
         UPDATE commerce_payment_provider
@@ -119,21 +126,28 @@ async fn update_payment_provider(
     .bind(command.display_name_i18n.as_ref().map(json_text))
     .bind(command.sort_order)
     .bind(command.status.as_deref())
-    .execute(pool)
+    .execute(&mut *transaction)
     .await
     .map_err(|error| write_error("failed to update payment provider", error))?;
     ensure_affected(result.rows_affected(), "payment provider was not found")?;
-    insert_provider_update_audit(pool, &command).await?;
+    insert_provider_update_audit(&mut *transaction, &command).await?;
+    transaction
+        .commit()
+        .await
+        .map_err(|error| write_error("failed to commit payment provider update", error))?;
     load_payment_provider(pool, command.subject, &command.provider_id).await
 }
 
 /// Idempotent audit trail for provider edits: a stable uuid derived from the
 /// subject, provider, request id, and reason keeps replays from writing
 /// duplicate rows while still recording every distinct operator mutation.
-async fn insert_provider_update_audit(
-    pool: &PgPool,
+async fn insert_provider_update_audit<'e, E>(
+    executor: E,
     command: &UpdatePaymentProviderCommand,
-) -> DomainResult<()> {
+) -> DomainResult<()>
+where
+    E: sqlx::PgExecutor<'e>,
+{
     let change_summary = provider_update_change_summary(command);
     sqlx::query(
         r#"
@@ -176,7 +190,7 @@ async fn insert_provider_update_audit(
     .bind(command.subject.organization_id)
     .bind(&command.provider_id)
     .bind(command.request_id.as_deref())
-    .execute(pool)
+    .execute(executor)
     .await
     .map_err(|error| write_error("failed to write payment provider audit log", error))?;
     Ok(())

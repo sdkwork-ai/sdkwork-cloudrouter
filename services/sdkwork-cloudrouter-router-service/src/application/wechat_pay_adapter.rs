@@ -20,8 +20,8 @@ use super::{
 };
 use crate::application::payment_adapter::STANDARD_PAYMENT_ADAPTER_OPERATIONS;
 use crate::application::payment_provider_http::{
-    build_payment_provider_http_client, send_bounded, PaymentProviderHttpClient,
-    PaymentProviderHttpError,
+    build_payment_provider_http_client, ensure_payment_provider_target, send_bounded,
+    PaymentProviderHttpClient, PaymentProviderHttpError,
 };
 
 type WeChatPayHttpClient = PaymentProviderHttpClient;
@@ -993,18 +993,18 @@ fn normalize_api_base_url(api_base_url: String) -> Result<String, PaymentProvide
             "WeChat Pay API base URL is required",
         ));
     }
-    let uri = api_base_url.parse::<Uri>().map_err(|error| {
+    api_base_url.parse::<Uri>().map_err(|error| {
         invalid_request(
             PaymentAdapterOperation::InvokeNativeOperation,
             format!("WeChat Pay API base URL is invalid: {error}"),
         )
     })?;
-    if !matches!(uri.scheme_str(), Some("http" | "https")) || uri.authority().is_none() {
-        return Err(invalid_request(
+    ensure_payment_provider_target(&api_base_url).map_err(|reason| {
+        invalid_request(
             PaymentAdapterOperation::InvokeNativeOperation,
-            "WeChat Pay API base URL must be an absolute http or https URL",
-        ));
-    }
+            format!("WeChat Pay API base URL must be a public HTTPS endpoint: {reason}"),
+        )
+    })?;
     Ok(api_base_url)
 }
 

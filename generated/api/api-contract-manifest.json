@@ -7335,7 +7335,7 @@
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#createPricingDefaultRegion@/admin/pricing/settings",
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#createPricingDefaultRegion@/admin/pricing/settings/:sectionId?",
       "kind": "create",
       "module": "pc-admin-pricing",
       "openapi_exposed": true,
@@ -7504,7 +7504,7 @@
           "type": "object"
         }
       },
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
@@ -8502,7 +8502,7 @@
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#deletePricingDefaultRegion@/admin/pricing/settings",
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#deletePricingDefaultRegion@/admin/pricing/settings/:sectionId?",
       "kind": "delete",
       "module": "pc-admin-pricing",
       "openapi_exposed": true,
@@ -8527,7 +8527,7 @@
           "type": "object"
         }
       },
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
@@ -8639,7 +8639,7 @@
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#fetchAdminOfficialPricingProducts@/admin/pricing/settings",
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#fetchAdminOfficialPricingProducts@/admin/pricing/settings/:sectionId?",
       "kind": "read",
       "module": "pc-admin-pricing",
       "openapi_exposed": true,
@@ -9497,7 +9497,7 @@
           "type": "object"
         }
       },
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
@@ -9514,7 +9514,7 @@
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#fetchAdminOfficialPricingRates@/admin/pricing/settings",
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#fetchAdminOfficialPricingRates@/admin/pricing/settings/:sectionId?",
       "kind": "read",
       "module": "pc-admin-pricing",
       "openapi_exposed": true,
@@ -10320,7 +10320,7 @@
           "type": "object"
         }
       },
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
@@ -10337,7 +10337,7 @@
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#fetchPricingDefaultRegions@/admin/pricing/settings",
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#fetchPricingDefaultRegions@/admin/pricing/settings/:sectionId?",
       "kind": "read",
       "module": "pc-admin-pricing",
       "openapi_exposed": true,
@@ -10497,7 +10497,7 @@
           "type": "object"
         }
       },
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
@@ -11535,7 +11535,7 @@
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#refreshAdminOfficialPricingRates@/admin/pricing/settings",
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#refreshAdminOfficialPricingRates@/admin/pricing/settings/:sectionId?",
       "kind": "action",
       "module": "pc-admin-pricing",
       "openapi_exposed": true,
@@ -11640,7 +11640,7 @@
           "type": "object"
         }
       },
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
@@ -11663,7 +11663,7 @@
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#resolvePriceSetting@/admin/pricing/settings",
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#resolvePriceSetting@/admin/pricing/settings/:sectionId?",
       "kind": "read",
       "module": "pc-admin-pricing",
       "openapi_exposed": true,
@@ -11783,7 +11783,7 @@
           "type": "object"
         }
       },
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
@@ -11800,7 +11800,7 @@
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#updatePricingDefaultRegion@/admin/pricing/settings",
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#updatePricingDefaultRegion@/admin/pricing/settings/:sectionId?",
       "kind": "update",
       "module": "pc-admin-pricing",
       "openapi_exposed": true,
@@ -11971,7 +11971,7 @@
           "type": "object"
         }
       },
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
@@ -12957,7 +12957,7 @@
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
-      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#upsertPriceSetting@/admin/pricing/settings",
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts#upsertPriceSetting@/admin/pricing/settings/:sectionId?",
       "kind": "create",
       "module": "pc-admin-pricing",
       "openapi_exposed": true,
@@ -13396,7 +13396,7 @@
           "type": "object"
         }
       },
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "route_scope": "admin",
       "sdk_api_prefix": "/backend/v3/api",
       "sdk_client": "SdkworkBackendClient",
@@ -18164,7 +18164,7 @@
                       "maxLength": 256,
                       "type": "string"
                     },
-                    "maxItems": 200,
+                    "maxItems": 100,
                     "type": "array"
                   },
                   "vendorCode": {
@@ -18192,7 +18192,7 @@
                       "maxLength": 256,
                       "type": "string"
                     },
-                    "maxItems": 200,
+                    "maxItems": 100,
                     "type": "array"
                   },
                   "vendorCode": {
@@ -19483,7 +19483,7 @@
       "api_method": "GET",
       "api_path": "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/members",
       "api_surface": "backend",
-      "bounded_collection_max": 200,
+      "bounded_collection_max": 100,
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
@@ -19595,7 +19595,7 @@
       "api_method": "GET",
       "api_path": "/backend/v3/api/ai/upstream_account_groups/{accountGroupId}/resources",
       "api_surface": "backend",
-      "bounded_collection_max": 200,
+      "bounded_collection_max": 100,
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
@@ -19992,7 +19992,7 @@
       "api_method": "GET",
       "api_path": "/backend/v3/api/ai/upstream_accounts/{accountId}/resources",
       "api_surface": "backend",
-      "bounded_collection_max": 200,
+      "bounded_collection_max": 100,
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
@@ -20326,7 +20326,7 @@
       "api_method": "GET",
       "api_path": "/backend/v3/api/ai/upstream_suppliers/{supplierId}/auth_methods",
       "api_surface": "backend",
-      "bounded_collection_max": 200,
+      "bounded_collection_max": 100,
       "file_targets": [],
       "idempotency_required": false,
       "if_match_required": false,
@@ -20812,7 +20812,7 @@
                             "maxLength": 256,
                             "type": "string"
                           },
-                          "maxItems": 200,
+                          "maxItems": 100,
                           "type": "array"
                         },
                         "vendorCode": {
@@ -20840,7 +20840,7 @@
                             "maxLength": 256,
                             "type": "string"
                           },
-                          "maxItems": 200,
+                          "maxItems": 100,
                           "type": "array"
                         },
                         "vendorCode": {
@@ -20972,6 +20972,109 @@
           "required": [
             "items",
             "pageInfo"
+          ],
+          "type": "object"
+        }
+      },
+      "route": "/admin/upstream",
+      "route_scope": "admin",
+      "sdk_api_prefix": "/backend/v3/api",
+      "sdk_client": "SdkworkBackendClient",
+      "sdk_domain": "intelligence",
+      "sdk_family": "cloudrouter-backend-sdk",
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
+      "tag": "ai",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}/secret",
+      "api_surface": "backend",
+      "bounded_collection_max": 1,
+      "file_targets": [],
+      "idempotency_required": false,
+      "if_match_required": false,
+      "key": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts#revealUpstreamAccountCredentialSecret@/admin/upstream",
+      "kind": "read",
+      "module": "pc-admin-upstream",
+      "openapi_exposed": true,
+      "operation": "revealUpstreamAccountCredentialSecret",
+      "operation_id": "upstreamAccounts.credentials.secrets.retrieve",
+      "path_params": [
+        "accountId",
+        "credentialId"
+      ],
+      "query_parameters": [],
+      "query_parameters_declared": true,
+      "read_sources": [
+        "ai_upstream_account",
+        "ai_upstream_account_credential"
+      ],
+      "request_body_required": null,
+      "request_id_header": false,
+      "response_schema": {
+        "name": "UpstreamAccountCredentialSecretItemResponse",
+        "schema": {
+          "additionalProperties": false,
+          "name": "UpstreamAccountCredentialSecretItemResponse",
+          "properties": {
+            "item": {
+              "additionalProperties": false,
+              "name": "UpstreamAccountCredentialSecret",
+              "properties": {
+                "accountId": {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                "authMethodCode": {
+                  "maxLength": 128,
+                  "type": "string"
+                },
+                "credentialName": {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                "credentialVersion": {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                "id": {
+                  "maxLength": 32,
+                  "type": "string"
+                },
+                "isActive": {
+                  "type": "boolean"
+                },
+                "maskedLabel": {
+                  "maxLength": 256,
+                  "nullable": true,
+                  "type": "string"
+                },
+                "secret": {
+                  "maxLength": 32768,
+                  "type": "string"
+                },
+                "status": {
+                  "format": "int32",
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "id",
+                "accountId",
+                "authMethodCode",
+                "credentialName",
+                "maskedLabel",
+                "credentialVersion",
+                "isActive",
+                "status",
+                "secret"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "item"
           ],
           "type": "object"
         }
@@ -21234,7 +21337,7 @@
                       "maxLength": 256,
                       "type": "string"
                     },
-                    "maxItems": 200,
+                    "maxItems": 100,
                     "type": "array"
                   },
                   "vendorCode": {
@@ -21262,7 +21365,7 @@
                       "maxLength": 256,
                       "type": "string"
                     },
-                    "maxItems": 200,
+                    "maxItems": 100,
                     "type": "array"
                   },
                   "vendorCode": {
@@ -21441,7 +21544,7 @@
                 ],
                 "type": "object"
               },
-              "maxItems": 200,
+              "maxItems": 100,
               "type": "array"
             }
           },
@@ -21571,7 +21674,7 @@
                 "required": [],
                 "type": "object"
               },
-              "maxItems": 200,
+              "maxItems": 100,
               "type": "array"
             }
           },
@@ -21702,7 +21805,7 @@
                 "required": [],
                 "type": "object"
               },
-              "maxItems": 200,
+              "maxItems": 100,
               "type": "array"
             }
           },
@@ -22024,7 +22127,7 @@
                 ],
                 "type": "object"
               },
-              "maxItems": 200,
+              "maxItems": 100,
               "type": "array"
             }
           },
@@ -22186,7 +22289,7 @@
                 ],
                 "type": "object"
               },
-              "maxItems": 200,
+              "maxItems": 100,
               "type": "array"
             }
           },
@@ -22315,7 +22418,7 @@
                 "required": [],
                 "type": "object"
               },
-              "maxItems": 200,
+              "maxItems": 100,
               "type": "array"
             }
           },
@@ -32359,24 +32462,24 @@
   "summary": {
     "api_method_counts": {
       "DELETE": 21,
-      "GET": 111,
+      "GET": 112,
       "PATCH": 20,
       "POST": 58,
       "PUT": 12
     },
     "api_surface_counts": {
       "app": 74,
-      "backend": 148
+      "backend": 149
     },
-    "operation_count": 222,
+    "operation_count": 223,
     "route_scope_counts": {
-      "admin": 148,
+      "admin": 149,
       "console": 31,
       "public": 43
     },
     "sdk_client_counts": {
       "SdkworkAppClient": 74,
-      "SdkworkBackendClient": 148
+      "SdkworkBackendClient": 149
     }
   }
 }

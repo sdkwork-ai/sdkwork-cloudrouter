@@ -2777,7 +2777,7 @@
       "read_sources": [
         "pricing_default_region"
       ],
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
       "write_tables": [
@@ -2855,7 +2855,7 @@
       "read_sources": [
         "pricing_default_region"
       ],
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
       "write_tables": [
@@ -2916,7 +2916,7 @@
         "pricing_rate",
         "pricing_import_run"
       ],
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
       "write_tables": []
@@ -2934,7 +2934,7 @@
         "pricing_rate",
         "pricing_import_run"
       ],
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
       "write_tables": []
@@ -2950,7 +2950,7 @@
       "read_sources": [
         "pricing_default_region"
       ],
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
       "write_tables": []
@@ -3068,7 +3068,7 @@
         "pricing_import_run",
         "cloudrouter_pricing_rule"
       ],
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
       "write_tables": [
@@ -3093,7 +3093,7 @@
         "cloudrouter_pricing_plan",
         "cloudrouter_pricing_rule"
       ],
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
       "write_tables": []
@@ -3109,7 +3109,7 @@
       "read_sources": [
         "pricing_default_region"
       ],
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
       "write_tables": [
@@ -3188,7 +3188,7 @@
         "cloudrouter_pricing_rule",
         "pricing_rate"
       ],
-      "route": "/admin/pricing/settings",
+      "route": "/admin/pricing/settings/:sectionId?",
       "sdk_operations": [],
       "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-pricing/src/pricingService.ts",
       "write_tables": [
@@ -3695,6 +3695,34 @@
       "api_surface": null,
       "file_targets": [],
       "kind": null,
+      "operation": "backendStorageProviderAccountCreate",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendStorageProviderAccountsList",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
       "operation": "backendStorageProviderCreate",
       "operation_scope": null,
       "read_sources": [],
@@ -3724,6 +3752,20 @@
       "file_targets": [],
       "kind": null,
       "operation": "backendStorageProviderHealthCheck",
+      "operation_scope": null,
+      "read_sources": [],
+      "route": null,
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-storage/src/storageService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": null,
+      "api_path": null,
+      "api_surface": null,
+      "file_targets": [],
+      "kind": null,
+      "operation": "backendStorageProviderRotateCredential",
       "operation_scope": null,
       "read_sources": [],
       "route": null,
@@ -4273,6 +4315,23 @@
       "operation_scope": null,
       "read_sources": [
         "ai_upstream_supplier"
+      ],
+      "route": "/admin/upstream",
+      "sdk_operations": [],
+      "source": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-admin-upstream/src/upstreamService.ts",
+      "write_tables": []
+    },
+    {
+      "api_method": "GET",
+      "api_path": "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}/secret",
+      "api_surface": "backend",
+      "file_targets": [],
+      "kind": "read",
+      "operation": "revealUpstreamAccountCredentialSecret",
+      "operation_scope": null,
+      "read_sources": [
+        "ai_upstream_account",
+        "ai_upstream_account_credential"
       ],
       "route": "/admin/upstream",
       "sdk_operations": [],
@@ -5917,7 +5976,7 @@
     }
   ],
   "summary": {
-    "operation_count": 322,
+    "operation_count": 326,
     "source_file_count": 43,
     "write_operation_count": 137
   }

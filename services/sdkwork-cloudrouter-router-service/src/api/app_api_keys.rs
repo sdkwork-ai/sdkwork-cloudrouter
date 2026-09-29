@@ -38,6 +38,7 @@ use crate::ports::{
 const DEFAULT_ACCOUNT_GROUP: &str = DEFAULT_ACCOUNT_GROUP_CODE;
 
 #[derive(Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct AppApiKeyListQueryRequest {
     page: Option<i64>,
     page_size: Option<i64>,

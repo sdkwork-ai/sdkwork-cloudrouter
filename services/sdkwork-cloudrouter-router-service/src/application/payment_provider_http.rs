@@ -15,7 +15,8 @@ use hyper_rustls::HttpsConnector;
 use hyper_util::client::legacy::connect::HttpConnector;
 use hyper_util::client::legacy::Client;
 use hyper_util::rt::TokioExecutor;
-use sdkwork_cloudrouter_http::ensure_rustls_crypto_provider;
+use sdkwork_cloudrouter_http::{ensure_rustls_crypto_provider, OutboundDnsResolver};
+use sdkwork_cloudrouter_security::{validate_outbound_base_url, OutboundTargetPolicy};
 
 /// Connect (and happy-eyeballs) budget for one provider TCP/TLS handshake.
 pub(crate) const PAYMENT_PROVIDER_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
@@ -30,7 +31,7 @@ pub(crate) const PAYMENT_PROVIDER_REQUEST_TIMEOUT: Duration = Duration::from_sec
 pub(crate) const MAX_PAYMENT_PROVIDER_RESPONSE_BYTES: usize = 4 * 1024 * 1024;
 
 pub(crate) type PaymentProviderRequestBody = Full<Bytes>;
-pub(crate) type PaymentProviderConnector = HttpsConnector<HttpConnector>;
+pub(crate) type PaymentProviderConnector = HttpsConnector<HttpConnector<OutboundDnsResolver>>;
 pub(crate) type PaymentProviderHttpClient =
     Client<PaymentProviderConnector, PaymentProviderRequestBody>;
 
@@ -68,19 +69,36 @@ pub(crate) struct PaymentProviderHttpResponse {
 }
 
 /// Build the shared payment-provider HTTP client: HTTPS-only with webpki
-/// roots, connector-level connect/happy-eyeballs/read/write timeouts, and
-/// hyper's default bounded pool.
+/// roots, connection-time outbound-address policy enforcement (DNS results
+/// must be public, production-boundary addresses), connector-level
+/// connect/happy-eyeballs/read/write timeouts, and hyper's default bounded
+/// pool.
 pub(crate) fn build_payment_provider_http_client() -> PaymentProviderHttpClient {
     ensure_rustls_crypto_provider();
-    let mut http = HttpConnector::new();
+    let mut http = HttpConnector::new_with_resolver(OutboundDnsResolver::new(
+        OutboundTargetPolicy::Production,
+    ));
     http.set_connect_timeout(Some(PAYMENT_PROVIDER_CONNECT_TIMEOUT));
     http.set_happy_eyeballs_timeout(Some(PAYMENT_PROVIDER_CONNECT_TIMEOUT));
     let https = hyper_rustls::HttpsConnectorBuilder::new()
         .with_webpki_roots()
-        .https_or_http()
+        .https_only()
         .enable_http1()
         .wrap_connector(http);
     Client::builder(TokioExecutor::new()).build(https)
+}
+
+/// Validates an operator-configured provider gateway/API base URL before it is
+/// accepted for live payment dispatch. Payment egress always runs at the
+/// production outbound boundary: HTTPS only, no userinfo or fragment, no IP
+/// literals, and no local/internal host names. The DNS results used for the
+/// actual connection are re-checked against the same policy by
+/// [`OutboundDnsResolver`], so a validated host name cannot rebind to an
+/// internal address between validation and dispatch.
+pub(crate) fn ensure_payment_provider_target(value: &str) -> Result<(), String> {
+    validate_outbound_base_url(value, OutboundTargetPolicy::Production)
+        .map(|_| ())
+        .map_err(|error| error.to_string())
 }
 
 /// Execute one provider dispatch under the shared bounds. The total deadline
@@ -130,4 +148,29 @@ pub(crate) async fn send_bounded(
             "payment provider request timed out after {PAYMENT_PROVIDER_REQUEST_TIMEOUT:?}"
         ))
     })?
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ensure_payment_provider_target;
+
+    #[test]
+    fn payment_target_requires_public_https() {
+        assert!(ensure_payment_provider_target("https://openapi.alipay.com/gateway.do").is_ok());
+        let rejected = [
+            "http://openapi.alipay.com/gateway.do",
+            "https://localhost/gateway.do",
+            "https://provider.internal/v3",
+            "https://127.0.0.1/gateway.do",
+            "https://user:pass@api.example.com/v3",
+            "https://api.example.com/path#fragment",
+            "not a url",
+        ];
+        for target in rejected {
+            assert!(
+                ensure_payment_provider_target(target).is_err(),
+                "{target} must be rejected"
+            );
+        }
+    }
 }
