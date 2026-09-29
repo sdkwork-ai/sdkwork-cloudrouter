@@ -33,7 +33,6 @@ export interface UseCloudRouterUploadOptions {
   appResourceId?: string;
   spaceId?: string;
   parentNodeId?: string;
-  organizationId?: string;
   onUploaded?: (uploaded: CloudRouterUploadedFile) => void;
   onError?: (message: string) => void;
 }
@@ -87,7 +86,6 @@ export function useCloudRouterUpload(
           ...(options.appResourceId ? { appResourceId: options.appResourceId } : {}),
           ...(options.spaceId ? { spaceId: options.spaceId } : {}),
           ...(options.parentNodeId ? { parentNodeId: options.parentNodeId } : {}),
-          ...(options.organizationId ? { organizationId: options.organizationId } : {}),
           signal: controller.signal,
           onProgress: setProgress,
         });
@@ -118,7 +116,6 @@ export function useCloudRouterUpload(
       options.appResourceId,
       options.spaceId,
       options.parentNodeId,
-      options.organizationId,
       options.onUploaded,
       options.onError,
     ],

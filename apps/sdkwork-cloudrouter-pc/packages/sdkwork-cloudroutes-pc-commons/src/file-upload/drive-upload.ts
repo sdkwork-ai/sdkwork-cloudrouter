@@ -46,8 +46,6 @@ export interface CloudRouterUploadFileInput {
   /** 显式指定目标空间；缺省时由 Drive 按 scene 自动解析或创建。 */
   spaceId?: string;
   parentNodeId?: string;
-  /** 团队类资源需要携带组织上下文。 */
-  organizationId?: string;
   fileName?: string;
   contentType?: string;
   uploadProfileCode?: DriveUploaderProfile;

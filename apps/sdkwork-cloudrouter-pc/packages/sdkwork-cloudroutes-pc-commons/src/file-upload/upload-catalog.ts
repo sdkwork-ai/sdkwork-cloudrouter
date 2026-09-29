@@ -111,7 +111,9 @@ export const CLOUDROUTER_UPLOAD_CATEGORIES: readonly CloudRouterUploadCategory[]
     visibility: 'private',
     retention: {
       mode: 'temporary',
-      ttlSeconds: String(7 * 24 * 60 * 60),
+      // 与 `apps/sdkwork-cloudrouter-pc/specs/upload.declaration.json` 的
+      // `retentionTtlSeconds`（86400，1 天）保持一致，代码不得另立数值。
+      ttlSeconds: String(24 * 60 * 60),
       cleanupAction: 'soft_delete',
     },
   },

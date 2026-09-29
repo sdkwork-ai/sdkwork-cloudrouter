@@ -9,7 +9,7 @@
       "source": "cloudrouter-pc-admin-site-logo-upload",
       "uploadProfileCode": "image",
       "retention": "long_term",
-      "purpose": "public_asset"
+      "purpose": "Site logo, the publicly displayed brand mark of the site."
     },
     {
       "appResourceType": "site.settings_brand_asset",
