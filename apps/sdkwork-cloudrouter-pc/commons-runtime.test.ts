@@ -217,10 +217,14 @@ test("agents app SDK factory preserves the canonical app-api surface URL", async
     "utf8",
   );
   assert.match(source, /resolveDependencyAppSurfaceBaseUrl\(options, 'VITE_SDKWORK_AGENT_APP_API_BASE_URL'\)/);
-  assert.doesNotMatch(
-    source,
-    /function buildAgentAppConfig[\s\S]*?normalizeGeneratedSdkBaseUrl\(/,
+  // Scope the guard to buildAgentAppConfig's own body: later sibling builders
+  // legitimately call normalizeGeneratedSdkBaseUrl, and a file-wide lazy regex
+  // would match across them.
+  const agentAppConfigBody = source.slice(
+    source.indexOf("function buildAgentAppConfig"),
+    source.indexOf("function buildAgentBackendConfig"),
   );
+  assert.doesNotMatch(agentAppConfigBody, /normalizeGeneratedSdkBaseUrl\(/);
 
   const requestedUrls: string[] = [];
   const tokenManager = getCloudRouterGlobalTokenManager();
@@ -999,9 +1003,10 @@ test("console sidebar keeps dashboard top-level and groups the remaining menus b
   assert.doesNotMatch(source, /path:\s*'\/console\/checkout'/);
   assert.doesNotMatch(source, /path:\s*'\/console\/payment'/);
   assert.doesNotMatch(source, /console\.menu\.group\.aiWorkspace/);
-  assert.doesNotMatch(source, /console\.menu\.agents/);
-  assert.doesNotMatch(source, /path:\s*'\/console\/agents'/);
-  assert.doesNotMatch(source, /\bBot\b/);
+  // The agents console shipped as a top-level sidebar surface
+  // (feat(console-agents)); lock it in instead of guarding against it.
+  assert.match(source, /path:\s*'\/console\/agents'/);
+  assert.match(source, /labelKey: 'console\.menu\.agents'/);
 });
 
 test("console business routes compose T1 domain PC packages through Cloud Router extensions", () => {
@@ -1640,6 +1645,7 @@ test("portal admin access check clears an expired IAM session", async () => {
       location: {
         hash: "",
         hostname: "localhost",
+        protocol: "http:",
         pathname: "/admin/dashboard",
         replace: () => undefined,
         search: "",
@@ -1647,7 +1653,10 @@ test("portal admin access check clears an expired IAM session", async () => {
     },
   });
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    const rawUrl = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    // The same-origin base-URL resolver now emits absolute origins; match by path.
+    const parsed = new URL(rawUrl, "http://localhost");
+    const url = `${parsed.pathname}${parsed.search}`;
     captured.push({ url, method: init?.method ?? "GET" });
     if (url === "/app/v3/api/auth/sessions/current") {
       return new Response(JSON.stringify({ code: "401", msg: "session expired" }), {

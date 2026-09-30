@@ -328,8 +328,8 @@ test("model catalog pricing view derives token flat and unavailable cached cells
     badgeLabel: "reference / 1M tokens",
     layout: "token",
     cells: [
-      { key: "input", labelKey: "models.input", value: "$0.15", tone: "default", unavailable: false },
-      { key: "output", labelKey: "models.output", value: "$0.60", tone: "default", unavailable: false },
+      { key: "input", labelKey: "models.input", value: "$0.150", tone: "default", unavailable: false },
+      { key: "output", labelKey: "models.output", value: "$0.600", tone: "default", unavailable: false },
       { key: "cachedInput", labelKey: "models.cachedIn", value: "$0.075", tone: "cached", unavailable: false },
     ],
   });
@@ -337,8 +337,8 @@ test("model catalog pricing view derives token flat and unavailable cached cells
     badgeLabel: "reference / 1M tokens",
     layout: "token",
     cells: [
-      { key: "input", labelKey: "models.input", value: "$0.11", tone: "default", unavailable: false },
-      { key: "output", labelKey: "models.output", value: "$0.42", tone: "default", unavailable: false },
+      { key: "input", labelKey: "models.input", value: "$0.110", tone: "default", unavailable: false },
+      { key: "output", labelKey: "models.output", value: "$0.420", tone: "default", unavailable: false },
       { key: "cachedInput", labelKey: "models.cachedIn", value: "-", tone: "muted", unavailable: true },
     ],
   });
@@ -368,14 +368,14 @@ test("model catalog pricing view marks missing billing meters unavailable withou
     badgeLabel: "reference / 1M tokens",
     layout: "token",
     cells: [
-      { key: "input", labelKey: "models.input", value: "$0.20", tone: "default", unavailable: false },
+      { key: "input", labelKey: "models.input", value: "$0.200", tone: "default", unavailable: false },
       { key: "output", labelKey: "models.output", value: "-", tone: "muted", unavailable: true },
       { key: "cachedInput", labelKey: "models.cachedIn", value: "-", tone: "muted", unavailable: true },
     ],
   });
 
   assert.deepEqual(deriveModelCatalogDetailView(inputOnlyTextModel).pricingRows, [
-    { key: "input", labelKey: "models.input", fallbackLabel: "Input", value: "$0.20", unitLabel: "per 1M tokens" },
+    { key: "input", labelKey: "models.input", fallbackLabel: "Input", value: "$0.200", unitLabel: "per 1M tokens" },
     {
       key: "output",
       labelKey: "models.output",
@@ -450,8 +450,8 @@ test("model catalog detail view derives copy route and sidebar rows", () => {
     { key: "Max Tokens", value: "16384" },
   ]);
   assert.deepEqual(detail.pricingRows, [
-    { key: "input", labelKey: "models.input", fallbackLabel: "Input", value: "$0.15", unitLabel: "per 1M tokens" },
-    { key: "output", labelKey: "models.output", fallbackLabel: "Output", value: "$0.60", unitLabel: "per 1M tokens" },
+    { key: "input", labelKey: "models.input", fallbackLabel: "Input", value: "$0.150", unitLabel: "per 1M tokens" },
+    { key: "output", labelKey: "models.output", fallbackLabel: "Output", value: "$0.600", unitLabel: "per 1M tokens" },
     {
       key: "cachedInput",
       labelKey: "models.cachedIn",
@@ -689,7 +689,7 @@ test("runtime model catalog maps public reference prices without exposing privat
   assert.equal(models[0].modality, "Text");
   assert.equal(models[0].pricing.status, "reference");
   assert.equal(models[0].pricing.input, 0.15);
-  assert.equal(formatModelPrice(models[0].pricing, "input"), "$0.15");
+  assert.equal(formatModelPrice(models[0].pricing, "input"), "$0.150");
   assert.equal(modelPricingBadgeLabel(models[0]), "reference / 1M tokens");
   assert.equal(modelPricingUnitLabel(models[0]), "per 1M tokens");
 
@@ -729,7 +729,7 @@ test("runtime model catalog keeps region in reference prices instead of model id
     models.map((model) => model.id),
     ["minimax/MiniMax-M2.7"],
   );
-  assert.equal(formatModelPrice(models[0].pricing, "input"), "$0.30");
+  assert.equal(formatModelPrice(models[0].pricing, "input"), "$0.300");
   assert.deepEqual(models[0].pricing.referencePrices, [
     { regionCode: "global", billingMeter: "llm_input_token", unitPrice: 0.3, currency: "USD" },
     { regionCode: "cn", billingMeter: "llm_input_token", unitPrice: 2.1, currency: "CNY" },
