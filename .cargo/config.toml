@@ -1,5 +1,15 @@
 [build]
 incremental = true
+# Override the global ~/.cargo/config.toml jobs = -1 (all 16 cores). That
+# ceiling, combined with its O2 dependency profile, exhausted the 31 GB host's
+# commit charge during `pnpm dev` (rustc-LLVM ERROR: out of memory, exit
+# 0xc0000409 STATUS_STACK_BUFFER_OVERRUN) — the dying rustc processes also left
+# corrupt artifacts ("only metadata stub found for rlib dependency `core`").
+# jobs = 8 and jobs = 4 both still OOM-cascaded on this machine (C: is ~96%
+# full, so the pagefile cannot absorb spikes); 2 parallel jobs is the verified
+# safe ceiling. jobs is not part of the fingerprint, so this cap never forces
+# a rebuild.
+jobs = 2
 
 [env]
 SDKWORK_CLOUDROUTER_HTTP_OPENAPI_BUILD_MODE = { value = "copy", force = false }

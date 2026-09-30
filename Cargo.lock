@@ -5083,6 +5083,7 @@ name = "sdkwork-api-memory-assembly"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "sdkwork-database-config",
  "sdkwork-intelligence-memory-repository-sqlx",
  "sdkwork-intelligence-memory-service",
  "sdkwork-memory-database-host",
@@ -8662,6 +8663,7 @@ dependencies = [
  "sdkwork-drive-config",
  "sdkwork-drive-contract",
  "sdkwork-drive-http",
+ "sdkwork-drive-object-runtime",
  "sdkwork-drive-observability",
  "sdkwork-drive-security",
  "sdkwork-drive-storage-contract",
