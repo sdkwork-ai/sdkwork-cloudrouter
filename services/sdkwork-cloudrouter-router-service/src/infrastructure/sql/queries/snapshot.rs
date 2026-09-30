@@ -1047,8 +1047,6 @@ SELECT
     account_group.priority,
     account_group.cost_multiplier::text AS cost_multiplier,
     account_group.sale_multiplier::text AS sale_multiplier,
-    account_group.vendor_code,
-    COALESCE(account_group.modalities, '[]'::jsonb)::text AS modalities,
     COALESCE((
         SELECT jsonb_agg(jsonb_build_object('vendorCode', policy.vendor_code, 'models', model_access_models.model_patterns) ORDER BY policy.priority ASC, policy.id ASC)
         FROM ai_model_access_policy policy

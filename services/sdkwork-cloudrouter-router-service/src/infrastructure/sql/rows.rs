@@ -620,11 +620,6 @@ pub struct UpstreamAccountGroupRow {
     pub priority: i32,
     pub cost_multiplier: String,
     pub sale_multiplier: String,
-    /// 分组声明的 vendor 范围（`ai_upstream_account_group.vendor_code`）；
-    /// 与 `modalities_json` 一起决定该分组可服务的模型集合。
-    pub vendor_code: Option<String>,
-    /// 分组声明的模态范围（`ai_upstream_account_group.modalities`，jsonb 字符串数组）。
-    pub modalities_json: String,
     pub model_blacklist_json: String,
     pub model_whitelist_json: String,
 }
@@ -752,8 +747,6 @@ impl UpstreamAccountGroupMetricSnapshotRow {
 
 impl UpstreamAccountGroupRow {
     pub fn try_into_domain(self) -> DomainResult<UpstreamAccountGroup> {
-        let modalities =
-            parse_string_array(&self.modalities_json, "upstream account group modalities")?;
         Ok(UpstreamAccountGroup {
             id: self.id,
             tenant_id: self.tenant_id,
@@ -778,12 +771,7 @@ impl UpstreamAccountGroupRow {
             priority: self.priority.max(0),
             cost_multiplier: DecimalValue::parse(&self.cost_multiplier)?,
             sale_multiplier: DecimalValue::parse(&self.sale_multiplier)?,
-            // Declared below through `with_model_scope`, which normalizes the
-            // modality aliases; the literal carries the neutral default.
-            vendor_code: None,
-            modalities: Vec::new(),
-        }
-        .with_model_scope(self.vendor_code, modalities))
+        })
     }
 }
 

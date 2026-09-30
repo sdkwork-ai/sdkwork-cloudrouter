@@ -188,10 +188,6 @@ mod tests {
             priority: 100,
             cost_multiplier: DecimalValue::ONE,
             sale_multiplier: DecimalValue::ONE,
-            // Selection tests exercise routing/priority only; the group declares no
-            // vendor or modality scope, so it stays unrestricted.
-            vendor_code: None,
-            modalities: Vec::new(),
         }
     }
 

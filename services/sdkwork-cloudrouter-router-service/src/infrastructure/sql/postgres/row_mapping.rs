@@ -200,8 +200,6 @@ pub async fn load_upstream_account_groups(
             priority: row.try_get("priority")?,
             cost_multiplier: row.try_get("cost_multiplier")?,
             sale_multiplier: row.try_get("sale_multiplier")?,
-            vendor_code: row.try_get("vendor_code")?,
-            modalities_json: row.try_get("modalities")?,
             model_blacklist_json: row.try_get("model_blacklist")?,
             model_whitelist_json: row.try_get("model_whitelist")?,
         })
