@@ -1,6 +1,12 @@
 import { SdkworkProductDownloadSection } from '@sdkwork/cloudrouter-pc-downloads';
 import { useTranslation } from 'react-i18next';
-import { createCloudRouterDownloadCards, createCloudRouterDownloadCatalog } from '../downloads/cloudRouterDownloads';
+import {
+  cloudRouterDownloadCatalog,
+  createCloudRouterDownloadCards,
+  createCloudRouterDownloadCatalog,
+  resolveUsableDownloadCatalog,
+} from '../downloads/cloudRouterDownloads';
+import { useHomeContent } from '../content/useHomeContent';
 
 interface DownloadPanelProps {
   className?: string;
@@ -16,6 +22,7 @@ export function DownloadPanel({
   variant = 'section',
 }: DownloadPanelProps) {
   const { t } = useTranslation();
+  const home = useHomeContent();
   const translateDownloadText = (
     key: string,
     fallback: string | {
@@ -23,6 +30,8 @@ export function DownloadPanel({
       [key: string]: unknown;
     },
   ): string => {
+    // The two branches exist because i18next overloads `t` on the fallback's shape; collapsing
+    // them into one call makes the compiler unable to pick an overload.
     if (typeof fallback === 'string') {
       return t(key, fallback);
     }
@@ -30,12 +39,22 @@ export function DownloadPanel({
     return t(key, fallback);
   };
 
+  // `undefined` means the console published nothing usable, which is the signal to keep rendering
+  // the catalog checked into the repository — the same no-op guarantee the footer switches have.
+  const publishedCatalog = resolveUsableDownloadCatalog(home.downloadCatalog);
+  const catalog = createCloudRouterDownloadCatalog(
+    publishedCatalog ?? cloudRouterDownloadCatalog,
+  );
+
   return (
     <SdkworkProductDownloadSection
       className={className}
       catalog={{
-        ...createCloudRouterDownloadCatalog(),
-        cards: createCloudRouterDownloadCards(translateDownloadText),
+        ...catalog,
+        cards: createCloudRouterDownloadCards(translateDownloadText, {
+          brandVariables: home.variables,
+          ...(publishedCatalog !== undefined ? { catalog: publishedCatalog } : {}),
+        }),
       }}
       subtitle={subtitle}
       title={title}
@@ -46,14 +65,21 @@ export function DownloadPanel({
 
 export function DownloadSection() {
   const { t } = useTranslation();
+  const home = useHomeContent();
 
   return (
     <DownloadPanel
-      subtitle={t(
-        'home.deploy.subtitle',
-        'Choose the edition that fits your workflow. From local development to massive enterprise clusters.',
+      subtitle={home.text(
+        home.content.download?.subtitle,
+        t(
+          'home.deploy.subtitle',
+          'Choose the edition that fits your workflow. From local development to massive enterprise clusters.',
+        ),
       )}
-      title={t('home.deploy.title', 'Ready to deploy?')}
+      title={home.text(
+        home.content.download?.title,
+        t('home.deploy.title', 'Ready to deploy?'),
+      )}
       variant="section"
     />
   );

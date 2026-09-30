@@ -20,7 +20,7 @@ use sdkwork_cloudrouter_config::{
 use sdkwork_cloudrouter_database_host::connect_cloud_router_database;
 use sdkwork_cloudrouter_http::TrustedRequestSubject;
 use sdkwork_cloudrouter_router_service::application::{
-    default_desktop_cache_manager, default_service_cache_manager,
+    cached_site_settings_store, default_desktop_cache_manager, default_service_cache_manager,
     AiRoutingCacheInvalidatingAdminAiResourceStore, AiRoutingCacheInvalidatingAdminModelStore,
     AiRoutingCacheInvalidatingAdminUpstreamStore, ApiKeySecretHasher, ApiKeySecretStorageConfig,
     ModelRankingsService, RedisCacheBackend, RuntimeCacheManager, UpstreamCredentialSecretCodec,
@@ -774,8 +774,12 @@ pub async fn router_with_postgres_shared_runtime(
             pool.clone(),
             build_api_key_secret_storage_config(&api_key_security_config)?,
         ));
-    let site_settings_store: SiteSettingsRuntimeStore =
-        Arc::new(PostgresSiteSettingsStore::new(pool.clone()));
+    // Site settings is read on every console page load; cache it so the pool is not
+    // asked for the same single-row snapshot per request.
+    let site_settings_store: SiteSettingsRuntimeStore = cached_site_settings_store(
+        Arc::new(PostgresSiteSettingsStore::new(pool.clone())),
+        Some(cache_manager.clone()),
+    );
     let runtime_region_settings_store: RuntimeRegionSettingsRuntimeStore =
         Arc::new(PostgresRuntimeRegionSettingsStore::new(pool.clone()));
     let ai_resource_store: AdminAiResourceRuntimeStore =
@@ -1074,8 +1078,12 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
             pool.clone(),
             build_api_key_secret_storage_config(&api_key_security_config)?,
         ));
-    let site_settings_store: SiteSettingsRuntimeStore =
-        Arc::new(PostgresSiteSettingsStore::new(pool.clone()));
+    // Site settings is read on every console page load; cache it so the pool is not
+    // asked for the same single-row snapshot per request.
+    let site_settings_store: SiteSettingsRuntimeStore = cached_site_settings_store(
+        Arc::new(PostgresSiteSettingsStore::new(pool.clone())),
+        Some(cache_manager.clone()),
+    );
     let runtime_region_settings_store: RuntimeRegionSettingsRuntimeStore =
         Arc::new(PostgresRuntimeRegionSettingsStore::new(pool.clone()));
     let ai_resource_store: AdminAiResourceRuntimeStore =

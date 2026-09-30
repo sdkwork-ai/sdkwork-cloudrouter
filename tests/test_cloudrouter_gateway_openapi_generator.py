@@ -1175,7 +1175,12 @@ class CloudRouterGatewayOpenApiGeneratorTest(unittest.TestCase):
             audit = audit_vendor_schema_quality(spec, provider_prefixes=self._provider_prefixes())
 
             self.assertEqual([], audit.unregistered_vendor_paths)
-            self.assertEqual(57, len(audit.root_schema_names))
+            # Bumped 57 -> 59 by the TypeSafe AI vendor-native door: its single
+            # published operation contributes exactly two operation-level payload
+            # components (TypeSafeSystemOneRequest / TypeSafeSystemOneResponse);
+            # the nested TypeSafeQuestion / TypeSafeAnswer / TypeSafeUsage schemas
+            # are not referenced directly from a path, so they are not roots.
+            self.assertEqual(59, len(audit.root_schema_names))
             self.assertIn("ProviderJsonNull", audit.reachable_schema_names)
             self.assertEqual([], audit.unresolved_refs)
             self.assertEqual([], audit.non_component_payload_schemas)

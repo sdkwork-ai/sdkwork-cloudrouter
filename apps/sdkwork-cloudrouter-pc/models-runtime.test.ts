@@ -20,6 +20,13 @@ import {
   modelCatalogCapabilityLabelKey,
   modelCatalogGroupFallbackLabel,
   modelCatalogGroupLabelKey,
+  modelCatalogGroupKeyVendorCode,
+  isModelCatalogGroupOptionEmpty,
+  matchesModelCatalogGroupKey,
+  MODEL_GROUP_DEFAULT_DISPLAY_LIMIT,
+  filterModelCatalogGroupOptions,
+  resolveDisplayedGroupOptionsForCatalog,
+  resolveGroupShowMoreStateForCatalog,
   resolveDisplayedProvidersForCatalog,
   resolveProviderShowMoreStateForCatalog,
   filterProvidersForCatalog,
@@ -82,6 +89,7 @@ function catalogFilters(overrides: Partial<ModelCatalogFilters> = {}): ModelCata
   return {
     searchQuery: "",
     providerSearchQuery: "",
+    groupSearchQuery: "",
     selectedProviders: [],
     selectedModalities: [],
     selectedCapabilities: [],
@@ -167,6 +175,7 @@ test("model catalog filter field registry matches defaults and reset output", ()
   const expectedFields = [
     "searchQuery",
     "providerSearchQuery",
+    "groupSearchQuery",
     "selectedProviders",
     "selectedModalities",
     "selectedCapabilities",
@@ -876,6 +885,130 @@ test("runtime model catalog preserves backend-configured custom model groups for
     modelIds(filterModelsForCatalog(models, catalogFilters({ selectedGroups: ["premium-lab"] }))),
     ["openai/gpt-4o-mini"],
   );
+});
+
+test("model library group filter searches label, key and vendor prefix", () => {
+  const groups = [
+    { key: "deepseek.text" as const, label: "DeepSeek 文本", modelCount: 12 },
+    { key: "openai.image" as const, label: "OpenAI 图像", modelCount: 4 },
+    { key: "default-group" as const, label: "Default group", modelCount: 278 },
+  ];
+
+  assert.deepEqual(
+    filterModelCatalogGroupOptions(groups, "").map((group) => group.key),
+    ["deepseek.text", "openai.image", "default-group"],
+  );
+  // Account group labels are operator-authored, so both languages must be searchable.
+  assert.deepEqual(
+    filterModelCatalogGroupOptions(groups, "图像").map((group) => group.key),
+    ["openai.image"],
+  );
+  // The key prefix survives as a search token: `openai` finds `openai.image`.
+  assert.deepEqual(
+    filterModelCatalogGroupOptions(groups, "openai").map((group) => group.key),
+    ["openai.image"],
+  );
+  assert.deepEqual(
+    filterModelCatalogGroupOptions(groups, "DEEPSEEK").map((group) => group.key),
+    ["deepseek.text"],
+  );
+  assert.deepEqual(filterModelCatalogGroupOptions(groups, "no-such-group"), []);
+  assert.equal(modelCatalogGroupKeyVendorCode("deepseek.text"), "deepseek");
+  assert.equal(modelCatalogGroupKeyVendorCode("default-group"), "default-group");
+});
+
+test("model library group filter folds long lists and expands searched results", () => {
+  const groups = Array.from({ length: MODEL_GROUP_DEFAULT_DISPLAY_LIMIT + 4 }, (_, index) => ({
+    key: `vendor-${index}.text` as const,
+    label: `Vendor ${index}`,
+    modelCount: index,
+  }));
+
+  assert.equal(
+    resolveDisplayedGroupOptionsForCatalog(groups, { groupSearchQuery: "", showAllGroups: false }).length,
+    MODEL_GROUP_DEFAULT_DISPLAY_LIMIT,
+  );
+  assert.equal(
+    resolveDisplayedGroupOptionsForCatalog(groups, { groupSearchQuery: "", showAllGroups: true }).length,
+    groups.length,
+  );
+  // A search always shows every hit; folding would hide the match the operator asked for.
+  assert.equal(
+    resolveDisplayedGroupOptionsForCatalog(
+      filterModelCatalogGroupOptions(groups, "vendor-8"),
+      { groupSearchQuery: "vendor-8", showAllGroups: false },
+    ).length,
+    1,
+  );
+
+  const collapsed = resolveGroupShowMoreStateForCatalog(groups, {
+    groupSearchQuery: "",
+    showAllGroups: false,
+  });
+  assert.equal(collapsed.visible, true);
+  assert.equal(collapsed.expanded, false);
+  assert.equal(collapsed.hiddenCount, 4);
+  assert.equal(collapsed.labelKey, "models.showMore");
+
+  const expanded = resolveGroupShowMoreStateForCatalog(groups, {
+    groupSearchQuery: "",
+    showAllGroups: true,
+  });
+  assert.equal(expanded.visible, true);
+  assert.equal(expanded.expanded, true);
+  assert.equal(expanded.labelKey, "models.showLess");
+
+  // No fold affordance when everything already fits or a search is active.
+  assert.equal(
+    resolveGroupShowMoreStateForCatalog(groups.slice(0, 2), {
+      groupSearchQuery: "",
+      showAllGroups: false,
+    }).visible,
+    false,
+  );
+  assert.equal(
+    resolveGroupShowMoreStateForCatalog(groups, {
+      groupSearchQuery: "vendor-1",
+      showAllGroups: false,
+    }).visible,
+    false,
+  );
+});
+
+test("model library group filter marks groups without an active model and matches keys case-insensitively", () => {
+  assert.equal(isModelCatalogGroupOptionEmpty({ key: "empty-group" as const, label: "Empty", modelCount: 0 }), true);
+  assert.equal(isModelCatalogGroupOptionEmpty({ key: "full-group" as const, label: "Full", modelCount: 3 }), false);
+  // A group whose count never arrived keeps its normal weight instead of being
+  // dimmed as if it were empty.
+  assert.equal(isModelCatalogGroupOptionEmpty({ key: "unknown-group" as const, label: "Unknown" }), false);
+
+  assert.equal(matchesModelCatalogGroupKey("deepseek.text", "DeepSeek.Text"), true);
+  assert.equal(matchesModelCatalogGroupKey("  deepseek.text  ", "deepseek.text"), true);
+  assert.equal(matchesModelCatalogGroupKey("deepseek.text", "deepseek.image"), false);
+});
+
+test("runtime model catalog keeps account group keys verbatim so the group filter stays addressable", () => {
+  const models = resolveRuntimeModelCatalog([
+    {
+      model: "deepseek-chat",
+      catalogKey: "deepseek/deepseek-chat",
+      displayName: "DeepSeek Chat",
+      vendorCode: "deepseek",
+      vendor: "deepseek",
+      capabilities: ["chat"],
+      groups: ["deepseek.text", " 企业专享分组 ", "deepseek.text", "   "],
+      categories: ["Recommended"],
+      providerCodes: ["deepseek"],
+      officialReferencePrices: [],
+      priceAvailability: { status: "reference" },
+    },
+  ]);
+
+  // Dotted vendor×modality keys and non-ASCII operator group names both survive:
+  // the sidebar echoes them back verbatim as the server-side `groups` filter.
+  assert.deepEqual(models[0].groups, ["deepseek.text", "企业专享分组"]);
+  assert.equal(matchesModelCatalogGroupKey(models[0].groups[0], "deepseek.text"), true);
+  assert.equal(matchesModelCatalogGroupKey(models[0].groups[1], "企业专享分组"), true);
 });
 
 test("runtime model catalog keeps unknown public prices unavailable instead of free", () => {

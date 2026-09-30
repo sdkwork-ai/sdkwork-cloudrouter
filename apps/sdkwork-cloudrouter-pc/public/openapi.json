@@ -11845,6 +11845,212 @@
         },
         "type": "object"
       },
+      "TypeSafeAnswer": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional type safe answer values using the provider json value module."
+        },
+        "description": "Type safe answer schema exposed by Cloud Router.",
+        "properties": {
+          "choice": {
+            "description": "Option selected for a choice question.",
+            "type": "string"
+          },
+          "confidence": {
+            "description": "Probability mass concentrated on the reported answer. Reported for choice and score answers; a noul answer carries none.",
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "legend": {
+            "additionalProperties": {
+              "description": "Additional legend values as a string variant.",
+              "type": "string"
+            },
+            "description": "Maps each score level index to the level description declared by the question.",
+            "type": "object"
+          },
+          "noul": {
+            "description": "Probability that a noul question is true: near 1 is a strong yes, near 0 a strong no, and near 0.5 means the state does not decide it.",
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "probabilities": {
+            "additionalProperties": {
+              "description": "Additional probabilities values as a number variant.",
+              "type": "number"
+            },
+            "description": "Probability assigned to each candidate answer of a choice question, keyed by option.",
+            "type": "object"
+          },
+          "score": {
+            "description": "Position on the score question's ordered levels. The value can fall between two levels.",
+            "type": "number"
+          },
+          "type": {
+            "description": "Question primitive that produced this answer.",
+            "enum": [
+              "choice",
+              "score",
+              "noul"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "type": "object"
+      },
+      "TypeSafeQuestion": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional type safe question values using the provider json value module."
+        },
+        "description": "Type safe question schema exposed by Cloud Router.",
+        "properties": {
+          "criteria": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProviderJsonValue"
+              }
+            ],
+            "description": "Answer space the question is scored against: a map of option to description for a choice question of up to 255 options, or an ordered array of level descriptions for a score question, written as situations rather than degrees. A noul question needs no criteria."
+          },
+          "instructions": {
+            "description": "The single judgment this question asks for. Questions are evaluated independently against the same state, so each instruction should carry exactly one atomic judgment.",
+            "type": "string"
+          },
+          "type": {
+            "description": "Question primitive: choice picks one of the declared options, score rates the state against ordered levels, and noul answers a true-or-false judgment as a probability.",
+            "enum": [
+              "choice",
+              "score",
+              "noul"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "instructions"
+        ],
+        "type": "object"
+      },
+      "TypeSafeSystemOneRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional type safe system one request values using the provider json value module."
+        },
+        "description": "Type safe system one request schema exposed by Cloud Router.",
+        "properties": {
+          "model": {
+            "description": "Model name to evaluate with. Cloud Router selects the routed catalog model for the request; sending a name here overrides it. Versioned ids such as jev-1.13.0 are accepted alongside the published aliases.",
+            "type": "string"
+          },
+          "questions": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/TypeSafeQuestion"
+                }
+              ],
+              "description": "Additional questions values using the type safe question module."
+            },
+            "description": "Typed questions keyed by a caller-chosen question id. Every question is evaluated against the same state in parallel and in isolation.",
+            "type": "object"
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProviderJsonValue"
+              }
+            ],
+            "description": "Context the questions are evaluated against: a text string, an array of text values, or a JSON object whose fields the instructions can reference by dot path."
+          }
+        },
+        "required": [
+          "state",
+          "questions"
+        ],
+        "type": "object"
+      },
+      "TypeSafeSystemOneResponse": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional type safe system one response values using the provider json value module."
+        },
+        "description": "Type safe system one response schema exposed by Cloud Router.",
+        "properties": {
+          "answers": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/TypeSafeAnswer"
+                }
+              ],
+              "description": "Additional answers values using the type safe answer module."
+            },
+            "description": "One typed answer per requested question, keyed by the same question id that was sent.",
+            "type": "object"
+          },
+          "model": {
+            "description": "Versioned model id that answered the request, so callers can log which release produced each result.",
+            "type": "string"
+          },
+          "usage": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TypeSafeUsage"
+              }
+            ],
+            "description": "Usage field on the type safe system one response, using the type safe usage module."
+          }
+        },
+        "required": [
+          "answers"
+        ],
+        "type": "object"
+      },
+      "TypeSafeUsage": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional type safe usage values using the provider json value module."
+        },
+        "description": "Type safe usage schema exposed by Cloud Router.",
+        "properties": {
+          "input_tokens": {
+            "description": "Input token count. System One bills on input tokens.",
+            "type": "integer"
+          },
+          "output_tokens": {
+            "description": "Output token count reported by the endpoint.",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "ViduCreation": {
         "additionalProperties": {
           "allOf": [
@@ -12567,7 +12773,7 @@
     }
   },
   "info": {
-    "description": "Cloud Router Open API exposes OpenAI-compatible /v1 APIs and provider-specific APIs for OpenAI, Google Gemini, Anthropic Claude, Volcengine Ark, Suno, Midjourney, Kling, Vidu, and Nano Banana compatible media providers.",
+    "description": "Cloud Router Open API exposes OpenAI-compatible /v1 APIs and provider-specific APIs for OpenAI, Google Gemini, Anthropic Claude, Volcengine Ark, Suno, Midjourney, Kling, Vidu, and Nano Banana compatible media providers, plus the TypeSafe AI System One decision endpoint.",
     "title": "Cloud Router Open API",
     "version": "1.0.0"
   },
@@ -15975,6 +16181,95 @@
         "summary": "Suno retrieve music generation",
         "tags": [
           "Audio/suno"
+        ]
+      }
+    },
+    "/typesafe/v1/systemone": {
+      "post": {
+        "description": "Evaluates typed questions against one state through the TypeSafe AI System One endpoint using the configured TypeSafe AI provider account.",
+        "operationId": "typesafeCreateSystemOneDecision",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TypeSafeSystemOneRequest"
+              }
+            }
+          },
+          "description": "Typed request payload for the typesafe create system one decision operation.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TypeSafeSystemOneResponse"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "TypeSafe AI System One decision",
+        "tags": [
+          "Chat/typesafe"
         ]
       }
     },
@@ -28773,6 +29068,10 @@
     {
       "description": "Volcengine Ark content generation APIs exposed through Cloud Router vendor routing.",
       "name": "Videos/volcengine"
+    },
+    {
+      "description": "TypeSafe AI System One decision APIs exposed through Cloud Router vendor routing.",
+      "name": "Chat/typesafe"
     }
   ],
   "x-api-prefix": "/v1",
@@ -28788,6 +29087,7 @@
     "minimax",
     "nano-banana",
     "suno",
+    "typesafe",
     "vidu",
     "volcengine"
   ]

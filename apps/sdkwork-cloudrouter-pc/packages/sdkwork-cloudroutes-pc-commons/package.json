@@ -138,6 +138,18 @@
       "import": "./src/domain-service-providers.ts",
       "require": "./src/domain-service-providers.ts",
       "default": "./src/domain-service-providers.ts"
+    },
+    "./footer-settings": {
+      "types": "./src/footer-settings.ts",
+      "import": "./src/footer-settings.ts",
+      "require": "./src/footer-settings.ts",
+      "default": "./src/footer-settings.ts"
+    },
+    "./footer-glyphs": {
+      "types": "./src/footer-glyphs.ts",
+      "import": "./src/footer-glyphs.ts",
+      "require": "./src/footer-glyphs.ts",
+      "default": "./src/footer-glyphs.ts"
     }
   },
   "scripts": {

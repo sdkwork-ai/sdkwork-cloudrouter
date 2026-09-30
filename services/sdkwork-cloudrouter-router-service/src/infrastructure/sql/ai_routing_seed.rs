@@ -96,7 +96,15 @@ const DEFAULT_MIXED_ACCOUNT_GROUP_CODE: &str = crate::domain::DEFAULT_ACCOUNT_GR
 ///   already share standard protocols (`openai_chat_completions`,
 ///   `openai_responses`, `anthropic_messages`) and therefore keep reusing the
 ///   protocol-surface groups instead of growing a parallel family.
-const DEFAULT_ADMIN_ROUTING_TOPOLOGY_SEED_SOURCE: &str = "default-admin-routing-topology-seed.v12|vendor-default-accounts|default-group|default-mixed-group-vendor-skeleton|default-relay-suppliers|official.openai.full|openai|official|openai_compatible|https://api.openai.com/v1|vendor-modality-groups|i18n-zh-en|price_first|prepay|anthropic-messages-multi-vendor|bytedance-ark-media-split|relay-media-vendor-groups";
+///
+/// `v13` adds `typesafe-system-one`: TypeSafe AI becomes a 27th catalog vendor
+/// with a bundled default account, `official.typesafe.full` and the vendor's
+/// single native endpoint `api.typesafe.systemone` (`POST /v1/systemone`). A
+/// database seeded before it has no `typesafe` supplier, no account and no
+/// entitlement, so every Jev request would answer 50201 even though the
+/// resource, the taxonomy route and both classifier arms are present in the
+/// binary — which is exactly the state the fingerprint bump exists to clear.
+const DEFAULT_ADMIN_ROUTING_TOPOLOGY_SEED_SOURCE: &str = "default-admin-routing-topology-seed.v13|vendor-default-accounts|default-group|default-mixed-group-vendor-skeleton|default-relay-suppliers|official.openai.full|openai|official|openai_compatible|https://api.openai.com/v1|vendor-modality-groups|i18n-zh-en|price_first|prepay|anthropic-messages-multi-vendor|bytedance-ark-media-split|relay-media-vendor-groups|typesafe-system-one";
 
 /// Environment values for which the bundled vendor default accounts are seeded
 /// in the *enabled* state. Everywhere else (production and any unrecognised
@@ -540,7 +548,7 @@ const DEFAULT_RELAY_SUPPLIERS: [DefaultRelaySupplierSeed; 4] = [
 /// a vendor listed here that the catalog does not declare, or a derived
 /// vendor-modality group with no account here, is a load error rather than a
 /// silent empty pool.
-const DEFAULT_VENDOR_UPSTREAM_ACCOUNTS: [DefaultVendorUpstreamAccountSeed; 28] = [
+const DEFAULT_VENDOR_UPSTREAM_ACCOUNTS: [DefaultVendorUpstreamAccountSeed; 29] = [
     DefaultVendorUpstreamAccountSeed {
         vendor_code: "openai",
         supplier_name: "OpenAI",
@@ -866,6 +874,21 @@ const DEFAULT_VENDOR_UPSTREAM_ACCOUNTS: [DefaultVendorUpstreamAccountSeed; 28] =
         account_code: "black-forest-labs-default",
         account_name: "Black Forest Labs Default",
     },
+    DefaultVendorUpstreamAccountSeed {
+        vendor_code: "typesafe",
+        supplier_name: "TypeSafe AI",
+        supplier_display_name_i18n: "{\"en-US\":\"TypeSafe AI\",\"zh-CN\":\"TypeSafe AI\"}",
+        adapter_code: "typesafe",
+        protocol_code: "vendor_native",
+        // TypeSafe publishes one host for the System One surface; the endpoint
+        // template is `/v1/systemone`, so `base_url` is the bare origin. Unlike
+        // the OpenAI-compatible vendors there is no `/v1` suffix to fold in:
+        // the path template carries it, and `build_uri` is a plain
+        // concatenation.
+        base_url: "https://api.typesafe.ai",
+        account_code: "typesafe-default",
+        account_name: "TypeSafe AI Default",
+    },
 ];
 
 /// Modality whitelist for account groups, mirroring SUPPORTED_MODALITIES in the
@@ -893,7 +916,7 @@ const VENDOR_MODALITY_MAPPING: [(&str, &str); 6] = [
 /// Curated binding from vendor code to the resource group granted to that
 /// vendor's default account groups. Every vendor declared in the bundled
 /// resources must have a binding (validated at seed load time).
-const VENDOR_RESOURCE_GROUP_BINDINGS: [(&str, &str); 28] = [
+const VENDOR_RESOURCE_GROUP_BINDINGS: [(&str, &str); 29] = [
     ("openai", "official.openai.full"),
     ("openai_compatible", "api.openai_compatible.all"),
     ("anthropic", "official.anthropic.claude_code"),
@@ -937,10 +960,16 @@ const VENDOR_RESOURCE_GROUP_BINDINGS: [(&str, &str); 28] = [
     ("black_forest_labs", "official.black_forest_labs.full"),
     ("mureka", "official.mureka.full"),
     ("xiaomi", "official.xiaomi.full"),
+    // TypeSafe AI. Its default account is not a fall-through: every `typesafe`
+    // model declares `apiFormat = vendor_native` and TypeSafe serves no
+    // chat-completions endpoint, so `official.typesafe.full` has to carry the
+    // native `api.typesafe.systemone` grant or the account is routable but
+    // reachable by nothing.
+    ("typesafe", "official.typesafe.full"),
 ];
 
 /// Localized vendor display names: (vendor_code, en-US, zh-CN).
-const VENDOR_LOCALIZED_NAMES: [(&str, &str, &str); 28] = [
+const VENDOR_LOCALIZED_NAMES: [(&str, &str, &str); 29] = [
     ("openai", "OpenAI", "OpenAI"),
     ("openai_compatible", "OpenAI Compatible", "OpenAI 兼容"),
     ("anthropic", "Anthropic", "Anthropic"),
@@ -973,6 +1002,7 @@ const VENDOR_LOCALIZED_NAMES: [(&str, &str, &str); 28] = [
     ),
     ("mureka", "Mureka", "Mureka"),
     ("xiaomi", "Xiaomi MiMo", "小米 MiMo"),
+    ("typesafe", "TypeSafe AI", "TypeSafe AI"),
 ];
 
 /// Localized modality display names: (modality_code, en-US, zh-CN).
@@ -5336,6 +5366,10 @@ mod tests {
             "xiaomi.image",
             "xiaomi.audio",
             "xiaomi.video",
+            // TypeSafe AI owns a vendor-native surface, so it contributes the
+            // `text` group its `llm` modality maps to and nothing else: `network`
+            // is not an account-group modality.
+            "typesafe.text",
         ];
         assert_eq!(
             codes.len(),
@@ -5751,9 +5785,9 @@ mod tests {
         );
         assert_eq!(
             account_codes.len(),
-            28,
+            29,
             "the bundled vendor default account set must cover every catalog vendor \
-             (26 catalog vendors + the `gemini`/`kling` account-side aliases of \
+             (27 catalog vendors + the `gemini`/`kling` account-side aliases of \
              `google`/`kuaishou` — see VENDOR_CODE_ALIASES). `bytedance` used to be \
              an alias of `jimeng` and shared its account; they are separate vendors \
              now, each with its own host, so each carries its own account."

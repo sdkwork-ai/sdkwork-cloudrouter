@@ -285,6 +285,15 @@ const API_CASES: &[ApiCase] = &[
         body: r#"{"model":"claude-sonnet-4-5","max_tokens":16,"messages":[{"role":"user","content":"hi"}]}"#,
     },
     ApiCase {
+        // TypeSafe serves no chat-completions surface at all: the vendor-native
+        // System One endpoint is the only addressable door for its models, so
+        // this probe pins the door itself rather than an OpenAI-compatible path.
+        api_code: "typesafe.systemone",
+        path: "/typesafe/v1/systemone",
+        published_path: "",
+        body: r#"{"state":"hi","questions":{"is_urgent":{"type":"noul","instructions":"Does this convey urgency or time-sensitivity?"}}}"#,
+    },
+    ApiCase {
         api_code: "anthropic.chat",
         path: "/v1/chat/completions",
         published_path: "",

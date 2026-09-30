@@ -228,15 +228,15 @@ function normalizeRuntimeModelCategories(values: string[]): ModelCategoryKey[] {
   return Array.from(new Set(categories));
 }
 
+/**
+ * Account group keys are opaque identifiers owned by the routing account-group
+ * authority (`deepseek.text`, `企业专享分组`). They are compared verbatim against
+ * the catalog `groups` filter, so the client only trims them: reshaping or
+ * stripping characters here would silently drop a key from the model's group
+ * list and make the sidebar group filter stop matching that model.
+ */
 function normalizeRuntimeModelGroup(value: string): ModelGroupKey | null {
-  const normalized = value
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9_.:-]/g, '')
-    .replace(/-+/g, '-')
-    .replace(/^-+|-+$/g, '');
-  return normalized.length > 0 ? normalized : null;
+  return value.trim() || null;
 }
 
 function normalizeRuntimeModelCategory(value: string): ModelCategoryKey | null {

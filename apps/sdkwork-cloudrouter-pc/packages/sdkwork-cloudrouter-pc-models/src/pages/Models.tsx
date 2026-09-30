@@ -10,12 +10,16 @@ import {
   createDefaultModelCatalogFilters,
   deriveModelCatalogCardView,
   deriveModelCatalogFilterOptions,
+  filterModelCatalogGroupOptions,
   filterModelsForCatalog,
   filterProvidersForCatalog,
+  isModelCatalogGroupOptionEmpty,
   modelCatalogCategoryLabelKey,
   modelCatalogGroupLabelKey,
   resetModelCatalogFilters,
+  resolveDisplayedGroupOptionsForCatalog,
   resolveDisplayedProvidersForCatalog,
+  resolveGroupShowMoreStateForCatalog,
   resolveProviderShowMoreStateForCatalog,
   type ModelCatalogFilters,
 } from '../modelCatalog';
@@ -41,6 +45,7 @@ export function Models() {
   const [filters, setFilters] = useState<ModelCatalogFilters>(() => createDefaultModelCatalogFilters());
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showAllProviders, setShowAllProviders] = useState(false);
+  const [showAllGroups, setShowAllGroups] = useState(false);
   const [catalogModels, setCatalogModels] = useState<Model[]>([]);
   const [catalogGroups, setCatalogGroups] = useState<ModelCatalogGroup[]>([]);
   const [groupSaleMultipliers, setGroupSaleMultipliers] = useState<Map<string, string>>(new Map());
@@ -113,6 +118,22 @@ export function Models() {
   const providerShowMoreState = resolveProviderShowMoreStateForCatalog(filteredProviders, {
     providerSearchQuery: filters.providerSearchQuery,
     showAllProviders,
+  });
+
+  // Group keys are `<vendorCode>.<modality>` and the catalog ships one entry per
+  // account group, so the list is long: search + fold keep it readable while the
+  // model count per group tells the operator which groups actually serve models.
+  const filteredGroups = useMemo(() => {
+    return filterModelCatalogGroupOptions(filterOptions.groups, filters.groupSearchQuery);
+  }, [filterOptions.groups, filters.groupSearchQuery]);
+
+  const displayedGroups = resolveDisplayedGroupOptionsForCatalog(filteredGroups, {
+    groupSearchQuery: filters.groupSearchQuery,
+    showAllGroups,
+  });
+  const groupShowMoreState = resolveGroupShowMoreStateForCatalog(filteredGroups, {
+    groupSearchQuery: filters.groupSearchQuery,
+    showAllGroups,
   });
   const selectedProviderCodes = useMemo(() => {
     if (filters.selectedProviders.length === 0) {
@@ -248,27 +269,67 @@ export function Models() {
         </CollapsibleSection>
 
         <CollapsibleSection title={t('models.groups', 'Groups')} icon={Users}>
-          <div className="space-y-2">
-            {filterOptions.groups.map(group => (
-              <FilterCheckbox
-                key={group.key}
-                checked={filters.selectedGroups.includes(group.key)}
-                label={
-                  <span className="flex items-center gap-1.5 min-w-0">
-                    <span className="truncate">{t(modelCatalogGroupLabelKey(group.key), group.label)}</span>
-                    {group.saleMultiplier ? (
-                      <GroupSaleMultiplierBadge
-                        multiplier={group.saleMultiplier}
-                        title={t('models.group.saleMultiplier', 'Sale multiplier')}
-                      />
-                    ) : null}
-                  </span>
-                }
-                onClick={() => toggleGroupFilter(group.key)}
-                activeColorClass="bg-purple-500 border-purple-500"
-              />
-            ))}
+          <div className="relative mb-3 group">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-lobster-500 transition-colors" />
+            <input
+              type="text"
+              placeholder={t('models.groupSearch', 'Search groups...')}
+              value={filters.groupSearchQuery}
+              onChange={(e) => updateFilters({ groupSearchQuery: e.target.value })}
+              className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-500 focus:outline-none focus:border-lobster-500 focus:ring-1 focus:ring-lobster-500 transition-all"
+            />
           </div>
+          <div className="space-y-2 pr-2">
+            {displayedGroups.map(group => {
+              const empty = isModelCatalogGroupOptionEmpty(group);
+              return (
+                <FilterCheckbox
+                  key={group.key}
+                  checked={filters.selectedGroups.includes(group.key)}
+                  label={
+                    <span
+                      className={`flex items-center gap-1.5 min-w-0 ${empty ? 'opacity-60' : ''}`}
+                      title={empty
+                        ? t('models.groupEmpty', 'No active model in this group')
+                        : undefined}
+                    >
+                      <span className="truncate">{t(modelCatalogGroupLabelKey(group.key), group.label)}</span>
+                      {typeof group.modelCount === 'number' ? (
+                        <span className="flex-shrink-0 rounded-full bg-slate-100 dark:bg-white/10 px-1.5 py-0.5 text-[10px] font-medium leading-none text-slate-500 dark:text-slate-400">
+                          {group.modelCount}
+                        </span>
+                      ) : null}
+                      {group.saleMultiplier ? (
+                        <GroupSaleMultiplierBadge
+                          multiplier={group.saleMultiplier}
+                          title={t('models.group.saleMultiplier', 'Sale multiplier')}
+                        />
+                      ) : null}
+                    </span>
+                  }
+                  onClick={() => toggleGroupFilter(group.key)}
+                  activeColorClass="bg-purple-500 border-purple-500"
+                />
+              );
+            })}
+            {filteredGroups.length === 0 && (
+              <div className="text-xs text-slate-500 text-center py-2">
+                {t('models.noResults')}
+              </div>
+            )}
+          </div>
+          {groupShowMoreState.visible && (
+            <button
+              onClick={() => setShowAllGroups(!showAllGroups)}
+              className="mt-3 text-xs font-medium text-lobster-500 hover:text-lobster-600 dark:text-lobster-400 dark:hover:text-lobster-300 transition-colors flex items-center gap-1"
+            >
+              {t(groupShowMoreState.labelKey, {
+                count: groupShowMoreState.hiddenCount,
+                defaultValue: groupShowMoreState.fallbackLabel,
+              })}
+              <ChevronDown className={`w-3 h-3 transition-transform ${groupShowMoreState.expanded ? 'rotate-180' : ''}`} />
+            </button>
+          )}
         </CollapsibleSection>
 
         <CollapsibleSection title={t('models.modality')} icon={SlidersHorizontal}>

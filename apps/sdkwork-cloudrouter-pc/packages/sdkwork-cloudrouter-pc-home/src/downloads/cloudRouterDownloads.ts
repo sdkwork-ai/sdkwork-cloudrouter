@@ -1,4 +1,5 @@
 import type { SdkworkDownloadCard } from '@sdkwork/cloudrouter-pc-downloads';
+import { interpolateBrandTokens, type BrandTokenVariables } from '../content/brand-tokens.ts';
 import defaultDownloadCatalog from './cloud-router-downloads.json' with { type: 'json' };
 
 type Translate = (
@@ -13,10 +14,12 @@ export interface CreateCloudRouterDownloadCardsOptions {
   baseUrl?: string;
   catalog?: unknown;
   runtimeEnv?: Record<string, string | undefined>;
+  /** Brand tokens substituted into card copy, so a rename follows into the download section. */
+  brandVariables?: BrandTokenVariables;
 }
 
 const DOWNLOAD_BASE_URL_ENV = 'VITE_CLOUDROUTER_DOWNLOAD_BASE_URL';
-const DOWNLOAD_CATALOG_SCHEMA_VERSION = '2026-05-18.sdkwork-download-catalog.v1';
+export const DOWNLOAD_CATALOG_SCHEMA_VERSION = '2026-05-18.sdkwork-download-catalog.v1';
 
 export const cloudRouterDownloadCatalog = defaultDownloadCatalog;
 
@@ -248,12 +251,38 @@ function normalizeDownloadAction(rawAction: unknown): SdkworkDownloadCard['actio
   };
 }
 
-function localizeCatalogCard(card: SdkworkDownloadCard, t: Translate): SdkworkDownloadCard {
-  const unavailableLabel = translated(t, 'home.download.unavailable', 'Coming soon');
+interface LocalizeOptions {
+  /** Card copy came from the console, so it is authoritative and must not be replaced by i18n. */
+  operatorAuthored: boolean;
+  variables: BrandTokenVariables | undefined;
+}
+
+function localizeCatalogCard(card: SdkworkDownloadCard, t: Translate, options: LocalizeOptions): SdkworkDownloadCard {
+  const variables = options.variables ?? { productName: '', siteName: '', version: '' };
+  const interpolate = (value: string) => interpolateBrandTokens(value, variables);
+  const unavailableLabel = translated(t, 'home.download.unavailable', 'Coming soon', variables);
+
+  if (options.operatorAuthored) {
+    // The console is the authority on what the download section says. Applying the shipped
+    // translation here would silently re-label an operator's "Sdkwork Gateway Appliance" back to
+    // the bundled wording — the exact bug this branch exists to prevent.
+    return {
+      ...card,
+      actions: card.actions.map((action) => ({
+        ...action,
+        ...(action.ctaLabel ? { ctaLabel: interpolate(action.ctaLabel) } : {}),
+        label: interpolate(action.label),
+        unavailableLabel: action.unavailableLabel ?? `${interpolate(action.label)} ${unavailableLabel}`,
+      })),
+      description: interpolate(card.description),
+      title: interpolate(card.title),
+    };
+  }
+
   const titleById: Record<string, [string, string]> = {
-    'cloud-router-desktop': ['home.desktop.title', 'Cloud Router Desktop'],
-    'cloud-router-server': ['home.server.title', 'Cloud Router Server'],
-    'cloud-router-mobile': ['home.mobile.title', 'Cloud Router Mobile'],
+    'cloud-router-desktop': ['home.desktop.title', '{{productName}} Desktop'],
+    'cloud-router-server': ['home.server.title', '{{productName}} Server'],
+    'cloud-router-mobile': ['home.mobile.title', '{{productName}} Mobile'],
   };
   const descriptionById: Record<string, [string, string]> = {
     'cloud-router-desktop': [
@@ -281,22 +310,94 @@ function localizeCatalogCard(card: SdkworkDownloadCard, t: Translate): SdkworkDo
     actions: card.actions.map((action) => {
       const labelTranslation = actionLabelById[action.id];
       const label = labelTranslation
-        ? translated(t, labelTranslation[0], labelTranslation[1])
+        ? translated(t, labelTranslation[0], labelTranslation[1], variables)
         : action.label;
       return {
         ...action,
         ...(action.id === 'server-linux-x64'
-          ? { ctaLabel: translated(t, 'home.server.get', action.ctaLabel ?? 'Get Server Edition') }
+          ? { ctaLabel: translated(t, 'home.server.get', action.ctaLabel ?? 'Get Server Edition', variables) }
           : {}),
-        label,
+        label: interpolate(label),
         unavailableLabel: action.unavailableLabel ?? `${label} ${unavailableLabel}`,
       };
     }),
     description: descriptionTranslation
-      ? translated(t, descriptionTranslation[0], descriptionTranslation[1])
-      : card.description,
-    title: titleTranslation ? translated(t, titleTranslation[0], titleTranslation[1]) : card.title,
+      ? interpolate(translated(t, descriptionTranslation[0], descriptionTranslation[1], variables))
+      : interpolate(card.description),
+    title: titleTranslation
+      ? interpolate(translated(t, titleTranslation[0], titleTranslation[1], variables))
+      : interpolate(card.title),
   };
+}
+
+/**
+ * Reads the download catalog published by `/admin/site`, or `undefined` to keep the bundled one.
+ *
+ * Three outcomes, and the distinction matters:
+ * - **absent / blank** → `undefined`. Nothing was published, so the checked-in catalog keeps
+ *   rendering. This is what makes the feature a no-op for a deployment nobody has edited.
+ * - **usable** → returned as-is, with `schemaVersion` stamped when the console omitted it (the
+ *   version token is ours, not the operator's, so it is not something the form should have to set).
+ * - **malformed, or a different schemaVersion** → `undefined`. A catalog from an incompatible
+ *   console build cannot be interpreted safely, and blanking the download section would be worse
+ *   than showing the shipped release.
+ */
+export function readRuntimeDownloadCatalog(value: unknown): unknown | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+  const declaredVersion = stringValue(value.schemaVersion)?.trim();
+  if (declaredVersion && declaredVersion !== DOWNLOAD_CATALOG_SCHEMA_VERSION) {
+    return undefined;
+  }
+  if (!isRecord(value.product) || !stringValue(value.product.id)?.trim()) {
+    return undefined;
+  }
+  if (!stringValue(value.product.name)?.trim() || !stringValue(value.product.version)?.trim()) {
+    return undefined;
+  }
+  const cards = Array.isArray(value.cards) ? value.cards : [];
+  if (cards.length === 0) {
+    return undefined;
+  }
+  if (!declaredVersion) {
+    return { ...value, schemaVersion: DOWNLOAD_CATALOG_SCHEMA_VERSION };
+  }
+  return value;
+}
+
+/**
+ * The version of the release checked into the repository.
+ *
+ * Returns `''` rather than throwing when the bundled catalog is unreadable: this feeds the hero
+ * badge, and an unreadable catalog must degrade to a badge without a version, not to a blank page.
+ */
+export function readBundledCloudRouterVersion(): string {
+  try {
+    return createCloudRouterDownloadCatalog(defaultDownloadCatalog).product.version;
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Keeps a published catalog only if it can actually render.
+ *
+ * `readRuntimeDownloadCatalog` proves the envelope is complete; this proves the contents produce at
+ * least one renderable card. Both checks exist because the download section sits on the landing
+ * page: a catalog that passes the envelope check but has every card malformed would otherwise throw
+ * during render, and a blank homepage is a far worse outcome than showing the shipped release.
+ */
+export function resolveUsableDownloadCatalog(candidate: unknown): unknown | undefined {
+  if (candidate === undefined) {
+    return undefined;
+  }
+  try {
+    createCloudRouterDownloadCatalog(candidate);
+    return candidate;
+  } catch {
+    return undefined;
+  }
 }
 
 export function createCloudRouterDownloadCatalog(rawCatalog: unknown = defaultDownloadCatalog): {
@@ -396,14 +497,19 @@ export function createCloudRouterDownloadCards(
   options: CreateCloudRouterDownloadCardsOptions = {},
 ): SdkworkDownloadCard[] {
   const baseUrl = normalizeBaseUrl(options.baseUrl) ?? resolveCloudRouterDownloadBaseUrl(options.runtimeEnv);
-  const rawCatalog = options.catalog ?? (baseUrl ? undefined : defaultDownloadCatalog);
+  const operatorCatalog = options.catalog;
+  const rawCatalog = operatorCatalog ?? (baseUrl ? undefined : defaultDownloadCatalog);
   if (rawCatalog !== undefined) {
     const catalog = createCloudRouterDownloadCatalog(rawCatalog);
-    return catalog.cards.map((card) => localizeCatalogCard(card, t));
+    const localizeOptions: LocalizeOptions = {
+      operatorAuthored: operatorCatalog !== undefined,
+      variables: options.brandVariables,
+    };
+    return catalog.cards.map((card) => localizeCatalogCard(card, t, localizeOptions));
   }
   const createHref = (...segments: string[]) => joinDownloadUrl(baseUrl, ...segments);
   const actionAvailable = (href: string) => href.length > 0;
-  const unavailableLabel = translated(t, 'home.download.unavailable', 'Coming soon');
+  const unavailableLabel = translated(t, 'home.download.unavailable', 'Coming soon', options.brandVariables);
 
   return [
     {
@@ -442,7 +548,7 @@ export function createCloudRouterDownloadCards(
       id: 'cloud-router-desktop',
       kind: 'desktop',
       primaryActionStrategy: 'detected-platform',
-      title: translated(t, 'home.desktop.title', 'Cloud Router Desktop'),
+      title: translated(t, 'home.desktop.title', '{{productName}} Desktop', options.brandVariables),
       tone: 'brand',
     },
     {
@@ -482,7 +588,7 @@ export function createCloudRouterDownloadCards(
       id: 'cloud-router-server',
       kind: 'server',
       primaryActionId: 'server-linux',
-      title: translated(t, 'home.server.title', 'Cloud Router Server'),
+      title: translated(t, 'home.server.title', '{{productName}} Server', options.brandVariables),
       tone: 'server',
     },
     {
@@ -513,7 +619,7 @@ export function createCloudRouterDownloadCards(
       id: 'cloud-router-mobile',
       kind: 'mobile',
       primaryActionStrategy: 'detected-platform',
-      title: translated(t, 'home.mobile.title', 'Cloud Router Mobile'),
+      title: translated(t, 'home.mobile.title', '{{productName}} Mobile', options.brandVariables),
       tone: 'mobile',
     },
   ];

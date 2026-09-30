@@ -22,7 +22,7 @@ import {
   Video,
   X,
 } from 'lucide-react';
-import { formatGroupMultiplier, OptionIconTile } from './GroupSelector';
+import { formatGroupMultiplier, OptionIconTile } from './GroupSelector.tsx';
 
 export type GroupPickerSelectionMode = 'single' | 'multiple';
 

@@ -314,6 +314,8 @@ fn account_group_rows_use_decimal_cost_and_sale_multipliers() {
         priority: 10,
         cost_multiplier: "1.080000".to_owned(),
         sale_multiplier: "1.250000".to_owned(),
+        vendor_code: Some("deepseek".to_owned()),
+        modalities_json: "[\"text\"]".to_owned(),
         model_blacklist_json: "[]".to_owned(),
         model_whitelist_json: "[]".to_owned(),
     }
@@ -337,6 +339,12 @@ fn account_group_rows_use_decimal_cost_and_sale_multipliers() {
         group.sale_multiplier
     );
 
+    // The group's servable model scope travels with the row so downstream model
+    // catalog facets can attribute models by vendor x modality instead of by
+    // routing-capability heuristics.
+    assert_eq!(Some("deepseek".to_owned()), group.vendor_code);
+    assert_eq!(vec!["text".to_owned()], group.modalities);
+
     let invalid = UpstreamAccountGroupRow {
         id: 11,
         tenant_id: 10,
@@ -353,6 +361,8 @@ fn account_group_rows_use_decimal_cost_and_sale_multipliers() {
         priority: 100,
         cost_multiplier: "not-a-decimal".to_owned(),
         sale_multiplier: "1.000000".to_owned(),
+        vendor_code: None,
+        modalities_json: "[]".to_owned(),
         model_blacklist_json: "[]".to_owned(),
         model_whitelist_json: "[]".to_owned(),
     };

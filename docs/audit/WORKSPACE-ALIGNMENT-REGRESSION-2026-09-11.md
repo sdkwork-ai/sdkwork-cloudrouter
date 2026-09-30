@@ -148,16 +148,16 @@ Locale 主线（退役 `X-Sdkwork-Locale` → 标准 `Accept-Language`）**已�
 基线后来被改名，这条注释就永久指向一个**不存在的文件**：
 
 ```
--- baseline source: ddl/baseline/postgres/0001_aiot_legacy_baseline.sql   ← 该文件已不存在
+-- baseline source: ddl/baseline/postgres/0001_aiot_baseline.sql   ← 该文件已不存在
 ```
 
 - `sdkwork-aiot` 等 44 个文件的 `-- baseline source:`
-- `sdkwork-iam` 的 5 条 `-- source: .../0001_iam_legacy_baseline.sql#<anchor>`
-- `sdkwork-models` 的 `0001_sdkwork_models_catalog_baseline.sql`
+- `sdkwork-iam` 的 5 条 `-- source: .../0001_iam_baseline.sql#<anchor>`
+- `sdkwork-models` 的 `0001_sdkwork-models_baseline.sql`
 - `sdkwork-notary`（重命名链：`notary_legacy_baseline` → `notary_foundation` → `notary_baseline`，
   纯 R095/R096 rename，无删除）
-- `sdkwork-prompts`（`0001_prompts_ai_baseline.sql`）、`sdkwork-appbase`
-  （`0001_base_data_baseline.sql` vs 磁盘 `0001_base-data_baseline.sql`）
+- `sdkwork-prompts`（`0001_prompts_baseline.sql`）、`sdkwork-appbase`
+  （`0001_base-data_baseline.sql` vs 磁盘 `0001_base-data_baseline.sql`）
 
 **动作**：注册进 `align-database-bootstrap-references.mjs` 的迁移表并执行 → **58 个文件 / 48 行
 注释出处改写**（44 + 14 两轮），全部为单行注释替换。

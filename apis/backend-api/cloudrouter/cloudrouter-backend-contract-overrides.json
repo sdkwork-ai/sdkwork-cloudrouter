@@ -1270,8 +1270,10 @@
         "brandColor",
         "customCss",
         "description",
+        "descriptionI18n",
         "docsUrl",
         "footerCopyright",
+        "footerCopyrightI18n",
         "logo",
         "icon",
         "favicon",
@@ -1281,11 +1283,17 @@
         "policeRecordUrl",
         "privacyUrl",
         "seoDescription",
+        "seoDescriptionI18n",
         "seoTitle",
+        "seoTitleI18n",
         "shortName",
+        "shortNameI18n",
         "siteName",
+        "siteNameI18n",
         "supportUrl",
-        "termsUrl"
+        "termsUrl",
+        "homepage",
+        "downloads"
       ],
       "properties": {
         "accentColor": {
@@ -1300,6 +1308,10 @@
           "$ref": "#/components/schemas/MediaResource",
           "description": "communityGroupQrCode field on AdminSiteSettingsResponse."
         },
+        "communityGroupQrCodeEnabled": {
+          "type": "boolean",
+          "description": "communityGroupQrCodeEnabled field on AdminSiteSettingsResponse."
+        },
         "customCss": {
           "type": "string",
           "description": "customCss field on AdminSiteSettingsResponse."
@@ -1308,17 +1320,189 @@
           "type": "string",
           "description": "description field on AdminSiteSettingsResponse."
         },
+        "descriptionI18n": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "descriptionI18n field on AdminSiteSettingsResponse."
+        },
         "docsUrl": {
           "type": "string",
           "description": "docsUrl field on AdminSiteSettingsResponse."
+        },
+        "douyinQrCode": {
+          "$ref": "#/components/schemas/MediaResource",
+          "description": "douyinQrCode field on AdminSiteSettingsResponse."
+        },
+        "douyinQrCodeEnabled": {
+          "type": "boolean",
+          "description": "douyinQrCodeEnabled field on AdminSiteSettingsResponse."
+        },
+        "downloads": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "downloads field on AdminSiteSettingsResponse."
         },
         "favicon": {
           "$ref": "#/components/schemas/MediaResource",
           "description": "favicon field on AdminSiteSettingsResponse."
         },
+        "footerBrandEnabled": {
+          "type": "boolean",
+          "description": "footerBrandEnabled field on AdminSiteSettingsResponse."
+        },
+        "footerCompanyLinksEnabled": {
+          "type": "boolean",
+          "description": "footerCompanyLinksEnabled field on AdminSiteSettingsResponse."
+        },
         "footerCopyright": {
           "type": "string",
           "description": "footerCopyright field on AdminSiteSettingsResponse."
+        },
+        "footerCopyrightI18n": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "footerCopyrightI18n field on AdminSiteSettingsResponse."
+        },
+        "footerLegalEnabled": {
+          "type": "boolean",
+          "description": "footerLegalEnabled field on AdminSiteSettingsResponse."
+        },
+        "footerNewsletterEnabled": {
+          "type": "boolean",
+          "description": "footerNewsletterEnabled field on AdminSiteSettingsResponse."
+        },
+        "footerProductLinksEnabled": {
+          "type": "boolean",
+          "description": "footerProductLinksEnabled field on AdminSiteSettingsResponse."
+        },
+        "footerQrCodesEnabled": {
+          "type": "boolean",
+          "description": "footerQrCodesEnabled field on AdminSiteSettingsResponse."
+        },
+        "footerResourceLinksEnabled": {
+          "type": "boolean",
+          "description": "footerResourceLinksEnabled field on AdminSiteSettingsResponse."
+        },
+        "footerSocialBilibiliEnabled": {
+          "type": "boolean",
+          "description": "footerSocialBilibiliEnabled field on AdminSiteSettingsResponse."
+        },
+        "footerSocialBilibiliUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialBilibiliUrl field on AdminSiteSettingsResponse."
+        },
+        "footerSocialDiscordEnabled": {
+          "type": "boolean",
+          "description": "footerSocialDiscordEnabled field on AdminSiteSettingsResponse."
+        },
+        "footerSocialDiscordUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialDiscordUrl field on AdminSiteSettingsResponse."
+        },
+        "footerSocialDouyinEnabled": {
+          "type": "boolean",
+          "description": "footerSocialDouyinEnabled field on AdminSiteSettingsResponse."
+        },
+        "footerSocialDouyinUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialDouyinUrl field on AdminSiteSettingsResponse."
+        },
+        "footerSocialEmailEnabled": {
+          "type": "boolean",
+          "description": "footerSocialEmailEnabled field on AdminSiteSettingsResponse."
+        },
+        "footerSocialEmailUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialEmailUrl field on AdminSiteSettingsResponse."
+        },
+        "footerSocialEnabled": {
+          "type": "boolean",
+          "description": "footerSocialEnabled field on AdminSiteSettingsResponse."
+        },
+        "footerSocialGithubEnabled": {
+          "type": "boolean",
+          "description": "footerSocialGithubEnabled field on AdminSiteSettingsResponse."
+        },
+        "footerSocialGithubUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialGithubUrl field on AdminSiteSettingsResponse."
+        },
+        "footerSocialLinkedinEnabled": {
+          "type": "boolean",
+          "description": "footerSocialLinkedinEnabled field on AdminSiteSettingsResponse."
+        },
+        "footerSocialLinkedinUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialLinkedinUrl field on AdminSiteSettingsResponse."
+        },
+        "footerSocialTelegramEnabled": {
+          "type": "boolean",
+          "description": "footerSocialTelegramEnabled field on AdminSiteSettingsResponse."
+        },
+        "footerSocialTelegramUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialTelegramUrl field on AdminSiteSettingsResponse."
+        },
+        "footerSocialTwitterEnabled": {
+          "type": "boolean",
+          "description": "footerSocialTwitterEnabled field on AdminSiteSettingsResponse."
+        },
+        "footerSocialTwitterUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialTwitterUrl field on AdminSiteSettingsResponse."
+        },
+        "footerSocialWeiboEnabled": {
+          "type": "boolean",
+          "description": "footerSocialWeiboEnabled field on AdminSiteSettingsResponse."
+        },
+        "footerSocialWeiboUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialWeiboUrl field on AdminSiteSettingsResponse."
+        },
+        "footerSocialXiaohongshuEnabled": {
+          "type": "boolean",
+          "description": "footerSocialXiaohongshuEnabled field on AdminSiteSettingsResponse."
+        },
+        "footerSocialXiaohongshuUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialXiaohongshuUrl field on AdminSiteSettingsResponse."
+        },
+        "footerSocialYoutubeEnabled": {
+          "type": "boolean",
+          "description": "footerSocialYoutubeEnabled field on AdminSiteSettingsResponse."
+        },
+        "footerSocialYoutubeUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialYoutubeUrl field on AdminSiteSettingsResponse."
+        },
+        "footerSocialZhihuEnabled": {
+          "type": "boolean",
+          "description": "footerSocialZhihuEnabled field on AdminSiteSettingsResponse."
+        },
+        "footerSocialZhihuUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialZhihuUrl field on AdminSiteSettingsResponse."
+        },
+        "homepage": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "homepage field on AdminSiteSettingsResponse."
         },
         "icon": {
           "$ref": "#/components/schemas/MediaResource",
@@ -1340,6 +1524,10 @@
           "$ref": "#/components/schemas/MediaResource",
           "description": "officialAccountQrCode field on AdminSiteSettingsResponse."
         },
+        "officialAccountQrCodeEnabled": {
+          "type": "boolean",
+          "description": "officialAccountQrCodeEnabled field on AdminSiteSettingsResponse."
+        },
         "policeRecordNumber": {
           "type": "string",
           "description": "policeRecordNumber field on AdminSiteSettingsResponse."
@@ -1356,17 +1544,45 @@
           "type": "string",
           "description": "seoDescription field on AdminSiteSettingsResponse."
         },
+        "seoDescriptionI18n": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "seoDescriptionI18n field on AdminSiteSettingsResponse."
+        },
         "seoTitle": {
           "type": "string",
           "description": "seoTitle field on AdminSiteSettingsResponse."
+        },
+        "seoTitleI18n": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "seoTitleI18n field on AdminSiteSettingsResponse."
         },
         "shortName": {
           "type": "string",
           "description": "shortName field on AdminSiteSettingsResponse."
         },
+        "shortNameI18n": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "shortNameI18n field on AdminSiteSettingsResponse."
+        },
         "siteName": {
           "type": "string",
           "description": "siteName field on AdminSiteSettingsResponse."
+        },
+        "siteNameI18n": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "siteNameI18n field on AdminSiteSettingsResponse."
         },
         "supportUrl": {
           "type": "string",
@@ -1375,6 +1591,14 @@
         "termsUrl": {
           "type": "string",
           "description": "termsUrl field on AdminSiteSettingsResponse."
+        },
+        "videoChannelQrCode": {
+          "$ref": "#/components/schemas/MediaResource",
+          "description": "videoChannelQrCode field on AdminSiteSettingsResponse."
+        },
+        "videoChannelQrCodeEnabled": {
+          "type": "boolean",
+          "description": "videoChannelQrCodeEnabled field on AdminSiteSettingsResponse."
         }
       },
       "description": "AdminSiteSettingsResponse contract."
@@ -1395,6 +1619,10 @@
           "$ref": "#/components/schemas/MediaResource",
           "description": "communityGroupQrCode field on AdminSiteSettingsUpdateRequest."
         },
+        "communityGroupQrCodeEnabled": {
+          "type": "boolean",
+          "description": "communityGroupQrCodeEnabled field on AdminSiteSettingsUpdateRequest."
+        },
         "customCss": {
           "type": "string",
           "description": "customCss field on AdminSiteSettingsUpdateRequest."
@@ -1403,17 +1631,189 @@
           "type": "string",
           "description": "description field on AdminSiteSettingsUpdateRequest."
         },
+        "descriptionI18n": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "descriptionI18n field on AdminSiteSettingsUpdateRequest."
+        },
         "docsUrl": {
           "type": "string",
           "description": "docsUrl field on AdminSiteSettingsUpdateRequest."
+        },
+        "douyinQrCode": {
+          "$ref": "#/components/schemas/MediaResource",
+          "description": "douyinQrCode field on AdminSiteSettingsUpdateRequest."
+        },
+        "douyinQrCodeEnabled": {
+          "type": "boolean",
+          "description": "douyinQrCodeEnabled field on AdminSiteSettingsUpdateRequest."
+        },
+        "downloads": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "downloads field on AdminSiteSettingsUpdateRequest."
         },
         "favicon": {
           "$ref": "#/components/schemas/MediaResource",
           "description": "favicon field on AdminSiteSettingsUpdateRequest."
         },
+        "footerBrandEnabled": {
+          "type": "boolean",
+          "description": "footerBrandEnabled field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerCompanyLinksEnabled": {
+          "type": "boolean",
+          "description": "footerCompanyLinksEnabled field on AdminSiteSettingsUpdateRequest."
+        },
         "footerCopyright": {
           "type": "string",
           "description": "footerCopyright field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerCopyrightI18n": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "footerCopyrightI18n field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerLegalEnabled": {
+          "type": "boolean",
+          "description": "footerLegalEnabled field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerNewsletterEnabled": {
+          "type": "boolean",
+          "description": "footerNewsletterEnabled field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerProductLinksEnabled": {
+          "type": "boolean",
+          "description": "footerProductLinksEnabled field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerQrCodesEnabled": {
+          "type": "boolean",
+          "description": "footerQrCodesEnabled field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerResourceLinksEnabled": {
+          "type": "boolean",
+          "description": "footerResourceLinksEnabled field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialBilibiliEnabled": {
+          "type": "boolean",
+          "description": "footerSocialBilibiliEnabled field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialBilibiliUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialBilibiliUrl field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialDiscordEnabled": {
+          "type": "boolean",
+          "description": "footerSocialDiscordEnabled field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialDiscordUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialDiscordUrl field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialDouyinEnabled": {
+          "type": "boolean",
+          "description": "footerSocialDouyinEnabled field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialDouyinUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialDouyinUrl field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialEmailEnabled": {
+          "type": "boolean",
+          "description": "footerSocialEmailEnabled field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialEmailUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialEmailUrl field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialEnabled": {
+          "type": "boolean",
+          "description": "footerSocialEnabled field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialGithubEnabled": {
+          "type": "boolean",
+          "description": "footerSocialGithubEnabled field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialGithubUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialGithubUrl field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialLinkedinEnabled": {
+          "type": "boolean",
+          "description": "footerSocialLinkedinEnabled field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialLinkedinUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialLinkedinUrl field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialTelegramEnabled": {
+          "type": "boolean",
+          "description": "footerSocialTelegramEnabled field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialTelegramUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialTelegramUrl field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialTwitterEnabled": {
+          "type": "boolean",
+          "description": "footerSocialTwitterEnabled field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialTwitterUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialTwitterUrl field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialWeiboEnabled": {
+          "type": "boolean",
+          "description": "footerSocialWeiboEnabled field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialWeiboUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialWeiboUrl field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialXiaohongshuEnabled": {
+          "type": "boolean",
+          "description": "footerSocialXiaohongshuEnabled field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialXiaohongshuUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialXiaohongshuUrl field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialYoutubeEnabled": {
+          "type": "boolean",
+          "description": "footerSocialYoutubeEnabled field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialYoutubeUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialYoutubeUrl field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialZhihuEnabled": {
+          "type": "boolean",
+          "description": "footerSocialZhihuEnabled field on AdminSiteSettingsUpdateRequest."
+        },
+        "footerSocialZhihuUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "description": "footerSocialZhihuUrl field on AdminSiteSettingsUpdateRequest."
+        },
+        "homepage": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "homepage field on AdminSiteSettingsUpdateRequest."
         },
         "icon": {
           "$ref": "#/components/schemas/MediaResource",
@@ -1435,6 +1835,10 @@
           "$ref": "#/components/schemas/MediaResource",
           "description": "officialAccountQrCode field on AdminSiteSettingsUpdateRequest."
         },
+        "officialAccountQrCodeEnabled": {
+          "type": "boolean",
+          "description": "officialAccountQrCodeEnabled field on AdminSiteSettingsUpdateRequest."
+        },
         "policeRecordNumber": {
           "type": "string",
           "description": "policeRecordNumber field on AdminSiteSettingsUpdateRequest."
@@ -1451,17 +1855,45 @@
           "type": "string",
           "description": "seoDescription field on AdminSiteSettingsUpdateRequest."
         },
+        "seoDescriptionI18n": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "seoDescriptionI18n field on AdminSiteSettingsUpdateRequest."
+        },
         "seoTitle": {
           "type": "string",
           "description": "seoTitle field on AdminSiteSettingsUpdateRequest."
+        },
+        "seoTitleI18n": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "seoTitleI18n field on AdminSiteSettingsUpdateRequest."
         },
         "shortName": {
           "type": "string",
           "description": "shortName field on AdminSiteSettingsUpdateRequest."
         },
+        "shortNameI18n": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "shortNameI18n field on AdminSiteSettingsUpdateRequest."
+        },
         "siteName": {
           "type": "string",
           "description": "siteName field on AdminSiteSettingsUpdateRequest."
+        },
+        "siteNameI18n": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "siteNameI18n field on AdminSiteSettingsUpdateRequest."
         },
         "supportUrl": {
           "type": "string",
@@ -1470,6 +1902,14 @@
         "termsUrl": {
           "type": "string",
           "description": "termsUrl field on AdminSiteSettingsUpdateRequest."
+        },
+        "videoChannelQrCode": {
+          "$ref": "#/components/schemas/MediaResource",
+          "description": "videoChannelQrCode field on AdminSiteSettingsUpdateRequest."
+        },
+        "videoChannelQrCodeEnabled": {
+          "type": "boolean",
+          "description": "videoChannelQrCodeEnabled field on AdminSiteSettingsUpdateRequest."
         }
       },
       "description": "AdminSiteSettingsUpdateRequest contract."

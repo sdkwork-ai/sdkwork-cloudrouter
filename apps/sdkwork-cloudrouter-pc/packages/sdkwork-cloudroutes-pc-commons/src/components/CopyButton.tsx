@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AlertCircle, Check, Copy, Loader2 } from 'lucide-react';
-import { copyTextToClipboard } from '../clipboard';
+import { copyTextToClipboard } from '../clipboard.ts';
 
 export type CopyButtonVariant = 'icon' | 'inline' | 'menu';
 

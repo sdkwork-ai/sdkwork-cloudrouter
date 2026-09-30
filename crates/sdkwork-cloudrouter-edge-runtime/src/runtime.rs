@@ -2006,6 +2006,9 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
             // settlements dashboard, app routing, model ranking refresh) read
             // `ai_metering_*` tables co-located in the commerce pool.
             commerce_pool: context.commerce_pool.clone(),
+            // Share the process cache manager with the backend surface so a site-settings
+            // write on any replica evicts the portal read cache on every replica.
+            cache_manager: Some(context.cache_manager.clone()),
         },
     )
     .await

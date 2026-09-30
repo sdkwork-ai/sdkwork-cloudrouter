@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="SDKWork Cloud Router - Commercial AI Gateway Console" />
+    <meta name="description" content="Unified AI gateway console." />
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#0ea5e9" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
@@ -18,11 +18,22 @@
       connect-src to the deployment without rebuilding the portal bundle.
     -->
 
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="SDKWork Cloud Router" />
-    <meta property="og:description" content="SDKWork Cloud Router - Commercial AI Gateway Console" />
+    <!--
+      The document metadata below is deliberately brand-neutral.
 
-    <title>SDKWork Cloud Router</title>
+      Everything here is a placeholder that is replaced at runtime by
+      `applySiteBrandingToDocument()` as soon as `GET /app/v3/api/system/site/runtime`
+      answers, using the operator's `seoTitle` / `seoDescription` / `favicon` from
+      `/admin/site`. Hardcoding a product name in this file is what made a re-brand
+      leave the old name in the browser tab — so the static value only has to be
+      sensible for the moment before the first paint, and for crawlers that do not
+      execute JavaScript.
+    -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="AI Gateway Console" />
+    <meta property="og:description" content="Unified AI gateway console." />
+
+    <title>AI Gateway Console</title>
   </head>
   <body>
     <div id="root"></div>

@@ -1279,6 +1279,22 @@
         "coding"
       ],
       "sortOrder": 434
+    },
+    {
+      "resourceCode": "api.typesafe.systemone",
+      "resourceType": "api_endpoint",
+      "displayName": "TypeSafe AI Jev System One",
+      "vendorCode": "typesafe",
+      "modalityCode": "llm",
+      "apiCode": "typesafe.systemone",
+      "method": "POST",
+      "pathTemplate": "/v1/systemone",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "chat"
+      ],
+      "sortOrder": 758
     }
   ]
 }

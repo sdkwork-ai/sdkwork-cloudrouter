@@ -612,7 +612,11 @@ test("commons exports an adaptive admin table shell with a fixed footer slot", (
     assert.ok(shellSource.includes(marker), `missing admin table shell marker: ${marker}`);
   }
 
-  assert.match(indexSource, /export \* from '\.\/components\/AdminTableShell';/);
+  // Either spelling satisfies the intent here, which is that the barrel re-exports
+  // AdminTableShell. The extension-qualified form is the one to prefer: this package's
+  // `src/` still carries stray in-place `tsc` emit beside its sources, and a bare
+  // specifier resolves to the stale `.js` copy ahead of the real source.
+  assert.match(indexSource, /export \* from '\.\/components\/AdminTableShell(?:\.tsx)?';/);
 });
 
 test("navbar notification dropdown has a portal-side outside click dismiss guard", () => {

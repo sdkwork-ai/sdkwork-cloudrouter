@@ -46,13 +46,26 @@ Gateway 热路径只做必要工作：
 
 ## 4. 缓存设计
 
+缓存由 `RuntimeCacheManager` 统一承载
+（`services/sdkwork-cloudrouter-router-service/src/application/cache_runtime.rs`）：desktop 模式使用进程内后端
+（`LocalCacheBackend`），server/docker/kubernetes 模式强制使用 Redis 后端（`RedisCacheBackend`，多副本共享缓存
+是硬依赖）。每个缓存以一次命名空间注册声明 TTL、scope、failure mode 与 consistency，注册表
+（`default_cache_namespace_policies`）是命名空间清单的唯一权威，本表不重复枚举。
+
 | 缓存 | 内容 | desktop | server/docker/kubernetes | 失效 |
 | --- | --- | --- | --- | --- |
-| API key digest | key hash、状态、subject、scope | moka | moka + Redis | 短 TTL + 主动失效 |
-| model catalog | alias、capability、pricing version | moka | moka + Redis | 配置版本 |
-| routing snapshot | compiled routing profile/rule/fallback | moka | moka + Redis | snapshot version |
-| provider health | latency、error rate、circuit state | moka | Redis + local mirror | 短 TTL |
-| rate bucket | token bucket/leaky bucket | memory | Redis + local fast path | TTL |
+| API key digest | key hash、状态、subject、scope | 进程内 | 进程内 + Redis | 短 TTL + 主动失效 |
+| model catalog | alias、capability、pricing version | 进程内 | 进程内 + Redis | 配置版本 |
+| routing snapshot | compiled routing profile/rule/fallback | 进程内 | 进程内 + Redis | snapshot version |
+| provider health | latency、error rate、circuit state | 进程内 | Redis + local mirror | 短 TTL |
+| rate bucket | token bucket/leaky bucket | 内存 | Redis + local fast path | TTL |
+| site settings | 站点设置文档的进程内快照 + 跨副本失效戳 | 进程内快照 | Redis 版本戳 + 进程内快照 | 写入时发布时间戳 |
+
+site settings 一行说明：`/app/v3/api/system/site/runtime` 与 `/backend/v3/api/system/site/settings`
+在每次控制台页面加载时都会被读取，因此读路径加了两级缓存。进程内保存文档快照（`SiteSettings` 无
+serde 实现，故不落共享 JSON 缓存），跨副本失效依靠 `site.settings.version` 的时间戳比对；写操作清空
+本进程快照并发布新戳，其他副本在 `revalidate_interval` 内发现戳变化即淘汰本地快照。同键冷读由每键
+异步闸门合并（single-flight），避免改配置后的惊群把连接池打满。
 
 缓存键必须包含 tenant、organization、scope、version，避免跨租户污染。
 
@@ -185,6 +198,7 @@ P1 上线前至少压测：
 8. usage fact 写入和 finalize。
 9. console usage/dashboard 查询。
 10. admin monitor 查询。
+11. `/app/v3/api/system/site/runtime` 首屏高并发（站点设置读缓存的命中率、跨副本失效延迟，以及冷读合并是否真的把并发降到一次源读取）。
 
 报告必须包含：
 

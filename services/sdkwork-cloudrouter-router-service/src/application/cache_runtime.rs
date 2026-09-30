@@ -23,6 +23,10 @@ pub const ROUTING_IDEMPOTENCY_CACHE_NAMESPACE: &str = "routing.idempotency";
 pub const ROUTING_CONFIG_VERSION_CACHE_NAMESPACE: &str = "routing.config_version";
 pub const ROUTING_DISABLED_UPSTREAM_ACCOUNT_CACHE_NAMESPACE: &str =
     "routing.disabled_upstream_account";
+/// Cross-replica invalidation stamp for the site-settings read cache. Holds the
+/// epoch-microsecond stamp of the last site-settings write; every replica compares its
+/// process-local snapshot against it.
+pub const SITE_SETTINGS_VERSION_CACHE_NAMESPACE: &str = "site.settings.version";
 pub const DEFAULT_DESKTOP_CACHE_INSTANCE_NAME: &str = "local-default";
 pub const DEFAULT_SERVICE_CACHE_INSTANCE_NAME: &str = "redis-default";
 pub const DEFAULT_CACHE_KEY_PREFIX: &str = "cloud";
@@ -2284,6 +2288,27 @@ fn default_cache_namespace_policies(instance_name: &str) -> Vec<CacheNamespacePo
     disabled_upstream_account.consistency = "coordination_critical".to_owned();
     disabled_upstream_account.jitter_percent = 0;
 
+    // The site-settings invalidation stamp. Read on the portal's first-paint path, so
+    // it must be cheap, and it coordinates replicas that hold process-local snapshots.
+    // Jitter stays 0 because a randomized ttl would desynchronise the stamp across
+    // replicas, and the ttl is deliberately long: if the key vanished, replicas could
+    // only fall back to their local snapshot ttl for propagation.
+    let mut site_settings_version = CacheNamespacePolicy::new(
+        SITE_SETTINGS_VERSION_CACHE_NAMESPACE,
+        instance_name,
+        86_400,
+        "global",
+        "internal",
+        vec![
+            "site".to_owned(),
+            "settings".to_owned(),
+            "branding".to_owned(),
+        ],
+    );
+    site_settings_version.failure_mode = "origin_fallback".to_owned();
+    site_settings_version.consistency = "coordination_critical".to_owned();
+    site_settings_version.jitter_percent = 0;
+
     vec![
         auth_qr,
         route_snapshot,
@@ -2291,5 +2316,6 @@ fn default_cache_namespace_policies(instance_name: &str) -> Vec<CacheNamespacePo
         idempotency,
         config_version,
         disabled_upstream_account,
+        site_settings_version,
     ]
 }

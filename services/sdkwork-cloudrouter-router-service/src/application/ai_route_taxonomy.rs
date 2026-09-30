@@ -822,6 +822,34 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         RoutingCapability::Chat,
         BillingMeter::LlmInputToken,
     ),
+    // TypeSafe AI's System One decision surface (`POST /v1/systemone`).
+    //
+    // Jev is not a chat model: it takes a `state` plus a map of typed questions
+    // (`Choice` / `Score` / `Noul`) and answers with typed decisions carrying
+    // probabilities and a confidence value. The router therefore does not
+    // translate anything — the body is passed through to TypeSafe verbatim —
+    // and this entry exists so the path is *routable at all*: without it
+    // `typesafe.systemone` would be an api code seeded in
+    // `vendor-native-resources.json` with no taxonomy route, which
+    // `find_builtin_ai_route` answers with no meter and
+    // `AiRouteStrategy::StatelessFailClosed`, so billing preflight rejects
+    // every request before a byte leaves the gateway.
+    //
+    // `RoutingCapability::Chat` is the honest family for it under the closed
+    // capability vocabulary (`chat` / `image` / `audio` / `music` / `video` /
+    // `embedding` / `rerank` / `network`): Jev is a text-in, structured-out
+    // inference call on an LLM-family account, which is exactly what the `chat`
+    // arm means for `baidu.chat_completions` above — the other vendor that
+    // publishes a native chat-shaped surface. The meter is `LlmInputToken`
+    // because TypeSafe prices input tokens only ($0.042 / 1M) and bills no
+    // output tokens at all, so the catalog publishes a single `llm_input_token`
+    // rate and no `llm_output_token` row.
+    model(
+        "typesafe.systemone",
+        "typesafe.systemone",
+        RoutingCapability::Chat,
+        BillingMeter::LlmInputToken,
+    ),
     model(
         "deepseek.chat_completions",
         "deepseek.chat_completions",

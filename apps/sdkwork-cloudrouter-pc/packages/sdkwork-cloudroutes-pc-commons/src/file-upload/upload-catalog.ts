@@ -214,7 +214,7 @@ const SLOTS: readonly CloudRouterUploadSlot[] = [
     code: 'site-qr-code',
     category: 'public_asset',
     label: '站点二维码',
-    description: '公众号与社群二维码图片。',
+    description: '页脚关注渠道二维码：公众号、视频号、抖音号、社群。',
     uploadProfileCode: 'image',
     scene: 'site-qr-code',
     appResourceType: 'site.settings_brand_asset',

@@ -735,6 +735,25 @@
       ]
     },
     {
+      "groupCode": "official.typesafe.full",
+      "groupName": "Official TypeSafe AI Full API",
+      "groupType": "api_group",
+      "selectionMode": "all",
+      "description": "TypeSafe AI official account resources: the `vendor.typesafe` resource plus the System One decision surface (`POST /v1/systemone`), which every `typesafe` catalog model declares via `apiFormat = vendor_native`. Unlike the vendors whose models stay on the OpenAI-compatible face, TypeSafe serves no chat-completions endpoint at all, so the native grant is the only way its models reach a routable account.",
+      "sortOrder": 262,
+      "items": [
+        {
+          "itemType": "resource",
+          "resourceCode": "vendor.typesafe"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.typesafe.systemone",
+          "sortOrder": 1
+        }
+      ]
+    },
+    {
       "groupCode": "official.xai.full",
       "groupName": "Official xAI Full API",
       "groupType": "api_group",

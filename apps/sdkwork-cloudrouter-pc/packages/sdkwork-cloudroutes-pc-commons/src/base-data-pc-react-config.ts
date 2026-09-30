@@ -7,7 +7,7 @@
  */
 
 import { configureSdkworkBaseDataPcReact } from '@sdkwork/appbase-pc-react';
-import { getSdkworkBaseDataBackendSdkClient } from './sdk-clients';
+import { getSdkworkBaseDataBackendSdkClient } from './sdk-clients.ts';
 
 configureSdkworkBaseDataPcReact({
   createClient: () => getSdkworkBaseDataBackendSdkClient(),

@@ -436,7 +436,7 @@
     },
     {
       "path": "src/types/site-runtime-settings-response.ts",
-      "sha256": "5cbad522a9ee5718d86c39b1445ad9447abf4a0bdca1edf3f5cb7fa1dedb0d74"
+      "sha256": "8cd696951beb389b66029673c9bfd3f9016caccf6f45a7c26f8070ecce830c07"
     },
     {
       "path": "src/types/update-api-key-request.ts",

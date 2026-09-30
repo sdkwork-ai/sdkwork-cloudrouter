@@ -14,7 +14,7 @@ export interface UpstreamAccountGroup {
   groupCode: string;
   /** Group name field on upstream account group. */
   groupName: string;
-  /** Group name i 18 n field on upstream account group. */
+  /** Group name i18n field on upstream account group. */
   groupNameI18n?: string | null;
   /** Group type field on upstream account group. */
   groupType: 'mixed' | 'llm' | 'image' | 'video' | 'audio' | 'music' | 'other';

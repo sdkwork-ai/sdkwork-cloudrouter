@@ -1650,6 +1650,15 @@ fn model_music_endpoint_descriptor(model: &ModelInfo) -> EndpointDescriptor {
 /// generic face would replay an OpenAI body to a path Baidu does not serve and
 /// discard the models' own declaration.
 ///
+/// `typesafe` joins it for a stronger reason: TypeSafe publishes **no**
+/// chat-completions endpoint at all. Every `typesafe` model declares
+/// `apiFormat = vendor_native` and is served by the System One decision
+/// surface (`POST /v1/systemone`), which takes a `state` plus typed questions
+/// and answers with typed decisions rather than completions. Leaving it on the
+/// generic face would route every Jev request to `/v1/chat/completions` — a
+/// path TypeSafe does not serve — so the model has to reach the native
+/// descriptor or it has no reachable route whatsoever.
+///
 /// Deliberately a one-vendor table. Adding a vendor here is a claim that its
 /// models *declare* `vendor_native`; every other vendor's chat models say
 /// `openai_compatible` and must keep the generic fallback, which is why the
@@ -1665,6 +1674,17 @@ fn vendor_native_chat_descriptor(vendor_code: &str) -> Option<EndpointDescriptor
             path_template: "/v2/chat/completions",
             streaming_supported: true,
             sort_order: 420,
+        },
+        "typesafe" => EndpointDescriptor {
+            endpoint_code: "typesafe.systemone",
+            protocol_code: "vendor_native",
+            display_name: "TypeSafe AI Jev System One",
+            method: "POST",
+            path_template: "/v1/systemone",
+            // Jev answers a whole decision set in one non-streaming response
+            // (70–500 ms end to end); it has no streaming mode.
+            streaming_supported: false,
+            sort_order: 425,
         },
         _ => return None,
     };
@@ -1893,6 +1913,12 @@ fn endpoint_modality_code(endpoint_code: &str) -> Option<String> {
         | "xai.chat_completions"
         | "xiaomi.chat_completions"
         | "zhipu.chat_completions" => Some("chat"),
+        // TypeSafe AI's System One surface. `chat` is the modality the
+        // accounting side can name for it — text in, typed decisions out, on an
+        // LLM-family account — and it is the same modality Baidu's native chat
+        // surface resolves to, so the two native chat-shaped endpoints meter
+        // alike.
+        "typesafe.systemone" => Some("chat"),
         "alibaba.embeddings" | "zhipu.embeddings" => Some("embedding"),
         _ => None,
     }
@@ -3410,6 +3436,11 @@ mod tests {
             ("suno.music", "/v1/music"),
             ("suno.music_generation", "/v1/music/generations"),
             ("suno.music_task_query", "/v1/music/generations/{taskId}"),
+            // TypeSafe AI's System One decision surface. The catalog's only
+            // `typesafe` models all declare `apiFormat = vendor_native`, so this
+            // is the single endpoint they can reach; the `"typesafe"` arm of
+            // `vendor_native_chat_descriptor` is what binds them.
+            ("typesafe.systemone", "/v1/systemone"),
             ("tencent.anthropic_messages", "/v1/messages"),
             ("vidu.motion_sync", "/ent/v2/template"),
             ("vidu.reference_to_image", "/ent/v2/reference2image"),
@@ -3533,6 +3564,7 @@ mod tests {
             "stepfun",
             "suno",
             "tencent",
+            "typesafe",
             "vidu",
             "volcengine",
             "xai",
@@ -3553,15 +3585,17 @@ mod tests {
         // Capabilities whose descriptor arm can return a `vendor_native`
         // endpoint. `embedding` / `rerank` / `llm` stay generic by design.
         //
-        // `chat` is swept too, and only because `baidu` publishes a vendor_native
-        // chat surface (`/v2/chat/completions`): it is the single vendor whose
-        // chat models declare `apiFormat = vendor_native`, so its endpoint is
-        // genuinely bindable and the sweep is the only thing that proves the
-        // arm is reachable. Leaving it out would have marked
-        // `baidu.chat_completions` as declared-but-unbindable — which is
-        // exactly how this gap was found. Every *other* vendor's chat models
-        // declare `openai_compatible` and must keep the generic fallback, which
-        // the `generic_seen` assertion below still guarantees.
+        // `chat` is swept too, and because two vendors publish a vendor_native
+        // chat-shaped surface: `baidu` (`/v2/chat/completions`) and `typesafe`
+        // (`/v1/systemone`, the System One decision surface). They are the only
+        // vendors whose chat models declare `apiFormat = vendor_native`, so
+        // their endpoints are genuinely bindable and the sweep is the only
+        // thing that proves the arms are reachable. Leaving `chat` out would
+        // have marked `baidu.chat_completions` as declared-but-unbindable —
+        // which is exactly how that gap was found — and would do the same to
+        // `typesafe.systemone`. Every *other* vendor's chat models declare
+        // `openai_compatible` and must keep the generic fallback, which the
+        // `generic_seen` assertion below still guarantees.
         const NATIVE_CAPABILITIES: &[(&str, &[&str], &[&str])] = &[
             ("chat", &["text"], &["text"]),
             ("image", &["text"], &["image"]),

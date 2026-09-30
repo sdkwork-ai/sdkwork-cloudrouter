@@ -155,6 +155,8 @@ def infer_external_protocol_id(route_path: str) -> str:
         return "nano-banana-v1"
     if normalized.startswith("/suno/"):
         return "suno-v1"
+    if normalized.startswith("/typesafe/"):
+        return "typesafe-v1"
     if normalized.startswith("/vidu/"):
         return "vidu-v1"
     if normalized.startswith("/volcengine/"):

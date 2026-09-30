@@ -114,6 +114,7 @@ mod tests {
             "stepfun",
             "suno",
             "tencent",
+            "typesafe",
             "vidu",
             "xai",
             "xiaomi",

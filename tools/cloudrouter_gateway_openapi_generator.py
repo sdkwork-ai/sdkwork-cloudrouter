@@ -71,6 +71,7 @@ VENDOR_PROVIDER_PREFIXES = {
     "minimax",
     "nano-banana",
     "elevenlabs",
+    "typesafe",
 }
 
 # The OpenAI-compatible surface. `x-api-prefix` names it, but provider-native
@@ -631,7 +632,8 @@ class CloudRouterGatewayOpenApiGenerator:
                     "Cloud Router Open API exposes OpenAI-compatible /v1 APIs and "
                     "provider-specific APIs for OpenAI, Google Gemini, "
                     "Anthropic Claude, Volcengine Ark, Suno, Midjourney, Kling, "
-                    "Vidu, and Nano Banana compatible media providers."
+                    "Vidu, and Nano Banana compatible media providers, plus the "
+                    "TypeSafe AI System One decision endpoint."
                 ),
             },
             "servers": [
@@ -3245,6 +3247,7 @@ class CloudRouterGatewayOpenApiGenerator:
             {"name": "Chat/anthropic", "description": "Anthropic message APIs exposed through Cloud Router vendor routing."},
             {"name": "Batches/anthropic", "description": "Anthropic message batch APIs exposed through Cloud Router vendor routing."},
             {"name": "Videos/volcengine", "description": "Volcengine Ark content generation APIs exposed through Cloud Router vendor routing."},
+            {"name": "Chat/typesafe", "description": "TypeSafe AI System One decision APIs exposed through Cloud Router vendor routing."},
         ]
 
     def _paths(self) -> dict[str, Any]:
@@ -3457,6 +3460,7 @@ class CloudRouterGatewayOpenApiGenerator:
             "/vidu/ent/v2/template": {"post": self._operation("Videos/vidu", "viduCreateTemplate", "Vidu create template video", "Creates a Vidu template video using the configured Vidu provider account.", "ViduTemplateRequest", "ViduVideoGenerationTask", provider="vidu")},
             "/nano-banana/v1/images/generations": {"post": self._operation("Images/nano-banana", "nanoBananaCreateImageGeneration", "Nano Banana image generation", "Creates a Nano Banana compatible image generation using the configured Nano Banana provider account.", "NanoBananaImageGenerationRequest", "NanoBananaImageGenerationTask", provider="nano-banana")},
             "/nano-banana/v1/images/generations/{task_id}": {"get": self._operation("Images/nano-banana", "nanoBananaRetrieveImageGeneration", "Nano Banana retrieve image generation", "Retrieves a Nano Banana compatible image generation task using the configured Nano Banana provider account.", None, "NanoBananaImageGenerationTask", parameters=[self._path_param("task_id", "Nano Banana task identifier.")], provider="nano-banana")},
+            "/typesafe/v1/systemone": {"post": self._operation("Chat/typesafe", "typesafeCreateSystemOneDecision", "TypeSafe AI System One decision", "Evaluates typed questions against one state through the TypeSafe AI System One endpoint using the configured TypeSafe AI provider account.", "TypeSafeSystemOneRequest", "TypeSafeSystemOneResponse", provider="typesafe")},
         }
 
     def _operation(
@@ -5384,6 +5388,58 @@ class CloudRouterGatewayOpenApiGenerator:
                     "image": {"type": "string", "description": "Character image URL whose person performs the motion."},
                     "video": {"type": "string", "description": "Motion reference video URL (single-person performance, 3-30 seconds)."},
                     "callback_url": {"type": "string", "description": "Optional callback URL."},
+                },
+            },
+            "TypeSafeQuestion": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["type", "instructions"],
+                "properties": {
+                    "type": self._string_schema("Question primitive: choice picks one of the declared options, score rates the state against ordered levels, and noul answers a true-or-false judgment as a probability.", enum=["choice", "score", "noul"]),
+                    "instructions": self._string_schema("The single judgment this question asks for. Questions are evaluated independently against the same state, so each instruction should carry exactly one atomic judgment."),
+                    "criteria": self._json_value_schema("Answer space the question is scored against: a map of option to description for a choice question of up to 255 options, or an ordered array of level descriptions for a score question, written as situations rather than degrees. A noul question needs no criteria."),
+                },
+            },
+            "TypeSafeAnswer": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["type"],
+                "properties": {
+                    "type": self._string_schema("Question primitive that produced this answer.", enum=["choice", "score", "noul"]),
+                    "choice": self._string_schema("Option selected for a choice question."),
+                    "probabilities": self._number_map_schema("Probability assigned to each candidate answer of a choice question, keyed by option."),
+                    "score": self._number_schema("Position on the score question's ordered levels. The value can fall between two levels."),
+                    "legend": {"type": "object", "additionalProperties": {"type": "string"}, "description": "Maps each score level index to the level description declared by the question."},
+                    "noul": {"type": "number", "minimum": 0, "maximum": 1, "description": "Probability that a noul question is true: near 1 is a strong yes, near 0 a strong no, and near 0.5 means the state does not decide it."},
+                    "confidence": {"type": "number", "minimum": 0, "maximum": 1, "description": "Probability mass concentrated on the reported answer. Reported for choice and score answers; a noul answer carries none."},
+                },
+            },
+            "TypeSafeUsage": {
+                "type": "object",
+                "additionalProperties": True,
+                "properties": {
+                    "input_tokens": self._integer_schema("Input token count. System One bills on input tokens."),
+                    "output_tokens": self._integer_schema("Output token count reported by the endpoint."),
+                },
+            },
+            "TypeSafeSystemOneRequest": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["state", "questions"],
+                "properties": {
+                    "state": self._json_value_schema("Context the questions are evaluated against: a text string, an array of text values, or a JSON object whose fields the instructions can reference by dot path."),
+                    "questions": {"type": "object", "additionalProperties": {"$ref": "#/components/schemas/TypeSafeQuestion"}, "description": "Typed questions keyed by a caller-chosen question id. Every question is evaluated against the same state in parallel and in isolation."},
+                    "model": self._string_schema("Model name to evaluate with. Cloud Router selects the routed catalog model for the request; sending a name here overrides it. Versioned ids such as jev-1.13.0 are accepted alongside the published aliases."),
+                },
+            },
+            "TypeSafeSystemOneResponse": {
+                "type": "object",
+                "additionalProperties": True,
+                "required": ["answers"],
+                "properties": {
+                    "answers": {"type": "object", "additionalProperties": {"$ref": "#/components/schemas/TypeSafeAnswer"}, "description": "One typed answer per requested question, keyed by the same question id that was sent."},
+                    "model": self._string_schema("Versioned model id that answered the request, so callers can log which release produced each result."),
+                    "usage": {"$ref": "#/components/schemas/TypeSafeUsage"},
                 },
             },
             "MiniMaxMusicGenerationRequest": {

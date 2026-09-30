@@ -227,6 +227,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "sunoRetrieveMusicGeneration",
     ),
     HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/typesafe/v1/systemone",
+        "Chat/typesafe",
+        "typesafeCreateSystemOneDecision",
+    ),
+    HttpRoute::api_key_or_dual_token(
         HttpMethod::Get,
         "/v1/assistants",
         "Assistants",

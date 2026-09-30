@@ -5249,6 +5249,10 @@
             ],
             "description": "Community group qr code field on site runtime settings response."
           },
+          "communityGroupQrCodeEnabled": {
+            "description": "Community group qr code enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
           "customCss": {
             "description": "Custom css field on site runtime settings response.",
             "maxLength": 20000,
@@ -5259,10 +5263,51 @@
             "maxLength": 4096,
             "type": "string"
           },
+          "descriptionI18n": {
+            "additionalProperties": {
+              "description": "Description i18n field on site runtime settings response.",
+              "type": "string"
+            },
+            "description": "Description i18n field on site runtime settings response.",
+            "type": "object"
+          },
           "docsUrl": {
             "description": "Docs url field on site runtime settings response.",
             "maxLength": 2048,
             "type": "string"
+          },
+          "douyinQrCode": {
+            "anyOf": [
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/MediaResource"
+                  }
+                ],
+                "description": "Douyin qr code variant using media resource."
+              },
+              {
+                "description": "Null variant accepted by douyin qr code.",
+                "type": "null"
+              }
+            ],
+            "description": "Douyin qr code field on site runtime settings response."
+          },
+          "douyinQrCodeEnabled": {
+            "description": "Douyin qr code enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
+          "downloads": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              ],
+              "description": "Downloads field on site runtime settings response."
+            },
+            "description": "Downloads field on site runtime settings response.",
+            "type": "object"
           },
           "favicon": {
             "anyOf": [
@@ -5281,10 +5326,170 @@
             ],
             "description": "Favicon field on site runtime settings response."
           },
+          "footerBrandEnabled": {
+            "description": "Footer brand enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
+          "footerCompanyLinksEnabled": {
+            "description": "Footer company links enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
           "footerCopyright": {
             "description": "Footer copyright field on site runtime settings response.",
             "maxLength": 4096,
             "type": "string"
+          },
+          "footerCopyrightI18n": {
+            "additionalProperties": {
+              "description": "Footer copyright i18n field on site runtime settings response.",
+              "type": "string"
+            },
+            "description": "Footer copyright i18n field on site runtime settings response.",
+            "type": "object"
+          },
+          "footerLegalEnabled": {
+            "description": "Footer legal enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
+          "footerNewsletterEnabled": {
+            "description": "Footer newsletter enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
+          "footerProductLinksEnabled": {
+            "description": "Footer product links enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
+          "footerQrCodesEnabled": {
+            "description": "Footer qr codes enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
+          "footerResourceLinksEnabled": {
+            "description": "Footer resource links enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
+          "footerSocialBilibiliEnabled": {
+            "description": "Footer social bilibili enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
+          "footerSocialBilibiliUrl": {
+            "description": "Footer social bilibili url field on site runtime settings response.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "footerSocialDiscordEnabled": {
+            "description": "Footer social discord enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
+          "footerSocialDiscordUrl": {
+            "description": "Footer social discord url field on site runtime settings response.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "footerSocialDouyinEnabled": {
+            "description": "Footer social douyin enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
+          "footerSocialDouyinUrl": {
+            "description": "Footer social douyin url field on site runtime settings response.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "footerSocialEmailEnabled": {
+            "description": "Footer social email enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
+          "footerSocialEmailUrl": {
+            "description": "Footer social email url field on site runtime settings response.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "footerSocialEnabled": {
+            "description": "Footer social enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
+          "footerSocialGithubEnabled": {
+            "description": "Footer social github enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
+          "footerSocialGithubUrl": {
+            "description": "Footer social github url field on site runtime settings response.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "footerSocialLinkedinEnabled": {
+            "description": "Footer social linkedin enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
+          "footerSocialLinkedinUrl": {
+            "description": "Footer social linkedin url field on site runtime settings response.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "footerSocialTelegramEnabled": {
+            "description": "Footer social telegram enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
+          "footerSocialTelegramUrl": {
+            "description": "Footer social telegram url field on site runtime settings response.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "footerSocialTwitterEnabled": {
+            "description": "Footer social twitter enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
+          "footerSocialTwitterUrl": {
+            "description": "Footer social twitter url field on site runtime settings response.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "footerSocialWeiboEnabled": {
+            "description": "Footer social weibo enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
+          "footerSocialWeiboUrl": {
+            "description": "Footer social weibo url field on site runtime settings response.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "footerSocialXiaohongshuEnabled": {
+            "description": "Footer social xiaohongshu enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
+          "footerSocialXiaohongshuUrl": {
+            "description": "Footer social xiaohongshu url field on site runtime settings response.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "footerSocialYoutubeEnabled": {
+            "description": "Footer social youtube enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
+          "footerSocialYoutubeUrl": {
+            "description": "Footer social youtube url field on site runtime settings response.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "footerSocialZhihuEnabled": {
+            "description": "Footer social zhihu enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
+          "footerSocialZhihuUrl": {
+            "description": "Footer social zhihu url field on site runtime settings response.",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "homepage": {
+            "additionalProperties": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/JsonValue"
+                }
+              ],
+              "description": "Homepage field on site runtime settings response."
+            },
+            "description": "Homepage field on site runtime settings response.",
+            "type": "object"
           },
           "icon": {
             "anyOf": [
@@ -5347,6 +5552,10 @@
             ],
             "description": "Official account qr code field on site runtime settings response."
           },
+          "officialAccountQrCodeEnabled": {
+            "description": "Official account qr code enabled field on site runtime settings response.",
+            "type": "boolean"
+          },
           "policeRecordNumber": {
             "description": "Police record number field on site runtime settings response.",
             "maxLength": 255,
@@ -5367,21 +5576,53 @@
             "maxLength": 4096,
             "type": "string"
           },
+          "seoDescriptionI18n": {
+            "additionalProperties": {
+              "description": "Seo description i18n field on site runtime settings response.",
+              "type": "string"
+            },
+            "description": "Seo description i18n field on site runtime settings response.",
+            "type": "object"
+          },
           "seoTitle": {
             "description": "Seo title field on site runtime settings response.",
             "maxLength": 255,
             "type": "string"
+          },
+          "seoTitleI18n": {
+            "additionalProperties": {
+              "description": "Seo title i18n field on site runtime settings response.",
+              "type": "string"
+            },
+            "description": "Seo title i18n field on site runtime settings response.",
+            "type": "object"
           },
           "shortName": {
             "description": "Short name field on site runtime settings response.",
             "maxLength": 255,
             "type": "string"
           },
+          "shortNameI18n": {
+            "additionalProperties": {
+              "description": "Short name i18n field on site runtime settings response.",
+              "type": "string"
+            },
+            "description": "Short name i18n field on site runtime settings response.",
+            "type": "object"
+          },
           "siteName": {
             "description": "Site name field on site runtime settings response.",
             "maxLength": 255,
             "minLength": 1,
             "type": "string"
+          },
+          "siteNameI18n": {
+            "additionalProperties": {
+              "description": "Site name i18n field on site runtime settings response.",
+              "type": "string"
+            },
+            "description": "Site name i18n field on site runtime settings response.",
+            "type": "object"
           },
           "supportUrl": {
             "description": "Support url field on site runtime settings response.",
@@ -5392,29 +5633,58 @@
             "description": "Terms url field on site runtime settings response.",
             "maxLength": 2048,
             "type": "string"
+          },
+          "videoChannelQrCode": {
+            "anyOf": [
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/MediaResource"
+                  }
+                ],
+                "description": "Video channel qr code variant using media resource."
+              },
+              {
+                "description": "Null variant accepted by video channel qr code.",
+                "type": "null"
+              }
+            ],
+            "description": "Video channel qr code field on site runtime settings response."
+          },
+          "videoChannelQrCodeEnabled": {
+            "description": "Video channel qr code enabled field on site runtime settings response.",
+            "type": "boolean"
           }
         },
         "required": [
           "siteName",
+          "siteNameI18n",
           "shortName",
+          "shortNameI18n",
           "description",
+          "descriptionI18n",
           "logo",
           "icon",
           "favicon",
           "brandColor",
           "accentColor",
           "footerCopyright",
+          "footerCopyrightI18n",
           "icpRecordNumber",
           "icpRecordUrl",
           "policeRecordNumber",
           "policeRecordUrl",
           "seoTitle",
+          "seoTitleI18n",
           "seoDescription",
+          "seoDescriptionI18n",
           "supportUrl",
           "docsUrl",
           "privacyUrl",
           "termsUrl",
-          "customCss"
+          "customCss",
+          "homepage",
+          "downloads"
         ],
         "type": "object"
       },
@@ -6211,11 +6481,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "dashboard.overview",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-dashboard/src/dashboardService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.dashboard_overview.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/gateway/traces": {
@@ -6332,11 +6598,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "gateway.traces",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-gateway/src/gatewayService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.gateway_traces.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/pricing/rates": {
@@ -6521,11 +6783,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "pricing.rates",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-pricing/src/services/pricingService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.pricing_rates.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/routing/account_groups": {
@@ -6649,11 +6907,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "routing.accountGroups",
         "x-source-file": "crates/sdkwork-routes-cloudrouter-app-api/src/http_route_manifest.rs",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.routing_accountGroups.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/routing/api_keys": {
@@ -6776,11 +7030,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "routing.apiKeys",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/routingApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.routing_apiKeys.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/routing/request_traces": {
@@ -6901,11 +7151,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "routing.requestTraces",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/routingApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.routing_requestTraces.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/routing/usage": {
@@ -6991,11 +7237,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "routing.usage",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/routingApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.routing_usage.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/settlements/dashboard": {
@@ -7095,11 +7337,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "settlements.dashboard",
         "x-source-file": "sdks/_route-manifests/app-api/sdkwork-routes-cloudrouter-app-api.route-manifest.json",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.settlements_dashboard.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/ai/usage/logs": {
@@ -7254,11 +7492,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "usage.logs",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-usage/src/usageService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.usage_logs.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/iam/api_keys": {
@@ -7384,11 +7618,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "apiKeys",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-api-keys/src/apiKeyService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.apiKeys.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create key. Reads ai_upstream_account_group. Writes ai_upstream_account_group, iam_gateway_api_key, iam_gateway_access_policy, ai_quota_policy, ops_audit_log. File targets none.",
@@ -7500,11 +7730,7 @@
           "iam_gateway_access_policy",
           "ai_quota_policy",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.apiKeys.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/iam/api_keys/{apiKeyId}": {
@@ -7594,11 +7820,7 @@
         "x-write-tables": [
           "iam_gateway_api_key",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.apiKeys.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       },
       "patch": {
         "description": "Update key. Reads iam_gateway_api_key, ai_upstream_account_group, iam_gateway_access_policy, ai_quota_policy. Writes iam_gateway_api_key, iam_gateway_access_policy, ai_quota_policy, ops_audit_log. File targets none.",
@@ -7709,11 +7931,7 @@
           "iam_gateway_access_policy",
           "ai_quota_policy",
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.apiKeys.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/iam/invite/policy": {
@@ -7813,10 +8031,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "invite.policy",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.invite_policy.read"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/iam/invites/claim": {
@@ -7914,11 +8129,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/src/auth/inviteCodeGate.ts",
         "x-write-tables": [
           "ops_referral_relation"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.invites_claim.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/iam/invites/validate": {
@@ -8012,10 +8223,7 @@
           "ops_referral_invite_code",
           "iam_user",
           "iam_credential"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.invites_validate.manage"
+        ]
       }
     },
     "/app/v3/api/iam/users/settings": {
@@ -8101,11 +8309,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "users.settings",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-console-settings/src/settingsService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.users_settings.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "put": {
         "description": "Update settings. Reads iam_user_preference, integration_webhook_endpoint. Writes iam_user_preference, integration_webhook_endpoint. File targets none.",
@@ -8202,11 +8406,7 @@
         "x-write-tables": [
           "iam_user_preference",
           "integration_webhook_endpoint"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.users_settings.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/notification/notifications": {
@@ -8337,11 +8537,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "notifications",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/notificationService.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.notifications.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/notification/notifications/{notificationId}/acknowledge": {
@@ -8448,11 +8644,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/notificationService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.notifications_acknowledge.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/notification/notifications/{notificationId}/popup_seen": {
@@ -8559,11 +8751,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/notificationService.ts",
         "x-write-tables": [
           "ops_audit_log"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.notifications_popupSeen.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/runtime/invocations": {
@@ -8733,11 +8921,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "invocations",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.invocations.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create runtime invocation. Reads ai_chat_conversation, ai_chat_turn, ai_agent_session. Writes ai_runtime_invocation. File targets none.",
@@ -8834,11 +9018,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [
           "ai_runtime_invocation"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.invocations.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}": {
@@ -8932,11 +9112,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "invocations",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.invocations.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}/artifacts": {
@@ -9056,11 +9232,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "invocations.artifacts",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.invocations_artifacts.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create runtime artifact. Reads ai_runtime_invocation. Writes ai_runtime_artifact. File targets none.",
@@ -9165,11 +9337,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [
           "ai_runtime_artifact"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.invocations_artifacts.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}/completions": {
@@ -9276,11 +9444,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [
           "ai_runtime_invocation"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.invocations_completions.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}/events": {
@@ -9400,11 +9564,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "invocations.events",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.invocations_events.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       },
       "post": {
         "description": "Create runtime event. Reads ai_runtime_invocation. Writes ai_runtime_invocation_event. File targets none.",
@@ -9509,11 +9669,7 @@
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
         "x-write-tables": [
           "ai_runtime_invocation_event"
-        ],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.invocations_events.manage",
-        "x-sdkwork-required-surface": "organizationMember"
+        ]
       }
     },
     "/app/v3/api/runtime/invocations/{invocationId}/events/stream": {
@@ -9622,16 +9778,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "invocations.events.stream",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudrouter-pc-playground/src/appRuntimeApiOperations.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.invocations_events_stream.read",
-        "x-sdkwork-required-surface": "organizationMember"
+        "x-write-tables": []
       }
     },
     "/app/v3/api/system/site/runtime": {
       "get": {
-        "description": "List site branding. Reads ops_audit_log. Writes none. File targets none.",
+        "description": "List site branding. Reads ops_config_snapshot. Writes none. File targets none.",
         "operationId": "site.runtime.retrieve",
         "parameters": [
           {
@@ -9715,7 +9867,7 @@
         "x-contract-kind": "read",
         "x-file-targets": [],
         "x-read-sources": [
-          "ops_audit_log"
+          "ops_config_snapshot"
         ],
         "x-route-scope": "public",
         "x-sdk-domain": "system",
@@ -9726,10 +9878,7 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-resource": "site.runtime",
         "x-source-file": "apps/sdkwork-cloudrouter-pc/packages/sdkwork-cloudroutes-pc-commons/src/siteBranding.ts",
-        "x-write-tables": [],
-        "x-sdkwork-request-context": "WebRequestContext",
-        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-app-api",
-        "x-sdkwork-permission": "cloudrouter.site_runtime.read"
+        "x-write-tables": []
       }
     }
   },

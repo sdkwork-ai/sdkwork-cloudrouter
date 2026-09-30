@@ -635,6 +635,30 @@ function buildVerificationPlan(settings, env = process.env) {
     env,
   });
   plan.push({
+    label: 'portal site branding runtime tests',
+    command: pnpmCommand(),
+    args: ['--dir', 'apps/sdkwork-cloudrouter-pc', 'exec', 'tsx', 'site-branding-runtime.test.ts'],
+    env,
+  });
+  plan.push({
+    label: 'portal admin site i18n runtime tests',
+    command: pnpmCommand(),
+    args: ['--dir', 'apps/sdkwork-cloudrouter-pc', 'exec', 'tsx', 'admin-site-i18n-runtime.test.ts'],
+    env,
+  });
+  plan.push({
+    label: 'portal site settings parity tests',
+    command: pnpmCommand(),
+    args: ['--dir', 'apps/sdkwork-cloudrouter-pc', 'exec', 'tsx', 'site-settings-parity.test.ts'],
+    env,
+  });
+  plan.push({
+    label: 'portal site content authoring tests',
+    command: pnpmCommand(),
+    args: ['--dir', 'apps/sdkwork-cloudrouter-pc', 'exec', 'tsx', 'site-content-authoring.test.ts'],
+    env,
+  });
+  plan.push({
     label: 'portal auth runtime tests',
     command: pnpmCommand(),
     args: ['--dir', 'apps/sdkwork-cloudrouter-pc', 'exec', 'tsx', 'auth-runtime.test.ts'],

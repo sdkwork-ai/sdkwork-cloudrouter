@@ -5574,7 +5574,7 @@
       "operation": "fetchSiteBranding",
       "operation_scope": "app_shell",
       "read_sources": [
-        "ops_audit_log"
+        "ops_config_snapshot"
       ],
       "route": "/",
       "sdk_operations": [],

@@ -1078,6 +1078,7 @@ mod tests {
             "/minimax/v1",
             "/nano-banana/v1",
             "/suno/v1",
+            "/typesafe/v1",
             "/vidu",
             "/volcengine",
             "/feeds/v3/api",

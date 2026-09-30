@@ -211,6 +211,15 @@ mod tests {
                 OpenApiCapability::Payment,
             ),
             (Method::POST, "/v1/videos", OpenApiCapability::Video),
+            // TypeSafe AI publishes no OpenAI-compatible chat surface at all:
+            // the vendor-native System One endpoint is the only door its
+            // catalog models have, so the inbound gate must claim it or every
+            // request to that vendor 404s before routing.
+            (
+                Method::POST,
+                "/typesafe/v1/systemone",
+                OpenApiCapability::Llm,
+            ),
         ];
 
         for (method, path, expected) in cases {
@@ -236,6 +245,13 @@ mod tests {
         assert_eq!(
             None,
             open_api_capability_for_request(&Method::GET, "/v1/user/balance")
+        );
+        // The TypeSafe door is method-specific: the contract publishes only
+        // `POST /typesafe/v1/systemone`, so a GET must not be claimed by any
+        // capability arm.
+        assert_eq!(
+            None,
+            open_api_capability_for_request(&Method::GET, "/typesafe/v1/systemone")
         );
     }
 }

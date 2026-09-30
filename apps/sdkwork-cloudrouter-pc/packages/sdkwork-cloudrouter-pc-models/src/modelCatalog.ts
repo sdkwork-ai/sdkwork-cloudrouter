@@ -16,9 +16,17 @@ export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
 /** UI-only fold for long provider filter lists; not server pagination. */
 export const MODEL_PROVIDER_DEFAULT_DISPLAY_LIMIT = 5;
 
+/**
+ * UI-only fold for the account-group filter list. The catalog ships one group per
+ * vendor × modality (plus unrestricted groups), so the sidebar needs the same
+ * search + fold treatment the provider list already has.
+ */
+export const MODEL_GROUP_DEFAULT_DISPLAY_LIMIT = 6;
+
 export const MODEL_CATALOG_FILTER_FIELDS = [
   'searchQuery',
   'providerSearchQuery',
+  'groupSearchQuery',
   'selectedProviders',
   'selectedModalities',
   'selectedCapabilities',
@@ -32,6 +40,7 @@ export type ModelCatalogFilterField = (typeof MODEL_CATALOG_FILTER_FIELDS)[numbe
 type ModelCatalogFilterValueByField = {
   searchQuery: string;
   providerSearchQuery: string;
+  groupSearchQuery: string;
   selectedProviders: string[];
   selectedModalities: string[];
   selectedCapabilities: string[];
@@ -205,6 +214,7 @@ export function createDefaultModelCatalogFilters(): ModelCatalogFilters {
   const filters = {
     searchQuery: '',
     providerSearchQuery: '',
+    groupSearchQuery: '',
     selectedProviders: [],
     selectedModalities: [],
     selectedCapabilities: [],
@@ -226,6 +236,113 @@ export function filterProvidersForCatalog(providers: string[], providerSearchQue
     return [...providers];
   }
   return providers.filter((provider) => provider.toLowerCase().includes(normalizedSearch));
+}
+
+/**
+ * Group keys are opaque, and the shipped key is `<vendorCode>.<modality>`
+ * (`deepseek.text`). The operator-facing label is the account group name, so
+ * search matches the label, the key and the vendor prefix the key carries.
+ */
+export function filterModelCatalogGroupOptions(
+  groups: readonly ModelCatalogGroupOption[],
+  groupSearchQuery: string,
+): ModelCatalogGroupOption[] {
+  const normalizedSearch = groupSearchQuery.trim().toLowerCase();
+  if (normalizedSearch.length === 0) {
+    return [...groups];
+  }
+  return groups.filter((group) => {
+    const haystack = [
+      group.label,
+      group.key,
+      modelCatalogGroupKeyVendorCode(group.key),
+    ]
+      .join(' ')
+      .toLowerCase();
+    return haystack.includes(normalizedSearch);
+  });
+}
+
+export function resolveDisplayedGroupOptionsForCatalog(
+  groups: readonly ModelCatalogGroupOption[],
+  options: {
+    groupSearchQuery: string;
+    showAllGroups: boolean;
+  },
+): ModelCatalogGroupOption[] {
+  if (options.showAllGroups || options.groupSearchQuery.trim().length > 0) {
+    return [...groups];
+  }
+  return groups.slice(0, MODEL_GROUP_DEFAULT_DISPLAY_LIMIT);
+}
+
+export function resolveGroupShowMoreStateForCatalog(
+  groups: readonly ModelCatalogGroupOption[],
+  options: {
+    groupSearchQuery: string;
+    showAllGroups: boolean;
+  },
+): ProviderShowMoreState {
+  const hiddenCount = Math.max(0, groups.length - MODEL_GROUP_DEFAULT_DISPLAY_LIMIT);
+  if (options.groupSearchQuery.trim().length > 0 || hiddenCount === 0) {
+    return {
+      visible: false,
+      expanded: false,
+      hiddenCount: 0,
+      labelKey: null,
+      fallbackLabel: null,
+    };
+  }
+  if (options.showAllGroups) {
+    return {
+      visible: true,
+      expanded: true,
+      hiddenCount,
+      labelKey: 'models.showLess',
+      fallbackLabel: 'Show Less',
+    };
+  }
+  return {
+    visible: true,
+    expanded: false,
+    hiddenCount,
+    labelKey: 'models.showMore',
+    fallbackLabel: `Show ${hiddenCount} More`,
+  };
+}
+
+/**
+ * The vendor prefix of a group key (`deepseek.text` → `deepseek`). Group keys are
+ * built as `<vendorCode>.<modality>`; keys without a separator stand alone.
+ */
+export function modelCatalogGroupKeyVendorCode(groupKey: string): string {
+  const normalized = groupKey.trim();
+  const separatorIndex = normalized.indexOf('.');
+  return separatorIndex > 0 ? normalized.slice(0, separatorIndex) : normalized;
+}
+
+/**
+ * A group with no publicly active model is still a configured group, so it stays
+ * in the list (dimmed) instead of vanishing: an empty group answers "is this
+ * group wired up?" without forcing the operator to guess.
+ *
+ * Only a *known* zero count dims the row — the catalog-reported model count is
+ * optional, and a missing count must not be read as "empty".
+ */
+export function isModelCatalogGroupOptionEmpty(group: ModelCatalogGroupOption): boolean {
+  return typeof group.modelCount === 'number' && group.modelCount <= 0;
+}
+
+/**
+ * Group keys cross the wire unchanged and are matched case-insensitively, so a
+ * selection stays valid even when the catalog reports a key with different casing
+ * than the value the account-group authority stored.
+ */
+export function matchesModelCatalogGroupKey(
+  modelGroupKey: string,
+  selectedGroupKey: string,
+): boolean {
+  return modelGroupKey.trim().toLowerCase() === selectedGroupKey.trim().toLowerCase();
 }
 
 export function deriveModelCatalogFilterOptions(
@@ -640,7 +757,9 @@ export function filterModelsForCatalog(
       filters.selectedCategories.every((category) => matchesModelCategory(model, category));
     const matchesGroup =
       filters.selectedGroups.length === 0 ||
-      filters.selectedGroups.some((group) => model.groups.includes(group));
+      filters.selectedGroups.some((group) =>
+        model.groups.some((modelGroup) => matchesModelCatalogGroupKey(modelGroup, group)),
+      );
 
     return matchesSearch && matchesProvider && matchesModality && matchesCapability && matchesCategory && matchesGroup;
   });

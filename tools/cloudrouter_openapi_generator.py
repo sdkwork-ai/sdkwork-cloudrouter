@@ -1630,7 +1630,15 @@ class CloudRouterOpenApiGenerator:
         return " ".join(self._identifier_words(field_name)).lower() or field_name
 
     def _identifier_words(self, identifier: str) -> list[str]:
-        return re.findall(r"[A-Z]+(?=[A-Z][a-z]|\d|$)|[A-Z]?[a-z]+|\d+", identifier.replace("_", " "))
+        # The leading branch keeps a capitalised acronym-plus-digit token that closes with
+        # lower-case letters as one word, so a field like `siteNameI18n` reads as
+        # "site name i18n" instead of "site name i 18 n". It deliberately requires the
+        # trailing lower-case run: a bare `V2` still splits into `v` / `2`, which is what
+        # existing field labels rely on.
+        return re.findall(
+            r"[A-Z]\d+[a-z]+|[A-Z]+(?=[A-Z][a-z]|\d|$)|[A-Z]?[a-z]+|\d+",
+            identifier.replace("_", " "),
+        )
 
     def _operation_payload_schemas(self, operations: list[dict[str, Any]]) -> dict[str, Any]:
         result: dict[str, Any] = {}
@@ -1798,6 +1806,10 @@ class CloudRouterOpenApiGenerator:
         return self._page_data_schema(record_ref)
 
     def _operation_is_list(self, operation: dict[str, Any]) -> bool:
+        # 契约可显式声明单资源载荷：operationId 末段被路径字面量规则钉死为 `list`，
+        # 但响应体是单对象 `{ item }`。此时不得按分页集合渲染。
+        if operation.get("single_item_response") is True:
+            return False
         operation_id = self._string(operation.get("operation_id")) or self._string(operation.get("operation"))
         if operation_id.endswith(".list") or operation_id.endswith(".search"):
             return True

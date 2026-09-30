@@ -110,6 +110,9 @@ function inferExternalProtocolId(routePath) {
   if (normalized.startsWith("/volcengine/")) {
     return "volcengine-v1";
   }
+  if (normalized.startsWith("/typesafe/")) {
+    return "typesafe-v1";
+  }
   return "cloudrouter-vendor-relay";
 }
 
@@ -133,7 +136,8 @@ function isExternalWireProtocolRoute(routePath) {
     normalized.startsWith("/nano-banana/") ||
     normalized.startsWith("/suno/") ||
     normalized.startsWith("/vidu/") ||
-    normalized.startsWith("/volcengine/")
+    normalized.startsWith("/volcengine/") ||
+    normalized.startsWith("/typesafe/")
   );
 }
 

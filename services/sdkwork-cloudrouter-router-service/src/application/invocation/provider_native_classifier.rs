@@ -372,6 +372,7 @@ pub fn provider_native_api_code_from_normalized_path(
             "mureka.music_generation_task_query"
         }
         "baidu" if path == "/v2/chat/completions" => "baidu.chat_completions",
+        "typesafe" if path == "/v1/systemone" => "typesafe.systemone",
         "runway" | "runwayml" if path == "/v1/text_to_image" => "runway.image_generation",
         "runway" | "runwayml" if task_poll_path_matches(path, "v1/tasks") => "runway.task_query",
         "stability_ai" | "stability" if path.starts_with("/v2beta/stable-image/generate/") => {
@@ -826,7 +827,19 @@ mod tests {
 
         let chat = classify_post("/v2/chat/completions", "baidu");
         assert_eq!("baidu.chat_completions", chat.resource.route_key);
-        assert_eq!(Some(BillingMeter::LlmInputToken), chat.billing.meter);
+        assert_eq!(
+            Some(BillingMeter::LlmInputToken),
+            chat.billing.meter
+        );
+
+        // TypeSafe AI's System One decision surface. It is reached through the
+        // same `vendor_native` passthrough as Baidu's native chat surface — the
+        // gateway forwards the `state` / `questions` body verbatim — so the
+        // classification is the same shape and must carry the LLM input meter,
+        // which is the only meter TypeSafe bills against.
+        let system_one = classify_post("/v1/systemone", "typesafe");
+        assert_eq!("typesafe.systemone", system_one.resource.route_key);
+        assert_eq!(Some(BillingMeter::LlmInputToken), system_one.billing.meter);
     }
 
     /// The async poll each of those vendors exposes is its own routable

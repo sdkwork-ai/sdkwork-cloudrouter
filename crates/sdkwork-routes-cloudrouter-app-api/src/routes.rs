@@ -11,10 +11,10 @@ use sdkwork_cloudrouter_config::{
 use sdkwork_cloudrouter_database_host::connect_cloud_router_database;
 use sdkwork_cloudrouter_http::AppSubjectBoundaryConfig;
 use sdkwork_cloudrouter_router_service::application::{
-    bootstrap_payment_provider_registry, payment_runtime_environment, ApiKeySecretHasher,
-    ApiKeySecretStorageConfig, EntityUuidGenerator, InMemoryRuntimeStreamBus,
+    bootstrap_payment_provider_registry, cached_site_settings_store, payment_runtime_environment,
+    ApiKeySecretHasher, ApiKeySecretStorageConfig, EntityUuidGenerator, InMemoryRuntimeStreamBus,
     ModelRankingRefreshWorker, ModelRankingRefreshWorkerConfig, ModelRankingsService,
-    PaymentAggregateRuntimeStore, PaymentProviderRegistry, RuntimeStreamBus,
+    PaymentAggregateRuntimeStore, PaymentProviderRegistry, RuntimeCacheManager, RuntimeStreamBus,
     UpstreamCredentialSecretCodec,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::{
@@ -664,7 +664,10 @@ pub async fn router_with_postgres_product_catalog(
     let app_runtime_store = Arc::new(PostgresAppRuntimeStore::new(pool.clone()));
     let app_routing_read_store = Arc::new(PostgresAppRoutingReadStore::new(pool.clone()));
     let entity_uuid_generator: EntityUuidGen = Arc::new(OsApiKeySecretGenerator);
-    let app_site_settings_store = Arc::new(PostgresSiteSettingsStore::new(pool.clone()));
+    // This assembly path has no shared cache manager, so the site-settings store keeps
+    // its process-local snapshot tier and decays to origin on the local ttl.
+    let app_site_settings_store =
+        cached_site_settings_store(Arc::new(PostgresSiteSettingsStore::new(pool.clone())), None);
     let app_invite_store = Arc::new(PostgresAppInviteStore::new(pool.clone()));
     let auth_settings_store = Arc::new(PostgresAdminAuthSettingsStore::new(pool.clone()));
     let api_key_runtime = Some(app_api_key_runtime_deps_for_postgres(
@@ -733,6 +736,9 @@ pub struct PostgresSharedRuntime {
         Arc<dyn sdkwork_cloudrouter_router_service::ports::AppRuntimeGatewayClient + Send + Sync>,
     pub app_runtime_stream_bus: Arc<dyn RuntimeStreamBus + Send + Sync>,
     pub model_ranking_refresh_worker_config: ModelRankingRefreshWorkerConfig,
+    /// Process-shared cache manager, used to keep the site-settings read cache coherent
+    /// across replicas. `None` keeps the store's process-local TTL tier only.
+    pub cache_manager: Option<RuntimeCacheManager>,
 }
 
 pub async fn router_with_postgres_shared_runtime(
@@ -753,6 +759,7 @@ pub async fn router_with_postgres_shared_runtime(
         app_runtime_gateway_client,
         app_runtime_stream_bus,
         model_ranking_refresh_worker_config,
+        cache_manager,
     } = runtime;
     let credential_secret_codec =
         credential_secret_codec_from_config(&upstream_credential_security_config)?;
@@ -806,7 +813,12 @@ pub async fn router_with_postgres_shared_runtime(
         AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
     finalize_product_router_with_federated_capabilities(
         router_with_runtime_stores_and_database_status(AppRouterRuntime {
-            app_site_settings_store: Some(Arc::new(PostgresSiteSettingsStore::new(pool.clone()))),
+            // Portal first paint reads this on every page load; share the manager with
+            // the backend surface so an admin write evicts both replicas' snapshots.
+            app_site_settings_store: Some(cached_site_settings_store(
+                Arc::new(PostgresSiteSettingsStore::new(pool.clone())),
+                cache_manager.clone(),
+            )),
             app_invite_store: Some(Arc::new(PostgresAppInviteStore::new(pool.clone()))),
             auth_settings_store: Some(Arc::new(PostgresAdminAuthSettingsStore::new(pool.clone()))),
             entity_uuid_generator,
@@ -1055,7 +1067,12 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
                 );
     finalize_product_router_with_federated_capabilities(
         router_with_runtime_stores_and_database_status(AppRouterRuntime {
-            app_site_settings_store: Some(Arc::new(PostgresSiteSettingsStore::new(pool.clone()))),
+            // This path carries no shared cache manager; the local snapshot tier still
+            // absorbs the per-page-load read pressure.
+            app_site_settings_store: Some(cached_site_settings_store(
+                Arc::new(PostgresSiteSettingsStore::new(pool.clone())),
+                None,
+            )),
             app_invite_store: Some(Arc::new(PostgresAppInviteStore::new(pool.clone()))),
             auth_settings_store: Some(Arc::new(PostgresAdminAuthSettingsStore::new(pool.clone()))),
             entity_uuid_generator,

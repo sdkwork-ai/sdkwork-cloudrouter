@@ -409,6 +409,18 @@
       "sortOrder": 120
     },
     {
+      "resourceCode": "vendor.typesafe",
+      "resourceType": "vendor",
+      "displayName": "TypeSafe AI",
+      "vendorCode": "typesafe",
+      "capability": "llm",
+      "capabilities": [
+        "llm",
+        "network"
+      ],
+      "sortOrder": 121
+    },
+    {
       "resourceCode": "vendor.xai",
       "resourceType": "vendor",
       "displayName": "xAI",

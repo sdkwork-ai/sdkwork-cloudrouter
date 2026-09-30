@@ -843,6 +843,11 @@ class ApiContractManifestGenerator:
         bounded_collection_max = entry.get("bounded_collection_max")
         if isinstance(bounded_collection_max, int) and bounded_collection_max > 0:
             compiled["bounded_collection_max"] = bounded_collection_max
+        # 单资源读端点：operationId 因路径末段是字面量而必须以 `list` 收尾
+        # （`check-api-operation-patterns.mjs` 硬约束），但业务载荷是单对象
+        # `{ item }` 而不是 `{ items, pageInfo }`。声明后由生成器按单对象封套渲染。
+        if entry.get("single_item_response") is True:
+            compiled["single_item_response"] = True
         description = self._string(entry.get("description"))
         if description:
             compiled["description"] = description

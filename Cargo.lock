@@ -4516,6 +4516,7 @@ dependencies = [
 name = "sdkwork-agent-provider-transport-ipc"
 version = "0.1.0"
 dependencies = [
+ "libc",
  "sdkwork-agent-kernel",
  "serde",
  "serde_json",

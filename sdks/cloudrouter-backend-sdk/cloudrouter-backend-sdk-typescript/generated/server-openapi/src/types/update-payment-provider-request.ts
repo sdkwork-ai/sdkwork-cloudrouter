@@ -2,7 +2,7 @@
 export interface UpdatePaymentProviderRequest {
   /** Display name field on update payment provider request. */
   displayName?: string;
-  /** Display name i 18 n field on update payment provider request. */
+  /** Display name i18n field on update payment provider request. */
   displayNameI18n?: Record<string, string>;
   /** Reason field on update payment provider request. */
   reason: string;

@@ -320,11 +320,11 @@
     },
     {
       "path": "src/types/admin-site-settings-response.ts",
-      "sha256": "3ff1d497665d661fd311487f4bc93dcb17bf5339e2697db1c13259447e3d434a"
+      "sha256": "de67fe34d9e9844870a9ddce522e16f64271febcfa52610fc009257a15137858"
     },
     {
       "path": "src/types/admin-site-settings-update-request.ts",
-      "sha256": "90f2f131638d9029b64b6c1954ce02d706f17e3a61048b7ce9bac77988929402"
+      "sha256": "021ad0ae0738084501f6dfeaf5f3603ac826b9e5a4db75d37f9e82a795359e5a"
     },
     {
       "path": "src/types/admin-storage-default-bucket-list-response.ts",
@@ -732,7 +732,7 @@
     },
     {
       "path": "src/types/update-payment-provider-request.ts",
-      "sha256": "960a5fbc930092b5c0435ae245d7537727110509e0e5275b42c0199505555b28"
+      "sha256": "8591d1eafe30075c4d2aad0b9969eec21962d8ba769f59d0c05208f6445209f3"
     },
     {
       "path": "src/types/update-upstream-account-group-request.ts",
@@ -820,7 +820,7 @@
     },
     {
       "path": "src/types/upstream-account-group.ts",
-      "sha256": "4814e4e568307f3510cd4334e1b5405466a2bd42985b8f2a2bfa0ba9cd380f9b"
+      "sha256": "7629fa2e7760b961d1504b033d2768356cfd8989ad7271eb122dac4ef37e80e8"
     },
     {
       "path": "src/types/upstream-account-item-response.ts",
