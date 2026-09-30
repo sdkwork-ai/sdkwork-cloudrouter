@@ -35,12 +35,12 @@ mod app_notification_store;
 mod app_routing_read_store;
 mod app_runtime_gateway_client;
 mod app_runtime_store;
+mod billing_subject_resolver;
 mod chat_completion_relay;
 mod chat_completion_stream_relay;
 mod dashboard_overview_read_store;
 mod embeddings_relay;
 mod gateway_accounting_retry_queue;
-mod billing_subject_resolver;
 mod gateway_billing_store;
 mod gateway_chain_policy_store;
 mod gateway_usage_recorder;
@@ -223,9 +223,8 @@ pub use api_key_management_read_store::{
 };
 pub use app_chat_store::{
     AppChatConversationCursor, AppChatConversationItem, AppChatConversationList, AppChatFuture,
-    AppChatMessageCursor,
-    AppChatMessageItem, AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnItem,
-    AppChatTurnOutcome, AppChatUsageSnapshot, CompleteAppChatTurnCommand,
+    AppChatMessageCursor, AppChatMessageItem, AppChatMessageList, AppChatStore, AppChatSubject,
+    AppChatTurnItem, AppChatTurnOutcome, AppChatUsageSnapshot, CompleteAppChatTurnCommand,
     CreateAppChatConversationCommand, CreateAppChatTurnCommand,
 };
 pub use app_gateway_traces_read_store::{

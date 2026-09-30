@@ -237,8 +237,8 @@ async fn create_payment_intent_places_provider_order_when_adapter_is_real() {
 }
 
 #[tokio::test]
-async fn create_payment_intent_marks_intent_failed_but_keeps_durable_record_when_provider_order_fails()
-{
+async fn create_payment_intent_marks_intent_failed_but_keeps_durable_record_when_provider_order_fails(
+) {
     let store = InMemoryPaymentIntentRuntimeStore::default();
     let registry = default_payment_provider_registry().with_adapter(
         "wechat_pay",

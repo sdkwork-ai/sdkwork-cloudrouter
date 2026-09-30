@@ -9,7 +9,9 @@ use sdkwork_cloudrouter_router_service::application::{
     InvocationUsageLine, ResourceType, ResponseNormalizationInterceptor, TraceTelemetryInterceptor,
     UsageRecordingInterceptor,
 };
-use sdkwork_cloudrouter_router_service::domain::{BillingOwnerKind, AiRouteModelRequirement, BillingMeter, DomainError, RoutingCapability,};
+use sdkwork_cloudrouter_router_service::domain::{
+    AiRouteModelRequirement, BillingMeter, BillingOwnerKind, DomainError, RoutingCapability,
+};
 use sdkwork_cloudrouter_router_service::ports::{
     GatewayOfficialRateReference, GatewayRequestTraceCommand, GatewayUsageQuantity,
     GatewayUsageRecordCommand, GatewayUsageRecordFuture, GatewayUsageRecorder,
@@ -41,6 +43,10 @@ impl InvocationInterceptor for FailingDispatchInterceptor {
 
     fn before<'a>(&'a self, _invocation: &'a mut Invocation) -> InvocationFuture<'a, ()> {
         Box::pin(async move {
+            // Hyphenated key body: the redactor must collapse the whole
+            // `sk-provider-secret` token, matching redaction.rs's vendor key
+            // family semantics (`sk-proj-...` style separators stay inside
+            // the secret).
             Err(InvocationError::new(
                 InvocationErrorKind::Dispatch,
                 "provider returned HTTP 503 for sk-provider-secret",
@@ -600,7 +606,7 @@ async fn usage_recording_records_error_trace_as_pipeline_observer() {
     assert_eq!(Some(502), trace.http_status);
     assert_eq!(Some("dispatch_failed"), trace.error_type.as_deref());
     assert_eq!(
-        Some("provider returned HTTP 503 for sk-[REDACTED]-secret"),
+        Some("provider returned HTTP 503 for sk-[REDACTED]"),
         trace.error_message_masked.as_deref()
     );
     assert!(invocation.usage.trace_recorded);

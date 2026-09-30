@@ -4,8 +4,9 @@ use serde_json::Value;
 
 use super::routing::STICKY_SCOPE_SESSION;
 use super::{
-    DispatchMode, Invocation, InvocationDispatchResponse, InvocationError, InvocationErrorKind,
-    InvocationFuture, InvocationInterceptor, InvocationSurface, StickyMode, StickyRouteConstraint,
+    adapter_response_status_code, DispatchMode, Invocation, InvocationDispatchResponse,
+    InvocationError, InvocationErrorKind, InvocationFuture, InvocationInterceptor,
+    InvocationSurface, StickyMode, StickyRouteConstraint,
 };
 use crate::domain::AiRouteModelRequirement;
 use crate::ports::{
@@ -292,13 +293,6 @@ fn effective_response_body(
         .body_bytes
         .as_ref()
         .and_then(|bytes| serde_json::from_slice(bytes).ok())
-}
-
-fn adapter_response_status_code(body: &Value) -> Option<u16> {
-    body.get("statusCode")
-        .or_else(|| body.get("status_code"))
-        .and_then(Value::as_u64)
-        .and_then(|value| u16::try_from(value).ok())
 }
 
 fn sticky_response_object_id(object_type: &str, response_body: &Value) -> Option<String> {

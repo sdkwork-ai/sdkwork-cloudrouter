@@ -135,8 +135,7 @@ mod tests {
         for (surface, catalog) in VENDOR_CODE_ALIASES {
             assert_ne!(surface, catalog, "{surface} aliases itself");
             assert_ne!(
-                *surface,
-                *catalog,
+                *surface, *catalog,
                 "{surface} -> {catalog} is not a translation"
             );
             assert!(

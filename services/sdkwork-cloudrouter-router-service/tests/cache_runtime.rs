@@ -556,7 +556,11 @@ impl CacheBackend for FailingCacheBackend {
         Box::pin(async move { failing_backend_error() })
     }
 
-    fn increment<'a>(&'a self, _key: &'a str, _ttl: std::time::Duration) -> CacheBackendFuture<'a, i64> {
+    fn increment<'a>(
+        &'a self,
+        _key: &'a str,
+        _ttl: std::time::Duration,
+    ) -> CacheBackendFuture<'a, i64> {
         Box::pin(async move { failing_backend_error() })
     }
 
@@ -1360,7 +1364,11 @@ async fn local_cache_evicts_oldest_live_entries_in_fifo_order() -> DomainResult<
 
     for key in ["a", "b", "c"] {
         backend
-            .set_json(key.to_owned(), serde_json::json!(key), Duration::from_secs(60))
+            .set_json(
+                key.to_owned(),
+                serde_json::json!(key),
+                Duration::from_secs(60),
+            )
             .await?;
         clock.elapsed_millis.fetch_add(1, Ordering::Relaxed);
     }
@@ -1368,7 +1376,11 @@ async fn local_cache_evicts_oldest_live_entries_in_fifo_order() -> DomainResult<
     // must skip it during the next eviction.
     assert!(backend.delete("b").await?);
     backend
-        .set_json("d".to_owned(), serde_json::json!("d"), Duration::from_secs(60))
+        .set_json(
+            "d".to_owned(),
+            serde_json::json!("d"),
+            Duration::from_secs(60),
+        )
         .await?;
     let expected = ["a", "c", "d"];
     for key in expected {
@@ -1380,7 +1392,11 @@ async fn local_cache_evicts_oldest_live_entries_in_fifo_order() -> DomainResult<
 
     // One more insert over the cap evicts the next-oldest live entry (a).
     backend
-        .set_json("e".to_owned(), serde_json::json!("e"), Duration::from_secs(60))
+        .set_json(
+            "e".to_owned(),
+            serde_json::json!("e"),
+            Duration::from_secs(60),
+        )
         .await?;
     assert!(backend.get_json("a").await?.is_none(), "a must be evicted");
     for key in ["c", "d", "e"] {

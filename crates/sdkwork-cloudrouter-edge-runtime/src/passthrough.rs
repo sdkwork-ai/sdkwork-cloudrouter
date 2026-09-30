@@ -1821,200 +1821,32 @@ fn standard_api_code_for_provider_adapter_route(
         })
 }
 
-/// The edge runtime's copy of the router's `path -> api_code` classifier.
+/// Edge-runtime adapter over the router's single vendor-native arm table.
 ///
-/// The two copies are compared arm-for-arm by
-/// `tools/check-cloudrouter-ai-routing-consistency.mjs`; a one-sided edit makes
-/// the edge side fall back to a synthesised `<vendor>.<path.with.dots>` key that
-/// matches no seeded resource, so the request reaches no account scope and the
-/// fail-closed pricing preflight refuses it.
+/// The arm table (`(provider, path) -> api_code`) lives in exactly one place —
+/// `sdkwork_cloudrouter_router_service::application::
+/// provider_native_api_code_from_normalized_path`. This function performs the
+/// edge side's normalization (it sees the full inbound passthrough path, so it
+/// folds the provider segment and strips the provider's own namespace prefix)
+/// and then delegates the arms to that shared function.
 ///
-/// The `sfx.sound` arms cover sound effects (音效). The four sfx vendors each
-/// answer a different path; all of them resolve onto the one `sfx.sound` route
-/// so the capability has a single reachable endpoint code. `elevenlabs` is
-/// deliberately absent from those arms: it keeps its own vendor-native
-/// `elevenlabs.sound_generation` classification, which is the more specific one
-/// and must win.
-///
-/// Comment text here is parsed by that gate's arm regex, so it must not sit
-/// between an arm and its `=>` — a comment there is captured as the arm's
-/// condition and reported as a shape the gate cannot model.
+/// Keeping the arms in one crate is what makes a vendor-native endpoint a
+/// single edit: the gate `tools/check-cloudrouter-ai-routing-consistency.mjs`
+/// no longer compares two copies but asserts both call sites reference the
+/// shared authority. When this side falls back to a synthesised
+/// `<vendor>.<path.with.dots>` key the request reaches no seeded resource, so
+/// the fail-closed pricing preflight refuses it.
 fn provider_native_api_code_from_standard_path(
     provider: &str,
     standard_path: &str,
 ) -> Option<String> {
     let provider = normalize_endpoint_key_segment(provider);
     let path = normalize_provider_api_path(provider.as_str(), standard_path);
-    // --- Vendor-native surfaces whose models declare
-    // `apiFormat = vendor_native`. Without these arms the catch-all below
-    // synthesises `<vendor>.<last.path.segment>` (for example
-    // `alibaba.video.synthesis`), which matches no taxonomy route, so the
-    // classification carries `meter: None` and the fail-closed pricing
-    // preflight refuses the request even though the resource grant, the
-    // account and the credential are all present.
-    //
-    // Only endpoints a `vendor_native` model actually binds to are listed.
-    // Each vendor's `openai_compatible` models keep the generic face, so
-    // `alibaba` chat / embedding / image and `zhipu` chat / embedding /
-    // image deliberately stay out.
-    //
-    // The eight `<vendor>.anthropic_messages` arms are the Anthropic Messages
-    // protocol as served by vendors other than Anthropic. Each of them publishes
-    // an Anthropic-compatible endpoint under its own base URL
-    // (`protocolBaseUrls.anthropic_messages` in the catalog), and the gateway
-    // serves them all through the `/anthropic/` namespace — so
-    // `normalize_provider_api_path` has already stripped that prefix and every
-    // one of them arrives here as `/v1/messages`. Without an arm the catch-all
-    // synthesises `<vendor>.messages`, which names no taxonomy route, so the
-    // classification carries `meter: None` and the fail-closed pricing preflight
-    // rejects the request even though the account, the credential, the grant and
-    // the group membership all exist.
-    //
-    // This map is duplicated in the router service's
-    // `provider_native_classifier.rs`; the same gate compares the two arm sets.
-    //
-    // `jimeng` and `bytedance` are two different ByteDance surfaces and must not
-    // be aliased together. `jimeng` is the standalone consumer host
-    // (`jimeng.jianying.com`, `/v1/...`); `bytedance` is the catalog surface,
-    // which is Volcengine Ark (`ark.cn-beijing.volces.com/api/v3`), whose
-    // `doubao-seedance-*` / `doubao-seedream-*` families live under
-    // `/api/v3/...`. Folding them — as the old `"bytedance" | "jimeng"`
-    // descriptor arm did — left every seedance model carrying a `jimeng.*` api
-    // code while the request dialled an Ark path. Without the `bytedance` arms
-    // the catch-all would synthesise `bytedance.tasks`, which names no taxonomy
-    // route, so the classification would carry `meter: None` and the
-    // fail-closed pricing preflight would reject every seedance request.
-    let api_code = match provider.as_str() {
-        "anthropic" if path == "/v1/claude-code/sessions" => "anthropic.claude_code",
-        "anthropic" if path == "/v1/messages" => "anthropic.messages",
-        "alibaba" if path == "/v1/messages" => "alibaba.anthropic_messages",
-        "deepseek" if path == "/v1/messages" => "deepseek.anthropic_messages",
-        "meituan" if path == "/v1/messages" => "meituan.anthropic_messages",
-        "moonshot" if path == "/v1/messages" => "moonshot.anthropic_messages",
-        "stepfun" if path == "/v1/messages" => "stepfun.anthropic_messages",
-        "tencent" if path == "/v1/messages" => "tencent.anthropic_messages",
-        "xiaomi" if path == "/v1/messages" => "xiaomi.anthropic_messages",
-        "zhipu" if path == "/v1/messages" => "zhipu.anthropic_messages",
-        "google" | "gemini" if path == "/v1beta/live/sessions" => "gemini.live",
-        "google" | "gemini" if gemini_model_action_matches(path.as_str(), "generatecontent") => {
-            "gemini.generate_content"
-        }
-        "google" | "gemini"
-            if gemini_model_action_matches(path.as_str(), "streamgeneratecontent") =>
-        {
-            "gemini.stream_generate_content"
-        }
-        "google" | "gemini" if gemini_model_action_matches(path.as_str(), "embedcontent") => {
-            "gemini.embed_content"
-        }
-        "google" | "gemini" if gemini_model_action_matches(path.as_str(), "generateimages") => {
-            if path.contains("/nano-banana:") {
-                "gemini.nano_banana.image_generation"
-            } else {
-                "gemini.image_generation"
-            }
-        }
-        "google" | "gemini" if gemini_model_action_matches(path.as_str(), "generatevideos") => {
-            "gemini.video_generation"
-        }
-        "kling" if path == "/v1/videos/text2video" => "kling.text_to_video",
-        "kling" if path == "/v1/videos/generations" => "kling.text_to_video",
-        "kling" if path == "/v1/videos/avatar" => "kling.avatar",
-        "kling" if path == "/v1/videos/motion-control" => "kling.motion_control",
-        "kling" if path == "/v1/videos/image2video" => "kling.image_to_video",
-        "kling" if path == "/v1/images/generations" => "kling.image_generation",
-        "kling" if task_poll_path_matches(path.as_str(), "v1/tasks") => "kling.task_query",
-        "kling" if task_poll_path_matches(path.as_str(), "v1/videos/generations") => {
-            "kling.task_query"
-        }
-        "jimeng" if path == "/v1/images/generations" => "jimeng.image_generation",
-        "jimeng" if path == "/v1/videos/generations" => "jimeng.video_generation",
-        "jimeng" if task_poll_path_matches(path.as_str(), "v1/tasks") => "jimeng.task_query",
-        "bytedance" if path == "/api/v3/images/generations" => "bytedance.image_generation",
-        "bytedance" if path == "/api/v3/contents/generations/tasks" => "bytedance.video_generation",
-        "bytedance"
-            if task_poll_path_matches(path.as_str(), "api/v3/contents/generations/tasks") =>
-        {
-            "bytedance.task_query"
-        }
-        "volcengine" if path == "/v1/images/generations" => "volcengine.image_generation",
-        "volcengine" if path == "/v1/videos/generations" => "volcengine.video_generation",
-        "volcengine" if path == "/api/v3/audio/speech" => "volcengine.speech",
-        "volcengine" if path == "/api/v3/images/generations" => "volcengine.image_generation",
-        "volcengine" if path == "/api/v3/contents/generations/tasks" => {
-            "volcengine.video_generation"
-        }
-        "volcengine" if task_poll_path_matches(path.as_str(), "v1/tasks") => {
-            "volcengine.task_query"
-        }
-        "volcengine"
-            if task_poll_path_matches(path.as_str(), "api/v3/contents/generations/tasks") =>
-        {
-            "volcengine.task_query"
-        }
-        "elevenlabs" if path == "/v1/text-to-speech/{voice_id}" => "elevenlabs.text_to_speech",
-        "elevenlabs" if path.starts_with("/v1/text-to-speech/") => "elevenlabs.text_to_speech",
-        "elevenlabs" if path == "/v1/sound-generation" => "elevenlabs.sound_generation",
-        "kling" if path == "/v1/sound/generate" => "sfx.sound",
-        "stability_ai" if path == "/v1/sound/generate" => "sfx.sound",
-        "stability_ai" if path == "/v2beta/audio/stable-audio-2/text-to-audio" => "sfx.sound",
-        "vidu" if path == "/ent/v2/text2audio" => "sfx.sound",
-        "vidu" if path == "/ent/v2/timing2audio" => "sfx.sound",
-        "minimax" if path == "/v1/music_generation" => "minimax.music_generation",
-        "minimax" if path == "/v1/music/generations" => "minimax.music_generation",
-        "minimax" if path == "/v1/music/generation" => "minimax.music_generation",
-        "suno" if path == "/v1/music/generations" => "suno.music_generation",
-        "suno" if task_poll_path_matches(path.as_str(), "v1/music/generations") => {
-            "suno.music_task_query"
-        }
-        "vidu" if path == "/ent/v2/reference2image" => "vidu.reference_to_image",
-        "alibaba"
-            if path == "/api/v1/services/aigc/video-generation/video-synthesis" =>
-        {
-            "alibaba.video_generation"
-        }
-        "alibaba" if task_poll_path_matches(path.as_str(), "api/v1/tasks") => {
-            "alibaba.video_generation_task_query"
-        }
-        "luma_ai" if path == "/dream-machine/v1/generations" => "luma_ai.video_generation",
-        "luma_ai"
-            if task_poll_path_matches(path.as_str(), "dream-machine/v1/generations") =>
-        {
-            "luma_ai.video_generation_task_query"
-        }
-        "pixverse" if path == "/openapi/v2/video/text/generate" => "pixverse.video_generation",
-        "pixverse" if task_poll_path_matches(path.as_str(), "openapi/v2/video/result") => {
-            "pixverse.video_generation_task_query"
-        }
-        "zhipu" if path == "/api/paas/v4/videos/generations" => "zhipu.video_generation",
-        "zhipu" if task_poll_path_matches(path.as_str(), "api/paas/v4/async-result") => {
-            "zhipu.video_generation_task_query"
-        }
-        "mureka" if path == "/v1/song/generate" => "mureka.music_generation",
-        "mureka" if task_poll_path_matches(path.as_str(), "v1/song/query") => {
-            "mureka.music_generation_task_query"
-        }
-        "baidu" if path == "/v2/chat/completions" => "baidu.chat_completions",
-        "runway" | "runwayml" if path == "/v1/text_to_image" => "runway.image_generation",
-        "runway" | "runwayml" if task_poll_path_matches(path.as_str(), "v1/tasks") => {
-            "runway.task_query"
-        }
-        "stability_ai" | "stability"
-            if path.starts_with("/v2beta/stable-image/generate/") =>
-        {
-            "stability_ai.image_generation"
-        }
-        "black_forest_labs" | "bfl" if path == "/v1/get_result" => "black_forest_labs.task_query",
-        "black_forest_labs" | "bfl" if path.starts_with("/v1/flux-") => {
-            "black_forest_labs.image_generation"
-        }
-        "vidu" if path == "/ent/v2/template" => "vidu.motion_sync",
-        "vidu" if path == "/ent/v2/start-end2video" => "vidu.start_end_to_video",
-        "tencent.cloud" if path == "/vidu/ent/v2/reference2image" => "vidu.reference_to_image",
-        "tencent.cloud" if path == "/vidu/ent/v2/start-end2video" => "vidu.start_end_to_video",
-        _ => return None,
-    };
-    Some(api_code.to_owned())
+    sdkwork_cloudrouter_router_service::application::provider_native_api_code_from_normalized_path(
+        provider.as_str(),
+        path.as_str(),
+    )
+    .map(str::to_owned)
 }
 
 fn provider_native_api_code_from_endpoint_key(endpoint_key: &str) -> Option<String> {
@@ -2037,55 +1869,21 @@ fn provider_native_model_from_standard_path(path: &str) -> Option<String> {
         .map(str::to_owned)
 }
 
+/// Delegates to the router service's single implementation; kept as a local
+/// name so the edge call sites read the same as before.
 fn canonical_provider_native_catalog_key(
     supplier_code: &str,
     provider_native_model: &str,
 ) -> String {
-    let supplier_code = supplier_code.trim();
-    let provider_native_model = provider_native_model.trim();
-    let provider_prefix = provider_native_model
-        .split('/')
-        .map(str::trim)
-        .find(|part| !part.is_empty());
-    if provider_prefix == Some(supplier_code) {
-        provider_native_model.to_owned()
-    } else {
-        format!("{supplier_code}/{provider_native_model}")
-    }
+    sdkwork_cloudrouter_router_service::application::canonical_provider_native_catalog_key(
+        supplier_code,
+        provider_native_model,
+    )
 }
 
-fn gemini_model_action_matches(path: &str, action: &str) -> bool {
-    path.starts_with("/v1beta/models/") && path.ends_with(&format!(":{action}"))
-}
-
-/// Matches the task-polling path of a vendor family, for example
-/// `v1/music/generations`, `v1/videos/generations` or
-/// `api/v3/contents/generations/tasks`. The family carries its own prefix
-/// because the vendors disagree on it — the OpenAI-shaped families answer under
-/// `/v1/...` while Volcengine's Ark answers the generation task under
-/// `/api/v3/contents/generations/tasks`.
-///
-/// Kept byte-for-byte in step with the same helper in
-/// `sdkwork_cloudrouter_router_service::application::invocation::
-/// provider_native_classifier`; `tools/check-cloudrouter-ai-routing-consistency.mjs`
-/// compares the two path→api_code maps and fails when one side recognises a
-/// path the other does not.
-fn task_poll_path_matches(path: &str, family: &str) -> bool {
-    let prefix = format!("/{family}/");
-    path == format!("/{family}/{{task_id}}")
-        || path
-            .strip_prefix(prefix.as_str())
-            .is_some_and(|task_id| !task_id.trim().is_empty())
-}
-
+/// Delegates to the router service's single implementation.
 fn normalize_standard_api_path(value: &str) -> String {
-    let value = value.trim();
-    let value = if value.starts_with('/') {
-        value.to_owned()
-    } else {
-        format!("/{value}")
-    };
-    value.to_ascii_lowercase()
+    sdkwork_cloudrouter_router_service::application::normalize_standard_api_path(value)
 }
 
 fn normalize_provider_api_path(provider: &str, standard_path: &str) -> String {
@@ -2221,10 +2019,12 @@ fn adapter_streaming_response(
     Response::builder()
         .status(status)
         .header(axum::http::header::CONTENT_TYPE, content_type)
-        .body(crate::provider_passthrough_transport::apply_stream_deadlines_to_body(
-            stream_body,
-            crate::provider_passthrough_transport::PROVIDER_STREAM_TOTAL,
-        ))
+        .body(
+            crate::provider_passthrough_transport::apply_stream_deadlines_to_body(
+                stream_body,
+                crate::provider_passthrough_transport::PROVIDER_STREAM_TOTAL,
+            ),
+        )
         .map_err(|error| format!("failed to build provider adapter streaming response: {error}"))
 }
 

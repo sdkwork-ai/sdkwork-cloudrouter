@@ -243,13 +243,8 @@ fn catalog_with_avatar_accounts(
         .with_catalog_key("kling.motion_control"),
     );
     catalog.add_model(
-        AiModel::new(
-            "motion_sync",
-            "Vidu motion sync",
-            "vidu",
-            vec!["video"],
-        )
-        .with_catalog_key("vidu.motion_sync"),
+        AiModel::new("motion_sync", "Vidu motion sync", "vidu", vec!["video"])
+            .with_catalog_key("vidu.motion_sync"),
     );
     for (catalog_key, model, supplier, account_id) in [
         ("kling.avatar", "avatar", "kling", 4201),

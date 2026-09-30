@@ -195,9 +195,17 @@ const BREAKER_OPEN_MARKER: &str = "open circuit breaker";
 const BREAKER_RETRY_COOLDOWN: std::time::Duration = std::time::Duration::from_secs(31);
 const BREAKER_MAX_RETRIES: u32 = 2;
 
-/// One API under test: the api code, the inbound path, and a minimal body.
+/// One API under test: the api code, the HTTP method, the inbound path, and a
+/// minimal body.
+///
+/// The method is carried explicitly because the published surface is not
+/// POST-only: the contract mounts 59 `GET` and 17 `DELETE` operations beside
+/// the 91 `POST` ones, and a probe that dials the wrong verb answers `405` and
+/// proves nothing about the chain.
 struct ApiCase {
     api_code: &'static str,
+    /// The HTTP method this operation is published under.
+    method: &'static str,
     /// The concrete path this probe dials, with real model names substituted in.
     path: &'static str,
     /// The *published* path template this probe's route is matched against.
@@ -206,6 +214,31 @@ struct ApiCase {
     /// means "identical to `path`".
     published_path: &'static str,
     body: &'static str,
+    /// How the gateway is *expected* to answer this operation on a deployment
+    /// whose upstream accounts serve it versus one that does not.
+    expectation: ApiExpectation,
+}
+
+/// The contract's own vocabulary for a published operation, mirrored so a
+/// probe can assert the right thing without inventing a status.
+///
+/// Every open-api operation publishes `200, 400, 401, 404, 501, 502`. The three
+/// that matter to a chain probe are:
+///
+/// * `Routable` — the gateway must reach a vendor account (200, or the
+///   vendor's own rejection / a network failure while the seed ships
+///   placeholder credentials). A `501` here would be a chain gap.
+/// * `Unbacked` — the operation is published but has no upstream route account
+///   on this deployment, so the contract's documented answer is `501`
+///   (`"... has no upstream route account on this deployment"`). It must NOT
+///   answer 404 (the route is gone) and must NOT answer a routing/pricing gap.
+/// * `Synthetic` — the gateway answers locally with a body it owns
+///   (`GET /v1/models`, `GET /v1/vendors`), regardless of upstream.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ApiExpectation {
+    Routable,
+    Unbacked,
+    Synthetic,
 }
 
 impl ApiCase {
@@ -217,6 +250,12 @@ impl ApiCase {
         } else {
             self.published_path
         }
+    }
+
+    /// `"<METHOD> <published path>"` — the key the generated route manifest and
+    /// the contract both spell an operation with.
+    fn operation(&self) -> String {
+        format!("{} {}", self.method, self.manifest_path())
     }
 }
 
@@ -241,54 +280,72 @@ const API_CASES: &[ApiCase] = &[
         api_code: "anthropic.messages",
         path: "/anthropic/v1/messages",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model":"claude-sonnet-4-5","max_tokens":16,"messages":[{"role":"user","content":"hi"}]}"#,
     },
     ApiCase {
         api_code: "anthropic.chat",
         path: "/v1/chat/completions",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model":"claude-sonnet-4-5","messages":[{"role":"user","content":"hi"}],"max_tokens":16}"#,
     },
     ApiCase {
         api_code: "openai.responses",
         path: "/v1/responses",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model":"gpt-6-astra","input":"hi"}"#,
     },
     ApiCase {
         api_code: "openai.completions",
         path: "/v1/completions",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model":"gpt-6-astra","prompt":"hi","max_tokens":16}"#,
     },
     ApiCase {
         api_code: "google.generate_content",
         path: "/google/v1beta/models/gemini-3.5-flash:generateContent",
         published_path: "/google/v1beta/models/{model}:generateContent",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"contents":[{"parts":[{"text":"hi"}]}]}"#,
     },
     ApiCase {
         api_code: "google.stream_generate_content",
         path: "/google/v1beta/models/gemini-3.5-flash:streamGenerateContent",
         published_path: "/google/v1beta/models/{model}:streamGenerateContent",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"contents":[{"parts":[{"text":"hi"}]}]}"#,
     },
     ApiCase {
         api_code: "openai.threads",
         path: "/v1/threads",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model":"gpt-6-astra"}"#,
     },
     ApiCase {
         api_code: "openai.assistants",
         path: "/v1/assistants",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model":"gpt-6-astra"}"#,
     },
     ApiCase {
         api_code: "openai.conversations",
         path: "/v1/conversations",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model":"gpt-6-astra"}"#,
     },
     // --- embedding ---
@@ -296,12 +353,16 @@ const API_CASES: &[ApiCase] = &[
         api_code: "openai.embeddings",
         path: "/v1/embeddings",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model":"text-embedding-3-small","input":"hi"}"#,
     },
     ApiCase {
         api_code: "google.embed_content",
         path: "/google/v1beta/models/gemini-embedding-2:embedContent",
         published_path: "/google/v1beta/models/{model}:embedContent",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"content":{"parts":[{"text":"hi"}]}}"#,
     },
     // --- image ---
@@ -309,24 +370,32 @@ const API_CASES: &[ApiCase] = &[
         api_code: "openai.images",
         path: "/v1/images/generations",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model":"gpt-image-2","prompt":"a red apple","n":1}"#,
     },
     ApiCase {
         api_code: "openai.images.edits",
         path: "/v1/images/edits",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model":"gpt-image-2","prompt":"add a hat"}"#,
     },
     ApiCase {
         api_code: "nano_banana.image_generation",
         path: "/nano-banana/v1/images/generations",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model":"gemini-3-pro-image","prompt":"a red apple"}"#,
     },
     ApiCase {
         api_code: "midjourney.image_generation",
         path: "/midjourney/v1/images/generations",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model":"midjourney-v7","prompt":"a red apple"}"#,
     },
     // --- video ---
@@ -334,31 +403,74 @@ const API_CASES: &[ApiCase] = &[
         api_code: "openai.video",
         path: "/v1/videos",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model":"sora-2","prompt":"a paper plane"}"#,
     },
     ApiCase {
         api_code: "kling.text_to_video",
         path: "/kling/v1/videos/generations",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model_name":"kling-v3","prompt":"a paper plane","duration":"5"}"#,
     },
     ApiCase {
         api_code: "kling.avatar",
         path: "/kling/v1/videos/avatar",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model_name":"kling-v3","image":"https://cdn.example.test/p.png","audio":"https://cdn.example.test/a.mp3"}"#,
     },
     ApiCase {
         api_code: "kling.motion_control",
         path: "/kling/v1/videos/motion-control",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model_name":"kling-v3","image":"https://cdn.example.test/p.png","video":"https://cdn.example.test/d.mp4"}"#,
     },
     ApiCase {
         api_code: "vidu.start_end_to_video",
         path: "/vidu/ent/v2/start-end2video",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model":"viduq3","prompt":"a paper plane"}"#,
+    },
+    // Vidu's three primary video surfaces. The contract published all three and
+    // `sdkwork-generations` calls them through `videos_vidu()`, but the taxonomy
+    // named no route for any of them, so each died in `classify_request` as
+    // `ResourceClassification` (a 404 on a published path). The probes pin the
+    // classification now that the taxonomy, the seeds, the grants and both arm
+    // tables carry them.
+    //
+    // `viduq3` is the vendor's active video model, so the pricing resolver's
+    // requested-model path finds `vidu/viduq3` in the price book.
+    ApiCase {
+        api_code: "vidu.text_to_video",
+        path: "/vidu/ent/v2/text2video",
+        published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
+        body: r#"{"model":"viduq3","prompt":"a paper plane"}"#,
+    },
+    ApiCase {
+        api_code: "vidu.image_to_video",
+        path: "/vidu/ent/v2/img2video",
+        published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
+        body: r#"{"model":"viduq3","images":["https://cdn.example.test/p.png"],"prompt":"a paper plane"}"#,
+    },
+    ApiCase {
+        api_code: "vidu.reference_to_video",
+        path: "/vidu/ent/v2/reference2video",
+        published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
+        body: r#"{"model":"viduq3","images":["https://cdn.example.test/p.png"],"prompt":"a red apple"}"#,
     },
     // `POST /ent/v2/template` is *template*-driven: the official contract
     // requires `template` (a scene-template name such as `hugging`). The body
@@ -373,6 +485,8 @@ const API_CASES: &[ApiCase] = &[
         api_code: "vidu.motion_sync",
         path: "/vidu/ent/v2/template",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"template":"hugging","model":"viduq3","images":["https://cdn.example.test/p.png"],"prompt":"hug"}"#,
     },
     // `POST /ent/v2/reference2image` accepts `viduq2` / `viduq1` (the official
@@ -383,12 +497,16 @@ const API_CASES: &[ApiCase] = &[
         api_code: "vidu.reference_to_image",
         path: "/vidu/ent/v2/reference2image",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model":"viduq2","prompt":"a red apple"}"#,
     },
     ApiCase {
         api_code: "volcengine.video_generation",
         path: "/volcengine/api/v3/contents/generations/tasks",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model":"doubao-seedance-2-5-260628","content":[{"type":"text","text":"a paper plane"}]}"#,
     },
     // --- audio / speech ---
@@ -396,24 +514,32 @@ const API_CASES: &[ApiCase] = &[
         api_code: "openai.audio.speech",
         path: "/v1/audio/speech",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model":"tts-1-hd","input":"hi","voice":"alloy"}"#,
     },
     ApiCase {
         api_code: "openai.realtime",
         path: "/v1/realtime/sessions",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model":"gpt-realtime-2.1"}"#,
     },
     ApiCase {
         api_code: "elevenlabs.text_to_speech",
         path: "/elevenlabs/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM",
         published_path: "/elevenlabs/v1/text-to-speech/{voice_id}",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model_id":"eleven_multilingual_v2","text":"hello"}"#,
     },
     ApiCase {
         api_code: "volcengine.speech",
         path: "/volcengine/api/v3/audio/speech",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model":"seed-tts-2.0-standard","input":"hello"}"#,
     },
     // --- music ---
@@ -421,12 +547,16 @@ const API_CASES: &[ApiCase] = &[
         api_code: "suno.music",
         path: "/suno/v1/music/generations",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model":"mureka-v9","prompt":"upbeat"}"#,
     },
     ApiCase {
         api_code: "minimax.music_generation",
         path: "/minimax/v1/music_generation",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model":"music-cover","prompt":"upbeat"}"#,
     },
     // --- sfx ---
@@ -434,7 +564,1081 @@ const API_CASES: &[ApiCase] = &[
         api_code: "elevenlabs.sound_generation",
         path: "/elevenlabs/v1/sound-generation",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"model_id":"eleven_text_to_sound_v2","text":"whoosh"}"#,
+    },
+    ApiCase {
+        api_code: "anthropicListFiles",
+        method: "GET",
+        path: "/anthropic/v1/files",
+        published_path: "/anthropic/v1/files",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "anthropicUploadFile",
+        method: "POST",
+        path: "/anthropic/v1/files",
+        published_path: "/anthropic/v1/files",
+        body: r#"{"filename":"probe.txt"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "anthropicDeleteFile",
+        method: "DELETE",
+        path: "/anthropic/v1/files/file-probe-001",
+        published_path: "/anthropic/v1/files/{file_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "anthropicRetrieveFile",
+        method: "GET",
+        path: "/anthropic/v1/files/file-probe-001",
+        published_path: "/anthropic/v1/files/{file_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "anthropicRetrieveFileContent",
+        method: "GET",
+        path: "/anthropic/v1/files/file-probe-001/content",
+        published_path: "/anthropic/v1/files/{file_id}/content",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "anthropicListMessageBatches",
+        method: "GET",
+        path: "/anthropic/v1/messages/batches",
+        published_path: "/anthropic/v1/messages/batches",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "anthropicCreateMessageBatch",
+        method: "POST",
+        path: "/anthropic/v1/messages/batches",
+        published_path: "/anthropic/v1/messages/batches",
+        body: r#"{"requests":[{"custom_id":"probe-1","params":{"model":"claude-sonnet-4-5","max_tokens":16,"messages":[{"role":"user","content":"hi"}]}}]}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "anthropicRetrieveMessageBatch",
+        method: "GET",
+        path: "/anthropic/v1/messages/batches/batch-probe-001",
+        published_path: "/anthropic/v1/messages/batches/{batch_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "anthropicCancelMessageBatch",
+        method: "POST",
+        path: "/anthropic/v1/messages/batches/batch-probe-001/cancel",
+        published_path: "/anthropic/v1/messages/batches/{batch_id}/cancel",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "anthropicCountMessageTokens",
+        method: "POST",
+        path: "/anthropic/v1/messages/count_tokens",
+        published_path: "/anthropic/v1/messages/count_tokens",
+        body: r#"{"model":"claude-sonnet-4-5","messages":[{"role":"user","content":"hi"}]}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "googleListCachedContents",
+        method: "GET",
+        path: "/google/v1beta/cachedContents",
+        published_path: "/google/v1beta/cachedContents",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "googleCreateCachedContent",
+        method: "POST",
+        path: "/google/v1beta/cachedContents",
+        published_path: "/google/v1beta/cachedContents",
+        body: r#"{"model":"models/gemini-3.5-flash","contents":[{"parts":[{"text":"hi"}]}]}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "googleDeleteCachedContent",
+        method: "DELETE",
+        path: "/google/v1beta/cachedContents/cachedContents-probe-001",
+        published_path: "/google/v1beta/cachedContents/{cached_content_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "googleRetrieveCachedContent",
+        method: "GET",
+        path: "/google/v1beta/cachedContents/cachedContents-probe-001",
+        published_path: "/google/v1beta/cachedContents/{cached_content_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "googleListFiles",
+        method: "GET",
+        path: "/google/v1beta/files",
+        published_path: "/google/v1beta/files",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "googleUploadFile",
+        method: "POST",
+        path: "/google/v1beta/files",
+        published_path: "/google/v1beta/files",
+        body: r#"{"filename":"probe.txt"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "googleDeleteFile",
+        method: "DELETE",
+        path: "/google/v1beta/files/file-probe-001",
+        published_path: "/google/v1beta/files/{file_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "googleRetrieveFile",
+        method: "GET",
+        path: "/google/v1beta/files/file-probe-001",
+        published_path: "/google/v1beta/files/{file_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "googleBatchEmbedContents",
+        method: "POST",
+        path: "/google/v1beta/models/gemini-3.5-flash:batchEmbedContents",
+        published_path: "/google/v1beta/models/{model}:batchEmbedContents",
+        body: r#"{"requests":[{"model":"models/text-embedding-004","content":{"parts":[{"text":"hi"}]}}]}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "googleCountTokens",
+        method: "POST",
+        path: "/google/v1beta/models/gemini-3.5-flash:countTokens",
+        published_path: "/google/v1beta/models/{model}:countTokens",
+        body: r#"{"contents":[{"parts":[{"text":"hi"}]}]}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "klingRetrieveVideoGeneration",
+        method: "GET",
+        path: "/kling/v1/videos/generations/task-probe-001",
+        published_path: "/kling/v1/videos/generations/{task_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "midjourneyRetrieveImageGeneration",
+        method: "GET",
+        path: "/midjourney/v1/images/generations/task-probe-001",
+        published_path: "/midjourney/v1/images/generations/{task_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "nanoBananaRetrieveImageGeneration",
+        method: "GET",
+        path: "/nano-banana/v1/images/generations/task-probe-001",
+        published_path: "/nano-banana/v1/images/generations/{task_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "sunoRetrieveMusicGeneration",
+        method: "GET",
+        path: "/suno/v1/music/generations/task-probe-001",
+        published_path: "/suno/v1/music/generations/{task_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "listAssistants",
+        method: "GET",
+        path: "/v1/assistants",
+        published_path: "/v1/assistants",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "deleteAssistant",
+        method: "DELETE",
+        path: "/v1/assistants/asst-probe-001",
+        published_path: "/v1/assistants/{assistant_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveAssistant",
+        method: "GET",
+        path: "/v1/assistants/asst-probe-001",
+        published_path: "/v1/assistants/{assistant_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "modifyAssistant",
+        method: "POST",
+        path: "/v1/assistants/asst-probe-001",
+        published_path: "/v1/assistants/{assistant_id}",
+        body: r#"{"model":"gpt-6-astra","name":"probe"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "openai.audio.transcriptions",
+        method: "POST",
+        path: "/v1/audio/transcriptions",
+        published_path: "/v1/audio/transcriptions",
+        body: r#"{"model":"whisper-1"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "openai.audio.translations",
+        method: "POST",
+        path: "/v1/audio/translations",
+        published_path: "/v1/audio/translations",
+        body: r#"{"model":"whisper-1"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "listVoiceConsents",
+        method: "GET",
+        path: "/v1/audio/voice_consents",
+        published_path: "/v1/audio/voice_consents",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "createVoiceConsent",
+        method: "POST",
+        path: "/v1/audio/voice_consents",
+        published_path: "/v1/audio/voice_consents",
+        body: r#"{"voice_id":"voice-probe-001"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "deleteVoiceConsent",
+        method: "DELETE",
+        path: "/v1/audio/voice_consents/vc-probe-001",
+        published_path: "/v1/audio/voice_consents/{consent_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveVoiceConsent",
+        method: "GET",
+        path: "/v1/audio/voice_consents/vc-probe-001",
+        published_path: "/v1/audio/voice_consents/{consent_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "updateVoiceConsent",
+        method: "POST",
+        path: "/v1/audio/voice_consents/vc-probe-001",
+        published_path: "/v1/audio/voice_consents/{consent_id}",
+        body: r#"{"voice_id":"voice-probe-001"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "listVoices",
+        method: "GET",
+        path: "/v1/audio/voices",
+        published_path: "/v1/audio/voices",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "createVoice",
+        method: "POST",
+        path: "/v1/audio/voices",
+        published_path: "/v1/audio/voices",
+        body: r#"{"name":"probe-voice"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveVoice",
+        method: "GET",
+        path: "/v1/audio/voices/21m00Tcm4TlvDq8ikWAM",
+        published_path: "/v1/audio/voices/{voice_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "listBatches",
+        method: "GET",
+        path: "/v1/batches",
+        published_path: "/v1/batches",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "openai.batches",
+        method: "POST",
+        path: "/v1/batches",
+        published_path: "/v1/batches",
+        body: r#"{"input_file_id":"file-probe-001","endpoint":"/v1/chat/completions","completion_window":"24h"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveBatch",
+        method: "GET",
+        path: "/v1/batches/batch-probe-001",
+        published_path: "/v1/batches/{batch_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "cancelBatch",
+        method: "POST",
+        path: "/v1/batches/batch-probe-001/cancel",
+        published_path: "/v1/batches/{batch_id}/cancel",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "listChatCompletions",
+        method: "GET",
+        path: "/v1/chat/completions",
+        published_path: "/v1/chat/completions",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "deleteChatCompletion",
+        method: "DELETE",
+        path: "/v1/chat/completions/cmpl-probe-001",
+        published_path: "/v1/chat/completions/{completion_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveChatCompletion",
+        method: "GET",
+        path: "/v1/chat/completions/cmpl-probe-001",
+        published_path: "/v1/chat/completions/{completion_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "modifyChatCompletion",
+        method: "POST",
+        path: "/v1/chat/completions/cmpl-probe-001",
+        published_path: "/v1/chat/completions/{completion_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "listChatCompletionMessages",
+        method: "GET",
+        path: "/v1/chat/completions/cmpl-probe-001/messages",
+        published_path: "/v1/chat/completions/{completion_id}/messages",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "openai.containers",
+        method: "GET",
+        path: "/v1/containers",
+        published_path: "/v1/containers",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "createContainer",
+        method: "POST",
+        path: "/v1/containers",
+        published_path: "/v1/containers",
+        body: r#"{"name":"probe-container"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "deleteContainer",
+        method: "DELETE",
+        path: "/v1/containers/cntr-probe-001",
+        published_path: "/v1/containers/{container_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveContainer",
+        method: "GET",
+        path: "/v1/containers/cntr-probe-001",
+        published_path: "/v1/containers/{container_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "listContainerFiles",
+        method: "GET",
+        path: "/v1/containers/cntr-probe-001/files",
+        published_path: "/v1/containers/{container_id}/files",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "createContainerFile",
+        method: "POST",
+        path: "/v1/containers/cntr-probe-001/files",
+        published_path: "/v1/containers/{container_id}/files",
+        body: r#"{"file_id":"file-probe-001"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "deleteContainerFile",
+        method: "DELETE",
+        path: "/v1/containers/cntr-probe-001/files/file-probe-001",
+        published_path: "/v1/containers/{container_id}/files/{file_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveContainerFile",
+        method: "GET",
+        path: "/v1/containers/cntr-probe-001/files/file-probe-001",
+        published_path: "/v1/containers/{container_id}/files/{file_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveContainerFileContent",
+        method: "GET",
+        path: "/v1/containers/cntr-probe-001/files/file-probe-001/content",
+        published_path: "/v1/containers/{container_id}/files/{file_id}/content",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "listConversations",
+        method: "GET",
+        path: "/v1/conversations",
+        published_path: "/v1/conversations",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "deleteConversation",
+        method: "DELETE",
+        path: "/v1/conversations/conv-probe-001",
+        published_path: "/v1/conversations/{conversation_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveConversation",
+        method: "GET",
+        path: "/v1/conversations/conv-probe-001",
+        published_path: "/v1/conversations/{conversation_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "modifyConversation",
+        method: "POST",
+        path: "/v1/conversations/conv-probe-001",
+        published_path: "/v1/conversations/{conversation_id}",
+        body: r#"{"metadata":{"probe":"1"}}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "listConversationItems",
+        method: "GET",
+        path: "/v1/conversations/conv-probe-001/items",
+        published_path: "/v1/conversations/{conversation_id}/items",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "createConversationItem",
+        method: "POST",
+        path: "/v1/conversations/conv-probe-001/items",
+        published_path: "/v1/conversations/{conversation_id}/items",
+        body: r#"{"items":[{"type":"message","role":"user","content":[{"type":"input_text","text":"hi"}]}]}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "deleteConversationItem",
+        method: "DELETE",
+        path: "/v1/conversations/conv-probe-001/items/item-probe-001",
+        published_path: "/v1/conversations/{conversation_id}/items/{item_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveConversationItem",
+        method: "GET",
+        path: "/v1/conversations/conv-probe-001/items/item-probe-001",
+        published_path: "/v1/conversations/{conversation_id}/items/{item_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "openai.files",
+        method: "GET",
+        path: "/v1/files",
+        published_path: "/v1/files",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "uploadFile",
+        method: "POST",
+        path: "/v1/files",
+        published_path: "/v1/files",
+        body: r#"{"purpose":"assistants","filename":"probe.txt"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "deleteFile",
+        method: "DELETE",
+        path: "/v1/files/file-probe-001",
+        published_path: "/v1/files/{file_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveFile",
+        method: "GET",
+        path: "/v1/files/file-probe-001",
+        published_path: "/v1/files/{file_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveFileContent",
+        method: "GET",
+        path: "/v1/files/file-probe-001/content",
+        published_path: "/v1/files/{file_id}/content",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "openai.images.variations",
+        method: "POST",
+        path: "/v1/images/variations",
+        published_path: "/v1/images/variations",
+        body: r#"{"model":"gpt-image-2","image":"aGVsbG8="}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "openai.models",
+        method: "GET",
+        path: "/v1/models",
+        published_path: "/v1/models",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Synthetic,
+    },
+    ApiCase {
+        api_code: "retrieveModel",
+        method: "GET",
+        path: "/v1/models/gemini-3.5-flash",
+        published_path: "/v1/models/{model}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Synthetic,
+    },
+    ApiCase {
+        api_code: "openai.moderations",
+        method: "POST",
+        path: "/v1/moderations",
+        published_path: "/v1/moderations",
+        body: r#"{"input":"hi"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "createRealtimeCall",
+        method: "POST",
+        path: "/v1/realtime/calls",
+        published_path: "/v1/realtime/calls",
+        body: r#"{"model":"gpt-realtime-2.1"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "acceptRealtimeCall",
+        method: "POST",
+        path: "/v1/realtime/calls/call-probe-001/accept",
+        published_path: "/v1/realtime/calls/{call_id}/accept",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "hangupRealtimeCall",
+        method: "POST",
+        path: "/v1/realtime/calls/call-probe-001/hangup",
+        published_path: "/v1/realtime/calls/{call_id}/hangup",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "referRealtimeCall",
+        method: "POST",
+        path: "/v1/realtime/calls/call-probe-001/refer",
+        published_path: "/v1/realtime/calls/{call_id}/refer",
+        body: r#"{"target":"sip:probe@example.test"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "rejectRealtimeCall",
+        method: "POST",
+        path: "/v1/realtime/calls/call-probe-001/reject",
+        published_path: "/v1/realtime/calls/{call_id}/reject",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "createRealtimeClientSecret",
+        method: "POST",
+        path: "/v1/realtime/client_secrets",
+        published_path: "/v1/realtime/client_secrets",
+        body: r#"{"session":{"type":"realtime"}}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "createRealtimeTranscriptionSession",
+        method: "POST",
+        path: "/v1/realtime/transcription_sessions",
+        published_path: "/v1/realtime/transcription_sessions",
+        body: r#"{"model":"gpt-realtime-2.1"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "createRealtimeTranslationSession",
+        method: "POST",
+        path: "/v1/realtime/translations",
+        published_path: "/v1/realtime/translations",
+        body: r#"{"model":"gpt-realtime-2.1"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "compactResponse",
+        method: "POST",
+        path: "/v1/responses/compact",
+        published_path: "/v1/responses/compact",
+        body: r#"{"model":"gpt-6-astra"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "countResponseInputTokens",
+        method: "POST",
+        path: "/v1/responses/input_tokens",
+        published_path: "/v1/responses/input_tokens",
+        body: r#"{"model":"gpt-6-astra","input":"hi"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "deleteResponse",
+        method: "DELETE",
+        path: "/v1/responses/resp-probe-001",
+        published_path: "/v1/responses/{response_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveResponse",
+        method: "GET",
+        path: "/v1/responses/resp-probe-001",
+        published_path: "/v1/responses/{response_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "cancelResponse",
+        method: "POST",
+        path: "/v1/responses/resp-probe-001/cancel",
+        published_path: "/v1/responses/{response_id}/cancel",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "listResponseInputItems",
+        method: "GET",
+        path: "/v1/responses/resp-probe-001/input_items",
+        published_path: "/v1/responses/{response_id}/input_items",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "createThreadAndRun",
+        method: "POST",
+        path: "/v1/threads/runs",
+        published_path: "/v1/threads/runs",
+        body: r#"{"assistant_id":"asst-probe-001","model":"gpt-6-astra"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "deleteThread",
+        method: "DELETE",
+        path: "/v1/threads/thread-probe-001",
+        published_path: "/v1/threads/{thread_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveThread",
+        method: "GET",
+        path: "/v1/threads/thread-probe-001",
+        published_path: "/v1/threads/{thread_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "modifyThread",
+        method: "POST",
+        path: "/v1/threads/thread-probe-001",
+        published_path: "/v1/threads/{thread_id}",
+        body: r#"{"metadata":{"probe":"1"}}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "listMessages",
+        method: "GET",
+        path: "/v1/threads/thread-probe-001/messages",
+        published_path: "/v1/threads/{thread_id}/messages",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "createMessage",
+        method: "POST",
+        path: "/v1/threads/thread-probe-001/messages",
+        published_path: "/v1/threads/{thread_id}/messages",
+        body: r#"{"role":"user","content":"hi"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "deleteMessage",
+        method: "DELETE",
+        path: "/v1/threads/thread-probe-001/messages/msg-probe-001",
+        published_path: "/v1/threads/{thread_id}/messages/{message_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveMessage",
+        method: "GET",
+        path: "/v1/threads/thread-probe-001/messages/msg-probe-001",
+        published_path: "/v1/threads/{thread_id}/messages/{message_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "modifyMessage",
+        method: "POST",
+        path: "/v1/threads/thread-probe-001/messages/msg-probe-001",
+        published_path: "/v1/threads/{thread_id}/messages/{message_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "listRuns",
+        method: "GET",
+        path: "/v1/threads/thread-probe-001/runs",
+        published_path: "/v1/threads/{thread_id}/runs",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "createRun",
+        method: "POST",
+        path: "/v1/threads/thread-probe-001/runs",
+        published_path: "/v1/threads/{thread_id}/runs",
+        body: r#"{"assistant_id":"asst-probe-001","model":"gpt-6-astra"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveRun",
+        method: "GET",
+        path: "/v1/threads/thread-probe-001/runs/run-probe-001",
+        published_path: "/v1/threads/{thread_id}/runs/{run_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "modifyRun",
+        method: "POST",
+        path: "/v1/threads/thread-probe-001/runs/run-probe-001",
+        published_path: "/v1/threads/{thread_id}/runs/{run_id}",
+        body: r#"{"assistant_id":"asst-probe-001","model":"gpt-6-astra"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "cancelRun",
+        method: "POST",
+        path: "/v1/threads/thread-probe-001/runs/run-probe-001/cancel",
+        published_path: "/v1/threads/{thread_id}/runs/{run_id}/cancel",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "listRunSteps",
+        method: "GET",
+        path: "/v1/threads/thread-probe-001/runs/run-probe-001/steps",
+        published_path: "/v1/threads/{thread_id}/runs/{run_id}/steps",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveRunStep",
+        method: "GET",
+        path: "/v1/threads/thread-probe-001/runs/run-probe-001/steps/step-probe-001",
+        published_path: "/v1/threads/{thread_id}/runs/{run_id}/steps/{step_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "submitRunToolOutputs",
+        method: "POST",
+        path: "/v1/threads/thread-probe-001/runs/run-probe-001/submit_tool_outputs",
+        published_path: "/v1/threads/{thread_id}/runs/{run_id}/submit_tool_outputs",
+        body: r#"{"tool_outputs":[{"tool_call_id":"call-probe-001","output":"ok"}]}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "openai.uploads",
+        method: "POST",
+        path: "/v1/uploads",
+        published_path: "/v1/uploads",
+        body: r#"{"purpose":"assistants","bytes":16,"filename":"probe.txt","mime_type":"text/plain"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "cancelUpload",
+        method: "POST",
+        path: "/v1/uploads/upload-probe-001/cancel",
+        published_path: "/v1/uploads/{upload_id}/cancel",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "completeUpload",
+        method: "POST",
+        path: "/v1/uploads/upload-probe-001/complete",
+        published_path: "/v1/uploads/{upload_id}/complete",
+        body: r#"{"part_ids":["part-probe-001"]}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "addUploadPartExplicit",
+        method: "POST",
+        path: "/v1/uploads/upload-probe-001/parts",
+        published_path: "/v1/uploads/{upload_id}/parts",
+        body: r#"{"data":"aGVsbG8="}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "listVectorStores",
+        method: "GET",
+        path: "/v1/vector_stores",
+        published_path: "/v1/vector_stores",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "openai.vector_stores",
+        method: "POST",
+        path: "/v1/vector_stores",
+        published_path: "/v1/vector_stores",
+        body: r#"{"name":"probe-store"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "deleteVectorStore",
+        method: "DELETE",
+        path: "/v1/vector_stores/vs-probe-001",
+        published_path: "/v1/vector_stores/{vector_store_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveVectorStore",
+        method: "GET",
+        path: "/v1/vector_stores/vs-probe-001",
+        published_path: "/v1/vector_stores/{vector_store_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "modifyVectorStore",
+        method: "POST",
+        path: "/v1/vector_stores/vs-probe-001",
+        published_path: "/v1/vector_stores/{vector_store_id}",
+        body: r#"{"name":"probe-store"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "createVectorStoreFileBatch",
+        method: "POST",
+        path: "/v1/vector_stores/vs-probe-001/file_batches",
+        published_path: "/v1/vector_stores/{vector_store_id}/file_batches",
+        body: r#"{"file_ids":["file-probe-001"]}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveVectorStoreFileBatch",
+        method: "GET",
+        path: "/v1/vector_stores/vs-probe-001/file_batches/batch-probe-001",
+        published_path: "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "cancelVectorStoreFileBatch",
+        method: "POST",
+        path: "/v1/vector_stores/vs-probe-001/file_batches/batch-probe-001/cancel",
+        published_path: "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}/cancel",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "listVectorStoreFileBatchFiles",
+        method: "GET",
+        path: "/v1/vector_stores/vs-probe-001/file_batches/batch-probe-001/files",
+        published_path: "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}/files",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "listVectorStoreFiles",
+        method: "GET",
+        path: "/v1/vector_stores/vs-probe-001/files",
+        published_path: "/v1/vector_stores/{vector_store_id}/files",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "createVectorStoreFile",
+        method: "POST",
+        path: "/v1/vector_stores/vs-probe-001/files",
+        published_path: "/v1/vector_stores/{vector_store_id}/files",
+        body: r#"{"file_id":"file-probe-001"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "deleteVectorStoreFile",
+        method: "DELETE",
+        path: "/v1/vector_stores/vs-probe-001/files/file-probe-001",
+        published_path: "/v1/vector_stores/{vector_store_id}/files/{file_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveVectorStoreFile",
+        method: "GET",
+        path: "/v1/vector_stores/vs-probe-001/files/file-probe-001",
+        published_path: "/v1/vector_stores/{vector_store_id}/files/{file_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "modifyVectorStoreFile",
+        method: "POST",
+        path: "/v1/vector_stores/vs-probe-001/files/file-probe-001",
+        published_path: "/v1/vector_stores/{vector_store_id}/files/{file_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "searchVectorStore",
+        method: "POST",
+        path: "/v1/vector_stores/vs-probe-001/search",
+        published_path: "/v1/vector_stores/{vector_store_id}/search",
+        body: r#"{"query":"hi"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "listVideos",
+        method: "GET",
+        path: "/v1/videos",
+        published_path: "/v1/videos",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "createVideoCharacter",
+        method: "POST",
+        path: "/v1/videos/characters",
+        published_path: "/v1/videos/characters",
+        body: r#"{"model":"sora-2"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveVideoCharacter",
+        method: "GET",
+        path: "/v1/videos/characters/char-probe-001",
+        published_path: "/v1/videos/characters/{character_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "editVideo",
+        method: "POST",
+        path: "/v1/videos/edits",
+        published_path: "/v1/videos/edits",
+        body: r#"{"model":"sora-2","prompt":"a paper plane"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "extendVideo",
+        method: "POST",
+        path: "/v1/videos/extensions",
+        published_path: "/v1/videos/extensions",
+        body: r#"{"model":"sora-2","prompt":"a paper plane"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "deleteVideo",
+        method: "DELETE",
+        path: "/v1/videos/video-probe-001",
+        published_path: "/v1/videos/{video_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveVideo",
+        method: "GET",
+        path: "/v1/videos/video-probe-001",
+        published_path: "/v1/videos/{video_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "retrieveVideoContent",
+        method: "GET",
+        path: "/v1/videos/video-probe-001/content",
+        published_path: "/v1/videos/{video_id}/content",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "remixVideo",
+        method: "POST",
+        path: "/v1/videos/video-probe-001/remix",
+        published_path: "/v1/videos/{video_id}/remix",
+        body: r#"{"model":"sora-2","prompt":"a paper plane"}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "vidu.video_task_query",
+        method: "GET",
+        path: "/vidu/ent/v2/tasks/task-probe-001/creations",
+        published_path: "/vidu/ent/v2/tasks/{task_id}/creations",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
+    },
+    ApiCase {
+        api_code: "volcengineRetrieveContentGenerationTask",
+        method: "GET",
+        path: "/volcengine/api/v3/contents/generations/tasks/task-probe-001",
+        published_path: "/volcengine/api/v3/contents/generations/tasks/{task_id}",
+        body: r#"{}"#,
+        expectation: ApiExpectation::Routable,
     },
 ];
 
@@ -541,19 +1745,33 @@ fn every_probe_path_is_a_published_route() {
         )
     });
 
-    // Pair each `HttpMethod::Post` with the path literal that follows it. The
-    // generated file spells a route two ways — `HttpRoute::<ctor>(HttpMethod::
-    // Post, "<path>", ...)` on one line, or with the arguments wrapped across
+    // Pair each `HttpMethod::<Verb>` with the path literal that follows it, and
+    // key the result by `"<VERB> <path>"` — the surface is not POST-only (59
+    // `GET` and 17 `DELETE` operations are published beside the 91 `POST` ones),
+    // so a POST-only scan could not see a `GET`-only route at all.
+    //
+    // The generated file spells a route two ways — `HttpRoute::<ctor>(HttpMethod
+    // ::Post, "<path>", ...)` on one line, or with the arguments wrapped across
     // lines — so the scan looks at the remainder of the current line first and
     // only then at the next few lines. Reading only the following lines dropped
     // the single-line form and reported `/v1/videos` as unpublished.
+    const HTTP_METHODS: &[(&str, &str)] = &[
+        ("HttpMethod::Get", "GET"),
+        ("HttpMethod::Post", "POST"),
+        ("HttpMethod::Put", "PUT"),
+        ("HttpMethod::Patch", "PATCH"),
+        ("HttpMethod::Delete", "DELETE"),
+    ];
     let mut published: std::collections::BTreeSet<String> = std::collections::BTreeSet::new();
     let lines: Vec<&str> = source.lines().collect();
     for (index, line) in lines.iter().enumerate() {
-        let Some(post_at) = line.find("HttpMethod::Post") else {
+        let Some((method_at, verb, marker_len)) = HTTP_METHODS
+            .iter()
+            .find_map(|(marker, verb)| line.find(marker).map(|at| (at, *verb, marker.len())))
+        else {
             continue;
         };
-        let after_method = &line[post_at + "HttpMethod::Post".len()..];
+        let after_method = &line[method_at + marker_len..];
         let mut found = extract_path_literal(after_method);
         if found.is_none() {
             for candidate in lines.iter().skip(index + 1).take(3) {
@@ -564,12 +1782,12 @@ fn every_probe_path_is_a_published_route() {
             }
         }
         if let Some(path) = found {
-            published.insert(normalise_path(path));
+            published.insert(format!("{} {}", verb, normalise_path(path)));
         }
     }
     assert!(
-        published.len() > 50,
-        "only {} POST routes parsed from the manifest; the parser or the generated layout changed",
+        published.len() > 150,
+        "only {} routes parsed from the manifest; the parser or the generated layout changed",
         published.len()
     );
 
@@ -580,12 +1798,12 @@ fn every_probe_path_is_a_published_route() {
         // :generateContent`) are published with the placeholder, and comparing
         // a substituted path against it would report every such route as
         // unpublished.
-        let normalised = normalise_path(case.manifest_path());
-        if published.contains(&normalised) {
+        let operation = format!("{} {}", case.method, normalise_path(case.manifest_path()));
+        if published.contains(&operation) {
             continue;
         }
         missing.push(format!(
-            "{} ({} -> {normalised})",
+            "{} ({} -> {operation})",
             case.api_code,
             case.manifest_path()
         ));
@@ -673,7 +1891,7 @@ async fn every_published_api_reaches_its_vendor_account_on_the_real_catalog() {
                     client
                         .apply(
                             Request::builder()
-                                .method("POST")
+                                .method(case.method)
                                 .uri(case.path)
                                 .header("content-type", "application/json"),
                         )
@@ -745,7 +1963,7 @@ async fn every_published_api_reaches_its_vendor_account_on_the_real_catalog() {
         {
             unreachable.push(format!("{label} => HTTP {status}: {excerpt}"));
         } else {
-            reached.push(format!("{label} => HTTP {status}"));
+            reached.push(format!("{label} => HTTP {status}: {excerpt}"));
         }
     }
 

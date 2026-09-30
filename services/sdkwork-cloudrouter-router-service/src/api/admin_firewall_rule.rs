@@ -1,6 +1,5 @@
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
@@ -9,19 +8,25 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::Router;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 
-use crate::api::request_id::{generate_server_request_id, RequestIdError};
+use crate::api::request_id::generate_server_request_id;
 use crate::api::response::{
-    json_created_response, json_success_list_response, no_content_response,
+    bad_request, json_created_response, json_success_list_response, no_content_response,
     normalize_list_search_query, offset_page_info, parse_offset_list_query, problem_from_wire_code,
+    domain_conflict_response as conflict_response,
+};
+use crate::api::text_normalization::parse_json_body;
+use crate::api::command_error::{
+    command_error_from_request_id as request_id_error, command_error_response,
+    system_error_response, ApiCommandError,
 };
 use crate::application::EntityUuidGenerator;
-use crate::domain::DomainError;
+use crate::infrastructure::sql::sql_hash::digest_hex;
 use crate::ports::{
     AdminFirewallRuleItem, AdminFirewallRuleStore, AdminFirewallRuleSubject,
     CreateAdminFirewallRuleCommand, DeleteAdminFirewallRuleCommand, ListAdminFirewallRulesQuery,
 };
+use sdkwork_utils_rust::datetime::current_timestamp_string;
 
 const MAX_VALUE_LEN: usize = 256;
 const MAX_REASON_LEN: usize = 512;
@@ -84,11 +89,6 @@ enum FirewallTarget {
     Domain,
 }
 
-enum FirewallCommandBuildError {
-    BadRequest(String),
-    System(DomainError),
-}
-
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct AdminFirewallRuleItemEnvelope {
@@ -144,7 +144,7 @@ async fn fetch_firewall_rules(
             offset_page_info(page.page_no, page.page_size, page.total),
         ),
         Err(error) => {
-            firewall_rule_system_response("firewall rule read model is unavailable", error)
+            system_error_response("firewall rule read model is unavailable", error)
         }
     }
 }
@@ -180,7 +180,7 @@ async fn create_firewall_rule(
     };
     let command = match build_create_command(state.clone(), &headers, subject, request) {
         Ok(command) => command,
-        Err(error) => return command_build_error_response(error),
+        Err(error) => return command_error_response(error, "firewall rule command is invalid"),
     };
 
     match state.store.create_firewall_rule(command).await {
@@ -192,7 +192,7 @@ async fn create_firewall_rule(
         ),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
-            firewall_rule_system_response("firewall rule command store is unavailable", error)
+            system_error_response("firewall rule command store is unavailable", error)
         }
     }
 }
@@ -210,7 +210,7 @@ async fn delete_firewall_rule(
     };
     let command = match build_delete_command(state.clone(), &headers, subject, rule_id) {
         Ok(command) => command,
-        Err(error) => return command_build_error_response(error),
+        Err(error) => return command_error_response(error, "firewall rule command is invalid"),
     };
 
     match state.store.delete_firewall_rule(command).await {
@@ -218,20 +218,9 @@ async fn delete_firewall_rule(
         Ok(false) => not_found_response("firewall rule was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
-            firewall_rule_system_response("firewall rule command store is unavailable", error)
+            system_error_response("firewall rule command store is unavailable", error)
         }
     }
-}
-
-fn parse_json_body<T>(body: &[u8], entity_name: &str) -> Result<T, String>
-where
-    T: for<'de> Deserialize<'de>,
-{
-    if body.iter().all(u8::is_ascii_whitespace) {
-        return Err(format!("{entity_name} request body is required"));
-    }
-    serde_json::from_slice(body)
-        .map_err(|error| format!("invalid {entity_name} request body: {error}"))
 }
 
 fn normalize_create_request(
@@ -521,7 +510,7 @@ fn build_create_command(
     _headers: &HeaderMap,
     subject: AdminFirewallRuleSubject,
     request: NormalizedCreateRequest,
-) -> Result<CreateAdminFirewallRuleCommand, FirewallCommandBuildError> {
+) -> Result<CreateAdminFirewallRuleCommand, ApiCommandError> {
     let rule_uuid = generate_entity_uuid(&state)?;
     let rule_code = entity_code("fw", &rule_uuid);
     Ok(CreateAdminFirewallRuleCommand {
@@ -549,7 +538,7 @@ fn build_delete_command(
     _headers: &HeaderMap,
     subject: AdminFirewallRuleSubject,
     rule_id: i64,
-) -> Result<DeleteAdminFirewallRuleCommand, FirewallCommandBuildError> {
+) -> Result<DeleteAdminFirewallRuleCommand, ApiCommandError> {
     Ok(DeleteAdminFirewallRuleCommand {
         subject,
         audit_log_uuid: generate_entity_uuid(&state)?,
@@ -562,20 +551,11 @@ fn build_delete_command(
 
 fn generate_entity_uuid(
     state: &AdminFirewallRuleState,
-) -> Result<String, FirewallCommandBuildError> {
+) -> Result<String, ApiCommandError> {
     state
         .entity_uuid_generator
         .generate_entity_uuid()
-        .map_err(FirewallCommandBuildError::System)
-}
-
-fn request_id_error(error: RequestIdError) -> FirewallCommandBuildError {
-    match error {
-        RequestIdError::Invalid(message) => FirewallCommandBuildError::BadRequest(message),
-        RequestIdError::System(message) => {
-            FirewallCommandBuildError::System(DomainError::new(message))
-        }
-    }
+        .map_err(ApiCommandError::System)
 }
 
 fn parse_positive_id(value: &str, field_name: &str) -> Result<i64, String> {
@@ -604,66 +584,7 @@ fn entity_code(prefix: &str, uuid: &str) -> String {
     format!("{prefix}-{short}")
 }
 
-fn digest_hex(value: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(value.as_bytes());
-    hex::encode(hasher.finalize())
-}
-
-fn bad_request(message: String) -> Response {
-    problem_from_wire_code("4001", message).into_response()
-}
-
 fn not_found_response(message: &str) -> Response {
     problem_from_wire_code("4040", message.to_owned()).into_response()
 }
 
-fn conflict_response(error: DomainError) -> Response {
-    problem_from_wire_code("4090", error.to_string()).into_response()
-}
-
-fn command_build_error_response(error: FirewallCommandBuildError) -> Response {
-    match error {
-        FirewallCommandBuildError::BadRequest(message) => bad_request(message),
-        FirewallCommandBuildError::System(error) => {
-            firewall_rule_system_response("firewall rule command is invalid", error)
-        }
-    }
-}
-
-fn firewall_rule_system_response(context: &str, error: DomainError) -> Response {
-    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
-}
-
-fn current_timestamp_string() -> String {
-    let seconds = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_secs() as i64)
-        .unwrap_or(0);
-    format_unix_timestamp(seconds)
-}
-
-fn format_unix_timestamp(seconds: i64) -> String {
-    let days = seconds.div_euclid(86_400);
-    let seconds_of_day = seconds.rem_euclid(86_400);
-    let (year, month, day) = civil_from_days(days);
-    let hour = seconds_of_day / 3_600;
-    let minute = (seconds_of_day % 3_600) / 60;
-    let second = seconds_of_day % 60;
-    format!("{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02}")
-}
-
-fn civil_from_days(days: i64) -> (i64, i64, i64) {
-    let days = days + 719_468;
-    let era = if days >= 0 { days } else { days - 146_096 } / 146_097;
-    let day_of_era = days - era * 146_097;
-    let year_of_era =
-        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
-    let year = year_of_era + era * 400;
-    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
-    let month_prime = (5 * day_of_year + 2) / 153;
-    let day = day_of_year - (153 * month_prime + 2) / 5 + 1;
-    let month = month_prime + if month_prime < 10 { 3 } else { -9 };
-    let year = year + if month <= 2 { 1 } else { 0 };
-    (year, month, day)
-}

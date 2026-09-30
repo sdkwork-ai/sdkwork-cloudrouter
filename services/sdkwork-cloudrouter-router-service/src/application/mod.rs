@@ -1,9 +1,9 @@
 mod ai_route_taxonomy;
-mod billing_subject_cache;
 mod ai_routing_cache_invalidation;
 mod alipay_payment_adapter;
 mod api_key_secret_codec;
 mod api_key_secret_generator;
+mod billing_subject_cache;
 mod cache_runtime;
 mod gateway_accounting_retry;
 mod gateway_chain_policy;
@@ -84,10 +84,13 @@ pub use gateway_invocation_policy::{
 pub use gateway_invocation_rate_limit::{GatewayInvocationRateLimiter, GatewayRateLimitSpec};
 pub use gateway_pricing_decision::GatewayPricingDecision;
 pub use iam_runtime_context::IamRuntimeContext;
+pub(crate) use invocation::is_token_meter;
 pub use invocation::{
-    AccountBillingMode, AccountResolutionInterceptor, BillingMode, BillingPolicyInterceptor,
-    BillingQuantitySource, BillingSettlementInterceptor, BillingTransactionInterceptor,
-    CircuitBreakerConfig, CircuitBreakerInterceptor, CircuitBreakerStateStore, CircuitCallPermit,
+    canonical_provider_native_catalog_key, normalize_standard_api_path,
+    provider_native_api_code_from_normalized_path, AccountBillingMode,
+    AccountResolutionInterceptor, BillingMode, BillingPolicyInterceptor, BillingQuantitySource,
+    BillingSettlementInterceptor, BillingTransactionInterceptor, CircuitBreakerConfig,
+    CircuitBreakerInterceptor, CircuitBreakerStateStore, CircuitCallPermit,
     DeferredStreamInvocation, DeferredStreamResponse, DispatchExecutor, DispatchMode,
     IdempotencyConfig, IdempotencyInterceptor, IdempotencyKeyStatus, IdempotencyLockAcquisition,
     IdempotencyStore, IdempotencyStoreEntry, IdempotencyStoreError, Invocation, InvocationAccount,
@@ -136,6 +139,7 @@ pub use payment_provider_account_resolver::{
     PaymentProviderAccountCredentialResolver, PaymentProviderResolvedCredentials,
     PaymentProviderSecretResolver, PaymentProviderSecretValue,
 };
+pub(crate) use payment_provider_registry::normalize_payment_supplier_code;
 pub use payment_provider_registry::{
     default_payment_provider_registry, production_payment_provider_registry,
     resolve_payment_provider_registry_for_deployment, sandbox_payment_provider_registry,
@@ -172,6 +176,7 @@ pub use payment_reconciliation_runtime::{
     RuntimeReconciliationLedgerEntry,
 };
 
+pub use billing_subject_cache::{BillingSubjectCacheMetrics, CachedBillingSubjectResolver};
 #[cfg(test)]
 pub use payment_reconciliation_runtime::InMemoryPaymentReconciliationRuntimeStore;
 pub use payment_reconciliation_worker::{
@@ -198,7 +203,6 @@ pub use route_strategy::{
     STRATEGY_QUALITY_FIRST, STRATEGY_ROUND_ROBIN, STRATEGY_STICKY, STRATEGY_WEIGHTED,
 };
 pub use runtime_stream_bus::{InMemoryRuntimeStreamBus, RuntimeStreamBus, RuntimeStreamBusFuture};
-pub use billing_subject_cache::{BillingSubjectCacheMetrics, CachedBillingSubjectResolver};
 pub use sdkwork_models_catalog_service::{
     ApiKeyAuthenticator, ApiKeySecretHasher, AuthenticateApiKeyQuery, AuthenticatedApiKeyContext,
     BillingStrategyKind, BillingStrategyRegistry, BillingStructure, ListModelCatalogQuery,

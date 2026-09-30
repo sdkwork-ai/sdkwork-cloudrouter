@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
@@ -9,19 +8,26 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::api::request_id::{generate_server_request_id, RequestIdError};
+use crate::api::request_id::generate_server_request_id;
 use crate::api::response::{
-    json_created_response, json_success_list_response, no_content_response, offset_page_info,
-    parse_offset_list_query, problem_from_wire_code, success_envelope, ParsedOffsetListQuery,
+    bad_request, json_created_response, json_success_list_response, no_content_response,
+    offset_page_info, parse_offset_list_query, problem_from_wire_code, success_envelope,
+    ParsedOffsetListQuery,
+    domain_conflict_response as conflict_response,
+};
+use crate::api::text_normalization::parse_json_body;
+use crate::api::command_error::{
+    command_error_from_request_id as request_id_error, command_error_response,
+    system_error_response, ApiCommandError,
 };
 use crate::application::EntityUuidGenerator;
-use crate::domain::DomainError;
 use crate::ports::{
     AdminReferralListPage, AdminReferralStore, AdminReferralStrategyItem, AdminReferralSubject,
     CreateAdminReferralStrategyCommand, DeleteAdminReferralStrategyCommand,
     ListAdminReferralRelationsQuery, ListAdminReferralStrategiesQuery,
     RetrieveAdminReferralStrategyQuery, UpdateAdminReferralStrategyCommand,
 };
+use sdkwork_utils_rust::datetime::{civil_from_days, current_timestamp_string};
 
 const MAX_STRATEGY_NAME_LEN: usize = 128;
 const MAX_STRATEGY_DESCRIPTION_LEN: usize = 512;
@@ -81,12 +87,6 @@ struct NormalizedReferralStrategyMutation {
     ends_at: Option<String>,
 }
 
-#[derive(Debug)]
-enum AdminReferralCommandBuildError {
-    BadRequest(String),
-    System(DomainError),
-}
-
 pub fn admin_referral_router_with_store(
     store: Arc<dyn AdminReferralStore + Send + Sync>,
     entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
@@ -136,7 +136,7 @@ async fn fetch_referral_relations(
     {
         Ok(page) => referral_list_response(page),
         Err(error) => {
-            referral_system_response("referral relation read model is unavailable", error)
+            system_error_response("referral relation read model is unavailable", error)
         }
     }
 }
@@ -153,7 +153,7 @@ async fn fetch_referral_strategies(
     };
     let status = match normalize_optional_strategy_status(params.status.as_deref()) {
         Ok(status) => status,
-        Err(error) => return command_build_error_response(error),
+        Err(error) => return command_error_response(error, "referral command is invalid"),
     };
     let search = normalize_search_query(params.q.as_deref());
     match state
@@ -170,7 +170,7 @@ async fn fetch_referral_strategies(
     {
         Ok(page) => referral_list_response(page),
         Err(error) => {
-            referral_system_response("referral strategy read model is unavailable", error)
+            system_error_response("referral strategy read model is unavailable", error)
         }
     }
 }
@@ -196,7 +196,7 @@ async fn fetch_referral_strategy(
         Ok(Some(item)) => Json(success_envelope(item)).into_response(),
         Ok(None) => not_found_response("referral strategy was not found"),
         Err(error) => {
-            referral_system_response("referral strategy read model is unavailable", error)
+            system_error_response("referral strategy read model is unavailable", error)
         }
     }
 }
@@ -214,17 +214,17 @@ async fn create_referral_strategy(
         };
     let mutation = match normalize_strategy_mutation(request) {
         Ok(mutation) => mutation,
-        Err(error) => return command_build_error_response(error),
+        Err(error) => return command_error_response(error, "referral command is invalid"),
     };
     let command = match build_create_command(state.clone(), subject, mutation) {
         Ok(command) => command,
-        Err(error) => return command_build_error_response(error),
+        Err(error) => return command_error_response(error, "referral command is invalid"),
     };
     match state.store.create_referral_strategy(command).await {
         Ok(item) => json_created_response(None, item),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
-            referral_system_response("referral strategy command store is unavailable", error)
+            system_error_response("referral strategy command store is unavailable", error)
         }
     }
 }
@@ -256,23 +256,23 @@ async fn update_referral_strategy(
         Ok(Some(item)) => item,
         Ok(None) => return not_found_response("referral strategy was not found"),
         Err(error) => {
-            return referral_system_response("referral strategy read model is unavailable", error);
+            return system_error_response("referral strategy read model is unavailable", error);
         }
     };
     let mutation = match merge_strategy_mutation(current, request) {
         Ok(mutation) => mutation,
-        Err(error) => return command_build_error_response(error),
+        Err(error) => return command_error_response(error, "referral command is invalid"),
     };
     let command = match build_update_command(state.clone(), subject, strategy_id, mutation) {
         Ok(command) => command,
-        Err(error) => return command_build_error_response(error),
+        Err(error) => return command_error_response(error, "referral command is invalid"),
     };
     match state.store.update_referral_strategy(command).await {
         Ok(item) => Json(success_envelope(item)).into_response(),
         Err(error) if error.is_not_found() => not_found_response("referral strategy was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
-            referral_system_response("referral strategy command store is unavailable", error)
+            system_error_response("referral strategy command store is unavailable", error)
         }
     }
 }
@@ -289,14 +289,14 @@ async fn delete_referral_strategy(
     };
     let command = match build_delete_command(state.clone(), subject, strategy_id) {
         Ok(command) => command,
-        Err(error) => return command_build_error_response(error),
+        Err(error) => return command_error_response(error, "referral command is invalid"),
     };
     match state.store.delete_referral_strategy(command).await {
         Ok(true) => no_content_response(None),
         Ok(false) => not_found_response("referral strategy was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
-            referral_system_response("referral strategy command store is unavailable", error)
+            system_error_response("referral strategy command store is unavailable", error)
         }
     }
 }
@@ -323,22 +323,11 @@ fn referral_list_response<T: Serialize>(page: AdminReferralListPage<T>) -> Respo
     )
 }
 
-fn parse_json_body<T>(body: &[u8], entity_name: &str) -> Result<T, String>
-where
-    T: for<'de> Deserialize<'de>,
-{
-    if body.iter().all(u8::is_ascii_whitespace) {
-        return Err(format!("{entity_name} request body is required"));
-    }
-    serde_json::from_slice(body)
-        .map_err(|error| format!("invalid {entity_name} request body: {error}"))
-}
-
 fn build_create_command(
     state: AdminReferralState,
     subject: AdminReferralSubject,
     mutation: NormalizedReferralStrategyMutation,
-) -> Result<CreateAdminReferralStrategyCommand, AdminReferralCommandBuildError> {
+) -> Result<CreateAdminReferralStrategyCommand, ApiCommandError> {
     Ok(CreateAdminReferralStrategyCommand {
         subject,
         strategy_uuid: generate_entity_uuid(&state)?,
@@ -363,7 +352,7 @@ fn build_update_command(
     subject: AdminReferralSubject,
     strategy_id: String,
     mutation: NormalizedReferralStrategyMutation,
-) -> Result<UpdateAdminReferralStrategyCommand, AdminReferralCommandBuildError> {
+) -> Result<UpdateAdminReferralStrategyCommand, ApiCommandError> {
     Ok(UpdateAdminReferralStrategyCommand {
         subject,
         strategy_id,
@@ -387,7 +376,7 @@ fn build_delete_command(
     state: AdminReferralState,
     subject: AdminReferralSubject,
     strategy_id: String,
-) -> Result<DeleteAdminReferralStrategyCommand, AdminReferralCommandBuildError> {
+) -> Result<DeleteAdminReferralStrategyCommand, ApiCommandError> {
     Ok(DeleteAdminReferralStrategyCommand {
         subject,
         strategy_id,
@@ -399,7 +388,7 @@ fn build_delete_command(
 
 fn normalize_strategy_mutation(
     request: ReferralStrategyMutationRequest,
-) -> Result<NormalizedReferralStrategyMutation, AdminReferralCommandBuildError> {
+) -> Result<NormalizedReferralStrategyMutation, ApiCommandError> {
     let name = normalize_required_text(
         &request.name,
         "referral strategy name",
@@ -453,7 +442,7 @@ fn normalize_strategy_mutation(
 fn merge_strategy_mutation(
     current: AdminReferralStrategyItem,
     request: ReferralStrategyMutationRequest,
-) -> Result<NormalizedReferralStrategyMutation, AdminReferralCommandBuildError> {
+) -> Result<NormalizedReferralStrategyMutation, ApiCommandError> {
     let name = match request.name {
         Some(value) => normalize_required_text(
             &Some(value),
@@ -534,21 +523,21 @@ fn merge_strategy_mutation(
 fn validate_strategy_window(
     starts_at: Option<&str>,
     ends_at: Option<&str>,
-) -> Result<(), AdminReferralCommandBuildError> {
+) -> Result<(), ApiCommandError> {
     if let (Some(starts_at), Some(ends_at)) = (starts_at, ends_at) {
         match (
             parse_wall_clock_seconds(starts_at),
             parse_wall_clock_seconds(ends_at),
         ) {
             (Some(starts), Some(ends)) if starts >= ends => {
-                return Err(AdminReferralCommandBuildError::BadRequest(
+                return Err(ApiCommandError::BadRequest(
                     "referral strategy endsAt must be after startsAt".to_owned(),
                 ));
             }
             // Values are already validated by normalize_optional_timestamp;
             // the None arm is unreachable defensive handling.
             (None, _) | (_, None) => {
-                return Err(AdminReferralCommandBuildError::BadRequest(
+                return Err(ApiCommandError::BadRequest(
                     "referral strategy startsAt and endsAt must use a valid timestamp format"
                         .to_owned(),
                 ));
@@ -572,20 +561,20 @@ fn normalize_required_text(
     value: &Option<String>,
     field_name: &str,
     max_len: usize,
-) -> Result<String, AdminReferralCommandBuildError> {
+) -> Result<String, ApiCommandError> {
     let Some(value) = value.as_deref() else {
-        return Err(AdminReferralCommandBuildError::BadRequest(format!(
+        return Err(ApiCommandError::BadRequest(format!(
             "{field_name} is required"
         )));
     };
     let value = value.trim();
     if value.is_empty() {
-        return Err(AdminReferralCommandBuildError::BadRequest(format!(
+        return Err(ApiCommandError::BadRequest(format!(
             "{field_name} is required"
         )));
     }
     if value.chars().count() > max_len {
-        return Err(AdminReferralCommandBuildError::BadRequest(format!(
+        return Err(ApiCommandError::BadRequest(format!(
             "{field_name} must be at most {max_len} characters"
         )));
     }
@@ -596,10 +585,10 @@ fn normalize_optional_text(
     value: Option<&str>,
     field_name: &str,
     max_len: usize,
-) -> Result<String, AdminReferralCommandBuildError> {
+) -> Result<String, ApiCommandError> {
     let value = value.unwrap_or("").trim();
     if value.chars().count() > max_len {
-        return Err(AdminReferralCommandBuildError::BadRequest(format!(
+        return Err(ApiCommandError::BadRequest(format!(
             "{field_name} must be at most {max_len} characters"
         )));
     }
@@ -610,9 +599,9 @@ fn normalize_enum_value(
     value: Option<&str>,
     field_name: &str,
     allowed: &[&str],
-) -> Result<String, AdminReferralCommandBuildError> {
+) -> Result<String, ApiCommandError> {
     let Some(value) = value.map(str::trim).filter(|value| !value.is_empty()) else {
-        return Err(AdminReferralCommandBuildError::BadRequest(format!(
+        return Err(ApiCommandError::BadRequest(format!(
             "{field_name} is required"
         )));
     };
@@ -620,7 +609,7 @@ fn normalize_enum_value(
     if allowed.contains(&normalized.as_str()) {
         Ok(normalized)
     } else {
-        Err(AdminReferralCommandBuildError::BadRequest(format!(
+        Err(ApiCommandError::BadRequest(format!(
             "{field_name} must be one of {}",
             allowed.join(", ")
         )))
@@ -629,7 +618,7 @@ fn normalize_enum_value(
 
 fn normalize_strategy_status(
     value: Option<&str>,
-) -> Result<String, AdminReferralCommandBuildError> {
+) -> Result<String, ApiCommandError> {
     match normalize_optional_strategy_status(value)? {
         Some(status) => Ok(status),
         None => Ok(STATUS_DISABLED.to_owned()),
@@ -638,14 +627,14 @@ fn normalize_strategy_status(
 
 fn normalize_optional_strategy_status(
     value: Option<&str>,
-) -> Result<Option<String>, AdminReferralCommandBuildError> {
+) -> Result<Option<String>, ApiCommandError> {
     let Some(value) = value.map(str::trim).filter(|value| !value.is_empty()) else {
         return Ok(None);
     };
     match value.to_ascii_lowercase().as_str() {
         "active" | "enabled" | "normal" => Ok(Some(STATUS_ACTIVE.to_owned())),
         "disabled" | "inactive" => Ok(Some(STATUS_DISABLED.to_owned())),
-        _ => Err(AdminReferralCommandBuildError::BadRequest(
+        _ => Err(ApiCommandError::BadRequest(
             "referral strategy status must be active or disabled".to_owned(),
         )),
     }
@@ -654,23 +643,23 @@ fn normalize_optional_strategy_status(
 fn normalize_reward_value(
     value: Option<&Value>,
     reward_type: &str,
-) -> Result<String, AdminReferralCommandBuildError> {
+) -> Result<String, ApiCommandError> {
     let raw = match value {
         Some(Value::String(value)) => value.trim().to_owned(),
         Some(Value::Number(value)) => value.to_string(),
         Some(_) => {
-            return Err(AdminReferralCommandBuildError::BadRequest(
+            return Err(ApiCommandError::BadRequest(
                 "referral strategy rewardValue must be a number or string".to_owned(),
             ));
         }
         None => {
-            return Err(AdminReferralCommandBuildError::BadRequest(
+            return Err(ApiCommandError::BadRequest(
                 "referral strategy rewardValue is required".to_owned(),
             ));
         }
     };
     if raw.is_empty() || raw.chars().count() > MAX_REWARD_VALUE_LEN {
-        return Err(AdminReferralCommandBuildError::BadRequest(format!(
+        return Err(ApiCommandError::BadRequest(format!(
             "referral strategy rewardValue must be at most {MAX_REWARD_VALUE_LEN} characters"
         )));
     }
@@ -683,7 +672,7 @@ fn normalize_reward_value(
         _ => false,
     };
     if !valid {
-        return Err(AdminReferralCommandBuildError::BadRequest(format!(
+        return Err(ApiCommandError::BadRequest(format!(
             "referral strategy rewardValue does not match rewardType {reward_type}"
         )));
     }
@@ -708,7 +697,7 @@ fn is_cash_amount(value: &str) -> bool {
 
 fn normalize_max_rewards_per_inviter(
     value: Option<&Value>,
-) -> Result<i64, AdminReferralCommandBuildError> {
+) -> Result<i64, ApiCommandError> {
     let raw = match value {
         Some(Value::Number(value)) => value.as_i64(),
         Some(Value::String(value)) => value.trim().parse::<i64>().ok(),
@@ -716,12 +705,12 @@ fn normalize_max_rewards_per_inviter(
         None => Some(MAX_REWARDS_PER_INVITER_UNLIMITED),
     }
     .ok_or_else(|| {
-        AdminReferralCommandBuildError::BadRequest(
+        ApiCommandError::BadRequest(
             "referral strategy maxRewardsPerInviter must be a non-negative integer".to_owned(),
         )
     })?;
     if raw < 0 {
-        return Err(AdminReferralCommandBuildError::BadRequest(
+        return Err(ApiCommandError::BadRequest(
             "referral strategy maxRewardsPerInviter must be a non-negative integer".to_owned(),
         ));
     }
@@ -731,17 +720,17 @@ fn normalize_max_rewards_per_inviter(
 fn normalize_optional_timestamp(
     value: Option<&str>,
     field_name: &str,
-) -> Result<Option<String>, AdminReferralCommandBuildError> {
+) -> Result<Option<String>, ApiCommandError> {
     let Some(value) = value.map(str::trim).filter(|value| !value.is_empty()) else {
         return Ok(None);
     };
     if value.len() > 64 {
-        return Err(AdminReferralCommandBuildError::BadRequest(format!(
+        return Err(ApiCommandError::BadRequest(format!(
             "{field_name} must be at most 64 characters"
         )));
     }
     if !is_valid_timestamp(value) {
-        return Err(AdminReferralCommandBuildError::BadRequest(format!(
+        return Err(ApiCommandError::BadRequest(format!(
             "{field_name} must be a timestamp in YYYY-MM-DD HH:MM:SS or ISO-8601 format"
         )));
     }
@@ -890,78 +879,15 @@ fn normalize_path_id(value: &str, field_name: &str) -> Result<String, String> {
 
 fn generate_entity_uuid(
     state: &AdminReferralState,
-) -> Result<String, AdminReferralCommandBuildError> {
+) -> Result<String, ApiCommandError> {
     state
         .entity_uuid_generator
         .generate_entity_uuid()
-        .map_err(AdminReferralCommandBuildError::System)
-}
-
-fn request_id_error(error: RequestIdError) -> AdminReferralCommandBuildError {
-    match error {
-        RequestIdError::Invalid(message) => AdminReferralCommandBuildError::BadRequest(message),
-        RequestIdError::System(message) => {
-            AdminReferralCommandBuildError::System(DomainError::new(message))
-        }
-    }
-}
-
-fn bad_request(message: impl Into<String>) -> Response {
-    problem_from_wire_code("4001", message.into()).into_response()
+        .map_err(ApiCommandError::System)
 }
 
 fn not_found_response(message: &'static str) -> Response {
     problem_from_wire_code("4040", message).into_response()
-}
-
-fn conflict_response(error: DomainError) -> Response {
-    problem_from_wire_code("4090", error.to_string()).into_response()
-}
-
-fn command_build_error_response(error: AdminReferralCommandBuildError) -> Response {
-    match error {
-        AdminReferralCommandBuildError::BadRequest(message) => bad_request(message),
-        AdminReferralCommandBuildError::System(error) => {
-            referral_system_response("referral command is invalid", error)
-        }
-    }
-}
-
-fn referral_system_response(context: &str, error: DomainError) -> Response {
-    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
-}
-
-fn current_timestamp_string() -> String {
-    let seconds = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_secs() as i64)
-        .unwrap_or(0);
-    format_unix_timestamp(seconds)
-}
-
-fn format_unix_timestamp(seconds: i64) -> String {
-    let days = seconds.div_euclid(86_400);
-    let seconds_of_day = seconds.rem_euclid(86_400);
-    let (year, month, day) = civil_from_days(days);
-    let hour = seconds_of_day / 3_600;
-    let minute = (seconds_of_day % 3_600) / 60;
-    let second = seconds_of_day % 60;
-    format!("{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02}")
-}
-
-fn civil_from_days(days: i64) -> (i64, i64, i64) {
-    let days = days + 719_468;
-    let era = if days >= 0 { days } else { days - 146_096 } / 146_097;
-    let day_of_era = days - era * 146_097;
-    let year_of_era =
-        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
-    let year = year_of_era + era * 400;
-    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
-    let month_prime = (5 * day_of_year + 2) / 153;
-    let day = day_of_year - (153 * month_prime + 2) / 5 + 1;
-    let month = month_prime + if month_prime < 10 { 3 } else { -9 };
-    let year = year + if month <= 2 { 1 } else { 0 };
-    (year, month, day)
 }
 
 #[cfg(test)]
@@ -1030,7 +956,7 @@ mod tests {
 
         let error = merge_strategy_mutation(seeded_strategy(), request).unwrap_err();
         match error {
-            AdminReferralCommandBuildError::BadRequest(message) => {
+            ApiCommandError::BadRequest(message) => {
                 assert!(message.contains("rewardValue"), "{message}");
             }
             _ => panic!("expected bad request"),
@@ -1048,7 +974,7 @@ mod tests {
 
         let error = merge_strategy_mutation(current, request).unwrap_err();
         match error {
-            AdminReferralCommandBuildError::BadRequest(message) => {
+            ApiCommandError::BadRequest(message) => {
                 assert!(message.contains("endsAt"), "{message}");
             }
             _ => panic!("expected bad request"),
@@ -1114,7 +1040,7 @@ mod tests {
 
         let error = normalize_strategy_mutation(request).unwrap_err();
         match error {
-            AdminReferralCommandBuildError::BadRequest(message) => {
+            ApiCommandError::BadRequest(message) => {
                 assert!(message.contains("rewardType"));
             }
             _ => panic!("expected bad request"),
@@ -1136,7 +1062,7 @@ mod tests {
 
         let error = normalize_strategy_mutation(request).unwrap_err();
         match error {
-            AdminReferralCommandBuildError::BadRequest(message) => {
+            ApiCommandError::BadRequest(message) => {
                 assert!(message.contains("endsAt"));
             }
             _ => panic!("expected bad request"),
@@ -1160,7 +1086,7 @@ mod tests {
 
         let error = normalize_strategy_mutation(request).unwrap_err();
         match error {
-            AdminReferralCommandBuildError::BadRequest(message) => {
+            ApiCommandError::BadRequest(message) => {
                 assert!(message.contains("endsAt"));
             }
             _ => panic!("expected bad request"),
@@ -1199,7 +1125,7 @@ mod tests {
             let error = normalize_optional_timestamp(Some(value), "referral strategy startsAt")
                 .unwrap_err();
             match error {
-                AdminReferralCommandBuildError::BadRequest(message) => {
+                ApiCommandError::BadRequest(message) => {
                     assert!(message.contains("startsAt"), "{value}: {message}");
                 }
                 _ => panic!("expected bad request for {value}"),

@@ -78,10 +78,12 @@ impl PostgresTestContext {
         .execute(&admin_pool)
         .await
         .unwrap();
-        sqlx::query(sqlx::AssertSqlSafe(format!("CREATE SCHEMA {quoted_schema}")))
-            .execute(&admin_pool)
-            .await
-            .unwrap();
+        sqlx::query(sqlx::AssertSqlSafe(format!(
+            "CREATE SCHEMA {quoted_schema}"
+        )))
+        .execute(&admin_pool)
+        .await
+        .unwrap();
         admin_pool.close().await;
 
         let schema_for_connections = schema.clone();
@@ -158,7 +160,11 @@ fn split_statements(baseline: &str) -> Vec<String> {
 }
 
 fn timestamp(offset_seconds: i64) -> String {
-    format!("2026-09-19 00:{:02}:{:02}+00", offset_seconds / 60, offset_seconds % 60)
+    format!(
+        "2026-09-19 00:{:02}:{:02}+00",
+        offset_seconds / 60,
+        offset_seconds % 60
+    )
 }
 
 async fn insert_intent(pool: &PgPool, intent_id: &str, amount: &str) {
@@ -203,7 +209,12 @@ async fn insert_intent(pool: &PgPool, intent_id: &str, amount: &str) {
         .expect("insert payment intent");
 }
 
-fn refund_record(refund_id: &str, intent_id: &str, amount: &str, sequence: usize) -> PaymentRefundRuntimeRecord {
+fn refund_record(
+    refund_id: &str,
+    intent_id: &str,
+    amount: &str,
+    sequence: usize,
+) -> PaymentRefundRuntimeRecord {
     PaymentRefundRuntimeRecord {
         id: refund_id.to_owned(),
         tenant_id: TENANT_ID.to_owned(),
@@ -262,7 +273,13 @@ fn refund_item(refund_id: &str, sequence: usize) -> PaymentRefundItemRecord {
     }
 }
 
-async fn insert_refund_ok(store: &PostgresPaymentIntentRuntimeStore, refund_id: &str, intent_id: &str, amount: &str, sequence: usize) {
+async fn insert_refund_ok(
+    store: &PostgresPaymentIntentRuntimeStore,
+    refund_id: &str,
+    intent_id: &str,
+    amount: &str,
+    sequence: usize,
+) {
     store
         .insert_refund(
             refund_record(refund_id, intent_id, amount, sequence),
@@ -273,7 +290,13 @@ async fn insert_refund_ok(store: &PostgresPaymentIntentRuntimeStore, refund_id: 
         .unwrap_or_else(|error| panic!("refund {refund_id} ({amount}) must be accepted: {error}"));
 }
 
-async fn insert_refund_conflict(store: &PostgresPaymentIntentRuntimeStore, refund_id: &str, intent_id: &str, amount: &str, sequence: usize) {
+async fn insert_refund_conflict(
+    store: &PostgresPaymentIntentRuntimeStore,
+    refund_id: &str,
+    intent_id: &str,
+    amount: &str,
+    sequence: usize,
+) {
     let error = store
         .insert_refund(
             refund_record(refund_id, intent_id, amount, sequence),
@@ -283,7 +306,9 @@ async fn insert_refund_conflict(store: &PostgresPaymentIntentRuntimeStore, refun
         .await
         .expect_err("refund over the cumulative cap must be rejected");
     assert!(
-        error.to_string().contains("exceeds the remaining refundable amount"),
+        error
+            .to_string()
+            .contains("exceeds the remaining refundable amount"),
         "expected a refund-cap conflict, got: {error}"
     );
 }

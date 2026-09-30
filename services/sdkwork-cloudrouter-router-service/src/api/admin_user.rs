@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::body::Bytes;
 use axum::extract::{Path, State};
@@ -9,8 +8,12 @@ use axum::routing::{delete, post};
 use axum::Router;
 use serde::{Deserialize, Serialize};
 
+use crate::api::command_error::system_error_response;
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::{json_created_response, no_content_response, problem_from_wire_code};
+use crate::api::response::{
+    bad_request, json_created_response, no_content_response, problem_from_wire_code,
+    domain_conflict_response as conflict_response,
+};
 use crate::application::{ApiKeySecretGenerator, ApiKeySecretHasher};
 use crate::domain::{DecimalValue, DomainError, GatewayApiKey, DEFAULT_ACCOUNT_GROUP_CODE};
 use crate::ports::{
@@ -18,6 +21,7 @@ use crate::ports::{
     DeleteGatewayApiKeyForOrganizationCommand, EnsureDefaultUpstreamAccountGroupCommand,
     GatewayApiKeyCommandStore,
 };
+use sdkwork_utils_rust::datetime::current_timestamp_string;
 
 const HASH_ALG_HMAC_SHA256: &str = "HMAC_SHA256";
 const SECRET_VERSION: i64 = 1;
@@ -125,7 +129,7 @@ async fn create_backend_api_key(
     {
         Ok(group) => group,
         Err(error) => {
-            return admin_user_system_response("admin api key command store is unavailable", error);
+            return system_error_response("admin api key command store is unavailable", error);
         }
     };
     let command = match build_backend_create_api_key_command(
@@ -156,7 +160,7 @@ async fn create_backend_api_key(
         ),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
-            admin_user_system_response("admin api key command store is unavailable", error)
+            system_error_response("admin api key command store is unavailable", error)
         }
     }
 }
@@ -201,7 +205,7 @@ async fn delete_backend_api_key(
         Ok(true) => no_content_response(None),
         Ok(false) => not_found_response("api key was not found"),
         Err(error) => {
-            admin_user_system_response("admin api key command store is unavailable", error)
+            system_error_response("admin api key command store is unavailable", error)
         }
     }
 }
@@ -368,55 +372,10 @@ fn mask_created_key(raw_key: &str) -> String {
     format!("{prefix}********{suffix}")
 }
 
-fn current_timestamp_string() -> String {
-    let seconds = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_secs() as i64)
-        .unwrap_or(0);
-    format_unix_timestamp(seconds)
-}
-
-fn format_unix_timestamp(seconds: i64) -> String {
-    let days = seconds.div_euclid(86_400);
-    let seconds_of_day = seconds.rem_euclid(86_400);
-    let (year, month, day) = civil_from_days(days);
-    let hour = seconds_of_day / 3_600;
-    let minute = (seconds_of_day % 3_600) / 60;
-    let second = seconds_of_day % 60;
-    format!("{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02}")
-}
-
-fn civil_from_days(days: i64) -> (i64, i64, i64) {
-    let days = days + 719_468;
-    let era = if days >= 0 { days } else { days - 146_096 } / 146_097;
-    let day_of_era = days - era * 146_097;
-    let year_of_era =
-        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
-    let year = year_of_era + era * 400;
-    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
-    let month_prime = (5 * day_of_year + 2) / 153;
-    let month = month_prime + if month_prime < 10 { 3 } else { -9 };
-    let year = year + if month <= 2 { 1 } else { 0 };
-    let day = day_of_era - (365 * year + year_of_era / 4 - year_of_era / 100);
-    (year, month, day)
-}
-
-fn bad_request(message: String) -> Response {
-    problem_from_wire_code("4001", message).into_response()
-}
-
 fn not_found_response(message: &str) -> Response {
     problem_from_wire_code("4040", message).into_response()
 }
 
-fn conflict_response(error: DomainError) -> Response {
-    problem_from_wire_code("4090", error.to_string()).into_response()
-}
-
 fn command_build_error_response(error: DomainError) -> Response {
     problem_from_wire_code("5000", error.to_string()).into_response()
-}
-
-fn admin_user_system_response(context: &str, error: DomainError) -> Response {
-    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }

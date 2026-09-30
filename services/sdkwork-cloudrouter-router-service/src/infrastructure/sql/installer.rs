@@ -10,7 +10,8 @@ use sqlx::{PgPool, Row};
 use crate::application::UpstreamCredentialSecretCodec;
 use crate::domain::DomainError;
 use crate::infrastructure::sql::ai_routing_seed::{
-    import_postgres_ai_routing_seed, postgres_ai_routing_seed_complete, postgres_ai_routing_seed_gap,
+    import_postgres_ai_routing_seed, postgres_ai_routing_seed_complete,
+    postgres_ai_routing_seed_gap,
 };
 use crate::infrastructure::sql::model_catalog_import::{
     catalog_api_endpoint_projections, catalog_authority_keys,
@@ -366,7 +367,9 @@ impl DatabaseInstaller {
             // startup converges a dev/test database onto `sdkwork-models` while
             // the second startup of an unchanged catalog stays a pure read.
             if let Some(changed) = self.refresh_on_catalog_drift().await? {
-                return self.status_report_with_options(&self.options, changed).await;
+                return self
+                    .status_report_with_options(&self.options, changed)
+                    .await;
             }
             return self.status_report_with_options(&self.options, false).await;
         }
@@ -412,7 +415,11 @@ impl DatabaseInstaller {
             if let Ok(Some(gap)) = postgres_ai_routing_seed_gap(&self.pool).await {
                 causes.push(format!("ai routing seed: {gap}"));
             }
-            if self.vendor_accounts_lack_credentials().await.unwrap_or(false) {
+            if self
+                .vendor_accounts_lack_credentials()
+                .await
+                .unwrap_or(false)
+            {
                 causes.push(
                     "the bundled vendor default accounts exist but carry no active credential — \
                      the seed skips credential writes when no upstream-credential key ring is \
@@ -813,7 +820,10 @@ impl DatabaseInstaller {
     /// catalog while its rows survive), and finding out which one from the
     /// outside means diffing fifteen key sets by hand. Returning
     /// `table.column` names it outright.
-    async fn catalog_gap(&self, catalog: &ModelCatalog) -> Result<Option<String>, DatabaseInstallError> {
+    async fn catalog_gap(
+        &self,
+        catalog: &ModelCatalog,
+    ) -> Result<Option<String>, DatabaseInstallError> {
         for expectation in catalog_expectations(catalog) {
             let actual =
                 postgres_string_values(&self.pool, expectation.table, expectation.column).await?;

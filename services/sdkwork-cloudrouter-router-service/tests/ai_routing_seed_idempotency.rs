@@ -32,7 +32,8 @@ use sqlx::{PgPool, Row};
 use sdkwork_cloudrouter_router_service::application::UpstreamCredentialSecretCodec;
 use sdkwork_cloudrouter_router_service::infrastructure::crypto::RingAeadCredentialSecretCodec;
 use sdkwork_cloudrouter_router_service::infrastructure::sql::ai_routing_seed::{
-    import_postgres_ai_routing_seed, postgres_ai_routing_seed_complete, postgres_ai_routing_seed_gap,
+    import_postgres_ai_routing_seed, postgres_ai_routing_seed_complete,
+    postgres_ai_routing_seed_gap,
 };
 
 /// A development-like environment seeds the vendor default accounts *enabled*,
@@ -491,7 +492,9 @@ async fn ai_routing_seed_attaches_a_member_created_by_a_later_pass() {
         "a group without its member account must make the seed incomplete"
     );
 
-    seed(&context).await.expect("re-seed after detaching member");
+    seed(&context)
+        .await
+        .expect("re-seed after detaching member");
     assert_eq!(
         postgres_ai_routing_seed_gap(&context.pool)
             .await

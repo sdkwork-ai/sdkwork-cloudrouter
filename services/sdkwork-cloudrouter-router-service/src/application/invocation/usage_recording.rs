@@ -1,13 +1,11 @@
 use std::sync::Arc;
 use std::sync::OnceLock;
 
-use serde_json::Value;
-
 use super::{
-    Invocation, InvocationError, InvocationErrorKind, InvocationFuture, InvocationInterceptor,
-    InvocationShape,
+    effective_dispatch_status_code, is_token_meter, provider_response_succeeded, Invocation,
+    InvocationError, InvocationErrorKind, InvocationFuture, InvocationInterceptor, InvocationShape,
 };
-use crate::domain::{provider_native_model_id, BillingMeter, BillingOwnerKind};
+use crate::domain::{provider_native_model_id, BillingOwnerKind};
 use crate::ports::{GatewayRequestTraceCommand, GatewayUsageQuantity, GatewayUsageRecorder};
 
 #[derive(Clone)]
@@ -125,22 +123,6 @@ fn observe_recording_failure(
         error = %error,
         "gateway accounting persistence failed after invocation processing"
     );
-}
-
-fn provider_response_succeeded(invocation: &Invocation) -> bool {
-    invocation
-        .telemetry
-        .normalized_response
-        .as_ref()
-        .map(|response| (200..300).contains(&response.status_code))
-        .or_else(|| {
-            invocation
-                .dispatch
-                .response
-                .as_ref()
-                .map(|response| (200..300).contains(&response.status_code))
-        })
-        .unwrap_or(false)
 }
 
 fn usage_recording_failure_counter() -> prometheus::IntCounterVec {
@@ -306,27 +288,6 @@ fn trace_command_from_invocation(
     }
 }
 
-fn effective_dispatch_status_code(
-    invocation: &Invocation,
-    response: &super::InvocationDispatchResponse,
-) -> Option<u16> {
-    if invocation.dispatch.mode != super::DispatchMode::InternalProviderAdapter {
-        return Some(response.status_code);
-    }
-    response
-        .body
-        .as_ref()
-        .and_then(adapter_response_status_code)
-        .or(Some(response.status_code))
-}
-
-fn adapter_response_status_code(body: &Value) -> Option<u16> {
-    body.get("statusCode")
-        .or_else(|| body.get("status_code"))
-        .and_then(Value::as_u64)
-        .and_then(|value| u16::try_from(value).ok())
-}
-
 fn status_code_for_error(error: &InvocationError) -> u16 {
     match error.kind {
         InvocationErrorKind::InvalidRequest | InvocationErrorKind::ResourceClassification => 400,
@@ -387,24 +348,6 @@ fn aggregate_trace_usage(invocation: &Invocation) -> TraceUsageTotals {
         }
     }
     totals
-}
-
-fn is_token_meter(meter: &BillingMeter) -> bool {
-    matches!(
-        meter,
-        BillingMeter::LlmInputToken
-            | BillingMeter::LlmOutputToken
-            | BillingMeter::LlmReasoningToken
-            | BillingMeter::LlmCacheWriteToken
-            | BillingMeter::LlmCacheReadToken
-            | BillingMeter::EmbeddingInputToken
-            | BillingMeter::ImageInputToken
-            | BillingMeter::ImageOutputToken
-            | BillingMeter::AudioInputToken
-            | BillingMeter::AudioOutputToken
-            | BillingMeter::VideoInputToken
-            | BillingMeter::VideoOutputToken
-    )
 }
 
 fn integer_quantity(quantity: &GatewayUsageQuantity) -> Result<i64, std::num::ParseIntError> {

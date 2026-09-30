@@ -1,3 +1,4 @@
+use crate::infrastructure::sql::store_error::redacted_store_error;
 use super::pricing_region_preference::{
     is_region_missing, region_display_order, resolve_group_region, PricingRegionPreferences,
 };
@@ -705,7 +706,7 @@ fn json_array_cell(row: &sqlx::postgres::PgRow, column: &str) -> Option<Vec<Stri
     serde_json::from_str(&optional_string_cell(row, column)?).ok()
 }
 fn sql_error(error: sqlx::Error) -> DomainError {
-    DomainError::new(error.to_string())
+    redacted_store_error("failed to load official pricing catalog", error)
 }
 
 #[cfg(test)]

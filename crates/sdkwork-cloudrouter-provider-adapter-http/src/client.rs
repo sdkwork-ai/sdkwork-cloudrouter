@@ -352,7 +352,13 @@ fn adapter_body_error(
     }
 }
 
-fn declared_content_length_exceeds_limit(
+/// Whether a declared `Content-Length` exceeds `limit` without reading the body.
+///
+/// This is the single implementation; the edge runtime's invocation dispatcher
+/// re-exports it rather than keeping its own copy. A header that is absent,
+/// non-UTF-8 or unparsable is treated as "does not exceed" — the bounded reader
+/// downstream enforces the real limit in that case.
+pub fn declared_content_length_exceeds_limit(
     content_length: Option<&HeaderValue>,
     limit: usize,
 ) -> bool {

@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::extract::{Path, RawQuery, State};
 use axum::http::HeaderMap;
@@ -15,18 +14,20 @@ use serde_json::{Map, Value};
 use crate::api::app_sql_subject::{map_required_app_sql_subject, RequiredAppSqlScopedSubject};
 
 use crate::api::response::{
-    internal_problem, json_created_response, json_success_list_response, problem_from_wire_code,
-    service_unavailable_problem, success_envelope,
+    bad_request, internal_problem, json_created_response, json_success_list_response,
+    problem_from_wire_code, service_unavailable_problem, success_envelope,
 };
+use crate::api::text_normalization::normalize_trimmed_optional as normalize_optional_text;
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::infrastructure::OsApiKeySecretGenerator;
 use crate::ports::{
     AppChatConversationCursor, AppChatConversationItem, AppChatConversationList, AppChatFuture,
-    AppChatMessageCursor,
-    AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnOutcome, AppChatUsageSnapshot,
-    CompleteAppChatTurnCommand, CreateAppChatConversationCommand, CreateAppChatTurnCommand,
+    AppChatMessageCursor, AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnOutcome,
+    AppChatUsageSnapshot, CompleteAppChatTurnCommand, CreateAppChatConversationCommand,
+    CreateAppChatTurnCommand,
 };
+use sdkwork_utils_rust::datetime::current_timestamp_string;
 
 const MAX_TITLE_LEN: usize = 256;
 const MAX_SOURCE_SURFACE_LEN: usize = 64;
@@ -597,20 +598,6 @@ fn normalize_required_message_text(
     Ok(value.to_owned())
 }
 
-fn normalize_optional_text(
-    value: Option<&str>,
-    field: &str,
-    max_len: usize,
-) -> Result<Option<String>, String> {
-    let Some(value) = value.map(str::trim).filter(|value| !value.is_empty()) else {
-        return Ok(None);
-    };
-    if value.chars().count() > max_len {
-        return Err(format!("{field} must be at most {max_len} characters"));
-    }
-    Ok(Some(value.to_owned()))
-}
-
 fn normalize_optional_id(value: Option<&str>, field: &str) -> Result<Option<String>, String> {
     value.map(|value| normalize_id(value, field)).transpose()
 }
@@ -890,10 +877,6 @@ mod tests {
     }
 }
 
-fn bad_request(message: impl Into<String>) -> Response {
-    problem_from_wire_code("4001", message.into()).into_response()
-}
-
 fn invalid_parameter(message: impl Into<String>) -> Response {
     crate::api::response::platform_problem(
         sdkwork_utils_rust::SdkWorkResultCode::InvalidParameter,
@@ -923,36 +906,4 @@ impl From<String> for AppChatBuildError {
     fn from(value: String) -> Self {
         Self::BadRequest(value)
     }
-}
-
-fn current_timestamp_string() -> String {
-    let seconds = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs() as i64;
-    format_unix_timestamp(seconds)
-}
-
-fn format_unix_timestamp(seconds: i64) -> String {
-    let days = seconds.div_euclid(86_400);
-    let seconds_of_day = seconds.rem_euclid(86_400);
-    let (year, month, day) = civil_from_days(days);
-    let hour = seconds_of_day / 3_600;
-    let minute = (seconds_of_day % 3_600) / 60;
-    let second = seconds_of_day % 60;
-    format!("{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02}")
-}
-
-fn civil_from_days(days: i64) -> (i64, i64, i64) {
-    let z = days + 719_468;
-    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
-    let doe = z - era * 146_097;
-    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
-    let y = yoe + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let d = doy - (153 * mp + 2) / 5 + 1;
-    let m = mp + if mp < 10 { 3 } else { -9 };
-    let year = y + if m <= 2 { 1 } else { 0 };
-    (year, m, d)
 }

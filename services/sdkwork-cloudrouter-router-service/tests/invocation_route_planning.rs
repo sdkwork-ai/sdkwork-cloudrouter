@@ -471,8 +471,11 @@ async fn plans_provider_native_model_route_for_anthropic_messages() {
     }
     let catalog = Arc::new(catalog);
 
-    let mut invocation =
-        provider_native_invocation("anthropic", "/anthropic/v1/messages", RoutingCapability::Chat);
+    let mut invocation = provider_native_invocation(
+        "anthropic",
+        "/anthropic/v1/messages",
+        RoutingCapability::Chat,
+    );
     // payload 提取拦截器在本测试未运行；这里手工模拟其结果
     // （provider-native 预置 catalog key = supplier/<model>）。
     invocation.resource.requested_model = Some("claude-sonnet-4-5".to_owned());
@@ -491,8 +494,7 @@ async fn plans_provider_native_model_route_for_anthropic_messages() {
         invocation.resource.requested_model_catalog_key.as_deref()
     );
     assert_eq!(
-        "anthropic.messages",
-        plan.candidates[0].api_code,
+        "anthropic.messages", plan.candidates[0].api_code,
         "anthropic.messages 的模型类候选必须保留内建 api_code"
     );
 }
@@ -554,13 +556,15 @@ async fn provider_native_model_route_resolves_cross_vendor_model_by_catalog_name
     }
     let catalog = Arc::new(catalog);
 
-    let mut invocation =
-        provider_native_invocation("anthropic", "/anthropic/v1/messages", RoutingCapability::Chat);
+    let mut invocation = provider_native_invocation(
+        "anthropic",
+        "/anthropic/v1/messages",
+        RoutingCapability::Chat,
+    );
     invocation.resource.requested_model = Some("deepseek-chat".to_owned());
     // payload 提取对 provider-native 请求预置 supplier/<model> key；
     // 该 key 不在目录中，规划必须回退到目录名称解析结果。
-    invocation.resource.requested_model_catalog_key =
-        Some("anthropic/deepseek-chat".to_owned());
+    invocation.resource.requested_model_catalog_key = Some("anthropic/deepseek-chat".to_owned());
 
     RoutePlanningInterceptor::new(catalog.clone())
         .before(&mut invocation)

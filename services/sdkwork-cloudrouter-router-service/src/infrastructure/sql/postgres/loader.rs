@@ -15,14 +15,14 @@ use crate::infrastructure::sql::model_catalog_import::{
 use crate::infrastructure::sql::postgres::error::PostgresCatalogLoadError;
 use crate::infrastructure::sql::postgres::row_mapping;
 use crate::infrastructure::sql::routing_config_change::AI_ROUTING_CONFIG_SCOPE;
-use crate::infrastructure::sql::rows::{GatewayApiKeyRow, ModelApiEndpointRow, ModelVideoProfileRow};
+use crate::infrastructure::sql::rows::{
+    GatewayApiKeyRow, ModelApiEndpointRow, ModelVideoProfileRow,
+};
 use crate::infrastructure::sql::PricingCatalogSql;
 use crate::ports::{
     ApiKeyManagementReadFuture, GatewayApiKeyListPage, GatewayApiKeyManagementReadStore,
     GatewayApiKeyManagementSnapshot, ListGatewayApiKeysQuery, UpstreamRouteGateDiagnosis,
 };
-
-const API_KEY_SECRET_MODE_CIPHERTEXT: &str = "ciphertext";
 
 pub struct PostgresPricingCatalogLoader {
     pool: PgPool,
@@ -440,9 +440,7 @@ where
 /// 而不是静默丢档位——丢档位会让"有价却说无价"重新出现。
 fn parse_string_array(value: &str, field: &str) -> Result<Vec<String>, sqlx::Error> {
     let decoded = serde_json::from_str::<serde_json::Value>(value).map_err(|error| {
-        sqlx::Error::Decode(
-            format!("{field} is not valid json: {error}").into(),
-        )
+        sqlx::Error::Decode(format!("{field} is not valid json: {error}").into())
     })?;
     let serde_json::Value::Array(items) = decoded else {
         return Err(sqlx::Error::Decode(
@@ -457,9 +455,7 @@ fn parse_string_array(value: &str, field: &str) -> Result<Vec<String>, sqlx::Err
                 .filter(|value| !value.is_empty())
                 .map(str::to_owned)
                 .ok_or_else(|| {
-                    sqlx::Error::Decode(
-                        format!("{field} entries must be non-empty strings").into(),
-                    )
+                    sqlx::Error::Decode(format!("{field} entries must be non-empty strings").into())
                 })
         })
         .collect()
@@ -468,7 +464,8 @@ fn parse_string_array(value: &str, field: &str) -> Result<Vec<String>, sqlx::Err
 /// Runs the per-gate account-pool diagnosis inside the catalog load
 /// transaction. The caller treats failures as best-effort (degrading to no
 /// diagnosis) so the snapshot refresh itself is never blocked by it.
-async fn diagnose_upstream_route_gates<'e, E>(    executor: E,
+async fn diagnose_upstream_route_gates<'e, E>(
+    executor: E,
 ) -> Result<UpstreamRouteGateDiagnosis, PostgresCatalogLoadError>
 where
     E: sqlx::Executor<'e, Database = sqlx::Postgres>,
@@ -632,9 +629,7 @@ fn gateway_api_keys_base_sql() -> String {
 #[cfg(test)]
 mod tests {
     use super::managed_provider_secrets_from_rows;
-    use crate::application::{
-        UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext,
-    };
+    use crate::application::{UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext};
     use crate::infrastructure::crypto::RingAeadCredentialSecretCodec;
     use crate::infrastructure::sql::rows::{GatewayApiKeyRow, UpstreamAccountRouteRow};
     use sdkwork_cloudrouter_config::ApiKeySecretStorageMode;
@@ -695,6 +690,4 @@ mod tests {
         assert!(!secrets.contains_key(&encoded.ciphertext));
         assert!(managed_provider_secrets_from_rows(&rows, None).is_err());
     }
-
-
 }

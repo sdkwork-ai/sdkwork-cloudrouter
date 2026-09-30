@@ -10,11 +10,11 @@ use serde::{Deserialize, Serialize};
 use sdkwork_utils_rust::http_api::cursor_window_page_info;
 use sdkwork_utils_rust::{base64url_decode, base64url_encode};
 
+use crate::api::command_error::system_error_response;
 use crate::api::response::{
-    json_success_list_response, normalize_list_search_query, problem_from_wire_code,
+    bad_request, json_success_list_response, normalize_list_search_query,
     ApiResponseError, DEFAULT_LIST_PAGE_SIZE, MAX_LIST_PAGE_SIZE,
 };
-use crate::domain::DomainError;
 use crate::ports::{
     AdminFinanceCursor, AdminFinanceStore, AdminFinanceSubject, ListAdminBillingRecordsQuery,
     ListAdminTransactionsQuery,
@@ -102,7 +102,7 @@ async fn fetch_transactions(
             let page_info = cursor_page_info(&collection);
             json_success_list_response(None, collection.items, page_info)
         }
-        Err(error) => finance_system_response("finance ledger read model is unavailable", error),
+        Err(error) => system_error_response("finance ledger read model is unavailable", error),
     }
 }
 
@@ -134,7 +134,7 @@ async fn fetch_billing_records(
             json_success_list_response(None, collection.items, page_info)
         }
         Err(error) => {
-            finance_system_response("finance usage statement read model is unavailable", error)
+            system_error_response("finance usage statement read model is unavailable", error)
         }
     }
 }
@@ -267,12 +267,4 @@ fn normalize_optional_text(
 ) -> Result<Option<String>, ApiResponseError> {
     normalize_optional_text_value(value, field_name, max_len)
         .map_err(|message| ApiResponseError::from(bad_request(message)))
-}
-
-fn bad_request(message: impl Into<String>) -> Response {
-    problem_from_wire_code("4001", message.into()).into_response()
-}
-
-fn finance_system_response(context: &str, error: DomainError) -> Response {
-    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }

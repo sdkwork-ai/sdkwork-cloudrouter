@@ -21,7 +21,8 @@ use crate::infrastructure::sql::rows::{
 use crate::ports::{
     AccountBaseUrlConfig, AccountGroupModelAccess, AccountModelAccess, AdminLlmProtocolConfig,
     PricingCatalog, PricingDefaultRegionProvider, SupplierModelAccess, UpstreamAccountRouteCatalog,
-    UpstreamRouteGateDiagnosis, VendorModelListEntry, VideoPricingTierDecision, VideoPricingTierGap,
+    UpstreamRouteGateDiagnosis, VendorModelListEntry, VideoPricingTierDecision,
+    VideoPricingTierGap,
 };
 
 #[derive(Default)]
@@ -276,7 +277,6 @@ const API_CODE_GENERATION_MODE_OVERRIDES: &[(&str, &str)] = &[
     ("vidu.motion_sync", "reference_to_video"),
 ];
 
-
 /// 把 `ai_model_video_profile` 行折叠成"模型 → 档位列表"的索引。
 ///
 /// 没有声明任何档位码的行不产生候选——没有 `tier_code` 就没有可用的计价维度。
@@ -321,12 +321,15 @@ fn index_video_pricing_tiers(
         if key.is_empty() {
             continue;
         }
-        index.entry(key.to_owned()).or_default().push(VideoPricingTier {
-            generation_mode: row.generation_mode,
-            resolution: row.resolution,
-            tier_codes,
-            is_default: row.is_default,
-        });
+        index
+            .entry(key.to_owned())
+            .or_default()
+            .push(VideoPricingTier {
+                generation_mode: row.generation_mode,
+                resolution: row.resolution,
+                tier_codes,
+                is_default: row.is_default,
+            });
     }
     // 默认档位排在最前，其次分辨率更具体的档位，最后按主档位码稳定排序：调用方
     // 只需取首个满足条件的档位，结果与加载顺序无关。
@@ -470,11 +473,7 @@ fn decide_video_pricing_tier(
         .into_iter()
         .collect();
     for tier in &ordered {
-        if let Some(code) = tier
-            .tier_codes
-            .iter()
-            .find(|code| priced.contains(*code))
-        {
+        if let Some(code) = tier.tier_codes.iter().find(|code| priced.contains(*code)) {
             decision.tier_code = Some(code.clone());
             return decision;
         }

@@ -7,7 +7,6 @@
 //!   configured per-API-key chain policy for operations review.
 
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::body::Bytes;
 use axum::extract::{Path, State};
@@ -20,7 +19,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::api::admin_sql_subject::SqlScopedAdminSubject;
 use crate::api::request_id::generate_server_request_id;
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::response::{bad_request, problem_from_wire_code, success_envelope};
 use crate::application::{validate_chain_policy, EntityUuidGenerator};
 use crate::ports::{
     AdminChainPolicyItem, AdminChainPolicyStore, AdminChainPolicySubject, UpsertChainPolicyCommand,
@@ -234,39 +233,5 @@ fn request_id_from_headers(headers: &HeaderMap) -> Option<String> {
 
 /// `YYYY-MM-DD HH:MM:SS` UTC timestamp compatible with Postgres
 /// `timestamptz` parsing (same shape as sibling admin handlers).
-fn current_timestamp_string() -> String {
-    let seconds = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_secs() as i64)
-        .unwrap_or(0);
-    format_unix_timestamp(seconds)
-}
-
-fn format_unix_timestamp(seconds: i64) -> String {
-    let days = seconds.div_euclid(86_400);
-    let seconds_of_day = seconds.rem_euclid(86_400);
-    let (year, month, day) = civil_from_days(days);
-    let hour = seconds_of_day / 3_600;
-    let minute = (seconds_of_day % 3_600) / 60;
-    let second = seconds_of_day % 60;
-    format!("{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02}")
-}
-
-fn civil_from_days(days: i64) -> (i64, i64, i64) {
-    let z = days + 719_468;
-    let era = z.div_euclid(146_097);
-    let doe = z.rem_euclid(146_097);
-    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
-    let y = yoe + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let d = doy - (153 * mp + 2) / 5 + 1;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 };
-    (if m <= 2 { y + 1 } else { y }, m, d)
-}
-
-fn bad_request(message: impl Into<String>) -> Response {
-    problem_from_wire_code("4001", message.into()).into_response()
-}
-
 use axum::Json;
+use sdkwork_utils_rust::datetime::current_timestamp_string;

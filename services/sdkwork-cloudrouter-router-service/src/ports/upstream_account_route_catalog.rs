@@ -214,7 +214,10 @@ pub enum VideoPricingTierGap {
     /// 该计量单位在该模型下没有任何带 `tier_code` 条件的费率。
     MeterHasNoTierConditionedRate { meter: String },
     /// profile 声明的档位与费率报价的档位不相交。
-    DeclaredTierNotPriced { declared: Vec<String>, priced: Vec<String> },
+    DeclaredTierNotPriced {
+        declared: Vec<String>,
+        priced: Vec<String>,
+    },
 }
 
 /// `["a", "b"]`、`[]`、`["a", …+3]`：既给出可核对的前几项，又不让错误信息无界。

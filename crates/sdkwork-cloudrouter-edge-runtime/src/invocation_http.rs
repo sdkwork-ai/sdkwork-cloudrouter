@@ -763,7 +763,72 @@ fn apply_gateway_dispatch_defaults<C>(
     if invocation.billing.mode == BillingMode::Free {
         invocation.dispatch.mode = DispatchMode::NoopFree;
     }
+    apply_declared_not_implemented_defaults(invocation);
 }
+
+/// Synthesises the `501` the contract publishes for locally-answered
+/// management operations that have no upstream route account.
+///
+/// A free endpoint with no synthetic body falls through to `NoopFree`, which
+/// answers `204 No Content`. That is the wrong status for the operations below:
+/// the open-api contract publishes each of them with an explicit `501`
+/// response, so a caller driving the generated SDK receives a documented
+/// status instead of an empty success body it cannot branch on. The
+/// classification (and therefore the contract key) is unchanged — only the
+/// locally-synthesised status differs, so routing, pricing and the free
+/// billing mode stay exactly as classified.
+fn apply_declared_not_implemented_defaults(invocation: &mut Invocation) {
+    if invocation.resource.surface != InvocationSurface::OpenAiCompatible
+        || invocation.resource.resource_type != ResourceType::FreeEndpoint
+        || invocation.dispatch.mode != DispatchMode::NoopFree
+    {
+        return;
+    }
+    let declared_not_implemented = match invocation.resource.api_code.as_str() {
+        // `GET /v1/models/{model}` — the model *list* is served locally; a
+        // single-model lookup has no upstream route account.
+        "openai.models" => {
+            invocation.request.method == axum::http::Method::GET
+                && invocation.request.path.starts_with("/v1/models/")
+        }
+        // `GET /v1/audio/voices/{voice_id}` — voice create/list are routed
+        // management surfaces; per-voice retrieval is not.
+        "openai.audio.voices" => {
+            invocation.request.method == axum::http::Method::GET
+                && invocation.request.path.starts_with("/v1/audio/voices/")
+        }
+        // `POST /v1/realtime/client_secrets` — minting is local; the durable
+        // session surface is `POST /v1/realtime/sessions`.
+        "openai.realtime" => {
+            invocation.request.method == axum::http::Method::POST
+                && invocation.request.path == "/v1/realtime/client_secrets"
+        }
+        _ => false,
+    };
+    if !declared_not_implemented {
+        return;
+    }
+    invocation.dispatch.mode = DispatchMode::SyntheticLocalResponse;
+    invocation.dispatch.response = Some(InvocationDispatchResponse::json(
+        NOT_IMPLEMENTED_STATUS_CODE,
+        json!({
+            "error": {
+                "message": format!(
+                    "{} {} is declared by the Cloud Router Open API contract but has no upstream route account on this deployment",
+                    invocation.request.method, invocation.request.path
+                ),
+                "type": "invalid_request_error",
+                "param": null,
+                "code": "not_implemented",
+            }
+        }),
+    ));
+}
+
+/// The status the contract declares for published operations the gateway
+/// answers locally. Kept as a named constant so the classifier, the contract
+/// and this synthesis cannot drift on the number.
+const NOT_IMPLEMENTED_STATUS_CODE: u16 = 501;
 
 fn normalized_response_to_http(
     normalized: sdkwork_cloudrouter_router_service::application::InvocationNormalizedResponse,

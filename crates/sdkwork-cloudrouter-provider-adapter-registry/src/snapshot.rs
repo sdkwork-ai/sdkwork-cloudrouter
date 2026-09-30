@@ -1,5 +1,6 @@
 use sdkwork_cloudrouter_provider_adapter_contract::{
-    AdapterEndpointRuntimeState, AdapterKind, AdapterRouteStatus, ProviderAdapterManifest,
+    normalize_adapter_path, AdapterEndpointRuntimeState, AdapterKind, AdapterRouteStatus,
+    ProviderAdapterManifest,
 };
 use serde::{Deserialize, Serialize};
 
@@ -55,7 +56,7 @@ impl ProviderAdapterSnapshot {
                                 runtime_state: endpoint.runtime_state.clone(),
                                 method: endpoint.method.to_ascii_uppercase(),
                                 invocation_shape: endpoint.invocation_shape.clone(),
-                                standard_path_pattern: normalize_path(
+                                standard_path_pattern: normalize_adapter_path(
                                     endpoint.standard_path_pattern.as_str(),
                                 ),
                                 adapter_path_template: "/providers/{supplier_code}{standard_path}"
@@ -68,14 +69,5 @@ impl ProviderAdapterSnapshot {
             .collect();
 
         Ok(Self { routes })
-    }
-}
-
-fn normalize_path(value: &str) -> String {
-    let value = value.trim();
-    if value.starts_with('/') {
-        value.to_owned()
-    } else {
-        format!("/{value}")
     }
 }

@@ -330,7 +330,7 @@
       "groupName": "Official Vidu Full API",
       "groupType": "api_group",
       "selectionMode": "all",
-      "description": "Vidu official account resources including reference image, start-end video generation, and motion sync template.",
+      "description": "Vidu official account resources including reference image, text/image/reference/start-end video generation, motion sync template, and video task query.",
       "sortOrder": 160,
       "items": [
         {
@@ -348,6 +348,22 @@
         {
           "itemType": "resource",
           "resourceCode": "api.vidu.motion_sync"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.vidu.text_to_video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.vidu.image_to_video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.vidu.reference_to_video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.vidu.video_task_query"
         },
         {
           "itemType": "resource",

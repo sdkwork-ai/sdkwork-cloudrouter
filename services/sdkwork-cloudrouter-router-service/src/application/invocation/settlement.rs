@@ -1,9 +1,9 @@
 use serde_json::{json, Value};
 
 use super::{
-    BillingMode, BillingQuantitySource, Invocation, InvocationError, InvocationErrorKind,
-    InvocationFuture, InvocationInterceptor, InvocationPricingQuote, InvocationUsageLine,
-    InvocationUsageLineRole,
+    effective_dispatch_status_code, is_token_meter, BillingMode, BillingQuantitySource, Invocation,
+    InvocationError, InvocationErrorKind, InvocationFuture, InvocationInterceptor,
+    InvocationPricingQuote, InvocationUsageLine, InvocationUsageLineRole,
 };
 use crate::application::{GatewayPricingDecision, PriceResolution, PriceResolutionStatus};
 use crate::domain::{
@@ -423,24 +423,6 @@ fn token_columns(
     }
 }
 
-fn is_token_meter(meter: &BillingMeter) -> bool {
-    matches!(
-        meter,
-        BillingMeter::LlmInputToken
-            | BillingMeter::LlmOutputToken
-            | BillingMeter::LlmReasoningToken
-            | BillingMeter::LlmCacheWriteToken
-            | BillingMeter::LlmCacheReadToken
-            | BillingMeter::EmbeddingInputToken
-            | BillingMeter::ImageInputToken
-            | BillingMeter::ImageOutputToken
-            | BillingMeter::AudioInputToken
-            | BillingMeter::AudioOutputToken
-            | BillingMeter::VideoInputToken
-            | BillingMeter::VideoOutputToken
-    )
-}
-
 fn provider_native_model_for_settlement(
     invocation: &Invocation,
     account: &super::InvocationAccount,
@@ -757,27 +739,6 @@ fn effective_invocation_dispatch_status_code(invocation: &Invocation) -> Option<
         .response
         .as_ref()
         .and_then(|response| effective_dispatch_status_code(invocation, response))
-}
-
-fn effective_dispatch_status_code(
-    invocation: &Invocation,
-    response: &super::InvocationDispatchResponse,
-) -> Option<u16> {
-    if invocation.dispatch.mode != super::DispatchMode::InternalProviderAdapter {
-        return Some(response.status_code);
-    }
-    response
-        .body
-        .as_ref()
-        .and_then(adapter_response_status_code)
-        .or(Some(response.status_code))
-}
-
-fn adapter_response_status_code(body: &Value) -> Option<u16> {
-    body.get("statusCode")
-        .or_else(|| body.get("status_code"))
-        .and_then(Value::as_u64)
-        .and_then(|value| u16::try_from(value).ok())
 }
 
 fn settlement_error(message: impl Into<String>) -> InvocationError {

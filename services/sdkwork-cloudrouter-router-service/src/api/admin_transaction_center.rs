@@ -7,10 +7,15 @@ use axum::routing::{get, patch};
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
+use crate::api::command_error::system_error_response;
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
-    json_success_list_response, offset_page_info, parse_offset_list_query, problem_from_wire_code,
-    success_envelope, ApiResponseError,
+    bad_request, json_success_list_response, offset_page_info, parse_offset_list_query,
+    problem_from_wire_code, success_envelope, ApiResponseError,
+};
+use crate::api::text_normalization::{
+    normalize_visible_ascii_optional as normalize_optional_text,
+    normalize_visible_ascii_required as normalize_required_text,
 };
 use crate::domain::DomainError;
 use crate::ports::{
@@ -274,7 +279,7 @@ where
     };
     match load(query).await {
         Ok(collection) => collection_response(collection),
-        Err(error) => transaction_center_system_response(
+        Err(error) => system_error_response(
             "transaction center collection is unavailable",
             error,
         ),
@@ -289,22 +294,18 @@ fn collection_response(collection: AdminTransactionCollection) -> Response {
     )
 }
 
-fn transaction_center_system_response(context: &str, error: DomainError) -> Response {
-    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
-}
-
 fn transaction_center_write_response(context: &str, error: DomainError) -> Response {
     if error.is_not_found() {
         return problem_from_wire_code("4040", error.to_string()).into_response();
     }
-    transaction_center_system_response(context, error)
+    system_error_response(context, error)
 }
 
 fn server_request_id() -> Result<String, ApiResponseError> {
     generate_server_request_id().map_err(|error| {
         let response = match error {
             RequestIdError::Invalid(message) => bad_request(message),
-            RequestIdError::System(message) => transaction_center_system_response(
+            RequestIdError::System(message) => system_error_response(
                 "request id generation failed",
                 DomainError::new(message),
             ),
@@ -377,36 +378,6 @@ fn validated_list_query(
     })
 }
 
-fn normalize_required_text(
-    value: String,
-    field_name: &str,
-    max_len: usize,
-) -> Result<String, ApiResponseError> {
-    normalize_optional_text(Some(value), field_name, max_len)?
-        .ok_or_else(|| bad_request(format!("{field_name} is required")).into())
-}
-
-fn normalize_optional_text(
-    value: Option<String>,
-    field_name: &str,
-    max_len: usize,
-) -> Result<Option<String>, ApiResponseError> {
-    let Some(value) = value else {
-        return Ok(None);
-    };
-    let value = value.trim();
-    if value.is_empty() {
-        return Ok(None);
-    }
-    if value.chars().count() > max_len || !value.bytes().all(|byte| (0x20..=0x7e).contains(&byte)) {
-        return Err(bad_request(format!(
-            "{field_name} must be visible ASCII and at most {max_len} characters"
-        ))
-        .into());
-    }
-    Ok(Some(value.to_owned()))
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum AsciiCase {
     Lower,
@@ -458,8 +429,4 @@ fn normalize_optional_ascii_code(
         return Ok(None);
     };
     normalize_ascii_code(value, field_name, exact_len, pattern).map(Some)
-}
-
-fn bad_request(message: impl Into<String>) -> Response {
-    problem_from_wire_code("4001", message.into()).into_response()
 }

@@ -8,7 +8,8 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
 use crate::api::admin_sql_subject::{RequiredAdminSqlScopedSubject, SqlScopedAdminSubject};
-use crate::api::response::{not_found_problem, problem_from_wire_code, success_envelope};
+use crate::api::response::{bad_request, not_found_problem, success_envelope};
+use crate::api::text_normalization::parse_json_body;
 use crate::application::{
     AuthenticatedApiKeyContext, SelectUpstreamAccountRouteQuery, SelectUpstreamModelRouteQuery,
     SelectedUpstreamAccountRoute, SelectedUpstreamModelRoute, UpstreamRouteSelectionErrorKind,
@@ -368,17 +369,6 @@ fn route_explain_issue(
     }
 }
 
-fn parse_json_body<T>(body: &[u8], entity_name: &str) -> Result<T, String>
-where
-    T: for<'de> Deserialize<'de>,
-{
-    if body.iter().all(u8::is_ascii_whitespace) {
-        return Err(format!("{entity_name} request body is required"));
-    }
-    serde_json::from_slice(body)
-        .map_err(|error| format!("invalid {entity_name} request body: {error}"))
-}
-
 fn parse_positive_i64(value: Option<&str>, field_name: &str) -> Result<i64, String> {
     let value = value
         .and_then(|value| normalize_optional_text(Some(value)))
@@ -441,10 +431,6 @@ fn parse_billing_meter(value: &str) -> Result<BillingMeter, String> {
         return Err(format!("billingMeter is not supported: {normalized}"));
     }
     Ok(meter)
-}
-
-fn bad_request(message: String) -> Response {
-    problem_from_wire_code("4001", message).into_response()
 }
 
 fn route_target_not_found() -> Response {

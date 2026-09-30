@@ -125,26 +125,6 @@
       "operation": "GET /nano-banana/v1/images/generations/{task_id}",
       "group": "no-supplier-namespace",
       "reason": "no supplier/vendor/account, and the wired nano-banana ingress is the Gemini-native /google/v1beta/models/nano-banana:generateImages — but `dispatch_nano_banana` in sdkwork-generations drives THIS path, so it is a live cross-repo breakage (API authority ambiguity), not something an arm can paper over"
-    },
-    {
-      "operation": "POST /vidu/ent/v2/text2video",
-      "group": "published-no-route",
-      "reason": "published and called by sdkwork-generations, but the taxonomy names no vidu video route"
-    },
-    {
-      "operation": "POST /vidu/ent/v2/img2video",
-      "group": "published-no-route",
-      "reason": "published and called by sdkwork-generations, but the taxonomy names no vidu video route"
-    },
-    {
-      "operation": "POST /vidu/ent/v2/reference2video",
-      "group": "published-no-route",
-      "reason": "published and called by sdkwork-generations, but the taxonomy names no vidu video route"
-    },
-    {
-      "operation": "GET /vidu/ent/v2/tasks/{task_id}/creations",
-      "group": "published-no-route",
-      "reason": "published and called by sdkwork-generations, but the taxonomy names no vidu video route"
     }
   ]
 }

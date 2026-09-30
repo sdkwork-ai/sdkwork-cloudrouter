@@ -100,13 +100,13 @@ INSERT INTO ai_metering_usage
      base_output_unit_price, cache_read_unit_price, rate_multiplier, reference_multiplier,
      official_reference_amount, upstream_cost_amount, customer_charge_amount,
      currency, pricing_plan_code, pricing_snapshot, occurred_at, settlement_status, idempotency_key,
-     debit_points)
+     debit_points, owner_name_snapshot)
 VALUES
     ($1, $2, $3, $4, $5, $6, $7, 1, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
      $18, $19, $20, $21, $22, $23::numeric, $24, $25, $26, $27, $28, $29, $30, $31, $32,
      $33::numeric, $34::numeric, $35::numeric, $36::numeric, $37::numeric, $38::numeric,
      $39::numeric, $40::numeric, $41::numeric, $42::numeric,
-     $43, $44, $45::jsonb, to_timestamp($46::double precision / 1000.0), $47, $48, $49)
+     $43, $44, $45::jsonb, to_timestamp($46::double precision / 1000.0), $47, $48, $49, $50)
 ON CONFLICT (tenant_id, organization_id, request_id, usage_type) DO UPDATE SET
     trace_id = excluded.trace_id,
     api_key_id = excluded.api_key_id,

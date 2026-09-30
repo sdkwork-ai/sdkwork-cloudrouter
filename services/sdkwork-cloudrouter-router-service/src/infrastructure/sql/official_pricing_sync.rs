@@ -839,10 +839,7 @@ fn diff_price_book_keys(
     live: &BTreeSet<(String, String, String)>,
 ) -> PriceBookDrift {
     let render = |key: &(String, String, String)| format!("{}/{}/{}", key.1, key.2, key.0);
-    let mut missing = projected
-        .difference(live)
-        .map(render)
-        .collect::<Vec<_>>();
+    let mut missing = projected.difference(live).map(render).collect::<Vec<_>>();
     let mut orphan = live.difference(projected).map(render).collect::<Vec<_>>();
     missing.sort();
     orphan.sort();
@@ -1485,7 +1482,9 @@ async fn bootstrap_default_pricing_plans(
 
 #[cfg(test)]
 mod tests {
-    use super::{catalog_availability, diff_price_book_keys, normalize_price_side, project_catalog};
+    use super::{
+        catalog_availability, diff_price_book_keys, normalize_price_side, project_catalog,
+    };
     use crate::infrastructure::sql::model_catalog_import::{
         model_catalog_key, sdkwork_model_is_publicly_active,
     };
@@ -1505,7 +1504,8 @@ mod tests {
         let published_kept = book("models.openai.global.official", "openai", "global");
         let published_dropped_by_catalog =
             book("models.google.global.reference", "google", "global");
-        let published_missing_from_db = book("models.kuaishou.global.official", "kuaishou", "global");
+        let published_missing_from_db =
+            book("models.kuaishou.global.official", "kuaishou", "global");
         let deleted_by_catalog = book("models.openai.global.reference", "openai", "global");
 
         let projected: BTreeSet<_> = [

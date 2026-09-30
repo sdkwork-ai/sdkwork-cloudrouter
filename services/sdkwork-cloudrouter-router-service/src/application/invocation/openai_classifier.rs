@@ -233,6 +233,19 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
             RoutingCapability::Audio,
         ));
     }
+    if method == Method::GET && path.starts_with("/v1/audio/voices/") {
+        // Single-voice retrieval. Voice *creation* and *listing*
+        // (`POST`/`GET /v1/audio/voices`) are routed management surfaces, but
+        // per-voice retrieval has no upstream route account, so it is answered
+        // locally (`501`, as the contract declares) instead of 404-ing after
+        // the mounted route failed classification.
+        return Ok(api(
+            "openai/management/audio_voices",
+            "openai.audio.voices",
+            ResourceType::Audio,
+            RoutingCapability::Audio,
+        ));
+    }
     if path.starts_with("/v1/audio/voice_consents/") {
         return Ok(api(
             "openai/management/audio_voice_consents",
@@ -267,6 +280,22 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
         ));
     }
     if method == Method::GET && path == "/v1/models" {
+        return Ok(free_endpoint(
+            "openai/management/models",
+            "openai.models",
+            RoutingCapability::Network,
+        ));
+    }
+    if method == Method::GET && path.starts_with("/v1/models/") {
+        // Single-model retrieval. The gateway serves the group-scoped model
+        // *list* locally (`openai.models` above) and has no per-model upstream
+        // route account, so this is a locally-answered free endpoint rather
+        // than a dead ingress: the contract publishes it with a `501`
+        // response, which `apply_gateway_dispatch_defaults` synthesises.
+        //
+        // Without this arm the path reached a mounted route and then died in
+        // `classify_request` as `ResourceClassification`, surfacing as a 404
+        // on a path the contract advertises.
         return Ok(free_endpoint(
             "openai/management/models",
             "openai.models",
@@ -558,6 +587,19 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
             "openai.video",
             ResourceType::Video,
             RoutingCapability::Video,
+        ));
+    }
+    if method == Method::POST && path == "/v1/realtime/client_secrets" {
+        // Realtime client-secret minting. The durable realtime session surface
+        // (`POST /v1/realtime/sessions`) is routed through the media pipeline,
+        // but secret minting is a locally-answered management operation with no
+        // upstream route account — the contract publishes it as a `501`
+        // surface, which `apply_gateway_dispatch_defaults` synthesises.
+        return Ok(api(
+            "openai/management/realtime",
+            "openai.realtime",
+            ResourceType::RealtimeSession,
+            RoutingCapability::Network,
         ));
     }
     if path == "/v1/realtime/calls"

@@ -1,8 +1,8 @@
 use serde_json::Value;
 
 use super::{
-    DispatchMode, Invocation, InvocationError, InvocationFuture, InvocationInterceptor,
-    InvocationRouteAttempt,
+    adapter_response_status_code, DispatchMode, Invocation, InvocationError, InvocationFuture,
+    InvocationInterceptor, InvocationRouteAttempt,
 };
 
 #[derive(Debug, Clone, Default)]
@@ -82,13 +82,6 @@ fn effective_status_code(
         .as_ref()
         .and_then(adapter_response_status_code)
         .unwrap_or(response.status_code)
-}
-
-fn adapter_response_status_code(body: &Value) -> Option<u16> {
-    body.get("statusCode")
-        .or_else(|| body.get("status_code"))
-        .and_then(Value::as_u64)
-        .and_then(|value| u16::try_from(value).ok())
 }
 
 fn effective_error_body(body: &Value) -> Option<&Value> {

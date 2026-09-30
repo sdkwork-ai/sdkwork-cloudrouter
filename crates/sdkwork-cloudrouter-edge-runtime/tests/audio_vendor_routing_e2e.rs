@@ -149,12 +149,9 @@ async fn media_handler(
 ) -> (StatusCode, Json<Value>) {
     let path = request.uri().path().to_owned();
     let query = request.uri().query().map(str::to_owned);
-    let body_bytes = axum::body::to_bytes(
-        request.into_body(),
-        1024 * 1024,
-    )
-    .await
-    .unwrap_or_default();
+    let body_bytes = axum::body::to_bytes(request.into_body(), 1024 * 1024)
+        .await
+        .unwrap_or_default();
     let body = serde_json::from_slice::<Value>(&body_bytes).unwrap_or(Value::Null);
     provider.calls.fetch_add(1, Ordering::SeqCst);
     provider
@@ -203,10 +200,7 @@ fn tts_accounts(
             base_url: elevenlabs.to_owned(),
             secret_ref: "vault://providers/elevenlabs/account/main".to_owned(),
             secret_value: "sk-elevenlabs-tts-secret".to_owned(),
-            api_scope: &[
-                "elevenlabs.text_to_speech",
-                "elevenlabs.sound_generation",
-            ],
+            api_scope: &["elevenlabs.text_to_speech", "elevenlabs.sound_generation"],
             capabilities: &["audio", "speech", "sfx"],
         },
         TtsAccountSpec {
@@ -324,7 +318,12 @@ fn catalog_with_tts_accounts(
         ),
         ("volcengine.speech", "speech", "volcengine", 4102),
         ("suno.music_generation", "music_generation", "suno", 4103),
-        ("minimax.music_generation", "music_generation", "minimax", 4104),
+        (
+            "minimax.music_generation",
+            "music_generation",
+            "minimax",
+            4104,
+        ),
     ] {
         catalog.add_price(ModelPrice::new_for_catalog_key(
             catalog_key,
@@ -410,10 +409,12 @@ async fn send_request(router: axum::Router, uri: &str, body: Value) -> (StatusCo
         .await
         .unwrap();
     let status = response.status();
-    let body = String::from_utf8(axum::body::to_bytes(response.into_body(), 1024 * 1024 * 16)
-        .await
-        .unwrap()
-        .to_vec())
+    let body = String::from_utf8(
+        axum::body::to_bytes(response.into_body(), 1024 * 1024 * 16)
+            .await
+            .unwrap()
+            .to_vec(),
+    )
     .unwrap();
     (status, body)
 }
@@ -472,8 +473,7 @@ async fn tts_routing_elevenlabs_text_to_speech_routes_to_elevenlabs_account() {
         calls[0].authorization
     );
     assert_eq!(
-        "/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM",
-        calls[0].path,
+        "/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM", calls[0].path,
         "vendor path after the provider prefix must be forwarded verbatim"
     );
     assert_eq!("hello world", calls[0].body["text"]);
@@ -485,12 +485,7 @@ async fn sfx_routing_elevenlabs_sound_generation_routes_to_elevenlabs_account() 
     let elevenlabs = start_mock_upstream("elevenlabs").await;
     let volcengine = start_mock_upstream("volcengine").await;
     let unused = "http://127.0.0.1:9".to_owned();
-    let accounts = tts_accounts(
-        &elevenlabs.base_url,
-        &volcengine.base_url,
-        &unused,
-        &unused,
-    );
+    let accounts = tts_accounts(&elevenlabs.base_url, &volcengine.base_url, &unused, &unused);
     let hasher = hasher();
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
     let catalog = catalog_with_tts_accounts(&key_hash, accounts);
@@ -530,8 +525,7 @@ async fn sfx_routing_elevenlabs_sound_generation_routes_to_elevenlabs_account() 
         calls[0].authorization
     );
     assert_eq!(
-        "/v1/sound-generation",
-        calls[0].path,
+        "/v1/sound-generation", calls[0].path,
         "vendor path after the provider prefix must be forwarded verbatim"
     );
     assert_eq!(
@@ -540,8 +534,7 @@ async fn sfx_routing_elevenlabs_sound_generation_routes_to_elevenlabs_account() 
         "query parameters carry the requested audio format and must survive the relay"
     );
     assert_eq!(
-        "cinematic whoosh transition",
-        calls[0].body["text"],
+        "cinematic whoosh transition", calls[0].body["text"],
         "the SFX prompt must reach the vendor unchanged"
     );
     assert_eq!(0.65, calls[0].body["prompt_influence"]);
@@ -687,4 +680,3 @@ async fn music_routing_minimax_music_generation_routes_to_minimax_account() {
     assert_eq!(44100, calls[0].body["audio_setting"]["sample_rate"]);
     assert_eq!(0, suno.provider.calls());
 }
-

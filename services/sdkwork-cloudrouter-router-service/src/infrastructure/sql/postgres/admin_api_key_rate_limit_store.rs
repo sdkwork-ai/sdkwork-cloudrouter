@@ -1,4 +1,3 @@
-use sha2::{Digest, Sha256};
 use sqlx::{PgPool, Postgres, Row, Transaction};
 
 use crate::domain::{DomainError, DomainResult};
@@ -6,6 +5,7 @@ use crate::infrastructure::sql::routing_config_change::{
     record_postgres_ai_routing_config_change, AiRoutingConfigChange,
 };
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
+use crate::infrastructure::sql::sql_hash::digest_hex;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 use crate::ports::{
     AdminApiKeyRateLimitCommandFuture, AdminApiKeyRateLimitItem, AdminApiKeyRateLimitListPage,
@@ -564,12 +564,6 @@ fn policy_name(command: &CreateAdminApiKeyRateLimitCommand, api_key: &ApiKeyIden
 
 fn truncate_chars(value: &str, max_len: usize) -> String {
     value.chars().take(max_len).collect()
-}
-
-fn digest_hex(value: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(value.as_bytes());
-    hex::encode(hasher.finalize())
 }
 
 fn required_integer_cell(row: &sqlx::postgres::PgRow, column: &str) -> DomainResult<i64> {

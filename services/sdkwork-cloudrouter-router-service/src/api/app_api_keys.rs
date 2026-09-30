@@ -1,7 +1,6 @@
 use std::collections::BTreeMap;
 use std::net::IpAddr;
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::api::app_sql_subject::{RequiredAppSqlScopedSubject, SqlScopedSubject};
 use axum::extract::{Path, Query, State};
@@ -31,6 +30,7 @@ use crate::ports::{
     GatewayApiKeyManagementReadStore, GatewayApiKeyManagementSnapshot, ListGatewayApiKeysQuery,
     UpdateGatewayApiKeyCommand, UpsertChainPolicyCommand, ADMIN_CHAIN_POLICY_SCOPE_API_KEY,
 };
+use sdkwork_utils_rust::datetime::current_timestamp_string;
 
 /// Seeded default account group code, sourced from the canonical selection
 /// module so the group created here is exactly the one auth-token sessions fall
@@ -1524,39 +1524,6 @@ fn mask_created_key(raw_key: &str) -> String {
     suffix_chars.reverse();
     let suffix: String = suffix_chars.into_iter().collect();
     format!("{prefix}********{suffix}")
-}
-
-fn current_timestamp_string() -> String {
-    let seconds = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_secs() as i64)
-        .unwrap_or(0);
-    format_unix_timestamp(seconds)
-}
-
-fn format_unix_timestamp(seconds: i64) -> String {
-    let days = seconds.div_euclid(86_400);
-    let seconds_of_day = seconds.rem_euclid(86_400);
-    let (year, month, day) = civil_from_days(days);
-    let hour = seconds_of_day / 3_600;
-    let minute = (seconds_of_day % 3_600) / 60;
-    let second = seconds_of_day % 60;
-    format!("{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02}")
-}
-
-fn civil_from_days(days: i64) -> (i64, i64, i64) {
-    let days = days + 719_468;
-    let era = if days >= 0 { days } else { days - 146_096 } / 146_097;
-    let day_of_era = days - era * 146_097;
-    let year_of_era =
-        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
-    let year = year_of_era + era * 400;
-    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
-    let month_prime = (5 * day_of_year + 2) / 153;
-    let day = day_of_year - (153 * month_prime + 2) / 5 + 1;
-    let month = month_prime + if month_prime < 10 { 3 } else { -9 };
-    let year = year + if month <= 2 { 1 } else { 0 };
-    (year, month, day)
 }
 
 fn system_error(error: DomainError) -> AppApiKeyCreateError {

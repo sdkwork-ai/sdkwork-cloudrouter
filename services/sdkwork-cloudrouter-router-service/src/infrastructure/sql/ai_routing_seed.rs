@@ -11,9 +11,7 @@ use sdkwork_iam_bootstrap::{
     DEFAULT_IAM_TENANT_SQL_ID as DEFAULT_IAM_TENANT_ID,
 };
 
-use crate::application::{
-    UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext,
-};
+use crate::application::{UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext};
 use crate::infrastructure::sql::account_rate_card::sync_legacy_account_group_rate_cards;
 
 const MANIFEST_JSON: &str = include_str!("../../../../../data/ai-routing/install-manifest.json");
@@ -388,7 +386,8 @@ const DEFAULT_SDKWORK_RELAY_CN_OPENAI_BASE_URL: &str = "https://api.sdkwork.cn/v
 const DEFAULT_SDKWORK_RELAY_CN_ANTHROPIC_BASE_URL: &str = "https://api.sdkwork.cn/anthropic";
 /// The BirdCoder relay mirrors the SDKWork relay surface on its own domains.
 const DEFAULT_BIRDCODER_RELAY_GLOBAL_OPENAI_BASE_URL: &str = "https://api.birdcoder.com/v1";
-const DEFAULT_BIRDCODER_RELAY_GLOBAL_ANTHROPIC_BASE_URL: &str = "https://api.birdcoder.com/anthropic";
+const DEFAULT_BIRDCODER_RELAY_GLOBAL_ANTHROPIC_BASE_URL: &str =
+    "https://api.birdcoder.com/anthropic";
 const DEFAULT_BIRDCODER_RELAY_CN_OPENAI_BASE_URL: &str = "https://api.birdcoder.cn/v1";
 const DEFAULT_BIRDCODER_RELAY_CN_ANTHROPIC_BASE_URL: &str = "https://api.birdcoder.cn/anthropic";
 
@@ -859,7 +858,8 @@ const DEFAULT_VENDOR_UPSTREAM_ACCOUNTS: [DefaultVendorUpstreamAccountSeed; 28] =
     DefaultVendorUpstreamAccountSeed {
         vendor_code: "black_forest_labs",
         supplier_name: "Black Forest Labs",
-        supplier_display_name_i18n: "{\"en-US\":\"Black Forest Labs\",\"zh-CN\":\"Black Forest Labs\"}",
+        supplier_display_name_i18n:
+            "{\"en-US\":\"Black Forest Labs\",\"zh-CN\":\"Black Forest Labs\"}",
         adapter_code: "black_forest_labs",
         protocol_code: "vendor_native",
         base_url: "https://api.bfl.ai",
@@ -966,7 +966,11 @@ const VENDOR_LOCALIZED_NAMES: [(&str, &str, &str); 28] = [
     ("stepfun", "StepFun", "阶跃星辰"),
     ("meituan", "Meituan", "美团"),
     ("stability_ai", "Stability AI", "Stability AI"),
-    ("black_forest_labs", "Black Forest Labs", "Black Forest Labs"),
+    (
+        "black_forest_labs",
+        "Black Forest Labs",
+        "Black Forest Labs",
+    ),
     ("mureka", "Mureka", "Mureka"),
     ("xiaomi", "Xiaomi MiMo", "小米 MiMo"),
 ];
@@ -2389,19 +2393,21 @@ async fn import_postgres_default_admin_upstream_topology(
         // `sync_default_group_members` at the end of the seed), so a group that
         // resolves no account here is completed rather than skipped.
         let account_id = match group.account_code.as_deref() {
-            Some(account_code) => sqlx::query_scalar::<_, i64>(
-                r#"
+            Some(account_code) => {
+                sqlx::query_scalar::<_, i64>(
+                    r#"
                     SELECT id
                     FROM ai_upstream_account
                     WHERE tenant_id = $1 AND organization_id = $2
                       AND account_code = $3 AND deleted_at IS NULL
                     "#,
-            )
-            .bind(DEFAULT_IAM_TENANT_ID)
-            .bind(DEFAULT_IAM_ORGANIZATION_ID)
-            .bind(account_code)
-            .fetch_optional(&mut **tx)
-            .await?,
+                )
+                .bind(DEFAULT_IAM_TENANT_ID)
+                .bind(DEFAULT_IAM_ORGANIZATION_ID)
+                .bind(account_code)
+                .fetch_optional(&mut **tx)
+                .await?
+            }
             None => None,
         };
         let account_group_id = default_admin_upstream_account_group_id(&group);
@@ -5076,7 +5082,8 @@ fn default_endpoint_method(api_code: &str) -> &'static str {
         | "kling.task_query"
         | "jimeng.task_query"
         | "volcengine.task_query"
-        | "vidu.task_query" => "GET",
+        | "vidu.task_query"
+        | "vidu.video_task_query" => "GET",
         "openai.containers.delete" | "openai.containers.files.delete" => "DELETE",
         _ => "POST",
     }
@@ -5906,7 +5913,11 @@ mod tests {
         // `model_catalog_import::model_endpoint_descriptor`, which maps
         // endpoint_code to a resource by `endpoint_code == resource.api_code`.
         let generic_endpoints: [(&str, &str, &str); 7] = [
-            ("chat", "openai.chat_completions", "api.openai.chat_completions"),
+            (
+                "chat",
+                "openai.chat_completions",
+                "api.openai.chat_completions",
+            ),
             ("embedding", "openai.embeddings", "api.openai.embeddings"),
             ("image", "openai.images", "api.openai.images"),
             ("audio", "openai.audio", "api.openai.audio"),
@@ -6322,6 +6333,10 @@ mod tests {
             "api.volcengine.image_generation",
             "api.vidu.start_end_to_video",
             "api.vidu.reference_to_image",
+            "api.vidu.text_to_video",
+            "api.vidu.image_to_video",
+            "api.vidu.reference_to_video",
+            "api.vidu.video_task_query",
         ] {
             assert!(
                 cn.contains(resource_code),

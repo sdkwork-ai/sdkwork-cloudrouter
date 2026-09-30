@@ -4,9 +4,9 @@ use std::sync::Arc;
 use serde_json::{Map, Value};
 
 use super::{
-    AlipayPaymentProviderConfig, PayPalPaymentProviderConfig, PaymentAdapterFuture,
-    PaymentAdapterOperation, PaymentProviderRegistryError, StripePaymentProviderConfig,
-    WeChatPayProviderConfig, WeChatPaySignVerifyMode,
+    normalize_payment_supplier_code, AlipayPaymentProviderConfig, PayPalPaymentProviderConfig,
+    PaymentAdapterFuture, PaymentAdapterOperation, PaymentProviderRegistryError,
+    StripePaymentProviderConfig, WeChatPayProviderConfig, WeChatPaySignVerifyMode,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -134,7 +134,7 @@ impl PaymentProviderAccountCredentialResolver {
         account: PaymentProviderAccountCredentialRefs,
     ) -> PaymentAdapterFuture<'_, PaymentProviderResolvedCredentials> {
         Box::pin(async move {
-            let supplier_code = normalize_supplier_code(&account.supplier_code);
+            let supplier_code = normalize_payment_supplier_code(&account.supplier_code);
             validate_payment_secret_ref(&supplier_code, &account.secret_ref)?;
             if let Some(secret_ref) = account.webhook_secret_ref.as_deref() {
                 validate_payment_secret_ref(&supplier_code, secret_ref)?;
@@ -305,13 +305,6 @@ pub fn validate_payment_secret_ref(
         ));
     }
     Ok(())
-}
-
-fn normalize_supplier_code(supplier_code: &str) -> String {
-    supplier_code
-        .trim()
-        .to_ascii_lowercase()
-        .replace(['-', ' '], "_")
 }
 
 fn required_text(

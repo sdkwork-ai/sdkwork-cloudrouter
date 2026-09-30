@@ -321,7 +321,11 @@ where
         // no local record. A lost insert race surfaces as a typed conflict,
         // in which case the concurrent winner's record is replayed and no
         // second provider order is placed.
-        let intent = match self.store.insert_payment_intent(intent, route_decision).await {
+        let intent = match self
+            .store
+            .insert_payment_intent(intent, route_decision)
+            .await
+        {
             Ok(intent) => intent,
             Err(error) if error.is_conflict() => {
                 let existing = self

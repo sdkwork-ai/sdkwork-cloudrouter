@@ -518,6 +518,66 @@
       "sortOrder": 595
     },
     {
+      "resourceCode": "api.vidu.text_to_video",
+      "resourceType": "api_endpoint",
+      "displayName": "Vidu Text To Video",
+      "vendorCode": "vidu",
+      "modalityCode": "video",
+      "apiCode": "vidu.text_to_video",
+      "method": "POST",
+      "pathTemplate": "/ent/v2/text2video",
+      "capability": "video",
+      "capabilities": [
+        "video"
+      ],
+      "sortOrder": 600
+    },
+    {
+      "resourceCode": "api.vidu.image_to_video",
+      "resourceType": "api_endpoint",
+      "displayName": "Vidu Image To Video",
+      "vendorCode": "vidu",
+      "modalityCode": "video",
+      "apiCode": "vidu.image_to_video",
+      "method": "POST",
+      "pathTemplate": "/ent/v2/img2video",
+      "capability": "video",
+      "capabilities": [
+        "video"
+      ],
+      "sortOrder": 605
+    },
+    {
+      "resourceCode": "api.vidu.reference_to_video",
+      "resourceType": "api_endpoint",
+      "displayName": "Vidu Reference To Video",
+      "vendorCode": "vidu",
+      "modalityCode": "video",
+      "apiCode": "vidu.reference_to_video",
+      "method": "POST",
+      "pathTemplate": "/ent/v2/reference2video",
+      "capability": "video",
+      "capabilities": [
+        "video"
+      ],
+      "sortOrder": 610
+    },
+    {
+      "resourceCode": "api.vidu.video_task_query",
+      "resourceType": "api_endpoint",
+      "displayName": "Vidu Video Task Query",
+      "vendorCode": "vidu",
+      "modalityCode": "video",
+      "apiCode": "vidu.video_task_query",
+      "method": "GET",
+      "pathTemplate": "/ent/v2/tasks/{task_id}/creations",
+      "capability": "video",
+      "capabilities": [
+        "video"
+      ],
+      "sortOrder": 615
+    },
+    {
       "resourceCode": "api.suno.music",
       "resourceType": "api_endpoint",
       "displayName": "Music Generation (Suno-protocol)",

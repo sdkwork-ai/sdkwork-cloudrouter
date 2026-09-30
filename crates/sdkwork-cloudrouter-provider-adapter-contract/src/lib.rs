@@ -6,7 +6,10 @@ mod registry;
 mod task;
 mod usage;
 
-pub use endpoint::{AdapterEndpointRuntimeState, AdapterInvocationShape, AdapterStreamingMode};
+pub use endpoint::{
+    normalize_adapter_path, AdapterEndpointRuntimeState, AdapterInvocationShape,
+    AdapterStreamingMode,
+};
 pub use envelope::{
     AdapterInvocationMetadata, AdapterInvocationRequest, AdapterInvocationResponse,
     AdapterProviderContext, AdapterResponseProvider, AdapterSecret, AdapterSubject,

@@ -1,8 +1,8 @@
-use sha2::{Digest, Sha256};
 use sqlx::{Postgres, Transaction};
 
 use crate::domain::{DomainError, DomainResult};
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
+use crate::infrastructure::sql::sql_hash::digest_hex;
 use crate::infrastructure::sql::store_error::redacted_store_error;
 
 pub(crate) const AI_ROUTING_CONFIG_SCOPE: &str = "routing";
@@ -200,11 +200,6 @@ fn config_change_event_uuid(
 fn digest_id(prefix: &str, payload: &str) -> String {
     let digest = digest_hex(payload);
     format!("{prefix}-{}", &digest[..24])
-}
-
-fn digest_hex(payload: &str) -> String {
-    let digest = Sha256::digest(payload.as_bytes());
-    hex::encode(digest)
 }
 
 fn store_error(context: &str, error: sqlx::Error) -> DomainError {

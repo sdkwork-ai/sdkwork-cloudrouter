@@ -2,18 +2,18 @@ use std::sync::Arc;
 
 use axum::extract::{Query, State};
 use axum::http::HeaderMap;
-use axum::response::{IntoResponse, Response};
+use axum::response::Response;
 use axum::routing::get;
 use axum::Router;
 use serde::Deserialize;
 
+use crate::api::command_error::system_error_response;
 use crate::api::admin_sql_subject::{
     map_required_admin_sql_subject, RequiredAdminSqlScopedSubject,
 };
 use crate::api::response::{
-    json_success_list_response, offset_page_info, parse_offset_list_query, problem_from_wire_code,
+    bad_request, json_success_list_response, offset_page_info, parse_offset_list_query,
 };
-use crate::domain::DomainError;
 use crate::ports::{AdminRecordStore, ListAdminRecordLogsQuery};
 
 const MAX_FILTER_LEN: usize = 128;
@@ -57,7 +57,7 @@ async fn fetch_logs(
             page.items,
             offset_page_info(page.page_no, page.page_size, page.total),
         ),
-        Err(error) => record_system_response("admin record read model is unavailable", error),
+        Err(error) => system_error_response("admin record read model is unavailable", error),
     }
 }
 
@@ -93,12 +93,4 @@ fn normalize_filter(value: Option<String>, field: &str) -> Result<Option<String>
         ));
     }
     Ok(Some(value.to_owned()))
-}
-
-fn bad_request(message: impl Into<String>) -> Response {
-    problem_from_wire_code("4001", message.into()).into_response()
-}
-
-fn record_system_response(context: &str, error: DomainError) -> Response {
-    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }

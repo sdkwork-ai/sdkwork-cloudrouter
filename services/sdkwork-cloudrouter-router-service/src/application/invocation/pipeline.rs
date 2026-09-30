@@ -7,8 +7,9 @@ use serde_json::Value;
 use tracing::Instrument;
 
 use super::{
-    record_streaming_usage_body, BillingMode, BillingQuantitySource, Invocation,
-    InvocationCancellationSignal, InvocationError, InvocationErrorKind, InvocationInterceptor,
+    record_streaming_usage_body, tenant_lease_loss_error, BillingMode, BillingQuantitySource,
+    Invocation, InvocationCancellationSignal, InvocationError, InvocationErrorKind,
+    InvocationInterceptor,
 };
 #[cfg(test)]
 use crate::domain::BillingOwnerKind;
@@ -527,13 +528,6 @@ fn ensure_invocation_active(invocation: &Invocation) -> Result<(), InvocationErr
     } else {
         Ok(())
     }
-}
-
-fn tenant_lease_loss_error() -> InvocationError {
-    InvocationError::new(
-        InvocationErrorKind::RateLimit,
-        "tenant in-flight lease ownership was lost",
-    )
 }
 
 fn has_pending_stream(invocation: &Invocation) -> bool {

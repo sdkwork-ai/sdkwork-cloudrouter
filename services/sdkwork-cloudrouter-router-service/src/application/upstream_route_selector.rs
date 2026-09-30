@@ -1000,10 +1000,7 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             // 放进 failover 只会把同一个失败在下游重演一遍。
             let primary = routes[index].clone();
             let failover = routes[index + 1..].to_vec();
-            return CandidateUpstreamAccountRouteEvaluation::Selected(
-                Box::new(primary),
-                failover,
-            );
+            return CandidateUpstreamAccountRouteEvaluation::Selected(Box::new(primary), failover);
         }
         CandidateUpstreamAccountRouteEvaluation::NoCallableCandidate
     }
@@ -1131,11 +1128,7 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
                 last_failure = Some((
                     format!(
                         "model {catalog_key}, meter {}: {}{}",
-                        resolution
-                            .audit_snapshot
-                            .resource
-                            .meter
-                            .code(),
+                        resolution.audit_snapshot.resource.meter.code(),
                         resolution
                             .failure
                             .as_ref()
@@ -1594,7 +1587,9 @@ where
 
     // 1. Already a catalog model key — nothing to translate.
     if parse_model_catalog_identity(pricing_catalog_key).is_some()
-        && catalog.model_catalog_keys_by_name(pricing_catalog_key).is_empty()
+        && catalog
+            .model_catalog_keys_by_name(pricing_catalog_key)
+            .is_empty()
     {
         // Not a *known* model, but still shaped like one; keep it as the first
         // candidate so an unknown-but-model-shaped key fails with the key the
@@ -1651,7 +1646,10 @@ fn endpoint_code_candidates(query: &SelectUpstreamAccountRouteQuery) -> Vec<Stri
         if raw.is_empty() {
             continue;
         }
-        for candidate in [raw.to_owned(), raw.strip_prefix("api.").unwrap_or(raw).to_owned()] {
+        for candidate in [
+            raw.to_owned(),
+            raw.strip_prefix("api.").unwrap_or(raw).to_owned(),
+        ] {
             if !candidate.is_empty() && !candidates.contains(&candidate) {
                 candidates.push(candidate);
             }
@@ -1666,7 +1664,10 @@ fn endpoint_code_candidates(query: &SelectUpstreamAccountRouteQuery) -> Vec<Stri
 /// (`volcengine.video_generation` → `volcengine`); the route key carries the
 /// same information for media routes. Both are offered so the alias table gets a
 /// chance regardless of which spelling the caller populated.
-fn vendor_code_candidates(query: &SelectUpstreamAccountRouteQuery, pricing_catalog_key: &str) -> Vec<String> {
+fn vendor_code_candidates(
+    query: &SelectUpstreamAccountRouteQuery,
+    pricing_catalog_key: &str,
+) -> Vec<String> {
     let mut candidates: Vec<String> = Vec::new();
     for raw in [
         query.api_code.as_str(),
@@ -2364,7 +2365,10 @@ mod pricing_dimension_tests {
             output_type_for_meter(&BillingMeter::ImageOutputToken),
             Some("image")
         );
-        assert_eq!(output_type_for_meter(&BillingMeter::ImageResult), Some("image"));
+        assert_eq!(
+            output_type_for_meter(&BillingMeter::ImageResult),
+            Some("image")
+        );
         assert_eq!(
             output_type_for_meter(&BillingMeter::ImageInputToken),
             Some("image_input")

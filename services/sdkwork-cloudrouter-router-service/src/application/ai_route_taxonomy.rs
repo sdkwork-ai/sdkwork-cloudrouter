@@ -647,6 +647,45 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         BillingMeter::VideoResult,
         "video_task",
     ),
+    // Vidu's three primary video surfaces. The official contract publishes them
+    // (`POST /vidu/ent/v2/{text2video,img2video,reference2video}`) and
+    // `sdkwork-generations` calls them through `videos_vidu()`, but the
+    // taxonomy named no route for any of them: three published, mounted,
+    // actively-called operations that died in `classify_request` as
+    // `ResourceClassification` and surfaced as a 404. The naming is the
+    // catalog's generation-mode vocabulary (`text_to_video` / `image_to_video` /
+    // `reference_to_video`), so `video_generation_mode_for_api_code` in
+    // `catalog.rs` resolves the pricing mode by suffix with no override entry.
+    media_task(
+        "vidu.text_to_video",
+        "vidu.text_to_video",
+        RoutingCapability::Video,
+        BillingMeter::VideoResult,
+        "video_task",
+    ),
+    media_task(
+        "vidu.image_to_video",
+        "vidu.image_to_video",
+        RoutingCapability::Video,
+        BillingMeter::VideoResult,
+        "video_task",
+    ),
+    media_task(
+        "vidu.reference_to_video",
+        "vidu.reference_to_video",
+        RoutingCapability::Video,
+        BillingMeter::VideoResult,
+        "video_task",
+    ),
+    // The task-poll face for the three surfaces above:
+    // `GET /vidu/ent/v2/tasks/{task_id}/creations`. It is a read-only query
+    // face, so it bills as an account request like every other `*.task_query`.
+    account(
+        "vidu.video_task_query",
+        "vidu.video_task_query",
+        RoutingCapability::Network,
+        BillingMeter::ApiRequest,
+    ),
     account(
         "elevenlabs.text_to_speech",
         "elevenlabs.text_to_speech",

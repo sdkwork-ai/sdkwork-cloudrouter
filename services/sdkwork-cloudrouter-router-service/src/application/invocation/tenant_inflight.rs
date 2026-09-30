@@ -562,6 +562,19 @@ impl InvocationInterceptor for TenantInflightInterceptor {
     }
 }
 
+/// Error raised when a tenant in-flight lease is lost mid-request.
+///
+/// Lease loss means the concurrency slot is no longer provably ours, so the
+/// invocation must fail closed rather than continue consuming provider spend
+/// unaccounted. Mapped to HTTP 429 (rate limit) so clients retry. Single
+/// authority shared by the dispatch executor and the invocation pipeline.
+pub(crate) fn tenant_lease_loss_error() -> InvocationError {
+    InvocationError::new(
+        InvocationErrorKind::RateLimit,
+        "tenant in-flight lease ownership was lost",
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

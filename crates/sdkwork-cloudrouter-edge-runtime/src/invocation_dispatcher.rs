@@ -395,15 +395,9 @@ where
     .map(|collected| collected.to_bytes())
 }
 
-fn declared_content_length_exceeds_limit(
-    content_length: Option<&HeaderValue>,
-    limit: usize,
-) -> bool {
-    content_length
-        .and_then(|value| value.to_str().ok())
-        .and_then(|value| value.trim().parse::<u64>().ok())
-        .is_some_and(|value| value > limit as u64)
-}
+/// Single-sourced from the outbound HTTP transport that owns body limits; this
+/// re-export keeps the existing call sites (and tests) reading the same name.
+use sdkwork_cloudrouter_provider_adapter_http::declared_content_length_exceeds_limit;
 
 fn provider_response_too_large_error(status_code: u16, limit: usize) -> InvocationDispatchError {
     dispatch_error(

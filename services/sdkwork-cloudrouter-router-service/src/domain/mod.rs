@@ -4,11 +4,6 @@ mod upstream_auth;
 mod vendor_code_alias;
 
 pub use billing_owner::BillingOwnerKind;
-pub use vendor_code_alias::catalog_vendor_code;
-pub use upstream_account_group_selection::{
-    select_default_account_group_for_subject, upstream_account_group_in_subject_scope,
-    DefaultAccountGroupSelection, DefaultAccountGroupSelectionReason, DEFAULT_ACCOUNT_GROUP_CODE,
-};
 pub use sdkwork_models_catalog_service::domain::ResourceDefinition;
 pub use sdkwork_models_catalog_service::domain::{
     ensure_canonical_model_catalog_key, is_model_region_segment, model_catalog_scope_matches_key,
@@ -31,9 +26,14 @@ pub use sdkwork_models_catalog_service::domain::{
     DEFAULT_RETRYABLE_PROVIDER_STATUS_CODES,
 };
 pub use sdkwork_models_contract_service::{DomainError, DomainResult};
+pub use upstream_account_group_selection::{
+    select_default_account_group_for_subject, upstream_account_group_in_subject_scope,
+    DefaultAccountGroupSelection, DefaultAccountGroupSelectionReason, DEFAULT_ACCOUNT_GROUP_CODE,
+};
 pub use upstream_auth::{
     canonical_upstream_runtime_auth_config, resolve_upstream_runtime_auth_profile,
 };
+pub use vendor_code_alias::catalog_vendor_code;
 
 /// True when the optional text is present and non-blank after trimming.
 ///

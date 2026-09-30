@@ -1,3 +1,4 @@
+use crate::infrastructure::sql::store_error::redacted_store_error;
 use sqlx::{PgPool, Row};
 
 use crate::domain::{DecimalValue, DomainError};
@@ -400,7 +401,7 @@ fn decimal_value_string(value: &str, digits: u32, field_name: &str) -> Result<St
 }
 
 fn sql_error(error: sqlx::Error) -> DomainError {
-    DomainError::new(error.to_string())
+    redacted_store_error("failed to load admin record data", error)
 }
 
 #[cfg(test)]

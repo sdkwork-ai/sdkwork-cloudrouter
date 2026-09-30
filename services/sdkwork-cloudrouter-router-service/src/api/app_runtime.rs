@@ -4,6 +4,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+use crate::api::command_error::system_error_response;
 use crate::api::app_sql_subject::{map_required_app_sql_subject, RequiredAppSqlScopedSubject};
 use axum::body::Body;
 use axum::extract::{Path, Query, State};
@@ -23,8 +24,12 @@ use tokio::time::sleep;
 
 use crate::api::openai_runtime::resolve_openai_upstream_route_plan;
 use crate::api::response::{
-    json_created_response, json_success_list_response, offset_page_info, parse_offset_list_query,
-    problem_from_wire_code, success_envelope,
+    bad_request, json_created_response, json_success_list_response, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code, success_envelope,
+};
+use crate::api::text_normalization::{
+    normalize_trimmed_optional as normalize_optional_text,
+    normalize_trimmed_required as normalize_required_text,
 };
 use crate::application::{
     AuthenticatedApiKeyContext, EntityUuidGenerator, InMemoryRuntimeStreamBus, RuntimeStreamBus,
@@ -41,6 +46,7 @@ use crate::ports::{
     CreateAppRuntimeArtifactCommand, CreateAppRuntimeEventCommand,
     CreateAppRuntimeInvocationCommand, UpstreamAccountRouteCatalog,
 };
+use sdkwork_utils_rust::datetime::current_timestamp_string;
 
 const RUNTIME_EVENTS_FETCH_PAGE_SIZE: i64 = 100;
 const MAX_ID_LEN: usize = 128;
@@ -650,7 +656,7 @@ async fn list_invocations(
             list.items,
             offset_page_info(list.page_no, list.page_size, list.total),
         ),
-        Err(error) => app_runtime_system_response("app runtime invocations are unavailable", error),
+        Err(error) => system_error_response("app runtime invocations are unavailable", error),
     }
 }
 
@@ -668,7 +674,7 @@ async fn get_invocation(
     match state.store.get_invocation(subject, invocation_id).await {
         Ok(Some(item)) => Json(success_envelope(item)).into_response(),
         Ok(None) => not_found("runtime invocation was not found"),
-        Err(error) => app_runtime_system_response("app runtime invocation is unavailable", error),
+        Err(error) => system_error_response("app runtime invocation is unavailable", error),
     }
 }
 
@@ -689,13 +695,13 @@ async fn create_invocation(
         Ok(command) => command,
         Err(AppRuntimeBuildError::BadRequest(message)) => return bad_request(message),
         Err(AppRuntimeBuildError::System(error)) => {
-            return app_runtime_system_response("app runtime invocation command is invalid", error);
+            return system_error_response("app runtime invocation command is invalid", error);
         }
     };
     match state.store.create_invocation(command).await {
         Ok(item) => json_created_response(None, AppRuntimeInvocationEnvelope { item }),
         Err(error) if error.is_conflict() => conflict(error.to_string()),
-        Err(error) => app_runtime_system_response("app runtime invocation is unavailable", error),
+        Err(error) => system_error_response("app runtime invocation is unavailable", error),
     }
 }
 
@@ -711,7 +717,7 @@ async fn complete_invocation(
         Ok(command) => command,
         Err(AppRuntimeBuildError::BadRequest(message)) => return bad_request(message),
         Err(AppRuntimeBuildError::System(error)) => {
-            return app_runtime_system_response("app runtime completion command is invalid", error);
+            return system_error_response("app runtime completion command is invalid", error);
         }
     };
     if command.status == "cancelled" {
@@ -719,7 +725,7 @@ async fn complete_invocation(
             request_runtime_stream_cancellation(&state, command.subject, &command.invocation_id)
                 .await
         {
-            return app_runtime_system_response(
+            return system_error_response(
                 "app runtime stream cancellation is unavailable",
                 error,
             );
@@ -733,7 +739,7 @@ async fn complete_invocation(
         {
             Ok(item) => item,
             Err(error) => {
-                return app_runtime_system_response(
+                return system_error_response(
                     "app runtime terminal event is unavailable",
                     error,
                 );
@@ -757,7 +763,7 @@ async fn complete_invocation(
                     Err(error) if error.is_not_found() => return not_found(error.to_string()),
                     Err(error) if error.is_conflict() => return conflict(error.to_string()),
                     Err(error) => {
-                        return app_runtime_system_response(
+                        return system_error_response(
                             "app runtime invocation is unavailable",
                             error,
                         );
@@ -770,7 +776,7 @@ async fn complete_invocation(
         Ok(item) => Json(success_envelope(AppRuntimeInvocationEnvelope { item })).into_response(),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) if error.is_conflict() => conflict(error.to_string()),
-        Err(error) => app_runtime_system_response("app runtime invocation is unavailable", error),
+        Err(error) => system_error_response("app runtime invocation is unavailable", error),
     }
 }
 
@@ -834,7 +840,7 @@ async fn list_events(
             offset_page_info(list.page_no, list.page_size, list.total),
         ),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
-        Err(error) => app_runtime_system_response("app runtime events are unavailable", error),
+        Err(error) => system_error_response("app runtime events are unavailable", error),
     }
 }
 
@@ -860,7 +866,7 @@ async fn stream_events(
         Ok(item) => item,
         Err(error) if error.is_not_found() => return not_found(error.to_string()),
         Err(error) => {
-            return app_runtime_system_response("app runtime invocation is unavailable", error);
+            return system_error_response("app runtime invocation is unavailable", error);
         }
     };
 
@@ -871,7 +877,7 @@ async fn stream_events(
     {
         Ok(value) => value,
         Err(error) => {
-            return app_runtime_system_response("app runtime event stream is unavailable", error);
+            return system_error_response("app runtime event stream is unavailable", error);
         }
     };
     if terminal_event_exists {
@@ -887,7 +893,7 @@ async fn stream_events(
     if let Some(invocation) = invocation.as_ref() {
         if is_terminal_runtime_invocation(invocation) {
             if is_failed_runtime_invocation(invocation) {
-                return app_runtime_system_response(
+                return system_error_response(
                     "app runtime event stream is unavailable",
                     DomainError::new(runtime_invocation_failed_message(invocation)),
                 );
@@ -917,7 +923,7 @@ async fn stream_events(
             Ok(RuntimeStreamExecutionStart::Active) => true,
             Ok(RuntimeStreamExecutionStart::TerminalAlreadyRecorded) => false,
             Err(error) => {
-                return app_runtime_system_response(
+                return system_error_response(
                     "app runtime event stream is unavailable",
                     error,
                 );
@@ -943,7 +949,7 @@ async fn stream_events(
         Ok(items) => items,
         Err(error) if error.is_not_found() => return not_found(error.to_string()),
         Err(error) => {
-            return app_runtime_system_response("app runtime event stream is unavailable", error);
+            return system_error_response("app runtime event stream is unavailable", error);
         }
     };
 
@@ -960,7 +966,7 @@ async fn execute_or_complete_empty_stream(
     invocation_id: String,
 ) -> Response {
     let Some(executor) = state.executor.clone() else {
-        return app_runtime_system_response(
+        return system_error_response(
             "app runtime event stream is unavailable",
             DomainError::new("OpenAI-compatible runtime stream executor is not configured"),
         );
@@ -977,7 +983,7 @@ async fn execute_or_complete_empty_stream(
     {
         Ok(response) => response,
         Err(error) if error.is_not_found() => not_found(error.to_string()),
-        Err(error) => app_runtime_system_response("app runtime event stream is unavailable", error),
+        Err(error) => system_error_response("app runtime event stream is unavailable", error),
     }
 }
 
@@ -993,14 +999,14 @@ async fn create_event(
         Ok(command) => command,
         Err(AppRuntimeBuildError::BadRequest(message)) => return bad_request(message),
         Err(AppRuntimeBuildError::System(error)) => {
-            return app_runtime_system_response("app runtime event command is invalid", error);
+            return system_error_response("app runtime event command is invalid", error);
         }
     };
     match state.store.create_event(command).await {
         Ok(item) => json_created_response(None, AppRuntimeEventEnvelope { item }),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) if error.is_conflict() => conflict(error.to_string()),
-        Err(error) => app_runtime_system_response("app runtime event is unavailable", error),
+        Err(error) => system_error_response("app runtime event is unavailable", error),
     }
 }
 
@@ -1036,7 +1042,7 @@ async fn list_artifacts(
             offset_page_info(list.page_no, list.page_size, list.total),
         ),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
-        Err(error) => app_runtime_system_response("app runtime artifacts are unavailable", error),
+        Err(error) => system_error_response("app runtime artifacts are unavailable", error),
     }
 }
 
@@ -1052,14 +1058,14 @@ async fn create_artifact(
         Ok(command) => command,
         Err(AppRuntimeBuildError::BadRequest(message)) => return bad_request(message),
         Err(AppRuntimeBuildError::System(error)) => {
-            return app_runtime_system_response("app runtime artifact command is invalid", error);
+            return system_error_response("app runtime artifact command is invalid", error);
         }
     };
     match state.store.create_artifact(command).await {
         Ok(item) => json_created_response(None, AppRuntimeArtifactEnvelope { item }),
         Err(error) if error.is_not_found() => not_found(error.to_string()),
         Err(error) if error.is_conflict() => conflict(error.to_string()),
-        Err(error) => app_runtime_system_response("app runtime artifact is unavailable", error),
+        Err(error) => system_error_response("app runtime artifact is unavailable", error),
     }
 }
 
@@ -1073,7 +1079,7 @@ fn runtime_events_sse_response(items: Vec<AppRuntimeEventItem>) -> Response {
                 body.push_str("\n\n");
             }
             Err(error) => {
-                return app_runtime_system_response(
+                return system_error_response(
                     "app runtime event stream serialization failed",
                     DomainError::new(error.to_string()),
                 );
@@ -5764,28 +5770,6 @@ fn normalize_stream_next_event_no(query: &AppRuntimeListQuery) -> i64 {
     query.after_event_no.unwrap_or(0).max(0).saturating_add(1)
 }
 
-fn normalize_required_text(
-    value: Option<&str>,
-    field: &str,
-    max_len: usize,
-) -> Result<String, String> {
-    normalize_optional_text(value, field, max_len)?.ok_or_else(|| format!("{field} is required"))
-}
-
-fn normalize_optional_text(
-    value: Option<&str>,
-    field: &str,
-    max_len: usize,
-) -> Result<Option<String>, String> {
-    let Some(value) = value.map(str::trim).filter(|value| !value.is_empty()) else {
-        return Ok(None);
-    };
-    if value.chars().count() > max_len {
-        return Err(format!("{field} must be at most {max_len} characters"));
-    }
-    Ok(Some(value.to_owned()))
-}
-
 fn normalize_optional_id(value: Option<&str>, field: &str) -> Result<Option<String>, String> {
     value.map(|value| normalize_id(value, field)).transpose()
 }
@@ -5941,20 +5925,12 @@ fn generate_entity_uuid(state: &AppRuntimeState) -> Result<String, AppRuntimeBui
         .map_err(AppRuntimeBuildError::System)
 }
 
-fn bad_request(message: impl Into<String>) -> Response {
-    problem_from_wire_code("4001", message.into()).into_response()
-}
-
 fn not_found(message: impl Into<String>) -> Response {
     problem_from_wire_code("4040", message.into()).into_response()
 }
 
 fn conflict(message: impl Into<String>) -> Response {
     problem_from_wire_code("4090", message.into()).into_response()
-}
-
-fn app_runtime_system_response(context: &str, error: DomainError) -> Response {
-    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
 }
 
 #[derive(Debug)]
@@ -5967,38 +5943,6 @@ impl From<String> for AppRuntimeBuildError {
     fn from(value: String) -> Self {
         Self::BadRequest(value)
     }
-}
-
-fn current_timestamp_string() -> String {
-    let seconds = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs() as i64;
-    format_unix_timestamp(seconds)
-}
-
-fn format_unix_timestamp(seconds: i64) -> String {
-    let days = seconds.div_euclid(86_400);
-    let seconds_of_day = seconds.rem_euclid(86_400);
-    let (year, month, day) = civil_from_days(days);
-    let hour = seconds_of_day / 3_600;
-    let minute = (seconds_of_day % 3_600) / 60;
-    let second = seconds_of_day % 60;
-    format!("{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02}")
-}
-
-fn civil_from_days(days: i64) -> (i64, i64, i64) {
-    let z = days + 719_468;
-    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
-    let doe = z - era * 146_097;
-    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
-    let y = yoe + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let d = doy - (153 * mp + 2) / 5 + 1;
-    let m = mp + if mp < 10 { 3 } else { -9 };
-    let year = y + if m <= 2 { 1 } else { 0 };
-    (year, m, d)
 }
 
 #[cfg(test)]

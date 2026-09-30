@@ -1,3 +1,4 @@
+use crate::application::is_token_meter;
 use crate::domain::{
     ensure_canonical_model_catalog_key, provider_native_model_id, AccountRateCard, AiModel,
     AiModelPublicMetadata, BillingMeter, DecimalValue, DomainError, DomainResult,
@@ -883,24 +884,6 @@ fn normalized_unit_size(meter: &BillingMeter, unit_size: DecimalValue) -> Decima
     } else {
         unit_size
     }
-}
-
-fn is_token_meter(meter: &BillingMeter) -> bool {
-    matches!(
-        meter,
-        BillingMeter::LlmInputToken
-            | BillingMeter::LlmOutputToken
-            | BillingMeter::LlmReasoningToken
-            | BillingMeter::LlmCacheWriteToken
-            | BillingMeter::LlmCacheReadToken
-            | BillingMeter::EmbeddingInputToken
-            | BillingMeter::AudioInputToken
-            | BillingMeter::AudioOutputToken
-            | BillingMeter::ImageInputToken
-            | BillingMeter::ImageOutputToken
-            | BillingMeter::VideoInputToken
-            | BillingMeter::VideoOutputToken
-    )
 }
 
 fn normalized_region_code(value: String) -> String {

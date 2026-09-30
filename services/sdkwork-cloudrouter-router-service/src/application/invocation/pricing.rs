@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
 use super::{
-    requested_resolution, resolve_pricing_identity, BillingMode, BillingQuantitySource, DispatchMode,
-    Invocation, InvocationAccount, InvocationBody, InvocationError, InvocationErrorKind,
-    InvocationFuture, InvocationPreflightResolution, InvocationPricingQuote, InvocationUsageLine,
-    RouteKind,
+    quote_rate_hash, requested_resolution, resolve_pricing_identity, BillingMode,
+    BillingQuantitySource, DispatchMode, Invocation, InvocationAccount, InvocationBody,
+    InvocationError, InvocationErrorKind, InvocationFuture, InvocationPreflightResolution,
+    InvocationPricingQuote, InvocationUsageLine, RouteKind,
 };
 use crate::application::{
     InvocationInterceptor, PriceResolution, PriceResolutionStatus, PriceService, ResolvedModelPrice,
@@ -630,10 +630,7 @@ fn pricing_dimensions(
             // quotes the two levels separately, so the catalog conditions those rates on it.
             // No rate in the whole catalog used `quality` before this pointer was added, so
             // extending the list cannot re-price any request that already resolved.
-            (
-                "quality",
-                &["/quality", "/output/quality", "/mode"][..],
-            ),
+            ("quality", &["/quality", "/output/quality", "/mode"][..]),
             ("resolution", &["/resolution", "/size", "/output/size"][..]),
             (
                 "duration_seconds",
@@ -756,13 +753,6 @@ fn add_meter_dimensions(
         }
         _ => {}
     }
-}
-
-fn quote_rate_hash(quote: &InvocationPricingQuote) -> Option<&str> {
-    quote
-        .rate_metadata
-        .as_ref()
-        .map(|metadata| metadata.rate_hash.as_str())
 }
 
 fn priced_requested_model(
@@ -1015,11 +1005,8 @@ mod tests {
 
         fn invocation_with_body(body: serde_json::Value) -> Invocation {
             Invocation::new(
-                InvocationRequest::new(
-                    axum::http::Method::POST,
-                    "/v1/videos/avatar/image2video",
-                )
-                .with_body(InvocationBody::Json(body)),
+                InvocationRequest::new(axum::http::Method::POST, "/v1/videos/avatar/image2video")
+                    .with_body(InvocationBody::Json(body)),
                 InvocationSubject {
                     auth_type: InvocationAuthType::GatewayApiKey,
                     api_key_id: Some(1),
@@ -1050,12 +1037,7 @@ mod tests {
             "model_name": "kling-ai-avatar-v2",
             "mode": "pro"
         }));
-        let dimensions = pricing_dimensions(
-            &pro,
-            &BillingMeter::VideoOutputSecond,
-            None,
-            None,
-        );
+        let dimensions = pricing_dimensions(&pro, &BillingMeter::VideoOutputSecond, None, None);
         assert_eq!(
             Some(&serde_json::json!("pro")),
             dimensions.get("quality"),
@@ -1069,12 +1051,8 @@ mod tests {
         let without_mode = invocation_with_body(serde_json::json!({
             "model_name": "kling-ai-avatar-v2"
         }));
-        let dimensions = pricing_dimensions(
-            &without_mode,
-            &BillingMeter::VideoOutputSecond,
-            None,
-            None,
-        );
+        let dimensions =
+            pricing_dimensions(&without_mode, &BillingMeter::VideoOutputSecond, None, None);
         assert!(
             dimensions.get("quality").is_none(),
             "an omitted `mode` must leave `quality` unset so the default-mode rate matches"

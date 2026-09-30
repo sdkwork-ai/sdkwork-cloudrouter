@@ -1,3 +1,4 @@
+use crate::infrastructure::sql::store_error::redacted_store_error;
 use sqlx::{PgPool, Row};
 
 use crate::domain::{DecimalValue, DomainError};
@@ -230,9 +231,13 @@ impl UsageLogsReadStore for PostgresUsageLogsReadStore {
             };
             let next_cursor = if has_more {
                 rows.last().and_then(|row| {
-                    let started_at_micros = row.try_get::<i64, _>("cursor_started_at_micros").ok()?;
+                    let started_at_micros =
+                        row.try_get::<i64, _>("cursor_started_at_micros").ok()?;
                     let id = row.try_get::<i64, _>("cursor_id").ok()?;
-                    Some(UsageLogsCursor { started_at_micros, id })
+                    Some(UsageLogsCursor {
+                        started_at_micros,
+                        id,
+                    })
                 })
             } else {
                 None
@@ -473,7 +478,7 @@ fn decimal_value_string(value: &str, digits: u32, field_name: &str) -> Result<St
 }
 
 fn sql_error(error: sqlx::Error) -> DomainError {
-    DomainError::new(error.to_string())
+    redacted_store_error("failed to load usage logs", error)
 }
 
 #[cfg(test)]

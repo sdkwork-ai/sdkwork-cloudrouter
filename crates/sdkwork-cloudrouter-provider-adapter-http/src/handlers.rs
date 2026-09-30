@@ -7,7 +7,9 @@ use axum::Json;
 use sdkwork_cloudrouter_provider_adapter::{
     provider_adapter_manifest, AdapterInvocationContext, ProviderAdapter,
 };
-use sdkwork_cloudrouter_provider_adapter_contract::AdapterInvocationRequest;
+use sdkwork_cloudrouter_provider_adapter_contract::{
+    normalize_adapter_path, AdapterInvocationRequest,
+};
 use serde_json::{json, Value};
 
 use crate::gateway_auth::authorized;
@@ -69,7 +71,9 @@ pub(crate) async fn invoke_provider(
         )
             .into_response();
     }
-    if normalize_path(path.as_str()) != normalize_path(request.invocation.standard_path.as_str()) {
+    if normalize_adapter_path(path.as_str())
+        != normalize_adapter_path(request.invocation.standard_path.as_str())
+    {
         return (
             StatusCode::BAD_REQUEST,
             Json(error_body("adapter_invocation_path_mismatch")),
@@ -129,13 +133,4 @@ fn error_body(code: &str) -> Value {
             "code": code
         }
     })
-}
-
-fn normalize_path(value: &str) -> String {
-    let value = value.trim();
-    if value.starts_with('/') {
-        value.to_owned()
-    } else {
-        format!("/{value}")
-    }
 }

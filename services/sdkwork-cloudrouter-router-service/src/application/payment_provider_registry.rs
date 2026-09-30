@@ -106,7 +106,7 @@ impl PaymentProviderAdapterIdentity {
         let tenant_id = tenant_id.into();
         let organization_id = organization_id.into();
         let provider_account_id = provider_account_id.into();
-        let supplier_code = normalize_supplier_code(&supplier_code.into());
+        let supplier_code = normalize_payment_supplier_code(&supplier_code.into());
         for (field, value) in [
             ("tenant_id", tenant_id.as_str()),
             ("organization_id", organization_id.as_str()),
@@ -153,7 +153,7 @@ impl PaymentProviderRegistry {
         supplier_code: &'static str,
         adapter: Arc<dyn PaymentProviderAdapter>,
     ) -> Result<Self, PaymentProviderRegistryError> {
-        let normalized = normalize_supplier_code(supplier_code);
+        let normalized = normalize_payment_supplier_code(supplier_code);
         let canonical = self
             .aliases
             .get(normalized.as_str())
@@ -226,7 +226,7 @@ impl PaymentProviderRegistry {
         &self,
         supplier_code: &str,
     ) -> Result<Arc<dyn PaymentProviderAdapter>, PaymentProviderRegistryError> {
-        let normalized = normalize_supplier_code(supplier_code);
+        let normalized = normalize_payment_supplier_code(supplier_code);
         let canonical = self
             .aliases
             .get(normalized.as_str())
@@ -261,7 +261,7 @@ impl PaymentProviderRegistry {
     }
 
     pub fn canonical_supplier_code(&self, supplier_code: &str) -> String {
-        let normalized = normalize_supplier_code(supplier_code);
+        let normalized = normalize_payment_supplier_code(supplier_code);
         self.aliases
             .get(normalized.as_str())
             .copied()
@@ -337,7 +337,14 @@ fn default_payment_provider_aliases() -> HashMap<&'static str, &'static str> {
     ])
 }
 
-fn normalize_supplier_code(supplier_code: &str) -> String {
+/// Normalizes a payment supplier code to its canonical registry key.
+///
+/// Trims surrounding whitespace, lowercases, and folds hyphen/space aliases
+/// onto the underscore form used by registry entries (e.g. `WeChat-Pay` and
+/// `wechat pay` both become `wechat_pay`). This is the single authority for
+/// payment supplier-code normalization shared by the registry, the account
+/// resolver, and the runtime assembler so all three agree on lookup keys.
+pub(crate) fn normalize_payment_supplier_code(supplier_code: &str) -> String {
     supplier_code
         .trim()
         .to_ascii_lowercase()

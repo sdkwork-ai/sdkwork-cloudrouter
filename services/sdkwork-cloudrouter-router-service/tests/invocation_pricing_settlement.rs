@@ -8,10 +8,12 @@ use sdkwork_cloudrouter_router_service::application::{
     PricingFinalizationInterceptor, PricingPreflightInterceptor, PricingSettlementInterceptor,
     ResourceType,
 };
-use sdkwork_cloudrouter_router_service::domain::{AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
+use sdkwork_cloudrouter_router_service::domain::{
+    AiModel, BillingMeter, DecimalValue, GatewayApiKey, ModelPrice, ModelUpstreamRoute,
     ModelVendor, ModelVendorDefinition, Money, PriceSide, PricingPlan, PricingRateCondition,
     PricingRateMetadata, PricingRateVariant, ProviderAuthProfile, RoutingCapability,
-    UpstreamAccountGroup, UpstreamAccountRoute,};
+    UpstreamAccountGroup, UpstreamAccountRoute,
+};
 use sdkwork_cloudrouter_router_service::infrastructure::InMemoryPricingCatalog;
 use sdkwork_cloudrouter_router_service::ports::GatewayUsageQuantity;
 use serde_json::json;

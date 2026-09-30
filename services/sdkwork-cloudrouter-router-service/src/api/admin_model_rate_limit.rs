@@ -1,25 +1,30 @@
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::body::Bytes;
 use axum::extract::{Query, State};
 use axum::http::HeaderMap;
-use axum::response::{IntoResponse, Response};
+use axum::response::Response;
 use axum::routing::get;
 use axum::Router;
 use serde::{Deserialize, Serialize};
 
-use crate::api::request_id::{generate_server_request_id, RequestIdError};
+use crate::api::request_id::generate_server_request_id;
 use crate::api::response::{
-    json_created_response, json_success_list_response, normalize_list_search_query,
-    offset_page_info, parse_offset_list_query, problem_from_wire_code,
+    bad_request, json_created_response, json_success_list_response, normalize_list_search_query,
+    offset_page_info, parse_offset_list_query,
+    domain_conflict_response as conflict_response,
+};
+use crate::api::text_normalization::parse_json_body;
+use crate::api::command_error::{
+    command_error_from_request_id as request_id_error, command_error_response,
+    system_error_response, ApiCommandError,
 };
 use crate::application::EntityUuidGenerator;
-use crate::domain::DomainError;
 use crate::ports::{
     AdminModelRateLimitItem, AdminModelRateLimitStore, AdminModelRateLimitSubject,
     CreateAdminModelRateLimitCommand, ListAdminModelRateLimitsQuery,
 };
+use sdkwork_utils_rust::datetime::current_timestamp_string;
 
 const MAX_MODEL_LEN: usize = 128;
 const MAX_GROUP_LEN: usize = 128;
@@ -56,11 +61,6 @@ struct NormalizedCreateRequest {
     account_group: String,
     rpm: i64,
     tpm: i64,
-}
-
-enum ModelRateLimitCommandBuildError {
-    BadRequest(String),
-    System(DomainError),
 }
 
 #[derive(Debug, Serialize)]
@@ -116,7 +116,7 @@ async fn fetch_model_rate_limits(
             offset_page_info(page.page_no, page.page_size, page.total),
         ),
         Err(error) => {
-            model_rate_limit_system_response("model rate limit read model is unavailable", error)
+            system_error_response("model rate limit read model is unavailable", error)
         }
     }
 }
@@ -153,7 +153,7 @@ async fn create_model_rate_limit(
     };
     let command = match build_create_command(state.clone(), &headers, subject, request) {
         Ok(command) => command,
-        Err(error) => return command_build_error_response(error),
+        Err(error) => return command_error_response(error, "model rate limit command is invalid"),
     };
 
     match state.store.create_model_rate_limit(command).await {
@@ -168,20 +168,9 @@ async fn create_model_rate_limit(
             bad_request("accountGroup must identify an existing upstream account group".to_owned())
         }
         Err(error) => {
-            model_rate_limit_system_response("model rate limit command store is unavailable", error)
+            system_error_response("model rate limit command store is unavailable", error)
         }
     }
-}
-
-fn parse_json_body<T>(body: &[u8], entity_name: &str) -> Result<T, String>
-where
-    T: for<'de> Deserialize<'de>,
-{
-    if body.iter().all(u8::is_ascii_whitespace) {
-        return Err(format!("{entity_name} request body is required"));
-    }
-    serde_json::from_slice(body)
-        .map_err(|error| format!("invalid {entity_name} request body: {error}"))
 }
 
 fn normalize_create_request(
@@ -245,7 +234,7 @@ fn build_create_command(
     _headers: &HeaderMap,
     subject: AdminModelRateLimitSubject,
     request: NormalizedCreateRequest,
-) -> Result<CreateAdminModelRateLimitCommand, ModelRateLimitCommandBuildError> {
+) -> Result<CreateAdminModelRateLimitCommand, ApiCommandError> {
     let policy_uuid = generate_entity_uuid(&state)?;
     let policy_code = entity_code("mrl", &policy_uuid);
     Ok(CreateAdminModelRateLimitCommand {
@@ -265,20 +254,11 @@ fn build_create_command(
 
 fn generate_entity_uuid(
     state: &AdminModelRateLimitState,
-) -> Result<String, ModelRateLimitCommandBuildError> {
+) -> Result<String, ApiCommandError> {
     state
         .entity_uuid_generator
         .generate_entity_uuid()
-        .map_err(ModelRateLimitCommandBuildError::System)
-}
-
-fn request_id_error(error: RequestIdError) -> ModelRateLimitCommandBuildError {
-    match error {
-        RequestIdError::Invalid(message) => ModelRateLimitCommandBuildError::BadRequest(message),
-        RequestIdError::System(message) => {
-            ModelRateLimitCommandBuildError::System(DomainError::new(message))
-        }
-    }
+        .map_err(ApiCommandError::System)
 }
 
 fn to_item_response(item: AdminModelRateLimitItem) -> AdminModelRateLimitItemResponse {
@@ -299,56 +279,3 @@ fn entity_code(prefix: &str, uuid: &str) -> String {
     format!("{prefix}-{short}")
 }
 
-fn bad_request(message: String) -> Response {
-    problem_from_wire_code("4001", message).into_response()
-}
-
-fn conflict_response(error: DomainError) -> Response {
-    problem_from_wire_code("4090", error.to_string()).into_response()
-}
-
-fn command_build_error_response(error: ModelRateLimitCommandBuildError) -> Response {
-    match error {
-        ModelRateLimitCommandBuildError::BadRequest(message) => bad_request(message),
-        ModelRateLimitCommandBuildError::System(error) => {
-            model_rate_limit_system_response("model rate limit command is invalid", error)
-        }
-    }
-}
-
-fn model_rate_limit_system_response(context: &str, error: DomainError) -> Response {
-    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
-}
-
-fn current_timestamp_string() -> String {
-    let seconds = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_secs() as i64)
-        .unwrap_or(0);
-    format_unix_timestamp(seconds)
-}
-
-fn format_unix_timestamp(seconds: i64) -> String {
-    let days = seconds.div_euclid(86_400);
-    let seconds_of_day = seconds.rem_euclid(86_400);
-    let (year, month, day) = civil_from_days(days);
-    let hour = seconds_of_day / 3_600;
-    let minute = (seconds_of_day % 3_600) / 60;
-    let second = seconds_of_day % 60;
-    format!("{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02}")
-}
-
-fn civil_from_days(days: i64) -> (i64, i64, i64) {
-    let days = days + 719_468;
-    let era = if days >= 0 { days } else { days - 146_096 } / 146_097;
-    let day_of_era = days - era * 146_097;
-    let year_of_era =
-        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
-    let year = year_of_era + era * 400;
-    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
-    let month_prime = (5 * day_of_year + 2) / 153;
-    let day = day_of_year - (153 * month_prime + 2) / 5 + 1;
-    let month = month_prime + if month_prime < 10 { 3 } else { -9 };
-    let year = year + if month <= 2 { 1 } else { 0 };
-    (year, month, day)
-}

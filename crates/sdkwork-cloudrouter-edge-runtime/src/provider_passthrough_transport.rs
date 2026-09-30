@@ -201,10 +201,7 @@ pub(crate) const PROVIDER_STREAM_TOTAL: Duration = Duration::from_secs(1_800);
 /// downstream connection (and its upstream quota) indefinitely.
 fn apply_passthrough_stream_timeouts(response: Response, total_timeout: Duration) -> Response {
     let (parts, body) = response.into_parts();
-    Response::from_parts(
-        parts,
-        apply_stream_deadlines_to_body(body, total_timeout),
-    )
+    Response::from_parts(parts, apply_stream_deadlines_to_body(body, total_timeout))
 }
 
 /// Applies the passthrough total/idle stream deadlines to an already-built
@@ -371,7 +368,9 @@ fn withheld_provider_error_body() -> &'static str {
 /// leak that material to the calling tenant. This mirrors the buffered relay
 /// path in `invocation_http` so redaction behavior cannot drift between the
 /// two egress paths.
-async fn upstream_to_axum_response(upstream_response: hyper::Response<hyper::body::Incoming>) -> Response {
+async fn upstream_to_axum_response(
+    upstream_response: hyper::Response<hyper::body::Incoming>,
+) -> Response {
     let (mut parts, body) = upstream_response.into_parts();
     let mut response = if parts.status.is_success() {
         Response::new(axum::body::Body::new(body))
@@ -715,7 +714,9 @@ mod tests {
         server.abort();
     }
 
-    async fn spawn_upstream(upstream: Router) -> (std::net::SocketAddr, tokio::task::JoinHandle<()>) {
+    async fn spawn_upstream(
+        upstream: Router,
+    ) -> (std::net::SocketAddr, tokio::task::JoinHandle<()>) {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
             .await
             .expect("bind test upstream");

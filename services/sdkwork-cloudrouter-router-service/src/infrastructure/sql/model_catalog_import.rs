@@ -1705,18 +1705,17 @@ fn model_endpoint_descriptor(model: &ModelInfo) -> EndpointDescriptor {
             streaming_supported: false,
             sort_order: 70,
         },
-        _ if model.api_format == "vendor_native" => vendor_native_chat_descriptor(
-            model.vendor_code.trim(),
-        )
-        .unwrap_or(EndpointDescriptor {
-            endpoint_code: "openai.chat_completions",
-            protocol_code: "openai_compatible",
-            display_name: "OpenAI Chat Completions",
-            method: "POST",
-            path_template: "/v1/chat/completions",
-            streaming_supported: model.supports_streaming,
-            sort_order: 10,
-        }),
+        _ if model.api_format == "vendor_native" => {
+            vendor_native_chat_descriptor(model.vendor_code.trim()).unwrap_or(EndpointDescriptor {
+                endpoint_code: "openai.chat_completions",
+                protocol_code: "openai_compatible",
+                display_name: "OpenAI Chat Completions",
+                method: "POST",
+                path_template: "/v1/chat/completions",
+                streaming_supported: model.supports_streaming,
+                sort_order: 10,
+            })
+        }
         _ if model.api_format == "openai_responses" => EndpointDescriptor {
             endpoint_code: "openai.chat_completions",
             protocol_code: "openai_compatible",
@@ -1826,24 +1825,42 @@ fn endpoint_modality_code(endpoint_code: &str) -> Option<String> {
         // `bytedance` (Volcengine Ark) and `jimeng` are separate surfaces with
         // separate hosts and paths, so they get separate endpoints — see the
         // split note on `vendor_native_image_descriptor`.
-        "bytedance.image_generation" | "jimeng.image_generation" | "kling.image_generation"
-        | "volcengine.image_generation" | "vidu.reference_to_image"
-        | "black_forest_labs.image_generation" | "runway.image_generation"
+        "bytedance.image_generation"
+        | "jimeng.image_generation"
+        | "kling.image_generation"
+        | "volcengine.image_generation"
+        | "vidu.reference_to_image"
+        | "black_forest_labs.image_generation"
+        | "runway.image_generation"
         | "stability_ai.image_generation" => Some("image"),
-        "gemini.video_generation" | "bytedance.video_generation" | "jimeng.video_generation"
-        | "volcengine.video_generation" | "kling.text_to_video" | "kling.image_to_video"
-        | "kling.avatar" | "kling.motion_control" | "vidu.start_end_to_video"
+        "gemini.video_generation"
+        | "bytedance.video_generation"
+        | "jimeng.video_generation"
+        | "volcengine.video_generation"
+        | "kling.text_to_video"
+        | "kling.image_to_video"
+        | "kling.avatar"
+        | "kling.motion_control"
+        | "vidu.start_end_to_video"
+        | "vidu.text_to_video"
+        | "vidu.image_to_video"
+        | "vidu.reference_to_video"
         | "vidu.motion_sync" => Some("video"),
         // Task/polling surfaces carry the modality of the job they track, so the
         // accounting side can meter the poll the way it meters the submit.
-        "bytedance.task_query" | "jimeng.task_query" | "volcengine.task_query"
-        | "kling.task_query" => Some("video"),
+        "bytedance.task_query"
+        | "jimeng.task_query"
+        | "volcengine.task_query"
+        | "kling.task_query"
+        | "vidu.video_task_query" => Some("video"),
         "minimax.music_generation" | "suno.music_generation" => Some("music"),
         "elevenlabs.text_to_speech" | "volcengine.speech" => Some("audio"),
         "elevenlabs.sound_generation" | "sfx.sound" => Some("audio"),
         // Gemini's live/translate session surface is audio-in/audio-out.
         "gemini.live" => Some("audio"),
-        "gemini.generate_content" | "gemini.stream_generate_content" | "anthropic.messages"
+        "gemini.generate_content"
+        | "gemini.stream_generate_content"
+        | "anthropic.messages"
         | "anthropic.claude_code" => Some("chat"),
         "gemini.embed_content" => Some("embedding"),
         // The thirteen vendors that had no `api.*` entitlement at all. Their
@@ -1854,17 +1871,27 @@ fn endpoint_modality_code(endpoint_code: &str) -> Option<String> {
         // spells the modality out for all but the two obvious cases, but the
         // map is explicit on purpose — it is the accounting side's only way to
         // pick a meter, and a `None` here is a silent billing degradation.
-        "alibaba.image_generation" | "xai.image_generation" | "xiaomi.image_generation"
+        "alibaba.image_generation"
+        | "xai.image_generation"
+        | "xiaomi.image_generation"
         | "zhipu.image_generation" => Some("image"),
-        "alibaba.video_generation" | "luma_ai.video_generation" | "pixverse.video_generation"
-        | "xai.video_generation" | "xiaomi.video_generation" | "zhipu.video_generation" => {
-            Some("video")
-        }
+        "alibaba.video_generation"
+        | "luma_ai.video_generation"
+        | "pixverse.video_generation"
+        | "xai.video_generation"
+        | "xiaomi.video_generation"
+        | "zhipu.video_generation" => Some("video"),
         "mureka.music_generation" => Some("music"),
         "xiaomi.speech" => Some("audio"),
-        "alibaba.chat_completions" | "baidu.chat_completions" | "deepseek.chat_completions"
-        | "meituan.chat_completions" | "moonshot.chat_completions" | "stepfun.chat_completions"
-        | "tencent.chat_completions" | "xai.chat_completions" | "xiaomi.chat_completions"
+        "alibaba.chat_completions"
+        | "baidu.chat_completions"
+        | "deepseek.chat_completions"
+        | "meituan.chat_completions"
+        | "moonshot.chat_completions"
+        | "stepfun.chat_completions"
+        | "tencent.chat_completions"
+        | "xai.chat_completions"
+        | "xiaomi.chat_completions"
         | "zhipu.chat_completions" => Some("chat"),
         "alibaba.embeddings" | "zhipu.embeddings" => Some("embedding"),
         _ => None,
@@ -2733,9 +2760,8 @@ mod tests {
     /// the chain disagreed about which `api_code` an image request carries.
     #[test]
     fn image_models_bind_to_their_vendor_native_endpoint() {
-        let image_model_of =
-            |vendor_code: &str, api_format: &str, model_id: &str| -> ModelInfo {
-                serde_json::from_value(serde_json::json!({
+        let image_model_of = |vendor_code: &str, api_format: &str, model_id: &str| -> ModelInfo {
+            serde_json::from_value(serde_json::json!({
                     "catalogKey": format!("{vendor_code}/{model_id}"),
                     "modelId": model_id,
                     "displayName": "Test Image Model",
@@ -2751,7 +2777,7 @@ mod tests {
                     "source": { "sourceUrl": "https://example.test/models", "observedAt": "2026-01-01T00:00:00Z" },
                 }))
                 .expect("test image model must deserialize")
-            };
+        };
 
         // Catalog vendor code -> the native endpoint its image models must use.
         // `bytedance` and `jimeng` are deliberately separate rows: ByteDance's
@@ -2856,9 +2882,8 @@ mod tests {
     /// `ai_model_api_endpoint` rows no video model could ever reach them.
     #[test]
     fn video_models_bind_to_their_vendor_native_endpoint() {
-        let video_model_of =
-            |vendor_code: &str, api_format: &str, model_id: &str| -> ModelInfo {
-                serde_json::from_value(serde_json::json!({
+        let video_model_of = |vendor_code: &str, api_format: &str, model_id: &str| -> ModelInfo {
+            serde_json::from_value(serde_json::json!({
                     "catalogKey": format!("{vendor_code}/{model_id}"),
                     "modelId": model_id,
                     "displayName": "Test Video Model",
@@ -2874,7 +2899,7 @@ mod tests {
                     "source": { "sourceUrl": "https://example.test/models", "observedAt": "2026-01-01T00:00:00Z" },
                 }))
                 .expect("test video model must deserialize")
-            };
+        };
 
         // Catalog vendor code -> the native endpoint its video models must use.
         // `bytedance` resolves to Ark's async task surface; `jimeng` keeps its
@@ -2974,6 +2999,10 @@ mod tests {
             "jimeng.video_generation",
             "volcengine.video_generation",
             "vidu.start_end_to_video",
+            "vidu.text_to_video",
+            "vidu.image_to_video",
+            "vidu.reference_to_video",
+            "vidu.video_task_query",
             "vidu.motion_sync",
         ] {
             assert_eq!(
@@ -3248,7 +3277,8 @@ mod tests {
         // A MiniMax model that declares an OpenAI-compatible surface keeps it:
         // the request body it will receive is the OpenAI one.
         assert_eq!(
-            model_endpoint_descriptor(&music_model_of("minimax", "openai_compatible")).endpoint_code,
+            model_endpoint_descriptor(&music_model_of("minimax", "openai_compatible"))
+                .endpoint_code,
             "suno.music",
             "minimax declared openai_compatible and must not be forced native"
         );
@@ -3321,7 +3351,10 @@ mod tests {
             // bound to jimeng's `/v1/videos/generations` while Ark's own
             // endpoint carried none.
             ("bytedance.image_generation", "/api/v3/images/generations"),
-            ("bytedance.task_query", "/api/v3/contents/generations/tasks/{taskId}"),
+            (
+                "bytedance.task_query",
+                "/api/v3/contents/generations/tasks/{taskId}",
+            ),
             (
                 "bytedance.video_generation",
                 "/api/v3/contents/generations/tasks",
@@ -3329,9 +3362,18 @@ mod tests {
             ("deepseek.anthropic_messages", "/v1/messages"),
             ("elevenlabs.sound_generation", "/v1/sound-generation"),
             ("elevenlabs.text_to_speech", "/v1/text-to-speech/{voice_id}"),
-            ("gemini.embed_content", "/v1beta/models/{model}:embedContent"),
-            ("gemini.generate_content", "/v1beta/models/{model}:generateContent"),
-            ("gemini.image_generation", "/v1beta/models/{model}:generateImages"),
+            (
+                "gemini.embed_content",
+                "/v1beta/models/{model}:embedContent",
+            ),
+            (
+                "gemini.generate_content",
+                "/v1beta/models/{model}:generateContent",
+            ),
+            (
+                "gemini.image_generation",
+                "/v1beta/models/{model}:generateImages",
+            ),
             ("gemini.live", "/v1beta/live/sessions"),
             (
                 "gemini.nano_banana.image_generation",
@@ -3341,7 +3383,10 @@ mod tests {
                 "gemini.stream_generate_content",
                 "/v1beta/models/{model}:streamGenerateContent",
             ),
-            ("gemini.video_generation", "/v1beta/models/{model}:generateVideos"),
+            (
+                "gemini.video_generation",
+                "/v1beta/models/{model}:generateVideos",
+            ),
             ("jimeng.image_generation", "/v1/images/generations"),
             ("jimeng.task_query", "/v1/tasks/{taskId}"),
             ("jimeng.video_generation", "/v1/videos/generations"),
@@ -3369,6 +3414,10 @@ mod tests {
             ("vidu.motion_sync", "/ent/v2/template"),
             ("vidu.reference_to_image", "/ent/v2/reference2image"),
             ("vidu.start_end_to_video", "/ent/v2/start-end2video"),
+            ("vidu.text_to_video", "/ent/v2/text2video"),
+            ("vidu.image_to_video", "/ent/v2/img2video"),
+            ("vidu.reference_to_video", "/ent/v2/reference2video"),
+            ("vidu.video_task_query", "/ent/v2/tasks/{task_id}/creations"),
             ("volcengine.image_generation", "/api/v3/images/generations"),
             ("volcengine.speech", "/api/v3/audio/speech"),
             (
@@ -3404,10 +3453,7 @@ mod tests {
             ),
             ("baidu.chat_completions", "/v2/chat/completions"),
             ("deepseek.chat_completions", "/v1/chat/completions"),
-            (
-                "luma_ai.video_generation",
-                "/dream-machine/v1/generations",
-            ),
+            ("luma_ai.video_generation", "/dream-machine/v1/generations"),
             (
                 "luma_ai.video_generation_task_query",
                 "/dream-machine/v1/generations/{id}",
@@ -3440,14 +3486,8 @@ mod tests {
             ("zhipu.anthropic_messages", "/v1/messages"),
             ("zhipu.chat_completions", "/api/paas/v4/chat/completions"),
             ("zhipu.embeddings", "/api/paas/v4/embeddings"),
-            (
-                "zhipu.image_generation",
-                "/api/paas/v4/images/generations",
-            ),
-            (
-                "zhipu.video_generation",
-                "/api/paas/v4/videos/generations",
-            ),
+            ("zhipu.image_generation", "/api/paas/v4/images/generations"),
+            ("zhipu.video_generation", "/api/paas/v4/videos/generations"),
             (
                 "zhipu.video_generation_task_query",
                 "/api/paas/v4/async-result/{id}",
@@ -3742,6 +3782,25 @@ mod tests {
             "kling.image_to_video",
             "kling.motion_control",
             "vidu.motion_sync",
+            // Vidu's three remaining video entry points and their poll surface.
+            // `vidu.start_end_to_video` stays the *bound* video descriptor (the
+            // arm the catalog's `viduq3*` models already resolve to), because a
+            // `ModelInfo` carries no generation-mode field: one vendor can bind
+            // exactly one video endpoint, and rebinding it would silently move
+            // every existing `viduq3` model to another path.
+            //
+            // These four are therefore explicit-entry and poll surfaces, the
+            // same shape as the Kling / Gemini feature-entry arms above and
+            // every other `*.task_query`: a caller selects them by api code (the
+            // generation service drives them through `videos_vidu()`), a poll
+            // caller arrives holding a task id, and no model's
+            // `primaryCapability` selects them. Each carries a classifier arm in
+            // both copies of `provider_native_api_code_from_standard_path` and a
+            // grant in `official.vidu.full`.
+            "vidu.image_to_video",
+            "vidu.reference_to_video",
+            "vidu.text_to_video",
+            "vidu.video_task_query",
             // Compatibility-face surfaces. Every endpoint below is a real
             // declaration, classified and granted, but no model binds to it
             // because every model of its vendor declares
@@ -3791,5 +3850,4 @@ mod tests {
              endpoint is a model that can never reach it"
         );
     }
-
 }

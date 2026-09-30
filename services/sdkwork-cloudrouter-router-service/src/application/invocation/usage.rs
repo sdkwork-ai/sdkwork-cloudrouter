@@ -150,11 +150,40 @@ pub struct InvocationPricingQuote {
     pub pricing_audit_snapshot: PricingAuditSnapshot,
 }
 
-fn quote_rate_hash(quote: &InvocationPricingQuote) -> Option<&str> {
+/// Returns the rate hash carried on a pricing quote, when the quote was
+/// resolved against a rated price table.
+///
+/// Single authority shared by pricing preflight and usage recording so both
+/// derive the same audit hash for a quote.
+pub(crate) fn quote_rate_hash(quote: &InvocationPricingQuote) -> Option<&str> {
     quote
         .rate_metadata
         .as_ref()
         .map(|metadata| metadata.rate_hash.as_str())
+}
+
+/// Reports whether a billing meter counts LLM/embedding/audio/image/video
+/// **tokens** (as opposed to request counts, byte sizes, or durations).
+///
+/// Settlement and usage recording must agree on which meters are token-based
+/// because they aggregate those quantities differently. Single authority for
+/// that classification.
+pub(crate) fn is_token_meter(meter: &BillingMeter) -> bool {
+    matches!(
+        meter,
+        BillingMeter::LlmInputToken
+            | BillingMeter::LlmOutputToken
+            | BillingMeter::LlmReasoningToken
+            | BillingMeter::LlmCacheWriteToken
+            | BillingMeter::LlmCacheReadToken
+            | BillingMeter::EmbeddingInputToken
+            | BillingMeter::AudioInputToken
+            | BillingMeter::AudioOutputToken
+            | BillingMeter::ImageInputToken
+            | BillingMeter::ImageOutputToken
+            | BillingMeter::VideoInputToken
+            | BillingMeter::VideoOutputToken
+    )
 }
 
 fn usage_line_role_for_meter(meter: &BillingMeter) -> InvocationUsageLineRole {

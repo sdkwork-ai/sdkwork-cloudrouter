@@ -1,3 +1,4 @@
+use crate::infrastructure::sql::store_error::redacted_store_error;
 use sqlx::{PgPool, Row};
 
 use crate::domain::DomainError;
@@ -821,7 +822,7 @@ fn decimal_cell(row: &sqlx::postgres::PgRow, column: &str) -> f64 {
 }
 
 fn sql_error(error: sqlx::Error) -> DomainError {
-    DomainError::new(error.to_string())
+    redacted_store_error("failed to load dashboard overview", error)
 }
 
 #[cfg(test)]

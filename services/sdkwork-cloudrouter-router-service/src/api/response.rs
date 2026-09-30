@@ -342,6 +342,24 @@ pub fn validation_problem(detail: impl Into<String>) -> ProblemResponse {
     platform_problem(SdkWorkResultCode::ValidationError, detail)
 }
 
+/// Builds the standard 400 Bad Request response from a client-supplied message.
+///
+/// Uses wire code `4001` so the HTTP body matches the code emitted by sibling
+/// admin/app surfaces for malformed input. Single authority for that mapping:
+/// API modules import this instead of declaring a private `bad_request`.
+pub fn bad_request(message: impl Into<String>) -> Response {
+    problem_from_wire_code("4001", message.into()).into_response()
+}
+
+/// Builds the standard 409 Conflict response from a domain error.
+///
+/// Uses wire code `4090`, matching the sibling admin/app surfaces. Single
+/// authority for that mapping: API modules import this instead of declaring a
+/// private `conflict_response`.
+pub fn domain_conflict_response(error: crate::domain::DomainError) -> Response {
+    problem_from_wire_code("4090", error.to_string()).into_response()
+}
+
 pub fn not_found_problem(detail: impl Into<String>) -> ProblemResponse {
     platform_problem(SdkWorkResultCode::NotFound, detail)
 }

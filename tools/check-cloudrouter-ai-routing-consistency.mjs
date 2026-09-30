@@ -137,18 +137,21 @@ function read(relativePath) {
 }
 
 /**
- * Extract the match arms of `provider_native_api_code_from_standard_path` as
- * normalised `provider | condition => api_code` strings, so the two copies can
- * be compared textually without depending on their formatting or on the
- * normalisation helpers each file keeps its own copy of.
+ * Extract the match arms of the single vendor-native arm table as normalised
+ * `provider | condition => api_code` strings.
+ *
+ * The table lives in exactly one function —
+ * `provider_native_api_code_from_normalized_path` in the router service — and
+ * the edge runtime delegates to it. Extracting here is what lets checks 4 and 7
+ * evaluate the table without caring which crate the arms live in.
  */
 function mapArms(source, relativePath) {
   const functionBody = source.match(
-    /fn provider_native_api_code_from_standard_path[\s\S]*?\n\}\n/,
+    /fn provider_native_api_code_from_normalized_path[\s\S]*?\n\}\n/,
   );
   if (!functionBody) {
     failures.push(
-      `${relativePath}: cannot find provider_native_api_code_from_standard_path`,
+      `${relativePath}: cannot find provider_native_api_code_from_normalized_path`,
     );
     return [];
   }
@@ -215,16 +218,16 @@ const POLL_HELPERS = {
 };
 
 function parsePathArms(source, relativePath) {
-  const label = `${relativePath}: provider_native_api_code_from_standard_path`;
+  const label = `${relativePath}: provider_native_api_code_from_normalized_path`;
   const functionBody = source.match(
-    /fn provider_native_api_code_from_standard_path[\s\S]*?\n\}\n/,
+    /fn provider_native_api_code_from_normalized_path[\s\S]*?\n\}\n/,
   );
   if (!functionBody) {
     failures.push(`${label}: function not found`);
     return null;
   }
   const block = functionBody[0].match(
-    /let api_code = match provider\.as_str\(\) \{([\s\S]*?)\n {4}\};/,
+    /let api_code = match provider \{([\s\S]*?)\n {4}\};/,
   );
   if (!block) {
     failures.push(`${label}: cannot isolate the api_code match block`);
@@ -283,7 +286,7 @@ function parsePathArms(source, relativePath) {
     }
 
     shape = condition.match(
-      /^gemini_model_action_matches\(path\.as_str\(\), "([^"]+)"\) => "([^"]+)"$/,
+      /^gemini_model_action_matches\(path, "([^"]+)"\) => "([^"]+)"$/,
     );
     if (shape) {
       arms.push({
@@ -296,7 +299,7 @@ function parsePathArms(source, relativePath) {
     }
 
     shape = condition.match(
-      /^gemini_model_action_matches\(path\.as_str\(\), "([^"]+)"\) => \{ if path\.contains\("([^"]+)"\) \{ "([^"]+)" \} else \{ "([^"]+)" \} \}$/,
+      /^gemini_model_action_matches\(path, "([^"]+)"\) => \{ if path\.contains\("([^"]+)"\) \{ "([^"]+)" \} else \{ "([^"]+)" \} \}$/,
     );
     if (shape) {
       arms.push({
@@ -310,7 +313,7 @@ function parsePathArms(source, relativePath) {
     }
 
     shape = condition.match(
-      /^task_poll_path_matches\(path\.as_str\(\), "([^"]+)"\) => "([^"]+)"$/,
+      /^task_poll_path_matches\(path, "([^"]+)"\) => "([^"]+)"$/,
     );
     if (shape) {
       arms.push({
@@ -318,6 +321,20 @@ function parsePathArms(source, relativePath) {
         kind: "poll",
         family: shape[1],
         apiCode: shape[2],
+      });
+      continue;
+    }
+
+    shape = condition.match(
+      /^path\.starts_with\("([^"]+)"\) && path\.ends_with\("([^"]+)"\) => "([^"]+)"$/,
+    );
+    if (shape) {
+      arms.push({
+        providers,
+        kind: "pathRange",
+        prefix: shape[1],
+        suffix: shape[2],
+        apiCode: shape[3],
       });
       continue;
     }
@@ -377,6 +394,8 @@ function armPinnedPaths(arm) {
       return [arm.path];
     case "pathPrefix":
       return [`${arm.prefix}{value}`];
+    case "pathRange":
+      return [`${arm.prefix}{value}${arm.suffix}`];
     case "geminiAction":
       return arm.branch
         ? [
@@ -407,6 +426,8 @@ function armAnswersTemplate(arm, template, apiCode) {
       return pathTemplateCompatible(arm.path, template);
     case "pathPrefix":
       return template.startsWith(arm.prefix);
+    case "pathRange":
+      return template.startsWith(arm.prefix) && template.endsWith(arm.suffix);
     case "poll": {
       const prefix = `/${arm.family}/`;
       if (!template.toLowerCase().startsWith(prefix)) return false;
@@ -444,6 +465,9 @@ function resolveApiCode(arms, supplierCode, standardPath) {
       case "pathPrefix":
         hit = path.startsWith(arm.prefix);
         break;
+      case "pathRange":
+        hit = path.startsWith(arm.prefix) && path.endsWith(arm.suffix);
+        break;
       case "geminiAction":
         hit =
           path.startsWith(GEMINI_MODELS_PREFIX) &&
@@ -469,27 +493,73 @@ function resolveApiCode(arms, supplierCode, standardPath) {
 
 
 // ---------------------------------------------------------------------------
-// 1. The two copies of the path -> api_code map must stay identical.
+// 1. The path -> api_code arm table must have exactly one authority, and both
+//    the router classifier and the edge passthrough must delegate to it.
 // ---------------------------------------------------------------------------
 
-const classifierArms = new Set(mapArms(read(CLASSIFIER), CLASSIFIER));
-const passthroughArms = new Set(mapArms(read(PASSTHROUGH), PASSTHROUGH));
+const AUTHORITY_FN = "provider_native_api_code_from_normalized_path";
+const AUTHORITY = CLASSIFIER;
+const DELEGATORS = [
+  { path: CLASSIFIER, fn: "provider_native_api_code_from_standard_path" },
+  { path: PASSTHROUGH, fn: "provider_native_api_code_from_standard_path" },
+];
 
-if (classifierArms.size > 0 && passthroughArms.size > 0) {
-  notes.push(
-    `path -> api_code map: classifier ${classifierArms.size} arms, passthrough ${passthroughArms.size} arms`,
-  );
-  reportSetDifference(
-    "classified by the router service but not passed through by the edge runtime",
-    classifierArms,
-    passthroughArms,
-  );
-  reportSetDifference(
-    "passed through by the edge runtime but not classified by the router service",
-    passthroughArms,
-    classifierArms,
+const authoritySource = read(AUTHORITY);
+const authorityArms = new Set(mapArms(authoritySource, AUTHORITY));
+
+// The authority must own the arm table (a non-empty match block), and no other
+// file may carry a second copy of it.
+if (authorityArms.size === 0) {
+  failures.push(`${AUTHORITY}: the ${AUTHORITY_FN} arm table is empty or unreadable`);
+}
+const authorityDefinitions = [
+  ...authoritySource.matchAll(new RegExp(`fn ${AUTHORITY_FN}\\s*\\(`, "g")),
+].length;
+if (authorityDefinitions !== 1) {
+  failures.push(
+    `${AUTHORITY}: expected exactly one definition of ${AUTHORITY_FN}, found ${authorityDefinitions}`,
   );
 }
+
+for (const delegator of DELEGATORS) {
+  const source = read(delegator.path);
+  const body = source.match(new RegExp(`fn ${delegator.fn}[\\s\\S]*?\\n\\}\\n`));
+  if (!body) {
+    failures.push(`${delegator.path}: cannot find ${delegator.fn}`);
+    continue;
+  }
+  if (!body[0].includes(`${AUTHORITY_FN}(`)) {
+    failures.push(
+      `${delegator.path}: ${delegator.fn} does not delegate to the single authority ${AUTHORITY_FN}`,
+    );
+  }
+  // A delegator must not also carry its own arm table.
+  const localArms = [...body[0].matchAll(/"([a-z0-9_.]+)"\s+if\s+[\s\S]*?=>/g)];
+  if (localArms.length > 0) {
+    failures.push(
+      `${delegator.path}: ${delegator.fn} still carries ${localArms.length} local arm(s) instead of delegating`,
+    );
+  }
+}
+
+// No other file in the two crates may define the authority (one authority only).
+const strayDefinitions = [];
+for (const candidate of [CLASSIFIER, PASSTHROUGH]) {
+  if (candidate === AUTHORITY) continue;
+  const source = read(candidate);
+  if (new RegExp(`fn ${AUTHORITY_FN}\\s*\\(`).test(source)) {
+    strayDefinitions.push(candidate);
+  }
+}
+if (strayDefinitions.length > 0) {
+  failures.push(
+    `the arm table authority ${AUTHORITY_FN} is duplicated outside ${AUTHORITY}: ${strayDefinitions.join(", ")}`,
+  );
+}
+
+notes.push(
+  `path -> api_code map: single authority (${AUTHORITY_FN}) with ${authorityArms.size} arm(s), ${DELEGATORS.length} delegating caller(s)`,
+);
 
 // ---------------------------------------------------------------------------
 // 2. Every seeded api code must exist in the routing taxonomy.
@@ -656,10 +726,7 @@ if (openApiPrefixes && openApiPrefixes.length > 0) {
 const parsedArmsByCopy = new Map();
 
 if (seededEndpoints.length > 0) {
-  for (const [label, relativePath] of [
-    ["passthrough", PASSTHROUGH],
-    ["classifier", CLASSIFIER],
-  ]) {
+  for (const [label, relativePath] of [["authority", AUTHORITY]]) {
     const arms = parsePathArms(read(relativePath), relativePath);
     if (!arms) continue;
     parsedArmsByCopy.set(label, arms);
@@ -897,7 +964,7 @@ const DECLARED_UNROUTED_OPERATIONS = new Map();
 }
 
 const openApiContractSource = read(OPEN_API_CONTRACT);
-if (openApiContractSource.length > 0 && parsedArmsByCopy.has("classifier")) {
+if (openApiContractSource.length > 0 && parsedArmsByCopy.has("authority")) {
   let openApiContract;
   try {
     openApiContract = JSON.parse(openApiContractSource);
@@ -910,7 +977,7 @@ if (openApiContractSource.length > 0 && parsedArmsByCopy.has("classifier")) {
     )
       ? openApiContract["x-sdkwork-vendor-path-prefixes"]
       : [];
-    const arms = parsedArmsByCopy.get("classifier");
+    const arms = parsedArmsByCopy.get("authority");
     const unrouted = [];
     const routable = [];
     const seen = new Set();
@@ -1414,6 +1481,260 @@ for (const relativePath of CLOSURE_GUARD_SOURCES) {
       `${relativePath}: the closure guard's table declares ${notSeeded.length} endpoint(s) no seed backs; the guard would accept an invented route`,
     );
     for (const [code, path] of notSeeded) failures.push(`    ${code} ${path}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 10. Every `/v1/**` operation the contract publishes has to be classifiable
+//     by `OpenAiResourceClassifier`.
+// ---------------------------------------------------------------------------
+//
+// Check 7 evaluates the vendor-native namespaces only: it derives its operation
+// list from `x-sdkwork-vendor-path-prefixes` and skips everything else,
+// including `v1`. The OpenAI-compatible surface is 75 of the contract's 122
+// paths, and it therefore had no routability assertion at all. Three published
+// operations drifted into "route mounted, no classifier arm"
+// (`GET /v1/models/{model}`, `GET /v1/audio/voices/{voice_id}`,
+// `POST /v1/realtime/client_secrets`): a request reached the handler and then
+// died in `classify_request` as `ResourceClassification`, surfacing as a 404
+// for a path the contract advertises.
+//
+// The gate cannot run the Rust classifier, so it evaluates the arms by shape —
+// the same approach check 4 uses for the vendor map. Every arm is modelled; a
+// shape this gate cannot read is a hard failure, so an arm nobody can evaluate
+// can never be silently skipped.
+
+const OPENAI_CLASSIFIER =
+  "services/sdkwork-cloudrouter-router-service/src/application/invocation/openai_classifier.rs";
+
+/** HTTP methods an OpenAPI path item may declare as operations. */
+const HTTP_ROUTE_METHODS = new Set([
+  "GET",
+  "POST",
+  "PUT",
+  "PATCH",
+  "DELETE",
+  "HEAD",
+  "OPTIONS",
+]);
+
+/**
+ * Split `classify_openai_spec` into one entry per arm.
+ *
+ * The body is a flat run of arms, each opening with a 4-space-indented
+ * `if ... {`. A naive `/if (.*?) \{ return Ok\(/` regex merges block-bodied
+ * arms: `if path == "/v1/files" { if method == Method::POST { return Ok(..) }
+ * return Ok(..) }` has two `return Ok(` sites inside one `if`, and a second
+ * `if` at the same indent follows whose condition would be concatenated onto
+ * the first. Splitting on the indent boundary keeps each arm self-contained.
+ *
+ * Returns one normalised condition string per top-level arm. A non-`if`
+ * statement in the arm run (a bare `return`, `let`, etc.) is a shape the gate
+ * cannot read and is reported so it can never be silently skipped.
+ */
+function extractOpenAiArmConditions(body) {
+  const lines = body.split("\n");
+  const armStarts = [];
+  for (let index = 0; index < lines.length; index += 1) {
+    if (/^ {4}if[\s(]/.test(lines[index])) armStarts.push(index);
+  }
+  const conditions = [];
+  const unreadable = [];
+  for (let index = 0; index < armStarts.length; index += 1) {
+    const start = armStarts[index];
+    const end = index + 1 < armStarts.length ? armStarts[index + 1] : lines.length;
+    const armLines = lines.slice(start, end);
+    // Collect up to the first `{` that closes the guard: a multi-line guard
+    // (`if path == "a"\n || path == "b"\n{`) spans several lines before its
+    // brace, so the condition is everything up to that brace.
+    const guard = [];
+    let closed = false;
+    for (const line of armLines) {
+      const braceIndex = line.indexOf("{");
+      if (braceIndex === -1) {
+        guard.push(line.trim());
+        continue;
+      }
+      guard.push(line.slice(0, braceIndex).trim());
+      closed = true;
+      break;
+    }
+    if (!closed) {
+      unreadable.push(armLines.join(" ").replace(/\s+/g, " ").trim());
+      continue;
+    }
+    const condition = guard
+      .join(" ")
+      .replace(/^if\s+/, "")
+      // `let Some(rest) = path.strip_prefix("...")` and its `let`-less form
+      // both reduce to the bare `path.strip_prefix("...")` call, which is
+      // what the predicate table models.
+      .replace(/^let\s+Some\([^)]*\)\s*=\s*/, "")
+      .replace(/^let\s+/, "")
+      .replace(/\s*\{\s*$/, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (condition.length === 0) {
+      unreadable.push(armLines.join(" ").replace(/\s+/g, " ").trim());
+      continue;
+    }
+    conditions.push(condition);
+  }
+  return { conditions, unreadable };
+}
+
+/**
+ * Evaluate the `classify_openai_spec` arms against one `(method, path)`.
+ *
+ * Returns `false` when no arm accepts the pair. Predicate helpers
+ * (`path.starts_with`, `path.ends_with`, the `strip_prefix` guard) are modelled
+ * explicitly; anything else is pushed onto `unmodelled` so the gate fails
+ * loudly instead of guessing.
+ */
+function buildOpenAiClassifier(relativePath) {
+  const source = read(relativePath);
+  if (source.length === 0) return null;
+  const body = source.match(
+    /fn classify_openai_spec\(method: &Method, path: &str\)[\s\S]*?\n\}\n/,
+  );
+  if (!body) {
+    failures.push(
+      `${relativePath}: cannot find classify_openai_spec; extend the gate`,
+    );
+    return null;
+  }
+  return { source, body: body[0] };
+}
+
+const openAiClassifier = buildOpenAiClassifier(OPENAI_CLASSIFIER);
+
+if (openAiClassifier && openApiContractSource.length > 0) {
+  const extracted = extractOpenAiArmConditions(openAiClassifier.body);
+
+  const unmodelledConditions = [...extracted.unreadable];
+  const predicates = [];
+  for (const condition of extracted.conditions) {
+    // `method == Method::X && path == "..."` / `path == "..."`
+    const literal = condition.match(
+      /^(?:method == Method::([A-Z]+) && )?path == "([^"]+)"$/,
+    );
+    if (literal) {
+      predicates.push({
+        method: literal[1] ? literal[1].toUpperCase() : null,
+        match: (method, path) => path === literal[2],
+      });
+      continue;
+    }
+    // `method == Method::X && path.starts_with("...")` / `path.starts_with("...")`
+    const prefix = condition.match(
+      /^(?:method == Method::([A-Z]+) && )?path\.starts_with\("([^"]+)"\)$/,
+    );
+    if (prefix) {
+      predicates.push({
+        method: prefix[1] ? prefix[1].toUpperCase() : null,
+        match: (method, path) => path.startsWith(prefix[2]),
+      });
+      continue;
+    }
+    // The multi-branch realtime guard:
+    //   path == "a" || path == "b" || ...
+    const alternatives = condition
+      .split(/\s*\|\|\s*/)
+      .map((part) => part.match(/^path == "([^"]+)"$/));
+    if (alternatives.every(Boolean) && alternatives.length > 0) {
+      const paths = alternatives.map((entry) => entry[1]);
+      predicates.push({ method: null, match: (method, path) => paths.includes(path) });
+      continue;
+    }
+    // `method == Method::X && path.starts_with("a") && path.ends_with("b")`
+    const bothEnds = condition.match(
+      /^method == Method::([A-Z]+) && path\.starts_with\("([^"]+)"\) && path\.ends_with\("([^"]+)"\)$/,
+    );
+    if (bothEnds) {
+      predicates.push({
+        method: bothEnds[1].toUpperCase(),
+        match: (method, path) =>
+          path.startsWith(bothEnds[2]) && path.endsWith(bothEnds[3]),
+      });
+      continue;
+    }
+    // `method == Method::X && path.starts_with("a")`
+    const postPrefix = condition.match(
+      /^method == Method::([A-Z]+) && path\.starts_with\("([^"]+)"\)$/,
+    );
+    if (postPrefix) {
+      predicates.push({
+        method: postPrefix[1].toUpperCase(),
+        match: (method, path) => path.startsWith(postPrefix[2]),
+      });
+      continue;
+    }
+    // The `strip_prefix` guard. `classify_openai_spec` calls
+    // `path.strip_prefix("/v1/chat/completions/")` on the management face and
+    // returns the same spec for any non-empty remainder, so the reachable set
+    // is exactly `path.starts_with(prefix) && path !== prefix`. The enclosing
+    // arm is written as `let Some(rest) = ...; if !rest.is_empty() {`, which
+    // the extractor normalises to `path.strip_prefix("...")`.
+    const stripped = condition.match(
+      /^path\.strip_prefix\("([^"]+)"\)$/,
+    );
+    if (stripped) {
+      predicates.push({
+        method: null,
+        match: (method, path) =>
+          path.startsWith(stripped[1]) && path !== stripped[1],
+      });
+      continue;
+    }
+    // `!rest.is_empty()` inner guard, same arm shape as the `strip_prefix`
+    // guard above; on its own it carries no path predicate because the outer
+    // arm supplies the prefix. Collapse it onto the outer arm by treating it
+    // as a no-op that accepts whatever the outer arm already accepted.
+    if (condition === "!rest.is_empty()") {
+      predicates.push({ method: null, match: () => true });
+      continue;
+    }
+    unmodelledConditions.push(condition);
+  }
+
+  if (unmodelledConditions.length > 0) {
+    failures.push(
+      `${OPENAI_CLASSIFIER}: ${unmodelledConditions.length} classify_openai_spec arm(s) this gate cannot model; extend the gate instead of leaving them unchecked`,
+    );
+    for (const condition of unmodelledConditions) {
+      failures.push(`    if ${condition}`);
+    }
+  } else {
+    const classifies = (method, path) =>
+      predicates.some(
+        (predicate) =>
+          (predicate.method === null || predicate.method === method) &&
+          predicate.match(method, path),
+      );
+
+    const contract = JSON.parse(openApiContractSource);
+    const openAiPaths = Object.keys(contract.paths ?? {}).filter(
+      (path) => path === "/v1" || path.startsWith("/v1/"),
+    );
+    const unclassified = [];
+    let operationCount = 0;
+    for (const path of openAiPaths) {
+      for (const method of Object.keys(contract.paths[path])) {
+        const upper = method.toUpperCase();
+        if (!HTTP_ROUTE_METHODS.has(upper)) continue;
+        operationCount += 1;
+        if (!classifies(upper, path)) unclassified.push(`${upper} ${path}`);
+      }
+    }
+    notes.push(
+      `open-api OpenAI-compatible surface: ${operationCount} operation(s), ${unclassified.length} without a classifier arm`,
+    );
+    if (unclassified.length > 0) {
+      failures.push(
+        `open-api paths published under /v1 that OpenAiResourceClassifier cannot classify; the gateway answers 404 for a path the contract advertises (${unclassified.length})`,
+      );
+      for (const operation of unclassified) failures.push(`    ${operation}`);
+    }
   }
 }
 

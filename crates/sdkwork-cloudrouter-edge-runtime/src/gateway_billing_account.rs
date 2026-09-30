@@ -552,10 +552,7 @@ fn platform_catalog_tenant_id() -> i64 {
 /// here is what lets the 402 surface carry a funding action.
 fn account_hold_error(error: CommerceServiceError) -> DomainError {
     let message = error.message().to_owned();
-    if matches!(
-        error.kind(),
-        CommerceServiceErrorKind::InsufficientBalance
-    ) {
+    if matches!(error.kind(), CommerceServiceErrorKind::InsufficientBalance) {
         return DomainError::insufficient_balance(message);
     }
     DomainError::new(message)

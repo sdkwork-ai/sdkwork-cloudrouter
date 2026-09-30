@@ -1,0 +1,1171 @@
+[
+  {
+    "op": "GET /anthropic/v1/files",
+    "ns": "anthropic",
+    "declared": true,
+    "group": "vendor-utility",
+    "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+  },
+  {
+    "op": "POST /anthropic/v1/files",
+    "ns": "anthropic",
+    "declared": true,
+    "group": "vendor-utility",
+    "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+  },
+  {
+    "op": "GET /anthropic/v1/files/{file_id}",
+    "ns": "anthropic",
+    "declared": true,
+    "group": "vendor-utility",
+    "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+  },
+  {
+    "op": "DELETE /anthropic/v1/files/{file_id}",
+    "ns": "anthropic",
+    "declared": true,
+    "group": "vendor-utility",
+    "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+  },
+  {
+    "op": "GET /anthropic/v1/files/{file_id}/content",
+    "ns": "anthropic",
+    "declared": true,
+    "group": "vendor-utility",
+    "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+  },
+  {
+    "op": "POST /anthropic/v1/messages",
+    "ns": "anthropic",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /anthropic/v1/messages/batches",
+    "ns": "anthropic",
+    "declared": true,
+    "group": "vendor-utility",
+    "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+  },
+  {
+    "op": "POST /anthropic/v1/messages/batches",
+    "ns": "anthropic",
+    "declared": true,
+    "group": "vendor-utility",
+    "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+  },
+  {
+    "op": "GET /anthropic/v1/messages/batches/{batch_id}",
+    "ns": "anthropic",
+    "declared": true,
+    "group": "vendor-utility",
+    "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+  },
+  {
+    "op": "POST /anthropic/v1/messages/batches/{batch_id}/cancel",
+    "ns": "anthropic",
+    "declared": true,
+    "group": "vendor-utility",
+    "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+  },
+  {
+    "op": "POST /anthropic/v1/messages/count_tokens",
+    "ns": "anthropic",
+    "declared": true,
+    "group": "vendor-utility",
+    "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+  },
+  {
+    "op": "POST /elevenlabs/v1/sound-generation",
+    "ns": "elevenlabs",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /elevenlabs/v1/text-to-speech/{voice_id}",
+    "ns": "elevenlabs",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /google/v1beta/cachedContents",
+    "ns": "google",
+    "declared": true,
+    "group": "vendor-utility",
+    "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+  },
+  {
+    "op": "POST /google/v1beta/cachedContents",
+    "ns": "google",
+    "declared": true,
+    "group": "vendor-utility",
+    "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+  },
+  {
+    "op": "GET /google/v1beta/cachedContents/{cached_content_id}",
+    "ns": "google",
+    "declared": true,
+    "group": "vendor-utility",
+    "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+  },
+  {
+    "op": "DELETE /google/v1beta/cachedContents/{cached_content_id}",
+    "ns": "google",
+    "declared": true,
+    "group": "vendor-utility",
+    "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+  },
+  {
+    "op": "GET /google/v1beta/files",
+    "ns": "google",
+    "declared": true,
+    "group": "vendor-utility",
+    "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+  },
+  {
+    "op": "POST /google/v1beta/files",
+    "ns": "google",
+    "declared": true,
+    "group": "vendor-utility",
+    "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+  },
+  {
+    "op": "GET /google/v1beta/files/{file_id}",
+    "ns": "google",
+    "declared": true,
+    "group": "vendor-utility",
+    "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+  },
+  {
+    "op": "DELETE /google/v1beta/files/{file_id}",
+    "ns": "google",
+    "declared": true,
+    "group": "vendor-utility",
+    "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+  },
+  {
+    "op": "POST /google/v1beta/models/{model}:batchEmbedContents",
+    "ns": "google",
+    "declared": true,
+    "group": "vendor-utility",
+    "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+  },
+  {
+    "op": "POST /google/v1beta/models/{model}:countTokens",
+    "ns": "google",
+    "declared": true,
+    "group": "vendor-utility",
+    "reason": "vendor utility surface: no taxonomy route, no api_endpoint seed, no resource grant, no price"
+  },
+  {
+    "op": "POST /google/v1beta/models/{model}:embedContent",
+    "ns": "google",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /google/v1beta/models/{model}:generateContent",
+    "ns": "google",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /google/v1beta/models/{model}:streamGenerateContent",
+    "ns": "google",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /kling/v1/videos/avatar",
+    "ns": "kling",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /kling/v1/videos/generations",
+    "ns": "kling",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /kling/v1/videos/generations/{task_id}",
+    "ns": "kling",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /kling/v1/videos/motion-control",
+    "ns": "kling",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /midjourney/v1/images/generations",
+    "ns": "midjourney",
+    "declared": true,
+    "group": "no-supplier-namespace",
+    "reason": "no supplier/vendor/account: generations dispatches the midjourney slug through the OpenAI-compatible image surface instead"
+  },
+  {
+    "op": "GET /midjourney/v1/images/generations/{task_id}",
+    "ns": "midjourney",
+    "declared": true,
+    "group": "no-supplier-namespace",
+    "reason": "no supplier/vendor/account: generations dispatches the midjourney slug through the OpenAI-compatible image surface instead"
+  },
+  {
+    "op": "POST /minimax/v1/music_generation",
+    "ns": "minimax",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /nano-banana/v1/images/generations",
+    "ns": "nano-banana",
+    "declared": true,
+    "group": "no-supplier-namespace",
+    "reason": "no supplier/vendor/account, and the wired nano-banana ingress is the Gemini-native /google/v1beta/models/nano-banana:generateImages — but `dispatch_nano_banana` in sdkwork-generations drives THIS path, so it is a live cross-repo breakage (API authority ambiguity), not something an arm can paper over"
+  },
+  {
+    "op": "GET /nano-banana/v1/images/generations/{task_id}",
+    "ns": "nano-banana",
+    "declared": true,
+    "group": "no-supplier-namespace",
+    "reason": "no supplier/vendor/account, and the wired nano-banana ingress is the Gemini-native /google/v1beta/models/nano-banana:generateImages — but `dispatch_nano_banana` in sdkwork-generations drives THIS path, so it is a live cross-repo breakage (API authority ambiguity), not something an arm can paper over"
+  },
+  {
+    "op": "POST /suno/v1/music/generations",
+    "ns": "suno",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /suno/v1/music/generations/{task_id}",
+    "ns": "suno",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/assistants",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/assistants",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/assistants/{assistant_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/assistants/{assistant_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "DELETE /v1/assistants/{assistant_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/audio/speech",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/audio/transcriptions",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/audio/translations",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/audio/voice_consents",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/audio/voice_consents",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/audio/voice_consents/{consent_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/audio/voice_consents/{consent_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "DELETE /v1/audio/voice_consents/{consent_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/audio/voices",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/audio/voices",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/audio/voices/{voice_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/batches",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/batches",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/batches/{batch_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/batches/{batch_id}/cancel",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/chat/completions",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/chat/completions",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/chat/completions/{completion_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/chat/completions/{completion_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "DELETE /v1/chat/completions/{completion_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/chat/completions/{completion_id}/messages",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/completions",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/containers",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/containers",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/containers/{container_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "DELETE /v1/containers/{container_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/containers/{container_id}/files",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/containers/{container_id}/files",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/containers/{container_id}/files/{file_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "DELETE /v1/containers/{container_id}/files/{file_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/containers/{container_id}/files/{file_id}/content",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/conversations",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/conversations",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/conversations/{conversation_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/conversations/{conversation_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "DELETE /v1/conversations/{conversation_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/conversations/{conversation_id}/items",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/conversations/{conversation_id}/items",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/conversations/{conversation_id}/items/{item_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "DELETE /v1/conversations/{conversation_id}/items/{item_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/embeddings",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/files",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/files",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/files/{file_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "DELETE /v1/files/{file_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/files/{file_id}/content",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/images/edits",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/images/generations",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/images/variations",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/models",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/models/{model}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/moderations",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/realtime/calls",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/realtime/calls/{call_id}/accept",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/realtime/calls/{call_id}/hangup",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/realtime/calls/{call_id}/refer",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/realtime/calls/{call_id}/reject",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/realtime/client_secrets",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/realtime/sessions",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/realtime/transcription_sessions",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/realtime/translations",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/responses",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/responses/compact",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/responses/input_tokens",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/responses/{response_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "DELETE /v1/responses/{response_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/responses/{response_id}/cancel",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/responses/{response_id}/input_items",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/threads",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/threads/runs",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/threads/{thread_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/threads/{thread_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "DELETE /v1/threads/{thread_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/threads/{thread_id}/messages",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/threads/{thread_id}/messages",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/threads/{thread_id}/messages/{message_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/threads/{thread_id}/messages/{message_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "DELETE /v1/threads/{thread_id}/messages/{message_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/threads/{thread_id}/runs",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/threads/{thread_id}/runs",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/threads/{thread_id}/runs/{run_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/threads/{thread_id}/runs/{run_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/threads/{thread_id}/runs/{run_id}/cancel",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/threads/{thread_id}/runs/{run_id}/steps",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/threads/{thread_id}/runs/{run_id}/steps/{step_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/threads/{thread_id}/runs/{run_id}/submit_tool_outputs",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/uploads",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/uploads/{upload_id}/cancel",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/uploads/{upload_id}/complete",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/uploads/{upload_id}/parts",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/vector_stores",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/vector_stores",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/vector_stores/{vector_store_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/vector_stores/{vector_store_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "DELETE /v1/vector_stores/{vector_store_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/vector_stores/{vector_store_id}/file_batches",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/vector_stores/{vector_store_id}/file_batches/{batch_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/vector_stores/{vector_store_id}/file_batches/{batch_id}/cancel",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/vector_stores/{vector_store_id}/file_batches/{batch_id}/files",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/vector_stores/{vector_store_id}/files",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/vector_stores/{vector_store_id}/files",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/vector_stores/{vector_store_id}/files/{file_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/vector_stores/{vector_store_id}/files/{file_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "DELETE /v1/vector_stores/{vector_store_id}/files/{file_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/vector_stores/{vector_store_id}/search",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/videos",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/videos",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/videos/characters",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/videos/characters/{character_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/videos/edits",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/videos/extensions",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/videos/{video_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "DELETE /v1/videos/{video_id}",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /v1/videos/{video_id}/content",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /v1/videos/{video_id}/remix",
+    "ns": "v1",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /vidu/ent/v2/img2video",
+    "ns": "vidu",
+    "declared": true,
+    "group": "published-no-route",
+    "reason": "published and called by sdkwork-generations, but the taxonomy names no vidu video route"
+  },
+  {
+    "op": "POST /vidu/ent/v2/reference2image",
+    "ns": "vidu",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /vidu/ent/v2/reference2video",
+    "ns": "vidu",
+    "declared": true,
+    "group": "published-no-route",
+    "reason": "published and called by sdkwork-generations, but the taxonomy names no vidu video route"
+  },
+  {
+    "op": "POST /vidu/ent/v2/start-end2video",
+    "ns": "vidu",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /vidu/ent/v2/tasks/{task_id}/creations",
+    "ns": "vidu",
+    "declared": true,
+    "group": "published-no-route",
+    "reason": "published and called by sdkwork-generations, but the taxonomy names no vidu video route"
+  },
+  {
+    "op": "POST /vidu/ent/v2/template",
+    "ns": "vidu",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /vidu/ent/v2/text2video",
+    "ns": "vidu",
+    "declared": true,
+    "group": "published-no-route",
+    "reason": "published and called by sdkwork-generations, but the taxonomy names no vidu video route"
+  },
+  {
+    "op": "POST /volcengine/api/v3/audio/speech",
+    "ns": "volcengine",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "POST /volcengine/api/v3/contents/generations/tasks",
+    "ns": "volcengine",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  },
+  {
+    "op": "GET /volcengine/api/v3/contents/generations/tasks/{task_id}",
+    "ns": "volcengine",
+    "declared": false,
+    "group": "",
+    "reason": ""
+  }
+]

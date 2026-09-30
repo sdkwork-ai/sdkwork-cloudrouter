@@ -4,10 +4,11 @@ use std::time::{Duration, Instant};
 use super::provider_adapter_dispatch::validate_provider_adapter_target;
 use super::provider_request::ProviderRequestBuilder;
 use super::{
-    BillingMode, BillingQuantitySource, DispatchMode, Invocation, InvocationAccount,
-    InvocationCancellationSignal, InvocationDispatchResponse, InvocationError, InvocationErrorKind,
-    InvocationFuture, InvocationInterceptor, InvocationRouteAttempt, InvocationRouteCandidate,
-    InvocationShape, InvocationSurface, ResolvedProviderSecret,
+    adapter_response_status_code, tenant_lease_loss_error, BillingMode, BillingQuantitySource,
+    DispatchMode, Invocation, InvocationAccount, InvocationCancellationSignal,
+    InvocationDispatchResponse, InvocationError, InvocationErrorKind, InvocationFuture,
+    InvocationInterceptor, InvocationRouteAttempt, InvocationRouteCandidate, InvocationShape,
+    InvocationSurface, ResolvedProviderSecret,
 };
 use crate::domain::AiRouteFailureStrategy;
 use crate::ports::{
@@ -288,13 +289,6 @@ fn effective_response_status_code(
         .as_ref()
         .and_then(adapter_response_status_code)
         .unwrap_or(response.status_code)
-}
-
-fn adapter_response_status_code(body: &serde_json::Value) -> Option<u16> {
-    body.get("statusCode")
-        .or_else(|| body.get("status_code"))
-        .and_then(serde_json::Value::as_u64)
-        .and_then(|value| u16::try_from(value).ok())
 }
 
 fn refresh_adapter_target(
@@ -633,11 +627,4 @@ fn ensure_dispatch_active(
     } else {
         Ok(())
     }
-}
-
-fn tenant_lease_loss_error() -> InvocationError {
-    InvocationError::new(
-        InvocationErrorKind::RateLimit,
-        "tenant in-flight lease ownership was lost",
-    )
 }

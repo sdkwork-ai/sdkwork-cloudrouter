@@ -105,9 +105,7 @@ fn redact_prefixed_tokens(input: &str, prefix: &str) -> String {
             // The trailing separators are not part of the secret; trim them
             // so `sk-proj-` followed by a non-token character does not fold
             // the separator into the redaction.
-            while token_end > token_start
-                && matches!(bytes[token_end - 1], b'-' | b'_')
-            {
+            while token_end > token_start && matches!(bytes[token_end - 1], b'-' | b'_') {
                 token_end -= 1;
             }
             if token_end - token_start >= 8 {

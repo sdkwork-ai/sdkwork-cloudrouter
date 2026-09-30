@@ -77,12 +77,20 @@ pub use pricing::{PricingFinalizationInterceptor, PricingPreflightInterceptor};
 // 只再导出调用链真正消费的两个入口：预检/结算用 `resolve_pricing_identity`
 // 取身份，流水线用 `apply_pricing_identity` 回写计量档。身份类型本身留在
 // `pricing_identity` 模块内，避免 `pub use` 未使用告警。
-pub use pricing_identity::{apply_pricing_identity, requested_resolution, resolve_pricing_identity};
+pub use pricing_identity::{
+    apply_pricing_identity, requested_resolution, resolve_pricing_identity,
+};
 pub use provider_adapter_dispatch::ProviderAdapterDispatchInterceptor;
-pub use provider_native_classifier::ProviderNativeResourceClassifier;
+pub use provider_native_classifier::{
+    canonical_provider_native_catalog_key, normalize_standard_api_path,
+    provider_native_api_code_from_normalized_path, ProviderNativeResourceClassifier,
+};
 pub use request_transform::RequestTransformInterceptor;
 pub use resource::{InvocationResource, InvocationSurface, ResourceType};
 pub use response_normalization::ResponseNormalizationInterceptor;
+pub(crate) use response_normalization::{
+    adapter_response_status_code, effective_dispatch_status_code, provider_response_succeeded,
+};
 pub use route_planning::RoutePlanningInterceptor;
 pub use routing::{
     InvocationRouteAttempt, InvocationRouteCandidate, InvocationRouteCandidateKind,
@@ -97,8 +105,10 @@ pub use state::{Invocation, InvocationCancellationSignal, InvocationId, Invocati
 pub use sticky::{StickyCommitInterceptor, StickyResolutionInterceptor};
 pub use subject::{InvocationAuthType, InvocationSubject};
 pub use telemetry::{InvocationNormalizedResponse, InvocationTelemetry};
+pub(crate) use tenant_inflight::tenant_lease_loss_error;
 pub use tenant_inflight::{TenantInflightConfig, TenantInflightInterceptor};
 pub use trace::TraceTelemetryInterceptor;
+pub(crate) use usage::{is_token_meter, quote_rate_hash};
 pub use usage::{
     InvocationPreflightResolution, InvocationPricingQuote, InvocationUsage, InvocationUsageLine,
     InvocationUsageLineRole,

@@ -1,4 +1,4 @@
-use sdkwork_cloudrouter_provider_adapter_contract::AdapterRouteStatus;
+use sdkwork_cloudrouter_provider_adapter_contract::{normalize_adapter_path, AdapterRouteStatus};
 
 use crate::config::{ProviderAdapterLookup, ProviderAdapterRouteConfig};
 
@@ -176,8 +176,8 @@ fn canonical_endpoint_key(value: &str) -> String {
 }
 
 fn path_match_score(pattern: &str, path: &str) -> Option<i32> {
-    let pattern = normalize_path(pattern);
-    let path = normalize_path(path);
+    let pattern = normalize_adapter_path(pattern);
+    let path = normalize_adapter_path(path);
     if pattern == path {
         return Some(100);
     }
@@ -190,13 +190,4 @@ fn path_match_score(pattern: &str, path: &str) -> Option<i32> {
         }
     }
     None
-}
-
-fn normalize_path(value: &str) -> String {
-    let value = value.trim();
-    if value.starts_with('/') {
-        value.to_owned()
-    } else {
-        format!("/{value}")
-    }
 }

@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use super::{
-    AccountBillingMode, BillingMode, Invocation, InvocationError, InvocationErrorKind,
-    InvocationFuture, InvocationInterceptor,
+    is_token_meter, provider_response_succeeded, AccountBillingMode, BillingMode, Invocation,
+    InvocationError, InvocationErrorKind, InvocationFuture, InvocationInterceptor,
 };
 use crate::domain::{BillingMeter, BillingOwnerKind, DecimalValue, DomainError};
 use crate::ports::{
@@ -524,24 +524,6 @@ fn unit_size_or_default(meter: &BillingMeter, persisted: &str) -> Option<Decimal
     }
 }
 
-fn is_token_meter(meter: &BillingMeter) -> bool {
-    matches!(
-        meter,
-        BillingMeter::LlmInputToken
-            | BillingMeter::LlmOutputToken
-            | BillingMeter::LlmReasoningToken
-            | BillingMeter::LlmCacheWriteToken
-            | BillingMeter::LlmCacheReadToken
-            | BillingMeter::EmbeddingInputToken
-            | BillingMeter::AudioInputToken
-            | BillingMeter::AudioOutputToken
-            | BillingMeter::ImageInputToken
-            | BillingMeter::ImageOutputToken
-            | BillingMeter::VideoInputToken
-            | BillingMeter::VideoOutputToken
-    )
-}
-
 fn conservative_quantity(meter: &BillingMeter, input: i64, output: i64) -> i64 {
     match meter {
         BillingMeter::LlmOutputToken
@@ -577,28 +559,9 @@ fn billing_error(error: impl std::fmt::Display) -> InvocationError {
 /// classification carried by a [`DomainError`] coming through the billing port.
 fn billing_port_error(error: DomainError) -> InvocationError {
     if error.is_insufficient_balance() {
-        return InvocationError::new(
-            InvocationErrorKind::InsufficientBalance,
-            error.to_string(),
-        );
+        return InvocationError::new(InvocationErrorKind::InsufficientBalance, error.to_string());
     }
     billing_error(error)
-}
-
-fn provider_response_succeeded(invocation: &Invocation) -> bool {
-    invocation
-        .telemetry
-        .normalized_response
-        .as_ref()
-        .map(|response| (200..300).contains(&response.status_code))
-        .or_else(|| {
-            invocation
-                .dispatch
-                .response
-                .as_ref()
-                .map(|response| (200..300).contains(&response.status_code))
-        })
-        .unwrap_or(false)
 }
 
 #[cfg(test)]

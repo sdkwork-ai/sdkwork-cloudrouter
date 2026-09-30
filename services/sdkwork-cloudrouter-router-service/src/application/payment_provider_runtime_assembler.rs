@@ -4,12 +4,13 @@ use serde::Serialize;
 use serde_json::Map;
 
 use super::{
-    AlipayOpenApiClient, AlipayPaymentProviderAdapter, AlipaySigner, PayPalPaymentProviderAdapter,
-    PaymentAdapterFuture, PaymentAdapterOperation, PaymentProviderAccountCredentialRefs,
-    PaymentProviderAccountCredentialResolver, PaymentProviderAdapter,
-    PaymentProviderAdapterIdentity, PaymentProviderRegistry, PaymentProviderRegistryError,
-    PaymentProviderResolvedCredentials, PaymentProviderSecretResolver,
-    StripePaymentProviderAdapter, WeChatPayApiClient, WeChatPayCrypto, WeChatPayProviderAdapter,
+    normalize_payment_supplier_code, AlipayOpenApiClient, AlipayPaymentProviderAdapter,
+    AlipaySigner, PayPalPaymentProviderAdapter, PaymentAdapterFuture, PaymentAdapterOperation,
+    PaymentProviderAccountCredentialRefs, PaymentProviderAccountCredentialResolver,
+    PaymentProviderAdapter, PaymentProviderAdapterIdentity, PaymentProviderRegistry,
+    PaymentProviderRegistryError, PaymentProviderResolvedCredentials,
+    PaymentProviderSecretResolver, StripePaymentProviderAdapter, WeChatPayApiClient,
+    WeChatPayCrypto, WeChatPayProviderAdapter,
 };
 
 pub trait PaymentProviderAdapterFactory: Send + Sync {
@@ -308,7 +309,7 @@ impl PaymentProviderRuntimeAssembler {
 
         for account in accounts {
             let account_no = payment_account_no(&account);
-            let supplier_code = normalize_supplier_code(&account.supplier_code);
+            let supplier_code = normalize_payment_supplier_code(&account.supplier_code);
             match self.resolve_and_register(registry.clone(), account).await {
                 Ok(next_registry) => {
                     registry = next_registry;
@@ -382,7 +383,7 @@ impl PaymentProviderRuntimeAssembler {
             match PaymentProviderAccountCredentialRefs::from_projection(record) {
                 Ok(account) => {
                     let account_no = payment_account_no(&account);
-                    let supplier_code = normalize_supplier_code(&account.supplier_code);
+                    let supplier_code = normalize_payment_supplier_code(&account.supplier_code);
                     let status = payment_account_status(&account);
                     if status != "active" {
                         skipped.push(PaymentProviderRuntimeAssemblySkipped {
@@ -429,13 +430,6 @@ fn payment_account_no(account: &PaymentProviderAccountCredentialRefs) -> String 
         .filter(|value| !value.is_empty())
         .map(str::to_owned)
         .unwrap_or_else(|| account.merchant_id.clone())
-}
-
-fn normalize_supplier_code(supplier_code: &str) -> String {
-    supplier_code
-        .trim()
-        .to_ascii_lowercase()
-        .replace(['-', ' '], "_")
 }
 
 fn normalize_environment(environment: &str) -> String {
@@ -492,7 +486,7 @@ fn projection_supplier_code(record: &Map<String, serde_json::Value>) -> String {
         .get("providerCode")
         .or_else(|| record.get("supplier_code"))
         .and_then(serde_json::Value::as_str)
-        .map(normalize_supplier_code)
+        .map(normalize_payment_supplier_code)
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| "unknown".to_owned())
 }

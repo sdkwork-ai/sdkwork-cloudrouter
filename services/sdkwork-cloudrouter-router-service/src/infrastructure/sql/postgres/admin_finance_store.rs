@@ -1,3 +1,4 @@
+use crate::infrastructure::sql::store_error::redacted_store_error;
 use sdkwork_contract_service::{CommercePaymentStatus, CommerceRechargeStatus};
 use sdkwork_invoice_service::InvoiceStatus;
 use sdkwork_payment_service::RefundStatus;
@@ -577,7 +578,7 @@ fn invoice_status_value(status: InvoiceStatus) -> &'static str {
 }
 
 fn sql_error(error: sqlx::Error) -> DomainError {
-    DomainError::new(error.to_string())
+    redacted_store_error("failed to load admin finance data", error)
 }
 
 #[cfg(test)]

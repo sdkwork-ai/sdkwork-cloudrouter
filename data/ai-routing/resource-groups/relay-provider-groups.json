@@ -78,6 +78,22 @@
         {
           "itemType": "resource",
           "resourceCode": "api.vidu.start_end_to_video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.vidu.text_to_video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.vidu.image_to_video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.vidu.reference_to_video"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.vidu.video_task_query"
         }
       ]
     },

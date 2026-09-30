@@ -8,16 +8,16 @@ use crate::iam_auth_token_cache::resolve_auth_token_cache;
 use axum::Router;
 use sdkwork_account_repository_sqlx::PostgresCommerceAccountStore;
 use sdkwork_cloudrouter_config::{
-    ensure_no_known_default_secret_material, ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig,
-    DatabaseEngine, DeploymentMode, DeploymentRuntime, InternalGatewaySecurityConfig,
-    ProviderAdapterConfig, ProviderAdapterManifestDiscoveryConfig, ProviderRelayConfig,
-    ProviderSecretMapConfig, RedisConfig, RequestLimitsConfig, RuntimeConfigProfile,
-    RuntimeTomlConfig, SecretHygienePosture, StartupInstallMode, TrustedSubjectConfig,
-    UpstreamCredentialSecurityConfig,
+    ensure_no_known_default_secret_material, ApiKeySecurityConfig, AppSessionConfig,
+    DatabaseConfig, DatabaseEngine, DeploymentMode, DeploymentRuntime,
+    InternalGatewaySecurityConfig, ProviderAdapterConfig, ProviderAdapterManifestDiscoveryConfig,
+    ProviderRelayConfig, ProviderSecretMapConfig, RedisConfig, RequestLimitsConfig,
+    RuntimeConfigProfile, RuntimeTomlConfig, SecretHygienePosture, StartupInstallMode,
+    TrustedSubjectConfig, UpstreamCredentialSecurityConfig,
 };
 use sdkwork_cloudrouter_database_host::bootstrap_cloud_router_database;
 use sdkwork_cloudrouter_http::QueryStringApiKeyPolicy;
-use sdkwork_cloudrouter_provider_adapter_contract::AdapterRouteStatus;
+use sdkwork_cloudrouter_provider_adapter_contract::{normalize_adapter_path, AdapterRouteStatus};
 use sdkwork_cloudrouter_provider_adapter_http::ProviderAdapterHttpClient;
 use sdkwork_cloudrouter_provider_adapter_registry::{
     ProviderAdapterRegistry, ProviderAdapterRouteConfig,
@@ -529,31 +529,32 @@ where
     // Production/staging server postures must never silently mount the
     // unmetered legacy relay passthrough when the provider secret resolver is
     // missing; they fail startup instead (see merge_relay_...).
-    let passthrough_deployment_mode =
-        DeploymentMode::from_env_or_runtime_toml(runtime_toml).map_err(GatewayRouterError::Config)?;
+    let passthrough_deployment_mode = DeploymentMode::from_env_or_runtime_toml(runtime_toml)
+        .map_err(GatewayRouterError::Config)?;
     let passthrough_environment = runtime_toml
         .and_then(|runtime| runtime.install.environment.as_deref())
         .unwrap_or("development")
         .trim()
         .to_ascii_lowercase();
     let production_posture = passthrough_deployment_mode != DeploymentMode::Desktop
-        && matches!(passthrough_environment.as_str(), "production" | "prod" | "staging");
-    merge_relay_authenticated_openai_passthrough(
-        RelayAuthenticatedOpenAiPassthroughInput {
-            router,
-            catalog,
-            api_key_hasher,
-            provider_passthrough_config,
-            provider_adapter_config,
-            usage_recorder,
-            secret_resolver_configured,
-            production_posture,
-            query_string_api_key_policy,
-            body_max_bytes,
-            provider_response_timeout: provider_runtime_config.response_timeout,
-            provider_http_pool_config: provider_runtime_config.http_pool_config,
-        },
-    )
+        && matches!(
+            passthrough_environment.as_str(),
+            "production" | "prod" | "staging"
+        );
+    merge_relay_authenticated_openai_passthrough(RelayAuthenticatedOpenAiPassthroughInput {
+        router,
+        catalog,
+        api_key_hasher,
+        provider_passthrough_config,
+        provider_adapter_config,
+        usage_recorder,
+        secret_resolver_configured,
+        production_posture,
+        query_string_api_key_policy,
+        body_max_bytes,
+        provider_response_timeout: provider_runtime_config.response_timeout,
+        provider_http_pool_config: provider_runtime_config.http_pool_config,
+    })
 }
 
 fn build_internal_gateway_request_verifier(
@@ -3429,15 +3430,6 @@ fn adapter_path_pattern_matches(pattern: &str, path: &str) -> bool {
     pattern_lower
         .strip_suffix("/*")
         .is_some_and(|prefix| path_lower == prefix || path_lower.starts_with(&format!("{prefix}/")))
-}
-
-fn normalize_adapter_path(value: &str) -> String {
-    let value = value.trim();
-    if value.starts_with('/') {
-        value.to_owned()
-    } else {
-        format!("/{value}")
-    }
 }
 
 #[derive(Clone)]

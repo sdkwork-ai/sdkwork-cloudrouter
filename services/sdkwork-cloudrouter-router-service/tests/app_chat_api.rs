@@ -6,10 +6,9 @@ use axum::http::{Request, StatusCode};
 use sdkwork_cloudrouter_router_service::application::EntityUuidGenerator;
 use sdkwork_cloudrouter_router_service::domain::DomainResult;
 use sdkwork_cloudrouter_router_service::ports::{
-    AppChatConversationCursor,
-    AppChatConversationItem, AppChatConversationList, AppChatFuture, AppChatMessageCursor,
-    AppChatMessageItem, AppChatMessageList, AppChatStore, AppChatSubject, AppChatTurnItem,
-    AppChatTurnOutcome, AppChatUsageSnapshot, CompleteAppChatTurnCommand,
+    AppChatConversationCursor, AppChatConversationItem, AppChatConversationList, AppChatFuture,
+    AppChatMessageCursor, AppChatMessageItem, AppChatMessageList, AppChatStore, AppChatSubject,
+    AppChatTurnItem, AppChatTurnOutcome, AppChatUsageSnapshot, CompleteAppChatTurnCommand,
     CreateAppChatConversationCommand, CreateAppChatTurnCommand,
 };
 use serde_json::Value;

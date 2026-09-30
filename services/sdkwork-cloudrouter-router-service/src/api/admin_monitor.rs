@@ -7,7 +7,7 @@ use axum::Router;
 use serde::Deserialize;
 
 use crate::api::response::{
-    json_success_list_response, normalize_list_search_query, offset_page_info,
+    bad_request, json_success_list_response, normalize_list_search_query, offset_page_info,
     parse_offset_list_query, problem_from_wire_code, ApiResponseError,
 };
 use crate::ports::{AdminMonitorQuery, AdminMonitorReadStore};
@@ -107,10 +107,6 @@ fn monitor_success<T: serde::Serialize>(
         collection.items,
         offset_page_info(collection.page_no, collection.page_size, collection.total),
     )
-}
-
-fn bad_request(message: impl Into<String>) -> Response {
-    problem_from_wire_code("4001", message.into()).into_response()
 }
 
 fn monitor_system_response(context: &str, error: crate::domain::DomainError) -> Response {

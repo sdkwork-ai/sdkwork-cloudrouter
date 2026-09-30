@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::body::Bytes;
 use axum::extract::{Path, Query, State};
@@ -12,13 +11,19 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::api::request_id::{generate_server_request_id, RequestIdError};
+use crate::api::request_id::generate_server_request_id;
 use crate::api::response::{
-    json_created_response, json_success_list_response, no_content_response, offset_page_info,
-    parse_offset_list_query, problem_from_wire_code, success_envelope, ParsedOffsetListQuery,
+    bad_request, json_created_response, json_success_list_response, no_content_response,
+    offset_page_info, parse_offset_list_query, problem_from_wire_code, success_envelope,
+    ParsedOffsetListQuery,
+    domain_conflict_response as conflict_response,
+};
+use crate::api::text_normalization::parse_json_body;
+use crate::api::command_error::{
+    command_error_from_request_id as request_id_error, command_error_response,
+    system_error_response, ApiCommandError,
 };
 use crate::application::EntityUuidGenerator;
-use crate::domain::DomainError;
 use crate::ports::{
     AdminMarketingListPage, AdminMarketingStore, AdminMarketingSubject, AdminRechargePackageStatus,
     CreateAdminRechargePackageCommand, DeleteAdminRechargePackageCommand,
@@ -27,6 +32,7 @@ use crate::ports::{
     RechargeSettingsUpdateCommand, UpdateAdminExchangeRuleCommand,
     UpdateAdminRechargePackageCommand,
 };
+use sdkwork_utils_rust::datetime::current_timestamp_string;
 
 const MAX_ORDER_NO_LEN: usize = 128;
 const MAX_ASSET_TYPE_LEN: usize = 32;
@@ -120,11 +126,6 @@ struct NormalizedExchangeRuleMutation {
     rate: String,
 }
 
-enum AdminMarketingCommandBuildError {
-    BadRequest(String),
-    System(DomainError),
-}
-
 pub fn admin_marketing_router_with_store(
     store: Arc<dyn AdminMarketingStore + Send + Sync>,
     entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
@@ -190,7 +191,7 @@ async fn fetch_recharge_records(
         .await
     {
         Ok(page) => marketing_list_response(page),
-        Err(error) => marketing_system_response("recharge read model is unavailable", error),
+        Err(error) => system_error_response("recharge read model is unavailable", error),
     }
 }
 
@@ -214,7 +215,7 @@ async fn fetch_recharge_record(
             Json(success_envelope(AdminMarketingItemEnvelope { item })).into_response()
         }
         Ok(None) => not_found_response("recharge record was not found"),
-        Err(error) => marketing_system_response("recharge read model is unavailable", error),
+        Err(error) => system_error_response("recharge read model is unavailable", error),
     }
 }
 
@@ -234,7 +235,7 @@ async fn fetch_recharge_packages(
     };
     let status = match normalize_optional_recharge_package_status(params.status.as_deref()) {
         Ok(status) => status,
-        Err(error) => return command_build_error_response(error),
+        Err(error) => return command_error_response(error, "marketing command is invalid"),
     };
     match state
         .store
@@ -249,7 +250,7 @@ async fn fetch_recharge_packages(
     {
         Ok(page) => marketing_list_response(page),
         Err(error) => {
-            marketing_system_response("recharge package read model is unavailable", error)
+            system_error_response("recharge package read model is unavailable", error)
         }
     }
 }
@@ -269,14 +270,14 @@ async fn create_recharge_package(
     let command =
         match build_create_recharge_package_command(state.clone(), &headers, subject, request) {
             Ok(command) => command,
-            Err(error) => return command_build_error_response(error),
+            Err(error) => return command_error_response(error, "marketing command is invalid"),
         };
 
     match state.store.create_recharge_package(command).await {
         Ok(item) => json_created_response(None, AdminMarketingItemEnvelope { item }),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
-            marketing_system_response("recharge package command store is unavailable", error)
+            system_error_response("recharge package command store is unavailable", error)
         }
     }
 }
@@ -306,7 +307,7 @@ async fn update_recharge_package(
         request,
     ) {
         Ok(command) => command,
-        Err(error) => return command_build_error_response(error),
+        Err(error) => return command_error_response(error, "marketing command is invalid"),
     };
 
     match state.store.update_recharge_package(command).await {
@@ -314,7 +315,7 @@ async fn update_recharge_package(
         Err(error) if error.is_not_found() => not_found_response("recharge package was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
-            marketing_system_response("recharge package command store is unavailable", error)
+            system_error_response("recharge package command store is unavailable", error)
         }
     }
 }
@@ -333,7 +334,7 @@ async fn delete_recharge_package(
     let command =
         match build_delete_recharge_package_command(state.clone(), &headers, subject, package_id) {
             Ok(command) => command,
-            Err(error) => return command_build_error_response(error),
+            Err(error) => return command_error_response(error, "marketing command is invalid"),
         };
 
     match state.store.delete_recharge_package(command).await {
@@ -341,7 +342,7 @@ async fn delete_recharge_package(
         Ok(false) => not_found_response("recharge package was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
-            marketing_system_response("recharge package command store is unavailable", error)
+            system_error_response("recharge package command store is unavailable", error)
         }
     }
 }
@@ -355,7 +356,7 @@ async fn fetch_recharge_settings(
     match state.store.load_recharge_settings(subject).await {
         Ok(item) => Json(success_envelope(item)).into_response(),
         Err(error) => {
-            marketing_system_response("recharge settings read model is unavailable", error)
+            system_error_response("recharge settings read model is unavailable", error)
         }
     }
 }
@@ -374,13 +375,13 @@ async fn update_recharge_settings(
     };
     let command = match build_update_recharge_settings_command(state.clone(), subject, request) {
         Ok(command) => command,
-        Err(error) => return command_build_error_response(error),
+        Err(error) => return command_error_response(error, "marketing command is invalid"),
     };
     match state.store.update_recharge_settings(command).await {
         Ok(item) => Json(success_envelope(item)).into_response(),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
-            marketing_system_response("recharge settings command store is unavailable", error)
+            system_error_response("recharge settings command store is unavailable", error)
         }
     }
 }
@@ -407,7 +408,7 @@ async fn fetch_referral_stats(
         .await
     {
         Ok(page) => marketing_list_response(page),
-        Err(error) => marketing_system_response("referral read model is unavailable", error),
+        Err(error) => system_error_response("referral read model is unavailable", error),
     }
 }
 
@@ -421,16 +422,16 @@ async fn fetch_exchange_rules(
     let source_asset_type = match normalize_optional_asset_type(params.source_asset_type.as_deref())
     {
         Ok(value) => value,
-        Err(error) => return command_build_error_response(error),
+        Err(error) => return command_error_response(error, "marketing command is invalid"),
     };
     let target_asset_type = match normalize_optional_asset_type(params.target_asset_type.as_deref())
     {
         Ok(value) => value,
-        Err(error) => return command_build_error_response(error),
+        Err(error) => return command_error_response(error, "marketing command is invalid"),
     };
     let status = match normalize_optional_exchange_rule_status(params.status.as_deref()) {
         Ok(value) => value,
-        Err(error) => return command_build_error_response(error),
+        Err(error) => return command_error_response(error, "marketing command is invalid"),
     };
     let parsed = match parse_marketing_list_query(AdminMarketingListQueryRequest {
         page: params.page,
@@ -453,7 +454,7 @@ async fn fetch_exchange_rules(
         .await
     {
         Ok(page) => marketing_list_response(page),
-        Err(error) => marketing_system_response("exchange rule read model is unavailable", error),
+        Err(error) => system_error_response("exchange rule read model is unavailable", error),
     }
 }
 
@@ -471,14 +472,14 @@ async fn update_exchange_rule(
     let command =
         match build_update_exchange_rule_command(state.clone(), &headers, subject, request) {
             Ok(command) => command,
-            Err(error) => return command_build_error_response(error),
+            Err(error) => return command_error_response(error, "marketing command is invalid"),
         };
 
     match state.store.update_exchange_rule(command).await {
         Ok(item) => Json(success_envelope(AdminMarketingItemEnvelope { item })).into_response(),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) => {
-            marketing_system_response("exchange rule command store is unavailable", error)
+            system_error_response("exchange rule command store is unavailable", error)
         }
     }
 }
@@ -505,7 +506,7 @@ async fn fetch_payment_attempts(
         .await
     {
         Ok(page) => marketing_list_response(page),
-        Err(error) => marketing_system_response("payment attempt read model is unavailable", error),
+        Err(error) => system_error_response("payment attempt read model is unavailable", error),
     }
 }
 
@@ -527,23 +528,12 @@ where
     )
 }
 
-fn parse_json_body<T>(body: &[u8], entity_name: &str) -> Result<T, String>
-where
-    T: for<'de> Deserialize<'de>,
-{
-    if body.iter().all(u8::is_ascii_whitespace) {
-        return Err(format!("{entity_name} request body is required"));
-    }
-    serde_json::from_slice(body)
-        .map_err(|error| format!("invalid {entity_name} request body: {error}"))
-}
-
 fn build_create_recharge_package_command(
     state: AdminMarketingState,
     _headers: &HeaderMap,
     subject: AdminMarketingSubject,
     request: RechargePackageMutationRequest,
-) -> Result<CreateAdminRechargePackageCommand, AdminMarketingCommandBuildError> {
+) -> Result<CreateAdminRechargePackageCommand, ApiCommandError> {
     let mutation = normalize_recharge_package_mutation(request)?;
     Ok(CreateAdminRechargePackageCommand {
         subject,
@@ -564,7 +554,7 @@ fn build_update_recharge_package_command(
     subject: AdminMarketingSubject,
     package_id: String,
     request: RechargePackageMutationRequest,
-) -> Result<UpdateAdminRechargePackageCommand, AdminMarketingCommandBuildError> {
+) -> Result<UpdateAdminRechargePackageCommand, ApiCommandError> {
     let mutation = normalize_recharge_package_mutation(request)?;
     Ok(UpdateAdminRechargePackageCommand {
         subject,
@@ -585,7 +575,7 @@ fn build_delete_recharge_package_command(
     _headers: &HeaderMap,
     subject: AdminMarketingSubject,
     package_id: String,
-) -> Result<DeleteAdminRechargePackageCommand, AdminMarketingCommandBuildError> {
+) -> Result<DeleteAdminRechargePackageCommand, ApiCommandError> {
     Ok(DeleteAdminRechargePackageCommand {
         subject,
         package_id,
@@ -600,7 +590,7 @@ fn build_update_exchange_rule_command(
     _headers: &HeaderMap,
     subject: AdminMarketingSubject,
     request: ExchangeRuleMutationRequest,
-) -> Result<UpdateAdminExchangeRuleCommand, AdminMarketingCommandBuildError> {
+) -> Result<UpdateAdminExchangeRuleCommand, ApiCommandError> {
     let mutation = normalize_exchange_rule_mutation(request)?;
     let remark = format!(
         "{} to {} exchange rate",
@@ -622,7 +612,7 @@ fn build_update_recharge_settings_command(
     state: AdminMarketingState,
     subject: AdminMarketingSubject,
     request: RechargeSettingsUpdateRequest,
-) -> Result<RechargeSettingsUpdateCommand, AdminMarketingCommandBuildError> {
+) -> Result<RechargeSettingsUpdateCommand, ApiCommandError> {
     let mutation = normalize_recharge_settings_mutation(request)?;
     Ok(RechargeSettingsUpdateCommand {
         subject,
@@ -637,7 +627,7 @@ fn build_update_recharge_settings_command(
 
 fn normalize_recharge_package_mutation(
     request: RechargePackageMutationRequest,
-) -> Result<NormalizedRechargePackageMutation, AdminMarketingCommandBuildError> {
+) -> Result<NormalizedRechargePackageMutation, ApiCommandError> {
     Ok(NormalizedRechargePackageMutation {
         price_amount: normalize_recharge_package_price_amount(request.price_amount.as_ref())?,
         currency_code: normalize_currency_code(
@@ -652,17 +642,17 @@ fn normalize_recharge_package_mutation(
 
 fn normalize_recharge_package_price_amount(
     value: Option<&Value>,
-) -> Result<String, AdminMarketingCommandBuildError> {
+) -> Result<String, ApiCommandError> {
     let raw = match value {
         Some(Value::String(value)) => value.trim().to_owned(),
         Some(Value::Number(value)) => value.to_string(),
         Some(_) => {
-            return Err(AdminMarketingCommandBuildError::BadRequest(
+            return Err(ApiCommandError::BadRequest(
                 "recharge package priceAmount must be a number or string".to_owned(),
             ));
         }
         None => {
-            return Err(AdminMarketingCommandBuildError::BadRequest(
+            return Err(ApiCommandError::BadRequest(
                 "recharge package priceAmount is required".to_owned(),
             ));
         }
@@ -673,24 +663,24 @@ fn normalize_recharge_package_price_amount(
 
 fn normalize_recharge_package_bonus_points(
     value: Option<&Value>,
-) -> Result<i64, AdminMarketingCommandBuildError> {
+) -> Result<i64, ApiCommandError> {
     let bonus = match value {
         Some(Value::Number(value)) => value.as_i64(),
         Some(Value::String(value)) => value.trim().parse::<i64>().ok(),
         Some(_) => None,
         None => {
-            return Err(AdminMarketingCommandBuildError::BadRequest(
+            return Err(ApiCommandError::BadRequest(
                 "recharge package bonusPoints is required".to_owned(),
             ));
         }
     }
     .ok_or_else(|| {
-        AdminMarketingCommandBuildError::BadRequest(
+        ApiCommandError::BadRequest(
             "recharge package bonusPoints must be a non-negative integer".to_owned(),
         )
     })?;
     if bonus < 0 {
-        return Err(AdminMarketingCommandBuildError::BadRequest(
+        return Err(ApiCommandError::BadRequest(
             "recharge package bonusPoints must be a non-negative integer".to_owned(),
         ));
     }
@@ -699,24 +689,24 @@ fn normalize_recharge_package_bonus_points(
 
 fn normalize_recharge_package_discount(
     value: Option<&Value>,
-) -> Result<i64, AdminMarketingCommandBuildError> {
+) -> Result<i64, ApiCommandError> {
     let discount = match value {
         Some(Value::Number(value)) => value.as_i64(),
         Some(Value::String(value)) => value.trim().parse::<i64>().ok(),
         Some(_) => None,
         None => {
-            return Err(AdminMarketingCommandBuildError::BadRequest(
+            return Err(ApiCommandError::BadRequest(
                 "recharge package discount is required".to_owned(),
             ));
         }
     }
     .ok_or_else(|| {
-        AdminMarketingCommandBuildError::BadRequest(
+        ApiCommandError::BadRequest(
             "recharge package discount must be an integer between 1 and 100".to_owned(),
         )
     })?;
     if !(1..=100).contains(&discount) {
-        return Err(AdminMarketingCommandBuildError::BadRequest(
+        return Err(ApiCommandError::BadRequest(
             "recharge package discount must be an integer between 1 and 100".to_owned(),
         ));
     }
@@ -725,7 +715,7 @@ fn normalize_recharge_package_discount(
 
 fn normalize_recharge_settings_mutation(
     request: RechargeSettingsUpdateRequest,
-) -> Result<NormalizedRechargeSettingsMutation, AdminMarketingCommandBuildError> {
+) -> Result<NormalizedRechargeSettingsMutation, ApiCommandError> {
     let base_currency_code = normalize_currency_code(
         request.base_currency_code.as_deref(),
         "recharge settings baseCurrencyCode",
@@ -749,17 +739,17 @@ fn normalize_recharge_settings_mutation(
 fn normalize_decimal_value(
     value: Option<&Value>,
     field_name: &str,
-) -> Result<String, AdminMarketingCommandBuildError> {
+) -> Result<String, ApiCommandError> {
     let raw = match value {
         Some(Value::String(value)) => value.trim().to_owned(),
         Some(Value::Number(value)) => value.to_string(),
         Some(_) => {
-            return Err(AdminMarketingCommandBuildError::BadRequest(format!(
+            return Err(ApiCommandError::BadRequest(format!(
                 "{field_name} must be a number or string"
             )));
         }
         None => {
-            return Err(AdminMarketingCommandBuildError::BadRequest(format!(
+            return Err(ApiCommandError::BadRequest(format!(
                 "{field_name} is required"
             )));
         }
@@ -770,10 +760,10 @@ fn normalize_decimal_value(
 fn normalize_decimal_string(
     value: &str,
     field_name: &str,
-) -> Result<String, AdminMarketingCommandBuildError> {
+) -> Result<String, ApiCommandError> {
     let value = value.trim().replace(',', "");
     if value.is_empty() || value.starts_with('-') || value.starts_with('+') {
-        return Err(AdminMarketingCommandBuildError::BadRequest(format!(
+        return Err(ApiCommandError::BadRequest(format!(
             "{field_name} must be a positive decimal"
         )));
     }
@@ -786,7 +776,7 @@ fn normalize_decimal_string(
         || fraction.len() > 6
         || !fraction.chars().all(|ch| ch.is_ascii_digit())
     {
-        return Err(AdminMarketingCommandBuildError::BadRequest(format!(
+        return Err(ApiCommandError::BadRequest(format!(
             "{field_name} must be a valid decimal"
         )));
     }
@@ -794,7 +784,7 @@ fn normalize_decimal_string(
     let whole = if whole.is_empty() { "0" } else { whole };
     let fraction = fraction.trim_end_matches('0');
     if whole == "0" && fraction.is_empty() {
-        return Err(AdminMarketingCommandBuildError::BadRequest(format!(
+        return Err(ApiCommandError::BadRequest(format!(
             "{field_name} must be greater than zero"
         )));
     }
@@ -808,10 +798,10 @@ fn normalize_decimal_string(
 fn normalize_currency_code(
     value: Option<&str>,
     field_name: &str,
-) -> Result<String, AdminMarketingCommandBuildError> {
+) -> Result<String, ApiCommandError> {
     let value = value.unwrap_or("").trim().to_ascii_uppercase();
     if value.len() != 3 || !value.chars().all(|ch| ch.is_ascii_uppercase()) {
-        return Err(AdminMarketingCommandBuildError::BadRequest(format!(
+        return Err(ApiCommandError::BadRequest(format!(
             "{field_name} must match ^[A-Z]{{3}}$"
         )));
     }
@@ -822,14 +812,14 @@ fn normalize_currency_rates(
     value: Option<BTreeMap<String, Value>>,
     field_name: &str,
     base_currency_code: &str,
-) -> Result<BTreeMap<String, String>, AdminMarketingCommandBuildError> {
+) -> Result<BTreeMap<String, String>, ApiCommandError> {
     let Some(value) = value else {
-        return Err(AdminMarketingCommandBuildError::BadRequest(format!(
+        return Err(ApiCommandError::BadRequest(format!(
             "{field_name} is required"
         )));
     };
     if value.is_empty() {
-        return Err(AdminMarketingCommandBuildError::BadRequest(format!(
+        return Err(ApiCommandError::BadRequest(format!(
             "{field_name} must not be empty"
         )));
     }
@@ -847,7 +837,7 @@ fn normalize_currency_rates(
 
 fn normalize_recharge_package_status(
     value: Option<&str>,
-) -> Result<AdminRechargePackageStatus, AdminMarketingCommandBuildError> {
+) -> Result<AdminRechargePackageStatus, ApiCommandError> {
     let Some(status) = normalize_optional_recharge_package_status(value)? else {
         return Ok(AdminRechargePackageStatus::Active);
     };
@@ -856,14 +846,14 @@ fn normalize_recharge_package_status(
 
 fn normalize_optional_recharge_package_status(
     value: Option<&str>,
-) -> Result<Option<AdminRechargePackageStatus>, AdminMarketingCommandBuildError> {
+) -> Result<Option<AdminRechargePackageStatus>, ApiCommandError> {
     let Some(value) = value.map(str::trim).filter(|value| !value.is_empty()) else {
         return Ok(None);
     };
     match value.to_ascii_lowercase().as_str() {
         "active" | "enabled" | "normal" => Ok(AdminRechargePackageStatus::Active),
         "inactive" | "disabled" => Ok(AdminRechargePackageStatus::Inactive),
-        _ => Err(AdminMarketingCommandBuildError::BadRequest(
+        _ => Err(ApiCommandError::BadRequest(
             "recharge package status must be active or inactive".to_owned(),
         )),
     }
@@ -873,25 +863,25 @@ fn normalize_optional_recharge_package_status(
 fn decimal_money_to_cents_with_field(
     value: &str,
     field_name: &str,
-) -> Result<i64, AdminMarketingCommandBuildError> {
+) -> Result<i64, ApiCommandError> {
     let value = value.trim().trim_start_matches('$').replace(',', "");
     if value.is_empty() || value.starts_with('-') {
-        return Err(AdminMarketingCommandBuildError::BadRequest(format!(
+        return Err(ApiCommandError::BadRequest(format!(
             "{field_name} must be greater than zero"
         )));
     }
     let parts: Vec<&str> = value.split('.').collect();
     if parts.len() > 2 || parts[0].is_empty() || !parts[0].chars().all(|ch| ch.is_ascii_digit()) {
-        return Err(AdminMarketingCommandBuildError::BadRequest(format!(
+        return Err(ApiCommandError::BadRequest(format!(
             "{field_name} must be a valid money amount"
         )));
     }
     let dollars = parts[0].parse::<i64>().map_err(|_| {
-        AdminMarketingCommandBuildError::BadRequest(format!("{field_name} is too large"))
+        ApiCommandError::BadRequest(format!("{field_name} is too large"))
     })?;
     let cents = if parts.len() == 2 {
         if parts[1].len() > 2 || !parts[1].chars().all(|ch| ch.is_ascii_digit()) {
-            return Err(AdminMarketingCommandBuildError::BadRequest(format!(
+            return Err(ApiCommandError::BadRequest(format!(
                 "{field_name} must have at most 2 decimal places"
             )));
         }
@@ -907,10 +897,10 @@ fn decimal_money_to_cents_with_field(
         .checked_mul(100)
         .and_then(|value| value.checked_add(cents))
         .ok_or_else(|| {
-            AdminMarketingCommandBuildError::BadRequest(format!("{field_name} is too large"))
+            ApiCommandError::BadRequest(format!("{field_name} is too large"))
         })?;
     if total <= 0 {
-        return Err(AdminMarketingCommandBuildError::BadRequest(format!(
+        return Err(ApiCommandError::BadRequest(format!(
             "{field_name} must be greater than zero"
         )));
     }
@@ -923,7 +913,7 @@ fn cents_to_plain_money_string(cents: i64) -> String {
 
 fn normalize_exchange_rule_mutation(
     request: ExchangeRuleMutationRequest,
-) -> Result<NormalizedExchangeRuleMutation, AdminMarketingCommandBuildError> {
+) -> Result<NormalizedExchangeRuleMutation, ApiCommandError> {
     let source_asset_type =
         normalize_required_asset_type(request.source_asset_type.as_deref(), "sourceAssetType")?;
     let target_asset_type =
@@ -941,10 +931,10 @@ fn normalize_exchange_rule_mutation(
 fn normalize_required_asset_type(
     value: Option<&str>,
     field_name: &str,
-) -> Result<String, AdminMarketingCommandBuildError> {
+) -> Result<String, ApiCommandError> {
     let value = value.unwrap_or("").trim();
     if value.is_empty() {
-        return Err(AdminMarketingCommandBuildError::BadRequest(format!(
+        return Err(ApiCommandError::BadRequest(format!(
             "{field_name} is required"
         )));
     }
@@ -953,7 +943,7 @@ fn normalize_required_asset_type(
 
 fn normalize_optional_asset_type(
     value: Option<&str>,
-) -> Result<Option<String>, AdminMarketingCommandBuildError> {
+) -> Result<Option<String>, ApiCommandError> {
     let Some(value) = value.map(str::trim).filter(|value| !value.is_empty()) else {
         return Ok(None);
     };
@@ -963,10 +953,10 @@ fn normalize_optional_asset_type(
 fn normalize_asset_type(
     value: &str,
     field_name: &str,
-) -> Result<String, AdminMarketingCommandBuildError> {
+) -> Result<String, ApiCommandError> {
     let normalized = value.trim().to_ascii_uppercase();
     if normalized.chars().count() > MAX_ASSET_TYPE_LEN {
-        return Err(AdminMarketingCommandBuildError::BadRequest(format!(
+        return Err(ApiCommandError::BadRequest(format!(
             "{field_name} must be at most {MAX_ASSET_TYPE_LEN} characters"
         )));
     }
@@ -974,7 +964,7 @@ fn normalize_asset_type(
         .bytes()
         .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_'))
     {
-        return Err(AdminMarketingCommandBuildError::BadRequest(format!(
+        return Err(ApiCommandError::BadRequest(format!(
             "{field_name} may only contain letters, numbers, -, and _"
         )));
     }
@@ -984,35 +974,35 @@ fn normalize_asset_type(
 fn ensure_supported_exchange_pair(
     source_asset_type: &str,
     target_asset_type: &str,
-) -> Result<(), AdminMarketingCommandBuildError> {
+) -> Result<(), ApiCommandError> {
     if source_asset_type == POINTS_ASSET_TYPE && target_asset_type == CASH_ASSET_TYPE {
         return Ok(());
     }
-    Err(AdminMarketingCommandBuildError::BadRequest(
+    Err(ApiCommandError::BadRequest(
         "exchange rule currently supports POINTS to CASH only".to_owned(),
     ))
 }
 
 fn normalize_exchange_rule_status(
     value: Option<&str>,
-) -> Result<String, AdminMarketingCommandBuildError> {
+) -> Result<String, ApiCommandError> {
     let status = value.unwrap_or("active").trim().to_ascii_lowercase();
     if status == "active" || status == "enabled" || status == "normal" {
         return Ok("active".to_owned());
     }
     if status == "inactive" || status == "disabled" {
-        return Err(AdminMarketingCommandBuildError::BadRequest(
+        return Err(ApiCommandError::BadRequest(
             "exchange rule status only supports active".to_owned(),
         ));
     }
-    Err(AdminMarketingCommandBuildError::BadRequest(
+    Err(ApiCommandError::BadRequest(
         "exchange rule status must be active".to_owned(),
     ))
 }
 
 fn normalize_optional_exchange_rule_status(
     value: Option<&str>,
-) -> Result<Option<String>, AdminMarketingCommandBuildError> {
+) -> Result<Option<String>, ApiCommandError> {
     let Some(value) = value.map(str::trim).filter(|value| !value.is_empty()) else {
         return Ok(None);
     };
@@ -1021,17 +1011,17 @@ fn normalize_optional_exchange_rule_status(
 
 fn normalize_exchange_rate_value(
     value: Option<&Value>,
-) -> Result<String, AdminMarketingCommandBuildError> {
+) -> Result<String, ApiCommandError> {
     let raw = match value {
         Some(Value::String(value)) => value.trim().to_owned(),
         Some(Value::Number(value)) => value.to_string(),
         Some(_) => {
-            return Err(AdminMarketingCommandBuildError::BadRequest(
+            return Err(ApiCommandError::BadRequest(
                 "exchange rule rate must be a number or string".to_owned(),
             ));
         }
         None => {
-            return Err(AdminMarketingCommandBuildError::BadRequest(
+            return Err(ApiCommandError::BadRequest(
                 "exchange rule rate is required".to_owned(),
             ));
         }
@@ -1039,35 +1029,35 @@ fn normalize_exchange_rate_value(
     normalize_exchange_rate_text(&raw)
 }
 
-fn normalize_exchange_rate_text(value: &str) -> Result<String, AdminMarketingCommandBuildError> {
+fn normalize_exchange_rate_text(value: &str) -> Result<String, ApiCommandError> {
     let normalized = value.trim().replace(',', "");
     if normalized.is_empty() || normalized.starts_with('-') || normalized.starts_with('+') {
-        return Err(AdminMarketingCommandBuildError::BadRequest(
+        return Err(ApiCommandError::BadRequest(
             "exchange rule rate must be between 1 and 1000000".to_owned(),
         ));
     }
     let parts: Vec<&str> = normalized.split('.').collect();
     if parts.len() > 2 || parts[0].is_empty() || !parts[0].chars().all(|ch| ch.is_ascii_digit()) {
-        return Err(AdminMarketingCommandBuildError::BadRequest(
+        return Err(ApiCommandError::BadRequest(
             "exchange rule rate must be a valid decimal".to_owned(),
         ));
     }
     let whole = parts[0].parse::<i64>().map_err(|_| {
-        AdminMarketingCommandBuildError::BadRequest("exchange rule rate is too large".to_owned())
+        ApiCommandError::BadRequest("exchange rule rate is too large".to_owned())
     })?;
     if !(1..=1_000_000).contains(&whole) {
-        return Err(AdminMarketingCommandBuildError::BadRequest(
+        return Err(ApiCommandError::BadRequest(
             "exchange rule rate must be between 1 and 1000000".to_owned(),
         ));
     }
     let fraction = parts.get(1).copied().unwrap_or("");
     if fraction.len() > 6 || !fraction.chars().all(|ch| ch.is_ascii_digit()) {
-        return Err(AdminMarketingCommandBuildError::BadRequest(
+        return Err(ApiCommandError::BadRequest(
             "exchange rule rate must have at most 6 decimal places".to_owned(),
         ));
     }
     if whole == 1_000_000 && fraction.chars().any(|ch| ch != '0') {
-        return Err(AdminMarketingCommandBuildError::BadRequest(
+        return Err(ApiCommandError::BadRequest(
             "exchange rule rate must be between 1 and 1000000".to_owned(),
         ));
     }
@@ -1108,76 +1098,14 @@ fn normalize_order_no(value: &str) -> Result<String, String> {
 
 fn generate_entity_uuid(
     state: &AdminMarketingState,
-) -> Result<String, AdminMarketingCommandBuildError> {
+) -> Result<String, ApiCommandError> {
     state
         .entity_uuid_generator
         .generate_entity_uuid()
-        .map_err(AdminMarketingCommandBuildError::System)
-}
-
-fn request_id_error(error: RequestIdError) -> AdminMarketingCommandBuildError {
-    match error {
-        RequestIdError::Invalid(message) => AdminMarketingCommandBuildError::BadRequest(message),
-        RequestIdError::System(message) => {
-            AdminMarketingCommandBuildError::System(DomainError::new(message))
-        }
-    }
-}
-
-fn bad_request(message: impl Into<String>) -> Response {
-    problem_from_wire_code("4001", message.into()).into_response()
+        .map_err(ApiCommandError::System)
 }
 
 fn not_found_response(message: &'static str) -> Response {
     problem_from_wire_code("4040", message).into_response()
 }
 
-fn conflict_response(error: DomainError) -> Response {
-    problem_from_wire_code("4090", error.to_string()).into_response()
-}
-
-fn command_build_error_response(error: AdminMarketingCommandBuildError) -> Response {
-    match error {
-        AdminMarketingCommandBuildError::BadRequest(message) => bad_request(message),
-        AdminMarketingCommandBuildError::System(error) => {
-            marketing_system_response("marketing command is invalid", error)
-        }
-    }
-}
-
-fn marketing_system_response(context: &str, error: DomainError) -> Response {
-    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
-}
-
-fn current_timestamp_string() -> String {
-    let seconds = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_secs() as i64)
-        .unwrap_or(0);
-    format_unix_timestamp(seconds)
-}
-
-fn format_unix_timestamp(seconds: i64) -> String {
-    let days = seconds.div_euclid(86_400);
-    let seconds_of_day = seconds.rem_euclid(86_400);
-    let (year, month, day) = civil_from_days(days);
-    let hour = seconds_of_day / 3_600;
-    let minute = (seconds_of_day % 3_600) / 60;
-    let second = seconds_of_day % 60;
-    format!("{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02}")
-}
-
-fn civil_from_days(days: i64) -> (i64, i64, i64) {
-    let days = days + 719_468;
-    let era = if days >= 0 { days } else { days - 146_096 } / 146_097;
-    let day_of_era = days - era * 146_097;
-    let year_of_era =
-        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
-    let year = year_of_era + era * 400;
-    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
-    let month_prime = (5 * day_of_year + 2) / 153;
-    let day = day_of_year - (153 * month_prime + 2) / 5 + 1;
-    let month = month_prime + if month_prime < 10 { 3 } else { -9 };
-    let year = year + if month <= 2 { 1 } else { 0 };
-    (year, month, day)
-}

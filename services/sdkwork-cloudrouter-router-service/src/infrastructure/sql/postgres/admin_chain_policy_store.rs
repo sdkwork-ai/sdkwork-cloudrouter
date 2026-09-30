@@ -7,6 +7,7 @@ use crate::infrastructure::sql::routing_config_change::{
     record_postgres_ai_routing_config_change, AiRoutingConfigChange,
 };
 use crate::infrastructure::sql::runtime_id::next_cloud_runtime_id;
+use crate::infrastructure::sql::sql_hash::digest_hex;
 use crate::ports::{
     AdminChainPolicyItem, AdminChainPolicyStore, AdminChainPolicyStoreError,
     UpsertChainPolicyCommand,
@@ -304,13 +305,6 @@ fn item_from_row(row: &sqlx::postgres::PgRow) -> Option<AdminChainPolicyItem> {
         payload: row.try_get("payload").ok()?,
         updated_at: row.try_get("updated_at").ok()?,
     })
-}
-
-fn digest_hex(payload: &str) -> String {
-    use sha2::{Digest, Sha256};
-    let mut hasher = Sha256::new();
-    hasher.update(payload.as_bytes());
-    format!("{:x}", hasher.finalize())
 }
 
 fn store_error(message: &str, error: impl std::fmt::Display) -> AdminChainPolicyStoreError {

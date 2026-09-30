@@ -126,7 +126,10 @@ impl InvocationPricingIdentity {
 ///
 /// `RouteKind::Model` 时调用方应已把模型键写入
 /// `resource.requested_model_catalog_key`；本函数优先采信它。
-pub fn resolve_pricing_identity<C>(catalog: &C, invocation: &Invocation) -> InvocationPricingIdentity
+pub fn resolve_pricing_identity<C>(
+    catalog: &C,
+    invocation: &Invocation,
+) -> InvocationPricingIdentity
 where
     C: PricingCatalog,
 {
@@ -314,7 +317,10 @@ fn reconcile_pricing_meters(
         .cloned()
         .collect::<Vec<_>>();
     if !retained.is_empty() {
-        return (dedupe_meters(retained), PricingMeterSource::RouteDeclaredWithinCatalog);
+        return (
+            dedupe_meters(retained),
+            PricingMeterSource::RouteDeclaredWithinCatalog,
+        );
     }
     (defined.to_vec(), PricingMeterSource::CatalogDefinition)
 }
@@ -421,29 +427,42 @@ pub(crate) fn measurement_profile_for_catalog_meter(
 ) -> Option<(BillingMode, BillingQuantitySource)> {
     use BillingMeter::*;
     let profile = match meter {
-        LlmInputToken | LlmOutputToken | LlmReasoningToken | LlmCacheWriteToken
-        | LlmCacheReadToken | LlmCacheStorageTokenHour | EmbeddingInputToken | ImageInputToken
-        | ImageOutputToken | AudioInputToken | AudioOutputToken | VideoInputToken
+        LlmInputToken
+        | LlmOutputToken
+        | LlmReasoningToken
+        | LlmCacheWriteToken
+        | LlmCacheReadToken
+        | LlmCacheStorageTokenHour
+        | EmbeddingInputToken
+        | ImageInputToken
+        | ImageOutputToken
+        | AudioInputToken
+        | AudioOutputToken
+        | VideoInputToken
         | VideoOutputToken => (BillingMode::Token, BillingQuantitySource::ResponseBody),
         EmbeddingImage | ImageResult | VideoResult | SfxResult | ApiResult | RerankSearch
-        | RerankDocument | WebSearchCall | FileSearchCall | ToolCall => {
-            (BillingMode::ResultCount, BillingQuantitySource::ResponseBody)
-        }
+        | RerankDocument | WebSearchCall | FileSearchCall | ToolCall => (
+            BillingMode::ResultCount,
+            BillingQuantitySource::ResponseBody,
+        ),
         ImagePixel | ImageMegapixel | ApiItem => {
             (BillingMode::ItemCount, BillingQuantitySource::ResponseBody)
         }
         TtsInputCharacter | SpeechCharacter => {
             (BillingMode::Character, BillingQuantitySource::ResponseBody)
         }
-        VideoInputSecond | VideoOutputSecond => {
-            (BillingMode::VideoSecond, BillingQuantitySource::ResponseBody)
-        }
-        AudioInputSecond | AudioOutputSecond | MusicOutputSecond => {
-            (BillingMode::AudioSecond, BillingQuantitySource::ResponseBody)
-        }
-        AudioInputMinute | AudioOutputMinute | SttAudioMinute => {
-            (BillingMode::AudioSecond, BillingQuantitySource::ResponseBody)
-        }
+        VideoInputSecond | VideoOutputSecond => (
+            BillingMode::VideoSecond,
+            BillingQuantitySource::ResponseBody,
+        ),
+        AudioInputSecond | AudioOutputSecond | MusicOutputSecond => (
+            BillingMode::AudioSecond,
+            BillingQuantitySource::ResponseBody,
+        ),
+        AudioInputMinute | AudioOutputMinute | SttAudioMinute => (
+            BillingMode::AudioSecond,
+            BillingQuantitySource::ResponseBody,
+        ),
         ApiRequest => (BillingMode::ApiRequest, BillingQuantitySource::FixedRequest),
         CodeInterpreterSession | ContainerSession => {
             (BillingMode::ItemCount, BillingQuantitySource::ResponseBody)

@@ -78,7 +78,9 @@ async fn trace_masks_error_messages() {
         invocation.telemetry.error_type.as_deref()
     );
     assert_eq!(
-        Some("provider rejected key sk-[REDACTED]-secret"),
+        // Hyphenated key body: redaction collapses the whole
+        // `sk-provider-secret` token (vendor key family semantics).
+        Some("provider rejected key sk-[REDACTED]"),
         invocation.telemetry.error_message_masked.as_deref()
     );
 }

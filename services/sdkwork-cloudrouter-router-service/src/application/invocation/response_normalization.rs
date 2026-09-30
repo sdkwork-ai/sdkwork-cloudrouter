@@ -357,6 +357,65 @@ fn masked_message(message: &str) -> String {
     crate::redaction::redact_sensitive_tokens(message)
 }
 
+/// Extracts the provider-reported HTTP status from an adapter response body.
+///
+/// Internal provider adapters report the upstream call result in-band, using
+/// either camelCase (`statusCode`) or snake_case (`status_code`). Both
+/// spellings are accepted because adapters are authored against different
+/// upstream wire formats.
+///
+/// This is the single authority for that derivation: every invocation
+/// interceptor (settlement, sticky, trace, usage extraction, usage recording)
+/// shares this helper rather than re-declaring it.
+pub(crate) fn adapter_response_status_code(body: &Value) -> Option<u16> {
+    body.get("statusCode")
+        .or_else(|| body.get("status_code"))
+        .and_then(Value::as_u64)
+        .and_then(|value| u16::try_from(value).ok())
+}
+
+/// Resolves the effective HTTP status code for a completed dispatch.
+///
+/// Only internal provider-adapter dispatches carry an in-band adapter status;
+/// for every other dispatch mode the transport-level status is already
+/// authoritative. When the adapter body omits a status, fall back to the
+/// transport status so callers always observe a concrete code.
+pub(crate) fn effective_dispatch_status_code(
+    invocation: &Invocation,
+    response: &InvocationDispatchResponse,
+) -> Option<u16> {
+    if invocation.dispatch.mode != DispatchMode::InternalProviderAdapter {
+        return Some(response.status_code);
+    }
+    response
+        .body
+        .as_ref()
+        .and_then(adapter_response_status_code)
+        .or(Some(response.status_code))
+}
+
+/// Reports whether the provider call completed successfully (2xx).
+///
+/// Prefers the normalized response status when response normalization has
+/// already run, then falls back to the raw dispatch response status. Used by
+/// billing settlement and usage recording so both agree on what counts as a
+/// billable success.
+pub(crate) fn provider_response_succeeded(invocation: &Invocation) -> bool {
+    invocation
+        .telemetry
+        .normalized_response
+        .as_ref()
+        .map(|response| (200..300).contains(&response.status_code))
+        .or_else(|| {
+            invocation
+                .dispatch
+                .response
+                .as_ref()
+                .map(|response| (200..300).contains(&response.status_code))
+        })
+        .unwrap_or(false)
+}
+
 #[cfg(test)]
 mod tests {
     use super::rewrite_sse_model_line;

@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::body::Bytes;
 use axum::extract::{Query, State};
@@ -10,14 +9,19 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::api::request_id::{generate_server_request_id, RequestIdError};
-use crate::api::response::{problem_from_wire_code, success_envelope};
+use crate::api::request_id::generate_server_request_id;
+use crate::api::response::{bad_request, success_envelope};
+use crate::api::text_normalization::parse_json_body;
+use crate::api::command_error::{
+    command_error_from_request_id as request_id_error, command_error_response,
+    system_error_response, ApiCommandError,
+};
 use crate::application::EntityUuidGenerator;
-use crate::domain::DomainError;
 use crate::ports::{
     GetSiteSettingsQuery, GetSiteSettingsScopeQuery, SiteSettings, SiteSettingsStore,
     SiteSettingsSubject, UpdateSiteSettingsCommand,
 };
+use sdkwork_utils_rust::datetime::current_timestamp_string;
 
 const MAX_SHORT_TEXT_LEN: usize = 255;
 const MAX_LONG_TEXT_LEN: usize = 4096;
@@ -99,11 +103,6 @@ struct SiteSettingsResponse {
     custom_css: String,
 }
 
-enum SiteSettingsCommandBuildError {
-    BadRequest(String),
-    System(DomainError),
-}
-
 pub fn admin_site_settings_router_with_store(
     store: Arc<dyn SiteSettingsStore + Send + Sync>,
     entity_uuid_generator: Arc<dyn EntityUuidGenerator + Send + Sync>,
@@ -154,7 +153,7 @@ async fn fetch_site_settings(
     {
         Ok(settings) => Json(success_envelope(to_response(settings))).into_response(),
         Err(error) => {
-            site_settings_system_response("site settings read model is unavailable", error)
+            system_error_response("site settings read model is unavailable", error)
         }
     }
 }
@@ -177,7 +176,7 @@ async fn update_site_settings(
     {
         Ok(settings) => settings,
         Err(error) => {
-            return site_settings_system_response("site settings read model is unavailable", error);
+            return system_error_response("site settings read model is unavailable", error);
         }
     };
     let settings = match merge_update_request(current, request) {
@@ -186,13 +185,13 @@ async fn update_site_settings(
     };
     let command = match build_update_command(state.clone(), &headers, subject, settings) {
         Ok(command) => command,
-        Err(error) => return command_build_error_response(error),
+        Err(error) => return command_error_response(error, "site settings command is invalid"),
     };
 
     match state.store.update_site_settings(command).await {
         Ok(settings) => Json(success_envelope(to_response(settings))).into_response(),
         Err(error) => {
-            site_settings_system_response("site settings command store is unavailable", error)
+            system_error_response("site settings command store is unavailable", error)
         }
     }
 }
@@ -231,19 +230,8 @@ async fn fetch_site_runtime_settings(
         Err(error) if error.is_not_found() => {
             Json(success_envelope(to_response(SiteSettings::default()))).into_response()
         }
-        Err(error) => site_settings_system_response("site runtime settings are unavailable", error),
+        Err(error) => system_error_response("site runtime settings are unavailable", error),
     }
-}
-
-fn parse_json_body<T>(body: &[u8], entity_name: &str) -> Result<T, String>
-where
-    T: for<'de> Deserialize<'de>,
-{
-    if body.iter().all(u8::is_ascii_whitespace) {
-        return Err(format!("{entity_name} request body is required"));
-    }
-    serde_json::from_slice(body)
-        .map_err(|error| format!("invalid {entity_name} request body: {error}"))
 }
 
 fn merge_update_request(
@@ -434,7 +422,7 @@ fn build_update_command(
     _headers: &HeaderMap,
     subject: SiteSettingsSubject,
     settings: SiteSettings,
-) -> Result<UpdateSiteSettingsCommand, SiteSettingsCommandBuildError> {
+) -> Result<UpdateSiteSettingsCommand, ApiCommandError> {
     Ok(UpdateSiteSettingsCommand {
         subject,
         audit_log_uuid: generate_entity_uuid(&state)?,
@@ -447,20 +435,11 @@ fn build_update_command(
 
 fn generate_entity_uuid(
     state: &AdminSiteSettingsState,
-) -> Result<String, SiteSettingsCommandBuildError> {
+) -> Result<String, ApiCommandError> {
     state
         .entity_uuid_generator
         .generate_entity_uuid()
-        .map_err(SiteSettingsCommandBuildError::System)
-}
-
-fn request_id_error(error: RequestIdError) -> SiteSettingsCommandBuildError {
-    match error {
-        RequestIdError::Invalid(message) => SiteSettingsCommandBuildError::BadRequest(message),
-        RequestIdError::System(message) => {
-            SiteSettingsCommandBuildError::System(DomainError::new(message))
-        }
-    }
+        .map_err(ApiCommandError::System)
 }
 
 fn optional_string(value: String) -> Option<String> {
@@ -498,52 +477,3 @@ fn to_response(settings: SiteSettings) -> SiteSettingsResponse {
     }
 }
 
-fn bad_request(message: String) -> Response {
-    problem_from_wire_code("4001", message).into_response()
-}
-
-fn command_build_error_response(error: SiteSettingsCommandBuildError) -> Response {
-    match error {
-        SiteSettingsCommandBuildError::BadRequest(message) => bad_request(message),
-        SiteSettingsCommandBuildError::System(error) => {
-            site_settings_system_response("site settings command is invalid", error)
-        }
-    }
-}
-
-fn site_settings_system_response(context: &str, error: DomainError) -> Response {
-    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
-}
-
-fn current_timestamp_string() -> String {
-    let seconds = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_secs() as i64)
-        .unwrap_or(0);
-    format_unix_timestamp(seconds)
-}
-
-fn format_unix_timestamp(seconds: i64) -> String {
-    let days = seconds.div_euclid(86_400);
-    let seconds_of_day = seconds.rem_euclid(86_400);
-    let (year, month, day) = civil_from_days(days);
-    let hour = seconds_of_day / 3_600;
-    let minute = (seconds_of_day % 3_600) / 60;
-    let second = seconds_of_day % 60;
-    format!("{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02}")
-}
-
-fn civil_from_days(days: i64) -> (i64, i64, i64) {
-    let days = days + 719_468;
-    let era = if days >= 0 { days } else { days - 146_096 } / 146_097;
-    let day_of_era = days - era * 146_097;
-    let year_of_era =
-        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
-    let year = year_of_era + era * 400;
-    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
-    let month_prime = (5 * day_of_year + 2) / 153;
-    let day = day_of_year - (153 * month_prime + 2) / 5 + 1;
-    let month = month_prime + if month_prime < 10 { 3 } else { -9 };
-    let year = year + if month <= 2 { 1 } else { 0 };
-    (year, month, day)
-}

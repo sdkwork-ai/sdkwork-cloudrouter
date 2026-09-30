@@ -23,6 +23,7 @@ use crate::application::payment_provider_http::{
     build_payment_provider_http_client, ensure_payment_provider_target, send_bounded,
     PaymentProviderHttpClient, PaymentProviderHttpError,
 };
+use sdkwork_utils_rust::datetime::civil_from_days;
 
 type AlipayHttpClient = PaymentProviderHttpClient;
 
@@ -865,20 +866,6 @@ fn current_alipay_timestamp() -> String {
     let minute = (seconds_of_day % 3600) / 60;
     let second = seconds_of_day % 60;
     format!("{year:04}-{month:02}-{day:02} {hour:02}:{minute:02}:{second:02}")
-}
-
-fn civil_from_days(days: i64) -> (i64, i64, i64) {
-    let days = days + 719_468;
-    let era = if days >= 0 { days } else { days - 146_096 } / 146_097;
-    let doe = days - era * 146_097;
-    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
-    let year = yoe + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let day = doy - (153 * mp + 2) / 5 + 1;
-    let month = mp + if mp < 10 { 3 } else { -9 };
-    let year = year + if month <= 2 { 1 } else { 0 };
-    (year, month, day)
 }
 
 fn normalize_gateway_url(gateway_url: String) -> Result<String, PaymentProviderRegistryError> {

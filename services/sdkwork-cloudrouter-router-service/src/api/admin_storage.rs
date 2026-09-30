@@ -8,10 +8,14 @@ use axum::routing::{get, patch};
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
+use crate::api::command_error::system_error_response;
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
     json_success_list_response, platform_problem, problem_from_wire_code, success_envelope,
     ApiResponseError,
+};
+use crate::api::text_normalization::{
+    normalize_visible_ascii_optional as normalize_optional_text, normalize_visible_ascii_required as normalize_required_text,
 };
 use crate::domain::DomainError;
 use crate::ports::{
@@ -348,7 +352,7 @@ where
     };
     match load(query).await {
         Ok(collection) => collection_response(collection),
-        Err(error) => storage_system_response("storage collection is unavailable", error),
+        Err(error) => system_error_response("storage collection is unavailable", error),
     }
 }
 
@@ -356,7 +360,7 @@ fn collection_response(collection: AdminStorageCollection) -> Response {
     let page_size = match usize::try_from(collection.page_size) {
         Ok(page_size) if (1..=MAX_LIMIT as usize).contains(&page_size) => page_size,
         _ => {
-            return storage_system_response(
+            return system_error_response(
                 "storage pagination is unavailable",
                 DomainError::new("storage collection page size is invalid"),
             )
@@ -366,7 +370,7 @@ fn collection_response(collection: AdminStorageCollection) -> Response {
         Some(Ok(cursor)) => Some(cursor),
         Some(Err(error)) => {
             tracing::error!(error = %error, "storage cursor encoding failed");
-            return storage_system_response("storage pagination is unavailable", error);
+            return system_error_response("storage pagination is unavailable", error);
         }
         None => None,
     };
@@ -556,7 +560,7 @@ fn request_id_error_response(error: RequestIdError) -> Response {
     match error {
         RequestIdError::Invalid(message) => bad_request(message),
         RequestIdError::System(message) => {
-            storage_system_response("request id generation failed", DomainError::new(message))
+            system_error_response("request id generation failed", DomainError::new(message))
         }
     }
 }
@@ -575,41 +579,6 @@ fn optional_header(headers: &HeaderMap, name: &str) -> Result<Option<String>, Ap
         .map_err(|_| bad_request(format!("{name} header must be visible ASCII")))?;
     normalize_optional_text(Some(value.to_owned()), name, MAX_REQUEST_ID_LEN)
 }
-
-/// 自动生成唯一服务商编码：provider-<16位随机hex>。
-/// 数据库唯一索引（tenant+org+supplier_code）兜底保证唯一性。
-fn normalize_required_text(
-    value: String,
-    field_name: &str,
-    max_len: usize,
-) -> Result<String, ApiResponseError> {
-    normalize_optional_text(Some(value), field_name, max_len)?
-        .ok_or_else(|| bad_request(format!("{field_name} is required")).into())
-}
-
-fn normalize_optional_text(
-    value: Option<String>,
-    field_name: &str,
-    max_len: usize,
-) -> Result<Option<String>, ApiResponseError> {
-    let Some(value) = value else {
-        return Ok(None);
-    };
-    let value = value.trim();
-    if value.is_empty() {
-        return Ok(None);
-    }
-    if value.chars().count() > max_len || !value.bytes().all(|byte| (0x20..=0x7e).contains(&byte)) {
-        return Err(bad_request(format!(
-            "{field_name} must be visible ASCII and at most {max_len} characters"
-        ))
-        .into());
-    }
-    Ok(Some(value.to_owned()))
-}
-
-/// 显示名称类字段的规范化：允许任意 Unicode 文本（中文等），
-/// 仅拒绝控制字符并限制长度。与编码类字段（visible ASCII）区分。
 
 fn ensure_enum(value: &str, allowed: &[&str], field_name: &str) -> Result<(), ApiResponseError> {
     if allowed.contains(&value) {
@@ -640,9 +609,5 @@ fn storage_error_response(context: &str, error: DomainError) -> Response {
     if error.is_conflict() {
         return problem_from_wire_code("4090", error.to_string()).into_response();
     }
-    storage_system_response(context, error)
-}
-
-fn storage_system_response(context: &str, error: DomainError) -> Response {
-    problem_from_wire_code("5000", format!("{context}: {error}")).into_response()
+    system_error_response(context, error)
 }

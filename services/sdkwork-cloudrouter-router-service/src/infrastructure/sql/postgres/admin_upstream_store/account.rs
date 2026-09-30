@@ -491,7 +491,11 @@ pub(super) async fn reveal_credential_secret(
     record_credential_secret_reveal_audit(pool, &subject, account_id, credential_id).await?;
     Ok(AdminUpstreamAccountCredentialSecretItem {
         id: column(&row, "id", "failed to map upstream credential id")?,
-        account_id: column(&row, "account_id", "failed to map upstream credential account")?,
+        account_id: column(
+            &row,
+            "account_id",
+            "failed to map upstream credential account",
+        )?,
         credential_name: column(
             &row,
             "credential_name",
@@ -554,9 +558,7 @@ async fn record_credential_secret_reveal_audit(
     ))
     .execute(pool)
     .await
-    .map_err(|error| {
-        store_error("failed to write credential secret reveal audit log", error)
-    })?;
+    .map_err(|error| store_error("failed to write credential secret reveal audit log", error))?;
     Ok(())
 }
 

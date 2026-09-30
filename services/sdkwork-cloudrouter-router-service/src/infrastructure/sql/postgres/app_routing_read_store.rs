@@ -1,3 +1,4 @@
+use crate::infrastructure::sql::store_error::redacted_store_error;
 use sqlx::{PgPool, Row};
 
 use crate::domain::{DomainError, DomainResult};
@@ -973,7 +974,7 @@ fn success_rate_label(success: i64, total: i64) -> String {
 }
 
 fn sql_error(error: sqlx::Error) -> DomainError {
-    DomainError::new(error.to_string())
+    redacted_store_error("failed to load app routing data", error)
 }
 
 #[cfg(test)]

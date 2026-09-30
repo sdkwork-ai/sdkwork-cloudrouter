@@ -210,16 +210,32 @@ fn external_usage_line_billing(meter: Option<BillingMeter>) -> InvocationBilling
 /// `elevenlabs.sound_generation` classification, which is the more specific one
 /// and must win.
 ///
-/// This map is duplicated in the edge runtime
-/// (`crates/sdkwork-cloudrouter-edge-runtime/src/passthrough.rs`); the same gate
-/// compares the two arm sets, so an arm added to only one side fails the build
-/// rather than silently dropping the passthrough.
+/// Router-side adapter: normalises the supplier code and standard path, then
+/// delegates the arms to [`provider_native_api_code_from_normalized_path`],
+/// which is the single authority the edge runtime also calls. The gate
+/// `tools/check-cloudrouter-ai-routing-consistency.mjs` asserts this delegation
+/// (and that no second copy of the table exists), so an arm added to only one
+/// side fails the build rather than silently dropping the passthrough.
 fn provider_native_api_code_from_standard_path(
     supplier_code: &str,
     standard_path: &str,
 ) -> Option<String> {
     let provider = normalize_provider_match_key(supplier_code);
     let path = normalize_provider_api_path(supplier_code, provider.as_str(), standard_path);
+    provider_native_api_code_from_normalized_path(provider.as_str(), path.as_str())
+        .map(str::to_owned)
+}
+
+/// The vendor-native `(provider, path) -> api_code` arm table — the single
+/// authority both this crate and the edge runtime consult.
+///
+/// Callers must pass an already-normalized `provider` match key and `path`
+/// (see [`provider_native_api_code_from_standard_path`] for the router side and
+/// `sdkwork_cloudrouter_edge_runtime::passthrough` for the edge side).
+pub fn provider_native_api_code_from_normalized_path(
+    provider: &str,
+    path: &str,
+) -> Option<&'static str> {
     // --- Vendor-native surfaces whose models declare
     // `apiFormat = vendor_native`. Without these arms the catch-all below
     // synthesises `<vendor>.<last.path.segment>` (for example
@@ -228,10 +244,6 @@ fn provider_native_api_code_from_standard_path(
     // preflight refuses the request even though the resource grant, the
     // account and the credential are all present.
     //
-    // Only endpoints a `vendor_native` model actually binds to are listed.
-    // Each vendor's `openai_compatible` models keep the generic face, so
-    // `alibaba` chat / embedding / image and `zhipu` chat / embedding /
-    // image deliberately stay out.
     // Only endpoints a `vendor_native` model actually binds to are listed.
     // Each vendor's `openai_compatible` models keep the generic face, so
     // `alibaba` chat / embedding / image and `zhipu` chat / embedding /
@@ -249,9 +261,10 @@ fn provider_native_api_code_from_standard_path(
     // rejects the request even though the account, the credential, the grant and
     // the group membership all exist.
     //
-    // This map is duplicated in the edge runtime
-    // (`crates/sdkwork-cloudrouter-edge-runtime/src/passthrough.rs`); the same
-    // gate compares the two arm sets.
+    // This arm table is the single authority: the edge runtime
+    // (`crates/sdkwork-cloudrouter-edge-runtime/src/passthrough.rs`) delegates
+    // here rather than keeping a copy, and the gate
+    // `tools/check-cloudrouter-ai-routing-consistency.mjs` asserts that.
     //
     // `jimeng` and `bytedance` are two different ByteDance surfaces and must not
     // be aliased together. `jimeng` is the standalone consumer host
@@ -264,7 +277,7 @@ fn provider_native_api_code_from_standard_path(
     // the catch-all would synthesise `bytedance.tasks`, which names no taxonomy
     // route, so the classification would carry `meter: None` and the
     // fail-closed pricing preflight would reject every seedance request.
-    let api_code = match provider.as_str() {
+    let api_code = match provider {
         "anthropic" if path == "/v1/claude-code/sessions" => "anthropic.claude_code",
         "anthropic" if path == "/v1/messages" => "anthropic.messages",
         "alibaba" if path == "/v1/messages" => "alibaba.anthropic_messages",
@@ -276,25 +289,23 @@ fn provider_native_api_code_from_standard_path(
         "xiaomi" if path == "/v1/messages" => "xiaomi.anthropic_messages",
         "zhipu" if path == "/v1/messages" => "zhipu.anthropic_messages",
         "google" | "gemini" if path == "/v1beta/live/sessions" => "gemini.live",
-        "google" | "gemini" if gemini_model_action_matches(path.as_str(), "generatecontent") => {
+        "google" | "gemini" if gemini_model_action_matches(path, "generatecontent") => {
             "gemini.generate_content"
         }
-        "google" | "gemini"
-            if gemini_model_action_matches(path.as_str(), "streamgeneratecontent") =>
-        {
+        "google" | "gemini" if gemini_model_action_matches(path, "streamgeneratecontent") => {
             "gemini.stream_generate_content"
         }
-        "google" | "gemini" if gemini_model_action_matches(path.as_str(), "embedcontent") => {
+        "google" | "gemini" if gemini_model_action_matches(path, "embedcontent") => {
             "gemini.embed_content"
         }
-        "google" | "gemini" if gemini_model_action_matches(path.as_str(), "generateimages") => {
+        "google" | "gemini" if gemini_model_action_matches(path, "generateimages") => {
             if path.contains("/nano-banana:") {
                 "gemini.nano_banana.image_generation"
             } else {
                 "gemini.image_generation"
             }
         }
-        "google" | "gemini" if gemini_model_action_matches(path.as_str(), "generatevideos") => {
+        "google" | "gemini" if gemini_model_action_matches(path, "generatevideos") => {
             "gemini.video_generation"
         }
         "kling" if path == "/v1/videos/text2video" => "kling.text_to_video",
@@ -303,18 +314,14 @@ fn provider_native_api_code_from_standard_path(
         "kling" if path == "/v1/videos/motion-control" => "kling.motion_control",
         "kling" if path == "/v1/videos/image2video" => "kling.image_to_video",
         "kling" if path == "/v1/images/generations" => "kling.image_generation",
-        "kling" if task_poll_path_matches(path.as_str(), "v1/tasks") => "kling.task_query",
-        "kling" if task_poll_path_matches(path.as_str(), "v1/videos/generations") => {
-            "kling.task_query"
-        }
+        "kling" if task_poll_path_matches(path, "v1/tasks") => "kling.task_query",
+        "kling" if task_poll_path_matches(path, "v1/videos/generations") => "kling.task_query",
         "jimeng" if path == "/v1/images/generations" => "jimeng.image_generation",
         "jimeng" if path == "/v1/videos/generations" => "jimeng.video_generation",
-        "jimeng" if task_poll_path_matches(path.as_str(), "v1/tasks") => "jimeng.task_query",
+        "jimeng" if task_poll_path_matches(path, "v1/tasks") => "jimeng.task_query",
         "bytedance" if path == "/api/v3/images/generations" => "bytedance.image_generation",
         "bytedance" if path == "/api/v3/contents/generations/tasks" => "bytedance.video_generation",
-        "bytedance"
-            if task_poll_path_matches(path.as_str(), "api/v3/contents/generations/tasks") =>
-        {
+        "bytedance" if task_poll_path_matches(path, "api/v3/contents/generations/tasks") => {
             "bytedance.task_query"
         }
         "volcengine" if path == "/v1/images/generations" => "volcengine.image_generation",
@@ -324,12 +331,8 @@ fn provider_native_api_code_from_standard_path(
         "volcengine" if path == "/api/v3/contents/generations/tasks" => {
             "volcengine.video_generation"
         }
-        "volcengine" if task_poll_path_matches(path.as_str(), "v1/tasks") => {
-            "volcengine.task_query"
-        }
-        "volcengine"
-            if task_poll_path_matches(path.as_str(), "api/v3/contents/generations/tasks") =>
-        {
+        "volcengine" if task_poll_path_matches(path, "v1/tasks") => "volcengine.task_query",
+        "volcengine" if task_poll_path_matches(path, "api/v3/contents/generations/tasks") => {
             "volcengine.task_query"
         }
         "elevenlabs" if path == "/v1/text-to-speech/{voice_id}" => "elevenlabs.text_to_speech",
@@ -344,44 +347,34 @@ fn provider_native_api_code_from_standard_path(
         "minimax" if path == "/v1/music/generations" => "minimax.music_generation",
         "minimax" if path == "/v1/music/generation" => "minimax.music_generation",
         "suno" if path == "/v1/music/generations" => "suno.music_generation",
-        "suno" if task_poll_path_matches(path.as_str(), "v1/music/generations") => {
-            "suno.music_task_query"
-        }
+        "suno" if task_poll_path_matches(path, "v1/music/generations") => "suno.music_task_query",
         "vidu" if path == "/ent/v2/reference2image" => "vidu.reference_to_image",
-        "alibaba"
-            if path == "/api/v1/services/aigc/video-generation/video-synthesis" =>
-        {
+        "alibaba" if path == "/api/v1/services/aigc/video-generation/video-synthesis" => {
             "alibaba.video_generation"
         }
-        "alibaba" if task_poll_path_matches(path.as_str(), "api/v1/tasks") => {
+        "alibaba" if task_poll_path_matches(path, "api/v1/tasks") => {
             "alibaba.video_generation_task_query"
         }
         "luma_ai" if path == "/dream-machine/v1/generations" => "luma_ai.video_generation",
-        "luma_ai"
-            if task_poll_path_matches(path.as_str(), "dream-machine/v1/generations") =>
-        {
+        "luma_ai" if task_poll_path_matches(path, "dream-machine/v1/generations") => {
             "luma_ai.video_generation_task_query"
         }
         "pixverse" if path == "/openapi/v2/video/text/generate" => "pixverse.video_generation",
-        "pixverse" if task_poll_path_matches(path.as_str(), "openapi/v2/video/result") => {
+        "pixverse" if task_poll_path_matches(path, "openapi/v2/video/result") => {
             "pixverse.video_generation_task_query"
         }
         "zhipu" if path == "/api/paas/v4/videos/generations" => "zhipu.video_generation",
-        "zhipu" if task_poll_path_matches(path.as_str(), "api/paas/v4/async-result") => {
+        "zhipu" if task_poll_path_matches(path, "api/paas/v4/async-result") => {
             "zhipu.video_generation_task_query"
         }
         "mureka" if path == "/v1/song/generate" => "mureka.music_generation",
-        "mureka" if task_poll_path_matches(path.as_str(), "v1/song/query") => {
+        "mureka" if task_poll_path_matches(path, "v1/song/query") => {
             "mureka.music_generation_task_query"
         }
         "baidu" if path == "/v2/chat/completions" => "baidu.chat_completions",
         "runway" | "runwayml" if path == "/v1/text_to_image" => "runway.image_generation",
-        "runway" | "runwayml" if task_poll_path_matches(path.as_str(), "v1/tasks") => {
-            "runway.task_query"
-        }
-        "stability_ai" | "stability"
-            if path.starts_with("/v2beta/stable-image/generate/") =>
-        {
+        "runway" | "runwayml" if task_poll_path_matches(path, "v1/tasks") => "runway.task_query",
+        "stability_ai" | "stability" if path.starts_with("/v2beta/stable-image/generate/") => {
             "stability_ai.image_generation"
         }
         "black_forest_labs" | "bfl" if path == "/v1/get_result" => "black_forest_labs.task_query",
@@ -390,11 +383,25 @@ fn provider_native_api_code_from_standard_path(
         }
         "vidu" if path == "/ent/v2/template" => "vidu.motion_sync",
         "vidu" if path == "/ent/v2/start-end2video" => "vidu.start_end_to_video",
+        "vidu" if path == "/ent/v2/text2video" => "vidu.text_to_video",
+        "vidu" if path == "/ent/v2/img2video" => "vidu.image_to_video",
+        "vidu" if path == "/ent/v2/reference2video" => "vidu.reference_to_video",
+        "vidu" if path.starts_with("/ent/v2/tasks/") && path.ends_with("/creations") => {
+            "vidu.video_task_query"
+        }
         "tencent.cloud" if path == "/vidu/ent/v2/reference2image" => "vidu.reference_to_image",
         "tencent.cloud" if path == "/vidu/ent/v2/start-end2video" => "vidu.start_end_to_video",
+        "tencent.cloud" if path == "/vidu/ent/v2/text2video" => "vidu.text_to_video",
+        "tencent.cloud" if path == "/vidu/ent/v2/img2video" => "vidu.image_to_video",
+        "tencent.cloud" if path == "/vidu/ent/v2/reference2video" => "vidu.reference_to_video",
+        "tencent.cloud"
+            if path.starts_with("/vidu/ent/v2/tasks/") && path.ends_with("/creations") =>
+        {
+            "vidu.video_task_query"
+        }
         _ => return None,
     };
-    Some(api_code.to_owned())
+    Some(api_code)
 }
 
 fn gemini_model_action_matches(path: &str, action: &str) -> bool {
@@ -438,7 +445,7 @@ fn provider_native_model_from_standard_path(path: &str) -> Option<String> {
         .map(str::to_owned)
 }
 
-fn canonical_provider_native_catalog_key(
+pub fn canonical_provider_native_catalog_key(
     supplier_code: &str,
     provider_native_model: &str,
 ) -> String {
@@ -473,7 +480,7 @@ fn normalize_provider_api_path(
         .unwrap_or(path)
 }
 
-fn normalize_standard_api_path(value: &str) -> String {
+pub fn normalize_standard_api_path(value: &str) -> String {
     let value = value.trim();
     let value = if value.starts_with('/') {
         value.to_owned()
@@ -759,17 +766,11 @@ mod tests {
     #[test]
     fn stability_ai_stable_image_generate_path_classifies_like_the_native_one() {
         let core = classify_post("/v2beta/stable-image/generate/core", "stability_ai");
-        assert_eq!(
-            "stability_ai.image_generation",
-            core.resource.route_key
-        );
+        assert_eq!("stability_ai.image_generation", core.resource.route_key);
         assert_eq!(Some(BillingMeter::ImageResult), core.billing.meter);
 
         let ultra = classify_post("/v2beta/stable-image/generate/ultra", "stability");
-        assert_eq!(
-            "stability_ai.image_generation",
-            ultra.resource.route_key
-        );
+        assert_eq!("stability_ai.image_generation", ultra.resource.route_key);
         assert_eq!(Some(BillingMeter::ImageResult), ultra.billing.meter);
     }
 
@@ -821,17 +822,11 @@ mod tests {
 
         let music = classify_post("/v1/song/generate", "mureka");
         assert_eq!("mureka.music_generation", music.resource.route_key);
-        assert_eq!(
-            Some(BillingMeter::MusicOutputSecond),
-            music.billing.meter
-        );
+        assert_eq!(Some(BillingMeter::MusicOutputSecond), music.billing.meter);
 
         let chat = classify_post("/v2/chat/completions", "baidu");
         assert_eq!("baidu.chat_completions", chat.resource.route_key);
-        assert_eq!(
-            Some(BillingMeter::LlmInputToken),
-            chat.billing.meter
-        );
+        assert_eq!(Some(BillingMeter::LlmInputToken), chat.billing.meter);
     }
 
     /// The async poll each of those vendors exposes is its own routable
@@ -868,8 +863,8 @@ mod tests {
             ),
         ];
         for (vendor, path, route_key) in polls {
-            let request = InvocationClassificationRequest::new(Method::GET, path)
-                .with_supplier_code(vendor);
+            let request =
+                InvocationClassificationRequest::new(Method::GET, path).with_supplier_code(vendor);
             let classification = ProviderNativeResourceClassifier
                 .classify(&request)
                 .expect("vendor-native task polling classification");

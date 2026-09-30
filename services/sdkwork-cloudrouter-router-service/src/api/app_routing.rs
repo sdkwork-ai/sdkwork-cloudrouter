@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::api::app_sql_subject::{map_optional_app_sql_subject, ResolvedAppSqlScopedSubject};
 use crate::api::response::{
-    json_success_list_response, normalize_list_search_query, offset_page_info,
+    bad_request, json_success_list_response, normalize_list_search_query, offset_page_info,
     parse_offset_list_query, platform_problem_for_context, problem_from_wire_code,
     success_envelope,
 };
@@ -393,10 +393,6 @@ fn decode_routing_traces_cursor(value: &str) -> Result<AppRoutingRequestTraceCur
         started_at_micros: payload.started_at_micros,
         id: payload.id,
     })
-}
-
-fn bad_request(message: String) -> Response {
-    problem_from_wire_code("4001", message).into_response()
 }
 
 fn app_routing_read_model_error(error: impl std::fmt::Display) -> Response {

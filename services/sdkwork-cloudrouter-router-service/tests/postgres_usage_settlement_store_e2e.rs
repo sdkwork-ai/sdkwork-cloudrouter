@@ -189,9 +189,14 @@ async fn settlement_recovers_after_sync_ledger_commit_without_double_debit() {
     let Some(ctx) = PostgresTestContext::new("usage_settlement_sync_recovery").await else {
         return;
     };
-    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-sync-recovery-credit", 1_000_000_000)
-        .await
-        .expect("credit token bank wallet");
+    credit_token_bank(
+        &ctx.pool,
+        USER_ID,
+        "settle-e2e-sync-recovery-credit",
+        1_000_000_000,
+    )
+    .await
+    .expect("credit token bank wallet");
     let request_id = "settle-e2e-sync-recovery";
     insert_usage_fact(&ctx.pool, 1, USER_ID, request_id, "20.000000")
         .await
@@ -294,9 +299,14 @@ async fn settlement_recovers_after_async_adjustment_without_double_credit() {
     let Some(ctx) = PostgresTestContext::new("usage_settlement_async_recovery").await else {
         return;
     };
-    credit_token_bank(&ctx.pool, USER_ID, "settle-e2e-async-recovery-credit", 1_000_000_000)
-        .await
-        .expect("credit token bank wallet");
+    credit_token_bank(
+        &ctx.pool,
+        USER_ID,
+        "settle-e2e-async-recovery-credit",
+        1_000_000_000,
+    )
+    .await
+    .expect("credit token bank wallet");
     let request_id = "settle-e2e-async-recovery";
     insert_usage_fact(&ctx.pool, 1, USER_ID, request_id, "20.000000")
         .await
@@ -447,15 +457,9 @@ async fn settlement_terminal_failure_marks_shadow_charge_lines_failed() {
     };
     // An unparseable amount is a terminal failure that must mirror onto the
     // shadow charge line so the new ledger never shows it as pending forever.
-    insert_usage_fact(
-        &ctx.pool,
-        1,
-        USER_ID,
-        "settle-e2e-charge-bad",
-        "NaN",
-    )
-    .await
-    .expect("insert malformed pending usage fact");
+    insert_usage_fact(&ctx.pool, 1, USER_ID, "settle-e2e-charge-bad", "NaN")
+        .await
+        .expect("insert malformed pending usage fact");
     insert_billing_ledger_chain(&ctx.pool, "settle-e2e-charge-bad")
         .await
         .expect("insert shadow measurement, decision, and charge line");
@@ -917,8 +921,10 @@ async fn create_schema(pool: &PgPool, schema: &str) {
                 .execute(&mut *connection)
                 .await
             {
-                panic!("apply baseline DDL failed for statement: {statement}
-error: {error}");
+                panic!(
+                    "apply baseline DDL failed for statement: {statement}
+error: {error}"
+                );
             }
         }
     }
