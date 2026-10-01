@@ -116,7 +116,7 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         HttpMethod::Get,
         "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}/secret",
         "ai",
-        "upstreamAccounts.credentials.secrets.list",
+        "upstreamAccounts.credentials.secrets.retrieve",
     ),
     HttpRoute::dual_token(
         HttpMethod::Get,
@@ -729,12 +729,6 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/backend/v3/api/system/site/settings",
         "system",
         "site.settings.update",
-    ),
-    HttpRoute::dual_token(
-        HttpMethod::Get,
-        "/backend/v3/api/ai/upstream_accounts/{accountId}/credentials/{credentialId}/secret",
-        "ai",
-        "upstreamAccounts.credentials.secrets.retrieve",
     ),
 ];
 
