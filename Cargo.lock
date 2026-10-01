@@ -7294,6 +7294,7 @@ dependencies = [
 name = "sdkwork-order-service"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "sdkwork-contract-service",
  "sdkwork-payment-service",
  "sdkwork-utils-rust",
@@ -7353,6 +7354,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "sdkwork-payment-compensation-worker"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "sdkwork-contract-service",
+ "sdkwork-payment-providers",
+ "sdkwork-payment-repository-sqlx",
+ "sdkwork-utils-rust",
+ "serde_json",
+ "sqlx",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "sdkwork-payment-database-host"
 version = "0.1.0"
 dependencies = [
@@ -7367,7 +7383,7 @@ dependencies = [
 name = "sdkwork-payment-providers"
 version = "0.1.0"
 dependencies = [
- "aes-gcm 0.10.3",
+ "aes-gcm 0.11.1",
  "async-trait",
  "base64 0.22.1",
  "chrono",
@@ -7382,6 +7398,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2 0.10.9",
+ "time",
  "tokio",
  "urlencoding",
  "uuid",
@@ -7401,6 +7418,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "tokio",
+ "tracing",
  "uuid",
 ]
 
@@ -7418,11 +7436,14 @@ version = "0.1.0"
 dependencies = [
  "sdkwork-database-spi",
  "sdkwork-database-sqlx",
+ "sdkwork-payment-compensation-worker",
  "sdkwork-payment-database-host",
  "sdkwork-payment-providers",
  "sdkwork-payment-repository-sqlx",
  "sdkwork-web-bootstrap",
  "sdkwork-web-core",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -8532,6 +8553,7 @@ dependencies = [
  "sha2 0.10.9",
  "sqlx",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
