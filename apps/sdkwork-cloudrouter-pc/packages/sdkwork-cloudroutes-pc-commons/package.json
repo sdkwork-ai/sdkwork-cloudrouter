@@ -179,6 +179,7 @@
     "@sdkwork/drive-admin-storage-sdk": "workspace:*",
     "@sdkwork/drive-app-sdk": "workspace:*",
     "@sdkwork/drive-sdk": "workspace:*",
+    "@sdkwork/drive-upload-image-core": "workspace:*",
     "@sdkwork/feeds-sdk": "workspace:*",
     "@sdkwork/generations-app-sdk": "workspace:*",
     "@sdkwork/iam-app-sdk": "workspace:*",

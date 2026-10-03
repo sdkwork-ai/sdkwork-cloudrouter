@@ -20,13 +20,15 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { FileUpload, type FileUploadItem } from '@sdkwork/ui-pc-react';
+import { DriveUploadImage } from 'sdkwork-drive-pc-upload-image';
 import { getLoadErrorMessage } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { BusinessStatePanel } from '@sdkwork/cloudroutes-pc-commons';
 import {
+  cloudRouterMediaResourceToDriveUploadImageValue,
+  driveUploadImageValueToCloudRouterMediaResource,
+  getCloudRouterDriveImageService,
+  getCloudRouterUploadSlot,
   readMediaResourceUrl,
-  useCloudRouterUpload,
-  useResolvedMediaResourceUrl,
   type CloudRouterMediaResource,
   type CloudRouterUploadSlotCode,
 } from '@sdkwork/cloudroutes-pc-commons/runtime';
@@ -573,7 +575,6 @@ export function CloudRouterSiteSettingsPage() {
                 />
                 <MediaUploadField
                   label={t('admin.siteSettings.fields.favicon')}
-                  maxSizeBytes={1024 * 1024}
                   onChange={(media) => updateMediaField('favicon', media)}
                   slot="site-favicon"
                   value={form.favicon}
@@ -1647,62 +1648,27 @@ function SectionDivider({ title }: { title: string }) {
 }
 
 /**
- * 站点媒体字段：站点资源与二维码统一走 Drive uploader。
+ * 站点媒体字段：站点资源与二维码统一走共享 Drive 图片上传组件族。
  *
- * 上传归类、体积与 MIME 准入、进度与错误处理全部由统一上传目录与
- * `useCloudRouterUpload` 承担，本组件只负责渲染与状态映射。
+ * 上传声明、体积与 MIME 准入由统一上传目录与 commons 的图片上传服务承担，
+ * 本组件只负责把 `CloudRouterMediaResource` 持久化状态桥接为共享组件的受控值。
  */
 function MediaUploadField({
   label,
   slot,
   value,
   onChange,
-  accept = 'image/*',
-  maxSizeBytes = 2 * 1024 * 1024,
-  previewFit = 'object-contain',
-  previewIcon: PreviewIcon = Image,
+  maxSizeBytes,
 }: {
   label: string;
   slot: CloudRouterUploadSlotCode;
   value: CloudRouterMediaResource | undefined;
   onChange: (media: CloudRouterMediaResource | undefined) => void;
-  accept?: string;
   maxSizeBytes?: number;
-  previewFit?: string;
-  previewIcon?: React.ComponentType<{ className?: string }>;
 }) {
   const { t } = useTranslation();
-  const previewUrl = useResolvedMediaResourceUrl(value);
-  const [items, setItems] = useState<FileUploadItem[]>([]);
-
-  const uploader = useCloudRouterUpload({
-    slot,
-    onUploaded: (result) => onChange(result.media),
-  });
-
-  const markItem = (itemId: string, status: FileUploadItem['status'], progress?: number) => {
-    setItems((current) => current.map((item) =>
-      item.id === itemId ? { ...item, status, ...(progress === undefined ? {} : { progress }) } : item));
-  };
-
-  const handleValueChange = (nextItems: FileUploadItem[]) => {
-    setItems(nextItems);
-    const nextFile = nextItems.find((item) => item.file);
-    if (!nextFile?.file || uploader.isUploading) {
-      return;
-    }
-    const pendingId = nextFile.id;
-    markItem(pendingId, 'uploading', 0);
-    void uploader.upload(nextFile.file).then((result) => {
-      markItem(pendingId, result ? 'success' : 'error', result ? 100 : 0);
-    });
-  };
-
-  const clear = () => {
-    onChange(undefined);
-    setItems([]);
-    uploader.reset();
-  };
+  const catalogSlot = getCloudRouterUploadSlot(slot);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   return (
     <div>
@@ -1710,7 +1676,7 @@ function MediaUploadField({
         {value ? (
           <button
             className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-red-600 dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-red-400"
-            onClick={clear}
+            onClick={() => onChange(undefined)}
             type="button"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -1718,35 +1684,31 @@ function MediaUploadField({
           </button>
         ) : null}
       </div>
-      <div className="flex items-start gap-3">
-        <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5">
-          {previewUrl ? (
-            <img alt={label} className={`h-full w-full ${previewFit}`} src={previewUrl} />
-          ) : (
-            <PreviewIcon className="h-8 w-8 text-slate-300 dark:text-slate-600" />
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <FileUpload
-            accept={accept}
-            disabled={uploader.isUploading}
-            emptyStateDescription={t('admin.siteSettings.upload.imageDescription')}
-            emptyStateTitle={t('admin.siteSettings.upload.imageTitle')}
-            label={label}
-            maxFiles={1}
-            maxSize={maxSizeBytes}
-            multiple={false}
-            onValueChange={handleValueChange}
-            rejectionTitle={t('admin.siteSettings.upload.rejectionTitle')}
-            replaceOnMax
-            value={items}
-            variant="image"
-          />
-          {uploader.error ? (
-            <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{uploader.error}</p>
-          ) : null}
-        </div>
-      </div>
+      <DriveUploadImage
+        appResourceId={catalogSlot.appResourceId}
+        copy={{
+          pickImage: t('admin.siteSettings.upload.imageTitle'),
+          removeImage: '移除图片',
+          retryUpload: '重试上传',
+          uploading: '上传中…',
+          uploadFailed: '上传失败',
+        }}
+        description={t('admin.siteSettings.upload.imageDescription')}
+        label={label}
+        maxSizeBytes={maxSizeBytes ?? catalogSlot.maxSizeBytes}
+        onChange={(next) => {
+          setUploadError(null);
+          onChange(driveUploadImageValueToCloudRouterMediaResource(next, catalogSlot.mediaKind));
+        }}
+        onUploadError={(error) => setUploadError(error.message)}
+        service={getCloudRouterDriveImageService(slot)}
+        shape="rounded"
+        sizePx={96}
+        value={cloudRouterMediaResourceToDriveUploadImageValue(value)}
+      />
+      {uploadError ? (
+        <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{uploadError}</p>
+      ) : null}
     </div>
   );
 }
@@ -1794,10 +1756,7 @@ function QrCodeSlotField({
       </div>
       <MediaUploadField
         label={label}
-        maxSizeBytes={10 * 1024 * 1024}
         onChange={onChange}
-        previewFit="object-cover"
-        previewIcon={QrCode}
         slot={QR_UPLOAD_SLOT}
         value={value}
       />

@@ -55,6 +55,8 @@ packages:
   - "../sdkwork-documents/sdks/sdkwork-documents-app-sdk/sdkwork-documents-app-sdk-typescript/src/index.ts"
   - "../sdkwork-drive/sdks/sdkwork-drive-app-sdk/sdkwork-drive-app-sdk-typescript"
   - "../sdkwork-drive/sdks/sdkwork-drive-backend-sdk/sdkwork-drive-backend-sdk-typescript/src/index.ts"
+  - "../sdkwork-drive/apps/sdkwork-drive-common/packages/sdkwork-drive-upload-image-core"
+  - "../sdkwork-drive/apps/sdkwork-drive-pc/packages/sdkwork-drive-pc-upload-image"
   - "../sdkwork-messaging/sdks/sdkwork-messaging-app-sdk/sdkwork-messaging-app-sdk-typescript"
   - "../sdkwork-messaging/sdks/sdkwork-messaging-backend-sdk/sdkwork-messaging-backend-sdk-typescript"
   - "../sdkwork-messaging/apps/sdkwork-messaging-pc/packages/sdkwork-messaging-pc-admin-notify"
