@@ -220,6 +220,9 @@ packages:
   - "../sdkwork-feeds/sdks/sdkwork-feeds-sdk/sdkwork-feeds-sdk-typescript"
   - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-admin-core"
   - "../sdkwork-rtc/sdks/sdkwork-rtc-backend-sdk/sdkwork-rtc-backend-sdk-typescript"
+  - "../sdkwork-iam/apps/sdkwork-iam-common/packages/sdkwork-iam-desktop-auth"
+  - "../sdkwork-appbase/packages/mobile-react/foundation/sdkwork-appbase-mobile-react"
+  - "../sdkwork-appbase/packages/mobile-react/foundation/sdkwork-shell-mobile-react"
 
 catalog:
   "@tailwindcss/vite": ^4.3.3
