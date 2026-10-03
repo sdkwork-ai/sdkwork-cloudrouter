@@ -15,8 +15,7 @@ import type {
 } from '@sdkwork/cloudrouter-pc-admin-core/sdk';
 import { upstreamService } from './upstreamService';
 import { isKnownLlmProtocol, LLM_PROTOCOLS, llmProtocolLabelKey, PROTOCOL_RESOURCE_GROUPS } from './llmProtocols';
-import { resolveVendorBaseUrl, vendorStandardBaseUrl } from './vendorBaseUrlRules';
-import { resolveVendorProtocolDefaultUrl, normalizeVendorRegion, vendorSupportedProtocols } from './vendorProtocolBaseUrls';
+import { resolveVendorBaseUrl, vendorAddressUnavailableReason, vendorDefaultBaseUrl, resolveVendorProtocolDefaultUrl, normalizeVendorRegion, vendorStandardBaseUrl, vendorSupportedProtocols } from './vendorProtocolCatalog';
 import { emptyResourceSelection, ResourcePicker, toEntitlements, toSelection, type ResourceSelection } from './resourcePicker';
 import {
   dangerButtonClass,
@@ -570,18 +569,37 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
     )));
   };
 
-  // 初始化后按当前 vendor+region 配置补填一次空的协议 Base URL（兼容历史数据/编辑场景）
+  // 默认 Base URL（非 LLM 调用地址）同样按 vendor+region 自动填充：vendor 有原生官方
+  // 域名时用原生域名，否则回退到该 vendor 的主协议官方地址。已被手工改过的值不覆盖。
+  const fillDefaultBaseUrl = (vendorCode: string | null, region: string, previousDefault: string | undefined) => {
+    setDefaultBaseUrl((current) => {
+      const trimmed = current.trim();
+      if (trimmed !== '' && trimmed !== previousDefault) return current;
+      return vendorDefaultBaseUrl(vendorCode, region) ?? '';
+    });
+  };
+
+  // 初始化后按当前 vendor+region 配置补填一次空的 Base URL（兼容历史数据/编辑场景）
   useEffect(() => {
     fillEmptyProtocolBaseUrls(defaultVendorCode, regionCode);
+    fillDefaultBaseUrl(defaultVendorCode, regionCode, undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 已分析收录的 vendor 的协议支持集（null = 未收录，不做协议限制）
+  // 已收录 vendor 的协议支持集：
+  //   null = 目录未描述该 vendor（不做限制，保留手工配置）
+  //   []   = 目录已描述且该 vendor 不发布任何 LLM API 协议（纯音视频厂商）
   const vendorProtocolSupport = useMemo(() => vendorSupportedProtocols(defaultVendorCode), [defaultVendorCode]);
+  // 纯 native 厂商没有 LLM API 协议可勾选，不能再用「至少一个协议」卡住保存
+  const vendorPublishesNoLlmProtocol = vendorProtocolSupport !== null && vendorProtocolSupport.length === 0;
+  // 该 vendor 在目录里被明确记录为「不发布可拨号的官方地址」（如 Suno 无公开 API）：
+  // 此时默认 Base URL 只能手填，且必须说明原因，而不是留一个看起来坏掉的空框。
+  const vendorAddressUnavailable = useMemo(() => Boolean(vendorAddressUnavailableReason(defaultVendorCode)), [defaultVendorCode]);
 
   const handleVendorChange = (vendorCode: string) => {
     const previousVendor = defaultVendorCode;
     setDefaultVendorCode(vendorCode);
+    fillDefaultBaseUrl(vendorCode, regionCode, vendorDefaultBaseUrl(previousVendor, regionCode));
     // 官方 vendor 切换联动：仍为默认值（或为空）的协议行跟随新的默认 vendor，手动多选过的行保留
     if (previousVendor !== vendorCode) {
       setProtocolVendors((current) => {
@@ -627,6 +645,7 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
   const handleRegionChange = (value: string) => {
     const previousRegion = regionCode;
     setRegionCode(value);
+    fillDefaultBaseUrl(defaultVendorCode, value, vendorDefaultBaseUrl(defaultVendorCode, previousRegion));
     if (normalizeVendorRegion(previousRegion) !== normalizeVendorRegion(value)) {
       setProtocols((current) => current.map((item) => {
         const previousDefault = resolveVendorProtocolDefaultUrl(defaultVendorCode, previousRegion, item.protocolCode)?.baseUrl;
@@ -696,7 +715,9 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
       setFormError(t('admin.upstream.supplier.form.vendor.required'));
       return;
     }
-    if (protocols.length === 0) {
+    // 纯 native 厂商（Kling / Runway / Suno 等）不发布任何 LLM API 协议，
+    // 不能要求运营为它编造一个协议行
+    if (protocols.length === 0 && !vendorPublishesNoLlmProtocol) {
       setFormError(t('admin.upstream.supplier.form.protocols.required'));
       return;
     }
@@ -833,10 +854,16 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
         </FormSection>
         <FormSection title={t('admin.upstream.supplier.form.section.protocol')}>
           <div className={`grid gap-4 ${supplierType === 'official' ? 'grid-cols-3' : 'grid-cols-4'}`}>
-            <DrawerField label={t('admin.upstream.supplier.form.defaultBaseUrl.label')} hint={t('admin.upstream.supplier.form.defaultBaseUrl.hint')} className={supplierType === 'official' ? 'col-span-3' : 'col-span-4'}>
+            <DrawerField
+              label={t('admin.upstream.supplier.form.defaultBaseUrl.label')}
+              hint={vendorAddressUnavailable
+                ? t('admin.upstream.supplier.form.defaultBaseUrl.unavailable')
+                : t('admin.upstream.supplier.form.defaultBaseUrl.hint')}
+              className={supplierType === 'official' ? 'col-span-3' : 'col-span-4'}
+            >
               <input aria-label={t('admin.upstream.supplier.form.defaultBaseUrl.label')} placeholder="https://api.example.com/v1" className={inputClass} value={defaultBaseUrl} onChange={(event) => setDefaultBaseUrl(event.currentTarget.value)} />
             </DrawerField>
-            <DrawerField label={t('admin.upstream.supplier.form.protocols.title')} required hint={t('admin.upstream.supplier.form.protocols.description')} className={supplierType === 'official' ? 'col-span-3' : 'col-span-4'}>
+            <DrawerField label={t('admin.upstream.supplier.form.protocols.title')} required={!vendorPublishesNoLlmProtocol} hint={t('admin.upstream.supplier.form.protocols.description')} className={supplierType === 'official' ? 'col-span-3' : 'col-span-4'}>
               <div className="grid grid-cols-3 gap-1.5">
                 {LLM_PROTOCOLS.map((option) => {
                   const checked = protocols.some((item) => item.protocolCode === option.code);
@@ -849,6 +876,9 @@ function SupplierDrawer({ supplier, catalog, busy, onSubmit, onClose }: { suppli
                   );
                 })}
               </div>
+              {vendorPublishesNoLlmProtocol ? (
+                <p className="text-xs text-slate-500 dark:text-slate-400">{t('admin.upstream.supplier.form.protocols.nativeOnly')}</p>
+              ) : null}
               {protocols.length > 0 ? (
                 <div className="grid gap-1">
                   {protocols.map((protocol, index) => (
@@ -1174,15 +1204,19 @@ function SupplierCapabilities({ supplier, onChanged, onClose }: { supplier: Upst
     .filter((resource) => resource.resourceType === 'vendor' && resource.vendorCode)
     .map((resource) => ({ vendorCode: resource.vendorCode as string, label: resource.displayName })), [catalog]);
 
-  // 当前 Vendor 的标准 Base URL（有规则时展示提示）；无 Vendor 或未收录时为空
-  const vendorStandardUrl = useMemo(() => vendorStandardBaseUrl(supplier.defaultVendorCode), [supplier.defaultVendorCode]);
-  // 端点 Base URL 生成：优先按（vendor+region+协议）解析官方默认，协议未选或未收录时回退旧 vendor 规则
+  // 当前 Vendor 的标准 Base URL（有官方地址时展示提示）；无 Vendor 或目录未收录时为空
+  const vendorStandardUrl = useMemo(
+    () => vendorStandardBaseUrl(supplier.defaultVendorCode, supplier.regionCode),
+    [supplier.defaultVendorCode, supplier.regionCode],
+  );
+  // 端点 Base URL 生成：优先按（vendor+region+协议）解析官方默认，协议未选或未收录时回退 vendor 标准地址
   const resolveEndpointBaseUrl = (endpoint: UpstreamSupplierEndpointInput): string => {
+    const endpointRegion = endpoint.regionCode ?? supplier.regionCode;
     if (endpoint.protocolCode && isKnownLlmProtocol(endpoint.protocolCode)) {
-      const protocolDefault = resolveVendorProtocolDefaultUrl(supplier.defaultVendorCode, endpoint.regionCode, endpoint.protocolCode as LlmProtocolConfig['protocolCode'])?.baseUrl;
+      const protocolDefault = resolveVendorProtocolDefaultUrl(supplier.defaultVendorCode, endpointRegion, endpoint.protocolCode as LlmProtocolConfig['protocolCode'])?.baseUrl;
       if (protocolDefault) return protocolDefault;
     }
-    return resolveVendorBaseUrl(supplier.defaultVendorCode, endpoint.baseUrl);
+    return resolveVendorBaseUrl(supplier.defaultVendorCode, endpointRegion, endpoint.baseUrl);
   };
   // 运行时默认端点 = active 端点中 priority 最小者（priority ASC → routing_weight DESC → id ASC）
   const defaultEndpointIndex = useMemo(() => {

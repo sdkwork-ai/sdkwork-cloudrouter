@@ -5,7 +5,8 @@
   "type": "module",
   "main": "./src/index.tsx",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --config vitest.config.ts"
   },
   "dependencies": {
     "@sdkwork/appbase-pc-react": "workspace:*",
@@ -14,7 +15,8 @@
     "react-i18next": "catalog:"
   },
   "devDependencies": {
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "private": true,
   "exports": {

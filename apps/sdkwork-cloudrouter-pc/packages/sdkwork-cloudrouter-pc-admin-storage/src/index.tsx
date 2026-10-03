@@ -37,7 +37,7 @@ import {
   backendStorageGarbageCollectionJobCreate,
   backendStorageGarbageCollectionJobsList,
   backendStorageProviderAccountCreate,
-  backendStorageProviderAccountsList,
+  backendStorageProviderAccountsPage,
   backendStorageProviderCreate,
   backendStorageProviderDelete,
   backendStorageProviderHealthCheck,
@@ -596,7 +596,7 @@ function StorageAdminSections({ sectionId }: StorageAdminProps = {}) {
           existingProviderIds={knownProviderIdsRef.current}
           onClose={closeProviderEditor}
           onCreateProvider={(input) => backendStorageProviderCreate(input)}
-          onListProviderAccounts={(input) => backendStorageProviderAccountsList(input)}
+          onListProviderAccounts={(input) => backendStorageProviderAccountsPage(input)}
           onCreateProviderAccount={(input) => backendStorageProviderAccountCreate(input)}
           onProviderSaved={() => setRefreshKey((value) => value + 1)}
           onRotateCredential={(providerId, credentialRef) => backendStorageProviderRotateCredential(providerId, credentialRef)}

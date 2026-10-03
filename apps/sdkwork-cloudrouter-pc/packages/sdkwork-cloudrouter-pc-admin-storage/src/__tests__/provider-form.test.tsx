@@ -37,6 +37,8 @@ const hoisted = vi.hoisted(() => ({
     healthCheck: vi.fn(),
     rotateCredential: vi.fn(),
     listAccounts: vi.fn(),
+    // 共享编辑器读的是「一页账号 + 续读游标」，所以账号门面按分页形状应答。
+    accountsPage: vi.fn().mockResolvedValue({ items: [], hasMore: false }),
     createAccount: vi.fn(),
   },
   /** 最近一次渲染时注入共享编辑器的全部 props（断言接线用）。 */
@@ -203,6 +205,7 @@ vi.mock('../storageService', () => ({
   // gained by converging onto the shared editor.
   backendStorageProviderRotateCredential: hoisted.services.rotateCredential,
   backendStorageProviderAccountsList: hoisted.services.listAccounts,
+  backendStorageProviderAccountsPage: hoisted.services.accountsPage,
   backendStorageProviderAccountCreate: hoisted.services.createAccount,
   getStorageProviderAdminService: () => ({
     listProviders: vi.fn().mockResolvedValue(hoisted.mockProviders),
@@ -316,7 +319,7 @@ describe('storage admin provider section wired to the shared drive editor', () =
 
     fireEvent.click(screen.getByText('list-accounts'));
     await waitFor(() => {
-      expect(hoisted.services.listAccounts).toHaveBeenCalledWith({ status: 'active' });
+      expect(hoisted.services.accountsPage).toHaveBeenCalledWith({ status: 'active' });
     });
 
     fireEvent.click(screen.getByText('create-account'));

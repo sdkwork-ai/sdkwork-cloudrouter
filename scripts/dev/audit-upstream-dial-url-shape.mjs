@@ -92,8 +92,12 @@ const LLM_PROTOCOLS = ['openai_compatible', 'openai_responses', 'anthropic_messa
 //     api.deepseek.com + /anthropic        -> /anthropic/v1/messages        (DeepSeek docs)
 //     open.bigmodel.cn + /api/anthropic    -> /api/anthropic/v1/messages    (Zhipu docs cURL)
 //
-// ⇒ one rule, family-aware op path. The single exception found is the
-//   `anthropic` vendor row itself (pathPrefix "/v1" duplicates the SDK version).
+// ⇒ one rule, family-aware op path. The `anthropic` vendor row used to be the
+//   single exception (`pathPrefix "/v1"`, which duplicates the SDK-supplied
+//   version); the catalog now stores `""` for it, and
+//   `tools/generate-cloudrouter-vendor-catalog.mjs` fails when any projected
+//   Base URL would compose into a doubled version segment, so the exception
+//   cannot come back silently.
 const OP_PATH_BY_FAMILY = {
   openai: '/chat/completions',
   anthropic: '/v1/messages',

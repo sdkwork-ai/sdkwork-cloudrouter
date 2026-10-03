@@ -83,10 +83,12 @@ type StorageProviderUpdateInputMatchesService = [
 
 /** 账号中心：可复用服务商账号的查询入参。 */
 export type StorageProviderAccountsListInput = Parameters<StorageProviderAdminService['listProviderAccounts']>[0];
+/** 账号中心：一页账号 + 服务端续读游标。 */
+export type StorageProviderAccountsPage = Awaited<ReturnType<StorageProviderAdminService['listProviderAccountsPage']>>;
 /** 账号中心：登记一个可复用账号（含访问密钥对）的入参。 */
 export type StorageProviderAccountCreateInput = Parameters<StorageProviderAdminService['createProviderAccount']>[0];
 /** 账号中心：账号视图。 */
-export type StorageProviderAccountRecord = Awaited<ReturnType<StorageProviderAdminService['listProviderAccounts']>>[number];
+export type StorageProviderAccountRecord = StorageProviderAccountsPage['items'][number];
 
 export async function backendStorageProvidersList() {
   return getStorageProviderAdminService().listProviders();
@@ -121,6 +123,16 @@ export async function backendStorageProviderRotateCredential(providerId: string,
  */
 export async function backendStorageProviderAccountsList(input?: StorageProviderAccountsListInput) {
   return getStorageProviderAdminService().listProviderAccounts(input);
+}
+
+/**
+ * 账号中心：读取**一页**可复用账号，并带回服务端续读游标。
+ *
+ * 共享编辑器（drive 属主）用它填充「更换账号」弹窗：账号列表是分页接口，
+ * 只取一页会把排在窗口之外的账号（包括运维刚刚新建的那个）当作不存在。
+ */
+export async function backendStorageProviderAccountsPage(input?: StorageProviderAccountsListInput) {
+  return getStorageProviderAdminService().listProviderAccountsPage(input);
 }
 
 /** 账号中心：直接登记一个可复用账号 + 访问密钥对，省去先去账号中心建号的往返。 */
