@@ -26,6 +26,6 @@ pub(crate) mod string_value;
 
 pub use queries::PricingCatalogSql;
 pub use runtime_id::{
-    bootstrap_cloud_runtime_id_generator, validate_cloud_runtime_id_configuration,
-    RuntimeIdConfigurationError,
+    bootstrap_cloud_runtime_id_generator, next_shared_runtime_id,
+    validate_cloud_runtime_id_configuration, RuntimeIdConfigurationError,
 };

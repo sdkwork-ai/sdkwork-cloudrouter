@@ -77,12 +77,12 @@ impl StickyRouteStore for InvocationStickyObjectRouteStore {
             sqlx::query(
                 r#"
                 INSERT INTO ai_upstream_object_route
-                    (uuid, tenant_id, organization_id, status, api_key_id, account_group_id,
+                    (id, uuid, tenant_id, organization_id, status, api_key_id, account_group_id,
                      object_type, object_id, object_key_hash, parent_object_type,
                      parent_object_id, supplier_code, account_id, vendor_code, api_code,
                      catalog_key, provider_model, region_code, sticky_scope, last_seen_at)
                 VALUES
-                    ($1, $2, $3, 1, $4, $5, $6, $7, $8, $9, $10,
+                    ($19, $1, $2, $3, 1, $4, $5, $6, $7, $8, $9, $10,
                      $11, $12, $13, $14, $15, $16, $17, $18, CURRENT_TIMESTAMP)
                 ON CONFLICT(tenant_id, organization_id, object_type, object_id)
                 WHERE deleted_at IS NULL
@@ -124,6 +124,11 @@ impl StickyRouteStore for InvocationStickyObjectRouteStore {
             .bind(&command.provider_model)
             .bind(&command.region_code)
             .bind(&command.sticky_scope)
+            // The baseline DDL declares `id BIGINT NOT NULL PRIMARY KEY` with no
+            // identity default, so the insert carries a generator-assigned id.
+            .bind(sdkwork_cloudrouter_router_service::infrastructure::sql::next_shared_runtime_id(
+                "ai_upstream_object_route",
+            )?)
             .execute(&self.0)
             .await
             .map_err(sticky_store_error)?;

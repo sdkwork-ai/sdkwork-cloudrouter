@@ -11,7 +11,7 @@ use crate::application::UpstreamCredentialSecretCodec;
 use crate::domain::DomainError;
 use crate::infrastructure::sql::ai_routing_seed::{
     import_postgres_ai_routing_seed, postgres_ai_routing_seed_complete,
-    postgres_ai_routing_seed_gap,
+    postgres_ai_routing_seed_gap, postgres_default_media_gateway_api_key_gap,
 };
 use crate::infrastructure::sql::model_catalog_import::{
     catalog_api_endpoint_projections, catalog_authority_keys,
@@ -694,6 +694,14 @@ impl DatabaseInstaller {
         }
         let routing_seed_complete = postgres_ai_routing_seed_complete(&self.pool).await?;
         if !routing_seed_complete {
+            return Ok(InstallationStatus::UpgradeRequired);
+        }
+        if postgres_default_media_gateway_api_key_gap(
+            &self.pool,
+            Some(options.environment.as_str()),
+        )
+        .await?
+        {
             return Ok(InstallationStatus::UpgradeRequired);
         }
         if !self.default_service_node_complete().await? {

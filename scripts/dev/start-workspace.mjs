@@ -63,6 +63,10 @@ const DEFAULT_DEV_DATABASE_RELATIVE_PATH = path.join('target', 'dev', 'cloudrout
 const DEFAULT_MODELS_CATALOG_RELATIVE_PATH = path.join('..', 'sdkwork-models');
 const DEFAULT_DEV_SECRET =
   'sdkwork-cloudrouter-local-dev-secret-20260507';
+// Must stay byte-identical to `ai_routing_seed.rs`
+// `DEFAULT_MEDIA_GATEWAY_API_KEY_SECRET`, which seeds the matching
+// `iam_gateway_api_key` row in development-like installs.
+const DEFAULT_DEV_MEDIA_GATEWAY_API_KEY = 'sk-dev-internal-media-gateway';
 const UPSTREAM_CREDENTIAL_KEY_RING_ENV =
   'SDKWORK_CLOUDROUTER_UPSTREAM_CREDENTIAL_KEY_RING';
 const UPSTREAM_CREDENTIAL_KEY_RING_FILE_ENV =
@@ -459,12 +463,22 @@ function rustPrebuildStep(settings, { workspaceRoot, platform }) {
     return null;
   }
 
+  // The prebuild must see the SAME environment as the runtime step it warms.
+  // Route-manifest and topology build scripts declare `rerun-if-env-changed`
+  // on SDKWORK_* variables, so a prebuild under the bare cargo env leaves the
+  // all-in-one gateway's units cold: `cargo run` then recompiles the whole
+  // closure inside the health-check budget and `pnpm dev` fails on
+  // `application.public-ingress` before the server ever binds.
+  const runtimeEnv = settings.runtimeMode === 'all-in-one'
+    ? edgeServerEnv(settings)
+    : undefined;
+
   return {
     name: 'rust-prebuild',
     command: cargoCommand(platform),
     args: ['build', ...packages.flatMap((packageName) => ['-p', packageName])],
     cwd: workspaceRoot,
-    env: cloudRouterDevCargoEnv(workspaceRoot),
+    env: cloudRouterDevCargoEnv(workspaceRoot, runtimeEnv),
     shell: false,
     windowsHide: platform === 'win32',
     blocking: true,
@@ -838,6 +852,15 @@ function serviceEnv(settings, bindEnvName, bindValue, {
     // would abort the dev install outright.
     SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE:
       process.env.SDKWORK_CLOUDROUTER_INSTALL_SEED_PROFILE ?? 'standard',
+    // The generations media gateway hop (sdkwork-generations → this gateway's
+    // public /v1 pipeline) needs a gateway API key. `ai_routing_seed` seeds the
+    // matching dev-only credential row under the same literal; production must
+    // configure both values explicitly instead.
+    ...(settings.gatewayForwardUrl
+      ? { GENERATIONS_MEDIA_GATEWAY_BASE_URL: settings.gatewayForwardUrl }
+      : {}),
+    GENERATIONS_MEDIA_GATEWAY_API_KEY:
+      process.env.GENERATIONS_MEDIA_GATEWAY_API_KEY ?? DEFAULT_DEV_MEDIA_GATEWAY_API_KEY,
   };
   if (databaseMaxConnections !== undefined) {
     env.SDKWORK_DATABASE_MAX_CONNECTIONS = databaseMaxConnections;

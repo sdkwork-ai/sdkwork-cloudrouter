@@ -317,6 +317,17 @@ pub(crate) fn next_cloud_runtime_id(context: &str) -> DomainResult<i64> {
     next_runtime_id(state.as_ref(), context)
 }
 
+/// Generates one shared snowflake runtime id for runtime-owned tables.
+///
+/// Public wrapper over [`next_cloud_runtime_id`] for runtime stores that live
+/// outside this crate: the edge-runtime sticky store inserts into
+/// `ai_upstream_object_route`, whose baseline DDL declares
+/// `id BIGINT NOT NULL PRIMARY KEY` with no identity default, so every insert
+/// must carry an explicit generator-assigned id.
+pub fn next_shared_runtime_id(context: &str) -> DomainResult<i64> {
+    next_cloud_runtime_id(context)
+}
+
 /// Validates deployment-mode policy before database bootstrap.
 ///
 /// Server and container modes acquire their node ID from PostgreSQL after the pool is ready.

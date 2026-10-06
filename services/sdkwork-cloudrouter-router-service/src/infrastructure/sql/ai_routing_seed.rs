@@ -130,6 +130,34 @@ const DEFAULT_VENDOR_ENDPOINT_CODE: &str = "official-global";
 /// Auth method code shared by every bundled vendor default account.
 const DEFAULT_VENDOR_AUTH_METHOD_CODE: &str = "api_key";
 
+/// Plaintext of the dev-only gateway API key the generations media gateway
+/// (`sdkwork-generations` `GENERATIONS_MEDIA_GATEWAY_API_KEY`) uses to call the
+/// public invocation pipeline on `POST /v1/images/generations` and friends.
+///
+/// The value is part of the dev contract: `scripts/dev/start-workspace.mjs`
+/// exports the same literal, and the stored row keeps only its HMAC under the
+/// runtime API-key pepper. Production-like installs never seed this key — an
+/// operator must create a real key through the admin surface and configure the
+/// env explicitly.
+const DEFAULT_MEDIA_GATEWAY_API_KEY_SECRET: &str = "sk-dev-internal-media-gateway";
+
+/// Convergent identity of the seeded media gateway key row.
+const DEFAULT_MEDIA_GATEWAY_API_KEY_IDEMPOTENCY_KEY: &str = "seed-default-media-gateway-api-key";
+
+/// `iam_api_key.id` of the dev media gateway key's authentication-plane row.
+const DEFAULT_MEDIA_GATEWAY_IAM_API_KEY_ID: &str = "seed-dev-media-gateway";
+
+/// Runtime app the dev media gateway key authenticates for. Must match the
+/// `iam_tenant_application` registration the IAM bootstrap seeds for the
+/// default tenant (`validate_enabled_tenant_runtime_app` rejects keys whose
+/// app is not provisioned).
+const DEFAULT_MEDIA_GATEWAY_API_KEY_APP_ID: &str = "sdkwork-cloudrouter";
+
+/// Attribution principal for the seeded service key. API-key authentication
+/// only matches the credential hash and the account group, so this is a stable
+/// dev-only service identity rather than a seeded human user.
+const DEFAULT_MEDIA_GATEWAY_API_KEY_USER_ID: i64 = 100_001;
+
 /// `ai_upstream_supplier.supplier_type` value for a relay (中转站) supplier.
 ///
 /// The column is constrained by
@@ -1261,6 +1289,15 @@ pub async fn import_postgres_ai_routing_seed(
     // so its membership is completed here rather than during the topology pass.
     sync_default_group_members(&mut tx, &catalog).await?;
 
+    // Runs last so the default mixed group row it binds to already exists.
+    // Without this key every generations media dispatch fails the gateway
+    // hop with 401 before any vendor is reached.
+    import_postgres_default_media_gateway_api_key(
+        &mut tx,
+        seed_environment_enables_vendor_accounts(environment),
+    )
+    .await?;
+
     let rate_card_effective_at = sqlx::query_scalar::<_, String>("SELECT CURRENT_TIMESTAMP::text")
         .fetch_one(&mut *tx)
         .await?;
@@ -1279,6 +1316,53 @@ fn seed_environment_enables_vendor_accounts(environment: Option<&str>) -> bool {
     environment
         .map(|value| value.trim().to_ascii_lowercase())
         .is_some_and(|value| DEV_LIKE_INSTALL_ENVIRONMENTS.contains(&value.as_str()))
+}
+
+/// Environment-gated completeness clause for the dev media gateway API key:
+/// dev-like installs are only complete when BOTH key rows are live — the IAM
+/// authentication plane (`iam_api_key`, whose lookup JOINs the seeded service
+/// user) and the routing plane (`iam_gateway_api_key`) — so
+/// `ensure_bootstrap_data` converges an existing database onto them;
+/// production installs never report a gap for them.
+pub async fn postgres_default_media_gateway_api_key_gap(
+    pool: &PgPool,
+    environment: Option<&str>,
+) -> Result<bool, sqlx::Error> {
+    if !seed_environment_enables_vendor_accounts(environment) {
+        return Ok(false);
+    }
+    let routing_row_live = sqlx::query_scalar::<_, bool>(
+        r#"
+        SELECT EXISTS (
+            SELECT 1
+            FROM iam_gateway_api_key
+            WHERE tenant_id = $1 AND organization_id = $2
+              AND idempotency_key = $3
+              AND status = 1 AND deleted_at IS NULL
+        )
+        "#,
+    )
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(DEFAULT_IAM_ORGANIZATION_ID)
+    .bind(DEFAULT_MEDIA_GATEWAY_API_KEY_IDEMPOTENCY_KEY)
+    .fetch_one(pool)
+    .await?;
+    let auth_row_live = sqlx::query_scalar::<_, bool>(
+        r#"
+        SELECT EXISTS (
+            SELECT 1
+            FROM iam_api_key k
+            JOIN iam_user u ON u.id = k.user_id AND u.tenant_id = k.tenant_id
+            WHERE k.id = $1
+              AND k.status = 'active'
+              AND u.status = 'active' AND u.is_deleted = 0
+        )
+        "#,
+    )
+    .bind(DEFAULT_MEDIA_GATEWAY_IAM_API_KEY_ID)
+    .fetch_one(pool)
+    .await?;
+    Ok(!routing_row_live || !auth_row_live)
 }
 
 pub async fn postgres_ai_routing_seed_complete(pool: &PgPool) -> Result<bool, sqlx::Error> {
@@ -2788,6 +2872,194 @@ async fn sync_default_group_members(
         .execute(&mut **tx)
         .await?;
     }
+    Ok(())
+}
+
+/// Seeds the dev-only gateway API key the generations media gateway
+/// authenticates with (`GENERATIONS_MEDIA_GATEWAY_API_KEY`).
+///
+/// Every image/video/music dispatch from `sdkwork-generations` leaves that
+/// service as an HTTP call to this gateway's public invocation pipeline, which
+/// requires a gateway API key. Without a seeded credential the hop 401s before
+/// any vendor is reached, so a fully green dev topology still fails every
+/// generation command. Production-like environments skip this step: an
+/// operator creates a real key through the admin surface and configures the
+/// environment explicitly.
+///
+/// The key exists in TWO tables, mirroring the two lookup planes the hop
+/// crosses:
+///
+/// 1. `iam_api_key` — the IAM authentication plane. The public `/v1` open-api
+///    middleware resolves `X-Api-Key` credentials through the IAM adapter
+///    (SHA-256 key hash, active owner user, enabled tenant runtime app).
+/// 2. `iam_gateway_api_key` — the routing plane. The invocation pipeline
+///    resolves the same credential into an account group (the default mixed
+///    group, the same vendor pool the signed-in app-session surface uses) for
+///    route planning, pricing and billing.
+///
+/// Both rows bind a seeded dev-only service user (`100001`), because the IAM
+/// lookup JOINs an active `iam_user` row — a gateway key without an owner can
+/// never authenticate. Production-like environments skip all of this: an
+/// operator creates a real key through the admin surface and configures the
+/// environment explicitly.
+async fn import_postgres_default_media_gateway_api_key(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    dev_like_environment: bool,
+) -> Result<(), sqlx::Error> {
+    if !dev_like_environment {
+        return Ok(());
+    }
+    let Some(pepper_secret) = sdkwork_cloudrouter_config::ApiKeySecurityConfig::from_env()
+        .ok()
+        .flatten()
+        .map(|config| config.pepper_secret().to_owned())
+    else {
+        tracing::warn!(
+            "api key pepper is not configured; the dev media gateway API key was not seeded \
+             and generations media dispatch will fail gateway authentication"
+        );
+        return Ok(());
+    };
+    let key_hash = {
+        use crate::application::ApiKeySecretHasher as _;
+        crate::infrastructure::crypto::HmacSha256ApiKeySecretHasher::new(pepper_secret)
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?
+            .hash_secret(DEFAULT_MEDIA_GATEWAY_API_KEY_SECRET)
+            .map_err(|error| sqlx::Error::Protocol(error.to_string()))?
+    };
+    // The IAM adapter hashes api keys with plain SHA-256 (no pepper), so the
+    // authentication-plane row stores exactly that digest.
+    let iam_key_hash = {
+        use sha2::Digest as _;
+        sha2::Sha256::digest(DEFAULT_MEDIA_GATEWAY_API_KEY_SECRET.as_bytes())
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>()
+    };
+    let service_user_id = DEFAULT_MEDIA_GATEWAY_API_KEY_USER_ID.to_string();
+    sqlx::query(
+        r#"
+        INSERT INTO iam_user (
+            id, tenant_id, username, display_name, status, locale, timezone,
+            source, is_deleted, created_at, updated_at
+        ) VALUES (
+            $1, $2, 'media-gateway-service', 'Media Gateway Service',
+            'active', 'en-US', 'UTC', 'system', 0,
+            CURRENT_TIMESTAMP::text, CURRENT_TIMESTAMP::text
+        )
+        ON CONFLICT (id) DO UPDATE SET
+            status = 'active',
+            is_deleted = 0,
+            updated_at = CURRENT_TIMESTAMP::text
+        "#,
+    )
+    .bind(&service_user_id)
+    .bind(DEFAULT_IAM_TENANT_ID.to_string())
+    .execute(&mut **tx)
+    .await?;
+    sqlx::query(
+        r#"
+        INSERT INTO iam_api_key (
+            id, tenant_id, organization_id, user_id, app_id, environment,
+            deployment_mode, name, key_hash, permission_scope_json, status,
+            created_at, updated_at
+        ) VALUES (
+            $1, $2, $3, $4, $5, 'development', 'standalone',
+            'Dev media gateway internal key', $6, '[]', 'active',
+            CURRENT_TIMESTAMP::text, CURRENT_TIMESTAMP::text
+        )
+        ON CONFLICT (id) DO UPDATE SET
+            key_hash = EXCLUDED.key_hash,
+            status = 'active',
+            user_id = EXCLUDED.user_id,
+            updated_at = CURRENT_TIMESTAMP::text
+        "#,
+    )
+    .bind(DEFAULT_MEDIA_GATEWAY_IAM_API_KEY_ID)
+    .bind(DEFAULT_IAM_TENANT_ID.to_string())
+    .bind(DEFAULT_IAM_ORGANIZATION_ID.to_string())
+    .bind(&service_user_id)
+    .bind(DEFAULT_MEDIA_GATEWAY_API_KEY_APP_ID)
+    .bind(&iam_key_hash)
+    .execute(&mut **tx)
+    .await?;
+    let group_id = sqlx::query_scalar::<_, i64>(
+        r#"
+        SELECT id
+        FROM ai_upstream_account_group
+        WHERE tenant_id = $1 AND organization_id = $2
+          AND group_code = $3 AND deleted_at IS NULL
+        "#,
+    )
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(DEFAULT_IAM_ORGANIZATION_ID)
+    .bind(DEFAULT_MIXED_ACCOUNT_GROUP_CODE)
+    .fetch_optional(&mut **tx)
+    .await?
+    .ok_or_else(|| {
+        sqlx::Error::Protocol(
+            "default mixed account group is missing; the media gateway API key cannot bind"
+                .to_string(),
+        )
+    })?;
+    let metadata = serde_json::json!({
+        "seed": "default_media_gateway_api_key",
+        "purpose": "generations media gateway internal dispatch",
+        "accountGroupCode": DEFAULT_MIXED_ACCOUNT_GROUP_CODE,
+    })
+    .to_string();
+    sqlx::query(
+        r#"
+        INSERT INTO iam_gateway_api_key (
+            id, uuid, tenant_id, organization_id, data_scope, status, metadata,
+            user_id, account_group_id, name, key_prefix, key_display_masked,
+            key_hash, hash_alg, secret_version, key_secret_mode,
+            idempotency_key
+        ) VALUES (
+            $1, $2, $3, $4, $5, 1, $6::jsonb,
+            $7, $8, $9, $10, $11,
+            $12, 'hmac-sha256', 1, 'plaintext',
+            $13
+        )
+        ON CONFLICT (tenant_id, idempotency_key) WHERE deleted_at IS NULL DO UPDATE SET
+            key_hash = EXCLUDED.key_hash,
+            account_group_id = EXCLUDED.account_group_id,
+            status = 1,
+            metadata = EXCLUDED.metadata,
+            deleted_at = NULL,
+            deleted_by = NULL,
+            updated_at = CURRENT_TIMESTAMP
+        "#,
+    )
+    .bind(stable_seed_id(
+        "sdk-iam-gateway-api-key",
+        &[
+            &DEFAULT_IAM_TENANT_ID.to_string(),
+            &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+            DEFAULT_MEDIA_GATEWAY_API_KEY_IDEMPOTENCY_KEY,
+        ],
+    ))
+    .bind(stable_seed_uuid(
+        "sdk-iam-gateway-api-key",
+        &[
+            &DEFAULT_IAM_TENANT_ID.to_string(),
+            &DEFAULT_IAM_ORGANIZATION_ID.to_string(),
+            DEFAULT_MEDIA_GATEWAY_API_KEY_IDEMPOTENCY_KEY,
+        ],
+    ))
+    .bind(DEFAULT_IAM_TENANT_ID)
+    .bind(DEFAULT_IAM_ORGANIZATION_ID)
+    .bind(DEFAULT_ADMIN_DATA_SCOPE)
+    .bind(&metadata)
+    .bind(DEFAULT_MEDIA_GATEWAY_API_KEY_USER_ID)
+    .bind(group_id)
+    .bind("Dev media gateway internal key")
+    .bind("sk-dev")
+    .bind("sk-dev-****-media-gateway")
+    .bind(&key_hash)
+    .bind(DEFAULT_MEDIA_GATEWAY_API_KEY_IDEMPOTENCY_KEY)
+    .execute(&mut **tx)
+    .await?;
     Ok(())
 }
 
