@@ -27,22 +27,27 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
     def test_playground_is_a_thin_sdkwork_agents_workbench_host(self) -> None:
         adapter_source = PLAYGROUND_ADAPTER.read_text(encoding="utf-8")
 
-        self.assertIn("@sdkwork/agents-pc/workbench", adapter_source)
-        self.assertIn("AgentsWorkbench", adapter_source)
-        self.assertIn("configureAgentsWorkbenchRuntime", adapter_source)
+        # The host composes the single agents playground package and only binds
+        # the runtime: SDK clients, balance, token plan, login redirect.
+        self.assertIn("@sdkwork/agents-pc-playground", adapter_source)
+        self.assertIn("AgentsPlayground", adapter_source)
+        self.assertIn("configureAgentsPlaygroundRuntime", adapter_source)
         self.assertIn("getSdkworkAgentAppSdkClient", adapter_source)
         self.assertIn("getSdkworkDriveAppSdkClient", adapter_source)
         self.assertIn("getSdkworkMemoryAppSdkClient", adapter_source)
         self.assertIn("getSdkworkPromptsAppSdkClient", adapter_source)
         self.assertIn("getSdkworkSkillsAppSdkClient", adapter_source)
-        self.assertIn("<AgentsWorkbench showSidebarLogo={false} />", adapter_source)
+        self.assertIn("createPlaygroundBalancePort", adapter_source)
+        self.assertIn("getCloudRouterMembershipCheckoutService", adapter_source)
+        self.assertIn("getCloudRouterPointsRechargeService", adapter_source)
+        self.assertIn("<AgentsPlayground hiddenTabs={['presentation']}", adapter_source)
         self.assertNotIn("GlobalSidebar", adapter_source)
         self.assertNotIn("WORKBENCH_VIEW_BY_TAB", adapter_source)
         self.assertNotIn("PlaygroundPage", adapter_source)
         self.assertNotIn("PlaygroundService", adapter_source)
         self.assertNotIn("fetch(", adapter_source)
         self.assertNotIn("axios", adapter_source)
-        self.assertLessEqual(adapter_source.count("\n"), 30)
+        self.assertLessEqual(adapter_source.count("\n"), 70)
 
     def test_agents_pc_exports_the_complete_embeddable_workbench(self) -> None:
         package = json.loads((AGENTS_APP_ROOT / "package.json").read_text(encoding="utf-8"))
@@ -94,7 +99,7 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
             AGENTS_PACKAGE_ROOT / "src" / "pages" / "AgentsHomePage.tsx"
         ).read_text(encoding="utf-8")
         conversation_source = (
-            AGENTS_PACKAGE_ROOT / "src" / "pages" / "HomeAgentConversation.tsx"
+            AGENTS_PACKAGE_ROOT / "src" / "pages" / "AgentChatView.tsx"
         ).read_text(encoding="utf-8")
 
         self.assertEqual("./src/home.ts", package["exports"]["./home"]["import"])
@@ -105,7 +110,10 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
         self.assertIn("agentService.createAgent", page_source)
         self.assertIn("agentService.updateAgent", page_source)
         self.assertIn("agentService.deleteAgent", page_source)
-        self.assertIn("agentChatService.sendMessage", conversation_source)
+        # The conversation page renders the shared chat surface through the
+        # composed ChatService port; it must not reach the agent chat service
+        # directly (agent chat unification contract).
+        self.assertNotIn("agentChatService", conversation_source)
         self.assertNotIn("@sdkwork/cloudrouter", page_source)
         self.assertNotIn("@sdkwork/cloudrouter", conversation_source)
         self.assertNotIn("fetch(", page_source)
@@ -143,12 +151,20 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
             AGENTS_APP_ROOT / "src" / "bootstrap" / "index.ts"
         ).read_text(encoding="utf-8")
 
+        ports_source = (
+            AGENTS_WORKBENCH_ROOT / "ports.ts"
+        ).read_text(encoding="utf-8")
+
+        # The workbench runtime composes the SDK providers and delegates the
+        # chat/project port wiring to the ports adapter module.
         self.assertIn("configureAgentsHomeRuntime(runtime)", runtime_source)
-        self.assertIn("configureChatAgentPort", runtime_source)
-        self.assertIn("configureProjectPort", runtime_source)
-        self.assertIn("agentChatService", runtime_source)
-        self.assertIn("agentProjectService", runtime_source)
-        self.assertIn("agentsDriveUploadService", runtime_source)
+        self.assertIn("configureChatBalancePort", runtime_source)
+        self.assertIn("configureAgentsWorkbenchPorts()", runtime_source)
+        self.assertIn("configureChatAgentPort", ports_source)
+        self.assertIn("configureProjectPort", ports_source)
+        self.assertIn("agentChatService", ports_source)
+        self.assertIn("agentProjectService", ports_source)
+        self.assertIn("agentsDriveUploadService", ports_source)
         self.assertIn("configureMemoryAppSdkClientProvider", runtime_source)
         self.assertIn("configurePromptsAppSdkClientProvider", runtime_source)
         self.assertIn("configureSkillsAppSdkClientProvider", runtime_source)
@@ -175,7 +191,7 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
             workspace_source,
         )
         self.assertIn(
-            "../sdkwork-prompts/sdks/sdkwork-prompts-app-sdk/generated/server-openapi",
+            "../sdkwork-prompts/sdks/sdkwork-prompts-app-sdk/sdkwork-prompts-app-sdk-typescript",
             workspace_source,
         )
         for package_name in [
@@ -226,12 +242,9 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
         package = json.loads((prompts_package_root / "package.json").read_text(encoding="utf-8"))
         source = (prompts_package_root / "src" / "index.ts").read_text(encoding="utf-8")
 
-        self.assertEqual(
-            "workspace:*",
-            package["dependencies"]["sdkwork-prompts-app-sdk-generated-typescript"],
-        )
-        self.assertIn("from 'sdkwork-prompts-app-sdk-generated-typescript'", source)
-        self.assertNotIn("../../generated/server-openapi", source)
+        # The package is a thin re-export over the co-located generated surface:
+        # no vendored transport, no second HTTP stack.
+        self.assertIn("export * from '../generated/server-openapi/src/index'", source)
 
     def test_component_contracts_declare_the_workbench_port(self) -> None:
         playground_spec = json.loads(
