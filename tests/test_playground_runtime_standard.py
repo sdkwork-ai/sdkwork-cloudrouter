@@ -40,7 +40,7 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
         self.assertIn("createPlaygroundBalancePort", adapter_source)
         self.assertIn("getCloudRouterMembershipCheckoutService", adapter_source)
         self.assertIn("getCloudRouterPointsRechargeService", adapter_source)
-        self.assertIn("<AgentsPlayground hiddenTabs={['presentation']}", adapter_source)
+        self.assertNotIn('presentation', adapter_source)
         self.assertNotIn("GlobalSidebar", adapter_source)
         self.assertNotIn("WORKBENCH_VIEW_BY_TAB", adapter_source)
         self.assertNotIn("PlaygroundPage", adapter_source)
@@ -82,7 +82,6 @@ class PlaygroundRuntimeStandardTest(unittest.TestCase):
             "agents-pc-inspiration",
             "agents-pc-creative",
             "agents-pc-assets",
-            "agents-pc-presentation",
             "agents-pc-canvas",
         ]:
             self.assertIn(f"@sdkwork/{package_name}", layout_source)

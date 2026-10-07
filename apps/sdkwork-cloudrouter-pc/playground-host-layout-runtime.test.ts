@@ -20,5 +20,7 @@ test('keeps the creative (生成) tab visible so inspiration submit opens the de
   // creative must NOT be hidden: inspiration submit dispatches switch-tab -> creative, and
   // hiding it makes the workbench fall back to the unified chat agent interface.
   assert.doesNotMatch(playgroundSource, /hiddenTabs=\{\[['"]creative/);
-  assert.match(playgroundSource, /hiddenTabs=\{\[['"]presentation['"]\]\}/);
+  // The workbench tab registry owns the composition; the host must not
+  // reference a tab (such as the retired demo surface) by name.
+  assert.doesNotMatch(playgroundSource, /presentation/);
 });
