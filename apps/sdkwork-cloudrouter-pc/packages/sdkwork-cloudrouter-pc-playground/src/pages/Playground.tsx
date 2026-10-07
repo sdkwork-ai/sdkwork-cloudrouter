@@ -57,9 +57,10 @@ export function Playground({
     <div className="sdkwork-playground-host flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden">
       {/* The creative (生成) tab renders the dedicated generation page (bottom input,
           creative sidebar session list, and generation history) via @sdkwork/agents-pc-creative.
-          It is kept visible and removed from hiddenTabs so that inspiration submit routes to
-          the creative generation page instead of the unified chat agent interface. */}
-      <AgentsPlayground overlayTopInset={overlayTopInset} />
+          It stays visible — it is never listed in hiddenTabs — so inspiration submit
+          routes to the creative generation page; only the presentation (演示) tab is
+          hidden because this host ships no presentation backend. */}
+      <AgentsPlayground hiddenTabs={['presentation']} overlayTopInset={overlayTopInset} />
     </div>
   );
 }
