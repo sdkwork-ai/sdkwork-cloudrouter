@@ -686,6 +686,19 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         RoutingCapability::Network,
         BillingMeter::ApiRequest,
     ),
+    // The Veo long-running operation poll face:
+    // `GET /v1beta/models/{model}/operations/{operation_id}`. `gemini.video_
+    // generation` answers with an operation name and every subsequent poll
+    // reads it back; without this route the poll fails closed with
+    // "no upstream account routes are configured" even though the create
+    // dispatch succeeded. Read-only query face, billed as an account request
+    // like every other `*.task_query`.
+    account(
+        "gemini.video_task_query",
+        "gemini.video_task_query",
+        RoutingCapability::Network,
+        BillingMeter::ApiRequest,
+    ),
     account(
         "elevenlabs.text_to_speech",
         "elevenlabs.text_to_speech",

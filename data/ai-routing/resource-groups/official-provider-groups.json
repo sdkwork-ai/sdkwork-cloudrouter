@@ -158,6 +158,10 @@
         {
           "itemType": "resource",
           "resourceCode": "api.gemini.video_generation"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.gemini.video_task_query"
         }
       ]
     },

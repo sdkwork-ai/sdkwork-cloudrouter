@@ -147,6 +147,22 @@
       "sortOrder": 460
     },
     {
+      "resourceCode": "api.gemini.video_task_query",
+      "resourceType": "api_endpoint",
+      "displayName": "Gemini Video Task Query",
+      "vendorCode": "gemini",
+      "modalityCode": "video",
+      "apiCode": "gemini.video_task_query",
+      "method": "GET",
+      "pathTemplate": "/v1beta/models/{model}/operations/{operationId}",
+      "capability": "network",
+      "capabilities": [
+        "network",
+        "http"
+      ],
+      "sortOrder": 470
+    },
+    {
       "resourceCode": "api.kling.text_to_video",
       "resourceType": "api_endpoint",
       "displayName": "Kling Text To Video",

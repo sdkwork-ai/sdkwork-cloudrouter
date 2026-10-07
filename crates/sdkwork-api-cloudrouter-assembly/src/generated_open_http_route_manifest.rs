@@ -131,6 +131,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "googleRetrieveFile",
     ),
     HttpRoute::api_key_or_dual_token(
+        HttpMethod::Get,
+        "/google/v1beta/models/{model}/operations/{operation_id}",
+        "Videos/google",
+        "googleRetrieveVideoOperation",
+    ),
+    HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
         "/google/v1beta/models/{model}:batchEmbedContents",
         "Embeddings/google",
@@ -156,9 +162,33 @@ const HTTP_ROUTES: &[HttpRoute] = &[
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
+        "/google/v1beta/models/{model}:generateImages",
+        "Images/google",
+        "googleGenerateImages",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/google/v1beta/models/{model}:generateVideos",
+        "Videos/google",
+        "googleGenerateVideos",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
         "/google/v1beta/models/{model}:streamGenerateContent",
         "Chat/google",
         "googleStreamGenerateContent",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/kling/v1/images/generations",
+        "Images/kling",
+        "klingCreateImageGeneration",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Get,
+        "/kling/v1/tasks/{task_id}",
+        "Images/kling",
+        "klingRetrieveImageGeneration",
     ),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,
@@ -956,6 +986,12 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "/volcengine/api/v3/contents/generations/tasks/{task_id}",
         "Videos/volcengine",
         "volcengineRetrieveContentGenerationTask",
+    ),
+    HttpRoute::api_key_or_dual_token(
+        HttpMethod::Post,
+        "/volcengine/api/v3/images/generations",
+        "Images/volcengine",
+        "volcengineCreateImageGeneration",
     ),
 ];
 

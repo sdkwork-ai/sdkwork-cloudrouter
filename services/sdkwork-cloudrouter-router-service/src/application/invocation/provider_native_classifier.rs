@@ -308,6 +308,7 @@ pub fn provider_native_api_code_from_normalized_path(
         "google" | "gemini" if gemini_model_action_matches(path, "generatevideos") => {
             "gemini.video_generation"
         }
+        "google" | "gemini" if gemini_operation_poll_matches(path) => "gemini.video_task_query",
         "kling" if path == "/v1/videos/text2video" => "kling.text_to_video",
         "kling" if path == "/v1/videos/generations" => "kling.text_to_video",
         "kling" if path == "/v1/videos/avatar" => "kling.avatar",
@@ -407,6 +408,14 @@ pub fn provider_native_api_code_from_normalized_path(
 
 fn gemini_model_action_matches(path: &str, action: &str) -> bool {
     path.starts_with("/v1beta/models/") && path.ends_with(&format!(":{action}"))
+}
+
+/// Matches the Veo long-running operation poll path
+/// (`/v1beta/models/{model}/operations/{operation_id}`): the create face
+/// (`:generateVideos`) returns an operation name and every subsequent poll
+/// reads it back under the same model resource.
+fn gemini_operation_poll_matches(path: &str) -> bool {
+    path.starts_with("/v1beta/models/") && path.contains("/operations/")
 }
 
 /// Matches the task-polling path of a vendor family, for example

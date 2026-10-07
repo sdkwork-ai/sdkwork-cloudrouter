@@ -1872,7 +1872,8 @@ fn endpoint_modality_code(endpoint_code: &str) -> Option<String> {
         | "jimeng.task_query"
         | "volcengine.task_query"
         | "kling.task_query"
-        | "vidu.video_task_query" => Some("video"),
+        | "vidu.video_task_query"
+        | "gemini.video_task_query" => Some("video"),
         "minimax.music_generation" | "suno.music_generation" => Some("music"),
         "elevenlabs.text_to_speech" | "volcengine.speech" => Some("audio"),
         "elevenlabs.sound_generation" | "sfx.sound" => Some("audio"),
@@ -3412,6 +3413,10 @@ mod tests {
             (
                 "gemini.video_generation",
                 "/v1beta/models/{model}:generateVideos",
+            ),
+            (
+                "gemini.video_task_query",
+                "/v1beta/models/{model}/operations/{operationId}",
             ),
             ("jimeng.image_generation", "/v1/images/generations"),
             ("jimeng.task_query", "/v1/tasks/{taskId}"),

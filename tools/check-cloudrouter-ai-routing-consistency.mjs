@@ -325,6 +325,20 @@ function parsePathArms(source, relativePath) {
       continue;
     }
 
+    // The Veo long-running operation poll:
+    //   gemini_operation_poll_matches(path) => "gemini.video_task_query"
+    shape = condition.match(
+      /^gemini_operation_poll_matches\(path\) => "([^"]+)"$/,
+    );
+    if (shape) {
+      arms.push({
+        providers,
+        kind: "geminiOperationPoll",
+        apiCode: shape[1],
+      });
+      continue;
+    }
+
     shape = condition.match(
       /^path\.starts_with\("([^"]+)"\) && path\.ends_with\("([^"]+)"\) => "([^"]+)"$/,
     );
@@ -405,6 +419,11 @@ function armPinnedPaths(arm) {
         : [`${GEMINI_MODELS_PREFIX}{model}:${arm.action}`];
     case "poll":
       return [`/${arm.family}/{task_id}`, `/${arm.family}/task_abc123`];
+    case "geminiOperationPoll":
+      return [
+        `${GEMINI_MODELS_PREFIX}{model}/operations/{operation_id}`,
+        `${GEMINI_MODELS_PREFIX}{model}/operations/op-abc123`,
+      ];
     default:
       return [];
   }
@@ -446,6 +465,14 @@ function armAnswersTemplate(arm, template, apiCode) {
       }
       return !nanoModel;
     }
+    case "geminiOperationPoll": {
+      const lower = template.toLowerCase();
+      if (!lower.startsWith(GEMINI_MODELS_PREFIX)) return false;
+      const marker = "/operations/";
+      const markerIndex = lower.indexOf(marker);
+      if (markerIndex < 0) return false;
+      return lower.slice(markerIndex + marker.length).length > 0;
+    }
     default:
       return collapse("") === collapse(template);
   }
@@ -479,6 +506,15 @@ function resolveApiCode(arms, supplierCode, standardPath) {
           path === `/${arm.family}/{task_id}` ||
           (path.startsWith(prefix) &&
             path.slice(prefix.length).trim().length > 0);
+        break;
+      }
+      case "geminiOperationPoll": {
+        hit =
+          path.startsWith(GEMINI_MODELS_PREFIX) &&
+          path.includes("/operations/") &&
+          path.slice(path.indexOf("/operations/") + "/operations/".length)
+            .trim()
+            .length > 0;
         break;
       }
       default:
