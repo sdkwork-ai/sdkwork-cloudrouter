@@ -42,7 +42,7 @@ pub fn resolve_cloud_web_environment_from_process_env() -> WebEnvironment {
 /// Cloud Router HTTP service security policy aligned with IAM/Drive dev bootstrap behavior.
 ///
 /// Registered SDKWork desktop WebView and mini program client origins
-/// (`app://dsh`, `app://birdcoder`, `tauri://localhost`,
+/// (`app://dsh`, `app://birdcoder`, `dsh-app://app`, `tauri://localhost`,
 /// `https://servicewechat.com`, ...) are merged into every environment posture
 /// so the shells keep working even when deployment env files omit them.
 pub fn cloud_service_security_policy(environment: &WebEnvironment) -> SecurityPolicy {
@@ -139,6 +139,7 @@ mod tests {
                 "app://dsh",
                 "app://birdcoder",
                 "app://sdkwork",
+                "dsh-app://app",
                 "https://servicewechat.com",
             ] {
                 policy
