@@ -17,6 +17,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./domains": {
+      "types": "./src/domains.ts",
+      "import": "./src/domains.ts",
+      "default": "./src/domains.ts"
     }
   },
   "scripts": {
