@@ -31,6 +31,7 @@ import { SdkworkBackendClient as ModelsBackendClient } from '@sdkwork/models-bac
 import { SdkworkAppClient as ModelsAppClient } from '@sdkwork/models-app-sdk';
 import { SdkworkBackendClient as MembershipBackendClient } from '@sdkwork/membership-backend-sdk';
 import { SdkworkBackendClient as CommunityBackendClient } from '@sdkwork/community-backend-sdk';
+import { SdkworkBackendClient as CourseBackendClient } from '@sdkwork/course-backend-sdk';
 import { SdkworkBackendClient as PaymentBackendClient } from '@sdkwork/payment-backend-sdk';
 import { SdkworkBackendClient as BaseDataBackendClient } from '@sdkwork/base-data-backend-sdk';
 import { SdkworkBackendClient as PromotionBackendClient } from '@sdkwork/promotion-backend-sdk';
@@ -687,6 +688,7 @@ let promptsBackendClient: SdkworkPromptsBackendClient | null = null;
 let driveAppClient: SdkworkDriveAppClient | null = null;
 let membershipBackendClient: MembershipBackendClient | null = null;
 let communityBackendClient: CommunityBackendClient | null = null;
+let courseBackendClient: CourseBackendClient | null = null;
 let paymentBackendClient: PaymentBackendClient | null = null;
 let baseDataBackendClient: BaseDataBackendClient | null = null;
 let promotionBackendClient: PromotionBackendClient | null = null;
@@ -802,6 +804,16 @@ export function createSdkworkCommunityBackendSdkClient(
 ): CommunityBackendClient {
   return attachCloudRouterSdkSessionAuthBoundary(
     new CommunityBackendClient(buildDependencyBackendConfig(options, 'VITE_SDKWORK_COMMUNITY_BACKEND_API_BASE_URL')),
+  );
+}
+
+export type SdkworkCourseBackendSdkClientOptions = CloudRouterBackendSdkClientOptions;
+
+export function createSdkworkCourseBackendSdkClient(
+  options: SdkworkCourseBackendSdkClientOptions = {},
+): CourseBackendClient {
+  return attachCloudRouterSdkSessionAuthBoundary(
+    new CourseBackendClient(buildDependencyBackendConfig(options, 'VITE_SDKWORK_COURSE_BACKEND_API_BASE_URL')),
   );
 }
 
@@ -1203,6 +1215,18 @@ export function getSdkworkCommunityBackendSdkClient(
   return communityBackendClient;
 }
 
+export function getSdkworkCourseBackendSdkClient(
+  options: SdkworkCourseBackendSdkClientOptions = {},
+): CourseBackendClient {
+  if (hasRuntimeOverrides(options)) {
+    return createSdkworkCourseBackendSdkClient(options);
+  }
+  if (!courseBackendClient) {
+    courseBackendClient = createSdkworkCourseBackendSdkClient();
+  }
+  return courseBackendClient;
+}
+
 export function getSdkworkPaymentBackendSdkClient(
   options: SdkworkPaymentBackendSdkClientOptions = {},
 ): PaymentBackendClient {
@@ -1531,6 +1555,7 @@ function resetCloudRouterSdkClientCaches(): void {
   skillsAppClient = null;
   driveAppClient = null;
   membershipBackendClient = null;
+  courseBackendClient = null;
   paymentBackendClient = null;
   baseDataBackendClient = null;
   promotionBackendClient = null;

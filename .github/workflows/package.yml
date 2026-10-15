@@ -99,6 +99,10 @@ on:
         description: sdkwork-community commit/ref.
         required: false
         default: main
+      sdkwork_course_ref:
+        description: sdkwork-course commit/ref.
+        required: false
+        default: main
       sdkwork_database_ref:
         description: sdkwork-database commit/ref.
         required: false
@@ -278,6 +282,7 @@ jobs:
           "SDKWORK_CATALOG_REF": "${{ github.event.inputs.sdkwork_catalog_ref || vars.SDKWORK_CATALOG_REF }}",
           "SDKWORK_CLOUDROUTER_REF": "${{ github.event.inputs.sdkwork_cloudrouter_ref || vars.SDKWORK_CLOUDROUTER_REF }}",
           "SDKWORK_COMMUNITY_REF": "${{ github.event.inputs.sdkwork_community_ref || vars.SDKWORK_COMMUNITY_REF }}",
+          "SDKWORK_COURSE_REF": "${{ github.event.inputs.sdkwork_course_ref || vars.SDKWORK_COURSE_REF }}",
           "SDKWORK_DOCUMENTS_REF": "${{ github.event.inputs.sdkwork_documents_ref || vars.SDKWORK_DOCUMENTS_REF }}",
           "SDKWORK_IAM_REF": "${{ github.event.inputs.sdkwork_iam_ref || vars.SDKWORK_IAM_REF }}",
           "SDKWORK_KERNEL_REF": "${{ github.event.inputs.sdkwork_kernel_ref || vars.SDKWORK_KERNEL_REF }}",

@@ -13,10 +13,14 @@ import {
 import { HOME_SECTIONS } from './packages/sdkwork-cloudrouter-pc-admin-site/src/siteContentFields.ts';
 
 const PORTAL_ROOT = path.dirname(new URL(import.meta.url).pathname).replace(/^\/([A-Za-z]:)/, '$1');
-const ADMIN_SITE_SOURCE = path.join(
-  PORTAL_ROOT,
-  'packages/sdkwork-cloudrouter-pc-admin-site/src/index.tsx',
-);
+const ADMIN_SITE_SOURCES = [
+  path.join(PORTAL_ROOT, 'packages/sdkwork-cloudrouter-pc-admin-site/src/index.tsx'),
+  // The download catalog editor and the shared controls are separate modules of the same page;
+  // their t() calls are page copy and must pass the same existence check.
+  path.join(PORTAL_ROOT, 'packages/sdkwork-cloudrouter-pc-admin-site/src/DownloadCatalogEditor.tsx'),
+  path.join(PORTAL_ROOT, 'packages/sdkwork-cloudrouter-pc-admin-site/src/SiteSettingsControls.tsx'),
+];
+const ADMIN_SITE_SOURCE = ADMIN_SITE_SOURCES[0];
 const CATEGORY_SOURCE = path.join(
   PORTAL_ROOT,
   'packages/sdkwork-cloudrouter-pc-admin-site/src/siteSettingsCategories.ts',
@@ -104,6 +108,11 @@ function readDeclaredCategories(): string[] {
     .map((match) => match[1]);
 }
 
+/** Every module of the admin page whose literal t() calls must resolve. */
+function readAdminSiteSources(): string {
+  return ADMIN_SITE_SOURCES.map((file) => readFileSync(file, 'utf8')).join('\n');
+}
+
 /**
  * The registry-driven half of the sidebar.
  *
@@ -150,7 +159,7 @@ test('every category, platform, footer region and homepage region label resolves
  * (`Record<HomeContentWarningCode, string>`); that the *keys* exist is not.
  */
 test('every homepage warning the console can raise has a sentence in both locales', () => {
-  const source = readFileSync(ADMIN_SITE_SOURCE, 'utf8');
+  const source = readAdminSiteSources();
   const keys = [
     ...source.matchAll(/'(admin\.siteSettings\.homeContent\.warning\.[A-Za-z]+)'/g),
   ].map((match) => match[1]);
@@ -166,14 +175,39 @@ test('every homepage warning the console can raise has a sentence in both locale
 });
 
 /**
+ * The download editor's warnings are looked up through a `Record<DownloadCatalogWarningCode,
+ * string>` table the same way the homepage warnings are, so the scan cannot see them either.
+ */
+test('every download catalog warning the console can raise has a sentence in both locales', () => {
+  const source = readFileSync(
+    path.join(PORTAL_ROOT, 'packages/sdkwork-cloudrouter-pc-admin-site/src/DownloadCatalogEditor.tsx'),
+    'utf8',
+  );
+  const keys = [
+    ...source.matchAll(/'(admin\.siteSettings\.downloads\.warning\.[A-Za-z]+)'/g),
+  ].map((match) => match[1]);
+
+  assert.ok(keys.length >= 5, `expected a warning per incomplete-catalog kind, saw ${keys.length}`);
+  assert.equal(new Set(keys).size, keys.length, 'a warning key is written twice');
+
+  for (const locale of ['en', 'zh'] as const) {
+    const bundle = BUNDLES[locale] as Record<string, unknown>;
+    const missing = keys.filter((key) => typeof bundle[key] !== 'string');
+    assert.deepEqual(missing, [], `${locale} is missing download warning keys:\n${missing.join('\n')}`);
+  }
+});
+
+/**
  * Every literal `t('…')` the page or its category table contains must exist. This is the cheap,
  * mechanical half of the same concern: a renamed key would otherwise silently render as itself.
  */
 test('no t() call on the admin site page references an undefined key', () => {
   const referenced = new Set<string>();
-  for (const file of [ADMIN_SITE_SOURCE, CATEGORY_SOURCE]) {
-    const source = readFileSync(file, 'utf8');
-    for (const match of source.matchAll(/\bt\(\s*'([^']+)'/g)) referenced.add(match[1]);
+  for (const match of readAdminSiteSources().matchAll(/\bt\(\s*'([^']+)'/g)) {
+    referenced.add(match[1]);
+  }
+  for (const match of readFileSync(CATEGORY_SOURCE, 'utf8').matchAll(/\bt\(\s*'([^']+)'/g)) {
+    referenced.add(match[1]);
   }
   assert.ok(referenced.size > 20, `expected the page to reference many keys, saw ${referenced.size}`);
 
@@ -186,23 +220,23 @@ test('no t() call on the admin site page references an undefined key', () => {
 
 
 /**
- * `BusinessStatePanel` and the shared `FileUpload` both ship English defaults for their
- * chrome (Retry / Click to upload or drag images here / Some files could not be added.).
- * The page must override all of them, otherwise a Chinese operator reads English chrome.
+ * The shared upload chrome both editors render ships English defaults (DriveUploadImage's
+ * pick/retry/uploading strings, BusinessStatePanel's retry label). The page must override all of
+ * them, otherwise a Chinese operator reads English chrome.
  */
 test('the admin site page overrides the shared components English default chrome', () => {
-  const source = readFileSync(ADMIN_SITE_SOURCE, 'utf8');
+  const source = readAdminSiteSources();
   const problems: string[] = [];
 
-  const fileUploadTags = source.match(/<FileUpload\b[\s\S]*?\/>/g) ?? [];
-  assert.ok(fileUploadTags.length > 0, 'expected the admin site page to render FileUpload');
-  for (const tag of fileUploadTags) {
-    // `label` is not cosmetic: the shared control draws it as a visible <Label> AND uses it
-    // as the file input's aria-label, so omitting it publishes the English default
-    // "Upload images" to both sighted and assistive-technology users on a Chinese page.
-    for (const prop of ['label', 'emptyStateTitle', 'emptyStateDescription', 'rejectionTitle']) {
+  const imageUploadTags = source.match(/<DriveUploadImage\b[\s\S]*?\/>/g) ?? [];
+  assert.ok(imageUploadTags.length > 0, 'expected the admin site page to render DriveUploadImage');
+  for (const tag of imageUploadTags) {
+    // `copy` carries the component's own chrome (pick/remove/retry/uploading strings) and
+    // `label` becomes the file input's accessible name; omitting either publishes the English
+    // default to sighted and assistive-technology users on a Chinese page.
+    for (const prop of ['copy', 'label']) {
       if (!tag.includes(prop)) {
-        problems.push(`FileUpload is missing ${prop}`);
+        problems.push(`DriveUploadImage is missing ${prop}`);
       }
     }
   }

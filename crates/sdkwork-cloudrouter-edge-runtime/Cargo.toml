@@ -47,6 +47,7 @@ sdkwork_api_messaging_assembly.workspace = true
 sdkwork_api_partner_assembly.workspace = true
 sdkwork-api-log-assembly.workspace = true
 sdkwork_api_community_assembly.workspace = true
+sdkwork_api_course_assembly.workspace = true
 sdkwork_api_rtc_assembly.workspace = true
 sdkwork_api_membership_assembly.workspace = true
 sdkwork_api_payment_assembly.workspace = true

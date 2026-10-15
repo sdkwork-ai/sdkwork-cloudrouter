@@ -3,14 +3,23 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
+  applyResolvedDownloadUrls,
   cloudRouterDownloadCatalog,
+  dropHiddenDownloadCatalogCards,
+  hasVisibleDownloadCatalogCards,
   createCloudRouterDownloadCards,
   createCloudRouterDownloadCatalog,
+  readDownloadActionDriveRefs,
   readRuntimeDownloadCatalog,
+  resolvableDownloadDriveRefs,
   resolveCloudRouterDownloadBaseUrl,
   resolveUsableDownloadCatalog,
 } from "./packages/sdkwork-cloudrouter-pc-home/src/downloads/cloudRouterDownloads.ts";
 import { createHomeContentRuntime } from "./packages/sdkwork-cloudrouter-pc-home/src/content/home-content.ts";
+import {
+  detectSdkworkDownloadPlatform,
+  resolveSdkworkDownloadCardActions,
+} from "./packages/sdkwork-cloudrouter-pc-downloads/src/platform-detection";
 
 function readPortalSource(relativePath: string): string {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8");
@@ -596,4 +605,295 @@ test("the legacy base-URL download path resolves brand tokens in every edition t
     }).map((card) => [card.id, card.title]),
   );
   assert.equal(untitled.get("cloud-router-desktop"), "{{productName}} Desktop");
+});
+
+test("published drive installer references are resolved onto the rendered cards", () => {
+  const publishedCatalog = {
+    schemaVersion: "2026-05-18.sdkwork-download-catalog.v1",
+    generatedAt: "1.0.0.release",
+    product: { id: "sdkwork-cloudrouter", name: "SdkWork CloudRouter", version: "1.0.0" },
+    cards: [
+      {
+        id: "card-desktop",
+        title: "Desktop",
+        description: "For developers.",
+        kind: "desktop",
+        actions: [
+          {
+            id: "desktop-windows",
+            label: "Windows x64",
+            href: "https://example.com/cloudrouter.msi",
+            platform: "windows",
+          },
+          {
+            id: "desktop-macos",
+            label: "macOS",
+            href: "drive://spaces/space-1/nodes/node-9",
+            platform: "macos",
+            drive: { spaceId: "space-1", nodeId: "node-9", shareToken: "token-9" },
+          },
+        ],
+      },
+    ],
+  };
+
+  const refs = readDownloadActionDriveRefs(publishedCatalog);
+  assert.equal(refs.size, 1);
+  assert.deepEqual(refs.get("card-desktop/desktop-macos"), {
+    nodeId: "node-9",
+    shareToken: "token-9",
+    spaceId: "space-1",
+  });
+
+  // The catalog is renderable, the drive action normalizes inert (empty href, disabled), and
+  // resolution flips exactly that action on without touching the plain URL next to it.
+  const cards = createCloudRouterDownloadCards(t, { catalog: publishedCatalog });
+  assert.equal(cards[0].actions.find((action) => action.id === "desktop-macos")?.disabled, true);
+  const resolved = applyResolvedDownloadUrls(cards, new Map([
+    ["card-desktop/desktop-macos", "https://storage.example.test/signed?X-Amz-Expires=3600"],
+  ]));
+  const macos = resolved[0].actions.find((action) => action.id === "desktop-macos");
+  assert.equal(macos?.disabled, false);
+  assert.equal(macos?.href, "https://storage.example.test/signed?X-Amz-Expires=3600");
+  const windows = resolved[0].actions.find((action) => action.id === "desktop-windows");
+  assert.equal(windows?.href, "https://example.com/cloudrouter.msi");
+
+  // The panel wires resolution in: a catalog with drive references must never render the raw
+  // drive:// mirror as a navigable href.
+  const panelSource = readPortalSource("./packages/sdkwork-cloudrouter-pc-home/src/components/DownloadSection.tsx");
+  assert.ok(panelSource.includes("readDownloadActionDriveRefs"), "panel must read drive references");
+  assert.ok(panelSource.includes("applyResolvedDownloadUrls"), "panel must apply resolved URLs");
+  assert.ok(panelSource.includes("useDriveDownloadUrls"), "panel must resolve through the hook");
+});
+
+test("drive references without an action or node id are ignored rather than guessed", () => {
+  const refs = readDownloadActionDriveRefs({
+    cards: [
+      { id: "card-a", actions: [{ id: "action-a", drive: { nodeId: "" } }] },
+      { id: "card-b", actions: [{ drive: { nodeId: "node-2" } }] },
+      { actions: [{ id: "action-c", drive: { nodeId: "node-3" } }] },
+      { id: "card-d", actions: [{ id: "action-d", drive: "not-an-object" }] },
+    ],
+  });
+  assert.equal(refs.size, 0);
+});
+
+test("hidden cards leave the section without resurrecting the bundled catalog", () => {
+  const published = {
+    schemaVersion: "2026-05-18.sdkwork-download-catalog.v1",
+    product: { id: "sdkwork-cloudrouter", name: "SdkWork CloudRouter", version: "1.0.0" },
+    cards: [
+      { id: "card-desktop", title: "Desktop", description: "d", kind: "desktop", actions: [{ id: "a1", label: "Win", href: "https://example.com/a.msi" }] },
+      { id: "card-mobile", title: "Mobile", description: "m", kind: "mobile", hidden: true, actions: [{ id: "a2", label: "iOS", href: "", disabled: true }] },
+    ],
+  };
+
+  // A catalog with no hidden flag comes back untouched — the same object, not a clone (the
+  // common case pays nothing).
+  const unflagged = {
+    ...published,
+    cards: published.cards.map(({ hidden: _hidden, ...card }) => card),
+  };
+  assert.equal(dropHiddenDownloadCatalogCards(unflagged), unflagged);
+
+  const filtered = dropHiddenDownloadCatalogCards({ ...published });
+  assert.deepEqual(
+    (filtered as { cards: Array<{ id: string }> }).cards.map((card) => card.id),
+    ["card-desktop"],
+  );
+
+  // The all-hidden case is what the panel early-returns on: the section draws nothing rather
+  // than resurrecting the bundled catalog.
+  const allHidden = dropHiddenDownloadCatalogCards({
+    ...published,
+    cards: published.cards.map((card) => ({ ...card, hidden: true })),
+  });
+  assert.equal(hasVisibleDownloadCatalogCards(allHidden), false);
+  assert.equal(hasVisibleDownloadCatalogCards(filtered), true);
+  assert.equal(hasVisibleDownloadCatalogCards(published), true);
+
+  // Hidden cards never contribute drive references either — their installers are not rendered.
+  const withDrive = {
+    ...published,
+    cards: [
+      ...published.cards,
+      { id: "card-hidden-drive", title: "X", description: "x", kind: "package", hidden: true,
+        actions: [{ id: "a3", label: "Pkg", href: "drive://spaces/s/n", drive: { spaceId: "s", nodeId: "n", shareToken: "t" } }] },
+    ],
+  };
+  assert.equal(readDownloadActionDriveRefs(dropHiddenDownloadCatalogCards(withDrive)).size, 0);
+
+  // And the panel wires the filter + early return in.
+  const panelSource = readPortalSource("./packages/sdkwork-cloudrouter-pc-home/src/components/DownloadSection.tsx");
+  assert.ok(panelSource.includes("dropHiddenDownloadCatalogCards"), "panel must drop hidden cards");
+  assert.ok(panelSource.includes("hasVisibleDownloadCatalogCards"), "panel must early-return when nothing is visible");
+});
+
+test("an explicitly hidden drive installer is never re-enabled by URL resolution", () => {
+  const published = {
+    schemaVersion: "2026-05-18.sdkwork-download-catalog.v1",
+    product: { id: "sdkwork-cloudrouter", name: "SdkWork CloudRouter", version: "1.0.0" },
+    cards: [
+      {
+        id: "card-desktop",
+        title: "Desktop",
+        description: "d",
+        kind: "desktop",
+        actions: [
+          {
+            id: "desktop-visible",
+            label: "Windows",
+            href: "drive://spaces/s/n-1",
+            platform: "windows",
+            drive: { spaceId: "s", nodeId: "n-1", shareToken: "t-1" },
+          },
+          {
+            id: "desktop-hidden",
+            label: "macOS",
+            href: "drive://spaces/s/n-2",
+            platform: "macos",
+            disabled: true,
+            drive: { spaceId: "s", nodeId: "n-2", shareToken: "t-2" },
+          },
+        ],
+      },
+    ],
+  };
+
+  // Both actions carry drive references, but only the visible one is resolvable — the hidden
+  // one's disabled state is an operator decision the resolution flow must respect.
+  const refs = readDownloadActionDriveRefs(published);
+  assert.equal(refs.get("card-desktop/desktop-visible")?.disabled, undefined);
+  assert.equal(refs.get("card-desktop/desktop-hidden")?.disabled, true);
+
+  const resolvable = resolvableDownloadDriveRefs(refs);
+  assert.equal(resolvable.size, 1);
+  assert.ok(resolvable.has("card-desktop/desktop-visible"));
+
+  // End to end: resolution enables the visible installer and leaves the hidden one disabled.
+  const cards = createCloudRouterDownloadCards(t, { catalog: published });
+  // Even a URL that arrives for the hidden installer's key must not wake it: the raw document's
+  // explicit disabled flag is the second line of defense behind the resolvable filter.
+  const resolved = applyResolvedDownloadUrls(cards, new Map([
+    ["card-desktop/desktop-visible", "https://storage.example.test/signed-1?X-Amz-Expires=3600"],
+    ["card-desktop/desktop-hidden", "https://storage.example.test/signed-2?X-Amz-Expires=3600"],
+  ]), refs);
+  const visible = resolved[0].actions.find((action) => action.id === "desktop-visible");
+  assert.equal(visible?.disabled, false);
+  assert.equal(visible?.href, "https://storage.example.test/signed-1?X-Amz-Expires=3600");
+  const hidden = resolved[0].actions.find((action) => action.id === "desktop-hidden");
+  assert.equal(hidden?.disabled, true);
+  assert.equal(hidden?.href, "");
+});
+
+test("a pending drive installer shows its own name, or the operator's authored label", () => {
+  const published = {
+    schemaVersion: "2026-05-18.sdkwork-download-catalog.v1",
+    product: { id: "sdkwork-cloudrouter", name: "SdkWork CloudRouter", version: "1.0.0" },
+    cards: [
+      {
+        id: "card-desktop",
+        title: "Desktop",
+        description: "d",
+        kind: "desktop",
+        actions: [
+          {
+            id: "desktop-plain",
+            label: "Windows",
+            href: "drive://spaces/s/n-1",
+            platform: "windows",
+            drive: { spaceId: "s", nodeId: "n-1", shareToken: "t-1" },
+          },
+          {
+            id: "desktop-authored",
+            label: "macOS",
+            href: "drive://spaces/s/n-2",
+            platform: "macos",
+            unavailableLabel: "Contact sales for the beta build",
+            drive: { spaceId: "s", nodeId: "n-2", shareToken: "t-2" },
+          },
+          {
+            id: "desktop-hidden",
+            label: "Linux",
+            href: "drive://spaces/s/n-3",
+            platform: "linux",
+            disabled: true,
+            drive: { spaceId: "s", nodeId: "n-3", shareToken: "t-3" },
+          },
+        ],
+      },
+    ],
+  };
+
+  const refs = readDownloadActionDriveRefs(published);
+  const cards = createCloudRouterDownloadCards(t, { catalog: published });
+  // Nothing has resolved yet: the localizer has filled every disabled action with
+  // "… Coming soon", which is wrong for an installer that exists and is about to resolve.
+  const pending = applyResolvedDownloadUrls(cards, new Map(), refs);
+  const plain = pending[0].actions.find((action) => action.id === "desktop-plain");
+  assert.equal(plain?.unavailableLabel, "Windows");
+  const authored = pending[0].actions.find((action) => action.id === "desktop-authored");
+  assert.equal(authored?.unavailableLabel, "Contact sales for the beta build");
+  // The hidden action keeps whatever the localizer wrote — it is deliberately unavailable.
+  const hidden = pending[0].actions.find((action) => action.id === "desktop-hidden");
+  assert.notEqual(hidden?.unavailableLabel, "Linux");
+
+  // Resolution replaces the pending label with a working link.
+  const resolved = applyResolvedDownloadUrls(cards, new Map([
+    ["card-desktop/desktop-plain", "https://storage.example.test/signed-1?X-Amz-Expires=3600"],
+    ["card-desktop/desktop-authored", "https://storage.example.test/signed-2?X-Amz-Expires=3600"],
+  ]), refs);
+  assert.equal(resolved[0].actions.find((action) => action.id === "desktop-plain")?.href, "https://storage.example.test/signed-1?X-Amz-Expires=3600");
+  assert.equal(resolved[0].actions.find((action) => action.id === "desktop-authored")?.href, "https://storage.example.test/signed-2?X-Amz-Expires=3600");
+});
+
+test("HarmonyOS is a first-class platform across detection, the bundled catalog, and published docs", () => {
+  // UA detection must see HarmonyOS before Android: NEXT UAs carry "OpenHarmony" alone and
+  // HarmonyOS 2-4 UAs carry both tokens, so an Android-first check would swallow every Huawei
+  // device into the plain Android branch.
+  assert.equal(detectSdkworkDownloadPlatform("Mozilla/5.0 (Phone; OpenHarmony 5.0) AppleWebKit/537.36 (KHTML, like Gecko) Mobile Safari/537.36"), "harmonyos");
+  assert.equal(detectSdkworkDownloadPlatform("Mozilla/5.0 (Linux; Android 12; HarmonyOS; HMSCore 6.6.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99 Mobile Safari/537.36"), "harmonyos");
+  assert.equal(detectSdkworkDownloadPlatform("Mozilla/5.0 (Linux; Android 13; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Mobile Safari/537.36"), "android");
+  assert.equal(detectSdkworkDownloadPlatform("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile Safari/604.1"), "ios");
+
+  // The bundled catalog ships HarmonyOS on the mobile card as a coming-soon entry, matching
+  // iOS/Android until an operator publishes a real package.
+  const bundledActions = actionsById(createCloudRouterDownloadCards(t).flatMap((card) => card.actions));
+  const harmony = bundledActions.get("mobile-harmonyos");
+  assert.ok(harmony, "bundled mobile card must ship a HarmonyOS entry");
+  assert.equal(harmony?.platform, "harmonyos");
+  assert.equal(harmony?.disabled, true);
+
+  // A published catalog that gives HarmonyOS a real package renders it as the card's primary
+  // action for a HarmonyOS visitor (detected-platform strategy) and as an enabled secondary.
+  const published = {
+    schemaVersion: "2026-05-18.sdkwork-download-catalog.v1",
+    product: { id: "sdkwork-cloudrouter", name: "SdkWork CloudRouter", version: "1.0.0" },
+    cards: [
+      {
+        id: "card-mobile",
+        title: "Mobile",
+        description: "m",
+        kind: "mobile",
+        primaryActionStrategy: "detected-platform",
+        actions: [
+          { id: "mobile-ios", label: "iOS", href: "", platform: "ios", disabled: true },
+          {
+            id: "mobile-harmonyos",
+            label: "HarmonyOS",
+            href: "https://example.com/cloudrouter-harmonyos-1.0.0.hap",
+            platform: "harmonyos",
+          },
+        ],
+      },
+    ],
+  };
+  const cards = createCloudRouterDownloadCards(t, { catalog: published });
+  const harmonyAction = cards[0].actions.find((action) => action.id === "mobile-harmonyos");
+  assert.equal(harmonyAction?.platform, "harmonyos", "the runtime keeps the harmonyos platform on published actions");
+  assert.equal(harmonyAction?.disabled, false);
+  const resolved = resolveSdkworkDownloadCardActions(cards[0], "harmonyos");
+  assert.equal(resolved.primaryAction.id, "mobile-harmonyos");
+  const resolvedForIphone = resolveSdkworkDownloadCardActions(cards[0], "ios");
+  assert.equal(resolvedForIphone.primaryAction.id, "mobile-harmonyos", "a HarmonyOS visitor without an iOS package falls back to the first available installer");
 });

@@ -18,6 +18,12 @@ export function detectSdkworkDownloadPlatform(userAgent?: string): SdkworkDownlo
     return "generic";
   }
 
+  // HarmonyOS first: NEXT UAs carry "OpenHarmony" without "Android", while HarmonyOS 2–4 UAs
+  // usually carry both — an Android check first would swallow every Huawei device.
+  if (normalized.includes("harmonyos") || normalized.includes("openharmony")) {
+    return "harmonyos";
+  }
+
   if (normalized.includes("android")) {
     return "android";
   }

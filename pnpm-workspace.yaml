@@ -213,6 +213,7 @@ packages:
   - "../sdkwork-payment/apps/sdkwork-payment-pc/packages/sdkwork-payment-pc-core"
   - "../sdkwork-drive/sdks/sdkwork-drive-sdk/sdkwork-drive-sdk-typescript"
   - "../sdkwork-community/sdks/sdkwork-community-backend-sdk/sdkwork-community-backend-sdk-typescript"
+  - "../sdkwork-course/sdks/sdkwork-course-backend-sdk/sdkwork-course-backend-sdk-typescript"
   - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-admin-orders"
   - "../sdkwork-order/apps/sdkwork-order-pc/packages/sdkwork-order-pc-admin-trade"
   - "../sdkwork-rtc/apps/sdkwork-rtc-pc/packages/sdkwork-rtc-pc-admin-core"

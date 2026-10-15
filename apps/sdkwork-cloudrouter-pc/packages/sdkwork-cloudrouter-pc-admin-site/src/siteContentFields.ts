@@ -672,3 +672,664 @@ export function toDownloadCatalogPayload(text: string): Record<string, unknown> 
   }
   return parsed;
 }
+
+/**
+ * The download catalog as a form model.
+ *
+ * The catalog stays a JSON document at rest — the release pipeline writes one, and the JSON
+ * editor keeps accepting it — but an operator maintaining a package by hand should not have to
+ * edit a 260-line document to swap one installer URL. This model mirrors the runtime reader in
+ * `sdkwork-cloudrouter-pc-home/src/downloads/cloudRouterDownloads.ts` the same way
+ * `HomeContentForm` mirrors `readHomeContent`: the shapes are written down twice and
+ * `site-content-authoring.test.ts` feeds the console's output through the *real* runtime reader
+ * to keep the two copies honest.
+ *
+ * Fields the editor does not model (per-action `ariaLabel`, `ctaLabel`, `external`, `sources`,
+ * `kind`, and anything a newer console build adds) are carried in `extra` verbatim, so opening a
+ * pipeline-produced catalog in the structured editor and saving it must not silently rewrite it.
+ */
+export const DOWNLOAD_MAX_CARDS = 12;
+/** Bound on one card's platform rows, matching the largest shipped card. */
+export const DOWNLOAD_MAX_ACTIONS_PER_CARD = 24;
+
+export type DownloadCatalogPlatform =
+  | 'android'
+  | 'docker'
+  | 'generic'
+  | 'harmonyos'
+  | 'helm'
+  | 'ios'
+  | 'linux'
+  | 'macos'
+  | 'windows';
+
+export type DownloadCatalogTargetKind =
+  | 'container'
+  | 'desktop'
+  | 'documentation'
+  | 'mobile'
+  | 'package'
+  | 'server';
+
+export type DownloadCatalogCardIcon = 'desktop' | 'download' | 'mobile' | 'server' | 'terminal';
+
+export type DownloadCatalogCardTone = 'brand' | 'mobile' | 'neutral' | 'server';
+
+export type DownloadCatalogPrimaryStrategy = 'detected-platform' | 'first-available';
+
+export const DOWNLOAD_CATALOG_PLATFORMS: readonly DownloadCatalogPlatform[] = [
+  'windows',
+  'macos',
+  'linux',
+  'ios',
+  'android',
+  'harmonyos',
+  'docker',
+  'helm',
+  'generic',
+];
+
+export const DOWNLOAD_CATALOG_KINDS: readonly DownloadCatalogTargetKind[] = [
+  'desktop',
+  'server',
+  'mobile',
+  'package',
+  'container',
+  'documentation',
+];
+
+export const DOWNLOAD_CATALOG_ICONS: readonly DownloadCatalogCardIcon[] = [
+  'desktop',
+  'server',
+  'mobile',
+  'terminal',
+  'download',
+];
+
+export const DOWNLOAD_CATALOG_TONES: readonly DownloadCatalogCardTone[] = [
+  'brand',
+  'server',
+  'mobile',
+  'neutral',
+];
+
+export const DOWNLOAD_CATALOG_PRIMARY_STRATEGIES: readonly DownloadCatalogPrimaryStrategy[] = [
+  'detected-platform',
+  'first-available',
+];
+
+/**
+ * An uploaded installer, stored on the action as a Drive reference.
+ *
+ * Drive download URLs are short-lived presigned links, so the catalog stores the stable node
+ * reference plus the read-only share token minted at upload time; the landing page exchanges the
+ * token for a fresh download URL at render time (the same chain the public footer uses for
+ * Drive-hosted QR artwork). `href` mirrors the reference as a `drive://` URI, which the runtime's
+ * own href normalizer keeps inert — a visitor never navigates into it directly.
+ */
+export interface DownloadCatalogDriveRefFields {
+  nodeId: string;
+  shareToken: string;
+  spaceId: string;
+}
+
+export interface DownloadCatalogActionFields {
+  architecture: string;
+  disabled: boolean;
+  drive: DownloadCatalogDriveRefFields;
+  fileName: string;
+  href: string;
+  id: string;
+  label: string;
+  platform: DownloadCatalogPlatform | '';
+  releaseTag: string;
+  sha256: string;
+  /** Operator-typed decimal byte count; serialised back as a JSON number. */
+  sizeBytes: string;
+  unavailableLabel: string;
+  version: string;
+  /** Runtime fields the editor does not model, carried verbatim. */
+  extra: Record<string, unknown>;
+}
+
+export interface DownloadCatalogCardFields {
+  badge: string;
+  description: string;
+  /**
+   * Deliberate per-card visibility: `true` keeps the edition out of the landing page's download
+   * section entirely — how an operator parks an edition that is not ready to ship. Written only
+   * when set (absent means visible), the same "deviations only" rule the action flag follows.
+   */
+  hidden: boolean;
+  icon: DownloadCatalogCardIcon | '';
+  id: string;
+  kind: DownloadCatalogTargetKind | '';
+  primaryActionId: string;
+  primaryActionStrategy: DownloadCatalogPrimaryStrategy | '';
+  title: string;
+  tone: DownloadCatalogCardTone | '';
+  actions: DownloadCatalogActionFields[];
+  extra: Record<string, unknown>;
+}
+
+export interface DownloadCatalogForm {
+  generatedAt: string;
+  productChannel: string;
+  productId: string;
+  productName: string;
+  productReleaseTag: string;
+  productReleaseUrl: string;
+  productVersion: string;
+  cards: DownloadCatalogCardFields[];
+}
+
+/** Stable codes for the entries the homepage would skip, so the console can translate them. */
+export type DownloadCatalogWarningCode =
+  | 'cards.missing'
+  | 'card.identity'
+  | 'card.actions.missing'
+  | 'action.identity'
+  | 'action.target';
+
+function randomIdFragment(): string {
+  return Math.random().toString(36).slice(2, 8);
+}
+
+export function createDownloadCatalogCardId(): string {
+  return `card-${randomIdFragment()}`;
+}
+
+export function createDownloadCatalogActionId(): string {
+  return `action-${randomIdFragment()}`;
+}
+
+export function createEmptyDownloadCatalogAction(): DownloadCatalogActionFields {
+  return {
+    architecture: '',
+    disabled: false,
+    drive: { nodeId: '', shareToken: '', spaceId: '' },
+    fileName: '',
+    href: '',
+    id: createDownloadCatalogActionId(),
+    label: '',
+    platform: '',
+    releaseTag: '',
+    sha256: '',
+    sizeBytes: '',
+    unavailableLabel: '',
+    version: '',
+    extra: {},
+  };
+}
+
+export function createEmptyDownloadCatalogCard(): DownloadCatalogCardFields {
+  return {
+    badge: '',
+    description: '',
+    hidden: false,
+    icon: '',
+    id: createDownloadCatalogCardId(),
+    kind: '',
+    primaryActionId: '',
+    primaryActionStrategy: '',
+    title: '',
+    tone: '',
+    actions: [createEmptyDownloadCatalogAction()],
+    extra: {},
+  };
+}
+
+/** A fresh, empty editor state — a factory, for the same reason `createDefaultHomeContentForm` is. */
+export function createEmptyDownloadCatalogForm(): DownloadCatalogForm {
+  return {
+    generatedAt: '',
+    productChannel: '',
+    productId: '',
+    productName: '',
+    productReleaseTag: '',
+    productReleaseUrl: '',
+    productVersion: '',
+    cards: [],
+  };
+}
+
+/**
+ * A minimal publishable skeleton for "the operator wants to maintain packages by hand".
+ *
+ * Seeded with the product identity this repository ships under and one card holding one empty
+ * row; the warnings list then walks the operator through the two fields the homepage requires.
+ */
+export function createStarterDownloadCatalogForm(): DownloadCatalogForm {
+  return {
+    ...createEmptyDownloadCatalogForm(),
+    productId: 'sdkwork-cloudrouter',
+    cards: [createEmptyDownloadCatalogCard()],
+  };
+}
+
+function readDriveRef(value: unknown): DownloadCatalogDriveRefFields {
+  if (!isRecord(value)) {
+    return { nodeId: '', shareToken: '', spaceId: '' };
+  }
+  return {
+    nodeId: readText(value.nodeId, HOME_LABEL_MAX_LENGTH),
+    shareToken: readText(value.shareToken, 512),
+    spaceId: readText(value.spaceId, HOME_LABEL_MAX_LENGTH),
+  };
+}
+
+function readCatalogPlatform(value: unknown): DownloadCatalogPlatform | '' {
+  const platform = stringValue(value);
+  return platform && (DOWNLOAD_CATALOG_PLATFORMS as readonly string[]).includes(platform)
+    ? (platform as DownloadCatalogPlatform)
+    : '';
+}
+
+function readCatalogKind(value: unknown): DownloadCatalogTargetKind | '' {
+  const kind = stringValue(value);
+  return kind && (DOWNLOAD_CATALOG_KINDS as readonly string[]).includes(kind)
+    ? (kind as DownloadCatalogTargetKind)
+    : '';
+}
+
+function readCatalogIcon(value: unknown): DownloadCatalogCardIcon | '' {
+  const icon = stringValue(value);
+  return icon && (DOWNLOAD_CATALOG_ICONS as readonly string[]).includes(icon)
+    ? (icon as DownloadCatalogCardIcon)
+    : '';
+}
+
+function readCatalogTone(value: unknown): DownloadCatalogCardTone | '' {
+  const tone = stringValue(value);
+  return tone && (DOWNLOAD_CATALOG_TONES as readonly string[]).includes(tone)
+    ? (tone as DownloadCatalogCardTone)
+    : '';
+}
+
+function readCatalogStrategy(value: unknown): DownloadCatalogPrimaryStrategy | '' {
+  const strategy = stringValue(value);
+  return strategy && (DOWNLOAD_CATALOG_PRIMARY_STRATEGIES as readonly string[]).includes(strategy)
+    ? (strategy as DownloadCatalogPrimaryStrategy)
+    : '';
+}
+
+/** Per-action keys the editor models; everything else on the raw record rides along in `extra`. */
+const MODELED_ACTION_KEYS = new Set([
+  'architecture',
+  'disabled',
+  'drive',
+  'fileName',
+  'href',
+  'id',
+  'label',
+  'platform',
+  'releaseTag',
+  'sha256',
+  'sizeBytes',
+  'unavailableLabel',
+  'version',
+]);
+
+const MODELED_CARD_KEYS = new Set([
+  'actions',
+  'badge',
+  'description',
+  'hidden',
+  'icon',
+  'id',
+  'kind',
+  'primaryActionId',
+  'primaryActionStrategy',
+  'title',
+  'tone',
+]);
+
+function readExtraFields(
+  value: Record<string, unknown>,
+  modeledKeys: Set<string>,
+): Record<string, unknown> {
+  const extra: Record<string, unknown> = {};
+  for (const [key, entry] of Object.entries(value)) {
+    if (!modeledKeys.has(key)) {
+      extra[key] = entry;
+    }
+  }
+  return extra;
+}
+
+function readCatalogAction(value: Record<string, unknown>): DownloadCatalogActionFields {
+  return {
+    architecture: readText(value.architecture, HOME_LABEL_MAX_LENGTH),
+    disabled: value.disabled === true,
+    drive: readDriveRef(value.drive),
+    fileName: readText(value.fileName, HOME_LABEL_MAX_LENGTH),
+    href: readText(value.href, HOME_TEXT_MAX_LENGTH),
+    id: readText(value.id, HOME_LABEL_MAX_LENGTH),
+    label: readText(value.label, HOME_LABEL_MAX_LENGTH),
+    platform: readCatalogPlatform(value.platform),
+    releaseTag: readText(value.releaseTag, HOME_LABEL_MAX_LENGTH),
+    sha256: readText(value.sha256, 128),
+    sizeBytes: typeof value.sizeBytes === 'number' && Number.isFinite(value.sizeBytes)
+      ? String(value.sizeBytes)
+      : readText(value.sizeBytes, 24),
+    unavailableLabel: readText(value.unavailableLabel, HOME_LABEL_MAX_LENGTH),
+    version: readText(value.version, HOME_LABEL_MAX_LENGTH),
+    extra: readExtraFields(value, MODELED_ACTION_KEYS),
+  };
+}
+
+function readCatalogCard(value: Record<string, unknown>): DownloadCatalogCardFields {
+  return {
+    badge: readText(value.badge, HOME_LABEL_MAX_LENGTH),
+    description: readText(value.description, HOME_TEXT_MAX_LENGTH),
+    hidden: value.hidden === true,
+    icon: readCatalogIcon(value.icon),
+    id: readText(value.id, HOME_LABEL_MAX_LENGTH),
+    kind: readCatalogKind(value.kind),
+    primaryActionId: readText(value.primaryActionId, HOME_LABEL_MAX_LENGTH),
+    primaryActionStrategy: readCatalogStrategy(value.primaryActionStrategy),
+    title: readText(value.title, HOME_LABEL_MAX_LENGTH),
+    tone: readCatalogTone(value.tone),
+    actions: readRows(value.actions, DOWNLOAD_MAX_ACTIONS_PER_CARD, readCatalogAction),
+    extra: readExtraFields(value, MODELED_CARD_KEYS),
+  };
+}
+
+/**
+ * Reads the published catalog into editor state.
+ *
+ * Defensive like `readHomeContentForm`: this runs against whatever an older or newer console
+ * build stored, and a payload it cannot understand must degrade to empty form fields rather than
+ * throw while the page loads.
+ */
+export function readDownloadCatalogForm(value: unknown): DownloadCatalogForm {
+  const form = createEmptyDownloadCatalogForm();
+  if (!isRecord(value)) {
+    return form;
+  }
+
+  const product = isRecord(value.product) ? value.product : undefined;
+  form.generatedAt = readText(value.generatedAt, HOME_LABEL_MAX_LENGTH);
+  form.productId = product ? readText(product.id, HOME_LABEL_MAX_LENGTH) : '';
+  form.productName = product ? readText(product.name, HOME_LABEL_MAX_LENGTH) : '';
+  form.productVersion = product ? readText(product.version, HOME_LABEL_MAX_LENGTH) : '';
+  form.productChannel = product ? readText(product.channel, HOME_LABEL_MAX_LENGTH) : '';
+  form.productReleaseTag = product ? readText(product.releaseTag, HOME_LABEL_MAX_LENGTH) : '';
+  form.productReleaseUrl = product ? readText(product.releaseUrl, HOME_TEXT_MAX_LENGTH) : '';
+  form.cards = readRows(value.cards, DOWNLOAD_MAX_CARDS, readCatalogCard);
+  return form;
+}
+
+/** Writes one catalog text value the runtime will render verbatim, bounded by its own limits. */
+function writeCatalogText(value: string, maxLength: number): string | undefined {
+  const trimmed = value.replace(CONTROL_CHARACTERS, '').trim().slice(0, maxLength);
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function writeDriveHref(drive: DownloadCatalogDriveRefFields): string | undefined {
+  if (!drive.spaceId || !drive.nodeId) {
+    return undefined;
+  }
+  return `drive://spaces/${drive.spaceId}/nodes/${drive.nodeId}`;
+}
+
+function writeCatalogDriveRef(
+  drive: DownloadCatalogDriveRefFields,
+): Record<string, string> | undefined {
+  const ref: Record<string, string> = {};
+  if (drive.spaceId) ref.spaceId = drive.spaceId;
+  if (drive.nodeId) ref.nodeId = drive.nodeId;
+  if (drive.shareToken) ref.shareToken = drive.shareToken;
+  return Object.keys(ref).length > 0 ? ref : undefined;
+}
+
+function writeCatalogAction(action: DownloadCatalogActionFields): Record<string, unknown> | undefined {
+  const doc: Record<string, unknown> = {};
+  // Preserved extras first, so a read → write cycle keeps both the key set and the key order of
+  // fields the editor does not model — the canonical text the "unsaved changes" counter compares
+  // stays stable for a catalog that was only opened and re-saved.
+  for (const [key, value] of Object.entries(action.extra)) {
+    doc[key] = value;
+  }
+
+  const id = writeCatalogText(action.id, HOME_LABEL_MAX_LENGTH);
+  // No id means the runtime drops the row; keeping the operator's typing in the document still
+  // beats discarding it, so an id-less row is written with the fields it has.
+  if (id !== undefined) doc.id = id;
+
+  const label = writeCatalogText(action.label, HOME_LABEL_MAX_LENGTH);
+  if (label !== undefined) doc.label = label;
+
+  const href = action.href.trim().length > 0
+    ? writeCatalogText(action.href, HOME_TEXT_MAX_LENGTH)
+    : writeDriveHref(action.drive);
+  if (href !== undefined) doc.href = href;
+
+  const drive = writeCatalogDriveRef(action.drive);
+  if (drive !== undefined) doc.drive = drive;
+
+  const architecture = writeCatalogText(action.architecture, HOME_LABEL_MAX_LENGTH);
+  if (architecture !== undefined) doc.architecture = architecture;
+
+  const fileName = writeCatalogText(action.fileName, HOME_LABEL_MAX_LENGTH);
+  if (fileName !== undefined) doc.fileName = fileName;
+
+  const platform = readCatalogPlatform(action.platform);
+  if (platform) doc.platform = platform;
+
+  const releaseTag = writeCatalogText(action.releaseTag, HOME_LABEL_MAX_LENGTH);
+  if (releaseTag !== undefined) doc.releaseTag = releaseTag;
+
+  const sha256 = writeCatalogText(action.sha256, 128);
+  if (sha256 !== undefined) doc.sha256 = sha256;
+
+  const sizeBytes = /^\d+$/u.exec(action.sizeBytes.trim());
+  if (sizeBytes) doc.sizeBytes = Number(sizeBytes[0]);
+
+  const unavailableLabel = writeCatalogText(action.unavailableLabel, HOME_LABEL_MAX_LENGTH);
+  if (unavailableLabel !== undefined) doc.unavailableLabel = unavailableLabel;
+
+  const version = writeCatalogText(action.version, HOME_LABEL_MAX_LENGTH);
+  if (version !== undefined) doc.version = version;
+
+  // An explicit `disabled` is only ever a deviation from the runtime's own rule (no href means
+  // disabled), so `false` writes nothing and `true` opts a row out even with a filled href.
+  if (action.disabled) doc.disabled = true;
+
+  return Object.keys(doc).length > 0 ? doc : undefined;
+}
+
+function writeCatalogCard(card: DownloadCatalogCardFields): Record<string, unknown> | undefined {
+  const doc: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(card.extra)) {
+    doc[key] = value;
+  }
+
+  const id = writeCatalogText(card.id, HOME_LABEL_MAX_LENGTH);
+  if (id !== undefined) doc.id = id;
+
+  const title = writeCatalogText(card.title, HOME_LABEL_MAX_LENGTH);
+  if (title !== undefined) doc.title = title;
+
+  const description = writeCatalogText(card.description, HOME_TEXT_MAX_LENGTH);
+  if (description !== undefined) doc.description = description;
+
+  const kind = readCatalogKind(card.kind);
+  if (kind) doc.kind = kind;
+
+  // Visible is the runtime's own default, so only the deliberate hide is stored.
+  if (card.hidden) doc.hidden = true;
+
+  const icon = readCatalogIcon(card.icon);
+  if (icon) doc.icon = icon;
+
+  const tone = readCatalogTone(card.tone);
+  if (tone) doc.tone = tone;
+
+  const badge = writeCatalogText(card.badge, HOME_LABEL_MAX_LENGTH);
+  if (badge !== undefined) doc.badge = badge;
+
+  const primaryActionId = writeCatalogText(card.primaryActionId, HOME_LABEL_MAX_LENGTH);
+  if (primaryActionId !== undefined) doc.primaryActionId = primaryActionId;
+
+  const strategy = readCatalogStrategy(card.primaryActionStrategy);
+  if (strategy) doc.primaryActionStrategy = strategy;
+
+  const actions = card.actions
+    .slice(0, DOWNLOAD_MAX_ACTIONS_PER_CARD)
+    .map(writeCatalogAction)
+    .filter((entry): entry is Record<string, unknown> => entry !== undefined);
+  // A card with no rows is kept as the operator authored it; the runtime drops the card, and the
+  // console warns, which is the same half-written-row convention the homepage editor uses.
+  if (actions.length > 0) doc.actions = actions;
+
+  return Object.keys(doc).length > 0 ? doc : undefined;
+}
+
+/**
+ * Turns editor state back into the canonical catalog text.
+ *
+ * A completely untouched form serialises to `''` — the same "nothing published" contract
+ * `toDownloadCatalogPayload` hands the backend — and a partially filled one serialises to the
+ * document, so the save guard (not the editor) decides what is publishable.
+ */
+export function toDownloadCatalogText(form: DownloadCatalogForm): string {
+  const product: Record<string, unknown> = {};
+  const productId = writeCatalogText(form.productId, HOME_LABEL_MAX_LENGTH);
+  const productName = writeCatalogText(form.productName, HOME_LABEL_MAX_LENGTH);
+  const productVersion = writeCatalogText(form.productVersion, HOME_LABEL_MAX_LENGTH);
+  const productChannel = writeCatalogText(form.productChannel, HOME_LABEL_MAX_LENGTH);
+  const productReleaseTag = writeCatalogText(form.productReleaseTag, HOME_LABEL_MAX_LENGTH);
+  const productReleaseUrl = writeCatalogText(form.productReleaseUrl, HOME_TEXT_MAX_LENGTH);
+  if (productId !== undefined) product.id = productId;
+  if (productName !== undefined) product.name = productName;
+  if (productVersion !== undefined) product.version = productVersion;
+  if (productChannel !== undefined) product.channel = productChannel;
+  if (productReleaseTag !== undefined) product.releaseTag = productReleaseTag;
+  if (productReleaseUrl !== undefined) product.releaseUrl = productReleaseUrl;
+
+  const doc: Record<string, unknown> = {};
+  const generatedAt = writeCatalogText(form.generatedAt, HOME_LABEL_MAX_LENGTH);
+  if (generatedAt !== undefined) doc.generatedAt = generatedAt;
+  if (Object.keys(product).length > 0) doc.product = product;
+  const cards = form.cards
+    .slice(0, DOWNLOAD_MAX_CARDS)
+    .map(writeCatalogCard)
+    .filter((entry): entry is Record<string, unknown> => entry !== undefined);
+  if (cards.length > 0) doc.cards = cards;
+
+  if (Object.keys(doc).length === 0) {
+    return '';
+  }
+  return `${JSON.stringify(doc, null, 2)}\n`;
+}
+
+/** Names every entry the homepage would skip, so the console can say so before it is saved. */
+export function findIncompleteDownloadCatalog(form: DownloadCatalogForm): DownloadCatalogWarningCode[] {
+  const warnings = new Set<DownloadCatalogWarningCode>();
+  if (form.cards.length === 0) {
+    warnings.add('cards.missing');
+  }
+  for (const card of form.cards) {
+    for (const code of findDownloadCatalogCardWarningCodes(card)) {
+      warnings.add(code);
+    }
+  }
+  return [...warnings];
+}
+
+/**
+ * One card's share of the catalog warnings, in a form the tab strip can render per tab.
+ *
+ * The aggregate list answers "is anything wrong?"; the tabs also have to answer "where?" — a
+ * warning dot on the tab whose card is incomplete — and a second walk of the same rules is how
+ * the two answers stop agreeing.
+ */
+export function findDownloadCatalogCardWarningCodes(
+  card: DownloadCatalogCardFields,
+): DownloadCatalogWarningCode[] {
+  const codes: DownloadCatalogWarningCode[] = [];
+  if (!card.id.trim() || !card.title.trim() || !card.description.trim() || !card.kind) {
+    codes.push('card.identity');
+  }
+  // A deliberately hidden card is parked, not broken: the "not ready to ship" signals are
+  // excused exactly the way a disabled installer excuses a missing target, so an operator can
+  // park a half-built edition without its tab permanently carrying a warning dot. Identity
+  // still warns — malformed data stays malformed while hidden.
+  const parked = card.hidden;
+  if (!parked && card.actions.length === 0) {
+    codes.push('card.actions.missing');
+  }
+  for (const action of card.actions) {
+    for (const code of findDownloadCatalogActionWarningCodes(action)) {
+      if (parked && code === 'action.target') {
+        continue;
+      }
+      codes.push(code);
+    }
+  }
+  return codes;
+}
+
+/**
+ * One installer row's warnings, for the sidebar entry that represents it.
+ *
+ * Same split as the card level: the aggregate answers "is anything wrong", the sidebar dot
+ * answers "which installer", so both read the same rules instead of a second copy.
+ */
+export function findDownloadCatalogActionWarningCodes(
+  action: DownloadCatalogActionFields,
+): DownloadCatalogWarningCode[] {
+  const codes: DownloadCatalogWarningCode[] = [];
+  if (!action.id.trim() || !action.label.trim()) {
+    codes.push('action.identity');
+  }
+  const hasTarget = action.href.trim().length > 0
+    || (Boolean(action.drive.nodeId) && Boolean(action.drive.spaceId));
+  // A deliberately disabled row needs no target; an enabled row without one would render as
+  // "coming soon", which is a legitimate intermediate state and therefore only a warning.
+  if (!hasTarget && !action.disabled) {
+    codes.push('action.target');
+  }
+  return codes;
+}
+
+/**
+ * The form state the structured editor starts from.
+ *
+ * An operator maintaining packages by hand should edit the catalog that is already live, not
+ * re-type it: a published document wins, and when nothing is published the application's bundled
+ * catalog — which is what the homepage is rendering right now — seeds the editor instead. The
+ * result stays editor state until the operator actually changes something, so opening the page
+ * and saving publishes nothing (the "blank means bundled" contract is untouched).
+ *
+ * `null` means the stored text is not parseable JSON: the structured editor is blocked until the
+ * JSON mode repairs it.
+ */
+export function readInitialDownloadCatalogForm(
+  value: string,
+  fallbackCatalog?: unknown,
+): DownloadCatalogForm | null {
+  const trimmed = value.trim();
+  if (trimmed.length > 0) {
+    try {
+      return readDownloadCatalogForm(JSON.parse(trimmed));
+    } catch {
+      return null;
+    }
+  }
+  if (fallbackCatalog !== undefined && fallbackCatalog !== null) {
+    return readDownloadCatalogForm(fallbackCatalog);
+  }
+  return createStarterDownloadCatalogForm();
+}
+
+/**
+ * The structured editor's verdict on whether an action downloads from Drive.
+ *
+ * Mirrors the reference the write side produces (`drive://spaces/<spaceId>/nodes/<nodeId>`), so
+ * the editor's URL/upload source switch and the runtime's href handling agree.
+ */
+export function isDownloadCatalogDriveHref(href: string): boolean {
+  return /^drive:\/\/spaces\/[^/]+\/nodes\/[^/]+$/u.test(href.trim());
+}

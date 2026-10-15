@@ -89,6 +89,11 @@ const MOUNTED_BACKEND_CAPABILITIES: &[MountedBackendCapability] = &[
         manifest: sdkwork_routes_community_backend_api::gateway_route_manifest,
     },
     MountedBackendCapability {
+        workspace: "sdkwork-course",
+        owner: "sdkwork-course",
+        manifest: sdkwork_routes_course_backend_api::course_backend_api_http_route_manifest,
+    },
+    MountedBackendCapability {
         workspace: "sdkwork-rtc",
         owner: "sdkwork-rtc",
         manifest: sdkwork_routes_rtc_backend_api::gateway_route_manifest,
@@ -182,6 +187,7 @@ mod tests {
             "sdkwork-membership",
             "sdkwork-payment",
             "sdkwork-community",
+            "sdkwork-course",
             "sdkwork-log",
             "sdkwork-drive",
         ] {
@@ -204,6 +210,10 @@ mod tests {
             (
                 "sdkwork-community",
                 "assemble_backend_business_router_with_pool",
+            ),
+            (
+                "sdkwork-course",
+                "sdkwork_api_course_assembly::assemble_backend_business_router_with_pool",
             ),
             ("sdkwork-rtc", "assemble_backend_api_contribution_with_pool"),
         ] {
@@ -265,6 +275,55 @@ mod tests {
             route.auth,
             "IAM backend bootstrap routes must inherit bootstrap-body auth"
         );
+    }
+
+    #[test]
+    fn composed_manifest_includes_course_backend_routes() {
+        // Regression: the Course Center admin module reached
+        // `/backend/v3/api/course_*` through the same-origin dependency backend
+        // base URL and answered 404 because the course capability was merged
+        // nowhere. The capability is dependency-owned, so every declared
+        // `/backend/v3/api/course_*` path must be registered by the course mount
+        // and inherit its dual-token auth and `course.*` permissions.
+        let manifest = cloud_router_backend_composed_route_manifest();
+        for (method, path, permission) in [
+            ("GET", "/backend/v3/api/course_categories", "course.categories.read"),
+            ("POST", "/backend/v3/api/course_categories", "course.categories.write"),
+            ("GET", "/backend/v3/api/course_instructors", "course.instructors.read"),
+            ("POST", "/backend/v3/api/course_instructors", "course.instructors.write"),
+            ("GET", "/backend/v3/api/courses", "course.courses.read"),
+            ("POST", "/backend/v3/api/courses/{courseId}/publish", "course.courses.publish"),
+            ("GET", "/backend/v3/api/courses/{courseId}/offerings", "course.offerings.read"),
+            ("GET", "/backend/v3/api/courses/{courseId}/sections", "course.lessons.read"),
+            ("GET", "/backend/v3/api/courses/{courseId}/lessons", "course.lessons.read"),
+            ("GET", "/backend/v3/api/course_lessons/{lessonId}/resources", "course.resources.read"),
+            ("GET", "/backend/v3/api/course_live_sessions", "course.live_sessions.read"),
+            ("POST", "/backend/v3/api/course_live_sessions/{liveSessionId}/start", "course.live_sessions.operate"),
+            ("GET", "/backend/v3/api/course_enrollments", "course.enrollments.read"),
+            ("POST", "/backend/v3/api/course_enrollments/grants", "course.enrollments.write"),
+            ("GET", "/backend/v3/api/course_progress", "course.progress.read"),
+            ("PATCH", "/backend/v3/api/course_lesson_progress/{lessonProgressId}", "course.progress.repair"),
+            ("GET", "/backend/v3/api/course_comments", "course.comments.read"),
+            ("PATCH", "/backend/v3/api/course_comments/{commentId}/moderation", "course.comments.moderate"),
+            ("GET", "/backend/v3/api/course_applications", "course.applications.read"),
+            ("PATCH", "/backend/v3/api/course_applications/{applicationId}/review", "course.applications.review"),
+            ("GET", "/backend/v3/api/course_reports/overview", "course.reports.read"),
+            ("GET", "/backend/v3/api/course_audit_logs", "course.audit_logs.read"),
+        ] {
+            let route = manifest.match_route(method, path).unwrap_or_else(|| {
+                panic!("{method} {path} must be registered by the course mount")
+            });
+            assert_eq!(
+                RouteAuth::DualToken,
+                route.auth,
+                "{method} {path} must inherit dual-token auth from the course manifest"
+            );
+            assert_eq!(
+                Some(permission),
+                route.required_permission,
+                "{method} {path} must keep its declared course permission"
+            );
+        }
     }
 
     #[test]

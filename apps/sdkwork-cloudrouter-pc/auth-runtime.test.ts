@@ -2704,8 +2704,8 @@ test("admin module registry exposes the owned commercial management centers", ()
   const adminHostSource = readPortalFile("./src/admin/cloudRouterAdminHostMount.tsx");
   const operationsMenu = findAdminModuleMenuSource(adminRegistrySource, "operations");
 
-  assert.deepEqual(findOrderedMatches(adminRegistrySource, /id:\s*'([^']+)'/g), ["home", "membershipCenter", "communityCenter", "rechargeCenter", "marketingCenter", "partnerCenter", "paymentCenter", "storageCenter", "operations"]);
-  assert.deepEqual(findOrderedMatches(adminRegistrySource, /moduleId:\s*'([^']+)'/g), ["home", "membershipCenter", "communityCenter", "rechargeCenter", "partnerCenter", "marketingCenter", "paymentCenter", "storageCenter", "operations"]);
+  assert.deepEqual(findOrderedMatches(adminRegistrySource, /id:\s*'([^']+)'/g), ["home", "membershipCenter", "communityCenter", "courseCenter", "rechargeCenter", "marketingCenter", "partnerCenter", "paymentCenter", "storageCenter", "operations"]);
+  assert.deepEqual(findOrderedMatches(adminRegistrySource, /moduleId:\s*'([^']+)'/g), ["home", "membershipCenter", "communityCenter", "courseCenter", "rechargeCenter", "partnerCenter", "marketingCenter", "paymentCenter", "storageCenter", "operations"]);
   assert.doesNotMatch(operationsMenu, /\/admin\/oauth/);
   assert.doesNotMatch(adminRegistrySource, /path:\s*'\/admin\/(catalog|orders|finance|wallet|oauth|service-providers|agents|skill|prompts|mcp|announcement|user|organization)'/);
 

@@ -29,6 +29,7 @@ export const ADMIN_ROUTE_PERMISSION_HINTS: readonly AdminRoutePermissionHint[] =
   { pathPrefix: '/admin/site', requiredPermission: 'cloudrouter.admin.access' },
   { pathPrefix: '/admin/memberships', requiredPermission: 'cloudrouter.admin.access' },
   { pathPrefix: '/admin/community', requiredPermission: 'cloudrouter.admin.access' },
+  { pathPrefix: '/admin/course', requiredPermission: 'cloudrouter.admin.access' },
   { pathPrefix: '/admin/recharges', requiredPermission: 'cloudrouter.admin.access' },
   { pathPrefix: '/admin/marketing', requiredPermission: 'cloudrouter.admin.access' },
   { pathPrefix: '/admin/partner', requiredPermission: 'cloudrouter.admin.access' },

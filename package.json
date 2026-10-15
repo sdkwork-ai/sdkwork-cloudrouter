@@ -209,7 +209,8 @@
       "@types/react": "^19.0.0",
       "@types/react-dom": "^19.0.0",
       "@sdkwork/sdk-common": "workspace:*",
-      "vitest@4>vite": "catalog:"
+      "vitest@4>vite": "catalog:",
+      "@sdkwork/utils": "workspace:*"
     },
     "packageExtensions": {
       "@sdkwork/models-pc-admin-catalog": {

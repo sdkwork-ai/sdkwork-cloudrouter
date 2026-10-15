@@ -69,6 +69,7 @@ ENV SDKWORK_MODELS_APP_ROOT=${INSTALL_ROOT}/database-modules/sdkwork-models \
     SDKWORK_EDU_DATA_APP_ROOT=${INSTALL_ROOT}/database-modules/sdkwork-appbase \
     SDKWORK_MED_DATA_APP_ROOT=${INSTALL_ROOT}/database-modules/sdkwork-appbase \
     SDKWORK_COMMUNITY_APP_ROOT=${INSTALL_ROOT}/database-modules/sdkwork-community \
+    SDKWORK_COURSE_APP_ROOT=${INSTALL_ROOT}/database-modules/sdkwork-course \
     SDKWORK_DRIVE_APP_ROOT=${INSTALL_ROOT}/database-modules/sdkwork-drive \
     SDKWORK_IAM_APP_ROOT=${INSTALL_ROOT}/database-modules/sdkwork-iam \
     SDKWORK_INVENTORY_APP_ROOT=${INSTALL_ROOT}/database-modules/sdkwork-inventory \

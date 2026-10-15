@@ -3,8 +3,10 @@ import {
   ArrowRightLeft,
   BadgePercent,
   BarChart3,
+  BookOpen,
   Boxes,
   Building2,
+  CalendarClock,
   ClipboardList,
   CloudCog,
   Compass,
@@ -13,17 +15,21 @@ import {
   Database,
   DatabaseZap,
   FileText,
+  FolderTree,
   Gauge,
   Gift,
   Globe2,
+  GraduationCap,
   HardDrive,
   Home,
   Layers3,
   LayoutDashboard,
+  ListTree,
   Megaphone,
   MessagesSquare,
   Network,
   Package,
+  Radio,
   ReceiptText,
   Recycle,
   RefreshCcw,
@@ -34,7 +40,9 @@ import {
   ShieldAlert,
   ShieldCheck,
   TicketPercent,
+  TrendingUp,
   Undo2,
+  UserRound,
   Users,
   UsersRound,
   WalletCards,
@@ -55,6 +63,7 @@ export type AdminModuleId =
   | 'rtc'
   | 'membershipCenter'
   | 'communityCenter'
+  | 'courseCenter'
   | 'rechargeCenter'
   | 'marketingCenter'
   | 'partnerCenter'
@@ -135,6 +144,13 @@ export const ADMIN_MODULES: AdminModuleDef[] = [
     icon: Compass,
     defaultPath: '/admin/community/overview',
     pathPrefixes: ['/admin/community'],
+  }),
+  moduleBlock({
+    id: 'courseCenter',
+    nameKey: 'admin.header.courseCenter',
+    icon: GraduationCap,
+    defaultPath: '/admin/course/overview',
+    pathPrefixes: ['/admin/course'],
   }),
   moduleBlock({
     id: 'rechargeCenter',
@@ -249,6 +265,32 @@ export const ADMIN_MODULE_MENUS: AdminModuleMenu[] = [
       ]),
       groupBlock('admin.menu.community.monetize', [
         itemBlock({ path: '/admin/community/tiers', labelKey: 'admin.menu.community.tiers', icon: Crown, iconColor: 'text-lobster-400' }),
+      ]),
+    ],
+  },
+  {
+    moduleId: 'courseCenter',
+    groups: [
+      groupBlock('admin.menu.course.catalog', [
+        itemBlock({ path: '/admin/course/overview', labelKey: 'admin.menu.course.overview', icon: LayoutDashboard }),
+        itemBlock({ path: '/admin/course/courses', labelKey: 'admin.menu.course.courses', icon: BookOpen, iconColor: 'text-lobster-400' }),
+        itemBlock({ path: '/admin/course/categories', labelKey: 'admin.menu.course.categories', icon: FolderTree, iconColor: 'text-lobster-400' }),
+      ]),
+      groupBlock('admin.menu.course.teaching', [
+        itemBlock({ path: '/admin/course/instructors', labelKey: 'admin.menu.course.instructors', icon: UserRound }),
+        itemBlock({ path: '/admin/course/offerings', labelKey: 'admin.menu.course.offerings', icon: CalendarClock, iconColor: 'text-lobster-400' }),
+        itemBlock({ path: '/admin/course/content', labelKey: 'admin.menu.course.content', icon: ListTree, iconColor: 'text-lobster-400' }),
+        itemBlock({ path: '/admin/course/liveSessions', labelKey: 'admin.menu.course.liveSessions', icon: Radio, iconColor: 'text-lobster-400' }),
+      ]),
+      groupBlock('admin.menu.course.learners', [
+        itemBlock({ path: '/admin/course/enrollments', labelKey: 'admin.menu.course.enrollments', icon: ClipboardList }),
+        itemBlock({ path: '/admin/course/progress', labelKey: 'admin.menu.course.progress', icon: TrendingUp }),
+        itemBlock({ path: '/admin/course/applications', labelKey: 'admin.menu.course.applications', icon: FileText }),
+      ]),
+      groupBlock('admin.menu.course.governance', [
+        itemBlock({ path: '/admin/course/comments', labelKey: 'admin.menu.course.comments', icon: MessagesSquare, iconColor: 'text-lobster-400' }),
+        itemBlock({ path: '/admin/course/reports', labelKey: 'admin.menu.course.reports', icon: BarChart3 }),
+        itemBlock({ path: '/admin/course/auditLogs', labelKey: 'admin.menu.course.auditLogs', icon: ScrollText }),
       ]),
     ],
   },

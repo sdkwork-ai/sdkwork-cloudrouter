@@ -124,6 +124,7 @@ function normalizePlatform(value: unknown): SdkworkDownloadCard['actions'][numbe
     platform === 'android'
     || platform === 'docker'
     || platform === 'generic'
+    || platform === 'harmonyos'
     || platform === 'helm'
     || platform === 'ios'
     || platform === 'linux'
@@ -331,6 +332,35 @@ function localizeCatalogCard(card: SdkworkDownloadCard, t: Translate, options: L
 }
 
 /**
+ * Drops the cards an operator deliberately hid from `/admin/site`.
+ *
+ * `hidden: true` is portal-owned and the shared normalizer drops unknown fields, so the filter
+ * runs on the raw published document — before normalization — the same place the Drive installer
+ * references are read. An unfiltered or non-record input comes back unchanged, and a catalog
+ * without any hidden card is returned as the same object (the common case pays nothing).
+ */
+export function dropHiddenDownloadCatalogCards(catalog: unknown): unknown {
+  if (!isRecord(catalog) || !Array.isArray(catalog.cards)) {
+    return catalog;
+  }
+  const visibleCards = catalog.cards.filter(
+    (card) => !(isRecord(card) && card.hidden === true),
+  );
+  if (visibleCards.length === catalog.cards.length) {
+    return catalog;
+  }
+  return { ...catalog, cards: visibleCards };
+}
+
+/** Whether a catalog still draws at least one card after hidden ones are dropped. */
+export function hasVisibleDownloadCatalogCards(catalog: unknown): boolean {
+  if (!isRecord(catalog) || !Array.isArray(catalog.cards)) {
+    return false;
+  }
+  return catalog.cards.some((card) => !(isRecord(card) && card.hidden === true));
+}
+
+/**
  * Reads the download catalog published by `/admin/site`, or `undefined` to keep the bundled one.
  *
  * Three outcomes, and the distinction matters:
@@ -492,6 +522,153 @@ export function resolveCloudRouterDownloadBaseUrl(
   return normalizeBaseUrl(runtimeEnv[DOWNLOAD_BASE_URL_ENV]);
 }
 
+/**
+ * A Drive-hosted installer reference an operator uploaded from `/admin/site`.
+ *
+ * Drive download URLs are short-lived presigned links, so the catalog stores the stable node
+ * reference plus the read-only share token minted at upload time; the landing page exchanges the
+ * token for a fresh download URL at render time (the same chain the public footer uses for
+ * Drive-hosted artwork).
+ */
+export interface SdkworkDownloadDriveRef {
+  nodeId: string;
+  shareToken?: string;
+  spaceId?: string;
+  /**
+   * The operator explicitly hid this installer on `/admin/site`. A hidden installer must never
+   * be re-enabled by URL resolution: the disabled state an operator wrote wins over the
+   * "resolve then enable" flow, which only exists to wake up actions that are disabled *because
+   * their Drive href is not directly navigable.
+   */
+  disabled?: boolean;
+  /**
+   * The operator-authored unavailable label, if any. While a Drive URL has not resolved yet the
+   * action renders disabled, and the shared localizer has already filled the gap with
+   * "… Coming soon" — wrong for an installer that exists and is about to be downloadable. The
+   * stitch step replaces that default with the bare package name, but never an authored label.
+   */
+  unavailableLabel?: string;
+}
+
+/**
+ * Reads the Drive installer references out of a published catalog.
+ *
+ * Runs against the *raw* catalog — the action's `drive` field is portal-owned and the shared
+ * normalizer drops it — and keys every reference by `${card.id}/${action.id}` so the resolved
+ * URLs can be stitched back onto the normalized cards. An action without both ids, or a
+ * reference without a node id, is skipped rather than guessed at.
+ */
+export function readDownloadActionDriveRefs(catalog: unknown): Map<string, SdkworkDownloadDriveRef> {
+  const refs = new Map<string, SdkworkDownloadDriveRef>();
+  if (!isRecord(catalog) || !Array.isArray(catalog.cards)) {
+    return refs;
+  }
+  for (const rawCard of catalog.cards) {
+    if (!isRecord(rawCard) || !Array.isArray(rawCard.actions)) {
+      continue;
+    }
+    const cardId = stringValue(rawCard.id)?.trim();
+    if (!cardId) {
+      continue;
+    }
+    for (const rawAction of rawCard.actions) {
+      if (!isRecord(rawAction) || !isRecord(rawAction.drive)) {
+        continue;
+      }
+      const nodeId = stringValue(rawAction.drive.nodeId)?.trim();
+      const actionId = stringValue(rawAction.id)?.trim();
+      if (!nodeId || !actionId) {
+        continue;
+      }
+      const spaceId = stringValue(rawAction.drive.spaceId)?.trim();
+      const shareToken = stringValue(rawAction.drive.shareToken)?.trim();
+      const unavailableLabel = stringValue(rawAction.unavailableLabel)?.trim();
+      refs.set(`${cardId}/${actionId}`, {
+        nodeId,
+        ...(spaceId ? { spaceId } : {}),
+        ...(shareToken ? { shareToken } : {}),
+        ...(rawAction.disabled === true ? { disabled: true } : {}),
+        ...(unavailableLabel ? { unavailableLabel } : {}),
+      });
+    }
+  }
+  return refs;
+}
+
+/**
+ * Drops the references whose installers an operator explicitly hid, so the URL resolver neither
+ * exchanges their tokens nor produces a URL the stitch step could apply. The normalized action
+ * cannot carry this distinction — both an explicit hide and "no navigable href yet" normalize to
+ * the same disabled state — which is why it is read here, on the raw document.
+ */
+export function resolvableDownloadDriveRefs(
+  refs: ReadonlyMap<string, SdkworkDownloadDriveRef>,
+): Map<string, SdkworkDownloadDriveRef> {
+  const resolvable = new Map<string, SdkworkDownloadDriveRef>();
+  for (const [key, ref] of refs) {
+    if (!ref.disabled) {
+      resolvable.set(key, ref);
+    }
+  }
+  return resolvable;
+}
+
+/**
+ * Stitches resolved download URLs back onto normalized cards.
+ *
+ * Runs after `createCloudRouterDownloadCards`: a Drive-referencing action normalizes with an
+ * empty href (the runtime's href rules only accept http(s) URLs, so the `drive://` mirror is
+ * inert), and stays disabled until its URL arrives here. An action without a resolution keeps
+ * its disabled state — a catalog must never render a link that cannot be followed.
+ *
+ * Two operator decisions survive every path here:
+ *
+ * - **Hidden** — an installer the operator disabled is never woken, even by a URL that arrives
+ *   for its key (the resolvable set is filtered upstream; this is the second line of defense).
+ * - **Authored copy** — a pending installer shows its package name instead of the localizer's
+ *   "… Coming soon" default, because the installer exists and is about to be downloadable; an
+ *   operator-authored unavailable label (carried on the ref) always wins.
+ */
+export function applyResolvedDownloadUrls(
+  cards: readonly SdkworkDownloadCard[],
+  urls: ReadonlyMap<string, string>,
+  refs?: ReadonlyMap<string, SdkworkDownloadDriveRef>,
+): SdkworkDownloadCard[] {
+  if (urls.size === 0 && !refs?.size) {
+    return [...cards];
+  }
+  return cards.map((card) => {
+    const relevant = card.actions.some((action) => {
+      const key = `${card.id}/${action.id}`;
+      return urls.has(key) || (refs?.has(key) === true && !refs.get(key)?.disabled);
+    });
+    if (!relevant) {
+      return card;
+    }
+    return {
+      ...card,
+      actions: card.actions.map((action) => {
+        const key = `${card.id}/${action.id}`;
+        const ref = refs?.get(key);
+        if (ref?.disabled) {
+          return action;
+        }
+        const url = urls.get(key);
+        if (url) {
+          return { ...action, disabled: false, href: url };
+        }
+        if (!ref) {
+          return action;
+        }
+        // Still resolving: keep the button visible under its own name rather than the
+        // "coming soon" default an installer that exists never deserved. An operator-authored
+        // unavailable label rides in the ref and is preserved verbatim.
+        return { ...action, unavailableLabel: ref.unavailableLabel ?? action.label };
+      }),
+    };
+  });
+}
+
 export function createCloudRouterDownloadCards(
   t: Translate,
   options: CreateCloudRouterDownloadCardsOptions = {},
@@ -608,6 +785,14 @@ export function createCloudRouterDownloadCards(
           label: 'Android',
           platform: 'android',
           unavailableLabel: `Android ${unavailableLabel}`,
+        },
+        {
+          disabled: !actionAvailable(createHref('mobile', 'harmonyos', 'latest')),
+          href: createHref('mobile', 'harmonyos', 'latest'),
+          id: 'mobile-harmonyos',
+          label: 'HarmonyOS',
+          platform: 'harmonyos',
+          unavailableLabel: `HarmonyOS ${unavailableLabel}`,
         },
       ],
       description: translated(

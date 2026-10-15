@@ -340,6 +340,18 @@ routes:
   - /admin/community/:sectionId?
   evidence:
   - apps/sdkwork-cloudrouter-pc/src/App.tsx
+- route: /admin/course/:sectionId?
+  package: '@sdkwork/cloudrouter-pc-admin-course'
+  owner: admin-control-plane
+  route_scope: admin
+  delivery_kind: sdk_backed_business_runtime
+  dependency_owned: true
+  dependency_sdk_family: sdkwork-course-backend-sdk
+  api_surface: backend
+  operation_routes:
+  - /admin/course/:sectionId?
+  evidence:
+  - apps/sdkwork-cloudrouter-pc/src/App.tsx
 - route: /admin/upstream
   package: '@sdkwork/cloudrouter-pc-admin-upstream'
   owner: admin-control-plane

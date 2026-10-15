@@ -130,6 +130,7 @@ export type CloudRouterUploadSlotCode =
   | 'community-circle-avatar'
   | 'community-circle-cover'
   | 'community-group-qr-code'
+  | 'site-download-installer'
   | 'site-favicon'
   | 'site-icon'
   | 'site-logo'
@@ -209,6 +210,23 @@ const SLOTS: readonly CloudRouterUploadSlot[] = [
     maxSizeBytes: 1024 * 1024,
     shareLink: 'reader',
     mediaKind: 'image',
+  },
+  {
+    code: 'site-download-installer',
+    category: 'public_asset',
+    label: '站点安装包',
+    description: '落地页下载区对外发布的各平台安装包文件。',
+    // 安装包是任意平台二进制，MIME 由浏览器推断不可靠，准入以体积上限与
+    // 管理端文件名扩展白名单约束；document profile 走分片上传。
+    uploadProfileCode: 'document',
+    scene: 'site-download-installer',
+    appResourceType: 'site.download_installer',
+    appResourceId: 'site-download-installers',
+    source: `${SOURCE_PREFIX}-admin-site-installer-upload`,
+    accept: ['*'],
+    maxSizeBytes: 2 * 1024 * 1024 * 1024,
+    shareLink: 'reader',
+    mediaKind: 'document',
   },
   {
     code: 'site-qr-code',

@@ -10,6 +10,7 @@ export type SdkworkDownloadPlatform =
   | "android"
   | "docker"
   | "generic"
+  | "harmonyos"
   | "helm"
   | "ios"
   | "linux"

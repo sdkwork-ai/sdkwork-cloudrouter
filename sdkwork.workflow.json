@@ -81,6 +81,12 @@
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
+      "id": "sdkwork-course",
+      "repository": "sdkwork-ai/sdkwork-course",
+      "refInput": "SDKWORK_COURSE_REF",
+      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
+    },
+    {
       "id": "sdkwork-database",
       "repository": "sdkwork-ai/sdkwork-database",
       "ref": "main",

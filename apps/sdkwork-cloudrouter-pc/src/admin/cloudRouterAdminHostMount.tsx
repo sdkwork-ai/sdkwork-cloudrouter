@@ -1,4 +1,4 @@
-import { lazy, type ComponentType, type LazyExoticComponent, type ReactElement } from 'react';
+import { lazy, useEffect, useState, type ComponentType, type LazyExoticComponent, type ReactElement } from 'react';
 import { Navigate, Route, useParams } from 'react-router-dom';
 import { IAM_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-iam/contribution';
 import { RTC_ADMIN_ROUTE_RECORDS } from '@sdkwork/cloudrouter-pc-admin-rtc/contribution';
@@ -9,7 +9,7 @@ import { TradeCenterHostElement } from './tradeCenterHostElement.tsx';
 
 export type CloudRouterAdminRouteContribution = {
   path: string;
-  owner: 'sdkwork-cloudrouter' | 'sdkwork-models' | 'sdkwork-log' | 'sdkwork-partner' | 'sdkwork-rtc' | 'sdkwork-order' | 'sdkwork-messaging';
+  owner: 'sdkwork-cloudrouter' | 'sdkwork-models' | 'sdkwork-log' | 'sdkwork-partner' | 'sdkwork-rtc' | 'sdkwork-order' | 'sdkwork-messaging' | 'sdkwork-course';
   adminPackage: `@sdkwork/${string}`;
   backendSdkFamilies: readonly string[];
   requiredPermission: string;
@@ -42,7 +42,7 @@ const RateLimitAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admi
 const ServiceNodesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-service-nodes'), 'ServiceNodesAdmin');
 const RuntimeRegionAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-runtime-region'), 'RuntimeRegionAdmin');
 const CloudRouterAuthSettingsPage = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-site'), 'CloudRouterAuthSettingsPage');
-const CloudRouterSiteSettingsPage = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-site'), 'CloudRouterSiteSettingsPage');
+const CloudRouterSiteSettingsPage = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-site'), 'CloudRouterSiteSettingsPage') as LazyExoticComponent<ComponentType<{ bundledDownloadCatalog?: unknown }>>;
 const MembershipsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-memberships'), 'MembershipsAdmin');
 const RechargeAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-memberships'), 'RechargeAdmin');
 const PricePlansAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-pricing'), 'PricePlansAdmin');
@@ -50,6 +50,7 @@ const RateCardsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admi
 const PricingRulesAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-pricing'), 'PricingRulesAdmin');
 const PriceSettingsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-pricing'), 'PriceSettingsAdmin');
 const CommunityAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-community'), 'CommunityAdmin');
+const CourseAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-course'), 'CourseAdmin');
 const MarketingAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-marketing'), 'MarketingAdmin');
 const PartnerAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-partner'), 'CloudRouterPartnerAdmin');
 const PaymentsAdmin = lazyAdminRoute(() => import('@sdkwork/cloudrouter-pc-admin-payments'), 'PaymentsAdmin');
@@ -112,6 +113,30 @@ const MESSAGING_ADMIN_ROUTE_ELEMENTS: Readonly<Record<string, ReactElement>> = {
   'sms-templates': <MessagingNotifySmsTemplates />,
 };
 
+/**
+ * The site settings page needs one cross-surface handoff the console package may not own: the
+ * application's bundled download catalog, which seeds the structured download editor when
+ * nothing is published yet. The home package is imported dynamically so the admin graph keeps
+ * its own code split instead of eagerly pulling in the landing surface.
+ */
+function SiteSettingsRoute() {
+  const [bundledDownloadCatalog, setBundledDownloadCatalog] = useState<unknown>(undefined);
+  useEffect(() => {
+    let active = true;
+    void import('@sdkwork/cloudrouter-pc-home').then((module) => {
+      if (active) {
+        setBundledDownloadCatalog(module.cloudRouterDownloadCatalog);
+      }
+    }).catch(() => {
+      // Without the seed the editor falls back to a minimal skeleton; the page still works.
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+  return <CloudRouterSiteSettingsPage bundledDownloadCatalog={bundledDownloadCatalog} />;
+}
+
 export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRouteContribution[] = [
   route('dashboard', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-dashboard', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <DashboardAdmin />),
   route('analytics', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-analytics', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <AnalyticsAdmin />),
@@ -130,9 +155,10 @@ export const CLOUDROUTER_ADMIN_ROUTE_CONTRIBUTIONS: readonly CloudRouterAdminRou
   route('service-nodes', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-service-nodes', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <ServiceNodesAdmin />),
   route('settings', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-site', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <CloudRouterAuthSettingsPage />),
   route('runtime-region', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-runtime-region', ['cloudrouter-backend-sdk'], 'cloudrouter.system.read', <RuntimeRegionAdmin />),
-  route('site', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-site', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <CloudRouterSiteSettingsPage />),
+  route('site', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-site', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <SiteSettingsRoute />),
   route('memberships/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-memberships', ['sdkwork-membership-backend-sdk', 'cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={MembershipsAdmin} />),
   route('community/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-community', ['sdkwork-community-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={CommunityAdmin} />),
+  route('course/:sectionId?', 'sdkwork-course', '@sdkwork/cloudrouter-pc-admin-course', ['sdkwork-course-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={CourseAdmin} />),
   route('recharges/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-memberships', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <AdminSectionRoute component={RechargeAdmin} />),
   route('pricing', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-pricing', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <Navigate to="/admin/pricing/settings" replace />),
   route('pricing/settings/:sectionId?', 'sdkwork-cloudrouter', '@sdkwork/cloudrouter-pc-admin-pricing', ['cloudrouter-backend-sdk'], 'cloudrouter.admin.access', <PricingSectionRoute />),

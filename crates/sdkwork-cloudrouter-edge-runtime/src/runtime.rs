@@ -1968,6 +1968,19 @@ pub async fn all_in_one_in_process_upstreams_from_env() -> anyhow::Result<EdgeIn
         .await
         .map_err(anyhow::Error::msg)?;
     let backend_router = backend_router.merge(community_backend_assembly.router);
+    // Course backend surface (`/backend/v3/api/course_*`) is dependency-owned.
+    // It enters through the course API assembly's federated backend business
+    // router on the process-shared database pool — not through a direct
+    // `sdkwork-routes-*` import — per API_ASSEMBLY_SPEC §3/§6.1, and must be
+    // merged before the Web Framework layer is installed by
+    // `finalize_all_in_one_route_surfaces`.
+    let course_backend_assembly =
+        sdkwork_api_course_assembly::assemble_backend_business_router_with_pool(
+            context.database_pool.clone(),
+        )
+        .await
+        .map_err(anyhow::Error::msg)?;
+    let backend_router = backend_router.merge(course_backend_assembly.router);
     // RTC backend surface (`/backend/v3/api/rtc/*`) is dependency-owned. It
     // enters through the RTC API assembly backend contribution on the
     // process-shared database pool — not through a direct `sdkwork-routes-*`
@@ -4015,6 +4028,34 @@ gateway_invocation_body_max_bytes = 37
             .find("rtc_backend_contribution.domain_context_injectors")
             .expect("rtc domain context injectors passed into framework finalize");
         assert!(injectors_at > merge_at && injectors_at > finalize_at);
+    }
+
+    #[test]
+    fn all_in_one_backend_composes_course_backend_surface_through_assembly() {
+        let source = include_str!("runtime.rs");
+
+        // Dependency-owned course backend surface (`/backend/v3/api/course_*`)
+        // enters through the course API assembly's federated backend business
+        // router on the process-shared database pool (API_ASSEMBLY_SPEC
+        // §3/§6.1), never through a direct route-crate import.
+        assert!(source.contains(
+            "sdkwork_api_course_assembly::assemble_backend_business_router_with_pool("
+        ));
+        let forbidden_route_crate_import = ["sdkwork_routes_course", "_backend_api::"].concat();
+        assert!(
+            !source.contains(&forbidden_route_crate_import),
+            "course backend surface must not import the dependency route crate directly"
+        );
+        // The course backend router must be merged before the Web Framework
+        // layer is installed by `finalize_all_in_one_route_surfaces`; a merge
+        // after framework installation would leave it without request context.
+        let merge_at = source
+            .find(".merge(course_backend_assembly.router)")
+            .expect("course backend router merge before framework finalize");
+        let finalize_at = source
+            .find("= finalize_all_in_one_route_surfaces(")
+            .expect("framework finalize call after course merge");
+        assert!(merge_at < finalize_at);
     }
 
     #[test]

@@ -328,6 +328,12 @@ sdkwork_invoice_database_bootstrap = { package = "sdkwork-invoice-database-boots
 # instead of an HTTP base URL that would loop back into this gateway's own
 # listener (APPLICATION_GATEWAY_SPEC §2.3).
 sdkwork_api_community_assembly = { package = "sdkwork-api-community-assembly", path = "../sdkwork-community/crates/sdkwork-api-community-assembly", features = ["commerce-membership-embedded", "commerce-order-embedded"] }
+# SDKWork course capability: the course backend surface
+# (`/backend/v3/api/course_*`) enters through the course API assembly's
+# federated backend business router (API_ASSEMBLY_SPEC §3/§6.1), never through a
+# direct route-crate import, and shares the host's process database pool.
+sdkwork_api_course_assembly = { package = "sdkwork-api-course-assembly", path = "../sdkwork-course/crates/sdkwork-api-course-assembly" }
+sdkwork_routes_course_backend_api = { package = "sdkwork-routes-course-backend-api", path = "../sdkwork-course/crates/sdkwork-routes-course-backend-api" }
 # SDKWork communication RTC capability: the RTC backend surface
 # (`/backend/v3/api/rtc/*`) enters through the RTC API assembly contribution
 # (API_ASSEMBLY_SPEC §3/§6.1), never through a direct route-crate import.

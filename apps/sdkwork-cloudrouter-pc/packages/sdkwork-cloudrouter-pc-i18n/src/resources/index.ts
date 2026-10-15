@@ -36,6 +36,7 @@ import { adminMarketingReferralsMessages } from './admin/marketing-referrals';
 import { adminPartnerMessages as adminPartnerShellMessages } from './admin/partner';
 import { adminMembershipsMessages } from './admin/memberships';
 import { adminCommunityMessages } from './admin/community';
+import { adminCourseMessages } from './admin/course';
 import { adminMiscMessages } from './admin/misc';
 import { adminModelMessages } from './admin/model';
 import { adminMonitorMessages } from './admin/monitor';
@@ -92,6 +93,7 @@ export const resources = mergeI18nBundles([
   partnerJoinMessages,
   adminMembershipsMessages,
   adminCommunityMessages,
+  adminCourseMessages,
   adminMiscMessages,
   adminModelMessages,
   adminMonitorMessages,

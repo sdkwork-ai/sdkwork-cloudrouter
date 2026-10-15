@@ -30,6 +30,15 @@
       "purpose": "Browser tab favicon."
     },
     {
+      "appResourceType": "site.download_installer",
+      "appResourceIdKind": "entity",
+      "scene": "site-download-installer",
+      "source": "cloudrouter-pc-admin-site-installer-upload",
+      "uploadProfileCode": "document",
+      "retention": "long_term",
+      "purpose": "Site download installer package published by the landing page download section."
+    },
+    {
       "appResourceType": "site.settings_brand_asset",
       "appResourceIdKind": "entity",
       "scene": "site-qr-code",

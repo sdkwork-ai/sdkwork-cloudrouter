@@ -150,6 +150,7 @@ const PORTAL_SOURCE_OPTIMIZE_EXCLUDE = [
   '@sdkwork/ui-pc-react',
   '@sdkwork/cloudrouter-app-sdk',
   '@sdkwork/cloudrouter-backend-sdk',
+  '@sdkwork/course-backend-sdk',
   '@sdkwork/generations-app-sdk',
   '@sdkwork/generations-pc-asset-config',
 ];

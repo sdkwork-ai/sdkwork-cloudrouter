@@ -224,6 +224,7 @@ const CORE_DATABASE_MODULES = [
   { repo: 'sdkwork-appbase', envKey: 'SDKWORK_EDU_DATA_APP_ROOT' },
   { repo: 'sdkwork-appbase', envKey: 'SDKWORK_MED_DATA_APP_ROOT' },
   { repo: 'sdkwork-community', envKey: 'SDKWORK_COMMUNITY_APP_ROOT' },
+  { repo: 'sdkwork-course', envKey: 'SDKWORK_COURSE_APP_ROOT' },
   { repo: 'sdkwork-drive', envKey: 'SDKWORK_DRIVE_APP_ROOT' },
   { repo: 'sdkwork-iam', envKey: 'SDKWORK_IAM_APP_ROOT', extraPaths: ['iam'] },
   { repo: 'sdkwork-inventory', envKey: 'SDKWORK_INVENTORY_APP_ROOT' },

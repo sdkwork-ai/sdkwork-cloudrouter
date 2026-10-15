@@ -1,0 +1,20 @@
+{
+  "name": "@sdkwork/cloudrouter-pc-admin-course",
+  "version": "0.0.1",
+  "private": true,
+  "license": "SEE LICENSE IN ../../../../LICENSE",
+  "type": "module",
+  "main": "src/index.tsx",
+  "scripts": {
+    "test": "vitest run src/courseService.test.ts --config ../../vite.config.ts --configLoader native --pool vmThreads",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sdkwork/appbase-pc-react": "workspace:*",
+    "@sdkwork/cloudroutes-pc-commons": "workspace:*",
+    "@sdkwork/ui-pc-react": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.10"
+  }
+}

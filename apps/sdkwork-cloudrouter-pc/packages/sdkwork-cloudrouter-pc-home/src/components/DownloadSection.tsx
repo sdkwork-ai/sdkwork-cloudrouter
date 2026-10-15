@@ -1,11 +1,19 @@
+import { useMemo } from 'react';
 import { SdkworkProductDownloadSection } from '@sdkwork/cloudrouter-pc-downloads';
 import { useTranslation } from 'react-i18next';
 import {
+  applyResolvedDownloadUrls,
   cloudRouterDownloadCatalog,
   createCloudRouterDownloadCards,
   createCloudRouterDownloadCatalog,
+  dropHiddenDownloadCatalogCards,
+  hasVisibleDownloadCatalogCards,
+  readDownloadActionDriveRefs,
+  resolvableDownloadDriveRefs,
   resolveUsableDownloadCatalog,
+  type SdkworkDownloadDriveRef,
 } from '../downloads/cloudRouterDownloads';
+import { useDriveDownloadUrls } from '../downloads/useDriveDownloadUrls';
 import { useHomeContent } from '../content/useHomeContent';
 
 interface DownloadPanelProps {
@@ -42,8 +50,48 @@ export function DownloadPanel({
   // `undefined` means the console published nothing usable, which is the signal to keep rendering
   // the catalog checked into the repository — the same no-op guarantee the footer switches have.
   const publishedCatalog = resolveUsableDownloadCatalog(home.downloadCatalog);
+
+  // Cards an operator hid on `/admin/site` leave the section entirely. When everything they
+  // published is hidden, the section draws nothing at all — resurrecting the bundled catalog
+  // would override a deliberate operator decision.
+  const visibleCatalog = publishedCatalog === undefined
+    ? undefined
+    : dropHiddenDownloadCatalogCards(publishedCatalog);
+  const sectionVisible = visibleCatalog === undefined
+    || hasVisibleDownloadCatalogCards(visibleCatalog);
+
+  // Installers an operator uploaded land on their actions as Drive references; resolve each to a
+  // fresh presigned URL before rendering so the buttons link somewhere a visitor can actually
+  // follow. Installers the operator explicitly hid are excluded — their disabled state is a
+  // decision, not the "href not navigable yet" state resolution exists to fix — and actions
+  // whose resolution has not landed yet stay disabled rather than rendering a link that cannot
+  // be followed.
+  const driveRefs = useMemo(
+    () => (visibleCatalog === undefined || !sectionVisible
+      ? new Map<string, SdkworkDownloadDriveRef>()
+      : readDownloadActionDriveRefs(visibleCatalog)),
+    [visibleCatalog, sectionVisible],
+  );
+  const driveUrls = useDriveDownloadUrls(
+    useMemo(() => resolvableDownloadDriveRefs(driveRefs), [driveRefs]),
+  );
+
+  // The early return sits below every hook, so flipping between "some card visible" and "all
+  // hidden" across renders never changes the hook order.
+  if (!sectionVisible) {
+    return null;
+  }
+
   const catalog = createCloudRouterDownloadCatalog(
     publishedCatalog ?? cloudRouterDownloadCatalog,
+  );
+  const cards = applyResolvedDownloadUrls(
+    createCloudRouterDownloadCards(translateDownloadText, {
+      brandVariables: home.variables,
+      ...(visibleCatalog !== undefined ? { catalog: visibleCatalog } : {}),
+    }),
+    driveUrls,
+    driveRefs,
   );
 
   return (
@@ -51,10 +99,7 @@ export function DownloadPanel({
       className={className}
       catalog={{
         ...catalog,
-        cards: createCloudRouterDownloadCards(translateDownloadText, {
-          brandVariables: home.variables,
-          ...(publishedCatalog !== undefined ? { catalog: publishedCatalog } : {}),
-        }),
+        cards,
       }}
       subtitle={subtitle}
       title={title}

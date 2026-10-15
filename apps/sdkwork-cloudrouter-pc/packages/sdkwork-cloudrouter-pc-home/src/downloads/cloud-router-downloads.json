@@ -246,6 +246,14 @@
           "label": "Android",
           "platform": "android",
           "unavailableLabel": "Android coming soon"
+        },
+        {
+          "disabled": true,
+          "href": "",
+          "id": "mobile-harmonyos",
+          "label": "HarmonyOS",
+          "platform": "harmonyos",
+          "unavailableLabel": "HarmonyOS coming soon"
         }
       ],
       "description": "Track routing health, account activity, and model usage from a mobile companion built for operators and builders.",

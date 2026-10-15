@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { DriveUploadImage } from 'sdkwork-drive-pc-upload-image';
+import { DownloadCatalogEditor } from './DownloadCatalogEditor';
+import { InlineWarning, SectionDivider, TextArea, TextField, ToggleSwitch } from './SiteSettingsControls';
 import { getLoadErrorMessage } from '@sdkwork/cloudroutes-pc-commons/runtime';
 import { BusinessStatePanel } from '@sdkwork/cloudroutes-pc-commons';
 import {
@@ -200,7 +202,16 @@ if (SITE_SETTINGS_CATEGORIES.length !== SITE_SETTINGS_CATEGORY_IDS.length) {
   throw new Error('Every site-settings category needs exactly one tab definition.');
 }
 
-export function CloudRouterSiteSettingsPage() {
+export function CloudRouterSiteSettingsPage({
+  bundledDownloadCatalog,
+}: {
+  /**
+   * The application's bundled download catalog, handed in by the composition layer so the
+   * structured editor can seed itself from the catalog that is already live when nothing is
+   * published yet. Optional: without it the editor seeds from a minimal skeleton instead.
+   */
+  bundledDownloadCatalog?: unknown;
+} = {}) {
   const { t } = useTranslation();
   const [form, setForm] = useState<SiteSettingsForm>(DEFAULT_SITE_SETTINGS);
   /**
@@ -604,8 +615,9 @@ export function CloudRouterSiteSettingsPage() {
             ) : null}
 
             {activeCategory === 'downloads' ? (
-              <DownloadCatalogField
+              <DownloadCatalogEditor
                 check={downloadCatalogCheck}
+                fallbackCatalog={bundledDownloadCatalog}
                 onChange={updateDownloadCatalog}
                 value={form.downloads}
               />
@@ -1241,16 +1253,6 @@ const WARNING_LABEL_KEYS: Record<HomeContentWarningCode, string> = {
   'modalities.items': 'admin.siteSettings.homeContent.warning.modalityItems',
 };
 
-/** The amber note a half-written entry carries. */
-function InlineWarning({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="inline-flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400">
-      <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-      {children}
-    </p>
-  );
-}
-
 /** One authored button: a caption and where it goes. Both halves or the runtime draws nothing. */
 function LinkPairFields({
   label,
@@ -1350,101 +1352,6 @@ function CollectionRow({
         >
           <Trash2 className="h-4 w-4" />
         </button>
-      </div>
-    </div>
-  );
-}
-
-/**
- * The download catalog editor.
- *
- * A JSON document rather than a grid of inputs: every entry carries a file name, a platform, a
- * release tag and a download URL that a release job already computed. Retyping those into fields
- * would replace a copy with a transcription, so the console takes the document the pipeline
- * produced, checks it against the rules the homepage reads it with, and shows what the landing
- * page would draw before it is published.
- */
-function DownloadCatalogField({
-  check,
-  onChange,
-  value,
-}: {
-  check: DownloadCatalogCheck;
-  onChange: (next: string) => void;
-  value: string;
-}) {
-  const { t } = useTranslation();
-  const summary = check.summary;
-  return (
-    <div className="grid grid-cols-1 gap-4">
-      <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-        {t('admin.siteSettings.downloads.intro')}
-      </p>
-
-      <label className="block">
-        <span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">
-          {t('admin.siteSettings.downloads.fieldLabel')}
-        </span>
-        <textarea
-          className="h-80 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-xs leading-relaxed text-slate-900 outline-none transition-colors focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/20 dark:border-white/10 dark:bg-black/20 dark:text-white"
-          data-admin-site-download-catalog
-          onChange={(event) => onChange(event.target.value)}
-          placeholder={t('admin.siteSettings.downloads.placeholder')}
-          spellCheck={false}
-          value={value}
-        />
-      </label>
-
-      {check.ok ? (
-        summary ? (
-          <div
-            className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300"
-            data-admin-site-download-status="publishable"
-            role="status"
-          >
-            {t('admin.siteSettings.downloads.publishable', {
-              actions: summary.actions,
-              cards: summary.cards,
-              name: summary.productName,
-              version: summary.version,
-            })}
-          </div>
-        ) : (
-          <div
-            className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
-            data-admin-site-download-status="unset"
-            role="status"
-          >
-            {t('admin.siteSettings.downloads.unset')}
-          </div>
-        )
-      ) : (
-        <div
-          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300"
-          data-admin-site-download-status="invalid"
-          role="alert"
-        >
-          <p className="font-medium">{t('admin.siteSettings.downloads.invalidTitle')}</p>
-          <ul className="mt-1 list-disc space-y-0.5 pl-5">
-            {check.problems.map((problem) => (
-              <li key={problem}>{problem}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <div className="flex flex-wrap items-center gap-3">
-        <button
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
-          disabled={value.trim().length === 0}
-          onClick={() => onChange('')}
-          type="button"
-        >
-          {t('admin.siteSettings.downloads.clear')}
-        </button>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
-          {t('admin.siteSettings.downloads.clearHint')}
-        </p>
       </div>
     </div>
   );
@@ -1607,47 +1514,6 @@ function VisibilityPill({ enabled }: { enabled: boolean }) {
 }
 
 /**
- * The switch used by every toggleable row. Extracted so the social row, the QR slots, and the
- * footer regions cannot drift into three different-looking switches for the same action.
- */
-function ToggleSwitch({
-  checked,
-  label,
-  onChange,
-}: {
-  checked: boolean;
-  label: string;
-  onChange: (next: boolean) => void;
-}) {
-  const labelId = useId();
-  return (
-    <button
-      aria-checked={checked}
-      aria-labelledby={labelId}
-      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-lobster-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-[#1a1a1a] ${checked ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`}
-      data-admin-site-switch={checked ? 'on' : 'off'}
-      onClick={() => onChange(!checked)}
-      role="switch"
-      type="button"
-    >
-      <span className="sr-only" id={labelId}>{label}</span>
-      <span
-        className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-5' : 'translate-x-0.5'}`}
-      />
-    </button>
-  );
-}
-
-function SectionDivider({ title }: { title: string }) {
-  return (
-    <div className="flex items-center gap-3 pt-2">
-      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{title}</span>
-      <div className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
-    </div>
-  );
-}
-
-/**
  * 站点媒体字段：站点资源与二维码统一走共享 Drive 图片上传组件族。
  *
  * 上传声明、体积与 MIME 准入由统一上传目录与 commons 的图片上传服务承担，
@@ -1761,71 +1627,6 @@ function QrCodeSlotField({
         value={value}
       />
     </div>
-  );
-}
-
-function TextField({ label, value, onChange, className = '', error = null, maxLength, placeholder, required = false }: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  className?: string;
-  error?: string | null;
-  /**
-   * The bound the *runtime* enforces, so the console cannot author a value that gets truncated
-   * on render. Optional because most fields here are not rendered by a bounded reader.
-   */
-  maxLength?: number;
-  placeholder?: string;
-  required?: boolean;
-}) {
-  const errorId = useId();
-  return (
-    <label className={`block ${className}`}>
-      <span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</span>
-      <input
-        aria-describedby={error ? errorId : undefined}
-        aria-invalid={error ? 'true' : undefined}
-        className={`w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:ring-2 dark:bg-black/20 dark:text-white ${
-          error
-            ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20 dark:border-red-500/60'
-            : 'border-slate-200 focus:border-lobster-500 focus:ring-lobster-500/20 dark:border-white/10'
-        }`}
-        maxLength={maxLength}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        required={required}
-        value={value}
-      />
-      {error ? (
-        <span className="mt-1 block text-xs text-red-600 dark:text-red-400" id={errorId} role="alert">
-          {error}
-        </span>
-      ) : null}
-    </label>
-  );
-}
-
-function TextArea({ label, value, onChange, className = '', maxLength, rows = 4, placeholder }: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  className?: string;
-  maxLength?: number;
-  rows?: number;
-  placeholder?: string;
-}) {
-  return (
-    <label className={`block ${className}`}>
-      <span className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</span>
-      <textarea
-        className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition-colors focus:border-lobster-500 focus:ring-2 focus:ring-lobster-500/20 dark:border-white/10 dark:bg-black/20 dark:text-white"
-        maxLength={maxLength}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        rows={rows}
-        value={value}
-      />
-    </label>
   );
 }
 
