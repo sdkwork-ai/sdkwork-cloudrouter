@@ -55,7 +55,7 @@ customer-facing documentation.
 
 ## Installation And Usage
 
-Current release: `0.4.5`. Release records live under
+Current release: `0.4.6`. Release records live under
 [docs/release](./docs/release/).
 
 Primary installation and usage guides:
@@ -94,7 +94,7 @@ purpose: `pnpm exec sdkwork-app` resolves its bin from the root
 Quick Ubuntu/Debian service install from a release asset:
 
 ```bash
-sudo apt install ./cloudrouter-linux-x64-server-0.4.5.deb
+sudo apt install ./cloudrouter-linux-x64-server-0.4.6.deb
 sudo editor /etc/sdkwork/router/config.toml
 sudo editor /etc/sdkwork/database/database.secret
 sudo systemctl start cloudrouter
@@ -1127,7 +1127,7 @@ only portable archives. `scripts/build-cloud-router-native-installer.mjs`
 consumes the same staged production directory and package plan to build:
 
 - Linux `.deb` packages for Ubuntu/Debian installation through
-  `apt install ./cloudrouter-linux-x64-server-0.4.5.deb` or
+  `apt install ./cloudrouter-linux-x64-server-0.4.6.deb` or
   `dpkg -i`.
 - Windows `.msi` packages through WiX for service and desktop install targets.
 - macOS `.pkg` packages through `pkgbuild` for service and desktop install

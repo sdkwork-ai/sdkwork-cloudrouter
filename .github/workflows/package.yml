@@ -25,11 +25,11 @@ on:
       tag:
         description: Release tag or source ref to package.
         required: true
-        default: v0.4.5
+        default: v0.4.6
       package_version:
         description: Package version used in artifact names and manifests.
         required: true
-        default: 0.4.5
+        default: 0.4.6
       deployment_profile:
         description: Deployment profile filter.
         required: true
@@ -125,46 +125,6 @@ on:
         required: true
         default: false
         type: boolean
-      sdkwork_appbase_ref:
-        description: sdkwork-appbase commit/ref override.
-        required: false
-        default: 023176cb4954280d6bb7cc7946be2e679a8dfe43
-      sdkwork_core_ref:
-        description: sdkwork-core commit/ref override.
-        required: false
-        default: 3eb4a1619af5af56e43b45bcb83c134a68ff5d5b
-      sdkwork_database_ref:
-        description: sdkwork-database commit/ref override.
-        required: false
-        default: 0606b8c470ec0955c124075e62a7373ed6b74607
-      sdkwork_drive_ref:
-        description: sdkwork-drive commit/ref override.
-        required: false
-        default: 711c4f11dd5365b34d5c5b9b5159d021d575c1f0
-      sdkwork_generations_ref:
-        description: sdkwork-generations commit/ref override.
-        required: false
-        default: df2472bc8795afdbd782cb88847b88044b4253cc
-      sdkwork_image_ref:
-        description: sdkwork-image commit/ref override.
-        required: false
-        default: fb749408e4768d400cdac928fd82cd6d4e1a1b7c
-      sdkwork_sdk_generator_ref:
-        description: sdkwork-sdk-generator commit/ref override.
-        required: false
-        default: 6fa1223a86825eb323e469502bf7fb31bda650c9
-      sdkwork_ui_ref:
-        description: sdkwork-ui commit/ref override.
-        required: false
-        default: 47252c7aeddc9a00a71adb16bab6d71916083757
-      sdkwork_utils_ref:
-        description: sdkwork-utils commit/ref override.
-        required: false
-        default: c650f6ee940f855b57443746eda4c3e9735096eb
-      sdkwork_web_framework_ref:
-        description: sdkwork-web-framework commit/ref override.
-        required: false
-        default: 8f0c9bea5cb96e288c3c4499de379c2d8e154bd8
 
 permissions:
   contents: write
@@ -197,22 +157,22 @@ jobs:
           "SDKWORK_ACCOUNT_REF": "${{ vars.SDKWORK_ACCOUNT_REF }}",
           "SDKWORK_AGENTS_REF": "${{ vars.SDKWORK_AGENTS_REF }}",
           "SDKWORK_APP_TOPOLOGY_REF": "${{ vars.SDKWORK_APP_TOPOLOGY_REF }}",
-          "SDKWORK_APPBASE_REF": "${{ github.event.inputs.sdkwork_appbase_ref || vars.SDKWORK_APPBASE_REF }}",
+          "SDKWORK_APPBASE_REF": "${{ vars.SDKWORK_APPBASE_REF }}",
           "SDKWORK_ASSETS_REF": "${{ vars.SDKWORK_ASSETS_REF }}",
           "SDKWORK_AUDIO_REF": "${{ vars.SDKWORK_AUDIO_REF }}",
           "SDKWORK_CATALOG_REF": "${{ vars.SDKWORK_CATALOG_REF }}",
           "SDKWORK_CLOUDROUTER_REF": "${{ vars.SDKWORK_CLOUDROUTER_REF }}",
           "SDKWORK_COMMUNITY_REF": "${{ vars.SDKWORK_COMMUNITY_REF }}",
-          "SDKWORK_CORE_REF": "${{ github.event.inputs.sdkwork_core_ref || vars.SDKWORK_CORE_REF }}",
+          "SDKWORK_CORE_REF": "${{ vars.SDKWORK_CORE_REF }}",
           "SDKWORK_COURSE_REF": "${{ vars.SDKWORK_COURSE_REF }}",
-          "SDKWORK_DATABASE_REF": "${{ github.event.inputs.sdkwork_database_ref || vars.SDKWORK_DATABASE_REF }}",
+          "SDKWORK_DATABASE_REF": "${{ vars.SDKWORK_DATABASE_REF }}",
           "SDKWORK_DOCUMENTS_REF": "${{ vars.SDKWORK_DOCUMENTS_REF }}",
-          "SDKWORK_DRIVE_REF": "${{ github.event.inputs.sdkwork_drive_ref || vars.SDKWORK_DRIVE_REF }}",
+          "SDKWORK_DRIVE_REF": "${{ vars.SDKWORK_DRIVE_REF }}",
           "SDKWORK_FEEDS_REF": "${{ vars.SDKWORK_FEEDS_REF }}",
-          "SDKWORK_GENERATIONS_REF": "${{ github.event.inputs.sdkwork_generations_ref || vars.SDKWORK_GENERATIONS_REF }}",
+          "SDKWORK_GENERATIONS_REF": "${{ vars.SDKWORK_GENERATIONS_REF }}",
           "SDKWORK_IAM_REF": "${{ vars.SDKWORK_IAM_REF }}",
           "SDKWORK_ID_REF": "${{ vars.SDKWORK_ID_REF }}",
-          "SDKWORK_IMAGE_REF": "${{ github.event.inputs.sdkwork_image_ref || vars.SDKWORK_IMAGE_REF }}",
+          "SDKWORK_IMAGE_REF": "${{ vars.SDKWORK_IMAGE_REF }}",
           "SDKWORK_INVENTORY_REF": "${{ vars.SDKWORK_INVENTORY_REF }}",
           "SDKWORK_INVOICE_REF": "${{ vars.SDKWORK_INVOICE_REF }}",
           "SDKWORK_KERNEL_REF": "${{ vars.SDKWORK_KERNEL_REF }}",
@@ -233,15 +193,15 @@ jobs:
           "SDKWORK_RTC_REF": "${{ vars.SDKWORK_RTC_REF }}",
           "SDKWORK_SANDBOX_REF": "${{ vars.SDKWORK_SANDBOX_REF }}",
           "SDKWORK_SDK_COMMONS_REF": "${{ vars.SDKWORK_SDK_COMMONS_REF }}",
-          "SDKWORK_SDK_GENERATOR_REF": "${{ github.event.inputs.sdkwork_sdk_generator_ref || vars.SDKWORK_SDK_GENERATOR_REF }}",
+          "SDKWORK_SDK_GENERATOR_REF": "${{ vars.SDKWORK_SDK_GENERATOR_REF }}",
           "SDKWORK_SPECS_REF": "${{ vars.SDKWORK_SPECS_REF }}",
           "SDKWORK_SHOP_REF": "${{ vars.SDKWORK_SHOP_REF }}",
           "SDKWORK_SKILLS_REF": "${{ vars.SDKWORK_SKILLS_REF }}",
           "SDKWORK_TEST_REF": "${{ vars.SDKWORK_TEST_REF }}",
-          "SDKWORK_UI_REF": "${{ github.event.inputs.sdkwork_ui_ref || vars.SDKWORK_UI_REF }}",
-          "SDKWORK_UTILS_REF": "${{ github.event.inputs.sdkwork_utils_ref || vars.SDKWORK_UTILS_REF }}",
+          "SDKWORK_UI_REF": "${{ vars.SDKWORK_UI_REF }}",
+          "SDKWORK_UTILS_REF": "${{ vars.SDKWORK_UTILS_REF }}",
           "SDKWORK_VIDEO_REF": "${{ vars.SDKWORK_VIDEO_REF }}",
           "SDKWORK_VOICE_REF": "${{ vars.SDKWORK_VOICE_REF }}",
-          "SDKWORK_WEB_FRAMEWORK_REF": "${{ github.event.inputs.sdkwork_web_framework_ref || vars.SDKWORK_WEB_FRAMEWORK_REF }}"
+          "SDKWORK_WEB_FRAMEWORK_REF": "${{ vars.SDKWORK_WEB_FRAMEWORK_REF }}"
         }
     secrets: inherit
