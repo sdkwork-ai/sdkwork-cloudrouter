@@ -393,12 +393,12 @@
         "version": "0.4.2",
         "releaseChannel": "STABLE",
         "title": "SDKWork Cloud Router 0.4.2",
-        "summary": "Packaging and container image publication corrected; cloud deployment-profile image lane added.",
-        "content": "Packaging workflow repaired (the dependency checkout JSON was invalid and blocked every release). Container image is now built and pushed to registry.sdkwork.com/apps/sdkwork-cloudrouter from the packaging workflow. Cloud deployment-profile image lane added per DEPLOYMENT_SPEC section 5.",
+        "summary": "Packaging pipeline repaired; every supported install package publishes from the packaging workflow.",
+        "content": "Packaging pipeline repaired: the workflow file had been rejected by GitHub since 2026-09-03 (its workflow_dispatch input count exceeded the 25-input cap), so no release could run. Every supported install package (Linux deb/tar.gz, Windows msi/zip, macOS pkg/tar.gz, desktop installers, container install package) is built, signed, and published to this release. Container image publication is wired into the packaging lifecycle and pushes registry.sdkwork.com/apps/sdkwork-cloudrouter for both deployment profiles once the repository container registry credentials are configured.",
         "highlights": [
-          "Packaging workflow can run again; releases publish downloadable packages",
-          "Container image published from the framework lifecycle with OCI digest evidence",
-          "Cloud deployment-profile container image lane added"
+          "Packaging workflow runs again after six weeks of silent file rejection",
+          "All supported install packages published and downloadable",
+          "Container image and cloud deployment-profile lane integrated into the release lifecycle"
         ],
         "packageIds": [
           "web-universal-cloud-browser-zip",
