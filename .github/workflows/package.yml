@@ -4,6 +4,14 @@ name: Package Application
 # package, validate, sign, SBOM, and release-upload behavior lives in
 # sdkwork.workflow.json lifecycle steps and in the sdkwork-github-workflow
 # framework. Do not add matrix, upload, changelog, or attestation logic here.
+#
+# DISPATCH INPUT BUDGET — GitHub rejects the whole file above 25
+# workflow_dispatch inputs (raised from 10 in December 2025); an over-budget
+# file never runs at all, not even for a tag push. This repository has
+# 49 dependencies, so per-dependency dispatch inputs exist only for the
+# 10 dependencies pinned to a fixed ref. Every other dependency resolves
+# through its repository variable (vars.SDKWORK_*_REF) and defaults to the ref
+# declared in sdkwork.workflow.json. Current budget: 20 of 25.
 
 on:
   push:
@@ -118,200 +126,44 @@ on:
         required: true
         default: false
         type: boolean
-      sdkwork_account_ref:
-        description: sdkwork-account commit/ref.
-        required: false
-        default: main
-      sdkwork_agents_ref:
-        description: sdkwork-agents commit/ref.
-        required: false
-        default: main
-      sdkwork_app_topology_ref:
-        description: sdkwork-app-topology commit/ref.
-        required: false
-        default: main
       sdkwork_appbase_ref:
-        description: sdkwork-appbase commit/ref.
+        description: sdkwork-appbase commit/ref override.
         required: false
-        default: main
-      sdkwork_assets_ref:
-        description: sdkwork-assets commit/ref.
-        required: false
-        default: main
-      sdkwork_audio_ref:
-        description: sdkwork-audio commit/ref.
-        required: false
-        default: main
-      sdkwork_catalog_ref:
-        description: sdkwork-catalog commit/ref.
-        required: false
-        default: main
-      sdkwork_cloudrouter_ref:
-        description: sdkwork-cloudrouter commit/ref.
-        required: false
-        default: main
-      sdkwork_community_ref:
-        description: sdkwork-community commit/ref.
-        required: false
-        default: main
+        default: ba3a5103dd0a895a11dcda3ea2e5bac5428f38aa
       sdkwork_core_ref:
-        description: sdkwork-core commit/ref.
+        description: sdkwork-core commit/ref override.
         required: false
-        default: main
-      sdkwork_course_ref:
-        description: sdkwork-course commit/ref.
-        required: false
-        default: main
+        default: 1cb61734ab62e1954ba7fcc3b7cd5465e6914149
       sdkwork_database_ref:
-        description: sdkwork-database commit/ref.
-        required: false
-        default: main
-      sdkwork_documents_ref:
-        description: sdkwork-documents commit/ref.
+        description: sdkwork-database commit/ref override.
         required: false
         default: main
       sdkwork_drive_ref:
-        description: sdkwork-drive commit/ref.
+        description: sdkwork-drive commit/ref override.
         required: false
-        default: main
-      sdkwork_feeds_ref:
-        description: sdkwork-feeds commit/ref.
-        required: false
-        default: main
+        default: 46245a721cca19262c68742a7506a8a0aa752291
       sdkwork_generations_ref:
-        description: sdkwork-generations commit/ref.
+        description: sdkwork-generations commit/ref override.
         required: false
-        default: main
-      sdkwork_iam_ref:
-        description: sdkwork-iam commit/ref.
-        required: false
-        default: main
-      sdkwork_id_ref:
-        description: sdkwork-id commit/ref.
-        required: false
-        default: main
+        default: 5823633ca3efc930f9c500e5c91e53e7210cae44
       sdkwork_image_ref:
-        description: sdkwork-image commit/ref.
+        description: sdkwork-image commit/ref override.
         required: false
-        default: main
-      sdkwork_inventory_ref:
-        description: sdkwork-inventory commit/ref.
-        required: false
-        default: main
-      sdkwork_invoice_ref:
-        description: sdkwork-invoice commit/ref.
-        required: false
-        default: main
-      sdkwork_kernel_ref:
-        description: sdkwork-kernel commit/ref.
-        required: false
-        default: main
-      sdkwork_knowledgebase_ref:
-        description: sdkwork-knowledgebase commit/ref.
-        required: false
-        default: main
-      sdkwork_log_ref:
-        description: sdkwork-log commit/ref.
-        required: false
-        default: main
-      sdkwork_membership_ref:
-        description: sdkwork-membership commit/ref.
-        required: false
-        default: main
-      sdkwork_memory_ref:
-        description: sdkwork-memory commit/ref.
-        required: false
-        default: main
-      sdkwork_merchandise_ref:
-        description: sdkwork-merchandise commit/ref.
-        required: false
-        default: main
-      sdkwork_messaging_ref:
-        description: sdkwork-messaging commit/ref.
-        required: false
-        default: main
-      sdkwork_models_ref:
-        description: sdkwork-models commit/ref.
-        required: false
-        default: main
-      sdkwork_music_ref:
-        description: sdkwork-music commit/ref.
-        required: false
-        default: main
-      sdkwork_order_ref:
-        description: sdkwork-order commit/ref.
-        required: false
-        default: main
-      sdkwork_partner_ref:
-        description: sdkwork-partner commit/ref.
-        required: false
-        default: main
-      sdkwork_payment_ref:
-        description: sdkwork-payment commit/ref.
-        required: false
-        default: main
-      sdkwork_promotion_ref:
-        description: sdkwork-promotion commit/ref.
-        required: false
-        default: main
-      sdkwork_prompts_ref:
-        description: sdkwork-prompts commit/ref.
-        required: false
-        default: main
-      sdkwork_rpc_framework_ref:
-        description: sdkwork-rpc-framework commit/ref.
-        required: false
-        default: main
-      sdkwork_rtc_ref:
-        description: sdkwork-rtc commit/ref.
-        required: false
-        default: main
-      sdkwork_sandbox_ref:
-        description: sdkwork-sandbox commit/ref.
-        required: false
-        default: main
-      sdkwork_sdk_commons_ref:
-        description: sdkwork-sdk-commons commit/ref.
-        required: false
-        default: main
+        default: 19aa219bee6bf9e926c73433748add88c0917083
       sdkwork_sdk_generator_ref:
-        description: sdkwork-sdk-generator commit/ref.
+        description: sdkwork-sdk-generator commit/ref override.
         required: false
-        default: main
-      sdkwork_specs_ref:
-        description: sdkwork-specs commit/ref.
-        required: false
-        default: main
-      sdkwork_shop_ref:
-        description: sdkwork-shop commit/ref.
-        required: false
-        default: main
-      sdkwork_skills_ref:
-        description: sdkwork-skills commit/ref.
-        required: false
-        default: main
-      sdkwork_test_ref:
-        description: sdkwork-test commit/ref.
-        required: false
-        default: main
+        default: e11d0c69f7a19ad5e9bb680f22ac392e98a2bc49
       sdkwork_ui_ref:
-        description: sdkwork-ui commit/ref.
+        description: sdkwork-ui commit/ref override.
         required: false
-        default: main
+        default: e53d25425dd13ec02d5e0173e79245d32c5926ff
       sdkwork_utils_ref:
-        description: sdkwork-utils commit/ref.
-        required: false
-        default: main
-      sdkwork_video_ref:
-        description: sdkwork-video commit/ref.
-        required: false
-        default: main
-      sdkwork_voice_ref:
-        description: sdkwork-voice commit/ref.
+        description: sdkwork-utils commit/ref override.
         required: false
         default: main
       sdkwork_web_framework_ref:
-        description: sdkwork-web-framework commit/ref.
+        description: sdkwork-web-framework commit/ref override.
         required: false
         default: main
 
@@ -343,54 +195,54 @@ jobs:
       framework_ref: 2121cc5f1385e8e561171d01fbb71f11adbda187
       dependency_refs_json: >-
         {
-          "SDKWORK_ACCOUNT_REF": "${{ github.event.inputs.sdkwork_account_ref || vars.SDKWORK_ACCOUNT_REF }}",
-          "SDKWORK_AGENTS_REF": "${{ github.event.inputs.sdkwork_agents_ref || vars.SDKWORK_AGENTS_REF }}",
-          "SDKWORK_APP_TOPOLOGY_REF": "${{ github.event.inputs.sdkwork_app_topology_ref || vars.SDKWORK_APP_TOPOLOGY_REF }}",
+          "SDKWORK_ACCOUNT_REF": "${{ vars.SDKWORK_ACCOUNT_REF }}",
+          "SDKWORK_AGENTS_REF": "${{ vars.SDKWORK_AGENTS_REF }}",
+          "SDKWORK_APP_TOPOLOGY_REF": "${{ vars.SDKWORK_APP_TOPOLOGY_REF }}",
           "SDKWORK_APPBASE_REF": "${{ github.event.inputs.sdkwork_appbase_ref || vars.SDKWORK_APPBASE_REF }}",
-          "SDKWORK_ASSETS_REF": "${{ github.event.inputs.sdkwork_assets_ref || vars.SDKWORK_ASSETS_REF }}",
-          "SDKWORK_AUDIO_REF": "${{ github.event.inputs.sdkwork_audio_ref || vars.SDKWORK_AUDIO_REF }}",
-          "SDKWORK_CATALOG_REF": "${{ github.event.inputs.sdkwork_catalog_ref || vars.SDKWORK_CATALOG_REF }}",
-          "SDKWORK_CLOUDROUTER_REF": "${{ github.event.inputs.sdkwork_cloudrouter_ref || vars.SDKWORK_CLOUDROUTER_REF }}",
-          "SDKWORK_COMMUNITY_REF": "${{ github.event.inputs.sdkwork_community_ref || vars.SDKWORK_COMMUNITY_REF }}",
+          "SDKWORK_ASSETS_REF": "${{ vars.SDKWORK_ASSETS_REF }}",
+          "SDKWORK_AUDIO_REF": "${{ vars.SDKWORK_AUDIO_REF }}",
+          "SDKWORK_CATALOG_REF": "${{ vars.SDKWORK_CATALOG_REF }}",
+          "SDKWORK_CLOUDROUTER_REF": "${{ vars.SDKWORK_CLOUDROUTER_REF }}",
+          "SDKWORK_COMMUNITY_REF": "${{ vars.SDKWORK_COMMUNITY_REF }}",
           "SDKWORK_CORE_REF": "${{ github.event.inputs.sdkwork_core_ref || vars.SDKWORK_CORE_REF }}",
-          "SDKWORK_COURSE_REF": "${{ github.event.inputs.sdkwork_course_ref || vars.SDKWORK_COURSE_REF }}",
+          "SDKWORK_COURSE_REF": "${{ vars.SDKWORK_COURSE_REF }}",
           "SDKWORK_DATABASE_REF": "${{ github.event.inputs.sdkwork_database_ref || vars.SDKWORK_DATABASE_REF }}",
-          "SDKWORK_DOCUMENTS_REF": "${{ github.event.inputs.sdkwork_documents_ref || vars.SDKWORK_DOCUMENTS_REF }}",
+          "SDKWORK_DOCUMENTS_REF": "${{ vars.SDKWORK_DOCUMENTS_REF }}",
           "SDKWORK_DRIVE_REF": "${{ github.event.inputs.sdkwork_drive_ref || vars.SDKWORK_DRIVE_REF }}",
-          "SDKWORK_FEEDS_REF": "${{ github.event.inputs.sdkwork_feeds_ref || vars.SDKWORK_FEEDS_REF }}",
+          "SDKWORK_FEEDS_REF": "${{ vars.SDKWORK_FEEDS_REF }}",
           "SDKWORK_GENERATIONS_REF": "${{ github.event.inputs.sdkwork_generations_ref || vars.SDKWORK_GENERATIONS_REF }}",
-          "SDKWORK_IAM_REF": "${{ github.event.inputs.sdkwork_iam_ref || vars.SDKWORK_IAM_REF }}",
-          "SDKWORK_ID_REF": "${{ github.event.inputs.sdkwork_id_ref || vars.SDKWORK_ID_REF }}",
+          "SDKWORK_IAM_REF": "${{ vars.SDKWORK_IAM_REF }}",
+          "SDKWORK_ID_REF": "${{ vars.SDKWORK_ID_REF }}",
           "SDKWORK_IMAGE_REF": "${{ github.event.inputs.sdkwork_image_ref || vars.SDKWORK_IMAGE_REF }}",
-          "SDKWORK_INVENTORY_REF": "${{ github.event.inputs.sdkwork_inventory_ref || vars.SDKWORK_INVENTORY_REF }}",
-          "SDKWORK_INVOICE_REF": "${{ github.event.inputs.sdkwork_invoice_ref || vars.SDKWORK_INVOICE_REF }}",
-          "SDKWORK_KERNEL_REF": "${{ github.event.inputs.sdkwork_kernel_ref || vars.SDKWORK_KERNEL_REF }}",
-          "SDKWORK_KNOWLEDGEBASE_REF": "${{ github.event.inputs.sdkwork_knowledgebase_ref || vars.SDKWORK_KNOWLEDGEBASE_REF }}",
-          "SDKWORK_LOG_REF": "${{ github.event.inputs.sdkwork_log_ref || vars.SDKWORK_LOG_REF }}",
-          "SDKWORK_MEMBERSHIP_REF": "${{ github.event.inputs.sdkwork_membership_ref || vars.SDKWORK_MEMBERSHIP_REF }}",
-          "SDKWORK_MEMORY_REF": "${{ github.event.inputs.sdkwork_memory_ref || vars.SDKWORK_MEMORY_REF }}",
-          "SDKWORK_MERCHANDISE_REF": "${{ github.event.inputs.sdkwork_merchandise_ref || vars.SDKWORK_MERCHANDISE_REF }}",
-          "SDKWORK_MESSAGING_REF": "${{ github.event.inputs.sdkwork_messaging_ref || vars.SDKWORK_MESSAGING_REF }}",
-          "SDKWORK_MODELS_REF": "${{ github.event.inputs.sdkwork_models_ref || vars.SDKWORK_MODELS_REF }}",
-          "SDKWORK_MUSIC_REF": "${{ github.event.inputs.sdkwork_music_ref || vars.SDKWORK_MUSIC_REF }}",
-          "SDKWORK_ORDER_REF": "${{ github.event.inputs.sdkwork_order_ref || vars.SDKWORK_ORDER_REF }}",
-          "SDKWORK_PARTNER_REF": "${{ github.event.inputs.sdkwork_partner_ref || vars.SDKWORK_PARTNER_REF }}",
-          "SDKWORK_PAYMENT_REF": "${{ github.event.inputs.sdkwork_payment_ref || vars.SDKWORK_PAYMENT_REF }}",
-          "SDKWORK_PROMOTION_REF": "${{ github.event.inputs.sdkwork_promotion_ref || vars.SDKWORK_PROMOTION_REF }}",
-          "SDKWORK_PROMPTS_REF": "${{ github.event.inputs.sdkwork_prompts_ref || vars.SDKWORK_PROMPTS_REF }}",
-          "SDKWORK_RPC_FRAMEWORK_REF": "${{ github.event.inputs.sdkwork_rpc_framework_ref || vars.SDKWORK_RPC_FRAMEWORK_REF }}",
-          "SDKWORK_RTC_REF": "${{ github.event.inputs.sdkwork_rtc_ref || vars.SDKWORK_RTC_REF }}",
-          "SDKWORK_SANDBOX_REF": "${{ github.event.inputs.sdkwork_sandbox_ref || vars.SDKWORK_SANDBOX_REF }}",
-          "SDKWORK_SDK_COMMONS_REF": "${{ github.event.inputs.sdkwork_sdk_commons_ref || vars.SDKWORK_SDK_COMMONS_REF }}",
+          "SDKWORK_INVENTORY_REF": "${{ vars.SDKWORK_INVENTORY_REF }}",
+          "SDKWORK_INVOICE_REF": "${{ vars.SDKWORK_INVOICE_REF }}",
+          "SDKWORK_KERNEL_REF": "${{ vars.SDKWORK_KERNEL_REF }}",
+          "SDKWORK_KNOWLEDGEBASE_REF": "${{ vars.SDKWORK_KNOWLEDGEBASE_REF }}",
+          "SDKWORK_LOG_REF": "${{ vars.SDKWORK_LOG_REF }}",
+          "SDKWORK_MEMBERSHIP_REF": "${{ vars.SDKWORK_MEMBERSHIP_REF }}",
+          "SDKWORK_MEMORY_REF": "${{ vars.SDKWORK_MEMORY_REF }}",
+          "SDKWORK_MERCHANDISE_REF": "${{ vars.SDKWORK_MERCHANDISE_REF }}",
+          "SDKWORK_MESSAGING_REF": "${{ vars.SDKWORK_MESSAGING_REF }}",
+          "SDKWORK_MODELS_REF": "${{ vars.SDKWORK_MODELS_REF }}",
+          "SDKWORK_MUSIC_REF": "${{ vars.SDKWORK_MUSIC_REF }}",
+          "SDKWORK_ORDER_REF": "${{ vars.SDKWORK_ORDER_REF }}",
+          "SDKWORK_PARTNER_REF": "${{ vars.SDKWORK_PARTNER_REF }}",
+          "SDKWORK_PAYMENT_REF": "${{ vars.SDKWORK_PAYMENT_REF }}",
+          "SDKWORK_PROMOTION_REF": "${{ vars.SDKWORK_PROMOTION_REF }}",
+          "SDKWORK_PROMPTS_REF": "${{ vars.SDKWORK_PROMPTS_REF }}",
+          "SDKWORK_RPC_FRAMEWORK_REF": "${{ vars.SDKWORK_RPC_FRAMEWORK_REF }}",
+          "SDKWORK_RTC_REF": "${{ vars.SDKWORK_RTC_REF }}",
+          "SDKWORK_SANDBOX_REF": "${{ vars.SDKWORK_SANDBOX_REF }}",
+          "SDKWORK_SDK_COMMONS_REF": "${{ vars.SDKWORK_SDK_COMMONS_REF }}",
           "SDKWORK_SDK_GENERATOR_REF": "${{ github.event.inputs.sdkwork_sdk_generator_ref || vars.SDKWORK_SDK_GENERATOR_REF }}",
-          "SDKWORK_SPECS_REF": "${{ github.event.inputs.sdkwork_specs_ref || vars.SDKWORK_SPECS_REF }}",
-          "SDKWORK_SHOP_REF": "${{ github.event.inputs.sdkwork_shop_ref || vars.SDKWORK_SHOP_REF }}",
-          "SDKWORK_SKILLS_REF": "${{ github.event.inputs.sdkwork_skills_ref || vars.SDKWORK_SKILLS_REF }}",
-          "SDKWORK_TEST_REF": "${{ github.event.inputs.sdkwork_test_ref || vars.SDKWORK_TEST_REF }}",
+          "SDKWORK_SPECS_REF": "${{ vars.SDKWORK_SPECS_REF }}",
+          "SDKWORK_SHOP_REF": "${{ vars.SDKWORK_SHOP_REF }}",
+          "SDKWORK_SKILLS_REF": "${{ vars.SDKWORK_SKILLS_REF }}",
+          "SDKWORK_TEST_REF": "${{ vars.SDKWORK_TEST_REF }}",
           "SDKWORK_UI_REF": "${{ github.event.inputs.sdkwork_ui_ref || vars.SDKWORK_UI_REF }}",
           "SDKWORK_UTILS_REF": "${{ github.event.inputs.sdkwork_utils_ref || vars.SDKWORK_UTILS_REF }}",
-          "SDKWORK_VIDEO_REF": "${{ github.event.inputs.sdkwork_video_ref || vars.SDKWORK_VIDEO_REF }}",
-          "SDKWORK_VOICE_REF": "${{ github.event.inputs.sdkwork_voice_ref || vars.SDKWORK_VOICE_REF }}",
+          "SDKWORK_VIDEO_REF": "${{ vars.SDKWORK_VIDEO_REF }}",
+          "SDKWORK_VOICE_REF": "${{ vars.SDKWORK_VOICE_REF }}",
           "SDKWORK_WEB_FRAMEWORK_REF": "${{ github.event.inputs.sdkwork_web_framework_ref || vars.SDKWORK_WEB_FRAMEWORK_REF }}"
         }
     secrets: inherit

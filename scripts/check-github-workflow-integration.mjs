@@ -30,6 +30,10 @@ const APP_CONFIG = path.join(REPO_ROOT, 'sdkwork.app.config.json');
 const REUSABLE_WORKFLOW =
   /uses:\s*sdkwork-ai\/sdkwork-github-workflow\/\.github\/workflows\/sdkwork-package\.yml@([^\s]+)/u;
 const PINNED_REF = /^(?:[0-9a-f]{40}|v\d+(?:\.\d+)*)$/u;
+// GitHub rejects the entire workflow file above 25 workflow_dispatch inputs
+// (raised from 10 in December 2025). An over-budget file never runs at all, not
+// even for a tag push, so the packaging release silently stops happening.
+const MAX_DISPATCH_INPUTS = 25;
 const FORBIDDEN_LOCAL_LOGIC =
   /^\s*(?:runs-on|steps|environment|strategy):|uses:\s*actions\/checkout|gh\s+release\s+upload|softprops\/action-gh-release/imu;
 
@@ -128,6 +132,9 @@ if (packageWorkflow !== null && workflow !== null && appConfig !== null) {
   }
 
   const declaredInputs = parseWorkflowInputs(packageWorkflow);
+  if (declaredInputs.size > MAX_DISPATCH_INPUTS) {
+    fail('package.yml declares ' + declaredInputs.size + ' workflow_dispatch inputs; GitHub rejects the file above ' + MAX_DISPATCH_INPUTS + ', which stops every release including tag pushes');
+  }
   const referencedInputs = new Set(
     [...packageWorkflow.matchAll(/github\.event\.inputs\.([A-Za-z0-9_-]+)/gu)].map((match) => match[1]),
   );
@@ -151,9 +158,11 @@ if (packageWorkflow !== null && workflow !== null && appConfig !== null) {
     }
     if (refs !== null) {
       const declared = new Map();
+      const pinnedRefInputs = new Set();
       for (const entry of workflow.dependencies ?? []) {
         if (typeof entry?.refInput === 'string' && entry.refInput.trim() !== '') {
           declared.set(entry.refInput, entry.id ?? entry.repository ?? entry.refInput);
+          if (typeof entry.ref === 'string' && entry.ref.trim() !== '') pinnedRefInputs.add(entry.refInput);
         }
       }
       for (const [refInput, id] of declared) {
@@ -166,11 +175,16 @@ if (packageWorkflow !== null && workflow !== null && appConfig !== null) {
         const rawEntry = new RegExp('"' + refInput + '"\\s*:\\s*"([^"]*)"', 'u').exec(folded);
         const entry = rawEntry ? rawEntry[1] : '';
         const inputName = refInput.toLowerCase();
-        if (!declaredInputs.has(inputName)) {
-          fail('package.yml must expose workflow_dispatch input ' + inputName + ' for ' + refInput);
-        }
-        if (!entry.includes('github.event.inputs.' + inputName)) {
-          fail('dependency_refs_json entry ' + refInput + ' must read github.event.inputs.' + inputName);
+        // The dispatch-input budget is shared across every dependency, so only a
+        // dependency the repository pins to a fixed ref gets an override input;
+        // the rest resolve through their repository variable.
+        if (pinnedRefInputs.has(refInput)) {
+          if (!declaredInputs.has(inputName)) {
+            fail('package.yml must expose workflow_dispatch input ' + inputName + ' for pinned dependency ' + refInput);
+          }
+          if (!entry.includes('github.event.inputs.' + inputName)) {
+            fail('dependency_refs_json entry ' + refInput + ' must read github.event.inputs.' + inputName);
+          }
         }
         if (!entry.includes('vars.' + refInput)) {
           fail('dependency_refs_json entry ' + refInput + ' must fall back to vars.' + refInput);

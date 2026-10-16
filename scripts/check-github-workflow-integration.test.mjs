@@ -27,7 +27,12 @@ const APP_CONFIG = [
   '}',
 ].join('\n');
 
-function packageWorkflow({ refsJson, extraInputRef = null, tagDefault = 'v0.4.1' }) {
+function packageWorkflow({ refsJson, extraInputRef = null, tagDefault = 'v0.4.1', fillerInputs = 0 }) {
+  const filler = Array.from({ length: fillerInputs }, (_unused, index) => [
+    '      filler_' + index + ':',
+    '        required: false',
+    '        default: all',
+  ]).join('\n');
   return [
     'name: Package Application',
     'on:',
@@ -42,6 +47,7 @@ function packageWorkflow({ refsJson, extraInputRef = null, tagDefault = 'v0.4.1'
     '      sdkwork_core_ref:',
     '        required: false',
     '        default: main',
+    ...(filler ? [filler] : []),
     '      sdkwork_ui_ref:',
     '        required: false',
     '        default: main',
@@ -106,6 +112,25 @@ test('rejects an event input that has no workflow_dispatch declaration', () => {
   );
   assert.equal(result.status, 1);
   assert.match(result.output, /without declaring that workflow_dispatch input/u);
+});
+
+// The defect that silently stopped every release: the file grew past GitHub's
+// 25 workflow_dispatch input cap, so GitHub rejected it and no run was ever
+// created, not even for a tag push.
+test('rejects a workflow_dispatch input budget above the GitHub cap', () => {
+  const nl = String.fromCharCode(10);
+  const filler = Array.from({ length: 30 }, (_unused, index) => [
+    '      filler_' + index + ':',
+    '        required: false',
+    '        default: all',
+  ].join(nl)).join(nl);
+  const yml = packageWorkflow({ refsJson: VALID_REFS }).replace(
+    '      sdkwork_ui_ref:',
+    filler + nl + '      sdkwork_ui_ref:',
+  );
+  const result = withFixture(yml, runGuard);
+  assert.equal(result.status, 1);
+  assert.match(result.output, /GitHub rejects the file above 25/u);
 });
 
 test('rejects a workflow_dispatch tag default that drifts from the release version', () => {
