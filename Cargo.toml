@@ -109,7 +109,7 @@ edition = "2021"
 # MSRV floor matching the `stable` channel used by CI (rust-toolchain.toml,
 # dtolnay/rust-toolchain@stable). Raise only with MIGRATION_SPEC.md evidence.
 rust-version = "1.85"
-version = "0.4.1"
+version = "0.4.2"
 license-file = "LICENSE"
 
 # RUST_CODE_SPEC.md section 13 workspace lint baseline. Members inherit via

@@ -1,6 +1,6 @@
 # Current Version
 
-- Current Version: `0.4.1`
+- Current Version: `0.4.2`
 - Release Date: unreleased (pre-launch; `sdkwork.app.config.json` declares
   `preLaunch: true`)
 - Status: `In development — no GitHub release published for the 0.4.x line yet`

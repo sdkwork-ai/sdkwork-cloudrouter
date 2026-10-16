@@ -67,7 +67,7 @@ spec:
               component: standalone
       containers:
         - name: cloudrouter
-          image: registry.sdkwork.com/apps/sdkwork-cloudrouter:0.4.1
+          image: registry.sdkwork.com/apps/sdkwork-cloudrouter:0.4.2
           ports:
             - containerPort: 3900
               name: http

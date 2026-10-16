@@ -18,11 +18,11 @@ on:
       tag:
         description: Release tag or source ref to package.
         required: true
-        default: v0.4.1
+        default: v0.4.2
       package_version:
         description: Package version used in artifact names and manifests.
         required: true
-        default: 0.4.1
+        default: 0.4.2
       deployment_profile:
         description: Deployment profile filter.
         required: true

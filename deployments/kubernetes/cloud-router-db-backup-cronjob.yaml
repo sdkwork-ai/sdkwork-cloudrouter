@@ -40,7 +40,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: pg-backup
-              image: registry.sdkwork.com/apps/sdkwork-cloudrouter:0.4.1
+              image: registry.sdkwork.com/apps/sdkwork-cloudrouter:0.4.2
               imagePullPolicy: IfNotPresent
               securityContext:
                 allowPrivilegeEscalation: false

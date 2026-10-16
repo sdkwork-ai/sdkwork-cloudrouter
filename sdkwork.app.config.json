@@ -181,7 +181,7 @@
       }
     ],
     "metadata": {
-      "assetVersion": "0.4.1",
+      "assetVersion": "0.4.2",
       "defaultLocale": "en-US"
     }
   },
@@ -226,7 +226,7 @@
           "sourceType": "WEB_URL",
           "packageFormat": "ZIP",
           "platform": "WEB",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.1/web.zip",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.2/web.zip",
           "enabled": false,
           "metadata": {
             "checksumPendingBuild": true,
@@ -247,7 +247,7 @@
           "sourceType": "WEB_URL",
           "packageFormat": "ZIP",
           "platform": "WEB",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/TEST/0.4.1/web.zip",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/TEST/0.4.2/web.zip",
           "enabled": false,
           "metadata": {
             "checksumPendingBuild": true,
@@ -268,7 +268,7 @@
           "sourceType": "WEB_URL",
           "packageFormat": "ZIP",
           "platform": "WEB",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.1/standalone/web.zip",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.2/standalone/web.zip",
           "enabled": false,
           "metadata": {
             "checksumPendingBuild": true,
@@ -289,7 +289,7 @@
           "sourceType": "BINARY_URL",
           "packageFormat": "ZIP",
           "platform": "DESKTOP_WINDOWS",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.1/windows/x64/app.zip",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.2/windows/x64/app.zip",
           "enabled": false,
           "metadata": {
             "checksumPendingBuild": true,
@@ -310,7 +310,7 @@
           "sourceType": "BINARY_URL",
           "packageFormat": "DMG",
           "platform": "DESKTOP_MACOS",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.1/macos/universal/app.dmg",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.2/macos/universal/app.dmg",
           "enabled": false,
           "metadata": {
             "checksumPendingBuild": true,
@@ -331,7 +331,7 @@
           "sourceType": "BINARY_URL",
           "packageFormat": "APPIMAGE",
           "platform": "DESKTOP_LINUX",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.1/linux/generic/x64/app.AppImage",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.2/linux/generic/x64/app.AppImage",
           "enabled": false,
           "metadata": {
             "linux": {
@@ -359,10 +359,10 @@
     }
   },
   "release": {
-    "currentVersion": "0.4.1",
+    "currentVersion": "0.4.2",
     "defaultChannel": "STABLE",
     "latest": {
-      "STABLE": "0.4.1"
+      "STABLE": "0.4.2"
     },
     "notes": [
       {
@@ -384,9 +384,33 @@
           "linux-x64-standalone-desktop-appimage"
         ],
         "publishedAt": "2026-05-07T00:00:00Z",
-        "current": true,
+        "current": false,
         "forceUpdate": false,
         "minSupportedVersion": "0.4.1",
+        "metadata": {}
+      },
+      {
+        "version": "0.4.2",
+        "releaseChannel": "STABLE",
+        "title": "SDKWork Cloud Router 0.4.2",
+        "summary": "Packaging and container image publication corrected; cloud deployment-profile image lane added.",
+        "content": "Packaging workflow repaired (the dependency checkout JSON was invalid and blocked every release). Container image is now built and pushed to registry.sdkwork.com/apps/sdkwork-cloudrouter from the packaging workflow. Cloud deployment-profile image lane added per DEPLOYMENT_SPEC section 5.",
+        "highlights": [
+          "Packaging workflow can run again; releases publish downloadable packages",
+          "Container image published from the framework lifecycle with OCI digest evidence",
+          "Cloud deployment-profile container image lane added"
+        ],
+        "packageIds": [
+          "web-universal-cloud-browser-zip",
+          "web-universal-standalone-browser-zip",
+          "windows-x64-standalone-desktop-zip",
+          "macos-universal-standalone-desktop-dmg",
+          "linux-x64-standalone-desktop-appimage"
+        ],
+        "publishedAt": "2026-10-16T05:35:46Z",
+        "current": true,
+        "forceUpdate": false,
+        "minSupportedVersion": "0.4.2",
         "metadata": {}
       }
     ]
