@@ -77,6 +77,9 @@ jobs:
       - name: Packaging plan check (container + install packages)
         run: pnpm check:packaging --if-present
 
+      - name: GitHub packaging workflow integration
+        run: pnpm check:workflow-integration
+
       - name: Install PC workspace dependencies
         working-directory: apps/sdkwork-cloudrouter-pc
         run: pnpm install --frozen-lockfile

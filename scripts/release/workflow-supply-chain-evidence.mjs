@@ -87,9 +87,37 @@ function sha256(value) {
   return createHash('sha256').update(value).digest('hex');
 }
 
-export function signReleaseArtifact({ env = process.env, root = REPO_ROOT } = {}) {
+const OCI_IMAGE_MANIFEST_NAME = 'container-image.json';
+const OCI_DIGEST_PATTERN = /^([^\s@]+)@(sha256:[a-f0-9]{64})$/u;
+
+// A release artifact binds one of two ways (GITHUB_WORKFLOW_SPEC.md section 8):
+// a packaged file binds its own bytes, while the container target binds the
+// immutable registry digest of the pushed image. The OCI deployment digest is
+// never the image-manifest file checksum, and a local-only image id is not
+// sufficient evidence.
+export function artifactBinding(env = process.env, root = REPO_ROOT) {
   const paths = pathsFor(env, root);
   const bytes = fs.readFileSync(paths.artifactPath);
+  if (path.basename(paths.artifactPath) !== OCI_IMAGE_MANIFEST_NAME) {
+    return { paths, bytes, artifactKind: 'file', artifactLocator: null, digest: `sha256:${sha256(bytes)}` };
+  }
+  let manifest;
+  try {
+    manifest = JSON.parse(bytes.toString('utf8'));
+  } catch (error) {
+    throw new Error(`container image manifest is not valid JSON: ${error.message}`);
+  }
+  const match = OCI_DIGEST_PATTERN.exec(String(manifest?.repoDigest ?? ''));
+  if (!match) {
+    throw new Error('container release evidence requires a pushed repository@sha256 digest; build the image with --push');
+  }
+  return { paths, bytes, artifactKind: 'oci-image', artifactLocator: match[0], digest: match[2] };
+}
+
+export function signReleaseArtifact({ env = process.env, root = REPO_ROOT } = {}) {
+  const binding = artifactBinding(env, root);
+  const paths = binding.paths;
+  const bytes = binding.bytes;
   const resolved = signingKey(env);
   const privateKey = resolved.privateKey;
   const algorithm = ['ed25519', 'ed448'].includes(privateKey.asymmetricKeyType) ? null : 'sha256';
@@ -101,7 +129,9 @@ export function signReleaseArtifact({ env = process.env, root = REPO_ROOT } = {}
     algorithm: String(privateKey.asymmetricKeyType),
     hashAlgorithm: algorithm ?? 'none',
     artifact: paths.artifactRelativePath,
-    digest: `sha256:${sha256(bytes)}`,
+    artifactKind: binding.artifactKind,
+    ...(binding.artifactLocator ? { artifactLocator: binding.artifactLocator } : {}),
+    digest: binding.digest,
     publicKeyFingerprint: `sha256:${sha256(publicKey)}`,
     signatureBase64: signature.toString('base64'),
   };
@@ -113,14 +143,15 @@ export function signReleaseArtifact({ env = process.env, root = REPO_ROOT } = {}
     { mode: 0o644 },
   );
   console.log(`[cloudrouter-supply-chain] signed ${paths.artifactRelativePath} -> ${portable(path.relative(root, paths.signaturePath))}`);
-  return { ...paths, envelope };
+  return { ...paths, envelope, binding };
 }
 
 export function createSbomAndProvenance({ env = process.env, root = REPO_ROOT, sourceCommit = gitHead(root), evidenceWriter = writeWorkflowEvidence } = {}) {
-  const paths = pathsFor(env, root);
+  const binding = artifactBinding(env, root);
+  const paths = binding.paths;
   if (!fs.existsSync(paths.signaturePath)) throw new Error(`detached signature is missing: ${paths.signaturePath} (run the sign phase first)`);
-  const bytes = fs.readFileSync(paths.artifactPath);
-  const digest = sha256(bytes);
+  const bytes = binding.bytes;
+  const digest = binding.digest.slice('sha256:'.length);
   const version = required(env.SDKWORK_PACKAGE_VERSION, 'SDKWORK_PACKAGE_VERSION');
   const sbom = {
     bomFormat: 'CycloneDX',
@@ -128,23 +159,28 @@ export function createSbomAndProvenance({ env = process.env, root = REPO_ROOT, s
     version: 1,
     metadata: {
       component: {
-        type: 'application',
+        type: binding.artifactKind === 'oci-image' ? 'container' : 'application',
         name: paths.packageId,
         version,
         hashes: [{ alg: 'SHA-256', content: digest }],
       },
     },
     components: [{
-      type: 'file',
-      name: path.basename(paths.artifactPath),
+      type: binding.artifactKind === 'oci-image' ? 'container' : 'file',
+      name: binding.artifactLocator ?? path.basename(paths.artifactPath),
       version,
       hashes: [{ alg: 'SHA-256', content: digest }],
-      properties: [{ name: 'sdkwork:sizeBytes', value: String(bytes.length) }],
+      properties: [
+        { name: 'sdkwork:sizeBytes', value: String(bytes.length) },
+        ...(binding.artifactLocator
+          ? [{ name: 'sdkwork:artifactLocator', value: binding.artifactLocator }]
+          : []),
+      ],
     }],
   };
   const provenance = {
     _type: 'https://in-toto.io/Statement/v1',
-    subject: [{ name: paths.artifactRelativePath, digest: { sha256: digest } }],
+    subject: [{ name: binding.artifactLocator ?? paths.artifactRelativePath, digest: { sha256: digest } }],
     predicateType: 'https://slsa.dev/provenance/v1',
     predicate: {
       buildDefinition: {
@@ -165,11 +201,11 @@ export function createSbomAndProvenance({ env = process.env, root = REPO_ROOT, s
   fs.mkdirSync(paths.evidenceRoot, { recursive: true });
   fs.writeFileSync(paths.sbomPath, `${JSON.stringify(sbom, null, 2)}\n`);
   fs.writeFileSync(paths.provenancePath, `${JSON.stringify(provenance)}\n`);
-  evidenceWriter({ env, paths, root, sourceCommit });
-  return { ...paths, digest: `sha256:${digest}` };
+  evidenceWriter({ env, paths, root, sourceCommit, binding });
+  return { ...paths, digest: binding.digest };
 }
 
-function writeWorkflowEvidence({ env, paths, root, sourceCommit }) {
+function writeWorkflowEvidence({ env, paths, root, sourceCommit, binding = { artifactKind: 'file', artifactLocator: null } }) {
   const cli = required(env.SDKWORK_WORKFLOW_CLI, 'SDKWORK_WORKFLOW_CLI');
   const outputs = required(env.SDKWORK_ARTIFACT_EVIDENCE_PATHS, 'SDKWORK_ARTIFACT_EVIDENCE_PATHS')
     .split(/\r?\n/u)
@@ -186,6 +222,8 @@ function writeWorkflowEvidence({ env, paths, root, sourceCommit }) {
       '--source-commit', sourceCommit,
       '--artifact-id', paths.packageId,
       '--artifact', paths.artifactRelativePath,
+      '--artifact-kind', binding.artifactKind,
+      ...(binding.artifactLocator ? ['--artifact-locator', binding.artifactLocator] : []),
       '--artifact-evidence', output,
       '--sbom', portable(path.relative(root, paths.sbomPath)),
       '--provenance', portable(path.relative(root, paths.provenancePath)),

@@ -1,5 +1,7 @@
-# sdkwork-cloudrouter standalone container image.
-# runtimeTarget = "container", deploymentProfile = "standalone".
+# sdkwork-cloudrouter container image.
+# runtimeTarget = "container"; deploymentProfile = "standalone" (single-container
+# unit) or "cloud" (cloud image/orchestration bundle), selected by the
+# DEPLOYMENT_PROFILE build arg and by the portal dist tree in the build context.
 # Build context: an unpacked install-package container directory containing
 # bin/, portal/, config/, container/ (entrypoint + metadata.json),
 # INSTALL.md and install-manifest.json.
@@ -16,6 +18,13 @@ ARG INSTALLER_BINARY=cloudrouterctl
 ARG INSTALL_ROOT=/opt/sdkwork/router
 ARG CONFIG_FILE=/etc/sdkwork/router/config.toml
 ARG VERSION=0.0.0
+# Deployment profile is a build input, not an environment binding: the same
+# release builds one `standalone` image (single-container unit) and one `cloud`
+# image (orchestrated/bundle) from the matching portal dist tree
+# (DEPLOYMENT_SPEC.md section 5). The image still carries no environment
+# binding; lifecycle environment, domain, database, and credentials remain
+# deployment inputs.
+ARG DEPLOYMENT_PROFILE=standalone
 
 # Runtime directory layout (RUNTIME_DIRECTORY_SPEC §4.5 Container Scope):
 # config mounts at /etc/sdkwork/router, secrets at /run/secrets/sdkwork/router,
@@ -50,7 +59,7 @@ RUN chmod 0755 ${INSTALL_ROOT}/bin/${GATEWAY_BINARY} \
 
 ENV SDKWORK_CLOUDROUTER_CONFIG_FILE=${CONFIG_FILE}
 ENV SDKWORK_CLOUDROUTER_DEPLOYMENT_MODE=server
-ENV SDKWORK_CLOUDROUTER_DEPLOYMENT_PROFILE=standalone
+ENV SDKWORK_CLOUDROUTER_DEPLOYMENT_PROFILE=${DEPLOYMENT_PROFILE}
 ENV SDKWORK_CLOUDROUTER_RUNTIME_TARGET=container
 # Operator binaries (cloudrouterctl backup/restore/ensure) must be on PATH so
 # the documented `docker compose exec cloudrouter cloudrouterctl ...` commands

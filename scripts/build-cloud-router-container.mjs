@@ -11,6 +11,10 @@
  *   4. unpack it into dist/container-image-build
  *   5. docker build -f Dockerfile -t <imageTag> <unpacked dir>
  *   6. record the immutable image digest in dist/container-image.json
+ *   7. optionally push the image and record its verified repository digest
+ *      (--push), authenticated with SDKWORK_CONTAINER_REGISTRY_USERNAME and
+ *      SDKWORK_CONTAINER_REGISTRY_PASSWORD as required by
+ *      GITHUB_WORKFLOW_SPEC.md section 7
  *
  * The committed Dockerfile at the repository root is the build input; it is
  * equivalent to the container/Containerfile generated inside the install
@@ -21,7 +25,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import { execFile } from 'node:child_process';
+import { execFile, spawnSync } from 'node:child_process';
 import {
   existsSync,
   readFileSync,
@@ -30,12 +34,14 @@ import {
 import {
   cp,
   mkdir,
+  mkdtemp,
   readFile,
   readdir,
   rm,
   stat as statFile,
   writeFile,
 } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 import { promisify } from 'node:util';
@@ -57,10 +63,20 @@ const CONTAINER_IMAGE_MANIFEST_SCHEMA_VERSION = '2026-08-07.container-image.v1';
 // Image name + tag. Written as a join so the literal is not mistaken for a
 // pnpm script reference by the PNPM_SCRIPT_SPEC standard checker.
 const DEFAULT_IMAGE_TAG = ['cloudrouter', 'local'].join(':');
+// Deployment profile of the image being built (DEPLOYMENT_SPEC.md section 5:
+// single-container units use `standalone`, cloud image/bundle releases use
+// `cloud`). The profile selects the portal dist tree baked into the image and
+// the SDKWORK_CLOUDROUTER_DEPLOYMENT_PROFILE the container reports at runtime.
+const DEFAULT_DEPLOYMENT_PROFILE = 'standalone';
+const SUPPORTED_DEPLOYMENT_PROFILES = ['standalone', 'cloud'];
 const STAGING_ROOT = 'dist/install-package-staging';
 const PACKAGE_OUTPUT_DIR = 'dist/install-packages';
 const IMAGE_BUILD_DIR = 'dist/container-image-build';
 const IMAGE_MANIFEST_FILE = 'dist/container-image.json';
+// The pushed repository digest as its own release asset: the OCI deployment
+// digest is the registry locator, never the manifest file checksum
+// (GITHUB_WORKFLOW_SPEC.md section 8).
+const IMAGE_DIGEST_FILE = 'dist/container-image.digest';
 // Snapshot of every build input (binaries, dist, database modules, catalog,
 // app config). When the snapshot is unchanged and the unpacked image build
 // context still exists, the packaging pipeline (staging copy, install package
@@ -78,8 +94,18 @@ package builder and docker.
 
 Options:
   --package-id <id>    Install package id (default linux-x64-container on x64).
+  --deployment-profile <profile>
+                       standalone or cloud (default ${DEFAULT_DEPLOYMENT_PROFILE}).
+                       Selects apps/sdkwork-cloudrouter-pc/dist/<profile>/prod
+                       and the container deployment profile.
   --version <value>    Product package version (default ${DEFAULT_VERSION}).
   --tag <name>         Image tag (default ${DEFAULT_IMAGE_TAG}).
+  --push               Push the image and record its verified repository digest.
+                       Requires --tag with an explicit registry repository plus
+                       SDKWORK_CONTAINER_REGISTRY_USERNAME and
+                       SDKWORK_CONTAINER_REGISTRY_PASSWORD.
+  --require-repo-digest  Reject a local-only image manifest during validation.
+  --validate-manifest  Validate dist/container-image.json without building.
   --check              Validate the build plan without building.
   --dry-run            Print the build plan without writing files.
   --json               Print machine-readable JSON.
@@ -94,8 +120,12 @@ function parseBuildContainerArgs(argv = process.argv.slice(2)) {
     force: false,
     help: false,
     json: false,
+    deploymentProfile: DEFAULT_DEPLOYMENT_PROFILE,
     packageId: defaultContainerPackageId(process.platform, process.arch),
+    push: false,
+    requireRepoDigest: false,
     tag: DEFAULT_IMAGE_TAG,
+    validateManifest: false,
     version: DEFAULT_VERSION,
   };
   for (let index = 0; index < argv.length; index += 1) {
@@ -123,6 +153,19 @@ function parseBuildContainerArgs(argv = process.argv.slice(2)) {
         break;
       case '--force':
         settings.force = true;
+        break;
+      case '--push':
+        settings.push = true;
+        break;
+      case '--require-repo-digest':
+        settings.requireRepoDigest = true;
+        break;
+      case '--validate-manifest':
+        settings.validateManifest = true;
+        break;
+      case '--deployment-profile':
+        settings.deploymentProfile = requireValue(argv, index, arg);
+        index += 1;
         break;
       case '--version':
         settings.version = requireValue(argv, index, arg);
@@ -254,8 +297,13 @@ const CORE_DATABASE_MODULES = [
 ];
 
 function createBuildPlan(settings, root = workspaceRoot) {
+  const deploymentProfile = String(settings.deploymentProfile ?? DEFAULT_DEPLOYMENT_PROFILE).trim();
+  if (!SUPPORTED_DEPLOYMENT_PROFILES.includes(deploymentProfile)) {
+    throw new Error(`Unsupported deployment profile: ${deploymentProfile}; use ${SUPPORTED_DEPLOYMENT_PROFILES.join(' or ')}`);
+  }
   const packageItem = resolvePackageItem(settings.packageId, settings.version);
   const names = stagedBinaryNames(packageItem);
+  const portalDistRoot = path.join(root, 'apps', 'sdkwork-cloudrouter-pc', 'dist', deploymentProfile);
   const plan = {
     schemaVersion: CONTAINER_IMAGE_MANIFEST_SCHEMA_VERSION,
     package: {
@@ -265,11 +313,15 @@ function createBuildPlan(settings, root = workspaceRoot) {
       architecture: packageItem.architecture,
     },
     imageTag: settings.tag,
+    deploymentProfile,
+    push: settings.push === true,
+    requireRepoDigest: settings.requireRepoDigest === true,
     imageFile: path.join(root, 'Dockerfile'),
     stagingRoot: path.join(root, STAGING_ROOT),
     packageOutputDir: path.join(root, PACKAGE_OUTPUT_DIR),
     imageBuildDir: path.join(root, IMAGE_BUILD_DIR),
     manifestPath: path.join(root, IMAGE_MANIFEST_FILE),
+    digestPath: path.join(root, IMAGE_DIGEST_FILE),
     snapshotPath: path.join(root, STAGING_SNAPSHOT_FILE),
     prerequisites: [
       {
@@ -281,8 +333,8 @@ function createBuildPlan(settings, root = workspaceRoot) {
         path: path.join(root, names.installerSource),
       },
       {
-        label: 'portal dist',
-        path: path.join(root, 'apps', 'sdkwork-cloudrouter-pc', 'dist', 'standalone', 'prod'),
+        label: `portal dist (${deploymentProfile})`,
+        path: path.join(portalDistRoot, 'prod'),
       },
       {
         label: 'release env template',
@@ -303,11 +355,11 @@ function createBuildPlan(settings, root = workspaceRoot) {
     // the installed web root (RUNTIME_DIRECTORY_SPEC.md §4.1.1). SDK archives
     // are produced by scripts/archive-cloud-router-sdks.mjs into the dist root
     // and must land under portal/dist/sdk-archives in the image.
-    portalDistPath: path.join(root, 'apps', 'sdkwork-cloudrouter-pc', 'dist'),
+    portalDistPath: portalDistRoot,
     stagedEntries: [
       { archivePath: names.gatewayArchive, sourcePath: path.join(root, names.gatewaySource) },
       { archivePath: names.installerArchive, sourcePath: path.join(root, names.installerSource) },
-      { archivePath: 'portal/dist', sourcePath: path.join(root, 'apps', 'sdkwork-cloudrouter-pc', 'dist', 'standalone', 'prod') },
+      { archivePath: 'portal/dist', sourcePath: path.join(portalDistRoot, 'prod') },
       { archivePath: 'portal/dist/sdk-archives', sourcePath: path.join(root, 'apps', 'sdkwork-cloudrouter-pc', 'dist', 'sdk-archives') },
       { archivePath: '.env.release.example', sourcePath: path.join(root, '.env.release.example') },
     ],
@@ -372,7 +424,23 @@ function validateBuildPlan(plan) {
   if (!distCheck.ok) {
     issues.push(...distCheck.issues);
   }
+  if (plan.push) {
+    const repository = imageRepository(plan.imageTag);
+    if (!repository.includes('/')) {
+      issues.push('--push requires --tag with an explicit registry repository, for example registry.sdkwork.com/apps/sdkwork-cloudrouter:<version>');
+    }
+    if (!process.env.SDKWORK_CONTAINER_REGISTRY_USERNAME
+      || !process.env.SDKWORK_CONTAINER_REGISTRY_PASSWORD) {
+      issues.push('--push requires SDKWORK_CONTAINER_REGISTRY_USERNAME and SDKWORK_CONTAINER_REGISTRY_PASSWORD');
+    }
+  }
   return issues;
+}
+
+function imageRepository(imageTag) {
+  const lastSlash = imageTag.lastIndexOf('/');
+  const lastColon = imageTag.lastIndexOf(':');
+  return lastColon > lastSlash ? imageTag.slice(0, lastColon) : imageTag;
 }
 
 function renderBuildPlan(plan) {
@@ -380,6 +448,8 @@ function renderBuildPlan(plan) {
     '[container-image-build] Build Plan',
     `[container-image-build]   package id: ${plan.package.id} (${plan.package.platform}-${plan.package.architecture} v${plan.package.version})`,
     `[container-image-build]   image tag: ${plan.imageTag}`,
+    `[container-image-build]   deployment profile: ${plan.deploymentProfile}`,
+    `[container-image-build]   push: ${plan.push}`,
     `[container-image-build]   Dockerfile: ${plan.imageFile}`,
     `[container-image-build]   staging root: ${plan.stagingRoot}`,
     `[container-image-build]   package output: ${plan.packageOutputDir}`,
@@ -546,6 +616,8 @@ async function buildImage(plan) {
     'build',
     '--build-arg',
     `VERSION=${plan.package.version}`,
+    '--build-arg',
+    `DEPLOYMENT_PROFILE=${plan.deploymentProfile}`,
     '-f',
     plan.imageFile,
     '-t',
@@ -563,53 +635,167 @@ async function buildImage(plan) {
   }
 }
 
-async function imageDigest(imageTag) {
+// Push the image to its registry repository and return the verified
+// immutable repository digest (repository@sha256:...). Credentials arrive as
+// reusable-workflow secrets (GITHUB_WORKFLOW_SPEC.md section 7) and are never
+// written to a tracked file; docker login uses an ephemeral DOCKER_CONFIG
+// directory that is removed before returning.
+async function pushImage(plan) {
+  const repository = imageRepository(plan.imageTag);
+  const registry = repository.split('/')[0];
+  const dockerConfig = await mkdtemp(path.join(tmpdir(), 'sdkwork-container-registry-'));
+  const dockerEnv = { ...process.env, DOCKER_CONFIG: dockerConfig };
   try {
-    const { stdout } = await execFileAsync('docker', [
-      'image',
-      'inspect',
-      '--format',
-      '{{index .RepoDigests 0}}',
-      imageTag,
-    ]);
-    const repoDigest = stdout.trim();
-    if (repoDigest) {
-      return { repoDigest, imageId: null };
+    const login = spawnSync('docker', [
+      'login',
+      registry,
+      '--username',
+      process.env.SDKWORK_CONTAINER_REGISTRY_USERNAME,
+      '--password-stdin',
+    ], {
+      cwd: workspaceRoot,
+      encoding: 'utf8',
+      env: dockerEnv,
+      input: process.env.SDKWORK_CONTAINER_REGISTRY_PASSWORD,
+      maxBuffer: 4 * 1024 * 1024,
+      windowsHide: true,
+    });
+    if (login.error) throw login.error;
+    if (login.status !== 0) {
+      throw new Error(`container registry login failed: ${String(login.stderr ?? '').trim()}`);
     }
-  } catch {
-    // fall through to image id
+    const { stdout, stderr } = await execFileAsync('docker', ['push', plan.imageTag], {
+      env: dockerEnv,
+      maxBuffer: 64 * 1024 * 1024,
+    });
+    const output = `${stdout}\n${stderr}`;
+    const match = /digest:\s*(sha256:[a-f0-9]{64})/iu.exec(output);
+    if (!match) {
+      throw new Error('docker push did not return an immutable sha256 digest');
+    }
+    const repoDigest = `${repository}@${match[1].toLowerCase()}`;
+    // Fail closed when the registry does not serve the digest we just recorded:
+    // release evidence must never point at a local-only or mutable image.
+    await execFileAsync('docker', ['manifest', 'inspect', repoDigest], {
+      env: dockerEnv,
+      maxBuffer: 64 * 1024 * 1024,
+    });
+    return repoDigest;
+  } finally {
+    await rm(dockerConfig, { recursive: true, force: true });
   }
+}
+
+async function imageIdentity(imageTag, repoDigest = null) {
   const { stdout } = await execFileAsync('docker', [
     'image',
     'inspect',
     '--format',
-    '{{.Id}}',
+    '{{index .RepoDigests 0}}|{{.Id}}|{{.Size}}',
     imageTag,
   ]);
-  return { repoDigest: null, imageId: stdout.trim() };
+  const [inspectedRepoDigest, imageId, sizeBytes] = stdout.trim().split('|');
+  return {
+    repoDigest: repoDigest || (inspectedRepoDigest || null),
+    imageId: imageId || null,
+    sizeBytes: Number(sizeBytes) || 0,
+  };
 }
 
-async function writeImageManifest(plan, archive) {
-  const digest = await imageDigest(plan.imageTag);
+function humanSize(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) {
+    return 'n/a';
+  }
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return `${value.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`;
+}
+
+async function writeImageManifest(plan, archive, identity) {
   const manifest = {
     schemaVersion: CONTAINER_IMAGE_MANIFEST_SCHEMA_VERSION,
     packageId: plan.package.id,
     version: plan.package.version,
+    deploymentProfile: plan.deploymentProfile,
     imageTag: plan.imageTag,
     packageArchive: path.basename(archive.path),
     packageArchiveSha256: archive.sha256,
-    repoDigest: digest.repoDigest,
-    imageId: digest.imageId,
+    repoDigest: identity.repoDigest,
+    imageId: identity.imageId,
+    sizeBytes: identity.sizeBytes,
+    sizeHuman: humanSize(identity.sizeBytes),
     buildDate: new Date().toISOString(),
   };
   await writeFile(plan.manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+  if (manifest.repoDigest) {
+    await writeFile(plan.digestPath, `${manifest.repoDigest}\n`, 'utf8');
+  }
   return manifest;
+}
+
+function validateImageManifestRecord(manifest, expected = {}) {
+  const issues = [];
+  if (manifest?.schemaVersion !== CONTAINER_IMAGE_MANIFEST_SCHEMA_VERSION) {
+    issues.push(`schemaVersion must be ${CONTAINER_IMAGE_MANIFEST_SCHEMA_VERSION}`);
+  }
+  if (expected.packageId && manifest?.packageId !== expected.packageId) {
+    issues.push(`packageId must be ${expected.packageId}`);
+  }
+  if (expected.version && manifest?.version !== expected.version) {
+    issues.push(`version must be ${expected.version}`);
+  }
+  if (!/^sha256:[a-f0-9]{64}$/u.test(String(manifest?.imageId ?? ''))) {
+    issues.push('imageId must be an immutable sha256 image id');
+  }
+  if (manifest?.repoDigest !== null
+    && !/@sha256:[a-f0-9]{64}$/u.test(String(manifest?.repoDigest ?? ''))) {
+    issues.push('repoDigest must be null or an immutable repository digest');
+  }
+  if (expected.requireRepoDigest === true
+    && !/@sha256:[a-f0-9]{64}$/u.test(String(manifest?.repoDigest ?? ''))) {
+    issues.push('repoDigest is required for release publication; build with --push');
+  }
+  if (!Number.isSafeInteger(manifest?.sizeBytes) || manifest.sizeBytes <= 0) {
+    issues.push('sizeBytes must be a positive safe integer');
+  }
+  return issues;
+}
+
+async function validateRecordedImageManifest(settings) {
+  const packageItem = resolvePackageItem(settings.packageId, settings.version);
+  const manifestPath = path.join(workspaceRoot, IMAGE_MANIFEST_FILE);
+  if (!existsSync(manifestPath)) {
+    throw new Error(`missing container image manifest: ${manifestPath}`);
+  }
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+  const issues = validateImageManifestRecord(manifest, {
+    packageId: packageItem.id,
+    version: packageItem.version,
+    requireRepoDigest: settings.requireRepoDigest === true,
+  });
+  if (issues.length > 0) {
+    throw new Error(`container image manifest is invalid: ${issues.join('; ')}`);
+  }
+  if (settings.json) {
+    console.log(JSON.stringify({ ok: true, manifestPath, manifest }, null, 2));
+  } else {
+    console.log(`[container-image-build] valid manifest: ${manifestPath}`);
+  }
 }
 
 async function main(argv = process.argv.slice(2)) {
   const settings = parseBuildContainerArgs(argv);
   if (settings.help) {
     printHelp();
+    return 0;
+  }
+  if (settings.validateManifest) {
+    await validateRecordedImageManifest(settings);
     return 0;
   }
 
@@ -680,13 +866,22 @@ async function main(argv = process.argv.slice(2)) {
   }
 
   await buildImage(plan);
-  const manifest = await writeImageManifest(plan, archive);
+  const repoDigest = plan.push ? await pushImage(plan) : null;
+  if (repoDigest) {
+    console.log(`[container-image-build] pushed: ${plan.imageTag}`);
+  }
+  const manifest = await writeImageManifest(
+    plan,
+    archive,
+    await imageIdentity(plan.imageTag, repoDigest),
+  );
   if (settings.json) {
     console.log(JSON.stringify({ ok: true, manifest }, null, 2));
   } else {
     console.log(`[container-image-build] image: ${manifest.imageTag}`);
     console.log(`[container-image-build] repoDigest: ${manifest.repoDigest ?? 'n/a (local build)'}`);
     console.log(`[container-image-build] imageId: ${manifest.imageId ?? 'n/a'}`);
+    console.log(`[container-image-build] size: ${manifest.sizeHuman ?? 'n/a'}`);
     console.log(`[container-image-build] manifest: ${plan.manifestPath}`);
   }
   return 0;
@@ -701,7 +896,9 @@ export {
   CONTAINER_IMAGE_MANIFEST_SCHEMA_VERSION,
   collectSourceSnapshot,
   createBuildPlan,
+  imageRepository,
   main,
   parseBuildContainerArgs,
   snapshotMatches,
+  validateImageManifestRecord,
 };
