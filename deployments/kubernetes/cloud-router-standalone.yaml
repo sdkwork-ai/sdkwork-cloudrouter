@@ -2,7 +2,7 @@
 #
 # runtimeTarget = "container", deploymentProfile = "standalone". This is the
 # Kubernetes packaging of the standalone container image that the release
-# pipeline publishes (ghcr.io/sdkwork-cloudrouter/cloudrouter:<version>). The
+# pipeline publishes (registry.sdkwork.com/apps/sdkwork-cloudrouter:<version>). The
 # image embeds one all-in-one gateway binary (cloudrouter) that serves the
 # portal, gateway, app API, and backend API through a single application
 # public ingress on port 3900, plus the cloudrouterctl operator binary used by
@@ -67,7 +67,7 @@ spec:
               component: standalone
       containers:
         - name: cloudrouter
-          image: ghcr.io/sdkwork-cloudrouter/cloudrouter:0.4.1
+          image: registry.sdkwork.com/apps/sdkwork-cloudrouter:0.4.1
           ports:
             - containerPort: 3900
               name: http

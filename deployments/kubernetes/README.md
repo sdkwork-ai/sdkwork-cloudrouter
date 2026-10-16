@@ -1,7 +1,7 @@
 # SDKWork Cloud Router — Kubernetes Deployment Example
 
 This example deploys the **standalone** container image published by the release
-pipeline (`ghcr.io/sdkwork-cloudrouter/cloudrouter:<version>`,
+pipeline (`registry.sdkwork.com/apps/sdkwork-cloudrouter:<version>`,
 `deploymentProfile=standalone`, `runtimeTarget=container`). The image embeds one
 all-in-one `cloudrouter` binary that serves the portal, gateway, app API, and
 backend API through a single application public ingress on port **3900**
