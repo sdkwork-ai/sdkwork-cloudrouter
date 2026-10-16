@@ -10,7 +10,7 @@
   },
   "release": {
     "artifactPrefix": "cloudrouter",
-    "defaultVersion": "0.4.4",
+    "defaultVersion": "0.4.5",
     "versionInput": "package_version",
     "tagInput": "tag",
     "changelog": {
@@ -352,7 +352,7 @@
         "name": "Build production artifacts",
         "shell": "pwsh",
         "workingDirectory": ".",
-        "run": "$downloadArgs = @(\"--version\", $env:SDKWORK_PACKAGE_VERSION, \"--release-tag\", $env:SDKWORK_RELEASE_TAG)\nif ($env:CLOUDROUTER_DOWNLOAD_CDN_BASE_URL) {\n  $downloadArgs += @(\"--cdn-base-url\", $env:CLOUDROUTER_DOWNLOAD_CDN_BASE_URL)\n}\nnode scripts/update-cloud-router-downloads.mjs @downloadArgs\nnode scripts/build-cloud-router-production.mjs\ncargo build -p sdkwork-cloudrouter-installer --bin cloudrouterctl --release\n# The container image bakes one portal dist tree per deployment profile\n# (DEPLOYMENT_SPEC.md section 5): the standalone build above covers the\n# single-container unit, the cloud lane needs its own dist/cloud/<alias> tree.\nif ($env:SDKWORK_DEPLOYMENT_PROFILE -eq \"cloud\") {\n  pnpm --dir apps/sdkwork-cloudrouter-pc build:prod:cloud\n  if ($LASTEXITCODE -ne 0) { throw \"cloud portal build failed (exit $LASTEXITCODE)\" }\n}"
+        "run": "$ErrorActionPreference = \"Stop\"\n$downloadArgs = @(\"--version\", $env:SDKWORK_PACKAGE_VERSION, \"--release-tag\", $env:SDKWORK_RELEASE_TAG)\nif ($env:CLOUDROUTER_DOWNLOAD_CDN_BASE_URL) {\n  $downloadArgs += @(\"--cdn-base-url\", $env:CLOUDROUTER_DOWNLOAD_CDN_BASE_URL)\n}\n# Every command is checked: a bare native command does not stop a PowerShell\n# step, so a failed build would otherwise be masked by the next successful\n# command and surface later as a confusing missing-artifact error.\nnode scripts/update-cloud-router-downloads.mjs @downloadArgs\nif ($LASTEXITCODE -ne 0) { throw \"download catalog generation failed (exit $LASTEXITCODE)\" }\nnode scripts/build-cloud-router-production.mjs\nif ($LASTEXITCODE -ne 0) { throw \"production build failed (exit $LASTEXITCODE)\" }\ncargo build -p sdkwork-cloudrouter-installer --bin cloudrouterctl --release\nif ($LASTEXITCODE -ne 0) { throw \"cloudrouterctl build failed (exit $LASTEXITCODE)\" }\n# The container image bakes one portal dist tree per deployment profile\n# (DEPLOYMENT_SPEC.md section 5): the standalone build above covers the\n# single-container unit, the cloud lane needs its own dist/cloud/<alias> tree.\nif ($env:SDKWORK_DEPLOYMENT_PROFILE -eq \"cloud\") {\n  pnpm --dir apps/sdkwork-cloudrouter-pc build:prod:cloud\n  if ($LASTEXITCODE -ne 0) { throw \"cloud portal build failed (exit $LASTEXITCODE)\" }\n}"
       }
     ],
     "stage": [
@@ -436,7 +436,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/linux-debian-x64-standalone-server-deb/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-linux-x64-server-0.4.4.deb",
+      "artifactPath": "dist/install-packages/cloudrouter-linux-x64-server-0.4.5.deb",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -455,7 +455,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/linux-debian-arm64-standalone-server-deb/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-linux-arm64-server-0.4.4.deb",
+      "artifactPath": "dist/install-packages/cloudrouter-linux-arm64-server-0.4.5.deb",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -473,7 +473,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/linux-x64-standalone-server-tar-gz/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-linux-x64-archive-0.4.4.tar.gz",
+      "artifactPath": "dist/install-packages/cloudrouter-linux-x64-archive-0.4.5.tar.gz",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -491,7 +491,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/linux-arm64-standalone-server-tar-gz/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-linux-arm64-archive-0.4.4.tar.gz",
+      "artifactPath": "dist/install-packages/cloudrouter-linux-arm64-archive-0.4.5.tar.gz",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -509,7 +509,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/windows-x64-standalone-server-msi/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-windows-x64-server-0.4.4.msi",
+      "artifactPath": "dist/install-packages/cloudrouter-windows-x64-server-0.4.5.msi",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -527,7 +527,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/windows-arm64-standalone-server-msi/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-windows-arm64-server-0.4.4.msi",
+      "artifactPath": "dist/install-packages/cloudrouter-windows-arm64-server-0.4.5.msi",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -545,7 +545,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/windows-x64-standalone-server-zip/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-windows-x64-archive-0.4.4.zip",
+      "artifactPath": "dist/install-packages/cloudrouter-windows-x64-archive-0.4.5.zip",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -563,7 +563,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/windows-arm64-standalone-server-zip/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-windows-arm64-archive-0.4.4.zip",
+      "artifactPath": "dist/install-packages/cloudrouter-windows-arm64-archive-0.4.5.zip",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -581,7 +581,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/macos-x64-standalone-server-pkg/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-macos-x64-server-0.4.4.pkg",
+      "artifactPath": "dist/install-packages/cloudrouter-macos-x64-server-0.4.5.pkg",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -599,7 +599,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/macos-arm64-standalone-server-pkg/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-macos-arm64-server-0.4.4.pkg",
+      "artifactPath": "dist/install-packages/cloudrouter-macos-arm64-server-0.4.5.pkg",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -617,7 +617,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/macos-x64-standalone-server-tar-gz/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-macos-x64-archive-0.4.4.tar.gz",
+      "artifactPath": "dist/install-packages/cloudrouter-macos-x64-archive-0.4.5.tar.gz",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -635,7 +635,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/macos-arm64-standalone-server-tar-gz/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-macos-arm64-archive-0.4.4.tar.gz",
+      "artifactPath": "dist/install-packages/cloudrouter-macos-arm64-archive-0.4.5.tar.gz",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -654,7 +654,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/linux-debian-x64-standalone-desktop-deb/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-linux-x64-desktop-0.4.4.deb",
+      "artifactPath": "dist/install-packages/cloudrouter-linux-x64-desktop-0.4.5.deb",
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop"
     },
@@ -673,7 +673,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/linux-debian-arm64-standalone-desktop-deb/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-linux-arm64-desktop-0.4.4.deb",
+      "artifactPath": "dist/install-packages/cloudrouter-linux-arm64-desktop-0.4.5.deb",
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop"
     },
@@ -691,7 +691,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/windows-x64-standalone-desktop-msi/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-windows-x64-desktop-0.4.4.msi",
+      "artifactPath": "dist/install-packages/cloudrouter-windows-x64-desktop-0.4.5.msi",
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop"
     },
@@ -709,7 +709,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/windows-arm64-standalone-desktop-msi/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-windows-arm64-desktop-0.4.4.msi",
+      "artifactPath": "dist/install-packages/cloudrouter-windows-arm64-desktop-0.4.5.msi",
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop"
     },
@@ -727,7 +727,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/macos-x64-standalone-desktop-pkg/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-macos-x64-desktop-0.4.4.pkg",
+      "artifactPath": "dist/install-packages/cloudrouter-macos-x64-desktop-0.4.5.pkg",
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop"
     },
@@ -745,7 +745,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/macos-arm64-standalone-desktop-pkg/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-macos-arm64-desktop-0.4.4.pkg",
+      "artifactPath": "dist/install-packages/cloudrouter-macos-arm64-desktop-0.4.5.pkg",
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop"
     },
