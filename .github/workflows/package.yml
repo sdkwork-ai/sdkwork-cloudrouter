@@ -9,10 +9,8 @@ name: Package Application
 # workflow_dispatch inputs (raised from 10 in December 2025); an over-budget
 # file never runs at all, not even for a tag push. This repository has
 # 49 dependencies, so per-dependency dispatch inputs exist only for the
-# 10 dependencies pinned to a fixed ref, and each default is that
-# pinned ref. Every other dependency resolves through its repository variable
-# (vars.SDKWORK_*_REF) and defaults to the ref declared in sdkwork.workflow.json.
-# Current budget: 20 of 25.
+# 10 dependencies pinned to a fixed ref. Every other dependency resolves
+# through its repository variable (vars.SDKWORK_*_REF). Budget: 20 of 25.
 
 on:
   push:
@@ -27,11 +25,11 @@ on:
       tag:
         description: Release tag or source ref to package.
         required: true
-        default: v0.4.3
+        default: v0.4.4
       package_version:
         description: Package version used in artifact names and manifests.
         required: true
-        default: 0.4.3
+        default: 0.4.4
       deployment_profile:
         description: Deployment profile filter.
         required: true
