@@ -31,6 +31,12 @@
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
+      "id": "sdkwork-aiot",
+      "repository": "sdkwork-ai/sdkwork-aiot",
+      "refInput": "SDKWORK_AIOT_REF",
+      "tokenSecret": "SDKWORK_RELEASE_TOKEN"
+    },
+    {
       "id": "sdkwork-app-topology",
       "repository": "sdkwork-ai/sdkwork-app-topology",
       "refInput": "SDKWORK_APP_TOPOLOGY_REF",

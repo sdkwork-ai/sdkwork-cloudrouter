@@ -3,6 +3,7 @@
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
+  mkdtemp,
   access,
   chmod,
   mkdir,
@@ -11,6 +12,7 @@ import {
   stat as statFile,
   writeFile,
 } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 import { promisify } from 'node:util';
@@ -1153,28 +1155,50 @@ async function buildWindowsMsi(plan, fileEntries) {
   if (process.platform !== 'win32') {
     throw new Error('Windows .msi builds require WiX on a Windows host');
   }
-  const buildRoot = path.join(plan.outputDir, '.native-build', `${plan.package.id}-msi`);
+  // WiX resolves every <File Source> through the Win32 path APIs, which fail
+  // above the 260 character limit with WIX0103 for a file that exists. The
+  // archived payload includes the deep SDK archive trees, so building under the
+  // workspace output directory (itself ~110 characters on a runner) overflows.
+  // A short per-build temporary root keeps every payload path inside the limit.
+  const buildRoot = await mkdtemp(path.join(tmpdir(), 'sdkwork-msi-'));
   const payloadRoot = path.join(buildRoot, 'payload');
   await rm(buildRoot, { recursive: true, force: true });
   await mkdir(payloadRoot, { recursive: true });
-  await writeMappedPackageFiles(payloadRoot, fileEntries, (entry) =>
-    windowsPayloadPathForArchivePath(plan, entry.relativePath)
-  );
+  for (const entry of fileEntries) {
+    const payloadPath = windowsPayloadPathForArchivePath(plan, entry.relativePath);
+    if (!payloadPath) {
+      continue;
+    }
+    const targetPath = path.join(payloadRoot, wixFlatPayloadName(stableWixId('fil', payloadPath), payloadPath));
+    await writeFile(targetPath, entry.data);
+    if ((entry.mode ?? 0o644) & 0o111) {
+      await chmod(targetPath, 0o755);
+    }
+  }
   const wixSourcePath = path.join(buildRoot, 'cloudrouter.wxs');
   await writeFile(wixSourcePath, createWixSource(plan, payloadRoot, fileEntries), 'utf8');
-  await execFileAsync('wix', [
-    'build',
-    wixSourcePath,
-    '-arch',
-    plan.package.architecture === 'arm64' ? 'arm64' : 'x64',
-    '-pdbtype',
-    'none',
-    '-out',
-    plan.installerPath,
-  ], {
-    cwd: workspaceRoot,
-    maxBuffer: 1024 * 1024 * 16,
-  });
+  try {
+    await execFileAsync('wix', [
+      'build',
+      wixSourcePath,
+      '-arch',
+      plan.package.architecture === 'arm64' ? 'arm64' : 'x64',
+      '-pdbtype',
+      'none',
+      '-out',
+      plan.installerPath,
+    ], {
+      cwd: workspaceRoot,
+      maxBuffer: 1024 * 1024 * 16,
+    });
+  } catch (error) {
+    // execFile captures the tool output on the error; discarding it leaves only
+    // "Command failed: wix build <path>" and hides the real WiX diagnostic.
+    const stdout = String(error?.stdout ?? '').trim();
+    const stderr = String(error?.stderr ?? '').trim();
+    const detail = [stderr, stdout].filter(Boolean).join('\n');
+    throw new Error(`wix build failed for ${plan.package.id}: ${detail || error.message}`);
+  }
   await rm(buildRoot, { recursive: true, force: true });
 }
 
@@ -1190,6 +1214,15 @@ function windowsPayloadPathForArchivePath(plan, archivePath) {
     return 'install-manifest.json';
   }
   return normalized;
+}
+
+// WiX resolves every <File Source> through the Win32 path APIs, so a deep logical
+// payload path (the SDK archive trees) overflows the ~260 character limit and fails
+// with WIX0103 for a file that exists. Staging each payload file under its stable
+// hashed id keeps the source path constant and short; the installed name and
+// location still come from the <File Name> attribute and the directory tree.
+function wixFlatPayloadName(fileId, payloadPath) {
+  return `${fileId}${path.posix.extname(String(payloadPath))}`;
 }
 
 function createWixSource(plan, payloadRoot, fileEntries) {
@@ -1213,7 +1246,7 @@ function createWixSource(plan, payloadRoot, fileEntries) {
     destination.tree.addFile(destination.parts, {
       componentId,
       fileId,
-      source: path.join(payloadRoot, ...payloadPath.split('/')),
+      source: path.join(payloadRoot, wixFlatPayloadName(fileId, payloadPath)),
     });
   }
 
@@ -1310,7 +1343,7 @@ function renderWixDirectory(node, indentLevel) {
   }
   for (const file of node.files.sort((left, right) => left.name.localeCompare(right.name))) {
     lines.push(`${indent}  <Component Id="${file.componentId}" Guid="*">`);
-    lines.push(`${indent}    <File Id="${file.fileId}" Source="${xmlEscape(file.source)}" KeyPath="yes" />`);
+    lines.push(`${indent}    <File Id="${file.fileId}" Source="${xmlEscape(file.source)}" Name="${xmlEscape(file.name)}" KeyPath="yes" />`);
     lines.push(`${indent}  </Component>`);
   }
   lines.push(`${indent}</Directory>`);
