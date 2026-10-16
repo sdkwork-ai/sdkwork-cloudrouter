@@ -4853,7 +4853,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-api-cloudrouter-assembly"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "anyhow",
  "axum",
@@ -4893,7 +4893,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-api-cloudrouter-standalone-gateway"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "axum",
  "sdkwork-api-cloudrouter-assembly",
@@ -5294,7 +5294,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-admin-analytics-repository-sqlx"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "sdkwork-cloudrouter-router-service",
  "sdkwork-database-sqlx",
@@ -5306,7 +5306,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-admin-dashboard-repository-sqlx"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "sdkwork-cloudrouter-router-service",
  "sdkwork-database-sqlx",
@@ -5318,7 +5318,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-admin-gateway"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "anyhow",
  "axum",
@@ -5341,7 +5341,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-admin-monitor-repository-sqlx"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "sdkwork-cloudrouter-router-service",
  "sdkwork-database-sqlx",
@@ -5351,7 +5351,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-config"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "sdkwork-cloudrouter-provider-adapter-contract",
  "sdkwork-cloudrouter-provider-adapter-registry",
@@ -5364,7 +5364,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-contract"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "serde",
  "serde_json",
@@ -5372,7 +5372,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-database-host"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "dotenvy",
  "hex",
@@ -5387,7 +5387,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-edge-runtime"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5462,7 +5462,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-health"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "sdkwork-cloudrouter-config",
  "serde",
@@ -5471,7 +5471,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-http"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "async-trait",
  "axum",
@@ -5506,7 +5506,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-installer"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "anyhow",
  "argon2",
@@ -5538,7 +5538,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-license"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "base64 0.22.1",
  "chrono",
@@ -5549,7 +5549,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-observability"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "opentelemetry 0.30.0",
  "opentelemetry-otlp 0.30.0",
@@ -5567,7 +5567,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-paas-plugin"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "serde",
  "serde_json",
@@ -5576,7 +5576,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-provider-adapter"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "sdkwork-cloudrouter-provider-adapter-contract",
  "serde",
@@ -5585,7 +5585,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-provider-adapter-contract"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "serde",
  "serde_json",
@@ -5593,7 +5593,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-provider-adapter-host"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "anyhow",
  "axum",
@@ -5610,7 +5610,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-provider-adapter-http"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "axum",
  "bytes",
@@ -5630,7 +5630,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-provider-adapter-registry"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "sdkwork-cloudrouter-provider-adapter-contract",
  "serde",
@@ -5639,7 +5639,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-router-service"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "arc-swap",
  "async-trait",
@@ -5705,7 +5705,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-security"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "base64 0.22.1",
  "ed25519-dalek",
@@ -5724,7 +5724,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-settlements-dashboard-repository-sqlx"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "sdkwork-cloudrouter-router-service",
  "sdkwork-database-sqlx",
@@ -5737,7 +5737,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-standalone-gateway"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "anyhow",
  "axum",
@@ -5769,7 +5769,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-cloudrouter-test-support"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "anyhow",
  "axum",
@@ -7573,7 +7573,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-provider-adapter-alicloud"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "hex",
  "hmac 0.12.1",
@@ -7586,7 +7586,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-provider-adapter-tencent-cloud"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "sdkwork-cloudrouter-provider-adapter",
  "sdkwork-cloudrouter-provider-adapter-contract",
@@ -7638,7 +7638,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-routes-agent-open-api"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "axum",
  "sdkwork-cloudrouter-http",
@@ -7710,7 +7710,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-routes-audio-open-api"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "axum",
  "sdkwork-cloudrouter-http",
@@ -7738,7 +7738,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-routes-cloudrouter-app-api"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -7797,7 +7797,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-routes-cloudrouter-backend-api"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "anyhow",
  "axum",
@@ -7848,7 +7848,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-routes-cloudrouter-drive-open-api"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "axum",
  "sdkwork-cloudrouter-http",
@@ -7856,7 +7856,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-routes-cloudrouter-knowledgebase-open-api"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "axum",
  "sdkwork-cloudrouter-http",
@@ -7864,7 +7864,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-routes-cloudrouter-llm-open-api"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "axum",
  "sdkwork-cloudrouter-http",
@@ -7872,7 +7872,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-routes-cloudrouter-memory-open-api"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "axum",
  "sdkwork-cloudrouter-http",
@@ -8216,7 +8216,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-routes-iaas-open-api"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "axum",
  "sdkwork-cloudrouter-http",
@@ -8294,7 +8294,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-routes-image-open-api"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "axum",
  "sdkwork-cloudrouter-http",
@@ -8610,7 +8610,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-routes-paas-open-api"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "axum",
  "sdkwork-cloudrouter-http",
@@ -8704,7 +8704,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-routes-payment-open-api"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "axum",
  "sdkwork-cloudrouter-http",
@@ -8856,7 +8856,7 @@ dependencies = [
 
 [[package]]
 name = "sdkwork-routes-video-open-api"
-version = "0.4.6"
+version = "0.4.7"
 dependencies = [
  "axum",
  "sdkwork-cloudrouter-http",
