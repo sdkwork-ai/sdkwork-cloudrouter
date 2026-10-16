@@ -7,10 +7,12 @@ name: Package Application
 #
 # DISPATCH INPUT BUDGET - GitHub rejects the whole file above 25
 # workflow_dispatch inputs (raised from 10 in December 2025); an over-budget
-# file never runs at all, not even for a tag push. This repository has
-# 49 dependencies, so per-dependency dispatch inputs exist only for the
-# 10 dependencies pinned to a fixed ref. Every other dependency resolves
-# through its repository variable (vars.SDKWORK_*_REF). Budget: 20 of 25.
+# file never runs at all, not even for a tag push. This repository declares
+# 49 dependencies and resolves every one of them through main, so it needs
+# only the 10 standard filter inputs. Per-dependency override inputs are added
+# only for a dependency pinned to a fixed ref (currently 0); see
+# scripts/check-github-workflow-integration.mjs, which fails the build if this
+# budget is exceeded.
 
 on:
   push:
