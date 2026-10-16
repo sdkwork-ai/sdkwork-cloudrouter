@@ -10,7 +10,7 @@
   },
   "release": {
     "artifactPrefix": "cloudrouter",
-    "defaultVersion": "0.4.2",
+    "defaultVersion": "0.4.3",
     "versionInput": "package_version",
     "tagInput": "tag",
     "changelog": {
@@ -39,7 +39,7 @@
     {
       "id": "sdkwork-appbase",
       "repository": "sdkwork-ai/sdkwork-appbase",
-      "ref": "ba3a5103dd0a895a11dcda3ea2e5bac5428f38aa",
+      "ref": "023176cb4954280d6bb7cc7946be2e679a8dfe43",
       "refInput": "SDKWORK_APPBASE_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
@@ -76,7 +76,7 @@
     {
       "id": "sdkwork-core",
       "repository": "sdkwork-ai/sdkwork-core",
-      "ref": "1cb61734ab62e1954ba7fcc3b7cd5465e6914149",
+      "ref": "3eb4a1619af5af56e43b45bcb83c134a68ff5d5b",
       "refInput": "SDKWORK_CORE_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
@@ -89,7 +89,7 @@
     {
       "id": "sdkwork-database",
       "repository": "sdkwork-ai/sdkwork-database",
-      "ref": "main",
+      "ref": "0606b8c470ec0955c124075e62a7373ed6b74607",
       "refInput": "SDKWORK_DATABASE_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
@@ -102,7 +102,7 @@
     {
       "id": "sdkwork-drive",
       "repository": "sdkwork-ai/sdkwork-drive",
-      "ref": "46245a721cca19262c68742a7506a8a0aa752291",
+      "ref": "711c4f11dd5365b34d5c5b9b5159d021d575c1f0",
       "refInput": "SDKWORK_DRIVE_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
@@ -115,7 +115,7 @@
     {
       "id": "sdkwork-generations",
       "repository": "sdkwork-ai/sdkwork-generations",
-      "ref": "5823633ca3efc930f9c500e5c91e53e7210cae44",
+      "ref": "df2472bc8795afdbd782cb88847b88044b4253cc",
       "refInput": "SDKWORK_GENERATIONS_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
@@ -134,7 +134,7 @@
     {
       "id": "sdkwork-image",
       "repository": "sdkwork-ai/sdkwork-image",
-      "ref": "19aa219bee6bf9e926c73433748add88c0917083",
+      "ref": "fb749408e4768d400cdac928fd82cd6d4e1a1b7c",
       "refInput": "SDKWORK_IMAGE_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
@@ -261,7 +261,7 @@
     {
       "id": "sdkwork-sdk-generator",
       "repository": "sdkwork-ai/sdkwork-sdk-generator",
-      "ref": "e11d0c69f7a19ad5e9bb680f22ac392e98a2bc49",
+      "ref": "6fa1223a86825eb323e469502bf7fb31bda650c9",
       "refInput": "SDKWORK_SDK_GENERATOR_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
@@ -292,14 +292,14 @@
     {
       "id": "sdkwork-ui",
       "repository": "sdkwork-ai/sdkwork-ui",
-      "ref": "e53d25425dd13ec02d5e0173e79245d32c5926ff",
+      "ref": "47252c7aeddc9a00a71adb16bab6d71916083757",
       "refInput": "SDKWORK_UI_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
     {
       "id": "sdkwork-utils",
       "repository": "sdkwork-ai/sdkwork-utils",
-      "ref": "main",
+      "ref": "c650f6ee940f855b57443746eda4c3e9735096eb",
       "refInput": "SDKWORK_UTILS_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     },
@@ -318,7 +318,7 @@
     {
       "id": "sdkwork-web-framework",
       "repository": "sdkwork-ai/sdkwork-web-framework",
-      "ref": "main",
+      "ref": "8f0c9bea5cb96e288c3c4499de379c2d8e154bd8",
       "refInput": "SDKWORK_WEB_FRAMEWORK_REF",
       "tokenSecret": "SDKWORK_RELEASE_TOKEN"
     }
@@ -428,7 +428,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/linux-debian-x64-standalone-server-deb/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-linux-x64-server-0.4.2.deb",
+      "artifactPath": "dist/install-packages/cloudrouter-linux-x64-server-0.4.3.deb",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -447,7 +447,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/linux-debian-arm64-standalone-server-deb/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-linux-arm64-server-0.4.2.deb",
+      "artifactPath": "dist/install-packages/cloudrouter-linux-arm64-server-0.4.3.deb",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -465,7 +465,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/linux-x64-standalone-server-tar-gz/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-linux-x64-archive-0.4.2.tar.gz",
+      "artifactPath": "dist/install-packages/cloudrouter-linux-x64-archive-0.4.3.tar.gz",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -483,7 +483,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/linux-arm64-standalone-server-tar-gz/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-linux-arm64-archive-0.4.2.tar.gz",
+      "artifactPath": "dist/install-packages/cloudrouter-linux-arm64-archive-0.4.3.tar.gz",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -501,7 +501,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/windows-x64-standalone-server-msi/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-windows-x64-server-0.4.2.msi",
+      "artifactPath": "dist/install-packages/cloudrouter-windows-x64-server-0.4.3.msi",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -519,7 +519,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/windows-arm64-standalone-server-msi/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-windows-arm64-server-0.4.2.msi",
+      "artifactPath": "dist/install-packages/cloudrouter-windows-arm64-server-0.4.3.msi",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -537,7 +537,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/windows-x64-standalone-server-zip/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-windows-x64-archive-0.4.2.zip",
+      "artifactPath": "dist/install-packages/cloudrouter-windows-x64-archive-0.4.3.zip",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -555,7 +555,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/windows-arm64-standalone-server-zip/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-windows-arm64-archive-0.4.2.zip",
+      "artifactPath": "dist/install-packages/cloudrouter-windows-arm64-archive-0.4.3.zip",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -573,7 +573,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/macos-x64-standalone-server-pkg/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-macos-x64-server-0.4.2.pkg",
+      "artifactPath": "dist/install-packages/cloudrouter-macos-x64-server-0.4.3.pkg",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -591,7 +591,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/macos-arm64-standalone-server-pkg/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-macos-arm64-server-0.4.2.pkg",
+      "artifactPath": "dist/install-packages/cloudrouter-macos-arm64-server-0.4.3.pkg",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -609,7 +609,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/macos-x64-standalone-server-tar-gz/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-macos-x64-archive-0.4.2.tar.gz",
+      "artifactPath": "dist/install-packages/cloudrouter-macos-x64-archive-0.4.3.tar.gz",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -627,7 +627,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/macos-arm64-standalone-server-tar-gz/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-macos-arm64-archive-0.4.2.tar.gz",
+      "artifactPath": "dist/install-packages/cloudrouter-macos-arm64-archive-0.4.3.tar.gz",
       "deploymentProfile": "standalone",
       "runtimeTarget": "server"
     },
@@ -646,7 +646,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/linux-debian-x64-standalone-desktop-deb/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-linux-x64-desktop-0.4.2.deb",
+      "artifactPath": "dist/install-packages/cloudrouter-linux-x64-desktop-0.4.3.deb",
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop"
     },
@@ -665,7 +665,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/linux-debian-arm64-standalone-desktop-deb/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-linux-arm64-desktop-0.4.2.deb",
+      "artifactPath": "dist/install-packages/cloudrouter-linux-arm64-desktop-0.4.3.deb",
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop"
     },
@@ -683,7 +683,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/windows-x64-standalone-desktop-msi/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-windows-x64-desktop-0.4.2.msi",
+      "artifactPath": "dist/install-packages/cloudrouter-windows-x64-desktop-0.4.3.msi",
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop"
     },
@@ -701,7 +701,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/windows-arm64-standalone-desktop-msi/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-windows-arm64-desktop-0.4.2.msi",
+      "artifactPath": "dist/install-packages/cloudrouter-windows-arm64-desktop-0.4.3.msi",
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop"
     },
@@ -719,7 +719,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/macos-x64-standalone-desktop-pkg/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-macos-x64-desktop-0.4.2.pkg",
+      "artifactPath": "dist/install-packages/cloudrouter-macos-x64-desktop-0.4.3.pkg",
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop"
     },
@@ -737,7 +737,7 @@
         "dist/install-packages/*",
         "dist/release-evidence/macos-arm64-standalone-desktop-pkg/*"
       ],
-      "artifactPath": "dist/install-packages/cloudrouter-macos-arm64-desktop-0.4.2.pkg",
+      "artifactPath": "dist/install-packages/cloudrouter-macos-arm64-desktop-0.4.3.pkg",
       "deploymentProfile": "standalone",
       "runtimeTarget": "desktop"
     },

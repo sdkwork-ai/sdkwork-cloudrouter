@@ -5,13 +5,14 @@ name: Package Application
 # sdkwork.workflow.json lifecycle steps and in the sdkwork-github-workflow
 # framework. Do not add matrix, upload, changelog, or attestation logic here.
 #
-# DISPATCH INPUT BUDGET — GitHub rejects the whole file above 25
+# DISPATCH INPUT BUDGET - GitHub rejects the whole file above 25
 # workflow_dispatch inputs (raised from 10 in December 2025); an over-budget
 # file never runs at all, not even for a tag push. This repository has
 # 49 dependencies, so per-dependency dispatch inputs exist only for the
-# 10 dependencies pinned to a fixed ref. Every other dependency resolves
-# through its repository variable (vars.SDKWORK_*_REF) and defaults to the ref
-# declared in sdkwork.workflow.json. Current budget: 20 of 25.
+# 10 dependencies pinned to a fixed ref, and each default is that
+# pinned ref. Every other dependency resolves through its repository variable
+# (vars.SDKWORK_*_REF) and defaults to the ref declared in sdkwork.workflow.json.
+# Current budget: 20 of 25.
 
 on:
   push:
@@ -26,11 +27,11 @@ on:
       tag:
         description: Release tag or source ref to package.
         required: true
-        default: v0.4.2
+        default: v0.4.3
       package_version:
         description: Package version used in artifact names and manifests.
         required: true
-        default: 0.4.2
+        default: 0.4.3
       deployment_profile:
         description: Deployment profile filter.
         required: true
@@ -129,43 +130,43 @@ on:
       sdkwork_appbase_ref:
         description: sdkwork-appbase commit/ref override.
         required: false
-        default: ba3a5103dd0a895a11dcda3ea2e5bac5428f38aa
+        default: 023176cb4954280d6bb7cc7946be2e679a8dfe43
       sdkwork_core_ref:
         description: sdkwork-core commit/ref override.
         required: false
-        default: 1cb61734ab62e1954ba7fcc3b7cd5465e6914149
+        default: 3eb4a1619af5af56e43b45bcb83c134a68ff5d5b
       sdkwork_database_ref:
         description: sdkwork-database commit/ref override.
         required: false
-        default: main
+        default: 0606b8c470ec0955c124075e62a7373ed6b74607
       sdkwork_drive_ref:
         description: sdkwork-drive commit/ref override.
         required: false
-        default: 46245a721cca19262c68742a7506a8a0aa752291
+        default: 711c4f11dd5365b34d5c5b9b5159d021d575c1f0
       sdkwork_generations_ref:
         description: sdkwork-generations commit/ref override.
         required: false
-        default: 5823633ca3efc930f9c500e5c91e53e7210cae44
+        default: df2472bc8795afdbd782cb88847b88044b4253cc
       sdkwork_image_ref:
         description: sdkwork-image commit/ref override.
         required: false
-        default: 19aa219bee6bf9e926c73433748add88c0917083
+        default: fb749408e4768d400cdac928fd82cd6d4e1a1b7c
       sdkwork_sdk_generator_ref:
         description: sdkwork-sdk-generator commit/ref override.
         required: false
-        default: e11d0c69f7a19ad5e9bb680f22ac392e98a2bc49
+        default: 6fa1223a86825eb323e469502bf7fb31bda650c9
       sdkwork_ui_ref:
         description: sdkwork-ui commit/ref override.
         required: false
-        default: e53d25425dd13ec02d5e0173e79245d32c5926ff
+        default: 47252c7aeddc9a00a71adb16bab6d71916083757
       sdkwork_utils_ref:
         description: sdkwork-utils commit/ref override.
         required: false
-        default: main
+        default: c650f6ee940f855b57443746eda4c3e9735096eb
       sdkwork_web_framework_ref:
         description: sdkwork-web-framework commit/ref override.
         required: false
-        default: main
+        default: 8f0c9bea5cb96e288c3c4499de379c2d8e154bd8
 
 permissions:
   contents: write
