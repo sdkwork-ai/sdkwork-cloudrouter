@@ -8,14 +8,16 @@ rewritten on every release so it never accumulates prior versions.
 - `2026-05-16-v0.2.0.md` — runtime authentication settings capability.
 - `2026-05-17-v0.3.0.md` — commercial runtime and installation hardening slice.
 
-## 2026-10-17 - v0.4.8
+## 2026-10-17 - v0.4.9
 
 ### Scope
 
-- Closes the two packaging defects that the `v0.4.7` run exposed. `v0.4.7` was
-  tagged before its fixes landed, so those fixes had never been exercised by a
-  packaging run; `0.4.8` is the first version that actually builds them.
-- Supersedes `v0.4.7` (failed packaging run, no published release).
+- Closes the three packaging defects that the `v0.4.7` and `v0.4.8` runs exposed.
+  `v0.4.7` was tagged before its fixes landed, so those fixes had never been
+  exercised by a packaging run; `0.4.8` built them and surfaced a second,
+  independent WiX defect; `0.4.9` is the version that closes both.
+- Supersedes `v0.4.8`, which cleared `WIX0103` on every MSI lane but failed all
+  of them with `WIX0091`, and `v0.4.7`, which never built its own fixes.
 
 ### Delivered
 
