@@ -67,6 +67,42 @@ runs:
     # GITHUB_TOKEN reports "repository ... not found", because that token is
     # scoped to this repository alone. Verify every planned path exists and
     # name the repository that is missing.
+    # sdkwork-agents keeps its PC packages in a separate repository,
+    # sdkwork-agents-apps, recorded in the parent tree as a gitlink at apps/
+    # whose URL is SSH. The dependency plan declares `submodules: false`, so the
+    # checkout leaves apps/ empty, and the pnpm workspace then cannot resolve
+    # @sdkwork/agents-pc-agents and the other agents packages. Materialize the
+    # revision the parent tree pins, over HTTPS, at the revision it records so
+    # this never goes stale when main moves.
+    - name: Materialize the sdkwork-agents apps submodule
+      shell: bash
+      env:
+        SDKWORK_AGENTS_APPS_TOKEN: ${{ inputs.token }}
+      run: |
+        set -euo pipefail
+        target="../sdkwork-agents/apps"
+        marker="$target/sdkwork-agents-pc/package.json"
+        if [ -f "$marker" ]; then
+          echo "[sdkwork-agents-apps] already materialized"
+          exit 0
+        fi
+        pinned="$(git -C ../sdkwork-agents rev-parse "HEAD:apps" 2>/dev/null || true)"
+        if [ -z "$pinned" ]; then
+          echo "[sdkwork-agents-apps] sdkwork-agents records no apps gitlink; nothing to materialize"
+          exit 0
+        fi
+        echo "[sdkwork-agents-apps] materializing $target at $pinned"
+        mkdir -p "$target"
+        if [ ! -d "$target/.git" ]; then
+          git -C "$target" init --quiet
+        fi
+        git -C "$target" remote remove origin >/dev/null 2>&1 || true
+        git -C "$target" remote add origin https://github.com/sdkwork-ai/sdkwork-agents-apps.git
+        basic="$(printf 'x-access-token:%s' "$SDKWORK_AGENTS_APPS_TOKEN" | base64 -w0)"
+        git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $basic" \
+          -C "$target" fetch --depth 1 origin "$pinned"
+        git -C "$target" checkout --detach FETCH_HEAD
+
     - name: Verify every declared dependency was checked out
       shell: bash
       env:

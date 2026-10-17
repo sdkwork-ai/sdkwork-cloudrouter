@@ -92,6 +92,14 @@ rewritten on every release so it never accumulates prior versions.
   workspace really does declare — the package behind it had simply never been
   checked out. The packaging workflow always passed this token, which is why
   packaging could read the private repositories and Verify could not.
+- Materialized `sdkwork-agents/apps` in the shared dependency action. That
+  directory is a separate repository, recorded in the parent tree as a gitlink
+  whose URL is SSH, and the dependency plan declares `submodules: false`, so the
+  checkout left it empty and the pnpm workspace could not resolve
+  `@sdkwork/agents-pc-agents`. It is now fetched over HTTPS at the revision the
+  parent tree itself records, so it cannot go stale when `main` moves; the
+  packaging lifecycle materialized the same tree from a fixed revision recorded
+  in this manifest.
 - Added a post-checkout assertion that every planned dependency directory
   exists, so a dependency that fails to clone is named at the point of failure
   instead of surfacing as an unrelated workspace resolution error.
