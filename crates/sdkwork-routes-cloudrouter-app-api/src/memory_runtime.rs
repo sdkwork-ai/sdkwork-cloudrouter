@@ -88,10 +88,7 @@ mod tests {
         // backend-api surfaces the Cloud Router already mounts. Both needles are
         // assembled at compile time so no assertion can satisfy itself.
         assert!(!source.contains(concat!("assemble_api_", "router_from_env()")));
-        assert!(!source.contains(concat!(
-            "wrap_router_with_web_",
-            "framework_from_env"
-        )));
+        assert!(!source.contains(concat!("wrap_router_with_web_", "framework_from_env")));
         let forbidden_direct_route_crate = ["sdkwork_routes_memory", "_app_api::"].concat();
         assert!(!source.contains(&forbidden_direct_route_crate));
     }

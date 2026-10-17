@@ -4038,9 +4038,8 @@ gateway_invocation_body_max_bytes = 37
         // enters through the course API assembly's federated backend business
         // router on the process-shared database pool (API_ASSEMBLY_SPEC
         // §3/§6.1), never through a direct route-crate import.
-        assert!(source.contains(
-            "sdkwork_api_course_assembly::assemble_backend_business_router_with_pool("
-        ));
+        assert!(source
+            .contains("sdkwork_api_course_assembly::assemble_backend_business_router_with_pool("));
         let forbidden_route_crate_import = ["sdkwork_routes_course", "_backend_api::"].concat();
         assert!(
             !source.contains(&forbidden_route_crate_import),

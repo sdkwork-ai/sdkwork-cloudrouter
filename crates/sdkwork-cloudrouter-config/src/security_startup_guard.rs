@@ -145,9 +145,7 @@ mod tests {
         posture: SecretHygienePosture,
     ) -> Result<(), String> {
         ensure_no_known_default_secret_material(
-            secrets
-                .iter()
-                .map(|(label, value)| (*label, *value)),
+            secrets.iter().map(|(label, value)| (*label, *value)),
             posture,
         )
     }
@@ -168,7 +166,10 @@ mod tests {
     #[test]
     fn rejects_placeholder_pepper_on_server_deployments() {
         assert!(guard(
-            &[("api_key_pepper", Some("cloudrouter-local-dev-pepper-change-me"))],
+            &[(
+                "api_key_pepper",
+                Some("cloudrouter-local-dev-pepper-change-me")
+            )],
             SecretHygienePosture::server_deployment()
         )
         .is_err());
@@ -177,7 +178,10 @@ mod tests {
     #[test]
     fn allows_desktop_deployments_and_unique_values() {
         assert!(guard(
-            &[("api_key_pepper", Some("cloudrouter-local-dev-pepper-change-me"))],
+            &[(
+                "api_key_pepper",
+                Some("cloudrouter-local-dev-pepper-change-me")
+            )],
             SecretHygienePosture::local_development()
         )
         .is_ok());
@@ -186,7 +190,11 @@ mod tests {
             SecretHygienePosture::server_deployment()
         )
         .is_ok());
-        assert!(guard(&[("api_key_pepper", None)], SecretHygienePosture::server_deployment()).is_ok());
+        assert!(guard(
+            &[("api_key_pepper", None)],
+            SecretHygienePosture::server_deployment()
+        )
+        .is_ok());
     }
 
     #[test]
@@ -222,10 +230,11 @@ mod tests {
         )];
 
         // The mode-derived path still tolerates the value (documented legacy behavior)...
-        assert!(
-            ensure_no_known_default_secret_material_for_mode(published.iter().copied(), unset_profile_mode)
-                .is_ok()
-        );
+        assert!(ensure_no_known_default_secret_material_for_mode(
+            published.iter().copied(),
+            unset_profile_mode
+        )
+        .is_ok());
 
         // ...but the server-runtime path, which has already proven PostgreSQL-only,
         // is immune to the missing variable.
@@ -234,7 +243,10 @@ mod tests {
 
     #[test]
     fn posture_classification_is_exhaustive_over_deployment_modes() {
-        assert!(SecretHygienePosture::from_deployment_mode(DeploymentMode::Desktop).allows_default_secret_material());
+        assert!(
+            SecretHygienePosture::from_deployment_mode(DeploymentMode::Desktop)
+                .allows_default_secret_material()
+        );
         for mode in [
             DeploymentMode::Server,
             DeploymentMode::Docker,

@@ -287,28 +287,112 @@ mod tests {
         // and inherit its dual-token auth and `course.*` permissions.
         let manifest = cloud_router_backend_composed_route_manifest();
         for (method, path, permission) in [
-            ("GET", "/backend/v3/api/course_categories", "course.categories.read"),
-            ("POST", "/backend/v3/api/course_categories", "course.categories.write"),
-            ("GET", "/backend/v3/api/course_instructors", "course.instructors.read"),
-            ("POST", "/backend/v3/api/course_instructors", "course.instructors.write"),
+            (
+                "GET",
+                "/backend/v3/api/course_categories",
+                "course.categories.read",
+            ),
+            (
+                "POST",
+                "/backend/v3/api/course_categories",
+                "course.categories.write",
+            ),
+            (
+                "GET",
+                "/backend/v3/api/course_instructors",
+                "course.instructors.read",
+            ),
+            (
+                "POST",
+                "/backend/v3/api/course_instructors",
+                "course.instructors.write",
+            ),
             ("GET", "/backend/v3/api/courses", "course.courses.read"),
-            ("POST", "/backend/v3/api/courses/{courseId}/publish", "course.courses.publish"),
-            ("GET", "/backend/v3/api/courses/{courseId}/offerings", "course.offerings.read"),
-            ("GET", "/backend/v3/api/courses/{courseId}/sections", "course.lessons.read"),
-            ("GET", "/backend/v3/api/courses/{courseId}/lessons", "course.lessons.read"),
-            ("GET", "/backend/v3/api/course_lessons/{lessonId}/resources", "course.resources.read"),
-            ("GET", "/backend/v3/api/course_live_sessions", "course.live_sessions.read"),
-            ("POST", "/backend/v3/api/course_live_sessions/{liveSessionId}/start", "course.live_sessions.operate"),
-            ("GET", "/backend/v3/api/course_enrollments", "course.enrollments.read"),
-            ("POST", "/backend/v3/api/course_enrollments/grants", "course.enrollments.write"),
-            ("GET", "/backend/v3/api/course_progress", "course.progress.read"),
-            ("PATCH", "/backend/v3/api/course_lesson_progress/{lessonProgressId}", "course.progress.repair"),
-            ("GET", "/backend/v3/api/course_comments", "course.comments.read"),
-            ("PATCH", "/backend/v3/api/course_comments/{commentId}/moderation", "course.comments.moderate"),
-            ("GET", "/backend/v3/api/course_applications", "course.applications.read"),
-            ("PATCH", "/backend/v3/api/course_applications/{applicationId}/review", "course.applications.review"),
-            ("GET", "/backend/v3/api/course_reports/overview", "course.reports.read"),
-            ("GET", "/backend/v3/api/course_audit_logs", "course.audit_logs.read"),
+            (
+                "POST",
+                "/backend/v3/api/courses/{courseId}/publish",
+                "course.courses.publish",
+            ),
+            (
+                "GET",
+                "/backend/v3/api/courses/{courseId}/offerings",
+                "course.offerings.read",
+            ),
+            (
+                "GET",
+                "/backend/v3/api/courses/{courseId}/sections",
+                "course.lessons.read",
+            ),
+            (
+                "GET",
+                "/backend/v3/api/courses/{courseId}/lessons",
+                "course.lessons.read",
+            ),
+            (
+                "GET",
+                "/backend/v3/api/course_lessons/{lessonId}/resources",
+                "course.resources.read",
+            ),
+            (
+                "GET",
+                "/backend/v3/api/course_live_sessions",
+                "course.live_sessions.read",
+            ),
+            (
+                "POST",
+                "/backend/v3/api/course_live_sessions/{liveSessionId}/start",
+                "course.live_sessions.operate",
+            ),
+            (
+                "GET",
+                "/backend/v3/api/course_enrollments",
+                "course.enrollments.read",
+            ),
+            (
+                "POST",
+                "/backend/v3/api/course_enrollments/grants",
+                "course.enrollments.write",
+            ),
+            (
+                "GET",
+                "/backend/v3/api/course_progress",
+                "course.progress.read",
+            ),
+            (
+                "PATCH",
+                "/backend/v3/api/course_lesson_progress/{lessonProgressId}",
+                "course.progress.repair",
+            ),
+            (
+                "GET",
+                "/backend/v3/api/course_comments",
+                "course.comments.read",
+            ),
+            (
+                "PATCH",
+                "/backend/v3/api/course_comments/{commentId}/moderation",
+                "course.comments.moderate",
+            ),
+            (
+                "GET",
+                "/backend/v3/api/course_applications",
+                "course.applications.read",
+            ),
+            (
+                "PATCH",
+                "/backend/v3/api/course_applications/{applicationId}/review",
+                "course.applications.review",
+            ),
+            (
+                "GET",
+                "/backend/v3/api/course_reports/overview",
+                "course.reports.read",
+            ),
+            (
+                "GET",
+                "/backend/v3/api/course_audit_logs",
+                "course.audit_logs.read",
+            ),
         ] {
             let route = manifest.match_route(method, path).unwrap_or_else(|| {
                 panic!("{method} {path} must be registered by the course mount")

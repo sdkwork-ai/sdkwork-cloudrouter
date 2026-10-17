@@ -992,7 +992,8 @@ impl RuntimeConfigLocation {
                         // `%SystemDrive%` is where Windows keeps its profile
                         // directory, so the fallback follows the system drive
                         // instead of pinning the drive letter.
-                        let system_drive = get_env("SystemDrive").unwrap_or_else(|| "C:".to_owned());
+                        let system_drive =
+                            get_env("SystemDrive").unwrap_or_else(|| "C:".to_owned());
                         format!("{system_drive}/Users/Default")
                     });
                 let root = join_runtime_path(&home, ".sdkwork/router");

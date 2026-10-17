@@ -67,7 +67,8 @@ async fn gateway_main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> 
     // Listener bind precedence lives in the shared component so every SDKWork
     // gateway resolves its bind identically (application bind, then server
     // bind, then the runtime-config value, then the compiled default).
-    let application_bind = std::env::var("SDKWORK_CLOUDROUTER_APPLICATION_PUBLIC_INGRESS_BIND").ok();
+    let application_bind =
+        std::env::var("SDKWORK_CLOUDROUTER_APPLICATION_PUBLIC_INGRESS_BIND").ok();
     let server_bind = std::env::var("SDKWORK_CLOUDROUTER_SERVER_BIND").ok();
     let runtime_bind = runtime_toml
         .as_ref()

@@ -126,9 +126,11 @@ impl StickyRouteStore for InvocationStickyObjectRouteStore {
             .bind(&command.sticky_scope)
             // The baseline DDL declares `id BIGINT NOT NULL PRIMARY KEY` with no
             // identity default, so the insert carries a generator-assigned id.
-            .bind(sdkwork_cloudrouter_router_service::infrastructure::sql::next_shared_runtime_id(
-                "ai_upstream_object_route",
-            )?)
+            .bind(
+                sdkwork_cloudrouter_router_service::infrastructure::sql::next_shared_runtime_id(
+                    "ai_upstream_object_route",
+                )?,
+            )
             .execute(&self.0)
             .await
             .map_err(sticky_store_error)?;

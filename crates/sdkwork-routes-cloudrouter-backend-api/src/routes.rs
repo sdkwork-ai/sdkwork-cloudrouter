@@ -37,26 +37,26 @@ use sdkwork_cloudrouter_router_service::infrastructure::sql::installer::{
 use sdkwork_cloudrouter_router_service::infrastructure::sql::pool::connect_standard_database_pool;
 use sdkwork_cloudrouter_router_service::infrastructure::sql::postgres::{
     PostgresAdminAnnouncementStore, PostgresAdminApiKeyRateLimitStore,
-    PostgresAdminAuthSettingsStore, PostgresAdminChainPolicyStore,
-    PostgresAdminFinanceStore, PostgresAdminFirewallRuleStore, PostgresAdminIpRateLimitStore,
-    PostgresAdminMarketingStore, PostgresAdminModelRateLimitStore,
-    PostgresAdminPricingStore, PostgresAdminRecordStore, PostgresAdminReferralStore,
-    PostgresAdminServiceNodeStore, PostgresAdminStorageStore, PostgresAdminTransactionCenterStore,
-    PostgresAdminUpstreamAccountVerifier, PostgresAdminUpstreamStore, PostgresCatalogLoadError,
-    PostgresGatewayApiKeyCommandStore, PostgresOfficialPricingCatalogReadStore,
-    PostgresPricingCatalogLoader, PostgresRuntimeRegionSettingsStore, PostgresSiteSettingsStore,
+    PostgresAdminAuthSettingsStore, PostgresAdminChainPolicyStore, PostgresAdminFinanceStore,
+    PostgresAdminFirewallRuleStore, PostgresAdminIpRateLimitStore, PostgresAdminMarketingStore,
+    PostgresAdminModelRateLimitStore, PostgresAdminPricingStore, PostgresAdminRecordStore,
+    PostgresAdminReferralStore, PostgresAdminServiceNodeStore, PostgresAdminStorageStore,
+    PostgresAdminTransactionCenterStore, PostgresAdminUpstreamAccountVerifier,
+    PostgresAdminUpstreamStore, PostgresCatalogLoadError, PostgresGatewayApiKeyCommandStore,
+    PostgresOfficialPricingCatalogReadStore, PostgresPricingCatalogLoader,
+    PostgresRuntimeRegionSettingsStore, PostgresSiteSettingsStore,
 };
 use sdkwork_cloudrouter_router_service::infrastructure::OsApiKeySecretGenerator;
 use sdkwork_cloudrouter_router_service::ports::{
     AdminAnalyticsReadStore, AdminAnnouncementStore, AdminApiKeyRateLimitStore,
-    AdminAuthSettingsStore, AdminChainPolicyStore, AdminDashboardReadStore,
-    AdminFinanceStore, AdminFirewallRuleStore, AdminIpRateLimitStore, AdminMarketingStore,
-    AdminModelRateLimitStore, AdminMonitorReadStore, AdminPricingStore,
-    AdminRecordStore, AdminReferralStore, AdminServiceNodeStore, AdminStorageStore,
-    AdminTransactionCenterStore, AdminUpstreamAccountVerifier, AdminUpstreamStore,
-    GatewayApiKeyCommandStore, ModelRankingRefreshStore, ModelRankingsReadModelStore,
-    OfficialPricingCatalogReadStore, OfficialPricingRefreshStore, RuntimeRegionSettingsStore,
-    SiteSettingsStore, UpstreamAccountRouteCatalog,
+    AdminAuthSettingsStore, AdminChainPolicyStore, AdminDashboardReadStore, AdminFinanceStore,
+    AdminFirewallRuleStore, AdminIpRateLimitStore, AdminMarketingStore, AdminModelRateLimitStore,
+    AdminMonitorReadStore, AdminPricingStore, AdminRecordStore, AdminReferralStore,
+    AdminServiceNodeStore, AdminStorageStore, AdminTransactionCenterStore,
+    AdminUpstreamAccountVerifier, AdminUpstreamStore, GatewayApiKeyCommandStore,
+    ModelRankingRefreshStore, ModelRankingsReadModelStore, OfficialPricingCatalogReadStore,
+    OfficialPricingRefreshStore, RuntimeRegionSettingsStore, SiteSettingsStore,
+    UpstreamAccountRouteCatalog,
 };
 use sdkwork_database_sqlx::DatabasePool;
 use sdkwork_models_catalog_repository_sqlx::{
@@ -1383,9 +1383,8 @@ fn merge_admin_router_with_subject_boundary(
         // API unauthenticated. The routes exist (so the misconfiguration is
         // visible) but every request is denied with 503 until the deployment
         // configures the boundary.
-        None => router.merge(admin_router.layer(axum::middleware::from_fn(
-            admin_boundary_required_deny_all,
-        ))),
+        None => router
+            .merge(admin_router.layer(axum::middleware::from_fn(admin_boundary_required_deny_all))),
     }
 }
 

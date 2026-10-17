@@ -1,6 +1,6 @@
 use sdkwork_cloudrouter_config::{ApiKeySecurityConfig, AppSessionConfig, TrustedSubjectConfig};
 use sdkwork_cloudrouter_http::{
-    TrustedRequestSubject, sign_app_session_token, sign_trusted_request_subject,
+    sign_app_session_token, sign_trusted_request_subject, TrustedRequestSubject,
 };
 
 pub const API_KEY_PEPPER: &str = "0123456789abcdef0123456789abcdef";

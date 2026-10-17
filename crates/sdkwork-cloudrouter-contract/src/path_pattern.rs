@@ -4,9 +4,7 @@ pub fn matches_path_pattern(pattern: &str, path: &str) -> bool {
 
     pattern_segments.len() == path_segments.len()
         && pattern_segments.iter().zip(path_segments.iter()).all(
-            |(pattern_segment, path_segment)| {
-                matches_path_segment(pattern_segment, path_segment)
-            },
+            |(pattern_segment, path_segment)| matches_path_segment(pattern_segment, path_segment),
         )
 }
 

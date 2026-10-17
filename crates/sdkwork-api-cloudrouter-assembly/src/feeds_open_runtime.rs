@@ -42,8 +42,10 @@ fn feeds_web_environment() -> WebEnvironment {
 /// Redis URL for the shared stores, mirroring the standalone gateway env
 /// contract (SDKWORK_CLOUDROUTER_REDIS_*).
 fn feeds_redis_url() -> String {
-    let host = std::env::var("SDKWORK_CLOUDROUTER_REDIS_HOST").unwrap_or_else(|_| "127.0.0.1".to_owned());
-    let port = std::env::var("SDKWORK_CLOUDROUTER_REDIS_PORT").unwrap_or_else(|_| "6379".to_owned());
+    let host =
+        std::env::var("SDKWORK_CLOUDROUTER_REDIS_HOST").unwrap_or_else(|_| "127.0.0.1".to_owned());
+    let port =
+        std::env::var("SDKWORK_CLOUDROUTER_REDIS_PORT").unwrap_or_else(|_| "6379".to_owned());
     let database =
         std::env::var("SDKWORK_CLOUDROUTER_REDIS_DATABASE").unwrap_or_else(|_| "0".to_owned());
     match std::env::var("SDKWORK_CLOUDROUTER_REDIS_PASSWORD")
@@ -98,14 +100,13 @@ async fn wrap_feeds_open_router_with_web_framework(
             format!("{store_prefix}:idempotency"),
         )
         .map_err(|error| format!("wire federated feeds idempotency store failed: {error}"))?;
-        let concurrent_admission_store =
-            sdkwork_web_bootstrap::shared_concurrent_admission_store(
-                &redis_url,
-                format!("{store_prefix}:concurrent-admission"),
-            )
-            .map_err(|error| {
-                format!("wire federated feeds concurrent admission store failed: {error}")
-            })?;
+        let concurrent_admission_store = sdkwork_web_bootstrap::shared_concurrent_admission_store(
+            &redis_url,
+            format!("{store_prefix}:concurrent-admission"),
+        )
+        .map_err(|error| {
+            format!("wire federated feeds concurrent admission store failed: {error}")
+        })?;
         builder
             .readiness_check(readiness_check)
             .rate_limit_store(rate_limit_store)
