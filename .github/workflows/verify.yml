@@ -76,8 +76,17 @@ jobs:
           cargo install --locked cargo-audit
           cargo install --locked cargo-deny
 
+      # Not frozen. The root lockfile spans all 223 workspace projects, and
+      # roughly two hundred of them come from the federated sibling
+      # repositories this job checks out at `main`. Any sibling that adds a
+      # dependency — sdkwork-drive adding sdkwork-drive-pc-commons@workspace:*
+      # to sdkwork-drive-pc-core, for example — makes the committed lockfile
+      # stale and `--frozen-lockfile` aborts with ERR_PNPM_OUTDATED_LOCKFILE.
+      # Resolving dependencies from `main` and pinning the resolution of those
+      # same dependencies are mutually exclusive; the packaging lifecycle
+      # already installs the same workspace with --no-frozen-lockfile.
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
       - name: Rust formatting check
         run: pnpm format:rust:check
@@ -105,7 +114,7 @@ jobs:
 
       - name: Install PC workspace dependencies
         working-directory: apps/sdkwork-cloudrouter-pc
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
       - name: PC workspace typecheck
         working-directory: apps/sdkwork-cloudrouter-pc
@@ -285,7 +294,7 @@ jobs:
 
       - name: Install PC workspace dependencies
         working-directory: apps/sdkwork-cloudrouter-pc
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
       - name: Install Playwright chromium
         working-directory: apps/sdkwork-cloudrouter-pc
