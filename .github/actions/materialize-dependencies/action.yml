@@ -59,3 +59,32 @@ runs:
       with:
         dependencies-json: ${{ steps.dependencies.outputs.dependencies }}
         token: ${{ inputs.token }}
+
+    # The framework's composite action runs `git clone` as a native command, so
+    # a non-zero exit does not stop it: a dependency that fails to clone is
+    # silently absent, and the job then dies much later with a confusing
+    # downstream error. A private repository cloned with the workflow
+    # GITHUB_TOKEN reports "repository ... not found", because that token is
+    # scoped to this repository alone. Verify every planned path exists and
+    # name the repository that is missing.
+    - name: Verify every declared dependency was checked out
+      shell: bash
+      env:
+        SDKWORK_DEPENDENCY_PLAN_JSON: ${{ steps.dependencies.outputs.dependencies }}
+      run: |
+        set -euo pipefail
+        node -e '
+        const fs = require("fs");
+        const plan = JSON.parse(process.env.SDKWORK_DEPENDENCY_PLAN_JSON ?? "{}");
+        const include = plan.include ?? [];
+        const missing = include
+          .filter((entry) => !entry.path || !fs.existsSync(entry.path))
+          .map((entry) => `${entry.repository} -> ${entry.path}`);
+        if (missing.length > 0) {
+          console.error("dependency checkout left these repositories absent:");
+          for (const entry of missing) console.error("  " + entry);
+          console.error("A private dependency cloned with the workflow GITHUB_TOKEN reports 404; pass a token with cross-repository read access.");
+          process.exit(1);
+        }
+        console.log(`dependency checkout verified: ${include.length} repositories present`);
+        '

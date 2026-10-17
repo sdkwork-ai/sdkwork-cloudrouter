@@ -82,6 +82,19 @@ rewritten on every release so it never accumulates prior versions.
   requested but no deployment matched the selected package matrix` and all
   twenty-two package jobs were skipped. `deploy` now follows only the explicit
   `workflow_dispatch` input.
+- Passed `SDKWORK_RELEASE_TOKEN` to the dependency checkout instead of relying
+  on the workflow `GITHUB_TOKEN`. Three of the fifty dependencies —
+  `sdkwork-appbase`, `sdkwork-feeds`, and `sdkwork-test` — are private, and the
+  workflow token is scoped to this repository alone: cloning one of them with it
+  returns `repository ... not found`. The clone failure was silent, so the job
+  instead died much later at `pnpm install` with
+  `ERR_PNPM_WORKSPACE_PKG_NOT_FOUND` for `@sdkwork/appbase-pc-react`, a name the
+  workspace really does declare — the package behind it had simply never been
+  checked out. The packaging workflow always passed this token, which is why
+  packaging could read the private repositories and Verify could not.
+- Added a post-checkout assertion that every planned dependency directory
+  exists, so a dependency that fails to clone is named at the point of failure
+  instead of surfacing as an unrelated workspace resolution error.
 - Repointed the supply-chain SBOM step from `anchore/syft-action` to
   `anchore/sbom-action`. The old repository now returns 404, so the job failed
   during `Set up job` before any of its own steps ran — the job had been

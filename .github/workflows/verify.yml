@@ -56,6 +56,13 @@ jobs:
 
       - name: Materialize SDKWork dependencies
         uses: ./.github/actions/materialize-dependencies
+        with:
+          # Three of the fifty dependencies are private (sdkwork-appbase,
+          # sdkwork-feeds, sdkwork-test). The workflow GITHUB_TOKEN is scoped to
+          # this repository alone, so cloning one of those with it returns
+          # "repository ... not found" and the workspace then loses the packages
+          # other repositories declare as `workspace:*` dependencies.
+          token: ${{ secrets.SDKWORK_RELEASE_TOKEN || github.token }}
 
       - uses: pnpm/action-setup@v4
         with:
@@ -158,6 +165,8 @@ jobs:
 
       - name: Materialize SDKWork dependencies
         uses: ./.github/actions/materialize-dependencies
+        with:
+          token: ${{ secrets.SDKWORK_RELEASE_TOKEN || github.token }}
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -281,6 +290,8 @@ jobs:
 
       - name: Materialize SDKWork dependencies
         uses: ./.github/actions/materialize-dependencies
+        with:
+          token: ${{ secrets.SDKWORK_RELEASE_TOKEN || github.token }}
 
       - uses: pnpm/action-setup@v4
         with:
