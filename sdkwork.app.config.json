@@ -181,7 +181,7 @@
       }
     ],
     "metadata": {
-      "assetVersion": "0.4.7",
+      "assetVersion": "0.4.8",
       "defaultLocale": "en-US"
     }
   },
@@ -226,7 +226,7 @@
           "sourceType": "WEB_URL",
           "packageFormat": "ZIP",
           "platform": "WEB",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.7/web.zip",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.8/web.zip",
           "enabled": false,
           "metadata": {
             "checksumPendingBuild": true,
@@ -247,7 +247,7 @@
           "sourceType": "WEB_URL",
           "packageFormat": "ZIP",
           "platform": "WEB",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/TEST/0.4.7/web.zip",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/TEST/0.4.8/web.zip",
           "enabled": false,
           "metadata": {
             "checksumPendingBuild": true,
@@ -268,7 +268,7 @@
           "sourceType": "WEB_URL",
           "packageFormat": "ZIP",
           "platform": "WEB",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.7/standalone/web.zip",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.8/standalone/web.zip",
           "enabled": false,
           "metadata": {
             "checksumPendingBuild": true,
@@ -289,7 +289,7 @@
           "sourceType": "BINARY_URL",
           "packageFormat": "ZIP",
           "platform": "DESKTOP_WINDOWS",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.7/windows/x64/app.zip",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.8/windows/x64/app.zip",
           "enabled": false,
           "metadata": {
             "checksumPendingBuild": true,
@@ -310,7 +310,7 @@
           "sourceType": "BINARY_URL",
           "packageFormat": "DMG",
           "platform": "DESKTOP_MACOS",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.7/macos/universal/app.dmg",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.8/macos/universal/app.dmg",
           "enabled": false,
           "metadata": {
             "checksumPendingBuild": true,
@@ -331,7 +331,7 @@
           "sourceType": "BINARY_URL",
           "packageFormat": "APPIMAGE",
           "platform": "DESKTOP_LINUX",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.7/linux/generic/x64/app.AppImage",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.8/linux/generic/x64/app.AppImage",
           "enabled": false,
           "metadata": {
             "linux": {
@@ -359,22 +359,22 @@
     }
   },
   "release": {
-    "currentVersion": "0.4.7",
+    "currentVersion": "0.4.8",
     "defaultChannel": "STABLE",
     "latest": {
-      "STABLE": "0.4.7"
+      "STABLE": "0.4.8"
     },
     "notes": [
       {
-        "version": "0.4.1",
+        "version": "0.4.8",
         "releaseChannel": "STABLE",
-        "title": "SDKWork Cloud Router 0.4.1",
-        "summary": "SDKWork Cloud Router initialized standard release.",
-        "content": "Initial SDKWork App Standard v3 manifest for SDKWork Cloud Router.",
+        "title": "SDKWork Cloud Router 0.4.8",
+        "summary": "Container and Windows MSI packaging defects fixed and verified by a real packaging run.",
+        "content": "Declares the previously missing sdkwork-aiot federated repository so the container image plan passes its prerequisite check, and stages the Windows MSI payload under a stable hashed id so <File Source> no longer overflows the Win32 path limit and fails with WIX0103. Release notes cover only this version; earlier records stay archived under docs/release/.",
         "highlights": [
-          "SDKWork App Standard v3 configuration initialized",
-          "platform_app projection metadata standardized",
-          "Download package matrix normalized"
+          "sdkwork-aiot declared: all four container OCI lanes reach the build step",
+          "Windows MSI payload path made constant-length: all five MSI lanes stop failing WIX0103",
+          "Install-time configuration stays contract-driven for ports, PostgreSQL/SQLite, and Redis"
         ],
         "packageIds": [
           "web-universal-cloud-browser-zip",
@@ -383,34 +383,10 @@
           "macos-universal-standalone-desktop-dmg",
           "linux-x64-standalone-desktop-appimage"
         ],
-        "publishedAt": "2026-05-07T00:00:00Z",
-        "current": false,
-        "forceUpdate": false,
-        "minSupportedVersion": "0.4.1",
-        "metadata": {}
-      },
-      {
-        "version": "0.4.7",
-        "releaseChannel": "STABLE",
-        "title": "SDKWork Cloud Router 0.4.7",
-        "summary": "Packaging pipeline repaired; every supported install package publishes from the packaging workflow.",
-        "content": "Packaging pipeline repaired: the workflow file had been rejected by GitHub since 2026-09-03 (its workflow_dispatch input count exceeded the 25-input cap), so no release could run. Every supported install package (Linux deb/tar.gz, Windows msi/zip, macOS pkg/tar.gz, desktop installers, container install package) is built, signed, and published to this release. Container image publication is wired into the packaging lifecycle and pushes registry.sdkwork.com/apps/sdkwork-cloudrouter for both deployment profiles once the repository container registry credentials are configured.",
-        "highlights": [
-          "Packaging workflow runs again after six weeks of silent file rejection",
-          "All supported install packages published and downloadable",
-          "Container image and cloud deployment-profile lane integrated into the release lifecycle"
-        ],
-        "packageIds": [
-          "web-universal-cloud-browser-zip",
-          "web-universal-standalone-browser-zip",
-          "windows-x64-standalone-desktop-zip",
-          "macos-universal-standalone-desktop-dmg",
-          "linux-x64-standalone-desktop-appimage"
-        ],
-        "publishedAt": "2026-10-16T05:35:46Z",
+        "publishedAt": "2026-10-17T00:00:00Z",
         "current": true,
         "forceUpdate": false,
-        "minSupportedVersion": "0.4.7",
+        "minSupportedVersion": "0.4.8",
         "metadata": {}
       }
     ]
