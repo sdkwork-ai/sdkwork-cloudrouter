@@ -176,7 +176,7 @@ fn chrono_iso8601_utc() -> String {
 
 fn epoch_to_iso8601_utc(epoch_seconds: u64) -> String {
     let days_since_epoch = (epoch_seconds / 86400) as i64;
-    let seconds_of_day = (epoch_seconds % 86400) as u64;
+    let seconds_of_day = epoch_seconds % 86400;
     let hour = seconds_of_day / 3600;
     let minute = (seconds_of_day % 3600) / 60;
     let second = seconds_of_day % 60;

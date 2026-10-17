@@ -48,6 +48,14 @@ pub struct ProviderAdapterHttpClient {
 
 /// Result of an adapter invocation — either a buffered JSON response or a
 /// streaming body that must not be buffered.
+///
+/// The size difference between the two variants is inherent to what they
+/// carry: one holds the buffered response body and its metadata, the other
+/// holds only a status, a content type, and a stream handle. Boxing the
+/// buffered variant would add a heap allocation to every non-streaming
+/// invocation — the common case — to shrink the enum in a type that is
+/// constructed once per request and immediately consumed.
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug)]
 pub enum AdapterInvokeResult {
     /// Buffered JSON response from the adapter.

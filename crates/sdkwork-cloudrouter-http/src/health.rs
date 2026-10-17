@@ -6,6 +6,12 @@ use sdkwork_cloudrouter_health::HealthResponse;
 use crate::metrics::record_readiness_check;
 use crate::router::ServiceState;
 
+// The Err variant is an axum `(StatusCode, Json<HealthResponse>)` responder
+// pair, 144 bytes, just over clippy's 128-byte result_large_err threshold.
+// Boxing it would add a heap allocation to a probe that returns on every
+// request and would force every caller to unbox, for a fixed-size response
+// whose size is the response itself. This is the response, not a large error.
+#[allow(clippy::result_large_err)]
 pub async fn healthz(
     State(state): State<ServiceState>,
 ) -> Result<Json<HealthResponse>, (StatusCode, Json<HealthResponse>)> {
@@ -20,6 +26,8 @@ pub async fn healthz(
     ))
 }
 
+// Same responder pair as healthz; see the note above.
+#[allow(clippy::result_large_err)]
 pub async fn readyz(
     State(state): State<ServiceState>,
 ) -> Result<(StatusCode, Json<HealthResponse>), (StatusCode, Json<HealthResponse>)> {

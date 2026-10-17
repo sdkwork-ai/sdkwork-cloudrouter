@@ -100,10 +100,10 @@ impl CloudRouterLocalePolicy {
         {
             policy.fallback_locale = tag;
         }
-        if let Some(value) = std::env::var("SDKWORK_CLOUDROUTER_SUPPORTED_LOCALES").ok() {
+        if let Ok(value) = std::env::var("SDKWORK_CLOUDROUTER_SUPPORTED_LOCALES") {
             let parsed = value
                 .split(',')
-                .filter_map(|part| normalize_locale_tag(part))
+                .filter_map(normalize_locale_tag)
                 .collect::<Vec<_>>();
             if !parsed.is_empty() {
                 policy.supported_locales = parsed;
@@ -217,7 +217,7 @@ fn best_accept_language_match(
         }
         if best
             .as_ref()
-            .map_or(true, |(_, best_quality)| quality > *best_quality)
+            .is_none_or(|(_, best_quality)| quality > *best_quality)
         {
             best = Some((canonical, quality));
         }
@@ -299,15 +299,10 @@ pub fn interpolate_template(template: &str, params: &Value) -> Option<String> {
     let mut rest = template;
     while let Some(open) = rest.find("{{") {
         let after_open = &rest[open + 2..];
-        let Some(close) = after_open.find("}}") else {
-            return None;
-        };
+        let close = after_open.find("}}")?;
         let key = after_open[..close].trim();
         result.push_str(&rest[..open]);
-        let value = match key_value(key, params) {
-            Some(value) => value,
-            None => return None,
-        };
+        let value = key_value(key, params)?;
         result.push_str(&value);
         rest = &after_open[close + 2..];
     }
