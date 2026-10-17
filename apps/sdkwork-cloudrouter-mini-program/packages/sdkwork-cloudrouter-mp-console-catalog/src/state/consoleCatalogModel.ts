@@ -11,12 +11,22 @@ export interface ConsoleCatalogLabels {
   readonly reload: string;
 }
 
+/** Presentation row the WXML template binds to. */
+export interface ConsoleCatalogDisplayRow {
+  readonly id: string;
+  readonly vendor: string;
+  readonly model: string;
+  readonly inputPrice: string;
+  readonly outputPrice: string;
+}
+
 export interface ConsoleCatalogState {
   readonly labels: ConsoleCatalogLabels;
   readonly pageSize: number;
   readonly loading: boolean;
   readonly error: string | null;
   readonly rows: readonly ConsoleCatalogRateRow[];
+  readonly displayRows: readonly ConsoleCatalogDisplayRow[];
   setLoading(value: boolean): void;
   setError(value: string | null): void;
   setRows(page: { readonly items: readonly ConsoleCatalogRateRow[] }): void;
@@ -32,10 +42,28 @@ export function formatPrice(value: number | null, currency: string, locale: stri
   }).format(value);
 }
 
-export function createConsoleCatalogState(labels: ConsoleCatalogLabels): ConsoleCatalogState {
+/** Projects catalog rate rows onto the display rows the template renders. */
+export function toConsoleCatalogDisplayRows(
+  rows: readonly ConsoleCatalogRateRow[],
+  locale: string,
+): readonly ConsoleCatalogDisplayRow[] {
+  return rows.map((row) => ({
+    id: row.id,
+    vendor: row.vendor,
+    model: row.model,
+    inputPrice: formatPrice(row.inputPricePerMillionTokens, row.currency, locale),
+    outputPrice: formatPrice(row.outputPricePerMillionTokens, row.currency, locale),
+  }));
+}
+
+export function createConsoleCatalogState(
+  labels: ConsoleCatalogLabels,
+  locale: string,
+): ConsoleCatalogState {
   let loading = true;
   let error: string | null = null;
   let rows: readonly ConsoleCatalogRateRow[] = [];
+  const displayRows = () => toConsoleCatalogDisplayRows(rows, locale);
   return {
     labels,
     pageSize: 50,
@@ -47,6 +75,9 @@ export function createConsoleCatalogState(labels: ConsoleCatalogLabels): Console
     },
     get rows() {
       return rows;
+    },
+    get displayRows() {
+      return displayRows();
     },
     setLoading(value) {
       loading = value;

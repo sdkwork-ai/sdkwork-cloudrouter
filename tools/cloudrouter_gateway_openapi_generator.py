@@ -1286,6 +1286,8 @@ class CloudRouterGatewayOpenApiGenerator:
             "createRealtimeSession": "OpenAiRealtimeSessionCreateRequest",
             "createRealtimeTranscriptionSession": "OpenAiRealtimeTranscriptionSessionCreateRequest",
             "createRealtimeTranslationSession": "OpenAiRealtimeTranslationSessionCreateRequest",
+            "searchWeb": "DeepSeekWebSearchRequest",
+            "fetchWeb": "DeepSeekWebFetchRequest",
         }.get(operation_id)
 
     def _public_multipart_request_schema_override(self, operation_id: str) -> str | None:
@@ -1386,6 +1388,8 @@ class CloudRouterGatewayOpenApiGenerator:
             "createRealtimeSession": "OpenAiRealtimeSession",
             "createRealtimeTranscriptionSession": "OpenAiRealtimeTranscriptionSession",
             "createRealtimeTranslationSession": "OpenAiRealtimeTranslationSession",
+            "searchWeb": "DeepSeekWebSearchResponse",
+            "fetchWeb": "DeepSeekWebFetchResponse",
         }.get(operation_id)
 
     def _is_public_v1_path(self, path: str) -> bool:
@@ -1879,6 +1883,7 @@ class CloudRouterGatewayOpenApiGenerator:
         }
         schemas.update(self._openai_completion_resource_schemas())
         schemas.update(self._openai_moderation_resource_schemas())
+        schemas.update(self._deepseek_web_tool_resource_schemas())
         schemas.update(self._openai_response_resource_schemas())
         schemas.update(self._openai_chat_resource_schemas())
         schemas.update(self._openai_image_resource_schemas())
@@ -1995,6 +2000,177 @@ class CloudRouterGatewayOpenApiGenerator:
                     "flagged": self._boolean_schema("Whether the input was flagged by moderation."),
                     "categories": self._metadata_schema("Boolean category flags returned by the moderation model."),
                     "category_scores": self._number_map_schema("Moderation category scores keyed by category name."),
+                },
+            },
+        }
+
+    def _deepseek_web_tool_resource_schemas(self) -> dict[str, Any]:
+        """DeepSeek's standalone web tools (`/v1/tools/search`, `/v1/tools/fetch`).
+
+        The wire shapes mirror DeepSeek's published Search/Fetch references
+        verbatim: `count` is result shaping only (billing is per successful
+        request, never per result), `content` is empty unless `need_content` is
+        true, and every optional metadata field on a result is nullable rather
+        than omitted.
+        """
+        return {
+            "DeepSeekWebSearchRequest": {
+                "type": "object",
+                "description": "DeepSeek-compatible web search request.",
+                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
+                "required": ["query"],
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 128,
+                        "description": (
+                            "Search query of 1 to 128 Unicode characters, not all whitespace. "
+                            "Supports site:, -site:, -term, \"exact phrase\", lang:, after: and "
+                            "before: operators, which are forwarded unchanged."
+                        ),
+                    },
+                    "count": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 50,
+                        "default": 10,
+                        "description": "Number of results to return; does not change the per-request price.",
+                    },
+                    "ori_question": {
+                        "type": "string",
+                        "nullable": True,
+                        "minLength": 1,
+                        "maxLength": 128,
+                        "description": (
+                            "The user's original question that triggered the search, used to "
+                            "improve query understanding. A null value is treated as absent."
+                        ),
+                    },
+                    "localization": {
+                        "type": "string",
+                        "default": "",
+                        "description": "Optional IP address used to prefer localized search results.",
+                    },
+                    "need_content": {
+                        "type": "boolean",
+                        "default": False,
+                        "description": (
+                            "Whether to return full page content in each result's content field. "
+                            "When false, content is always an empty string."
+                        ),
+                    },
+                },
+            },
+            "DeepSeekWebSearchResult": {
+                "type": "object",
+                "description": "One ranked DeepSeek web search result.",
+                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
+                "required": [
+                    "rerank_score",
+                    "title",
+                    "url",
+                    "snippet",
+                    "summary",
+                    "content",
+                    "site_name",
+                    "site_icon",
+                    "date",
+                    "authority",
+                ],
+                "properties": {
+                    "rerank_score": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 3,
+                        "description": (
+                            "Relevance score from 0 to 3 combining relevance, authority and "
+                            "freshness; 1.5 or above is considered high quality."
+                        ),
+                    },
+                    "title": {"type": "string", "description": "Result title."},
+                    "url": {"type": "string", "description": "Result URL."},
+                    "snippet": {
+                        "type": "string",
+                        "description": "Short query-relevant excerpt intended for display.",
+                    },
+                    "summary": {
+                        "type": "string",
+                        "description": "Longer query-relevant summary intended for model consumption.",
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "Full page content when need_content is true, otherwise empty.",
+                    },
+                    "site_name": {
+                        "type": "string",
+                        "nullable": True,
+                        "description": "Site name, or null when unavailable.",
+                    },
+                    "site_icon": {
+                        "type": "string",
+                        "nullable": True,
+                        "description": "Site icon URL, or null when unavailable.",
+                    },
+                    "date": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": True,
+                        "description": "Publication time in UTC RFC 3339 format, or null when unknown.",
+                    },
+                    "authority": {
+                        "type": "integer",
+                        "minimum": -1,
+                        "maximum": 4,
+                        "description": "Page authority from 0 to 4, where -1 means unknown.",
+                    },
+                },
+            },
+            "DeepSeekWebSearchResponse": {
+                "type": "object",
+                "description": "DeepSeek-compatible web search response.",
+                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
+                "required": ["results"],
+                "properties": {
+                    "results": {
+                        "type": "array",
+                        "items": {"$ref": "#/components/schemas/DeepSeekWebSearchResult"},
+                        "description": "Ranked search results; empty when the search matched nothing.",
+                    }
+                },
+            },
+            "DeepSeekWebFetchRequest": {
+                "type": "object",
+                "description": "DeepSeek-compatible request to fetch a single web page as Markdown.",
+                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
+                "required": ["url"],
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "format": "uri",
+                        "minLength": 1,
+                        "maxLength": 8192,
+                        "description": (
+                            "Absolute HTTP or HTTPS URL to fetch. Must contain a host, must not "
+                            "carry a username or password, and is limited to 8192 characters."
+                        ),
+                    }
+                },
+            },
+            "DeepSeekWebFetchResponse": {
+                "type": "object",
+                "description": "DeepSeek-compatible fetched page: title plus Markdown body.",
+                "additionalProperties": {"$ref": "#/components/schemas/ProviderJsonValue"},
+                "required": ["title", "content"],
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "description": "Page title; an empty string when the page declares none.",
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "Extracted page body rendered as Markdown.",
+                    },
                 },
             },
         }
@@ -3228,6 +3404,7 @@ class CloudRouterGatewayOpenApiGenerator:
             {"name": "Batches", "description": "OpenAI-compatible batch processing API."},
             {"name": "Containers", "description": "OpenAI-compatible container and container file APIs."},
             {"name": "Moderations", "description": "OpenAI-compatible moderation API."},
+            {"name": "Tools", "description": "DeepSeek-compatible web search and page fetch tools exposed through Cloud Router routing."},
             {"name": "Uploads", "description": "OpenAI-compatible multipart upload APIs."},
             {"name": "Realtime", "description": "OpenAI-compatible realtime session bootstrap APIs."},
             {"name": "Images/vidu", "description": "Vidu image generation APIs exposed through Cloud Router vendor routing."},
@@ -3262,6 +3439,33 @@ class CloudRouterGatewayOpenApiGenerator:
         }
         paths["/v1/completions"] = {"post": self._operation("Completions", "createCompletion", "Create completion", "Creates a legacy text completion through an OpenAI-compatible request.", "JsonObject", "JsonObject")}
         paths["/v1/moderations"] = {"post": self._operation("Moderations", "createModeration", "Create moderation", "Classifies text or multimodal input through an OpenAI-compatible moderation request.", "JsonObject", "JsonObject")}
+        paths["/v1/tools/search"] = {
+            "post": self._deepseek_web_tool_operation(
+                "searchWeb",
+                "Search the web",
+                (
+                    "Searches the live web for a query and returns structured results. Query "
+                    "operators such as site:, -site:, \"exact phrase\", lang:, after: and before: "
+                    "are forwarded unchanged to the DeepSeek search engine. Billing is per "
+                    "successful request, independent of count and of the number of results."
+                ),
+                "DeepSeekWebSearchRequest",
+                "DeepSeekWebSearchResponse",
+            )
+        }
+        paths["/v1/tools/fetch"] = {
+            "post": self._deepseek_web_tool_operation(
+                "fetchWeb",
+                "Fetch a web page",
+                (
+                    "Fetches a single web page and returns its title and content as Markdown. "
+                    "Results depend on the target site's availability and access policy; blocked "
+                    "or unextractable pages answer 404."
+                ),
+                "DeepSeekWebFetchRequest",
+                "DeepSeekWebFetchResponse",
+            )
+        }
         paths["/v1/responses"] = {"post": self._operation("Responses", "createResponse", "Create response", "Creates a model response through an OpenAI-compatible Responses API request.", "OpenAiResponsesRequest", "OpenAiResponse")}
         paths["/v1/responses/input_tokens"] = {"post": self._operation("Responses", "countResponseInputTokens", "Count response input tokens", "Counts input tokens for a Responses API request when supported by the selected upstream.", "JsonObject", "JsonObject")}
         paths["/v1/responses/compact"] = {"post": self._operation("Responses", "compactResponse", "Compact response", "Compacts response input or conversation state when supported by the selected upstream.", "JsonObject", "JsonObject")}
@@ -3472,6 +3676,52 @@ class CloudRouterGatewayOpenApiGenerator:
             "/nano-banana/v1/images/generations/{task_id}": {"get": self._operation("Images/nano-banana", "nanoBananaRetrieveImageGeneration", "Nano Banana retrieve image generation", "Retrieves a Nano Banana compatible image generation task using the configured Nano Banana provider account.", None, "NanoBananaImageGenerationTask", parameters=[self._path_param("task_id", "Nano Banana task identifier.")], provider="nano-banana")},
             "/typesafe/v1/systemone": {"post": self._operation("Chat/typesafe", "typesafeCreateSystemOneDecision", "TypeSafe AI System One decision", "Evaluates typed questions against one state through the TypeSafe AI System One endpoint using the configured TypeSafe AI provider account.", "TypeSafeSystemOneRequest", "TypeSafeSystemOneResponse", provider="typesafe")},
         }
+
+    def _deepseek_web_tool_operation(
+        self,
+        operation_id: str,
+        summary: str,
+        description: str,
+        request_schema: str,
+        response_schema: str,
+    ) -> dict[str, Any]:
+        """Operation for DeepSeek's raw-JSON web tools.
+
+        `_operation` emits the generic gateway error set; DeepSeek documents a
+        wider one for these two APIs (balance, safety policy, body-read timeout,
+        body size, per-account QPS, upstream timeout), so the extra statuses are
+        appended here rather than widening every other operation.
+        """
+        operation = self._operation(
+            "Tools",
+            operation_id,
+            summary,
+            description,
+            request_schema,
+            response_schema,
+        )
+        operation["requestBody"]["description"] = (
+            f"DeepSeek-compatible JSON payload for the {operation_id} operation."
+        )
+        extra_errors = {
+            "402": "Insufficient account balance.",
+            "403": "The fetch request was rejected by a safety policy.",
+            "408": "Timed out while reading the request body.",
+            "413": "Request body exceeds the size limit.",
+            "429": "Search or fetch QPS limit exceeded.",
+            "500": "Internal server error.",
+            "504": "The downstream request timed out.",
+        }
+        for status, error_description in extra_errors.items():
+            operation["responses"][status] = {
+                "description": error_description,
+                "content": {
+                    "application/json": {
+                        "schema": {"$ref": "#/components/schemas/OpenAiErrorEnvelope"}
+                    }
+                },
+            }
+        return operation
 
     def _operation(
         self,

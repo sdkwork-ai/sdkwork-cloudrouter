@@ -1,14 +1,29 @@
 <view class="cr-page">
-  <view wx:if="{{loading}}" class="cr-muted">{{labels.loading}}</view>
-  <view wx:elif="{{error}}" class="cr-card">
-    <text>{{error}}</text>
-    <button size="mini" bindtap="onReload">{{labels.reload}}</button>
+  <view wx:if="{{loading}}" class="cr-state">
+    <view class="cr-spinner" />
+    <text class="cr-state-text">{{labels.loading}}</text>
   </view>
-  <view wx:elif="{{rows.length === 0}}" class="cr-muted">{{labels.empty}}</view>
+  <view wx:elif="{{error}}" class="cr-state">
+    <text class="cr-state-text">{{error}}</text>
+    <button class="cr-retry" hover-class="cr-retry--hover" bindtap="onReload">{{labels.reload}}</button>
+  </view>
+  <view wx:elif="{{rows.length === 0}}" class="cr-state">
+    <text class="cr-state-text">{{labels.empty}}</text>
+  </view>
   <block wx:else>
-    <view wx:for="{{rows}}" wx:key="id" class="cr-card cr-row">
-      <text>{{item[primaryField]}}</text>
-      <text class="cr-muted">{{item[secondaryField]}}</text>
+    <view class="cr-head">
+      <text class="cr-head-vendor">{{labels.columnVendor}}</text>
+      <text class="cr-head-model">{{labels.columnModel}}</text>
+      <text class="cr-head-price">{{labels.columnInput}}</text>
+      <text class="cr-head-price">{{labels.columnOutput}}</text>
+    </view>
+    <view class="cr-rows">
+      <view wx:for="{{rows}}" wx:key="id" class="cr-row">
+        <text class="cr-row-vendor">{{item.vendor}}</text>
+        <text class="cr-row-model">{{item.model}}</text>
+        <text class="cr-row-price">{{item.inputPrice}}</text>
+        <text class="cr-row-price">{{item.outputPrice}}</text>
+      </view>
     </view>
   </block>
 </view>

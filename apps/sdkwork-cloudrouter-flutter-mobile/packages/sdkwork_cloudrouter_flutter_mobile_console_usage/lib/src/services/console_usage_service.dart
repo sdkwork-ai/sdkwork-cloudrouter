@@ -2,6 +2,18 @@ import 'package:sdkwork_cloudrouter_flutter_mobile_core/sdkwork_cloudrouter_flut
 
 import '../models/console_usage_models.dart';
 
+/// Reason surfaced when the generated Dart transport cannot express usage
+/// pagination.
+///
+/// The browser roots page through `listUsageLogs(query)`; the generated Dart
+/// `usageLogsList()` takes no pagination parameters yet, so only the first page
+/// can be loaded. Per `APP_FLUTTER_UI_SPEC.md` section 4 the gap MUST be fixed
+/// by regenerating the Dart SDK instead of filling it with raw HTTP calls.
+const String generatedDartUsagePaginationGapReason =
+    'The generated Dart transport cloudrouter_app_sdk cannot express usage pagination yet: '
+    'usageLogsList() takes no page parameters. Regenerate the Dart SDK with query support '
+    'before enabling additional pages.';
+
 /// Console request and token usage records.
 ///
 /// The console ports are injected by root bootstrap; this service maps records
@@ -13,27 +25,20 @@ class ConsoleUsageService {
 
   final CloudRouterConsolePorts ports;
 
+  /// Loads the first usage page.
   Future<ConsoleUsagePage> load() async {
-    final payload = await ports.listUsageLogs();
-    return projectConsoleUsagePage(payload);
+    return toConsoleUsagePage(await ports.listUsageLogs(), page: 1, pageSize: pageSize);
   }
-}
 
-ConsoleUsagePage projectConsoleUsagePage(Object? payload) {
-  final items = <ConsoleUsageItem>[];
-  final records = payload is Map ? payload['records'] : null;
-  if (records is List) {
-    var index = 0;
-    for (final record in records) {
-      items.add(
-        ConsoleUsageItem(
-          id: readConsoleUsageString(record, 'id', index.toString()),
-          label: readConsoleUsageString(record, 'name', ''),
-          value: readConsoleUsageString(record, 'status', ''),
-        ),
-      );
-      index += 1;
+  /// Loads a later page; throws [UnsupportedError] until the Dart SDK is
+  /// regenerated with pagination parameters.
+  Future<ConsoleUsagePage> loadPage(int page) async {
+    if (page > 1) {
+      throw UnsupportedError(generatedDartUsagePaginationGapReason);
     }
+    return load();
   }
-  return ConsoleUsagePage(items: items, hasMore: false);
+
+  /// Bounded server page size; additional pages append through "load more".
+  static const int pageSize = 20;
 }

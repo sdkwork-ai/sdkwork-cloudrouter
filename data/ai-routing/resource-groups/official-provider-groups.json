@@ -512,7 +512,7 @@
       "groupName": "Official DeepSeek Full API",
       "groupType": "api_group",
       "selectionMode": "all",
-      "description": "DeepSeek official account resources. This group declares only the `vendor.deepseek` resource: the vendor ships no vendor-native api_endpoint in the bundled catalog yet, so its models are served through the protocol-coherent generic surface (openai_compatible / vendor_native) the seed already grants to the default account group. Vendor-native endpoints are added here when they land.",
+      "description": "DeepSeek official account resources: chat completions, Anthropic Messages and the standalone web tools (POST /v1/tools/search, POST /v1/tools/fetch). Other model traffic is served through the protocol-coherent generic surface (openai_compatible / vendor_native) the seed already grants to the default account group.",
       "sortOrder": 215,
       "items": [
         {
@@ -527,6 +527,14 @@
         {
           "itemType": "resource",
           "resourceCode": "api.deepseek.anthropic_messages"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.deepseek.web_search"
+        },
+        {
+          "itemType": "resource",
+          "resourceCode": "api.deepseek.web_fetch"
         }
       ]
     },

@@ -417,6 +417,42 @@
         "http"
       ],
       "sortOrder": 350
+    },
+    {
+      "resourceCode": "api.deepseek.web_search",
+      "resourceType": "api_endpoint",
+      "displayName": "DeepSeek Web Search",
+      "vendorCode": "deepseek",
+      "modalityCode": "network",
+      "apiCode": "deepseek.web_search",
+      "method": "POST",
+      "pathTemplate": "/v1/tools/search",
+      "capability": "network",
+      "capabilities": [
+        "network",
+        "http",
+        "search",
+        "retrieval"
+      ],
+      "sortOrder": 360
+    },
+    {
+      "resourceCode": "api.deepseek.web_fetch",
+      "resourceType": "api_endpoint",
+      "displayName": "DeepSeek Web Fetch",
+      "vendorCode": "deepseek",
+      "modalityCode": "network",
+      "apiCode": "deepseek.web_fetch",
+      "method": "POST",
+      "pathTemplate": "/v1/tools/fetch",
+      "capability": "network",
+      "capabilities": [
+        "network",
+        "http",
+        "fetch",
+        "retrieval"
+      ],
+      "sortOrder": 365
     }
   ]
 }

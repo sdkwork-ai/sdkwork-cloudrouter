@@ -151,7 +151,14 @@ jobs:
       format: ${{ github.event.inputs.format || 'all' }}
       publish_release: true
       upload_artifact: true
-      deploy: ${{ github.event.inputs.deploy == 'true' || github.event_name == 'release' }}
+      # Deployment is opt-in only. `sdkwork.workflow.json` declares no
+      # deployment environments, and the framework's plan job aborts the whole
+      # package matrix with "Deployment was requested but no deployment matched
+      # the selected package matrix" when `deploy` is true and the deployment
+      # matrix is empty. Publishing a GitHub release used to imply `deploy`,
+      # which is why every release-triggered run failed before a single package
+      # job started. Flip this back only after deployment environments exist.
+      deploy: ${{ github.event.inputs.deploy == 'true' }}
       retention_days: 30
       framework_ref: 2121cc5f1385e8e561171d01fbb71f11adbda187
       dependency_refs_json: >-

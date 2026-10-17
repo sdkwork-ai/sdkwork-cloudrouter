@@ -869,6 +869,36 @@ const BUILTIN_AI_ROUTE_TAXONOMY: &[AiRouteTaxonomyEntry] = &[
         RoutingCapability::Chat,
         BillingMeter::LlmInputToken,
     ),
+    // DeepSeek's standalone web tools, published on the `/v1` open-api ingress
+    // (`POST /v1/tools/search`, `POST /v1/tools/fetch`) and answered by
+    // DeepSeek's own search engine and page extractor.
+    //
+    // `account` is the honest shape: the caller sends no model, the vendor has
+    // no model dimension for these APIs, and the upstream call is a plain
+    // request/response. `BillingMeter::ApiRequest` matches DeepSeek's own
+    // billing rule — 5 CNY per 1,000 **successful requests**, independent of
+    // `count` and of the number of returned results — so the quantity is the
+    // fixed request unit rather than a response-derived result count (which is
+    // what `WebSearchCall` would meter and what DeepSeek explicitly does not
+    // charge).
+    //
+    // Both routes live under the `deepseek` supplier: the search engine and the
+    // page extractor are DeepSeek-hosted, so an account of any other supplier
+    // cannot serve them. The default `official.deepseek.full` account group
+    // grants both resources, and the classifier arms in
+    // `openai_classifier::classify_openai_spec` name exactly these api codes.
+    account(
+        "deepseek.web_search",
+        "deepseek.web_search",
+        RoutingCapability::Network,
+        BillingMeter::ApiRequest,
+    ),
+    account(
+        "deepseek.web_fetch",
+        "deepseek.web_fetch",
+        RoutingCapability::Network,
+        BillingMeter::ApiRequest,
+    ),
     model(
         "luma_ai.video_generation",
         "luma_ai.video_generation",

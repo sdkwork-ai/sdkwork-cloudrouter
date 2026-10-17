@@ -105,11 +105,11 @@ export function ConsoleApiKeysScreen({ ports, locale, labels }: ConsoleApiKeysSc
   return (
     <div className="space-y-3">
       {createdSecret && (
-        <p className="break-all rounded-md border border-amber-400/40 bg-amber-400/10 p-2 text-[11px] text-amber-100">
+        <p className="break-all border-y border-amber-400/40 bg-amber-400/10 px-[0.9rem] py-3 text-[11px] text-amber-100">
           {labels.createdOnce} <span className="font-mono">{createdSecret}</span>
         </p>
       )}
-      {error && <p className="text-[11px] text-red-300">{error}</p>}
+      {error && <p className="px-[0.9rem] py-2 text-[11px] text-red-300">{error}</p>}
       {loading ? (
         <p className="py-6 text-center text-xs text-gray-400">{labels.loading}</p>
       ) : keys.length === 0 ? (

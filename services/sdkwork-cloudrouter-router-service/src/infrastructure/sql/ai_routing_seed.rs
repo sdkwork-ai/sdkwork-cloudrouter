@@ -104,7 +104,15 @@ const DEFAULT_MIXED_ACCOUNT_GROUP_CODE: &str = crate::domain::DEFAULT_ACCOUNT_GR
 /// entitlement, so every Jev request would answer 50201 even though the
 /// resource, the taxonomy route and both classifier arms are present in the
 /// binary — which is exactly the state the fingerprint bump exists to clear.
-const DEFAULT_ADMIN_ROUTING_TOPOLOGY_SEED_SOURCE: &str = "default-admin-routing-topology-seed.v13|vendor-default-accounts|default-group|default-mixed-group-vendor-skeleton|default-relay-suppliers|official.openai.full|openai|official|openai_compatible|https://api.openai.com/v1|vendor-modality-groups|i18n-zh-en|price_first|prepay|anthropic-messages-multi-vendor|bytedance-ark-media-split|relay-media-vendor-groups|typesafe-system-one";
+/// `v14` adds `deepseek-web-tools`: DeepSeek's standalone web search and page
+/// fetch APIs (`POST /v1/tools/search`, `POST /v1/tools/fetch`) become seeded
+/// `api_endpoint` resources `api.deepseek.web_search` /
+/// `api.deepseek.web_fetch`, granted to `official.deepseek.full` beside the
+/// existing chat and Anthropic Messages endpoints. A database seeded before it
+/// has the resources, the group grant and therefore the account route missing,
+/// so both operations answer 50201 even though the classifier arms, the
+/// taxonomy routes and the open-api contract are present in the binary.
+const DEFAULT_ADMIN_ROUTING_TOPOLOGY_SEED_SOURCE: &str = "default-admin-routing-topology-seed.v14|vendor-default-accounts|default-group|default-mixed-group-vendor-skeleton|default-relay-suppliers|official.openai.full|openai|official|openai_compatible|https://api.openai.com/v1|vendor-modality-groups|i18n-zh-en|price_first|prepay|anthropic-messages-multi-vendor|bytedance-ark-media-split|relay-media-vendor-groups|typesafe-system-one|deepseek-web-tools";
 
 /// Environment values for which the bundled vendor default accounts are seeded
 /// in the *enabled* state. Everywhere else (production and any unrecognised

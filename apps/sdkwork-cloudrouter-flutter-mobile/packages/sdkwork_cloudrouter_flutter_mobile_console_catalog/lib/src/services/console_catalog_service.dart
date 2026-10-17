@@ -13,27 +13,17 @@ class ConsoleCatalogService {
 
   final CloudRouterConsolePorts ports;
 
-  Future<ConsoleCatalogPage> load() async {
-    final payload = await ports.listCatalog();
-    return projectConsoleCatalogPage(payload);
+  /// Loads the first catalog page.
+  Future<ConsoleCatalogPage> load() {
+    return loadPage(1);
   }
-}
 
-ConsoleCatalogPage projectConsoleCatalogPage(Object? payload) {
-  final items = <ConsoleCatalogItem>[];
-  final records = payload is Map ? payload['records'] : null;
-  if (records is List) {
-    var index = 0;
-    for (final record in records) {
-      items.add(
-        ConsoleCatalogItem(
-          id: readConsoleCatalogString(record, 'id', index.toString()),
-          label: readConsoleCatalogString(record, 'name', ''),
-          value: readConsoleCatalogString(record, 'status', ''),
-        ),
-      );
-      index += 1;
-    }
+  /// Loads a catalog page through the generated paginated transport.
+  Future<ConsoleCatalogPage> loadPage(int page) async {
+    final payload = await ports.listCatalog(page, pageSize);
+    return toConsoleCatalogPage(payload, page: page, pageSize: pageSize);
   }
-  return ConsoleCatalogPage(items: items, hasMore: false);
+
+  /// Bounded server page size; additional pages append through "load more".
+  static const int pageSize = 20;
 }

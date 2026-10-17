@@ -2,6 +2,8 @@
 
 :root {
   color-scheme: dark;
+  /* Bottom tab bar height; the canvas reserves it plus the safe-area inset. */
+  --cr-tabbar-height: 3.5rem;
 }
 
 html,
@@ -21,7 +23,29 @@ body {
   overscroll-behavior-y: none;
 }
 
-/* Safe area for iOS bottom tab bar */
-.pb-safe {
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
+/*
+ * Scroll containment per APP_MOBILE_REACT_UI_SPEC.md section 5: document-level
+ * scrolling is disabled, the app canvas (`.cr-canvas`) is the only scroll
+ * container, its scrollbar is visually hidden, and it carries bottom padding
+ * equal to the tab-bar height plus the safe-area inset so the last content row
+ * clears the fixed tab bar.
+ */
+html,
+body,
+#root {
+  overflow: hidden;
+}
+
+.cr-canvas {
+  scrollbar-width: none;
+  padding-bottom: calc(var(--cr-tabbar-height) + env(safe-area-inset-bottom, 0px));
+}
+
+.cr-canvas::-webkit-scrollbar {
+  display: none;
+}
+
+/* The fixed tab bar keeps the safe-area inset inside its own height. */
+.cr-tabbar {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }

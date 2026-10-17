@@ -52,6 +52,19 @@ const PACKAGE_BY_CAPABILITY_ID = {
   'console-catalog': 'sdkwork-cloudrouter-mp-console-catalog',
 };
 
+/**
+ * Canonical console tab order, read from the shared contract authority instead
+ * of restated here, so the tab bar cannot silently drift from
+ * `CLOUDROUTER_CONSOLE_ROUTE_ORDER`.
+ */
+const routesSource = fs.readFileSync(
+  path.join(REPO, 'apps/sdkwork-cloudrouter-common/packages/sdkwork-cloudrouter-contracts/src/routes.ts'),
+  'utf8',
+);
+const consoleRouteOrder = [...routesSource.matchAll(/CLOUDROUTER_CONSOLE_ROUTE_ORDER = \[([^\]]+)\]/gu)]
+  .map((match) => [...match[1].matchAll(/'([^']+)'/gu)].map((key) => key[1]))
+  .at(0);
+
 describe('cloudrouter mini program application root', () => {
   it('declares the mini program runtime identity', () => {
     assert.equal(manifest.app.key, 'sdkwork-cloudrouter-mini-program');
@@ -131,6 +144,48 @@ describe('cloudrouter mini program application root', () => {
         `${capabilityId} package declares its page path`,
       );
     }
+  });
+
+  it('declares the console tab bar with outline/filled icon pairs', () => {
+    assert.ok(Array.isArray(consoleRouteOrder) && consoleRouteOrder.length === 4);
+    const tabBar = appJson.tabBar;
+    assert.equal(tabBar.list.length, consoleRouteOrder.length);
+    // The tab sequence is the canonical route order; only the page path and the
+    // icon pair are mini-program specific.
+    assert.deepEqual(
+      tabBar.list.map((entry) => entry.pagePath),
+      consoleRouteOrder.map((key) => `pages/${key === 'apiKeys' ? 'api-keys' : key}/index`),
+    );
+    const iconFiles = new Set();
+    for (const entry of tabBar.list) {
+      assert.ok(entry.iconPath, `${entry.pagePath} declares iconPath`);
+      assert.ok(entry.selectedIconPath, `${entry.pagePath} declares selectedIconPath`);
+      assert.notEqual(
+        entry.iconPath,
+        entry.selectedIconPath,
+        `${entry.pagePath} must ship an outline/filled pair, not one icon twice`,
+      );
+      for (const iconPath of [entry.iconPath, entry.selectedIconPath]) {
+        const absolute = path.join(ROOT, 'src', iconPath);
+        assert.ok(fs.existsSync(absolute), `${iconPath} exists`);
+        iconFiles.add(iconPath);
+      }
+    }
+    // One distinct pair per tab: no glyph may be shared between two tabs.
+    assert.equal(iconFiles.size, consoleRouteOrder.length * 2);
+    // The pair colors are the shared glyph ramp, not a color-only swap.
+    assert.equal(tabBar.color, '#94a3b8');
+    assert.equal(tabBar.selectedColor, '#38bdf8');
+    assert.equal(tabBar.borderStyle, 'black');
+  });
+
+  it('derives the shell tab bar from the shared console tab descriptors', () => {
+    const navigation = readText('packages/sdkwork-cloudrouter-mp-shell/src/navigation/consoleNavigation.ts');
+    assert.ok(navigation.includes('CLOUDROUTER_CONSOLE_TABS'), 'tab bar derives from the tab authority');
+    for (const glyph of ['dashboard', 'receipt', 'key', 'barChart']) {
+      assert.ok(navigation.includes(`${glyph}: {`), `ICON_PATHS covers the ${glyph} glyph`);
+    }
+    assert.ok(!navigation.includes('/sign-in'), 'the sign-in route is not a tab');
   });
 
   it('materializes every deployment profile into config/mini-program/', () => {

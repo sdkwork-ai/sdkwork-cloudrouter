@@ -5,5 +5,6 @@
 - [Partner Join (伙伴计划) marketing module implementation plan](./PLAN-2026-0003-partner-join.md)
 - [Team account billing design and implementation plan](./PLAN-2026-0004-team-account-billing.md)
 - [Console agent management functional design and implementation plan](./PLAN-2026-0005-console-agent-management.md)
+- [Mobile console tabbar planning and three-surface completion implementation plan](./PLAN-2026-0006-mobile-console-tabbar.md)
 
 See `DOCUMENTATION_SPEC.md` section 2.

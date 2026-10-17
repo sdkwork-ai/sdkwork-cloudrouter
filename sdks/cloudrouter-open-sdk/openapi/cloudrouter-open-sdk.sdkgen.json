@@ -1037,6 +1037,201 @@
         },
         "type": "object"
       },
+      "DeepSeekWebFetchRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional deep seek web fetch request values using the provider json value module."
+        },
+        "description": "DeepSeek-compatible request to fetch a single web page as Markdown.",
+        "properties": {
+          "url": {
+            "description": "Absolute HTTP or HTTPS URL to fetch. Must contain a host, must not carry a username or password, and is limited to 8192 characters.",
+            "format": "uri",
+            "maxLength": 8192,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "type": "object"
+      },
+      "DeepSeekWebFetchResponse": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional deep seek web fetch response values using the provider json value module."
+        },
+        "description": "DeepSeek-compatible fetched page: title plus Markdown body.",
+        "properties": {
+          "content": {
+            "description": "Extracted page body rendered as Markdown.",
+            "type": "string"
+          },
+          "title": {
+            "description": "Page title; an empty string when the page declares none.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "content"
+        ],
+        "type": "object"
+      },
+      "DeepSeekWebSearchRequest": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional deep seek web search request values using the provider json value module."
+        },
+        "description": "DeepSeek-compatible web search request.",
+        "properties": {
+          "count": {
+            "default": 10,
+            "description": "Number of results to return; does not change the per-request price.",
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "localization": {
+            "default": "",
+            "description": "Optional IP address used to prefer localized search results.",
+            "type": "string"
+          },
+          "need_content": {
+            "default": false,
+            "description": "Whether to return full page content in each result's content field. When false, content is always an empty string.",
+            "type": "boolean"
+          },
+          "ori_question": {
+            "description": "The user's original question that triggered the search, used to improve query understanding. A null value is treated as absent.",
+            "maxLength": 128,
+            "minLength": 1,
+            "nullable": true,
+            "type": "string"
+          },
+          "query": {
+            "description": "Search query of 1 to 128 Unicode characters, not all whitespace. Supports site:, -site:, -term, \"exact phrase\", lang:, after: and before: operators, which are forwarded unchanged.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "DeepSeekWebSearchResponse": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional deep seek web search response values using the provider json value module."
+        },
+        "description": "DeepSeek-compatible web search response.",
+        "properties": {
+          "results": {
+            "description": "Ranked search results; empty when the search matched nothing.",
+            "items": {
+              "$ref": "#/components/schemas/DeepSeekWebSearchResult"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "results"
+        ],
+        "type": "object"
+      },
+      "DeepSeekWebSearchResult": {
+        "additionalProperties": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/ProviderJsonValue"
+            }
+          ],
+          "description": "Additional deep seek web search result values using the provider json value module."
+        },
+        "description": "One ranked DeepSeek web search result.",
+        "properties": {
+          "authority": {
+            "description": "Page authority from 0 to 4, where -1 means unknown.",
+            "maximum": 4,
+            "minimum": -1,
+            "type": "integer"
+          },
+          "content": {
+            "description": "Full page content when need_content is true, otherwise empty.",
+            "type": "string"
+          },
+          "date": {
+            "description": "Publication time in UTC RFC 3339 format, or null when unknown.",
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "rerank_score": {
+            "description": "Relevance score from 0 to 3 combining relevance, authority and freshness; 1.5 or above is considered high quality.",
+            "maximum": 3,
+            "minimum": 0,
+            "type": "number"
+          },
+          "site_icon": {
+            "description": "Site icon URL, or null when unavailable.",
+            "nullable": true,
+            "type": "string"
+          },
+          "site_name": {
+            "description": "Site name, or null when unavailable.",
+            "nullable": true,
+            "type": "string"
+          },
+          "snippet": {
+            "description": "Short query-relevant excerpt intended for display.",
+            "type": "string"
+          },
+          "summary": {
+            "description": "Longer query-relevant summary intended for model consumption.",
+            "type": "string"
+          },
+          "title": {
+            "description": "Result title.",
+            "type": "string"
+          },
+          "url": {
+            "description": "Result URL.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rerank_score",
+          "title",
+          "url",
+          "snippet",
+          "summary",
+          "content",
+          "site_name",
+          "site_icon",
+          "date",
+          "authority"
+        ],
+        "type": "object"
+      },
       "DeleteResult": {
         "additionalProperties": false,
         "description": "Delete result schema exposed by Cloud Router.",
@@ -13538,7 +13733,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-external-protocol-id": "anthropic-messages",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Uploads an Anthropic file using the configured Anthropic provider account.",
@@ -13629,7 +13829,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-external-protocol-id": "anthropic-messages",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/anthropic/v1/files/{file_id}": {
@@ -13721,7 +13926,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-external-protocol-id": "anthropic-messages",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "get": {
         "description": "Retrieves an Anthropic file using the configured Anthropic provider account.",
@@ -13811,7 +14021,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-external-protocol-id": "anthropic-messages",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/anthropic/v1/files/{file_id}/content": {
@@ -13904,7 +14119,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-external-protocol-id": "anthropic-messages",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/anthropic/v1/messages": {
@@ -13997,7 +14217,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-external-protocol-id": "anthropic-messages",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/anthropic/v1/messages/batches": {
@@ -14109,7 +14334,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-external-protocol-id": "anthropic-messages",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Creates an Anthropic message batch using the configured Anthropic provider account.",
@@ -14200,7 +14430,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-external-protocol-id": "anthropic-messages",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/anthropic/v1/messages/batches/{batch_id}": {
@@ -14292,7 +14527,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-external-protocol-id": "anthropic-messages",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/anthropic/v1/messages/batches/{batch_id}/cancel": {
@@ -14384,7 +14624,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-external-protocol-id": "anthropic-messages",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/anthropic/v1/messages/count_tokens": {
@@ -14477,7 +14722,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "anthropic-messages"
+        "x-sdkwork-external-protocol-id": "anthropic-messages",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/elevenlabs/v1/sound-generation": {
@@ -14580,7 +14830,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "elevenlabs-v1"
+        "x-sdkwork-external-protocol-id": "elevenlabs-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/elevenlabs/v1/text-to-speech/{voice_id}": {
@@ -14692,7 +14947,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "elevenlabs-v1"
+        "x-sdkwork-external-protocol-id": "elevenlabs-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/google/v1beta/cachedContents": {
@@ -14795,7 +15055,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Creates Google Gemini cached content using the configured Google provider account.",
@@ -14886,7 +15151,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/google/v1beta/cachedContents/{cached_content_id}": {
@@ -14978,7 +15248,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "get": {
         "description": "Retrieves Google Gemini cached content using the configured Google provider account.",
@@ -15068,7 +15343,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/google/v1beta/files": {
@@ -15171,7 +15451,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Uploads a Google Gemini file using the configured Google provider account.",
@@ -15262,7 +15547,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/google/v1beta/files/{file_id}": {
@@ -15354,7 +15644,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "get": {
         "description": "Retrieves Google Gemini file metadata using the configured Google provider account.",
@@ -15444,7 +15739,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/google/v1beta/models/{model}/operations/{operation_id}": {
@@ -15545,7 +15845,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/google/v1beta/models/{model}:batchEmbedContents": {
@@ -15648,7 +15953,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/google/v1beta/models/{model}:countTokens": {
@@ -15751,7 +16061,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/google/v1beta/models/{model}:embedContent": {
@@ -15854,7 +16169,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/google/v1beta/models/{model}:generateContent": {
@@ -15957,7 +16277,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/google/v1beta/models/{model}:generateImages": {
@@ -16060,7 +16385,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/google/v1beta/models/{model}:generateVideos": {
@@ -16163,7 +16493,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/google/v1beta/models/{model}:streamGenerateContent": {
@@ -16266,7 +16601,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "google-gemini-v1beta"
+        "x-sdkwork-external-protocol-id": "google-gemini-v1beta",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/kling/v1/images/generations": {
@@ -16359,7 +16699,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "kling-v1"
+        "x-sdkwork-external-protocol-id": "kling-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/kling/v1/tasks/{task_id}": {
@@ -16451,7 +16796,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "kling-v1"
+        "x-sdkwork-external-protocol-id": "kling-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/kling/v1/videos/avatar": {
@@ -16544,7 +16894,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "kling-v1"
+        "x-sdkwork-external-protocol-id": "kling-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/kling/v1/videos/generations": {
@@ -16637,7 +16992,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "kling-v1"
+        "x-sdkwork-external-protocol-id": "kling-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/kling/v1/videos/generations/{task_id}": {
@@ -16729,7 +17089,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "kling-v1"
+        "x-sdkwork-external-protocol-id": "kling-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/kling/v1/videos/motion-control": {
@@ -16822,7 +17187,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "kling-v1"
+        "x-sdkwork-external-protocol-id": "kling-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/midjourney/v1/images/generations": {
@@ -16915,7 +17285,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "midjourney-v1"
+        "x-sdkwork-external-protocol-id": "midjourney-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/midjourney/v1/images/generations/{task_id}": {
@@ -17007,7 +17382,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "midjourney-v1"
+        "x-sdkwork-external-protocol-id": "midjourney-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/minimax/v1/music_generation": {
@@ -17100,7 +17480,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "minimax-v1"
+        "x-sdkwork-external-protocol-id": "minimax-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/nano-banana/v1/images/generations": {
@@ -17193,7 +17578,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "nano-banana-v1"
+        "x-sdkwork-external-protocol-id": "nano-banana-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/nano-banana/v1/images/generations/{task_id}": {
@@ -17285,7 +17675,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "nano-banana-v1"
+        "x-sdkwork-external-protocol-id": "nano-banana-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/suno/v1/music/generations": {
@@ -17378,7 +17773,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "suno-v1"
+        "x-sdkwork-external-protocol-id": "suno-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/suno/v1/music/generations/{task_id}": {
@@ -17470,7 +17870,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "suno-v1"
+        "x-sdkwork-external-protocol-id": "suno-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/typesafe/v1/systemone": {
@@ -17563,7 +17968,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "typesafe-v1"
+        "x-sdkwork-external-protocol-id": "typesafe-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/assistants": {
@@ -17688,7 +18098,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Creates an assistant.",
@@ -17779,7 +18194,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/assistants/{assistant_id}": {
@@ -17871,7 +18291,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "get": {
         "description": "Retrieves an assistant.",
@@ -17961,7 +18386,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Modifies an assistant.",
@@ -18062,7 +18492,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/audio/speech": {
@@ -18156,7 +18591,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/audio/transcriptions": {
@@ -18254,7 +18694,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/audio/translations": {
@@ -18352,7 +18797,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/audio/voice_consents": {
@@ -18477,7 +18927,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Creates a voice consent record when supported by the selected upstream.",
@@ -18573,7 +19028,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/audio/voice_consents/{consent_id}": {
@@ -18665,7 +19125,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "get": {
         "description": "Retrieves a voice consent record when supported by the selected upstream.",
@@ -18755,7 +19220,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Updates a voice consent record when supported by the selected upstream.",
@@ -18856,7 +19326,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/audio/voices": {
@@ -18981,7 +19456,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Creates a voice when supported by the selected upstream.",
@@ -19077,7 +19557,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/audio/voices/{voice_id}": {
@@ -19169,7 +19654,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/batches": {
@@ -19294,7 +19784,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Creates a batch job.",
@@ -19385,7 +19880,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/batches/{batch_id}": {
@@ -19477,7 +19977,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/batches/{batch_id}/cancel": {
@@ -19569,7 +20074,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/chat/completions": {
@@ -19712,7 +20222,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Creates a chat completion through an OpenAI-compatible chat request.",
@@ -19803,7 +20318,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/chat/completions/{completion_id}": {
@@ -19895,7 +20415,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "get": {
         "description": "Retrieves a stored chat completion when the selected upstream supports retrieval.",
@@ -19985,7 +20510,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Modifies stored chat completion metadata when supported by the selected upstream.",
@@ -20086,7 +20616,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/chat/completions/{completion_id}/messages": {
@@ -20220,7 +20755,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/completions": {
@@ -20313,7 +20853,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/containers": {
@@ -20438,7 +20983,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Creates a container for tool-backed execution.",
@@ -20529,7 +21079,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/containers/{container_id}": {
@@ -20621,7 +21176,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "get": {
         "description": "Retrieves a container.",
@@ -20711,7 +21271,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/containers/{container_id}/files": {
@@ -20845,7 +21410,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Creates or uploads a container file.",
@@ -20946,7 +21516,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/containers/{container_id}/files/{file_id}": {
@@ -21047,7 +21622,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "get": {
         "description": "Retrieves container file metadata.",
@@ -21146,7 +21726,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/containers/{container_id}/files/{file_id}/content": {
@@ -21248,7 +21833,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/conversations": {
@@ -21373,7 +21963,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Creates a conversation.",
@@ -21464,7 +22059,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/conversations/{conversation_id}": {
@@ -21556,7 +22156,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "get": {
         "description": "Retrieves a conversation.",
@@ -21646,7 +22251,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Modifies a conversation.",
@@ -21747,7 +22357,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/conversations/{conversation_id}/items": {
@@ -21881,7 +22496,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Creates an item in a conversation.",
@@ -21982,7 +22602,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/conversations/{conversation_id}/items/{item_id}": {
@@ -22083,7 +22708,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "get": {
         "description": "Retrieves a conversation item.",
@@ -22182,7 +22812,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/embeddings": {
@@ -22275,7 +22910,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/files": {
@@ -22400,7 +23040,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Uploads a file for OpenAI-compatible file-backed APIs.",
@@ -22491,7 +23136,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/files/{file_id}": {
@@ -22583,7 +23233,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "get": {
         "description": "Retrieves file metadata.",
@@ -22673,7 +23328,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/files/{file_id}/content": {
@@ -22766,7 +23426,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/images/edits": {
@@ -22864,7 +23529,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/images/generations": {
@@ -22957,7 +23627,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/images/variations": {
@@ -23055,7 +23730,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/models": {
@@ -23137,7 +23817,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/models/{model}": {
@@ -23229,7 +23914,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/moderations": {
@@ -23322,7 +24012,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/realtime/calls": {
@@ -23420,7 +24115,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/realtime/calls/{call_id}/accept": {
@@ -23523,7 +24223,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/realtime/calls/{call_id}/hangup": {
@@ -23626,7 +24331,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/realtime/calls/{call_id}/refer": {
@@ -23729,7 +24439,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/realtime/calls/{call_id}/reject": {
@@ -23832,7 +24547,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/realtime/client_secrets": {
@@ -23925,7 +24645,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/realtime/sessions": {
@@ -24018,7 +24743,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/realtime/transcription_sessions": {
@@ -24111,7 +24841,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/realtime/translations": {
@@ -24204,7 +24939,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/responses": {
@@ -24297,7 +25037,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/responses/compact": {
@@ -24390,7 +25135,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/responses/input_tokens": {
@@ -24483,7 +25233,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/responses/{response_id}": {
@@ -24575,7 +25330,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "get": {
         "description": "Retrieves a stored response when the selected upstream supports response retrieval.",
@@ -24677,7 +25437,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/responses/{response_id}/cancel": {
@@ -24769,7 +25534,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/responses/{response_id}/input_items": {
@@ -24915,7 +25685,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/threads": {
@@ -25008,7 +25783,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/threads/runs": {
@@ -25101,7 +25881,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/threads/{thread_id}": {
@@ -25193,7 +25978,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "get": {
         "description": "Retrieves a thread.",
@@ -25283,7 +26073,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Modifies a thread.",
@@ -25384,7 +26179,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/threads/{thread_id}/messages": {
@@ -25518,7 +26318,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Creates a message in a thread.",
@@ -25619,7 +26424,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/threads/{thread_id}/messages/{message_id}": {
@@ -25720,7 +26530,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "get": {
         "description": "Retrieves a thread message.",
@@ -25819,7 +26634,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Modifies a thread message.",
@@ -25929,7 +26749,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/threads/{thread_id}/runs": {
@@ -26063,7 +26888,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Creates a run for a thread.",
@@ -26164,7 +26994,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/threads/{thread_id}/runs/{run_id}": {
@@ -26265,7 +27100,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Modifies a thread run.",
@@ -26375,7 +27215,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/threads/{thread_id}/runs/{run_id}/cancel": {
@@ -26476,7 +27321,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/threads/{thread_id}/runs/{run_id}/steps": {
@@ -26619,7 +27469,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/threads/{thread_id}/runs/{run_id}/steps/{step_id}": {
@@ -26729,7 +27584,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/threads/{thread_id}/runs/{run_id}/submit_tool_outputs": {
@@ -26841,7 +27701,348 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
+      }
+    },
+    "/v1/tools/fetch": {
+      "post": {
+        "description": "Fetches a single web page and returns its title and content as Markdown. Results depend on the target site's availability and access policy; blocked or unextractable pages answer 404.",
+        "operationId": "fetchWeb",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeepSeekWebFetchRequest"
+              }
+            }
+          },
+          "description": "DeepSeek-compatible JSON payload for the fetchWeb operation.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeepSeekWebFetchResponse"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Insufficient account balance."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "The fetch request was rejected by a safety policy."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "408": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Timed out while reading the request body."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request body exceeds the size limit."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Search or fetch QPS limit exceeded."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal server error."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "The downstream request timed out."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Fetch a web page",
+        "tags": [
+          "Tools"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
+      }
+    },
+    "/v1/tools/search": {
+      "post": {
+        "description": "Searches the live web for a query and returns structured results. Query operators such as site:, -site:, \"exact phrase\", lang:, after: and before: are forwarded unchanged to the DeepSeek search engine. Billing is per successful request, independent of count and of the number of results.",
+        "operationId": "searchWeb",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeepSeekWebSearchRequest"
+              }
+            }
+          },
+          "description": "DeepSeek-compatible JSON payload for the searchWeb operation.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeepSeekWebSearchResponse"
+                }
+              }
+            },
+            "description": "Successful response from Cloud Router or the selected upstream provider."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Invalid request."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Authentication failed."
+          },
+          "402": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Insufficient account balance."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "The fetch request was rejected by a safety policy."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Resource or route target not found."
+          },
+          "408": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Timed out while reading the request body."
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Request body exceeds the size limit."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Search or fetch QPS limit exceeded."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Internal server error."
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Route is declared but no upstream provider account is configured."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "Upstream provider relay failed."
+          },
+          "504": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAiErrorEnvelope"
+                }
+              }
+            },
+            "description": "The downstream request timed out."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Search the web",
+        "tags": [
+          "Tools"
+        ],
+        "x-sdkwork-owner": "sdkwork-cloudrouter",
+        "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
+        "x-sdkwork-wire-protocol": "external",
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/uploads": {
@@ -26934,7 +28135,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/uploads/{upload_id}/cancel": {
@@ -27026,7 +28232,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/uploads/{upload_id}/complete": {
@@ -27129,7 +28340,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/uploads/{upload_id}/parts": {
@@ -27232,7 +28448,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/vector_stores": {
@@ -27357,7 +28578,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Creates a vector store.",
@@ -27448,7 +28674,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/vector_stores/{vector_store_id}": {
@@ -27540,7 +28771,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "get": {
         "description": "Retrieves a vector store.",
@@ -27630,7 +28866,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Modifies a vector store.",
@@ -27731,7 +28972,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/vector_stores/{vector_store_id}/file_batches": {
@@ -27834,7 +29080,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}": {
@@ -27935,7 +29186,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}/cancel": {
@@ -28036,7 +29292,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/vector_stores/{vector_store_id}/file_batches/{batch_id}/files": {
@@ -28179,7 +29440,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/vector_stores/{vector_store_id}/files": {
@@ -28313,7 +29579,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Adds a file to a vector store.",
@@ -28414,7 +29685,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/vector_stores/{vector_store_id}/files/{file_id}": {
@@ -28515,7 +29791,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "get": {
         "description": "Retrieves a vector store file.",
@@ -28614,7 +29895,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Modifies vector store file attributes when supported by the selected upstream.",
@@ -28724,7 +30010,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/vector_stores/{vector_store_id}/search": {
@@ -28827,7 +30118,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/videos": {
@@ -28952,7 +30248,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "post": {
         "description": "Creates a video generation task through an OpenAI-compatible video request.",
@@ -29043,7 +30344,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/videos/characters": {
@@ -29141,7 +30447,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/videos/characters/{character_id}": {
@@ -29233,7 +30544,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/videos/edits": {
@@ -29326,7 +30642,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/videos/extensions": {
@@ -29419,7 +30740,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/videos/{video_id}": {
@@ -29511,7 +30837,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       },
       "get": {
         "description": "Retrieves video metadata.",
@@ -29601,7 +30932,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/videos/{video_id}/content": {
@@ -29694,7 +31030,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/v1/videos/{video_id}/remix": {
@@ -29797,7 +31138,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "openai-v1"
+        "x-sdkwork-external-protocol-id": "openai-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "gateway-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/vidu/ent/v2/img2video": {
@@ -29890,7 +31236,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "vidu-v1"
+        "x-sdkwork-external-protocol-id": "vidu-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/vidu/ent/v2/reference2image": {
@@ -29983,7 +31334,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "vidu-v1"
+        "x-sdkwork-external-protocol-id": "vidu-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/vidu/ent/v2/reference2video": {
@@ -30076,7 +31432,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "vidu-v1"
+        "x-sdkwork-external-protocol-id": "vidu-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/vidu/ent/v2/start-end2video": {
@@ -30169,7 +31530,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "vidu-v1"
+        "x-sdkwork-external-protocol-id": "vidu-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/vidu/ent/v2/tasks/{task_id}/creations": {
@@ -30261,7 +31627,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "vidu-v1"
+        "x-sdkwork-external-protocol-id": "vidu-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/vidu/ent/v2/template": {
@@ -30354,7 +31725,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "vidu-v1"
+        "x-sdkwork-external-protocol-id": "vidu-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/vidu/ent/v2/text2video": {
@@ -30447,7 +31823,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "vidu-v1"
+        "x-sdkwork-external-protocol-id": "vidu-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/volcengine/api/v3/audio/speech": {
@@ -30541,7 +31922,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "volcengine-v1"
+        "x-sdkwork-external-protocol-id": "volcengine-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/volcengine/api/v3/contents/generations/tasks": {
@@ -30634,7 +32020,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "volcengine-v1"
+        "x-sdkwork-external-protocol-id": "volcengine-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/volcengine/api/v3/contents/generations/tasks/{task_id}": {
@@ -30726,7 +32117,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "volcengine-v1"
+        "x-sdkwork-external-protocol-id": "volcengine-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     },
     "/volcengine/api/v3/images/generations": {
@@ -30819,7 +32215,12 @@
         "x-sdkwork-owner": "sdkwork-cloudrouter",
         "x-sdkwork-api-authority": "sdkwork-cloudrouter.ai",
         "x-sdkwork-wire-protocol": "external",
-        "x-sdkwork-external-protocol-id": "volcengine-v1"
+        "x-sdkwork-external-protocol-id": "volcengine-v1",
+        "x-sdkwork-request-context": "WebRequestContext",
+        "x-sdkwork-api-surface": "open-api",
+        "x-sdkwork-source-route-crate": "sdkwork-routes-cloudrouter-open-api",
+        "x-sdkwork-auth-mode": "api-key-or-dual-token",
+        "x-sdkwork-required-surface": "organizationMember"
       }
     }
   },
@@ -30898,6 +32299,10 @@
     {
       "description": "OpenAI-compatible moderation API.",
       "name": "Moderations"
+    },
+    {
+      "description": "DeepSeek-compatible web search and page fetch tools exposed through Cloud Router routing.",
+      "name": "Tools"
     },
     {
       "description": "OpenAI-compatible multipart upload APIs.",

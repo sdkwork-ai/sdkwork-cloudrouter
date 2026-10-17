@@ -32,7 +32,9 @@ CloudRouterAppSdkClients createCloudRouterAppSdkClients({
 /// Validates that the configured value is an absolute HTTP(S) URL carrying the
 /// app API prefix exactly once.
 String normalizeCloudRouterAppApiBaseUrl(String value) {
-  final normalized = value.trim().replaceFirst(RegExp(r'/+'), '');
+  // Only leading slashes are stripped: a bare `/+` would also eat the `//`
+  // after the scheme and silently destroy the URL.
+  final normalized = value.trim().replaceFirst(RegExp(r'^/+'), '');
   final uri = Uri.tryParse(normalized);
   if (uri == null ||
       !uri.hasScheme ||
@@ -68,5 +70,5 @@ String resolveCloudRouterTransportBaseUrl(String appApiBaseUrl) {
   return uri
       .replace(path: transportPath)
       .toString()
-      .replaceFirst(RegExp(r'/+'), '');
+      .replaceFirst(RegExp(r'^/+'), '');
 }

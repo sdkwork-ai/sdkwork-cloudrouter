@@ -19,6 +19,15 @@ rewritten on every release so it never accumulates prior versions.
   collision while leaving the derivation truncated.
 - Supersedes `v0.4.10`, which carries the complete `Directory` identifier fix but
   inherits the unrepaired CI gate described below.
+- Materializes the fifty federated SDKWork dependency repositories inside
+  `Verify Application`, and stops the packaging plan from aborting the whole
+  package matrix when no deployment environment is selected. Together these are
+  what let the twenty-two packaging targets run at all: before this release the
+  `v0.4.10` packaging run produced zero packages, because its plan job failed
+  before a single package job started.
+- Ships the DeepSeek-compatible web tools relay on the `/v1` ingress, and the
+  mobile console tab bar alignment across the mini-program, H5, and Flutter
+  surfaces.
 
 ### Delivered
 
@@ -52,6 +61,27 @@ rewritten on every release so it never accumulates prior versions.
 
 #### CI gate repair
 
+- Materialized the federated dependency repositories in every `Verify
+  Application` job. The Cargo workspace and the pnpm workspace both address
+  their SDKWork dependencies by relative path (`../sdkwork-log/crates/...`,
+  `../sdkwork-iam/apps/...`), but the job only ran `actions/checkout` on this
+  repository, so none of those directories existed on the runner. `cargo
+  metadata` failed to read `../sdkwork-log/crates/sdkwork-api-log-assembly/Cargo.toml`,
+  which failed `format:rust:check` and `cargo audit`; the Playwright `e2e`
+  webServer failed for the same reason on
+  `../sdkwork-iam/scripts/dev/create-dev-bootstrap-access-token-env.mjs`. Each
+  job now checks out the workflow framework, asks it for the dependency
+  checkout plan derived from `sdkwork.workflow.json`, and runs the framework's
+  `checkout-dependencies` action. `sdkwork-agents` records its `apps/` tree as a
+  submodule whose URL is SSH, which an HTTPS-only runner cannot initialize, so
+  `git@github.com:` is rewritten to `https://github.com/` first. The shared
+  sequence lives in `.github/actions/materialize-dependencies/action.yml`.
+- Made deployment strictly opt-in in `package.yml`. `deploy` became true for
+  every `release`-triggered run, while `sdkwork.workflow.json` declares no
+  deployment environments, so the plan job aborted with `Deployment was
+  requested but no deployment matched the selected package matrix` and all
+  twenty-two package jobs were skipped. `deploy` now follows only the explicit
+  `workflow_dispatch` input.
 - Repointed the supply-chain SBOM step from `anchore/syft-action` to
   `anchore/sbom-action`. The old repository now returns 404, so the job failed
   during `Set up job` before any of its own steps ran — the job had been
@@ -72,6 +102,28 @@ rewritten on every release so it never accumulates prior versions.
   fingerprint had drifted from `verify.yml` and from the current install-package
   target count.
 
+#### Runtime
+
+- Added the DeepSeek-compatible web tools relay on the `/v1` ingress:
+  `POST /v1/tools/search` and `POST /v1/tools/fetch`. Both mirror DeepSeek's
+  published request and response schemas and its error statuses
+  (400/401/402/403/404/408/413/429/500/504), route through the relay chain to a
+  `deepseek` upstream account, and bill per successful request as `api_request`.
+  The taxonomy, the routing seed, the group grant, the single-arm classifier,
+  the catalog projection, and the ledger entry were added together, so the
+  operation is reachable end to end rather than only declared.
+
+#### Mobile console surfaces
+
+- Aligned the console tab bar across the mini-program, H5, and Flutter surfaces
+  on the single authority `CLOUDROUTER_CONSOLE_TABS`, instead of each surface
+  hand-writing its own order. All three now derive their shell tabs from the
+  contract.
+- Gave every tab a filled/outline icon pair sharing one glyph, so the selected
+  state is no longer carried by colour alone, and generated the eight
+  mini-program PNG assets from `scripts/generate-tabbar-icons.py` rather than
+  committing them by hand.
+
 ### Configuration surface (verified, unchanged)
 
 Install-time customization stays contract-driven and is enforced by
@@ -82,14 +134,6 @@ Install-time customization stays contract-driven and is enforced by
   config file path, and `SDKWORK_DATABASE_URL` in `envOverrides`. Server,
   service, and container modes default to PostgreSQL; desktop mode keeps SQLite.
 - Redis: fourteen `SDKWORK_CLOUDROUTER_REDIS_*` overrides, disabled by default.
-
-### Dependency policy (unchanged)
-
-- Local development consumes SDKWork dependencies through relative workspace
-  sibling paths.
-- Release packaging resolves every one of the fifty dependencies from its
-  repository `main` through `refInput`; no dependency is pinned to a fixed
-  branch, tag, or commit.
 
 ### Verification
 
@@ -114,15 +158,51 @@ Install-time customization stays contract-driven and is enforced by
   payload produced no collision, and only at scale did the truncated identifier
   derivation show up, as 143 directories mapping to 84 identifiers.
 - `node scripts/check-github-workflow-integration.mjs` → ok.
+- `node scripts/plan-cloud-router-install-packages.mjs --check` re-run after the
+  workflow change → 24 packages, validation passed, including the four Windows
+  lanes (`windows-x64-desktop`, `windows-x64-service`, `windows-arm64-desktop`,
+  `windows-arm64-service`).
+- `pnpm install:native:check` → every native installer build plan validated.
+- `pnpm check:package-content` → PASS; `pnpm check:portal-dist` → PASS
+  (39 asset references resolve).
+- H5, mini-program, and shared-family contract suites → 10, 12, and 9 tests
+  passing respectively.
+- Submodules refreshed to each upstream `main` head: `external/cc-switch`
+  `968794e3` → `73f37c4b`, `external/new-api` `e2c7aa7b` → `5c31c1fa`,
+  `external/sub2api` `5253bb72` → `b0a02a33`.
+
+### Dependency policy (unchanged)
+
+- Local development consumes SDKWork dependencies through relative workspace
+  sibling paths.
+- Release packaging resolves every one of the fifty dependencies from its
+  repository `main` through `refInput`; no dependency is pinned to a fixed
+  branch, tag, or commit. No repository variable overrides any `refInput`, so
+  `sdkwork.workflow.json` resolves all fifty to `main`.
 
 ### Known non-blocking gate status
 
-`Verify Application` is red independently of packaging and does not gate the
-release. Its `verify` job fails at `pnpm format:rust:check` because the job only
-checks out this repository and never materializes the federated dependency
-repositories, so Cargo cannot load the `sdkwork-api-log-assembly` manifest;
-`e2e` fails for the same missing-dependency reason, and `security-scan` reports
-`cargo audit` warnings from transitive crates.
+`Verify Application` no longer fails for the missing-dependency reason described
+in earlier drafts of this release; that defect is fixed above. It still stops at
+`pnpm check:alignment`, which runs the standard-alignment audit in strict mode
+and exits non-zero while any P0 fact remains pending. Four P0 facts are pending
+and none of them is a regression introduced by this release:
+
+- `p0-client-local-sqlite-runtime` — the desktop target still runs against a
+  server-side database; there is no client-local SQLite runtime.
+- `p0-redis-ha-manifest` — `deployments/kubernetes/cloud-router-redis.yaml`
+  declares three replicas with Sentinel, but the runtime does not support
+  Sentinel discovery, so the deployment is not actually HA.
+- `p0-table-count-consistency` — cloud-router-owned table counts drift across
+  DDL (77), the registry (38), and `schema.yaml` (0).
+- `p0-high-traffic-table-partition` — `ai_request_trace`,
+  `ai_routing_decision_log`, and `ai_usage` are not partitioned; this is
+  deliberately blocked until the idempotency, archive-reconciliation, and
+  rollback gates in `TECH-35` pass.
+
+The blocking alignment guardian itself passes (65 passed, 0 failed, 0 blocking);
+only the strict P0 backlog fails. Packaging and release do not depend on this
+job.
 
 ### Risks / Remaining Work
 

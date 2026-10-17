@@ -7,8 +7,9 @@ import { createConsoleCatalogState, type ConsoleCatalogLabels } from './state/co
 export function createConsoleCatalogPage(
   ports: CloudRouterConsolePorts,
   labels: ConsoleCatalogLabels,
+  locale: string,
 ) {
-  const state = createConsoleCatalogState(labels);
+  const state = createConsoleCatalogState(labels, locale);
   return {
     state,
     async load(): Promise<void> {

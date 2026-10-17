@@ -369,11 +369,14 @@
         "version": "0.4.11",
         "releaseChannel": "STABLE",
         "title": "SDKWork Cloud Router 0.4.11",
-        "summary": "Windows MSI packaging green: the generated WiX identifiers are unique at real payload scale.",
-        "content": "Derives each generated WiX Directory identifier from its owning StandardDirectory tree and its own path within that tree. WiX identifiers are global to the document, so the previous truncated derivation collapsed 143 directories onto 84 identifiers and every MSI lane failed with WIX0091. Verified against a 134-file payload with 415 globally unique identifiers. Release notes cover only this version; earlier records stay archived under docs/release/.",
+        "summary": "Packaging runs end to end: the CI dependency materialization gap and the deployment gate that skipped every package job are fixed, on top of the Windows MSI identifier repair.",
+        "content": "Two CI defects prevented the 0.4.10 packaging run from producing any package at all. Verify Application never checked out the fifty federated SDKWork repositories its Cargo and pnpm workspaces address by relative path, so cargo metadata could not load ../sdkwork-log/crates/sdkwork-api-log-assembly/Cargo.toml; every job now materializes that dependency set from sdkwork.workflow.json first. The packaging plan treated every release-triggered run as a deployment request, and with no deployment environment declared it aborted the whole matrix before a single package job started; deployment is now opt-in only. On top of those: each generated WiX Directory identifier is derived from its owning StandardDirectory tree and its own path within that tree, because the previous truncated derivation collapsed 143 directories onto 84 identifiers and every MSI lane failed with WIX0091. This release also adds the DeepSeek-compatible /v1 web tools relay and aligns the console tab bar across the mini-program, H5, and Flutter surfaces. Release notes cover only this version; earlier records stay archived under docs/release/.",
         "highlights": [
-          "All five Windows MSI lanes build with unique WiX identifiers",
-          "Identifier uniqueness asserted at real payload scale, not only on small fixtures",
+          "All twenty-two packaging targets run: the plan job no longer aborts on an empty deployment matrix",
+          "Verify Application materializes all fifty federated dependencies, so cargo and e2e stop failing on missing ../sdkwork-* paths",
+          "Windows MSI lanes build with globally unique WiX identifiers, verified at 134-file payload scale",
+          "DeepSeek-compatible /v1/tools/search and /v1/tools/fetch relay, reachable end to end",
+          "Console tab bar aligned across mini-program, H5, and Flutter from one contract authority",
           "Install-time configuration stays contract-driven for ports, PostgreSQL/SQLite, and Redis"
         ],
         "packageIds": [

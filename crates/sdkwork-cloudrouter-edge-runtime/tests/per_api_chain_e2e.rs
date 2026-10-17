@@ -275,6 +275,26 @@ impl ApiCase {
 /// "the vendor is in the catalog" and "the vendor has an addressable door" are
 /// different facts.
 const API_CASES: &[ApiCase] = &[
+    // --- Web tools (DeepSeek native protocol on the /v1 ingress) ---
+    // DeepSeek's search/fetch tools are request-billed and model-less, so the
+    // probe asserts the whole chain (classifier arm -> taxonomy route -> seeded
+    // endpoint -> group grant) without a catalog model to bind to.
+    ApiCase {
+        api_code: "deepseek.web_search",
+        path: "/v1/tools/search",
+        published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
+        body: r#"{"query":"DeepSeek V4 release","count":3}"#,
+    },
+    ApiCase {
+        api_code: "deepseek.web_fetch",
+        path: "/v1/tools/fetch",
+        published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
+        body: r#"{"url":"https://example.com/"}"#,
+    },
     // --- LLM / chat ---
     ApiCase {
         api_code: "anthropic.messages",
@@ -291,6 +311,8 @@ const API_CASES: &[ApiCase] = &[
         api_code: "typesafe.systemone",
         path: "/typesafe/v1/systemone",
         published_path: "",
+        method: "POST",
+        expectation: ApiExpectation::Routable,
         body: r#"{"state":"hi","questions":{"is_urgent":{"type":"noul","instructions":"Does this convey urgency or time-sensitivity?"}}}"#,
     },
     ApiCase {

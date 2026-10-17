@@ -51,8 +51,8 @@ export function AuthGate({ authenticated, labels, brand, onSignIn, children }: A
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#141414] px-6 text-gray-100">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
+    <div className="flex min-h-screen items-center justify-center bg-[#141414] text-gray-100">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 px-[0.9rem]">
         <header className="space-y-1">
           <h1 className="text-lg font-semibold">{labels.title}</h1>
           <p className="text-[11px] text-gray-400">{labels.hint}</p>

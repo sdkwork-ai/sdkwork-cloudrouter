@@ -6,6 +6,7 @@ import {
   CLOUDROUTER_CLIENT_BOOTSTRAP_SCOPES,
   CLOUDROUTER_CONSOLE_ROUTE_ORDER,
   CLOUDROUTER_CONSOLE_ROUTES,
+  CLOUDROUTER_CONSOLE_TABS,
 } from '@sdkwork/cloudrouter-contracts';
 import {
   formatMinorUnitsAsCurrency,
@@ -36,6 +37,29 @@ describe('cloud router shared client contracts', () => {
       'cloudrouter.console.access',
       'cloudrouter.system.read',
     ]);
+  });
+
+  it('derives the console tab bar from the canonical route order', () => {
+    assert.deepEqual(
+      CLOUDROUTER_CONSOLE_TABS.map((tab) => tab.routeKey),
+      [...CLOUDROUTER_CONSOLE_ROUTE_ORDER],
+    );
+    for (const tab of CLOUDROUTER_CONSOLE_TABS) {
+      const route = CLOUDROUTER_CONSOLE_ROUTES[tab.routeKey];
+      assert.equal(tab.path, route.path);
+      assert.equal(tab.titleKey, route.titleKey);
+    }
+    // Every tab carries its own glyph: the outline/filled icon pair on each
+    // mobile root must be distinguishable, never a color-only swap.
+    const glyphs = CLOUDROUTER_CONSOLE_TABS.map((tab) => tab.glyph);
+    assert.equal(new Set(glyphs).size, glyphs.length);
+  });
+
+  it('keeps the sign-in route out of the tab bar', () => {
+    for (const tab of CLOUDROUTER_CONSOLE_TABS) {
+      assert.notEqual(tab.path, CLOUDROUTER_CONSOLE_ROUTES.signIn.path);
+      assert.notEqual(tab.titleKey, CLOUDROUTER_CONSOLE_ROUTES.signIn.titleKey);
+    }
   });
 });
 

@@ -9,6 +9,22 @@ on:
 permissions:
   contents: read
 
+# The Cargo workspace and the pnpm workspace both resolve their sibling SDKWork
+# repositories through relative paths (`../sdkwork-log/crates/...`,
+# `../sdkwork-iam/apps/...`). Those directories only exist because the local
+# workspace keeps every dependency checked out next to this repository; a bare
+# `actions/checkout` of this repository alone leaves them missing, so
+# `cargo metadata`, `pnpm install`, and the Playwright e2e webServer all fail
+# with `No such file or directory`. Every job below therefore materializes the
+# dependency set declared by `sdkwork.workflow.json` before it builds.
+#
+# Materialization mirrors the packaging workflow exactly: check out the
+# workflow framework, ask it for the dependency checkout plan, then run the
+# framework's `checkout-dependencies` composite action. `sdkwork-agents` records
+# its `apps/` tree as a submodule whose URL is SSH, which an HTTPS-only runner
+# cannot init, so `git@github.com:` is rewritten to `https://github.com/` up
+# front.
+
 jobs:
   verify:
     runs-on: ubuntu-24.04
@@ -32,7 +48,14 @@ jobs:
       CLOUDROUTER_EDGE_DEV_SMOKE_REQUIRED: "1"
       RUSTFLAGS: "-D warnings"
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout application source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Materialize SDKWork dependencies
+        uses: ./.github/actions/materialize-dependencies
 
       - uses: pnpm/action-setup@v4
         with:
@@ -118,9 +141,14 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout application source
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          submodules: recursive
+
+      - name: Materialize SDKWork dependencies
+        uses: ./.github/actions/materialize-dependencies
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -236,7 +264,14 @@ jobs:
     env:
       PLAYWRIGHT_BASE_URL: http://127.0.0.1:3901
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout application source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Materialize SDKWork dependencies
+        uses: ./.github/actions/materialize-dependencies
 
       - uses: pnpm/action-setup@v4
         with:

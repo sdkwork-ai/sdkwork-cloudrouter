@@ -773,6 +773,8 @@ const HTTP_ROUTES: &[HttpRoute] = &[
         "Assistants",
         "submitRunToolOutputs",
     ),
+    HttpRoute::api_key_or_dual_token(HttpMethod::Post, "/v1/tools/fetch", "Tools", "fetchWeb"),
+    HttpRoute::api_key_or_dual_token(HttpMethod::Post, "/v1/tools/search", "Tools", "searchWeb"),
     HttpRoute::api_key_or_dual_token(HttpMethod::Post, "/v1/uploads", "Uploads", "createUpload"),
     HttpRoute::api_key_or_dual_token(
         HttpMethod::Post,

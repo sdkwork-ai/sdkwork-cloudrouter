@@ -19,6 +19,10 @@ export interface ConsoleDashboardViewProps {
   readonly labels: ConsoleDashboardLabels;
 }
 
+/**
+ * Overview stat tiles. The section spans the viewport edge-to-edge (square
+ * corners); the tiles are inset elements inside it and may keep a radius.
+ */
 export function ConsoleDashboardView({ snapshot, locale, labels }: ConsoleDashboardViewProps) {
   const cards = [
     { id: 'requests', label: labels.requests, value: formatTokenCount(snapshot.totalRequests, locale) },
@@ -27,13 +31,18 @@ export function ConsoleDashboardView({ snapshot, locale, labels }: ConsoleDashbo
     { id: 'errorRate', label: labels.errorRate, value: formatPercent(snapshot.errorRate, locale) },
   ];
   return (
-    <div className="grid grid-cols-2 gap-3">
-      {cards.map((card) => (
-        <Panel key={card.id}>
-          <p className="text-[11px] text-gray-400">{card.label}</p>
-          <p className="mt-1 text-lg font-semibold text-white">{card.value}</p>
-        </Panel>
-      ))}
-    </div>
+    <Panel>
+      <div className="grid grid-cols-2 gap-3">
+        {cards.map((card) => (
+          <div key={card.id} className="rounded-xl bg-black/30 p-3">
+            <p className="text-[11px] text-gray-400">{card.label}</p>
+            <p className="mt-1 text-lg font-semibold text-white">{card.value}</p>
+          </div>
+        ))}
+      </div>
+      {snapshot.windowLabel && (
+        <p className="mt-3 text-[10px] text-gray-500">{snapshot.windowLabel}</p>
+      )}
+    </Panel>
   );
 }

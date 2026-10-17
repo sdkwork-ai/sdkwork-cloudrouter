@@ -1,4 +1,5 @@
 import 'package:sdkwork_cloudrouter_flutter_mobile_core/sdkwork_cloudrouter_flutter_mobile_core.dart';
+import 'package:sdkwork_cloudrouter_flutter_mobile_shell/sdkwork_cloudrouter_flutter_mobile_shell.dart';
 
 import 'host_adapters.dart';
 import 'iam_runtime.dart';
@@ -13,11 +14,15 @@ class CloudRouterFlutterRuntime {
     required this.sdkClients,
     required this.consolePorts,
     required this.session,
+    required this.routes,
   });
 
   final CloudRouterAppSdkClients sdkClients;
   final CloudRouterConsolePorts consolePorts;
   final CloudRouterSession session;
+
+  /// Assembled console route registry (canonical route ids, never HTTP paths).
+  final List<SdkworkCloudRouterRouteRegistration> routes;
 }
 
 Future<CloudRouterFlutterRuntime> bootstrap() async {
@@ -26,10 +31,12 @@ Future<CloudRouterFlutterRuntime> bootstrap() async {
   createIamRuntime(session);
   registerHostAdapters();
   final consolePorts = createCloudRouterConsolePorts(sdkClients: sdkClients);
-  createRoutes();
+  final routes = createRoutes();
+  verifyConsoleRouteAlignment(routes);
   return CloudRouterFlutterRuntime(
     sdkClients: sdkClients,
     consolePorts: consolePorts,
     session: session,
+    routes: routes,
   );
 }

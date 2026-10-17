@@ -13,27 +13,23 @@ class ConsoleApiKeysService {
 
   final CloudRouterConsolePorts ports;
 
-  Future<ConsoleApiKeysPage> load() async {
-    final payload = await ports.listApiKeys();
-    return projectConsoleApiKeysPage(payload);
+  /// Loads the API key page.
+  Future<ConsoleApiKeyPage> load() async {
+    return toConsoleApiKeyPage(await ports.listApiKeys());
   }
-}
 
-ConsoleApiKeysPage projectConsoleApiKeysPage(Object? payload) {
-  final items = <ConsoleApiKeysItem>[];
-  final records = payload is Map ? payload['records'] : null;
-  if (records is List) {
-    var index = 0;
-    for (final record in records) {
-      items.add(
-        ConsoleApiKeysItem(
-          id: readConsoleApiKeysString(record, 'id', index.toString()),
-          label: readConsoleApiKeysString(record, 'name', ''),
-          value: readConsoleApiKeysString(record, 'status', ''),
-        ),
-      );
-      index += 1;
-    }
+  /// Creates a key and returns the normalized summary plus the one-time
+  /// plaintext secret; throws [UnsupportedError] until the Dart SDK is
+  /// regenerated with request-body support (declared transport gap, never raw
+  /// HTTP). The name is captured for the future request body — the generated
+  /// transport cannot send it yet.
+  Future<({ConsoleApiKeySummary key, String? secret})> createKey(String name) async {
+    final payload = await ports.createApiKey();
+    return (key: toConsoleApiKeySummary(payload), secret: readCreatedApiKeySecret(payload));
   }
-  return ConsoleApiKeysPage(items: items, hasMore: false);
+
+  /// Revokes a key by id.
+  Future<void> revokeKey(String apiKeyId) async {
+    await ports.revokeApiKey(apiKeyId);
+  }
 }

@@ -5,22 +5,22 @@ import '../models/console_dashboard_models.dart';
 /// Sensitive state must clear on logout and account/tenant switch.
 class ConsoleDashboardState {
   const ConsoleDashboardState({
-    required this.items,
+    required this.snapshot,
     required this.loading,
     required this.errorMessage,
   });
 
-  final List<ConsoleDashboardItem> items;
+  final ConsoleDashboardSnapshot? snapshot;
   final bool loading;
   final String errorMessage;
 
   ConsoleDashboardState copyWith({
-    List<ConsoleDashboardItem>? items,
+    ConsoleDashboardSnapshot? snapshot,
     bool? loading,
     String? errorMessage,
   }) {
     return ConsoleDashboardState(
-      items: items ?? this.items,
+      snapshot: snapshot ?? this.snapshot,
       loading: loading ?? this.loading,
       errorMessage: errorMessage ?? this.errorMessage,
     );
@@ -29,7 +29,7 @@ class ConsoleDashboardState {
 
 ConsoleDashboardState initialConsoleDashboardState() {
   return const ConsoleDashboardState(
-    items: <ConsoleDashboardItem>[],
+    snapshot: null,
     loading: true,
     errorMessage: '',
   );

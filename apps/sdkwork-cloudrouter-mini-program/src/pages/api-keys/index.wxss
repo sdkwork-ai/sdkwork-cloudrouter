@@ -1,9 +1,202 @@
+/*
+ * CloudRouter console API keys (full-bleed per APP_MINI_PROGRAM_UI_SPEC §7:
+ * the create band and the list rows span the viewport edge-to-edge with square
+ * corners; each surface carries its own documented content inset).
+ */
+
 .cr-page {
+  min-height: 100%;
+  box-sizing: border-box;
+  background: #0b1220;
+  padding: 24rpx 0 48rpx;
+}
+
+.cr-secret {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  margin: 0 24rpx 20rpx;
   padding: 24rpx;
+  background: #082f49;
+  border: 1rpx solid #0ea5e9;
+  border-radius: 16rpx;
+}
+
+.cr-secret-title {
+  font-size: 22rpx;
+  color: #7dd3fc;
+}
+
+.cr-secret-value {
+  font-size: 26rpx;
+  color: #f0f9ff;
+  word-break: break-all;
+  font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+.cr-create {
+  display: flex;
+  gap: 16rpx;
+  margin: 0 24rpx 24rpx;
+}
+
+.cr-create-input {
+  flex: 1;
+  height: 76rpx;
+  padding: 0 24rpx;
+  background: #131c31;
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  color: #f1f5f9;
+}
+
+.cr-create-placeholder {
+  color: #475569;
+}
+
+.cr-create-button {
+  margin: 0;
+  padding: 0 36rpx;
+  height: 76rpx;
+  line-height: 76rpx;
+  background: #0284c7;
+  color: #f8fafc;
+  font-size: 26rpx;
+  border-radius: 12rpx;
+}
+
+.cr-create-button::after {
+  border: none;
+}
+
+.cr-create-button--hover {
+  background: #0369a1;
+}
+
+.cr-create-button[disabled] {
+  background: #1e293b;
+  color: #64748b;
+}
+
+.cr-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28rpx;
+  padding: 120rpx 48rpx;
+}
+
+.cr-state-text {
+  font-size: 26rpx;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.cr-spinner {
+  width: 52rpx;
+  height: 52rpx;
+  border: 5rpx solid #1e293b;
+  border-top-color: #38bdf8;
+  border-radius: 50%;
+  animation: cr-spin 0.9s linear infinite;
+}
+
+@keyframes cr-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cr-retry {
+  margin: 0;
+  padding: 14rpx 56rpx;
+  background: #1e293b;
+  color: #38bdf8;
+  font-size: 26rpx;
+  line-height: 1.6;
+  border-radius: 12rpx;
+}
+
+.cr-retry::after {
+  border: none;
+}
+
+.cr-retry--hover {
+  background: #334155;
+}
+
+.cr-rows {
+  display: flex;
+  flex-direction: column;
+  background: #0f172a;
 }
 
 .cr-row {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  margin-bottom: 16rpx;
+  gap: 24rpx;
+  padding: 24rpx;
+  border-bottom: 1rpx solid #1e293b;
+}
+
+.cr-row-main {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.cr-row-title {
+  font-size: 28rpx;
+  color: #f1f5f9;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cr-row-sub {
+  font-size: 22rpx;
+  color: #64748b;
+  word-break: break-all;
+}
+
+.cr-row-side {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12rpx;
+}
+
+.cr-row-status {
+  font-size: 22rpx;
+}
+
+.cr-row-status--on {
+  color: #4ade80;
+}
+
+.cr-row-status--off {
+  color: #64748b;
+}
+
+.cr-row-revoke {
+  margin: 0;
+  padding: 8rpx 28rpx;
+  background: transparent;
+  border: 1rpx solid #7f1d1d;
+  color: #fca5a5;
+  font-size: 22rpx;
+  line-height: 1.6;
+  border-radius: 10rpx;
+}
+
+.cr-row-revoke::after {
+  border: none;
+}
+
+.cr-row-revoke--hover {
+  background: #450a0a;
 }

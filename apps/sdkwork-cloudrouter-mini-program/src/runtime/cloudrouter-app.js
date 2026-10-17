@@ -67,6 +67,17 @@ var CLOUDROUTER_CONSOLE_ROUTES = {
     requiresAuthentication: true
   }
 };
+var CLOUDROUTER_CONSOLE_ROUTE_ORDER = [
+  "dashboard",
+  "usage",
+  "apiKeys",
+  "catalog"
+];
+var CLOUDROUTER_CONSOLE_TABS = CLOUDROUTER_CONSOLE_ROUTE_ORDER.map((routeKey) => {
+  const route = CLOUDROUTER_CONSOLE_ROUTES[routeKey];
+  const glyph = routeKey === "dashboard" ? "dashboard" : routeKey === "usage" ? "receipt" : routeKey === "apiKeys" ? "key" : "barChart";
+  return { routeKey, path: route.path, titleKey: route.titleKey, glyph };
+});
 var CLOUDROUTER_PC_ROUTE_ALIGNMENT = {
   signIn: ["/auth"],
   dashboard: ["/console/dashboard", "/console/gateway"],
@@ -705,10 +716,12 @@ var ENV_SUFFIXES = [
   }
 ];
 function readRuntimeEnv(key) {
-  var _a, _b, _c, _d;
-  const viteValue = (_b = (_a = globalThis["import.meta"]) == null ? void 0 : _a.env) == null ? void 0 : _b[key];
+  var _a, _b, _c, _d, _e;
+  const bridgeValue = (_a = globalThis["SDKWORK_RUNTIME_ENV"]) == null ? void 0 : _a[key];
+  if (typeof bridgeValue === "string" && bridgeValue.length > 0) return bridgeValue;
+  const viteValue = (_c = (_b = globalThis["import.meta"]) == null ? void 0 : _b.env) == null ? void 0 : _c[key];
   if (typeof viteValue === "string" && viteValue.length > 0) return viteValue;
-  const processValue = (_d = (_c = globalThis["process"]) == null ? void 0 : _c.env) == null ? void 0 : _d[key];
+  const processValue = (_e = (_d = globalThis["process"]) == null ? void 0 : _d.env) == null ? void 0 : _e[key];
   if (typeof processValue === "string" && processValue.length > 0) return processValue;
 }
 function splitBaseUrls(value) {
@@ -804,6 +817,11 @@ function resolveBaseUrl(options = {}) {
     candidate,
     ...candidateParts(candidate)
   }));
+  const relativeCandidate = parts.find((item) => item.candidate.startsWith("/") && !item.candidate.startsWith("//"));
+  if (relativeCandidate) return {
+    ...result(relativeCandidate.candidate.replace(/\/+$/u, "") || "/", "same-origin-relative"),
+    host: ""
+  };
   const exact = parts.find((item) => item.host === targetHost && item.port === targetPort && item.protocol.toLowerCase() === currentProtocol);
   if (exact) return result(normalizeCandidate(exact.candidate), "current-host-match");
   const sameHostPort = parts.find((item) => item.host === targetHost && item.port === targetPort);
@@ -932,7 +950,7 @@ function removeTrailingSlash(url) {
   }
 }
 
-// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/node_modules/.pnpm/@sdkwork_utils@0.11.0/node_modules/@sdkwork/utils/dist/runtime/random.js
+// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/sdkwork-utils/packages/sdkwork-utils-typescript/src/runtime/random.js
 function getCrypto() {
   const crypto = globalThis.crypto;
   if (!(crypto == null ? void 0 : crypto.getRandomValues)) throw new Error("Web Crypto API is not available in this environment.");
@@ -944,16 +962,20 @@ function randomBytes(length) {
   return bytes;
 }
 function randomUuid() {
+  var _a, _b;
   const crypto = getCrypto();
-  if (crypto.randomUUID) return crypto.randomUUID();
+  if (typeof crypto.randomUUID === "function") try {
+    return crypto.randomUUID.call(crypto);
+  } catch {
+  }
   const bytes = randomBytes(16);
-  bytes[6] = bytes[6] & 15 | 64;
-  bytes[8] = bytes[8] & 63 | 128;
+  bytes[6] = ((_a = bytes[6]) != null ? _a : 0) & 15 | 64;
+  bytes[8] = ((_b = bytes[8]) != null ? _b : 0) & 63 | 128;
   const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/node_modules/.pnpm/@sdkwork_utils@0.11.0/node_modules/@sdkwork/utils/dist/id.js
+// ../../../sdkwork-sdk-commons/sdkwork-sdk-common-typescript/dist/sdkwork-utils/packages/sdkwork-utils-typescript/src/id.js
 function uuid() {
   return randomUuid();
 }
@@ -3040,7 +3062,7 @@ function getCloudRouterTokenManager() {
   return tokenManager;
 }
 
-// ../../node_modules/.pnpm/@sdkwork+utils@0.11.0/node_modules/@sdkwork/utils/dist/runtime/binary.js
+// ../../../sdkwork-utils/packages/sdkwork-utils-typescript/src/runtime/binary.js
 var textEncoder = new TextEncoder();
 function toUtf8(value) {
   return textEncoder.encode(value);
@@ -3050,13 +3072,16 @@ function hexEncode(bytes) {
   let result = "";
   for (let index = 0; index < bytes.length; index += 1) {
     const byte = bytes[index];
+    if (byte === void 0) {
+      continue;
+    }
     result += HEX[byte >> 4];
     result += HEX[byte & 15];
   }
   return result;
 }
 
-// ../../node_modules/.pnpm/@sdkwork+utils@0.11.0/node_modules/@sdkwork/utils/dist/runtime/sha256.js
+// ../../../sdkwork-utils/packages/sdkwork-utils-typescript/src/runtime/sha256.js
 var K = new Uint32Array([
   1116352408,
   1899447441,
@@ -3127,16 +3152,22 @@ var BLOCK_SIZE = 64;
 function rotr(value, shift) {
   return value >>> shift | value << 32 - shift;
 }
+function readBlockU32(block, byteOffset) {
+  return block[byteOffset] << 24 | block[byteOffset + 1] << 16 | block[byteOffset + 2] << 8 | block[byteOffset + 3];
+}
 function sha256Block(state, block, offset) {
   const words = new Uint32Array(64);
   for (let index = 0; index < 16; index += 1) {
-    const start = offset + index * 4;
-    words[index] = block[start] << 24 | block[start + 1] << 16 | block[start + 2] << 8 | block[start + 3];
+    words[index] = readBlockU32(block, offset + index * 4);
   }
   for (let index = 16; index < 64; index += 1) {
-    const s0 = rotr(words[index - 15], 7) ^ rotr(words[index - 15], 18) ^ words[index - 15] >>> 3;
-    const s1 = rotr(words[index - 2], 17) ^ rotr(words[index - 2], 19) ^ words[index - 2] >>> 10;
-    words[index] = words[index - 16] + s0 + words[index - 7] + s1 >>> 0;
+    const wordMinus15 = words[index - 15];
+    const wordMinus2 = words[index - 2];
+    const wordMinus16 = words[index - 16];
+    const wordMinus7 = words[index - 7];
+    const s0 = rotr(wordMinus15, 7) ^ rotr(wordMinus15, 18) ^ wordMinus15 >>> 3;
+    const s1 = rotr(wordMinus2, 17) ^ rotr(wordMinus2, 19) ^ wordMinus2 >>> 10;
+    words[index] = wordMinus16 + s0 + wordMinus7 + s1 >>> 0;
   }
   let a = state[0];
   let b = state[1];
@@ -3215,10 +3246,267 @@ function sha256Hex(value) {
   return hexEncode(sha256Digest(bytes));
 }
 
-// ../../node_modules/.pnpm/@sdkwork+utils@0.11.0/node_modules/@sdkwork/utils/dist/crypto.js
+// ../../../sdkwork-utils/packages/sdkwork-utils-typescript/src/crypto.js
 function sha256Hash(value) {
   return sha256Hex(value);
 }
+
+// ../../../sdkwork-utils/packages/sdkwork-utils-typescript/src/money.js
+var LOCALE_RULES = {
+  "en-us": {
+    prefix: true,
+    decimal: ".",
+    grouping: ",",
+    nameSpace: true,
+    compact: [
+      { exponent: 12, unit: "T" },
+      { exponent: 9, unit: "B" },
+      { exponent: 6, unit: "M" },
+      { exponent: 3, unit: "K" }
+    ]
+  },
+  "zh-cn": {
+    prefix: true,
+    decimal: ".",
+    grouping: ",",
+    nameSpace: false,
+    compact: [
+      { exponent: 12, unit: "\u5146" },
+      { exponent: 8, unit: "\u4EBF" },
+      { exponent: 4, unit: "\u4E07" }
+    ]
+  },
+  "ja-jp": {
+    prefix: true,
+    decimal: ".",
+    grouping: ",",
+    nameSpace: false,
+    compact: [
+      { exponent: 12, unit: "\u5146" },
+      { exponent: 8, unit: "\u5104" },
+      { exponent: 4, unit: "\u4E07" }
+    ]
+  },
+  "ko-kr": {
+    prefix: true,
+    decimal: ".",
+    grouping: ",",
+    nameSpace: false,
+    compact: [
+      { exponent: 12, unit: "\uC870" },
+      { exponent: 8, unit: "\uC5B5" },
+      { exponent: 4, unit: "\uB9CC" }
+    ]
+  },
+  "de-de": {
+    prefix: false,
+    decimal: ",",
+    grouping: ".",
+    nameSpace: true,
+    compact: [
+      { exponent: 12, unit: "Bio." },
+      { exponent: 9, unit: "Mrd." },
+      { exponent: 6, unit: "Mio." },
+      { exponent: 3, unit: "Tsd." }
+    ]
+  },
+  "fr-fr": {
+    prefix: false,
+    decimal: ",",
+    grouping: " ",
+    nameSpace: true,
+    compact: [
+      { exponent: 12, unit: "B" },
+      { exponent: 9, unit: "Md" },
+      { exponent: 6, unit: "M" },
+      { exponent: 3, unit: "k" }
+    ]
+  },
+  "it-it": {
+    prefix: false,
+    decimal: ",",
+    grouping: ".",
+    nameSpace: true,
+    compact: [
+      { exponent: 12, unit: "Bio." },
+      { exponent: 9, unit: "Mrd." },
+      { exponent: 6, unit: "M" },
+      { exponent: 3, unit: "k" }
+    ]
+  },
+  "es-es": {
+    prefix: false,
+    decimal: ",",
+    grouping: ".",
+    nameSpace: true,
+    compact: [
+      { exponent: 12, unit: "T" },
+      { exponent: 9, unit: "B" },
+      { exponent: 6, unit: "M" },
+      { exponent: 3, unit: "k" }
+    ]
+  },
+  "ru-ru": {
+    prefix: false,
+    decimal: ",",
+    grouping: " ",
+    nameSpace: true,
+    compact: [
+      { exponent: 12, unit: "\u0442\u0440\u043B\u043D" },
+      { exponent: 9, unit: "\u043C\u043B\u0440\u0434" },
+      { exponent: 6, unit: "\u043C\u043B\u043D" },
+      { exponent: 3, unit: "\u0442\u044B\u0441." }
+    ]
+  }
+};
+var CURRENCY_NAMES = {
+  "en-us": {
+    USD: "US dollars",
+    EUR: "euros",
+    GBP: "British pounds",
+    CNY: "Chinese yuan",
+    JPY: "Japanese yen",
+    KRW: "South Korean won",
+    HKD: "Hong Kong dollars",
+    TWD: "New Taiwan dollars",
+    CHF: "Swiss francs",
+    CAD: "Canadian dollars",
+    AUD: "Australian dollars",
+    INR: "Indian rupees",
+    BHD: "Bahraini dinars",
+    KWD: "Kuwaiti dinars"
+  },
+  "zh-cn": {
+    USD: "\u7F8E\u5143",
+    EUR: "\u6B27\u5143",
+    GBP: "\u82F1\u9563",
+    CNY: "\u4EBA\u6C11\u5E01",
+    JPY: "\u65E5\u5143",
+    KRW: "\u97E9\u5143",
+    HKD: "\u6E2F\u5E01",
+    TWD: "\u65B0\u53F0\u5E01",
+    CHF: "\u745E\u58EB\u6CD5\u90CE",
+    CAD: "\u52A0\u62FF\u5927\u5143",
+    AUD: "\u6FB3\u5927\u5229\u4E9A\u5143",
+    INR: "\u5370\u5EA6\u5362\u6BD4",
+    BHD: "\u5DF4\u6797\u7B2C\u7EB3\u5C14",
+    KWD: "\u79D1\u5A01\u7279\u7B2C\u7EB3\u5C14"
+  },
+  "de-de": {
+    USD: "US-Dollar",
+    EUR: "Euro",
+    GBP: "Britisches Pfund",
+    CNY: "Chinesischer Yuan",
+    JPY: "Japanischer Yen",
+    KRW: "S\xFCdkoreanischer Won",
+    HKD: "Hongkong-Dollar",
+    TWD: "Neuer Taiwan-Dollar",
+    CHF: "Schweizer Franken",
+    CAD: "Kanadischer Dollar",
+    AUD: "Australischer Dollar",
+    INR: "Indische Rupie",
+    BHD: "Bahrainischer Dinar",
+    KWD: "Kuwaitischer Dinar"
+  },
+  "fr-fr": {
+    USD: "dollar am\xE9ricain",
+    EUR: "euro",
+    GBP: "livre sterling",
+    CNY: "yuan chinois",
+    JPY: "yen japonais",
+    KRW: "won sud-cor\xE9en",
+    HKD: "dollar de Hong Kong",
+    TWD: "nouveau dollar de Ta\xEFwan",
+    CHF: "franc suisse",
+    CAD: "dollar canadien",
+    AUD: "dollar australien",
+    INR: "roupie indienne",
+    BHD: "dinar bahre\xEFni",
+    KWD: "dinar kowe\xEFtien"
+  },
+  "it-it": {
+    USD: "dollaro statunitense",
+    EUR: "euro",
+    GBP: "sterlina britannica",
+    CNY: "yuan cinese",
+    JPY: "yen giapponese",
+    KRW: "won sudcoreano",
+    HKD: "dollaro di Hong Kong",
+    TWD: "nuovo dollaro taiwanese",
+    CHF: "franco svizzero",
+    CAD: "dollaro canadese",
+    AUD: "dollaro australiano",
+    INR: "rupia indiana",
+    BHD: "dinaro bahreinita",
+    KWD: "dinaro kuwaitiano"
+  },
+  "es-es": {
+    USD: "d\xF3lar estadounidense",
+    EUR: "euro",
+    GBP: "libra esterlina",
+    CNY: "yuan chino",
+    JPY: "yen japon\xE9s",
+    KRW: "won surcoreano",
+    HKD: "d\xF3lar de Hong Kong",
+    TWD: "nuevo d\xF3lar taiwan\xE9s",
+    CHF: "franco suizo",
+    CAD: "d\xF3lar canadiense",
+    AUD: "d\xF3lar australiano",
+    INR: "rupia india",
+    BHD: "dinar bahrein\xED",
+    KWD: "dinar kuwait\xED"
+  },
+  "ja-jp": {
+    USD: "\u7C73\u30C9\u30EB",
+    EUR: "\u30E6\u30FC\u30ED",
+    GBP: "\u82F1\u30DD\u30F3\u30C9",
+    CNY: "\u4E2D\u56FD\u4EBA\u6C11\u5143",
+    JPY: "\u65E5\u672C\u5186",
+    KRW: "\u97D3\u56FD\u30A6\u30A9\u30F3",
+    HKD: "\u9999\u6E2F\u30C9\u30EB",
+    TWD: "\u53F0\u6E7E\u30C9\u30EB",
+    CHF: "\u30B9\u30A4\u30B9\u30D5\u30E9\u30F3",
+    CAD: "\u30AB\u30CA\u30C0\u30C9\u30EB",
+    AUD: "\u30AA\u30FC\u30B9\u30C8\u30E9\u30EA\u30A2\u30C9\u30EB",
+    INR: "\u30A4\u30F3\u30C9\u30EB\u30D4\u30FC",
+    BHD: "\u30D0\u30FC\u30EC\u30FC\u30F3\u30C7\u30A3\u30FC\u30CA\u30FC\u30EB",
+    KWD: "\u30AF\u30A6\u30A7\u30FC\u30C8\u30C7\u30A3\u30CA\u30FC\u30EB"
+  },
+  "ko-kr": {
+    USD: "\uBBF8\uAD6D \uB2EC\uB7EC",
+    EUR: "\uC720\uB85C",
+    GBP: "\uC601\uAD6D \uD30C\uC6B4\uB4DC",
+    CNY: "\uC911\uAD6D \uC704\uC548",
+    JPY: "\uC77C\uBCF8 \uC5D4",
+    KRW: "\uB300\uD55C\uBBFC\uAD6D \uC6D0",
+    HKD: "\uD64D\uCF69 \uB2EC\uB7EC",
+    TWD: "\uC2E0 \uB300\uB9CC \uB2EC\uB7EC",
+    CHF: "\uC2A4\uC704\uC2A4 \uD504\uB791",
+    CAD: "\uCE90\uB098\uB2E4 \uB2EC\uB7EC",
+    AUD: "\uD638\uC8FC \uB2EC\uB7EC",
+    INR: "\uC778\uB3C4 \uB8E8\uD53C",
+    BHD: "\uBC14\uB808\uC778 \uB514\uB098\uB974",
+    KWD: "\uCFE0\uC6E8\uC774\uD2B8 \uB514\uB098\uB974"
+  },
+  "ru-ru": {
+    USD: "\u0434\u043E\u043B\u043B\u0430\u0440 \u0421\u0428\u0410",
+    EUR: "\u0435\u0432\u0440\u043E",
+    GBP: "\u0431\u0440\u0438\u0442\u0430\u043D\u0441\u043A\u0438\u0439 \u0444\u0443\u043D\u0442",
+    CNY: "\u043A\u0438\u0442\u0430\u0439\u0441\u043A\u0438\u0439 \u044E\u0430\u043D\u044C",
+    JPY: "\u044F\u043F\u043E\u043D\u0441\u043A\u0430\u044F \u0438\u0435\u043D\u0430",
+    KRW: "\u044E\u0436\u043D\u043E\u043A\u043E\u0440\u0435\u0439\u0441\u043A\u0430\u044F \u0432\u043E\u043D\u0430",
+    HKD: "\u0433\u043E\u043D\u043A\u043E\u043D\u0433\u0441\u043A\u0438\u0439 \u0434\u043E\u043B\u043B\u0430\u0440",
+    TWD: "\u043D\u043E\u0432\u044B\u0439 \u0442\u0430\u0439\u0432\u0430\u043D\u044C\u0441\u043A\u0438\u0439 \u0434\u043E\u043B\u043B\u0430\u0440",
+    CHF: "\u0448\u0432\u0435\u0439\u0446\u0430\u0440\u0441\u043A\u0438\u0439 \u0444\u0440\u0430\u043D\u043A",
+    CAD: "\u043A\u0430\u043D\u0430\u0434\u0441\u043A\u0438\u0439 \u0434\u043E\u043B\u043B\u0430\u0440",
+    AUD: "\u0430\u0432\u0441\u0442\u0440\u0430\u043B\u0438\u0439\u0441\u043A\u0438\u0439 \u0434\u043E\u043B\u043B\u0430\u0440",
+    INR: "\u0438\u043D\u0434\u0438\u0439\u0441\u043A\u0430\u044F \u0440\u0443\u043F\u0438\u044F",
+    BHD: "\u0431\u0430\u0445\u0440\u0435\u0439\u043D\u0441\u043A\u0438\u0439 \u0434\u0438\u043D\u0430\u0440",
+    KWD: "\u043A\u0443\u0432\u0435\u0439\u0442\u0441\u043A\u0438\u0439 \u0434\u0438\u043D\u0430\u0440"
+  }
+};
+var DEFAULT_LOCALE_RULES = LOCALE_RULES["en-us"];
+var DEFAULT_CURRENCY_NAMES = CURRENCY_NAMES["en-us"];
 
 // ../../sdks/cloudrouter-app-sdk/cloudrouter-app-sdk-typescript/dist/index.js
 var _HttpClient = class _HttpClient extends BaseHttpClient {

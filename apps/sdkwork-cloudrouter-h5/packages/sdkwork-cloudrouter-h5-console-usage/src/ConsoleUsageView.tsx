@@ -27,6 +27,10 @@ function statusLabel(status: ConsoleUsageStatus, labels: ConsoleUsageLabels): st
   return labels.statusUnknown;
 }
 
+/**
+ * Usage records as full-bleed list rows: each row spans the viewport width
+ * with square corners and keeps a documented 0.9rem content inset.
+ */
 export function ConsoleUsageView({ records, locale, labels }: ConsoleUsageViewProps) {
   return (
     <Panel title={labels.columnModel}>

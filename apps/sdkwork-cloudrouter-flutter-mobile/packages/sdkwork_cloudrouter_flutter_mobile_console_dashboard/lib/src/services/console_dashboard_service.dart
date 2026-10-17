@@ -13,27 +13,7 @@ class ConsoleDashboardService {
 
   final CloudRouterConsolePorts ports;
 
-  Future<ConsoleDashboardPage> load() async {
-    final payload = await ports.retrieveOverview();
-    return projectConsoleDashboardPage(payload);
+  Future<ConsoleDashboardSnapshot> load() async {
+    return projectConsoleDashboardSnapshot(await ports.retrieveOverview());
   }
-}
-
-ConsoleDashboardPage projectConsoleDashboardPage(Object? payload) {
-  final items = <ConsoleDashboardItem>[];
-  final records = payload is Map ? payload['records'] : null;
-  if (records is List) {
-    var index = 0;
-    for (final record in records) {
-      items.add(
-        ConsoleDashboardItem(
-          id: readConsoleDashboardString(record, 'id', index.toString()),
-          label: readConsoleDashboardString(record, 'name', ''),
-          value: readConsoleDashboardString(record, 'status', ''),
-        ),
-      );
-      index += 1;
-    }
-  }
-  return ConsoleDashboardPage(items: items, hasMore: false);
 }

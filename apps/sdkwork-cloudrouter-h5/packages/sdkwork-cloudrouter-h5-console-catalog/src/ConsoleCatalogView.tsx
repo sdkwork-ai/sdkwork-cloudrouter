@@ -1,5 +1,5 @@
-import type { ConsoleCatalogRateRow } from '@sdkwork/cloudrouter-contracts';
 import { Panel } from '@sdkwork/cloudrouter-h5-commons';
+import type { ConsoleCatalogRateRow } from '@sdkwork/cloudrouter-contracts';
 
 export interface ConsoleCatalogLabels {
   readonly columnVendor: string;
@@ -23,31 +23,33 @@ function formatPrice(value: number | null, currency: string, locale: string): st
   }).format(value);
 }
 
+/**
+ * Pricing catalog as full-bleed list rows: each row spans the viewport width
+ * with square corners and keeps a documented 0.9rem content inset.
+ */
 export function ConsoleCatalogView({ rows, locale, labels }: ConsoleCatalogViewProps) {
   return (
-    <div className="space-y-3">
-      {rows.map((row) => (
-        <Panel key={row.id}>
-          <p className="text-xs text-gray-100">{row.model}</p>
-          <p className="text-[10px] text-gray-500">
-            {labels.columnVendor}: {row.vendor} · {row.unit}
-          </p>
-          <dl className="mt-2 grid grid-cols-2 gap-2 text-[11px]">
-            <div>
-              <dt className="text-gray-500">{labels.columnInput}</dt>
-              <dd className="text-gray-200">
-                {formatPrice(row.inputPricePerMillionTokens, row.currency, locale)}
-              </dd>
+    <Panel title={labels.columnModel}>
+      <ul className="divide-y divide-white/10">
+        {rows.map((row) => (
+          <li key={row.id} className="flex items-start justify-between gap-3 py-2 text-[11px]">
+            <div className="min-w-0">
+              <p className="truncate text-gray-100">{row.model}</p>
+              <p className="text-gray-500">
+                {labels.columnVendor}: {row.vendor} · {row.unit}
+              </p>
             </div>
-            <div>
-              <dt className="text-gray-500">{labels.columnOutput}</dt>
-              <dd className="text-gray-200">
-                {formatPrice(row.outputPricePerMillionTokens, row.currency, locale)}
-              </dd>
+            <div className="shrink-0 text-right">
+              <p className="text-gray-200">
+                {labels.columnInput}: {formatPrice(row.inputPricePerMillionTokens, row.currency, locale)}
+              </p>
+              <p className="text-gray-400">
+                {labels.columnOutput}: {formatPrice(row.outputPricePerMillionTokens, row.currency, locale)}
+              </p>
             </div>
-          </dl>
-        </Panel>
-      ))}
-    </div>
+          </li>
+        ))}
+      </ul>
+    </Panel>
   );
 }

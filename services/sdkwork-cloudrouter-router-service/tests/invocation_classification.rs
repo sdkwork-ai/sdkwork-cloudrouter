@@ -100,6 +100,41 @@ fn classifies_openai_management_api_requests_and_free_endpoints() {
 }
 
 #[test]
+fn classifies_deepseek_web_tools_as_request_billed_api_endpoints() {
+    // DeepSeek publishes both tools as raw JSON APIs on `/v1`. They carry no
+    // model, and DeepSeek bills them per successful request (5 CNY / 1,000
+    // calls), never per result, so the classification must be
+    // `model_requirement = Ignored` + `BillingMeter::ApiRequest` — the shape
+    // `BillingPolicyInterceptor` maps onto `api_request_policy()`.
+    for (path, api_code, route_key) in [
+        (
+            "/v1/tools/search",
+            "deepseek.web_search",
+            "deepseek/web/tools_search",
+        ),
+        (
+            "/v1/tools/fetch",
+            "deepseek.web_fetch",
+            "deepseek/web/tools_fetch",
+        ),
+    ] {
+        let (resource, billing, routing) = classify_openai(Method::POST, path);
+
+        assert_eq!(route_key, resource.route_key, "{path}");
+        assert_eq!(api_code, resource.api_code, "{path}");
+        assert_eq!(InvocationSurface::OpenAiCompatible, resource.surface);
+        assert_eq!(ResourceType::ProviderNativeApi, resource.resource_type);
+        assert_eq!(RoutingCapability::Network, resource.capability);
+        assert_eq!(AiRouteModelRequirement::Ignored, resource.model_requirement);
+        assert_eq!(None, resource.requested_model, "{path}");
+        assert_eq!(BillingMode::ApiRequest, billing.mode, "{path}");
+        assert_eq!(Some(BillingMeter::ApiRequest), billing.meter, "{path}");
+        assert_eq!(AiRouteStrategy::PrimaryAccount, routing.strategy, "{path}");
+        assert_eq!(None, routing.sticky, "{path}");
+    }
+}
+
+#[test]
 fn classifies_lookup_and_parent_sticky_resources() {
     let (file_content, _billing, routing) =
         classify_openai(Method::GET, "/v1/files/file_123/content");

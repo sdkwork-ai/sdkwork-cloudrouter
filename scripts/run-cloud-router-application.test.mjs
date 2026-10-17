@@ -10,6 +10,7 @@ import {
   resolveCloudRouterBusinessAppsRoot,
   resolveCloudRouterBusinessSpecsRoot,
 } from './cloud-router-layout.mjs';
+import { DEFAULT_RELEASE_VERSION } from './cloud-router-release-version.mjs';
 
 const workspaceRoot = path.resolve(import.meta.dirname, '..');
 const portalRoot = path.join(workspaceRoot, 'apps', 'sdkwork-cloudrouter-pc');
@@ -32,6 +33,12 @@ const documentsSdkReferenceRoot = path.join(
   'sdkwork-documents-pc-sdk-reference',
 );
 const execFileAsync = promisify(execFile);
+
+// Every sdkwork-app facade entrypoint is prefixed with the Node dependency
+// guard so a bare checkout resolves the CLI before the facade runs. Derive the
+// prefix once instead of hardcoding it per assertion.
+const NODE_DEPS_GUARD = 'node scripts/lib/ensure-cloud-router-node-deps.mjs && ';
+const appCommand = (command) => `${NODE_DEPS_GUARD}pnpm exec sdkwork-app ${command}`;
 
 const validReleaseEnv = Object.freeze({
   SDKWORK_DATABASE_URL: 'postgres://release:secret@db.example.com:5432/cloud',
@@ -219,31 +226,31 @@ test('root package exposes pnpm application entrypoints', () => {
     readFileSync(path.join(workspaceRoot, 'package.json'), 'utf8'),
   );
 
-  const canonicalBrowser = 'pnpm exec sdkwork-app dev --runtime-target browser --deployment-profile standalone';
-  const canonicalDesktop = 'pnpm exec sdkwork-app dev --runtime-target desktop --deployment-profile standalone';
-  const canonicalServer = 'pnpm exec sdkwork-app dev --runtime-target server --deployment-profile standalone';
+  const canonicalBrowser = appCommand('dev --runtime-target browser --deployment-profile standalone');
+  const canonicalDesktop = appCommand('dev --runtime-target desktop --deployment-profile standalone');
+  const canonicalServer = appCommand('dev --runtime-target server --deployment-profile standalone');
   const canonicalDesktopSqlite = 'node scripts/cloud-router-dev.mjs --target desktop --deployment-profile standalone --database sqlite';
   // PNPM_SCRIPT_SPEC.md section 3: plan entrypoints go through the sdkwork-app
   // lifecycle facade; the legacy runner serves only the client-local SQLite
   // desktop variant.
-  const canonicalPlanPostgres = 'node scripts/lib/ensure-cloud-router-node-deps.mjs && pnpm exec sdkwork-app topology:plan --deployment-profile standalone --environment development --runtime-target server';
+  const canonicalPlanPostgres = appCommand('topology:plan --deployment-profile standalone --environment development --runtime-target server');
 
   assert.equal(rootPackage.private, true);
   assert.equal(rootPackage.packageManager, 'pnpm@10.33.0');
   assert.equal(rootPackage.scripts.dev, 'pnpm dev:standalone');
   assert.equal(
     rootPackage.scripts['dev:standalone'],
-    'pnpm exec sdkwork-app dev --deployment-profile standalone',
+    appCommand('dev --deployment-profile standalone'),
   );
   assert.equal(
     rootPackage.scripts['dev:cloud'],
-    'pnpm exec sdkwork-app dev --deployment-profile cloud',
+    appCommand('dev --deployment-profile cloud'),
   );
   assert.equal(rootPackage.scripts['dev:browser'], 'pnpm dev:browser:postgres:standalone');
   assert.equal(rootPackage.scripts['dev:browser:postgres'], undefined);
   assert.equal(rootPackage.scripts['dev:browser:sqlite'], undefined);
   assert.equal(rootPackage.scripts['dev:browser:postgres:standalone'], canonicalBrowser);
-  assert.equal(rootPackage.scripts.test, 'pnpm exec sdkwork-app test');
+  assert.equal(rootPackage.scripts.test, appCommand('test'));
   assert.equal(
     rootPackage.scripts['_sdkwork:test'],
     'pnpm topology:validate && pnpm test:topology && node scripts/run-cloud-router-application.test.mjs',
@@ -265,24 +272,24 @@ test('root package exposes pnpm application entrypoints', () => {
   );
   assert.equal(
     rootPackage.scripts['deploy:plan:cloud'],
-    'pnpm exec sdkwork-app deploy:plan --profile cloud.production',
+    appCommand('deploy:plan --profile cloud.production'),
   );
   assert.equal(
     rootPackage.scripts['deploy:validate:cloud'],
-    'pnpm exec sdkwork-app deploy:validate --profile cloud.production',
+    appCommand('deploy:validate --profile cloud.production'),
   );
   assert.equal(
     rootPackage.scripts['deploy:plan:standalone'],
-    'pnpm exec sdkwork-app deploy:plan --profile standalone.production',
+    appCommand('deploy:plan --profile standalone.production'),
   );
   assert.equal(
     rootPackage.scripts.build,
-    'pnpm exec sdkwork-app build',
+    appCommand('build'),
   );
   assert.equal(rootPackage.scripts['_sdkwork:build'], 'node scripts/build-cloud-router-production.mjs');
   assert.equal(
     rootPackage.scripts.check,
-    'pnpm exec sdkwork-app check',
+    appCommand('check'),
   );
   assert.match(rootPackage.scripts['_sdkwork:check'], /check:application-env/u);
   assert.equal(
@@ -528,7 +535,7 @@ test('pnpm dev delegates to the canonical standalone application lifecycle', () 
   assert.equal(rootPackage.scripts.dev, 'pnpm dev:standalone');
   assert.equal(
     rootPackage.scripts['dev:standalone'],
-    'pnpm exec sdkwork-app dev --deployment-profile standalone',
+    appCommand('dev --deployment-profile standalone'),
   );
   assert.match(rootPackage.scripts['dev:browser:postgres:standalone'], /sdkwork-app dev/u);
   assert.match(rootPackage.scripts['dev:browser:postgres:standalone'], /--runtime-target browser/u);
@@ -1582,7 +1589,7 @@ test('application scripts wire SDKWork application env standard checks and entry
     rootPackage.scripts['check:application-env'],
     'node --test scripts/lib/cloud-router-browser-env-contract.test.mjs scripts/lib/cloud-router-edge-env-contract.test.mjs scripts/dev/cloud-router-application-env.test.mjs scripts/dev/ensure-cloud-router-env.test.mjs scripts/write-release-env.test.mjs scripts/release-environment-validation.test.mjs && node scripts/check-cloud-router-application-env.mjs',
   );
-  assert.equal(rootPackage.scripts.check, 'pnpm exec sdkwork-app check');
+  assert.equal(rootPackage.scripts.check, appCommand('check'));
   assert.match(rootPackage.scripts['_sdkwork:check'], /check:application-env/u);
   assert.match(verifyScript, /buildApplicationEnvVerificationPlan/u);
   assert.match(verifyScript, /check:application-env/u);
@@ -4221,7 +4228,7 @@ test('production build creates portal assets and Rust edge release artifact', as
     pathToFileURL(path.join(workspaceRoot, 'scripts', 'build-cloud-router-production.mjs')).href
   );
 
-  assert.equal(rootPackage.scripts.build, 'pnpm exec sdkwork-app build');
+  assert.equal(rootPackage.scripts.build, appCommand('build'));
   assert.equal(rootPackage.scripts['_sdkwork:build'], 'node scripts/build-cloud-router-production.mjs');
   assert.deepEqual(module.parseProductionBuildArgs(['--dry-run']), {
     help: false,
@@ -4314,13 +4321,13 @@ test('install package planner covers platforms, architectures, modes, fast init,
   assert.deepEqual(module.SUPPORTED_PLATFORMS, ['windows', 'linux', 'macos']);
   assert.deepEqual(module.SUPPORTED_ARCHITECTURES, ['x64', 'arm64']);
   assert.deepEqual(module.SUPPORTED_DEPLOYMENT_MODES, ['archive', 'service', 'container', 'desktop']);
-  assert.equal(module.DEFAULT_VERSION, '0.3.0');
+  assert.equal(module.DEFAULT_VERSION, DEFAULT_RELEASE_VERSION);
 
   const defaultPlan = module.createInstallPackagePlan();
-  assert.equal(defaultPlan.version, '0.3.0');
+  assert.equal(defaultPlan.version, DEFAULT_RELEASE_VERSION);
   assert.equal(
     defaultPlan.packages.find((item) => item.id === 'linux-x64-archive')?.archiveName,
-    'cloudrouter-linux-x64-archive-0.3.0.tar.gz',
+    `cloudrouter-linux-x64-archive-${DEFAULT_RELEASE_VERSION}.tar.gz`,
   );
 
   const plan = module.createInstallPackagePlan({
@@ -4550,7 +4557,7 @@ test('install package archive builder creates manifest-backed archives without l
     outputDir: null,
     packageId: 'windows-x64-archive',
     stagingRoot: null,
-    version: '0.3.0',
+    version: DEFAULT_RELEASE_VERSION,
   });
   assert.deepEqual(module.parseInstallPackageBuildArgs(['--all', '--check', '--dry-run']), {
     all: true,
@@ -4561,7 +4568,7 @@ test('install package archive builder creates manifest-backed archives without l
     outputDir: null,
     packageId: 'windows-x64-archive',
     stagingRoot: null,
-    version: '0.3.0',
+    version: DEFAULT_RELEASE_VERSION,
   });
 
   const fixtureRoot = path.join(workspaceRoot, '.tmp', 'install-package-builder-test');

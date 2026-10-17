@@ -45,7 +45,7 @@ export function ConsoleCatalogScreen({ ports, locale, labels }: ConsoleCatalogSc
   if (loading) return <p className="py-6 text-center text-xs text-gray-400">{labels.loading}</p>;
   if (error) {
     return (
-      <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-200">
+      <div className="border-y border-red-500/40 bg-red-500/10 px-[0.9rem] py-3 text-xs text-red-200">
         <p>{error}</p>
         <button type="button" onClick={reload} className="mt-2 rounded-md border border-red-400/60 px-2 py-1 text-[11px]">
           {labels.reload}

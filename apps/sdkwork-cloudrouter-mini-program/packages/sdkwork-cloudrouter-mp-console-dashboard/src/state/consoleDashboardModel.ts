@@ -23,6 +23,7 @@ export interface ConsoleDashboardState {
   readonly loading: boolean;
   readonly error: string | null;
   readonly metrics: readonly ConsoleDashboardMetric[];
+  readonly windowLabel: string | null;
   setLoading(value: boolean): void;
   setError(value: string | null): void;
   setSnapshot(snapshot: ConsoleOverviewSnapshot): void;
@@ -46,10 +47,14 @@ export function toConsoleDashboardMetrics(
   ];
 }
 
-export function createConsoleDashboardState(labels: ConsoleDashboardLabels): ConsoleDashboardState {
+export function createConsoleDashboardState(
+  labels: ConsoleDashboardLabels,
+  locale: string,
+): ConsoleDashboardState {
   let loading = true;
   let error: string | null = null;
   let metrics: readonly ConsoleDashboardMetric[] = [];
+  let windowLabel: string | null = null;
   return {
     labels,
     get loading() {
@@ -61,6 +66,9 @@ export function createConsoleDashboardState(labels: ConsoleDashboardLabels): Con
     get metrics() {
       return metrics;
     },
+    get windowLabel() {
+      return windowLabel;
+    },
     setLoading(value) {
       loading = value;
     },
@@ -68,7 +76,8 @@ export function createConsoleDashboardState(labels: ConsoleDashboardLabels): Con
       error = value;
     },
     setSnapshot(snapshot) {
-      metrics = toConsoleDashboardMetrics(snapshot, 'zh-CN', labels);
+      metrics = toConsoleDashboardMetrics(snapshot, locale, labels);
+      windowLabel = snapshot.windowLabel;
     },
   };
 }

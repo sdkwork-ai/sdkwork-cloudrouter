@@ -6,10 +6,9 @@ Page({
   data: {
     loading: true,
     error: null,
-    rows: [],
+    metrics: [],
+    windowLabel: null,
     labels: {},
-    primaryField: 'label',
-    secondaryField: 'value',
   },
 
   controller: null,
@@ -20,25 +19,49 @@ Page({
       this.setData({ loading: false, error: 'CloudRouter runtime is not ready.' });
       return;
     }
-    this.controller = createConsoleDashboardPage(runtime.consolePorts, this.resolveLabels(runtime.translate));
+    this.controller = createConsoleDashboardPage(
+      runtime.consolePorts,
+      this.resolveLabels(runtime.translate),
+      runtime.locale,
+    );
     this.onReload();
   },
 
   resolveLabels(translate) {
     return {
       title: translate('cloudrouter.console.dashboard.title'),
+      requests: translate('cloudrouter.console.dashboard.requests'),
+      tokens: translate('cloudrouter.console.dashboard.tokens'),
+      cost: translate('cloudrouter.console.dashboard.cost'),
+      errorRate: translate('cloudrouter.console.dashboard.errorRate'),
       loading: translate('cloudrouter.console.shared.loading'),
       empty: translate('cloudrouter.console.shared.empty'),
       reload: translate('cloudrouter.console.shared.reload'),
     };
   },
 
+  syncState() {
+    const state = this.controller.state;
+    this.setData({
+      loading: state.loading,
+      error: state.error,
+      metrics: state.metrics,
+      windowLabel: state.windowLabel,
+    });
+  },
+
   async onReload() {
+    if (!this.controller) {
+      return;
+    }
     await this.controller.load();
-    this.setData({ loading: false, rows: [] });
+    this.syncState();
   },
 
   onPullDownRefresh() {
-    this.onReload().then(() => wx.stopPullDownRefresh());
+    this.onReload().then(
+      () => wx.stopPullDownRefresh(),
+      () => wx.stopPullDownRefresh(),
+    );
   },
 });

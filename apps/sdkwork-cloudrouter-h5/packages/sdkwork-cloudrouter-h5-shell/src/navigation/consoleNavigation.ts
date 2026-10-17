@@ -1,7 +1,7 @@
 import {
-  CLOUDROUTER_CONSOLE_CAPABILITIES,
-  CLOUDROUTER_CONSOLE_ROUTES,
+  CLOUDROUTER_CONSOLE_TABS,
   type CloudRouterConsoleRouteKey,
+  type CloudRouterConsoleTabDescriptor,
 } from '@sdkwork/cloudrouter-contracts';
 
 export interface ConsoleNavigationEntry {
@@ -12,21 +12,27 @@ export interface ConsoleNavigationEntry {
   readonly order: number;
 }
 
-/** Console navigation is derived from the shared capability descriptors. */
-export const CONSOLE_NAVIGATION: readonly ConsoleNavigationEntry[] = CLOUDROUTER_CONSOLE_CAPABILITIES.map(
-  (capability) => ({
-    key: capability.routeKey,
-    path: CLOUDROUTER_CONSOLE_ROUTES[capability.routeKey].path,
-    labelKey: capability.titleKey,
-    icon:
-      capability.routeKey === 'dashboard'
-        ? 'dashboard'
-        : capability.routeKey === 'usage'
-          ? 'usage'
-          : capability.routeKey === 'apiKeys'
-            ? 'key'
-            : 'catalog',
-    order: capability.order,
+/**
+ * Console navigation is derived from the shared console tab descriptors
+ * (`CLOUDROUTER_CONSOLE_TABS`), the same single authority the mini program and
+ * Flutter roots derive their tab bars from. The tab order therefore stays
+ * identical on every root; only the glyph-to-icon projection below is
+ * H5-specific (`APP_MOBILE_REACT_UI_SPEC.md` section 5).
+ */
+const ICON_BY_GLYPH: Record<CloudRouterConsoleTabDescriptor['glyph'], ConsoleNavigationEntry['icon']> = {
+  dashboard: 'dashboard',
+  receipt: 'usage',
+  key: 'key',
+  barChart: 'catalog',
+};
+
+export const CONSOLE_NAVIGATION: readonly ConsoleNavigationEntry[] = CLOUDROUTER_CONSOLE_TABS.map(
+  (tab, index) => ({
+    key: tab.routeKey,
+    path: tab.path,
+    labelKey: tab.titleKey,
+    icon: ICON_BY_GLYPH[tab.glyph],
+    order: (index + 1) * 10,
   }),
 );
 

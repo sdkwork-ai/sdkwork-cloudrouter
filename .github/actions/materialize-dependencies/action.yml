@@ -1,0 +1,61 @@
+name: Materialize SDKWork dependencies
+description: >-
+  Check out the sibling SDKWork repositories declared by sdkwork.workflow.json
+  into the workspace parent directory, at the ref each dependency resolves to
+  (main unless a repository variable pins it). This repository's Cargo workspace
+  and pnpm workspace address those dependencies by relative path, so no build,
+  install, or e2e step can run until they are materialized.
+
+inputs:
+  framework-ref:
+    required: false
+    default: 2121cc5f1385e8e561171d01fbb71f11adbda187
+    description: sdkwork-github-workflow ref that provides the checkout action.
+  token:
+    required: false
+    default: ${{ github.token }}
+    description: GitHub token used for dependency checkout.
+  config-path:
+    required: false
+    default: sdkwork.workflow.json
+    description: Workflow manifest that declares the dependency set.
+
+runs:
+  using: composite
+  steps:
+    # sdkwork-agents records apps/ as a submodule whose URL is SSH
+    # (git@github.com:sdkwork-ai/sdkwork-agents-apps.git). A runner has no SSH
+    # key, so submodule init would fail; rewrite the scheme to HTTPS first. The
+    # dependency clones themselves already use HTTPS and are unaffected.
+    - name: Rewrite SSH submodule URLs to HTTPS
+      shell: bash
+      run: |
+        set -euo pipefail
+        git config --global url."https://github.com/".insteadOf "git@github.com:"
+        git config --global --add safe.directory '*'
+
+    - name: Checkout workflow framework
+      uses: actions/checkout@v4
+      with:
+        repository: sdkwork-ai/sdkwork-github-workflow
+        ref: ${{ inputs.framework-ref }}
+        path: .sdkwork/github-workflow
+        fetch-depth: 1
+        token: ${{ inputs.token }}
+
+    - id: dependencies
+      name: Resolve dependency checkout plan
+      shell: bash
+      env:
+        SDKWORK_CONFIG_PATH: ${{ inputs.config-path }}
+      run: |
+        set -euo pipefail
+        node .sdkwork/github-workflow/scripts/sdkwork-workflow.mjs dependencies \
+          --config "${SDKWORK_CONFIG_PATH}" \
+          --github-output
+
+    - name: Checkout declared dependencies
+      uses: ./.sdkwork/github-workflow/actions/checkout-dependencies
+      with:
+        dependencies-json: ${{ steps.dependencies.outputs.dependencies }}
+        token: ${{ inputs.token }}

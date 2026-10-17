@@ -7,21 +7,33 @@ import { createConsoleUsageState, type ConsoleUsageLabels } from './state/consol
 export function createConsoleUsagePage(
   ports: CloudRouterConsolePorts,
   labels: ConsoleUsageLabels,
+  locale: string,
 ) {
-  const state = createConsoleUsageState(labels);
-  const load = async (page: number): Promise<void> => {
-    state.setLoading(true);
+  const state = createConsoleUsageState(labels, locale);
+  const load = async (page: number, append: boolean): Promise<void> => {
+    if (append) {
+      state.setLoadingMore(true);
+    } else {
+      state.setLoading(true);
+    }
     try {
-      state.setRows(await loadConsoleUsagePage(ports, { page, pageSize: state.pageSize }));
+      const result = await loadConsoleUsagePage(ports, { page, pageSize: state.pageSize });
+      if (append) {
+        state.appendRows(result);
+      } else {
+        state.setRows(result);
+      }
+      state.setError(null);
     } catch (cause) {
       state.setError(cause instanceof Error ? cause.message : labels.empty);
     } finally {
       state.setLoading(false);
+      state.setLoadingMore(false);
     }
   };
   return {
     state,
-    load: () => load(1),
-    loadMore: () => load(state.page + 1),
+    load: () => load(1, false),
+    loadMore: () => load(state.page + 1, true),
   };
 }

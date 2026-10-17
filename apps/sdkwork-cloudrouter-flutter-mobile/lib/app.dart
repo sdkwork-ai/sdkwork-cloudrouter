@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:sdkwork_cloudrouter_flutter_mobile_commons/sdkwork_cloudrouter_flutter_mobile_commons.dart';
 
 import 'auth_gate.dart';
 import 'bootstrap/runtime.dart';
+import 'runtime_scope.dart';
 
 class CloudRouterApp extends StatelessWidget {
   const CloudRouterApp({required this.runtime, super.key});
@@ -14,33 +16,9 @@ class CloudRouterApp extends StatelessWidget {
       runtime: runtime,
       child: MaterialApp(
         title: 'SDKWork CloudRouter',
-        theme: ThemeData(colorSchemeSeed: const Color(0xFF0F172A)),
+        theme: buildSdkworkCloudRouterTheme(),
         home: const CloudRouterAuthGate(),
       ),
     );
-  }
-}
-
-class CloudRouterRuntimeScope extends InheritedWidget {
-  const CloudRouterRuntimeScope({
-    required this.runtime,
-    required super.child,
-    super.key,
-  });
-
-  final CloudRouterFlutterRuntime runtime;
-
-  static CloudRouterFlutterRuntime of(BuildContext context) {
-    final scope =
-        context.dependOnInheritedWidgetOfExactType<CloudRouterRuntimeScope>();
-    if (scope == null) {
-      throw StateError('CloudRouterRuntimeScope is not available.');
-    }
-    return scope.runtime;
-  }
-
-  @override
-  bool updateShouldNotify(CloudRouterRuntimeScope oldWidget) {
-    return !identical(runtime, oldWidget.runtime);
   }
 }

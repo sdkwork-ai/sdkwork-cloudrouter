@@ -3819,6 +3819,15 @@ importers:
 
   apps/sdkwork-cloudrouter-common:
     devDependencies:
+      '@sdkwork/cloudrouter-contracts':
+        specifier: workspace:*
+        version: link:packages/sdkwork-cloudrouter-contracts
+      '@sdkwork/cloudrouter-sdk-ports':
+        specifier: workspace:*
+        version: link:packages/sdkwork-cloudrouter-sdk-ports
+      '@sdkwork/cloudrouter-service':
+        specifier: workspace:*
+        version: link:packages/sdkwork-cloudrouter-service
       tsx:
         specifier: 'catalog:'
         version: 4.23.12

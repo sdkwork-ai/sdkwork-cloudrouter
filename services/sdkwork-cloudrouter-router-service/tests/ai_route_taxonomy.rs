@@ -249,3 +249,74 @@ fn routing_index_filters_group_api_and_capability_without_full_selector_policy()
 fn account_ids(routes: &[UpstreamAccountRoute]) -> Vec<i64> {
     routes.iter().map(|route| route.account_id).collect()
 }
+
+#[test]
+fn deepseek_web_tools_resolve_to_the_deepseek_account_by_api_scope() {
+    // The two DeepSeek web tools are model-less `api` routes billed per request.
+    // Routing therefore resolves them by api scope alone: an account only
+    // reaches them when its group binding names the api code, and the taxonomy
+    // route must stay `Ignored` + `ApiRequest` (DeepSeek's own rule: 5 CNY per
+    // 1,000 successful calls, never per result).
+    for api_code in ["deepseek.web_search", "deepseek.web_fetch"] {
+        let route = find_builtin_ai_route(api_code).expect("taxonomy route must exist");
+        assert_eq!(api_code, route.route_key, "{api_code}");
+        assert_eq!(api_code, route.api_code, "{api_code}");
+        assert_eq!(RoutingCapability::Network, route.capability, "{api_code}");
+        assert_eq!(BillingMeter::ApiRequest, route.billing_meter, "{api_code}");
+        assert_eq!(
+            AiRouteModelRequirement::Ignored,
+            route.model_requirement,
+            "{api_code}"
+        );
+        assert_eq!(
+            AiRouteStrategy::PrimaryAccount,
+            route.route_strategy,
+            "{api_code}"
+        );
+        assert_eq!(
+            AiRouteFailureStrategy::FailClosed,
+            route.failure_strategy,
+            "{api_code}"
+        );
+        assert_eq!(None, route.sticky_object_type, "{api_code}");
+    }
+
+    let mut catalog = InMemoryPricingCatalog::default();
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("deepseek", 4001)
+            .with_upstream_endpoint(
+                Some("https://api.deepseek.com"),
+                Some("vault://deepseek/default"),
+            )
+            .with_resource_scoped_account_group_binding(
+                10,
+                10,
+                100,
+                vec!["deepseek.web_search", "deepseek.web_fetch"],
+                vec!["network"],
+            ),
+    );
+    // An account in the same group that is not granted these scopes must never
+    // be selected, even though it is callable for other APIs.
+    catalog.add_upstream_account_route(
+        UpstreamAccountRoute::new("openai", 4002)
+            .with_upstream_endpoint(
+                Some("https://api.openai.com/v1"),
+                Some("vault://openai/default"),
+            )
+            .with_resource_scoped_account_group_binding(
+                10,
+                20,
+                100,
+                vec!["openai.chat_completions"],
+                vec!["llm"],
+            ),
+    );
+
+    let index = AiRoutingIndex::compile(&catalog);
+    for api_code in ["deepseek.web_search", "deepseek.web_fetch"] {
+        let candidates =
+            index.matching_accounts(10, api_code, RoutingCapability::Network, None, None);
+        assert_eq!(vec![4001], account_ids(&candidates), "{api_code}");
+    }
+}

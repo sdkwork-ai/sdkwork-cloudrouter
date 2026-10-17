@@ -1,42 +1,62 @@
 import 'package:sdkwork_cloudrouter_flutter_mobile_commons/sdkwork_cloudrouter_flutter_mobile_commons.dart';
 
-/// Authored message keys for the dashboard capability.
+/// Authored copy for the dashboard capability.
 ///
-/// Fragment delivery follows `I18N_SPEC.md`: the `.arb` projection requires the
-/// Flutter toolchain and is declared pending in the app manifest. Until then the
-/// keys below are the single source the screens read.
+/// Keys mirror the `cloudrouter.console.dashboard.*` fragments authored for the
+/// H5 and mini-program roots. Fragment delivery follows `I18N_SPEC.md`: the
+/// `.arb` projection requires the Flutter toolchain and is declared pending in
+/// the app manifest; until then this record is the single source the screen
+/// reads.
+class ConsoleDashboardCopy {
+  const ConsoleDashboardCopy({
+    required this.title,
+    required this.requests,
+    required this.tokens,
+    required this.cost,
+    required this.errorRate,
+    required this.loading,
+    required this.empty,
+    required this.reload,
+  });
+
+  final String title;
+  final String requests;
+  final String tokens;
+  final String cost;
+  final String errorRate;
+  final String loading;
+  final String empty;
+  final String reload;
+}
+
 class ConsoleDashboardMessages {
   const ConsoleDashboardMessages._();
 
   static const String titleKey = 'cloudrouter.console.dashboard.title';
-  static const String loading = 'Loading';
-  static const String empty = 'No records';
-  static const String reload = 'Reload';
 
-  static Map<String, String> enUs() => <String, String>{
-        titleKey: 'dashboard',
-        loadingKey(titleKey): loading,
-        emptyKey(titleKey): empty,
-        reloadKey(titleKey): reload,
-      };
+  static ConsoleDashboardCopy enUs() => const ConsoleDashboardCopy(
+        title: 'Overview',
+        requests: 'Requests',
+        tokens: 'Tokens',
+        cost: 'Total cost',
+        errorRate: 'Error rate',
+        loading: 'Loading…',
+        empty: 'No data',
+        reload: 'Retry',
+      );
 
-  static Map<String, String> zhCn() => <String, String>{
-        titleKey: 'dashboard',
-        loadingKey(titleKey): '加载中',
-        emptyKey(titleKey): '暂无记录',
-        reloadKey(titleKey): '重新加载',
-      };
+  static ConsoleDashboardCopy zhCn() => const ConsoleDashboardCopy(
+        title: '概览',
+        requests: '请求总数',
+        tokens: 'Token 总数',
+        cost: '累计花费',
+        errorRate: '错误率',
+        loading: '加载中…',
+        empty: '暂无数据',
+        reload: '重试',
+      );
 
-  static String loadingKey(String key) => key + '.loading';
-  static String emptyKey(String key) => key + '.empty';
-  static String reloadKey(String key) => key + '.reload';
-
-  static String resolve(
-    SdkworkCloudRouterLocale locale,
-    Map<String, String> messages,
-    String key,
-    String fallback,
-  ) {
-    return pickSdkworkCloudRouterMessage(messages, key, fallback);
+  static ConsoleDashboardCopy resolve(SdkworkCloudRouterLocale locale) {
+    return locale == SdkworkCloudRouterLocale.zhCn ? zhCn() : enUs();
   }
 }

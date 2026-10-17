@@ -10,6 +10,9 @@
     "verify": "pnpm check"
   },
   "devDependencies": {
+    "@sdkwork/cloudrouter-contracts": "workspace:*",
+    "@sdkwork/cloudrouter-sdk-ports": "workspace:*",
+    "@sdkwork/cloudrouter-service": "workspace:*",
     "tsx": "catalog:",
     "typescript": "catalog:"
   }

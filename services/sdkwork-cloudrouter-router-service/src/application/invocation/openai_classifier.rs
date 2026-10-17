@@ -279,6 +279,31 @@ fn classify_openai_spec(method: &Method, path: &str) -> Result<OpenAiRouteSpec, 
             RoutingCapability::Network,
         ));
     }
+    // DeepSeek's standalone web tools (`POST /v1/tools/search` and
+    // `POST /v1/tools/fetch`) are published on the `/v1` OpenAI-compatible
+    // ingress but speak DeepSeek's own raw JSON protocol, not the OpenAI chat
+    // schema. They are request-billed — DeepSeek charges per successful call,
+    // never per returned result — so they classify with
+    // `AiRouteModelRequirement::Ignored` + `BillingMeter::ApiRequest` through
+    // the `api()` helper, which is exactly the `api_request_policy()` branch of
+    // `BillingPolicyInterceptor`. Without these arms the gateway answers 404 for
+    // a path the open-api contract advertises.
+    if method == Method::POST && path == "/v1/tools/search" {
+        return Ok(api(
+            "deepseek/web/tools_search",
+            "deepseek.web_search",
+            ResourceType::ProviderNativeApi,
+            RoutingCapability::Network,
+        ));
+    }
+    if method == Method::POST && path == "/v1/tools/fetch" {
+        return Ok(api(
+            "deepseek/web/tools_fetch",
+            "deepseek.web_fetch",
+            ResourceType::ProviderNativeApi,
+            RoutingCapability::Network,
+        ));
+    }
     if method == Method::GET && path == "/v1/models" {
         return Ok(free_endpoint(
             "openai/management/models",

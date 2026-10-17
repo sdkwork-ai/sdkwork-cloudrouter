@@ -14,8 +14,9 @@ import type { ConsoleDashboardLabels } from './state/consoleDashboardModel.js';
 export function createConsoleDashboardPage(
   ports: CloudRouterConsolePorts,
   labels: ConsoleDashboardLabels,
+  locale: string,
 ) {
-  const state = createConsoleDashboardState(labels);
+  const state = createConsoleDashboardState(labels, locale);
   return {
     state,
     async load(): Promise<void> {
@@ -23,6 +24,7 @@ export function createConsoleDashboardPage(
       try {
         const snapshot = await loadConsoleOverview(ports);
         state.setSnapshot(snapshot);
+        state.setError(null);
       } catch (cause) {
         state.setError(cause instanceof Error ? cause.message : labels.empty);
       } finally {

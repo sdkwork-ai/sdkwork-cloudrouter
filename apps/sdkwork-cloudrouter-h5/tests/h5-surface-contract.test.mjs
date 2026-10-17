@@ -38,6 +38,22 @@ const H5_PACKAGE_BY_CAPABILITY_ID = {
   'console-catalog': 'sdkwork-cloudrouter-h5-console-catalog',
 };
 
+/**
+ * Canonical console tab order, read from the shared contract authority instead
+ * of restated here, so the H5 tab bar cannot silently drift from
+ * `CLOUDROUTER_CONSOLE_ROUTE_ORDER`.
+ */
+const routesSource = fs.readFileSync(
+  path.join(
+    REPO,
+    'apps/sdkwork-cloudrouter-common/packages/sdkwork-cloudrouter-contracts/src/routes.ts',
+  ),
+  'utf8',
+);
+const consoleRouteOrder = [...routesSource.matchAll(/CLOUDROUTER_CONSOLE_ROUTE_ORDER = \[([^\]]+)\]/gu)]
+  .map((match) => [...match[1].matchAll(/'([^']+)'/gu)].map((key) => key[1]))
+  .at(0);
+
 function readText(relativePath) {
   return fs.readFileSync(path.join(ROOT, relativePath), 'utf8');
 }
@@ -121,5 +137,55 @@ describe('cloudrouter h5 application root', () => {
       const spec = readJson(`packages/${dir}/specs/component.spec.json`);
       assert.equal(spec.component.type, 'node-package');
     }
+  });
+
+  it('renders the console tab bar from the shared tab descriptors', () => {
+    const navigation = readText('packages/sdkwork-cloudrouter-h5-shell/src/navigation/consoleNavigation.ts');
+    assert.ok(
+      navigation.includes('CLOUDROUTER_CONSOLE_TABS'),
+      'navigation derives from the shared tab authority',
+    );
+    for (const glyph of ['dashboard', 'receipt', 'key', 'barChart']) {
+      assert.ok(navigation.includes(`${glyph}: '`), `ICON_BY_GLYPH covers the ${glyph} glyph`);
+    }
+    assert.ok(!navigation.includes('/sign-in'), 'the sign-in route is not a tab');
+  });
+
+  it('keeps the tab bar on the tab roots only, with native selected slots', () => {
+    const layout = readText('packages/sdkwork-cloudrouter-h5-shell/src/layout/ConsoleShellLayout.tsx');
+    assert.ok(layout.includes('cr-tabbar fixed bottom-0'), 'the tab bar sits outside the scroll flow');
+    assert.ok(layout.includes('grid-cols-4'), 'the tab bar declares one column per console tab');
+    // The app canvas is the only scroll container; the document frame never
+    // scrolls.
+    assert.ok(layout.includes('overflow-y-auto'), 'the canvas scrolls vertically');
+    assert.ok(layout.includes('overscroll-behavior-contain'), 'scroll never chains to the document');
+    assert.ok(layout.includes('overflow-hidden'), 'the app frame itself never scrolls');
+    // Filled/outline pair of the same glyph through the native selected slot,
+    // never a color-only swap.
+    assert.ok(layout.includes("fill={isActive ? 'currentColor' : 'none'}"));
+    const routes = readText('src/routes/consoleRoutes.tsx');
+    for (const key of consoleRouteOrder) {
+      assert.ok(
+        routes.includes(`CLOUDROUTER_CONSOLE_ROUTES.${key}.path`),
+        `console routes mount the ${key} tab inside the shell`,
+      );
+    }
+    assert.ok(
+      !routes.includes('CLOUDROUTER_CONSOLE_ROUTES.signIn.path'),
+      'the sign-in route renders outside the tab shell',
+    );
+  });
+
+  it('contains document scrolling to the app canvas and the tab bar', () => {
+    const css = readText('src/index.css');
+    assert.match(css, /--cr-tabbar-height:/u);
+    assert.match(
+      css,
+      /\.cr-canvas\s*\{[^}]*padding-bottom:\s*calc\(var\(--cr-tabbar-height\)/u,
+      'the canvas reserves the tab bar height plus the safe-area inset',
+    );
+    assert.match(css, /\.cr-canvas\s*\{[^}]*scrollbar-width:\s*none/u, 'the canvas scrollbar is hidden');
+    assert.match(css, /\.cr-tabbar\s*\{[^}]*padding-bottom:\s*env\(safe-area-inset-bottom/u);
+    assert.match(css, /#root\s*\{[^}]*overflow:\s*hidden/u, 'document scrolling stays disabled');
   });
 });
