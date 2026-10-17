@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-09-28T23:13:49.173Z",
+  "generatedAt": "2026-10-17T10:04:10.105Z",
   "facts": {
-    "generatedAt": "2026-09-28T23:13:49.173Z",
+    "generatedAt": "2026-10-17T10:04:10.105Z",
     "identity": {
       "appKey": "sdkwork-cloudrouter",
-      "version": "0.4.1",
+      "version": "0.4.11",
       "releaseChannels": [
         "STABLE"
       ],
@@ -24,7 +24,7 @@
       "workflowSbomRequired": true,
       "workflowOidcRequired": true,
       "workflowArtifactAttestations": true,
-      "installPackageTargetCount": 20
+      "installPackageTargetCount": 22
     },
     "ciSecurity": {
       "exists": true,
@@ -92,7 +92,9 @@
         "0042_retire_ai_mcp_runtime_registry.down.sql",
         "0042_retire_ai_mcp_runtime_registry.up.sql",
         "0043_payment_reconciliation_tables.down.sql",
-        "0043_payment_reconciliation_tables.up.sql"
+        "0043_payment_reconciliation_tables.up.sql",
+        "0044_ops_audit_log_idempotency.down.sql",
+        "0044_ops_audit_log_idempotency.up.sql"
       ],
       "postgresBaselineExists": true,
       "postgresPairs": {

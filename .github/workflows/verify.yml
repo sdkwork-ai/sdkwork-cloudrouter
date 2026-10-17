@@ -163,12 +163,18 @@ jobs:
         with:
           node-version: 22
 
+      # anchore/syft-action was renamed upstream; the repository now 404s, which
+      # failed this job at "Set up job" before any step ran. anchore/sbom-action
+      # is the same action under its current name and takes the same inputs.
       - name: Generate multi-ecosystem SBOM with syft (cargo + npm + pnpm)
-        uses: anchore/syft-action@v1
+        uses: anchore/sbom-action@v0
         with:
           path: .
           format: spdx-json
           output-file: /tmp/sbom-ci.spdx.json
+          # The SBOM is validated in the next step and released through the
+          # packaging workflow; do not upload a second copy as a run artifact.
+          upload-artifact: "false"
 
       - name: Verify syft SBOM covers cargo and npm ecosystems
         run: |

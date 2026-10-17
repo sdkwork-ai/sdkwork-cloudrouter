@@ -1,0 +1,56 @@
+# cargo-audit configuration for `cargo audit --deny warnings` (.github/workflows/verify.yml).
+#
+# `--deny warnings` promotes every advisory, including `unmaintained` and
+# `yanked` warnings, to a hard failure. Every entry below was investigated and
+# cannot be resolved inside this repository. Each entry records why, so the
+# next audit is a re-check of these specific items rather than a fresh triage.
+#
+# Rule for adding an entry: only ignore an advisory that is (a) unfixable in
+# this repository because an upstream or sibling repository pins the current
+# major version, (b) published with no fixed version at all, or (c) a
+# maintenance-status warning for a transitive crate. Never ignore a
+# vulnerability that `cargo update --precise` can resolve.
+
+[advisories]
+ignore = [
+  # --- No fixed version published upstream ---------------------------------
+  # RUSTSEC-2023-0071: rsa "Marvin Attack" timing sidechannel. The advisory
+  # states there is no patched release; every 0.9.x and 0.10.x is affected.
+  # Pulled in by sdkwork-cloudrouter-security, sdkwork-iam-bootstrap,
+  # sdkwork-web-core and sdkwork-payment-providers for RSA signing. Revisit
+  # when rsa ships a fix.
+  "RUSTSEC-2023-0071",
+
+  # --- Blocked by a sibling repository's major-version pin ------------------
+  # RUSTSEC-2026-0367 / -0368 / -0369: zip archive-extraction symlink escapes
+  # and SUID/SGID preservation. The fix is zip >= 9.0.0, but
+  # sdkwork-routes-drive-app-api in ../sdkwork-drive pins `zip = "8"`, so the
+  # resolver refuses 9.x. Removing these entries requires that sibling
+  # repository to widen its requirement first.
+  "RUSTSEC-2026-0367",
+  "RUSTSEC-2026-0368",
+  "RUSTSEC-2026-0369",
+
+  # RUSTSEC-2024-0437: protobuf uncontrolled recursion. The fix is
+  # protobuf >= 3.7.2, but prometheus 0.13.4 pins `protobuf = "2"`. Needs a
+  # prometheus release that moves to protobuf 3.x.
+  "RUSTSEC-2024-0437",
+
+  # --- Maintenance-status warnings on transitive crates ---------------------
+  # RUSTSEC-2024-0436: paste is unmaintained. Transitive through
+  # sdkwork-database-repository; the crate has no successor and no API change
+  # is required, so it is a maintenance signal rather than an exposure.
+  "RUSTSEC-2024-0436",
+
+  # RUSTSEC-2024-0449: unsafe-libyaml is unmaintained. Transitive through
+  # serde_yaml 0.9.34+deprecated, itself pulled in by sdkwork-database-contract,
+  # sdkwork-database-spi, sdkwork-routes-agents-http-shared and
+  # sdkwork-agent-provider-hermes. serde_yaml has a maintained successor
+  # (serde_yml / serde_norway), but migrating those five crates is out of
+  # scope for a packaging change.
+  "RUSTSEC-2024-0449",
+
+  # NOTE: the `yanked` warning on yoke-derive 0.8.3 is deliberately absent
+  # here. It was resolved the honest way, by locking yoke-derive 0.8.4, so it
+  # has no reason to appear in this list.
+]

@@ -8,18 +8,21 @@ rewritten on every release so it never accumulates prior versions.
 - `2026-05-16-v0.2.0.md` — runtime authentication settings capability.
 - `2026-05-17-v0.3.0.md` — commercial runtime and installation hardening slice.
 
-## 2026-10-17 - v0.4.10
+## 2026-10-17 - v0.4.11
 
 ### Scope
 
-- Closes the three packaging defects that the `v0.4.7` and `v0.4.8` runs exposed.
-  `v0.4.7` was tagged before its fixes landed, so those fixes had never been
-  exercised by a packaging run; `0.4.8` built them and surfaced a second,
-  independent WiX defect; `0.4.9` is the version that closes both.
-- Supersedes `v0.4.8`, which cleared `WIX0103` on every MSI lane but failed all
-  of them with `WIX0091`, and `v0.4.7`, which never built its own fixes.
+- Closes the packaging defect that the `v0.4.9` run left open, and repairs the
+  `Verify Application` gate so it fails for real reasons instead of structural
+  ones. `v0.4.7` was tagged before its fixes landed, `v0.4.8` surfaced a second
+  WiX defect behind the first, and `v0.4.9` cleared the cross-root identifier
+  collision while leaving the derivation truncated.
+- Supersedes `v0.4.10`, which carries the complete `Directory` identifier fix but
+  inherits the unrepaired CI gate described below.
 
 ### Delivered
+
+#### Packaging
 
 - Declared `sdkwork-aiot` in `sdkwork.workflow.json` `dependencies[]` and in the
   `package.yml` `dependency_refs_json` map. It was the only one of the fifty
@@ -33,19 +36,41 @@ rewritten on every release so it never accumulates prior versions.
   staged under a stable hashed id so the source path is constant-length, and
   the installed name moved to the `<File Name>` attribute while the directory
   tree is still carried by the `Directory` nodes.
-- Namespaced the generated WiX `Directory` identifiers by their owning
-  `StandardDirectory` tree and by their own path within that tree. WiX
-  identifiers are global to the whole `.wxs`, but the identifier was derived
-  from the directory name sequence minus its last segment, so the `sdkwork`
-  directory that exists under ProgramFiles, ProgramData, and AppData produced
-  one repeated `Directory Id` and every MSI lane failed with `WIX0091` Duplicate
-  Directory. Each `DirectoryNode` now carries its tree scope and its own path,
-  and the identifier is derived from both.
+- Derived the generated WiX `Directory` identifiers from the full in-tree path.
+  WiX identifiers are global to the whole `.wxs`, but the identifier hashed the
+  directory name sequence minus its last segment. The first repair namespaced it
+  by owning `StandardDirectory` tree, which cleared the cross-root collision but
+  left every sibling below a shared parent sharing one identifier: on a
+  134-file payload, 143 directories collapsed onto 84 identifiers and all four
+  MSI lanes failed with `WIX0091`. Each `DirectoryNode` now carries its tree
+  scope and its own accumulated path, and the identifier is derived from both.
 - Made the WiX failure message carry the captured tool output instead of only
   `Command failed: wix build <path>`, so the next MSI failure is diagnosable from
   the job log without re-running locally.
 - Staged the H5 surface the install package requires (`efe2a29a`), which the
   `v0.4.7` packaging run also depended on.
+
+#### CI gate repair
+
+- Repointed the supply-chain SBOM step from `anchore/syft-action` to
+  `anchore/sbom-action`. The old repository now returns 404, so the job failed
+  during `Set up job` before any of its own steps ran — the job had been
+  reporting red for a reason unrelated to anything it checks. The replacement is
+  the same action under its current name and takes the same inputs.
+- Locked `rustls` to 0.23.46 and `yoke-derive` to 0.8.4, clearing four
+  `rustls` advisories (RUSTSEC-2026-0346/0347/0348/0349) and the `yoke-derive`
+  yanked-release warning by upgrade rather than by suppression.
+- Added `.cargo/audit.toml` recording the six advisories that cannot be
+  resolved in this repository, each with the reason and the upstream change it
+  waits on: `rsa` has no patched release (RUSTSEC-2023-0071); `zip` needs 9.0.0
+  but `sdkwork-drive` pins `zip = "8"` (RUSTSEC-2026-0367/0368/0369);
+  `protobuf` needs 3.7.2 but `prometheus` 0.13.4 pins `protobuf = "2"`
+  (RUSTSEC-2024-0437); `paste` and `unsafe-libyaml` are unmaintained transitive
+  crates (RUSTSEC-2024-0436, RUSTSEC-2024-0449). Nothing that `cargo update
+  --precise` can resolve is suppressed.
+- Regenerated `generated/audit/standard-alignment-facts.json`, whose facts
+  fingerprint had drifted from `verify.yml` and from the current install-package
+  target count.
 
 ### Configuration surface (verified, unchanged)
 
