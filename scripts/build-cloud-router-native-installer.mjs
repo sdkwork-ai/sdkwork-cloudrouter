@@ -1227,9 +1227,9 @@ function wixFlatPayloadName(fileId, payloadPath) {
 
 function createWixSource(plan, payloadRoot, fileEntries) {
   const componentRefs = [];
-  const programFilesTree = new DirectoryNode('PROGRAMFILESSDKWORK', 'sdkwork');
-  const programDataTree = new DirectoryNode('COMMONAPPDATASDKWORK', 'sdkwork');
-  const appDataTree = new DirectoryNode('APPDATASDKWORK', 'sdkwork');
+  const programFilesTree = new DirectoryNode('PROGRAMFILESSDKWORK', 'sdkwork', 'ProgramFiles');
+  const programDataTree = new DirectoryNode('COMMONAPPDATASDKWORK', 'sdkwork', 'ProgramData');
+  const appDataTree = new DirectoryNode('APPDATASDKWORK', 'sdkwork', 'AppData');
   for (const entry of fileEntries) {
     const payloadPath = windowsPayloadPathForArchivePath(plan, entry.relativePath);
     if (!payloadPath) {
@@ -1307,9 +1307,14 @@ function stripWindowsRootDirectoryName(parts, expectedRootName) {
 }
 
 class DirectoryNode {
-  constructor(id, name) {
+  constructor(id, name, scope = '') {
     this.id = id;
     this.name = name;
+    // WiX identifiers are global to the whole .wxs, not per StandardDirectory,
+    // so two roots that both contain a directory named e.g. "sdkwork" must not
+    // derive the same Directory Id. The scope namespaces the id by the tree
+    // this node belongs to.
+    this.scope = scope;
     this.directories = new Map();
     this.files = [];
   }
@@ -1323,9 +1328,9 @@ class DirectoryNode {
       return;
     }
     const directoryName = parts[0];
-    const directoryId = stableWixId('dir', parts.slice(0, -1).join('/'));
+    const directoryId = stableWixId('dir', `${this.scope}/${parts.slice(0, -1).join('/')}`);
     if (!this.directories.has(directoryName)) {
-      this.directories.set(directoryName, new DirectoryNode(directoryId, directoryName));
+      this.directories.set(directoryName, new DirectoryNode(directoryId, directoryName, this.scope));
     }
     this.directories.get(directoryName).addFile(parts.slice(1), file);
   }

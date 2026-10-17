@@ -31,6 +31,13 @@ rewritten on every release so it never accumulates prior versions.
   staged under a stable hashed id so the source path is constant-length, and
   the installed name moved to the `<File Name>` attribute while the directory
   tree is still carried by the `Directory` nodes.
+- Namespaced the generated WiX `Directory` identifiers by their owning
+  `StandardDirectory` tree. WiX identifiers are global to the whole `.wxs`, but
+  the identifier was derived only from the directory name sequence, so the
+  `sdkwork` directory that exists under ProgramFiles, ProgramData, and AppData
+  produced one repeated `Directory Id` and every MSI lane failed with `WIX0091`
+  Duplicate Directory. Each `DirectoryNode` now carries its tree scope and the
+  identifier is derived from that scope plus the relative path.
 - Made the WiX failure message carry the captured tool output instead of only
   `Command failed: wix build <path>`, so the next MSI failure is diagnosable from
   the job log without re-running locally.
@@ -64,8 +71,13 @@ Install-time customization stays contract-driven and is enforced by
 - MSI path regression probe (`.sdkwork/evidence/msi-path-probe.mjs`) with WiX
   5.0.2, the same version the runner installs: a 364-character logical payload
   path produces 101/102-character `<File Source>` paths and the package builds.
-- Mutation check on the probe: reverting the fix to the full logical path
-  reproduces `WIX0103` on a 434-character path, so the probe is not a constant
+- MSI duplicate-identifier probe (`.sdkwork/evidence/msi-duplicate-directory-probe.mjs`)
+  with the same WiX: a payload that places `sdkwork` under all three
+  `StandardDirectory` trees yields 23 unique `Directory` identifiers with no
+  duplicates, and the package builds.
+- Mutation checks on both probes: reverting the path fix reproduces `WIX0103`
+  on a 434-character path, and dropping the tree scope from the identifier
+  reproduces `WIX0091` Duplicate Directory, so neither probe is a constant
   green.
 - `node scripts/check-github-workflow-integration.mjs` → ok.
 
@@ -80,6 +92,12 @@ repositories, so Cargo cannot load the `sdkwork-api-log-assembly` manifest;
 
 ### Risks / Remaining Work
 
+- The four container lanes failed in the `0.4.8` run for a reason outside this
+  repository: 181 `TS2307` errors inside `sdkwork-drive`, whose generated SDK
+  sources were gitignored and therefore absent from a cold checkout. That
+  repository committed the missing generated sources in `6c2f95f` after this
+  run started, so re-running the failed lanes is expected to clear them; no
+  change in this repository can affect it.
 - Container image publication still requires `SDKWORK_CONTAINER_REGISTRY_USERNAME`
   and `SDKWORK_CONTAINER_REGISTRY_PASSWORD`; without them the container lane
   builds the install package but cannot push an image.
