@@ -1,26 +1,30 @@
 # Current Version
 
 - Current Version: `0.4.11`
-- Release Date: unreleased (pre-launch; `sdkwork.app.config.json` declares
-  `preLaunch: true`)
-- Status: `In development — no GitHub release published for the 0.4.x line yet`
-- Released Version: `0.3.0` (2026-05-17)
-- Released GitHub Release: `https://github.com/sdkwork-ai/sdkwork-cloudrouter/releases/tag/v0.3.0`
-- Released Workflow: `https://github.com/sdkwork-ai/sdkwork-cloudrouter/actions/runs/25969690825`
+- Release Date: 2026-10-17
+- Status: `Published — GitHub release `v0.4.11``
+- Released Version: `0.4.11` (2026-10-17)
+- Released GitHub Release: `https://github.com/sdkwork-ai/sdkwork-cloudrouter/releases/tag/v0.4.11`
+- Released Workflow: `https://github.com/sdkwork-ai/sdkwork-cloudrouter/actions/runs/39040567817`
 - Release Asset Prefix: `cloudrouter-*`
 - Previous Version: `0.4.10`
 - Previous Status: `Superseded by 0.4.11 (see CHANGELOG.md)`
 
-The `0.4.x` line (console memory embedding, agents console surface, pricing
-and billing convergence, hardened egress boundaries) has not produced a
-published release record yet; this entry tracks the working version declared
-by `sdkwork.app.config.json` and the workspace manifests so release
-documentation does not lag the code.
+`0.4.11` is the first version of the `0.4.x` line whose packaging workflow ran
+its full matrix: eighteen of the twenty-two targets produced signed, attested
+art, and the release carries them. It closes the two CI defects that made the
+previous three attempts produce nothing at all — the `Verify Application` jobs
+never materialized the federated dependency set their Cargo and pnpm workspaces
+address by relative path, and the packaging plan treated every release-triggered
+run as a deployment request it could not satisfy, which skipped the package
+matrix before a single job started. It also carries the WiX `Directory`
+identifier derivation fix that `0.4.9` left incomplete.
 
-`0.4.11` carries the packaging defect fix that `0.4.9` left incomplete — the
-WiX `Directory` identifier derivation — plus the CI repair that keeps the
-Verify Application run honest: the `anchore/syft-action` repository was renamed
-upstream, and `cargo audit` had stopped being a real gate.
+The four `container` targets build their install package but stop at image
+publication: pushing to `registry.sdkwork.com` requires the
+`SDKWORK_CONTAINER_REGISTRY_USERNAME` and
+`SDKWORK_CONTAINER_REGISTRY_PASSWORD` repository secrets, which are not
+configured. See CHANGELOG.md, "Risks / Remaining Work".
 
 ## Versioning Rules
 

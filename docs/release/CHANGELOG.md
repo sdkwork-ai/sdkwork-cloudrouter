@@ -206,16 +206,25 @@ job.
 
 ### Risks / Remaining Work
 
-- The four container lanes failed in the `0.4.8` run for a reason outside this
-  repository: 181 `TS2307` errors inside `sdkwork-drive`, whose generated SDK
-  sources were gitignored and therefore absent from a cold checkout. That
-  repository committed the missing generated sources in `6c2f95f` after this
-  run started, so re-running the failed lanes is expected to clear them; no
-  change in this repository can affect it.
-- Container image publication still requires `SDKWORK_CONTAINER_REGISTRY_USERNAME`
-  and `SDKWORK_CONTAINER_REGISTRY_PASSWORD`; without them the container lane
-  builds the install package but cannot push an image.
+- **Container lanes remain unpublished, from missing registry credentials.**
+  All four `container` targets built their install package successfully — for
+  example `cloudrouter-linux-x64-container-0.4.11.tar.gz`, 80,188,758 bytes,
+  sha256 `3f281fe48701edd91c61e4a0b1aec5bf61e23dd339562ad339c92ed8c5c82634` —
+  and then stopped at publication with
+  `--push requires SDKWORK_CONTAINER_REGISTRY_USERNAME and SDKWORK_CONTAINER_REGISTRY_PASSWORD`.
+  Neither secret is configured on the repository, so the image
+  `registry.sdkwork.com/apps/sdkwork-cloudrouter:0.4.11` cannot be pushed. No
+  change in this repository can substitute for them: the repository already
+  emits this exact message, and the release-evidence step deliberately refuses a
+  local-only image without an immutable registry digest. Supplying the two
+  secrets and re-running only the failed lanes clears this.
+- The earlier `sdkwork-drive` `TS2307` container failures from the `0.4.8` run
+  do not recur: the four container lanes in this release reached the image
+  publication step, so their install packages build.
 - `cargo check --workspace --all-targets` is red on `main` independently of this
   release (`settlements-dashboard-repository-sqlx` test target missing a
-  `[dev-dependencies]` entry); the library surface is checked without
-  `--all-targets`.
+  `[dev-dependencies]` entry, and `sql_pricing_catalog_contract.rs` referencing
+  `UpstreamAccountGroupRow.vendor_code` / `.modalities_json` that neither this
+  repository's row struct nor `sdkwork-models`' domain type declares). The
+  library surface is checked without `--all-targets`, and the packaging
+  lifecycle does not compile test targets.
