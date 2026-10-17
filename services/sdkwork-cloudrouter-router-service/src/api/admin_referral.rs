@@ -8,18 +8,17 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::api::request_id::generate_server_request_id;
-use crate::api::response::{
-    bad_request, json_created_response, json_success_list_response, no_content_response,
-    offset_page_info, parse_offset_list_query, problem_from_wire_code, success_envelope,
-    ParsedOffsetListQuery,
-    domain_conflict_response as conflict_response,
-};
-use crate::api::text_normalization::parse_json_body;
 use crate::api::command_error::{
     command_error_from_request_id as request_id_error, command_error_response,
     system_error_response, ApiCommandError,
 };
+use crate::api::request_id::generate_server_request_id;
+use crate::api::response::{
+    bad_request, domain_conflict_response as conflict_response, json_created_response,
+    json_success_list_response, no_content_response, offset_page_info, parse_offset_list_query,
+    problem_from_wire_code, success_envelope, ParsedOffsetListQuery,
+};
+use crate::api::text_normalization::parse_json_body;
 use crate::application::EntityUuidGenerator;
 use crate::ports::{
     AdminReferralListPage, AdminReferralStore, AdminReferralStrategyItem, AdminReferralSubject,
@@ -135,9 +134,7 @@ async fn fetch_referral_relations(
         .await
     {
         Ok(page) => referral_list_response(page),
-        Err(error) => {
-            system_error_response("referral relation read model is unavailable", error)
-        }
+        Err(error) => system_error_response("referral relation read model is unavailable", error),
     }
 }
 
@@ -169,9 +166,7 @@ async fn fetch_referral_strategies(
         .await
     {
         Ok(page) => referral_list_response(page),
-        Err(error) => {
-            system_error_response("referral strategy read model is unavailable", error)
-        }
+        Err(error) => system_error_response("referral strategy read model is unavailable", error),
     }
 }
 
@@ -195,9 +190,7 @@ async fn fetch_referral_strategy(
     {
         Ok(Some(item)) => Json(success_envelope(item)).into_response(),
         Ok(None) => not_found_response("referral strategy was not found"),
-        Err(error) => {
-            system_error_response("referral strategy read model is unavailable", error)
-        }
+        Err(error) => system_error_response("referral strategy read model is unavailable", error),
     }
 }
 
@@ -616,9 +609,7 @@ fn normalize_enum_value(
     }
 }
 
-fn normalize_strategy_status(
-    value: Option<&str>,
-) -> Result<String, ApiCommandError> {
+fn normalize_strategy_status(value: Option<&str>) -> Result<String, ApiCommandError> {
     match normalize_optional_strategy_status(value)? {
         Some(status) => Ok(status),
         None => Ok(STATUS_DISABLED.to_owned()),
@@ -695,9 +686,7 @@ fn is_cash_amount(value: &str) -> bool {
         && fraction.bytes().all(|byte| byte.is_ascii_digit())
 }
 
-fn normalize_max_rewards_per_inviter(
-    value: Option<&Value>,
-) -> Result<i64, ApiCommandError> {
+fn normalize_max_rewards_per_inviter(value: Option<&Value>) -> Result<i64, ApiCommandError> {
     let raw = match value {
         Some(Value::Number(value)) => value.as_i64(),
         Some(Value::String(value)) => value.trim().parse::<i64>().ok(),
@@ -877,9 +866,7 @@ fn normalize_path_id(value: &str, field_name: &str) -> Result<String, String> {
     Ok(value.to_owned())
 }
 
-fn generate_entity_uuid(
-    state: &AdminReferralState,
-) -> Result<String, ApiCommandError> {
+fn generate_entity_uuid(state: &AdminReferralState) -> Result<String, ApiCommandError> {
     state
         .entity_uuid_generator
         .generate_entity_uuid()

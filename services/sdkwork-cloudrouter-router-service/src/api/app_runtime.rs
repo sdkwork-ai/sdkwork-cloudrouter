@@ -4,8 +4,8 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use crate::api::command_error::system_error_response;
 use crate::api::app_sql_subject::{map_required_app_sql_subject, RequiredAppSqlScopedSubject};
+use crate::api::command_error::system_error_response;
 use axum::body::Body;
 use axum::extract::{Path, Query, State};
 use axum::http::{header, HeaderMap, HeaderValue, Method, StatusCode};
@@ -725,10 +725,7 @@ async fn complete_invocation(
             request_runtime_stream_cancellation(&state, command.subject, &command.invocation_id)
                 .await
         {
-            return system_error_response(
-                "app runtime stream cancellation is unavailable",
-                error,
-            );
+            return system_error_response("app runtime stream cancellation is unavailable", error);
         }
         let terminal_event = match first_runtime_terminal_event(
             state.store.as_ref(),
@@ -739,10 +736,7 @@ async fn complete_invocation(
         {
             Ok(item) => item,
             Err(error) => {
-                return system_error_response(
-                    "app runtime terminal event is unavailable",
-                    error,
-                );
+                return system_error_response("app runtime terminal event is unavailable", error);
             }
         };
         if let Some(item) = terminal_event {
@@ -923,10 +917,7 @@ async fn stream_events(
             Ok(RuntimeStreamExecutionStart::Active) => true,
             Ok(RuntimeStreamExecutionStart::TerminalAlreadyRecorded) => false,
             Err(error) => {
-                return system_error_response(
-                    "app runtime event stream is unavailable",
-                    error,
-                );
+                return system_error_response("app runtime event stream is unavailable", error);
             }
         };
         return runtime_event_tail_sse_response(

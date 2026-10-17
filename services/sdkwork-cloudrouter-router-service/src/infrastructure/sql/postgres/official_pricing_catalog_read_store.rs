@@ -1,7 +1,7 @@
-use crate::infrastructure::sql::store_error::redacted_store_error;
 use super::pricing_region_preference::{
     is_region_missing, region_display_order, resolve_group_region, PricingRegionPreferences,
 };
+use crate::infrastructure::sql::store_error::redacted_store_error;
 use sqlx::{PgPool, Row};
 
 use crate::domain::DomainError;

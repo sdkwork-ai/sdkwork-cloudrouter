@@ -8,13 +8,13 @@ use axum::routing::get;
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
-use crate::api::request_id::generate_server_request_id;
-use crate::api::response::{bad_request, success_envelope};
-use crate::api::text_normalization::parse_json_body;
 use crate::api::command_error::{
     command_error_from_request_id as request_id_error, command_error_response,
     system_error_response, ApiCommandError,
 };
+use crate::api::request_id::generate_server_request_id;
+use crate::api::response::{bad_request, success_envelope};
+use crate::api::text_normalization::parse_json_body;
 use crate::application::EntityUuidGenerator;
 use crate::domain::DomainError;
 use crate::ports::{
@@ -72,10 +72,9 @@ async fn fetch_runtime_region_settings(
     let subject = scoped.into();
     match load_settings(&state, subject).await {
         Ok(settings) => Json(success_envelope(to_response(settings))).into_response(),
-        Err(error) => system_error_response(
-            "runtime region settings read model is unavailable",
-            error,
-        ),
+        Err(error) => {
+            system_error_response("runtime region settings read model is unavailable", error)
+        }
     }
 }
 
@@ -108,7 +107,9 @@ async fn update_runtime_region_settings(
     };
     let command = match build_update_command(state.clone(), subject, settings) {
         Ok(command) => command,
-        Err(error) => return command_error_response(error, "runtime region settings command is invalid"),
+        Err(error) => {
+            return command_error_response(error, "runtime region settings command is invalid")
+        }
     };
 
     match state.store.update_runtime_region_settings(command).await {

@@ -8,16 +8,15 @@ use axum::routing::{get, patch};
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 
-use crate::api::request_id::generate_server_request_id;
-use crate::api::response::{
-    bad_request, json_created_response, json_success_list_response, no_content_response,
-    normalize_list_search_query, offset_page_info, parse_offset_list_query, problem_from_wire_code,
-    success_envelope,
-    domain_conflict_response as conflict_response,
-};
 use crate::api::command_error::{
     command_error_from_request_id as request_id_error, command_error_response,
     system_error_response, ApiCommandError,
+};
+use crate::api::request_id::generate_server_request_id;
+use crate::api::response::{
+    bad_request, domain_conflict_response as conflict_response, json_created_response,
+    json_success_list_response, no_content_response, normalize_list_search_query, offset_page_info,
+    parse_offset_list_query, problem_from_wire_code, success_envelope,
 };
 use crate::application::EntityUuidGenerator;
 use crate::ports::{
@@ -181,9 +180,7 @@ async fn create_announcement(
             },
         ),
         Err(error) if error.is_conflict() => conflict_response(error),
-        Err(error) => {
-            system_error_response("announcement command store is unavailable", error)
-        }
+        Err(error) => system_error_response("announcement command store is unavailable", error),
     }
 }
 
@@ -220,9 +217,7 @@ async fn update_announcement(
         .into_response(),
         Ok(None) => not_found_response("announcement was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
-        Err(error) => {
-            system_error_response("announcement command store is unavailable", error)
-        }
+        Err(error) => system_error_response("announcement command store is unavailable", error),
     }
 }
 
@@ -246,9 +241,7 @@ async fn delete_announcement(
         Ok(true) => no_content_response(None),
         Ok(false) => not_found_response("announcement was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
-        Err(error) => {
-            system_error_response("announcement command store is unavailable", error)
-        }
+        Err(error) => system_error_response("announcement command store is unavailable", error),
     }
 }
 
@@ -424,9 +417,7 @@ fn build_delete_command(
     })
 }
 
-fn generate_entity_uuid(
-    state: &AdminAnnouncementState,
-) -> Result<String, ApiCommandError> {
+fn generate_entity_uuid(state: &AdminAnnouncementState) -> Result<String, ApiCommandError> {
     state
         .entity_uuid_generator
         .generate_entity_uuid()
@@ -448,4 +439,3 @@ fn to_item_response(item: AdminAnnouncementItem) -> AdminAnnouncementItemRespons
 fn not_found_response(message: &'static str) -> Response {
     problem_from_wire_code("4040", message).into_response()
 }
-

@@ -279,10 +279,7 @@ where
     };
     match load(query).await {
         Ok(collection) => collection_response(collection),
-        Err(error) => system_error_response(
-            "transaction center collection is unavailable",
-            error,
-        ),
+        Err(error) => system_error_response("transaction center collection is unavailable", error),
     }
 }
 
@@ -305,10 +302,9 @@ fn server_request_id() -> Result<String, ApiResponseError> {
     generate_server_request_id().map_err(|error| {
         let response = match error {
             RequestIdError::Invalid(message) => bad_request(message),
-            RequestIdError::System(message) => system_error_response(
-                "request id generation failed",
-                DomainError::new(message),
-            ),
+            RequestIdError::System(message) => {
+                system_error_response("request id generation failed", DomainError::new(message))
+            }
         };
         response.into()
     })

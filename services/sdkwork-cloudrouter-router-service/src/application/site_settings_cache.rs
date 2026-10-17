@@ -421,7 +421,8 @@ impl SiteSettingsStore for CachedSiteSettingsStore {
     ) -> SiteSettingsFuture<'a, SiteSettings> {
         Box::pin(async move {
             let key = SiteSettingsCacheKey::from_subject(&query.subject);
-            self.read_through(key, self.inner.get_site_settings(query)).await
+            self.read_through(key, self.inner.get_site_settings(query))
+                .await
         })
     }
 
@@ -609,7 +610,11 @@ mod tests {
             assert_eq!("Origin Brand", settings.site_name);
         }
 
-        assert_eq!(1, inner.reads(), "25 reads must collapse to one origin load");
+        assert_eq!(
+            1,
+            inner.reads(),
+            "25 reads must collapse to one origin load"
+        );
         let metrics = cached.metrics().snapshot();
         assert_eq!(1, metrics.origin_loads);
         assert_eq!(24, metrics.hits);
@@ -654,11 +659,21 @@ mod tests {
         );
 
         store.get_site_settings(subject_query()).await.unwrap();
-        store.get_site_settings_for_scope(scope_query()).await.unwrap();
+        store
+            .get_site_settings_for_scope(scope_query())
+            .await
+            .unwrap();
         store.get_site_settings(subject_query()).await.unwrap();
-        store.get_site_settings_for_scope(scope_query()).await.unwrap();
+        store
+            .get_site_settings_for_scope(scope_query())
+            .await
+            .unwrap();
 
-        assert_eq!(2, inner.reads(), "each cache identity keeps its own snapshot");
+        assert_eq!(
+            2,
+            inner.reads(),
+            "each cache identity keeps its own snapshot"
+        );
     }
 
     #[tokio::test]

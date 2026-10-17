@@ -122,7 +122,10 @@ fn gateway_usage_upsert_placeholder_order_matches_all_postgres_bindings() {
     // dropping any of the three halves breaks the bind/placeholder contract.
     assert_sql_contains(postgres_sql, "debit_points, owner_name_snapshot)");
     assert_sql_contains(postgres_sql, "$49, $50)");
-    assert_sql_contains(postgres_sql, "owner_name_snapshot = excluded.owner_name_snapshot");
+    assert_sql_contains(
+        postgres_sql,
+        "owner_name_snapshot = excluded.owner_name_snapshot",
+    );
 }
 
 #[test]

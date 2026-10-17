@@ -11,18 +11,17 @@ use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::api::request_id::generate_server_request_id;
-use crate::api::response::{
-    bad_request, json_created_response, json_success_list_response, no_content_response,
-    offset_page_info, parse_offset_list_query, problem_from_wire_code, success_envelope,
-    ParsedOffsetListQuery,
-    domain_conflict_response as conflict_response,
-};
-use crate::api::text_normalization::parse_json_body;
 use crate::api::command_error::{
     command_error_from_request_id as request_id_error, command_error_response,
     system_error_response, ApiCommandError,
 };
+use crate::api::request_id::generate_server_request_id;
+use crate::api::response::{
+    bad_request, domain_conflict_response as conflict_response, json_created_response,
+    json_success_list_response, no_content_response, offset_page_info, parse_offset_list_query,
+    problem_from_wire_code, success_envelope, ParsedOffsetListQuery,
+};
+use crate::api::text_normalization::parse_json_body;
 use crate::application::EntityUuidGenerator;
 use crate::ports::{
     AdminMarketingListPage, AdminMarketingStore, AdminMarketingSubject, AdminRechargePackageStatus,
@@ -249,9 +248,7 @@ async fn fetch_recharge_packages(
         .await
     {
         Ok(page) => marketing_list_response(page),
-        Err(error) => {
-            system_error_response("recharge package read model is unavailable", error)
-        }
+        Err(error) => system_error_response("recharge package read model is unavailable", error),
     }
 }
 
@@ -276,9 +273,7 @@ async fn create_recharge_package(
     match state.store.create_recharge_package(command).await {
         Ok(item) => json_created_response(None, AdminMarketingItemEnvelope { item }),
         Err(error) if error.is_conflict() => conflict_response(error),
-        Err(error) => {
-            system_error_response("recharge package command store is unavailable", error)
-        }
+        Err(error) => system_error_response("recharge package command store is unavailable", error),
     }
 }
 
@@ -314,9 +309,7 @@ async fn update_recharge_package(
         Ok(item) => Json(success_envelope(AdminMarketingItemEnvelope { item })).into_response(),
         Err(error) if error.is_not_found() => not_found_response("recharge package was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
-        Err(error) => {
-            system_error_response("recharge package command store is unavailable", error)
-        }
+        Err(error) => system_error_response("recharge package command store is unavailable", error),
     }
 }
 
@@ -341,9 +334,7 @@ async fn delete_recharge_package(
         Ok(true) => no_content_response(None),
         Ok(false) => not_found_response("recharge package was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
-        Err(error) => {
-            system_error_response("recharge package command store is unavailable", error)
-        }
+        Err(error) => system_error_response("recharge package command store is unavailable", error),
     }
 }
 
@@ -355,9 +346,7 @@ async fn fetch_recharge_settings(
     let subject = scoped.into();
     match state.store.load_recharge_settings(subject).await {
         Ok(item) => Json(success_envelope(item)).into_response(),
-        Err(error) => {
-            system_error_response("recharge settings read model is unavailable", error)
-        }
+        Err(error) => system_error_response("recharge settings read model is unavailable", error),
     }
 }
 
@@ -478,9 +467,7 @@ async fn update_exchange_rule(
     match state.store.update_exchange_rule(command).await {
         Ok(item) => Json(success_envelope(AdminMarketingItemEnvelope { item })).into_response(),
         Err(error) if error.is_conflict() => conflict_response(error),
-        Err(error) => {
-            system_error_response("exchange rule command store is unavailable", error)
-        }
+        Err(error) => system_error_response("exchange rule command store is unavailable", error),
     }
 }
 
@@ -661,9 +648,7 @@ fn normalize_recharge_package_price_amount(
     Ok(cents_to_plain_money_string(cents))
 }
 
-fn normalize_recharge_package_bonus_points(
-    value: Option<&Value>,
-) -> Result<i64, ApiCommandError> {
+fn normalize_recharge_package_bonus_points(value: Option<&Value>) -> Result<i64, ApiCommandError> {
     let bonus = match value {
         Some(Value::Number(value)) => value.as_i64(),
         Some(Value::String(value)) => value.trim().parse::<i64>().ok(),
@@ -687,9 +672,7 @@ fn normalize_recharge_package_bonus_points(
     Ok(bonus)
 }
 
-fn normalize_recharge_package_discount(
-    value: Option<&Value>,
-) -> Result<i64, ApiCommandError> {
+fn normalize_recharge_package_discount(value: Option<&Value>) -> Result<i64, ApiCommandError> {
     let discount = match value {
         Some(Value::Number(value)) => value.as_i64(),
         Some(Value::String(value)) => value.trim().parse::<i64>().ok(),
@@ -757,10 +740,7 @@ fn normalize_decimal_value(
     normalize_decimal_string(&raw, field_name)
 }
 
-fn normalize_decimal_string(
-    value: &str,
-    field_name: &str,
-) -> Result<String, ApiCommandError> {
+fn normalize_decimal_string(value: &str, field_name: &str) -> Result<String, ApiCommandError> {
     let value = value.trim().replace(',', "");
     if value.is_empty() || value.starts_with('-') || value.starts_with('+') {
         return Err(ApiCommandError::BadRequest(format!(
@@ -876,9 +856,9 @@ fn decimal_money_to_cents_with_field(
             "{field_name} must be a valid money amount"
         )));
     }
-    let dollars = parts[0].parse::<i64>().map_err(|_| {
-        ApiCommandError::BadRequest(format!("{field_name} is too large"))
-    })?;
+    let dollars = parts[0]
+        .parse::<i64>()
+        .map_err(|_| ApiCommandError::BadRequest(format!("{field_name} is too large")))?;
     let cents = if parts.len() == 2 {
         if parts[1].len() > 2 || !parts[1].chars().all(|ch| ch.is_ascii_digit()) {
             return Err(ApiCommandError::BadRequest(format!(
@@ -896,9 +876,7 @@ fn decimal_money_to_cents_with_field(
     let total = dollars
         .checked_mul(100)
         .and_then(|value| value.checked_add(cents))
-        .ok_or_else(|| {
-            ApiCommandError::BadRequest(format!("{field_name} is too large"))
-        })?;
+        .ok_or_else(|| ApiCommandError::BadRequest(format!("{field_name} is too large")))?;
     if total <= 0 {
         return Err(ApiCommandError::BadRequest(format!(
             "{field_name} must be greater than zero"
@@ -941,19 +919,14 @@ fn normalize_required_asset_type(
     normalize_asset_type(value, field_name)
 }
 
-fn normalize_optional_asset_type(
-    value: Option<&str>,
-) -> Result<Option<String>, ApiCommandError> {
+fn normalize_optional_asset_type(value: Option<&str>) -> Result<Option<String>, ApiCommandError> {
     let Some(value) = value.map(str::trim).filter(|value| !value.is_empty()) else {
         return Ok(None);
     };
     normalize_asset_type(value, "asset type").map(Some)
 }
 
-fn normalize_asset_type(
-    value: &str,
-    field_name: &str,
-) -> Result<String, ApiCommandError> {
+fn normalize_asset_type(value: &str, field_name: &str) -> Result<String, ApiCommandError> {
     let normalized = value.trim().to_ascii_uppercase();
     if normalized.chars().count() > MAX_ASSET_TYPE_LEN {
         return Err(ApiCommandError::BadRequest(format!(
@@ -983,9 +956,7 @@ fn ensure_supported_exchange_pair(
     ))
 }
 
-fn normalize_exchange_rule_status(
-    value: Option<&str>,
-) -> Result<String, ApiCommandError> {
+fn normalize_exchange_rule_status(value: Option<&str>) -> Result<String, ApiCommandError> {
     let status = value.unwrap_or("active").trim().to_ascii_lowercase();
     if status == "active" || status == "enabled" || status == "normal" {
         return Ok("active".to_owned());
@@ -1009,9 +980,7 @@ fn normalize_optional_exchange_rule_status(
     normalize_exchange_rule_status(Some(value)).map(Some)
 }
 
-fn normalize_exchange_rate_value(
-    value: Option<&Value>,
-) -> Result<String, ApiCommandError> {
+fn normalize_exchange_rate_value(value: Option<&Value>) -> Result<String, ApiCommandError> {
     let raw = match value {
         Some(Value::String(value)) => value.trim().to_owned(),
         Some(Value::Number(value)) => value.to_string(),
@@ -1042,9 +1011,9 @@ fn normalize_exchange_rate_text(value: &str) -> Result<String, ApiCommandError> 
             "exchange rule rate must be a valid decimal".to_owned(),
         ));
     }
-    let whole = parts[0].parse::<i64>().map_err(|_| {
-        ApiCommandError::BadRequest("exchange rule rate is too large".to_owned())
-    })?;
+    let whole = parts[0]
+        .parse::<i64>()
+        .map_err(|_| ApiCommandError::BadRequest("exchange rule rate is too large".to_owned()))?;
     if !(1..=1_000_000).contains(&whole) {
         return Err(ApiCommandError::BadRequest(
             "exchange rule rate must be between 1 and 1000000".to_owned(),
@@ -1096,9 +1065,7 @@ fn normalize_order_no(value: &str) -> Result<String, String> {
     Ok(value.to_owned())
 }
 
-fn generate_entity_uuid(
-    state: &AdminMarketingState,
-) -> Result<String, ApiCommandError> {
+fn generate_entity_uuid(state: &AdminMarketingState) -> Result<String, ApiCommandError> {
     state
         .entity_uuid_generator
         .generate_entity_uuid()
@@ -1108,4 +1075,3 @@ fn generate_entity_uuid(
 fn not_found_response(message: &'static str) -> Response {
     problem_from_wire_code("4040", message).into_response()
 }
-

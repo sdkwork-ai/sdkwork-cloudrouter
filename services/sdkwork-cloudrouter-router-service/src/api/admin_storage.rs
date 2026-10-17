@@ -15,7 +15,8 @@ use crate::api::response::{
     ApiResponseError,
 };
 use crate::api::text_normalization::{
-    normalize_visible_ascii_optional as normalize_optional_text, normalize_visible_ascii_required as normalize_required_text,
+    normalize_visible_ascii_optional as normalize_optional_text,
+    normalize_visible_ascii_required as normalize_required_text,
 };
 use crate::domain::DomainError;
 use crate::ports::{

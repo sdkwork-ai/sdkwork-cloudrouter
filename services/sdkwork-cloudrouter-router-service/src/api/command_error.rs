@@ -86,7 +86,10 @@ mod tests {
         assert_eq!(Some(40001), payload["code"].as_i64());
         assert_eq!(Some("name is required"), payload["detail"].as_str());
         assert_eq!(Some("Validation failed"), payload["title"].as_str());
-        assert_eq!(Some("validation.common.field.required"), payload["i18nKey"].as_str());
+        assert_eq!(
+            Some("validation.common.field.required"),
+            payload["i18nKey"].as_str()
+        );
     }
 
     /// The System branch must emit the `5000` wire code (platform `50001`) and
@@ -104,8 +107,14 @@ mod tests {
         assert_eq!(Some(50001), payload["code"].as_i64());
         // 500 responses are redacted: the raw driver/context detail must not leak.
         let detail = payload["detail"].as_str().unwrap_or_default();
-        assert!(!detail.contains("store offline"), "internal detail leaked: {detail}");
-        assert!(!detail.contains("pricing command is invalid"), "context leaked: {detail}");
+        assert!(
+            !detail.contains("store offline"),
+            "internal detail leaked: {detail}"
+        );
+        assert!(
+            !detail.contains("pricing command is invalid"),
+            "context leaked: {detail}"
+        );
     }
 
     /// A request-id failure is classified as BadRequest, not System.

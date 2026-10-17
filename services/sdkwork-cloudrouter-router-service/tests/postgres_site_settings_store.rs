@@ -86,7 +86,11 @@ fn subject() -> SiteSettingsSubject {
     }
 }
 
-fn update_command(settings: SiteSettings, requested_at: &str, suffix: &str) -> UpdateSiteSettingsCommand {
+fn update_command(
+    settings: SiteSettings,
+    requested_at: &str,
+    suffix: &str,
+) -> UpdateSiteSettingsCommand {
     UpdateSiteSettingsCommand {
         subject: subject(),
         audit_log_uuid: format!("test-site-settings-audit-{suffix}"),

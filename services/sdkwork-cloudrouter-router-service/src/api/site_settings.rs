@@ -10,13 +10,13 @@ use sdkwork_cloudrouter_http::RequestLocale;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
-use crate::api::request_id::generate_server_request_id;
-use crate::api::response::{bad_request, success_envelope};
-use crate::api::text_normalization::parse_json_body;
 use crate::api::command_error::{
     command_error_from_request_id as request_id_error, command_error_response,
     system_error_response, ApiCommandError,
 };
+use crate::api::request_id::generate_server_request_id;
+use crate::api::response::{bad_request, success_envelope};
+use crate::api::text_normalization::parse_json_body;
 use crate::application::EntityUuidGenerator;
 use crate::ports::{
     unsupported_site_settings_locale_keys, GetSiteSettingsQuery, GetSiteSettingsScopeQuery,
@@ -262,9 +262,7 @@ async fn fetch_site_settings(
         .await
     {
         Ok(settings) => Json(success_envelope(to_response(settings))).into_response(),
-        Err(error) => {
-            system_error_response("site settings read model is unavailable", error)
-        }
+        Err(error) => system_error_response("site settings read model is unavailable", error),
     }
 }
 
@@ -300,9 +298,7 @@ async fn update_site_settings(
 
     match state.store.update_site_settings(command).await {
         Ok(settings) => Json(success_envelope(to_response(settings))).into_response(),
-        Err(error) => {
-            system_error_response("site settings command store is unavailable", error)
-        }
+        Err(error) => system_error_response("site settings command store is unavailable", error),
     }
 }
 
@@ -796,9 +792,7 @@ fn build_update_command(
     })
 }
 
-fn generate_entity_uuid(
-    state: &AdminSiteSettingsState,
-) -> Result<String, ApiCommandError> {
+fn generate_entity_uuid(state: &AdminSiteSettingsState) -> Result<String, ApiCommandError> {
     state
         .entity_uuid_generator
         .generate_entity_uuid()

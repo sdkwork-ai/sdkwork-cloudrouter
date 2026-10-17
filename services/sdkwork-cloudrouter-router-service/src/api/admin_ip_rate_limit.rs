@@ -9,17 +9,17 @@ use axum::routing::get;
 use axum::Router;
 use serde::{Deserialize, Serialize};
 
-use crate::api::request_id::generate_server_request_id;
-use crate::api::response::{
-    bad_request, json_created_response, json_success_list_response, normalize_list_search_query,
-    offset_page_info, parse_offset_list_query,
-    domain_conflict_response as conflict_response,
-};
-use crate::api::text_normalization::parse_json_body;
 use crate::api::command_error::{
     command_error_from_request_id as request_id_error, command_error_response,
     system_error_response, ApiCommandError,
 };
+use crate::api::request_id::generate_server_request_id;
+use crate::api::response::{
+    bad_request, domain_conflict_response as conflict_response, json_created_response,
+    json_success_list_response, normalize_list_search_query, offset_page_info,
+    parse_offset_list_query,
+};
+use crate::api::text_normalization::parse_json_body;
 use crate::application::EntityUuidGenerator;
 use crate::infrastructure::sql::sql_hash::digest_hex;
 use crate::ports::{
@@ -120,9 +120,7 @@ async fn fetch_ip_rate_limits(
             page.items.into_iter().map(to_item_response).collect(),
             offset_page_info(page.page_no, page.page_size, page.total),
         ),
-        Err(error) => {
-            system_error_response("ip rate limit read model is unavailable", error)
-        }
+        Err(error) => system_error_response("ip rate limit read model is unavailable", error),
     }
 }
 
@@ -168,9 +166,7 @@ async fn create_ip_rate_limit(
             },
         ),
         Err(error) if error.is_conflict() => conflict_response(error),
-        Err(error) => {
-            system_error_response("ip rate limit command store is unavailable", error)
-        }
+        Err(error) => system_error_response("ip rate limit command store is unavailable", error),
     }
 }
 
@@ -363,9 +359,7 @@ fn build_create_command(
     })
 }
 
-fn generate_entity_uuid(
-    state: &AdminIpRateLimitState,
-) -> Result<String, ApiCommandError> {
+fn generate_entity_uuid(state: &AdminIpRateLimitState) -> Result<String, ApiCommandError> {
     state
         .entity_uuid_generator
         .generate_entity_uuid()
@@ -402,4 +396,3 @@ fn entity_code(prefix: &str, uuid: &str) -> String {
     let short = uuid.chars().take(24).collect::<String>();
     format!("{prefix}-{short}")
 }
-

@@ -14,12 +14,12 @@
 //! result — `count` must not change the price.
 
 use axum::http::{header, Method};
+use sdkwork_cloudrouter_router_service::application::BillingMode;
 use sdkwork_cloudrouter_router_service::application::{
     Invocation, InvocationAccount, InvocationAuthType, InvocationClassificationRequest,
     InvocationInterceptor, InvocationRequest, InvocationResourceClassifier, InvocationSubject,
     OpenAiResourceClassifier, RequestTransformInterceptor, ResolvedProviderSecret,
 };
-use sdkwork_cloudrouter_router_service::application::BillingMode;
 use sdkwork_cloudrouter_router_service::domain::{
     BillingMeter, ProviderAuthProfile, RoutingCapability,
 };
@@ -76,7 +76,11 @@ async fn deepseek_web_tools_relay_to_deepseek_native_paths() {
             .expect("classification must succeed for a published open-api path");
         let (resource, billing, routing) = classification.into_parts();
 
-        assert_eq!("deepseek", resource.api_code.split('.').next().unwrap(), "{path}");
+        assert_eq!(
+            "deepseek",
+            resource.api_code.split('.').next().unwrap(),
+            "{path}"
+        );
         assert_eq!(RoutingCapability::Network, resource.capability, "{path}");
         assert_eq!(BillingMode::ApiRequest, billing.mode, "{path}");
         assert_eq!(
@@ -162,7 +166,10 @@ async fn deepseek_web_tools_keep_v1_when_the_account_base_url_already_ends_with_
         .await
         .expect("provider request");
 
-    let provider_request = invocation.dispatch.provider_request.expect("provider request");
+    let provider_request = invocation
+        .dispatch
+        .provider_request
+        .expect("provider request");
     assert_eq!(
         Some("https://api.deepseek.com/v1/tools/search".to_owned()),
         provider_request.url

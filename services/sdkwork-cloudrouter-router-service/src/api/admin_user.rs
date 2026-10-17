@@ -11,8 +11,8 @@ use serde::{Deserialize, Serialize};
 use crate::api::command_error::system_error_response;
 use crate::api::request_id::{generate_server_request_id, RequestIdError};
 use crate::api::response::{
-    bad_request, json_created_response, no_content_response, problem_from_wire_code,
-    domain_conflict_response as conflict_response,
+    bad_request, domain_conflict_response as conflict_response, json_created_response,
+    no_content_response, problem_from_wire_code,
 };
 use crate::application::{ApiKeySecretGenerator, ApiKeySecretHasher};
 use crate::domain::{DecimalValue, DomainError, GatewayApiKey, DEFAULT_ACCOUNT_GROUP_CODE};
@@ -159,9 +159,7 @@ async fn create_backend_api_key(
             },
         ),
         Err(error) if error.is_conflict() => conflict_response(error),
-        Err(error) => {
-            system_error_response("admin api key command store is unavailable", error)
-        }
+        Err(error) => system_error_response("admin api key command store is unavailable", error),
     }
 }
 
@@ -204,9 +202,7 @@ async fn delete_backend_api_key(
     {
         Ok(true) => no_content_response(None),
         Ok(false) => not_found_response("api key was not found"),
-        Err(error) => {
-            system_error_response("admin api key command store is unavailable", error)
-        }
+        Err(error) => system_error_response("admin api key command store is unavailable", error),
     }
 }
 

@@ -11,18 +11,17 @@ use chrono::{DateTime, NaiveDate, NaiveTime, SecondsFormat};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::api::request_id::generate_server_request_id;
-use crate::api::response::{
-    bad_request, json_created_response, json_success_list_response, no_content_response,
-    offset_page_info, parse_offset_list_query, problem_from_wire_code, success_envelope,
-    ParsedOffsetListQuery,
-    domain_conflict_response as conflict_response,
-};
-use crate::api::text_normalization::parse_json_body;
 use crate::api::command_error::{
     command_error_from_request_id as request_id_error, command_error_response,
     system_error_response, ApiCommandError,
 };
+use crate::api::request_id::generate_server_request_id;
+use crate::api::response::{
+    bad_request, domain_conflict_response as conflict_response, json_created_response,
+    json_success_list_response, no_content_response, offset_page_info, parse_offset_list_query,
+    problem_from_wire_code, success_envelope, ParsedOffsetListQuery,
+};
+use crate::api::text_normalization::parse_json_body;
 use crate::application::EntityUuidGenerator;
 use crate::ports::{
     AdminPricingBasePriceSide, AdminPricingFormulaMode, AdminPricingListPage,
@@ -554,7 +553,12 @@ async fn create_pricing_plan(
             .unwrap_or_else(|| "synchronous".to_owned()),
         request_id: match generate_server_request_id() {
             Ok(request_id) => request_id,
-            Err(error) => return command_error_response(request_id_error(error), "pricing command is invalid"),
+            Err(error) => {
+                return command_error_response(
+                    request_id_error(error),
+                    "pricing command is invalid",
+                )
+            }
         },
         requested_at: current_timestamp_string(),
     };
@@ -660,7 +664,12 @@ async fn update_pricing_plan(
         }),
         request_id: match generate_server_request_id() {
             Ok(request_id) => request_id,
-            Err(error) => return command_error_response(request_id_error(error), "pricing command is invalid"),
+            Err(error) => {
+                return command_error_response(
+                    request_id_error(error),
+                    "pricing command is invalid",
+                )
+            }
         },
         requested_at: current_timestamp_string(),
     };
@@ -751,7 +760,12 @@ async fn create_rate_card(
         status: mutation.status,
         request_id: match generate_server_request_id() {
             Ok(request_id) => request_id,
-            Err(error) => return command_error_response(request_id_error(error), "pricing command is invalid"),
+            Err(error) => {
+                return command_error_response(
+                    request_id_error(error),
+                    "pricing command is invalid",
+                )
+            }
         },
         requested_at: current_timestamp_string(),
     };
@@ -806,7 +820,12 @@ async fn update_rate_card(
         status: mutation.status,
         request_id: match generate_server_request_id() {
             Ok(request_id) => request_id,
-            Err(error) => return command_error_response(request_id_error(error), "pricing command is invalid"),
+            Err(error) => {
+                return command_error_response(
+                    request_id_error(error),
+                    "pricing command is invalid",
+                )
+            }
         },
         requested_at: current_timestamp_string(),
     };
@@ -839,7 +858,12 @@ async fn delete_rate_card(
         },
         request_id: match generate_server_request_id() {
             Ok(request_id) => request_id,
-            Err(error) => return command_error_response(request_id_error(error), "pricing command is invalid"),
+            Err(error) => {
+                return command_error_response(
+                    request_id_error(error),
+                    "pricing command is invalid",
+                )
+            }
         },
         requested_at: current_timestamp_string(),
     };
@@ -1048,7 +1072,12 @@ async fn upsert_price_setting(
         status: mutation.status,
         request_id: match generate_server_request_id() {
             Ok(request_id) => request_id,
-            Err(error) => return command_error_response(request_id_error(error), "pricing command is invalid"),
+            Err(error) => {
+                return command_error_response(
+                    request_id_error(error),
+                    "pricing command is invalid",
+                )
+            }
         },
         requested_at: current_timestamp_string(),
     };
@@ -1166,7 +1195,12 @@ async fn create_pricing_rule(
         status: mutation.status,
         request_id: match generate_server_request_id() {
             Ok(request_id) => request_id,
-            Err(error) => return command_error_response(request_id_error(error), "pricing command is invalid"),
+            Err(error) => {
+                return command_error_response(
+                    request_id_error(error),
+                    "pricing command is invalid",
+                )
+            }
         },
         requested_at: current_timestamp_string(),
     };
@@ -1230,7 +1264,12 @@ async fn update_pricing_rule(
         status: mutation.status,
         request_id: match generate_server_request_id() {
             Ok(request_id) => request_id,
-            Err(error) => return command_error_response(request_id_error(error), "pricing command is invalid"),
+            Err(error) => {
+                return command_error_response(
+                    request_id_error(error),
+                    "pricing command is invalid",
+                )
+            }
         },
         requested_at: current_timestamp_string(),
     };
@@ -1263,7 +1302,12 @@ async fn delete_pricing_rule(
         },
         request_id: match generate_server_request_id() {
             Ok(request_id) => request_id,
-            Err(error) => return command_error_response(request_id_error(error), "pricing command is invalid"),
+            Err(error) => {
+                return command_error_response(
+                    request_id_error(error),
+                    "pricing command is invalid",
+                )
+            }
         },
         requested_at: current_timestamp_string(),
     };
@@ -1344,7 +1388,12 @@ async fn create_default_region(
         effective_to: mutation.effective_to,
         request_id: match generate_server_request_id() {
             Ok(request_id) => request_id,
-            Err(error) => return command_error_response(request_id_error(error), "pricing command is invalid"),
+            Err(error) => {
+                return command_error_response(
+                    request_id_error(error),
+                    "pricing command is invalid",
+                )
+            }
         },
         requested_at: current_timestamp_string(),
     };
@@ -1397,7 +1446,12 @@ async fn update_default_region(
         effective_to: mutation.effective_to,
         request_id: match generate_server_request_id() {
             Ok(request_id) => request_id,
-            Err(error) => return command_error_response(request_id_error(error), "pricing command is invalid"),
+            Err(error) => {
+                return command_error_response(
+                    request_id_error(error),
+                    "pricing command is invalid",
+                )
+            }
         },
         requested_at: current_timestamp_string(),
     };
@@ -1431,7 +1485,12 @@ async fn delete_default_region(
         },
         request_id: match generate_server_request_id() {
             Ok(request_id) => request_id,
-            Err(error) => return command_error_response(request_id_error(error), "pricing command is invalid"),
+            Err(error) => {
+                return command_error_response(
+                    request_id_error(error),
+                    "pricing command is invalid",
+                )
+            }
         },
         requested_at: current_timestamp_string(),
     };
@@ -1556,7 +1615,12 @@ async fn create_price_book(
         effective_to: mutation.effective_to,
         request_id: match generate_server_request_id() {
             Ok(request_id) => request_id,
-            Err(error) => return command_error_response(request_id_error(error), "pricing command is invalid"),
+            Err(error) => {
+                return command_error_response(
+                    request_id_error(error),
+                    "pricing command is invalid",
+                )
+            }
         },
         requested_at: current_timestamp_string(),
     };
@@ -1600,7 +1664,12 @@ async fn update_price_book(
         effective_to: mutation.effective_to,
         request_id: match generate_server_request_id() {
             Ok(request_id) => request_id,
-            Err(error) => return command_error_response(request_id_error(error), "pricing command is invalid"),
+            Err(error) => {
+                return command_error_response(
+                    request_id_error(error),
+                    "pricing command is invalid",
+                )
+            }
         },
         requested_at: current_timestamp_string(),
     };
@@ -1651,7 +1720,12 @@ async fn transition_price_book_lifecycle(
         },
         request_id: match generate_server_request_id() {
             Ok(request_id) => request_id,
-            Err(error) => return command_error_response(request_id_error(error), "pricing command is invalid"),
+            Err(error) => {
+                return command_error_response(
+                    request_id_error(error),
+                    "pricing command is invalid",
+                )
+            }
         },
         requested_at: current_timestamp_string(),
     };
@@ -1738,7 +1812,12 @@ async fn create_price_book_rate(
         source_url: mutation.source_url,
         request_id: match generate_server_request_id() {
             Ok(request_id) => request_id,
-            Err(error) => return command_error_response(request_id_error(error), "pricing command is invalid"),
+            Err(error) => {
+                return command_error_response(
+                    request_id_error(error),
+                    "pricing command is invalid",
+                )
+            }
         },
         requested_at: current_timestamp_string(),
     };
@@ -1746,9 +1825,7 @@ async fn create_price_book_rate(
         Ok(item) => json_created_response(None, AdminPricingItemEnvelope { item }),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) if error.is_bad_request() => bad_request(error.to_string()),
-        Err(error) => {
-            system_error_response("price book rate command store is unavailable", error)
-        }
+        Err(error) => system_error_response("price book rate command store is unavailable", error),
     }
 }
 
@@ -1795,7 +1872,12 @@ async fn update_price_book_rate(
         effective_to: mutation.effective_to,
         request_id: match generate_server_request_id() {
             Ok(request_id) => request_id,
-            Err(error) => return command_error_response(request_id_error(error), "pricing command is invalid"),
+            Err(error) => {
+                return command_error_response(
+                    request_id_error(error),
+                    "pricing command is invalid",
+                )
+            }
         },
         requested_at: current_timestamp_string(),
     };
@@ -1804,9 +1886,7 @@ async fn update_price_book_rate(
         Ok(None) => not_found_response("price book rate was not found"),
         Err(error) if error.is_conflict() => conflict_response(error),
         Err(error) if error.is_bad_request() => bad_request(error.to_string()),
-        Err(error) => {
-            system_error_response("price book rate command store is unavailable", error)
-        }
+        Err(error) => system_error_response("price book rate command store is unavailable", error),
     }
 }
 
@@ -1835,16 +1915,19 @@ async fn delete_price_book_rate(
         },
         request_id: match generate_server_request_id() {
             Ok(request_id) => request_id,
-            Err(error) => return command_error_response(request_id_error(error), "pricing command is invalid"),
+            Err(error) => {
+                return command_error_response(
+                    request_id_error(error),
+                    "pricing command is invalid",
+                )
+            }
         },
         requested_at: current_timestamp_string(),
     };
     match state.store.delete_price_book_rate(command).await {
         Ok(true) => no_content_response(None),
         Ok(false) => not_found_response("price book rate was not found"),
-        Err(error) => {
-            system_error_response("price book rate command store is unavailable", error)
-        }
+        Err(error) => system_error_response("price book rate command store is unavailable", error),
     }
 }
 
@@ -2001,9 +2084,7 @@ fn normalize_price_book_rate_create(
     let account_id = match normalize_optional_pricing_id(request.account_id.as_deref()) {
         Ok(value) => value.and_then(|value| value.parse::<i64>().ok()),
         Err(message) => {
-            return Err(ApiCommandError::BadRequest(format!(
-                "accountId {message}"
-            )));
+            return Err(ApiCommandError::BadRequest(format!("accountId {message}")));
         }
     };
     let product_code =
@@ -2287,9 +2368,7 @@ fn normalize_charge_mode(value: Option<&str>) -> Result<String, ApiCommandError>
     }
 }
 
-fn normalize_optional_charge_mode(
-    value: Option<&str>,
-) -> Result<Option<String>, ApiCommandError> {
+fn normalize_optional_charge_mode(value: Option<&str>) -> Result<Option<String>, ApiCommandError> {
     value
         .map(|value| normalize_charge_mode(Some(value)))
         .transpose()
@@ -2588,9 +2667,7 @@ fn normalize_optional_pricing_status(
     }
 }
 
-fn normalize_pricing_status(
-    value: Option<&str>,
-) -> Result<AdminPricingStatus, ApiCommandError> {
+fn normalize_pricing_status(value: Option<&str>) -> Result<AdminPricingStatus, ApiCommandError> {
     normalize_optional_pricing_status(value)
         .map(|status| status.unwrap_or(AdminPricingStatus::Active))
         .map_err(ApiCommandError::BadRequest)
@@ -2673,9 +2750,7 @@ fn normalize_rate_card_subject_type(
         .map_err(ApiCommandError::BadRequest)
 }
 
-fn normalize_formula_mode(
-    value: Option<&str>,
-) -> Result<AdminPricingFormulaMode, ApiCommandError> {
+fn normalize_formula_mode(value: Option<&str>) -> Result<AdminPricingFormulaMode, ApiCommandError> {
     match value {
         Some(value) if value.trim().eq_ignore_ascii_case("multiplier_markup") => {
             Ok(AdminPricingFormulaMode::MultiplierMarkup)
@@ -2689,22 +2764,18 @@ fn normalize_formula_mode(
     }
 }
 
-fn normalize_pricing_conditions(
-    value: Option<&Value>,
-) -> Result<Value, ApiCommandError> {
+fn normalize_pricing_conditions(value: Option<&Value>) -> Result<Value, ApiCommandError> {
     let Some(value) = value else {
         return Ok(Value::Array(Vec::new()));
     };
-    let items = value.as_array().ok_or_else(|| {
-        ApiCommandError::BadRequest("conditions must be an array".to_owned())
-    })?;
+    let items = value
+        .as_array()
+        .ok_or_else(|| ApiCommandError::BadRequest("conditions must be an array".to_owned()))?;
     let mut dimensions = BTreeSet::new();
     let mut normalized = Vec::with_capacity(items.len());
     for item in items {
         let object = item.as_object().ok_or_else(|| {
-            ApiCommandError::BadRequest(
-                "each pricing condition must be an object".to_owned(),
-            )
+            ApiCommandError::BadRequest("each pricing condition must be an object".to_owned())
         })?;
         let dimension = object
             .get("dimensionCode")
@@ -2712,9 +2783,7 @@ fn normalize_pricing_conditions(
             .map(str::trim)
             .filter(|value| !value.is_empty())
             .ok_or_else(|| {
-                ApiCommandError::BadRequest(
-                    "condition dimensionCode is required".to_owned(),
-                )
+                ApiCommandError::BadRequest("condition dimensionCode is required".to_owned())
             })?;
         if !dimensions.insert(dimension) {
             return Err(ApiCommandError::BadRequest(
@@ -2748,15 +2817,12 @@ fn normalize_pricing_conditions(
     Ok(Value::Array(normalized))
 }
 
-fn normalize_pricing_schedule(
-    value: Option<&Value>,
-) -> Result<Option<Value>, ApiCommandError> {
+fn normalize_pricing_schedule(value: Option<&Value>) -> Result<Option<Value>, ApiCommandError> {
     let Some(value) = value else {
         return Ok(None);
     };
-    let schedule = serde_json::from_value::<sdkwork_models::PriceSchedule>(value.clone()).map_err(
-        |error| ApiCommandError::BadRequest(format!("schedule is invalid: {error}")),
-    )?;
+    let schedule = serde_json::from_value::<sdkwork_models::PriceSchedule>(value.clone())
+        .map_err(|error| ApiCommandError::BadRequest(format!("schedule is invalid: {error}")))?;
     schedule.time_zone.parse::<chrono_tz::Tz>().map_err(|_| {
         ApiCommandError::BadRequest(
             "schedule timeZone must be an IANA time-zone identifier".to_owned(),
@@ -2771,14 +2837,10 @@ fn normalize_pricing_schedule(
     for window in &schedule.weekly_windows {
         let days = window.days_of_week.iter().copied().collect::<BTreeSet<_>>();
         let start = NaiveTime::parse_from_str(&window.start_time, "%H:%M:%S").map_err(|_| {
-            ApiCommandError::BadRequest(
-                "schedule startTime must use HH:mm:ss".to_owned(),
-            )
+            ApiCommandError::BadRequest("schedule startTime must use HH:mm:ss".to_owned())
         })?;
         let end = NaiveTime::parse_from_str(&window.end_time, "%H:%M:%S").map_err(|_| {
-            ApiCommandError::BadRequest(
-                "schedule endTime must use HH:mm:ss".to_owned(),
-            )
+            ApiCommandError::BadRequest("schedule endTime must use HH:mm:ss".to_owned())
         })?;
         if window.window_code.trim().is_empty()
             || !codes.insert(window.window_code.as_str())
@@ -2804,15 +2866,11 @@ fn normalize_pricing_schedule(
     Ok(Some(value.clone()))
 }
 
-fn parse_schedule_dates(
-    values: &[String],
-) -> Result<BTreeSet<NaiveDate>, ApiCommandError> {
+fn parse_schedule_dates(values: &[String]) -> Result<BTreeSet<NaiveDate>, ApiCommandError> {
     let mut dates = BTreeSet::new();
     for value in values {
         let date = NaiveDate::parse_from_str(value, "%Y-%m-%d").map_err(|_| {
-            ApiCommandError::BadRequest(
-                "schedule dates must use YYYY-MM-DD".to_owned(),
-            )
+            ApiCommandError::BadRequest("schedule dates must use YYYY-MM-DD".to_owned())
         })?;
         if !dates.insert(date) {
             return Err(ApiCommandError::BadRequest(
@@ -2842,9 +2900,8 @@ fn normalize_decimal_value(
     value: Option<&Value>,
     field_name: &str,
 ) -> Result<String, ApiCommandError> {
-    normalize_optional_decimal_value(value, field_name)?.ok_or_else(|| {
-        ApiCommandError::BadRequest(format!("{field_name} is required"))
-    })
+    normalize_optional_decimal_value(value, field_name)?
+        .ok_or_else(|| ApiCommandError::BadRequest(format!("{field_name} is required")))
 }
 
 fn normalize_optional_decimal_value(
@@ -2946,9 +3003,7 @@ fn normalize_optional_non_negative_integer(
         None => return Ok(None),
     }
     .ok_or_else(|| {
-        ApiCommandError::BadRequest(format!(
-            "{field_name} must be a non-negative integer"
-        ))
+        ApiCommandError::BadRequest(format!("{field_name} must be a non-negative integer"))
     })?;
     if parsed < 0 {
         return Err(ApiCommandError::BadRequest(format!(
@@ -2958,9 +3013,7 @@ fn normalize_optional_non_negative_integer(
     Ok(Some(parsed))
 }
 
-fn generate_entity_uuid(
-    state: &AdminPricingState,
-) -> Result<String, ApiCommandError> {
+fn generate_entity_uuid(state: &AdminPricingState) -> Result<String, ApiCommandError> {
     state
         .entity_uuid_generator
         .generate_entity_uuid()

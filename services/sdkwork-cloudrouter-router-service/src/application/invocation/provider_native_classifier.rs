@@ -836,10 +836,7 @@ mod tests {
 
         let chat = classify_post("/v2/chat/completions", "baidu");
         assert_eq!("baidu.chat_completions", chat.resource.route_key);
-        assert_eq!(
-            Some(BillingMeter::LlmInputToken),
-            chat.billing.meter
-        );
+        assert_eq!(Some(BillingMeter::LlmInputToken), chat.billing.meter);
 
         // TypeSafe AI's System One decision surface. It is reached through the
         // same `vendor_native` passthrough as Baidu's native chat surface — the
