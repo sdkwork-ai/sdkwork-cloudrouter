@@ -46,7 +46,18 @@ jobs:
       SDKWORK_DATABASE_URL: postgres://sdkwork_ai_test:sdkwork-ci@localhost:5432/sdkwork_ai_test
       CLOUDROUTER_BROWSER_SMOKE_REQUIRED: "1"
       CLOUDROUTER_EDGE_DEV_SMOKE_REQUIRED: "1"
-      RUSTFLAGS: "-D warnings"
+      # Deliberately no job-level RUSTFLAGS="-D warnings". RUSTFLAGS is applied
+      # to every crate cargo compiles, and this build pulls in roughly two
+      # hundred crates from the federated repositories resolved at main, so any
+      # warning in any of them became an error here — sdkwork-web-core alone
+      # tripped `-D deprecated` on Atomic::fetch_update and a dead assignment in
+      # stores.rs. -D warnings belongs on the clippy invocation, which lints the
+      # crates this repository owns.
+      #
+      # Note this also means the flags differ per crate, so the two settings do
+      # not share a build cache; the clippy step recompiles the workspace after
+      # the formatting step. That is the cost of holding our code to the
+      # standard without inheriting everyone else's warnings.
     steps:
       - name: Checkout application source
         uses: actions/checkout@v4
