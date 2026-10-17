@@ -249,3 +249,12 @@ job.
   repository's row struct nor `sdkwork-models`' domain type declares). The
   library surface is checked without `--all-targets`, and the packaging
   lifecycle does not compile test targets.
+- `cargo clippy --all-targets -- -D warnings` still fails on
+  `services/sdkwork-cloudrouter-router-service`: 60 lints in the library and 74
+  in its test targets, across about twenty kinds including dead code
+  (`api_key_secret_storage`, `writes`), hand-written `Option::map`,
+  `field_reassign_with_default`, and `items_after_test_module`. These are
+  pre-existing and untouched by this release: the gate had never once reached
+  clippy before, so the crate accumulated them in the dark. The eight lints
+  clippy did surface in the http and adapter crates are fixed. Clearing the rest
+  belongs in its own change, not in a release cut.
