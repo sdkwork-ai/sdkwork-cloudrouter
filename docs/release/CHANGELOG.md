@@ -8,7 +8,7 @@ rewritten on every release so it never accumulates prior versions.
 - `2026-05-16-v0.2.0.md` — runtime authentication settings capability.
 - `2026-05-17-v0.3.0.md` — commercial runtime and installation hardening slice.
 
-## 2026-10-17 - v0.4.9
+## 2026-10-17 - v0.4.10
 
 ### Scope
 
@@ -34,12 +34,13 @@ rewritten on every release so it never accumulates prior versions.
   the installed name moved to the `<File Name>` attribute while the directory
   tree is still carried by the `Directory` nodes.
 - Namespaced the generated WiX `Directory` identifiers by their owning
-  `StandardDirectory` tree. WiX identifiers are global to the whole `.wxs`, but
-  the identifier was derived only from the directory name sequence, so the
-  `sdkwork` directory that exists under ProgramFiles, ProgramData, and AppData
-  produced one repeated `Directory Id` and every MSI lane failed with `WIX0091`
-  Duplicate Directory. Each `DirectoryNode` now carries its tree scope and the
-  identifier is derived from that scope plus the relative path.
+  `StandardDirectory` tree and by their own path within that tree. WiX
+  identifiers are global to the whole `.wxs`, but the identifier was derived
+  from the directory name sequence minus its last segment, so the `sdkwork`
+  directory that exists under ProgramFiles, ProgramData, and AppData produced
+  one repeated `Directory Id` and every MSI lane failed with `WIX0091` Duplicate
+  Directory. Each `DirectoryNode` now carries its tree scope and its own path,
+  and the identifier is derived from both.
 - Made the WiX failure message carry the captured tool output instead of only
   `Command failed: wix build <path>`, so the next MSI failure is diagnosable from
   the job log without re-running locally.
@@ -77,10 +78,16 @@ Install-time customization stays contract-driven and is enforced by
   with the same WiX: a payload that places `sdkwork` under all three
   `StandardDirectory` trees yields 23 unique `Directory` identifiers with no
   duplicates, and the package builds.
-- Mutation checks on both probes: reverting the path fix reproduces `WIX0103`
-  on a 434-character path, and dropping the tree scope from the identifier
-  reproduces `WIX0091` Duplicate Directory, so neither probe is a constant
-  green.
+- Mutation checks on all three probes: reverting the path fix reproduces
+  `WIX0103` on a 434-character path, dropping the tree scope from the identifier
+  reproduces `WIX0091`, and restoring the truncated derivation reproduces
+  `WIX0091` with 81 unique identifiers for 143 directories, so no probe is a
+  constant green.
+- MSI scale probe (`.sdkwork/evidence/msi-scale-probe.mjs`): a 134-file payload
+  across all three roots and a deep SDK archive tree yields 415 globally unique
+  WiX identifiers and builds. The small probes were not sufficient — a six-file
+  payload produced no collision, and only at scale did the truncated identifier
+  derivation show up, as 143 directories mapping to 84 identifiers.
 - `node scripts/check-github-workflow-integration.mjs` → ok.
 
 ### Known non-blocking gate status

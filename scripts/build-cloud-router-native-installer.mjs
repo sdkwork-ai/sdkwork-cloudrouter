@@ -1307,14 +1307,16 @@ function stripWindowsRootDirectoryName(parts, expectedRootName) {
 }
 
 class DirectoryNode {
-  constructor(id, name, scope = '') {
+  constructor(id, name, scope = '', keyPath = '') {
     this.id = id;
     this.name = name;
-    // WiX identifiers are global to the whole .wxs, not per StandardDirectory,
-    // so two roots that both contain a directory named e.g. "sdkwork" must not
-    // derive the same Directory Id. The scope namespaces the id by the tree
-    // this node belongs to.
+    // WiX identifiers are global to the whole .wxs, not per StandardDirectory and
+    // not per element type, so two directories that share a name across roots, or
+    // two siblings at different depths, must never derive the same Directory Id.
+    // `scope` namespaces the id by the tree this node belongs to and `keyPath` is
+    // the directory's own path within that tree; together they are unique.
     this.scope = scope;
+    this.keyPath = keyPath;
     this.directories = new Map();
     this.files = [];
   }
@@ -1328,9 +1330,10 @@ class DirectoryNode {
       return;
     }
     const directoryName = parts[0];
-    const directoryId = stableWixId('dir', `${this.scope}/${parts.slice(0, -1).join('/')}`);
+    const childKeyPath = this.keyPath ? `${this.keyPath}/${directoryName}` : directoryName;
+    const childId = stableWixId('dir', `${this.scope}/${childKeyPath}`);
     if (!this.directories.has(directoryName)) {
-      this.directories.set(directoryName, new DirectoryNode(directoryId, directoryName, this.scope));
+      this.directories.set(directoryName, new DirectoryNode(childId, directoryName, this.scope, childKeyPath));
     }
     this.directories.get(directoryName).addFile(parts.slice(1), file);
   }

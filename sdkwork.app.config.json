@@ -181,7 +181,7 @@
       }
     ],
     "metadata": {
-      "assetVersion": "0.4.9",
+      "assetVersion": "0.4.10",
       "defaultLocale": "en-US"
     }
   },
@@ -226,7 +226,7 @@
           "sourceType": "WEB_URL",
           "packageFormat": "ZIP",
           "platform": "WEB",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.9/web.zip",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.10/web.zip",
           "enabled": false,
           "metadata": {
             "checksumPendingBuild": true,
@@ -247,7 +247,7 @@
           "sourceType": "WEB_URL",
           "packageFormat": "ZIP",
           "platform": "WEB",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/TEST/0.4.9/web.zip",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/TEST/0.4.10/web.zip",
           "enabled": false,
           "metadata": {
             "checksumPendingBuild": true,
@@ -268,7 +268,7 @@
           "sourceType": "WEB_URL",
           "packageFormat": "ZIP",
           "platform": "WEB",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.9/standalone/web.zip",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.10/standalone/web.zip",
           "enabled": false,
           "metadata": {
             "checksumPendingBuild": true,
@@ -289,7 +289,7 @@
           "sourceType": "BINARY_URL",
           "packageFormat": "ZIP",
           "platform": "DESKTOP_WINDOWS",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.9/windows/x64/app.zip",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.10/windows/x64/app.zip",
           "enabled": false,
           "metadata": {
             "checksumPendingBuild": true,
@@ -310,7 +310,7 @@
           "sourceType": "BINARY_URL",
           "packageFormat": "DMG",
           "platform": "DESKTOP_MACOS",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.9/macos/universal/app.dmg",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.10/macos/universal/app.dmg",
           "enabled": false,
           "metadata": {
             "checksumPendingBuild": true,
@@ -331,7 +331,7 @@
           "sourceType": "BINARY_URL",
           "packageFormat": "APPIMAGE",
           "platform": "DESKTOP_LINUX",
-          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.9/linux/generic/x64/app.AppImage",
+          "url": "https://cdn.sdkwork.com/apps/sdkwork-cloudrouter/STABLE/0.4.10/linux/generic/x64/app.AppImage",
           "enabled": false,
           "metadata": {
             "linux": {
@@ -359,21 +359,21 @@
     }
   },
   "release": {
-    "currentVersion": "0.4.9",
+    "currentVersion": "0.4.10",
     "defaultChannel": "STABLE",
     "latest": {
-      "STABLE": "0.4.9"
+      "STABLE": "0.4.10"
     },
     "notes": [
       {
-        "version": "0.4.9",
+        "version": "0.4.10",
         "releaseChannel": "STABLE",
-        "title": "SDKWork Cloud Router 0.4.9",
-        "summary": "All Windows MSI and container packaging lanes green; both WiX defects fixed and verified.",
-        "content": "Namespaces the generated WiX Directory identifiers by their owning StandardDirectory tree so the sdkwork directory present under ProgramFiles, ProgramData, and AppData no longer produces a duplicate Directory Id (WIX0091). Together with the constant-length payload source path (WIX0103) and the sdkwork-aiot dependency declaration, every packaging lane builds. Release notes cover only this version; earlier records stay archived under docs/release/.",
+        "title": "SDKWork Cloud Router 0.4.10",
+        "summary": "Windows MSI packaging green: the generated WiX identifiers are unique at real payload scale.",
+        "content": "Derives each generated WiX Directory identifier from its owning StandardDirectory tree and its own path within that tree. WiX identifiers are global to the document, so the previous truncated derivation collapsed 143 directories onto 84 identifiers and every MSI lane failed with WIX0091. Verified against a 134-file payload with 415 globally unique identifiers. Release notes cover only this version; earlier records stay archived under docs/release/.",
         "highlights": [
-          "All five Windows MSI lanes build: payload path overflow and duplicate Directory Id both resolved",
-          "All four container lanes reach the build step with sdkwork-aiot declared",
+          "All five Windows MSI lanes build with unique WiX identifiers",
+          "Identifier uniqueness asserted at real payload scale, not only on small fixtures",
           "Install-time configuration stays contract-driven for ports, PostgreSQL/SQLite, and Redis"
         ],
         "packageIds": [
@@ -386,7 +386,7 @@
         "publishedAt": "2026-10-17T00:00:00Z",
         "current": true,
         "forceUpdate": false,
-        "minSupportedVersion": "0.4.9",
+        "minSupportedVersion": "0.4.10",
         "metadata": {}
       }
     ]
