@@ -3032,7 +3032,7 @@ mod tests {
     fn datetime_normalization_requires_explicit_timezone() {
         let normalized =
             normalize_optional_datetime(Some("2026-08-18T00:00:00+08:00"), "effectiveFrom")
-                .unwrap_or_else(|_| None)
+                .unwrap_or(None)
                 .expect("valid RFC3339 timestamp");
         assert_eq!(normalized, "2026-08-18T00:00:00+08:00");
         assert!(normalize_optional_datetime(Some("2026-08-18 00:00:00"), "effectiveFrom").is_err());

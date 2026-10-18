@@ -1,6 +1,7 @@
 use sdkwork_cloudrouter_config::{ApiKeySecurityConfig, AppSessionConfig, TrustedSubjectConfig};
 use sdkwork_cloudrouter_http::{
-    sign_app_session_token, sign_trusted_request_subject, TrustedRequestSubject,
+    sign_app_session_token_with_claims, sign_trusted_request_subject, AppSessionTokenClaims,
+    AppSessionTokenKind, TrustedRequestSubject,
 };
 
 pub const API_KEY_PEPPER: &str = "0123456789abcdef0123456789abcdef";
@@ -48,12 +49,50 @@ pub fn default_trusted_request_subject() -> TrustedRequestSubject {
     trusted_request_subject(DEFAULT_TENANT_ID, DEFAULT_ORGANIZATION_ID, DEFAULT_USER_ID)
 }
 
+/// Builds claims for a test app session token from a trusted request subject.
+///
+/// The values mirror what the IAM login flow mints in development: tenant-level
+/// login scope when `organization_id == 0`, organization scope otherwise.
+fn app_session_token_claims(
+    token_kind: AppSessionTokenKind,
+    subject: TrustedRequestSubject,
+    issued_at: i64,
+    expires_at: i64,
+) -> AppSessionTokenClaims {
+    AppSessionTokenClaims {
+        token_kind,
+        tenant_id: subject.tenant_id,
+        organization_id: subject.organization_id,
+        user_id: subject.user_id,
+        session_id: format!("session-{}-{}", subject.tenant_id, subject.user_id),
+        app_id: "sdkwork-cloudrouter".to_owned(),
+        login_scope: if subject.organization_id == 0 {
+            "TENANT".to_owned()
+        } else {
+            "ORGANIZATION".to_owned()
+        },
+        environment: "dev".to_owned(),
+        deployment_mode: "saas".to_owned(),
+        auth_level: "password".to_owned(),
+        data_scope: vec![
+            format!("tenant:{}", subject.tenant_id),
+            format!("user:{}", subject.user_id),
+        ],
+        permission_scope: vec!["cloudrouter.console.access".to_owned()],
+        issued_at,
+        expires_at,
+        kid: None,
+    }
+}
+
 pub fn app_session_bearer_token(
     subject: TrustedRequestSubject,
     issued_at: i64,
     expires_at: i64,
 ) -> anyhow::Result<String> {
-    let token = sign_app_session_token(&app_session_config()?, subject, issued_at, expires_at);
+    let claims =
+        app_session_token_claims(AppSessionTokenKind::Auth, subject, issued_at, expires_at);
+    let token = sign_app_session_token_with_claims(&app_session_config()?, &claims);
     Ok(format!("Bearer {token}"))
 }
 
@@ -62,11 +101,11 @@ pub fn app_session_access_token(
     issued_at: i64,
     expires_at: i64,
 ) -> anyhow::Result<String> {
-    Ok(sign_app_session_token(
+    let claims =
+        app_session_token_claims(AppSessionTokenKind::Access, subject, issued_at, expires_at);
+    Ok(sign_app_session_token_with_claims(
         &app_session_config()?,
-        subject,
-        issued_at + 1,
-        expires_at + 1,
+        &claims,
     ))
 }
 
@@ -117,72 +156,6 @@ pub fn assert_server_generated_request_id(actual: &str, client_request_id: &str)
         matches!(variant, '8' | '9' | 'a' | 'b'),
         "server request id must be an RFC 4122 variant UUID"
     );
-}
-
-#[cfg(test)]
-mod tests {
-    use axum::http::{HeaderMap, HeaderValue};
-    use sdkwork_cloudrouter_http::{
-        verified_signed_trusted_request_subject, verify_app_session_authorization_header,
-    };
-
-    #[test]
-    fn standard_runtime_subject_helpers_create_verifiable_tokens_and_signatures() {
-        let subject = super::default_trusted_request_subject();
-        let issued_at = 1_800_000_000;
-        let expires_at = issued_at + 300;
-        let authorization =
-            super::app_session_bearer_token(subject, issued_at, expires_at).unwrap();
-
-        let verified_subject = verify_app_session_authorization_header(
-            &super::app_session_config().unwrap(),
-            authorization.as_str(),
-            issued_at + 1,
-        )
-        .unwrap();
-
-        assert_eq!(super::DEFAULT_TENANT_ID, verified_subject.tenant_id);
-        assert_eq!(
-            super::DEFAULT_ORGANIZATION_ID,
-            verified_subject.organization_id
-        );
-        assert_eq!(super::DEFAULT_USER_ID, verified_subject.user_id);
-
-        let signature = super::trusted_subject_signature(
-            subject,
-            issued_at,
-            "GET",
-            "/backend/v3/api/ai/models",
-        )
-        .unwrap();
-        let mut headers = HeaderMap::new();
-        headers.insert("x-sdkwork-subject-tenant-id", subject.tenant_id.into());
-        headers.insert(
-            "x-sdkwork-subject-organization-id",
-            subject.organization_id.into(),
-        );
-        headers.insert("x-sdkwork-subject-user-id", subject.user_id.into());
-        headers.insert("x-sdkwork-subject-timestamp", issued_at.into());
-        headers.insert(
-            "x-sdkwork-subject-signature",
-            HeaderValue::from_str(signature.as_str()).unwrap(),
-        );
-
-        let verified_subject = verified_signed_trusted_request_subject(
-            &mut headers,
-            "GET",
-            "/backend/v3/api/ai/models",
-            &super::trusted_subject_config().unwrap(),
-            issued_at + 1,
-        )
-        .unwrap()
-        .unwrap();
-
-        assert_eq!(subject, verified_subject);
-        assert!(headers.get("x-sdkwork-tenant-id").is_none());
-        assert!(headers.get("x-sdkwork-organization-id").is_none());
-        assert!(headers.get("x-sdkwork-user-id").is_none());
-    }
 }
 
 /// Account-domain ledger append port backed by the concrete commerce account
@@ -258,4 +231,70 @@ pub fn resolve_upstream_credential_key_ring() -> String {
          the inline dev ring, which only decrypts credentials written by that same ring"
     );
     FALLBACK_UPSTREAM_CREDENTIAL_KEY_RING.to_owned()
+}
+
+#[cfg(test)]
+mod tests {
+    use axum::http::{HeaderMap, HeaderValue};
+    use sdkwork_cloudrouter_http::{
+        verified_signed_trusted_request_subject, verify_app_session_authorization_header,
+    };
+
+    #[test]
+    fn standard_runtime_subject_helpers_create_verifiable_tokens_and_signatures() {
+        let subject = super::default_trusted_request_subject();
+        let issued_at = 1_800_000_000;
+        let expires_at = issued_at + 300;
+        let authorization =
+            super::app_session_bearer_token(subject, issued_at, expires_at).unwrap();
+
+        let verified_subject = verify_app_session_authorization_header(
+            &super::app_session_config().unwrap(),
+            authorization.as_str(),
+            issued_at + 1,
+        )
+        .unwrap();
+
+        assert_eq!(super::DEFAULT_TENANT_ID, verified_subject.tenant_id);
+        assert_eq!(
+            super::DEFAULT_ORGANIZATION_ID,
+            verified_subject.organization_id
+        );
+        assert_eq!(super::DEFAULT_USER_ID, verified_subject.user_id);
+
+        let signature = super::trusted_subject_signature(
+            subject,
+            issued_at,
+            "GET",
+            "/backend/v3/api/ai/models",
+        )
+        .unwrap();
+        let mut headers = HeaderMap::new();
+        headers.insert("x-sdkwork-subject-tenant-id", subject.tenant_id.into());
+        headers.insert(
+            "x-sdkwork-subject-organization-id",
+            subject.organization_id.into(),
+        );
+        headers.insert("x-sdkwork-subject-user-id", subject.user_id.into());
+        headers.insert("x-sdkwork-subject-timestamp", issued_at.into());
+        headers.insert(
+            "x-sdkwork-subject-signature",
+            HeaderValue::from_str(signature.as_str()).unwrap(),
+        );
+
+        let verified_subject = verified_signed_trusted_request_subject(
+            &mut headers,
+            "GET",
+            "/backend/v3/api/ai/models",
+            &super::trusted_subject_config().unwrap(),
+            issued_at + 1,
+        )
+        .unwrap()
+        .unwrap();
+
+        assert_eq!(subject, verified_subject);
+        assert!(headers.get("x-sdkwork-tenant-id").is_none());
+        assert!(headers.get("x-sdkwork-organization-id").is_none());
+        assert!(headers.get("x-sdkwork-user-id").is_none());
+    }
 }

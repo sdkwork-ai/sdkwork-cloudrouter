@@ -1027,10 +1027,6 @@ struct InMemoryPaymentIntentRuntimeState {
 }
 
 impl InMemoryPaymentIntentRuntimeStore {
-    fn payment_intents(&self) -> Vec<PaymentIntentRuntimeRecord> {
-        self.state.lock().unwrap().payment_intents.clone()
-    }
-
     pub fn route_decisions(&self) -> Vec<PaymentRouteDecisionRecord> {
         self.state.lock().unwrap().route_decisions.clone()
     }

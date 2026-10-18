@@ -22,18 +22,13 @@ use std::fmt;
 pub type ScaledUnits = i128;
 
 /// Rounding policy applied only when a scaling boundary crosses a remainder.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum DecimalRounding {
     Floor,
     Ceil,
+    #[default]
     HalfUp,
     HalfEven,
-}
-
-impl Default for DecimalRounding {
-    fn default() -> Self {
-        DecimalRounding::HalfUp
-    }
 }
 
 /// A parsed decimal value split into integer digits and fractional length, so
@@ -299,9 +294,8 @@ fn add_scaled(
     };
     scaled_to_decimal(left_units, scale)
         .map_err(|_| DecimalMathError::Overflow)
-        .map(|v| {
+        .inspect(|_v| {
             let _ = unit;
-            v
         })
 }
 
@@ -407,9 +401,9 @@ pub fn sum_decimal_strings(values: &[String], scale: u32) -> MathResult<String> 
             total += units;
         }
     }
-    scaled_to_decimal(total, scale).or_else(|_| {
+    scaled_to_decimal(total, scale).map_err(|_| {
         let _ = unit;
-        Err(DecimalMathError::Overflow)
+        DecimalMathError::Overflow
     })
 }
 

@@ -4,9 +4,10 @@ use std::time::Duration;
 use crate::{manifest, paths};
 use axum::Router;
 use sdkwork_cloudrouter_config::{
-    ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig, DatabaseEngine, DeploymentMode,
-    InternalGatewaySecurityConfig, RedisConfig, RequestLimitsConfig, RuntimeConfigProfile,
-    RuntimeTomlConfig, StartupInstallMode, TrustedSubjectConfig, UpstreamCredentialSecurityConfig,
+    ApiKeySecretStorageMode, ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig,
+    DatabaseEngine, DeploymentMode, InternalGatewaySecurityConfig, RedisConfig,
+    RequestLimitsConfig, RuntimeConfigProfile, RuntimeTomlConfig, StartupInstallMode,
+    TrustedSubjectConfig, UpstreamCredentialSecurityConfig,
 };
 use sdkwork_cloudrouter_database_host::connect_cloud_router_database;
 use sdkwork_cloudrouter_http::AppSubjectBoundaryConfig;
@@ -63,6 +64,20 @@ use sdkwork_routes_models_catalog_app_api::{
 use sqlx::PgPool;
 use tokio::time::sleep;
 
+type TenantSigningKeyResolverArc = Arc<dyn sdkwork_iam_web_adapter::TenantSigningKeyResolver>;
+
+/// Builds the per-tenant app session signing key resolver on the shared
+/// primary PostgreSQL pool. The signing-key table lives in the same database
+/// the Cloud Router server already uses, so no extra pool is opened.
+fn tenant_signing_key_resolver_from_pool(pool: &PgPool) -> TenantSigningKeyResolverArc {
+    let store = Arc::new(sdkwork_iam_web_adapter::PostgresTenantSigningKeyStore::new(
+        pool.clone(),
+    ));
+    let resolver = Arc::new(sdkwork_iam_web_adapter::TenantSigningKeyStoreWebResolver::new(store));
+    tracing::info!("per-tenant app session signing key resolver wired");
+    resolver
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RouterApiRouteModule {
     pub package_name: &'static str,
@@ -98,13 +113,10 @@ fn app_api_key_runtime_deps_for_postgres(
         Arc::new(api_key_secret_codec),
     );
     Ok(AppApiKeyRuntimeDeps {
-        read_store: Arc::new(
-            PostgresPricingCatalogLoader::with_credential_secret_codec_and_api_key_secret_storage(
-                pool.clone(),
-                credential_secret_codec.clone(),
-                api_key_secret_storage.clone(),
-            ),
-        ),
+        read_store: Arc::new(PostgresPricingCatalogLoader::with_credential_secret_codec(
+            pool.clone(),
+            credential_secret_codec.clone(),
+        )),
         command_store: Arc::new(PostgresGatewayApiKeyCommandStore::new(
             pool.clone(),
             api_key_secret_storage,
@@ -646,6 +658,7 @@ pub async fn router_with_postgres_product_catalog(
             model_rankings_store,
             &trusted_subject_config,
             &app_session_config,
+            &tenant_signing_key_resolver_from_pool(&pool),
         ),
     );
     let payment_intent_runtime_store =
@@ -676,7 +689,8 @@ pub async fn router_with_postgres_product_catalog(
         credential_secret_codec.clone(),
     )?);
     let subject_boundary_config =
-        AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
+        AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone())
+            .with_tenant_signing_key_resolver(tenant_signing_key_resolver_from_pool(&pool));
     finalize_product_router_with_federated_capabilities(
         router_with_runtime_stores_and_database_status(AppRouterRuntime {
             app_site_settings_store: Some(app_site_settings_store),
@@ -778,6 +792,7 @@ pub async fn router_with_postgres_shared_runtime(
             model_rankings_store,
             &trusted_subject_config,
             &app_session_config,
+            &tenant_signing_key_resolver_from_pool(&pool),
         ),
     );
     let payment_intent_runtime_store =
@@ -810,7 +825,8 @@ pub async fn router_with_postgres_shared_runtime(
         credential_secret_codec.clone(),
     )?);
     let subject_boundary_config =
-        AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone());
+        AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone())
+            .with_tenant_signing_key_resolver(tenant_signing_key_resolver_from_pool(&pool));
     finalize_product_router_with_federated_capabilities(
         router_with_runtime_stores_and_database_status(AppRouterRuntime {
             // Portal first paint reads this on every page load; share the manager with
@@ -993,6 +1009,8 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
     let pool = database_pool.as_postgres().cloned().ok_or_else(|| {
         ProductCatalogRouterError::Config("expected PostgreSQL database pool".to_owned())
     })?;
+    let subject_boundary_config = subject_boundary_config
+        .with_tenant_signing_key_resolver(tenant_signing_key_resolver_from_pool(&pool));
     if startup_install_mode.should_ensure() {
         DatabaseInstaller::for_postgres(pool.clone())
             .with_admin_model_store(Arc::new(PostgresModelCatalogAdminStore::new(pool.clone())))
@@ -1033,6 +1051,7 @@ async fn router_with_database_config_api_key_trusted_subject_app_session_and_sta
             model_rankings_store,
             &trusted_subject_config,
             &app_session_config,
+            &tenant_signing_key_resolver_from_pool(&pool),
         ));
     let payment_intent_runtime_store =
         Arc::new(PostgresPaymentIntentRuntimeStore::new(pool.clone()));
@@ -1444,10 +1463,12 @@ fn app_model_rankings_router_with_subject_boundary(
     read_store: ModelRankingsRuntimeStore,
     trusted_subject_config: &TrustedSubjectConfig,
     app_session_config: &AppSessionConfig,
+    tenant_signing_key_resolver: &TenantSigningKeyResolverArc,
 ) -> Router {
     sdkwork_cloudrouter_http::apply_optional_app_subject_boundary_if_legacy(
         app_model_rankings_router_with_read_store(read_store),
-        AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone()),
+        AppSubjectBoundaryConfig::new(trusted_subject_config.clone(), app_session_config.clone())
+            .with_tenant_signing_key_resolver(Arc::clone(tenant_signing_key_resolver)),
     )
 }
 
@@ -1793,6 +1814,14 @@ fn parse_non_empty_string_config(
 fn require_api_key_security_config(
     config: Option<ApiKeySecurityConfig>,
 ) -> Result<ApiKeySecurityConfig, ProductCatalogRouterError> {
+    // Plaintext gateway key persistence must fail fast in production-like
+    // deployments before any key material can be written. A configured but
+    // unreadable runtime config is also a hard error (fail closed), matching
+    // the web-framework production posture guard.
+    let runtime_toml = sdkwork_cloudrouter_config::RuntimeTomlConfig::from_env_config_file()
+        .map_err(ProductCatalogRouterError::Config)?;
+    ApiKeySecretStorageMode::ensure_safe_for_environment(runtime_toml.as_ref())
+        .map_err(ProductCatalogRouterError::Config)?;
     config.ok_or_else(|| {
         ProductCatalogRouterError::Config(format!(
             "{} is required when SDKWORK_DATABASE_URL is configured",

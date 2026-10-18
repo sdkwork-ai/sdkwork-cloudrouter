@@ -55,7 +55,7 @@ async fn admin_finance_route_lists_transactions_and_billing_records() {
     assert_eq!("stmt-202604", billing["data"]["items"][0]["id"]);
     assert_eq!("30", billing["data"]["items"][0]["userId"]);
     assert_eq!("2026-04", billing["data"]["items"][0]["period"]);
-    assert_eq!(12000, billing["data"]["items"][0]["totalTokens"]);
+    assert_eq!("12000", billing["data"]["items"][0]["totalTokens"]);
     assert_eq!("88.25", billing["data"]["items"][0]["totalCost"]);
     assert_eq!("unpaid", billing["data"]["items"][0]["status"]);
     assert_eq!(

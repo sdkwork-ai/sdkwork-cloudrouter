@@ -577,7 +577,8 @@ mod tests {
 
     #[test]
     fn usage_logs_query_uses_upstream_account_group_name_for_display_and_search() {
-        for sql in [LOAD_USAGE_LOGS] {
+        {
+            let sql = LOAD_USAGE_LOGS;
             assert!(
                 sql.contains("LEFT JOIN ai_upstream_account_group g"),
                 "usage logs Postgres SQL must join the channel group table"
@@ -660,7 +661,8 @@ mod tests {
             ),
             "usage logs Postgres model display must prefer provider_native_model"
         );
-        for sql in [LOAD_USAGE_LOGS] {
+        {
+            let sql = LOAD_USAGE_LOGS;
             assert!(
                 sql.contains("MAX(provider_native_model) AS provider_native_model"),
                 "usage logs Postgres aggregation must keep provider native model searchable"

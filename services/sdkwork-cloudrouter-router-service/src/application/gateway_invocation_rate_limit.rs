@@ -123,7 +123,10 @@ impl GatewayInvocationRateLimiter {
                             error = %error,
                             rate_limit_redis_degraded = 1,
                             "gateway rate-limit Redis store unavailable; falling back to local \
-                             per-node state with quotas divided by estimated_instance_count={}",
+                             per-node state with quotas divided by estimated_instance_count={} \
+                             (with 1 and multiple replicas each admits the full quota; set \
+                             SDKWORK_CLOUDROUTER_PROVIDER_RATE_LIMIT_ESTIMATED_INSTANCE_COUNT \
+                             or rate_limit.estimated_instance_count to the replica count)",
                             estimated_instance_count
                         );
                         (None, true)
@@ -133,7 +136,12 @@ impl GatewayInvocationRateLimiter {
             None => {
                 tracing::warn!(
                     rate_limit_redis_degraded = 1,
-                    "gateway rate limiter has no Redis config; running local per-node state"
+                    estimated_instance_count,
+                    "gateway rate limiter has no Redis config; running local per-node state \
+                     (with estimated_instance_count=1 a multi-replica fleet admits the full \
+                     configured quota per replica during degradation; set \
+                     SDKWORK_CLOUDROUTER_PROVIDER_RATE_LIMIT_ESTIMATED_INSTANCE_COUNT or \
+                     rate_limit.estimated_instance_count to the replica count)"
                 );
                 (None, true)
             }

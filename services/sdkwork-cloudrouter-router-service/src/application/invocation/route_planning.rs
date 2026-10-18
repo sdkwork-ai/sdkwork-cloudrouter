@@ -452,7 +452,6 @@ fn normalized_resolved_provider_model(
 /// `application::upstream_base_url::resolve_upstream_base_url`）。
 /// 优先级：账号配置 > 供应商配置 > 端点解析结果（`route_base_url` 已含
 /// 端点 Base URL 与供应商默认 Base URL 兜底，见 rows.rs）。
-
 fn model_candidate(
     selection: SelectedUpstreamModelRoute,
     capability: RoutingCapability,

@@ -857,7 +857,7 @@ fn video_line(
                 meter = %meter.code(),
                 "video-metered response reported no duration; falling back to a single second"
             );
-            measured_line(meter, "1".to_owned())
+            measured_line(meter, "1")
         }
     }
 }

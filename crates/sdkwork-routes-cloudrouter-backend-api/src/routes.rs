@@ -13,9 +13,9 @@ use sdkwork_cloudrouter_admin_analytics_repository_sqlx::PostgresAdminAnalyticsR
 use sdkwork_cloudrouter_admin_dashboard_repository_sqlx::PostgresAdminDashboardReadStore;
 use sdkwork_cloudrouter_admin_monitor_repository_sqlx::PostgresAdminMonitorReadStore;
 use sdkwork_cloudrouter_config::{
-    ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig, DatabaseEngine, DeploymentMode,
-    RedisConfig, RequestLimitsConfig, RuntimeTomlConfig, StartupInstallMode, TrustedSubjectConfig,
-    UpstreamCredentialSecurityConfig,
+    ApiKeySecretStorageMode, ApiKeySecurityConfig, AppSessionConfig, DatabaseConfig,
+    DatabaseEngine, DeploymentMode, RedisConfig, RequestLimitsConfig, RuntimeTomlConfig,
+    StartupInstallMode, TrustedSubjectConfig, UpstreamCredentialSecurityConfig,
 };
 use sdkwork_cloudrouter_database_host::connect_cloud_router_database;
 use sdkwork_cloudrouter_http::TrustedRequestSubject;
@@ -145,6 +145,20 @@ struct AdminSubjectBoundaryConfig {
     access_checker: AdminAccessChecker,
 }
 
+type TenantSigningKeyResolverArc = Arc<dyn sdkwork_iam_web_adapter::TenantSigningKeyResolver>;
+
+/// Builds the per-tenant app session signing key resolver on the shared
+/// primary PostgreSQL pool. The signing-key table lives in the same database
+/// the Cloud Router server already uses, so no extra pool is opened.
+fn tenant_signing_key_resolver_from_pool(pool: &sqlx::PgPool) -> TenantSigningKeyResolverArc {
+    let store = Arc::new(sdkwork_iam_web_adapter::PostgresTenantSigningKeyStore::new(
+        pool.clone(),
+    ));
+    let resolver = Arc::new(sdkwork_iam_web_adapter::TenantSigningKeyStoreWebResolver::new(store));
+    tracing::info!("per-tenant app session signing key resolver wired");
+    resolver
+}
+
 #[derive(Default)]
 struct AdminRouterRuntime<'a> {
     database_config: Option<&'a DatabaseConfig>,
@@ -182,6 +196,7 @@ struct AdminRouterRuntime<'a> {
     database_installer: Option<DatabaseInstallerRuntime>,
     trusted_subject_config: Option<TrustedSubjectConfig>,
     app_session_config: Option<AppSessionConfig>,
+    tenant_signing_key_resolver: Option<TenantSigningKeyResolverArc>,
     admin_access_checker: Option<AdminAccessChecker>,
     request_limits_config: RequestLimitsConfig,
     readiness_check: Option<sdkwork_cloudrouter_http::ReadinessCheckFn>,
@@ -330,6 +345,7 @@ where
         admin_access_checker,
         request_limits_config: _request_limits_config,
         readiness_check,
+        tenant_signing_key_resolver,
     } = runtime;
 
     let routing_cache_manager = cache_manager.clone();
@@ -352,10 +368,14 @@ where
     let subject_boundary_config = match (trusted_subject_config.clone(), app_session_config.clone())
     {
         (Some(trusted_subject_config), Some(app_session_config)) => {
-            Some(sdkwork_cloudrouter_http::AppSubjectBoundaryConfig::new(
+            let boundary = sdkwork_cloudrouter_http::AppSubjectBoundaryConfig::new(
                 trusted_subject_config,
                 app_session_config,
-            ))
+            );
+            Some(match tenant_signing_key_resolver.clone() {
+                Some(resolver) => boundary.with_tenant_signing_key_resolver(resolver),
+                None => boundary,
+            })
         }
         _ => None,
     };
@@ -841,6 +861,7 @@ pub async fn router_with_postgres_shared_runtime(
     let model_ranking_refresh_store: ModelRankingRefreshRuntimeStore =
         Arc::new(PostgresModelRankingRefreshStore::new(commerce_pool.clone()));
     let admin_access_checker = AdminAccessChecker(pool.clone());
+    let tenant_signing_key_resolver = tenant_signing_key_resolver_from_pool(&pool);
 
     // SDKWork log foundation: request log query router + full capture layer.
     // One row per request is persisted through the sdkwork-log store (metadata
@@ -883,7 +904,8 @@ pub async fn router_with_postgres_shared_runtime(
             subject_boundary: sdkwork_cloudrouter_http::AppSubjectBoundaryConfig::new(
                 trusted_subject_config.clone(),
                 app_session_config.clone(),
-            ),
+            )
+            .with_tenant_signing_key_resolver(Arc::clone(&tenant_signing_key_resolver)),
             access_checker: admin_access_checker.clone(),
         },
         drive_storage_assembly.router,
@@ -926,6 +948,7 @@ pub async fn router_with_postgres_shared_runtime(
             database_installer: Some(database_installer),
             trusted_subject_config: Some(trusted_subject_config),
             app_session_config: Some(app_session_config),
+            tenant_signing_key_resolver: Some(Arc::clone(&tenant_signing_key_resolver)),
             admin_access_checker: Some(admin_access_checker),
             request_limits_config,
             readiness_check: None,
@@ -1179,6 +1202,9 @@ async fn router_with_database_api_key_trusted_subject_app_session_and_startup_in
                     database_installer: Some(Arc::clone(&database_installer)),
                     trusted_subject_config: Some(trusted_subject_config),
                     app_session_config: Some(app_session_config),
+                    tenant_signing_key_resolver: Some(tenant_signing_key_resolver_from_pool(
+                        &pool,
+                    )),
                     admin_access_checker: Some(admin_access_checker),
                     request_limits_config,
                     readiness_check:
@@ -1445,7 +1471,7 @@ async fn admin_request_subject_boundary(
     next: Next,
 ) -> Response {
     let (subject, attach_subject) =
-        match resolve_admin_request_subject(&mut request, &config.subject_boundary) {
+        match resolve_admin_request_subject(&mut request, &config.subject_boundary).await {
             Ok(result) => result,
             Err(message) => return admin_unauthorized_response(&request, message),
         };
@@ -1469,7 +1495,7 @@ async fn admin_request_subject_boundary(
     }
 }
 
-fn resolve_admin_request_subject(
+async fn resolve_admin_request_subject(
     request: &mut Request<Body>,
     subject_boundary: &sdkwork_cloudrouter_http::AppSubjectBoundaryConfig,
 ) -> Result<(TrustedRequestSubject, bool), String> {
@@ -1485,13 +1511,24 @@ fn resolve_admin_request_subject(
         .path_and_query()
         .map(|value| value.as_str().to_owned())
         .unwrap_or_else(|| request.uri().path().to_owned());
-    sdkwork_cloudrouter_http::verified_app_request_subject(
-        request.headers_mut(),
-        &method,
-        &path_and_query,
-        subject_boundary,
-        current_unix_seconds(),
-    )
+    if subject_boundary.tenant_signing_key_resolver().is_some() {
+        sdkwork_cloudrouter_http::verified_app_request_subject_async(
+            request.headers_mut(),
+            &method,
+            &path_and_query,
+            subject_boundary,
+            current_unix_seconds(),
+        )
+        .await
+    } else {
+        sdkwork_cloudrouter_http::verified_app_request_subject(
+            request.headers_mut(),
+            &method,
+            &path_and_query,
+            subject_boundary,
+            current_unix_seconds(),
+        )
+    }
     .map(|subject| (subject, true))
 }
 
@@ -1546,6 +1583,14 @@ fn admin_internal_error_response(request: &Request<Body>, message: String) -> Re
 fn require_api_key_security_config(
     config: Option<ApiKeySecurityConfig>,
 ) -> Result<ApiKeySecurityConfig, ProductCatalogRouterError> {
+    // Plaintext gateway key persistence must fail fast in production-like
+    // deployments before any key material can be written. A configured but
+    // unreadable runtime config is also a hard error (fail closed), matching
+    // the web-framework production posture guard.
+    let runtime_toml = sdkwork_cloudrouter_config::RuntimeTomlConfig::from_env_config_file()
+        .map_err(ProductCatalogRouterError::Config)?;
+    ApiKeySecretStorageMode::ensure_safe_for_environment(runtime_toml.as_ref())
+        .map_err(ProductCatalogRouterError::Config)?;
     config.ok_or_else(|| {
         ProductCatalogRouterError::Config(format!(
             "{} is required when SDKWORK_DATABASE_URL is configured",

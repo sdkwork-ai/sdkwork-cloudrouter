@@ -40,6 +40,7 @@ struct AdminUserApiKeyCreateResponse {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct CreateApiKeyRequest {
+    #[serde(default, with = "sdkwork_utils_rust::serde_int64::option")]
     user_id: Option<i64>,
     name: Option<String>,
 }

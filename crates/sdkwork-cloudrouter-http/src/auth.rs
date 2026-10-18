@@ -34,7 +34,6 @@ const X_SDKWORK_SUBJECT_USER_ID: &str = "x-sdkwork-subject-user-id";
 const X_SDKWORK_SUBJECT_TIMESTAMP: &str = "x-sdkwork-subject-timestamp";
 const X_SDKWORK_SUBJECT_SIGNATURE: &str = "x-sdkwork-subject-signature";
 pub(crate) const DEFAULT_USER_OPERATOR_TYPE: i32 = 1;
-const APP_SESSION_TOKEN_VERSION: &str = "v1";
 const APP_SESSION_CLAIM_TOKEN_VERSION: &str = "v2";
 type HmacSha256 = Hmac<Sha256>;
 
@@ -146,6 +145,7 @@ pub enum AppSessionTokenError {
     InvalidAuthorizationScheme,
     InvalidHeaderValue(&'static str),
     InvalidTokenFormat,
+    UnknownSigningKey,
     InvalidPositiveInteger(&'static str),
     InvalidTimestamp(&'static str),
     InvalidTokenType,
@@ -162,6 +162,8 @@ pub enum AppSessionTokenError {
 pub struct AppSubjectBoundaryConfig {
     trusted_subject: TrustedSubjectConfig,
     app_session: AppSessionConfig,
+    tenant_signing_key_resolver:
+        Option<std::sync::Arc<dyn sdkwork_iam_web_adapter::TenantSigningKeyResolver>>,
 }
 
 #[derive(Debug, Serialize)]
@@ -379,7 +381,20 @@ impl AppSubjectBoundaryConfig {
         Self {
             trusted_subject,
             app_session,
+            tenant_signing_key_resolver: None,
         }
+    }
+
+    /// Attach a per-tenant app session signing key resolver. When present,
+    /// `kid`-bearing app session tokens verify against the per-tenant key
+    /// store at the subject boundary; no-kid tokens keep verifying with the
+    /// global `AppSessionConfig` secret.
+    pub fn with_tenant_signing_key_resolver(
+        mut self,
+        resolver: std::sync::Arc<dyn sdkwork_iam_web_adapter::TenantSigningKeyResolver>,
+    ) -> Self {
+        self.tenant_signing_key_resolver = Some(resolver);
+        self
     }
 
     pub fn trusted_subject(&self) -> &TrustedSubjectConfig {
@@ -389,6 +404,12 @@ impl AppSubjectBoundaryConfig {
     pub fn app_session(&self) -> &AppSessionConfig {
         &self.app_session
     }
+
+    pub fn tenant_signing_key_resolver(
+        &self,
+    ) -> Option<&std::sync::Arc<dyn sdkwork_iam_web_adapter::TenantSigningKeyResolver>> {
+        self.tenant_signing_key_resolver.as_ref()
+    }
 }
 
 impl fmt::Debug for AppSubjectBoundaryConfig {
@@ -397,6 +418,10 @@ impl fmt::Debug for AppSubjectBoundaryConfig {
             .debug_struct("AppSubjectBoundaryConfig")
             .field("trusted_subject", &self.trusted_subject)
             .field("app_session", &self.app_session)
+            .field(
+                "has_tenant_signing_key_resolver",
+                &self.tenant_signing_key_resolver.is_some(),
+            )
             .finish()
     }
 }
@@ -497,13 +522,24 @@ async fn enforce_verified_app_request_subject(
                 .into_response();
         }
     };
-    match verified_app_request_subject(
-        request.headers_mut(),
-        &method,
-        &path_and_query,
-        &config,
-        now_unix_seconds,
-    ) {
+    match if config.tenant_signing_key_resolver().is_some() {
+        verified_app_request_subject_async(
+            request.headers_mut(),
+            &method,
+            &path_and_query,
+            &config,
+            now_unix_seconds,
+        )
+        .await
+    } else {
+        verified_app_request_subject(
+            request.headers_mut(),
+            &method,
+            &path_and_query,
+            &config,
+            now_unix_seconds,
+        )
+    } {
         Ok(subject) => {
             attach_trusted_request_subject(&mut request, subject);
             next.run(request).await
@@ -576,6 +612,53 @@ pub fn verified_app_request_subject(
                 return Err(error.to_string());
             }
         };
+    remove_app_session_token_headers(headers);
+    remove_internal_trusted_subject_headers(headers);
+    Ok(subject)
+}
+
+/// Resolver-aware async variant of [`verified_app_request_subject`].
+///
+/// The signed trusted-subject and API-key handling is identical; only the
+/// app-session token branch changes: when the boundary config carries a
+/// per-tenant signing key resolver, kid-bearing app session tokens verify
+/// against the per-tenant key store via
+/// [`verify_dual_app_session_headers_with_resolver`].
+pub async fn verified_app_request_subject_async(
+    headers: &mut HeaderMap,
+    method: &str,
+    path_and_query: &str,
+    config: &AppSubjectBoundaryConfig,
+    now_unix_seconds: i64,
+) -> Result<TrustedRequestSubject, String> {
+    if let Some(subject) = verified_signed_trusted_request_subject(
+        headers,
+        method,
+        path_and_query,
+        config.trusted_subject(),
+        now_unix_seconds,
+    )
+    .map_err(|error| error.to_string())?
+    {
+        return Ok(subject);
+    }
+    let resolver = config
+        .tenant_signing_key_resolver()
+        .map(|resolver| resolver.as_ref());
+    let subject = match verify_dual_app_session_headers_with_resolver(
+        config.app_session(),
+        resolver,
+        headers,
+        now_unix_seconds,
+    )
+    .await
+    {
+        Ok(subject) => subject,
+        Err(error) => {
+            remove_app_session_token_headers(headers);
+            return Err(error.to_string());
+        }
+    };
     remove_app_session_token_headers(headers);
     remove_internal_trusted_subject_headers(headers);
     Ok(subject)
@@ -715,24 +798,6 @@ pub fn sign_trusted_request_subject(
     hex::encode(mac.finalize().into_bytes())
 }
 
-pub fn sign_app_session_token(
-    config: &AppSessionConfig,
-    subject: TrustedRequestSubject,
-    issued_at: i64,
-    expires_at: i64,
-) -> String {
-    let payload = app_session_payload(subject, issued_at, expires_at);
-    let mut mac = app_session_hmac_for_config(config)
-        .expect("HMAC-SHA256 signing key must be derivable from configured app session secret");
-    mac.update(payload.as_bytes());
-    format!(
-        "{}.{}.{}",
-        APP_SESSION_TOKEN_VERSION,
-        payload.replace('\n', "."),
-        hex::encode(mac.finalize().into_bytes())
-    )
-}
-
 pub fn sign_app_session_token_with_claims(
     config: &AppSessionConfig,
     claims: &AppSessionTokenClaims,
@@ -801,10 +866,10 @@ pub fn verify_app_session_token_claims_with_signing_secret(
 /// signs the token with that per-tenant key and embeds the `key_id` in the
 /// claims (`kid` field) so verifiers can look up the correct key later.
 ///
-/// Falls back to the shared `AppSessionConfig` HMAC secret when no
-/// per-tenant key is configured for the tenant (backward compatibility).
+/// Per-tenant signing is fail-closed: when the store cannot resolve an active
+/// signing key for the tenant, this function returns an error instead of
+/// falling back to the shared `AppSessionConfig` HMAC secret.
 pub async fn sign_app_session_token_with_claims_and_store(
-    config: &AppSessionConfig,
     store: &dyn TenantSigningKeyStore,
     claims: &AppSessionTokenClaims,
 ) -> Result<String, String> {
@@ -819,12 +884,15 @@ pub async fn sign_app_session_token_with_claims_and_store(
             ))
         }
         Err(error) => {
-            tracing::warn!(
+            tracing::error!(
                 error = %error,
                 tenant_id = claims.tenant_id,
-                "failed to resolve per-tenant signing key; falling back to shared HMAC secret",
+                "failed to resolve per-tenant signing key; refusing to sign app session token",
             );
-            Ok(sign_app_session_token_with_claims(config, claims))
+            Err(format!(
+                "per-tenant app session signing key resolution failed for tenant {}: {error}",
+                claims.tenant_id
+            ))
         }
     }
 }
@@ -835,8 +903,9 @@ pub async fn sign_app_session_token_with_claims_and_store(
 /// function verifies the signature with the per-tenant key. This supports
 /// key rotation windows where multiple keys may be valid simultaneously.
 ///
-/// Falls back to the shared `AppSessionConfig` HMAC secret when no `kid` is
-/// present or the resolver does not know the key (backward compatibility).
+/// Fail-closed: a token carrying a `kid` that the resolver does not know is
+/// rejected. Tokens without a `kid` still verify with the shared
+/// `AppSessionConfig` HMAC secret (backward compatibility).
 pub async fn verify_app_session_token_claims_with_resolver(
     config: &AppSessionConfig,
     resolver: &dyn sdkwork_iam_web_adapter::TenantSigningKeyResolver,
@@ -855,16 +924,22 @@ pub async fn verify_app_session_token_claims_with_resolver(
         .map_err(|_| AppSessionTokenError::InvalidTokenFormat)?;
     let unverified_claims: AppSessionTokenClaims = serde_json::from_slice(&decoded_payload)
         .map_err(|_| AppSessionTokenError::InvalidTokenFormat)?;
-    // Try per-tenant key when kid is present and resolver has the key.
-    if let Some(kid) = unverified_claims.kid.as_deref() {
-        if let Some(secret) = resolver.resolve_signing_secret_by_kid(kid).await {
-            verify_app_session_claim_signature_with_secret(&secret, parts[1], parts[2])?;
-            let claims: AppSessionTokenClaims = serde_json::from_slice(&decoded_payload)
-                .map_err(|_| AppSessionTokenError::InvalidTokenFormat)?;
-            validate_app_session_claims(config, &claims, now_unix_seconds)?;
-            return Ok(claims);
+    // Per-tenant key path: fail closed when the resolver does not know the kid.
+    if unverified_claims.kid.is_some() {
+        let kid = unverified_claims.kid.as_deref().unwrap_or_default();
+        match resolver.resolve_signing_secret_by_kid(kid).await {
+            Some(secret) => {
+                verify_app_session_claim_signature_with_secret(&secret, parts[1], parts[2])?;
+                let claims: AppSessionTokenClaims = serde_json::from_slice(&decoded_payload)
+                    .map_err(|_| AppSessionTokenError::InvalidTokenFormat)?;
+                validate_app_session_claims(config, &claims, now_unix_seconds)?;
+                return Ok(claims);
+            }
+            None => return Err(AppSessionTokenError::UnknownSigningKey),
         }
     }
+    // TODO(security): production must wire the per-tenant resolver for issuance
+    // and verification, then drop this no-kid shared-secret fallback path.
     // Fallback to shared HMAC secret for backward compatibility.
     verify_app_session_token_claims(config, token, now_unix_seconds)
 }
@@ -902,6 +977,87 @@ pub fn verify_dual_app_session_token_pair(
     verify_dual_app_session_headers(&headers, config, now_unix_seconds)
 }
 
+/// Per-token verification outcome shared by the sync and resolver-aware dual
+/// header verification paths: the verified subject plus the claims when the
+/// token was a claims-format (`v2`) token (`None` for legacy opaque tokens).
+type DualAppSessionTokenStep =
+    Result<(TrustedRequestSubject, Option<AppSessionTokenClaims>), AppSessionTokenError>;
+
+/// Applies token-kind validation and the legacy-token fallback to an already
+/// verified set of app session token claims.
+fn finalize_dual_app_session_token_step(
+    claims: Result<AppSessionTokenClaims, AppSessionTokenError>,
+    expected_kind: AppSessionTokenKind,
+    config: &AppSessionConfig,
+    token: &str,
+    now_unix_seconds: i64,
+) -> DualAppSessionTokenStep {
+    let claims = claims.and_then(|claims| {
+        if claims.token_kind == expected_kind {
+            Ok(claims)
+        } else {
+            Err(AppSessionTokenError::InvalidTokenType)
+        }
+    });
+    match claims.as_ref() {
+        Ok(claims) => Ok((claims.trusted_subject(), Some(claims.clone()))),
+        Err(AppSessionTokenError::InvalidTokenFormat) => Ok((
+            verify_app_session_token(config, token, now_unix_seconds)?,
+            None,
+        )),
+        Err(error) => Err(error.clone()),
+    }
+}
+
+fn verify_dual_app_session_token_step(
+    config: &AppSessionConfig,
+    token: &str,
+    expected_kind: AppSessionTokenKind,
+    now_unix_seconds: i64,
+) -> DualAppSessionTokenStep {
+    finalize_dual_app_session_token_step(
+        verify_app_session_token_claims(config, token, now_unix_seconds),
+        expected_kind,
+        config,
+        token,
+        now_unix_seconds,
+    )
+}
+
+async fn verify_dual_app_session_token_step_with_resolver(
+    config: &AppSessionConfig,
+    resolver: Option<&dyn sdkwork_iam_web_adapter::TenantSigningKeyResolver>,
+    token: &str,
+    expected_kind: AppSessionTokenKind,
+    now_unix_seconds: i64,
+) -> DualAppSessionTokenStep {
+    let claims = match resolver {
+        Some(resolver) => {
+            verify_app_session_token_claims_with_resolver(config, resolver, token, now_unix_seconds)
+                .await
+        }
+        None => verify_app_session_token_claims(config, token, now_unix_seconds),
+    };
+    finalize_dual_app_session_token_step(claims, expected_kind, config, token, now_unix_seconds)
+}
+
+/// Pairs the verified auth and access token subjects and runs the claims
+/// pairing validation when both tokens carried claims.
+fn pair_dual_app_session_subjects(
+    auth_subject: TrustedRequestSubject,
+    auth_claims: Option<AppSessionTokenClaims>,
+    access_subject: TrustedRequestSubject,
+    access_claims: Option<AppSessionTokenClaims>,
+) -> Result<TrustedRequestSubject, AppSessionTokenError> {
+    if auth_subject != access_subject {
+        return Err(AppSessionTokenError::SubjectMismatch);
+    }
+    if let (Some(auth_claims), Some(access_claims)) = (auth_claims, access_claims) {
+        validate_matching_app_session_claims(&auth_claims, &access_claims)?;
+    }
+    Ok(auth_subject)
+}
+
 pub fn verify_dual_app_session_headers(
     headers: &HeaderMap,
     config: &AppSessionConfig,
@@ -913,21 +1069,12 @@ pub fn verify_dual_app_session_headers(
         .to_str()
         .map_err(|_| AppSessionTokenError::InvalidHeaderValue(AUTHORIZATION))?;
     let auth_token = parse_app_session_authorization_bearer(authorization)?;
-    let auth_claims = verify_app_session_token_claims(config, auth_token, now_unix_seconds)
-        .and_then(|claims| {
-            if claims.token_kind == AppSessionTokenKind::Auth {
-                Ok(claims)
-            } else {
-                Err(AppSessionTokenError::InvalidTokenType)
-            }
-        });
-    let auth_subject = match auth_claims.as_ref() {
-        Ok(claims) => claims.trusted_subject(),
-        Err(AppSessionTokenError::InvalidTokenFormat) => {
-            verify_app_session_token(config, auth_token, now_unix_seconds)?
-        }
-        Err(error) => return Err(error.clone()),
-    };
+    let (auth_subject, auth_claims) = verify_dual_app_session_token_step(
+        config,
+        auth_token,
+        AppSessionTokenKind::Auth,
+        now_unix_seconds,
+    )?;
 
     let access_token = headers
         .get(ACCESS_TOKEN)
@@ -938,28 +1085,62 @@ pub fn verify_dual_app_session_headers(
     if access_token.is_empty() {
         return Err(AppSessionTokenError::MissingAccessToken);
     }
-    let access_claims = verify_app_session_token_claims(config, access_token, now_unix_seconds)
-        .and_then(|claims| {
-            if claims.token_kind == AppSessionTokenKind::Access {
-                Ok(claims)
-            } else {
-                Err(AppSessionTokenError::InvalidTokenType)
-            }
-        });
-    let access_subject = match access_claims.as_ref() {
-        Ok(claims) => claims.trusted_subject(),
-        Err(AppSessionTokenError::InvalidTokenFormat) => {
-            verify_app_session_token(config, access_token, now_unix_seconds)?
-        }
-        Err(error) => return Err(error.clone()),
-    };
-    if auth_subject != access_subject {
-        return Err(AppSessionTokenError::SubjectMismatch);
+    let (access_subject, access_claims) = verify_dual_app_session_token_step(
+        config,
+        access_token,
+        AppSessionTokenKind::Access,
+        now_unix_seconds,
+    )?;
+    pair_dual_app_session_subjects(auth_subject, auth_claims, access_subject, access_claims)
+}
+
+/// Resolver-aware variant of [`verify_dual_app_session_headers`].
+///
+/// When `resolver` is `Some`, kid-bearing tokens verify against the
+/// per-tenant signing key store (a token carrying an unknown `kid` is
+/// rejected with [`AppSessionTokenError::UnknownSigningKey`]); no-kid tokens
+/// keep verifying with the global `AppSessionConfig` secret (documented
+/// bridge until the token issuer guarantees `kid`). When `resolver` is
+/// `None`, this behaves exactly like the sync function.
+pub async fn verify_dual_app_session_headers_with_resolver(
+    config: &AppSessionConfig,
+    resolver: Option<&dyn sdkwork_iam_web_adapter::TenantSigningKeyResolver>,
+    headers: &HeaderMap,
+    now_unix_seconds: i64,
+) -> Result<TrustedRequestSubject, AppSessionTokenError> {
+    let authorization = headers
+        .get(AUTHORIZATION)
+        .ok_or(AppSessionTokenError::MissingBearerToken)?
+        .to_str()
+        .map_err(|_| AppSessionTokenError::InvalidHeaderValue(AUTHORIZATION))?;
+    let auth_token = parse_app_session_authorization_bearer(authorization)?;
+    let (auth_subject, auth_claims) = verify_dual_app_session_token_step_with_resolver(
+        config,
+        resolver,
+        auth_token,
+        AppSessionTokenKind::Auth,
+        now_unix_seconds,
+    )
+    .await?;
+
+    let access_token = headers
+        .get(ACCESS_TOKEN)
+        .ok_or(AppSessionTokenError::MissingAccessToken)?
+        .to_str()
+        .map(str::trim)
+        .map_err(|_| AppSessionTokenError::InvalidHeaderValue(ACCESS_TOKEN))?;
+    if access_token.is_empty() {
+        return Err(AppSessionTokenError::MissingAccessToken);
     }
-    if let (Ok(auth_claims), Ok(access_claims)) = (auth_claims, access_claims) {
-        validate_matching_app_session_claims(&auth_claims, &access_claims)?;
-    }
-    Ok(auth_subject)
+    let (access_subject, access_claims) = verify_dual_app_session_token_step_with_resolver(
+        config,
+        resolver,
+        access_token,
+        AppSessionTokenKind::Access,
+        now_unix_seconds,
+    )
+    .await?;
+    pair_dual_app_session_subjects(auth_subject, auth_claims, access_subject, access_claims)
 }
 
 pub fn verify_app_session_token(
@@ -967,37 +1148,8 @@ pub fn verify_app_session_token(
     token: &str,
     now_unix_seconds: i64,
 ) -> Result<TrustedRequestSubject, AppSessionTokenError> {
-    if token.trim().starts_with(APP_SESSION_CLAIM_TOKEN_VERSION) {
-        return verify_app_session_token_claims(config, token, now_unix_seconds)
-            .map(|claims| claims.trusted_subject());
-    }
-    let parts: Vec<&str> = token.trim().split('.').collect();
-    if parts.len() != 7 || parts[0] != APP_SESSION_TOKEN_VERSION {
-        return Err(AppSessionTokenError::InvalidTokenFormat);
-    }
-    let tenant_id = parse_session_positive_i64(parts[1], "tenant_id")?;
-    let organization_id = parse_session_non_negative_i64(
-        parts[2]
-            .parse::<i64>()
-            .map_err(|_| AppSessionTokenError::InvalidPositiveInteger("organization_id"))?,
-        "organization_id",
-    )?;
-    let user_id = parse_session_positive_i64(parts[3], "user_id")?;
-    let issued_at = parse_session_timestamp(parts[4], "issued_at")?;
-    let expires_at = parse_session_timestamp(parts[5], "expires_at")?;
-    if expires_at <= issued_at {
-        return Err(AppSessionTokenError::InvalidTimestamp("expires_at"));
-    }
-    validate_app_session_time_window(config, issued_at, expires_at, now_unix_seconds)?;
-    let subject = TrustedRequestSubject {
-        tenant_id,
-        organization_id,
-        user_id,
-        operator_id: user_id,
-        operator_type: DEFAULT_USER_OPERATOR_TYPE,
-    };
-    verify_app_session_signature(config, subject, issued_at, expires_at, parts[6])?;
-    Ok(subject)
+    verify_app_session_token_claims(config, token, now_unix_seconds)
+        .map(|claims| claims.trusted_subject())
 }
 
 pub fn verify_app_session_token_claims(
@@ -1067,6 +1219,9 @@ impl fmt::Display for AppSessionTokenError {
             }
             Self::InvalidHeaderValue(name) => write!(formatter, "{name} header value is invalid"),
             Self::InvalidTokenFormat => write!(formatter, "app session token format is invalid"),
+            Self::UnknownSigningKey => {
+                write!(formatter, "app session token signing key is unknown")
+            }
             Self::InvalidPositiveInteger(field) => {
                 write!(formatter, "app session {field} must be a positive integer")
             }
@@ -1301,12 +1456,6 @@ fn hmac_for_config(
         })
 }
 
-fn app_session_hmac_for_config(
-    config: &AppSessionConfig,
-) -> Result<HmacSha256, AppSessionTokenError> {
-    app_session_hmac_for_secret(config.signing_secret().as_bytes())
-}
-
 fn app_session_hmac_for_secret(signing_secret: &[u8]) -> Result<HmacSha256, AppSessionTokenError> {
     HmacSha256::new_from_slice(signing_secret)
         .map_err(|error| {
@@ -1316,13 +1465,6 @@ fn app_session_hmac_for_secret(signing_secret: &[u8]) -> Result<HmacSha256, AppS
             );
             AppSessionTokenError::SigningKeyInvalid
         })
-}
-
-fn app_session_payload(subject: TrustedRequestSubject, issued_at: i64, expires_at: i64) -> String {
-    format!(
-        "{}\n{}\n{}\n{}\n{}",
-        subject.tenant_id, subject.organization_id, subject.user_id, issued_at, expires_at
-    )
 }
 
 fn app_session_claim_payload(
@@ -1337,19 +1479,6 @@ fn app_session_claim_payload(
     })
 }
 
-fn parse_session_positive_i64(
-    value: &str,
-    field: &'static str,
-) -> Result<i64, AppSessionTokenError> {
-    let parsed = value
-        .parse::<i64>()
-        .map_err(|_| AppSessionTokenError::InvalidPositiveInteger(field))?;
-    if parsed <= 0 {
-        return Err(AppSessionTokenError::InvalidPositiveInteger(field));
-    }
-    Ok(parsed)
-}
-
 fn parse_session_non_negative_i64(
     value: i64,
     field: &'static str,
@@ -1358,16 +1487,6 @@ fn parse_session_non_negative_i64(
         return Err(AppSessionTokenError::InvalidPositiveInteger(field));
     }
     Ok(value)
-}
-
-fn parse_session_timestamp(value: &str, field: &'static str) -> Result<i64, AppSessionTokenError> {
-    let parsed = value
-        .parse::<i64>()
-        .map_err(|_| AppSessionTokenError::InvalidTimestamp(field))?;
-    if parsed <= 0 {
-        return Err(AppSessionTokenError::InvalidTimestamp(field));
-    }
-    Ok(parsed)
 }
 
 fn validate_app_session_claims(
@@ -1461,21 +1580,6 @@ fn verify_app_session_claim_signature_with_secret(
         hex::decode(signature).map_err(|_| AppSessionTokenError::InvalidSignature)?;
     let mut mac = app_session_hmac_for_secret(signing_secret)?;
     mac.update(encoded_payload.as_bytes());
-    mac.verify_slice(&decoded_signature)
-        .map_err(|_| AppSessionTokenError::InvalidSignature)
-}
-
-fn verify_app_session_signature(
-    config: &AppSessionConfig,
-    subject: TrustedRequestSubject,
-    issued_at: i64,
-    expires_at: i64,
-    signature: &str,
-) -> Result<(), AppSessionTokenError> {
-    let decoded_signature =
-        hex::decode(signature).map_err(|_| AppSessionTokenError::InvalidSignature)?;
-    let mut mac = app_session_hmac_for_config(config)?;
-    mac.update(app_session_payload(subject, issued_at, expires_at).as_bytes());
     mac.verify_slice(&decoded_signature)
         .map_err(|_| AppSessionTokenError::InvalidSignature)
 }

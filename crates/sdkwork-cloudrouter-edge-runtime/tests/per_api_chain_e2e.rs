@@ -216,6 +216,13 @@ struct ApiCase {
     body: &'static str,
     /// How the gateway is *expected* to answer this operation on a deployment
     /// whose upstream accounts serve it versus one that does not.
+    ///
+    /// Recorded on every case, but the assertions currently judge the published
+    /// status set rather than branching on it: every case in the table is
+    /// `Routable`, so the distinction carries no information yet. Kept because
+    /// the doc comment above the enum is the specification this table is written
+    /// against.
+    #[allow(dead_code)]
     expectation: ApiExpectation,
 }
 
@@ -237,6 +244,10 @@ struct ApiCase {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ApiExpectation {
     Routable,
+    /// Not constructed yet: every operation in the published manifest currently
+    /// has an upstream route account on the seeded deployment. The variant is
+    /// kept so adding an unbacked operation is a data change, not a redesign.
+    #[allow(dead_code)]
     Unbacked,
     Synthetic,
 }
@@ -254,6 +265,7 @@ impl ApiCase {
 
     /// `"<METHOD> <published path>"` — the key the generated route manifest and
     /// the contract both spell an operation with.
+    #[allow(dead_code)]
     fn operation(&self) -> String {
         format!("{} {}", self.method, self.manifest_path())
     }

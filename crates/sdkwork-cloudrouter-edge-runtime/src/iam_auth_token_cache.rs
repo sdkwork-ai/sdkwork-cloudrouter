@@ -244,8 +244,13 @@ mod tests {
     #[test]
     fn default_ttl_is_short_and_security_bounded() {
         std::env::remove_var("SDKWORK_CLOUDROUTER_AUTH_TOKEN_CACHE_TTL_SECONDS");
+        // Locks the shipped default. The comparison against
+        // `MAX_AUTH_TOKEN_CACHE_TTL_SECONDS` is a compile-time constant check
+        // over two literals, so it is asserted here only as documentation and
+        // is deliberately not written as a runtime assertion.
         assert_eq!(DEFAULT_AUTH_TOKEN_CACHE_TTL_SECONDS, 10);
-        assert!(DEFAULT_AUTH_TOKEN_CACHE_TTL_SECONDS <= MAX_AUTH_TOKEN_CACHE_TTL_SECONDS);
+        const _: () =
+            assert!(DEFAULT_AUTH_TOKEN_CACHE_TTL_SECONDS <= MAX_AUTH_TOKEN_CACHE_TTL_SECONDS);
     }
 
     #[tokio::test]

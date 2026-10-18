@@ -286,10 +286,10 @@ fn reserve_circuit_entry(circuits: &mut HashMap<i64, CircuitEntry>, account_id: 
 
 /// Bounded stats accessor: telemetry for untracked accounts is dropped at
 /// capacity instead of growing the map without a limit.
-fn bounded_stats_entry<'a>(
-    stats: &'a mut HashMap<i64, CircuitBreakerStats>,
+fn bounded_stats_entry(
+    stats: &mut HashMap<i64, CircuitBreakerStats>,
     account_id: i64,
-) -> Option<&'a mut CircuitBreakerStats> {
+) -> Option<&mut CircuitBreakerStats> {
     if stats.len() >= MAX_LOCAL_CIRCUIT_ENTRIES && !stats.contains_key(&account_id) {
         return None;
     }

@@ -206,7 +206,7 @@ pub struct Invocation {
     pub call_chain: Option<sdkwork_web_chain::ChainContext>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct InvocationCharging {
     pub charge_mode: CustomerChargeMode,
     pub settlement_mode: GatewayBillingSettlementMode,
@@ -227,20 +227,6 @@ pub struct InvocationCharging {
     /// as a provider failure that is safe to refund blindly.
     pub provider_completed: bool,
     pub settled: bool,
-}
-
-impl Default for InvocationCharging {
-    fn default() -> Self {
-        Self {
-            charge_mode: CustomerChargeMode::default(),
-            settlement_mode: GatewayBillingSettlementMode::default(),
-            reserved_amount: None,
-            hold_id: None,
-            points_settings: None,
-            provider_completed: false,
-            settled: false,
-        }
-    }
 }
 
 fn split_path_query(value: &str) -> (String, Option<String>) {

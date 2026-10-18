@@ -996,40 +996,6 @@ const GC_FIELDS: &[Field] = &[
     Field::String("completedAt"),
 ];
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn keyset_window_uses_the_last_returned_id_without_gaps() {
-        let source = [5_i64, 4, 3];
-        let mut cursor = None;
-        let mut seen = Vec::new();
-
-        loop {
-            let candidates = source
-                .iter()
-                .copied()
-                .filter(|id| cursor.is_none_or(|cursor: AdminStorageCursor| *id < cursor.id()))
-                .take(2)
-                .collect();
-            let (items, next_cursor) = keyset_window(candidates, 1, |id| {
-                AdminStorageCursor::new(*id)
-                    .ok_or_else(|| DomainError::new("test cursor must be positive"))
-            })
-            .expect("keyset window");
-            seen.extend(items);
-
-            match next_cursor {
-                Some(next_cursor) => cursor = Some(next_cursor),
-                None => break,
-            }
-        }
-
-        assert_eq!(vec![5, 4, 3], seen);
-    }
-}
-
 async fn ensure_provider_exists(
     pool: &PgPool,
     subject: crate::ports::AdminStorageSubject,
@@ -1100,4 +1066,38 @@ async fn load_bucket_logical_scope(
     .await
     .map_err(store_error)?
     .ok_or_else(|| DomainError::not_found("storage bucket was not found"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn keyset_window_uses_the_last_returned_id_without_gaps() {
+        let source = [5_i64, 4, 3];
+        let mut cursor = None;
+        let mut seen = Vec::new();
+
+        loop {
+            let candidates = source
+                .iter()
+                .copied()
+                .filter(|id| cursor.is_none_or(|cursor: AdminStorageCursor| *id < cursor.id()))
+                .take(2)
+                .collect();
+            let (items, next_cursor) = keyset_window(candidates, 1, |id| {
+                AdminStorageCursor::new(*id)
+                    .ok_or_else(|| DomainError::new("test cursor must be positive"))
+            })
+            .expect("keyset window");
+            seen.extend(items);
+
+            match next_cursor {
+                Some(next_cursor) => cursor = Some(next_cursor),
+                None => break,
+            }
+        }
+
+        assert_eq!(vec![5, 4, 3], seen);
+    }
 }

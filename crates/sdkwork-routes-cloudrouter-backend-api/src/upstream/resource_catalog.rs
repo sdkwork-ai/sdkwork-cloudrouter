@@ -80,7 +80,7 @@ async fn resource_catalog(
     let subject = resource_subject(scoped);
     let resources = match store
         .list_ai_resources(ListAdminAiResourcesQuery {
-            subject: subject.clone(),
+            subject,
             q: None,
             resource_type: None,
             status: Some("active".to_owned()),

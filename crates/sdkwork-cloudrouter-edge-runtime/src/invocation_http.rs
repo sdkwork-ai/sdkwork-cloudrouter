@@ -390,10 +390,11 @@ where
 /// Attaches machine-readable failure reason headers on non-success responses
 /// so callers (agents runtime, SDK users) can surface the exact cause instead
 /// of a generic "gateway unavailable" message:
-/// - `x-sdkwork-route-stage`: stable machine code (e.g. `provider_http_401`,
-///   `pricing_failed`, `dispatch_failed`);
-/// - `x-sdkwork-route-reason`: masked human-readable reason (credential
-///   material redacted, length-capped).
+///   - `x-sdkwork-route-stage`: stable machine code (e.g. `provider_http_401`,
+///     `pricing_failed`, `dispatch_failed`);
+///   - `x-sdkwork-route-reason`: masked human-readable reason (credential
+///     material redacted, length-capped).
+///
 /// The web framework preserves these into the problem `detail`/`failedStage`
 /// when present, so the information survives normalization.
 fn attach_route_failure_headers(

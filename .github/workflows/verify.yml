@@ -186,8 +186,14 @@ jobs:
           cargo install --locked cargo-audit
           cargo install --locked cargo-deny
 
+      # `--file .cargo/audit.toml` is required, not decorative. cargo-audit
+      # looks for its configuration at `$CARGO_HOME/audit.toml` and at
+      # `./audit.toml` in the working directory; it does not look inside
+      # `.cargo/`. Without this flag the ignore list that documents the seven
+      # advisories this repository cannot fix is silently skipped and every one
+      # of them is reported again.
       - name: Cargo audit (Rust vulnerabilities)
-        run: cargo audit --deny warnings
+        run: cargo audit --deny warnings --file .cargo/audit.toml
 
       - name: Cargo deny (licenses, advisories, bans)
         run: cargo deny check advisories bans licenses sources

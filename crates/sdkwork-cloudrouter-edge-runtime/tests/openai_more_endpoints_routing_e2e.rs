@@ -117,6 +117,19 @@ impl MockProvider {
     fn calls(&self) -> usize {
         self.calls.load(Ordering::SeqCst)
     }
+
+    /// Asserts every captured request reached the provider on a non-empty
+    /// upstream path. The mock records the path so a routing regression that
+    /// sends the request somewhere else is visible, not just a body mismatch.
+    fn assert_all_reached_an_upstream_path(&self, calls: &[CapturedUpstreamRequest]) {
+        for call in calls {
+            assert!(
+                call.path.starts_with('/'),
+                "captured upstream request has no usable path: {:?}",
+                call.path
+            );
+        }
+    }
 }
 
 struct MockUpstreamHandle {
@@ -192,6 +205,10 @@ async fn start_mock_upstream(marker: &'static str) -> MockUpstreamHandle {
 // Catalog builder
 // ---------------------------------------------------------------------------
 
+/// Registers one official-reference and one upstream price row for a catalog
+/// entry. The eight parameters mirror the pricing tuple the catalog stores;
+/// grouping them would only move the same eight values behind a constructor.
+#[allow(clippy::too_many_arguments)]
 fn add_price(
     catalog: &mut InMemoryPricingCatalog,
     catalog_key: &str,
@@ -550,6 +567,10 @@ async fn openai_more_endpoints_embeddings_routes_to_upstream_and_passes_through_
     assert_eq!(1, upstream.provider.calls());
 
     let calls = upstream.provider.captured();
+
+    upstream
+        .provider
+        .assert_all_reached_an_upstream_path(&calls);
     assert_eq!(1, calls.len());
     assert_eq!(
         Some("Bearer sk-openai-more-endpoints-secret".to_owned()),
@@ -580,6 +601,9 @@ async fn openai_more_endpoints_completions_routes_to_upstream_and_passes_through
     assert_eq!(8, payload["usage"]["total_tokens"]);
     assert_eq!(1, upstream.provider.calls());
     let calls = upstream.provider.captured();
+    upstream
+        .provider
+        .assert_all_reached_an_upstream_path(&calls);
     assert_eq!(
         Some("Bearer sk-openai-more-endpoints-secret".to_owned()),
         calls[0].authorization
@@ -607,6 +631,9 @@ async fn openai_more_endpoints_images_edits_routes_to_upstream_and_passes_throug
     assert_eq!(8, payload["usage"]["total_tokens"]);
     assert_eq!(1, upstream.provider.calls());
     let calls = upstream.provider.captured();
+    upstream
+        .provider
+        .assert_all_reached_an_upstream_path(&calls);
     assert_eq!(
         Some("Bearer sk-openai-more-endpoints-secret".to_owned()),
         calls[0].authorization
@@ -632,6 +659,9 @@ async fn openai_more_endpoints_audio_speech_routes_to_upstream_and_passes_throug
     assert_eq!("openai-more-endpoints", payload["marker"]);
     assert_eq!(1, upstream.provider.calls());
     let calls = upstream.provider.captured();
+    upstream
+        .provider
+        .assert_all_reached_an_upstream_path(&calls);
     assert_eq!(
         Some("Bearer sk-openai-more-endpoints-secret".to_owned()),
         calls[0].authorization
@@ -657,6 +687,9 @@ async fn openai_more_endpoints_audio_transcriptions_routes_to_upstream_and_passe
     assert_eq!("openai-more-endpoints", payload["marker"]);
     assert_eq!(1, upstream.provider.calls());
     let calls = upstream.provider.captured();
+    upstream
+        .provider
+        .assert_all_reached_an_upstream_path(&calls);
     assert_eq!(
         Some("Bearer sk-openai-more-endpoints-secret".to_owned()),
         calls[0].authorization
@@ -683,6 +716,9 @@ async fn openai_more_endpoints_moderations_routes_to_upstream_and_passes_through
     assert_eq!(8, payload["usage"]["total_tokens"]);
     assert_eq!(1, upstream.provider.calls());
     let calls = upstream.provider.captured();
+    upstream
+        .provider
+        .assert_all_reached_an_upstream_path(&calls);
     assert_eq!(
         Some("Bearer sk-openai-more-endpoints-secret".to_owned()),
         calls[0].authorization

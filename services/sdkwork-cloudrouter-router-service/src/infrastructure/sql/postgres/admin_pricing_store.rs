@@ -2294,7 +2294,7 @@ fn price_book_rate_from_row(row: &sqlx::postgres::PgRow) -> DomainResult<AdminPr
         quantity_step: optional_string_cell(row, "quantity_step"),
         currency_code: string_cell(row, "currency_code"),
         vendor_code: string_cell(row, "vendor_code"),
-        priority: integer_cell(row, "priority") as i64,
+        priority: integer_cell(row, "priority"),
         rate_variant: string_cell(row, "rate_variant"),
         conditions: row
             .try_get("conditions")
@@ -2495,8 +2495,8 @@ async fn create_price_book(
     .bind(&command.source_system)
     .bind(&command.vendor_code)
     .bind(&command.region_code)
-    .bind(&command.source_catalog_version())
-    .bind(&command.source_hash())
+    .bind(command.source_catalog_version())
+    .bind(command.source_hash())
     .bind(&command.currency_code)
     .bind(command.effective_from.as_deref())
     .bind(command.effective_to.as_deref())

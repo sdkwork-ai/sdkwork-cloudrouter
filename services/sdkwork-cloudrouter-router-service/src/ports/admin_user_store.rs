@@ -9,7 +9,9 @@ pub struct AdminUserSubject {
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AdminUserApiKeyItem {
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub id: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub user_id: i64,
     pub name: String,
     pub key: String,

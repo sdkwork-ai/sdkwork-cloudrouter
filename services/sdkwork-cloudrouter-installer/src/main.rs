@@ -603,7 +603,7 @@ async fn run_issue_bootstrap_token_postgres(
     let issued =
         issue_standalone_bootstrap_access_credential(pool, tenant_id, app_id, options.ttl_seconds)
             .await
-            .map_err(|error| InstallerCliError::InvalidState(error))?;
+            .map_err(InstallerCliError::InvalidState)?;
 
     print_json(&IssueBootstrapTokenOutput {
         status: "issued",
@@ -975,6 +975,11 @@ async fn run_reset_admin_postgres(
     let now = chrono::Utc::now();
     let password_hash = hash_admin_password(&password)?;
 
+    // `sqlx::Encode` is implemented for `String` and for `&T`, so clippy reads
+    // these borrows as redundant. They are not: `admin_user_id` and
+    // `password_hash` are read again by the INSERT below, so binding them by
+    // value would move them and fail to compile.
+    #[allow(clippy::needless_borrows_for_generic_args)]
     let affected = sqlx::query(
         "UPDATE iam_credential SET \
          credential_hash = $1, failed_attempts = 0, status = 'active', updated_at = $2 \
@@ -987,6 +992,9 @@ async fn run_reset_admin_postgres(
     .execute(pool)
     .await?
     .rows_affected();
+    // `admin_user_id` is read by both the INSERT below and
+    // `resolve_admin_username_postgres` after it, so these binds must borrow.
+    #[allow(clippy::needless_borrows_for_generic_args)]
     if affected == 0 {
         sqlx::query(
             "INSERT INTO iam_credential \

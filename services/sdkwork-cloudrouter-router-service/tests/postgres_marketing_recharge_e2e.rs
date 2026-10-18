@@ -344,12 +344,8 @@ async fn create_schema(pool: &PgPool) {
     // writes. The merchandise catalog family (`commerce_product_*`) is *not*
     // provisioned here: the admin marketing store must not write a sibling
     // repository's catalog tables, so no fixture of them is required.
-    for (_, baseline) in [ORDER_BASELINE, ORDER_E2E_MIGRATION, EXTRA_TABLES]
-        .iter()
-        .enumerate()
-    {
-        for (statement_index, statement) in split_statements(baseline).iter().enumerate() {
-            if statement_index % 50 == 0 {}
+    for baseline in [ORDER_BASELINE, ORDER_E2E_MIGRATION, EXTRA_TABLES] {
+        for statement in split_statements(baseline) {
             sqlx::query(sqlx::AssertSqlSafe(statement.to_owned()))
                 .execute(pool)
                 .await

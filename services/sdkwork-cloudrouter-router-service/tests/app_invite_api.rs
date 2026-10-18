@@ -131,10 +131,12 @@ struct TestAdminAuthSettingsStore {
 
 impl TestAdminAuthSettingsStore {
     fn with_policy(register_required: bool, login_required: bool) -> Arc<Self> {
-        let mut settings = AdminAuthSettings::default();
-        settings.invite_code_policy = AdminAuthInviteCodePolicy {
-            register_required,
-            login_required,
+        let settings = AdminAuthSettings {
+            invite_code_policy: AdminAuthInviteCodePolicy {
+                register_required,
+                login_required,
+            },
+            ..AdminAuthSettings::default()
         };
         Arc::new(Self {
             settings: Mutex::new(Some(settings)),

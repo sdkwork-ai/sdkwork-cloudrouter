@@ -43,13 +43,20 @@ pub struct DashboardOverviewSnapshot {
 pub struct DashboardOverviewSummary {
     pub available_credits: f64,
     pub used_credits: f64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub request_count: i64,
     pub total_used_credits: f64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub total_request_count: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub error_count: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub image_requests: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub video_requests: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub audio_requests: i64,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub music_requests: i64,
     pub rpm: f64,
     pub tpm: f64,
@@ -112,16 +119,19 @@ impl DashboardChartPoint {
 #[serde(rename_all = "camelCase")]
 pub struct DashboardModalityDistribution {
     pub modality: String,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub requests: i64,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct DashboardTopModel {
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub rank: i64,
     pub name: String,
     pub supplier: String,
     pub modality: String,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub requests: i64,
     pub cost: f64,
     pub trend: String,
@@ -131,6 +141,7 @@ pub struct DashboardTopModel {
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct DashboardAnnouncement {
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub id: i64,
     pub text: String,
     pub time: String,

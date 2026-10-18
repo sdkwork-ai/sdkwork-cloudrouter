@@ -1,17 +1,11 @@
 use axum::body::Body;
 use axum::http::{Method, Request, StatusCode};
-use sdkwork_cloudrouter_config::DatabaseConfig;
 use sdkwork_cloudrouter_test_support::{
-    api_key_security_config, app_session_config, app_session_dual_token_headers,
-    default_trusted_request_subject, trusted_subject_config,
+    app_session_dual_token_headers, default_trusted_request_subject,
 };
 use serde_json::Value;
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Mutex, OnceLock};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::OnceLock;
 use tower::ServiceExt;
-
-static SQLITE_DB_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 async fn call(method: Method, uri: &str) -> (StatusCode, Value) {
     let response = sdkwork_cloudrouter_standalone_gateway::router()
@@ -61,7 +55,7 @@ async fn default_router_returns_contract_fallback_for_product_api_keys_without_d
 
 #[tokio::test]
 async fn default_router_mounts_sdk_reference_documentation_route() {
-    let _guard = env_guard().lock().unwrap();
+    let _guard = env_guard().await;
     clear_generator_env();
 
     let response = sdkwork_cloudrouter_standalone_gateway::router()
@@ -89,7 +83,7 @@ async fn default_router_mounts_sdk_reference_documentation_route() {
 
 #[tokio::test]
 async fn default_router_serves_sdk_reference_documentation_with_app_session_auth() {
-    let _guard = env_guard().lock().unwrap();
+    let _guard = env_guard().await;
     clear_generator_env();
 
     // SDK reference 文档路由为纯函数本地产品路由：数据库配置装配路径要求
@@ -185,28 +179,6 @@ fn sdk_reference_request_body() -> String {
     .to_string()
 }
 
-fn unique_sqlite_url() -> String {
-    let nonce = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
-    let sequence = SQLITE_DB_SEQUENCE.fetch_add(1, Ordering::Relaxed);
-    let process_id = std::process::id();
-    let mut path = sqlite_test_database_dir();
-    std::fs::create_dir_all(&path).unwrap();
-    path.push(format!(
-        "app-contract-routes-{process_id}-{sequence}-{nonce}.sqlite"
-    ));
-    format!("sqlite://{}", path.to_string_lossy().replace('\\', "/"))
-}
-
-fn sqlite_test_database_dir() -> std::path::PathBuf {
-    std::env::var_os("CARGO_TARGET_DIR")
-        .map(std::path::PathBuf::from)
-        .unwrap_or_else(std::env::temp_dir)
-        .join("test-dbs")
-}
-
 fn clear_generator_env() {
     for name in [
         "SDKWORK_CLOUDROUTER_TOOL_API_SDK_GENERATOR_BASE_URL",
@@ -220,9 +192,18 @@ fn clear_generator_env() {
     }
 }
 
-fn env_guard() -> &'static Mutex<()> {
-    static ENV_GUARD: OnceLock<Mutex<()>> = OnceLock::new();
-    ENV_GUARD.get_or_init(|| Mutex::new(()))
+/// Serializes the tests that mutate process-wide generator environment
+/// variables. The guard is owned rather than borrowed so it does not hold a
+/// `MutexGuard` borrowed from a `'static` mutex across an await point, which is
+/// what `clippy::await_holding_lock` rejects; the lock is still released when the
+/// returned guard drops at the end of the test body.
+async fn env_guard() -> tokio::sync::OwnedMutexGuard<()> {
+    static ENV_GUARD: OnceLock<std::sync::Arc<tokio::sync::Mutex<()>>> = OnceLock::new();
+    ENV_GUARD
+        .get_or_init(|| std::sync::Arc::new(tokio::sync::Mutex::new(())))
+        .clone()
+        .lock_owned()
+        .await
 }
 
 #[tokio::test]

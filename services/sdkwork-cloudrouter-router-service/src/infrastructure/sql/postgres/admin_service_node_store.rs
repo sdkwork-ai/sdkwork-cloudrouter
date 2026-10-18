@@ -174,8 +174,16 @@ async fn update_service_node(
     pool: &PgPool,
     command: UpdateAdminServiceNodeCommand,
 ) -> DomainResult<AdminServiceNodeItem> {
-    let mut metadata = load_metadata(
-        pool,
+    // The metadata edit is a read-modify-write cycle: the row lock must span
+    // the whole cycle inside one transaction, or two operators editing the
+    // same node concurrently lose one update (last write silently overwrote
+    // the first — the version bump was never a concurrency condition).
+    let mut transaction = pool
+        .begin()
+        .await
+        .map_err(|error| store_error("failed to begin service node update", error))?;
+    let mut metadata = load_metadata_for_update(
+        &mut *transaction,
         command.subject.tenant_id,
         command.subject.organization_id,
         &command.node_id,
@@ -198,7 +206,7 @@ async fn update_service_node(
             metadata = $3::jsonb,
             updated_at = CURRENT_TIMESTAMP,
             version = COALESCE(version, 0) + 1
-        WHERE (tenant_id = $4 OR tenant_id = 0 OR tenant_id IS NULL)
+        WHERE tenant_id = $4
           AND (organization_id = $5 OR organization_id = 0 OR organization_id = '0')
           AND deleted_at IS NULL
           AND (instance_code = $6 OR id::text = $6)
@@ -210,11 +218,15 @@ async fn update_service_node(
     .bind(command.subject.tenant_id)
     .bind(command.subject.organization_id)
     .bind(&command.node_id)
-    .execute(pool)
+    .execute(&mut *transaction)
     .await
     .map_err(|error| store_error("failed to update service node", error))?;
 
     ensure_affected(result.rows_affected(), "service node not found")?;
+    transaction
+        .commit()
+        .await
+        .map_err(|error| store_error("failed to commit service node update", error))?;
     load_service_node(
         pool,
         command.subject.tenant_id,
@@ -236,7 +248,7 @@ async fn update_service_node_status(
             health_status = CASE WHEN $1 = 0 THEN 0 ELSE health_status END,
             updated_at = CURRENT_TIMESTAMP,
             version = COALESCE(version, 0) + 1
-        WHERE (tenant_id = $2 OR tenant_id = 0 OR tenant_id IS NULL)
+        WHERE tenant_id = $2
           AND (organization_id = $3 OR organization_id = 0 OR organization_id = '0')
           AND deleted_at IS NULL
           AND (instance_code = $4 OR id::text = $4)
@@ -272,7 +284,7 @@ async fn delete_service_node(
             deleted_by = $1,
             updated_at = CURRENT_TIMESTAMP,
             version = COALESCE(version, 0) + 1
-        WHERE (tenant_id = $2 OR tenant_id = 0 OR tenant_id IS NULL)
+        WHERE tenant_id = $2
           AND (organization_id = $3 OR organization_id = 0 OR organization_id = '0')
           AND deleted_at IS NULL
           AND (instance_code = $4 OR id::text = $4)
@@ -325,12 +337,17 @@ async fn load_service_node(
     item_from_row(row)
 }
 
-async fn load_metadata(
-    pool: &PgPool,
+/// Locks the service node row (`FOR UPDATE`) inside the caller's transaction
+/// so the subsequent metadata write cannot lose a concurrent operator's edit.
+async fn load_metadata_for_update<'a, E>(
+    executor: E,
     tenant_id: i64,
     organization_id: i64,
     node_id: &str,
-) -> DomainResult<Map<String, Value>> {
+) -> DomainResult<Map<String, Value>>
+where
+    E: sqlx::Executor<'a, Database = sqlx::Postgres>,
+{
     let metadata = sqlx::query(
         r#"
         SELECT COALESCE(metadata::text, '{}') AS metadata
@@ -340,12 +357,13 @@ async fn load_metadata(
           AND deleted_at IS NULL
           AND (instance_code = $3 OR id::text = $3)
         LIMIT 1
+        FOR UPDATE
         "#,
     )
     .bind(tenant_id)
     .bind(organization_id)
     .bind(node_id)
-    .fetch_optional(pool)
+    .fetch_optional(executor)
     .await
     .map_err(|error| store_error("failed to load service node metadata", error))?
     .ok_or_else(|| DomainError::new("service node not found"))?

@@ -350,7 +350,21 @@ impl UpstreamProviderEndpoint {
             ))
         })?
         .to_bytes();
-        let body = serde_json::from_slice::<Value>(&bytes).ok();
+        // A non-JSON verification body is a legitimate upstream variance
+        // (HTML error pages, empty bodies); record it instead of swallowing
+        // the parse result silently so verification outcomes stay observable.
+        let body = match serde_json::from_slice::<Value>(&bytes) {
+            Ok(value) => Some(value),
+            Err(error) => {
+                tracing::debug!(
+                    status_code = status_code,
+                    bytes = bytes.len(),
+                    error = %error,
+                    "upstream provider verification body is not JSON; treating as absent"
+                );
+                None
+            }
+        };
         Ok(upstream_verification_outcome(
             status_code,
             latency_ms,

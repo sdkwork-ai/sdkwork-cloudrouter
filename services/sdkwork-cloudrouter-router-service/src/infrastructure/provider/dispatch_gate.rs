@@ -52,7 +52,7 @@ impl ProviderDispatchGate {
                     .filter(|value| *value > 0)
             })
             .unwrap_or(DEFAULT_PROVIDER_DISPATCH_MAX_CONCURRENCY)
-            .min(tokio::sync::Semaphore::MAX_PERMITS as usize);
+            .min(tokio::sync::Semaphore::MAX_PERMITS);
         Self {
             semaphore: Arc::new(tokio::sync::Semaphore::new(max_concurrency)),
             max_concurrency,

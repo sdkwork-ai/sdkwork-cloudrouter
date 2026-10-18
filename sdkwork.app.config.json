@@ -55,34 +55,7 @@
       "community.groups.read",
       "community.groups.write",
       "community.tiers.read",
-      "community.tiers.write",
-      "course.categories.read",
-      "course.categories.write",
-      "course.instructors.read",
-      "course.instructors.write",
-      "course.courses.read",
-      "course.courses.write",
-      "course.courses.publish",
-      "course.offerings.read",
-      "course.offerings.write",
-      "course.lessons.read",
-      "course.lessons.write",
-      "course.resources.read",
-      "course.resources.write",
-      "course.live_sessions.read",
-      "course.live_sessions.write",
-      "course.live_sessions.operate",
-      "course.enrollments.read",
-      "course.enrollments.write",
-      "course.progress.read",
-      "course.progress.repair",
-      "course.comments.read",
-      "course.comments.moderate",
-      "course.reactions.read",
-      "course.applications.read",
-      "course.applications.review",
-      "course.reports.read",
-      "course.audit_logs.read"
+      "community.tiers.write"
     ]
   },
   "runtime": {
@@ -181,7 +154,7 @@
       }
     ],
     "metadata": {
-      "assetVersion": "0.4.11",
+      "assetVersion": "0.4.12",
       "defaultLocale": "en-US"
     }
   },
@@ -359,24 +332,24 @@
     }
   },
   "release": {
-    "currentVersion": "0.4.11",
+    "currentVersion": "0.4.12",
     "defaultChannel": "STABLE",
     "latest": {
-      "STABLE": "0.4.11"
+      "STABLE": "0.4.12"
     },
     "notes": [
       {
-        "version": "0.4.11",
+        "version": "0.4.12",
         "releaseChannel": "STABLE",
-        "title": "SDKWork Cloud Router 0.4.11",
-        "summary": "Packaging runs end to end: the CI dependency materialization gap and the deployment gate that skipped every package job are fixed, on top of the Windows MSI identifier repair.",
-        "content": "Two CI defects prevented the 0.4.10 packaging run from producing any package at all. Verify Application never checked out the fifty federated SDKWork repositories its Cargo and pnpm workspaces address by relative path, so cargo metadata could not load ../sdkwork-log/crates/sdkwork-api-log-assembly/Cargo.toml; every job now materializes that dependency set from sdkwork.workflow.json first. The packaging plan treated every release-triggered run as a deployment request, and with no deployment environment declared it aborted the whole matrix before a single package job started; deployment is now opt-in only. On top of those: each generated WiX Directory identifier is derived from its owning StandardDirectory tree and its own path within that tree, because the previous truncated derivation collapsed 143 directories onto 84 identifiers and every MSI lane failed with WIX0091. This release also adds the DeepSeek-compatible /v1 web tools relay and aligns the console tab bar across the mini-program, H5, and Flutter surfaces. Release notes cover only this version; earlier records stay archived under docs/release/.",
+        "title": "SDKWork Cloud Router 0.4.12",
+        "summary": "Restores a green Verify Application on main: the security scan reads its advisory allowlist again, the router-service test target compiles, and the clippy gate is clean.",
+        "content": "Every push since 0.4.11 failed Verify Application, so the repository had no green baseline to release from. Three independent defects were behind it. First, the security-scan job invoked cargo audit without --file: cargo-audit reads its configuration from $CARGO_HOME/audit.toml or ./audit.toml and never from .cargo/, so the seven advisories this repository documents as unfixable here were reported on every run and the job exited 5. Second, commit 38e990d7 removed the vendor_code and modalities fields from the upstream-account-group row but left the struct literals naming them in sql_pricing_catalog_contract.rs, so the router-service test target did not compile; because cargo stops at the first crate that will not build, that failure is what surfaced the clippy backlog behind it. Third, cargo clippy --all-targets -- -D warnings reported 78 errors across five crates. The mechanical half is fixed: unused imports, redundant closures, collapsible ifs, derivable Default impls, field_reassign_with_default, unnecessary to_owned, a named tuple type, and two test harnesses holding a MutexGuard across an await. Two families are waived crate-wide with the reasoning in the source, result_large_err on axum Response returns and too_many_arguments on route assembly and relay dependency injection. Separately, one stale assertion expected a workspace pool default of 10 while DatabaseConfig::DEFAULT_MAX_CONNECTIONS is 16, and its poisoned ENV_LOCK took ten more tests down with it; the assertion now reads the constant and the lock recovers from poisoning. The dead PostgresPricingCatalogLoader::api_key_secret_storage field is removed; the real encode/decode path lives in PostgresGatewayApiKeyCommandStore and was already wired. Release notes cover only this version; earlier records stay archived under docs/release/.",
         "highlights": [
-          "The package matrix runs: the plan job no longer aborts on an empty deployment matrix, and 18 of the 22 targets ship signed and attested packages",
-          "Verify Application materializes all fifty federated dependencies, so cargo and e2e stop failing on missing ../sdkwork-* paths",
-          "Windows MSI lanes build with globally unique WiX identifiers, verified at 134-file payload scale",
-          "DeepSeek-compatible /v1/tools/search and /v1/tools/fetch relay, reachable end to end",
-          "Console tab bar aligned across mini-program, H5, and Flutter from one contract authority",
+          "Verify Application is green on main for the first time since 0.4.11",
+          "cargo audit reads .cargo/audit.toml, so the seven documented advisories stop failing the security scan",
+          "The clippy gate is clean: 78 errors cleared across five crates, with the two waived families justified in source",
+          "The database_config suite is 33 of 33: one stale pool-default assertion no longer cascades through a poisoned lock",
+          "Dead API-key secret storage wiring removed from the pricing catalog loader",
           "Install-time configuration stays contract-driven for ports, PostgreSQL/SQLite, and Redis"
         ],
         "packageIds": [
@@ -386,7 +359,7 @@
           "macos-universal-standalone-desktop-dmg",
           "linux-x64-standalone-desktop-appimage"
         ],
-        "publishedAt": "2026-10-17T00:00:00Z",
+        "publishedAt": "2026-10-18T00:00:00Z",
         "current": true,
         "forceUpdate": false,
         "minSupportedVersion": "0.4.11",

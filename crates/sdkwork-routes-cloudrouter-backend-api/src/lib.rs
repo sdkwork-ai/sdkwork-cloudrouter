@@ -1,4 +1,13 @@
 #![forbid(unsafe_code)]
+// Waived crate-wide, with the reason recorded so the next audit re-checks this
+// decision rather than rediscovering it.
+//
+// `result_large_err`: every handler and closure in `upstream/` returns
+// `Result<Response, ProductCatalogRouterError>`, and the error type carries the
+// API problem payload inline, which puts it over the lint's size threshold. The
+// error value is only constructed on the failure path. Boxing it would change the
+// error type across every route signature in this crate for no runtime gain.
+#![allow(clippy::result_large_err)]
 
 mod http_route_manifest;
 pub mod manifest;

@@ -433,8 +433,8 @@ async fn tts_routing_elevenlabs_text_to_speech_routes_to_elevenlabs_account() {
     let accounts = tts_accounts(
         &elevenlabs.base_url,
         &volcengine.base_url,
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
     );
     let hasher = hasher();
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
@@ -444,8 +444,8 @@ async fn tts_routing_elevenlabs_text_to_speech_routes_to_elevenlabs_account() {
         collect_secrets(&tts_accounts(
             &elevenlabs.base_url,
             &volcengine.base_url,
-            &"http://127.0.0.1:9".to_owned(),
-            &"http://127.0.0.1:9".to_owned(),
+            "http://127.0.0.1:9",
+            "http://127.0.0.1:9",
         )),
     )
     .await;
@@ -548,8 +548,8 @@ async fn tts_routing_volcengine_speech_routes_to_volcengine_account() {
     let accounts = tts_accounts(
         &elevenlabs.base_url,
         &volcengine.base_url,
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
     );
     let hasher = hasher();
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
@@ -559,8 +559,8 @@ async fn tts_routing_volcengine_speech_routes_to_volcengine_account() {
         collect_secrets(&tts_accounts(
             &elevenlabs.base_url,
             &volcengine.base_url,
-            &"http://127.0.0.1:9".to_owned(),
-            &"http://127.0.0.1:9".to_owned(),
+            "http://127.0.0.1:9",
+            "http://127.0.0.1:9",
         )),
     )
     .await;
@@ -593,8 +593,8 @@ async fn music_routing_suno_music_generation_routes_to_suno_account() {
     let suno = start_mock_upstream("suno").await;
     let minimax = start_mock_upstream("minimax").await;
     let accounts = tts_accounts(
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
         &suno.base_url,
         &minimax.base_url,
     );
@@ -604,8 +604,8 @@ async fn music_routing_suno_music_generation_routes_to_suno_account() {
     let router = build_router(
         catalog,
         collect_secrets(&tts_accounts(
-            &"http://127.0.0.1:9".to_owned(),
-            &"http://127.0.0.1:9".to_owned(),
+            "http://127.0.0.1:9",
+            "http://127.0.0.1:9",
             &suno.base_url,
             &minimax.base_url,
         )),
@@ -636,8 +636,8 @@ async fn music_routing_minimax_music_generation_routes_to_minimax_account() {
     let suno = start_mock_upstream("suno").await;
     let minimax = start_mock_upstream("minimax").await;
     let accounts = tts_accounts(
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
         &suno.base_url,
         &minimax.base_url,
     );
@@ -647,8 +647,8 @@ async fn music_routing_minimax_music_generation_routes_to_minimax_account() {
     let router = build_router(
         catalog,
         collect_secrets(&tts_accounts(
-            &"http://127.0.0.1:9".to_owned(),
-            &"http://127.0.0.1:9".to_owned(),
+            "http://127.0.0.1:9",
+            "http://127.0.0.1:9",
             &suno.base_url,
             &minimax.base_url,
         )),

@@ -6,28 +6,18 @@ use crate::ports::RechargeSettingsModel;
 
 pub type GatewayBillingFuture<'a, T> = Pin<Box<dyn Future<Output = DomainResult<T>> + Send + 'a>>;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CustomerChargeMode {
+    #[default]
     PrepaidAdjustment,
     Postpaid,
 }
 
-impl Default for CustomerChargeMode {
-    fn default() -> Self {
-        Self::PrepaidAdjustment
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum GatewayBillingSettlementMode {
+    #[default]
     Synchronous,
     Asynchronous,
-}
-
-impl Default for GatewayBillingSettlementMode {
-    fn default() -> Self {
-        Self::Synchronous
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

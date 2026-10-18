@@ -144,7 +144,19 @@ fn rewrite_relay_sse_model_line(line: &[u8], requested_model: &str) -> Vec<u8> {
     let prefix_len = trimmed.as_ptr() as usize - line.as_ptr() as usize;
     rewritten.extend_from_slice(&line[..prefix_len]);
     rewritten.extend_from_slice(b"data: ");
-    rewritten.extend_from_slice(serde_json::to_vec(&restored).unwrap_or_default().as_slice());
+    let payload = match serde_json::to_vec(&restored) {
+        Ok(payload) => payload,
+        Err(error) => {
+            // Unreachable for `serde_json::Value` (object keys are always
+            // strings), but an empty data line must never pass silently.
+            tracing::warn!(
+                error = %error,
+                "sse relay model restore serialization failed; emitting empty data line"
+            );
+            Vec::new()
+        }
+    };
+    rewritten.extend_from_slice(payload.as_slice());
     rewritten
 }
 

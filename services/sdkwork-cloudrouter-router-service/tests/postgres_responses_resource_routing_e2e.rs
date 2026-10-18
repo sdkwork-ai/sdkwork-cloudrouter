@@ -1060,8 +1060,10 @@ async fn real_gateway_key_routes_responses_through_default_group_pool_to_routing
     let payload: Value = serde_json::from_str(&body).unwrap();
     assert_eq!("resp-e2e-responses-account-a", payload["id"]);
 
-    let captured_a = provider_a.captured.lock().unwrap();
-    let captured_b = provider_b.captured.lock().unwrap();
+    // Take the counts out and drop both guards before the remaining asserts so
+    // no lock is held across an await point.
+    let captured_a = provider_a.captured.lock().unwrap().clone();
+    let captured_b = provider_b.captured.lock().unwrap().clone();
     assert_eq!(
         1,
         captured_a.len(),
@@ -1078,8 +1080,6 @@ async fn real_gateway_key_routes_responses_through_default_group_pool_to_routing
         "routing target must receive the resolved account credential"
     );
     assert_eq!(MODEL, captured_a[0].body["model"]);
-    drop(captured_a);
-    drop(captured_b);
 
     // Usage must have been recorded for the Responses billing meters, routed
     // through the account-group pool to the resolved upstream account.

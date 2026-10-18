@@ -1525,31 +1525,39 @@ mod tests {
 
     #[test]
     fn command_debit_points_prefers_the_settlement_allocated_value() {
-        let mut command = GatewayUsageRecordCommand::default();
-        command.debit_points = Some(42);
+        let command = GatewayUsageRecordCommand {
+            debit_points: Some(42),
+            ..GatewayUsageRecordCommand::default()
+        };
         assert_eq!(command_debit_points(&command), Some(42));
     }
 
     #[test]
     fn command_debit_points_falls_back_to_per_fact_ceiling_for_rated_chargeable() {
-        let mut command = GatewayUsageRecordCommand::default();
-        command.customer_charge_amount = "0.15".to_owned();
+        let command = GatewayUsageRecordCommand {
+            customer_charge_amount: "0.15".to_owned(),
+            ..GatewayUsageRecordCommand::default()
+        };
         assert_eq!(command_debit_points(&command), Some(1_500_000));
     }
 
     #[test]
     fn command_debit_points_falls_back_to_zero_for_non_chargeable_facts() {
-        let mut command = GatewayUsageRecordCommand::default();
-        command.decision_status = "denied".to_owned();
-        command.billability = "not_chargeable".to_owned();
-        command.customer_charge_amount = "0.15".to_owned();
+        let command = GatewayUsageRecordCommand {
+            decision_status: "denied".to_owned(),
+            billability: "not_chargeable".to_owned(),
+            customer_charge_amount: "0.15".to_owned(),
+            ..GatewayUsageRecordCommand::default()
+        };
         assert_eq!(command_debit_points(&command), Some(0));
     }
 
     #[test]
     fn command_debit_points_returns_none_when_the_amount_cannot_be_converted() {
-        let mut command = GatewayUsageRecordCommand::default();
-        command.customer_charge_amount = "not-a-number".to_owned();
+        let command = GatewayUsageRecordCommand {
+            customer_charge_amount: "not-a-number".to_owned(),
+            ..GatewayUsageRecordCommand::default()
+        };
         assert_eq!(command_debit_points(&command), None);
     }
 }

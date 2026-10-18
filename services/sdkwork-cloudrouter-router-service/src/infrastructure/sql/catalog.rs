@@ -597,7 +597,7 @@ impl SqlPricingCatalogSnapshot {
                 row.billing_mode
                     .trim()
                     .is_empty()
-                    .then(|| ())
+                    .then_some(())
                     .map(|_| (row.account_id, row.billing_mode.clone()))
             })
             .collect::<HashMap<_, _>>();
@@ -1547,12 +1547,11 @@ impl UpstreamAccountRouteCatalog for SqlPricingCatalogSnapshot {
         // 覆盖 catalog key 恰好等于模型名的情形。
         if vendors.is_empty() {
             for model in self.models_by_key.values() {
-                if model.catalog_key == model_name
-                    || model.catalog_key.starts_with(&format!("{model_name}/"))
+                if (model.catalog_key == model_name
+                    || model.catalog_key.starts_with(&format!("{model_name}/")))
+                    && !vendors.contains(&model.vendor_code)
                 {
-                    if !vendors.contains(&model.vendor_code) {
-                        vendors.push(model.vendor_code.clone());
-                    }
+                    vendors.push(model.vendor_code.clone());
                 }
             }
         }

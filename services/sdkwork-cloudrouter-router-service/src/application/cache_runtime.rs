@@ -374,9 +374,19 @@ impl fmt::Debug for LocalCacheBackend {
     }
 }
 
+impl LocalCacheBackend {
+    /// Conservative default entry cap for `new()`/`default()`. The local
+    /// backend is a process-local cache: an uncapped instance adopted by a
+    /// new call site would grow without bound. Production assembly passes
+    /// the same value explicitly; genuinely uncapped instances remain
+    /// available via `with_max_entries_and_clock(None, ..)` for tests and
+    /// fixtures that rely on exact eviction accounting.
+    pub const DEFAULT_MAX_ENTRIES: usize = 100_000;
+}
+
 impl Default for LocalCacheBackend {
     fn default() -> Self {
-        Self::with_max_entries(None)
+        Self::with_max_entries(Some(Self::DEFAULT_MAX_ENTRIES))
     }
 }
 
@@ -819,13 +829,50 @@ impl CacheBackend for RedisCacheBackend {
 
     fn delete_prefix<'a>(&'a self, prefix: String) -> CacheBackendFuture<'a, usize> {
         Box::pin(async move {
-            let keys = self.scan_keys(format!("{prefix}*")).await?;
-            if keys.is_empty() {
-                return Ok(0);
-            }
+            // Scan and delete in bounded batches instead of materializing the
+            // whole key set first: a hot namespace can hold millions of keys,
+            // and collect-then-DEL ballooned process memory and pinned Redis
+            // with one giant multi-key command. Each SCAN/DEL gets its own
+            // command-timeout budget.
+            const SCAN_BATCH_COUNT: u32 = 500;
+            const DELETE_BATCH_MAX: usize = 500;
             let mut connection = self.connection().await?;
-            self.with_timeout(connection.del(keys), "redis cache delete prefix")
-                .await
+            let mut deleted_total: usize = 0;
+            let mut batch: Vec<String> = Vec::with_capacity(DELETE_BATCH_MAX);
+            let mut cursor: u64 = 0;
+            loop {
+                let (next_cursor, keys): (u64, Vec<String>) = self
+                    .with_timeout(
+                        redis::cmd("SCAN")
+                            .cursor_arg(cursor)
+                            .arg("MATCH")
+                            .arg(format!("{prefix}*"))
+                            .arg("COUNT")
+                            .arg(SCAN_BATCH_COUNT)
+                            .query_async(&mut connection),
+                        "redis cache scan",
+                    )
+                    .await?;
+                batch.extend(keys);
+                if batch.len() >= DELETE_BATCH_MAX {
+                    let pending = std::mem::take(&mut batch);
+                    let deleted: usize = self
+                        .with_timeout(connection.del(pending), "redis cache delete prefix")
+                        .await?;
+                    deleted_total += deleted;
+                }
+                if next_cursor == 0 {
+                    break;
+                }
+                cursor = next_cursor;
+            }
+            if !batch.is_empty() {
+                let deleted: usize = self
+                    .with_timeout(connection.del(batch), "redis cache delete prefix")
+                    .await?;
+                deleted_total += deleted;
+            }
+            Ok(deleted_total)
         })
     }
 
@@ -849,9 +896,33 @@ impl CacheBackend for RedisCacheBackend {
 
     fn stats_prefix<'a>(&'a self, prefix: String) -> CacheBackendFuture<'a, CacheBackendStats> {
         Box::pin(async move {
-            let keys = self.scan_keys(format!("{prefix}*")).await?;
+            // Count without materializing key sets: a hot namespace can hold
+            // millions of keys, and collect-then-len allocated an unbounded
+            // Vec just to derive a single usize.
+            let mut connection = self.connection().await?;
+            let mut cursor: u64 = 0;
+            let mut count: usize = 0;
+            loop {
+                let (next_cursor, keys): (u64, Vec<String>) = self
+                    .with_timeout(
+                        redis::cmd("SCAN")
+                            .cursor_arg(cursor)
+                            .arg("MATCH")
+                            .arg(format!("{prefix}*"))
+                            .arg("COUNT")
+                            .arg(500_u32)
+                            .query_async(&mut connection),
+                        "redis cache scan",
+                    )
+                    .await?;
+                count += keys.len();
+                if next_cursor == 0 {
+                    break;
+                }
+                cursor = next_cursor;
+            }
             Ok(CacheBackendStats {
-                entry_count: keys.len(),
+                entry_count: count,
                 expired_entry_count: 0,
             })
         })
@@ -899,49 +970,6 @@ impl CacheBackend for RedisCacheBackend {
 }
 
 impl RedisCacheBackend {
-    async fn scan_keys(&self, pattern: String) -> DomainResult<Vec<String>> {
-        self.scan_keys_limited(pattern, None).await
-    }
-
-    async fn scan_keys_limited(
-        &self,
-        pattern: String,
-        page_size: Option<usize>,
-    ) -> DomainResult<Vec<String>> {
-        let mut connection = self.connection().await?;
-        self.with_timeout(
-            async move {
-                let mut cursor: u64 = 0;
-                let mut keys = Vec::new();
-                loop {
-                    let (next_cursor, batch): (u64, Vec<String>) = redis::cmd("SCAN")
-                        .cursor_arg(cursor)
-                        .arg("MATCH")
-                        .arg(pattern.as_str())
-                        .arg("COUNT")
-                        .arg(500_u32)
-                        .query_async(&mut connection)
-                        .await?;
-                    keys.extend(batch);
-                    if page_size
-                        .map(|max_items| keys.len() >= max_items)
-                        .unwrap_or(false)
-                    {
-                        keys.truncate(page_size.unwrap_or(keys.len()));
-                        break;
-                    }
-                    if next_cursor == 0 {
-                        break;
-                    }
-                    cursor = next_cursor;
-                }
-                Ok(keys)
-            },
-            "redis cache scan",
-        )
-        .await
-    }
-
     async fn scan_keys_page(
         &self,
         pattern: String,

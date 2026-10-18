@@ -617,7 +617,7 @@ where
         "responses",
         RoutingCapability::Chat,
         BillingMeter::LlmInputToken,
-        tenant_region_code.as_deref(),
+        tenant_region_code,
     )
 }
 

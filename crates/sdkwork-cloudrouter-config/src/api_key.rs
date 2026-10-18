@@ -48,6 +48,31 @@ impl ApiKeySecretStorageMode {
     pub fn is_ciphertext(self) -> bool {
         matches!(self, Self::Ciphertext)
     }
+
+    /// Fail fast when a production-like deployment opts into plaintext key
+    /// persistence (`Err` describes the violation). API keys are gateway
+    /// credentials: a database dump must never disclose them, so plaintext
+    /// storage stays a disposable-environment opt-in only — mirroring the
+    /// web-framework legacy-mode panic guard for production posture.
+    pub fn ensure_safe_for_environment(
+        runtime_toml: Option<&crate::RuntimeTomlConfig>,
+    ) -> Result<(), String> {
+        if !crate::is_production_like_runtime_environment(runtime_toml) {
+            return Ok(());
+        }
+        let configured = std::env::var(Self::ENV_SECRET_STORAGE).ok().or_else(|| {
+            runtime_toml.and_then(|config| config.security.api_key_secret_storage.clone())
+        });
+        let mode = Self::from_optional_parts(configured)?;
+        if mode == Self::Plaintext {
+            return Err(format!(
+                "{} must not be 'plaintext' in production-like environments; \
+                 a database dump would disclose every gateway API key",
+                Self::ENV_SECRET_STORAGE
+            ));
+        }
+        Ok(())
+    }
 }
 
 impl ApiKeySecurityConfig {

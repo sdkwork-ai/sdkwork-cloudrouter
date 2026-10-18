@@ -299,7 +299,7 @@ async fn admin_model_command_route_creates_lists_and_syncs_catalog_models() {
     )
     .await;
     assert_eq!(0, delete_model["code"].as_i64().unwrap());
-    assert_eq!(true, delete_model["data"]["deleted"].as_bool().unwrap());
+    assert!(delete_model["data"]["deleted"].as_bool().unwrap());
 
     let models = request_json(
         router,

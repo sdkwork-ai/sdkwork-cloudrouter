@@ -1129,8 +1129,10 @@ async fn real_login_routes_through_default_group_pool_to_routing_target() {
     let payload: Value = serde_json::from_str(&body).unwrap();
     assert_eq!("chatcmpl-e2e-account-a", payload["id"]);
 
-    let captured_a = provider_a.captured.lock().unwrap();
-    let captured_b = provider_b.captured.lock().unwrap();
+    // Clone out and release both locks before the asserts so no guard is held
+    // across an await point.
+    let captured_a = provider_a.captured.lock().unwrap().clone();
+    let captured_b = provider_b.captured.lock().unwrap().clone();
     assert_eq!(
         1,
         captured_a.len(),
@@ -1306,14 +1308,13 @@ async fn admin_adds_account_to_group_then_routing_reaches_it() {
         body.contains("chatcmpl-e2e-account-c"),
         "newly added account C must be routable after snapshot reload: {body}"
     );
-    let captured_c = provider_c.captured.lock().unwrap();
+    let captured_c = provider_c.captured.lock().unwrap().clone();
     assert_eq!(1, captured_c.len(), "account C must be called exactly once");
     assert_eq!(
         Some(format!("Bearer {}", "sk-e2e-account-c-secret")),
         captured_c[0].authorization,
         "routing target must receive account C's resolved credential"
     );
-    drop(captured_c);
 
     // --- 关闭账号 C（status=0）→ 立即从账号池剔除，路由故障转移到 A ---
     let account_c_version =

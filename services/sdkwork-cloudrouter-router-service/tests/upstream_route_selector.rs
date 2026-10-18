@@ -1976,8 +1976,7 @@ fn empty_pool_error_names_the_blocking_gate_when_diagnosis_is_present() {
 
     let error = UpstreamRouteSelector::new(&catalog)
         .select_model_route(model_query(900))
-        .err()
-        .expect("empty pool must fail selection");
+        .expect_err("empty pool must fail selection");
     let message = error.to_string();
 
     assert_eq!(
@@ -2014,8 +2013,7 @@ fn empty_pool_without_diagnosis_keeps_the_legacy_cache_hint() {
 
     let error = UpstreamRouteSelector::new(&catalog)
         .select_model_route(model_query(901))
-        .err()
-        .expect("empty pool must fail selection");
+        .expect_err("empty pool must fail selection");
     let message = error.to_string();
 
     assert_eq!(

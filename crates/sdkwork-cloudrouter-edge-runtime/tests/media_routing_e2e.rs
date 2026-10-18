@@ -208,6 +208,10 @@ struct MediaAccountSpec {
     capabilities: &'static [&'static str],
 }
 
+/// Registers the pricing rows for one catalog entry on one upstream account.
+/// The parameters mirror the pricing tuple the catalog stores; grouping them
+/// would only move the same values behind a constructor.
+#[allow(clippy::too_many_arguments)]
 fn add_price_for_account(
     catalog: &mut InMemoryPricingCatalog,
     catalog_key: &str,
@@ -915,9 +919,9 @@ async fn media_routing_openai_video_generations_routes_to_openai_account() {
     let accounts = media_accounts(
         &openai.base_url,
         &google.base_url,
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
     );
     let hasher = hasher();
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
@@ -927,9 +931,9 @@ async fn media_routing_openai_video_generations_routes_to_openai_account() {
         collect_secrets(&media_accounts(
             &openai.base_url,
             &google.base_url,
-            &"http://127.0.0.1:9".to_owned(),
-            &"http://127.0.0.1:9".to_owned(),
-            &"http://127.0.0.1:9".to_owned(),
+            "http://127.0.0.1:9",
+            "http://127.0.0.1:9",
+            "http://127.0.0.1:9",
         )),
     )
     .await;
@@ -963,9 +967,9 @@ async fn media_routing_gemini_image_generation_routes_to_google_account() {
     let accounts = media_accounts(
         &openai.base_url,
         &google.base_url,
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
     );
     let hasher = hasher();
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
@@ -975,9 +979,9 @@ async fn media_routing_gemini_image_generation_routes_to_google_account() {
         collect_secrets(&media_accounts(
             &openai.base_url,
             &google.base_url,
-            &"http://127.0.0.1:9".to_owned(),
-            &"http://127.0.0.1:9".to_owned(),
-            &"http://127.0.0.1:9".to_owned(),
+            "http://127.0.0.1:9",
+            "http://127.0.0.1:9",
+            "http://127.0.0.1:9",
         )),
     )
     .await;
@@ -1010,9 +1014,9 @@ async fn media_routing_gemini_veo_video_generation_routes_to_google_account() {
     let accounts = media_accounts(
         &openai.base_url,
         &google.base_url,
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
     );
     let hasher = hasher();
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
@@ -1022,9 +1026,9 @@ async fn media_routing_gemini_veo_video_generation_routes_to_google_account() {
         collect_secrets(&media_accounts(
             &openai.base_url,
             &google.base_url,
-            &"http://127.0.0.1:9".to_owned(),
-            &"http://127.0.0.1:9".to_owned(),
-            &"http://127.0.0.1:9".to_owned(),
+            "http://127.0.0.1:9",
+            "http://127.0.0.1:9",
+            "http://127.0.0.1:9",
         )),
     )
     .await;
@@ -1052,10 +1056,10 @@ async fn media_routing_kling_video_generation_routes_to_kling_account() {
     let openai = start_mock_upstream("openai").await;
     let accounts = media_accounts(
         &openai.base_url,
-        &"http://127.0.0.1:9".to_owned(),
+        "http://127.0.0.1:9",
         &kling.base_url,
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
     );
     let hasher = hasher();
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
@@ -1064,10 +1068,10 @@ async fn media_routing_kling_video_generation_routes_to_kling_account() {
         catalog,
         collect_secrets(&media_accounts(
             &openai.base_url,
-            &"http://127.0.0.1:9".to_owned(),
+            "http://127.0.0.1:9",
             &kling.base_url,
-            &"http://127.0.0.1:9".to_owned(),
-            &"http://127.0.0.1:9".to_owned(),
+            "http://127.0.0.1:9",
+            "http://127.0.0.1:9",
         )),
     )
     .await;
@@ -1095,10 +1099,10 @@ async fn media_routing_vidu_video_generation_routes_to_vidu_account() {
     let openai = start_mock_upstream("openai").await;
     let accounts = media_accounts(
         &openai.base_url,
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
         &vidu.base_url,
-        &"http://127.0.0.1:9".to_owned(),
+        "http://127.0.0.1:9",
     );
     let hasher = hasher();
     let key_hash = hasher.hash_secret("sk-live-secret").unwrap();
@@ -1107,10 +1111,10 @@ async fn media_routing_vidu_video_generation_routes_to_vidu_account() {
         catalog,
         collect_secrets(&media_accounts(
             &openai.base_url,
-            &"http://127.0.0.1:9".to_owned(),
-            &"http://127.0.0.1:9".to_owned(),
+            "http://127.0.0.1:9",
+            "http://127.0.0.1:9",
             &vidu.base_url,
-            &"http://127.0.0.1:9".to_owned(),
+            "http://127.0.0.1:9",
         )),
     )
     .await;
@@ -1138,9 +1142,9 @@ async fn media_routing_seedance_video_generation_routes_to_volcengine_account() 
     let openai = start_mock_upstream("openai").await;
     let accounts = media_accounts(
         &openai.base_url,
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
-        &"http://127.0.0.1:9".to_owned(),
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
+        "http://127.0.0.1:9",
         &volcengine.base_url,
     );
     let hasher = hasher();
@@ -1150,9 +1154,9 @@ async fn media_routing_seedance_video_generation_routes_to_volcengine_account() 
         catalog,
         collect_secrets(&media_accounts(
             &openai.base_url,
-            &"http://127.0.0.1:9".to_owned(),
-            &"http://127.0.0.1:9".to_owned(),
-            &"http://127.0.0.1:9".to_owned(),
+            "http://127.0.0.1:9",
+            "http://127.0.0.1:9",
+            "http://127.0.0.1:9",
             &volcengine.base_url,
         )),
     )

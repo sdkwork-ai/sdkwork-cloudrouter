@@ -579,16 +579,16 @@ fn next_action_from_outcome(
                     redirect_url: None,
                     qr_code: Some(qr_code_media_resource(qr_code)),
                 })
-            } else if let Some(page_pay_url) =
-                outcome.payload.get("page_pay_url").and_then(Value::as_str)
-            {
-                Some(PaymentNextActionResponse {
-                    r#type: "redirect".to_owned(),
-                    redirect_url: Some(page_pay_url.to_owned()),
-                    qr_code: None,
-                })
             } else {
-                None
+                outcome
+                    .payload
+                    .get("page_pay_url")
+                    .and_then(Value::as_str)
+                    .map(|page_pay_url| PaymentNextActionResponse {
+                        r#type: "redirect".to_owned(),
+                        redirect_url: Some(page_pay_url.to_owned()),
+                        qr_code: None,
+                    })
             }
         }
         _ => None,

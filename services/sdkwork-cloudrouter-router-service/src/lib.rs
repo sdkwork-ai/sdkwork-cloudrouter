@@ -1,3 +1,23 @@
+// Two lint families are waived crate-wide, with the reason recorded here so the
+// next audit re-checks these specific decisions instead of rediscovering them.
+//
+// `result_large_err`: the flagged functions return `Result<Response, Response>`,
+// which is the axum handler contract. `hyper::Response<Body>` is at least 128
+// bytes, so every one of these trips the lint. The value is only ever
+// constructed on the error path, and boxing it would change the public handler
+// signature of the chat, responses, and embeddings ingress for no runtime
+// benefit.
+//
+// `too_many_arguments`: the flagged functions are route assembly and relay
+// dependency injection (`openai_chat_completions_router_with_auth_extensions`,
+// `resolve_openai_upstream_route_plan`, `StreamingUsageRecordingBody::new`, the
+// route-selection diagnostics builders, and the two admin store query helpers).
+// Each parameter is a distinct collaborator — catalog, hasher, relay, recorder,
+// plugins, request parts — that the caller supplies separately. Collapsing them
+// into a struct would move the assembly into a builder and touch the routing and
+// billing hot paths for a lint that measures a count, not a defect.
+#![allow(clippy::result_large_err, clippy::too_many_arguments)]
+
 pub mod api;
 pub mod application;
 pub mod domain;

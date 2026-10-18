@@ -6,13 +6,51 @@ use sdkwork_cloudrouter_config::{
 };
 use sdkwork_cloudrouter_http::{
     optional_app_request_subject, sanitize_sensitive_query, sanitize_sensitive_query_in_uri,
-    sign_app_session_token, sign_trusted_request_subject, upsert_query_parameter,
-    verified_app_request_subject, verified_signed_trusted_request_subject,
-    verify_app_session_token, verify_app_session_token_claims, ApiKeyCredentialSource,
-    ApiKeyIdentity, ApiKeyIdentityError, AppSessionTokenClaims, AppSessionTokenKind,
-    AppSubjectBoundaryConfig, QueryStringApiKeyPolicy, TrustedRequestSubject,
+    sign_trusted_request_subject, upsert_query_parameter, verified_app_request_subject,
+    verified_signed_trusted_request_subject, verify_app_session_token,
+    verify_app_session_token_claims, ApiKeyCredentialSource, ApiKeyIdentity, ApiKeyIdentityError,
+    AppSessionTokenClaims, AppSessionTokenError, AppSessionTokenKind, AppSubjectBoundaryConfig,
+    QueryStringApiKeyPolicy, TrustedRequestSubject,
 };
 use sdkwork_iam_context_service::IamAppContext;
+
+/// Mints a claims-format (`v2`) app session token for a trusted request
+/// subject, replacing the removed legacy v1 signer in tests. `token_kind`
+/// must match the header the token is placed in (`Auth` for the
+/// `Authorization` bearer, `Access` for the `Access-Token` header).
+fn sign_claims_token(
+    config: &AppSessionConfig,
+    token_kind: AppSessionTokenKind,
+    subject: TrustedRequestSubject,
+    issued_at: i64,
+    expires_at: i64,
+) -> String {
+    let claims = AppSessionTokenClaims {
+        token_kind,
+        tenant_id: subject.tenant_id,
+        organization_id: subject.organization_id,
+        user_id: subject.user_id,
+        session_id: format!("session-{}-{}", subject.tenant_id, subject.user_id),
+        app_id: "sdkwork-cloudrouter".to_owned(),
+        login_scope: if subject.organization_id == 0 {
+            "TENANT".to_owned()
+        } else {
+            "ORGANIZATION".to_owned()
+        },
+        environment: "dev".to_owned(),
+        deployment_mode: "saas".to_owned(),
+        auth_level: "password".to_owned(),
+        data_scope: vec![
+            format!("tenant:{}", subject.tenant_id),
+            format!("user:{}", subject.user_id),
+        ],
+        permission_scope: vec!["cloudrouter.console.access".to_owned()],
+        issued_at,
+        expires_at,
+        kid: None,
+    };
+    sdkwork_cloudrouter_http::sign_app_session_token_with_claims(config, &claims)
+}
 
 #[test]
 fn api_key_identity_rejects_multiple_header_credential_sources() {
@@ -486,7 +524,13 @@ fn app_session_token_verifies_subject_without_leaking_token_material() {
         operator_id: 30,
         operator_type: 1,
     };
-    let token = sign_app_session_token(&config, subject, 1_800_000_000, 1_800_000_300);
+    let token = sign_claims_token(
+        &config,
+        AppSessionTokenKind::Auth,
+        subject,
+        1_800_000_000,
+        1_800_000_300,
+    );
 
     let parsed = verify_app_session_token(&config, &token, 1_800_000_001).unwrap();
 
@@ -667,10 +711,20 @@ fn app_request_subject_boundary_returns_session_subject_after_stripping_direct_h
         operator_id: 30,
         operator_type: 1,
     };
-    let auth_token =
-        sign_app_session_token(&app_session_config, subject, 1_800_000_000, 1_800_000_300);
-    let access_token =
-        sign_app_session_token(&app_session_config, subject, 1_800_000_001, 1_800_000_301);
+    let auth_token = sign_claims_token(
+        &app_session_config,
+        AppSessionTokenKind::Auth,
+        subject,
+        1_800_000_000,
+        1_800_000_300,
+    );
+    let access_token = sign_claims_token(
+        &app_session_config,
+        AppSessionTokenKind::Access,
+        subject,
+        1_800_000_001,
+        1_800_000_301,
+    );
     let mut headers = HeaderMap::new();
     headers.insert("x-sdkwork-tenant-id", HeaderValue::from_static("999"));
     headers.insert(
@@ -714,8 +768,13 @@ fn app_request_subject_boundary_rejects_incomplete_session_token_headers() {
         operator_id: 30,
         operator_type: 1,
     };
-    let auth_token =
-        sign_app_session_token(&app_session_config, subject, 1_800_000_000, 1_800_000_300);
+    let auth_token = sign_claims_token(
+        &app_session_config,
+        AppSessionTokenKind::Auth,
+        subject,
+        1_800_000_000,
+        1_800_000_300,
+    );
     let mut headers = HeaderMap::new();
     headers.insert(
         "authorization",
@@ -779,8 +838,13 @@ fn optional_app_request_subject_boundary_strips_incomplete_session_token_headers
         operator_id: 30,
         operator_type: 1,
     };
-    let auth_token =
-        sign_app_session_token(&app_session_config, subject, 1_800_000_000, 1_800_000_300);
+    let auth_token = sign_claims_token(
+        &app_session_config,
+        AppSessionTokenKind::Auth,
+        subject,
+        1_800_000_000,
+        1_800_000_300,
+    );
     let mut headers = HeaderMap::new();
     headers.insert("x-sdkwork-tenant-id", HeaderValue::from_static("999"));
     headers.insert(
@@ -824,14 +888,16 @@ fn app_request_subject_boundary_rejects_mismatched_auth_and_access_subjects() {
         operator_id: 31,
         operator_type: 1,
     };
-    let auth_token = sign_app_session_token(
+    let auth_token = sign_claims_token(
         &app_session_config,
+        AppSessionTokenKind::Auth,
         auth_subject,
         1_800_000_000,
         1_800_000_300,
     );
-    let access_token = sign_app_session_token(
+    let access_token = sign_claims_token(
         &app_session_config,
+        AppSessionTokenKind::Access,
         access_subject,
         1_800_000_001,
         1_800_000_301,
@@ -874,7 +940,13 @@ fn app_session_authorization_header_accepts_case_insensitive_bearer_scheme() {
         operator_id: 30,
         operator_type: 1,
     };
-    let token = sign_app_session_token(&config, subject, 1_800_000_000, 1_800_000_300);
+    let token = sign_claims_token(
+        &config,
+        AppSessionTokenKind::Auth,
+        subject,
+        1_800_000_000,
+        1_800_000_300,
+    );
 
     let parsed = sdkwork_cloudrouter_http::verify_app_session_authorization_header(
         &config,
@@ -897,13 +969,80 @@ fn app_session_token_rejects_tampering_without_echoing_token() {
         operator_id: 30,
         operator_type: 1,
     };
-    let token = sign_app_session_token(&config, subject, 1_800_000_000, 1_800_000_300);
-    let tampered = token.replacen(".30.", ".31.", 1);
+    let token = sign_claims_token(
+        &config,
+        AppSessionTokenKind::Auth,
+        subject,
+        1_800_000_000,
+        1_800_000_300,
+    );
+    // Tamper with the signature segment: flip the first hex digit so the MAC
+    // no longer matches the claims payload.
+    let (payload, signature) = token.rsplit_once('.').unwrap();
+    let flipped = if signature.starts_with('0') { '1' } else { '0' };
+    let tampered = format!("{payload}.{}{}", flipped, &signature[1..]);
 
     let error = verify_app_session_token(&config, &tampered, 1_800_000_001).unwrap_err();
 
     assert_eq!("app session token signature is invalid", error.to_string());
     assert!(!format!("{error:?}").contains(&tampered));
+}
+
+#[tokio::test]
+async fn app_session_claims_token_with_unknown_kid_is_rejected_by_resolver() {
+    struct UnknownKidResolver;
+
+    #[async_trait::async_trait]
+    impl sdkwork_cloudrouter_http::TenantSigningKeyResolver for UnknownKidResolver {
+        async fn resolve_signing_secret_by_kid(&self, _kid: &str) -> Option<Vec<u8>> {
+            None
+        }
+    }
+
+    let config =
+        AppSessionConfig::from_signing_secret("app-session-secret-0123456789abcd").unwrap();
+    let subject = TrustedRequestSubject {
+        tenant_id: 100001,
+        organization_id: 0,
+        user_id: 30,
+        operator_id: 30,
+        operator_type: 1,
+    };
+    let claims = AppSessionTokenClaims {
+        token_kind: AppSessionTokenKind::Auth,
+        tenant_id: subject.tenant_id,
+        organization_id: subject.organization_id,
+        user_id: subject.user_id,
+        session_id: "session-unknown-kid".to_owned(),
+        app_id: "sdkwork-cloudrouter".to_owned(),
+        login_scope: "TENANT".to_owned(),
+        environment: "dev".to_owned(),
+        deployment_mode: "saas".to_owned(),
+        auth_level: "password".to_owned(),
+        data_scope: vec!["tenant:100001".to_owned(), "user:30".to_owned()],
+        permission_scope: vec!["cloudrouter.console.access".to_owned()],
+        issued_at: 1_800_000_000,
+        expires_at: 1_800_000_300,
+        kid: Some("unknown-kid".to_owned()),
+    };
+    let token = sdkwork_cloudrouter_http::sign_app_session_token_with_claims(&config, &claims);
+
+    // The token carries a kid the resolver does not know: verification must
+    // fail closed instead of falling back to the shared secret.
+    let error = sdkwork_cloudrouter_http::verify_app_session_token_claims_with_resolver(
+        &config,
+        &UnknownKidResolver,
+        &token,
+        1_800_000_001,
+    )
+    .await
+    .unwrap_err();
+
+    assert_eq!(AppSessionTokenError::UnknownSigningKey, error);
+    assert_eq!(
+        "app session token signing key is unknown",
+        error.to_string()
+    );
 }
 
 #[test]
@@ -928,4 +1067,199 @@ fn remove_internal_trusted_subject_headers_strips_projection_headers_only() {
     assert_eq!("Bearer auth-1", headers.get("authorization").unwrap());
     assert_eq!("access-1", headers.get("access-token").unwrap());
     assert_eq!("application/json", headers.get("accept").unwrap());
+}
+
+struct FakeTenantSigningKeyResolver {
+    keys: std::collections::HashMap<String, Vec<u8>>,
+}
+
+#[async_trait::async_trait]
+impl sdkwork_cloudrouter_http::TenantSigningKeyResolver for FakeTenantSigningKeyResolver {
+    async fn resolve_signing_secret_by_kid(&self, kid: &str) -> Option<Vec<u8>> {
+        self.keys.get(kid).cloned()
+    }
+}
+
+/// Mints a claims-format (`v2`) app session token carrying a `kid`, signed
+/// with an explicit (per-tenant) signing secret instead of the global
+/// `AppSessionConfig` secret.
+fn sign_claims_token_with_secret_and_kid(
+    signing_secret: &[u8],
+    token_kind: AppSessionTokenKind,
+    subject: TrustedRequestSubject,
+    issued_at: i64,
+    expires_at: i64,
+    kid: &str,
+) -> String {
+    let claims = AppSessionTokenClaims {
+        token_kind,
+        tenant_id: subject.tenant_id,
+        organization_id: subject.organization_id,
+        user_id: subject.user_id,
+        session_id: format!("session-{}-{}", subject.tenant_id, subject.user_id),
+        app_id: "sdkwork-cloudrouter".to_owned(),
+        login_scope: if subject.organization_id == 0 {
+            "TENANT".to_owned()
+        } else {
+            "ORGANIZATION".to_owned()
+        },
+        environment: "dev".to_owned(),
+        deployment_mode: "saas".to_owned(),
+        auth_level: "password".to_owned(),
+        data_scope: vec![
+            format!("tenant:{}", subject.tenant_id),
+            format!("user:{}", subject.user_id),
+        ],
+        permission_scope: vec!["cloudrouter.console.access".to_owned()],
+        issued_at,
+        expires_at,
+        kid: Some(kid.to_owned()),
+    };
+    sdkwork_cloudrouter_http::sign_app_session_token_with_claims_and_secret(signing_secret, &claims)
+}
+
+fn dual_kid_token_headers(
+    tenant_secret: &[u8],
+    kid: &str,
+    subject: TrustedRequestSubject,
+) -> HeaderMap {
+    let auth_token = sign_claims_token_with_secret_and_kid(
+        tenant_secret,
+        AppSessionTokenKind::Auth,
+        subject,
+        1_800_000_000,
+        1_800_000_300,
+        kid,
+    );
+    let access_token = sign_claims_token_with_secret_and_kid(
+        tenant_secret,
+        AppSessionTokenKind::Access,
+        subject,
+        1_800_000_001,
+        1_800_000_301,
+        kid,
+    );
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        "authorization",
+        HeaderValue::from_str(&format!("Bearer {auth_token}")).unwrap(),
+    );
+    headers.insert(
+        "Access-Token",
+        HeaderValue::from_str(&access_token).unwrap(),
+    );
+    headers
+}
+
+#[tokio::test]
+async fn dual_app_session_headers_with_resolver_verifies_per_tenant_kid_tokens() {
+    let config =
+        AppSessionConfig::from_signing_secret("app-session-secret-0123456789abcd").unwrap();
+    let tenant_secret = b"per-tenant-signing-key-secret-0123456789";
+    let kid = "tenant-100001-active";
+    let subject = TrustedRequestSubject {
+        tenant_id: 100001,
+        organization_id: 0,
+        user_id: 30,
+        operator_id: 30,
+        operator_type: 1,
+    };
+    let mut keys = std::collections::HashMap::new();
+    keys.insert(kid.to_owned(), tenant_secret.to_vec());
+    let resolver = FakeTenantSigningKeyResolver { keys };
+    let headers = dual_kid_token_headers(tenant_secret, kid, subject);
+
+    let verified = sdkwork_cloudrouter_http::verify_dual_app_session_headers_with_resolver(
+        &config,
+        Some(&resolver),
+        &headers,
+        1_800_000_001,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(subject, verified);
+}
+
+#[tokio::test]
+async fn dual_app_session_headers_with_resolver_rejects_unknown_kid() {
+    let config =
+        AppSessionConfig::from_signing_secret("app-session-secret-0123456789abcd").unwrap();
+    let tenant_secret = b"per-tenant-signing-key-secret-0123456789";
+    let subject = TrustedRequestSubject {
+        tenant_id: 100001,
+        organization_id: 0,
+        user_id: 30,
+        operator_id: 30,
+        operator_type: 1,
+    };
+    // The resolver knows no keys: the kid-bearing token must fail closed even
+    // though its signature matches the per-tenant secret.
+    let resolver = FakeTenantSigningKeyResolver {
+        keys: std::collections::HashMap::new(),
+    };
+    let headers = dual_kid_token_headers(tenant_secret, "tenant-100001-rotated-away", subject);
+
+    let error = sdkwork_cloudrouter_http::verify_dual_app_session_headers_with_resolver(
+        &config,
+        Some(&resolver),
+        &headers,
+        1_800_000_001,
+    )
+    .await
+    .unwrap_err();
+
+    assert_eq!(AppSessionTokenError::UnknownSigningKey, error);
+}
+
+#[tokio::test]
+async fn dual_app_session_headers_with_resolver_keeps_no_kid_global_secret_bridge() {
+    let config =
+        AppSessionConfig::from_signing_secret("app-session-secret-0123456789abcd").unwrap();
+    let subject = TrustedRequestSubject {
+        tenant_id: 100001,
+        organization_id: 0,
+        user_id: 30,
+        operator_id: 30,
+        operator_type: 1,
+    };
+    // No-kid tokens keep verifying with the global secret even when a
+    // resolver is wired (documented bridge until the issuer guarantees kid).
+    let mut headers = HeaderMap::new();
+    let auth_token = sign_claims_token(
+        &config,
+        AppSessionTokenKind::Auth,
+        subject,
+        1_800_000_000,
+        1_800_000_300,
+    );
+    let access_token = sign_claims_token(
+        &config,
+        AppSessionTokenKind::Access,
+        subject,
+        1_800_000_001,
+        1_800_000_301,
+    );
+    headers.insert(
+        "authorization",
+        HeaderValue::from_str(&format!("Bearer {auth_token}")).unwrap(),
+    );
+    headers.insert(
+        "Access-Token",
+        HeaderValue::from_str(&access_token).unwrap(),
+    );
+    let resolver = FakeTenantSigningKeyResolver {
+        keys: std::collections::HashMap::new(),
+    };
+
+    let verified = sdkwork_cloudrouter_http::verify_dual_app_session_headers_with_resolver(
+        &config,
+        Some(&resolver),
+        &headers,
+        1_800_000_001,
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(subject, verified);
 }

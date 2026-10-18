@@ -78,17 +78,19 @@ pub(super) async fn list(
         .into_iter()
         .map(map_row)
         .collect::<DomainResult<Vec<_>>>()?;
+    // One batched query for every page row instead of a per-row round trip.
+    let scope_ids: Vec<i64> = items.iter().map(|group| group.id).collect();
+    let access_map = super::model_access::load_scope_model_access_batch(
+        pool,
+        &query.subject,
+        "account_group",
+        &scope_ids,
+    )
+    .await?;
     for group in &mut items {
-        if let Some((blacklist, whitelist)) = super::model_access::load_scope_model_access(
-            pool,
-            &query.subject,
-            "account_group",
-            group.id,
-        )
-        .await?
-        {
-            group.model_blacklist = blacklist;
-            group.model_whitelist = whitelist;
+        if let Some((blacklist, whitelist)) = access_map.get(&group.id) {
+            group.model_blacklist = blacklist.clone();
+            group.model_whitelist = whitelist.clone();
         }
     }
     Ok(AdminUpstreamPage {

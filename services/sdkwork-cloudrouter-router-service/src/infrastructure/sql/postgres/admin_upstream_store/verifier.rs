@@ -138,7 +138,7 @@ async fn verify_account(
         )
         .map_err(|_| AdminUpstreamAccountVerificationError::InvalidConfiguration)?;
     let auth_profile = verification_auth_profile(&target)?;
-    let endpoint = UpstreamProviderEndpoint::new(&effective_verification_base_url(&target), secret)
+    let endpoint = UpstreamProviderEndpoint::new(effective_verification_base_url(&target), secret)
         .map_err(|_| AdminUpstreamAccountVerificationError::InvalidConfiguration)?
         .with_auth_profile(auth_profile);
     let outcome = endpoint

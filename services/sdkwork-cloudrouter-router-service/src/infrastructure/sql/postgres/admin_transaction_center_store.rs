@@ -113,8 +113,8 @@ async fn update_payment_provider(
             sort_order = COALESCE($6, sort_order),
             status = COALESCE($7, status),
             updated_at = now()
-        WHERE tenant_id IN (CAST($1 AS TEXT), '0')
-          AND (organization_id = CAST($2 AS TEXT) OR organization_id = '0')
+        WHERE tenant_id = CAST($1 AS TEXT)
+          AND organization_id = CAST($2 AS TEXT)
           AND id = CAST($3 AS TEXT)
           AND deleted_at IS NULL
         "#,

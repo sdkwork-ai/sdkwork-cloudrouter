@@ -2,9 +2,7 @@ use std::collections::BTreeMap;
 
 use sqlx::PgPool;
 
-use crate::application::{
-    ApiKeySecretStorageConfig, UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext,
-};
+use crate::application::{UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext};
 use crate::domain::{
     DomainError, DomainResult, DEFAULT_PROVIDER_CIRCUIT_BREAKER_RECOVERY_WINDOW_SECONDS,
 };
@@ -28,7 +26,6 @@ pub struct PostgresPricingCatalogLoader {
     pool: PgPool,
     credential_secret_codec:
         Option<std::sync::Arc<dyn UpstreamCredentialSecretCodec + Send + Sync>>,
-    api_key_secret_storage: Option<ApiKeySecretStorageConfig>,
     circuit_breaker_recovery_window_seconds: i64,
 }
 
@@ -37,7 +34,6 @@ impl PostgresPricingCatalogLoader {
         Self {
             pool,
             credential_secret_codec: None,
-            api_key_secret_storage: None,
             circuit_breaker_recovery_window_seconds:
                 default_circuit_breaker_recovery_window_seconds(),
         }
@@ -50,21 +46,6 @@ impl PostgresPricingCatalogLoader {
         Self {
             pool,
             credential_secret_codec: Some(credential_secret_codec),
-            api_key_secret_storage: None,
-            circuit_breaker_recovery_window_seconds:
-                default_circuit_breaker_recovery_window_seconds(),
-        }
-    }
-
-    pub fn with_credential_secret_codec_and_api_key_secret_storage(
-        pool: PgPool,
-        credential_secret_codec: std::sync::Arc<dyn UpstreamCredentialSecretCodec + Send + Sync>,
-        api_key_secret_storage: ApiKeySecretStorageConfig,
-    ) -> Self {
-        Self {
-            pool,
-            credential_secret_codec: Some(credential_secret_codec),
-            api_key_secret_storage: Some(api_key_secret_storage),
             circuit_breaker_recovery_window_seconds:
                 default_circuit_breaker_recovery_window_seconds(),
         }
@@ -631,8 +612,7 @@ mod tests {
     use super::managed_provider_secrets_from_rows;
     use crate::application::{UpstreamCredentialSecretCodec, UpstreamCredentialSecretContext};
     use crate::infrastructure::crypto::RingAeadCredentialSecretCodec;
-    use crate::infrastructure::sql::rows::{GatewayApiKeyRow, UpstreamAccountRouteRow};
-    use sdkwork_cloudrouter_config::ApiKeySecretStorageMode;
+    use crate::infrastructure::sql::rows::UpstreamAccountRouteRow;
 
     #[test]
     fn managed_upstream_credentials_are_decrypted_only_at_the_loader_boundary() {

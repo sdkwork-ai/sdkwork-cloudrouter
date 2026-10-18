@@ -464,8 +464,7 @@ async fn create_key_inner(
 
     // Per-API-key call-chain policy applied at creation (validated first).
     if let Some(policy) = request.chain {
-        validate_chain_policy(&policy)
-            .map_err(|message| AppApiKeyCreateError::BadRequest(message))?;
+        validate_chain_policy(&policy).map_err(AppApiKeyCreateError::BadRequest)?;
         if let Some(chain_store) = &state.chain_policy_store {
             chain_store
                 .upsert_chain_policy(build_app_chain_policy_command(
@@ -610,8 +609,7 @@ async fn update_key_inner(
 
     // Per-API-key call-chain policy upsert (key ownership was verified above).
     if let Some(policy) = request.chain {
-        validate_chain_policy(&policy)
-            .map_err(|message| AppApiKeyCreateError::BadRequest(message))?;
+        validate_chain_policy(&policy).map_err(AppApiKeyCreateError::BadRequest)?;
         if let Some(chain_store) = &state.chain_policy_store {
             chain_store
                 .upsert_chain_policy(build_app_chain_policy_command(

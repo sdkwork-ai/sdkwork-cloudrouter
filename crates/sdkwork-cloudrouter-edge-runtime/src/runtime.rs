@@ -2653,11 +2653,7 @@ async fn maybe_spawn_postgres_payment_reconciliation_worker(
     }
     let store: Arc<dyn PaymentReconciliationRuntimeStore + Send + Sync> =
         Arc::new(PostgresPaymentReconciliationRuntimeStore::new(pool.clone()));
-    let worker = PaymentReconciliationWorker::new(
-        store,
-        Arc::new(OsApiKeySecretGenerator::default()),
-        config,
-    );
+    let worker = PaymentReconciliationWorker::new(store, Arc::new(OsApiKeySecretGenerator), config);
     let interval = Duration::from_millis(worker.config().interval_millis);
     let mut shutdown_rx = sdkwork_cloudrouter_http::subscribe_shutdown_signal();
     tokio::spawn(async move {
@@ -3341,6 +3337,31 @@ fn apply_provider_adapter_config(
             adapter_relay
         };
         relays.embeddings = Some(Arc::new(adapter_relay));
+    }
+    // Startup observability for the honest-501 surfaces: an unwired relay
+    // answers `501 provider_relay_not_configured` at request time, which is
+    // contract-published behavior but otherwise invisible until a client
+    // hits it. Name every unwired invocation surface at assembly so a
+    // configuration gap shows up in startup logs instead.
+    let unwired_relays: &[(&str, bool)] = &[
+        (
+            "/v1/chat/completions (streaming)",
+            relays.chat_stream.is_none(),
+        ),
+        ("/v1/chat/completions", relays.chat.is_none()),
+        ("/v1/responses", relays.responses.is_none()),
+        ("/v1/embeddings", relays.embeddings.is_none()),
+    ];
+    let missing: Vec<&str> = unwired_relays
+        .iter()
+        .filter(|(_, wired)| !wired)
+        .map(|(surface, _)| *surface)
+        .collect();
+    if !missing.is_empty() {
+        tracing::warn!(
+            unwired_surfaces = ?missing,
+            "provider relays not configured; affected /v1 surfaces will answer 501 provider_relay_not_configured until a relay is assembled"
+        );
     }
     Ok(relays)
 }

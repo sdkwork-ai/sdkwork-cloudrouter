@@ -213,10 +213,10 @@ where
 {
     let mut keys = Vec::new();
     catalog.visit_models(None, &mut |model| {
-        if model.catalog_key == model_name || model.model == model_name {
-            if !keys.contains(&model.catalog_key) {
-                keys.push(model.catalog_key.clone());
-            }
+        if (model.catalog_key == model_name || model.model == model_name)
+            && !keys.contains(&model.catalog_key)
+        {
+            keys.push(model.catalog_key.clone());
         }
         true
     });

@@ -83,7 +83,10 @@ fn redact_prefixed_tokens(input: &str, prefix: &str) -> String {
     let prefix_bytes = prefix.as_bytes();
     let mut i = 0;
     while i < bytes.len() {
-        // Check for the prefix (case-insensitive) at current position.
+        // Check for the prefix (case-insensitive) at current position. The
+        // cursor always sits on a UTF-8 char boundary (initially 0, then
+        // advanced by whole characters or across the matched ASCII prefix),
+        // so mid-character false matches are impossible by construction.
         if i + prefix_bytes.len() <= bytes.len()
             && bytes[i..i + prefix_bytes.len()]
                 .iter()
@@ -93,7 +96,9 @@ fn redact_prefixed_tokens(input: &str, prefix: &str) -> String {
             // Count token characters after the prefix. Vendor key families
             // embed separators inside the token (OpenAI project keys look
             // like `sk-proj-...`), so `-` and `_` continue the token; any
-            // other punctuation, whitespace, or quote ends it.
+            // other punctuation, whitespace, quote, or non-ASCII byte ends
+            // it. The scan only advances over ASCII token bytes, so the
+            // stopping position is always a valid char boundary.
             let token_start = i + prefix_bytes.len();
             let mut token_end = token_start;
             while token_end < bytes.len()
@@ -115,8 +120,12 @@ fn redact_prefixed_tokens(input: &str, prefix: &str) -> String {
                 continue;
             }
         }
-        result.push(bytes[i] as char);
-        i += 1;
+        // Copy the whole UTF-8 character so multibyte text (e.g. Chinese
+        // provider error messages) survives redaction byte-for-byte instead
+        // of being rewritten as Latin-1 mojibake.
+        let ch = input[i..].chars().next().unwrap_or('\u{fffd}');
+        result.push(ch);
+        i += ch.len_utf8();
     }
     result
 }
@@ -243,6 +252,45 @@ mod tests {
         assert_eq!(
             "provider returned status 500",
             redact_sensitive_tokens("provider returned status 500")
+        );
+    }
+
+    #[test]
+    fn preserves_multibyte_text_outside_redactions() {
+        // Provider error bodies are frequently non-English; the prefixed-token
+        // scanner must copy whole UTF-8 characters so Chinese (and any other
+        // multibyte) text survives byte-for-byte instead of collapsing into
+        // Latin-1 mojibake.
+        let message = "上游返回错误：您的 api key 已失效，请检查配置";
+        assert_eq!(message, redact_sensitive_tokens(message));
+        let japanese = "エラー：認証に失敗しました";
+        assert_eq!(japanese, redact_sensitive_tokens(japanese));
+    }
+
+    #[test]
+    fn redacts_leaked_key_inside_multibyte_message() {
+        // Label pass: `api key: <value>` collapses before the prefixed-token
+        // scanner runs.
+        let labeled =
+            redact_sensitive_tokens("上游返回错误：您的 api key: sk-abcdefghijklmnop 已失效");
+        assert!(
+            !labeled.contains("abcdefghijklmnop"),
+            "the raw sk- token body must never survive redaction: {labeled}"
+        );
+        assert!(
+            labeled.contains("上游返回错误：您的 api key: [REDACTED] 已失效"),
+            "surrounding Chinese text must be preserved around the redacted key: {labeled}"
+        );
+        // Prefixed pass: a bare `sk-` token inside multibyte text is
+        // redacted while the surrounding characters survive.
+        let bare = redact_sensitive_tokens("上游返回错误：sk-abcdefghijklmnop 已失效");
+        assert!(
+            !bare.contains("abcdefghijklmnop"),
+            "the raw sk- token body must never survive redaction: {bare}"
+        );
+        assert!(
+            bare.contains("上游返回错误：sk-[REDACTED] 已失效"),
+            "surrounding Chinese text must be preserved around the redacted key: {bare}"
         );
     }
 }

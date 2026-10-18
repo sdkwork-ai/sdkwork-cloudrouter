@@ -65,6 +65,7 @@ pub struct AdminBillingRecordItem {
     pub id: String,
     pub user_id: String,
     pub period: String,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub total_tokens: i64,
     pub total_cost: String,
     pub status: String,

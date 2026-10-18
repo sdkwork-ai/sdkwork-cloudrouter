@@ -363,7 +363,7 @@ fn openai_api_code(capability_label: &str) -> &'static str {
 }
 
 fn resolve_model_route(
-    catalog: &(impl PricingCatalog + UpstreamAccountRouteCatalog + ?Sized),
+    catalog: &(impl UpstreamAccountRouteCatalog + ?Sized),
     _context: &AuthenticatedApiKeyContext,
     requested_model: &str,
     vendor_code: &str,

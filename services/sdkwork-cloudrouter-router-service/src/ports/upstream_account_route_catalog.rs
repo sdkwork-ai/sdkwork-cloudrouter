@@ -301,10 +301,10 @@ pub trait UpstreamAccountRouteCatalog: PricingCatalog + PricingDefaultRegionProv
     fn model_catalog_keys_by_name(&self, model_name: &str) -> Vec<String> {
         let mut keys = Vec::new();
         self.visit_models(None, &mut |model| {
-            if model.catalog_key == model_name || model.model == model_name {
-                if !keys.contains(&model.catalog_key) {
-                    keys.push(model.catalog_key.clone());
-                }
+            if (model.catalog_key == model_name || model.model == model_name)
+                && !keys.contains(&model.catalog_key)
+            {
+                keys.push(model.catalog_key.clone());
             }
             true
         });

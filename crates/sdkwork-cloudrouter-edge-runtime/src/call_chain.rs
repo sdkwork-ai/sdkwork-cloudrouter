@@ -132,7 +132,7 @@ impl InvocationInterceptor for CallChainInterceptor {
                     Ok(())
                 }
                 Err(outcome) => {
-                    Self::log_chain_rejection(outcome.as_reject_reason(), &invocation, client_ip);
+                    Self::log_chain_rejection(outcome.as_reject_reason(), invocation, client_ip);
                     Err(Self::error_from_outcome(outcome))
                 }
             }

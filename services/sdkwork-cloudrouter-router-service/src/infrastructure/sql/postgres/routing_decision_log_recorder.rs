@@ -148,10 +148,11 @@ fn decision_payload_hash(command: &RoutingDecisionRecordCommand) -> String {
         command.candidate_snapshot.as_ref(),
         command.fallback_chain.as_ref(),
         Some(&command.metadata),
-    ] {
-        if let Some(value) = value {
-            hasher.update(serde_json::to_string(value).unwrap_or_default().as_bytes());
-        }
+    ]
+    .into_iter()
+    .flatten()
+    {
+        hasher.update(serde_json::to_string(value).unwrap_or_default().as_bytes());
     }
     hex::encode(hasher.finalize())
 }

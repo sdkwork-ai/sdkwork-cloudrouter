@@ -665,6 +665,7 @@ pub struct AdminPriceBookRateItem {
     pub quantity_step: Option<String>,
     pub currency_code: String,
     pub vendor_code: String,
+    #[serde(with = "sdkwork_utils_rust::serde_int64")]
     pub priority: i64,
     pub rate_variant: String,
     pub conditions: serde_json::Value,

@@ -415,9 +415,7 @@ impl UpstreamCredentialRotationWorker {
 /// Reads `rotation_interval_days` from the account's `credential_rotation_policy`
 /// JSONB, falling back to `None` when the policy is absent or malformed.
 fn rotation_interval_days(account: &CredentialRotationAccount) -> Option<i64> {
-    let Some(policy) = account.credential_rotation_policy.as_deref() else {
-        return None;
-    };
+    let policy = account.credential_rotation_policy.as_deref()?;
     let parsed: Value = serde_json::from_str(policy).ok()?;
     let days = parsed.get("rotation_interval_days")?.as_i64()?;
     (days > 0).then_some(days)

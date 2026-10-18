@@ -226,6 +226,72 @@ fn push_aggregated(
     });
 }
 
+/// Loads model access rules for many scopes of one `scope_type` in a single
+/// query and aggregates them per scope id. List pages use this instead of one
+/// query per row (N+1). Scopes without rules are absent from the map.
+pub(super) async fn load_scope_model_access_batch(
+    pool: &sqlx::PgPool,
+    subject: &AdminUpstreamSubject,
+    scope_type: &str,
+    scope_ids: &[i64],
+) -> DomainResult<
+    std::collections::HashMap<
+        i64,
+        (
+            Vec<AdminUpstreamModelListEntry>,
+            Vec<AdminUpstreamModelListEntry>,
+        ),
+    >,
+> {
+    if scope_ids.is_empty() {
+        return Ok(Default::default());
+    }
+    let rows = sqlx::query(
+        r#"
+        SELECT scope_id, effect, vendor_code, model_pattern
+        FROM ai_model_access_policy
+        WHERE tenant_id = $1 AND organization_id = $2
+          AND scope_type = $3 AND scope_id = ANY($4)
+          AND status = 1 AND deleted_at IS NULL
+        ORDER BY scope_id, priority ASC, id ASC
+        "#,
+    )
+    .bind(subject.tenant_id)
+    .bind(subject.organization_id)
+    .bind(scope_type)
+    .bind(scope_ids)
+    .fetch_all(pool)
+    .await
+    .map_err(|error| store_error("failed to load model access rules", error))?;
+
+    let mut pages: std::collections::HashMap<
+        i64,
+        (
+            Vec<AdminUpstreamModelListEntry>,
+            Vec<AdminUpstreamModelListEntry>,
+        ),
+    > = Default::default();
+    for row in rows {
+        let scope_id: i64 = column(&row, "scope_id", "failed to map model access scope")?;
+        let effect: String = column(&row, "effect", "failed to map model access effect")?;
+        let vendor_code: Option<String> =
+            column(&row, "vendor_code", "failed to map model access vendor")?;
+        let model_pattern: Option<String> =
+            column(&row, "model_pattern", "failed to map model access pattern")?;
+        let Some(vendor_code) = vendor_code else {
+            continue;
+        };
+        let (blacklist, whitelist) = pages.entry(scope_id).or_default();
+        let target = if effect == "deny" {
+            blacklist
+        } else {
+            whitelist
+        };
+        push_aggregated(target, vendor_code, model_pattern);
+    }
+    Ok(pages)
+}
+
 /// Transaction-scoped variant of [`load_scope_model_access`] used while reloading
 /// an entity inside its own save transaction.
 pub(super) async fn load_scope_model_access_in_tx(

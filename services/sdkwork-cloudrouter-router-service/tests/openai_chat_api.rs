@@ -57,8 +57,7 @@ fn usage_record_for_meter<'a>(
 }
 
 fn catalog_with_hashed_api_key(key_hash: String) -> InMemoryPricingCatalog {
-    let catalog = catalog_with_hashed_api_key_without_routing(key_hash);
-    catalog
+    catalog_with_hashed_api_key_without_routing(key_hash)
 }
 
 fn catalog_with_hashed_api_key_missing_billing_subject(key_hash: String) -> InMemoryPricingCatalog {

@@ -223,7 +223,7 @@ impl CachedSiteSettingsStore {
     pub fn cached_entry_count(&self) -> usize {
         self.cache
             .lock()
-            .expect("site settings cache poisoned")
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
             .len()
     }
 
@@ -231,7 +231,7 @@ impl CachedSiteSettingsStore {
     pub fn invalidate_local(&self) {
         self.cache
             .lock()
-            .expect("site settings cache poisoned")
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
             .clear();
     }
 
@@ -267,7 +267,7 @@ impl CachedSiteSettingsStore {
                 // not immediately re-read the value it just wrote.
                 self.last_version_probe
                     .lock()
-                    .expect("site settings version probe clock poisoned")
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
                     .replace(Instant::now());
             }
             Err(error) => {
@@ -328,7 +328,7 @@ impl CachedSiteSettingsStore {
         let mut last = self
             .last_version_probe
             .lock()
-            .expect("site settings version probe clock poisoned");
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         match *last {
             Some(previous) if previous.elapsed() < self.revalidate_interval => false,
             _ => {
@@ -340,7 +340,10 @@ impl CachedSiteSettingsStore {
 
     fn cached_entry(&self, key: &SiteSettingsCacheKey, version: i64) -> Option<SiteSettings> {
         let now = Instant::now();
-        let mut cache = self.cache.lock().expect("site settings cache poisoned");
+        let mut cache = self
+            .cache
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         match cache.get(key) {
             Some(entry) if entry.expires_at > now && entry.stamp == version => {
                 let value = entry.value.clone();
@@ -361,7 +364,10 @@ impl CachedSiteSettingsStore {
 
     fn store_entry(&self, key: &SiteSettingsCacheKey, value: SiteSettings, version: i64) {
         let now = Instant::now();
-        let mut cache = self.cache.lock().expect("site settings cache poisoned");
+        let mut cache = self
+            .cache
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         if cache.len() >= self.max_entries {
             cache.retain(|_, entry| entry.expires_at > now);
             if cache.len() >= self.max_entries {
@@ -379,7 +385,10 @@ impl CachedSiteSettingsStore {
     }
 
     fn gate_for(&self, key: &SiteSettingsCacheKey) -> Arc<AsyncMutex<()>> {
-        let mut gates = self.gates.lock().expect("site settings gate map poisoned");
+        let mut gates = self
+            .gates
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         // The keyspace is one document per tenant/organization; only purge when a
         // pathological scope churn pushes the map past the entry cap.
         if gates.len() >= self.max_entries {
@@ -485,10 +494,11 @@ mod tests {
 
     impl CountingStore {
         fn new(load_delay: Duration) -> Self {
-            let mut settings = SiteSettings::default();
-            settings.site_name = "Origin Brand".to_owned();
             Self {
-                settings,
+                settings: SiteSettings {
+                    site_name: "Origin Brand".to_owned(),
+                    ..SiteSettings::default()
+                },
                 reads: AtomicU64::new(0),
                 writes: AtomicU64::new(0),
                 load_delay,
@@ -497,10 +507,6 @@ mod tests {
 
         fn reads(&self) -> u64 {
             self.reads.load(Ordering::SeqCst)
-        }
-
-        fn writes(&self) -> u64 {
-            self.writes.load(Ordering::SeqCst)
         }
     }
 

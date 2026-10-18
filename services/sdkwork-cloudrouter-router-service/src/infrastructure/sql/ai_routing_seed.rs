@@ -4615,12 +4615,12 @@ async fn import_postgres_default_admin_routing_strategies(
 ) -> Result<(), sqlx::Error> {
     let catalog = AiRoutingSeedCatalog::load().map_err(json_decode_error)?;
     for strategy in default_admin_routing_strategies() {
-        let strategy_id = default_admin_routing_strategy_id(&strategy.code);
-        let strategy_uuid = default_admin_routing_strategy_uuid(&strategy.code);
+        let strategy_id = default_admin_routing_strategy_id(strategy.code);
+        let strategy_uuid = default_admin_routing_strategy_uuid(strategy.code);
         let metadata = seed_metadata(
             &catalog,
             "default_admin_routing_strategy",
-            &strategy.code,
+            strategy.code,
             Value::Null,
         );
         sqlx::query(

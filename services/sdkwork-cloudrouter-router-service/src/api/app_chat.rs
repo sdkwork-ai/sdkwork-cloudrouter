@@ -212,19 +212,19 @@ pub fn app_chat_router_with_store(
             get(list_conversations).post(create_conversation),
         )
         .route(
-            "/app/v3/api/chat/conversations/{conversation_id}",
+            "/app/v3/api/chat/conversations/{conversationId}",
             get(get_conversation),
         )
         .route(
-            "/app/v3/api/chat/conversations/{conversation_id}/messages",
+            "/app/v3/api/chat/conversations/{conversationId}/messages",
             get(list_messages),
         )
         .route(
-            "/app/v3/api/chat/conversations/{conversation_id}/turns",
+            "/app/v3/api/chat/conversations/{conversationId}/turns",
             axum::routing::post(create_turn),
         )
         .route(
-            "/app/v3/api/chat/conversations/{conversation_id}/turns/{turn_id}/response",
+            "/app/v3/api/chat/conversations/{conversationId}/turns/{turnId}/response",
             axum::routing::post(complete_turn_response),
         )
         .with_state(AppChatState {

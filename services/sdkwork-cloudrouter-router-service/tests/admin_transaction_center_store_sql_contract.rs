@@ -48,6 +48,30 @@ fn transaction_center_sql_stores_keep_tenant_rows_before_global_seed_fallback() 
 }
 
 #[test]
+fn transaction_center_sql_provider_writes_never_touch_shared_platform_rows() {
+    let source = POSTGRES_STORE;
+    let start = source
+        .find("UPDATE commerce_payment_provider")
+        .expect("postgres transaction center store must update payment providers");
+    // The update statement runs until the next SELECT (the post-commit
+    // reload); shared '0' rows are a read-fallback only and must never match
+    // a tenant admin's write.
+    let statement = source[start..]
+        .split("SELECT")
+        .next()
+        .expect("update statement text");
+    assert!(
+        !statement.contains("'0')"),
+        "payment provider writes must be scoped to the caller's tenant exactly; \
+         the shared '0' platform row is read-fallback only"
+    );
+    assert!(
+        statement.contains("WHERE tenant_id = CAST($1 AS TEXT)"),
+        "payment provider writes must use an exact tenant predicate"
+    );
+}
+
+#[test]
 fn transaction_center_sql_stores_do_not_hide_missing_standard_tables() {
     let source = POSTGRES_STORE;
     assert!(

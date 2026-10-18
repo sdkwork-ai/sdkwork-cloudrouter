@@ -40,7 +40,9 @@ pub struct CreateGatewayApiKeyCommand {
     pub key_display_masked: String,
     pub key_hash: String,
     /// Raw key material generated at creation; persisted per the configured
-    /// secret storage mode (plaintext by default, ciphertext when enabled).
+    /// secret storage mode (ciphertext by default; plaintext only via
+    /// explicit operator opt-in, which is refused in production-like
+    /// environments).
     pub raw_key: String,
     pub hash_alg: String,
     pub secret_version: i64,

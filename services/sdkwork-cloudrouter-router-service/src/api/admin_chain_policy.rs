@@ -131,6 +131,18 @@ async fn update_global_chain_policy(
     body: Bytes,
 ) -> Response {
     let subject: AdminChainPolicySubject = scoped.into();
+    // GLOBAL chain policy rows are merged into every tenant's resolution at
+    // runtime (the resolver reads them without a tenant predicate), so a
+    // tenant-scoped GLOBAL row would shadow the platform row for all
+    // tenants. Only a platform operator (tenant 0) may create or replace
+    // the global policy.
+    if subject.tenant_id != 0 {
+        return problem_from_wire_code(
+            "forbidden",
+            "the global chain policy is platform-scoped and can only be modified by a platform operator",
+        )
+        .into_response();
+    }
     let request = match parse_upsert_request(&body) {
         Ok(request) => request,
         Err(message) => return bad_request(message),

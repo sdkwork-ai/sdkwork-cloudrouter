@@ -122,7 +122,7 @@ impl InvocationInterceptor for BillingTransactionInterceptor {
                     self.store
                         .precharge_hold(context.clone(), amount.clone())
                         .await
-                        .map(|hold_id| Some(hold_id))
+                        .map(Some)
                 } else {
                     self.store
                         .precharge(context.clone(), amount.clone())

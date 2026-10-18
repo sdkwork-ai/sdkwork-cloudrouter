@@ -123,17 +123,19 @@ pub(super) async fn list(
         .into_iter()
         .map(map_account_row)
         .collect::<DomainResult<Vec<_>>>()?;
+    // One batched query for every page row instead of a per-row round trip.
+    let scope_ids: Vec<i64> = items.iter().map(|account| account.id).collect();
+    let access_map = super::model_access::load_scope_model_access_batch(
+        pool,
+        &query.subject,
+        "account",
+        &scope_ids,
+    )
+    .await?;
     for account in &mut items {
-        if let Some((blacklist, whitelist)) = super::model_access::load_scope_model_access(
-            pool,
-            &query.subject,
-            "account",
-            account.id,
-        )
-        .await?
-        {
-            account.model_blacklist = blacklist;
-            account.model_whitelist = whitelist;
+        if let Some((blacklist, whitelist)) = access_map.get(&account.id) {
+            account.model_blacklist = blacklist.clone();
+            account.model_whitelist = whitelist.clone();
         }
     }
     Ok(AdminUpstreamPage {

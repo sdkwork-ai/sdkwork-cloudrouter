@@ -264,7 +264,7 @@ impl PaymentProviderAdapter for WeChatPayProviderAdapter {
                 request
                     .notify_url
                     .as_deref()
-                    .or_else(|| self.config.notify_url.as_deref()),
+                    .or(self.config.notify_url.as_deref()),
                 PaymentAdapterOperation::CreatePaymentIntent,
                 "notify_url",
             )?;

@@ -518,7 +518,7 @@ async fn auth_token_chat_completion_happy_path() {
         "response model must match request"
     );
     assert!(
-        body["choices"].as_array().map_or(false, |c| !c.is_empty()),
+        body["choices"].as_array().is_some_and(|c| !c.is_empty()),
         "response must contain at least one choice"
     );
     assert_eq!(

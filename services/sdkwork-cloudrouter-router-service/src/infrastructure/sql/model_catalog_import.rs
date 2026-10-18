@@ -1176,7 +1176,7 @@ fn vendor_native_image_descriptor(vendor_code: &str) -> Option<EndpointDescripto
 fn model_image_endpoint_descriptor(model: &ModelInfo) -> EndpointDescriptor {
     let native = vendor_native_image_descriptor(model.vendor_code.trim());
     if model.api_format == "google_gemini" {
-        return native.unwrap_or_else(|| EndpointDescriptor {
+        return native.unwrap_or(EndpointDescriptor {
             endpoint_code: "gemini.image_generation",
             protocol_code: "vendor_native",
             display_name: "Gemini Image Generation",
@@ -1372,7 +1372,7 @@ fn vendor_native_video_descriptor(vendor_code: &str) -> Option<EndpointDescripto
 fn model_video_endpoint_descriptor(model: &ModelInfo) -> EndpointDescriptor {
     let native = vendor_native_video_descriptor(model.vendor_code.trim());
     if model.api_format == "google_gemini" {
-        return native.unwrap_or_else(|| EndpointDescriptor {
+        return native.unwrap_or(EndpointDescriptor {
             endpoint_code: "gemini.video_generation",
             protocol_code: "vendor_native",
             display_name: "Gemini Video Generation",
@@ -2131,7 +2131,7 @@ pub(crate) fn merge_runtime_pricing_dictionary_rows(
     let database_identity_by_key = database_prices
         .iter()
         .filter_map(|row| {
-            let identity = row.rate_metadata.as_ref()?.record_identity.clone()?;
+            let identity = row.rate_metadata.as_ref()?.record_identity?;
             Some((model_price_row_identity(row), identity))
         })
         .collect::<BTreeMap<_, _>>();
@@ -2144,7 +2144,7 @@ pub(crate) fn merge_runtime_pricing_dictionary_rows(
             continue;
         }
         if let Some(identity) = database_identity_by_key.get(&identity_key) {
-            metadata.record_identity = Some(identity.clone());
+            metadata.record_identity = Some(*identity);
         }
     }
 
@@ -3710,7 +3710,7 @@ mod tests {
                     // modality, so an endpoint it cannot name falls through to
                     // the generic media meter and bills the wrong unit.
                     assert!(
-                        endpoint_modality_code(&descriptor.endpoint_code).is_some(),
+                        endpoint_modality_code(descriptor.endpoint_code).is_some(),
                         "{context} produced endpoint code {} which resolves to no modality; \
                          the accounting side cannot pick a meter for it",
                         descriptor.endpoint_code,
@@ -3747,7 +3747,7 @@ mod tests {
                         output_modalities,
                     ));
                     if descriptor.protocol_code == "vendor_native" {
-                        reachable.insert(descriptor.endpoint_code.clone());
+                        reachable.insert(descriptor.endpoint_code);
                     }
                 }
             }

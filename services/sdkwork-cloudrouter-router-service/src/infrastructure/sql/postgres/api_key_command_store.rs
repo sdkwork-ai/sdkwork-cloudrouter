@@ -589,11 +589,15 @@ async fn soft_delete_account_group_bindings(
     Ok(())
 }
 
+/// Columns written for one API key secret: storage mode, plaintext copy,
+/// ciphertext, and key id. Ciphertext mode leaves the plaintext slot empty.
+type EncodedApiKeySecretColumns = (String, Option<String>, Option<String>, Option<String>);
+
 fn encode_api_key_secret_for_storage(
     secret_storage: &ApiKeySecretStorageConfig,
     command: &CreateGatewayApiKeyCommand,
     api_key_id: i64,
-) -> DomainResult<(String, Option<String>, Option<String>, Option<String>)> {
+) -> DomainResult<EncodedApiKeySecretColumns> {
     if !secret_storage.is_ciphertext() {
         return Ok((
             API_KEY_SECRET_MODE_PLAINTEXT.to_owned(),

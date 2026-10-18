@@ -298,7 +298,15 @@ impl DatabaseConfig {
             );
             lines.push(String::new());
         } else {
-            lines.push("# Desktop deployments default to a local SQLite database.".to_owned());
+            // Desktop-profile TOMLs may carry a client-local SQLite default,
+            // but the Cloud Router server runtime itself requires PostgreSQL:
+            // every server entry point fails closed on a sqlite URL
+            // (`require_postgres_server_database`). This comment documents the
+            // client-local data default; it is not a server runtime claim.
+            lines.push(
+                "# Desktop local-data default is a client-local SQLite file; the Cloud Router server runtime requires PostgreSQL and rejects sqlite URLs."
+                    .to_owned(),
+            );
             lines.push(format!(
                 "# Default SQLite file: {}",
                 location.sqlite_database_path().display()

@@ -275,7 +275,7 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
             if let Some(rule) = reason {
                 return Err(UpstreamRouteSelectionError::model_forbidden(
                     model_access_forbidden_message(
-                        &rule,
+                        rule,
                         &query.requested_model,
                         &query.context.group_code,
                     ),
@@ -891,7 +891,7 @@ impl<'a, C: UpstreamAccountRouteCatalog> UpstreamRouteSelector<'a, C> {
         candidates: Vec<RouteCandidate>,
         query: &SelectUpstreamAccountRouteQuery,
     ) -> CandidateUpstreamAccountRouteEvaluation {
-        for candidate in candidates {
+        if let Some(candidate) = candidates.into_iter().next() {
             let candidate_group_accounts = routes
                 .iter()
                 .filter(|route| account_route_matches_candidate_group(route, &candidate))

@@ -101,7 +101,10 @@ impl<C: PricingCatalog> GatewayChainPolicyResolver<C> {
         let ttl = std::time::Duration::from_secs(CHAIN_POLICY_CACHE_TTL_SECS);
         let now = std::time::Instant::now();
         {
-            let cache = self.cache.lock().expect("chain policy cache lock");
+            let cache = self
+                .cache
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner());
             if let Some(entry) = cache.get(&(scope_type, scope_id)) {
                 if now.duration_since(entry.fetched_at) < ttl {
                     return entry.policy.clone();
@@ -113,7 +116,10 @@ impl<C: PricingCatalog> GatewayChainPolicyResolver<C> {
             .find_chain_policy(scope_type, scope_id)
             .await
             .and_then(|record| parse_chain_policy(&record.payload));
-        let mut cache = self.cache.lock().expect("chain policy cache lock");
+        let mut cache = self
+            .cache
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         // Bound the cache: drop expired entries first, then fall back to a
         // full reset so a long tail of configured API keys cannot grow
         // memory without bound.

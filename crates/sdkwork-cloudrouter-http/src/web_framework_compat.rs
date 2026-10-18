@@ -63,9 +63,18 @@ pub async fn project_trusted_subject_from_web_request_context(
 
 /// Fail fast when production-like deployments disable sdkwork-web-framework IAM.
 pub fn ensure_production_web_framework_security_policy() {
-    let runtime_toml = sdkwork_cloudrouter_config::RuntimeTomlConfig::from_env_config_file()
-        .ok()
-        .flatten();
+    // A configured-but-unreadable/unparseable runtime config must fail closed:
+    // swallowing the error would make the production-like detection below
+    // silently treat a broken production deployment as "not production" and
+    // skip every guard in this function. A missing config file (`Ok(None)`)
+    // remains a legitimate non-configured deployment.
+    let runtime_toml = match sdkwork_cloudrouter_config::RuntimeTomlConfig::from_env_config_file() {
+        Ok(config) => config,
+        Err(error) => panic!(
+            "runtime configuration file could not be read or parsed: {error}; \
+             refusing to evaluate production-like security guards without configuration"
+        ),
+    };
     if !is_production_like_runtime_environment(runtime_toml.as_ref()) {
         return;
     }
