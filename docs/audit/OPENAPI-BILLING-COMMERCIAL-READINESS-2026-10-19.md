@@ -184,9 +184,9 @@ fail-closed 或留给下一轮，不凭空收费。
 | --- | --- |
 | 计费 test target | **60 个 target / 418 passed / 0 failed** |
 | router-service `--lib` | **618 passed** |
-| router-service 全量 | **171 个 target / 1770 passed / 6 failed（全部 HEAD 既有，与计费无关）** |
+| router-service 全量 | **173 个 target / 1802 passed / 2 failed（payment SQL contract，HEAD 既有，与计费无关）** |
 | edge-runtime `--lib` | **100 passed** |
-| 既有红目标（非计费） | `upstream_route_selector` 4（价格门禁已移到 preflight，测试未同步）、`postgres_payment_intent_runtime_sql_contract` 2（退款 SQL 列已变更，测试未同步） |
+| 既有红目标（非计费） | `postgres_payment_intent_runtime_sql_contract` 2（退款 SQL 列/状态词汇已变更，测试未同步；支付域，需人工确认后修）。原 `upstream_route_selector` 4 已按新定价契约修正（见主审计 2.75） |
 | clippy（两 crate，`--lib --tests`） | 0 |
 | `cargo fmt --check` | 干净（edition 2021） |
 | `node tools/check-cloudrouter-ai-routing-consistency.mjs` | **passed**（81 arms / 64 codes；83 endpoints；122 OpenAI-compatible ops 全有分类臂） |

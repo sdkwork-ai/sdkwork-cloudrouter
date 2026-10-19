@@ -846,8 +846,12 @@ fn region_scoped_group_candidate_selects_the_matching_deployment() {
     assert_eq!("cn", selected.route.region_code);
 }
 
+/// A missing **procurement** (upstream-cost) price must not block routing: the
+/// sdkwork-models contract degrades it to "no procurement cost" and the gate
+/// only requires a catalog rate the customer charge can be derived from. The
+/// official price is global per catalog key, so this route is sellable.
 #[test]
-fn callable_route_without_upstream_price_reports_pricing_unavailable() {
+fn route_without_a_procurement_price_is_still_selectable() {
     let group_id = 28;
     let mut catalog = catalog_for_group(account_group(
         group_id,
@@ -862,14 +866,11 @@ fn callable_route_without_upstream_price_reports_pricing_unavailable() {
         100,
     ));
 
-    let error = UpstreamRouteSelector::new(&catalog)
+    let selected = UpstreamRouteSelector::new(&catalog)
         .select_model_route(model_query(group_id))
-        .unwrap_err();
+        .unwrap();
 
-    assert_eq!(
-        UpstreamRouteSelectionErrorKind::PricingUnavailable,
-        error.kind()
-    );
+    assert_eq!(3001, selected.route.account_id);
 }
 
 #[test]
@@ -1221,8 +1222,11 @@ fn pricing_gap_in_one_bound_group_falls_back_to_another_group() {
     assert_eq!(4001, selected.route.account_id);
 }
 
+/// Prices are keyed by catalog/model, not by supplier/account: both candidates
+/// are priced through the shared official rate, so the higher-priority
+/// candidate wins. A per-account procurement gap must not silently demote it.
 #[test]
-fn candidate_with_missing_output_price_yields_to_priced_candidate() {
+fn all_priced_candidates_are_ordered_by_priority() {
     let group_id = 42;
     let mut catalog = catalog_for_group(account_group(
         group_id,
@@ -1242,11 +1246,13 @@ fn candidate_with_missing_output_price_yields_to_priced_candidate() {
         .select_model_route(model_query(group_id))
         .unwrap();
 
-    assert_eq!(3002, selected.route.account_id);
+    assert_eq!(3001, selected.route.account_id);
 }
 
+/// The negative case still holds when the catalog publishes **no** rate for the
+/// resource: an unpriced API resource cannot derive a customer charge.
 #[test]
-fn account_route_without_api_request_price_reports_pricing_unavailable() {
+fn account_route_without_any_catalog_rate_reports_pricing_unavailable() {
     let group_id = 43;
     let mut catalog = catalog_for_group(account_group(
         group_id,
@@ -1257,8 +1263,8 @@ fn account_route_without_api_request_price_reports_pricing_unavailable() {
 
     let query = SelectUpstreamAccountRouteQuery {
         context: context(group_id),
-        route_key: RESOURCE_ROUTE_KEY.to_owned(),
-        api_code: RESOURCE_API_CODE.to_owned(),
+        route_key: "openai/unpriced-resource".to_owned(),
+        api_code: "openai.unpriced_resource".to_owned(),
         capability: RoutingCapability::Network,
         pricing_catalog_key: None,
         pricing_meters: None,
@@ -1825,28 +1831,24 @@ fn diagnostic_fails_when_account_missing_credentials() {
     );
 }
 
-/// Failure mode 6: account exists and is callable, but upstream cost price is
-/// missing. This produces PricingUnavailable, not UpstreamRouteUnavailable.
+/// Failure mode 6 (revised): a missing **procurement** price is not a routing
+/// failure. The customer-facing official rate is what the gate requires, and a
+/// missing upstream cost only means gross margin is unknown for that account.
 #[test]
-fn diagnostic_fails_when_upstream_cost_price_missing() {
+fn diagnostic_allows_a_missing_upstream_cost_price() {
     let group_id = 906;
     let mut catalog = catalog_for_group(account_group(
         group_id,
         UpstreamAccountRoutingStrategy::Failover,
         UpstreamAccountFallbackMode::Sequential,
     ));
-    // Add route WITHOUT price (don't use add_route_and_price)
+    // Add route WITHOUT a per-account upstream-cost price.
     catalog.add_upstream_account_route(account_route(group_id, 5001, "openai-direct", 1, 100));
 
-    let error = UpstreamRouteSelector::new(&catalog)
+    let selected = UpstreamRouteSelector::new(&catalog)
         .select_model_route(model_query(group_id))
-        .unwrap_err();
-    assert_eq!(
-        UpstreamRouteSelectionErrorKind::PricingUnavailable,
-        error.kind(),
-        "missing price should yield PricingUnavailable: {}",
-        error
-    );
+        .unwrap();
+    assert_eq!(5001, selected.route.account_id);
 }
 
 /// Failure mode 7: credential_health_status is unhealthy while account itself
