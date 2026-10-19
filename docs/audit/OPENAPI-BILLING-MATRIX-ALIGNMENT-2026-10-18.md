@@ -10,6 +10,8 @@
 >
 > **2026-10-19 第 10–22 轮补充**：新增 2.22（token 计价的二进制语音合成必须在派发前拒单）、2.23（批量提交在结果回收前必须拒单）、2.24（`background: true` 在用量回填前必须拒单）、2.25（实时语音在 WebSocket 代理落地前必须拒单）、2.26（图像单档位费率必须可解析）、2.27（Anthropic 缓存写入必须按 TTL 档位计价）、2.28（上下文分档 token 费率必须可解析）、2.29（缓存读必须按逐行模态计价）、2.30（Alibaba 显式/隐式缓存读必须可区分）、2.31（输入侧预扣取最高价不求和）、2.32（累计上界档位词汇）、2.33（流式 Chat 必须索取 usage）、2.34（usage-only chunk 不透传）、2.35（图像输入模式档位）、2.36（管理面归 Free）、2.37（OpenAI 管理/CRUD 归 Free）、2.38（异步轮询归 Free）、2.39（管理面几个"过度排除"的端点归 Free）、2.40（Responses 压缩按 token 计费）、2.41（音效按分钟计费已生效）、2.42（容器文件归 Free）、2.43（未定价按次端点不得静默免费）、2.44（音乐时长兜底歧义显式化）、2.45（就绪计数锁 165/176）、2.46（零产出必须 waive）、2.47（2xx 业务失败必须 waive）、2.48（中断流补输入估算）、2.49（服务端工具按次计费）、2.50（异步对账表与数据库初始化）、2.51（向量库检索按次计费）、2.52（异步对账 store）、2.53（批 embedding 按请求 token 估算）、2.54（DeepSeek web tools 按成功请求计费）、2.55（异步注册器）、2.56（异步 worker 编排）、2.57（货币→Token Bank 严格换算）、2.58（hold 原子捕获）、2.59（厂商时段价）、2.60（计费未就绪返回 501）、2.61（Code Interpreter 会话计费）、2.62（Anthropic web search 按次）、2.63（预扣 hold TTL 可配置）与二十四个测试文件（5+5+6+6+5+4+7+4+4+4+3+2+1+1+2+2+4+4+1+1+1+1+1+1 个用例，另在 precharge 文件新增 2 条、provider_request 单测 4 条、stream 过滤单测 5 条、usage_extraction 单测 5 条、async registrar 单测 2 条、async worker 单测 3 条、account hold 单测 2 条、overage split 单测 1 条、time-window 单测 3 条、BillingUnavailable 单测 1 条）。回归合计 **287** 个计费用例 + router-service `--lib` **598** 个单测全绿 + edge-runtime `--lib` **99** 个单测全绿。
 
+> **2026-10-19 第 28 轮补充**：新增 2.74（`PipelineAsyncPollTransport`：把轮询表达为合成 Free `GET` 调用、复用既有 `InvocationDispatcher` 的 TLS/代理/出站策略/超时/响应上限；带账号凭证的 GET 由 `ProviderRequestBuilder` 注入）。router lib **618**。
+>
 > **2026-10-19 第 27 轮补充**：新增 2.73（异步轮询执行器核心 `ProviderAsyncUsageExecutor` + `AsyncUsagePollTransport` 端口：账号/凭证解析、状态机判定、404/429/5xx 分流、batch 明确未实现）。router lib **614**。
 >
 > **2026-10-19 第 26 轮补充**：新增 2.72（异步创建注册拦截器 + 可轮询路径 `pollPath`；创建失败不登记、缺 id/thread id 失败关闭）。router lib **607**。
@@ -1630,6 +1632,24 @@ fail-closed。执行器核心见 2.73。
 仍缺：edge-runtime 的 `AsyncUsagePollTransport` 实现（复用现有 dispatcher/出站
 策略）与 runtime 启动接线；5 个异步 operation 继续 fail-closed。
 
+### 2.74 轮询传输：复用既有 dispatcher，而不是另开 HTTP 客户端
+
+`PipelineAsyncPollTransport` 把一次轮询表达成**合成的 Free `GET` 调用**：
+
+- 用与网关相同的分类器构造 `Invocation`（`/v1/**` 走 OpenAI 面，其余走供应商
+  原生面），计费档 `Free`（轮询不收费）；
+- 账号、base URL、auth profile、凭证全部来自任务的创建账号，不接受任何外部目标；
+- 通过 `ProviderRequestBuilder` 生成上游请求（路径校验、认证头注入、query 清理
+  与普通请求完全一致），再交给注入的 `InvocationDispatcher` 发送；
+- TLS、代理、出站目标策略（SSRF）、超时、响应体上限沿用现有 dispatcher —— 轮询
+  不会形成第二条绕过出站管控的 HTTP 路径；
+- dispatcher 的 `status_code`/`body` 原样返回，由 2.73 的状态机解释。
+
+回归（router `--lib` 4 条）：带凭证 GET（断言 `Authorization: Bearer …` 由
+builder 注入）、无凭证保持匿名、429 原样透传、传输失败映射为错误。
+
+仍缺：runtime 启动 worker + 注册拦截器进 pipeline + 解除预检拒单。
+
 ## 四、5 个"无专属计量单位且仍不可售"端点（已登记）
 
 
@@ -1687,6 +1707,7 @@ fail-closed。执行器核心见 2.73。
 | `tests/async_usage_settlement.rs` + worker 单测 | **异步完成态结算**：完成时重新定价、单笔 postpaid、任务幂等键重放、无用量失败关闭、结算失败重排 |
 | `async_usage_registration` 单测（5 条） | **异步创建入队**：background/thread run 登记 + `pollPath`、同步与失败创建不登记、缺 thread id 失败关闭 |
 | `provider_async_usage_executor` 单测（7 条） | **异步轮询状态机**：完成/运行/失败、404/429/5xx 分流、缺 pollPath/未知账号失败关闭、batch 未实现 |
+| `async_poll_transport` 单测（4 条） | **轮询传输**：带凭证 GET 走既有 dispatcher、无凭证匿名、429 透传、传输失败映射错误 |
 | `tests/billing_batch_embed.rs` | **批 embedding 估算**：响应无 usage 时按 `requests[].content.parts[].text` 估算 `embedding_input_token`，2 token ⇒ $0.000002 |
 | `tests/billing_deepseek_web_tools.rs` | **DeepSeek web tools**：search/fetch 各一次成功请求 = 一条 `api_request`（5 CNY/1k，global $0.00075/次） |
 | `tests/billing_music_duration_fallback.rs` | **音乐时长兜底**：不声明时长 = 1 秒 / $0.02；声明 180 秒 = $3.60。兜底值变更必须先确认目录语义 |

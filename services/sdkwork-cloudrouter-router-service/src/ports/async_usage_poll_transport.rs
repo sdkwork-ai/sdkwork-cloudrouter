@@ -16,6 +16,8 @@ pub struct AsyncPollRequest {
     pub base_url: Option<String>,
     pub auth_profile: ProviderAuthProfile,
     pub timeout_ms: Option<u64>,
+    /// The account's secret reference, when the account is credentialed.
+    pub secret_ref: Option<String>,
     /// Resolved credential value for the account's `secret_ref`, when one
     /// exists.
     pub secret: Option<String>,

@@ -9,7 +9,7 @@
 
 - **可售 166/176（94.3%）**，剩余 **10 个**全部 fail-closed，不存在静默免费路径。
 - 176 = **118 Free + 44 计量可售 + 1 音效 + 3 已补价按次 + 5 未定价按次 + 5 已登记不可售**。
-- 计费回归 **60 个 target / 418 passed**；router-service `--lib` **614**；edge-runtime `--lib` **101**；clippy 0；fmt 干净。
+- 计费回归 **60 个 target / 418 passed**；router-service `--lib` **618**；edge-runtime `--lib` **101**；clippy 0；fmt 干净。
 - 逐层锁的变异证据在主审计第五节；就绪计数由
   `commercial_readiness_counts_are_exactly_166_of_176` 钉住。
 
@@ -29,7 +29,8 @@
 | Token Bank 行为回归 | `tests/billing_token_bank_flow.rs` | 5 条：冻结/捕获/超额/402/失败释放/应收标记 |
 | 异步完成态结算 | `application/async_usage_settlement.rs` + `tests/async_usage_settlement.rs` | 已实现：完成时重新定价、单笔 postpaid、幂等重放、无用量失败关闭 |
 | 异步创建入队 | `AsyncUsageRegistrationInterceptor` + 5 条单测 | 已实现：四个创建面登记、`pollPath`、失败/缺 id 失败关闭 |
-| 异步轮询执行器 | `ProviderAsyncUsageExecutor` + `AsyncUsagePollTransport` 端口 + 7 条单测 | 已实现：账号/凭证解析、状态机、404/429/5xx 分流、batch 未实现；transport 实现与接线待做 |
+| 异步轮询执行器 | `ProviderAsyncUsageExecutor` + `AsyncUsagePollTransport` 端口 + 7 条单测 | 已实现：账号/凭证解析、状态机、404/429/5xx 分流、batch 未实现 |
+| 异步轮询传输 | `PipelineAsyncPollTransport`（`invocation/async_poll_transport.rs`）+ 4 条单测 | 已实现：合成 Free GET 走既有 dispatcher，凭证由 ProviderRequestBuilder 注入；runtime 构造/启动待做 |
 | 向量库存储可测量性 | `usage_extraction::storage_line` | 缺 `usage_bytes` ⇒ 记账失败；显式 0 字节 ⇒ waive |
 
 ## 3. 剩余 10 个 operation 的阻塞
@@ -45,18 +46,23 @@
 编排、**完成态结算核心 `ReplayAsyncUsageSettler`**（完成时重新定价 + 单笔 postpaid
 + 幂等重放 + 无用量失败关闭，已由 `tests/async_usage_settlement.rs` 覆盖）、
 **轮询状态机 `ProviderAsyncUsageExecutor`**（账号/凭证解析、Responses/ThreadRun
-状态判定、404/429/5xx 分流，已由 7 条单测覆盖）。
+状态判定、404/429/5xx 分流，已由 7 条单测覆盖）、**轮询传输
+`PipelineAsyncPollTransport`**（合成 Free GET 走既有 dispatcher，凭证由
+`ProviderRequestBuilder` 注入，4 条单测）。
 仍缺：
 
-1. `AsyncUsagePollTransport` 的宿主实现：用 edge-runtime 现有 dispatcher/出站
-   策略发一次带账号凭证的 `GET metadata.pollPath`（不要新开 HTTP 客户端栈）；
-   batch 的结果文件读取（`GET /v1/files/{id}/content` JSONL 按 `custom_id` 求和）
-   与 Anthropic results URL 仍未实现，batch 任务只会停在可见错误上。
-2. 在 `app_runtime` 启动 worker（feature flag），把注册拦截器加进 pipeline，并用
-   `AsyncUsageTaskWorker::with_settler(...)` 接入结算核心。
-3. 解除 `unmetered_batch_submission` / background / run 的预检守卫。
+1. runtime 接线：`app_runtime` 里用 `PostgresAsyncUsageTaskStore` +
+   `ProviderAsyncUsageExecutor::new(catalog, PipelineAsyncPollTransport::new(dispatcher))`
+   + `with_secret_resolver(...)` 构造 executor，worker 用
+   `with_settler(ReplayAsyncUsageSettler::new(catalog, billing_store).with_recorder(...))`
+   接结算，feature flag 启动轮询循环；同时把 `AsyncUsageRegistrationInterceptor`
+   加进 pipeline。
+2. 解除 `unmetered_batch_submission` / background / run 的预检守卫（仅
+   background Responses 与 threads run 可先解；batch 仍缺结果文件对账）。
+3. batch 结果文件读取（`GET /v1/files/{id}/content` JSONL 按 `custom_id` 求和）
+   与 Anthropic results URL —— 未实现前 batch 任务只会停在可见错误上。
 
-在 1–2 完成前不得解除拒单，否则批任务会变成未计量放行。
+在 1 完成前不得解除拒单，否则会变成未计量放行。
 
 ### B. 向量库存储（1 个）
 

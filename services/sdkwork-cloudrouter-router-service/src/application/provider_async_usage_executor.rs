@@ -106,6 +106,7 @@ where
                     base_url: account.base_url.clone(),
                     auth_profile: account.auth_profile.clone(),
                     timeout_ms: account.timeout_ms,
+                    secret_ref: account.secret_ref.clone(),
                     secret,
                     path,
                 })
