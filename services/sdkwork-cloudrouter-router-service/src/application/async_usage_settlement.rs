@@ -5,6 +5,7 @@ use std::sync::Arc;
 use axum::http::Method;
 use serde_json::{json, Value};
 
+use super::invocation::BatchUsageKind;
 use super::{
     apply_pricing_identity, resolve_pricing_identity, AccountBillingMode, BillingPolicyInterceptor,
     BillingSettlementInterceptor, Invocation, InvocationAccount, InvocationAuthType,
@@ -76,14 +77,20 @@ where
         self
     }
 
-    fn invocation<'a>(&'a self, task: &'a AsyncUsageTask) -> DomainResult<Invocation> {
+    fn invocation(
+        &self,
+        task: &AsyncUsageTask,
+        target: Option<&SettleTarget>,
+    ) -> DomainResult<Invocation> {
         let metadata = task.metadata.as_ref();
         let method = metadata_method(metadata);
-        let path = metadata_string(metadata, "path")
-            .map(str::to_owned)
+        let path = target
+            .map(|target| target.path.clone())
+            .or_else(|| metadata_string(metadata, "path").map(str::to_owned))
             .unwrap_or_else(|| default_poll_path(task));
-        let model = metadata_string(metadata, "model")
-            .map(str::to_owned)
+        let model = target
+            .map(|target| target.model.clone())
+            .or_else(|| metadata_string(metadata, "model").map(str::to_owned))
             .or_else(|| {
                 task.catalog_key
                     .as_deref()
@@ -96,9 +103,13 @@ where
         let classification = classify(&method, &path, &task.supplier_code)?;
         let (mut resource, billing, routing) = classification.into_parts();
         resource.requested_model = Some(model.clone());
-        resource.requested_model_catalog_key = task.catalog_key.clone();
+        resource.requested_model_catalog_key = target
+            .and_then(|target| target.catalog_key.clone())
+            .or_else(|| task.catalog_key.clone());
 
-        let request_id = task.billing_request_id();
+        let request_id = target
+            .map(|target| target.request_id.clone())
+            .unwrap_or_else(|| task.billing_request_id());
         let mut invocation = Invocation::new(
             InvocationRequest::new(method, path)
                 .with_request_id(request_id.clone())
@@ -159,66 +170,184 @@ where
         snapshot: &'a Value,
     ) -> AsyncUsageSettlementFuture<'a> {
         Box::pin(async move {
-            let mut invocation = self.invocation(task)?;
-            BillingPolicyInterceptor
-                .before(&mut invocation)
-                .await
-                .map_err(settlement_error)?;
-            let identity = resolve_pricing_identity(self.catalog.as_ref(), &invocation);
-            apply_pricing_identity(&mut invocation, &identity);
-            PricingPreflightInterceptor::new(Arc::clone(&self.catalog))
-                .before(&mut invocation)
-                .await
-                .map_err(settlement_error)?;
+            if let Some(rows) = snapshot.get("batchUsage").and_then(Value::as_array) {
+                return self.settle_batch(task, rows).await;
+            }
+            let invocation = self.invocation(task, None)?;
+            self.settle_invocation(invocation, snapshot).await
+        })
+    }
+}
 
-            invocation.dispatch = InvocationDispatch::json_response(200, snapshot.clone());
-            UsageExtractionInterceptor
+impl<C> ReplayAsyncUsageSettler<C>
+where
+    C: PricingCatalog
+        + PricingDefaultRegionProvider
+        + UpstreamAccountRouteCatalog
+        + Send
+        + Sync
+        + 'static,
+{
+    /// Prices one completed unit of work and debits it once.
+    ///
+    /// The completion call is the first moment an asynchronous task's amount is
+    /// knowable, so there is no prepaid hold to capture: the charge is a single
+    /// postpaid debit keyed by the invocation's request id.
+    async fn settle_invocation(
+        &self,
+        mut invocation: Invocation,
+        snapshot: &Value,
+    ) -> DomainResult<()> {
+        BillingPolicyInterceptor
+            .before(&mut invocation)
+            .await
+            .map_err(settlement_error)?;
+        let identity = resolve_pricing_identity(self.catalog.as_ref(), &invocation);
+        apply_pricing_identity(&mut invocation, &identity);
+        PricingPreflightInterceptor::new(Arc::clone(&self.catalog))
+            .before(&mut invocation)
+            .await
+            .map_err(settlement_error)?;
+
+        invocation.dispatch = InvocationDispatch::json_response(200, snapshot.clone());
+        UsageExtractionInterceptor
+            .after(&mut invocation)
+            .await
+            .map_err(settlement_error)?;
+        if invocation.usage.lines.is_empty() {
+            // A waived completion (zero results) has nothing to charge. A
+            // completion with no measurable usage at all is an accounting
+            // failure: returning Ok would settle the task with no fact.
+            if invocation.charging.waived.is_some() {
+                return Ok(());
+            }
+            return Err(DomainError::new(
+                "async usage settlement produced no billable usage",
+            ));
+        }
+
+        PricingFinalizationInterceptor::new(Arc::clone(&self.catalog))
+            .after(&mut invocation)
+            .await
+            .map_err(settlement_error)?;
+        PricingSettlementInterceptor
+            .after(&mut invocation)
+            .await
+            .map_err(settlement_error)?;
+        if let Some(recorder) = self.recorder.as_ref() {
+            UsageRecordingInterceptor::new(Arc::clone(recorder))
                 .after(&mut invocation)
                 .await
                 .map_err(settlement_error)?;
-            if invocation.usage.lines.is_empty() {
-                // A waived completion (zero results) has nothing to charge. A
-                // completion with no measurable usage at all is an accounting
-                // failure: returning Ok would settle the task with no fact.
-                if invocation.charging.waived.is_some() {
-                    return Ok(());
-                }
+            if invocation.usage.usage_recording_failure_count > 0 {
                 return Err(DomainError::new(
-                    "async usage settlement produced no billable usage",
+                    "async usage settlement could not persist its usage facts",
                 ));
             }
+        }
 
-            PricingFinalizationInterceptor::new(Arc::clone(&self.catalog))
-                .after(&mut invocation)
-                .await
-                .map_err(settlement_error)?;
-            PricingSettlementInterceptor
-                .after(&mut invocation)
-                .await
-                .map_err(settlement_error)?;
-            if let Some(recorder) = self.recorder.as_ref() {
-                UsageRecordingInterceptor::new(Arc::clone(recorder))
-                    .after(&mut invocation)
-                    .await
-                    .map_err(settlement_error)?;
-                if invocation.usage.usage_recording_failure_count > 0 {
-                    return Err(DomainError::new(
-                        "async usage settlement could not persist its usage facts",
-                    ));
-                }
+        invocation.charging.charge_mode = CustomerChargeMode::Postpaid;
+        invocation.charging.settlement_mode = GatewayBillingSettlementMode::Synchronous;
+        BillingSettlementInterceptor::new(Arc::clone(&self.billing_store))
+            .after(&mut invocation)
+            .await
+            .map_err(settlement_error)?;
+        Ok(())
+    }
+
+    /// Settles one completed batch as one charge per `(model, endpoint)` row.
+    ///
+    /// Each row re-prices through the endpoint it actually used, so chat
+    /// completions, Responses calls, embeddings and Anthropic messages keep
+    /// their own meters. Rows are keyed `task:model:kind` so a retry after a
+    /// crash cannot double-charge an already debited row.
+    async fn settle_batch(&self, task: &AsyncUsageTask, rows: &[Value]) -> DomainResult<()> {
+        if rows.is_empty() {
+            return Err(DomainError::new(
+                "async batch settlement received no usage rows",
+            ));
+        }
+        for row in rows {
+            let model = row
+                .get("model")
+                .and_then(Value::as_str)
+                .map(str::trim)
+                .filter(|model| !model.is_empty())
+                .ok_or_else(|| DomainError::new("async batch settlement row has no model"))?;
+            let kind_wire = row.get("kind").and_then(Value::as_str).unwrap_or_default();
+            let kind = BatchUsageKind::from_wire(kind_wire).ok_or_else(|| {
+                DomainError::new(format!(
+                    "async batch settlement row has unknown endpoint kind {kind_wire:?}"
+                ))
+            })?;
+            let input = row
+                .get("inputTokens")
+                .and_then(Value::as_i64)
+                .unwrap_or(0)
+                .max(0);
+            let output = row
+                .get("outputTokens")
+                .and_then(Value::as_i64)
+                .unwrap_or(0)
+                .max(0);
+            if input == 0 && output == 0 {
+                continue;
             }
+            let (path, shaped) = batch_row_shape(model, kind, input, output);
+            let catalog_key = self
+                .catalog
+                .model_catalog_keys_by_name(model)
+                .into_iter()
+                .next();
+            let target = SettleTarget {
+                model: model.to_owned(),
+                catalog_key,
+                path: path.to_owned(),
+                request_id: format!("{}:{}:{}", task.billing_request_id(), model, kind.as_str()),
+            };
+            let invocation = self.invocation(task, Some(&target))?;
+            self.settle_invocation(invocation, &shaped).await?;
+        }
+        Ok(())
+    }
+}
 
-            // No prepaid hold exists for an asynchronous task: the completion
-            // call is the first moment the amount is knowable, so it settles as
-            // a single postpaid debit.
-            invocation.charging.charge_mode = CustomerChargeMode::Postpaid;
-            invocation.charging.settlement_mode = GatewayBillingSettlementMode::Synchronous;
-            BillingSettlementInterceptor::new(Arc::clone(&self.billing_store))
-                .after(&mut invocation)
-                .await
-                .map_err(settlement_error)?;
-            Ok(())
-        })
+/// Per-row pricing context for a batch: which endpoint, model and idempotency
+/// key the completion charge uses.
+struct SettleTarget {
+    model: String,
+    catalog_key: Option<String>,
+    path: String,
+    request_id: String,
+}
+
+fn batch_row_shape(
+    model: &str,
+    kind: BatchUsageKind,
+    input: i64,
+    output: i64,
+) -> (&'static str, Value) {
+    match kind {
+        BatchUsageKind::ChatCompletion => (
+            "/v1/chat/completions",
+            json!({"model": model, "object": "chat.completion",
+                   "usage": {"prompt_tokens": input, "completion_tokens": output}}),
+        ),
+        BatchUsageKind::Responses => (
+            "/v1/responses",
+            json!({"model": model, "object": "response", "status": "completed",
+                   "usage": {"input_tokens": input, "output_tokens": output}}),
+        ),
+        BatchUsageKind::Embedding => (
+            "/v1/embeddings",
+            json!({"model": model, "object": "list",
+                   "usage": {"prompt_tokens": input}}),
+        ),
+        BatchUsageKind::AnthropicMessage => (
+            "/anthropic/v1/messages",
+            json!({"model": model, "type": "message",
+                   "usage": {"input_tokens": input, "output_tokens": output}}),
+        ),
     }
 }
 

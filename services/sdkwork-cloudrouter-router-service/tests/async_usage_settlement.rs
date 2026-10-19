@@ -324,6 +324,55 @@ async fn replaying_a_settlement_reuses_the_task_idempotency_key() {
         .all(|request| request == &task.billing_request_id()));
 }
 
+/// 批处理完成态按 `(model, endpoint)` 逐行结算：每行用真实端点重新定价，
+/// 幂等键带行后缀，因此一个批次可以产生多笔互不覆盖的后扣。
+#[tokio::test]
+async fn a_completed_batch_settles_one_charge_per_model_and_endpoint_row() {
+    let catalog = Arc::new(catalog());
+    let store = Arc::new(RecordingBillingStore::default());
+    let settler = ReplayAsyncUsageSettler::new(Arc::clone(&catalog), store.clone());
+    let mut task = task();
+    task.task_kind = AsyncUsageTaskKind::OpenAiBatch;
+    task.upstream_id = "batch_1".to_owned();
+    task.metadata = Some(json!({
+        "method": "POST",
+        "path": "/v1/batches",
+        "model": "gpt-4o",
+        "accountGroupId": ACCOUNT_GROUP_ID,
+        "pricingPlanCode": "standard"
+    }));
+    let snapshot = json!({
+        "batchUsage": [
+            {"model": "gpt-4o", "kind": "chat.completion", "requestCount": 2, "inputTokens": 100, "outputTokens": 50},
+            {"model": "gpt-4o", "kind": "responses", "requestCount": 1, "inputTokens": 200, "outputTokens": 100}
+        ]
+    });
+
+    settler
+        .settle(&task, &snapshot)
+        .await
+        .expect("batch settlement");
+
+    let postpaid = store.postpaid();
+    assert_eq!(2, postpaid.len(), "one debit per batch row");
+    // chat: 100×$10/1M + 50×$30/1M = $0.0025 → 175 000 micro
+    // responses: 200×$10/1M + 100×$30/1M = $0.0050 → 350 000 micro
+    assert_eq!(
+        vec!["175000", "350000"],
+        postpaid
+            .iter()
+            .map(|amount| amount.amount.as_str())
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        vec![
+            "async:openai_batch:batch_1:gpt-4o:chat.completion".to_owned(),
+            "async:openai_batch:batch_1:gpt-4o:responses".to_owned()
+        ],
+        store.settled_requests()
+    );
+}
+
 /// 完成态没有任何可计量用量：必须失败关闭，让 worker 重新调度/过期，而不是
 /// 把任务标成 settled 却一分钱不收。
 #[tokio::test]
