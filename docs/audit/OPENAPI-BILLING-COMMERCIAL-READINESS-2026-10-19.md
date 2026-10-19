@@ -184,7 +184,7 @@ fail-closed 或留给下一轮，不凭空收费。
 
 | 项 | 结果 |
 | --- | --- |
-| 计费 test target | **61 个 target / 419 passed / 0 failed** |
+| 计费 test target | **62 个 target / 422 passed / 0 failed** |
 | router-service `--lib` | **624 passed** |
 | router-service 全量 | **174 个 target / 1806 passed / 2 failed（payment SQL contract，HEAD 既有，与计费无关）** |
 | edge-runtime `--lib` | **100 passed** |
@@ -244,5 +244,7 @@ node tools/check-cloudrouter-ai-routing-consistency.mjs
 | --- | --- | --- |
 | `POST /v1/responses` + `background:true` | 放行；完成态按实测 token 重新定价并单笔 postpaid 扣费 | 预检拒单，且注册拦截器不挂载（不入队） |
 | `POST /v1/threads[/{id}]/runs`（带 `model`） | 按 Composite token 计费并入队；完成态 `thread.run.completed.data.usage` 结算 | 不入队；无 `model` 时仍因目录无 `api_request` 价而拒单 |
+| `POST /v1/batches`（OpenAI） | 创建按 Free 放行；完成态下载结果文件，按每个 (model, endpoint) 行重新定价并逐笔 postpaid | 创建仍是 ApiRequest，预检拒单且不入队 |
+| `POST /anthropic/v1/messages/batches`（Anthropic） | 同上，读取 esults_url 的 JSONL；仅 esult.type=succeeded 的行计费 | 同上，预检拒单 |
 
-两条不变量已由代码强制：**入队与结算同开关**、**放行与可结算同开关**，不存在接单但不收钱的时间窗。batch（OpenAI/Anthropic）与 `file_batches` 不在此列——它们仍 fail-closed，等待结果文件/逐文件字节对账。
+两条不变量已由代码强制：**入队与结算同开关**、**放行与可结算同开关**，不存在接单但不收钱的时间窗。batch（OpenAI/Anthropic）已在本节范围内：创建按 Free 放行，完成态按结果文件逐行扣费。`file_batches` 仍 fail-closed，等待逐文件字节对账。

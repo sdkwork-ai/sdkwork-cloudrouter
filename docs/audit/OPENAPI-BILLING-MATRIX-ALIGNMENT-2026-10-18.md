@@ -1706,6 +1706,28 @@ AsyncUsageRegistrationInterceptor（创建响应 {"id":"resp_1"}）
 只把 HTTP（transport）换成假实现；store、worker、settler、定价、账户动作都是
 真实组件。这条锁能抓住"各层单测都绿、装起来却漏扣/重扣"的集成缺陷。
 
+
+### 2.79 批处理对账：创建放行、完成态按结果文件逐行计价
+
+OpenAI / Anthropic 批处理是"创建时无用量、完成时才有用量"的第三种形态。本轮把整条链补齐：
+
+1. **创建**：worker 启用时 `POST /v1/batches` / `POST /anthropic/v1/messages/batches` 按
+   `Free` 放行（创建本身没有可定价的 `api_request` 费率）；worker 关闭时仍是
+   `ApiRequest`，由预检守卫拒单——不会出现"接了单没人收钱"。
+2. **轮询**：`status=completed` / `processing_status=ended` 后读取 `output_file_id` 或
+   `results_url`，再通过同一账户传输下载结果文件（原始字节）。
+3. **聚合**：`sum_openai_batch_usage` / `sum_anthropic_batch_usage` 按
+   `(model, endpoint)` 聚合，endpoint 由 `response.body.object` 判定
+   （`chat.completion` / `response` / `list` / `anthropic.message`）；失败行只计数、
+   不计 token；未知 object 或非法 JSONL 整体失败关闭。
+4. **结算**：`ReplayAsyncUsageSettler` 识别 `batchUsage` 行，每行用真实端点重新定价，
+   并使用 `task:model:kind` 作为幂等键，因此重试不会重复扣费。
+
+回归：批处理结算 1 条（chat 175 000 micro + responses 350 000 micro 两笔后扣）、
+执行器 3 条、聚合 3 条、创建门控 1 条；计费套件 **62 targets / 422 passed**。
+
+## 四、5 个"无专属计量单位且仍不可售"端点（已登记）
+
 ## 四、5 个"无专属计量单位且仍不可售"端点（已登记）
 
 
@@ -1966,4 +1988,4 @@ git diff services/sdkwork-cloudrouter-router-service/tests/golden/openapi_billin
 | `POST /v1/batches`、`POST /anthropic/v1/messages/batches` | **有**，且官方按 50% 折扣计价 | 保持 fail-closed，等结果文件对账（2.73/执行单 batch 缺口） |
 | `POST /v1/vector_stores/{id}/file_batches` | **有** | 保持 fail-closed，等逐文件字节读取 worker |
 
-因此商业化口径应改为：**166 无条件可售 + 2 条件可售（worker 启用）+ 3 待补基础设施 + 4 Deprecated**，而不是把 4 个 vendor 不存在的入口长期计入"待补资源"。契约层面把它们标记 `deprecated: true` 需要同步重新生成 5 个语言的 SDK（OpenAPI 是生成器输入），应在具备完整预算的会话中一次性完成，并在 `data/ai-routing/declared-unrouted.json` 对应条目上补 `deprecated` 字段。
+因此商业化口径应改为：**166 无条件可售 + 4 条件可售（worker 启用：background Responses、threads runs、batch ×2）+ 1 待补基础设施（file_batches）+ 4 Deprecated**，而不是把 4 个 vendor 不存在的入口长期计入"待补资源"。契约层面把它们标记 `deprecated: true` 需要同步重新生成 5 个语言的 SDK（OpenAPI 是生成器输入），应在具备完整预算的会话中一次性完成，并在 `data/ai-routing/declared-unrouted.json` 对应条目上补 `deprecated` 字段。
